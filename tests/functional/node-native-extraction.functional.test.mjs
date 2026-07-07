@@ -7,16 +7,20 @@
  * PATH so pdftotext/textutil/unzip cannot satisfy the extraction, and asserts the
  * Node-native backend produced the text. Skips only if the optional deps are
  * genuinely absent from the install.
+ *
+ * @capability document-type.ingested-markdown
+ * @capability ingest.adapter
  */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { extractDocumentTextNodeNative } from '../../lib/document-extract.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 async function depsPresent() {
   try { await import('unpdf'); await import('mammoth'); return true; }
@@ -68,7 +72,7 @@ test('node-native adapter extracts PDF and DOCX with no Python or system binary'
     assert.match(docx.text, /Mammoth docx text sample/);
   } finally {
     process.env.PATH = realPath;
-    rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmTmpDir(dir);
   }
 });
 
@@ -82,6 +86,6 @@ test('node-native adapter rejects xlsx without docling', async () => {
       (err) => err.code === 'OFFICE_REQUIRES_DOCLING',
     );
   } finally {
-    rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmTmpDir(dir);
   }
 });

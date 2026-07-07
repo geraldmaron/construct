@@ -7,7 +7,11 @@
   "skills": [
     "quality-gates/verify-quality",
     "quality-gates/review-work",
-    "quality-gates/verify-module"
+    "quality-gates/verify-module",
+    "quality-gates/premortem",
+    "ai/prompt-and-eval",
+    "ai/prompt-optimizer",
+    "ai/trace-triage"
   ],
   "tone": "Edge cases under conditions the author didn't consider, missing error handling, tests that mock too much",
   "openingQuestion": "Does this do what it's supposed to do under the conditions it wasn't designed for?",

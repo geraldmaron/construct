@@ -77,13 +77,39 @@ Works with Anthropic, OpenRouter, Ollama, and other OpenAI-compatible providers.
 
 ## Deployment modes
 
-Three modes. `solo` is the default and runs everything locally. Filesystem queue, local repo state, optional Postgres via Docker, local JSONL traces. If every cloud service goes down, you still work from `plan.md`, `.cx/context.md`, beads, git, and the local vector index.
+Three modes are defined. Only `solo` is fully implemented today.
 
-`team` promotes the intake queue to Postgres with row-locked worker claims. Shared memory, Docker worker pool, centralized telemetry, MCP through a broker.
+**`solo`** (default and fully supported) — runs entirely on the local machine. Filesystem task queue, local repo state, embedded LanceDB vector store, direct MCP dispatch, local JSONL traces. If every cloud service goes down, you still work from `plan.md`, `.cx/context.md`, beads, git, and the local vector index.
 
-`enterprise` adds tenant isolation, RBAC and ABAC scaffolding, isolated worker containers, signed MCP allowlists, and mandatory audit.
+**`team`** (planned — partially implemented) — the architecture is defined: shared run storage, Postgres queue with row-locked worker claims, shared memory store, Docker worker pool, centralized telemetry, MCP through a broker. The SQL client, migrations, Postgres run store, Postgres queue provider, team-mode queue default, and worker registry heartbeat now exist. A missing database is a configuration error unless `CONSTRUCT_DEGRADED_OK=postgres-queue` is set, which visibly falls back to the git queue. Do not run `team` mode expecting full distributed execution yet.
+
+**`enterprise`** (planned — not yet implemented) — would add tenant isolation, RBAC/ABAC scaffolding, isolated worker containers, signed MCP allowlists, and mandatory audit. No implementation exists yet.
 
 Pick or change modes with `construct config mode [solo|team|enterprise]`. [Deployment model](https://geraldmaron.github.io/construct/concepts/deployment-model).
+
+### Deployment mode capability status
+
+Current implementation state, sourced from `lib/mode-capabilities.mjs`:
+
+| Capability | solo | team | enterprise |
+|---|---|---|---|
+| Filesystem task queue | implemented | — | — |
+| Local memory | implemented | — | — |
+| Embedded LanceDB vector store | implemented | — | — |
+| Direct MCP dispatch | implemented | — | — |
+| Postgres task queue | — | implemented | implemented |
+| Worker heartbeat registry | — | implemented | implemented |
+| Shared memory store | — | stub | stub |
+| Central telemetry | — | stub | — |
+| Brokered MCP dispatch | — | stub | — |
+| Docker worker pool | — | not implemented | not implemented |
+| Tenant isolation | — | — | not implemented |
+| RBAC/ABAC | — | — | not implemented |
+| Isolated worker containers | — | — | not implemented |
+| Signed MCP allowlists | — | — | not implemented |
+| Mandatory audit log | — | — | not implemented |
+
+**stub** = code path exists but returns null or falls back silently. **not implemented** = no code path exists.
 
 ## Intake
 
@@ -130,6 +156,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 
 | Command | What it does |
 |---|---|
+| `construct approvals` | Manage pending MCP tool approvals |
 | `construct dev` | Start services for development |
 | `construct docs` | Documentation commands |
 | `construct doctor` | Check installation health |
@@ -143,6 +170,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct status` | Show system health and credentials |
 | `construct stop` | Stop all running services |
 | `construct sync` | Sync agent adapters to AI tools |
+| `construct workers` | List registered team workers and heartbeat freshness |
 
 ### Work
 
@@ -165,12 +193,13 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct integrations` | Check and manage external system connections |
 | `construct knowledge` | Query, index, or add to the project knowledge base |
 | `construct memory` | Inspect memory layer |
+| `construct pack` | Specialist/team/profile pack enable/disable lifecycle (LMCP-E3) |
 | `construct publish` | Publish typed artifacts: release gate + export PDF with figures + optional demos |
 | `construct reflect` | Capture improvement feedback and update Construct core |
 | `construct search` | Hybrid search across project state |
 | `construct storage` | Manage storage backend |
 | `construct tags` | Manage the controlled tag vocabulary (propose, add, deprecate, audit) |
-| `construct team` | Team review and template listing (`team:add` / `team:remove` are internal registry editors) |
+| `construct team` | Team review, template listing, and custom team authoring (`team:add` / `team:remove` are internal registry editors) |
 | `construct tools` | Detect optional publish pipeline binaries (Pandoc, D2, VHS, Playwright) |
 | `construct wireframe` | Generate wireframes from description |
 | `construct workflow` | Instantiate workflow templates (PRD-to-review chains, onboarding, handoffs) |
@@ -183,7 +212,9 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct acp` | Run Construct as an Agent Client Protocol (ACP) server over stdio for Zed/JetBrains/VS Code ACP clients |
 | `construct capability` | Describe what this Construct install can do (embedded contract; read-only, secret-free) |
 | `construct claude:allow` | Manage Claude Code `permissions.allow` from the outside (auto-classifier blocks the agent from editing it) |
+| `construct db` | Inspect and migrate the optional Postgres backend |
 | `construct execution` | Resolve the execution-capability contract for an embedded workflow (orchestrated vs prompt-only; descriptive, not enforced) |
+| `construct flow` | Deterministic flow-engine runs: start or resume a checkpointed flow, or inspect its status |
 | `construct hosts` | Show host support for Construct orchestration |
 | `construct mcp` | Manage MCP integrations |
 | `construct models` | Show or update model tier assignments |
@@ -281,8 +312,11 @@ construct/
 ├── commands         Command prompt assets
 ├── config           Repo-wide controlled vocabulary (tag-vocabulary.json)
 ├── deploy           Terraform and deployment configs
+├── deps
+├── dev
 ├── docs             Architecture notes, runbooks, and documentation contract
 ├── examples         Example projects and persona fixtures
+├── Formula
 ├── lib              Core runtime: CLI, hooks, MCP, providers, oracle, sync
 ├── packages         Shared workspace packages (e.g. cx-ui)
 ├── personas         Persona prompt definitions
@@ -308,9 +342,9 @@ construct uninstall          # interactive; pick what to remove
 npm uninstall @geraldmaron/construct
 ```
 
-`construct uninstall` finds both project state (`.construct/`, the Construct-owned files under `.claude/agents/` and `.claude/commands/`, hooks and mcpServers Construct added to `.claude/settings.json`) and machine state (`~/.cx/`, `~/.construct/workspace/`, the embedding model cache, the local Postgres container). Auto-risk items go by default. Ask-risk items (Postgres data, API keys, files you may have edited) are skipped unless you opt in.
+`construct uninstall` finds both project state (`.construct/`, the Construct-owned files under `.claude/agents/` and `.claude/commands/`, hooks and mcpServers Construct added to `.claude/settings.json`) and machine state (`~/.cx/`, `~/.local/state/construct/`, the embedding model cache). Auto-risk items go by default. Ask-risk items (API keys, files you may have edited) are skipped unless you opt in.
 
-It will not touch Docker itself, Homebrew CLIs like `cm` and `cass`, the pgvector image, or anything you added to `.claude/settings.json` by hand. Those appear in the final summary as follow-ups.
+It will not touch Homebrew CLIs like `cm` and `cass`, or anything you added to `.claude/settings.json` by hand. Those appear in the final summary as follow-ups.
 
 Useful flags:
 
@@ -319,7 +353,7 @@ construct uninstall --dry-run            # show the plan, change nothing
 construct uninstall --yes                # non-interactive, auto-risk only
 construct uninstall --yes --all          # non-interactive, everything
 construct uninstall --scope=project      # only this project, leave ~/.construct alone
-construct uninstall --keep-state         # only .construct/ and .claude/, keep .cx/, ~/.construct, Postgres
+construct uninstall --keep-state         # only .construct/ and .claude/, keep .cx/ and ~/.local/state/construct/
 ```
 
 ## License

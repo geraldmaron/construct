@@ -5,11 +5,12 @@
  * Drives startServices() with an injected spawn function that captures the
  * (command, args) each long-lived service would spawn, and a fake `op` binary on
  * PATH so opCliAvailable() reports present without touching a real 1Password. When
- * CONSTRUCT_OP_ENV_FILE points at a real env-file the cm / OpenCode / copilot-bridge
- * spawns are wrapped as `op run --env-file=… -- <cmd>`; with the var unset the same
- * spawns are byte-for-byte unchanged. A fake-op invocation counter records how many
- * times `op --version` is probed across the wrapped spawns — the cross-process signal
- * observable here without a real vault.
+ * CONSTRUCT_OP_ENV_FILE points at a real env-file the OpenCode / copilot-bridge
+ * spawns are wrapped as `op run --env-file=… -- <cmd>`; cm consumes no provider
+ * API key so it is deliberately excluded from the wrap (construct-0wmj); with the
+ * var unset the same spawns are byte-for-byte unchanged. A fake-op invocation
+ * counter records how many times `op --version` is probed across the wrapped
+ * spawns — the cross-process signal observable here without a real vault.
  */
 
 import { test } from 'node:test';
@@ -19,6 +20,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { startServices } from '../../lib/service-manager.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 function makeSandbox() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-svc-oprun-'));
@@ -80,9 +82,9 @@ async function withEnv(overrides, fn) {
   }
 }
 
-test('opted in: cm / opencode / copilot spawns are wrapped in op run', async (t) => {
+test('opted in: opencode / copilot spawns are wrapped in op run; cm is not (construct-0wmj)', async (t) => {
   const sandbox = makeSandbox();
-  t.after(() => fs.rmSync(sandbox.dir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(sandbox.dir));
 
   const spawns = [];
   await withEnv(
@@ -98,10 +100,12 @@ test('opted in: cm / opencode / copilot spawns are wrapped in op run', async (t)
     }),
   );
 
-  const cm = spawns.find((s) => s.args.includes('cm'));
+  // cm never consumes a provider API key, so the per-service op-run fallback
+  // is narrowed to skip it (construct-0wmj) — it launches unwrapped even
+  // when opted in.
+  const cm = spawns.find((s) => s.command === 'cm');
   assert.ok(cm, 'cm spawn captured');
-  assert.equal(cm.command, 'op');
-  assert.deepEqual(cm.args, ['run', `--env-file=${sandbox.envFile}`, '--', 'cm', 'serve', '--port', '7070']);
+  assert.deepEqual(cm.args, ['serve', '--port', '7070'], 'cm launched directly, not under op run');
 
   const opencode = spawns.find((s) => s.args.includes('opencode'));
   assert.ok(opencode, 'opencode spawn captured');
@@ -111,9 +115,43 @@ test('opted in: cm / opencode / copilot spawns are wrapped in op run', async (t)
   assert.ok(opVersionCalls(sandbox.opCounter) >= 1, 'fake op --version was probed at least once');
 });
 
+test('parent already resolved: per-service spawns are not wrapped again (single op run)', async (t) => {
+  const sandbox = makeSandbox();
+  t.after(() => rmTmpDir(sandbox.dir));
+
+  const spawns = [];
+  await withEnv(
+    {
+      PATH: `${sandbox.binDir}${path.delimiter}${process.env.PATH}`,
+      CONSTRUCT_OP_ENV_FILE: sandbox.envFile,
+      CONSTRUCT_OP_RUN_ACTIVE: '1',
+      CONSTRUCT_DOCTOR: 'off',
+      CONSTRUCT_ORACLE: 'off',
+    },
+    () => startServices({
+      ...runOptions({
+        homeDir: sandbox.homeDir,
+        spawns,
+        env: { CONSTRUCT_OP_ENV_FILE: sandbox.envFile, CONSTRUCT_OP_RUN_ACTIVE: '1' },
+      }),
+      selected: new Set(['memory', 'opencode']),
+    }),
+  );
+
+  const cm = spawns.find((s) => s.command === 'cm');
+  assert.ok(cm, 'cm spawn captured');
+  assert.deepEqual(cm.args, ['serve', '--port', '7070'], 'cm launched directly, not under op run');
+
+  const opencode = spawns.find((s) => s.command === 'opencode');
+  assert.ok(opencode, 'opencode spawn captured');
+  assert.deepEqual(opencode.args, ['serve', '--port', '5173']);
+
+  assert.ok(!spawns.some((s) => s.command === 'op'), 'no nested op run under the resolved parent');
+});
+
 test('not opted in: spawns are unchanged when CONSTRUCT_OP_ENV_FILE is unset', async (t) => {
   const sandbox = makeSandbox();
-  t.after(() => fs.rmSync(sandbox.dir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(sandbox.dir));
 
   const spawns = [];
   await withEnv(
@@ -144,7 +182,7 @@ test('not opted in: spawns are unchanged when CONSTRUCT_OP_ENV_FILE is unset', a
 test('opted in but op absent: spawns are unchanged (never forces 1Password)', async (t) => {
   const sandbox = makeSandbox();
   fs.rmSync(path.join(sandbox.binDir, 'op'), { force: true });
-  t.after(() => fs.rmSync(sandbox.dir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(sandbox.dir));
 
   const spawns = [];
   await withEnv(

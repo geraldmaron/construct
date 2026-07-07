@@ -34,7 +34,7 @@ construct install --yes
 1. ✅ Checks Docker → offers to install if missing
 2. ✅ Checks `cm` (Memory MCP server) → installs if missing
 3. ✅ Checks Node.js ≥ 20 → shows download link if needed
-4. ✅ Creates `~/.construct/config.env`
+4. ✅ Creates `~/.config/construct/config.env`
 5. ✅ Enables local JSONL traces in `.cx/traces`
 6. ✅ Runs `construct doctor` health check
 

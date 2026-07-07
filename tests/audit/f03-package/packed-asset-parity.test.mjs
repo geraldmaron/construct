@@ -33,9 +33,16 @@ const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..
 
 function packAndExtract() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-f03-pack-'));
+  const npmCache = path.join(dir, 'npm-cache');
+  fs.mkdirSync(npmCache, { recursive: true });
   const pack = spawnSync('npm', ['pack', '--json', '--pack-destination', dir], {
     cwd: REPO_ROOT,
     encoding: 'utf8',
+    env: {
+      ...process.env,
+      npm_config_cache: npmCache,
+      NPM_CONFIG_CACHE: npmCache,
+    },
   });
   if (pack.status !== 0) {
     throw new Error(`npm pack failed (exit ${pack.status}): ${pack.stderr || pack.stdout}`);

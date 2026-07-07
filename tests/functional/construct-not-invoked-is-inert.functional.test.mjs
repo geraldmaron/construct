@@ -12,7 +12,7 @@
  */
 
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -20,6 +20,7 @@ import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
 import { doctorRoot } from '../../lib/config/xdg.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const HOOK = (name) => join(REPO_ROOT, 'lib', 'hooks', `${name}.mjs`);
@@ -30,7 +31,7 @@ function sandbox() {
   const project = join(root, 'project');
   mkdirSync(join(HOME, '.cx'), { recursive: true });
   mkdirSync(join(project, '.cx'), { recursive: true });
-  return { root, HOME, project, cleanup() { rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } };
+  return { root, HOME, project, cleanup() { rmTmpDir(root); } };
 }
 
 function runHook(name, payload, env) {

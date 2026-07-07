@@ -1,0 +1,16 @@
+{
+  "capturedAt": "2026-07-05T00:43:08.535Z",
+  "tool": "provider_write",
+  "args": {
+    "provider": "jira",
+    "item": {
+      "type": "issue",
+      "project": "DEMO",
+      "summary": "fixture capture"
+    },
+    "dry_run": true
+  },
+  "result": {
+    "error": "Jira transport requires JIRA_URL, JIRA_EMAIL, and JIRA_TOKEN (or config.baseUrl/email/token)"
+  }
+}

@@ -15,10 +15,15 @@
  *
  * Isolation: own HOME + CX_HOME_OVERRIDE + project tmpdir; the server resolves
  * skills/templates from the repo (ROOT_DIR) and writes telemetry into the sandbox.
+ *
+ * @capability orchestration.routing
+ * @capability mcp.broker.connection
+ * @capability skill.roles-engineer
+ * @capability skill.roles-architect-ai-systems
  */
 
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -27,9 +32,12 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
 import { doctorRoot } from '../../lib/config/xdg.mjs';
+import { sterileSpawnEnv } from '../helpers/sterile-env.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SERVER = join(REPO_ROOT, 'lib', 'mcp', 'server.mjs');
+const MODEL = 'anthropic/claude-sonnet-4-6';
 
 function sandbox() {
   const root = mkdtempSync(join(tmpdir(), 'host-mcp-'));
@@ -37,7 +45,7 @@ function sandbox() {
   const project = join(root, 'project');
   mkdirSync(join(HOME, '.cx'), { recursive: true });
   mkdirSync(join(project, '.cx'), { recursive: true });
-  return { root, HOME, project, cleanup() { rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } };
+  return { root, HOME, project, cleanup() { rmTmpDir(root); } };
 }
 
 // The host spawns the server as a subprocess and speaks MCP over its stdio. The
@@ -48,7 +56,21 @@ async function connect(env) {
     command: process.execPath,
     args: [SERVER],
     cwd: env.project,
-    env: { ...process.env, HOME: env.HOME, CX_HOME_OVERRIDE: env.HOME, CONSTRUCT_DEV_PATH: REPO_ROOT },
+    env: sterileSpawnEnv({
+      HOME: env.HOME,
+      USERPROFILE: env.HOME,
+      CX_HOME_OVERRIDE: env.HOME,
+      XDG_CONFIG_HOME: join(env.HOME, '.config'),
+      XDG_DATA_HOME: join(env.HOME, '.local', 'share'),
+      XDG_RUNTIME_DIR: join(env.HOME, 'run'),
+      CONSTRUCT_DEV_PATH: REPO_ROOT,
+      CONSTRUCT_ORCHESTRATION_URL: '',
+      OPENROUTER_API_KEY: '',
+      ANTHROPIC_API_KEY: '',
+      CX_MODEL_REASONING: MODEL,
+      CX_MODEL_STANDARD: MODEL,
+      CX_MODEL_FAST: MODEL,
+    }),
   });
   const client = new Client({ name: 'host-emulation-test', version: '1.0.0' }, { capabilities: {} });
   await client.connect(transport);
@@ -157,6 +179,7 @@ test('a host can execute a research-shaped request through orchestration_run aft
     arguments: {
       request: 'compare oidc vs saml',
       workflow_type: policy.suggestedWorkflowType,
+      host_model: MODEL,
       file_count: 1,
       module_count: 1,
       wait: true,
@@ -164,8 +187,12 @@ test('a host can execute a research-shaped request through orchestration_run aft
     },
   }));
   assert.equal(run.intent, 'research');
+  assert.equal(run.degraded, false, 'the spawned-server happy path must not be degraded');
   assert.equal(run.track, 'focused');
   assert.equal(run.suggestedWorkflowType, 'research-synthesis');
   assert.deepEqual(run.specialists, ['cx-researcher']);
   assert.equal(run.researchExecutionPolicy?.mode, 'evidence-first');
+  assert.ok(Array.isArray(run.tasks) && run.tasks.length >= 1, 'the spawned-server run must return a non-empty executed task list');
+  assert.ok(run.tasks.every((task) => task.status === 'prepared'), 'inline host-emulation tasks stay prepared on the happy path');
+  assert.ok(run.tasks.every((task) => task.executor === 'inline:prepared'), 'inline host-emulation marks each task as prepared by the inline executor');
 });

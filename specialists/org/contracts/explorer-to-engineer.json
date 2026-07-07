@@ -1,6 +1,6 @@
 {
   "id": "explorer-to-engineer",
-  "producer": "cx-explorer",
+  "producer": "cx-researcher",
   "consumer": "cx-engineer",
   "trigger": {
     "intent": [
@@ -25,8 +25,16 @@
     "Exploration findings reviewed; gaps and surprising dependencies surfaced"
   ],
   "postconditions": [
-    "Implementation reads the files cited in keyFiles before edits",
-    "Gaps named by explorer (missing tests, missing error handling) are addressed or filed"
+    {
+      "id": "explorer-to-engineer-pc-0-implementation-reads-the-files-cited-in",
+      "description": "Implementation reads the files cited in keyFiles before edits",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "explorer-to-engineer-pc-1-gaps-named-by-explorer-missing-tests",
+      "description": "Gaps named by explorer (missing tests, missing error handling) are addressed or filed",
+      "postconditionType": "advisory"
+    }
   ],
   "description": "",
   "teamBoundary": {

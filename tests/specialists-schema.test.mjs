@@ -104,7 +104,8 @@ describe('validateRegistryFile against the live registry', () => {
   it('the shipped registry is valid (no drift)', () => {
     const result = validateRegistry(loadRegistry({ rootDir: ROOT_DIR }), { rootDir: ROOT_DIR });
     assert.equal(result.errors.length, 0, `shipped registry has drift: ${result.errors.join('; ')}`);
-    assert.ok(result.agentCount >= 25, 'sanity: registry should have the full persona set');
+    // construct-rf26.11 consolidated the 29-specialist roster to 12 (orchestrator + 11 workers).
+    assert.ok(result.agentCount >= 12, 'sanity: registry should have the full persona set');
   });
 
   it('returns a clear error when the registry file is missing', () => {

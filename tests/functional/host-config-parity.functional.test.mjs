@@ -9,24 +9,28 @@
  * (the OpenCode `.opencode/config.json` and VS Code `github.copilot.mcpServers`
  * bugs). Hosts are never executed.
  *
+ * @capability mcp.tool-budget.trim
+ *
  * Canonical project schema asserted:
  *   VS Code   .vscode/mcp.json         top-level `servers`
  *   Cursor    .cursor/mcp.json         top-level `mcpServers`
  *   OpenCode  .opencode/opencode.json  top-level `mcp`, local command = array
  *   Codex     .codex/config.toml       [mcp_servers."id"]
- *   Claude    .claude/agents/*.md + .claude/settings.json
+ *   Claude    .claude/agents/*.md + .mcp.json (project-scope MCP servers;
+ *             settings.json carries hooks/permissions only, never mcpServers)
  *   Copilot   .github/prompts/*.prompt.md
  *
  * Global scope must NOT seed any host config the user did not already have.
  */
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SYNC_SCRIPT = join(REPO_ROOT, 'scripts', 'sync-specialists.mjs');
@@ -43,7 +47,7 @@ function makeEnv() {
   mkdirSync(HOME, { recursive: true });
   mkdirSync(project, { recursive: true });
   spawnSync('git', ['init', '--quiet', '--initial-branch=main'], { cwd: project });
-  return { sandbox, HOME, project, cleanup() { rmSync(sandbox, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } };
+  return { sandbox, HOME, project, cleanup() { rmTmpDir(sandbox); } };
 }
 
 function runSync(env, scope) {
@@ -95,10 +99,13 @@ test('project sync writes each IDE surface at its canonical path + key + entry s
     assert.match(codexToml, /\[mcp_servers\./, 'Codex declares [mcp_servers.*]');
     assert.ok(readdirSync(p('.codex/agents')).some((f) => f.endsWith('.toml')), 'Codex agent tomls present');
 
-    // Claude — agents + settings.json (mcpServers).
+    // Claude — agents + .mcp.json (mcpServers). settings.json is not a file
+    // Claude Code reads MCP server definitions from (construct-ranh).
     assert.ok(existsSync(p('.claude/agents/construct.md')), 'Claude orchestrator agent present');
     const claudeSettings = readJson(p('.claude/settings.json'));
-    assert.ok(claudeSettings.mcpServers && typeof claudeSettings.mcpServers === 'object', 'Claude uses `mcpServers`');
+    assert.equal(claudeSettings.mcpServers, undefined, 'settings.json must not carry MCP server definitions');
+    const claudeMcpJson = readJson(p('.mcp.json'));
+    assert.ok(claudeMcpJson.mcpServers && typeof claudeMcpJson.mcpServers === 'object', 'Claude project scope uses .mcp.json `mcpServers`');
 
     // Copilot — a /construct prompt plus a VS Code custom agent. The agent file
     // carries VS-Code-namespaced tool grants (`<server>/*`, `web/fetch`); the
@@ -134,7 +141,7 @@ test('construct-mcp (the construct server) is wired for every selected host', ()
     };
 
     const hostConfigs = {
-      'Claude Code': p('.claude/settings.json'),
+      'Claude Code': p('.mcp.json'),
       'VS Code': p('.vscode/mcp.json'),
       Cursor: p('.cursor/mcp.json'),
       OpenCode: p('.opencode/opencode.json'),
@@ -165,7 +172,7 @@ test('no generated host config inlines a plaintext secret', () => {
       /\bgh[pousr]_[A-Za-z0-9]{20,}\b/,
       /"(?:authorization|api[_-]?key|token|secret|password)"\s*:\s*"(?!\{env:|\{file:|Bearer \{)[^"]{12,}"/i,
     ];
-    for (const rel of ['.claude/settings.json', '.vscode/mcp.json', '.cursor/mcp.json', '.opencode/opencode.json', '.codex/config.toml']) {
+    for (const rel of ['.claude/settings.json', '.mcp.json', '.vscode/mcp.json', '.cursor/mcp.json', '.opencode/opencode.json', '.codex/config.toml']) {
       const file = p(rel);
       if (!existsSync(file)) continue;
       const text = readFileSync(file, 'utf8');
@@ -197,6 +204,9 @@ test('global sync never seeds a host config the user did not already have', () =
     // Cursor + OpenCode global are likewise only-if-exists.
     assert.ok(!existsSync(join(env.HOME, '.cursor', 'mcp.json')), 'no seeded ~/.cursor/mcp.json');
     assert.ok(!existsSync(join(env.HOME, '.config', 'opencode', 'opencode.json')), 'no seeded global opencode.json');
+    // ~/.claude.json is Claude Code's own runtime state file; global sync must
+    // not fabricate it just to seed MCP servers for a user who never ran `claude`.
+    assert.ok(!existsSync(join(env.HOME, '.claude.json')), 'no seeded ~/.claude.json');
   } finally {
     env.cleanup();
   }

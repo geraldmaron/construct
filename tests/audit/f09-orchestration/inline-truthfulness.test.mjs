@@ -42,12 +42,34 @@ function project() {
 }
 test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} } });
 
+// orchestrationRun/runOrchestration resolve the run store through the
+// machine-scoped state root (ADR-0066), which reads CX_HOME_OVERRIDE from
+// real process.env — the ENV bag above only feeds model-tier lookups. Pin it
+// for the whole file so these fixtures never write into the real developer
+// machine's ~/.construct/projects/.
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-f09-truth-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+test.after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
+
+// worker_backend pinned explicitly: these fixtures pin inline prepare-only
+// truthfulness specifically. An MCP-originated run with no explicit backend
+// defaults to 'host' (see orchestration-mcp-host-default tests), a default
+// that would fail the "every task prepared" preconditions below for the
+// wrong reason.
+
 const ORCH_REQUEST = {
   request: 'Refactor the auth module and add a migration; review for security',
   requested_strategy: 'orchestrated',
   host_model: MODEL,
   file_count: 4,
   module_count: 2,
+  worker_backend: 'inline',
 };
 
 // A field that, present and truthy, would let a host know the run only PREPARED work.

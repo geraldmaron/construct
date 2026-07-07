@@ -1,0 +1,8 @@
+{
+  "id": "echo",
+  "version": "1.0.0",
+  "kind": "mcp-tool",
+  "compatVersion": 1,
+  "docs": "Built-in echo tool for testing the extension manifest system.",
+  "owner": "construct-core"
+}

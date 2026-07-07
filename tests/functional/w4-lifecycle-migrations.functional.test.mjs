@@ -4,7 +4,7 @@
  * Exercises the schema migration runtime: planning, dry-run, applied writes,
  * compatibility checks (older / newer), and the CLI `construct migrate` path.
  */
-import { mkdtempSync, writeFileSync, readFileSync, rmSync, existsSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync, existsSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,6 +19,7 @@ import {
   checkCompatibility,
 } from '../../lib/migrations/index.mjs';
 import { compareSemver, parseSemver, getInstalledVersion } from '../../lib/version.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -26,7 +27,7 @@ function freshTmp() {
   const root = mkdtempSync(join(tmpdir(), 'construct-migrate-'));
   return {
     root,
-    cleanup() { try { rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ } },
+    cleanup() { try { rmTmpDir(root); } catch { /* ignore */ } },
   };
 }
 
@@ -108,14 +109,19 @@ test('runMigrations is idempotent — running twice does not double-stamp', asyn
 });
 
 test('construct --version matches package.json', () => {
-  const result = spawnSync(process.execPath, [join(REPO_ROOT, 'bin', 'construct'), '--version'], {
-    cwd: REPO_ROOT,
-    encoding: 'utf8',
-    env: { ...process.env },
-  });
-  assert.equal(result.status, 0);
-  const { version } = getInstalledVersion();
-  assert.match(result.stdout, new RegExp(version.replace(/\./g, '\\.')));
+  const tmpHome = mkdtempSync(join(tmpdir(), 'construct-version-home-'));
+  try {
+    const result = spawnSync(process.execPath, [join(REPO_ROOT, 'bin', 'construct'), '--version'], {
+      cwd: REPO_ROOT,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: tmpHome, CX_HOME_OVERRIDE: tmpHome },
+    });
+    assert.equal(result.status, 0);
+    const { version } = getInstalledVersion();
+    assert.match(result.stdout, new RegExp(version.replace(/\./g, '\\.')));
+  } finally {
+    rmTmpDir(tmpHome);
+  }
 });
 
 test('construct migrate --dry-run runs end-to-end against a fixture cwd', () => {

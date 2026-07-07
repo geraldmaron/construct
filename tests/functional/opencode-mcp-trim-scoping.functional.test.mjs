@@ -34,9 +34,16 @@ function seedConfig(home, { model = undefined, ollamaModels = {} } = {}) {
   return join(dir, "opencode.json");
 }
 
+// sync-specialists.mjs derives its own root from import.meta.dirname and
+// self-populates CX_TOOLKIT_DIR from it when unset — it never needs the var
+// supplied externally. Setting it here would also feed lib/paths.mjs's
+// constructDir(), which lib/state-root.mjs's machine-scoped state root
+// (ADR-0066) builds on, redirecting real state into repoRoot instead of the
+// sandboxed HOME already in `env`.
+
 function runSync(env, extraArgs = []) {
   return spawnSync(process.execPath, [join(repoRoot, "scripts", "sync-specialists.mjs"), "--global", ...extraArgs], {
-    env: { ...env, CX_TOOLKIT_DIR: repoRoot, CONSTRUCT_SYNC_FORCE: "1", CONSTRUCT_SYNC_HOSTS: "opencode" },
+    env: { ...env, CONSTRUCT_SYNC_FORCE: "1", CONSTRUCT_SYNC_HOSTS: "opencode" },
     encoding: "utf8",
     timeout: 60_000,
   });

@@ -5,7 +5,7 @@ inputs: [alert-config, slo]
 artifactType: role-guidance
 role: sre
 applies_to:
-  - cx-sre
+  - cx-operations
 inherits: operations
 version: 2
 scopes:

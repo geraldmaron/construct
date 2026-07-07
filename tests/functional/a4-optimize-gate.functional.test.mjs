@@ -18,6 +18,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { spawnSync } from 'node:child_process';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const OPT = path.join(REPO, 'scripts', 'optimize.mjs');
@@ -42,7 +43,7 @@ test('A4: --rollback without a backup exits with a clear error', () => {
   });
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /No backup found/);
-  fs.rmSync(fakeHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(fakeHome);
 });
 
 test('A4: --rollback restores the latest .bak when present', () => {
@@ -65,7 +66,7 @@ test('A4: --rollback restores the latest .bak when present', () => {
   assert.equal(restored, original, 'skill file did not return to its prior content');
   assert.equal(fs.existsSync(backup), false, 'backup should be consumed by rollback');
 
-  fs.rmSync(fakeHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(fakeHome);
 });
 
 test('A4: default invocation without --apply is preview-only (no write, no history)', () => {
@@ -91,5 +92,5 @@ test('A4: default invocation without --apply is preview-only (no write, no histo
       assert.notEqual(entry.action, 'apply', 'no apply entry should have been recorded');
     }
   }
-  fs.rmSync(fakeHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(fakeHome);
 });

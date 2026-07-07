@@ -36,6 +36,7 @@ const POSTINSTALL = path.join(REPO_ROOT, 'bin', 'construct-postinstall.mjs');
 
 function runPostinstallInConsumer({ packageJson = '{"name":"demo-consumer","version":"1.0.0"}\n' } = {}) {
   const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-f03-postinstall-'));
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-f03-postinstall-home-'));
   fs.writeFileSync(path.join(projectRoot, 'package.json'), packageJson);
   const result = spawnSync(process.execPath, [POSTINSTALL], {
     cwd: projectRoot,
@@ -45,9 +46,11 @@ function runPostinstallInConsumer({ packageJson = '{"name":"demo-consumer","vers
       INIT_CWD: projectRoot,
       npm_config_global: 'false',
       CONSTRUCT_SKIP_POSTINSTALL: '',
+      HOME: home,
+      CX_HOME_OVERRIDE: home,
     },
   });
-  return { projectRoot, result };
+  return { projectRoot, home, result };
 }
 
 function snapshotMutations(projectRoot) {
@@ -73,8 +76,11 @@ function findInstallReceipt(projectRoot) {
 }
 
 test('[R3] scripts-enabled postinstall must leave an itemized mutation manifest with a recovery command', (t) => {
-  const { projectRoot, result } = runPostinstallInConsumer();
-  t.after(() => { try { fs.rmSync(projectRoot, { recursive: true, force: true }); } catch { /* tmp */ } });
+  const { projectRoot, home, result } = runPostinstallInConsumer();
+  t.after(() => {
+    try { fs.rmSync(projectRoot, { recursive: true, force: true }); } catch { /* tmp */ }
+    try { fs.rmSync(home, { recursive: true, force: true }); } catch { /* tmp */ }
+  });
 
   assert.equal(result.status, 0, `postinstall should exit 0; got ${result.status}: ${result.stderr}`);
 
@@ -103,8 +109,11 @@ test('[R3] scripts-enabled postinstall must leave an itemized mutation manifest 
 });
 
 test('[R3] the manifest must record the .gitignore append so it can be reverted', (t) => {
-  const { projectRoot, result } = runPostinstallInConsumer();
-  t.after(() => { try { fs.rmSync(projectRoot, { recursive: true, force: true }); } catch { /* tmp */ } });
+  const { projectRoot, home, result } = runPostinstallInConsumer();
+  t.after(() => {
+    try { fs.rmSync(projectRoot, { recursive: true, force: true }); } catch { /* tmp */ }
+    try { fs.rmSync(home, { recursive: true, force: true }); } catch { /* tmp */ }
+  });
 
   assert.equal(result.status, 0, `postinstall should exit 0; got ${result.status}: ${result.stderr}`);
 

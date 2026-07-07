@@ -1,33 +1,145 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-01T04:46:11.931Z",
+  "generatedAt": "2026-07-06T21:40:38.320Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 600,
-    "topLevelTestFiles": 304,
-    "nestedTestFiles": 296,
+    "testFiles": 810,
+    "topLevelTestFiles": 350,
+    "nestedTestFiles": 460,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 25,
+    "capabilityMarkedFiles": 40,
     "byLayer": {
-      "unit": 411,
-      "visual": 9,
+      "unit": 556,
+      "functional": 207,
+      "visual": 11,
       "live-provider": 2,
-      "integration": 30,
-      "functional": 148
+      "integration": 34
     },
     "byCategory": {
-      "unit": 368,
-      "visual": 9,
-      "structural-guard": 15,
-      "contract-subsystem": 28,
+      "unit": 493,
+      "functional": 207,
+      "visual": 11,
+      "structural-guard": 19,
+      "contract-subsystem": 44,
       "live-provider": 2,
-      "integration": 21,
-      "functional": 148,
+      "integration": 25,
       "hook": 9
     }
   },
   "releaseCriticalGaps": [],
   "files": [
+    {
+      "path": "tests/acceptance/01-init-contract.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/acceptance/01-init-contract.test.mjs"
+    },
+    {
+      "path": "tests/acceptance/02-provider-health-contract.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/acceptance/02-provider-health-contract.test.mjs"
+    },
+    {
+      "path": "tests/acceptance/03-status-contract.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/acceptance/03-status-contract.test.mjs"
+    },
+    {
+      "path": "tests/acceptance/04-doctor-contract.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/acceptance/04-doctor-contract.test.mjs"
+    },
+    {
+      "path": "tests/acceptance/05-optional-dep-degradation.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/acceptance/05-optional-dep-degradation.test.mjs — LMCP-L4 optional-dep degradation matrix."
+    },
+    {
+      "path": "tests/acceptance/global-install.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/acceptance/global-install.test.mjs — global install + project init"
+    },
+    {
+      "path": "tests/acceptance/k5-ink-react-degradation.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/acceptance/k5-ink-react-degradation.functional.test.mjs — LMCP-K5 Ink/React"
+    },
+    {
+      "path": "tests/acceptance/modes/enterprise.acceptance.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/acceptance/modes/enterprise.acceptance.test.mjs — LMCP-L6 enterprise-mode"
+    },
+    {
+      "path": "tests/acceptance/modes/solo.acceptance.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/acceptance/modes/solo.acceptance.test.mjs — LMCP-L6 solo-mode acceptance leg."
+    },
+    {
+      "path": "tests/acceptance/modes/team.acceptance.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/acceptance/modes/team.acceptance.test.mjs — LMCP-L6 team-mode acceptance leg."
+    },
+    {
+      "path": "tests/acceptance/ops-triage-preset.acceptance.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/acceptance/ops-triage-preset.acceptance.test.mjs — golden-fixture"
+    },
+    {
+      "path": "tests/acceptance/packed-install.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/acceptance/packed-install.test.mjs"
+    },
+    {
+      "path": "tests/acceptance/pm-feedback-preset.acceptance.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/acceptance/pm-feedback-preset.acceptance.test.mjs — golden-fixture"
+    },
+    {
+      "path": "tests/acceptance/tpm-preset.acceptance.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/acceptance/tpm-preset.acceptance.test.mjs — golden-fixture acceptance"
+    },
     {
       "path": "tests/adr-stamp-integrity.test.mjs",
       "layer": "unit",
@@ -85,6 +197,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/artifact-workflow.test.mjs — manifest intent planning and run provenance."
+    },
+    {
+      "path": "tests/artifacts/format-engines-manifest.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/artifacts/format-engines-manifest.test.mjs — LMCP-B7: FORMAT_ENGINES"
     },
     {
       "path": "tests/asset-quality/a11y-audit.test.mjs",
@@ -252,7 +372,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/audit/f01-mcp-safety/destructive-confirm.red.mjs — F01 [R11] self-authorizing-destruction proof."
+      "maintainerNotes": "tests/audit/f01-mcp-safety/destructive-confirm.test.mjs — F01 destructive-tool confirmation proofs."
     },
     {
       "path": "tests/audit/f01-mcp-safety/malicious-ref.test.mjs",
@@ -309,6 +429,22 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/audit/f02-secrets/precedence-divergence.red.mjs — F02 [R14] credential-precedence"
+    },
+    {
+      "path": "tests/audit/f02-secrets/resolver-bypass-consumers.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f02-secrets/resolver-bypass-consumers.test.mjs — secret-resolver bypass regression."
+    },
+    {
+      "path": "tests/audit/f02-secrets/sync-template-leak.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f02-secrets/sync-template-leak.test.mjs — F02 regression guard for the"
     },
     {
       "path": "tests/audit/f03-package/half-stage-recovery.test.mjs",
@@ -487,6 +623,14 @@
       "maintainerNotes": "tests/audit/f08-prompt-injection/untrusted-ingest-labeling.red.mjs —"
     },
     {
+      "path": "tests/audit/f09-orchestration/degraded-flag-propagation.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f09-orchestration/degraded-flag-propagation.test.mjs — construct-fbxv.5 proof."
+    },
+    {
       "path": "tests/audit/f09-orchestration/error-persistence.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -503,6 +647,14 @@
       "maintainerNotes": "tests/audit/f09-orchestration/inline-truthfulness.red.mjs — F09 [R17] prepared-vs-executed proof."
     },
     {
+      "path": "tests/audit/f09-orchestration/provider-timeout-default.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f09-orchestration/provider-timeout-default.test.mjs — construct-o6t8.1 proof."
+    },
+    {
       "path": "tests/audit/f09-orchestration/provider-timeout.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -517,6 +669,22 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/audit/f09-orchestration/remote-per-request-timeout.red.mjs — F09 [R20] proof."
+    },
+    {
+      "path": "tests/audit/f09-orchestration/remote-status-timeout.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f09-orchestration/remote-status-timeout.test.mjs — construct-o6t8.2 proof."
+    },
+    {
+      "path": "tests/audit/f09-orchestration/status-path-truthfulness.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f09-orchestration/status-path-truthfulness.test.mjs — Status path consistency."
     },
     {
       "path": "tests/audit/f10-registry-drift/catalog-semantic-drift.test.mjs",
@@ -615,6 +783,14 @@
       "maintainerNotes": "tests/audit/f13-artifact/missing-local-reference.red.mjs — F13 [R21] unvalidated-reference proof."
     },
     {
+      "path": "tests/audit/f13-artifact/publish-validation-propagation.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "publish-validation-propagation.test.mjs — F13/AP5 publish validation honesty."
+    },
+    {
       "path": "tests/audit/f13-artifact/required-renderer-soft-pass.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -637,14 +813,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/audit/f14-tools/exposure-parity.red.mjs — F14 [R36] tool-surface partition invariant."
-    },
-    {
-      "path": "tests/audit/f14-tools/output-schema-coverage.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/audit/f14-tools/output-schema-coverage.red.mjs — F14 [S2][S15] structured outputs."
     },
     {
       "path": "tests/audit/f14-tools/token-budget-instrumentation.test.mjs",
@@ -737,6 +905,14 @@
       "maintainerNotes": "tests/broker-check.test.mjs — broker_check MCP tool contract."
     },
     {
+      "path": "tests/browser/publish-html-artifact.test.mjs",
+      "layer": "visual",
+      "category": "visual",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/browser/publish-html-artifact.test.mjs — LMCP-L8 Playwright adoption:"
+    },
+    {
       "path": "tests/capabilities/mcp.broker.connection/mcp.test.mjs",
       "layer": "unit",
       "category": "contract-subsystem",
@@ -774,7 +950,9 @@
       "path": "tests/capability-tier.test.mjs",
       "layer": "unit",
       "category": "unit",
-      "capabilities": [],
+      "capabilities": [
+        "local.model.tier"
+      ],
       "skipped": false,
       "maintainerNotes": "capability-tier.test.mjs — Unit tests for resolveCapabilityTier and the small-model"
     },
@@ -1053,6 +1231,30 @@
       "maintainerNotes": "tests/concierge-routing.test.mjs — Concierge routing regression harness."
     },
     {
+      "path": "tests/config/env-number-defaults.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/config/env-number-defaults.test.mjs — resolveNonNegativeSetting env parsing."
+    },
+    {
+      "path": "tests/config/key-consumer-parity.test.mjs",
+      "layer": "unit",
+      "category": "structural-guard",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/config/key-consumer-parity.test.mjs — every documented construct.config.json"
+    },
+    {
+      "path": "tests/consumer/optional-deps-absent.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/consumer/optional-deps-absent.test.mjs — verifies CLI key commands work"
+    },
+    {
       "path": "tests/context-router.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -1117,6 +1319,14 @@
       "maintainerNotes": "tests/contracts-violation-log.test.mjs — unit tests for the ported"
     },
     {
+      "path": "tests/contracts-worker-boundary.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/contracts-worker-boundary.test.mjs — LMCP-F2: worker-boundary contract"
+    },
+    {
       "path": "tests/core-dependency-policy.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -1155,6 +1365,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/credential-precedence-parity.test.mjs"
+    },
+    {
+      "path": "tests/db-migrations.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/db-migrations.test.mjs — Postgres migration runner."
     },
     {
       "path": "tests/decisions-bindings.test.mjs",
@@ -1211,6 +1429,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/demo-tour.test.mjs — guided demo tour: linear renderer + accessible path."
+    },
+    {
+      "path": "tests/dep-intent-manifest.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/dep-intent-manifest.test.mjs — Dependency-intent manifest integrity gate."
     },
     {
       "path": "tests/deploy-contract.test.mjs",
@@ -1277,12 +1503,52 @@
       "maintainerNotes": "tests/doc-stamp.test.mjs — tests for lib/doc-stamp.mjs UUIDv7 identity, SHA-256 body hash, and frontmatter stamp verification."
     },
     {
+      "path": "tests/doctor-command-on-path.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/doctor-command-on-path.test.mjs"
+    },
+    {
+      "path": "tests/doctor-embedding-health.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/doctor-embedding-health.test.mjs — `construct doctor` embedding-model"
+    },
+    {
+      "path": "tests/doctor-engine-health.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/doctor-engine-health.test.mjs — `construct doctor` export-engine health"
+    },
+    {
+      "path": "tests/doctor-graph-validate.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/doctor-graph-validate.test.mjs — `construct doctor` graph-validate check (LMCP-C7)."
+    },
+    {
       "path": "tests/doctor-source-checkout.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/doctor-source-checkout.test.mjs — published-package vs source-checkout detection."
+    },
+    {
+      "path": "tests/doctor-stub-tier.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/doctor-stub-tier.test.mjs — Unit tests for the stub/not-implemented tier"
     },
     {
       "path": "tests/doctor/audit.test.mjs",
@@ -1293,12 +1559,44 @@
       "maintainerNotes": "tests/doctor/audit.test.mjs — doctor audit log behavior."
     },
     {
+      "path": "tests/doctor/beads-half-staged.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/doctor/beads-half-staged.test.mjs — doctor detection for half-initialized Beads state."
+    },
+    {
+      "path": "tests/doctor/contract-validation.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "Tests for a locally defined contract-shape predicate, exercised in isolation"
+    },
+    {
       "path": "tests/doctor/cost-ledger.test.mjs",
       "layer": "unit",
       "category": "contract-subsystem",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/doctor/cost-ledger.test.mjs — daily budget tracking and enforcement."
+    },
+    {
+      "path": "tests/doctor/oracle-liveness-watcher.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/doctor/oracle-liveness-watcher.test.mjs — LMCP: construct-a81q."
+    },
+    {
+      "path": "tests/doctor/provider-breaker-watcher.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/doctor/provider-breaker-watcher.test.mjs — LMCP-B9 doctor watcher."
     },
     {
       "path": "tests/document-extract-rtf.test.mjs",
@@ -1356,7 +1654,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/embed-approval-queue.test.mjs — approval queue tests."
+      "maintainerNotes": "tests/embed-approval-queue.test.mjs — ApprovalQueue unit tests."
     },
     {
       "path": "tests/embed-artifact.test.mjs",
@@ -1367,12 +1665,28 @@
       "maintainerNotes": "tests/embed-artifact.test.mjs — Unit tests for lib/embed/artifact.mjs"
     },
     {
+      "path": "tests/embed-authority-binding.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/embed-authority-binding.test.mjs — AuthorityGuard embedBindings enforcement (LMCP-E4)."
+    },
+    {
       "path": "tests/embed-authority-guard.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/embed-authority-guard.test.mjs — AuthorityGuard unit tests."
+    },
+    {
+      "path": "tests/embed-capability-loader.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/embed-capability-loader.test.mjs — embed-capability manifest loader,"
     },
     {
       "path": "tests/embed-cli.test.mjs",
@@ -1493,6 +1807,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "customer-profiles.test.mjs — Tests for the embed customer-profiles module."
+    },
+    {
+      "path": "tests/embed/provider-registry-parity.test.mjs",
+      "layer": "unit",
+      "category": "structural-guard",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/embed/provider-registry-parity.test.mjs — LMCP-B3."
     },
     {
       "path": "tests/embed/providers.test.mjs",
@@ -1687,6 +2009,30 @@
       "maintainerNotes": "tests/engine-tokens.test.mjs — token counter wrapper tests."
     },
     {
+      "path": "tests/enterprise/audit-isolation.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/enterprise/audit-isolation.test.mjs — LMCP-H5."
+    },
+    {
+      "path": "tests/enterprise/tenant-scoping.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/enterprise/tenant-scoping.test.mjs — LMCP-H4."
+    },
+    {
+      "path": "tests/enterprise/tenant.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/enterprise/tenant.test.mjs — tenant context resolution (LMCP-H1)."
+    },
+    {
       "path": "tests/entity-store.test.mjs",
       "layer": "integration",
       "category": "integration",
@@ -1701,6 +2047,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/env-config.test.mjs — Unit tests for lib/env-config.mjs."
+    },
+    {
+      "path": "tests/env-config/shadow-warning.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/env-config/shadow-warning.test.mjs — construct-xj96.12 proof."
     },
     {
       "path": "tests/evals-dataset.test.mjs",
@@ -1735,6 +2089,30 @@
       "maintainerNotes": "tests/export-branding.test.mjs — distribution branding policy coverage."
     },
     {
+      "path": "tests/extensions/manifest-providers.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/extensions/manifest-providers.test.mjs — LMCP-B2 provider manifest tests."
+    },
+    {
+      "path": "tests/extensions/manifest-strict.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/extensions/manifest-strict.test.mjs — strict-mode manifest validation."
+    },
+    {
+      "path": "tests/extensions/manifest.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/extensions/manifest.test.mjs — extension manifest validator unit tests."
+    },
+    {
       "path": "tests/external-mcp-schema-cost.test.mjs",
       "layer": "visual",
       "category": "visual",
@@ -1765,6 +2143,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/extractors/transcript.test.mjs — VTT, SRT, LRC, and .transcript extraction tests."
+    },
+    {
+      "path": "tests/fakes/fake-providers.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/fakes/fake-providers.test.mjs — contract + behaviour tests for all fake providers."
     },
     {
       "path": "tests/first-invocation-probe.test.mjs",
@@ -1801,6 +2187,62 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/flavors/schema.test.mjs — Every flavor overlay conforms to the schema."
+    },
+    {
+      "path": "tests/flows-checkpoint.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/flows-checkpoint.test.mjs — flow run checkpoint/resume."
+    },
+    {
+      "path": "tests/flows-define.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/flows-define.test.mjs — flow-load validation."
+    },
+    {
+      "path": "tests/flows-demo.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/flows-demo.test.mjs — end-to-end demo flow: fetch -> process -> done."
+    },
+    {
+      "path": "tests/flows-engine.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/flows-engine.test.mjs — router dispatch, join combinators, budget exhaustion."
+    },
+    {
+      "path": "tests/flows-schema.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/flows-schema.test.mjs — hand-rolled JSON-Schema subset validator."
+    },
+    {
+      "path": "tests/flows-state.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/flows-state.test.mjs — typed state transitions."
+    },
+    {
+      "path": "tests/frameworks-schema.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/frameworks-schema.test.mjs — ADR-0062 persona reasoning framework"
     },
     {
       "path": "tests/functional/a1-session-reflect.functional.test.mjs",
@@ -1931,6 +2373,14 @@
       "maintainerNotes": "tests/functional/binary-postcondition-enforcement.functional.test.mjs"
     },
     {
+      "path": "tests/functional/bun-compiled-binary.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/bun-compiled-binary.functional.test.mjs — construct-qvou regression."
+    },
+    {
       "path": "tests/functional/certification-runner.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -1971,6 +2421,14 @@
       "maintainerNotes": "cli-help-safety.functional.test.mjs — every command must respect --help."
     },
     {
+      "path": "tests/functional/config-invalid-surfaces-warning.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/config-invalid-surfaces-warning.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/construct-not-invoked-is-inert.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -1979,12 +2437,28 @@
       "maintainerNotes": "tests/functional/construct-not-invoked-is-inert.functional.test.mjs"
     },
     {
+      "path": "tests/functional/construct-shim.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/construct-shim.functional.test.mjs — construct-rf26.19."
+    },
+    {
       "path": "tests/functional/copilot-auth.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/copilot-auth.functional.test.mjs — the GitHub Copilot OAuth"
+    },
+    {
+      "path": "tests/functional/copilot-proxy-auth.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "copilot-proxy-auth.functional.test.mjs — the Copilot bridge must authenticate its"
     },
     {
       "path": "tests/functional/credentials-diagnostics-no-leak.functional.test.mjs",
@@ -2009,6 +2483,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "cursor-rules-delivery.functional.test.mjs — project-evidence rule delivery (construct-bwis)."
+    },
+    {
+      "path": "tests/functional/custom-specialist-authoring.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/custom-specialist-authoring.functional.test.mjs"
     },
     {
       "path": "tests/functional/deck-export.functional.test.mjs",
@@ -2057,6 +2539,14 @@
       "maintainerNotes": "tests/functional/dependency-matrix.functional.test.mjs — end-to-end coverage"
     },
     {
+      "path": "tests/functional/deployment-mode-single-resolver.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "deployment-mode-single-resolver.functional.test.mjs — every surface resolves"
+    },
+    {
       "path": "tests/functional/diagram.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2086,9 +2576,19 @@
       "path": "tests/functional/docling-remote-ingest.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
-      "capabilities": [],
+      "capabilities": [
+        "ingest.docling-remote"
+      ],
       "skipped": false,
       "maintainerNotes": "docling-remote-ingest.functional.test.mjs — opt-in remote conversion (ADR-0036, construct-n1f8)."
+    },
+    {
+      "path": "tests/functional/docling-shared-venv.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/docling-shared-venv.functional.test.mjs — one machine, one docling venv."
     },
     {
       "path": "tests/functional/docs-redirect-stubs.functional.test.mjs",
@@ -2123,6 +2623,30 @@
       "maintainerNotes": "tests/functional/doctor-no-repo-mutation.functional.test.mjs"
     },
     {
+      "path": "tests/functional/doctor-probe-providers.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/doctor-probe-providers.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/doctor-run-store-visibility.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/doctor-run-store-visibility.functional.test.mjs — the"
+    },
+    {
+      "path": "tests/functional/doctor-vscode-host-readiness.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/doctor-vscode-host-readiness.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/doctor-warning-paths.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2149,6 +2673,22 @@
       "maintainerNotes": "dogfood-certification.functional.test.mjs — Construct certifies its own distribution gallery."
     },
     {
+      "path": "tests/functional/embed-capability-lifecycle.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/embed-capability-lifecycle.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/embed-specialist-invocation.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/embed-specialist-invocation.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/embedded-contract-capability.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2168,7 +2708,9 @@
       "path": "tests/functional/embedded-contract-triage.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
-      "capabilities": [],
+      "capabilities": [
+        "workflow.triage"
+      ],
       "skipped": false,
       "maintainerNotes": "tests/functional/embedded-contract-triage.functional.test.mjs"
     },
@@ -2176,9 +2718,37 @@
       "path": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
-      "capabilities": [],
+      "capabilities": [
+        "workflow.evidence-ingest",
+        "workflow.research-synthesis",
+        "workflow.prd-draft",
+        "workflow.architecture-review",
+        "workflow.proposal-review",
+        "workflow.risk-review",
+        "workflow.structure-notes",
+        "workflow.transcript-process",
+        "workflow.data-structure",
+        "workflow.memo-draft",
+        "document-type.evidence-brief"
+      ],
       "skipped": false,
       "maintainerNotes": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/enterprise-doctor-fail-closed.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/enterprise-doctor-fail-closed.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/env-shadow-warning-cli.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/env-shadow-warning-cli.functional.test.mjs — construct-6y6w.3."
     },
     {
       "path": "tests/functional/eval-gates.functional.test.mjs",
@@ -2205,6 +2775,24 @@
       "maintainerNotes": "tests/functional/find-tool.functional.test.mjs"
     },
     {
+      "path": "tests/functional/flow-checkpoint-resume.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "flows.checkpoint"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/flow-checkpoint-resume.functional.test.mjs — flow-engine"
+    },
+    {
+      "path": "tests/functional/gate-worker-backend-visibility.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/gate-worker-backend-visibility.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/graphrag-ask.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2221,6 +2809,14 @@
       ],
       "skipped": false,
       "maintainerNotes": "tests/functional/headhunt-profile-teams.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/honest-terminal-states.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/honest-terminal-states.functional.test.mjs — Honest terminal states for degraded zero-task runs"
     },
     {
       "path": "tests/functional/hook-telemetry.functional.test.mjs",
@@ -2242,15 +2838,44 @@
       "path": "tests/functional/host-config-parity.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
-      "capabilities": [],
+      "capabilities": [
+        "mcp.tool-budget.trim"
+      ],
       "skipped": false,
       "maintainerNotes": "tests/functional/host-config-parity.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/host-execution-pickup.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "orchestration.routing",
+        "mcp.broker.connection"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/host-execution-pickup.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/host-execution-sampling.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "orchestration.routing",
+        "mcp.broker.connection"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/host-execution-sampling.functional.test.mjs"
     },
     {
       "path": "tests/functional/host-mcp-emulation.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
-      "capabilities": [],
+      "capabilities": [
+        "orchestration.routing",
+        "mcp.broker.connection",
+        "skill.roles-engineer",
+        "skill.roles-architect-ai-systems"
+      ],
       "skipped": false,
       "maintainerNotes": "tests/functional/host-mcp-emulation.functional.test.mjs"
     },
@@ -2295,6 +2920,14 @@
       "maintainerNotes": "tests/functional/ingest-tooling.functional.test.mjs — ingest pipeline detect contract."
     },
     {
+      "path": "tests/functional/init-beads-fail-closed.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/init-beads-fail-closed.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/init-gitignores-cx.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2317,6 +2950,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/init-intake-archetype.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/init-lazy-embedding.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/init-lazy-embedding.functional.test.mjs"
     },
     {
       "path": "tests/functional/init-no-project-secrets.functional.test.mjs",
@@ -2357,6 +2998,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/install-scope.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/intake-pending-ttl.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/intake-pending-ttl.functional.test.mjs — persisted"
     },
     {
       "path": "tests/functional/intake-process-archetype.functional.test.mjs",
@@ -2401,12 +3050,12 @@
       "maintainerNotes": "Live LLM test for the three-tier model router (reasoning / standard /"
     },
     {
-      "path": "tests/functional/llm/specialist-devil-advocate.functional.test.mjs",
+      "path": "tests/functional/llm/specialist-reviewer-plan-challenge.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "Live LLM test for cx-devil-advocate."
+      "maintainerNotes": "Live LLM test for cx-reviewer's plan-challenge mode (the devil-advocate"
     },
     {
       "path": "tests/functional/llm/specialist-roster.functional.test.mjs",
@@ -2441,6 +3090,14 @@
       "maintainerNotes": "tests/functional/mcp-add-no-plaintext.functional.test.mjs"
     },
     {
+      "path": "tests/functional/mcp-broker-enforcement.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/mcp-broker-enforcement.functional.test.mjs — functional tests"
+    },
+    {
       "path": "tests/functional/mcp-core-tools.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2449,10 +3106,20 @@
       "maintainerNotes": "tests/functional/mcp-core-tools.functional.test.mjs — Construct MCP stdio smoke."
     },
     {
-      "path": "tests/functional/mcp-ingest-resilience.functional.test.mjs",
+      "path": "tests/functional/mcp-dynamic-tool-registration.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
       "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/mcp-dynamic-tool-registration.functional.test.mjs — LMCP-B5."
+    },
+    {
+      "path": "tests/functional/mcp-ingest-resilience.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "ingest.docling"
+      ],
       "skipped": false,
       "maintainerNotes": "mcp-ingest-resilience.functional.test.mjs — isolated MCP ingest failure repro."
     },
@@ -2468,9 +3135,19 @@
       "path": "tests/functional/mcp-parity.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
-      "capabilities": [],
+      "capabilities": [
+        "mcp.broker.connection"
+      ],
       "skipped": false,
       "maintainerNotes": "tests/functional/mcp-parity.functional.test.mjs — End-to-end MCP parity."
+    },
+    {
+      "path": "tests/functional/mcp-secret-resolution-nonblocking.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "mcp-secret-resolution-nonblocking.functional.test.mjs — the MCP CallTool secret"
     },
     {
       "path": "tests/functional/mcp-tool-rate-audit.functional.test.mjs",
@@ -2481,12 +3158,44 @@
       "maintainerNotes": "tests/functional/mcp-tool-rate-audit.functional.test.mjs"
     },
     {
+      "path": "tests/functional/mode-degraded-fallback.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/mode-degraded-fallback.functional.test.mjs — B4 contract."
+    },
+    {
+      "path": "tests/functional/mode-honesty.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/mode-honesty.functional.test.mjs — LMCP-G8."
+    },
+    {
       "path": "tests/functional/model-catalog-visibility.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/model-catalog-visibility.functional.test.mjs — project config"
+    },
+    {
+      "path": "tests/functional/model-registry-wiring.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/model-registry-wiring.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/model-resolver-credential-fallback.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/model-resolver-credential-fallback.functional.test.mjs"
     },
     {
       "path": "tests/functional/model-resolver-no-defaults-chain.functional.test.mjs",
@@ -2516,7 +3225,10 @@
       "path": "tests/functional/node-native-extraction.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
-      "capabilities": [],
+      "capabilities": [
+        "document-type.ingested-markdown",
+        "ingest.adapter"
+      ],
       "skipped": false,
       "maintainerNotes": "tests/functional/node-native-extraction.functional.test.mjs"
     },
@@ -2526,7 +3238,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/op-run-wrap.functional.test.mjs — opt-in `op run` service wrapping."
+      "maintainerNotes": "tests/functional/op-run-wrap.functional.test.mjs — opt-in `op run` wrapping."
     },
     {
       "path": "tests/functional/opencode-adaptive-prompt.functional.test.mjs",
@@ -2595,6 +3307,14 @@
       "maintainerNotes": "tests/functional/opencode-primary-surface.functional.test.mjs — OpenCode-first surface."
     },
     {
+      "path": "tests/functional/opencode-stale-managed-reconcile.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/opencode-stale-managed-reconcile.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/opencode-tool-gateway.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2614,7 +3334,9 @@
       "path": "tests/functional/oracle-bounded-auto.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
-      "capabilities": [],
+      "capabilities": [
+        "oracle.meta-review"
+      ],
       "skipped": false,
       "maintainerNotes": "tests/functional/oracle-bounded-auto.functional.test.mjs —"
     },
@@ -2627,12 +3349,36 @@
       "maintainerNotes": "tests/functional/oracle-closed-loop.functional.test.mjs —"
     },
     {
+      "path": "tests/functional/oracle-heartbeat.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/oracle-heartbeat.functional.test.mjs — heartbeat file lifecycle."
+    },
+    {
       "path": "tests/functional/oracle-hygiene-policy.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/oracle-hygiene-policy.functional.test.mjs —"
+    },
+    {
+      "path": "tests/functional/oracle-liveness.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "oracle-liveness.functional.test.mjs — surface a stalled oracle producer."
+    },
+    {
+      "path": "tests/functional/oracle-noise-filter.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/oracle-noise-filter.functional.test.mjs — oracle contract-noise filtering."
     },
     {
       "path": "tests/functional/oracle-read-model.functional.test.mjs",
@@ -2651,10 +3397,20 @@
       "maintainerNotes": "tests/functional/oracle-synthesis.functional.test.mjs —"
     },
     {
-      "path": "tests/functional/orchestration-mcp.functional.test.mjs",
+      "path": "tests/functional/orchestration-keys-no-tiers.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
       "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/orchestration-keys-no-tiers.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/orchestration-mcp.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "orchestration.routing"
+      ],
       "skipped": false,
       "maintainerNotes": "tests/functional/orchestration-mcp.functional.test.mjs — MCP orchestration, in-process."
     },
@@ -2665,6 +3421,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/orchestration-mode-a.functional.test.mjs — end-to-end Mode-A runtime."
+    },
+    {
+      "path": "tests/functional/orchestration-readiness-executability.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/orchestration-readiness-executability.functional.test.mjs"
     },
     {
       "path": "tests/functional/orchestration-readiness.functional.test.mjs",
@@ -2683,12 +3447,36 @@
       "maintainerNotes": "tests/functional/orchestration-truth-negative.functional.test.mjs"
     },
     {
+      "path": "tests/functional/orchestration-worker-latency.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/orchestration-worker-latency.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/orchestrator-dispatch-grant.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/orchestrator-dispatch-grant.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/perspective-differentiation.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/perspective-differentiation.functional.test.mjs — regression"
+    },
+    {
+      "path": "tests/functional/pg-queue.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/pg-queue.functional.test.mjs — live Postgres queue semantics."
     },
     {
       "path": "tests/functional/post-merge-tracking.functional.test.mjs",
@@ -2707,6 +3495,14 @@
       "maintainerNotes": "tests/functional/postinstall-global-scope.functional.test.mjs"
     },
     {
+      "path": "tests/functional/preflight-scope-label.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/preflight-scope-label.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/profile-lifecycle.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2723,12 +3519,36 @@
       "maintainerNotes": "tests/functional/profile-ux-preview.functional.test.mjs. Mutating scope"
     },
     {
+      "path": "tests/functional/project-dotenv-tier.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/project-dotenv-tier.functional.test.mjs — construct-6y6w.8."
+    },
+    {
       "path": "tests/functional/project-parity.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "project-parity.functional.test.mjs — project-scoped adapter parity checks."
+    },
+    {
+      "path": "tests/functional/project-root-isolation.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/project-root-isolation.functional.test.mjs — regression"
+    },
+    {
+      "path": "tests/functional/provider-filter-enforcement.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/provider-filter-enforcement.functional.test.mjs — LMCP-B11."
     },
     {
       "path": "tests/functional/provider-poll.functional.test.mjs",
@@ -2755,6 +3575,14 @@
       ],
       "skipped": false,
       "maintainerNotes": "publish.functional.test.mjs — `construct publish` and `construct tools detect`."
+    },
+    {
+      "path": "tests/functional/readiness-honesty.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/readiness-honesty.functional.test.mjs"
     },
     {
       "path": "tests/functional/real-llm-scenarios.functional.test.mjs",
@@ -2789,6 +3617,14 @@
       "maintainerNotes": "tests/functional/reconcile-tasks.functional.test.mjs"
     },
     {
+      "path": "tests/functional/regression-run-02158a157d53.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/regression-run-02158a157d53.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/release-gate.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2811,6 +3647,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/routing-tables.test.mjs — parity guard for declarative routing."
+    },
+    {
+      "path": "tests/functional/run-events-semantics.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/run-events-semantics.functional.test.mjs — prepared-vs-executed"
     },
     {
       "path": "tests/functional/secret-audit-daemon-wiring.functional.test.mjs",
@@ -2885,12 +3729,52 @@
       "maintainerNotes": "tests/functional/setup-credentials-single-link.functional.test.mjs"
     },
     {
+      "path": "tests/functional/shared-state.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/shared-state.functional.test.mjs — LMCP-G10."
+    },
+    {
+      "path": "tests/functional/spawn-env-hermeticity.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/spawn-env-hermeticity.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/specialist-loop.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/specialist-loop.functional.test.mjs — the governed specialist"
+    },
+    {
+      "path": "tests/functional/sql-client.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/sql-client.functional.test.mjs — G1 SQL client contract."
+    },
+    {
+      "path": "tests/functional/state-root-footprint.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/state-root-footprint.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/surface-smoke-matrix.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/surface-smoke-matrix.functional.test.mjs"
     },
     {
       "path": "tests/functional/sync-no-double-frontmatter.functional.test.mjs",
@@ -2997,6 +3881,14 @@
       "maintainerNotes": "tests/functional/w5-self-loop.functional.test.mjs —"
     },
     {
+      "path": "tests/functional/web-capability-gate-visibility.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/web-capability-gate-visibility.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/web-search.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3005,12 +3897,36 @@
       "maintainerNotes": "tests/functional/web-search.functional.test.mjs"
     },
     {
+      "path": "tests/functional/workflow-contribution.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/workflow-contribution.functional.test.mjs — LMCP-D3."
+    },
+    {
+      "path": "tests/functional/workflow-done-gate-evidence.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/workflow-done-gate-evidence.functional.test.mjs — the"
+    },
+    {
       "path": "tests/gates-audit.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/gates-audit.test.mjs — gates-audit parsing + gap-detection coverage."
+    },
+    {
+      "path": "tests/git-queue-disposition.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/git-queue-disposition.test.mjs"
     },
     {
       "path": "tests/golden-surface.test.mjs",
@@ -3029,6 +3945,22 @@
       "maintainerNotes": "tests/graph/build-co-change.test.mjs — co-change layer derives module nodes,"
     },
     {
+      "path": "tests/graph/build-from-corpus.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/graph/build-from-corpus.test.mjs — @capability-annotation edge source"
+    },
+    {
+      "path": "tests/graph/build-from-registry-extended.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/graph/build-from-registry-extended.test.mjs — extended seeding"
+    },
+    {
       "path": "tests/graph/build-from-registry.test.mjs",
       "layer": "unit",
       "category": "contract-subsystem",
@@ -3045,6 +3977,54 @@
       "maintainerNotes": "tests/graph/build-import-graph.test.mjs — static import derivation must"
     },
     {
+      "path": "tests/graph/cli.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/graph/cli.test.mjs — `construct graph query --missing-tests` CLI wiring."
+    },
+    {
+      "path": "tests/graph/embed-nodes.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/graph/embed-nodes.test.mjs — LMCP-P6 embed nodes in the living graph."
+    },
+    {
+      "path": "tests/graph/evidence.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/graph/evidence.test.mjs — runtime-evidence edges: traces linked to workflow nodes (LMCP-C9)."
+    },
+    {
+      "path": "tests/graph/explain.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/graph/explain.test.mjs — `construct graph explain <workflow>` (LMCP-C3)."
+    },
+    {
+      "path": "tests/graph/gap-queries.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/graph/gap-queries.test.mjs — the six LMCP-C5 read-only gap queries."
+    },
+    {
+      "path": "tests/graph/gaps.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/graph/gaps.test.mjs — missing-tests gap query over a synthetic graph."
+    },
+    {
       "path": "tests/graph/impact.test.mjs",
       "layer": "unit",
       "category": "contract-subsystem",
@@ -3053,12 +4033,20 @@
       "maintainerNotes": "tests/graph/impact.test.mjs — change-impact selection over a synthetic graph."
     },
     {
+      "path": "tests/graph/impacted.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/graph/impacted.test.mjs — change-impact traversal over a synthetic graph."
+    },
+    {
       "path": "tests/graph/staleness.test.mjs",
       "layer": "unit",
       "category": "contract-subsystem",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/graph/staleness.test.mjs — graph seed-hash staleness helper."
+      "maintainerNotes": "tests/graph/staleness.test.mjs — per-source graph seed-hash staleness (LMCP-C6)."
     },
     {
       "path": "tests/graph/store.test.mjs",
@@ -3067,6 +4055,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/graph/store.test.mjs — unit coverage for the typed dependency-graph store."
+    },
+    {
+      "path": "tests/graph/validate.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/graph/validate.test.mjs — living-graph validation unit tests."
     },
     {
       "path": "tests/handoff-cleanup.test.mjs",
@@ -3093,12 +4089,28 @@
       "maintainerNotes": "headhunt.test.mjs — Unit tests for lib/headhunt.mjs domain overlay lifecycle."
     },
     {
+      "path": "tests/health-check-docker-solo.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/health-check-docker-solo.test.mjs"
+    },
+    {
       "path": "tests/health-check-resolve-credentials.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/health-check-resolve-credentials.test.mjs"
+    },
+    {
+      "path": "tests/helpers/cleanup.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/helpers/cleanup.test.mjs — Contract test for the rmTmpDir teardown helper."
     },
     {
       "path": "tests/helpers/sterile-host-env.test.mjs",
@@ -3173,12 +4185,44 @@
       "maintainerNotes": "tests/hooks/graph-impact-advisory.test.mjs — advisory PostToolUse hook behavior."
     },
     {
+      "path": "tests/hooks/guard-bash-role-fence.test.mjs",
+      "layer": "integration",
+      "category": "integration",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/hooks/guard-bash-role-fence.test.mjs — role-fence actor-identity gate"
+    },
+    {
+      "path": "tests/hooks/mcp-health-check-warn-only.test.mjs",
+      "layer": "integration",
+      "category": "integration",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/hooks/mcp-health-check-warn-only.test.mjs — PreToolUse mcp-health-check hook"
+    },
+    {
+      "path": "tests/hooks/model-fallback-registry.test.mjs",
+      "layer": "integration",
+      "category": "integration",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/hooks/model-fallback-registry.test.mjs"
+    },
+    {
       "path": "tests/hooks/no-skip-vars.test.mjs",
       "layer": "integration",
       "category": "integration",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/hooks/no-skip-vars.test.mjs — pins the no-skip-vars principle."
+    },
+    {
+      "path": "tests/hooks/orchestration-dispatch-guard-degraded.test.mjs",
+      "layer": "integration",
+      "category": "integration",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/hooks/orchestration-dispatch-guard-degraded.test.mjs — degraded dispatch"
     },
     {
       "path": "tests/hooks/orchestration-dispatch-guard.test.mjs",
@@ -3227,6 +4271,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "host-capabilities.test.mjs — Unit tests for lib/host-capabilities.mjs harness detection."
+    },
+    {
+      "path": "tests/identity.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/identity.test.mjs — actor/service identity resolution unit tests."
     },
     {
       "path": "tests/improvement-proposal.test.mjs",
@@ -3283,6 +4335,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/ingest-strategy.test.mjs — unit tests for ingest strategy resolution."
+    },
+    {
+      "path": "tests/ingest/sidecar-providers.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/ingest/sidecar-providers.test.mjs — LMCP-K2 governed ingestion providers."
     },
     {
       "path": "tests/init-docs.test.mjs",
@@ -3429,6 +4489,14 @@
       "maintainerNotes": "tests/intake-queue.test.mjs — `.cx/intake/` storage contract via FilesystemIntakeQueue."
     },
     {
+      "path": "tests/intake-session-prelude-staleness.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/intake-session-prelude-staleness.test.mjs — verdict age/staleness"
+    },
+    {
       "path": "tests/intake-session-prelude.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -3445,6 +4513,14 @@
       "maintainerNotes": "tests/intake-traceability.test.mjs — coverage for lib/intake/traceability.mjs."
     },
     {
+      "path": "tests/intake/git-queue.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/intake/git-queue.test.mjs — GitIntakeQueue.read() claimed-directory lookup."
+    },
+    {
       "path": "tests/intake/golden-rnd.test.mjs",
       "layer": "unit",
       "category": "contract-subsystem",
@@ -3459,6 +4535,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "intake-integrations.test.mjs — Tests for the intake integrations module."
+    },
+    {
+      "path": "tests/integrations/status-no-materialization.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/integrations/status-no-materialization.test.mjs — construct-192h.7:"
     },
     {
       "path": "tests/intent-classifier.test.mjs",
@@ -3549,6 +4633,22 @@
       "maintainerNotes": "tests/mcp-artifact-workflow.test.mjs — MCP workflow provenance envelope."
     },
     {
+      "path": "tests/mcp-broker-dispatch.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mcp-broker-dispatch.test.mjs — unit tests for broker-gated dispatch in"
+    },
+    {
+      "path": "tests/mcp-broker-status.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mcp-broker-status.test.mjs — construct://status mcpBrokerMode field."
+    },
+    {
       "path": "tests/mcp-broker.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -3621,6 +4721,22 @@
       "maintainerNotes": "tests/mcp-server.test.mjs — MCP server tool contract and trace metadata tests"
     },
     {
+      "path": "tests/mcp-stale-managed-reconcile.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mcp-stale-managed-reconcile.test.mjs — the second-pass reconcile that"
+    },
+    {
+      "path": "tests/mcp-tool-output-schema-guard.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mcp-tool-output-schema-guard.test.mjs — LMCP-L10 tool output-schema guard."
+    },
+    {
       "path": "tests/mcp-tools-doc-parity.test.mjs",
       "layer": "unit",
       "category": "structural-guard",
@@ -3637,6 +4753,70 @@
       "maintainerNotes": "tests/mcp-tools-list-coverage.test.mjs"
     },
     {
+      "path": "tests/mcp/approval-flow.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mcp/approval-flow.test.mjs — LMCP-I2 durable awaiting_approval state."
+    },
+    {
+      "path": "tests/mcp/broker-durability.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mcp/broker-durability.test.mjs — LMCP-I1."
+    },
+    {
+      "path": "tests/mcp/denial-audit.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mcp/denial-audit.test.mjs — LMCP-I3."
+    },
+    {
+      "path": "tests/mcp/enforcement-proof.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mcp/enforcement-proof.functional.test.mjs — LMCP-I4."
+    },
+    {
+      "path": "tests/mcp/host-role-clientinfo.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mcp/host-role-clientinfo.test.mjs — orchestration_run host provenance"
+    },
+    {
+      "path": "tests/mcp/provider-write-tool.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mcp/provider-write-tool.test.mjs — LMCP-I7 provider_write MCP tool."
+    },
+    {
+      "path": "tests/mcp/transport-separation.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mcp/transport-separation.test.mjs — LMCP-I5 transport separation."
+    },
+    {
+      "path": "tests/mcp/version-skew.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mcp/version-skew.test.mjs — construct://status flips restartRequired on version skew."
+    },
+    {
       "path": "tests/memory-stats.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -3651,6 +4831,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/migration-round-trip.test.mjs — Verify unified registry migration preserves all data."
+    },
+    {
+      "path": "tests/mode-health-single-source.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mode-health-single-source.test.mjs — single-source invariant for mode capability health."
     },
     {
       "path": "tests/model-free-selector.test.mjs",
@@ -3672,7 +4860,9 @@
       "path": "tests/model-router-local.test.mjs",
       "layer": "unit",
       "category": "unit",
-      "capabilities": [],
+      "capabilities": [
+        "local.model.tier"
+      ],
       "skipped": false,
       "maintainerNotes": "tests/model-router-local.test.mjs — ollama + local provider families"
     },
@@ -3685,12 +4875,28 @@
       "maintainerNotes": "tests/model-router-no-defaults.test.mjs — verify Construct ships with no"
     },
     {
+      "path": "tests/model-router-validated-wiring.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/model-router-validated-wiring.test.mjs"
+    },
+    {
       "path": "tests/model-router.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "model-router.test.mjs — Unit tests for lib/model-router.mjs tier resolution and failover logic."
+    },
+    {
+      "path": "tests/models/catalog-provider-kind.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/models/catalog-provider-kind.test.mjs — model catalog bridged onto the"
     },
     {
       "path": "tests/no-fabrication-coverage.test.mjs",
@@ -3707,6 +4913,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/npm-spawn-env.test.mjs — npm spawn env sanitization."
+    },
+    {
+      "path": "tests/observation-retention.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/observation-retention.test.mjs — TTL/size eviction for the"
     },
     {
       "path": "tests/observation-store.test.mjs",
@@ -3758,11 +4972,27 @@
     },
     {
       "path": "tests/opencode-runtime-plugin.test.mjs",
+      "layer": "visual",
+      "category": "visual",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/opencode-runtime-plugin.test.mjs — Tests for the OpenCode plugin."
+    },
+    {
+      "path": "tests/oracle-approval-dedupe.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/opencode-runtime-plugin.test.mjs — Tests for the OpenCode plugin."
+      "maintainerNotes": "tests/oracle-approval-dedupe.test.mjs — oracle pending-queue dedupe and retention."
+    },
+    {
+      "path": "tests/oracle-approval-triage.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/oracle-approval-triage.test.mjs — one-shot flush of the oracle"
     },
     {
       "path": "tests/oracle-artifact-gate.test.mjs",
@@ -3773,12 +5003,44 @@
       "maintainerNotes": "tests/oracle-artifact-gate.test.mjs — Oracle read-model artifact gate signals."
     },
     {
+      "path": "tests/oracle-capability-freshness.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/oracle-capability-freshness.test.mjs — capability-freshness gate"
+    },
+    {
+      "path": "tests/oracle-gaps-detection.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/oracle-gaps-detection.test.mjs — oracle gaps detection and filtering."
+    },
+    {
+      "path": "tests/oracle-reconcile-staleness.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/oracle-reconcile-staleness.test.mjs — contract violation SLA window logic."
+    },
+    {
       "path": "tests/orchestration-chain-of-thought.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/orchestration-chain-of-thought.test.mjs — chain-of-thought disclosure."
+    },
+    {
+      "path": "tests/orchestration-delegation-flow.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration-delegation-flow.test.mjs — flow-engine delegation chain"
     },
     {
       "path": "tests/orchestration-events.test.mjs",
@@ -3819,6 +5081,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/orchestration-policy.test.mjs — routeRequest dispatch classification tests"
+    },
+    {
+      "path": "tests/orchestration-provider-outcome.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration-provider-outcome.test.mjs — provider outcome classification,"
     },
     {
       "path": "tests/orchestration-readiness.test.mjs",
@@ -3893,6 +5163,30 @@
       "maintainerNotes": "tests/orchestration-worker.test.mjs — provider worker backend."
     },
     {
+      "path": "tests/orchestration/execution-state.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration/execution-state.test.mjs — run-level executionState"
+    },
+    {
+      "path": "tests/orchestration/persona-degraded.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration/persona-degraded.test.mjs — persona resolution boundary (LMCP-E2)."
+    },
+    {
+      "path": "tests/orchestration/provenance.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration/provenance.test.mjs — full execution provenance in traces (LMCP-F1)."
+    },
+    {
       "path": "tests/outcomes/record.test.mjs",
       "layer": "unit",
       "category": "contract-subsystem",
@@ -3917,6 +5211,54 @@
       "maintainerNotes": "tests/packaging-published-files.test.mjs"
     },
     {
+      "path": "tests/packs/core-pack.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/packs/core-pack.test.mjs — core pack loader unit tests."
+    },
+    {
+      "path": "tests/packs/lifecycle.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/packs/lifecycle.test.mjs — LMCP-E3 pack enable/disable lifecycle."
+    },
+    {
+      "path": "tests/packs/loader.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/packs/loader.test.mjs — pack loader unit tests."
+    },
+    {
+      "path": "tests/packs/manifest-schema.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/packs/manifest-schema.test.mjs — pack manifest schema constant tests."
+    },
+    {
+      "path": "tests/packs/prompt-validation.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/packs/prompt-validation.test.mjs — pack prompt-file validation (LMCP-E2)."
+    },
+    {
+      "path": "tests/packs/validate.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/packs/validate.test.mjs — pack manifest validator unit tests."
+    },
+    {
       "path": "tests/parity.test.mjs",
       "layer": "unit",
       "category": "structural-guard",
@@ -3939,6 +5281,22 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "persona-sections.test.mjs — Unit tests for lib/persona-sections.mjs."
+    },
+    {
+      "path": "tests/pg-queue-reliability.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/pg-queue-reliability.test.mjs — retry, DLQ, cancellation, idempotency contracts."
+    },
+    {
+      "path": "tests/pg-queue.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/pg-queue.test.mjs — Postgres queue provider contract checks."
     },
     {
       "path": "tests/platforms-claude-md-parity.test.mjs",
@@ -3973,12 +5331,28 @@
       "maintainerNotes": "tests/plugin-registry.test.mjs — validates plugin manifest loading and starter creation."
     },
     {
+      "path": "tests/policy-deny-default.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/policy-deny-default.test.mjs"
+    },
+    {
       "path": "tests/policy-engine.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/policy-engine.test.mjs — policy decision contract."
+    },
+    {
+      "path": "tests/policy/role-authority.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/policy/role-authority.test.mjs — identity-anchored role claim authority."
     },
     {
       "path": "tests/postcondition-checks.test.mjs",
@@ -4125,14 +5499,6 @@
       "maintainerNotes": "tests/provider-framework.test.mjs — tests for provider interface, registry, and errors."
     },
     {
-      "path": "tests/provider-git.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/provider-git.test.mjs — git provider tests."
-    },
-    {
       "path": "tests/provider-github.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -4147,14 +5513,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/provider-jira.test.mjs — Jira provider contract + unit tests."
-    },
-    {
-      "path": "tests/provider-slack.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/provider-slack.test.mjs — Slack provider contract + unit tests."
     },
     {
       "path": "tests/providers-circuit-breaker.test.mjs",
@@ -4173,12 +5531,28 @@
       "maintainerNotes": "tests/providers-contract.test.mjs — provider contract + registry tests."
     },
     {
+      "path": "tests/providers/breaker-status.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/providers/breaker-status.test.mjs — LMCP-B9: circuit-breaker state"
+    },
+    {
       "path": "tests/providers/connection-probe.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/providers/connection-probe.test.mjs — hermetic LLM provider credential probe."
+    },
+    {
+      "path": "tests/providers/credential-sources-placeholder.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/providers/credential-sources-placeholder.test.mjs — placeholder"
     },
     {
       "path": "tests/providers/creds.test.mjs",
@@ -4189,12 +5563,68 @@
       "maintainerNotes": "tests/providers/creds.test.mjs — credential management utility tests."
     },
     {
+      "path": "tests/providers/directory-provider.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/providers/directory-provider.test.mjs — directory provider tests."
+    },
+    {
+      "path": "tests/providers/dotenv-parity.test.mjs",
+      "layer": "unit",
+      "category": "structural-guard",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/providers/dotenv-parity.test.mjs — construct-192h.10: dotenv-file value"
+    },
+    {
+      "path": "tests/providers/feedback-provider.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/providers/feedback-provider.test.mjs — feedback provider tests."
+    },
+    {
+      "path": "tests/providers/op-discovery.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/providers/op-discovery.test.mjs — op CLI discovery tiers."
+    },
+    {
+      "path": "tests/providers/provider-add-configure.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/providers/provider-add-configure.test.mjs — LMCP-B12 CLI tests."
+    },
+    {
+      "path": "tests/providers/provider-commands.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/providers/provider-commands.test.mjs — LMCP-B8 CLI parity tests."
+    },
+    {
       "path": "tests/providers/scope-validators.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/providers/scope-validators.test.mjs — allowlist scope validation tests."
+    },
+    {
+      "path": "tests/publish/flag-parsing.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/publish/flag-parsing.test.mjs — construct-xj96.11 proof."
     },
     {
       "path": "tests/read-tracker-store.test.mjs",
@@ -4277,12 +5707,12 @@
       "maintainerNotes": "tests/registry/skill-consolidation.test.mjs — bound-orphan triage honesty for alignment census."
     },
     {
-      "path": "tests/registry/surface-map.test.mjs",
+      "path": "tests/registry/surface-map-manifest.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/registry/surface-map.test.mjs — ADR-0039 surface tier assignments."
+      "maintainerNotes": "tests/registry/surface-map-manifest.test.mjs — LMCP-B7: COMMAND_SURFACE/"
     },
     {
       "path": "tests/release-workflow.test.mjs",
@@ -4373,6 +5803,14 @@
       "maintainerNotes": "tests/roles/router.test.mjs — event → persona resolver."
     },
     {
+      "path": "tests/roots.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/roots.test.mjs — Bun-compiled-binary path resolution (construct-qvou)."
+    },
+    {
       "path": "tests/runtime-pressure.test.mjs",
       "layer": "visual",
       "category": "visual",
@@ -4405,6 +5843,38 @@
       "maintainerNotes": "tests/schema-validation.test.mjs — Validate unified registry schema and test with fixtures."
     },
     {
+      "path": "tests/scripts/ci-repro-drift.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/scripts/ci-repro-drift.test.mjs — drift gate between ci.yml's `test`"
+    },
+    {
+      "path": "tests/scripts/graph-gate.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/scripts/graph-gate.test.mjs — LMCP-C8 self-test for the living-graph"
+    },
+    {
+      "path": "tests/scripts/release-evidence-gate.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/scripts/release-evidence-gate.test.mjs — LMCP-M5 self-test for the"
+    },
+    {
+      "path": "tests/scripts/run-tests-shard.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/scripts/run-tests-shard.test.mjs — self-test for the test runner's"
+    },
+    {
       "path": "tests/secret-audit-wiring.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -4421,12 +5891,100 @@
       "maintainerNotes": "tests/secret-resolver-audit.test.mjs"
     },
     {
+      "path": "tests/secret-resolver-service-account.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/secret-resolver-service-account.test.mjs — opt-in 1Password service-account path."
+    },
+    {
+      "path": "tests/security/audit-redaction.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/security/audit-redaction.test.mjs — construct-9oi4.14.3 (LMCP-N3)."
+    },
+    {
+      "path": "tests/security/consumption-limits.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/security/consumption-limits.test.mjs — LMCP-N5: durable consumption"
+    },
+    {
+      "path": "tests/security/destructive-gate.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/security/destructive-gate.test.mjs — destructive-tool gate unit tests."
+    },
+    {
+      "path": "tests/security/misinformation-evidence-grounding.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/security/misinformation-evidence-grounding.test.mjs — citation"
+    },
+    {
+      "path": "tests/security/output-and-prompt-handling.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/security/output-and-prompt-handling.test.mjs — LMCP-N8 gap closure"
+    },
+    {
+      "path": "tests/security/owasp-coverage.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/security/owasp-coverage.test.mjs — LMCP-N8 security corpus wired into"
+    },
+    {
+      "path": "tests/security/ssrf.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/security/ssrf.test.mjs — LMCP-N7 SSRF / DNS-rebinding egress guard."
+    },
+    {
+      "path": "tests/security/trust-labels.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/security/trust-labels.test.mjs — Trust/provenance labeling regression"
+    },
+    {
+      "path": "tests/security/vector-poisoning.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/security/vector-poisoning.test.mjs — Vector-store poisoning defenses"
+    },
+    {
       "path": "tests/service-manager-ollama-keepalive.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "service-manager-ollama-keepalive.test.mjs — guards Ollama keep-alive resolution."
+    },
+    {
+      "path": "tests/service-manager/spawn-env.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/service-manager/spawn-env.test.mjs — construct-192h.8 proof."
     },
     {
       "path": "tests/session-start-hook.test.mjs",
@@ -4549,6 +6107,30 @@
       "maintainerNotes": "tests/agents-schema.test.mjs — pin the registry validation contract."
     },
     {
+      "path": "tests/status-degradation-details.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/status-degradation-details.test.mjs — Unit tests for degradationDetails in buildStatus."
+    },
+    {
+      "path": "tests/status-enterprise.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/status-enterprise.test.mjs — Enterprise mode status honesty checks."
+    },
+    {
+      "path": "tests/status-storage-probe.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/status-storage-probe.test.mjs — LanceDB storage health probe tests."
+    },
+    {
       "path": "tests/status.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -4557,12 +6139,36 @@
       "maintainerNotes": "status.test.mjs — Unit tests for lib/status.mjs project health summary."
     },
     {
+      "path": "tests/storage-admin-status-probe.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/storage-admin-status-probe.test.mjs — unit tests for getStorageStatus() health."
+    },
+    {
+      "path": "tests/storage-backend.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/storage-backend.test.mjs — optional Postgres SQL client resolver."
+    },
+    {
       "path": "tests/storage-file-lock.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/storage-file-lock.test.mjs — file-lock primitive tests."
+    },
+    {
+      "path": "tests/storage-health-probe.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/storage-health-probe.test.mjs — unit tests for probeStorageHealth()."
     },
     {
       "path": "tests/storage-rrf.test.mjs",
@@ -4627,6 +6233,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/task-graph.test.mjs — task graph schema + generation + persistence."
+    },
+    {
+      "path": "tests/team-health.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/team-health.test.mjs — team queue/worker health read model."
     },
     {
       "path": "tests/teams.test.mjs",
@@ -4799,6 +6413,14 @@
       "maintainerNotes": "tests/vector-client.test.mjs — tests for lib/storage/vector-client.mjs"
     },
     {
+      "path": "tests/visual/rendered-artifact.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/visual/rendered-artifact.test.mjs — real rendered-artifact visual gate (LMCP-L5)."
+    },
+    {
       "path": "tests/vscode-mcp-toolkit-path.test.mjs",
       "layer": "visual",
       "category": "visual",
@@ -4831,6 +6453,14 @@
       "maintainerNotes": "tests/worker-run-mcp.test.mjs"
     },
     {
+      "path": "tests/worker-runtime.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/worker-runtime.test.mjs — worker identity and heartbeat registry."
+    },
+    {
       "path": "tests/worker.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -4847,12 +6477,44 @@
       "maintainerNotes": "workflow-runtime.test.mjs — Integration tests for workflow state read/write and phase transitions."
     },
     {
+      "path": "tests/workflows/liveness.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/workflows/liveness.test.mjs — unit and fixture tests for workflow"
+    },
+    {
+      "path": "tests/workflows/manifest-loader.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/workflows/manifest-loader.test.mjs — unit tests for workflow manifest loader."
+    },
+    {
+      "path": "tests/workflows/manifest-schema.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/workflows/manifest-schema.test.mjs — unit tests for workflow manifest schema constants."
+    },
+    {
+      "path": "tests/workflows/surface-parity.test.mjs",
+      "layer": "unit",
+      "category": "structural-guard",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/workflows/surface-parity.test.mjs — unit and fixture tests for"
+    },
+    {
       "path": "tests/workflows/template-resolution.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/workflows/template-resolution.test.mjs — Reference integrity for workflow templates."
+      "maintainerNotes": "tests/workflows/template-resolution.test.mjs — Static drift guard, not a code-behavior test."
     },
     {
       "path": "tests/workflows/template-shape.test.mjs",
@@ -4860,7 +6522,71 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/workflows/template-shape.test.mjs — Shape validation for workflow templates."
+      "maintainerNotes": "tests/workflows/template-shape.test.mjs — Static drift guard, not a code-behavior test."
+    },
+    {
+      "path": "tests/workflows/workflow-defs-drift.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/workflows/workflow-defs-drift.test.mjs — regression guard for LMCP-D2."
+    },
+    {
+      "path": "tests/workflows/workflow-manifests.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/workflows/workflow-manifests.test.mjs — integration tests for all built-in workflow manifests."
+    },
+    {
+      "path": "tests/writes/confluence.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/writes/confluence.functional.test.mjs — Confluence writes routed"
+    },
+    {
+      "path": "tests/writes/control-plane-execution.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/writes/control-plane-execution.functional.test.mjs — LMCP-J6"
+    },
+    {
+      "path": "tests/writes/envelope.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/writes/envelope.test.mjs — governed write-envelope unit tests."
+    },
+    {
+      "path": "tests/writes/github.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/writes/github.functional.test.mjs — GitHub writes routed through the"
+    },
+    {
+      "path": "tests/writes/import-guard.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/writes/import-guard.test.mjs — LMCP-J6 guard: no orchestration or"
+    },
+    {
+      "path": "tests/writes/jira.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/writes/jira.functional.test.mjs — Jira writes routed through the"
     },
     {
       "path": "tests/xdg-config.test.mjs",

@@ -1,0 +1,53 @@
+{
+  "id": "operations-tpm-briefing",
+  "producer": "cx-operations",
+  "consumer": "user",
+  "trigger": {
+    "intent": ["implementation"],
+    "workCategory": "deep"
+  },
+  "input": {
+    "shape": "bound-snapshot-slice",
+    "mustContain": [
+      "snapshotSections"
+    ]
+  },
+  "output": {
+    "shape": "tpm-briefing",
+    "mustContain": [
+      "coverageMatrix",
+      "missingWork",
+      "timelineRisks",
+      "misalignment",
+      "proposals",
+      "provenance"
+    ]
+  },
+  "preconditions": [
+    "The operations specialist's bound provider snapshot has been sliced (Jira + Confluence + Slack sections present or explicitly empty)",
+    "Provider bindings and filters have been enforced at read time before the slice reaches analysis"
+  ],
+  "postconditions": [
+    {
+      "id": "operations-tpm-briefing-pc-0-every-missing-work-finding-cites-the",
+      "description": "Every missing-work finding cites the requirement id and the empty coverage",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "operations-tpm-briefing-pc-1-every-timeline-risk-finding-cites-its",
+      "description": "Every timeline-risk finding cites its evidence (issue id, due date, blocking chain)",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "operations-tpm-briefing-pc-2-every-proposal-names-the-provider-write",
+      "description": "Every proposal names the provider write kind and traces to an uncovered requirement",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "operations-tpm-briefing-pc-3-no-load-bearing-claim-is-present",
+      "description": "No load-bearing claim is present without a source id; unknowns are marked, never invented",
+      "postconditionType": "advisory"
+    }
+  ],
+  "description": "Recurring TPM briefing produced by the operations specialist over its bound Jira + Confluence + Slack snapshot: PRD-versus-epic coverage, timeline risk, misalignment, and approval-gated ticket proposals."
+}

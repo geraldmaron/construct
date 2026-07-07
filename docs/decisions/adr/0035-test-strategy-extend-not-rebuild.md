@@ -1,7 +1,8 @@
 # ADR-0035: Test Strategy — Extend, Not Rebuild
 
 - **Date**: 2026-06-10
-- **Status**: accepted
+- **Status**: superseded
+- **Superseded by**: ADR-0058
 - **Deciders**: Construct maintainers (cx-architect, cx-qa)
 - **Supersedes**: none
 

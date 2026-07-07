@@ -1,0 +1,14 @@
+{
+  "id": "memo-draft",
+  "version": "1.0.0",
+  "type": "linear",
+  "modes": ["solo", "team"],
+  "surfaces": ["mcp", "cli"],
+  "roleChain": ["operations", "reviewer"],
+  "defaultApprovalMode": "proposal-only",
+  "durableStateModel": "none",
+  "tier": "fast",
+  "description": "Draft a decision or status memo from a problem statement and context.",
+  "owner": "construct-core",
+  "compatVersion": 1
+}

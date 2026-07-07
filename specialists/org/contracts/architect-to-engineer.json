@@ -14,7 +14,9 @@
       "goal",
       "approach",
       "tasks",
-      "acceptanceCriteria"
+      "acceptanceCriteria",
+      "constraintMap",
+      "optionScoring"
     ]
   },
   "output": {
@@ -26,9 +28,23 @@
     "Task packet contains readFirst and doNotChange lists"
   ],
   "postconditions": [
-    "Implementation cites the ADR tasks it completed",
-    "filesChanged matches tasks in the ADR",
-    "verificationChecklist evaluated before DONE"
+    {
+      "id": "architect-to-engineer-pc-0-implementation-cites-the-adr-tasks-it",
+      "description": "Implementation cites the ADR tasks it completed",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "architect-to-engineer-pc-1-fileschanged-matches-tasks-in-the-adr",
+      "description": "filesChanged matches tasks in the ADR",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "architect-to-engineer-pc-2-verificationchecklist-evaluated-before-done",
+      "description": "verificationChecklist evaluated before DONE",
+      "postconditionType": "executable",
+      "enforcedVia": "output-shape",
+      "enforcedBy": "verificationChecklist (nested schema required)"
+    }
   ],
   "description": ""
 }

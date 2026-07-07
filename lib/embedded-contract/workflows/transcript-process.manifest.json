@@ -1,0 +1,14 @@
+{
+  "id": "transcript-process",
+  "version": "1.0.0",
+  "type": "linear",
+  "modes": ["solo", "team"],
+  "surfaces": ["mcp", "cli"],
+  "roleChain": ["researcher", "data-analyst"],
+  "defaultApprovalMode": "proposal-only",
+  "durableStateModel": "none",
+  "tier": "fast",
+  "description": "Process a meeting/call transcript into a summary, decisions, and action items.",
+  "owner": "construct-core",
+  "compatVersion": 1
+}

@@ -25,8 +25,16 @@
     "docAuthoring.owner present if authoring a typed document"
   ],
   "postconditions": [
-    "Dispatch plan emitted with specialists in sequence",
-    "Parallel work marked with [parallel: ...] tags"
+    {
+      "id": "construct-to-orchestrator-pc-0-dispatch-plan-emitted-with-specialists-in",
+      "description": "Dispatch plan emitted with specialists in sequence",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "construct-to-orchestrator-pc-1-parallel-work-marked-with-parallel-tags",
+      "description": "Parallel work marked with [parallel: ...] tags",
+      "postconditionType": "advisory"
+    }
   ],
   "skillHints": [
     "ai/orchestration-workflow",

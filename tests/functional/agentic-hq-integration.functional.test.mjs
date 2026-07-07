@@ -17,10 +17,11 @@
 
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { cpSync, mkdirSync, rmSync, existsSync, readFileSync } from 'node:fs';
+import { cpSync, mkdirSync, existsSync, readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const FIXTURE_SRC = join(__dirname, '..', 'fixtures', 'projects', 'agentic-hq');
@@ -33,7 +34,7 @@ before(() => {
 });
 
 after(() => {
-  rmSync(TMP_ROOT, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(TMP_ROOT);
 });
 
 // ---------------------------------------------------------------------------

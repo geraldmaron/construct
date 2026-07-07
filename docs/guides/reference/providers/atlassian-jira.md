@@ -12,7 +12,7 @@ Connects Construct to Jira issues, sprints, and project search via JQL.
 
 ## Authentication
 
-Add these three variables to `~/.construct/config.env`:
+Add these three variables to `~/.config/construct/config.env`:
 
 ```
 JIRA_BASE_URL=https://yourorg.atlassian.net

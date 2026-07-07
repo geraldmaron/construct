@@ -1,0 +1,80 @@
+name: bun-binary-smoke
+
+# Standalone smoke test for the Bun-compiled binary path. Kept separate from
+# ci.yml and release.yml rather than folded into either: this track is not
+# yet wired into release.yml (the Node-SEA pipeline there remains primary),
+# and this job must never gate it. Runs on demand or when the Bun build
+# scripts themselves change, so a regression in the build step is caught
+# without adding latency or a new required check to every PR.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/build-binary.mjs'
+      - 'scripts/build-sea.mjs'
+      - 'bin/construct'
+      - 'lib/roots.mjs'
+      - '.github/workflows/bun-binary-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: build + doctor + demo smoke (${{ matrix.os }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: linux-x64
+            runner: ubuntu-latest
+          - os: darwin-arm64
+            runner: macos-15
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: latest
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version-file: .tool-versions
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build one target with Bun
+        run: node scripts/build-binary.mjs ${{ matrix.os }}
+
+      - name: Smoke test — construct doctor against the compiled binary
+        # scripts/build-binary.mjs's own smoke check already gates the build
+        # step above on a real "Results:" line (not doctor's exit code, which
+        # legitimately reflects repo health unrelated to whether the binary
+        # itself works). This step re-runs doctor standalone so the report is
+        # visible directly in the workflow log, gated the same honest way.
+        shell: bash
+        run: |
+          set -o pipefail
+          ./dist/construct-${{ matrix.os }} doctor | tee doctor-output.txt || true
+          grep -E '^Results: [0-9]+ passed, [0-9]+ warnings?, [0-9]+ failed' doctor-output.txt
+
+      - name: Smoke test — demo flow (sandbox lifecycle) against the compiled binary
+        # `sandbox create/list/delete` is purpose-built for isolated
+        # non-interactive dry runs and exercises the same profile/specialist
+        # registry read path doctor covers, from a distinct entry point. Each
+        # step asserts on the CLI's actual stdout text (bin/construct's
+        # sandbox handler), not just exit code, so a silent Bun-compile no-op
+        # regression would fail here even if the process still exited 0.
+        shell: bash
+        run: |
+          set -euo pipefail
+          bin="./dist/construct-${{ matrix.os }}"
+          create_output="$("$bin" sandbox create --profile=default)"
+          echo "$create_output"
+          sandbox_id="$(echo "$create_output" | head -1 | sed -E 's/^✓ created sandbox //')"
+          [ -n "$sandbox_id" ] || { echo "sandbox create did not report an id"; exit 1; }
+          "$bin" sandbox list | grep -q "$sandbox_id"
+          "$bin" sandbox delete "$sandbox_id" | grep -q "^✓ removed $sandbox_id"

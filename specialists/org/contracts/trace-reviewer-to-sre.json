@@ -1,7 +1,7 @@
 {
   "id": "trace-reviewer-to-sre",
-  "producer": "cx-trace-reviewer",
-  "consumer": "cx-sre",
+  "producer": "cx-reviewer",
+  "consumer": "cx-operations",
   "trigger": {
     "trace.anomaly": true,
     "riskFlags": [
@@ -28,8 +28,16 @@
     "Flagged agents meet the minimum trace threshold (20+); insufficient-trace agents deferred"
   ],
   "postconditions": [
-    "SRE adjusts alert thresholds or SLOs based on the cited trace evidence",
-    "Runbook updated for the failure pattern identified at fleet level"
+    {
+      "id": "trace-reviewer-to-sre-pc-0-sre-adjusts-alert-thresholds-or-slos",
+      "description": "SRE adjusts alert thresholds or SLOs based on the cited trace evidence",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "trace-reviewer-to-sre-pc-1-runbook-updated-for-the-failure-pattern",
+      "description": "Runbook updated for the failure pattern identified at fleet level",
+      "postconditionType": "advisory"
+    }
   ],
   "description": "",
   "teamBoundary": {

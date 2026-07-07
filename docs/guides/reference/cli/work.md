@@ -24,12 +24,13 @@ description: Work commands for Construct.
 | `construct integrations` | Check and manage external system connections |
 | `construct knowledge` | Query, index, or add to the project knowledge base |
 | `construct memory` | Inspect memory layer |
+| `construct pack` | Specialist/team/profile pack enable/disable lifecycle (LMCP-E3) |
 | `construct publish` | Publish typed artifacts: release gate + export PDF with figures + optional demos |
 | `construct reflect` | Capture improvement feedback and update Construct core |
 | `construct search` | Hybrid search across project state |
 | `construct storage` | Manage storage backend |
 | `construct tags` | Manage the controlled tag vocabulary (propose, add, deprecate, audit) |
-| `construct team` | Team review and template listing (`team:add` / `team:remove` are internal registry editors) |
+| `construct team` | Team review, template listing, and custom team authoring (`team:add` / `team:remove` are internal registry editors) |
 | `construct tools` | Detect optional publish pipeline binaries (Pandoc, D2, VHS, Playwright) |
 | `construct wireframe` | Generate wireframes from description |
 | `construct workflow` | Instantiate workflow templates (PRD-to-review chains, onboarding, handoffs) |
@@ -178,12 +179,14 @@ Task graph management
 **Usage**
 
 ```bash
-construct graph <list|show|from-intake|recommend>
+construct graph <list|show|from-intake|recommend|build|stat|query|validate|explain|owasp>
 ```
 
 **Subcommands**
 
 - `recommend --json [--text|--file|<stdin>]` — Return a role-aware plan for an artifact without enqueuing (embedded contract; alias of intake classify)
+- `build|stat|query|validate|explain` — Living dependency graph — build/inspect/validate the typed file↔capability↔workflow↔test↔embed graph (replaces `construct matrix`)
+- `owasp | missing-tests --security` — OWASP GenAI Top-10 coverage matrix and the workflow/preset security-coverage gap list (LMCP-N8)
 
 ## construct handoffs
 
@@ -265,6 +268,23 @@ Inspect memory layer
 construct memory <status|search>
 ```
 
+## construct pack
+
+Specialist/team/profile pack enable/disable lifecycle (LMCP-E3)
+
+**Usage**
+
+```bash
+construct pack <list|enable|disable|info> [--json]
+```
+
+**Subcommands**
+
+- `list` — Every pack discovered across builtin/user/project tiers with its durable enabled state
+- `enable <pack-id>[@version]` — Validate the pack manifest and record it enabled in .cx/packs.json; refuses on an incompatible compatVersion or other validation failure
+- `disable <pack-id>` — Remove the pack's enabled entry (idempotent; the core pack cannot be disabled)
+- `info <pack-id>` — Full manifest plus enabled state for one pack
+
 ## construct publish
 
 Publish typed artifacts: release gate + export PDF with figures + optional demos
@@ -335,18 +355,19 @@ construct tags <audit|propose|add|deprecate|archive|list|proposed>
 
 ## construct team
 
-Team review and template listing (`team:add` / `team:remove` are internal registry editors)
+Team review, template listing, and custom team authoring (`team:add` / `team:remove` are internal registry editors)
 
 **Usage**
 
 ```bash
-construct team <list|show|review|templates>
+construct team <list|show|create|review|templates>
 ```
 
 **Subcommands**
 
 - `list` — List macro groups and squads (--kind group|squad)
 - `show` — Show one group or squad by id
+- `create` — Scaffold a custom team into .cx/org/ (or ~/.construct/org/ with --user) — see docs/guides/cookbook/custom-specialists-and-teams.md
 - `review` — Team review workflow
 - `templates` — List team doc templates
 

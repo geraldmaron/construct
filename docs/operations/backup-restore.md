@@ -1,115 +1,82 @@
 <!--
-docs/operations/backup-restore.md: Backup and restore guide for Construct.
+docs/operations/backup-restore.md: Backup, restore, and machine migration for Construct.
 
-Covers construct backup create/verify/restore, what gets backed up, and
-how to schedule regular backups.
+Reflects the post-Postgres state model: durable state is the project git repo
+plus Beads issues in Dolt; `.cx/` is machine-local and rebuildable; credentials
+live in ~/.config/construct/config.env. `construct backup` (the old Postgres
+dump/restore family) was removed with the SQL backend.
 -->
 
 # Backup and Restore
 
-Construct stores its durable state in Postgres (observations, sessions, document index) and in local files (`~/.cx/`, `~/.construct/`). Regular backups protect against data loss and enable machine-to-machine migration.
+Construct no longer runs a database you have to dump. The old `construct backup create/verify/restore` family required a local Postgres backend, which was removed — running `construct backup` now just tells you so. Durable state is instead split three ways, and each part is protected by a mechanism you already use.
 
-## Create a backup
+## Where durable state lives
 
-```bash
-construct backup create
-```
+| State | Location | How it is protected |
+|---|---|---|
+| Source, docs, `specialists/org`, `construct.config.json`, `AGENTS.md`, `.beads/` config + hooks | Your project git repo | `git commit` + `git push` |
+| Beads issues (task graph, history) | Dolt (versioned), working copy at `.beads/construct.db` (gitignored) | `bd dolt push` to your Dolt remote |
+| Machine credentials | `~/.config/construct/config.env` (mode `0600`) | Copy it somewhere safe, or resolve from 1Password (see below) |
+| Observations, sessions, traces, intake, task-graph cache, the LanceDB vector index | `.cx/` (gitignored in full); vector index at `.cx/lancedb` or `~/.local/state/construct/vector/lancedb` | Machine-local and **rebuildable** — not backed up |
 
-Creates a snapshot in `~/.construct/backups/postgres/` containing:
+The first three are your backup. Push your repo, run `bd dolt push`, and keep `config.env` safe, and you can reconstruct a machine.
 
-- Postgres dump (all observations, sessions, entities, document embeddings)
-- Session index (`~/.cx/sessions/`)
-- Audit trail (`~/.cx/audit-trail.jsonl`)
-- Registry snapshot from the current Construct install
+## Back up
 
-### Include secrets
-
-By default, `config.env` is not included in the backup. Add `--include-secrets` to include it:
+Nothing Construct-specific runs here — you back Construct up the same way you back up any repo-based tool.
 
 ```bash
-construct backup create --include-secrets
+# 1. Versioned project state (source, docs, specialists, beads config)
+git add -A && git commit -m "checkpoint" && git push
+
+# 2. Beads issue data (versioned separately in Dolt)
+bd dolt push
+
+# 3. Machine credentials — copy the file, or rely on 1Password (next section)
+cp ~/.config/construct/config.env /path/to/secure/backup/config.env
 ```
 
-Backup files are stored unencrypted. Keep them in a secure location: treat them with the same care as `config.env`.
+`config.env` is stored unencrypted and holds provider keys. Treat any copy with the same care as the original, and prefer a location that is itself encrypted.
 
-### Backup file naming
+### Credentials via 1Password (no plaintext to back up)
 
-Backups are named by timestamp:
+If `config.env` holds `op://` references instead of plaintext keys — for example `OPENROUTER_API_KEY=op://vault/item/credential` — then there is no secret to copy: the values re-resolve from 1Password on the new machine. Point Construct at your `op run` env-file with `CONSTRUCT_OP_ENV_FILE` and the keys are never written to disk in the clear. See [Plug in your own LLM → Resolve keys from 1Password](/guides/cookbook/plug-in-your-own-llm).
 
-```
-~/.construct/backups/postgres/construct-2026-05-08T10-30-00Z.tar.gz
-```
+## What is *not* backed up (and why that is safe)
 
-## Verify a backup
+Everything under `.cx/` is machine-local and gitignored in full. It rebuilds:
+
+- **LanceDB vector index** — re-embedded from your sources on demand; the embedding model re-downloads to `~/.cache/construct/embeddings/` (~22 MB, one time) on first use.
+- **Sessions, traces, observations, intake** — local session history. Losing them loses history, not versioned artifacts.
+
+Because the index is derived state, there is nothing to restore for it — it repopulates as Construct runs. Inspect the backend with `construct storage status`; clear it with `construct storage reset` if you want a clean rebuild.
+
+## Restore / migrate to a new machine
 
 ```bash
-construct backup verify
+# 1. Get your versioned state back
+git clone <your-repo> && cd <your-repo>
+npm install                      # postinstall stages .construct/ and .claude/
+
+# 2. Machine setup (config, completions, LanceDB path, optional CLIs)
+construct install --scope=user
+
+# 3. Credentials — restore config.env, or set CONSTRUCT_OP_ENV_FILE for 1Password
+cp /path/to/secure/backup/config.env ~/.config/construct/config.env
+
+# 4. Beads issue history (from your Dolt remote)
+bd dolt remote add origin <dolt-remote-url>   # only on a fresh checkout with no remote configured
+bd dolt pull
+
+# 5. Verify — the vector index re-embeds on use
+construct doctor
 ```
 
-Reads the most recent backup and confirms:
+`construct doctor` confirms config, the LanceDB backend, hooks, and integrations are healthy. The vector index is not restored from a backup; it rebuilds as you work.
 
-- Archive is not corrupt (checksum valid)
-- Postgres dump is parseable
-- Key tables are present
+## What changed from the Postgres era
 
-To verify a specific archive:
-
-```bash
-construct backup verify ~/.construct/backups/postgres/construct-2026-05-08T10-30-00Z.tar.gz
-```
-
-## Restore from a backup
-
-```bash
-construct backup restore
-```
-
-Restores from the most recent backup. The command requires `--confirm` to prevent accidental overwrites:
-
-```bash
-construct backup restore --confirm
-```
-
-To restore from a specific archive:
-
-```bash
-construct backup restore ~/.construct/backups/postgres/construct-2026-05-08T10-30-00Z.tar.gz --confirm
-```
-
-Restore steps performed:
-
-1. Stop Construct services (`construct stop`)
-2. Drop and recreate the Postgres schema
-3. Load the Postgres dump
-4. Restore session index files
-5. Restore audit trail
-6. Start services (`construct dev`)
-7. Run `construct doctor` to verify health
-
-## Purge old backups
-
-```bash
-construct backup purge
-```
-
-Removes backups older than 30 days. Use `--confirm` to execute:
-
-```bash
-construct backup purge --confirm
-```
-
-## Schedule regular backups
-
-Add a cron job to run backups automatically. Example (daily at 02:00):
-
-```cron
-0 2 * * * /usr/local/bin/construct backup create >> ~/.construct/backups/backup.log 2>&1
-```
-
-Verify the cron is working by checking the log file and the backup timestamps.
-
-## What is not backed up
-
-- `~/.cx/knowledge/`: indexed documents. Re-index with `construct storage sync` after restore.
-- `~/.cx/skills-profile.json`: skill scope cache. Regenerates automatically on next `construct skills scope`.
-- Platform adapter files (e.g. Claude Code settings): regenerate with `construct sync`.
+- `construct backup create/verify/restore/purge` — **removed**. There is no Postgres dump to take. Running `construct backup` prints the current guidance.
+- `DATABASE_URL` — carried through only if you set it (legacy passthrough); Construct's local retrieval no longer depends on it.
+- Retrieval now rides on embedded LanceDB (384-dim `Xenova/all-MiniLM-L6-v2`), not Postgres + pgvector.

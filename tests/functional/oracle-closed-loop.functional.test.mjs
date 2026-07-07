@@ -5,7 +5,7 @@
  * outcomes-aggregate, re-tick reflects outcomes present.
  */
 
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync, readdirSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import assert from 'node:assert/strict';
@@ -15,6 +15,7 @@ import { runOracleTick, approvePending } from '../../lib/oracle/actions.mjs';
 import { verdictsDir } from '../../lib/oracle/verdicts.mjs';
 import { gapFingerprint } from '../../lib/oracle/issues.mjs';
 import { routingDir } from '../../lib/oracle/dispatch.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 function freshProject() {
   const projectDir = mkdtempSync(join(tmpdir(), 'construct-oracle-loop-'));
@@ -27,7 +28,7 @@ function freshProject() {
     rootDir: process.cwd(),
     cleanup() {
       for (const d of [projectDir, homeDir]) {
-        try { rmSync(d, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ }
+        try { rmTmpDir(d); } catch { /* ignore */ }
       }
     },
   };

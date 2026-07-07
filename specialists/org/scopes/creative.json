@@ -35,7 +35,12 @@
     "sessionReflect": "on",
     "sessionOptimize": "on"
   },
-  "defaultSkills": [],
+  "defaultSkills": [
+    "docs/user-research-workflow",
+    "strategy/narrative-arc",
+    "docs/memo-and-decision-capture",
+    "quality-gates/review-work"
+  ],
   "toneDefaults": {
     "one-pager": "friendly",
     "memo": "friendly",

@@ -23,6 +23,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.join(HERE, '..', '..');
@@ -123,6 +124,6 @@ test('Construct MCP stdio server: core surface + per-tool round-trip + construct
     assert.ok(Array.isArray(teams) && teams.length > 0, 'list_teams must return teams from the unified registry');
   } finally {
     c.kill();
-    fs.rmSync(home, { recursive: true, force: true });
+    rmTmpDir(home);
   }
 });

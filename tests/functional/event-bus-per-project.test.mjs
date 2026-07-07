@@ -11,11 +11,12 @@
 
 import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, existsSync, rmSync, readFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, existsSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import * as bus from '../../lib/roles/event-bus.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 let savedCwd;
 let savedEnv;
@@ -48,7 +49,7 @@ test('event bus writes to <project>/.cx/events.jsonl when cwd is inside a Constr
     assert.equal(parsed.type, 'test.event');
     assert.equal(parsed.fingerprint, entry.fingerprint);
   } finally {
-    rmSync(projectRoot, { recursive: true, force: true });
+    rmTmpDir(projectRoot);
   }
 });
 
@@ -60,7 +61,7 @@ test('event bus respects CONSTRUCT_ROLES_ROOT override for tests', async () => {
     const overridePath = join(overrideRoot, 'events.jsonl');
     assert.ok(existsSync(overridePath), 'expected events.jsonl at override root');
   } finally {
-    rmSync(overrideRoot, { recursive: true, force: true });
+    rmTmpDir(overrideRoot);
   }
 });
 
@@ -86,7 +87,7 @@ test('two projects emit isolated fingerprints — no cross-project suppression',
     assert.equal(bEvents.length, 1, 'project B should have exactly one event');
     assert.ok(!existsSync(join(projA, '.cx', 'events.jsonl')) === false);
   } finally {
-    rmSync(projA, { recursive: true, force: true });
-    rmSync(projB, { recursive: true, force: true });
+    rmTmpDir(projA);
+    rmTmpDir(projB);
   }
 });

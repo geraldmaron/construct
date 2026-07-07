@@ -11,11 +11,15 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import test from 'node:test';
+import test, { after } from 'node:test';
 import { spawnSync } from 'node:child_process';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const BIN = path.join(REPO, 'bin', 'construct');
+
+const SANDBOX_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'profile-ux-home-'));
+after(() => rmTmpDir(SANDBOX_HOME));
 
 function freshProject(scopeId = 'rnd') {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'profile-ux-'));
@@ -26,7 +30,7 @@ function freshProject(scopeId = 'rnd') {
 function run(args, { cwd, env = {} } = {}) {
   return spawnSync('node', [BIN, ...args], {
     cwd,
-    env: { ...process.env, CX_TOOLKIT_DIR: REPO, ...env },
+    env: { ...process.env, CX_TOOLKIT_DIR: REPO, HOME: SANDBOX_HOME, CX_HOME_OVERRIDE: SANDBOX_HOME, ...env },
     encoding: 'utf8',
   });
 }
@@ -43,7 +47,7 @@ test('scope set --dry-run previews the structural diff without writing', () => {
   assert.ok(res.stdout.includes('[dry-run] No files were written.'));
   const after = fs.readFileSync(path.join(cwd, 'construct.config.json'), 'utf8');
   assert.equal(before, after, 'config.json must be unchanged after --dry-run');
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
 });
 
 test('scope set --yes writes the new scope without prompting', () => {
@@ -52,7 +56,7 @@ test('scope set --yes writes the new scope without prompting', () => {
   assert.equal(res.status, 0, `stderr: ${res.stderr}`);
   const after = JSON.parse(fs.readFileSync(path.join(cwd, 'construct.config.json'), 'utf8'));
   assert.equal(after.scope, 'operations');
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
 });
 
 test('scope set is a no-op when the target equals the current scope', () => {
@@ -63,7 +67,7 @@ test('scope set is a no-op when the target equals the current scope', () => {
   assert.ok(res.stdout.includes('already set'));
   const after = fs.readFileSync(path.join(cwd, 'construct.config.json'), 'utf8');
   assert.equal(before, after);
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
 });
 
 test('scope archive --dry-run shows what files would move without touching them', () => {
@@ -78,7 +82,7 @@ test('scope archive --dry-run shows what files would move without touching them'
   assert.ok(res.stdout.includes('What stays'));
   assert.ok(res.stdout.includes('[dry-run] No files were moved.'));
   assert.equal(fs.statSync(scopeFile).size, sizeBefore, 'scope file must not change under --dry-run');
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
 });
 
 test('scope archive fails fast when reason is too short', () => {
@@ -86,5 +90,5 @@ test('scope archive fails fast when reason is too short', () => {
   const res = run(['scope', 'archive', 'creative', '--reason=too', '--yes'], { cwd });
   assert.notEqual(res.status, 0);
   assert.ok(res.stderr.includes('substantive --reason'));
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
 });

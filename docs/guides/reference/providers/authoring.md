@@ -165,7 +165,7 @@ Do not swallow errors silently: the circuit breaker counts uncaught rejections t
 
 ### Global (all projects)
 
-Add to `~/.construct/providers.json`:
+Add to `~/.config/construct/providers.json`:
 
 ```json
 {

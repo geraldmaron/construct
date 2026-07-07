@@ -1,0 +1,37 @@
+{
+  "id": "docling",
+  "version": "1.0.0",
+  "kind": "ingestion-provider",
+  "capabilities": ["document-extraction"],
+  "docs": "Layout-aware document ingestion (PDF, DOCX/XLSX/PPTX/ODT/ODS, rich-text, Spotlight-indexable formats) via a Python sidecar provisioned through uv. Governed provider: install/health are probed, not assumed, and failure follows a declared degradation chain rather than crashing ingest.",
+  "owner": "construct-core",
+  "compatVersion": 1,
+  "installSource": "uv-venv",
+  "installDependencies": ["uv"],
+  "installProbe": {
+    "kind": "venv-marker",
+    "runtimeDirEnv": "CONSTRUCT_DOCLING_RUNTIME_DIR",
+    "defaultRuntimeDir": ".cx/runtime/docling",
+    "markerFile": ".install-marker.json",
+    "versionField": "doclingVersion",
+    "description": "Presence of <runtimeDir>/.venv/bin/python plus a .install-marker.json recording the installed docling version. Absence of either is treated as not-installed."
+  },
+  "healthCheck": {
+    "kind": "subprocess-version",
+    "command": "<runtimeDir>/.venv/bin/docling",
+    "args": ["--version"],
+    "timeoutMs": 15000,
+    "description": "Runs the venv-installed `docling` console script directly (not `uv run`, which expects a pyproject-based project rather than a bare venv). A non-zero exit, timeout, or missing venv is unhealthy; stdout carries the docling/docling-core/docling-parse version lines."
+  },
+  "degradation": {
+    "chain": [
+      { "id": "docling", "mode": "sidecar", "description": "Layout-aware extraction (tables, OCR, all formats) via the local Python sidecar." },
+      { "id": "node-native", "mode": "adapter", "description": "unpdf (PDF) or mammoth (DOCX) — pure-JS, lower fidelity, no OCR, no XLSX/PPTX/ODT/ODS support." },
+      { "id": "refuse", "mode": "error", "description": "No extractor available for this format; ingest fails loud with an actionable install hint." }
+    ],
+    "terminal": "refuse",
+    "resultMarking": "degraded"
+  },
+  "removalStatus": "active",
+  "securityClassification": "trusted"
+}

@@ -34,9 +34,15 @@ test('every host grants the orchestrator both dispatch tools', () => {
     mkdirSync(join(sandbox.root, '.claude', 'agents'), { recursive: true });
     writeFileSync(join(sandbox.root, '.claude', 'settings.json'), JSON.stringify({ mcpServers: {} }));
 
+    // sync-specialists.mjs derives its own root from import.meta.dirname and
+    // self-populates CX_TOOLKIT_DIR from it when unset — it never needs the
+    // var supplied externally. Setting it here would also feed
+    // lib/paths.mjs's constructDir(), which lib/state-root.mjs's
+    // machine-scoped state root (ADR-0066) builds on, redirecting real state
+    // into repoRoot instead of the sandboxed HOME.
     const r = spawnSync(process.execPath, [join(repoRoot, 'scripts', 'sync-specialists.mjs'), '--project'], {
       cwd: sandbox.root,
-      env: { ...sandbox.env, CX_TOOLKIT_DIR: repoRoot, CONSTRUCT_SYNC_HOSTS: 'claude,opencode,codex' },
+      env: { ...sandbox.env, CONSTRUCT_SYNC_HOSTS: 'claude,opencode,codex' },
       encoding: 'utf8',
       timeout: 60_000,
     });

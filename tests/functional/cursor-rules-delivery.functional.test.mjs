@@ -8,10 +8,11 @@
  */
 import test from 'node:test';
 import assert from 'node:assert';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync, readFileSync, unlinkSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, existsSync, readFileSync, unlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { emitCursorRules, globToRegExp } from '../../lib/rules-delivery.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 function fixture() {
   const root = mkdtempSync(join(tmpdir(), 'cx-rulesdeliv-'));
@@ -24,7 +25,7 @@ function fixture() {
   w('project/main.go', 'package main');
   w('project/.cursor/rules/construct.mdc', 'front-door pointer');
   w('project/.cursor/rules/my-own.mdc', 'user rule');
-  return { rulesDir, project, cleanup: () => rmSync(root, { recursive: true, force: true }) };
+  return { rulesDir, project, cleanup: () => rmTmpDir(root) };
 }
 
 test('emits only the rules whose globs match project files, with Cursor frontmatter', () => {

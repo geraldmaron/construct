@@ -17,7 +17,10 @@
       "functionalRequirements",
       "nonFunctionalRequirements",
       "acceptanceCriteria",
-      "constraints"
+      "constraints",
+      "valueStatement",
+      "tradeoffTable",
+      "prioritizationCall"
     ]
   },
   "output": {
@@ -25,40 +28,57 @@
     "type": "decision"
   },
   "preconditions": [
-    "cx-devil-advocate framing challenge logged if riskFlags.architecture"
+    "cx-reviewer framing challenge logged if riskFlags.architecture"
   ],
   "postconditions": [
-    "ADR Problem section traces to PRD Problem, not to tickets",
-    "ADR Rejected alternatives section present with ≥2 alternatives and specific rejection reasons",
-    "Reversibility section states whether one-way or two-way door",
+    {
+      "id": "product-manager-to-architect-pc-0-adr-problem-section-traces-to-prd",
+      "description": "ADR Problem section traces to PRD Problem, not to tickets",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "product-manager-to-architect-pc-1-adr-rejected-alternatives-section-present-with",
+      "description": "ADR Rejected alternatives section present with ≥2 alternatives and specific rejection reasons",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "product-manager-to-architect-pc-2-reversibility-section-states-whether-one-way",
+      "description": "Reversibility section states whether one-way or two-way door",
+      "postconditionType": "advisory"
+    },
     {
       "id": "adr-has-rejected-alternatives",
       "description": "ADR must contain a Rejected Alternatives section",
       "check": "artifact-has-section",
-      "section": "Rejected Alternatives"
+      "section": "Rejected Alternatives",
+      "postconditionType": "executable"
     },
     {
       "id": "adr-reversibility-stated",
       "description": "ADR Reversibility section is present and non-empty",
       "check": "artifact-section-nonempty",
-      "section": "Reversibility"
+      "section": "Reversibility",
+      "postconditionType": "executable"
     },
     {
       "id": "adr-consequences-stated",
       "description": "ADR Consequences section is present and non-empty",
       "check": "artifact-section-nonempty",
-      "section": "Consequences"
+      "section": "Consequences",
+      "postconditionType": "executable"
     },
     {
       "id": "adr-numeric-claims-cited",
       "description": "Every numeric claim in the ADR body cites a source",
-      "check": "artifact-claims-cited"
+      "check": "artifact-claims-cited",
+      "postconditionType": "executable"
     },
     {
       "id": "adr-manifest-reviewers",
       "description": "Manifest required reviewers must appear in agent log before handoff",
       "check": "artifact-reviewers-seen",
-      "fromManifest": true
+      "fromManifest": true,
+      "postconditionType": "executable"
     }
   ],
   "description": "",

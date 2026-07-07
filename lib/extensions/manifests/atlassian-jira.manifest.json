@@ -1,0 +1,53 @@
+{
+  "id": "atlassian-jira",
+  "version": "1.0.0",
+  "kind": "data-source",
+  "capabilities": ["read", "search"],
+  "secretEnvKeys": ["JIRA_BASE_URL", "JIRA_EMAIL", "JIRA_API_TOKEN"],
+  "operations": ["read", "search"],
+  "securityClassification": "trusted",
+  "owner": "construct-core",
+  "compatVersion": 1,
+  "installSource": "builtin",
+  "sourceTarget": {
+    "provider": "jira",
+    "selector": {
+      "field": "project",
+      "pattern": "^[A-Z][A-Z0-9]{1,9}$",
+      "patternTransform": "trimUpper",
+      "hint": "required Jira project key (2–10 uppercase letters/digits)",
+      "normalize": "trimUpper"
+    },
+    "signature": { "template": "jira:project:{value}", "valueMode": "upperOrEmpty" },
+    "legacyEnv": { "vars": ["JIRA_PROJECTS"], "parse": "csv", "valueTransform": "upper" },
+    "aliases": { "strategy": "simple", "displayPrefix": "Jira", "catchAll": true },
+    "embed": {
+      "mode": "perTarget",
+      "valueField": "project",
+      "valueKind": "scalar",
+      "refs": ["issues"],
+      "limit": 50
+    },
+    "embedFilters": {
+      "valueField": "project",
+      "valueKind": "scalar",
+      "defaultRefs": ["issues"],
+      "extraFilterKeys": ["jql"],
+      "defaultLimit": 50
+    },
+    "demandFetch": {
+      "targetRefs": ["issues"],
+      "targetJqlTemplate": "project = \"{value}\" AND statusCategory != Done ORDER BY updated DESC",
+      "targetJqlFilterKey": "jql",
+      "targetDefaultLimit": 50,
+      "queryDynamicJql": {
+        "singleTemplate": "project = \"{value}\" AND statusCategory != Done ORDER BY updated DESC",
+        "broadTemplate": "project IN ({values}) AND updated >= -{recencyDays}d ORDER BY updated DESC",
+        "recencyEnvVar": "JIRA_FETCH_RECENCY_DAYS",
+        "recencyDefaultDays": 30,
+        "legacyProjectsEnvVar": "JIRA_PROJECTS"
+      },
+      "queryDefaultLimit": 50
+    }
+  }
+}

@@ -13,6 +13,8 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { loadRegistry } from '../lib/registry/loader.mjs';
+import { computePostconditionCoverage } from '../lib/contracts/coverage.mjs';
+import { POSTCONDITIONS } from '../lib/specialists/postconditions.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -82,4 +84,69 @@ test('producer and consumer resolve against registry or well-known names', () =>
     assert.ok(producerOk, `contract ${c.id}: unknown producer ${c.producer}`);
     assert.ok(consumerOk, `contract ${c.id}: unknown consumer ${c.consumer}`);
   }
+});
+
+// construct-rf26.12: every postcondition across every contract must be
+// classified executable or advisory — no bare prose string that reads as
+// enforced but isn't (ADR-0015's finding). This is the durable coverage
+// measurement the bead asks for; a regression here means a contract shipped
+// with an unclassified postcondition.
+
+test('every postcondition on every contract carries a postconditionType', () => {
+  const registry = loadRegistry({ rootDir: REPO_ROOT, skipValidation: true });
+  const contracts = Object.values(registry.contracts || {});
+  const offenders = [];
+  for (const c of contracts) {
+    (c.postconditions || []).forEach((pc, idx) => {
+      if (typeof pc !== 'object' || pc === null) {
+        offenders.push(`${c.id}[${idx}]: bare postcondition, not an object`);
+        return;
+      }
+      if (pc.postconditionType !== 'executable' && pc.postconditionType !== 'advisory') {
+        offenders.push(`${c.id}[${idx}] (${pc.id}): postconditionType is '${pc.postconditionType}', expected executable|advisory`);
+      }
+    });
+  }
+  assert.deepEqual(offenders, []);
+});
+
+test('executable postconditions resolve to a real enforcement mechanism', () => {
+  const registry = loadRegistry({ rootDir: REPO_ROOT, skipValidation: true });
+  const contracts = Object.values(registry.contracts || {});
+  const offenders = [];
+  for (const c of contracts) {
+    for (const pc of c.postconditions || []) {
+      if (typeof pc !== 'object' || pc === null || pc.postconditionType !== 'executable') continue;
+      if (pc.check) continue; // validated directly by validateArtifactPostconditions
+      if (pc.enforcedVia === 'binary-postcondition') {
+        const [producer, ruleId] = [Object.keys(POSTCONDITIONS).find((p) => (POSTCONDITIONS[p] || []).some((r) => r.id === pc.enforcedBy)), pc.enforcedBy];
+        if (!producer) offenders.push(`${c.id} (${pc.id}): enforcedBy '${ruleId}' does not match any POSTCONDITIONS rule id`);
+        continue;
+      }
+      if (pc.enforcedVia === 'output-shape') {
+        if (!pc.enforcedBy) offenders.push(`${c.id} (${pc.id}): output-shape postcondition missing enforcedBy`);
+        continue;
+      }
+      offenders.push(`${c.id} (${pc.id}): executable postcondition has neither 'check' nor a recognized 'enforcedVia'`);
+    }
+  }
+  assert.deepEqual(offenders, []);
+});
+
+test('contract postcondition coverage is measured and does not regress below the rf26.11 floor', () => {
+  const coverage = computePostconditionCoverage({ repoRoot: REPO_ROOT });
+  assert.equal(coverage.unclassified, 0, 'no postcondition should be left unclassified');
+  assert.ok(coverage.total > 0, 'expected at least one postcondition across the contract set');
+  // construct-rf26.11's roster consolidation deleted 8 contracts that collapsed
+  // to intra-role handoffs or were absorbed into standard dispatch (7 of the
+  // 43 pre-consolidation contracts became same-role on both sides; an 8th,
+  // construct-to-rd-lead, lost its bypass-dispatch rationale when rd-lead
+  // retired into cx-architect). That dropped the rf26.12 floor of 39 to 35 —
+  // 3 executable checks on construct-to-rd-lead's framing-brief section
+  // presence and 1 more were not recreated elsewhere; see ADR-0065 appendix
+  // addendum for the accounting.
+  assert.ok(
+    coverage.executable >= 35,
+    `executable postcondition count regressed below the rf26.11 floor (35): got ${coverage.executable}`,
+  );
 });

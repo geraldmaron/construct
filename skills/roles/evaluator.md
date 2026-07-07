@@ -5,7 +5,7 @@ inputs: [model-output, eval-set]
 artifactType: guidance
 role: evaluator
 applies_to:
-  - cx-evaluator
+  - cx-reviewer
 inherits: reviewer
 version: 2
 scopes:

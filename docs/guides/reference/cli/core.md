@@ -7,6 +7,7 @@ description: Core commands for Construct.
 
 | Command | What it does |
 |---|---|
+| `construct approvals` | Manage pending MCP tool approvals |
 | `construct dev` | Start services for development |
 | `construct docs` | Documentation commands |
 | `construct doctor` | Check installation health |
@@ -20,6 +21,24 @@ description: Core commands for Construct.
 | `construct status` | Show system health and credentials |
 | `construct stop` | Stop all running services |
 | `construct sync` | Sync agent adapters to AI tools |
+| `construct workers` | List registered team workers and heartbeat freshness |
+
+## construct approvals
+
+Manage pending MCP tool approvals
+
+**Usage**
+
+```bash
+construct approvals list|approve|deny|status
+```
+
+**Subcommands**
+
+- `list` — List pending approvals with tool name, requestedAt, requestedBy
+- `approve <id>` — Approve a pending approval by id
+- `deny <id> [--reason=...]` — Deny a pending approval by id
+- `status <id>` — Show the full status of a specific approval
 
 ## construct dev
 
@@ -28,7 +47,7 @@ Start services for development
 **Usage**
 
 ```bash
-construct dev [--select] [--only=postgres,...]
+construct dev [--select] [--only=memory,opencode,...]
 ```
 
 **Options**
@@ -36,7 +55,7 @@ construct dev [--select] [--only=postgres,...]
 | Flag | Description |
 |---|---|
 | `--select` | Pick which services to start from an interactive checklist |
-| `--only=<a,b,c>` | Start only the named services (postgres, telemetry, memory, opencode) |
+| `--only=<a,b,c>` | Start only the named services (telemetry, memory, opencode, copilot-bridge) |
 
 ## construct docs
 
@@ -118,17 +137,16 @@ Machine setup (scoped per ADR-0029): --scope=project|user|both, default project
 **Usage**
 
 ```bash
-construct install [--scope=project|user|both] [--yes] [--dry-run] [--no-docker] [--no-launch-agent] [--reconfigure] [--with-docling]
+construct install [--scope=project|user|both] [--yes] [--dry-run] [--no-launch-agent] [--reconfigure] [--with-docling]
 ```
 
 **Options**
 
 | Flag | Description |
 |---|---|
-| `--scope=<s>` | project (default, no-op + guidance) | user (writes ~/.construct/, MCP, ~/.claude/* via consent) | both |
+| `--scope=<s>` | project (default, no-op + guidance) | user (writes ~/.config/construct/, MCP, ~/.claude/* via consent) | both |
 | `--yes` | Apply defaults without prompts (only meaningful with --scope=user|both) |
 | `--dry-run` | Preview the install plan (scopes, files, services) without writing anything |
-| `--no-docker` | Skip Docker-based service setup (local Postgres) |
 | `--no-launch-agent` | Skip background macOS LaunchAgent registration |
 | `--reconfigure` | Re-prompt for service consent, ignoring cached answers |
 | `--with-docling` | Eagerly provision the docling document-extraction venv now (heavy, ~10 min; else lazy on first ingest) |
@@ -254,3 +272,19 @@ construct sync [--project] [--dry-run] [--no-docs] [--compress-personas]
 | `--dry-run` | Preview adapter changes without writing files |
 | `--no-docs` | Skip AUTO docs regeneration after syncing adapters |
 | `--compress-personas` | Write compressed runtime persona prompts without changing the source prompts |
+
+## construct workers
+
+List registered team workers and heartbeat freshness
+
+**Usage**
+
+```bash
+construct workers <list> [--json]
+```
+
+**Options**
+
+| Flag | Description |
+|---|---|
+| `--json` | Output worker list as JSON |

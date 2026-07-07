@@ -3,9 +3,11 @@
  *
  * Bounded-auto policy, dry-run tick execution, and pending approval queue
  * for the Oracle meta-controller.
+ *
+ * @capability oracle.meta-review
  */
 
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import assert from 'node:assert/strict';
@@ -15,6 +17,7 @@ import { classifyAction, AUTO_ACTIONS, APPROVE_ACTIONS } from '../../lib/oracle/
 import { synthesizeVerdict } from '../../lib/oracle/synthesize.mjs';
 import { runOracleTick, listPending, approvePending } from '../../lib/oracle/actions.mjs';
 import { createDaemon } from '../../lib/daemons/contract.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 function freshProject() {
   const projectDir = mkdtempSync(join(tmpdir(), 'construct-oracle-tick-'));
@@ -27,7 +30,7 @@ function freshProject() {
     rootDir: process.cwd(),
     cleanup() {
       for (const d of [projectDir, homeDir]) {
-        try { rmSync(d, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ }
+        try { rmTmpDir(d); } catch { /* ignore */ }
       }
     },
   };

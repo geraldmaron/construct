@@ -10,8 +10,10 @@
 
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { mkdtempSync, rmSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
-import test from 'node:test';
+import test, { before, after } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import { renderTour } from '../lib/demo-tour-renderer.mjs';
@@ -19,6 +21,14 @@ import { loadDemoScript, listDemoScripts } from '../lib/demo-script.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BIN = path.join(REPO, 'bin', 'construct');
+
+// The `construct demo tour` binary spawns below share one sandboxed HOME so
+// the run never touches the real developer machine's ~/.construct/projects/
+// (ADR-0066 machine-scoped state root).
+
+let HOME;
+before(() => { HOME = mkdtempSync(path.join(os.tmpdir(), 'demo-tour-home-')); });
+after(() => { rmSync(HOME, { recursive: true, force: true }); });
 
 const ANSI = /\[[0-9;]*m/;
 
@@ -95,6 +105,7 @@ test('construct demo tour --accessible runs end-to-end and is WCAG-plain', () =>
     cwd: REPO,
     encoding: 'utf8',
     timeout: 60_000,
+    env: { ...process.env, HOME, CX_HOME_OVERRIDE: HOME },
   });
   assert.equal(proc.status, 0, `exit 0 expected, got ${proc.status}: ${proc.stderr}`);
   assert.ok(proc.stdout.includes('Demo tour:'), 'tour header missing');
@@ -109,6 +120,7 @@ test('construct demo tour accepts an explicit demo name', () => {
     cwd: REPO,
     encoding: 'utf8',
     timeout: 60_000,
+    env: { ...process.env, HOME, CX_HOME_OVERRIDE: HOME },
   });
   assert.equal(proc.status, 0, `exit 0 expected, got ${proc.status}: ${proc.stderr}`);
   const script = loadDemoScript(names[0], { cwd: REPO, repoRoot: REPO });
@@ -120,6 +132,7 @@ test('construct demo tour rejects an unknown name', () => {
     cwd: REPO,
     encoding: 'utf8',
     timeout: 60_000,
+    env: { ...process.env, HOME, CX_HOME_OVERRIDE: HOME },
   });
   assert.notEqual(proc.status, 0, 'unknown demo should exit non-zero');
   assert.ok(/Unknown demo/.test(proc.stderr), 'expected an unknown-demo message on stderr');

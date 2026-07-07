@@ -16,7 +16,7 @@ You can override this root with the `CX_DATA_DIR` environment variable.
 ## How to set it
 
 ```sh
-# In ~/.construct/config.env
+# In ~/.config/construct/config.env
 CX_DATA_DIR=/mnt/construct-data
 ```
 
@@ -59,6 +59,6 @@ volumes:
 
 ## Notes
 
-- `config.env` is always loaded from `~/.construct/config.env`, regardless of `CX_DATA_DIR`.
+- `config.env` is always loaded from `~/.config/construct/config.env`, regardless of `CX_DATA_DIR`.
 - The `CX_DATA_DIR` value must be an absolute path.
 - If the directory does not exist, Construct creates it on first run.

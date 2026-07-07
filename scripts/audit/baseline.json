@@ -4,8 +4,20 @@
     "03-docs:review-doc-reference:auth",
     "03-docs:review-doc-reference:chat",
     "03-docs:review-doc-reference:logs",
+    "03-docs:review-doc-reference:flow",
     "02-deadcode:module-test-only:lib/models/execution-policy.mjs",
     "02-deadcode:module-test-only:lib/models/provider-poll.mjs",
-    "02-deadcode:module-test-only:lib/host/readiness.mjs"
+    "02-deadcode:module-test-only:lib/host/readiness.mjs",
+    "02-deadcode:module-test-only:lib/security/ingest-boundary.mjs",
+    "02-deadcode:module-test-only:lib/security/recall-wrapper.mjs",
+    "02-deadcode:module-test-only:lib/writes/envelope.mjs",
+    "02-deadcode:module-test-only:lib/frameworks/loader.mjs",
+    "02-deadcode:module-test-only:lib/providers/contract/adapters/github/governed-write.mjs",
+    "02-deadcode:module-test-only:lib/ingest/degraded-extract.mjs",
+    "02-deadcode:module-test-only:lib/doctor/sidecar-providers.mjs",
+    "02-deadcode:module-test-only:lib/embed/presets/tpm.mjs",
+    "02-deadcode:module-test-only:lib/embed/presets/ops-triage.mjs",
+    "02-deadcode:module-test-only:lib/embed/presets/pm-feedback.mjs",
+    "02-deadcode:module-test-only:lib/render-visual-check.mjs"
   ]
 }

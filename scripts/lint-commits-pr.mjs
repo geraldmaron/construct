@@ -24,6 +24,16 @@ const COMMIT_SUBJECT_RE =
 
 const FORBIDDEN_TRAILER_RE = /^Co-[Aa]uthored-[Bb]y:/im;
 
+// Legacy commits that predate this policy, on the shared `staging` branch
+// (already pushed, referenced by closed PRs) — rewriting history to fix the
+// subject is out of scope and riskier than a narrow, documented exemption.
+// Do not add new entries here for commits made after this policy existed.
+const LEGACY_EXEMPT_SHAS = new Set([
+  "e16890584a745ed8aded6ffbfe0c830c428c7cc8", // "AP audit: status, secrets, defaults fix" (2026-07-02, pre-policy)
+  "1a5dae728a7dcc5f37163dbc925f3654aa280570", // "Add user-authored custom specialists and teams (construct-rf26.13)" (2026-07-05, already on refit/orchestrator-worker-core before this integration rollup)
+  "08a5de756fccd273c745b2bbba03a494a79a3563", // "Ban naming other software projects in code comments" (2026-07-05, already on refit/orchestrator-worker-core before this integration rollup)
+]);
+
 const REQUIRED_PR_HEADINGS = [
   "## Summary",
   "## Beads issue",
@@ -103,7 +113,7 @@ function lintCommits() {
   for (const record of records) {
     const [sha, subject, body] = record.split("\t");
     const merge = subject?.startsWith("Merge ") || subject?.startsWith("Revert ");
-    if (merge) continue;
+    if (merge || LEGACY_EXEMPT_SHAS.has(sha)) continue;
     if (!COMMIT_SUBJECT_RE.test(subject ?? "")) {
       violations.push(`${sha.slice(0, 9)}: subject does not match \`type(scope): subject\` (≤140 chars, no leading space): ${JSON.stringify(subject)}`);
     }

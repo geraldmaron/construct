@@ -9,7 +9,11 @@
     "schema": "lib/contract-schemas/implementation.json",
     "mustContain": [
       "filesChanged",
-      "verificationChecklist"
+      "verificationChecklist",
+      "feasibilityAssessment",
+      "effortClass",
+      "debtNote",
+      "blastRadius"
     ]
   },
   "output": {
@@ -37,10 +41,30 @@
     "Tests compiled; static analysis run"
   ],
   "postconditions": [
-    "Verdict in {APPROVED, APPROVED_WITH_WARNINGS, BLOCKED}",
-    "BLOCKED verdict stops downstream work until addressed",
-    "CRITICAL findings prevent release",
-    "Either findings is non-empty or noIssuesFoundAt enumerates the inspected paths — prevents silent rubber-stamp reviews"
+    {
+      "id": "engineer-to-reviewer-pc-0-verdict-in-approved-approved-with-warnings",
+      "description": "Verdict in {APPROVED, APPROVED_WITH_WARNINGS, BLOCKED}",
+      "postconditionType": "executable",
+      "enforcedVia": "output-shape",
+      "enforcedBy": "verdict (mustMatchEnum)"
+    },
+    {
+      "id": "engineer-to-reviewer-pc-1-blocked-verdict-stops-downstream-work-until",
+      "description": "BLOCKED verdict stops downstream work until addressed",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "engineer-to-reviewer-pc-2-critical-findings-prevent-release",
+      "description": "CRITICAL findings prevent release",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "engineer-to-reviewer-pc-3-either-findings-is-non-empty-or",
+      "description": "Either findings is non-empty or noIssuesFoundAt enumerates the inspected paths — prevents silent rubber-stamp reviews",
+      "postconditionType": "executable",
+      "enforcedVia": "output-shape",
+      "enforcedBy": "findings|noIssuesFoundAt (mustContainOneOf)"
+    }
   ],
   "description": "",
   "teamBoundary": {

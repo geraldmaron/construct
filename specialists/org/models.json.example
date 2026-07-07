@@ -1,0 +1,8 @@
+{
+  "_comment": "Starter model registry. Copy to models.json to activate operator-supplied tier defaults. Construct ships no active models.json: an unconfigured machine degrades honestly (no implicit model defaults) rather than resolving a model whose credentials may be absent. Precedence when active: CX_MODEL_<TIER> / CONSTRUCT_MODEL_<TIER> env pins ALWAYS win; registry tiers below fill only the tiers no env pin sets. Each tier is either a bare model id string or {\"primary\": id, \"fallback\": [ids]}. Resolution uses the primary.",
+  "models": {
+    "reasoning": { "primary": "anthropic/claude-opus-4-6", "fallback": ["anthropic/claude-sonnet-4-6"] },
+    "standard": { "primary": "anthropic/claude-sonnet-4-6", "fallback": ["anthropic/claude-opus-4-6"] },
+    "fast": { "primary": "anthropic/claude-haiku-4-5-20251001", "fallback": ["anthropic/claude-sonnet-4-6"] }
+  }
+}

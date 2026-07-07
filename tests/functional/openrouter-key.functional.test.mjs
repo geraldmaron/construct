@@ -22,6 +22,7 @@ import { API_KEY_CREDENTIALS } from '../../lib/providers/credential-catalog.mjs'
 import { hasSecret, __clearSecretCache } from '../../lib/providers/secret-resolver.mjs';
 import { isModelAvailable, listAvailableModels } from '../../lib/model-router.mjs';
 import { configDir } from '../../lib/config/xdg.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 function withTmpHome(fn) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-or-'));
@@ -33,7 +34,7 @@ function withTmpHome(fn) {
   } finally {
     process.env.HOME = original;
     __clearSecretCache();
-    fs.rmSync(home, { recursive: true, force: true });
+    rmTmpDir(home);
   }
 }
 
@@ -150,6 +151,6 @@ test('listAvailableModels exposes configured OpenRouter candidates', async () =>
     assert.ok(items.some((item) => item.provider === 'openrouter'));
   } finally {
     process.env.HOME = original;
-    fs.rmSync(home, { recursive: true, force: true });
+    rmTmpDir(home);
   }
 });

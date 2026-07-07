@@ -23,7 +23,8 @@
       "sequencedTasks",
       "dependencyGraph",
       "ownershipMatrix",
-      "verificationGates"
+      "verificationGates",
+      "slippageRisk"
     ]
   },
   "preconditions": [
@@ -31,9 +32,21 @@
     "Tasks are atomic and individually verifiable"
   ],
   "postconditions": [
-    "Every task names a single owner",
-    "Every task names a verification gate and definition-of-done",
-    "Dependency graph identifies blockers; no task lies on a hidden critical path"
+    {
+      "id": "architect-to-operations-pc-0-every-task-names-a-single-owner",
+      "description": "Every task names a single owner",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "architect-to-operations-pc-1-every-task-names-a-verification-gate",
+      "description": "Every task names a verification gate and definition-of-done",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "architect-to-operations-pc-2-dependency-graph-identifies-blockers-no-task",
+      "description": "Dependency graph identifies blockers; no task lies on a hidden critical path",
+      "postconditionType": "advisory"
+    }
   ],
   "description": "",
   "teamBoundary": {

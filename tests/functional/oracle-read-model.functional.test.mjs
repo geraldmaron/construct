@@ -5,7 +5,7 @@
  * without touching the developer's home log or real project state.
  */
 
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, cpSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, cpSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import assert from 'node:assert/strict';
@@ -13,6 +13,7 @@ import test from 'node:test';
 
 import { collectReadModel } from '../../lib/oracle/read-model.mjs';
 import { doctorRoot } from '../../lib/config/xdg.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 function freshEnv() {
   const projectDir = mkdtempSync(join(tmpdir(), 'construct-oracle-proj-'));
@@ -30,7 +31,7 @@ function freshEnv() {
     rootDir,
     cleanup() {
       for (const d of [projectDir, homeDir, rootDir]) {
-        try { rmSync(d, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ }
+        try { rmTmpDir(d); } catch { /* ignore */ }
       }
     },
   };

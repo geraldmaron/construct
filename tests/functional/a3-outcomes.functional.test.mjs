@@ -17,6 +17,7 @@ import test from 'node:test';
 import { spawnSync } from 'node:child_process';
 
 import { doctorRoot } from '../../lib/config/xdg.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const TRACKER = path.join(REPO, 'lib', 'hooks', 'agent-tracker.mjs');
@@ -45,7 +46,7 @@ test('A3 end-to-end: record -> aggregate -> classifier tiebreaker, capped and no
   assert.equal(triage.intakeType, 'bug');
   assert.equal(triage.primaryOwner, 'debugger');
 
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
 });
 
 test('A3 production trigger: agent-tracker writes outcome JSONL on a Task SubagentStop event', () => {
@@ -86,6 +87,6 @@ test('A3 production trigger: agent-tracker writes outcome JSONL on a Task Subage
   assert.ok(fs.existsSync(path.join(doctorRoot(fakeHome), 'last-agent.json')),
     'last-agent.json should have been written under the fake HOME doctor root');
 
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
-  fs.rmSync(fakeHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
+  rmTmpDir(fakeHome);
 });

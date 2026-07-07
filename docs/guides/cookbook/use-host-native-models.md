@@ -44,7 +44,7 @@ You can check the status of active bridges via `construct doctor`.
 
 ### Customizing Ports
 
-If the default bridge ports (5174, 5175, etc.) conflict with other services, you can customize them in your `~/.construct/config.env`:
+If the default bridge ports (5174, 5175, etc.) conflict with other services, you can customize them in your `~/.config/construct/config.env`:
 
 ```bash
 COPILOT_BRIDGE_PORT=6000

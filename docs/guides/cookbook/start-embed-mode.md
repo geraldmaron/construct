@@ -7,7 +7,7 @@ Embed mode is a background daemon that watches what you feed Construct and does 
 
 ## Before you start
 
-You need at least one provider configured in `~/.construct/config.env`. Jira and GitHub are the most common starting points.
+You need at least one provider configured in `~/.config/construct/config.env`. Jira and GitHub are the most common starting points.
 
 Check current status:
 
@@ -19,14 +19,14 @@ If the output shows `stopped`, you are ready to start.
 
 ## Configure targets and roles (optional but recommended)
 
-Edit `~/.construct/embed.yaml` to tell embed which repos and workspaces to maintain:
+Edit `~/.config/construct/embed.yaml` to tell embed which repos and workspaces to maintain:
 
 ```yaml
 targets:
   - type: repo
     ref: github.com/your-org/your-repo
     path: /path/to/local/clone   # optional — enables direct filesystem writes
-  - type: workspace              # fallback always present at ~/.construct/workspace
+  - type: workspace              # fallback always present at ~/.local/state/construct/workspace
 
 roles:
   primary: architect             # sets the analysis lens
@@ -79,7 +79,7 @@ construct embed approvals
 
 Every job action emits a toast notification in the dashboard started by `construct dev`. Notifications are typed: `info`, `success`, `warning`, `error`.
 
-To also receive embed notifications in Slack, set a webhook URL in `~/.construct/config.env`:
+To also receive embed notifications in Slack, set a webhook URL in `~/.config/construct/config.env`:
 
 ```sh
 SLACK_EMBED_WEBHOOK_URL=https://hooks.slack.com/services/…

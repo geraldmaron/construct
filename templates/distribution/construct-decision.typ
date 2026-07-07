@@ -1,5 +1,8 @@
 /**
- * templates/distribution/construct-decision.typ — Construct distribution PDF.
+ * templates/distribution/construct-decision.typ — layout for decision-class
+ * artifacts (adr, rfc, rfc-platform, security-audit-report). Same brand system
+ * as every other class; only the footer label differs. Metadata contract
+ * documented in construct-pdf.typ.
  */
 
 #import "construct-brand.typ": *
@@ -7,8 +10,8 @@
 #show: construct-theme
 
 #set page(
-  paper: "a4",
-  margin: (x: 2.15cm, top: 1.95cm, bottom: 2.35cm),
+  paper: construct-page-paper,
+  margin: construct-page-margin,
   numbering: "1",
   header: construct-running-header(
     "$if(title)$$title$$endif$",

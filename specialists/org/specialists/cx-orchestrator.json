@@ -9,7 +9,10 @@
     "ai/orchestration-workflow",
     "operating/orchestration-reference",
     "operating/change-management",
-    "operating/unstructured-triage"
+    "operating/unstructured-triage",
+    "exploration/dependency-graph-reading",
+    "roles/trace-reviewer",
+    "operating/fleet-health-routing"
   ],
   "events": [
     "handoff.received"
@@ -50,13 +53,22 @@
       "routing accuracy",
       "workload balance",
       "handoff completeness",
-      "specialist utilization"
+      "specialist utilization",
+      "parity drift",
+      "contract violations",
+      "doctor escalations",
+      "alignment census staleness",
+      "outcomes degradation"
     ],
     "riskSignals": [
       "misrouted tasks",
       "overloaded specialists",
       "dropped handoffs",
-      "stale queued work"
+      "stale queued work",
+      "unrouted systemic gaps",
+      "auto actions needing approval",
+      "stale alignment census",
+      "missing read-model signals"
     ],
     "artifactBias": [
       "notes",
@@ -73,7 +85,7 @@
     "engineer",
     "security",
     "qa",
-    "sre"
+    "operations"
   ],
   "team": "strategy-team",
   "teamId": "strategy-team",

@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import { doctorRoot } from '../../lib/config/xdg.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const HOOK = path.join(HERE, '..', '..', 'lib', 'hooks', 'session-start.mjs');
@@ -36,8 +37,8 @@ function driveHook(extraEnv = {}) {
   });
   const log = path.join(doctorRoot(home), 'session-start-last.log');
   const result = { status: res.status, stdout: res.stdout || '', stderr: res.stderr || '', logExists: fs.existsSync(log) };
-  fs.rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
-  fs.rmSync(proj, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(home);
+  rmTmpDir(proj);
   return result;
 }
 

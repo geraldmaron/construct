@@ -46,7 +46,7 @@ The mode is detected automatically. You can check it with `construct status`.
 
 If you run Construct in multiple projects simultaneously, each instance is namespace-isolated:
 
-- **Config**: each instance reads its own `~/.construct/config.env` plus any project-level overrides
+- **Config**: each instance reads its own `~/.config/construct/config.env` plus any project-level overrides
 - **Data**: `.cx/` directories are per-project; observations and sessions don't bleed between projects
 - **Ports**: each instance is assigned its own dashboard port. Conflicts surface as warnings during `construct init`.
 

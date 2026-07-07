@@ -5,7 +5,7 @@ inputs: [code-diff, internal-tooling]
 artifactType: role-guidance
 role: platform-engineer
 applies_to:
-  - cx-platform-engineer
+  - cx-engineer
 inherits: engineer
 version: 2
 scopes:

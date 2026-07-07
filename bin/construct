@@ -3,7 +3,10 @@
  * bin/construct — construct CLI entrypoint.
  *
  * Parses the command string, dispatches to the appropriate handler, and
- * loads environment config from ~/.construct/.env. This is the only
+ * loads environment config from the resolved project root's .env (nearest
+ * .cx/ or package.json ancestor of cwd, per lib/roots.mjs) and the user
+ * config.env ($XDG_CONFIG_HOME/construct/config.env), with project .env
+ * winning per lib/env-config.mjs's tier order. This is the only
  * public-facing binary; all commands are exported from lib/.
  */
 
@@ -79,12 +82,29 @@ import { syncFileStateToSql } from '../lib/storage/sync.mjs';
 import { deleteIngestedArtifacts, getStorageStatus, inferProjectName, resetStorage } from '../lib/storage/admin.mjs';
 import { runPressureRelease } from '../lib/runtime-pressure.mjs';
 import { loadRegistry, listSpecialists } from '../lib/registry/loader.mjs';
+import { resolveProjectRoot, resolveInstallRoot } from '../lib/roots.mjs';
 
-const ROOT_DIR = path.resolve(import.meta.dirname, '..');
+// See lib/roots.mjs's resolveInstallRoot for why: under a Bun-compiled
+// binary, import.meta.dirname resolves to the virtual /$bunfs/root rather
+// than a real path, so every sibling data-dir read below would throw ENOENT.
+
+const ROOT_DIR = resolveInstallRoot(path.resolve(import.meta.dirname, '..'));
+const PROJECT_ROOT = resolveProjectRoot(process.cwd());
 const HOME = os.homedir();
 enableSecretAuditTrail();
-ensureConstructCredentials({ env: process.env, cwd: ROOT_DIR, home: HOME });
-const ENV = loadConstructEnv({ rootDir: ROOT_DIR, homeDir: HOME, env: process.env });
+
+// The project .env tier binds to PROJECT_ROOT (the user's repo), not
+// ROOT_DIR (the toolkit install checkout) — ROOT_DIR stays reserved for
+// locating the toolkit's own assets (registry, skills, hooks) below.
+
+ensureConstructCredentials({ env: process.env, cwd: PROJECT_ROOT, home: HOME });
+
+// The CLI only fills keys missing from process.env, so a conflicting shell
+// export wins here — the opposite of the MCP server's file-wins merge.
+// shadowWinner: 'shell' keeps the warning honest about which value the CLI
+// actually applies (construct-6y6w.3 / construct-xj96.12).
+
+const ENV = loadConstructEnv({ rootDir: PROJECT_ROOT, homeDir: HOME, env: process.env, shadowWinner: 'shell' });
 for (const [key, value] of Object.entries(ENV)) {
   if (!(key in process.env)) process.env[key] = value;
 }
@@ -247,6 +267,12 @@ async function cmdRulesUsage(args = []) {
   process.exit(1);
 }
 
+async function cmdApprovals(args = []) {
+  const { runApprovalsCli } = await import('../lib/cli/approvals.mjs');
+  const code = await runApprovalsCli(args, { rootDir: ROOT_DIR, homeDir: HOME, env: process.env, println, errorln });
+  if (code) process.exit(code);
+}
+
 async function cmdStatus() {
   const jsonOutput = restArgsCache.includes('--json');
   const status = await buildStatus({ rootDir: ROOT_DIR, cwd: process.cwd(), homeDir: HOME, env: process.env });
@@ -293,6 +319,45 @@ async function cmdStatus() {
     println(`  Outcome roles    ${outcomeRoles}`);
     println(`  Detail:          npm run learning:status`);
   } catch { /* best-effort surface; never block status */ }
+}
+
+async function cmdWorkers(args = []) {
+  const sub = args.find((a) => !a.startsWith('--')) || 'list';
+  const wantsJson = args.includes('--json');
+  if (sub !== 'list') {
+    errorln('Usage: construct workers <list> [--json]');
+    process.exit(1);
+  }
+
+  const { createSqlClient, closeSqlClient } = await import('../lib/storage/backend.mjs');
+  const { WorkerRegistry } = await import('../lib/orchestration/worker-runtime.mjs');
+  const { resolveIntakeTenantId, INTAKE_PROJECT_ENV_KEY } = await import('../lib/intake/queue.mjs');
+  const sql = createSqlClient(process.env);
+  const project = process.env[INTAKE_PROJECT_ENV_KEY] || path.basename(path.resolve(process.cwd())) || 'construct';
+  const tenantId = resolveIntakeTenantId(process.env);
+
+  if (!sql) {
+    const payload = { status: 'unavailable', reason: 'postgres-unavailable', workers: [] };
+    if (wantsJson) { println(JSON.stringify(payload, null, 2)); return; }
+    println('Workers unavailable: DATABASE_URL or CONSTRUCT_DATABASE_URL is not configured.');
+    return;
+  }
+
+  try {
+    const registry = new WorkerRegistry({ sql, project, tenantId });
+    const workers = await registry.list();
+    const payload = { status: 'available', project, tenantId, workers };
+    if (wantsJson) { println(JSON.stringify(payload, null, 2)); return; }
+    if (!workers.length) {
+      println(`No workers registered for ${project}/${tenantId}.`);
+      return;
+    }
+    for (const worker of workers) {
+      println(`${worker.workerId}  ${worker.status}  heartbeat=${worker.heartbeatAt || 'never'}  ttl=${worker.ttlSeconds}s`);
+    }
+  } finally {
+    await closeSqlClient(sql);
+  }
 }
 
 async function cmdSync(args) {
@@ -343,6 +408,20 @@ async function cmdSync(args) {
     } catch (err) {
       opLog.event('reconcile-error', { message: err.message });
     }
+  }
+
+  // Advisory only: workflow-defs.mjs (LMCP-D2) can only drift from the
+  // manifests via a source regression, which release:check's --check run
+  // treats as a hard failure. Sync surfaces it early without blocking.
+
+  try {
+    const driftStatus = runNodeScript(path.join(ROOT_DIR, 'scripts', 'check-workflow-defs-drift.mjs'), ['--check'], {}, { exitOnError: false });
+    if (driftStatus !== 0) {
+      errorln('workflow-defs.mjs drift detected — run: npm run workflow-defs:check');
+    }
+    opLog.event('workflow-defs-check', { status: driftStatus });
+  } catch (err) {
+    opLog.event('workflow-defs-check-error', { message: err.message });
   }
 
   if (args.includes('--no-docs')) {
@@ -521,6 +600,17 @@ async function cmdDoctor() {
   add('specialists/org exists', fs.existsSync(path.join(ROOT_DIR, 'specialists', 'org')));
   add('sync-specialists.mjs exists', fs.existsSync(path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs')));
 
+  // Extension manifests check
+  try {
+    const extManifestsDir = path.join(ROOT_DIR, 'lib', 'extensions', 'manifests');
+    const extManifestFiles = fs.existsSync(extManifestsDir)
+      ? fs.readdirSync(extManifestsDir).filter((f) => f.endsWith('.manifest.json'))
+      : [];
+    add(`Extension manifests: ${extManifestFiles.length} loaded`, extManifestFiles.length > 0);
+  } catch {
+    add('Extension manifests: check failed', false);
+  }
+
   // Project .gitignore must cover .cx/. Auto-fix via --fix-gitignore.
   // Only checks when cwd looks like a Construct project (has .cx/ or
   // .construct/); non-project cwds get no warning.
@@ -659,6 +749,31 @@ async function cmdDoctor() {
     );
   }
 
+  // Legacy in-project heavy state (ADR-0066): runtime/traces/lancedb now
+  // resolve through the machine-scoped state root, so a project that still
+  // carries these directories is holding pre-refit state at the old
+  // project-local path. No auto-fix — the ADR calls for manual deletion, not
+  // a migration shim, since the durable copy already lives at the state root.
+
+  if (isProject) {
+    const legacyHeavyDirs = [
+      { rel: path.join('.cx', 'runtime'), label: '.cx/runtime' },
+      { rel: path.join('.cx', 'traces'), label: '.cx/traces' },
+      { rel: path.join('.cx', 'lancedb'), label: '.cx/lancedb' },
+    ]
+      .map((d) => ({ ...d, full: path.join(cwd, d.rel) }))
+      .filter((d) => fs.existsSync(d.full) && fs.readdirSync(d.full).length > 0);
+
+    add(
+      legacyHeavyDirs.length === 0
+        ? 'No legacy in-project heavy state (runtime/traces/lancedb)'
+        : `Legacy in-project heavy state found: ${legacyHeavyDirs.map((d) => d.label).join(', ')} — `
+          + 'durable state now lives at ~/.construct/projects/<key>/ (ADR-0066); delete the old directories manually to reclaim disk',
+      true,
+      legacyHeavyDirs.length !== 0,
+    );
+  }
+
   // Mirror model tier overrides stranded in the pre-XDG legacy config forward
   // before resolving tiers, so an install upgraded across the XDG move reports
   // configured without a manual copy. Applied to process.env too so the check
@@ -688,7 +803,7 @@ async function cmdDoctor() {
   try {
     const { resolveModelTiers } = await import('../lib/model-registry.mjs');
     const resolved = resolveModelTiers({ env: process.env });
-    if (resolved.complete && !resolved.errors) {
+    if (resolved.complete) {
       add('Models — all tiers configured', true);
     } else if (resolved.configured === 0) {
       add('Models — no tier configured (run `construct models --apply`)', false, true);
@@ -702,8 +817,79 @@ async function cmdDoctor() {
     add(`Models — check failed: ${err.message}`, false, true);
   }
 
+  // Worker-backend and web-capability visibility (construct-1yhp.2,
+  // construct-1yhp.8): reuse buildOrchestrationReadiness — the same
+  // resolution orchestration_run itself calls — so doctor can never
+  // advertise a backend/web mode that diverges from what a run would
+  // actually get. Both lines are advisory only; the resolved values never
+  // fail the gate.
+  try {
+    const { buildOrchestrationReadiness } = await import('../lib/orchestration/readiness.mjs');
+    const orchReadiness = buildOrchestrationReadiness({}, { env: process.env, cwd });
+    const backendNote = orchReadiness.workerBackend === 'inline'
+      ? 'inline (prepare-only — no specialist LLM reasoning runs; set orchestration.workerBackend=provider for real execution)'
+      : orchReadiness.workerBackend;
+    add(`Worker backend: ${backendNote}`, true, true);
+
+    const webNote = orchReadiness.webMode === 'unavailable'
+      ? 'unavailable (set WEB_SEARCH_URL for governed mode, or CONSTRUCT_ORCHESTRATION_WEB_DELEGATE=1 to delegate to a tool-capable host)'
+      : orchReadiness.webMode;
+    add(`Web capability: ${webNote}`, true, true);
+  } catch (err) {
+    add(`Worker backend / web capability check failed: ${err.message}`, false, true);
+  }
+
+  // Provider worker reliability settings (construct-5wkl): the effective
+  // per-call timeout and retry policy are resolved the same way the worker
+  // itself resolves them (resolveNonNegativeSetting over CONSTRUCT_PROVIDER_*),
+  // so this can never drift from what a real provider-backed run applies, and
+  // a test-scale or otherwise unintended override is never invisible. Advisory only.
+  try {
+    const { resolveNonNegativeSetting } = await import('../lib/env-config.mjs');
+    const { PROVIDER_TIMEOUT_DEFAULT_MS } = await import('../lib/orchestration/worker.mjs');
+    const timeoutMs = resolveNonNegativeSetting(process.env, 'CONSTRUCT_PROVIDER_TIMEOUT_MS', PROVIDER_TIMEOUT_DEFAULT_MS);
+    const maxAttempts = resolveNonNegativeSetting(process.env, 'CONSTRUCT_PROVIDER_MAX_ATTEMPTS', 3);
+    const retryBaseMs = resolveNonNegativeSetting(process.env, 'CONSTRUCT_PROVIDER_RETRY_BASE_MS', 250);
+    add(`Provider timeout: ${timeoutMs}ms · retry attempts: ${maxAttempts} (base backoff ${retryBaseMs}ms)`, true, true);
+  } catch (err) {
+    add(`Provider reliability settings check failed: ${err.message}`, false, true);
+  }
+
+
+  // Opt-in deep credential check (construct-1yhp.5). Default doctor stays
+  // presence-first (construct-trxz: a default-on op:// probe would fight the
+  // prompt-storm mitigation) — `--probe-providers` performs the real network
+  // auth probe only for providers already presence-configured.
+  if (args.includes('--probe-providers')) {
+    try {
+      const { getProviderModelCatalog } = await import('../lib/model-router.mjs');
+      const { probeProviderConnection } = await import('../lib/providers/connection-probe.mjs');
+      const { providers } = getProviderModelCatalog({ env: process.env });
+      const probeable = providers.filter((p) => p.configured && ['openrouter', 'anthropic', 'openai'].includes(p.id));
+      if (probeable.length === 0) {
+        add('Provider auth probe — no presence-configured openrouter/anthropic/openai provider to probe', true, true);
+      }
+      for (const p of probeable) {
+        const result = await probeProviderConnection(p.id, { env: process.env, cwd: process.cwd() });
+        if (result.ok) {
+          add(`Provider auth probe — ${p.id}: auth-verified (SERVING)`, true, true);
+        } else if (result.code === 'auth_error') {
+          add(`Provider auth probe — ${p.id}: ${result.status || '401/403'} (NOT_SERVING) — rotate or re-authenticate the key`, false, true);
+        } else if (result.code === 'missing_key') {
+          add(`Provider auth probe — ${p.id}: credential did not materialize (op:// ref unresolved) — check the ref or run \`op signin\``, false, true);
+        } else {
+          add(`Provider auth probe — ${p.id}: ${result.code}${result.status ? ` (${result.status})` : ''} (unverified)`, false, true);
+        }
+      }
+    } catch (err) {
+      add(`Provider auth probe failed: ${err.message}`, false, true);
+    }
+  }
+
+  const { resolveCommandOnPath } = await import('../lib/doctor/command-on-path.mjs');
+
   add('Node.js 20+ (recommended)', Number.parseInt(process.versions.node.split('.')[0], 10) >= 20);
-  add('npm available', true);
+  add('npm available', resolveCommandOnPath('npm').status === 0);
   const npmDevdir = process.env.npm_config_devdir ?? process.env.NPM_CONFIG_DEVDIR;
   if (npmDevdir) {
     add(
@@ -712,7 +898,7 @@ async function cmdDoctor() {
       true,
     );
   }
-  const constructOnPath = spawnSync('zsh', ['-lc', 'command -v construct'], { encoding: 'utf8', env: process.env });
+  const constructOnPath = resolveCommandOnPath('construct');
   const constructPath = constructOnPath.status === 0 ? constructOnPath.stdout.trim() : '';
   const constructVersion = constructPath
     ? spawnSync(constructPath, ['version'], { encoding: 'utf8', env: process.env })
@@ -763,16 +949,53 @@ async function cmdDoctor() {
     // Absence is not a doctor finding — VS Code adapter support hasn't landed
     // yet, so "create one or wait for support" isn't actionable. The line is
     // suppressed entirely when missing; doctor surfaces facts, not roadmap.
-    const vscodeSettingsOk = vscodeSettingsPaths.some((candidate) => fs.existsSync(candidate));
+    const vscodeSettingsPath = vscodeSettingsPaths.find((candidate) => fs.existsSync(candidate)) ?? null;
+    const vscodeSettingsOk = Boolean(vscodeSettingsPath);
     if (vscodeSettingsOk) add('VS Code settings file', true, true);
+
+    // classifyHostReadiness distinguishes the discrete host-config states
+    // (missing_config/stale_path/jsonc_unpatched/wrong_key/disabled/healthy)
+    // instead of collapsing readiness to settings.json presence above — only
+    // meaningful once VS Code has a settings file or a project mcp.json to read.
+    const vscodeProjectMcpPath = path.join(process.cwd(), '.vscode', 'mcp.json');
+    const vscodeMcpPath = fs.existsSync(vscodeProjectMcpPath) ? vscodeProjectMcpPath : null;
+    if (vscodeSettingsPath || vscodeMcpPath) {
+      const { classifyHostReadiness, HOST_READINESS_NEXT_STEPS } = await import('../lib/host/readiness.mjs');
+      const reasonCode = classifyHostReadiness({
+        host: 'vscode',
+        settingsPath: vscodeSettingsPath,
+        mcpPath: vscodeMcpPath,
+        root: ROOT_DIR,
+      });
+      const nextStep = HOST_READINESS_NEXT_STEPS[reasonCode];
+      add(
+        reasonCode === 'healthy'
+          ? 'VS Code MCP host readiness: healthy'
+          : `VS Code MCP host readiness: ${reasonCode} — ${nextStep}`,
+        reasonCode === 'healthy',
+        true,
+      );
+    }
   }
   add('User config ready', fs.existsSync(getUserEnvPath(HOME)) || fs.existsSync(configDir(HOME)), true);
   add('skills/ directory', fs.existsSync(path.join(ROOT_DIR, 'skills')));
   add('rules/common/', fs.existsSync(path.join(ROOT_DIR, 'rules', 'common')));
   add('specialists/prompts/ directory', fs.existsSync(path.join(ROOT_DIR, 'specialists', 'prompts')));
   add('Hybrid storage env keys documented', fs.existsSync(path.join(ROOT_DIR, '.env.example')));
-  fs.mkdirSync(path.join(doctorRoot(), 'performance-reviews'), { recursive: true });
-  add('performance-reviews/ ready', true);
+  const perfReviewsDir = path.join(doctorRoot(), 'performance-reviews');
+  fs.mkdirSync(perfReviewsDir, { recursive: true });
+  add('performance-reviews/ ready', fs.existsSync(perfReviewsDir));
+
+  // Living-graph truth: doctor runs `graph validate` so workflow/manifest drift
+  // surfaces as a health check, not only via the standalone command (LMCP-C7).
+
+  try {
+    const { checkGraphValidateForDoctor } = await import('../lib/doctor/graph-validate.mjs');
+    const graphCheck = checkGraphValidateForDoctor({ rootDir: process.cwd() });
+    add(graphCheck.label, graphCheck.ok, graphCheck.warning);
+  } catch (err) {
+    add(`Graph validate check failed: ${err.message}`, false, true);
+  }
 
   // construct.config.json — optional today (config is permitted to be absent;
   // env vars + defaults still work). The check enforces that when the file
@@ -780,7 +1003,9 @@ async function cmdDoctor() {
   try {
     const projectCfg = loadProjectConfig(process.cwd(), process.env);
     if (projectCfg.source === 'invalid') {
-      add(`construct.config.json valid (${projectCfg.errors.length} error${projectCfg.errors.length === 1 ? '' : 's'} — run \`construct config validate\`)`, false, false);
+      const detail = projectCfg.errors[0] || 'unknown error';
+      const more = projectCfg.errors.length > 1 ? ` (+${projectCfg.errors.length - 1} more)` : '';
+      add(`construct.config.json invalid: ${detail}${more} — defaults applied; run \`construct config validate\``, false, false);
     } else if (projectCfg.source === 'file') {
       add(`construct.config.json valid`, true, true);
     } else {
@@ -879,7 +1104,7 @@ async function cmdDoctor() {
       return !fs.existsSync(path.join(ROOT_DIR, s.promptFile));
     });
     add('All specialist promptFiles resolve', brokenPromptFiles.length === 0);
-    const headhuntClassifierAgents = ['cx-docs-keeper', 'cx-researcher', 'cx-architect', 'cx-security', 'cx-engineer'];
+    const headhuntClassifierAgents = ['cx-operations', 'cx-researcher', 'cx-architect', 'cx-security', 'cx-engineer'];
     const registryNames = new Set(Object.values(registry.specialists ?? {}).map((s) => `cx-${s.name}`));
     const classifierOrphans = headhuntClassifierAgents.filter((n) => !registryNames.has(n));
     add('Headhunt classifier agents exist in registry', classifierOrphans.length === 0);
@@ -913,10 +1138,33 @@ async function cmdDoctor() {
     const researchLintResults = lintResearchRepo({ rootDir: process.cwd() });
     add('Research artifacts meet minimum evidence structure', researchLintResults.every((entry) => entry.errors.length === 0), true);
 
-    const { VectorClient } = await import('../lib/storage/vector-client.mjs');
-    const vectorClient = new VectorClient({ env: process.env });
-    const vectorOk = await vectorClient.isHealthy();
-    add('Vector backend (LanceDB) reachable', vectorOk);
+    // isHealthy() connects to LanceDB, which creates the index directory on
+    // first touch — checking existence first keeps doctor from provisioning
+    // the vector store on a project that has never run semantic search
+    // (construct-rf26.17: lazy provisioning, not "on every project touch").
+    const { resolveStateDir } = await import('../lib/state-root.mjs');
+    const lancedbPath = process.env.CONSTRUCT_LANCEDB_PATH || resolveStateDir(process.cwd(), 'lancedb', { ensureDir: false });
+    if (fs.existsSync(lancedbPath)) {
+      const { VectorClient } = await import('../lib/storage/vector-client.mjs');
+      const vectorClient = new VectorClient({ env: process.env });
+      const vectorOk = await vectorClient.isHealthy();
+      add('Vector backend (LanceDB) reachable', vectorOk);
+
+      const { purgeExpiredData } = await import('../lib/storage/admin.mjs');
+      const purge = await purgeExpiredData(process.cwd(), { env: process.env });
+      if (purge.status === 'ok') {
+        const sizeMb = (purge.sizeBytes / 1024 / 1024).toFixed(1);
+        const oldest = purge.oldestRetainedAt ? new Date(purge.oldestRetainedAt).toISOString().slice(0, 10) : 'n/a';
+        add(
+          `Observations (vector index): ${sizeMb}MB, ${purge.remainingCount} row(s), oldest ${oldest}` +
+          (purge.evictedCount > 0 ? ` — evicted ${purge.evictedCount} past ${purge.maxAgeDays}d/${purge.maxRows} rows` : ''),
+          true,
+          true,
+        );
+      }
+    } else {
+      add('Vector backend (LanceDB): not yet provisioned (lazy — first semantic-search use creates it)', true, true);
+    }
 
     const { regenerateDocs } = await import('../lib/auto-docs.mjs');
     const { changed: stale } = await regenerateDocs({ rootDir: ROOT_DIR, check: true });
@@ -947,6 +1195,34 @@ async function cmdDoctor() {
           ? `Git hooks unwired (core.hooksPath = '${value}', expected '.beads/hooks') — pre-commit policy gates inactive`
           : 'Git hooks unwired (core.hooksPath unset) — pre-commit policy gates inactive. Fix: git config core.hooksPath .beads/hooks';
       add(label, wired);
+    }
+
+    // Half-initialized Beads: .claude/settings.json references bd but .beads/ is
+    // absent or has no database file. A project set up before D3 (fail-closed Beads)
+    // fired the hooks without a tracker, so bd exits non-zero with no database to read.
+
+    try {
+      const projectSettingsPath = path.join(process.cwd(), '.claude', 'settings.json');
+      let hasHooksRef = false;
+      if (fs.existsSync(projectSettingsPath)) {
+        hasHooksRef = /\bbd\b/.test(fs.readFileSync(projectSettingsPath, 'utf8'));
+      }
+      if (hasHooksRef) {
+        const beadsDir = path.join(process.cwd(), '.beads');
+        const beadsHasDb = fs.existsSync(beadsDir) && (
+          fs.existsSync(path.join(beadsDir, 'issues.jsonl')) ||
+          fs.existsSync(path.join(beadsDir, 'metadata.json'))
+        );
+        add(
+          beadsHasDb
+            ? 'Beads tracker initialized'
+            : 'Beads tracker not initialized (hooks reference bd but .beads/ missing — run: bd init)',
+          beadsHasDb,
+          false,
+        );
+      }
+    } catch (err) {
+      add(`Beads half-staged check failed: ${err.message}`, false, true);
     }
 
     const pluginRegistry = loadPluginRegistry({ cwd: process.cwd(), homeDir: HOME, rootDir: ROOT_DIR, env: process.env });
@@ -1121,16 +1397,17 @@ async function cmdDoctor() {
       add('No recent hook failures (24h)', false, true);
     }
 
-    // Agent contracts integrity
+    // Agent contracts integrity. A contract is broken if it lacks id,
+    // producer, or consumer, or declares neither postconditions nor output —
+    // mirrors the predicate in tests/doctor/contract-validation.test.mjs.
     const { getAllContracts } = await import('../lib/specialist-contracts.mjs');
     const contracts = getAllContracts();
     add('Agent contracts loaded', contracts.length > 0);
     if (contracts.length > 0) {
-      const missingTerminals = contracts.filter((c) =>
-        c.consumer && !c.consumer.startsWith('cx-') && c.consumer !== 'construct' && c.consumer !== '*'
-          ? false : false,
+      const brokenContracts = contracts.filter((c) =>
+        !c.id || !c.producer || !c.consumer || (!c.postconditions && !c.output),
       );
-      add('Agent contract schema intact', missingTerminals.length === 0);
+      add('Agent contract schema intact', brokenContracts.length === 0);
     }
 
     // Skills profile — if present, check staleness against current tags
@@ -1153,6 +1430,67 @@ async function cmdDoctor() {
     }
   } catch {
     add('Registry integrity check', false);
+  }
+
+  // Deployment-mode capability check: surfaces stub/not-implemented capabilities
+  // for team/enterprise modes so users know which advertised features are unbuilt.
+  // Solo mode is fully-implemented; this check is a no-op there.
+  //
+  // Enterprise mode additionally applies ADR-0057's status contract: a
+  // FAIL-CLOSED capability (tenant-isolation, isolated-workers) is architecturally
+  // non-trivial and "must not be a warning; it must be a hard error" surfaced
+  // "at startup (during construct doctor)". A LATER capability (rbac,
+  // signed-mcp-allowlists) has no runtime effect and must not read as a doctor
+  // failure at all — it is reported informationally only.
+
+  try {
+    const { getModeCapabilityStatus, getUnsupportedCapabilities, getCapabilities, categorizeEnterpriseCapability } =
+      await import('../lib/mode-capabilities.mjs');
+    const currentMode = getDeploymentMode(process.env);
+    const capStatus = getModeCapabilityStatus(currentMode);
+    if (currentMode === 'enterprise') {
+      const allCaps = getCapabilities('enterprise');
+      const failClosed = allCaps.filter((cap) => categorizeEnterpriseCapability(cap) === 'fail-closed');
+      const later = allCaps.filter((cap) => categorizeEnterpriseCapability(cap) === 'later');
+      if (failClosed.length > 0) {
+        add(
+          `Mode capabilities (enterprise): ${failClosed.length} fail-closed, not yet implemented (${failClosed.map((c) => c.label).join(', ')}) — ADR-0057 refuses these hard, not just a warning`,
+          false,
+          false,
+        );
+      } else {
+        add('Mode capabilities (enterprise): no fail-closed gaps', true, true);
+      }
+      if (later.length > 0) {
+        add(`Mode capabilities (enterprise): ${later.length} deferred to a later wave, no runtime effect (${later.map((c) => c.label).join(', ')})`, true, true);
+      }
+    } else if (capStatus !== 'fully-implemented') {
+      const unsupported = getUnsupportedCapabilities(currentMode);
+      add(
+        `Mode capabilities (${currentMode}): ${unsupported.length} stub/not-implemented (${unsupported.map(c => c.label).join(', ')})`,
+        false,
+        true,
+      );
+    } else {
+      add(`Mode capabilities (${currentMode})`, true, true);
+    }
+  } catch (err) {
+    add(`Mode capabilities check failed: ${err.message}`, false, true);
+  }
+
+  try {
+    const currentMode = getDeploymentMode(process.env);
+    if (currentMode === 'team' || currentMode === 'enterprise') {
+      const { summarizeTeamHealth } = await import('../lib/team/health.mjs');
+      const teamHealth = await summarizeTeamHealth({ rootDir: process.cwd(), env: process.env });
+      add(`Team queue/worker health: ${teamHealth.summary}`, teamHealth.status !== 'unavailable');
+      if (teamHealth.status !== 'unavailable') {
+        add(`Team queue DLQ depth: ${teamHealth.deadLetter}`, teamHealth.deadLetter === 0, teamHealth.deadLetter > 0);
+        add(`Team stale workers: ${teamHealth.staleWorkers}`, teamHealth.staleWorkers === 0, teamHealth.staleWorkers > 0);
+      }
+    }
+  } catch (err) {
+    add(`Team health check failed: ${err.message}`, false);
   }
 
   // Reconciliation drift (ADR-0027). Any task reporting needsRepair is surfaced
@@ -1347,7 +1685,7 @@ async function cmdDev(args = []) {
     process.exit(1);
   }
 
-  const { results, recovery } = await startServices({ rootDir: ROOT_DIR, homeDir: HOME, selected });
+  const { results, recovery } = await startServices({ rootDir: PROJECT_ROOT, homeDir: HOME, selected });
   opLog.event('services', { results: results.map((r) => ({ name: r.name, status: r.status })) });
   for (const svc of results) {
     const label = svc.url ? `${svc.name} → ${svc.url}` : svc.name;
@@ -1388,14 +1726,14 @@ async function cmdDev(args = []) {
   const { existsSync } = await import('node:fs');
   const { join } = await import('node:path');
   
-  const embedConfigExists = existsSync(join(ROOT_DIR, 'embed.yaml'));
-  const config = loadProjectConfig(ROOT_DIR);
+  const embedConfigExists = existsSync(join(PROJECT_ROOT, 'embed.yaml'));
+  const config = loadProjectConfig(PROJECT_ROOT);
   const autoEmbed = config.config?.autoEmbed;
-  
+
   if (embedConfigExists && autoEmbed) {
     try {
       const { runEmbedCli } = await import('../lib/embed/cli.mjs');
-      await runEmbedCli(['start'], { rootDir: ROOT_DIR });
+      await runEmbedCli(['start'], { rootDir: PROJECT_ROOT });
       opLog.event('embed', { status: 'started' });
     } catch (err) {
       warn(`embed start failed: ${err.message} — check ~/.cx/runtime/embed-daemon.log`);
@@ -1748,18 +2086,38 @@ async function cmdPrune(args) {
   const dryRun = args.includes('--dry-run');
   const { planPrune, executePrune, measureUsage } = await import('../lib/resources/budget.mjs');
   const actions = planPrune(process.cwd(), process.env);
-  if (actions.length === 0) { info('Nothing to prune. .cx/ is within all configured budgets.'); return; }
-  const byCat = {};
-  let totalBytes = 0;
-  for (const a of actions) {
-    byCat[a.category] = (byCat[a.category] || 0) + 1;
-    totalBytes += a.bytes || 0;
+  let pruned = false;
+  if (actions.length > 0) {
+    pruned = true;
+    const byCat = {};
+    let totalBytes = 0;
+    for (const a of actions) {
+      byCat[a.category] = (byCat[a.category] || 0) + 1;
+      totalBytes += a.bytes || 0;
+    }
+    println(`Plan: prune ${actions.length} file(s), free ${Math.round(totalBytes / 1024)}KB`);
+    for (const [cat, count] of Object.entries(byCat)) println(`  ${cat}: ${count} file(s)`);
+    if (!dryRun) {
+      const result = executePrune(actions);
+      info(`Pruned ${result.removed.length} file(s), freed ${Math.round(result.bytesFreed / 1024)}KB.`);
+    }
   }
-  println(`Plan: prune ${actions.length} file(s), free ${Math.round(totalBytes / 1024)}KB`);
-  for (const [cat, count] of Object.entries(byCat)) println(`  ${cat}: ${count} file(s)`);
+
+  // Vector-indexed observations live in LanceDB, not flat files, so they
+  // fall outside planPrune/executePrune's file-list model — purgeExpiredData
+  // is a no-op when the index was never provisioned, matching the lazy
+  // vector-index contract (construct-rf26.17).
+  if (!dryRun) {
+    const { purgeExpiredData } = await import('../lib/storage/admin.mjs');
+    const purge = await purgeExpiredData(process.cwd(), { env: process.env });
+    if (purge.status === 'ok' && purge.evictedCount > 0) {
+      pruned = true;
+      info(`Evicted ${purge.evictedCount} observation(s) past ${purge.maxAgeDays}d/${purge.maxRows}-row cap (${purge.remainingCount} retained).`);
+    }
+  }
+
+  if (!pruned) { info('Nothing to prune. .cx/ is within all configured budgets.'); return; }
   if (dryRun) { info('--dry-run: no files removed.'); return; }
-  const result = executePrune(actions);
-  info(`Pruned ${result.removed.length} file(s), freed ${Math.round(result.bytesFreed / 1024)}KB.`);
   const after = measureUsage(process.cwd(), process.env);
   println(`.cx/ now at ${Math.round(after.totalCxBytes / 1024 / 1024)}MB / ${Math.round(after.totalCxCap / 1024 / 1024)}MB cap (${Math.round(after.totalCxUsageRatio * 100)}%).`);
 }
@@ -2223,7 +2581,7 @@ async function cmdIntake(args) {
   const queue = createIntakeQueue(cwd, process.env);
 
   if (sub === 'list') {
-    const pending = queue.listPending();
+    const pending = await queue.listPending();
     const rows = pending.map((p) => {
       const t = p.triage || {};
       return [p.id, t.intakeType || 'unknown', t.rdStage || 'unknown', t.primaryOwner || '—', t.recommendedAction || '—'];
@@ -2235,7 +2593,7 @@ async function cmdIntake(args) {
   const id = args[1];
   if (sub === 'show') {
     if (!id) { errorln('Usage: construct intake show <id>'); process.exit(1); }
-    const entry = queue.read(id);
+    const entry = await queue.read(id);
     if (!entry) { errorln(`No ${rebrand.signalNoun} with id: ${id}`); process.exit(1); }
     const t = entry.triage || {};
     println(`${rebrand.signalNoun.charAt(0).toUpperCase() + rebrand.signalNoun.slice(1)} ${entry.id}`);
@@ -2349,7 +2707,7 @@ async function cmdIntake(args) {
 
     let stamped = null;
     if (outputPath) {
-      const packet = queue.read(id);
+      const packet = await queue.read(id);
       if (!packet) {
         errorln(`No intake packet found: ${id}`);
         process.exit(1);
@@ -2375,7 +2733,7 @@ async function cmdIntake(args) {
       || (outputPath ? `output: ${outputPath}` : '');
 
     try {
-      const r = queue.markProcessed(id, { processedBy: 'construct-intake-cli', notes });
+      const r = await queue.markProcessed(id, { processedBy: 'construct-intake-cli', notes });
       if (stamped) {
         info(`Marked ${r.id} processed. Stamped ${outputPath} with intake_id=${id} (confidence=${stamped.intake_confidence ?? 'n/a'}).`);
       } else if (noOutputOutcome) {
@@ -2394,7 +2752,7 @@ async function cmdIntake(args) {
     if (!id) { errorln('Usage: construct intake skip <id> [--reason=…]'); process.exit(1); }
     const flags = parseKvFlags(args.slice(2), ['reason']);
     try {
-      const r = queue.markSkipped(id, { skippedBy: 'construct-intake-cli', reason: flags.reason || '' });
+      const r = await queue.markSkipped(id, { skippedBy: 'construct-intake-cli', reason: flags.reason || '' });
       info(`Marked ${r.id} skipped.`);
     } catch (err) {
       errorln(err.message || 'mark skipped failed');
@@ -2406,7 +2764,7 @@ async function cmdIntake(args) {
   if (sub === 'reopen') {
     if (!id) { errorln('Usage: construct intake reopen <id>'); process.exit(1); }
     try {
-      const r = queue.reopen(id);
+      const r = await queue.reopen(id);
       info(`Reopened ${r.id} (from ${r.from}).`);
     } catch (err) {
       errorln(err.message || 'reopen failed');
@@ -3095,7 +3453,7 @@ async function cmdIntakeIntegrate(id, args, cwd) {
 
   const { createIntakeQueue } = await import('../lib/intake/queue.mjs');
   const queue = createIntakeQueue(cwd, process.env);
-  const entry = queue.read(id);
+  const entry = await queue.read(id);
   if (!entry) { errorln(`No intake packet with id: ${id}`); process.exit(1); }
 
   let result;
@@ -3471,7 +3829,7 @@ async function cmdGraph(args) {
     if (!intakeId) { errorln('Usage: construct graph from-intake <intake-id>'); process.exit(1); }
     const { createIntakeQueue } = await import('../lib/intake/queue.mjs');
     const queue = createIntakeQueue(cwd, process.env);
-    const entry = queue.read(intakeId);
+    const entry = await queue.read(intakeId);
     if (!entry) { errorln(`No intake packet: ${intakeId}`); process.exit(1); }
     const graph = generateTaskGraphFromTriage({
       triage: entry.triage,
@@ -3506,6 +3864,76 @@ async function cmdGraph(args) {
   }
 
   errorln(`Unknown graph subcommand: ${sub}. Available: list, show, from-intake, status`);
+  process.exit(1);
+}
+
+function printFlowHelp() {
+  println('Construct flow — resume a checkpointed flow-engine run (ADR-0067).');
+  println('');
+  println('Usage:');
+  println('  construct flow resume <run-id> --flow=<path> [--state=<json>]');
+  println('                                                  Resume <run-id> from its last checkpoint (or start it if none');
+  println('                                                  exists yet) and drive it to completion. <path> loads a JS');
+  println('                                                  flow module (default export from defineFlow). --state supplies');
+  println('                                                  the initial state as a JSON string, used only when starting fresh.');
+  println('  construct flow status <run-id>                  Print a checkpoint\'s persisted status without driving it.');
+}
+
+async function cmdFlow(args) {
+  const sub = args[0];
+  if (!sub || sub === '--help' || sub === '-h') { printFlowHelp(); return; }
+
+  const { loadCheckpoint, runCheckpointed } = await import('../lib/flows/checkpoint.mjs');
+  const cwd = process.cwd();
+
+  if (sub === 'status') {
+    const runId = args[1];
+    if (!runId) { errorln('Usage: construct flow status <run-id>'); process.exit(1); }
+    const checkpoint = loadCheckpoint(cwd, runId);
+    if (!checkpoint) { errorln(`No checkpoint for run "${runId}".`); process.exit(1); }
+    println(`Run: ${checkpoint.runId}`);
+    println(`Flow: ${checkpoint.flowId ?? '(unnamed)'}`);
+    println(`Updated: ${checkpoint.updatedAt}`);
+    println(`Status: ${checkpoint.run.status}`);
+    println(`Completed steps: ${checkpoint.run.completed.join(', ') || '(none)'}`);
+    println(`Frontier: ${checkpoint.run.frontier.join(', ') || '(empty)'}`);
+    return;
+  }
+
+  if (sub === 'resume') {
+    const runId = args[1];
+    const flags = parseKvFlags(args.slice(2), ['flow', 'state']);
+    if (!runId || !flags.flow) { errorln('Usage: construct flow resume <run-id> --flow=<path> [--state=<json>]'); process.exit(1); }
+    const { loadFlow } = await import('../lib/flows/define.mjs');
+    let flow;
+    try {
+      flow = await loadFlow(path.resolve(cwd, flags.flow));
+    } catch (err) {
+      errorln(`construct flow resume: failed to load flow "${flags.flow}": ${err.message}`);
+      process.exit(1);
+    }
+    let initialState = {};
+    if (flags.state) {
+      try {
+        initialState = JSON.parse(flags.state);
+      } catch (err) {
+        errorln(`construct flow resume: --state is not valid JSON: ${err.message}`);
+        process.exit(1);
+      }
+    }
+    const existed = Boolean(loadCheckpoint(cwd, runId));
+    const run = await runCheckpointed(cwd, runId, flow, initialState);
+    info(`${existed ? 'Resumed' : 'Started'} run ${runId} (flow "${flow.id ?? '(unnamed)'}")`);
+    println(`Status: ${run.status}`);
+    println(`Steps completed (cumulative): ${run.history.length}`);
+    if (run.status === 'error' || run.status === 'budget-exhausted') {
+      println(`Error: ${JSON.stringify(run.error)}`);
+      process.exit(1);
+    }
+    return;
+  }
+
+  errorln(`Unknown flow subcommand: ${sub}. Available: resume, status`);
   process.exit(1);
 }
 
@@ -3695,6 +4123,7 @@ async function cmdOrchestrate(args) {
     const timeoutMs = Number(eqFlag('--timeout-ms') || 8000);
     let observedTools = splitCsv(eqFlag('--observed-tools'));
     let reachableTools = splitCsv(eqFlag('--reachable-tools'));
+    const callerSuppliedObservations = Boolean(observedTools || reachableTools);
     let probeError = null;
 
     if (!rest.includes('--no-probe') && !observedTools && !reachableTools) {
@@ -3719,21 +4148,52 @@ async function cmdOrchestrate(args) {
       reachableTools,
       requiredTools: splitCsv(eqFlag('--required-tools')),
       clientContractVersion: eqFlag('--client-contract-version'),
-      observationScope: eqFlag('--observation-scope') || (observedTools || reachableTools ? 'host-session' : 'local-config'),
+      observationScope: eqFlag('--observation-scope') || (callerSuppliedObservations ? 'host-session' : (observedTools || reachableTools ? 'local-probe' : 'local-config')),
       probeError,
       authRequired: rest.includes('--auth-required'),
     }, { env: process.env, cwd: process.cwd() });
     let eventResult = null;
     try { eventResult = recordOrchestrationReadinessEvent(readiness, { homeDir: HOME }); } catch { /* telemetry must not break preflight */ }
 
+    // Opt-in deep credential check (construct-1yhp.5). Default preflight stays
+    // presence-first — `--deep` performs the real network auth probe, only for
+    // providers the presence-based catalog already marks configured.
+    let deepProbes = null;
+    if (rest.includes('--deep')) {
+      try {
+        const { getProviderModelCatalog } = await import('../lib/model-router.mjs');
+        const { probeProviderConnection } = await import('../lib/providers/connection-probe.mjs');
+        const { providers } = getProviderModelCatalog({ env: process.env });
+        const probeable = providers.filter((p) => p.configured && ['openrouter', 'anthropic', 'openai'].includes(p.id));
+        deepProbes = [];
+        for (const p of probeable) {
+          const result = await probeProviderConnection(p.id, { env: process.env, cwd: process.cwd() });
+          deepProbes.push({ provider: p.id, ...result });
+        }
+      } catch (err) {
+        deepProbes = { error: err.message };
+      }
+    }
+
     if (wantsJson) {
-      println(JSON.stringify({ ...readiness, eventPath: eventResult?.path ?? null }, null, 2));
+      println(JSON.stringify({ ...readiness, eventPath: eventResult?.path ?? null, deepProbes }, null, 2));
       process.exit(readiness.attached ? 0 : 1);
     }
 
     println(summarizeOrchestrationReadiness(readiness));
     println(`Reason: ${readiness.reasonCode}`);
     println(`Next: ${readiness.nextStep}`);
+    const modelLine = ['reasoning', 'standard', 'fast']
+      .map((tier) => `${tier}=${readiness.modelResolved?.[tier] ? 'resolved' : 'unresolved'}`)
+      .join(' ');
+    println(`Execution: workerBackend=${readiness.workerBackend} webMode=${readiness.webMode} credentialMaterializable=${readiness.credentialMaterializable} (${modelLine})`);
+    if (Array.isArray(deepProbes)) {
+      if (deepProbes.length === 0) println('Deep provider probe: no presence-configured openrouter/anthropic/openai provider to probe.');
+      for (const probe of deepProbes) {
+        if (probe.ok) println(`Deep provider probe — ${probe.provider}: auth-verified (SERVING)`);
+        else println(`Deep provider probe — ${probe.provider}: ${probe.code}${probe.status ? ` (${probe.status})` : ''} (unverified/failing)`);
+      }
+    }
     println(`Diagnostic id: ${readiness.diagnosticBundle?.diagnosticId}`);
     process.exit(readiness.attached ? 0 : 1);
   }
@@ -3751,6 +4211,10 @@ async function cmdOrchestrate(args) {
       if (sub === 'run') {
         const text = flag('--text') || positional.join(' ').trim();
         if (!text) { errorln('Usage: construct orchestrate run "<request>" --remote [--strategy S] [--worker-backend provider] [--json]'); process.exit(1); }
+        if (flag('--worker-backend') === 'host') {
+          errorln('--worker-backend=host requires an attached MCP host session to execute the materialized prompts and submit results back — the CLI (including --remote) has no such session. Use --worker-backend=inline or --worker-backend=provider, or invoke orchestration_run through an MCP host instead.');
+          process.exit(1);
+        }
         const res = await fetch(`${base}/api/orchestration/runs`, { method: 'POST', headers, body: JSON.stringify({ request: text, workflowType: flag('--workflow-type'), requestedStrategy: flag('--strategy') || 'auto', host: flag('--host'), hostModel: flag('--host-model'), hostProvider: flag('--host-provider'), workerBackend: flag('--worker-backend'), fileCount: Number(flag('--file-count') || 0), moduleCount: Number(flag('--module-count') || 0) }) });
         const env = await res.json();
         if (!res.ok) { errorln(`Daemon error (${res.status}): ${env.error || 'unknown'}`); process.exit(1); }
@@ -3759,6 +4223,7 @@ async function cmdOrchestrate(args) {
         return;
       }
       if (sub === 'status') {
+        const { shapeRun } = await import('../lib/mcp/tools/orchestration-run.mjs');
         const runId = positional[0];
         const path = runId ? `/api/orchestration/runs/${encodeURIComponent(runId)}` : '/api/orchestration/runs';
         const res = await fetch(`${base}${path}`, { headers });
@@ -3766,10 +4231,16 @@ async function cmdOrchestrate(args) {
         if (!res.ok) { errorln(`Daemon error (${res.status}): ${env.error || 'unknown'}`); process.exit(1); }
         if (wantsJson) { println(JSON.stringify(env.data, null, 2)); return; }
         if (runId) {
-          println(`Run ${env.data.runId} — ${env.data.status} · executionMode=${env.data.execution?.executionMode}`);
+          // AP5.4: a remote run payload is just as subject to the honest
+          // terminal-state taxonomy as a local one — never echo its raw status.
+          const shaped = shapeRun(env.data);
+          println(`Run ${env.data.runId} — ${shaped.status} · executionMode=${shaped.executionMode}${shaped.degraded ? ` · degraded: ${shaped.degradationReason}` : ''}`);
           for (const t of env.data.tasks || []) println(`  ${t.id} ${t.role} — ${t.status}${t.output ? ` (${t.output.length} chars)` : ''}`);
         } else {
-          for (const r of env.data.runs || []) println(`  ${r.runId} — ${r.status} · ${r.executionMode || ''} · ${r.createdAt}`);
+          for (const r of env.data.runs || []) {
+            const shaped = shapeRun(r);
+            println(`  ${r.runId} — ${shaped.status}${shaped.degraded ? ' (degraded)' : ''} · ${shaped.executionMode || r.executionMode || ''} · ${r.createdAt}`);
+          }
         }
         return;
       }
@@ -3781,9 +4252,21 @@ async function cmdOrchestrate(args) {
 
   if (sub === 'run') {
     const { runOrchestration, planRun, hostAdapterMetadata } = await import('../lib/orchestration/runtime.mjs');
+    const { shapeRun } = await import('../lib/mcp/tools/orchestration-run.mjs');
     const positional = rest.filter((a, i) => !a.startsWith('--') && !(i > 0 && rest[i - 1].startsWith('--') && !['--no-construct', '--no-execute', '--json'].includes(rest[i - 1])));
     const text = flag('--text') || positional.join(' ').trim();
     if (!text) { errorln('Usage: construct orchestrate run "<request>" [--workflow-type T] [--strategy orchestrated|prompt-only|auto] [--host H] [--host-model M] [--no-construct] [--no-execute] [--json]'); process.exit(1); }
+    const cliWorkerBackend = flag('--worker-backend');
+    // The host worker backend materializes prompts for an attached MCP host
+    // session to execute and submit back via orchestration_task_result — a
+    // bare CLI invocation has no such session on the other end, so a run
+    // planned this way would stand at 'awaiting-host' forever with nobody to
+    // submit results. Fail loud here instead of producing that silent
+    // abandoned run (LMCP host-execution).
+    if (cliWorkerBackend === 'host') {
+      errorln('--worker-backend=host requires an attached MCP host session to execute the materialized prompts and submit results back — the CLI has no such session. Use --worker-backend=inline (prepare only) or --worker-backend=provider (needs a provider key), or invoke orchestration_run through an MCP host instead.');
+      process.exit(1);
+    }
     const request = {
       request: text,
       workflowType: flag('--workflow-type'),
@@ -3792,14 +4275,25 @@ async function cmdOrchestrate(args) {
       host: flag('--host'),
       hostModel: flag('--host-model'),
       hostProvider: flag('--host-provider'),
-      workerBackend: flag('--worker-backend'),
+      workerBackend: cliWorkerBackend,
       fileCount: Number(flag('--file-count') || 0),
       moduleCount: Number(flag('--module-count') || 0),
     };
-    const run = rest.includes('--no-execute') ? await planRun(request, {}) : await runOrchestration(request, {});
+    // runOrchestration/executeRun resolve the worker backend from opts.workerBackend,
+    // not from request — the flag must reach opts explicitly or an override is silently
+    // dropped (construct-1xlz).
+
+    const runOpts = cliWorkerBackend ? { workerBackend: cliWorkerBackend } : {};
+    const run = rest.includes('--no-execute') ? await planRun(request, runOpts) : await runOrchestration(request, runOpts);
     if (wantsJson) { println(JSON.stringify(hostAdapterMetadata(run), null, 2)); return; }
-    println(`Run ${run.runId} — ${run.status} · executionMode=${run.execution.executionMode} · backend=${run.workerBackend} · hostRole=${run.hostRole}`);
-    if (run.execution.degraded) println(`  degraded: ${run.execution.degradationReason}`);
+
+    // AP5.1/AP5.4: the CLI must never print the raw persisted status — a
+    // pre-taxonomy run record can still carry a bare 'completed' despite being
+    // degraded or prepare-only, so route through the same honest read-model
+    // (shapeRun) the MCP orchestration_status tool uses.
+    const shaped = shapeRun(run);
+    println(`Run ${run.runId} — ${shaped.status} · executionMode=${shaped.executionMode} · backend=${run.workerBackend} · hostRole=${run.hostRole}`);
+    if (shaped.degraded) println(`  degraded: ${shaped.degradationReason}`);
     if (run.tasks.length) println(`  tasks: ${run.tasks.map((t) => `${t.role}(${t.status})`).join(' → ')}`);
     else println('  tasks: none (no Construct-owned specialist sequence for this execution mode)');
     for (const t of run.tasks) {
@@ -3810,12 +4304,14 @@ async function cmdOrchestrate(args) {
 
   if (sub === 'status') {
     const { getRun, getRuns, hostAdapterMetadata } = await import('../lib/orchestration/runtime.mjs');
+    const { shapeRun } = await import('../lib/mcp/tools/orchestration-run.mjs');
     const runId = rest.find((a) => !a.startsWith('--'));
     if (runId) {
       const run = await getRun(process.cwd(), runId);
       if (!run) { errorln(`Run not found: ${runId}`); process.exit(1); }
       if (wantsJson) { println(JSON.stringify(hostAdapterMetadata(run), null, 2)); return; }
-      println(`Run ${run.runId} — ${run.status} · executionMode=${run.execution.executionMode}`);
+      const shaped = shapeRun(run);
+      println(`Run ${run.runId} — ${shaped.status} · executionMode=${shaped.executionMode}${shaped.degraded ? ` · degraded: ${shaped.degradationReason}` : ''}`);
       for (const t of run.tasks) {
         println(`  ${t.id} ${t.role} — ${t.status}`);
         if (t.reasoning) println(`    reasoning: ${t.reasoning.length > 300 ? `${t.reasoning.slice(0, 300)}…` : t.reasoning}`);
@@ -3825,7 +4321,10 @@ async function cmdOrchestrate(args) {
     const runs = await getRuns(process.cwd());
     if (wantsJson) { println(JSON.stringify(runs, null, 2)); return; }
     if (!runs.length) { println('No orchestration runs recorded.'); return; }
-    for (const r of runs) println(`  ${r.runId} — ${r.status} · ${r.executionMode || ''} · ${r.createdAt}`);
+    for (const r of runs) {
+      const shaped = shapeRun(r);
+      println(`  ${r.runId} — ${shaped.status}${shaped.degraded ? ' (degraded)' : ''} · ${shaped.executionMode || r.executionMode || ''} · ${r.createdAt}`);
+    }
     return;
   }
 
@@ -3833,6 +4332,85 @@ async function cmdOrchestrate(args) {
   println('  run "<request>" [--workflow-type T] [--strategy S] [--host H] [--host-model M] [--no-construct] [--no-execute] [--json]');
   println('  status [run-id] [--json]');
   println('  preflight [--host H] [--json] [--no-probe] [--observed-tools=a,b] [--reachable-tools=a,b]');
+}
+
+async function cmdDb(args) {
+  const sub = args[0] || 'status';
+  const wantsJson = args.includes('--json');
+  const sql = createSqlClient(process.env);
+
+  async function finish(code = 0) {
+    await closeSqlClient(sql);
+    if (code) process.exit(code);
+  }
+
+  if (!sql) {
+    const result = {
+      status: 'unavailable',
+      reason: 'sql-client-unavailable',
+      message: 'Set DATABASE_URL or CONSTRUCT_DATABASE_URL and install optional dependency "postgres".',
+      migrations: [],
+    };
+    if (wantsJson) println(JSON.stringify(result, null, 2));
+    else {
+      println('Database unavailable.');
+      println(`Reason: ${result.message}`);
+    }
+    return finish(1);
+  }
+
+  try {
+    const { probeSqlClient } = await import('../lib/storage/backend.mjs');
+    const { getMigrationStatus, applyMigrations } = await import('../lib/db/migrate.mjs');
+    const probe = await probeSqlClient(sql);
+    if (probe.status !== 'available') {
+      const result = { status: probe.status, reason: 'postgres-unavailable', message: probe.message, migrations: [] };
+      if (wantsJson) println(JSON.stringify(result, null, 2));
+      else {
+        println('Database unavailable.');
+        println(`Reason: ${probe.message}`);
+      }
+      return finish(1);
+    }
+
+    if (sub === 'status') {
+      const migrations = await getMigrationStatus(sql);
+      const result = {
+        status: 'available',
+        pending: migrations.filter((m) => !m.applied).map((m) => m.id),
+        migrations: migrations.map((m) => ({ id: m.id, applied: m.applied })),
+      };
+      if (wantsJson) println(JSON.stringify(result, null, 2));
+      else {
+        println(`Database available. ${result.pending.length} pending migration${result.pending.length === 1 ? '' : 's'}.`);
+        for (const migration of result.migrations) println(`  ${migration.applied ? 'applied' : 'pending'} ${migration.id}`);
+      }
+      return finish(0);
+    }
+
+    if (sub === 'migrate') {
+      const result = await applyMigrations(sql);
+      const output = {
+        status: 'available',
+        applied: result.applied,
+        pending: result.status.filter((m) => !m.applied).map((m) => m.id),
+        migrations: result.status.map((m) => ({ id: m.id, applied: m.applied })),
+      };
+      if (wantsJson) println(JSON.stringify(output, null, 2));
+      else {
+        println(`Applied ${output.applied.length} migration${output.applied.length === 1 ? '' : 's'}.`);
+        for (const id of output.applied) println(`  ${id}`);
+      }
+      return finish(0);
+    }
+
+    errorln('Usage: construct db <status|migrate> [--json]');
+    return finish(1);
+  } catch (err) {
+    await closeSqlClient(sql);
+    errorln(err?.message || String(err));
+    process.exit(1);
+  }
 }
 
 async function cmdModels(args) {
@@ -4903,6 +5481,10 @@ async function cmdSpecialist(args) {
   const sub = args[0];
   if (sub === 'lint') return cmdLintPrompts();
 
+  if (sub === 'create' && args.includes('--custom')) {
+    return cmdSpecialistCreateCustom(args.slice(1));
+  }
+
   if (sub === 'create') {
     const role = args[1];
     if (!role) { errorln('Usage: construct specialist create <role>'); process.exit(1); }
@@ -4939,12 +5521,105 @@ async function cmdSpecialist(args) {
   process.exit(1);
 }
 
+// `construct specialist create <id> --custom` scaffolds a user-authored specialist
+// (construct-rf26.13) — distinct from the maintainer-facing `specialist create <role>`
+// above, which only stubs a prompt file for the built-in roster. `--custom` writes a
+// full registry-shaped JSON record (role, skills, fence, modelTier, delegation) into
+// the project's `.cx/org/` layer by default, or `~/.construct/org/` with `--user`.
+
+async function cmdSpecialistCreateCustom(args) {
+  const id = args.find((a) => !a.startsWith('--'));
+  const flag = (name) => args.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3);
+  const list = (name) => (flag(name) || '').split(',').map((s) => s.trim()).filter(Boolean);
+  const usage = 'Usage: construct specialist create <id> --custom --role=<role> --team=<team-id> --description="…" --skills=<bundle/skill,…> --fence-paths=<glob,…> [--model-tier=fast|standard|reasoning] [--handoff=role,…] [--tools=Read,Grep,…] [--user] [--force] [--root=<dir>]';
+
+  const role = flag('role');
+  const team = flag('team');
+  const description = flag('description');
+  const skills = list('skills');
+  const fencePaths = list('fence-paths');
+  const missing = [
+    !id && 'id (positional)', !role && '--role', !team && '--team',
+    !description && '--description', !skills.length && '--skills', !fencePaths.length && '--fence-paths',
+  ].filter(Boolean);
+  if (missing.length) {
+    errorln(usage);
+    errorln(`Missing required: ${missing.join(', ')}`);
+    process.exit(1);
+  }
+
+  const rootDir = flag('root') ? path.resolve(flag('root')) : ROOT_DIR;
+  const scope = args.includes('--user') ? 'user' : 'project';
+  const { createCustomSpecialist } = await import('../lib/registry/custom-scaffold.mjs');
+  try {
+    const { relPath, promptPath, scope: writtenScope } = createCustomSpecialist({
+      rootDir, scope, id, role, description,
+      modelTier: flag('model-tier') || 'standard',
+      skills, fence: { allowedPaths: fencePaths },
+      team, handoffCandidates: list('handoff'),
+      claudeTools: flag('tools') || undefined,
+      force: args.includes('--force'),
+    });
+    ok(`Created ${relPath} (${writtenScope} scope) and ${path.relative(rootDir, promptPath)}.`);
+    println('Run `construct sync` to pick it up — it then resolves through orchestration the same way a built-in specialist does.');
+  } catch (e) {
+    errorln(e.message);
+    process.exit(1);
+  }
+}
+
+async function cmdTeamCreateCustom(args) {
+  const id = args.find((a) => !a.startsWith('--'));
+  const flag = (name) => args.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3);
+  const list = (name) => (flag(name) || '').split(',').map((s) => s.trim()).filter(Boolean);
+  const usage = 'Usage: construct team create <id> --owner=<role> --charter="…" [--roles=role,…] [--specialists=cx-a,…] [--decision-rights=a,…] [--forbidden=a,…] [--escalation=role,orchestrator] [--group=<group-id>] [--user] [--force] [--root=<dir>]';
+
+  const owner = flag('owner');
+  const charter = flag('charter');
+  const missing = [!id && 'id (positional)', !owner && '--owner', !charter && '--charter'].filter(Boolean);
+  if (missing.length) {
+    errorln(usage);
+    errorln(`Missing required: ${missing.join(', ')}`);
+    process.exit(1);
+  }
+
+  const rootDir = flag('root') ? path.resolve(flag('root')) : ROOT_DIR;
+  const scope = args.includes('--user') ? 'user' : 'project';
+  const { createCustomTeam } = await import('../lib/registry/custom-scaffold.mjs');
+  try {
+    const { relPath, scope: writtenScope } = createCustomTeam({
+      rootDir, scope, id, owner, charter,
+      name: flag('name'),
+      roles: list('roles'),
+      specialists: list('specialists'),
+      decisionRights: list('decision-rights'),
+      forbiddenDecisions: list('forbidden'),
+      escalationPath: list('escalation'),
+      groupId: flag('group'),
+      force: args.includes('--force'),
+    });
+    ok(`Created ${relPath} (${writtenScope} scope).`);
+    println(`Run \`construct specialist create <id> --custom --role=${owner} --team=${id} …\` to give it an owner specialist, then \`construct sync\`.`);
+  } catch (e) {
+    errorln(e.message);
+    process.exit(1);
+  }
+}
+
 async function cmdBackup(args) {
   // Postgres-era backups were removed with the SQL backend (lib/storage/backup.mjs).
   // State is now Git-backed (.cx/) plus the local LanceDB index under .cx/lancedb.
   void args;
   errorln('construct backup is no longer supported: Postgres was removed. Commit .cx/ for Git-backed state; the LanceDB index lives under .cx/lancedb.');
   process.exit(1);
+}
+
+// `provider add|configure` persist to `.cx/providers/<id>.json`; every
+// success message names the path relative to cwd so output is copy-pasteable
+// and consistent whether the command ran from the project root or a subdir.
+
+function instanceConfigRelPath(id) {
+  return path.join('.cx', 'providers', `${id}.json`);
 }
 
 async function cmdProvider(args) {
@@ -4969,6 +5644,164 @@ async function cmdProvider(args) {
       process.exit(1);
     }
     return;
+  }
+
+  if (sub === 'status') {
+    const jsonOutput = args.includes('--json');
+    const { getState } = await import('../lib/providers/circuit-breaker.mjs');
+    const { describeProviders } = await import('../lib/providers/registry.mjs');
+    const { readInstanceConfig } = await import('../lib/providers/instance-config.mjs');
+    const desc = await describeProviders({ rootDir: process.cwd(), env: process.env });
+
+    // Breaker state is registered under `provider:<id>` (see registry.mjs
+    // wrapWithBreaker); look up with that prefix or the row reads CLOSED for
+    // every provider regardless of actual state.
+    const rows = desc.summary.map((entry) => {
+      const breaker = getState(`provider:${entry.id}`);
+      const breakerState = breaker ? breaker.state : 'CLOSED';
+      const degraded = !entry.health.ok || breakerState !== 'CLOSED';
+      const instance = readInstanceConfig(process.cwd(), entry.id);
+      const filter = instance?.config?.filter ?? null;
+      return {
+        id: entry.id,
+        enabled: entry.health.ok,
+        breaker: breakerState,
+        failures: breaker ? breaker.failures : 0,
+        degraded,
+        source: entry.source,
+        filter,
+      };
+    });
+
+    if (jsonOutput) {
+      println(JSON.stringify({ providers: rows, errors: desc.errors }, null, 2));
+      if (desc.errors.length) process.exit(1);
+      return;
+    }
+
+    println('Provider status');
+    println('════════════════');
+    println(`  ${'ID'.padEnd(24)} ${'ENABLED'.padEnd(9)} ${'BREAKER'.padEnd(18)} DEGRADED`);
+    for (const row of rows) {
+      const breakerCol = row.failures > 0 ? `${row.breaker} (${row.failures})` : row.breaker;
+      println(`  ${row.id.padEnd(24)} ${(row.enabled ? 'yes' : 'no').padEnd(9)} ${breakerCol.padEnd(18)} ${row.degraded ? 'yes' : 'no'}`);
+      if (row.filter) println(`     filter: ${JSON.stringify(row.filter)}`);
+    }
+    if (desc.errors.length) {
+      println('');
+      errorln('Errors loading providers:');
+      for (const e of desc.errors) errorln(`  ✗ [${e.id}] ${e.error}`);
+      process.exit(1);
+    }
+    return;
+  }
+
+  if (sub === 'health') {
+    const jsonOutput = args.includes('--json');
+    const id = args[1] && !args[1].startsWith('--') ? args[1] : undefined;
+    const { resolveProviders } = await import('../lib/providers/registry.mjs');
+    const { providers, errors } = await resolveProviders({ rootDir: process.cwd(), env: process.env });
+
+    if (id && !providers[id]) {
+      const loadError = errors.find((e) => e.id === id);
+      if (jsonOutput) {
+        println(JSON.stringify({ id, ok: false, error: loadError ? loadError.error : `unknown provider: ${id}` }, null, 2));
+      } else {
+        errorln(`Unknown provider: ${id}`);
+        if (loadError) errorln(loadError.error);
+      }
+      process.exit(1);
+    }
+
+    const targetIds = id ? [id] : Object.keys(providers);
+    const results = await Promise.all(
+      targetIds.map(async (pid) => {
+        try {
+          const health = await providers[pid].health({});
+          return { id: pid, ok: !!health.ok, detail: health.detail || null };
+        } catch (err) {
+          return { id: pid, ok: false, detail: err.message };
+        }
+      })
+    );
+
+    const anyFailed = results.some((r) => !r.ok) || errors.length > 0;
+
+    if (jsonOutput) {
+      println(JSON.stringify({ results, loadErrors: errors }, null, 2));
+      process.exit(anyFailed ? 1 : 0);
+    }
+
+    println('Provider health');
+    println('════════════════');
+    for (const r of results) {
+      println(`  ${r.ok ? '✓' : '✗'}  ${r.id.padEnd(24)} ${r.ok ? 'ok' : 'unhealthy'}`);
+      if (r.detail) println(`     ${r.detail}`);
+    }
+    if (errors.length) {
+      println('');
+      errorln('Errors loading providers:');
+      for (const e of errors) errorln(`  ✗ [${e.id}] ${e.error}`);
+    }
+    process.exit(anyFailed ? 1 : 0);
+  }
+
+  if (sub === 'validate') {
+    const jsonOutput = args.includes('--json');
+    const target = args[1] && !args[1].startsWith('--') ? args[1] : undefined;
+    if (!target) { errorln('Usage: construct provider validate <path|id>'); process.exit(1); }
+
+    const { validateManifest } = await import('../lib/extensions/validate.mjs');
+    const { loadManifestsFromDir, mergeManifests, resolveManifestDirs } = await import('../lib/extensions/loader.mjs');
+
+    let manifest;
+    let filePath;
+    const looksLikePath = target.endsWith('.json') || target.includes('/') || target.startsWith('.');
+
+    if (looksLikePath) {
+      filePath = path.isAbsolute(target) ? target : path.resolve(process.cwd(), target);
+      if (!fs.existsSync(filePath)) {
+        const result = { valid: false, errors: [`${filePath}: file not found`] };
+        if (jsonOutput) { println(JSON.stringify(result, null, 2)); } else { errorln(result.errors[0]); }
+        process.exit(1);
+      }
+      try {
+        manifest = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      } catch (err) {
+        const result = { valid: false, errors: [`${filePath}: failed to parse JSON (${err.message})`] };
+        if (jsonOutput) { println(JSON.stringify(result, null, 2)); } else { errorln(result.errors[0]); }
+        process.exit(1);
+      }
+    } else {
+      const dirs = resolveManifestDirs({ rootDir: process.cwd(), homeDir: HOME });
+      const builtin = loadManifestsFromDir(dirs.builtin).manifests;
+      const user = loadManifestsFromDir(dirs.user).manifests;
+      const project = loadManifestsFromDir(dirs.project).manifests;
+      const merged = mergeManifests(builtin, user, project);
+      manifest = merged.find((m) => m.id === target);
+      if (!manifest) {
+        const result = { valid: false, errors: [`no manifest found for provider id '${target}'`] };
+        if (jsonOutput) { println(JSON.stringify(result, null, 2)); } else { errorln(result.errors[0]); }
+        process.exit(1);
+      }
+      filePath = manifest._filePath;
+    }
+
+    const strict = args.includes('--strict');
+    const result = validateManifest(manifest, { filePath, strict });
+
+    if (jsonOutput) {
+      println(JSON.stringify(result, null, 2));
+      process.exit(result.valid ? 0 : 1);
+    }
+
+    if (result.valid) {
+      println(`✓ ${filePath || target} is a valid manifest`);
+      process.exit(0);
+    }
+    errorln(`✗ ${filePath || target} failed validation:`);
+    for (const e of result.errors) errorln(`  ${e}`);
+    process.exit(1);
   }
 
   if (sub === 'info') {
@@ -5052,7 +5885,105 @@ async function cmdProvider(args) {
     return;
   }
 
-  errorln(`Unknown provider subcommand: ${sub}. Available: list, info, test, plugins, new`);
+  if (sub === 'add') {
+    const id = args[1] && !args[1].startsWith('--') ? args[1] : undefined;
+    const jsonOutput = args.includes('--json');
+    if (!id) { errorln('Usage: construct provider add <id>'); process.exit(1); }
+
+    const { resolveProviders } = await import('../lib/providers/registry.mjs');
+    const { providers, errors } = await resolveProviders({ rootDir: process.cwd(), env: process.env });
+    if (!providers[id]) {
+      const loadError = errors.find((e) => e.id === id);
+      const result = { ok: false, error: loadError ? loadError.error : `unknown provider: ${id}` };
+      if (jsonOutput) { println(JSON.stringify(result, null, 2)); } else { errorln(`Unknown provider: ${id}`); if (loadError) errorln(loadError.error); }
+      process.exit(1);
+    }
+
+    const { readInstanceConfig, writeInstanceConfig, defaultsFromSchema } = await import('../lib/providers/instance-config.mjs');
+    const existing = readInstanceConfig(process.cwd(), id);
+    if (existing) {
+      const result = { ok: false, error: `instance config already exists for '${id}'; use 'provider configure ${id}' to change it` };
+      if (jsonOutput) { println(JSON.stringify(result, null, 2)); } else { errorln(result.error); }
+      process.exit(1);
+    }
+
+    const configSchema = providers[id].configSchema || {};
+    const defaults = defaultsFromSchema(configSchema);
+    const record = writeInstanceConfig(process.cwd(), id, defaults);
+
+    if (jsonOutput) {
+      println(JSON.stringify({ ok: true, providerId: id, config: record.config, path: instanceConfigRelPath(id) }, null, 2));
+      return;
+    }
+    println(`Added ${id} (${instanceConfigRelPath(id)})`);
+    println(JSON.stringify(record.config, null, 2));
+    return;
+  }
+
+  if (sub === 'configure') {
+    const id = args[1] && !args[1].startsWith('--') ? args[1] : undefined;
+    const jsonOutput = args.includes('--json');
+    if (!id) { errorln('Usage: construct provider configure <id> [--key value ...]'); process.exit(1); }
+
+    const { resolveProviders } = await import('../lib/providers/registry.mjs');
+    const { providers, errors } = await resolveProviders({ rootDir: process.cwd(), env: process.env });
+    if (!providers[id]) {
+      const loadError = errors.find((e) => e.id === id);
+      const result = { ok: false, error: loadError ? loadError.error : `unknown provider: ${id}` };
+      if (jsonOutput) { println(JSON.stringify(result, null, 2)); } else { errorln(`Unknown provider: ${id}`); if (loadError) errorln(loadError.error); }
+      process.exit(1);
+    }
+
+    const {
+      readInstanceConfig, writeInstanceConfig, defaultsFromSchema, applyOverrides, validateInstanceConfig,
+    } = await import('../lib/providers/instance-config.mjs');
+
+    // `--json` is the one bare boolean flag this subcommand accepts; every
+    // other `--foo` is a key.path expecting a value, so it is excluded from
+    // the key/value scan below rather than mis-parsed as a dangling key.
+    const BARE_FLAGS = new Set(['--json']);
+
+    const overrides = [];
+    for (let i = 2; i < args.length; i++) {
+      const a = args[i];
+      if (!a.startsWith('--') || BARE_FLAGS.has(a)) continue;
+      const keyPath = a.slice(2);
+      const value = args[i + 1];
+      if (value === undefined || value.startsWith('--')) {
+        errorln(`Usage: construct provider configure <id> --<key.path> <value> (missing value for --${keyPath})`);
+        process.exit(1);
+      }
+      overrides.push({ keyPath, value });
+      i++;
+    }
+
+    const configSchema = providers[id].configSchema || {};
+    const existing = readInstanceConfig(process.cwd(), id);
+    const base = existing ? existing.config : defaultsFromSchema(configSchema);
+    const merged = applyOverrides(base, overrides);
+
+    const result = validateInstanceConfig(id, configSchema, merged);
+    if (!result.valid) {
+      if (jsonOutput) {
+        println(JSON.stringify({ ok: false, providerId: id, errors: result.errors }, null, 2));
+      } else {
+        errorln(`✗ configure ${id} failed validation:`);
+        for (const e of result.errors) errorln(`  ${e}`);
+      }
+      process.exit(1);
+    }
+
+    const record = writeInstanceConfig(process.cwd(), id, merged);
+    if (jsonOutput) {
+      println(JSON.stringify({ ok: true, providerId: id, config: record.config, path: instanceConfigRelPath(id) }, null, 2));
+      return;
+    }
+    println(`✓ Configured ${id} (${instanceConfigRelPath(id)})`);
+    println(JSON.stringify(record.config, null, 2));
+    return;
+  }
+
+  errorln(`Unknown provider subcommand: ${sub}. Available: list, status, health, validate, info, test, add, configure, plugins, new`);
   process.exit(1);
 }
 
@@ -5211,9 +6142,9 @@ async function cmdCreds(args) {
     try {
       const { getProviderModelCatalog } = await import('../lib/model-router.mjs');
       const { providers } = getProviderModelCatalog({ env: process.env });
-      println('\nLLM provider readiness (op:// references resolve at call time)\n');
+      println('\nLLM provider readiness (presence-only — op:// references resolve at call time; run `construct creds test <provider>` to verify auth)\n');
       for (const p of providers) {
-        println(`  ${p.configured ? '✓' : '·'} ${p.id}`);
+        println(`  ${p.configured ? '✓ configured (unverified ref)' : '· not configured'} ${p.id}`);
       }
       println(`\n  Set keys as values or op:// refs in ${getUserEnvPath(HOME)}; run \`construct creds login copilot\` for GitHub Copilot.`);
     } catch { /* readiness view is informational */ }
@@ -5609,15 +6540,16 @@ const handlers = new Map([
   ['dev', cmdDev],
   ['stop', cmdStop],
   ['status', cmdStatus],
+  ['workers', cmdWorkers],
   ['install', cmdInstall],
   ['config', cmdConfig],
+  ['approvals', cmdApprovals],
   ['sources', cmdSources],
   ['intake', cmdIntake],
   ['recommendations', cmdRecommendations],
   ['integrations', cmdIntegrations],
   ['customer', cmdCustomer],
   ['workspace', cmdWorkspace],
-  ['graph', cmdGraph],
   ['uninstall', cmdUninstall],
   ['update', cmdUpdate],
   ['upgrade', cmdUpgrade],
@@ -5892,12 +6824,13 @@ const handlers = new Map([
     const sub = args[0];
     if (sub === 'review') return runTeamReviewCli(args.slice(1));
     if (sub === 'templates') { listTeamTemplates(); return; }
+    if (sub === 'create') return cmdTeamCreateCustom(args.slice(1));
     if (sub === 'list' || sub === 'show') {
       const { runTeamList, runTeamShow } = await import('../lib/registry/cli.mjs');
       if (sub === 'list') return runTeamList(args.slice(1), { rootDir: ROOT_DIR, println, errorln });
       return runTeamShow(args.slice(1), { rootDir: ROOT_DIR, println, errorln });
     }
-    errorln(`Unknown team subcommand: ${sub}. Available: list, show, review, templates`);
+    errorln(`Unknown team subcommand: ${sub}. Available: list, show, create, review, templates`);
     process.exit(1);
   }],
   ['role', async (args) => {
@@ -6128,6 +7061,9 @@ const handlers = new Map([
   ['telemetry', async (args) => {
     return cmdTelemetryQuery(args);
   }],
+  ['db', async (args) => {
+    return cmdDb(args);
+  }],
   ['beads', async (args) => {
     const sub = args[0];
     const subArgs = args.slice(1);
@@ -6356,13 +7292,40 @@ const handlers = new Map([
      if (typeof code === 'number' && code !== 0) process.exit(code);
    }],
    ['matrix', async (args) => {
+     if (!globalThis._matrixDeprecated) {
+       process.stderr.write('[deprecation] `construct matrix` is deprecated; use `construct graph` instead\n');
+       globalThis._matrixDeprecated = true;
+     }
      const { runGraphCli } = await import('../lib/graph/cli.mjs');
      const code = runGraphCli(args, { rootDir: ROOT_DIR, projectDir: process.cwd() });
      if (typeof code === 'number' && code !== 0) process.exit(code);
    }],
+   // `graph` carries two disjoint subcommand families: the living dependency
+   // graph (build/stat/query/validate/impacted/missing-tests/missing-docs/
+   // stale/dependencies/providers/surfaces/explain → lib/graph/cli.mjs) and the
+   // intake task graph (list/show/from-intake/status/recommend → cmdGraph).
+   ['graph', async (args) => {
+     const DEPENDENCY_GRAPH_SUBCOMMANDS = new Set([
+       'build', 'stat', 'query', 'validate', 'impacted',
+       'missing-tests', 'missing-docs', 'stale', 'dependencies', 'providers', 'surfaces', 'explain', 'owasp',
+     ]);
+     if (DEPENDENCY_GRAPH_SUBCOMMANDS.has(args[0])) {
+       const { runGraphCli } = await import('../lib/graph/cli.mjs');
+       const code = runGraphCli(args, { rootDir: ROOT_DIR, projectDir: process.cwd() });
+       if (typeof code === 'number' && code !== 0) process.exit(code);
+       return;
+     }
+     return cmdGraph(args);
+   }],
+   ['flow', async (args) => cmdFlow(args)],
    ['impact', async (args) => {
      const { runImpactCli } = await import('../lib/graph/impact-cli.mjs');
      const code = await runImpactCli(args, { rootDir: ROOT_DIR, projectDir: process.cwd() });
+     if (typeof code === 'number' && code !== 0) process.exit(code);
+   }],
+   ['pack', async (args) => {
+     const { runPackCli } = await import('../lib/packs/cli.mjs');
+     const code = runPackCli(args, { rootDir: process.cwd(), packageRoot: ROOT_DIR });
      if (typeof code === 'number' && code !== 0) process.exit(code);
    }],
    ['reflect', async (args) => {
@@ -6628,7 +7591,7 @@ const handlers = new Map([
 
         println('');
         println(`Scaffolding a new scope draft. Three questions, then a preview.`);
-        println(`Background: docs/guides/concepts/persona-research.md and docs/guides/concepts/scope-lifecycle.md`);
+        println(`Background: docs/guides/concepts/persona-research.md and docs/guides/concepts/profile-lifecycle.md`);
         println('');
         if (!displayName) displayName = await ask('Display name?', id);
         if (seedDepartments.length === 0) {
@@ -6687,11 +7650,11 @@ const handlers = new Map([
         println('');
         println(`✓ draft created at ${pathMod.relative(process.cwd(), result.dir)}`);
         println('');
-        println(`Next steps (in order, per docs/guides/concepts/scope-lifecycle.md):`);
-        println(`  1. Discover  (cx-ux-researcher): fill personas/<role>.md from interviews + primary sources.`);
+        println(`Next steps (in order, per docs/guides/concepts/profile-lifecycle.md):`);
+        println(`  1. Discover  (cx-researcher): fill personas/<role>.md from interviews + primary sources.`);
         println(`  2. Frame     (cx-product-manager): fill departments/<dept>.md charters and intake taxonomy.`);
         println(`  3. Architect (cx-architect): reconcile role reuse vs new; populate departments[] in scope.json.`);
-        println(`  4. Validate  (cx-evaluator): run persona-eval and classifier-eval against representative signals.`);
+        println(`  4. Validate  (cx-reviewer): run persona-eval and classifier-eval against representative signals.`);
         println('');
         println(`Inspect the brief:  open ${pathMod.relative(process.cwd(), result.briefPath)}`);
         return;

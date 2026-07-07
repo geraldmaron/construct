@@ -6,11 +6,11 @@
       "name": "Context7",
       "category": "core",
       "description": "Library and framework documentation lookup. Agents use this before writing code against any dependency.",
-      "package": "@upstash/context7-mcp@latest",
+      "package": "@upstash/context7-mcp@3.2.2",
       "command": "npx",
       "args": [
         "-y",
-        "@upstash/context7-mcp@latest"
+        "@upstash/context7-mcp@3.2.2"
       ],
       "env": {},
       "requiredEnv": [],
@@ -31,11 +31,11 @@
       "name": "Sequential Thinking",
       "category": "optional",
       "description": "Structured multi-step reasoning chains. Helps with complex planning and analysis.",
-      "package": "@modelcontextprotocol/server-sequential-thinking",
+      "package": "@modelcontextprotocol/server-sequential-thinking@2026.7.4",
       "command": "npx",
       "args": [
         "-y",
-        "@modelcontextprotocol/server-sequential-thinking"
+        "@modelcontextprotocol/server-sequential-thinking@2026.7.4"
       ],
       "env": {},
       "requiredEnv": [],

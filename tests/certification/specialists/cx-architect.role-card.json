@@ -15,7 +15,10 @@
     "architecture/caching",
     "architecture/cloud-native",
     "architecture/message-queue",
-    "architecture/security-arch"
+    "architecture/security-arch",
+    "ai/agent-dev",
+    "ai/prompt-and-eval",
+    "docs/research-workflow"
   ],
   "tone": "Designs that emerged from code, missing ADRs, data models that encode assumptions that will change",
   "openingQuestion": "What are the invariants, and what breaks if they're violated?",

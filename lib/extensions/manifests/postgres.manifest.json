@@ -1,0 +1,12 @@
+{
+  "id": "postgres",
+  "version": "1.0.0",
+  "kind": "queue",
+  "capabilities": ["enqueue", "claim", "lease", "reclaim"],
+  "secretEnvKeys": ["CONSTRUCT_DATABASE_URL"],
+  "operations": ["enqueue", "claim", "heartbeat", "complete", "skip", "reopen"],
+  "securityClassification": "trusted",
+  "owner": "construct-core",
+  "compatVersion": 1,
+  "installSource": "optional-dependency"
+}

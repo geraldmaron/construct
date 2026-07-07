@@ -2,6 +2,8 @@
  * tests/audit/f08-prompt-injection/excessive-agency-grants.red.mjs —
  * F08 [R35] excessive-agency proof for the generated VS Code / Copilot front-door agent.
  *
+ * @owasp LLM06
+ *
  * RED fixture (must FAIL against current code). scripts/sync-specialists.mjs
  * generates the VS Code custom agent (.github/agents/construct.agent.md) with a
  * fixed COPILOT_AGENT_TOOLS grant of `construct-mcp/*` (a wildcard over every MCP

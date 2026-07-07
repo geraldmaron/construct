@@ -12,7 +12,7 @@ Connects Construct to Salesforce accounts, opportunities, contacts, and custom o
 
 ## Authentication
 
-Salesforce uses an instance URL and a bearer access token. Set both in `~/.construct/config.env`:
+Salesforce uses an instance URL and a bearer access token. Set both in `~/.config/construct/config.env`:
 
 ```
 SALESFORCE_INSTANCE_URL=https://yourorg.my.salesforce.com

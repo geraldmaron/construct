@@ -11,11 +11,11 @@ profile/outcomes/learning, embedded-contract).
 
 # MCP Tools Reference
 
-Construct exposes a Model Context Protocol (MCP) server consumed by Claude Code, OpenCode, and any other MCP-compatible host. Tools are registered in `lib/mcp/server.mjs` and implemented across `lib/mcp/tools/`.
+Construct exposes a Model Context Protocol (MCP) server consumed by Claude Code, OpenCode, and any other MCP-compatible host. Tools are registered in `lib/mcp/server.mjs` and implemented across `lib/mcp/tools/`. Most tools are hand-maintained in `HARDCODED_TOOL_DEFS`; a new tool may instead self-register by exporting `TOOL_DEFS`/`TOOL_HANDLERS` from a `<name>.tool.mjs` file under `lib/mcp/tools/` — `lib/mcp/tool-registry.mjs` scans and merges these into the same catalog with no edit to `server.mjs`, and requires an inline `safety` classification on every def.
 
 ## Tool surface (gateway)
 
-To keep the serialized tool schema small enough for any context window — a flat 75-tool surface (~14.8k tokens) overran a 32k local-model window — `ListTools` exposes a **curated core** plus the `call` **gateway** and the `find_tool` **discovery** tool. The core front-loads the read/think tools (`orchestration_policy`, `orchestration_readiness`, `get_skill`, `get_template`, `search_skills`, `knowledge_search`, `memory_search`, `project_context`, `summarize_diff`, `find_tool`) **and the high-value action tools agents reach for directly** (`author_artifact`, `document_export`, `publish_run`, `artifact_workflow`, `workflow_invoke`, `triage_recommend`), since burying those behind the gateway made the common case the failing case. Every other tool stays reachable through `call`, and `find_tool` ranks the whole catalog by intent so the surface scales without a hand-maintained list (ADR-0048).
+To keep the serialized tool schema small enough for any context window — a flat 76-tool surface (~15k tokens) overran a 32k local-model window — `ListTools` exposes a **curated core** plus the `call` **gateway** and the `find_tool` **discovery** tool. The core front-loads the read/think tools (`orchestration_policy`, `orchestration_readiness`, `get_skill`, `get_template`, `search_skills`, `knowledge_search`, `memory_search`, `project_context`, `summarize_diff`, `find_tool`) **and the high-value action tools agents reach for directly** (`author_artifact`, `document_export`, `publish_run`, `artifact_workflow`, `workflow_invoke`, `triage_recommend`), since burying those behind the gateway made the common case the failing case. Every other tool stays reachable through `call`, and `find_tool` ranks the whole catalog by intent so the surface scales without a hand-maintained list (ADR-0048).
 
 ### `find_tool`
 Find Construct tools by intent when you do not know the exact name. Pass a natural-language `query` (and optional `limit`) describing the task; returns the best-matching tools with their full input schemas, ranked by hybrid local-embedding semantic similarity merged with normalized BM25 — degrading to BM25-only when no semantic model is provisioned, so it works offline. Then invoke a result via `call` (or directly when it is a flat tool). E.g. `find_tool({ query: "export a markdown file to pdf" })` → `document_export`.
@@ -25,7 +25,7 @@ Invoke any non-core Construct tool by name. Pass the tool name in `tool` (constr
 
 ## Host wiring policy
 
-The Construct MCP server (`construct-mcp`) is defined once in `specialists/org` (`mcpServers`) and wired into every selected host by `scripts/sync-specialists.mjs` — Claude Code (`.claude/settings.json` → `mcpServers`), OpenCode (`.opencode/opencode.json`), VS Code (`.vscode/mcp.json` → `servers`), Cursor (`.cursor/mcp.json` → `mcpServers`), and Codex (`.codex/config.toml` → `mcp_servers`). The `host-config-parity` functional test fails if any selected host drops it.
+The Construct MCP server (`construct-mcp`) is defined once in `specialists/org` (`mcpServers`) and wired into every selected host by `scripts/sync-specialists.mjs` — Claude Code (project scope: `.mcp.json` → `mcpServers`; global scope: `~/.claude.json` → top-level `mcpServers` — settings.json carries hooks/permissions only, never MCP server definitions), OpenCode (`.opencode/opencode.json`), VS Code (`.vscode/mcp.json` → `servers`), Cursor (`.cursor/mcp.json` → `mcpServers`), and Codex (`.codex/config.toml` → `mcp_servers`). The `host-config-parity` functional test fails if any selected host drops it.
 
 Credential handling diverges because hosts resolve env references at different times:
 
@@ -469,6 +469,18 @@ Looks up current data for a configured repo, project, or team. Resolves the righ
 | `query` | string | Yes | User's question or project/repo name |
 | `root_dir` | string | No | Data root override |
 
+### `provider_write`
+Destructive. Governed external write to a contract-adapter provider (`jira`, `confluence`, `github`). `dry_run` defaults to `true` and only renders the would-write diff from the adapter's validation path (`renderDryRun`) — no network call, no side effect. Executing (`dry_run: false`) requires the out-of-band destructive-gate `approval_token`; the write then dispatches through the J2 envelope (`lib/writes/envelope.mjs`) — idempotency key, sent-log dedup, retry, audit — to the governed-write adapter. The adapter's `write()` is never called directly by this tool. When `specialist_id` names an embedded specialist, the proposed `<provider>.<item.type>` token is checked against that specialist's LMCP-E4 `embedBindings` grant before either mode proceeds.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `provider` | string | Yes | `jira` \| `confluence` \| `github` |
+| `item` | object | Yes | Write payload; shape depends on provider (e.g. `{ type: 'issue', project, summary }` for jira) |
+| `dry_run` | boolean | No | Default `true`. When `true`, returns the validated diff only. |
+| `specialist_id` | string | No | Embedded-specialist caller id; enforces that specialist's embedBindings grant. |
+| `idempotency_key` | string | No | Explicit idempotency key forwarded to the J2 envelope. |
+| `approval_token` | string | Required to execute | Out-of-band destructive-gate token. |
+
 ## Workflow orchestration tools
 
 ### `workflow_init`
@@ -790,14 +802,18 @@ Search the public web and return CITED results — the only search surface that 
 | `recency` | string | Optional freshness window hint (e.g. `30d`). |
 
 ### `orchestration_run`
-Execute a real multi-specialist orchestration run and return per-specialist output — the executing counterpart to `workflow_invoke` (which only plans). For MCP hosts with no subagent primitive (VS Code/Copilot, Cursor), this is how a specialist chain actually runs: the engine owns orchestration, the tool is the thin client (ADR-0022). Solo runs execute in-process — no daemon, no port, no token; a remote/team orchestration service is opt-in via `CONSTRUCT_ORCHESTRATION_URL`. Real specialist output requires the `provider` worker backend (a provider key configured); the default `inline` backend prepares tasks only.
+Execute a real multi-specialist orchestration run and return per-specialist output — the executing counterpart to `workflow_invoke` (which only plans). For MCP hosts with no subagent primitive (VS Code/Copilot, Cursor), this is how a specialist chain actually runs: the engine owns orchestration, the tool is the thin client (ADR-0022). Solo runs execute in-process — no daemon, no port, no token; a remote/team orchestration service is opt-in via `CONSTRUCT_ORCHESTRATION_URL`.
+
+Three worker backends. `host` (the default for MCP-originated runs when neither `worker_backend` nor `construct.config.json`'s `orchestration.workerBackend` is set) materializes each specialist's prompt without spending any provider API credits — the calling host executes it in its own model session (the subscription it is already running under) and submits the result via `orchestration_task_result`; when the connected client declares the MCP `sampling` capability, construct-mcp instead drives that same loop itself (ADR-0063) and the run can complete in this same call. `provider` executes specialists against a configured provider key (real API spend). `inline` only prepares tasks — no execution at all (this stays the CLI's own default; the CLI has no attached host session to execute a `host`-backend run against).
+
+A `host`-backend run whose materialization completes returns `status: 'awaiting-host'` — a real, non-terminal standing state (never rendered as `completed` or `degraded`) — plus every task's materialized `system`/`user` prompt and a `hostInstructions` string describing exactly what to do next.
 
 | Parameter | Type | Description |
 |---|---|---|
 | `request` | string | **required** — Natural-language description of the work to orchestrate. |
 | `workflow_type` | string | Optional workflow type to shape the plan (e.g. architecture-review). |
 | `requested_strategy` | string | `orchestrated` \| `prompt-only` \| `auto` (default auto). |
-| `worker_backend` | string | `provider` executes specialists (needs a key); `inline` prepares only. Default: daemon config. |
+| `worker_backend` | string | `host` materializes prompts for the calling MCP host to execute (default for MCP-originated runs); `provider` executes against a configured provider key; `inline` prepares only. |
 | `host` | string | Host/IDE identifier (advisory). |
 | `host_model` | string | Model the host uses, for model resolution. |
 | `host_provider` | string | Provider family the host uses, for model resolution. |
@@ -805,6 +821,30 @@ Execute a real multi-specialist orchestration run and return per-specialist outp
 | `module_count` | number | Optional planning hint: number of modules in scope. |
 | `wait` | boolean | Wait for a terminal state and return task output (default true); `false` returns the runId to poll. |
 | `timeout_ms` | number | Max wait when `wait=true` (default 120000); on timeout the runId is returned to poll. |
+
+### `orchestration_task_result`
+Submit one host-executed specialist task result for a run planned with `worker_backend=host` (Phase 1 of the host worker backend, ADR-0063). `orchestration_run` returns each task's materialized prompt without executing it; execute that prompt as the named specialist role, then call this tool with the output. The response carries `next_task` (the next awaiting prompt) or `null` once the run is terminal — loop until `null`. Reachable via the `call` gateway (self-registered, non-core tool). Recorded fields are host-reported (`provenanceSource: 'host-reported'`) — self-reported, never independently verified, and never rendered identically to a `provider`-executed task's shape.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `run_id` | string | **required** — The run id from `orchestration_run`. |
+| `task_id` | string | **required** — The task id this result answers (e.g. `t1`). |
+| `output` | string | **required** — The specialist output produced. Must be non-empty. |
+| `model` | string | Optional: the model used to execute this task (self-reported). |
+| `provider` | string | Optional: the provider/vendor family used (self-reported). |
+| `reasoning` | string | Optional: reasoning/thinking for this task, if disclosed. |
+
+### `orchestration_delegation_next`
+Advance a request's delegation chain by exactly one step (ADR-0067, flow-engine-backed). Pass the same classification inputs given to `orchestration_policy` plus a `run_id` minted for this dispatch; the first call starts the chain and returns the first specialist's delegation, each subsequent call with the same `run_id` returns the next one. Never returns more than the current step — act on `currentDelegation` only, then call again. State persists across calls (and process restarts) via the same checkpoint mechanism as `construct flow resume`; `done: true` with `currentDelegation: null` means the chain is exhausted or the route resolved to no specialists (e.g. immediate track).
+
+| Parameter | Type | Description |
+|---|---|---|
+| `request` | string | **required** — The same request text passed to `orchestration_policy`. |
+| `run_id` | string | **required** — Caller-chosen id for this dispatch. Reuse it across calls to advance the same chain. |
+| `fileCount` | number | Optional planning hint: number of files in scope. |
+| `moduleCount` | number | Optional planning hint: number of modules in scope. |
+| `introducesContract` | boolean | Whether the change introduces a new contract/dependency. |
+| `explicitDrive` | boolean | Whether drive/full-send mode is explicitly active. |
 
 ### `orchestration_readiness`
 Report whether this MCP session has Construct orchestration tools attached and reachable now. Returns a pass/fail verdict, typed `reasonCode`, one deterministic `nextStep`, required/observed/missing tools, and a redacted diagnostic bundle. This is an observed attachment check, unlike `construct_execution_resolve`, which remains a descriptive planning/model-resolution contract.
