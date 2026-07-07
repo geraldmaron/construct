@@ -1,24 +1,24 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-06T21:40:38.320Z",
+  "generatedAt": "2026-07-07T04:41:29.767Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 810,
+    "testFiles": 811,
     "topLevelTestFiles": 350,
-    "nestedTestFiles": 460,
+    "nestedTestFiles": 461,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 40,
     "byLayer": {
       "unit": 556,
       "functional": 207,
-      "visual": 11,
+      "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
       "unit": 493,
       "functional": 207,
-      "visual": 11,
+      "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
       "live-provider": 2,
@@ -1245,6 +1245,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/config/key-consumer-parity.test.mjs — every documented construct.config.json"
+    },
+    {
+      "path": "tests/consumer/declared-imports.test.mjs",
+      "layer": "visual",
+      "category": "visual",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/consumer/declared-imports.test.mjs — every bare static import in shipped"
     },
     {
       "path": "tests/consumer/optional-deps-absent.test.mjs",
