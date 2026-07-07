@@ -571,9 +571,8 @@ function managedMcpDefs() {
 
 function scopedManagedMcpDefs({ projectScope = false } = {}) {
   const defs = managedMcpDefs();
-  if (!projectScope) return defs;
   return Object.fromEntries(
-    Object.entries(defs).filter(([id]) => PROJECT_DEFAULT_MCP_IDS.has(id)),
+    Object.entries(defs).filter(([id]) => DEFAULT_MANAGED_MCP_IDS.has(id)),
   );
 }
 
@@ -602,15 +601,9 @@ function extractFallbackChain(tierDef) {
   return [];
 }
 
-const hardDefaults = {
-  reasoning: "openrouter/deepseek/deepseek-r1",
-  standard: "openrouter/qwen/qwen3-coder:free",
-  fast: "openrouter/meta-llama/llama-3.3-70b-instruct:free",
-};
-
 // Primary model auto-detection: if the user picked a model in OpenCode config,
-// derive tiered siblings from the same provider family so subagents share the
-// primary's provider. Explicit CX_MODEL_* env wins if set.
+// preserve that user-owned choice as the standard tier only. Explicit CX_MODEL_*
+// env and registry tier config still win. Sync must not invent sibling models.
 const primaryFromOpenCode = (() => {
   try {
     const cfg = readOpenCodeConfig().config ?? {};
@@ -623,43 +616,43 @@ const resolvedModels = {
   reasoning: process.env[`${envPrefix}_MODEL_REASONING`]
     || familyTiers.reasoning
     || extractFallbackChain(registryModels.reasoning)[0]
-    || hardDefaults.reasoning,
+    || null,
   standard: process.env[`${envPrefix}_MODEL_STANDARD`]
     || familyTiers.standard
     || extractFallbackChain(registryModels.standard)[0]
-    || hardDefaults.standard,
+    || null,
   fast: process.env[`${envPrefix}_MODEL_FAST`]
     || familyTiers.fast
     || extractFallbackChain(registryModels.fast)[0]
-    || hardDefaults.fast,
+    || null,
 };
 if (primaryFromOpenCode && (familyTiers.reasoning || familyTiers.standard || familyTiers.fast)) {
   console.log(`[sync] Tier models derived from primary '${primaryFromOpenCode}': reasoning=${resolvedModels.reasoning} standard=${resolvedModels.standard} fast=${resolvedModels.fast}`);
 }
 
-// Full ordered fallback chains per tier (env override → registry chain → hard default)
+// Full ordered fallback chains per tier (env override → user-selected family tier → registry chain).
 const resolvedFallbackChains = {
   reasoning: [
     ...(process.env[`${envPrefix}_MODEL_REASONING`] ? [process.env[`${envPrefix}_MODEL_REASONING`]] : []),
+    ...(familyTiers.reasoning ? [familyTiers.reasoning] : []),
     ...extractFallbackChain(registryModels.reasoning),
-    hardDefaults.reasoning,
   ].filter((v, i, a) => v && a.indexOf(v) === i),
   standard: [
     ...(process.env[`${envPrefix}_MODEL_STANDARD`] ? [process.env[`${envPrefix}_MODEL_STANDARD`]] : []),
+    ...(familyTiers.standard ? [familyTiers.standard] : []),
     ...extractFallbackChain(registryModels.standard),
-    hardDefaults.standard,
   ].filter((v, i, a) => v && a.indexOf(v) === i),
   fast: [
     ...(process.env[`${envPrefix}_MODEL_FAST`] ? [process.env[`${envPrefix}_MODEL_FAST`]] : []),
+    ...(familyTiers.fast ? [familyTiers.fast] : []),
     ...extractFallbackChain(registryModels.fast),
-    hardDefaults.fast,
   ].filter((v, i, a) => v && a.indexOf(v) === i),
 };
 
 function resolveModel(entry) {
   if (entry.model) return entry.model;
   const tier = entry.modelTier && resolvedModels[entry.modelTier] ? entry.modelTier : "standard";
-  return resolvedModels[tier];
+  return resolvedModels[tier] || null;
 }
 
 function resolveModelChain(entry) {
@@ -1084,22 +1077,10 @@ const GLOBAL_CLAUDE_HOOK_IDS = globalHookAllowlist('claude');
 
 const GLOBAL_CLAUDE_MCP_IDS = globalMcpAllowlist('claude');
 
-// Project scope writes only core-category MCP servers (plus construct-mcp, the
-// orchestration server the specialist loop needs). optional/integration servers
-// (memory, github, sequential-thinking, playwright, …) are opt-in via
-// `construct mcp add` so a project does not silently inherit heavy servers it was
-// never asked for (ADR-0031 §Consequences follow-up). A server already present in
-// the project settings is preserved, so a manual opt-in sticks.
-
-const PROJECT_DEFAULT_MCP_IDS = (() => {
-  try {
-    const catalog = JSON.parse(fs.readFileSync(path.join(root, "lib", "mcp-catalog.json"), "utf8"));
-    const arr = catalog.mcps || catalog.servers || [];
-    return new Set([...arr.filter((m) => m.category === "core").map((m) => m.id), "construct-mcp"]);
-  } catch {
-    return new Set(["context7", "construct-mcp"]);
-  }
-})();
+// Sync only materializes Construct's own MCP server. Catalog/plugin MCP entries
+// are available through `construct mcp add`, but authentication or catalog
+// presence alone is not setup intent and must not create host warnings.
+const DEFAULT_MANAGED_MCP_IDS = new Set(["construct-mcp"]);
 
 function filterGlobalClaudeHooks(hooksJson) {
   const filtered = {};
@@ -1178,7 +1159,7 @@ function writeProjectMcpJson(targetDir) {
     if (template.mcpServers) {
       for (const [id, mcpDef] of Object.entries(template.mcpServers)) {
         if (existing.mcpServers[id]) continue;
-        if (!PROJECT_DEFAULT_MCP_IDS.has(id)) continue;
+        if (!DEFAULT_MANAGED_MCP_IDS.has(id)) continue;
         existing.mcpServers[id] = mcpDef;
       }
     }
@@ -1195,7 +1176,6 @@ function writeProjectMcpJson(targetDir) {
   // registry env key, a stale pinned version — gets corrected.
   const registryMcp = scopedManagedMcpDefs({ projectScope: true });
   for (const [id, mcpDef] of Object.entries(registryMcp)) {
-    if (!PROJECT_DEFAULT_MCP_IDS.has(id)) continue;
     const existingEntry = existing.mcpServers[id];
     const desiredEntry = buildClaudeMcpEntry(id, mcpDef, process.env);
     if (!needsRefresh(existingEntry, desiredEntry, { root })) continue;
@@ -1297,11 +1277,12 @@ ${personaList}
 
 function codexAgentToml(entry, allEntries) {
   const name = adapterName(entry);
+  const model = resolveModel(entry);
+  const modelLine = model ? `model = ${tomlString(model)}\n` : "";
   return `${generatedHeader}
 name = ${tomlString(name)}
 description = ${tomlString(entry.description)}
-model = ${tomlString(resolveModel(entry))}
-model_reasoning_effort = ${tomlString(entry.reasoningEffort ?? "medium")}
+${modelLine}model_reasoning_effort = ${tomlString(entry.reasoningEffort ?? "medium")}
 sandbox_mode = ${tomlString(entry.codexSandbox ?? "read-only")}
 
 developer_instructions = ${tomlString(buildPrompt(entry, allEntries, "codex"))}
@@ -2046,9 +2027,6 @@ function syncOpencode(entries, targetDir = null, wants = true) {
   });
 
   if (opencodeTemplate.$schema && !config.$schema) config.$schema = opencodeTemplate.$schema;
-  if (opencodeTemplate.model && !config.model && !config.defaultModel && !hadExistingConfig) {
-    config.model = opencodeTemplate.model;
-  }
   if (Array.isArray(opencodeTemplate.enabled_providers) && !Array.isArray(config.enabled_providers)) {
     config.enabled_providers = [...opencodeTemplate.enabled_providers];
   }
@@ -2069,7 +2047,7 @@ function syncOpencode(entries, targetDir = null, wants = true) {
     ? resolveTemplateStrings(opencodeTemplate.mcp)
     : {};
   for (const [id, entry] of Object.entries(templateMcp)) {
-    if (!PROJECT_DEFAULT_MCP_IDS.has(id)) continue;
+    if (!DEFAULT_MANAGED_MCP_IDS.has(id)) continue;
     if (!config.mcp[id]) config.mcp[id] = entry;
   }
   if (config.mcp["construct-mcp"]) {
@@ -2278,11 +2256,14 @@ function syncOpencode(entries, targetDir = null, wants = true) {
   const orchestratorEntry = writeEntries.find((e) => e.isOrchestrator) || registry.orchestrator;
   const orchestratorName = orchestratorEntry ? adapterName(orchestratorEntry) : "construct";
   const localEditorName = `${orchestratorName}-local`;
-  if (orchestratorEntry?.promptFile && isLocalModel(resolvedModels.fast)) {
+  const localEditorSeedModel = resolvedModels.fast && isLocalModel(resolvedModels.fast)
+    ? resolvedModels.fast
+    : (primaryFromOpenCode && isLocalModel(primaryFromOpenCode) ? primaryFromOpenCode : null);
+  if (orchestratorEntry?.promptFile && localEditorSeedModel) {
     const declaredLocal = Object.entries(config.provider || {})
       .flatMap(([pid, pv]) => Object.keys(pv?.models || {}).map((mk) => `${pid}/${mk}`))
       .filter((id) => isLocalModel(id) && getModelVerdict(id)?.verdict !== "COLLAPSED");
-    const editorModel = selectLocalEditorModel(declaredLocal) || resolvedModels.fast;
+    const editorModel = selectLocalEditorModel(declaredLocal) || localEditorSeedModel;
     adviseLocalModelCapability(editorModel);
     const editorVerdict = getModelVerdict(editorModel)?.verdict ?? null;
     const editorTier = resolveCapabilityTier({ model: editorModel, verdict: editorVerdict });
@@ -2313,16 +2294,26 @@ function syncOpencode(entries, targetDir = null, wants = true) {
     delete config.agent[localEditorName];
   }
 
-  // Pass current Construct model tiers to OpenCode config for native routing.
+  // Pass only explicitly/user-derived Construct model tiers to OpenCode config
+  // for native routing. Do not backfill unconfigured tiers with provider IDs.
   config.construct = config.construct || {};
-  config.construct.models = { ...resolvedModels };
+  const configuredResolvedModels = Object.fromEntries(
+    Object.entries(resolvedModels).filter(([, value]) => typeof value === "string" && value.length > 0),
+  );
+  if (Object.keys(configuredResolvedModels).length > 0) {
+    config.construct.models = configuredResolvedModels;
+  } else {
+    delete config.construct.models;
+  }
+  if (Object.keys(config.construct).length === 0) delete config.construct;
 
   // OpenCode's primary `model` is user-owned. Remove the legacy Construct seed
   // when we find it so the app can fall back to its own remembered selection
   // instead of a stale pin. New syncs never write this key back.
   const legacyPinnedModels = new Set([
     opencodeTemplate.model,
-    hardDefaults.standard,
+    "openrouter/openrouter/free",
+    "openrouter/qwen/qwen3-coder:free",
   ].filter(Boolean));
   if (!targetDir && legacyPinnedModels.has(config.model)) {
     delete config.model;

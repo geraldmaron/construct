@@ -51,8 +51,8 @@ function makeSandbox() {
   const runnerScript = [
     `import { resolveSecret } from ${JSON.stringify(path.join(REPO_ROOT, 'lib', 'providers', 'secret-resolver.mjs'))};`,
     `const env = { ANTHROPIC_API_KEY: ${JSON.stringify(OP_REF)} };`,
-    "resolveSecret('ANTHROPIC_API_KEY', { env });",
-    "resolveSecret('ANTHROPIC_API_KEY', { env });",
+    "resolveSecret('ANTHROPIC_API_KEY', { env, allowAmbient: false });",
+    "resolveSecret('ANTHROPIC_API_KEY', { env, allowAmbient: false });",
   ].join('\n');
   fs.writeFileSync(runner, runnerScript);
 

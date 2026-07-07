@@ -29,18 +29,20 @@ describe('PROVIDER_FAMILY_TIERS — local providers', () => {
     assert.ok(family.requiresEnv?.includes('LOCAL_LLM_BASE_URL'));
   });
 
-  it('routes ollama/* model ids to the ollama family', () => {
+  it('uses an ollama/* primary only as the user-owned standard tier', () => {
     const tiers = resolveTiersForPrimary('ollama/llama3.1:70b');
     assert.ok(tiers);
-    assert.match(tiers.reasoning, /^ollama\//);
-    assert.match(tiers.standard, /^ollama\//);
-    assert.match(tiers.fast, /^ollama\//);
+    assert.equal(tiers.reasoning, null);
+    assert.equal(tiers.standard, 'ollama/llama3.1:70b');
+    assert.equal(tiers.fast, null);
   });
 
-  it('routes local/* model ids to the local family', () => {
+  it('uses a local/* primary only as the user-owned standard tier', () => {
     const tiers = resolveTiersForPrimary('local/anything');
     assert.ok(tiers);
-    assert.match(tiers.reasoning, /^local\//);
+    assert.equal(tiers.reasoning, null);
+    assert.equal(tiers.standard, 'local/anything');
+    assert.equal(tiers.fast, null);
   });
 });
 

@@ -59,8 +59,9 @@ On docling timeout or failure, Construct falls back to **node-native** extractio
 | PDF | `.pdf` | docling / unpdf | Images externalized with docling |
 | Word | `.docx`, `.doc` | docling / mammoth | Legacy `.doc` via docling only |
 | Excel | `.xlsx`, `.xls`, `.ods` | docling | Fast tier requires docling |
-| PowerPoint | `.pptx`, `.ppt` | docling | Fast tier requires docling |
+| Presentation | `.pptx`, `.ppt`, `.odp` | docling | Fast tier requires docling |
 | Rich text | `.rtf` | docling | — |
+| Images | `.png`, `.jpg`, `.jpeg`, `.tif`, `.tiff`, `.bmp`, `.webp` | docling vision | Fast tier requires docling (`IMAGE_REQUIRES_DOCLING`) |
 | Apple iWork | `.pages`, `.numbers`, `.key` | docling | — |
 | Audio/video | `.mp3`, `.wav`, `.mp4`, `.mov`, … | whisper.cpp | Requires `whisper-cli`; `ASR_REQUIRED` without backend |
 

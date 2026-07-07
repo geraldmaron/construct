@@ -2,10 +2,11 @@
  * tests/functional/opencode-local-agent-emission.functional.test.mjs
  *
  * Asserts the hybrid architect/editor split. Spawns the real sync-specialists.mjs into an
- * isolated tmp HOME. When the fast tier resolves local, sync emits a `construct-local`
- * editor: mode subagent, pinned to the local fast model, escalation directive in the
+ * isolated tmp HOME. When the user-selected OpenCode primary is local, sync emits a
+ * `construct-local` editor: mode subagent, pinned to a user-declared local model,
+ * escalation directive in the
  * prompt, tightened tool surface (orchestration denied), and task limited to handing off
- * to construct. When the fast tier is cloud, no editor is emitted — and a stale editor
+ * to construct. When the primary is cloud, no editor is emitted — and a stale editor
  * left in the config is removed. The host binary is never executed.
  */
 
@@ -62,7 +63,7 @@ const baseCfg = (extra = {}) => ({
   ...extra,
 });
 
-test("local primary emits a construct-local editor pinned to the local fast tier", () => {
+test("local primary emits a construct-local editor pinned to a declared local model", () => {
   const out = syncAndRead(baseCfg({ model: "ollama/qwen2.5-coder:7b-cx32k" }));
   const editor = out.agent?.["construct-local"];
   assert.ok(editor, "construct-local should be emitted for a local primary");
