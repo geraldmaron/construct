@@ -2326,17 +2326,17 @@ function syncOpencode(entries, targetDir = null, wants = true) {
     delete config.model;
   }
 
-  // OpenCode's built-in helper agents drive session naming, summaries, and
-  // compaction. Keep them on a stronger auxiliary model so those surfaces do not
-  // inherit the main chat model's selection history or a low-end coder default.
-  const auxiliaryModel = resolvedModels.reasoning || resolvedModels.standard || resolvedModels.fast;
-  if (auxiliaryModel) {
-    for (const key of ["title", "summary", "compaction"]) {
-      config.agent[key] = {
-        ...(config.agent[key] && typeof config.agent[key] === "object" ? config.agent[key] : {}),
-        model: auxiliaryModel,
-      };
-    }
+  // OpenCode's built-in helper agents (session naming, summaries, compaction)
+  // must follow the host's live routing — an absolute model pin here made
+  // compaction call a provider the user had no key/credits for, failing hard
+  // even though a working model was selected for the session. Keep the entries
+  // present (hosts and tests rely on them existing) but strip any model pin a
+  // previous sync wrote, whether the old weak coder default or a strong tier
+  // pin, so OpenCode falls back to its own session-model/small_model routing.
+  for (const key of ["title", "summary", "compaction"]) {
+    const existing = config.agent[key] && typeof config.agent[key] === "object" ? config.agent[key] : {};
+    delete existing.model;
+    config.agent[key] = existing;
   }
 
   writeOpenCodeConfig(config, configPath);
