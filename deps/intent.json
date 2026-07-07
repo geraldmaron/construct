@@ -418,5 +418,17 @@
     "securityConcerns": "Has access to the full 1Password vault; requires biometric or master-password authentication; token scope should be minimized to required vaults only",
     "removalCriteria": "Secrets management moves to a different tool (e.g. Doppler, AWS Secrets Manager) or direct environment variable injection",
     "disposition": "optional"
+  },
+  {
+    "id": "minimatch",
+    "kind": "npm-dep",
+    "purpose": "Glob pattern matching for the directory knowledge provider (include/exclude filters over scanned files)",
+    "owningWorkflow": "knowledge-search, evidence-ingest (directory provider)",
+    "modeRequirement": "all",
+    "healthCheck": "require('minimatch') — verified at import time by lib/providers/directory/index.mjs",
+    "degradationBehavior": "error",
+    "securityConcerns": "null",
+    "removalCriteria": "Directory provider removed or switched to a built-in glob matcher (e.g. node:path matchesGlob once stable)",
+    "disposition": "core"
   }
 ]
