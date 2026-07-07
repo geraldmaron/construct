@@ -120,6 +120,24 @@ function runMcpRemove(id, { home, cwd, env = {} }) {
   });
 }
 
+function runMcpList({ home, cwd, env = {} }) {
+  const script = `
+    const { cmdMcpList } = await import(${JSON.stringify(mcpManagerPath)});
+    cmdMcpList();
+  `;
+
+  return execFileSync(process.execPath, ["--input-type=module", "-e", script], {
+    cwd,
+    env: {
+      ...process.env,
+      HOME: home,
+      ...env,
+    },
+    stdio: "pipe",
+    encoding: "utf8",
+  });
+}
+
 function runSync({ home, cwd, env = {}, t }) {
   const repoRoot = makeRepoCopy(t);
   // Tests in this file assert on user-scope OpenCode/Claude config, so opt
@@ -234,6 +252,28 @@ test("github MCP wires Claude/OpenCode directly and skips a standalone Codex MCP
     assert.doesNotMatch(codex, /api\.githubcopilot\.com\/mcp\//);
     assert.doesNotMatch(codex, /bearer_token_env_var = "GITHUB_TOKEN"/);
   }
+});
+
+test("mcp list distinguishes catalog entries from active and disabled config", (t) => {
+  const home = tempDir("construct-mcp-list-home-", t);
+  const cwd = tempDir("construct-mcp-list-cwd-", t);
+  const opencodeDir = path.join(home, ".config", "opencode");
+  fs.mkdirSync(opencodeDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(opencodeDir, "opencode.json"),
+    JSON.stringify({
+      mcp: {
+        "construct-mcp": { type: "local", command: ["node", "/tmp/construct.mjs"] },
+        context7: { type: "local", command: ["npx", "-y", "@upstash/context7-mcp@latest"], enabled: false },
+      },
+    }, null, 2) + "\n",
+  );
+
+  const output = runMcpList({ home, cwd });
+  assert.match(output, /● active\s+Construct MCP/i, "construct-mcp should render active");
+  assert.match(output, /\[surfaces: opencode\]/i, "active entry should name its surface");
+  assert.match(output, /◌ installed-disabled\s+Context7/i, "disabled optional entry should not render active");
+  assert.match(output, /`catalog` = known but not configured here/i, "legend should explain catalog vs active");
 });
 
 test("mcp remove clears the entry from VS Code (servers) and Cursor (mcpServers) too", (t) => {

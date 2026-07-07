@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Changed
+
+- Construct sync now treats optional MCP integrations as explicit opt-ins: generated host configs materialize only the Construct MCP server by default, leaving catalog/auth-only integrations such as GitHub or Context7 absent and silent until the user installs them. OpenCode sync no longer seeds an active root model, no longer backfills Construct model tiers with provider defaults, and strips legacy helper model pins so session title/summary/compaction follow user-owned OpenCode routing. Document ingest support now declares OpenDocument Presentation (`.odp`) and raster image inputs as high-fidelity/docling-backed formats with typed missing-engine diagnostics.
+
 ### Docs
 
 - `construct-1mjj` (ADR-0069, phase 4): swept ~638 user-facing `.cx` mentions to `.construct` across ~224 files — code comments, JSDoc/file headers, and log/error/help/template strings in `lib/**`, `bin/construct`, `scripts/**`, `docs/guides/**`, `docs/operations/**`, `docs/README.md`, and `templates/docs/**` — plus launcher prose repointed into `.construct/launcher/`. Home-scope `~/.cx`/`~/.construct`, dual-marker detection prose, legacy/migration wording, `cx-*` identifiers, ADRs under `docs/decisions/**`, and executable path/regex/comparison logic were deliberately left untouched. Also relaxed `lib/research-lint.mjs`'s source-cue heuristic to recognize both `.cx/` and `.construct/` document paths. `construct lint:comments` clean; CLI/doctor/status output tests green.

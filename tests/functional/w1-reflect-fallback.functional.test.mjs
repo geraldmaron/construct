@@ -114,6 +114,6 @@ test('reflect CLI exits 1 with a clear error when no context to derive from', as
     });
 
     assert.equal(result.status, 1, 'should exit 1');
-    assert.match(result.stderr || '', /no \.cx\/context\.md or recent session summaries/i);
+    assert.match(result.stderr || '', /no \.construct\/context\.md or recent session summaries/i);
   } finally { cleanup(); }
 });

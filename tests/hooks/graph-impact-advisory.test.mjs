@@ -41,6 +41,6 @@ describe('graph-impact-advisory hook', () => {
     const relFile = 'lib/example.mjs';
     const r = runHook({ filePath: path.join(emptyRoot, relFile), cwd: emptyRoot });
     assert.equal(r.status, 0);
-    assert.match(r.stderr, /no \.cx\/graph\/ present/);
+    assert.match(r.stderr, /no \.construct\/graph\/ present/);
   });
 });

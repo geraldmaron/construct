@@ -11,7 +11,8 @@ Samples aligned with the supported intake table in `docs/reference/document-io.m
 | PDF | `pdf/` | `sample.pdf` |
 | Word | `word/` | `sample.docx`, `sample.doc` |
 | Excel | `excel/` | `sample.xlsx`, `sample.xls`, `sample.ods` |
-| PowerPoint | `powerpoint/` | `sample.pptx`, `sample.ppt` |
+| Presentation | `powerpoint/` | `sample.pptx`, `sample.ppt`, `sample.odp` |
+| Images | `images/` | `sample.png`, `sample.jpg`, `sample.jpeg`, `sample.tiff`, `sample.bmp`, `sample.webp` |
 | Rich text | `rich-text/` | `sample.rtf` |
 | Apple iWork | `apple-iwork/` | `sample.pages`, `sample.numbers`, `sample.key` |
 | Audio/video | `audio-video/` | `sample.mp3`, `sample.wav`, `sample.mp4`, `sample.mov` |
