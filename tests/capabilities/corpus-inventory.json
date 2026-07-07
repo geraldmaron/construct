@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-07T04:29:36.478Z",
+  "generatedAt": "2026-07-07T04:41:29.767Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
     "testFiles": 811,

@@ -95,8 +95,9 @@ test('static bare imports in bin/ and lib/ are declared in package.json', () => 
     violations.join('\n  '));
 });
 
-test('minimatch stays a core dependency (directory provider regression pin)', () => {
-  const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8'));
-  assert.ok('minimatch' in (pkg.dependencies ?? {}),
-    'minimatch must be in dependencies — lib/providers/directory/index.mjs statically imports it');
+test('the directory provider uses the in-tree glob matcher, not minimatch (regression pin)', () => {
+  const src = readFileSync(resolve(ROOT, 'lib', 'providers', 'directory', 'index.mjs'), 'utf8');
+  assert.ok(!/from ['"]minimatch['"]/.test(src),
+    'lib/providers/directory/index.mjs must use lib/rules-delivery.mjs globToRegExp (ADR-0001) — ' +
+    'minimatch is not a declared dependency and crashes consumer installs');
 });
