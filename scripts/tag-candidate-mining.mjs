@@ -20,6 +20,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { configPath } from '../lib/config-dir.mjs';
 import { loadVocabulary } from '../lib/tags/vocabulary.mjs';
 import { listProposed } from '../lib/tags/lifecycle.mjs';
 
@@ -85,9 +86,9 @@ function walkDir(dir, results = []) {
 
 export default async function run({ cwd = process.cwd(), env = process.env } = {}) {
   const rootDir = env.CONSTRUCT_ROOT || cwd;
-  const knowledgeDir = path.join(rootDir, '.cx', 'knowledge');
-  const proposedPath = path.join(rootDir, '.cx', 'tags', 'proposed.jsonl');
-  const logPath = path.join(rootDir, '.cx', 'scheduler', 'logs', 'tag-candidate-mining.jsonl');
+  const knowledgeDir = configPath(rootDir, 'knowledge');
+  const proposedPath = configPath(rootDir, 'tags', 'proposed.jsonl');
+  const logPath = configPath(rootDir, 'scheduler', 'logs', 'tag-candidate-mining.jsonl');
 
   const vocab = loadVocabulary(rootDir);
   const knownIds = new Set(vocab.tags.map(t => t.id));

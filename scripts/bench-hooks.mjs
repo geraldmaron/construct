@@ -36,11 +36,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { performance } from 'node:perf_hooks';
+import { configPath } from '../lib/config-dir.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
 const HOOKS_DIR = path.join(ROOT, 'lib', 'hooks');
-const REPORT_DIR = path.join(ROOT, '.cx', 'bench');
+const REPORT_DIR = configPath(ROOT, 'bench');
 
 const args = Object.fromEntries(
   process.argv.slice(2).filter((a) => a.startsWith('--')).map((a) => {
