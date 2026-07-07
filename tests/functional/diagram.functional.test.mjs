@@ -53,7 +53,7 @@ test('construct diagram: source always produced; SVG when renderer present; exit
     const result = run(['diagram', 'web app: client -> api -> db'], dir);
     assert.equal(result.status, 0, `expected exit 0, got ${result.status}. stderr: ${result.stderr}`);
 
-    const outDir = path.join(dir, '.cx', 'diagrams');
+    const outDir = path.join(dir, '.construct', 'diagrams');
     assert.ok(fs.existsSync(outDir), 'expected .cx/diagrams/ to exist');
     const files = fs.readdirSync(outDir);
 
@@ -74,7 +74,7 @@ test('construct diagram --source-only: writes source, exits 0, no render', () =>
   try {
     const result = run(['diagram', 'client -> api -> db', '--source-only'], dir);
     assert.equal(result.status, 0, `expected exit 0, got ${result.status}. stderr: ${result.stderr}`);
-    const files = fs.readdirSync(path.join(dir, '.cx', 'diagrams'));
+    const files = fs.readdirSync(path.join(dir, '.construct', 'diagrams'));
     assert.ok(files.some((f) => f.endsWith('.d2')), `expected .d2 source; got: ${files.join(', ')}`);
     assert.ok(!files.some((f) => /\.(svg|png)$/.test(f)), `--source-only should not render; got: ${files.join(', ')}`);
   } finally {

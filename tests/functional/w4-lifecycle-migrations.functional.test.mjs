@@ -127,7 +127,7 @@ test('construct --version matches package.json', () => {
 test('construct migrate --dry-run runs end-to-end against a fixture cwd', () => {
   const { root, cleanup } = freshTmp();
   try {
-    const cxDir = join(root, '.cx');
+    const cxDir = join(root, '.construct');
     mkdirSync(cxDir, { recursive: true });
     writeFileSync(join(cxDir, 'config.json'), JSON.stringify({ alias: 'demo' }));
 

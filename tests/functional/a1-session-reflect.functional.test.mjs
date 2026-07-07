@@ -23,7 +23,7 @@ test('A1 end-to-end: hook writes searchable observation, accumulation works', as
   process.env.CONSTRUCT_EMBEDDING_MODEL = 'hashing';
 
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'a1-functional-'));
-  fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
 
   // Session 1: realistic multi-tool session
   const t1 = path.join(cwd, 'transcript-1.jsonl');
@@ -50,7 +50,7 @@ test('A1 end-to-end: hook writes searchable observation, accumulation works', as
   });
   assert.equal(r1.status, 0, `hook failed: ${r1.stderr}`);
 
-  const obsDir = path.join(cwd, '.cx', 'observations');
+  const obsDir = path.join(cwd, '.construct', 'observations');
   const indexPath = path.join(obsDir, 'index.json');
   assert.ok(fs.existsSync(indexPath), 'observations index not written');
 

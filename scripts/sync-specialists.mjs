@@ -72,7 +72,7 @@ import { stampFrontmatter } from "../lib/doc-stamp.mjs";
 import { buildSkillFrontmatter, stripLeadingFrontmatter } from "../lib/sync/skill-frontmatter.mjs";
 import { loadRegistry, clearCache } from "../lib/registry/loader.mjs";
 import { loadPluginRegistry } from "../lib/plugin-registry.mjs";
-import { PROJECT_MARKERS } from "../lib/config-dir.mjs";
+import { PROJECT_MARKERS, LAUNCHER_REL_PATH } from "../lib/config-dir.mjs";
 
 const home = os.homedir();
 const root = path.resolve(import.meta.dirname, "..");
@@ -1061,7 +1061,7 @@ function makeHooksPortable(hooksJson, projectRoot) {
     const m = cmd.match(/^node\s+"?\$HOME\/\.config\/construct\/lib\/hooks\/([a-z0-9-]+)\.mjs"?\s*(.*)$/);
     if (!m) return cmd;
     const [, name, rest] = m;
-    return `node "${anchor}/.construct/run.mjs" hook ${name}${rest ? ' ' + rest.trim() : ''}`;
+    return `node "${anchor}/${LAUNCHER_REL_PATH}/run.mjs" hook ${name}${rest ? ' ' + rest.trim() : ''}`;
   };
 
   const walk = (node) => {

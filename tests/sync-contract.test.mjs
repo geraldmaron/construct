@@ -307,14 +307,14 @@ describe('sync-specialists contract tests', () => {
         !/\$HOME\/\.construct/.test(allCommands),
         'project-mode settings must not reference $HOME/.construct paths'
       );
-      assert.match(allCommands, /\$\{CLAUDE_PROJECT_DIR:-\/[^}]+\}\/\.construct\/run\.mjs.{0,4}hook session-start/);
-      assert.match(allCommands, /\$\{CLAUDE_PROJECT_DIR:-\/[^}]+\}\/\.construct\/run\.mjs.{0,4}hook pre-push-gate/);
+      assert.match(allCommands, /\$\{CLAUDE_PROJECT_DIR:-\/[^}]+\}\/\.construct\/launcher\/run\.mjs.{0,4}hook session-start/);
+      assert.match(allCommands, /\$\{CLAUDE_PROJECT_DIR:-\/[^}]+\}\/\.construct\/launcher\/run\.mjs.{0,4}hook pre-push-gate/);
       assert.ok(
         !/\$\{CLAUDE_PROJECT_DIR:-\.\}/.test(allCommands),
         'cwd-relative :-. fallback breaks under cwd drift; fallback must be the absolute project root'
       );
       assert.ok(
-        !/node \.construct\/run\.mjs hook/.test(allCommands),
+        !/node \.construct\/launcher\/run\.mjs hook/.test(allCommands),
         'hook commands must anchor on ${CLAUDE_PROJECT_DIR:-<absRoot>} so they resolve from any cwd'
       );
     });

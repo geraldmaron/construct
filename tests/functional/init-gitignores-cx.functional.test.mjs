@@ -63,7 +63,7 @@ test('init creates .gitignore with .cx/ when no .gitignore exists', () => {
     const result = runInit(p.dir);
     assert.equal(result.status, 0, `init failed:\n${result.stderr}`);
     const gi = readFileSync(join(p.dir, '.gitignore'), 'utf8');
-    assert.match(gi, /^\.cx\/?\s*$/m, `.gitignore must contain .cx/ entry; got:\n${gi}`);
+    assert.match(gi, /^\.construct\/?\s*$/m, `.gitignore must contain .cx/ entry; got:\n${gi}`);
     assert.match(gi, /Construct.*generated.*runtime state|recreated by `construct sync`/i, '.gitignore should explain why generated artifacts (incl .cx/) are ignored');
   } finally { p.cleanup(); }
 });
@@ -76,18 +76,18 @@ test('init appends .cx/ to an existing .gitignore that lacks it', () => {
     assert.equal(result.status, 0, `init failed:\n${result.stderr}`);
     const gi = readFileSync(join(p.dir, '.gitignore'), 'utf8');
     assert.ok(gi.startsWith(seed), 'pre-existing content must be preserved');
-    assert.match(gi, /\.cx\/\s*$/m, `.cx/ must be appended; got:\n${gi}`);
+    assert.match(gi, /\.construct\/\s*$/m, `.cx/ must be appended; got:\n${gi}`);
   } finally { p.cleanup(); }
 });
 
 test('init does NOT double-add .cx/ when the entry already exists (idempotent)', () => {
-  const seed = 'node_modules/\n.cx/\n.env\n';
+  const seed = 'node_modules/\n.construct/\n.env\n';
   const p = makeProject(seed);
   try {
     const result = runInit(p.dir);
     assert.equal(result.status, 0, `init failed:\n${result.stderr}`);
     const gi = readFileSync(join(p.dir, '.gitignore'), 'utf8');
-    const occurrences = (gi.match(/^\.cx\/?$/gm) || []).length;
+    const occurrences = (gi.match(/^\.construct\/?$/gm) || []).length;
     assert.equal(occurrences, 1, `.cx/ should appear exactly once; got ${occurrences}:\n${gi}`);
   } finally { p.cleanup(); }
 });
@@ -104,7 +104,7 @@ test('init recognizes a broader pattern (e.g. `**`) and does not add a redundant
     // construct init's .cx/ contract.
 
     assert.ok(gi.startsWith(seed), `seeded content must be preserved; got:\n${gi}`);
-    const cxOccurrences = (gi.match(/^\.cx\/?$/gm) || []).length;
+    const cxOccurrences = (gi.match(/^\.construct\/?$/gm) || []).length;
     assert.equal(cxOccurrences, 0, `.cx/ must NOT be added when ** is present; got ${cxOccurrences} occurrence(s):\n${gi}`);
   } finally { p.cleanup(); }
 });

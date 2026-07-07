@@ -47,9 +47,9 @@ test('deriveSummaryFromContext reads context.md compact summary', () => {
 test('deriveSummaryFromContext falls back to context.md markdown body when no compact summary', () => {
   const { cwd, cleanup } = freshCwd();
   try {
-    mkdirSync(join(cwd, '.cx'), { recursive: true });
+    mkdirSync(join(cwd, '.construct'), { recursive: true });
     writeFileSync(
-      join(cwd, '.cx', 'context.md'),
+      join(cwd, '.construct', 'context.md'),
       '# Session\n\nLast saved: 2026-05-26\n\nFocus: completing the production release plan workstreams and verifying every gate.',
     );
     const result = deriveSummaryFromContext(cwd);
@@ -90,7 +90,7 @@ test('reflect CLI auto-derives the summary when .cx/context.md exists and --summ
     assert.equal(result.status, 0, `reflect should exit 0; stderr: ${result.stderr}`);
     assert.match(result.stderr || '', /auto-derived/i, 'should announce auto-derived path');
 
-    const internalDir = join(cwd, '.cx', 'knowledge', 'internal');
+    const internalDir = join(cwd, '.construct', 'knowledge', 'internal');
     assert.ok(existsSync(internalDir), `expected .cx/knowledge/internal/ to be created; stderr: ${result.stderr}`);
     const files = readdirSync(internalDir);
     assert.equal(files.length, 1, `expected one file in internal/, got ${files.length}`);

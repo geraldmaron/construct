@@ -28,7 +28,7 @@ function root() {
   return dir;
 }
 function readMisses(rootDir) {
-  const file = path.join(rootDir, '.cx', 'observations', 'tool-name-misses.jsonl');
+  const file = path.join(rootDir, '.construct', 'observations', 'tool-name-misses.jsonl');
   if (!fs.existsSync(file)) return [];
   return fs.readFileSync(file, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l));
 }

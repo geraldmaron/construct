@@ -25,7 +25,7 @@ describe('memory-stats', () => {
   describe('appendSessionStats', () => {
     it('creates the JSONL file and appends one line', () => {
       appendSessionStats(tmpDir, { sessionId: 'test-1', queriesIssued: 3, observationsInjected: 2, retrievalMs: 45 });
-      const p = path.join(tmpDir, '.cx', 'memory-stats.jsonl');
+      const p = path.join(tmpDir, '.construct', 'memory-stats.jsonl');
       assert.ok(fs.existsSync(p), 'file should exist');
       const lines = fs.readFileSync(p, 'utf8').trim().split('\n');
       assert.equal(lines.length, 1);
@@ -38,14 +38,14 @@ describe('memory-stats', () => {
     it('appends multiple entries without overwriting', () => {
       appendSessionStats(tmpDir, { sessionId: 's1', queriesIssued: 1 });
       appendSessionStats(tmpDir, { sessionId: 's2', queriesIssued: 2 });
-      const p = path.join(tmpDir, '.cx', 'memory-stats.jsonl');
+      const p = path.join(tmpDir, '.construct', 'memory-stats.jsonl');
       const lines = fs.readFileSync(p, 'utf8').trim().split('\n');
       assert.equal(lines.length, 2);
     });
 
     it('records memoryEnabled=false for ablation sessions', () => {
       appendSessionStats(tmpDir, { sessionId: 'ab-1', queriesIssued: 0, observationsInjected: 0, memoryEnabled: false });
-      const p = path.join(tmpDir, '.cx', 'memory-stats.jsonl');
+      const p = path.join(tmpDir, '.construct', 'memory-stats.jsonl');
       const entry = JSON.parse(fs.readFileSync(p, 'utf8').trim());
       assert.equal(entry.memoryEnabled, false);
     });

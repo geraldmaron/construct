@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://construct.dev/schemas/project-demo.schema.json",
   "title": "Construct project demo plug-in manifest",
-  "description": "Schema for .cx/demos/<name>.project.json — a project-defined demo plug-in scaffolded by `construct demo init --from-project`. Declares a project-local demo and the script plus terminal tape it ships with. Project runtime state; gitignored in consuming projects.",
+  "description": "Schema for .construct/demos/<name>.project.json — a project-defined demo plug-in scaffolded by `construct demo init --from-project`. Declares a project-local demo and the script plus terminal tape it ships with. Project runtime state; gitignored in consuming projects.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema", "name", "title", "project", "script"],
@@ -38,12 +38,12 @@
     },
     "script": {
       "type": "string",
-      "description": "Repo-relative path to the demo script under .cx/demos/scripts/.",
-      "pattern": "^\\.cx/demos/scripts/.+\\.json$"
+      "description": "Repo-relative path to the demo script under .construct/demos/scripts/.",
+      "pattern": "^\\.construct/demos/scripts/.+\\.json$"
     },
     "tape": {
       "type": "string",
-      "description": "Repo-relative path to the terminal VHS tape stub under .cx/demos/tapes/."
+      "description": "Repo-relative path to the terminal VHS tape stub under .construct/demos/tapes/."
     },
     "fallbackSurface": {
       "type": "string",

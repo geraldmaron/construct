@@ -40,7 +40,7 @@ function allowingPolicy() {
 describe('BrokerStore', () => {
   it('load/save round-trips rate-limit state', () => {
     const rootDir = fakeRoot();
-    const storePath = path.join(rootDir, '.cx', 'broker-state.json');
+    const storePath = path.join(rootDir, '.construct', 'broker-state.json');
 
     const store1 = new BrokerStore();
     store1.incrementRateLimitState('engineer', 'fs', 60_000);
@@ -148,7 +148,7 @@ describe('Broker rate-limit durability', () => {
     await broker1.invoke({ role: 'member', tool: 'fs', action: 'read', execute: async () => 'a' });
 
     // State file must exist
-    const storePath = path.join(rootDir, '.cx', 'broker-state.json');
+    const storePath = path.join(rootDir, '.construct', 'broker-state.json');
     assert.ok(fs.existsSync(storePath), 'broker-state.json must be written after invoke');
 
     const raw = JSON.parse(fs.readFileSync(storePath, 'utf8'));

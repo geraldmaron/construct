@@ -74,6 +74,7 @@ Architecture decision records for decisions that have already been made.
 | [0066](./0066-config-layer-project-footprint.md) | Config-layer project footprint — machine-scoped heavy state | accepted | Supersedes in-project heavy-state disposition of ADR-0027 |
 | [0067](./0067-deterministic-flow-engine.md) | Deterministic flow engine | accepted | Supersedes chain-resolution role of orchestration-policy.mjs |
 | [0068](./0068-ingestion-sidecar-process-contract.md) | Ingestion sidecar process contract | accepted | Formalizes the docling sidecar's existing shape; not a supersession |
+| [0069](./0069-single-project-directory-consolidation.md) | Single project-directory consolidation | accepted | Consolidates `.cx/` + `.construct/` into one `.construct/` with the launcher at `.construct/launcher/`; supersedes the launcher/config split of ADR-0027, extends ADR-0066 |
 
 ## Starter templates
 

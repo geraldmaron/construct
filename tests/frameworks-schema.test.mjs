@@ -296,7 +296,7 @@ test('core pack frameworks (LMCP-F7)', async (t) => {
 test('resolveFramework E1 pack precedence (ADR-0055/ADR-0062 §1)', async (t) => {
   await t.test('a project-tier pack framework overrides the core pack for the same id', () => {
     const projectDir = tmpRoot('cx-fw-override-');
-    const packsDir = path.join(projectDir, '.cx', 'packs');
+    const packsDir = path.join(projectDir, '.construct', 'packs');
     const manifestDir = path.join(packsDir, 'override-pack');
     fs.mkdirSync(manifestDir, { recursive: true });
     fs.writeFileSync(path.join(manifestDir, 'pack.manifest.json'), JSON.stringify({

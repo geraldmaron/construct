@@ -277,7 +277,7 @@ test("catalog declares setup modes for auto/manual capable integrations", (t) =>
 test("external plugin manifest entries are available to mcp add without editing built-ins", (t) => {
   const home = tempDir("construct-plugin-mcp-home-", t);
   const cwd = tempDir("construct-plugin-mcp-cwd-", t);
-  const pluginDir = path.join(cwd, ".cx", "plugins");
+  const pluginDir = path.join(cwd, ".construct", "plugins");
   fs.mkdirSync(pluginDir, { recursive: true });
   fs.writeFileSync(path.join(pluginDir, "acme.json"), JSON.stringify({
     version: 1,

@@ -35,14 +35,14 @@ afterEach(() => {
 
 test('event bus writes to <project>/.cx/events.jsonl when cwd is inside a Construct project', async () => {
   const projectRoot = mkdtempSync(join(tmpdir(), 'cx-project-'));
-  mkdirSync(join(projectRoot, '.cx'), { recursive: true });
+  mkdirSync(join(projectRoot, '.construct'), { recursive: true });
   try {
     const { _resetCache } = await import('../../lib/project-root.mjs');
     _resetCache();
     process.chdir(projectRoot);
 
     const entry = bus.emit('test.event', { summary: 'isolated to project' });
-    const projectEvents = join(projectRoot, '.cx', 'events.jsonl');
+    const projectEvents = join(projectRoot, '.construct', 'events.jsonl');
     assert.ok(existsSync(projectEvents), 'expected events.jsonl inside project .cx/');
     const written = readFileSync(projectEvents, 'utf8').trim().split('\n');
     const parsed = JSON.parse(written[written.length - 1]);
@@ -68,8 +68,8 @@ test('event bus respects CONSTRUCT_ROLES_ROOT override for tests', async () => {
 test('two projects emit isolated fingerprints — no cross-project suppression', async () => {
   const projA = mkdtempSync(join(tmpdir(), 'cx-projA-'));
   const projB = mkdtempSync(join(tmpdir(), 'cx-projB-'));
-  mkdirSync(join(projA, '.cx'), { recursive: true });
-  mkdirSync(join(projB, '.cx'), { recursive: true });
+  mkdirSync(join(projA, '.construct'), { recursive: true });
+  mkdirSync(join(projB, '.construct'), { recursive: true });
   try {
     const { _resetCache } = await import('../../lib/project-root.mjs');
 
@@ -81,11 +81,11 @@ test('two projects emit isolated fingerprints — no cross-project suppression',
     _resetCache();
     bus.emit('test.signal', { summary: 'same summary text' });
 
-    const aEvents = readFileSync(join(projA, '.cx', 'events.jsonl'), 'utf8').trim().split('\n');
-    const bEvents = readFileSync(join(projB, '.cx', 'events.jsonl'), 'utf8').trim().split('\n');
+    const aEvents = readFileSync(join(projA, '.construct', 'events.jsonl'), 'utf8').trim().split('\n');
+    const bEvents = readFileSync(join(projB, '.construct', 'events.jsonl'), 'utf8').trim().split('\n');
     assert.equal(aEvents.length, 1, 'project A should have exactly one event');
     assert.equal(bEvents.length, 1, 'project B should have exactly one event');
-    assert.ok(!existsSync(join(projA, '.cx', 'events.jsonl')) === false);
+    assert.ok(!existsSync(join(projA, '.construct', 'events.jsonl')) === false);
   } finally {
     rmTmpDir(projA);
     rmTmpDir(projB);

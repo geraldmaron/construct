@@ -160,7 +160,7 @@ describe('ApprovalQueue — approve / deny / expire', () => {
 describe('ApprovalQueue — JSONL persistence', () => {
   it('records survive load/save round-trip via JSONL', () => {
     const rootDir = fakeRoot();
-    const persistPath = path.join(rootDir, '.cx', 'approvals', 'queue.jsonl');
+    const persistPath = path.join(rootDir, '.construct', 'approvals', 'queue.jsonl');
 
     const q1 = new ApprovalQueue({ persistPath });
     const r1 = q1.enqueue({ tool: 'fs', args: { path: '/persist' }, surface: 'test' });
@@ -183,7 +183,7 @@ describe('ApprovalQueue — JSONL persistence', () => {
   it('resolvePersistPath returns team path for team mode', () => {
     const rootDir = '/some/project';
     const p = ApprovalQueue.resolvePersistPath(rootDir, 'team');
-    assert.ok(p.endsWith(path.join('.cx', 'approvals', 'queue.jsonl')));
+    assert.ok(p.endsWith(path.join('.construct', 'approvals', 'queue.jsonl')));
     assert.ok(p.startsWith('/some/project'));
   });
 
@@ -196,7 +196,7 @@ describe('ApprovalQueue — JSONL persistence', () => {
 describe('Broker — awaiting_approval flow (no throw)', () => {
   it('approvalRequired returns awaiting_approval instead of throwing', async () => {
     const rootDir = fakeRoot();
-    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.cx', 'approvals', 'queue.jsonl') });
+    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.construct', 'approvals', 'queue.jsonl') });
     const broker = new Broker({ rootDir, policy: approvalPolicy(), emit: () => {}, approvalQueue: queue });
 
     const result = await broker.invoke({
@@ -217,7 +217,7 @@ describe('Broker — awaiting_approval flow (no throw)', () => {
 
   it('duplicate call returns same awaiting_approval id', async () => {
     const rootDir = fakeRoot();
-    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.cx', 'approvals', 'queue.jsonl') });
+    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.construct', 'approvals', 'queue.jsonl') });
     const broker = new Broker({ rootDir, policy: approvalPolicy(), emit: () => {}, approvalQueue: queue });
 
     const r1 = await broker.invoke({
@@ -235,7 +235,7 @@ describe('Broker — awaiting_approval flow (no throw)', () => {
 
   it('approve then retry executes the tool', async () => {
     const rootDir = fakeRoot();
-    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.cx', 'approvals', 'queue.jsonl') });
+    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.construct', 'approvals', 'queue.jsonl') });
     const broker = new Broker({ rootDir, policy: approvalPolicy(), emit: () => {}, approvalQueue: queue });
 
     // First call: awaiting_approval
@@ -259,7 +259,7 @@ describe('Broker — awaiting_approval flow (no throw)', () => {
 
   it('deny returns denied status', async () => {
     const rootDir = fakeRoot();
-    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.cx', 'approvals', 'queue.jsonl') });
+    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.construct', 'approvals', 'queue.jsonl') });
     const broker = new Broker({ rootDir, policy: approvalPolicy(), emit: () => {}, approvalQueue: queue });
 
     const r1 = await broker.invoke({
@@ -280,7 +280,7 @@ describe('Broker — awaiting_approval flow (no throw)', () => {
 
   it('expired record returns expired status', async () => {
     const rootDir = fakeRoot();
-    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.cx', 'approvals', 'queue.jsonl'), timeoutMs: 1 });
+    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.construct', 'approvals', 'queue.jsonl'), timeoutMs: 1 });
     const broker = new Broker({ rootDir, policy: approvalPolicy(), emit: () => {}, approvalQueue: queue });
 
     const r1 = await broker.invoke({
@@ -303,7 +303,7 @@ describe('Broker — awaiting_approval flow (no throw)', () => {
 
   it('resumeToken param bypasses argsHash dedup', async () => {
     const rootDir = fakeRoot();
-    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.cx', 'approvals', 'queue.jsonl') });
+    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.construct', 'approvals', 'queue.jsonl') });
     const broker = new Broker({ rootDir, policy: approvalPolicy(), emit: () => {}, approvalQueue: queue });
 
     const r1 = await broker.invoke({

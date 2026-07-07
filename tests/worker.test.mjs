@@ -169,9 +169,9 @@ describe('trace event log', () => {
       path.join(projectRoot, 'construct.config.json'),
       JSON.stringify({ version: 1, resources: { disk: { totalCxMaxMb: 1 } } }),
     );
-    fs.mkdirSync(path.join(projectRoot, '.cx', 'intake', 'processed'), { recursive: true });
+    fs.mkdirSync(path.join(projectRoot, '.construct', 'intake', 'processed'), { recursive: true });
     fs.writeFileSync(
-      path.join(projectRoot, '.cx', 'intake', 'processed', 'p1.json'),
+      path.join(projectRoot, '.construct', 'intake', 'processed', 'p1.json'),
       'x'.repeat(1_050_000),
     );
     const event = emitTraceEvent({

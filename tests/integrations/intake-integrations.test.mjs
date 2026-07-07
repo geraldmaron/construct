@@ -97,8 +97,8 @@ describe('intake integrations', () => {
     it('detects tests/fixtures/ in sourcePath', () => {
       assert.equal(integ.isDemoIntakePacket({ intake: { sourcePath: '/x/tests/fixtures/y.md' } }), true);
     });
-    it('detects .cx/intake/demo/ in sourcePath', () => {
-      assert.equal(integ.isDemoIntakePacket({ intake: { sourcePath: '/x/.cx/intake/demo/y.md' } }), true);
+    it('detects .construct/intake/demo/ in sourcePath', () => {
+      assert.equal(integ.isDemoIntakePacket({ intake: { sourcePath: '/x/.construct/intake/demo/y.md' } }), true);
     });
     it('returns false for a real-looking sourcePath', () => {
       assert.equal(integ.isDemoIntakePacket({ intake: { sourcePath: '/work/inbox/feedback.md' } }), false);
@@ -156,24 +156,24 @@ describe('intake integrations', () => {
     const testDir = '/tmp/test-integration-tag';
 
     beforeEach(() => {
-      mkdirSync(join(testDir, '.cx', 'intake', 'pending'), { recursive: true });
+      mkdirSync(join(testDir, '.construct', 'intake', 'pending'), { recursive: true });
     });
 
     afterEach(() => {
       try {
-        const files = readdirSync(join(testDir, '.cx', 'intake', 'pending'));
-        files.forEach(f => unlinkSync(join(testDir, '.cx', 'intake', 'pending', f)));
+        const files = readdirSync(join(testDir, '.construct', 'intake', 'pending'));
+        files.forEach(f => unlinkSync(join(testDir, '.construct', 'intake', 'pending', f)));
       } catch {}
     });
 
     it('writes external ref to intake packet JSON', () => {
       const intakeId = 'tag-test-1';
       const entry = { id: intakeId, triage: { intakeType: 'bug' } };
-      writeFileSync(join(testDir, '.cx', 'intake', 'pending', `${intakeId}.json`), JSON.stringify(entry));
+      writeFileSync(join(testDir, '.construct', 'intake', 'pending', `${intakeId}.json`), JSON.stringify(entry));
 
       integ.tagIntakeWithExternalRef(testDir, intakeId, 'github', 'https://github.com/test/repo/1', '1');
 
-      const updated = JSON.parse(readFileSync(join(testDir, '.cx', 'intake', 'pending', `${intakeId}.json`), 'utf8'));
+      const updated = JSON.parse(readFileSync(join(testDir, '.construct', 'intake', 'pending', `${intakeId}.json`), 'utf8'));
       assert.ok(updated.externalRefs);
       assert.equal(updated.externalRefs.github.url, 'https://github.com/test/repo/1');
     });

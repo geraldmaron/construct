@@ -23,7 +23,7 @@ let projectRoot;
 
 beforeEach(() => {
   projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-intake-config-'));
-  fs.mkdirSync(path.join(projectRoot, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(projectRoot, '.construct'), { recursive: true });
   fs.mkdirSync(path.join(projectRoot, '.git'), { recursive: true });
   writeProjectConfig(path.join(projectRoot, PROJECT_CONFIG_FILENAME), { ...DEFAULT_PROJECT_CONFIG });
 });

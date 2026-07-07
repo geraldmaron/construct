@@ -18,9 +18,9 @@ import { validateArtifactPostconditions } from '../lib/contracts/validate.mjs';
 test('readAgentLogReviewers collects specialist ids', () => {
   const dir = mkdtempSync(join(tmpdir(), 'rev-log-'));
   try {
-    mkdirSync(join(dir, '.cx'), { recursive: true });
+    mkdirSync(join(dir, '.construct'), { recursive: true });
     writeFileSync(
-      join(dir, '.cx', 'agent-log.jsonl'),
+      join(dir, '.construct', 'agent-log.jsonl'),
       '{"agent":"cx-devil-advocate"}\n{"specialist":"cx-reviewer"}\n',
     );
     const seen = readAgentLogReviewers(dir);

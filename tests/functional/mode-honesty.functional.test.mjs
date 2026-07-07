@@ -81,7 +81,7 @@ test('requireTeamCapabilityOrDegrade succeeds with CONSTRUCT_DEGRADED_OK and wri
   assert.doesNotThrow(() => requireTeamCapabilityOrDegrade('postgres-queue', false, env, { cwd }));
 
   // Degradation record must be written
-  const degradationPath = path.join(cwd, '.cx', 'degradation.jsonl');
+  const degradationPath = path.join(cwd, '.construct', 'degradation.jsonl');
   assert.ok(fs.existsSync(degradationPath), 'degradation.jsonl must exist after degraded operation');
 
   const lines = fs.readFileSync(degradationPath, 'utf8').trim().split('\n').filter(Boolean);
