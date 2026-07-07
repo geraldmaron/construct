@@ -1,5 +1,8 @@
 /**
- * templates/distribution/construct-research.typ — Construct distribution PDF.
+ * templates/distribution/construct-research.typ — layout for research-class
+ * artifacts (research-brief, evidence-brief, signal-brief, research-finding,
+ * product-intelligence-report). Same brand system as every other class; only
+ * the footer label differs. Metadata contract documented in construct-pdf.typ.
  */
 
 #import "construct-brand.typ": *
@@ -7,8 +10,8 @@
 #show: construct-theme
 
 #set page(
-  paper: "a4",
-  margin: (x: 2cm, top: 1.9cm, bottom: 2.25cm),
+  paper: construct-page-paper,
+  margin: construct-page-margin,
   numbering: "1",
   header: construct-running-header(
     "$if(title)$$title$$endif$",
@@ -16,7 +19,7 @@
     version: "$if(version)$$version$$endif$",
   ),
   footer: construct-running-footer(
-    "Research analytics",
+    "Research brief",
     classification: "$if(classification)$$classification$$endif$",
   ),
 )
