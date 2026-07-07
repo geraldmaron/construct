@@ -12,8 +12,12 @@
 
 FROM ubuntu:24.04
 
+# zip/unzip belong to the GitHub runner's preinstalled baseline, not to the
+# project toolchain in setup-toolchain.sh — tests build DOCX fixtures by
+# shelling out to zip, so the replica base image must carry them too.
+
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends git curl ca-certificates xz-utils sudo \
+  && apt-get install -y --no-install-recommends git curl ca-certificates xz-utils sudo zip unzip \
   && rm -rf /var/lib/apt/lists/*
 
 # Non-root mirrors the GitHub Actions runner user; passwordless sudo lets the
