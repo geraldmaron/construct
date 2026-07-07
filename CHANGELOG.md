@@ -4,6 +4,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-07-07
+
 ### Added
 
 - `construct-rf26.19` follow-up: re-verified the Bun-compiled binary end to end now that `construct-qvou`'s data-root fix is merged — `construct doctor` and a real demo flow (`sandbox create/list/delete`) both produce genuine, correct stdout on a compiled darwin-arm64 binary. Added a demo-flow smoke step to `.github/workflows/bun-binary-smoke.yml` alongside the existing doctor smoke, asserting on each subcommand's actual stdout, not just exit code. Added `bin/construct-shim.mjs`: the ADR-0064 npm-downloader-shim design (platform detection, cached/checksummed download, argv/exit-code-preserving exec, Node-CLI fallback) — not yet wired as `package.json`'s `bin` entry, since 5 existing install/acceptance tests assume synchronous, network-independent `node bin/construct` output; that cutover is a deliberate follow-up. Covered by `tests/functional/construct-shim.functional.test.mjs` (15 tests: cache hit/miss, checksum mismatch, network failure, override/fallback). Documented the full Bun-binary distribution track in `docs/operations/maintenance/release-and-deploy.md`. Still unverified in this environment: a real GitHub Actions run, `install.sh` against a real GitHub Release/clean VM, a real `npm install -g`, and Linux binary execution (compile-only).
