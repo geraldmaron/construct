@@ -30,7 +30,7 @@ description: Work commands for Construct.
 | `construct search` | Hybrid search across project state |
 | `construct storage` | Manage storage backend |
 | `construct tags` | Manage the controlled tag vocabulary (propose, add, deprecate, audit) |
-| `construct team` | Team review and template listing (`team:add` / `team:remove` are internal registry editors) |
+| `construct team` | Team review, template listing, and custom team authoring (`team:add` / `team:remove` are internal registry editors) |
 | `construct tools` | Detect optional publish pipeline binaries (Pandoc, D2, VHS, Playwright) |
 | `construct wireframe` | Generate wireframes from description |
 | `construct workflow` | Instantiate workflow templates (PRD-to-review chains, onboarding, handoffs) |
@@ -355,18 +355,19 @@ construct tags <audit|propose|add|deprecate|archive|list|proposed>
 
 ## construct team
 
-Team review and template listing (`team:add` / `team:remove` are internal registry editors)
+Team review, template listing, and custom team authoring (`team:add` / `team:remove` are internal registry editors)
 
 **Usage**
 
 ```bash
-construct team <list|show|review|templates>
+construct team <list|show|create|review|templates>
 ```
 
 **Subcommands**
 
 - `list` — List macro groups and squads (--kind group|squad)
 - `show` — Show one group or squad by id
+- `create` — Scaffold a custom team into .cx/org/ (or ~/.construct/org/ with --user) — see docs/guides/cookbook/custom-specialists-and-teams.md
 - `review` — Team review workflow
 - `templates` — List team doc templates
 

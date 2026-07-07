@@ -25,6 +25,7 @@ import {
   resolvePuppeteerExecutable,
 } from '../../lib/diagram-export.mjs';
 import { pdfEngineFontOpts } from '../../lib/document-export.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const GOLDEN = path.join(REPO, 'tests', 'fixtures', 'publish', 'golden-prd-platform.md');
@@ -56,7 +57,7 @@ test('resolvePdfTemplatePath prefers project override', () => {
     const resolved = resolvePdfTemplatePath({ artifactType: 'prd-platform', cwd: dir, repoRoot: REPO });
     assert.equal(resolved, override);
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -177,11 +178,34 @@ test('construct-brand.typ uses Space Grotesk family names for body prose', () =>
   assert.doesNotMatch(brand, /Libertinus|SourceSerif|Geist|IBM Plex Sans|"Inter"/);
   assert.match(brand, /construct-figure-max-width = 92%/);
   assert.match(brand, /construct-figure-max-height = 3\.4in/);
-  assert.match(brand, /fit: "contain"/);
+
+  // Figures scale by measured natural size (no reserved-height letterbox):
+  // forcing width+height with fit:contain floated small diagrams in dead space.
+
+  assert.match(brand, /measure\(it\.body\)/);
+  assert.match(brand, /scale\(x: f \* 100%, y: f \* 100%, reflow: true/);
+  assert.doesNotMatch(brand, /fit: "contain"/);
   assert.match(brand, /set par\(justify: false, leading: 0\.9em, spacing: 1\.24em\)/);
   assert.match(brand, /set enum\(numbering: "1\."/);
   assert.match(brand, /#let horizontalrule = block/);
   assert.doesNotMatch(brand, /show enum\.item:/, 'ordered lists must keep native Typst numbering context');
+
+  // Tables must flow across pages: figures stay unbreakable even when a show
+  // rule replaces their body, so the lift needs an explicit breakable block.
+
+  assert.match(brand, /show figure\.where\(kind: table\): set block\(breakable: true\)/);
+
+  // Heading boundary spacing must live on block(above/below) — a trailing weak
+  // v() inside the block is trimmed at the boundary and never renders.
+
+  assert.match(brand, /block\(sticky: true, above: 1\.8em, below: 0\.9em/);
+  assert.doesNotMatch(brand, /v\(0\.6em, weak: true\)/);
+
+  // Lists share one em-based text column across bullets and numbers.
+
+  assert.match(brand, /set list\(.*indent: 0\.25em, body-indent: 0\.65em, spacing: 1em\)/);
+  assert.match(brand, /set enum\(numbering: "1\.", indent: 0\.25em, body-indent: 0\.65em, spacing: 1em\)/);
+  assert.match(brand, /set terms\(/);
 });
 
 test('construct-deck.html and construct-web.html use Space Grotesk brand stack', () => {
@@ -206,6 +230,19 @@ test('buildDistributionDiagramEnv sets Chrome path when available', () => {
   const env = buildDistributionDiagramEnv({});
   assert.equal(env.CONSTRUCT_D2_SKETCH, '1');
   if (chrome) assert.equal(env.PUPPETEER_EXECUTABLE_PATH, chrome);
+});
+
+test('all PDF layout wrappers share the brand page-geometry tokens', () => {
+  const dist = path.join(REPO, 'templates', 'distribution');
+  const brand = fs.readFileSync(path.join(dist, 'construct-brand.typ'), 'utf8');
+  assert.match(brand, /#let construct-page-paper = "a4"/);
+  assert.match(brand, /#let construct-page-margin = \(/);
+  for (const file of ['construct-pdf.typ', 'construct-prd.typ', 'construct-research.typ', 'construct-decision.typ']) {
+    const tpl = fs.readFileSync(path.join(dist, file), 'utf8');
+    assert.match(tpl, /paper: construct-page-paper/, `${file} must use the shared paper token`);
+    assert.match(tpl, /margin: construct-page-margin/, `${file} must use the shared margin token`);
+    assert.doesNotMatch(tpl, /margin:\s*\(x:\s*\d/, `${file} must not hardcode margins`);
+  }
 });
 
 test('ARTIFACT_TEMPLATE_MAP covers all prd family types', () => {

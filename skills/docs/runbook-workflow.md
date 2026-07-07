@@ -11,10 +11,10 @@ Use when: creating operational procedures for services, alerts, or recurring ope
 
 ## Steps
 
-1. **cx-sre** or **cx-release-manager** identifies the need
+1. **cx-operations** identifies the need
 2. **Write to `docs/operations/runbooks/{service}-{operation}.md`** using the template from `get_template("runbook")`: resolves `.cx/templates/docs/runbook.md` (override) then `templates/docs/runbook.md` (shipped)
 3. **Link from the relevant alert** or monitoring dashboard
-4. **cx-docs-keeper** adds to `.cx/context.md` if it's a critical path runbook
+4. **cx-operations** adds to `.cx/context.md` if it's a critical path runbook
 
 ## File naming
 - `docs/operations/runbooks/telemetry-restart.md`

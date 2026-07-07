@@ -25,6 +25,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { resolveExecution } from '../../lib/embedded-contract/execution.mjs';
 import { orchestrationRun } from '../../lib/mcp/tools/orchestration-run.mjs';
 import { sterileSpawnEnv, createOpStub } from '../helpers/sterile-env.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SERVER = path.join(REPO_ROOT, 'lib', 'mcp', 'server.mjs');
@@ -77,7 +78,7 @@ test('keys-no-tiers: orchestration_run (in-process) executes real tasks, never p
     assert.ok(Array.isArray(result.tasks) && result.tasks.length > 0, 'a keys-present run must resolve real tasks, not degrade to an empty plan');
     assert.equal(result.degraded, false);
   } finally {
-    fs.rmSync(cwd, { recursive: true, force: true });
+    rmTmpDir(cwd);
   }
 });
 
@@ -86,7 +87,7 @@ test('keys-no-tiers: the real spawned MCP server drives orchestration_run end to
   const project = path.join(home, 'project');
   fs.mkdirSync(path.join(home, '.cx'), { recursive: true });
   fs.mkdirSync(path.join(project, '.cx'), { recursive: true });
-  t.after(() => fs.rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
+  t.after(() => rmTmpDir(home));
 
   const transport = new StdioClientTransport({
     command: process.execPath,
@@ -140,6 +141,6 @@ test('op:// divergence: a stored op:// credential resolves the same model as a b
     const log = fs.readFileSync(logPath, 'utf8');
     assert.equal(log, '', 'credential-family detection is presence-only and must never shell out to op');
   } finally {
-    fs.rmSync(root, { recursive: true, force: true });
+    rmTmpDir(root);
   }
 });

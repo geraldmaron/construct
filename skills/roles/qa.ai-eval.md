@@ -6,8 +6,7 @@ artifactType: guidance
 role: qa.ai-eval
 applies_to:
   - cx-qa
-  - cx-test-automation
-  - cx-evaluator
+  - cx-reviewer
 inherits: qa
 version: 2
 scopes:

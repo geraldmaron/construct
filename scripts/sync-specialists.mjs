@@ -459,7 +459,7 @@ const standardConstructTools = [
 // agent's tools list or the call is blocked, leaving the orchestrator unable to route.
 // Single source of truth so every host's orchestrator grant stays in parity.
 
-const ORCHESTRATOR_DISPATCH_TOOLS = ["orchestration_policy", "orchestration_run"];
+const ORCHESTRATOR_DISPATCH_TOOLS = ["orchestration_policy", "orchestration_run", "orchestration_delegation_next"];
 const managedStart = `# BEGIN ${systemName.toUpperCase()} AGENTS`;
 const managedEnd = `# END ${systemName.toUpperCase()} AGENTS`;
 const mdManagedStart = `<!-- BEGIN ${systemName.toUpperCase()} AGENTS -->`;
@@ -792,7 +792,7 @@ function orchestrationMicroPrompt(platform) {
 
 // Directive for the local editor agent (construct-local). It executes bounded work on
 // the cheap local model and hands planning/reasoning back to the construct architect —
-// the aider architect/editor split. Kept short: a small model must actually obey it.
+// a cheap-editor/capable-architect split. Kept short: a small model must actually obey it.
 
 const LOCAL_EDITOR_DIRECTIVE =
   `You are a focused execution agent running on a local model, dispatched by construct to do one bounded job. Do well-scoped edits for the current task and verify them; make the smallest correct change, never a broad rewrite.\n` +
@@ -2263,7 +2263,7 @@ function syncOpencode(entries, targetDir = null, wants = true) {
     };
   }
 
-  // Hybrid split (aider architect/editor). When the fast tier is a LOCAL model, emit a
+  // Hybrid split (cheap local editor, capable architect). When the fast tier is a LOCAL model, emit a
   // narrow `construct-local` editor: it does bounded edits on a cheap local model and hands
   // planning/reasoning back to `construct` (the architect, which stays on the user's chosen
   // model — we never pin it). The editor's model is NOT the generic fast-tier default

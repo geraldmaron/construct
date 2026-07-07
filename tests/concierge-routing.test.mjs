@@ -205,7 +205,7 @@ describe("routing contract: expected dispatch per request type", () => {
     { request: "write a Meta PRD for the agent evaluation loop", fileCount: 2, moduleCount: 1, track: "orchestrated", specialists: ["cx-product-manager"], productFlavor: "ai-product" },
     { request: "create a backlog proposal from these customer notes", fileCount: 2, moduleCount: 1, track: "focused", specialists: ["cx-product-manager"], productFlavor: "product" },
     { request: "analyze retention funnel metrics by account segment", fileCount: 2, moduleCount: 1, track: "focused", specialists: ["cx-data-analyst"], roleFlavors: { dataAnalyst: "product" } },
-    { request: "design vector retrieval indexing for product intelligence artifacts", fileCount: 2, moduleCount: 1, track: "orchestrated", specialists: ["cx-architect", "cx-data-engineer"], roleFlavors: { architect: "ai-systems", dataEngineer: "vector-retrieval" } },
+    { request: "design vector retrieval indexing for product intelligence artifacts", fileCount: 2, moduleCount: 1, track: "orchestrated", specialists: ["cx-architect", "cx-engineer"], roleFlavors: { architect: "ai-systems", dataEngineer: "vector-retrieval" } },
     { request: "security audit prompt injection and retrieval access controls", fileCount: 2, moduleCount: 1, track: "orchestrated", specialists: ["cx-security"], roleFlavors: { security: "ai", qa: "ai-eval" } },
     { request: "is this ready to ship", fileCount: 2, moduleCount: 1, track: "focused", specialists: ["cx-reviewer"] },
     { request: "run full autonomous build", fileCount: 4, moduleCount: 2, explicitDrive: true, track: "orchestrated", specialists: ["cx-architect", "cx-engineer", "cx-reviewer", "cx-qa"] },

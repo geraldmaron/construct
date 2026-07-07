@@ -24,12 +24,13 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SYNC_SCRIPT = join(REPO_ROOT, 'scripts', 'sync-specialists.mjs');
@@ -46,7 +47,7 @@ function makeEnv() {
   mkdirSync(HOME, { recursive: true });
   mkdirSync(project, { recursive: true });
   spawnSync('git', ['init', '--quiet', '--initial-branch=main'], { cwd: project });
-  return { sandbox, HOME, project, cleanup() { rmSync(sandbox, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } };
+  return { sandbox, HOME, project, cleanup() { rmTmpDir(sandbox); } };
 }
 
 function runSync(env, scope) {

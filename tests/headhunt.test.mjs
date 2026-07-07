@@ -49,7 +49,7 @@ test('headhunt save mode creates a promotion request', async () => {
   assert.equal(request.status, 'pending_review');
   assert.equal(request.domain, 'terraform');
   assert.equal(request.challenge.required, true);
-  assert.equal(request.challenge.owner, 'cx-devil-advocate');
+  assert.equal(request.challenge.owner, 'cx-reviewer');
 });
 
 test('headhunt overlays are visible through active overlay helper and can be promoted', async () => {
@@ -69,7 +69,7 @@ test('headhunt overlays are visible through active overlay helper and can be pro
   const promoted = promoteHeadhunt(created.overlay.id, { cwd, owner: 'platform-team' });
   assert.equal(promoted.owner, 'platform-team');
   assert.equal(promoted.status, 'pending_review');
-  assert.equal(promoted.challenge.owner, 'cx-devil-advocate');
+  assert.equal(promoted.challenge.owner, 'cx-reviewer');
 });
 
 test('headhunt cleanup removes expired overlays', async () => {

@@ -12,6 +12,7 @@ description: Models & Integrations commands for Construct.
 | `construct claude:allow` | Manage Claude Code `permissions.allow` from the outside (auto-classifier blocks the agent from editing it) |
 | `construct db` | Inspect and migrate the optional Postgres backend |
 | `construct execution` | Resolve the execution-capability contract for an embedded workflow (orchestrated vs prompt-only; descriptive, not enforced) |
+| `construct flow` | Deterministic flow-engine runs: start or resume a checkpointed flow, or inspect its status |
 | `construct hosts` | Show host support for Construct orchestration |
 | `construct mcp` | Manage MCP integrations |
 | `construct models` | Show or update model tier assignments |
@@ -80,6 +81,21 @@ construct execution resolve --json
 **Subcommands**
 
 - `resolve --json` — Report executionMode, active Construct capabilities, and any degradation given host/strategy context
+
+## construct flow
+
+Deterministic flow-engine runs: start or resume a checkpointed flow, or inspect its status
+
+**Usage**
+
+```bash
+construct flow <resume|status> <run-id> [--flow=<path>] [--state=<json>]
+```
+
+**Subcommands**
+
+- `resume <run-id> --flow=<path> [--state=<json>]` — Start (new run-id) or resume a checkpointed flow and drive it to completion
+- `status <run-id>` — Read a flow checkpoint without driving it
 
 ## construct hosts
 

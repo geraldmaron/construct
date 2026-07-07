@@ -18,13 +18,14 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync, rmSync, realpathSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync, realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { resolveProjectScope, resolveProjectScopedPath, projectIdFor, _resetCache } from '../../lib/project-root.mjs';
 import { logSkillCall } from '../../lib/telemetry/skill-calls.mjs';
 import { logIntentVerification } from '../../lib/telemetry/intent-verifications.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 function makeSandbox() {
   // realpath normalizes /var/folders/... → /private/var/folders/... on
@@ -42,7 +43,7 @@ function makeSandbox() {
   mkdirSync(home, { recursive: true });
   return {
     root, projectA, projectB, home,
-    cleanup: () => rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }),
+    cleanup: () => rmTmpDir(root),
   };
 }
 

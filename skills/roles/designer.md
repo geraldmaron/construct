@@ -6,7 +6,6 @@ artifactType: role-guidance
 role: designer
 applies_to:
   - cx-designer
-  - cx-accessibility
 inherits: null
 version: 2
 scopes:

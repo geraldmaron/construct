@@ -95,20 +95,20 @@ describe('validateBinaryPostconditions', () => {
     });
   });
 
-  describe('cx-docs-keeper', () => {
+  describe('cx-operations', () => {
     it('flags missing coherence check', () => {
-      const r = validateBinaryPostconditions('cx-docs-keeper', {});
+      const r = validateBinaryPostconditions('cx-operations', {});
       assert.equal(r.ok, false);
       assert.equal(r.failures[0].id, 'docs-keeper.cross-doc-coherence-check-ran');
     });
 
     it('flags a true flag without a named diff', () => {
-      const r = validateBinaryPostconditions('cx-docs-keeper', { crossDocCoherenceCheckRan: true });
+      const r = validateBinaryPostconditions('cx-operations', { crossDocCoherenceCheckRan: true });
       assert.equal(r.ok, false);
     });
 
     it('passes when both flag and named diff are present', () => {
-      const r = validateBinaryPostconditions('cx-docs-keeper', {
+      const r = validateBinaryPostconditions('cx-operations', {
         crossDocCoherenceCheckRan: true,
         coherenceDiff: 'docs/guides/concepts/architecture.md vs docs/README.md — 4 sections reconciled',
       });
@@ -143,7 +143,7 @@ describe('describePostconditions', () => {
 });
 
 describe('POSTCONDITIONS table integrity', () => {
-  const expected = ['cx-reviewer', 'cx-security', 'cx-debugger', 'cx-docs-keeper', 'cx-designer'];
+  const expected = ['cx-reviewer', 'cx-security', 'cx-debugger', 'cx-operations', 'cx-designer'];
   for (const producer of expected) {
     it(`has at least one rule for ${producer}`, () => {
       const rules = POSTCONDITIONS[producer];

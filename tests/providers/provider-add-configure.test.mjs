@@ -8,7 +8,7 @@
  * (valid + invalid), and the configure → status round-trip.
  */
 
-import test from 'node:test';
+import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
@@ -19,8 +19,19 @@ import { dirname, join } from 'node:path';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(ROOT, 'bin', 'construct');
 
+// The spawned `construct` binary resolves the machine-scoped state root
+// (ADR-0066) from process.env.CX_HOME_OVERRIDE / HOME in its own process, so
+// every spawn below must be pinned to a throwaway home or it leaks a
+// project-key directory into the real developer machine's ~/.construct/projects/.
+const HOME_DIR = mkdtempSync(join(tmpdir(), 'construct-provider-configure-home-'));
+after(() => { rmSync(HOME_DIR, { recursive: true, force: true }); });
+
 function run(args, { cwd = ROOT } = {}) {
-  return spawnSync(process.execPath, [BIN, ...args], { cwd, encoding: 'utf8' });
+  return spawnSync(process.execPath, [BIN, ...args], {
+    cwd,
+    encoding: 'utf8',
+    env: { ...process.env, HOME: HOME_DIR, CX_HOME_OVERRIDE: HOME_DIR },
+  });
 }
 
 function freshProject() {

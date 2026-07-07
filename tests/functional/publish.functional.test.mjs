@@ -7,16 +7,20 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import test from 'node:test';
+import test, { after } from 'node:test';
 import { spawnSync } from 'node:child_process';
 import { detectPublishPipeline } from '../../lib/publish-tooling.mjs';
 import { runPublish, formatGateFailureMessage } from '../../lib/publish.mjs';
 import { validateArtifactRelease } from '../../lib/artifact-release-gate.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const BIN = path.join(REPO, 'bin', 'construct');
 const STUB = path.join(REPO, 'tests', 'fixtures', 'publish', 'agentic-platforms-stub.md');
 const GOLDEN = path.join(REPO, 'tests', 'fixtures', 'publish', 'golden-prd-platform.md');
+
+const SANDBOX_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'publish-home-'));
+after(() => rmTmpDir(SANDBOX_HOME));
 
 function run(args, cwd, env = {}) {
   return spawnSync(BIN, args, {
@@ -28,6 +32,8 @@ function run(args, cwd, env = {}) {
       CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
       BOOTSTRAP_CHECKED: '1',
       CONSTRUCT_DISABLE_AUTO_CLEANUP: '1',
+      HOME: SANDBOX_HOME,
+      CX_HOME_OVERRIDE: SANDBOX_HOME,
       ...env,
     },
   });
@@ -109,7 +115,7 @@ a -> b
     assert.equal(result.ok, true);
     assert.ok(result.ledger?.demos?.length >= 1);
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -130,7 +136,7 @@ test('runPublish --strict fails when tooling missing', () => {
     assert.equal(result.ok, false);
     assert.ok(result.missing?.length >= 1);
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -209,7 +215,7 @@ test('runPublish exports golden fixture when toolchain present', () => {
     assert.ok(fs.existsSync(out));
     assert.ok(fs.statSync(out).size > 1000);
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -278,7 +284,7 @@ session -> login: no
     assert.match(extracted, /4\.\s+Support compliance requirements/i);
     assert.doesNotMatch(extracted, /direction:\s+down/, 'diagram block should render as a figure, not remain literal source');
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -304,6 +310,6 @@ test('runPublish --preview captures render evidence and a validation report', (t
     assert.ok(validation.render.result.images.length >= 1, 'preview must produce at least one screenshot');
     assert.ok(validation.a11y?.coverage, 'report states a11y coverage');
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });

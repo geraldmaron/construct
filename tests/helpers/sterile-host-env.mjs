@@ -12,8 +12,14 @@
  *
  * Pattern: hermetic env isolation (XDG base-dir spec) + CLI stubbing + a footprint
  * diff — the standard lightweight alternative to a full VM/container for config tests.
+ *
+ * ADR-0066 moved heavy per-project state (traces, observations, the vector index,
+ * runtime bootstrap dirs) out of a project's `.cx/` and into `~/.construct/projects/<key>/`
+ * — a real host path most tests never touch on purpose. A test that spins up a project
+ * in a tmp dir but forgets to override HOME now has a second way to leak into the real
+ * machine, so the fingerprint also covers the real `~/.construct/projects/` entry set.
  */
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync, readFileSync, chmodSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync, readFileSync, readdirSync, chmodSync } from "node:fs";
 import { tmpdir, homedir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
@@ -32,6 +38,19 @@ export function realProtectedPaths(home = homedir()) {
     join(home, ".claude.json"),
     join(home, ".codex", "config.toml"),
   ];
+}
+
+// Directory, not a single file — fingerprint the sorted entry list rather than
+// a content hash so a run that creates or removes a project key is caught even
+// though nothing under realProtectedPaths() changed.
+
+function realConstructProjectKeys(home) {
+  const dir = join(home, ".construct", "projects");
+  try {
+    return existsSync(dir) ? readdirSync(dir).sort().join(",") : "absent";
+  } catch {
+    return "unreadable";
+  }
 }
 
 function hashPath(p) {
@@ -63,7 +82,35 @@ export function fingerprintRealConfigs(home = homedir()) {
   const fp = {};
   for (const p of realProtectedPaths(home)) fp[p] = hashPath(p);
   fp["ollama:list"] = createHash("sha256").update(realOllamaList()).digest("hex").slice(0, 16);
+  fp["construct:projects"] = createHash("sha256").update(realConstructProjectKeys(home)).digest("hex").slice(0, 16);
   return fp;
+}
+
+// Snapshot + diff variants for the whole-suite guard in scripts/run-tests.mjs:
+// beyond the pass/fail hash, they carry the raw project-key entry list so a
+// drift report can name exactly which keys appeared or vanished — the
+// attribution signal the per-test isolation work (construct-mtgs) needs to
+// find the leaking test, instead of an opaque "something changed".
+
+export function snapshotRealConfigs(home = homedir()) {
+  return {
+    fingerprint: fingerprintRealConfigs(home),
+    projectKeys: realConstructProjectKeys(home).split(",").filter(Boolean),
+  };
+}
+
+export function diffRealConfigs(beforeSnapshot, home = homedir()) {
+  const after = snapshotRealConfigs(home);
+  const drifted = Object.keys(beforeSnapshot.fingerprint).filter(
+    (k) => beforeSnapshot.fingerprint[k] !== after.fingerprint[k],
+  );
+  const beforeKeys = new Set(beforeSnapshot.projectKeys);
+  const afterKeys = new Set(after.projectKeys);
+  return {
+    drifted,
+    addedProjectKeys: [...afterKeys].filter((k) => !beforeKeys.has(k)),
+    removedProjectKeys: [...beforeKeys].filter((k) => !afterKeys.has(k)),
+  };
 }
 
 // A node-based `ollama` stub that emits the exact text shapes provision-context

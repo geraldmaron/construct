@@ -37,6 +37,7 @@ import path from 'node:path';
 
 import { runTaskViaProvider, _resetPackRegistryCache } from '../../lib/orchestration/worker.mjs';
 import { invokeWorkflow } from '../../lib/embedded-contract/workflow-invoke.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const MODEL = 'anthropic/claude-sonnet-4-6';
 const ENV = { ANTHROPIC_API_KEY: 'sk-test' };
@@ -210,7 +211,7 @@ test('negative control: fallback-mode convergence for both roles is detected via
 const createdDirs = [];
 
 after(() => {
-  for (const dir of createdDirs) fs.rmSync(dir, { recursive: true, force: true });
+  for (const dir of createdDirs) rmTmpDir(dir);
 });
 
 function freshDir(prefix) {

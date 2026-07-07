@@ -834,6 +834,18 @@ Submit one host-executed specialist task result for a run planned with `worker_b
 | `provider` | string | Optional: the provider/vendor family used (self-reported). |
 | `reasoning` | string | Optional: reasoning/thinking for this task, if disclosed. |
 
+### `orchestration_delegation_next`
+Advance a request's delegation chain by exactly one step (ADR-0067, flow-engine-backed). Pass the same classification inputs given to `orchestration_policy` plus a `run_id` minted for this dispatch; the first call starts the chain and returns the first specialist's delegation, each subsequent call with the same `run_id` returns the next one. Never returns more than the current step — act on `currentDelegation` only, then call again. State persists across calls (and process restarts) via the same checkpoint mechanism as `construct flow resume`; `done: true` with `currentDelegation: null` means the chain is exhausted or the route resolved to no specialists (e.g. immediate track).
+
+| Parameter | Type | Description |
+|---|---|---|
+| `request` | string | **required** — The same request text passed to `orchestration_policy`. |
+| `run_id` | string | **required** — Caller-chosen id for this dispatch. Reuse it across calls to advance the same chain. |
+| `fileCount` | number | Optional planning hint: number of files in scope. |
+| `moduleCount` | number | Optional planning hint: number of modules in scope. |
+| `introducesContract` | boolean | Whether the change introduces a new contract/dependency. |
+| `explicitDrive` | boolean | Whether drive/full-send mode is explicitly active. |
+
 ### `orchestration_readiness`
 Report whether this MCP session has Construct orchestration tools attached and reachable now. Returns a pass/fail verdict, typed `reasonCode`, one deterministic `nextStep`, required/observed/missing tools, and a redacted diagnostic bundle. This is an observed attachment check, unlike `construct_execution_resolve`, which remains a descriptive planning/model-resolution contract.
 

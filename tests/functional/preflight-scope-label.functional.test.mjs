@@ -15,9 +15,18 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = path.join(REPO, 'bin', 'construct');
+
+// A deterministic, fake-but-materialized model/credential config so preflight
+// resolves attached=true (exit 0) on any host — a bare `...process.env` spread
+// only reproduces on a machine that happens to carry real provider
+// credentials or ambient fallbacks (a local Ollama daemon, a signed-in `gh`/
+// `op` session); a fresh CI runner has none of those, so preflight would
+// otherwise always report model_unresolved regardless of what this suite
+// actually tests (scope labeling, not model resolution).
 
 function env() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-preflight-scope-'));
@@ -29,8 +38,12 @@ function env() {
       CX_HOME_OVERRIDE: home,
       CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
       BOOTSTRAP_CHECKED: '1',
+      CX_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
+      CX_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6',
+      CX_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
+      ANTHROPIC_API_KEY: 'sk-test-canary',
     },
-    cleanup() { fs.rmSync(home, { recursive: true, force: true }); },
+    cleanup() { rmTmpDir(home); },
   };
 }
 

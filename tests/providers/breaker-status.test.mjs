@@ -14,12 +14,15 @@ import { buildStatus, formatStatusReport } from '../../lib/status.mjs';
 import { resolveProviders } from '../../lib/providers/registry.mjs';
 import { getBreaker, clearBreakerRegistry } from '../../lib/providers/circuit-breaker.mjs';
 
-function withProjectAndHome(fn) {
+// fn is async; this must await it before cleanup, or the finally block
+// deletes rootDir/homeDir out from under fn's still-pending work.
+
+async function withProjectAndHome(fn) {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-breaker-status-project-'));
   const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-breaker-status-home-'));
   fs.mkdirSync(path.join(homeDir, '.claude', 'agents'), { recursive: true });
   try {
-    return fn({ rootDir, homeDir });
+    return await fn({ rootDir, homeDir });
   } finally {
     fs.rmSync(rootDir, { recursive: true, force: true });
     fs.rmSync(homeDir, { recursive: true, force: true });

@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-05T20:58:24.071Z",
+  "generatedAt": "2026-07-06T20:22:25.987Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 791,
-    "topLevelTestFiles": 341,
-    "nestedTestFiles": 450,
+    "testFiles": 808,
+    "topLevelTestFiles": 350,
+    "nestedTestFiles": 458,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 39,
+    "capabilityMarkedFiles": 40,
     "byLayer": {
-      "unit": 544,
-      "functional": 200,
+      "unit": 554,
+      "functional": 207,
       "visual": 11,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 481,
-      "functional": 200,
+      "unit": 491,
+      "functional": 207,
       "visual": 11,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -2189,6 +2189,54 @@
       "maintainerNotes": "tests/flavors/schema.test.mjs — Every flavor overlay conforms to the schema."
     },
     {
+      "path": "tests/flows-checkpoint.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/flows-checkpoint.test.mjs — flow run checkpoint/resume."
+    },
+    {
+      "path": "tests/flows-define.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/flows-define.test.mjs — flow-load validation."
+    },
+    {
+      "path": "tests/flows-demo.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/flows-demo.test.mjs — end-to-end demo flow: fetch -> process -> done."
+    },
+    {
+      "path": "tests/flows-engine.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/flows-engine.test.mjs — router dispatch, join combinators, budget exhaustion."
+    },
+    {
+      "path": "tests/flows-schema.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/flows-schema.test.mjs — hand-rolled JSON-Schema subset validator."
+    },
+    {
+      "path": "tests/flows-state.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/flows-state.test.mjs — typed state transitions."
+    },
+    {
       "path": "tests/frameworks-schema.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -2325,6 +2373,14 @@
       "maintainerNotes": "tests/functional/binary-postcondition-enforcement.functional.test.mjs"
     },
     {
+      "path": "tests/functional/bun-compiled-binary.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/bun-compiled-binary.functional.test.mjs — construct-qvou regression."
+    },
+    {
       "path": "tests/functional/certification-runner.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2381,6 +2437,14 @@
       "maintainerNotes": "tests/functional/construct-not-invoked-is-inert.functional.test.mjs"
     },
     {
+      "path": "tests/functional/construct-shim.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/construct-shim.functional.test.mjs — construct-rf26.19."
+    },
+    {
       "path": "tests/functional/copilot-auth.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2419,6 +2483,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "cursor-rules-delivery.functional.test.mjs — project-evidence rule delivery (construct-bwis)."
+    },
+    {
+      "path": "tests/functional/custom-specialist-authoring.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/custom-specialist-authoring.functional.test.mjs"
     },
     {
       "path": "tests/functional/deck-export.functional.test.mjs",
@@ -2509,6 +2581,14 @@
       ],
       "skipped": false,
       "maintainerNotes": "docling-remote-ingest.functional.test.mjs — opt-in remote conversion (ADR-0036, construct-n1f8)."
+    },
+    {
+      "path": "tests/functional/docling-shared-venv.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/docling-shared-venv.functional.test.mjs — one machine, one docling venv."
     },
     {
       "path": "tests/functional/docs-redirect-stubs.functional.test.mjs",
@@ -2695,6 +2775,16 @@
       "maintainerNotes": "tests/functional/find-tool.functional.test.mjs"
     },
     {
+      "path": "tests/functional/flow-checkpoint-resume.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "flows.checkpoint"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/flow-checkpoint-resume.functional.test.mjs — flow-engine"
+    },
+    {
       "path": "tests/functional/gate-worker-backend-visibility.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2862,6 +2952,14 @@
       "maintainerNotes": "tests/functional/init-intake-archetype.functional.test.mjs"
     },
     {
+      "path": "tests/functional/init-lazy-embedding.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/init-lazy-embedding.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/init-no-project-secrets.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2952,12 +3050,12 @@
       "maintainerNotes": "Live LLM test for the three-tier model router (reasoning / standard /"
     },
     {
-      "path": "tests/functional/llm/specialist-devil-advocate.functional.test.mjs",
+      "path": "tests/functional/llm/specialist-reviewer-plan-challenge.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "Live LLM test for cx-devil-advocate."
+      "maintainerNotes": "Live LLM test for cx-reviewer's plan-challenge mode (the devil-advocate"
     },
     {
       "path": "tests/functional/llm/specialist-roster.functional.test.mjs",
@@ -3663,6 +3761,14 @@
       "maintainerNotes": "tests/functional/sql-client.functional.test.mjs — G1 SQL client contract."
     },
     {
+      "path": "tests/functional/state-root-footprint.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/state-root-footprint.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/surface-smoke-matrix.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3997,6 +4103,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/health-check-resolve-credentials.test.mjs"
+    },
+    {
+      "path": "tests/helpers/cleanup.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/helpers/cleanup.test.mjs — Contract test for the rmTmpDir teardown helper."
     },
     {
       "path": "tests/helpers/sterile-host-env.test.mjs",
@@ -4801,6 +4915,14 @@
       "maintainerNotes": "tests/npm-spawn-env.test.mjs — npm spawn env sanitization."
     },
     {
+      "path": "tests/observation-retention.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/observation-retention.test.mjs — TTL/size eviction for the"
+    },
+    {
       "path": "tests/observation-store.test.mjs",
       "layer": "integration",
       "category": "integration",
@@ -4911,6 +5033,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/orchestration-chain-of-thought.test.mjs — chain-of-thought disclosure."
+    },
+    {
+      "path": "tests/orchestration-delegation-flow.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration-delegation-flow.test.mjs — flow-engine delegation chain"
     },
     {
       "path": "tests/orchestration-events.test.mjs",
@@ -5671,6 +5801,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/roles/router.test.mjs — event → persona resolver."
+    },
+    {
+      "path": "tests/roots.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/roots.test.mjs — Bun-compiled-binary path resolution (construct-qvou)."
     },
     {
       "path": "tests/runtime-pressure.test.mjs",

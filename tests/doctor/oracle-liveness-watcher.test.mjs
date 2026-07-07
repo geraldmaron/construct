@@ -31,10 +31,13 @@ test.beforeEach(() => {
   watcher.__resetOracleLivenessWatcherState();
 });
 
-function withProjectDir(fn) {
+// fn is async; this must await it before cleanup, or the finally block
+// deletes dir out from under fn's still-pending work.
+
+async function withProjectDir(fn) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-oracle-liveness-project-'));
   try {
-    return fn(dir);
+    return await fn(dir);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

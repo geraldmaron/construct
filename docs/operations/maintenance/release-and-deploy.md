@@ -10,7 +10,7 @@ The intent: stop re-deriving the release flow on every cycle. If a step is not a
 
 | Workflow | File | Trigger | Output |
 |---|---|---|---|
-| `ci` | `.github/workflows/ci.yml` | push, PR | Tests on Ubuntu/macOS × Node 20/22, comment + prose + profile lints, docs drift, retrieval evals, dependency CVE audit |
+| `ci` | `.github/workflows/ci.yml` | push, PR | Tests on Ubuntu × Node 20/22 (PRs) or Ubuntu/macOS × Node 20/22 (main push/schedule/dispatch), comment + prose + profile lints, docs drift, retrieval evals, dependency CVE audit |
 | `release` | `.github/workflows/release.yml` | tag `v*` | npm publish (OIDC), Docker image (GHCR), SEA binaries (linux/darwin/windows × x64/arm64), Homebrew tap bump, GitHub Release |
 | `pages` | `.github/workflows/pages.yml` | push to main, manual | GitHub Pages docs site |
 | `docs` | `.github/workflows/docs.yml` | push to main affecting docs | Auto-regenerates AUTO doc regions |
@@ -184,6 +184,29 @@ One-time setup on npmjs.com: package → Settings → Trusted Publishers → add
 - `release.yml` last step bumps the formula's `url`s and `sha256`s for each platform.
 - Requires `HOMEBREW_TAP_TOKEN` secret with push access to the tap repo.
 - Gated on `vars.HOMEBREW_TAP_ENABLED == 'true'`.
+- This is the **Node-SEA** formula (`templates/homebrew/construct.rb`), wired into `release.yml` today. See the Bun-compiled-binary track below for the formula that references Bun binaries instead — the two are not interchangeable until one is chosen as the shipped binary (ADR-0064).
+
+## Bun-compiled binaries (parallel track, construct-rf26.19)
+
+ADR-0064 affirms `bun build --compile` as the primary distribution path going forward, with Node SEA (above) as the recorded fallback if Bun's native-module compatibility ever breaks for LanceDB's N-API bindings or the MCP SDK. This track exists alongside the SEA pipeline and does not gate it — `release.yml` still ships SEA binaries and the Node-SEA Homebrew formula; nothing here runs on a tag push yet.
+
+**Build**: `node scripts/build-binary.mjs [target]` — targets: `darwin-arm64`, `darwin-x64`, `linux-x64`, `linux-arm64`. Requires Bun on PATH (`curl -fsSL https://bun.sh/install | bash`). Compiles from a temporary `.mjs`-suffixed copy of `bin/construct` (Bun's `--compile` bundler only traverses an entry's imports when the entry has a recognized extension) and smoke-tests the result with `construct doctor` when the build host matches the target arch; cross-compiled targets are produced but not executed on a foreign host.
+
+**Two Bun-compile-specific gaps** (construct-qvou, fixed in `lib/roots.mjs`): every bundled module's `import.meta.url`/`process.argv[1]` collapses to the same virtual `/$bunfs/root` path under `--compile`, which broke (a) install-root resolution for every `skills/`/`specialists/`/`templates/`/`config/`/`registry/` read, and (b) the `import.meta.url === file://${argv[1]}` "was I run directly" idiom used by ~19 `lib/*.mjs` files that double as standalone scripts (all evaluated true simultaneously). `resolveInstallRoot()` and `isMainModule()` in `lib/roots.mjs` are the fix; both assume the data directories ship next to the binary (true for `dist/<binary>`, one level below the checkout root).
+
+**CI smoke**: `.github/workflows/bun-binary-smoke.yml` — `workflow_dispatch` or on changes to the build scripts / `bin/construct` / `lib/roots.mjs`. Builds one target per matrix leg (`linux-x64` on `ubuntu-latest`, `darwin-arm64` on `macos-15`) and asserts real output, not just exit code: `construct doctor` must print a `Results: N passed, N warnings, N failed` line, and a demo-flow step runs `construct sandbox create/list/delete` end to end, asserting on each command's actual stdout text. Kept separate from `ci.yml`/`release.yml` so a regression here never blocks an unrelated release.
+
+**Curl installer**: `scripts/install.sh` — detects OS/arch, downloads `construct-<os>-<arch>` + its `.sha256` sidecar from a GitHub Release, verifies the checksum, installs to `/usr/local/bin` (or `~/.local/bin`, or `$CONSTRUCT_INSTALL_DIR`). Same URL scheme SEA binaries already publish under (`releases/download/<tag>/construct-<os>-<arch>`), so it works unchanged once Bun binaries are attached to a release. `CONSTRUCT_REPO` and `CONSTRUCT_VERSION` env vars override the repo and pinned version.
+
+**Homebrew formula**: `Formula/construct.rb` — separate from `templates/homebrew/construct.rb` (the live Node-SEA formula); references Bun binary release assets. Not yet pushed to the tap repo or wired into `release.yml`'s Homebrew bump step.
+
+**npm downloader shim**: `bin/construct-shim.mjs` implements the ADR-0064 "npm demoted to downloader shim" design — detect platform/arch, resolve a cached-or-downloaded Bun binary (same URL/checksum scheme as the curl installer, cached under `lib/config/xdg.mjs`'s `cacheDir()` keyed by package version), exec it with argv/exit-code passthrough, and fall back to running the real Node CLI (rather than erroring silently) on an unsupported platform or a failed download/checksum. **Not wired as `package.json`'s published `bin` entry.** Five existing install/acceptance tests (`tests/acceptance/global-install.test.mjs`, `packed-install.test.mjs`, `tests/functional/install-scope.functional.test.mjs`, `install-parity.functional.test.mjs`, `install-legacy-global-cleanup.functional.test.mjs`) spawn `node bin/construct ...` directly and assert on synchronous, network-independent stdout within tight timeouts; flipping the `bin` mapping needs those updated deliberately (mocked binaries or an offline-first fallback) so a real `npm install -g` does not regress into a flaky, network-dependent install. The shim's own logic is covered by `tests/functional/construct-shim.functional.test.mjs` — cache hit/miss, checksum mismatch, network failure, and the `CONSTRUCT_BIN_OVERRIDE` and unsupported-platform fallback paths, the latter proven against the real `bin/construct` CLI, not a stub.
+
+**What is genuinely verified vs. what is not (be precise here — do not restate this as "done")**:
+
+- Verified directly on this machine: `bun build --compile` for `darwin-arm64`, executed, `construct doctor` and `construct sandbox create/list/delete` (the CI smoke workflow's demo flow) both produce real, correct output against the compiled binary.
+- Verified by cross-compilation only, not execution: `darwin-x64`, `linux-x64`, `linux-arm64` binaries build successfully but have not been run on their native architecture from this environment.
+- Not verified here (needs real infrastructure): the GitHub Actions matrix itself (predicted to pass from a local dry run of its exact commands, not observed running in CI); `scripts/install.sh` against a real GitHub Release and a clean VM; a real `npm install -g` of a shim-based package from the npm registry; the Bun binary's behavior on Windows (unsupported — no target exists) or on any Linux distro other than whatever `ubuntu-latest`/this dev machine represent.
 
 ## Branch flow: feature → staging → main
 

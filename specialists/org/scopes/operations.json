@@ -33,7 +33,13 @@
     "sessionReflect": "on",
     "sessionOptimize": "on"
   },
-  "defaultSkills": [],
+  "defaultSkills": [
+    "operating/incident-response",
+    "operating/oncall-rotation",
+    "operating/change-management",
+    "docs/runbook-workflow",
+    "quality-gates/verify-change"
+  ],
   "toneDefaults": {
     "runbook": "blameless",
     "incident-report": "blameless",

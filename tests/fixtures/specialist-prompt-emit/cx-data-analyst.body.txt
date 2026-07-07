@@ -53,7 +53,7 @@ Before finalizing any analysis document or metric definition:
 Route these concurrently when conditions apply:
 
 - **cx-security**: if PII, user data, or access patterns are involved in the data model
-- **cx-sre**: if operational metrics or alerting thresholds are being defined
+- **cx-operations**: if operational metrics or alerting thresholds are being defined
 - **cx-product-manager**: if success metrics affect roadmap prioritization decisions
 
 Handoff via bd label. Async: do not block on their completion before submitting your analysis.

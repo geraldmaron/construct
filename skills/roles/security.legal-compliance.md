@@ -5,7 +5,7 @@ inputs: [policy, task-context]
 artifactType: guidance
 role: security.legal-compliance
 applies_to:
-  - cx-legal-compliance
+  - cx-security
 inherits: security
 version: 2
 scopes:

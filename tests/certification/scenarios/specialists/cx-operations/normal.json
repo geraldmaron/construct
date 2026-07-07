@@ -16,8 +16,14 @@
     "contract-audit-pass"
   ],
   "handoffEvidence": {
-    "required": false,
-    "artifactTypes": []
+    "required": true,
+    "artifactTypes": [
+      "runbook",
+      "incident-report",
+      "postmortem",
+      "memo",
+      "changelog"
+    ]
   },
   "liveScoring": {
     "enabled": true,

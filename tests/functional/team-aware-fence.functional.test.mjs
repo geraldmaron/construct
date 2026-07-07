@@ -64,17 +64,17 @@ describe('Team-aware fence integration', () => {
     assert.equal(d.source, 'team.forbiddenDecisions', 'should be blocked by team gate');
   });
 
-  it('sre can make deployment decisions (in team rights)', () => {
+  it('operations can make deployment decisions (in team rights)', () => {
     const manifests = loadRoleManifests();
 
-    // sre is in operations-group which has: decisionRights: deployment, rollback, ...
+    // operations is in operations-group which has: decisionRights: deployment, rollback, ...
     const d = policyDecision(
-      { role: 'sre', tool: 'deploy', action: 'ship', decision: 'deployment' },
+      { role: 'operations', tool: 'deploy', action: 'ship', decision: 'deployment' },
       { manifests }
     );
 
     // Should be allowed (not forbidden, and in team decisionRights)
-    assert.equal(d.allowed, true, 'sre can make deployment decisions');
+    assert.equal(d.allowed, true, 'operations can make deployment decisions');
   });
 
   it('security cannot make architecture decisions (forbidden by governance-group)', () => {

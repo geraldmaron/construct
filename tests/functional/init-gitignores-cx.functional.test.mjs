@@ -16,13 +16,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
+
+// lib/paths.mjs resolves the machine-scoped state root (ADR-0066) from
+// process.env directly, so every spawned `construct` needs its own sandboxed
+// HOME to avoid leaking test projects into the real developer machine's
+// ~/.construct/projects/.
+
+const SANDBOX_HOME = mkdtempSync(join(tmpdir(), 'init-cxignore-home-'));
+process.on('exit', () => rmTmpDir(SANDBOX_HOME));
 
 function makeProject(seedGitignore = null) {
   const dir = mkdtempSync(join(tmpdir(), 'init-cxignore-'));
@@ -30,7 +39,7 @@ function makeProject(seedGitignore = null) {
   spawnSync('git', ['config', 'user.email', 'test@example.com'], { cwd: dir });
   spawnSync('git', ['config', 'user.name', 'Test'], { cwd: dir });
   if (seedGitignore != null) writeFileSync(join(dir, '.gitignore'), seedGitignore);
-  return { dir, cleanup: () => rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }) };
+  return { dir, cleanup: () => rmTmpDir(dir) };
 }
 
 function runInit(cwd) {
@@ -42,6 +51,8 @@ function runInit(cwd) {
       ...process.env,
       CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
       BOOTSTRAP_CHECKED: '1',
+      HOME: SANDBOX_HOME,
+      CX_HOME_OVERRIDE: SANDBOX_HOME,
     },
   });
 }

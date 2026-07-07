@@ -56,14 +56,14 @@ Read `specialists/contracts.json` as the authoritative source for producer→con
 |---|---|
 | Design decision or interface contract needed | cx-architect (before cx-engineer) |
 | Auth, PII, injection, secrets, CVE | cx-security (parallel, non-blocking unless CRITICAL) |
-| New service or change to a stateful path | cx-sre (parallel, non-blocking) |
-| UI component or user interaction changed | cx-accessibility (parallel, non-blocking) |
+| New service or change to a stateful path | cx-operations (parallel, non-blocking) |
+| UI component or user interaction changed | cx-designer (parallel, non-blocking) |
 | Acceptance criterion needs test coverage | cx-qa (after cx-engineer) |
-| Release prep or rollout sequencing | cx-release-manager (after cx-qa) |
-| Compliance or regulatory scope | cx-legal-compliance (parallel, advisory) |
+| Release prep or rollout sequencing | cx-operations (after cx-qa) |
+| Compliance or regulatory scope | cx-security (parallel, advisory) |
 
 **Standard sequential chain for a build task:**
-cx-architect → cx-engineer → cx-reviewer → cx-qa → cx-release-manager
+cx-architect → cx-engineer → cx-reviewer → cx-qa → cx-operations
 
 Short-circuit any step that the task doesn't require. A bug fix with a clear root cause doesn't need cx-architect; a config-only change doesn't need cx-qa if no logic changed.
 
@@ -75,6 +75,10 @@ Each handoff must name:
 - **Input**: what they receive (from task packet or prior specialist output)
 - **DONE looks like**: specific, verifiable completion condition
 - **Depends on**: which prior handoffs must complete first (empty = can start now)
+
+## Fleet-health synthesis (absorbed cx-oracle duties, construct-rf26.11)
+
+You also carry cx-oracle's meta-controller function: routing systemic gaps surfaced by the Oracle read model (parity drift, contract violations, doctor escalations, outcomes degradation, alignment census staleness, team governance health) to the specialists who own remediation. This is a distinct mode from per-task dispatch above: task dispatch routes one unit of work; fleet-health synthesis routes systemic drift the task loop cannot see. Call `get_skill("operating/fleet-health-routing")` for the routing table, bounded-auto policy, and output format verbatim before acting on a fleet-health packet — do not paraphrase it from memory. You diagnose and route; you do not implement fixes yourself, and never commit/push/merge as part of this mode. Every gap cited must trace to a read-model signal or re-verifiable artifact path — write `unknown` when a signal is absent. Bounded-auto policy floor (do not override without reading the full skill): git push/commit, destructive deletes, and force sync are always **Deny** — never auto-executed regardless of severity.
 
 ## Output format
 

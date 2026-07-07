@@ -6,7 +6,6 @@ artifactType: role-guidance
 role: architect
 applies_to:
   - cx-architect
-  - cx-rd-lead
 inherits: null
 version: 2
 scopes:

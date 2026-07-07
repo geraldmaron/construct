@@ -14,6 +14,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 import {
   wrapWithOpRun,
   resolveOpEnvFile,
@@ -37,7 +38,7 @@ test('wrapWithOpRun returns the command unchanged when the var is unset', () => 
 
 test('wrapWithOpRun does not wrap when op CLI is absent (never forces 1Password)', (t) => {
   const { dir, file } = tmpEnvFile();
-  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(dir));
   const r = wrapWithOpRun('/usr/bin/node', ['server.mjs'], { env: { CONSTRUCT_OP_ENV_FILE: file }, hasOp: () => false });
   assert.equal(r.wrapped, false);
   assert.equal(r.command, '/usr/bin/node');
@@ -50,7 +51,7 @@ test('wrapWithOpRun does not wrap when the env-file is missing', () => {
 
 test('wrapWithOpRun wraps in op run when opted in and op is present', (t) => {
   const { dir, file } = tmpEnvFile();
-  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(dir));
   const r = wrapWithOpRun('/usr/bin/node', ['server.mjs'], { env: { CONSTRUCT_OP_ENV_FILE: file }, hasOp: () => true });
   assert.equal(r.wrapped, true);
   assert.equal(r.command, 'op');
@@ -59,7 +60,7 @@ test('wrapWithOpRun wraps in op run when opted in and op is present', (t) => {
 
 test('resolveOpEnvFile expands a leading ~ against the home dir', (t) => {
   const { dir, file } = tmpEnvFile();
-  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(dir));
   const resolved = resolveOpEnvFile({ CONSTRUCT_OP_ENV_FILE: '~/.env.op' }, dir);
   assert.equal(resolved, path.join(dir, '.env.op'));
   assert.equal(resolved, file);
@@ -67,7 +68,7 @@ test('resolveOpEnvFile expands a leading ~ against the home dir', (t) => {
 
 test('wrapWithOpRun does not nest when the parent already resolved (sentinel set)', (t) => {
   const { dir, file } = tmpEnvFile();
-  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(dir));
   const r = wrapWithOpRun('/usr/bin/node', ['server.mjs'], {
     env: { CONSTRUCT_OP_ENV_FILE: file, [OP_RUN_ACTIVE_ENV]: '1' },
     hasOp: () => true,
@@ -79,7 +80,7 @@ test('wrapWithOpRun does not nest when the parent already resolved (sentinel set
 
 test('maybeReExecUnderOpRun re-execs once under a single op run when opted in', (t) => {
   const { dir, file } = tmpEnvFile();
-  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(dir));
   const calls = [];
   const res = maybeReExecUnderOpRun({
     argv: ['/usr/bin/node', '/opt/construct/bin/construct', 'dev', '--only=memory'],
@@ -130,7 +131,7 @@ test('maybeReExecUnderOpRun does not re-exec when not opted in', () => {
 
 test('maybeReExecUnderOpRun does not re-exec when op is absent (never forces 1Password)', (t) => {
   const { dir, file } = tmpEnvFile();
-  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(dir));
   const calls = [];
   const res = maybeReExecUnderOpRun({
     env: { CONSTRUCT_OP_ENV_FILE: file },
@@ -145,7 +146,7 @@ test('maybeReExecUnderOpRun does not re-exec when op is absent (never forces 1Pa
 
 test('maybeReExecUnderOpRun falls through on a spawn error so the normal launch still runs', (t) => {
   const { dir, file } = tmpEnvFile();
-  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(dir));
   const res = maybeReExecUnderOpRun({
     argv: ['/usr/bin/node', '/opt/construct/bin/construct', 'dev'],
     execPath: '/usr/bin/node',

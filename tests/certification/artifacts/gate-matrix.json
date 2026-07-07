@@ -18,10 +18,10 @@
         "citationLint": true,
         "proseMinimum": 3,
         "requiredReviewers": [
-          "cx-devil-advocate"
+          "cx-reviewer"
         ],
         "optionalReviewers": [
-          "cx-ux-researcher"
+          "cx-researcher"
         ]
       }
     },
@@ -42,7 +42,7 @@
         "citationLint": true,
         "proseMinimum": 3,
         "requiredReviewers": [
-          "cx-devil-advocate",
+          "cx-reviewer",
           "cx-architect"
         ],
         "optionalReviewers": []
@@ -63,10 +63,10 @@
         "citationLint": true,
         "proseMinimum": 3,
         "requiredReviewers": [
-          "cx-devil-advocate"
+          "cx-reviewer"
         ],
         "optionalReviewers": [
-          "cx-business-strategist"
+          "cx-product-manager"
         ]
       }
     },
@@ -85,7 +85,6 @@
         "citationLint": true,
         "proseMinimum": 3,
         "requiredReviewers": [
-          "cx-devil-advocate",
           "cx-reviewer"
         ],
         "optionalReviewers": []
@@ -108,7 +107,6 @@
         "citationLint": true,
         "proseMinimum": 2,
         "requiredReviewers": [
-          "cx-devil-advocate",
           "cx-reviewer"
         ],
         "optionalReviewers": [
@@ -133,7 +131,6 @@
         "citationLint": true,
         "proseMinimum": 3,
         "requiredReviewers": [
-          "cx-devil-advocate",
           "cx-reviewer"
         ],
         "optionalReviewers": []
@@ -156,7 +153,6 @@
         "citationLint": true,
         "proseMinimum": 3,
         "requiredReviewers": [
-          "cx-devil-advocate",
           "cx-reviewer"
         ],
         "optionalReviewers": []
@@ -196,7 +192,7 @@
         "proseMinimum": 2,
         "requiredReviewers": [],
         "optionalReviewers": [
-          "cx-devil-advocate"
+          "cx-reviewer"
         ]
       }
     },
@@ -238,7 +234,7 @@
         "proseMinimum": 2,
         "requiredReviewers": [],
         "optionalReviewers": [
-          "cx-sre"
+          "cx-operations"
         ]
       }
     },
@@ -263,7 +259,7 @@
         "proseMinimum": 2,
         "requiredReviewers": [],
         "optionalReviewers": [
-          "cx-devil-advocate"
+          "cx-reviewer"
         ]
       }
     },
@@ -309,10 +305,10 @@
         "citationLint": true,
         "proseMinimum": 2,
         "requiredReviewers": [
-          "cx-devil-advocate"
+          "cx-reviewer"
         ],
         "optionalReviewers": [
-          "cx-business-strategist"
+          "cx-product-manager"
         ]
       }
     },
@@ -352,10 +348,10 @@
         "citationLint": true,
         "proseMinimum": 3,
         "requiredReviewers": [
-          "cx-devil-advocate"
+          "cx-reviewer"
         ],
         "optionalReviewers": [
-          "cx-ux-researcher"
+          "cx-researcher"
         ]
       }
     },
@@ -377,7 +373,7 @@
         "citationLint": true,
         "proseMinimum": 2,
         "requiredReviewers": [
-          "cx-devil-advocate"
+          "cx-reviewer"
         ],
         "optionalReviewers": []
       }
@@ -519,7 +515,7 @@
         "citationLint": true,
         "proseMinimum": 2,
         "requiredReviewers": [
-          "cx-devil-advocate"
+          "cx-reviewer"
         ],
         "optionalReviewers": []
       }
@@ -537,7 +533,7 @@
         "citationLint": true,
         "proseMinimum": 2,
         "requiredReviewers": [
-          "cx-devil-advocate"
+          "cx-reviewer"
         ],
         "optionalReviewers": []
       }
@@ -560,7 +556,7 @@
         "proseMinimum": 3,
         "requiredReviewers": [],
         "optionalReviewers": [
-          "cx-devil-advocate"
+          "cx-reviewer"
         ]
       }
     }

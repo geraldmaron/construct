@@ -11,6 +11,7 @@ import path from 'node:path';
 
 import { createSqlClient, closeSqlClient, probeSqlClient } from '../../lib/storage/backend.mjs';
 import { applyMigrations, getMigrationStatus } from '../../lib/db/migrate.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REQUIRE_LIVE = process.env.CONSTRUCT_REQUIRE_POSTGRES_TEST === '1';
 const LIVE_ENV = {
@@ -28,7 +29,7 @@ test('solo/no-url mode never opens a SQL client', () => {
 
 test('construct db status reports unavailable without database configuration', (t) => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-sql-cli-'));
-  t.after(() => fs.rmSync(home, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(home));
   const env = {
     PATH: process.env.PATH,
     HOME: home,

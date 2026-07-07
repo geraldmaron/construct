@@ -15,7 +15,11 @@
     "security/vuln-research",
     "security/threat-intel",
     "quality-gates/verify-security",
-    "architecture/security-arch"
+    "architecture/security-arch",
+    "compliance/license-audit",
+    "compliance/data-privacy",
+    "compliance/ai-disclosure",
+    "compliance/regulatory-review"
   ],
   "tone": "'Internal only' as a security boundary, trust relationships never made explicit, unaudited dependencies",
   "openingQuestion": "What does an attacker see when they look at this?",

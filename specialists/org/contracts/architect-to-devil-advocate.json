@@ -1,7 +1,7 @@
 {
   "id": "architect-to-devil-advocate",
   "producer": "cx-architect",
-  "consumer": "cx-devil-advocate",
+  "consumer": "cx-reviewer",
   "trigger": {
     "framingChallenge.required": true
   },
@@ -25,8 +25,16 @@
     "Problem statement stated independent of tickets/transcripts"
   ],
   "postconditions": [
-    "If verdict is BLOCKED, architect revises framing before proceeding",
-    "Challenge checkpoint logged to audit trail"
+    {
+      "id": "architect-to-devil-advocate-pc-0-if-verdict-is-blocked-architect-revises",
+      "description": "If verdict is BLOCKED, architect revises framing before proceeding",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "architect-to-devil-advocate-pc-1-challenge-checkpoint-logged-to-audit-trail",
+      "description": "Challenge checkpoint logged to audit trail",
+      "postconditionType": "advisory"
+    }
   ],
   "description": "",
   "teamBoundary": {

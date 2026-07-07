@@ -321,6 +321,10 @@
       "core": false
     },
     {
+      "name": "resume <run-id> --flow=<path> [--state=<json>]",
+      "core": false
+    },
+    {
       "name": "review",
       "core": false
     },
@@ -466,35 +470,18 @@
     }
   ],
   "agents": [
-    "accessibility",
-    "ai-engineer",
     "architect",
-    "business-strategist",
     "data-analyst",
-    "data-engineer",
     "debugger",
     "designer",
-    "devil-advocate",
-    "docs-keeper",
     "engineer",
-    "evaluator",
-    "explorer",
-    "legal-compliance",
     "operations",
-    "oracle",
     "orchestrator",
-    "platform-engineer",
     "product-manager",
     "qa",
-    "rd-lead",
-    "release-manager",
     "researcher",
     "reviewer",
-    "security",
-    "sre",
-    "test-automation",
-    "trace-reviewer",
-    "ux-researcher"
+    "security"
   ],
   "hooks": {
     "SessionStart": [

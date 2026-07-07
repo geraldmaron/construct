@@ -21,9 +21,18 @@ test('claude construct agent uses micro-prompt, not the static roster', () => {
     mkdirSync(join(sandbox.root, '.claude', 'agents'), { recursive: true });
     writeFileSync(join(sandbox.root, '.claude', 'settings.json'), JSON.stringify({ mcpServers: {} }));
 
+    // sync-specialists.mjs derives its own `root` from import.meta.dirname (the
+    // script's own file location under repoRoot/scripts/) and self-populates
+    // process.env.CX_TOOLKIT_DIR from that root when unset — it never needs the
+    // var supplied externally to find its source files. Setting CX_TOOLKIT_DIR
+    // here would also feed lib/paths.mjs's constructDir(), which lib/state-root.mjs
+    // builds the ADR-0066 machine-scoped state root on: any code path in the
+    // child that touched state-root.mjs would redirect real state into repoRoot
+    // instead of the sandboxed HOME, an unrelated concern from locating source
+    // files.
     const r = spawnSync(process.execPath, [join(repoRoot, 'scripts', 'sync-specialists.mjs'), '--project'], {
       cwd: sandbox.root,
-      env: { ...sandbox.env, CX_TOOLKIT_DIR: repoRoot, CONSTRUCT_SYNC_HOSTS: 'claude' },
+      env: { ...sandbox.env, CONSTRUCT_SYNC_HOSTS: 'claude' },
       encoding: 'utf8',
       timeout: 60_000,
     });

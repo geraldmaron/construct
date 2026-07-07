@@ -73,6 +73,29 @@ function payload(result) {
   try { return JSON.parse(text); } catch { return text; }
 }
 
+// Any in-process call that resolves the machine-scoped state root (ADR-0066)
+// needs CX_HOME_OVERRIDE pinned around it — process.env is the only thing
+// homeDir()/constructDir() consult, not the { env } option threaded through a
+// function's own signature. The spawned server sees the sandboxed HOME via
+// sterileSpawnEnv's env; this process must pin the same override around any
+// direct call (getRun, or runOrchestration invoked without a handshake), or it
+// reads/writes the real developer machine's state root instead.
+
+async function withHomeOverride(env, fn) {
+  const prev = process.env.CX_HOME_OVERRIDE;
+  process.env.CX_HOME_OVERRIDE = env.HOME;
+  try {
+    return await fn();
+  } finally {
+    if (prev === undefined) delete process.env.CX_HOME_OVERRIDE;
+    else process.env.CX_HOME_OVERRIDE = prev;
+  }
+}
+
+async function getRunInSandbox(env, runId) {
+  return withHomeOverride(env, () => getRun(env.project, runId, { env: {} }));
+}
+
 async function runViaClient(env, clientInfo, args) {
   const client = await connect(env, clientInfo);
   try {
@@ -80,7 +103,7 @@ async function runViaClient(env, clientInfo, args) {
       name: 'orchestration_run',
       arguments: { request: 'compare oidc vs saml', wait: true, worker_backend: 'inline', ...args },
     }));
-    const persisted = await getRun(env.project, run.runId, { env: {} });
+    const persisted = await getRunInSandbox(env, run.runId);
     return { run, persisted };
   } finally {
     await client.close();
@@ -109,6 +132,8 @@ test('the CLI path (no MCP handshake, no host arg) still records cli-direct', as
   const env = sandbox();
   t.after(() => env.cleanup());
 
-  const run = await runOrchestration({ request: 'compare oidc vs saml', workerBackend: 'inline' }, { cwd: env.project, env: {} });
+  const run = await withHomeOverride(env, () =>
+    runOrchestration({ request: 'compare oidc vs saml', workerBackend: 'inline' }, { cwd: env.project, env: {} }),
+  );
   assert.equal(run.hostRole, 'cli-direct', 'a direct runOrchestration call with no handshake and no host arg keeps recording cli-direct');
 });

@@ -1,6 +1,6 @@
 ---
 name: docs-user-research-workflow
-description: "Use when: cx-ux-researcher synthesizes user evidence — interviews, support tickets, session replay, surveys, or field notes."
+description: "Use when: cx-researcher synthesizes user evidence — interviews, support tickets, session replay, surveys, or field notes."
 inputs: [user-research, interview-data]
 artifactType: evidence-brief
 toneDefault: pedagogical
@@ -9,7 +9,7 @@ verificationBar: "Observed behavior weighted over self-report; sample size state
 ---
 # User Research Workflow
 
-Use when: cx-ux-researcher gathers or synthesizes **user** evidence. Do not use for CVE lookups, API version facts, or repo structure — use `docs/research-workflow` (cx-researcher) or `docs/codebase-research-workflow` (cx-explorer) instead.
+Use when: cx-researcher gathers or synthesizes **user** evidence. Do not use for CVE lookups, API version facts, or repo structure — use `docs/research-workflow` or `docs/codebase-research-workflow` (both also cx-researcher, under a different skill overlay) instead.
 
 Follow [rules/common/research.md](../../rules/common/research.md) and call `get_skill("roles/ux-researcher")` before drafting.
 
@@ -37,7 +37,7 @@ Follow [rules/common/research.md](../../rules/common/research.md) and call `get_
 
 - No invented customer names, quotes, or ticket ids.
 - Findings describe problems, not prescribed UI solutions.
-- cx-ux-researcher must **not** cite blog posts for API version or security claims.
+- cx-researcher must **not** cite blog posts for API version or security claims.
 ## Release gate
 
 Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.

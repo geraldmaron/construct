@@ -14,6 +14,7 @@ import test from 'node:test';
 
 import { listScopes, loadScope, resolveActiveScope } from '../../lib/scopes/loader.mjs';
 import { classifyRdIntake } from '../../lib/intake/classify.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const PRINCIPLED_SCOPES = ['rnd', 'operations', 'creative', 'research'];
 
@@ -50,7 +51,7 @@ test('escape hatch: .cx/scope.json with custom:true overrides the default', () =
   const p = resolveActiveScope(cwd);
   assert.equal(p.id, 'game-studio');
   assert.equal(p.custom, true);
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
 });
 
 test('curated catalog stays at four principled scopes', () => {

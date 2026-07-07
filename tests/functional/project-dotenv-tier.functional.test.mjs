@@ -23,7 +23,7 @@
  */
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -33,6 +33,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 
 import { resolveProjectRoot } from '../../lib/roots.mjs';
 import { sterileSpawnEnv } from '../helpers/sterile-env.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
@@ -58,7 +59,7 @@ function sandbox() {
     project,
     writeProjectEnv(contents) { writeFileSync(join(project, '.env'), contents, 'utf8'); },
     writeUserEnv(contents) { writeFileSync(join(home, '.config', 'construct', 'config.env'), contents, 'utf8'); },
-    cleanup() { rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); },
+    cleanup() { rmTmpDir(root); },
   };
 }
 
@@ -173,6 +174,6 @@ test('toolkit-dev-checkout case: resolveProjectRoot falls back to the nearest pa
       'a cwd inside a package.json-rooted checkout (the toolkit-dev shape ROOT_DIR used to serve) must still resolve to that checkout root',
     );
   } finally {
-    rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmTmpDir(root);
   }
 });

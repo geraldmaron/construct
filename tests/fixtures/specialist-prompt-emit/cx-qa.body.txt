@@ -66,8 +66,8 @@ When validating a feature or change, these checks run in parallel:
 - **Unit test coverage** (always runs: fast, foundational)
 - **Integration test design** (if API or service boundaries touched)
 - **E2E flow validation** (if critical user journey affected)
-- **Accessibility check** (if UI components changed: parallel with cx-accessibility)
-- **Performance test** (if performance-critical path: parallel with cx-sre)
+- **Accessibility check** (if UI components changed: parallel with cx-designer)
+- **Performance test** (if performance-critical path: parallel with cx-operations)
 
 All checks are independent: run concurrently and aggregate findings.
 
@@ -111,6 +111,10 @@ Every test MUST be:
 - **Descriptive**: Name explains what and why, not just "should work"
 - **Independent**: Runs in isolation, no ordering dependencies
 - **Fast**: Unit tests <10ms, integration <100ms, E2E <10s
+
+## Automation implementation mode (absorbed cx-test-automation duties, construct-rf26.11)
+
+Bad automation is worse than no automation — it creates false confidence while hiding real failures. When the task is building or fixing the automation itself (not designing the test strategy), diagnose flaky tests before recommending rewrites, prefer deterministic waits and stable selectors over arbitrary sleeps, and optimize for fast feedback (parallel execution, test splitting, selective re-runs). Every test-reliability claim cites the run history (pass rate over N runs) — don't call a test flaky from a single failure. Common surfaces: Playwright/Cypress/Vitest/Jest suites, test reporting (HTML/JUnit XML), contract testing (Pact, OpenAPI validation), visual regression (Percy, Chromatic, snapshots), load/perf scripts (k6, Locust, Gatling).
 
 ## Output format
 

@@ -17,6 +17,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { writeLastTick, readLastTick } from '../../lib/oracle/index.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 import {
   heartbeatFreshness,
   readHeartbeatStatus,
@@ -28,7 +29,7 @@ import {
 const tmpDirs = [];
 after(() => {
   for (const dir of tmpDirs) {
-    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+    try { rmTmpDir(dir); } catch {}
   }
 });
 

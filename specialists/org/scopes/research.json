@@ -33,7 +33,12 @@
     "sessionReflect": "on",
     "sessionOptimize": "on"
   },
-  "defaultSkills": [],
+  "defaultSkills": [
+    "docs/research-workflow",
+    "docs/evidence-ingest-workflow",
+    "docs/transcript-synthesis",
+    "strategy/market-research-methods"
+  ],
   "toneDefaults": {
     "research-brief": "direct",
     "evidence-brief": "direct",

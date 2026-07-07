@@ -55,21 +55,23 @@
 #let construct-font-display = ("Space Grotesk",)
 #let construct-font-mono = ("JetBrains Mono",)
 
-#let horizontalrule = block(width: 100%, above: 0.85em, below: 0.95em)[
+#let horizontalrule = block(width: 100%, above: 1.3em, below: 1.3em)[
   #line(length: 100%, stroke: 0.6pt + hairline-strong)
 ]
 
-// Type scale. One modular ramp shared by every document type so sizing never
-// drifts between a PRD, a research brief, and a decision record.
+// Type scale. One modular ramp (~1.2 steps off a 10.5pt body) shared by every
+// document type so sizing never drifts between a PRD, a research brief, and a
+// decision record. Every step must be visibly distinct from its neighbours at
+// reading distance — heading levels may not differ by weight alone.
 
-#let fs-micro = 8pt
-#let fs-small = 8.5pt
-#let fs-meta = 9pt
-#let fs-body = 10.4pt
-#let fs-h4 = 8.5pt
-#let fs-h3 = 11pt
-#let fs-h2 = 13pt
-#let fs-h1 = 17pt
+#let fs-micro = 8pt      // running header/footer, figure captions
+#let fs-small = 8.5pt    // table headers, bylines
+#let fs-meta = 9pt       // table body, block code
+#let fs-body = 10.5pt    // body prose
+#let fs-h4 = 9pt         // uppercase kicker heading
+#let fs-h3 = 12pt        // subsection heading
+#let fs-h2 = 14pt        // section heading
+#let fs-h1 = 16.5pt      // part heading (the document title belongs to the masthead)
 #let fs-subtitle = 11.5pt
 #let fs-title = 24pt
 
@@ -80,8 +82,24 @@
 #let wt-semibold = 600
 #let wt-bold = 700
 
+// Shared page geometry. Layout templates import these instead of hardcoding
+// margins so the document classes can never drift apart (they already had,
+// before these tokens existed).
+
+#let construct-page-paper = "a4"
+#let construct-page-margin = (x: 2.15cm, top: 2cm, bottom: 2.4cm)
+
 #let construct-figure-max-width = 92%
 #let construct-figure-max-height = 3.4in
+
+// Pandoc's typst writer encodes smart punctuation as markup ("---", "--", "..."),
+// but template variables land inside Typst *strings*, where markup is never
+// evaluated — without this a subtitle prints a literal "---". Normalize any
+// metadata string before it reaches the page.
+
+#let construct-smart-text(s) = {
+  str(s).replace("---", "\u{2014}").replace("--", "\u{2013}").replace("...", "\u{2026}")
+}
 
 // A document-type word maps to a compact badge so the masthead reads as a
 // labelled artifact rather than a bare title.
@@ -185,24 +203,28 @@
   )
   if chips != none {
     chips
-    v(0.62em)
+    v(0.7em)
   }
-  text(font: construct-font-display, size: fs-title, weight: wt-semibold, fill: ink, tracking: -0.02em)[#title]
+
+  // Display sizes need display leading: the body's paragraph leading applied at
+  // 26pt reads as a gap, not a title, so the title paragraph pins its own.
+
+  par(leading: 0.42em, text(font: construct-font-display, size: fs-title, weight: wt-semibold, fill: ink, tracking: -0.02em)[#construct-smart-text(title)])
   if subtitle != "" {
-    v(0.45em)
-    text(font: construct-font-sans, size: fs-subtitle, fill: ink-muted, tracking: -0.005em)[#subtitle]
+    v(0.55em)
+    par(leading: 0.5em, text(font: construct-font-sans, size: fs-subtitle, fill: ink-muted, tracking: -0.005em)[#construct-smart-text(subtitle)])
   }
   let byline = construct-editorial-line(status, owner, date)
   if byline != none {
-    v(0.78em)
+    v(0.95em)
     byline
   }
-  v(0.95em)
+  v(1.15em)
   block(width: 100%, height: 2pt, {
     place(left + horizon, line(length: 100%, stroke: 0.5pt + hairline))
     place(left + horizon, line(length: 46pt, stroke: 2pt + ink))
   })
-  v(1.05em)
+  v(1.5em)
 }
 
 // Shared callout shell: a grey panel with a black left bar and a small bold
@@ -216,6 +238,8 @@
     inset: (left: 14pt, top: 11pt, bottom: 11pt, right: 13pt),
     width: 100%,
     radius: (right: 3pt),
+    above: 1.05em,
+    below: 1.05em,
   )[
     #set par(leading: 0.66em, spacing: 0.72em)
     #set text(font: construct-font-sans, size: fs-body, fill: ink-body)
@@ -223,7 +247,6 @@
     #v(0.42em)
     #body
   ]
-  v(0.85em)
 }
 
 #let construct-at-a-glance(body) = construct-callout("At a glance", body, tint: surface-alt)
@@ -242,12 +265,13 @@
     inset: 13pt,
     width: 100%,
     radius: (bottom: 3pt),
+    above: 1.05em,
+    below: 1.05em,
   )[
     #text(font: construct-font-sans, size: 7.5pt, weight: wt-bold, fill: ink, tracking: 0.09em)[KEY METRICS]
     #v(0.48em)
     #body
   ]
-  v(0.85em)
 }
 
 // Running header appears from page two: short title at left, doc id and page at
@@ -256,7 +280,11 @@
 #let construct-running-header(title, doc-id: "", version: "") = context {
   if counter(page).get().first() > 1 [
     #set text(font: construct-font-sans, size: fs-micro, fill: ink-muted)
-    #let short-title = if title.len() > 52 { title.slice(0, 49) + "…" } else { title }
+    // Truncate on grapheme clusters, not bytes: slice() panics mid-codepoint on
+    // multibyte characters (em dashes, accents) in long titles.
+    #let clean-title = construct-smart-text(title)
+    #let glyphs = clean-title.clusters()
+    #let short-title = if glyphs.len() > 52 { glyphs.slice(0, 49).join("") + "…" } else { clean-title }
     #text(fill: ink-muted)[#short-title]
     #h(1fr)
     #if doc-id != "" [
@@ -273,18 +301,33 @@
   ]
 }
 
+// Running footer: a quiet wordmark line, not a second headline. The header
+// already carries the strong ink; the footer stays in the muted register so
+// page chrome frames the content instead of competing with it.
+
 #let construct-running-footer(footer-label, classification: "") = context {
   if counter(page).get().first() > 1 [
     #v(0.3em)
     #line(length: 100%, stroke: 0.4pt + hairline)
-    #v(0.28em)
+    #v(0.32em)
     #set text(font: construct-font-sans, size: fs-micro, fill: ink-faint)
     #align(center)[
-      #text(weight: wt-bold, fill: ink, tracking: 0.04em)[#footer-label]
-      #if classification != "" [ #sym.dot.c #upper(classification)]
+      #text(weight: wt-semibold, fill: ink-muted, tracking: 0.16em)[CONSTRUCT]
+      #text(fill: ink-faint)[ #sym.dot.c ]
+      #text(fill: ink-muted)[#footer-label]
+      #if classification != "" [ #text(fill: ink-faint)[ #sym.dot.c ] #upper(classification)]
     ]
   ]
 }
+
+// Pandoc's typst writer has emitted two different calls for a markdown
+// blockquote across versions: older releases call a bare `blockquote(...)`
+// (relying on their own default template to define it, which ours does not),
+// newer releases call Typst's native `quote(block: true, ...)` (handled by the
+// `show quote:` rule below). Defining `blockquote` as a forward to `quote` keeps
+// both pandoc generations rendering through the same show rule.
+
+#let blockquote(body) = quote(block: true, body)
 
 // The theme function carries every body-level #set/#show rule. Module-scope set
 // rules do NOT propagate through `#import`, so each layout template applies this
@@ -303,8 +346,14 @@
   // preserve Typst's native counter context or every item will render as `1.`.
   // Spacing belongs on the list container, not on a wrapped enum.item block.
 
-  set list(marker: (text(fill: ink)[•], text(fill: ink-muted)[‣], text(fill: ink-faint)[–]), indent: 2pt, body-indent: 9pt, spacing: 1.02em)
-  set enum(numbering: "1.", indent: 2pt, body-indent: 9pt, spacing: 1.02em)
+  // Indents are em-based so they track the type size, and identical between
+  // bullets and numbers so both list kinds share one text column. Item gaps
+  // (1em) sit between the in-item line leading (0.9em) and the paragraph gap
+  // (1.24em): wrapped lines, items, and blocks stay three distinct rhythms.
+
+  set list(marker: (text(fill: ink)[•], text(fill: ink-muted)[‣], text(fill: ink-faint)[–]), indent: 0.25em, body-indent: 0.65em, spacing: 1em)
+  set enum(numbering: "1.", indent: 0.25em, body-indent: 0.65em, spacing: 1em)
+  set terms(hanging-indent: 0.9em, spacing: 1em)
 
   // Links carry ink with a hairline underline so citations stay legible without
   // introducing color.
@@ -317,36 +366,38 @@
   // Headings. Level 2 is the working section header (the H1 title is rendered by
   // the masthead and stripped from the body), so it carries a short black rule.
 
+  // Heading rhythm: space above a heading is always noticeably larger than the
+  // space below it, so each heading binds to the section it opens rather than
+  // floating between two blocks. Above:below stays near 2:1 at every level.
+  // Boundary spacing lives on `block(above:, below:)` — a trailing weak v()
+  // inside the block sits at a block boundary, where Typst trims it to zero,
+  // so the gap under a heading silently never rendered.
+
   show heading.where(level: 1): it => {
-    v(1.2em, weak: true)
-    block(sticky: true, {
+    block(sticky: true, above: 2em, below: 0.9em, {
+      set par(leading: 0.45em)
       text(font: construct-font-display, size: fs-h1, weight: wt-semibold, fill: ink, tracking: -0.015em)[#it.body]
-      v(0.22em)
+      v(0.3em)
       line(length: 100%, stroke: 0.5pt + hairline)
-      v(0.7em, weak: true)
     })
   }
   show heading.where(level: 2): it => {
-    v(1.65em, weak: true)
-    block(sticky: true, {
+    block(sticky: true, above: 2.6em, below: 0.95em, {
+      set par(leading: 0.45em)
       text(font: construct-font-display, size: fs-h2, weight: wt-semibold, fill: ink, tracking: -0.01em)[#it.body]
-      v(0.4em)
+      v(0.42em)
       line(length: 26pt, stroke: 1.5pt + ink)
-      v(0.78em, weak: true)
     })
   }
   show heading.where(level: 3): it => {
-    v(1.15em, weak: true)
-    block(sticky: true, {
+    block(sticky: true, above: 1.8em, below: 0.9em, {
+      set par(leading: 0.45em)
       text(font: construct-font-sans, size: fs-h3, weight: wt-semibold, fill: ink-strong)[#it.body]
-      v(0.48em, weak: true)
     })
   }
   show heading.where(level: 4): it => {
-    v(0.75em, weak: true)
-    block(sticky: true, {
+    block(sticky: true, above: 1.2em, below: 0.35em, {
       text(font: construct-font-sans, size: fs-h4, weight: wt-bold, fill: ink-muted, tracking: 0.07em)[#upper(it.body)]
-      v(0.22em, weak: true)
     })
   }
 
@@ -365,6 +416,8 @@
     inset: 11pt,
     radius: 4pt,
     width: 100%,
+    above: 1.24em,
+    below: 1.24em,
   )[#text(font: construct-font-mono, size: fs-meta, fill: ink-body)[#it]]
 
   // Tables use a horizontal-only rule system: a strong black line under the bold
@@ -396,43 +449,54 @@
 
   // Pandoc wraps markdown tables in a centered figure; lift the table out and
   // left-align it so it reads as a clean data block aligned to the text column.
+  // The lift must re-supply the vertical rhythm the figure wrapper carried —
+  // without it a table sits flush against the heading above and prose below.
+  // Figures are unbreakable blocks even when a show rule replaces their body,
+  // so without the `set block(breakable: true)` a long table jumps whole to
+  // the next page and strands half a page of dead space behind it.
 
+  show figure.where(kind: table): set block(breakable: true)
   show figure.where(kind: table): it => {
-    if it.body.has("body") { align(left, it.body.body) } else { align(left, it.body) }
+    let content = if it.body.has("body") { it.body.body } else { it.body }
+    block(above: 1.2em, below: 1.35em, width: 100%, align(left, content))
   }
 
-  // Figures: a light bordered frame, a constrained width, and a caption that
-  // leads with a bold figure number.
+  // Figures: a light bordered frame, a caption that leads with a bold figure
+  // number, and measured scaling instead of a forced box. Fixing both width and
+  // height with fit:contain letterboxed every image — a wide diagram reserved
+  // the full max height and floated tiny inside dead whitespace. Measure the
+  // natural size, scale to fit width and the height cap, never upscale, and let
+  // the frame hug the result.
 
   set figure(supplement: "Figure")
-  show figure.where(kind: image): it => {
-    v(0.95em, weak: true)
+  show figure.where(kind: image): it => block(above: 1.2em, below: 1.2em, breakable: false, {
     block(
       stroke: 0.5pt + hairline,
       fill: white,
-      inset: 9pt,
+      inset: 10pt,
       width: 100%,
       radius: 4pt,
     )[
-      #align(center)[
-        #show image: img => image(
-          img,
-          width: construct-figure-max-width,
-          height: construct-figure-max-height,
-          fit: "contain",
-        )
-        #it.body
-      ]
+      #align(center, layout(avail => {
+        let natural = measure(it.body)
+        if natural.width == 0pt or natural.height == 0pt { it.body } else {
+          let f = calc.min(
+            (avail.width * construct-figure-max-width) / natural.width,
+            construct-figure-max-height / natural.height,
+            1,
+          )
+          scale(x: f * 100%, y: f * 100%, reflow: true, it.body)
+        }
+      }))
     ]
     if it.caption != none {
-      v(0.35em)
+      v(0.4em)
       align(center)[
         #text(font: construct-font-sans, size: fs-micro, weight: wt-bold, fill: ink, tracking: 0.03em)[#it.supplement #it.counter.display()]
         #text(font: construct-font-sans, size: fs-micro, fill: ink-muted)[ — #it.caption.body]
       ]
     }
-    v(0.95em, weak: true)
-  }
+  })
 
   // Blockquotes route to callouts: a quote carrying a Metric/Baseline table
   // becomes the key-metrics card, anything else becomes the at-a-glance aside.

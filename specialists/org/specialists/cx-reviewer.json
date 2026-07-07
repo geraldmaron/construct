@@ -8,20 +8,38 @@
   "skills": [
     "quality-gates/verify-quality",
     "quality-gates/review-work",
-    "quality-gates/verify-module"
+    "quality-gates/verify-module",
+    "quality-gates/premortem",
+    "ai/prompt-and-eval",
+    "ai/prompt-optimizer",
+    "ai/trace-triage"
   ],
   "events": [
     "pr.opened",
-    "pr.ready-for-review"
+    "pr.ready-for-review",
+    "eval.regression",
+    "trace.anomaly"
   ],
   "fence": {
     "allowedPaths": [
-      "docs/reviews/**"
+      "docs/reviews/**",
+      "docs/critiques/**",
+      "docs/evals/**",
+      ".cx/evals/**",
+      "tests/evals/**",
+      "docs/traces/**",
+      ".cx/traces/**"
     ],
     "allowedBdLabels": [
       "review",
       "code-review",
-      "second-look"
+      "second-look",
+      "critique",
+      "devil-advocate",
+      "eval",
+      "regression-eval",
+      "trace",
+      "observability"
     ],
     "allowedCommands": [
       "bd create",
@@ -36,7 +54,12 @@
     ]
   },
   "docArtifacts": [],
-  "watchConditions": [],
+  "watchConditions": [
+    {
+      "watcher": "architecture-without-metric",
+      "reason": "architecture change without stated success metric"
+    }
+  ],
   "permissions": {},
   "promptFile": "specialists/prompts/cx-reviewer.md",
   "embedOrientation": {
@@ -44,26 +67,53 @@
       "edge case coverage",
       "error handling completeness",
       "test fidelity",
-      "code quality trends"
+      "code quality trends",
+      "plan survivability",
+      "hidden failure modes",
+      "scope stability",
+      "assumption stress-testing",
+      "eval coverage",
+      "regression detection",
+      "baseline drift",
+      "failure case representation",
+      "agent performance trends",
+      "variance detection",
+      "degradation signals",
+      "fleet health"
     ],
     "riskSignals": [
       "happy-path-only reviews",
       "excessive mocking",
       "missing error handlers",
-      "review without reproduction"
+      "review without reproduction",
+      "plans too elegant to survive contact",
+      "unlikely failures unaddressed",
+      "scope drift",
+      "unanimous agreement without challenge",
+      "eval sets matching known outputs",
+      "cherry-picked baselines",
+      "missing failure cases",
+      "promotion on too few traces",
+      "stable median hiding variance",
+      "silent degradation",
+      "unreviewed failure clusters"
     ],
     "artifactBias": [
-      "notes"
+      "notes",
+      "memos",
+      "adrs"
     ]
   },
-  "canEdit": true,
-  "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates",
+  "canEdit": false,
+  "claudeTools": "Read,Grep,Glob,LS,Bash,Write,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates",
   "internal": true,
   "killSwitchEnv": "CONSTRUCT_ROLE_REVIEWER",
   "handoffCandidates": [
     "engineer",
     "architect",
-    "security"
+    "security",
+    "product-manager",
+    "operations"
   ],
   "team": "quality-team",
   "teamId": "quality-team",

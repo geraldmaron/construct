@@ -1,0 +1,110 @@
+---
+title: Flow authoring
+description: How to define a flow for the deterministic flow engine — typed state, steps, routers, join combinators, fan-out restrictions, and effort budgets.
+---
+
+The flow engine (`lib/flows/`) sequences work as a typed state machine instead of prose an agent is trusted to follow. A flow declares a state schema, a set of named steps, and a starting step; the engine validates the whole definition at load time and walks it deterministically at run time. See [ADR-0067](../../decisions/adr/0067-deterministic-flow-engine.md) for the design rationale.
+
+## Defining a flow
+
+```js
+import { defineFlow, TERMINAL } from '../../lib/flows/index.mjs';
+
+const flow = defineFlow({
+  stateSchema: {
+    type: 'object',
+    required: ['topic'],
+    properties: {
+      topic: { type: 'string' },
+      findings: { type: 'array' },
+      summary: { type: 'string' },
+    },
+  },
+  startStep: 'fetch',
+  steps: {
+    fetch: {
+      workerBackend: 'inline',
+      inputs: ['topic'],
+      run: (state) => ({ state: { findings: [`researched ${state.topic}`] } }),
+      router: () => 'summarize',
+    },
+    summarize: {
+      workerBackend: 'inline',
+      inputs: ['findings'],
+      run: (state) => ({ state: { summary: state.findings.join('; ') } }),
+      router: () => TERMINAL, // the only value that ends the flow
+    },
+  },
+});
+```
+
+`defineFlow` throws `FlowDefinitionError` immediately if the schema is malformed, a step's `router` can return a step name that doesn't exist, or a fan-out step (below) is misconfigured. A flow that loads at all is structurally valid — failures surface at authoring time, not mid-run.
+
+A step's `run(state)` only receives the state keys it declares in `inputs` — an omitted `inputs` array means `run` is called with an empty object, not the full state. This is deliberate: a step's declared inputs are a visible contract of what it actually reads, not an incidental side effect of however much state happens to exist by that point in the flow.
+
+Flow definitions can also be loaded from JSON via `loadFlow`, with `run`/`router` behavior supplied separately through a `handlers` map (JSON can't hold functions).
+
+## Steps
+
+Each step declares:
+
+- **`workerBackend`** — which execution backend (`inline` / `provider` / `host`) the step would delegate to. The engine records this on every step result; it does not call the backend itself — that integration is the caller's responsibility (or a later flow-engine capability, tracked separately).
+- **`run(state)`** — returns `{ state: <delta> }` merged into the flow's typed state. The delta is validated against the schema before it's accepted; a delta that would produce invalid state halts the run with a structured error instead of corrupting state silently.
+- **`router(state)`** — pure and synchronous. Returns the next step's name, an array of step names (fan-out), or a falsy value to end the flow. No LLM calls belong here — routing must be deterministic: the same state always produces the same routing decision.
+- **`budget`** (optional) — a plain number ceiling on the step's usage. Exhausting it produces a step result with `status: 'budget-exhausted'` instead of a silent truncation or a re-run.
+
+## Fan-out is restricted, not just discouraged
+
+A step can only declare `fanOut: true` if it also declares `readOnly: true` and names a `synthesis` step that every fan-out branch joins into:
+
+```js
+research: {
+  workerBackend: 'inline',
+  readOnly: true,
+  fanOut: true,
+  synthesis: 'combine',
+  router: () => ['searchA', 'searchB'],
+  run: (state) => ({ state: {} }),
+},
+```
+
+`defineFlow` rejects a `fanOut: true` step that isn't also `readOnly: true`, and rejects one with no `synthesis` target (or a target that doesn't exist as a step). This isn't an arbitrary restriction — it encodes the evidence in [ADR-0065](../../decisions/adr/0065-orchestrator-worker-consolidation.md): parallel decomposition only earns its cost for read-only, breadth-first work. A step that mutates state has no business fanning out.
+
+## Join combinators
+
+Use `andJoin`/`anyJoin` (from `lib/flows/joins.mjs`) to express a step that waits for every predecessor in a set (an *and*-join) versus a step reachable via any of several router paths (an *or*-reconvergence).
+
+## Determinism
+
+When more than one step is ready to run in the same tick (e.g. after a fan-out), the engine always runs whichever appears first in the flow's own `steps` declaration order — never arrival order from concurrent branches. This makes a run's execution order reproducible from the flow definition alone.
+
+## Running a flow
+
+```js
+import { runFlow } from '../../lib/flows/index.mjs';
+
+const result = await runFlow(flow, { topic: 'flow engines' });
+// result.status, result.state, result.history — one entry per step executed
+```
+
+`createRun`/`advanceRun` expose the same machinery one tick at a time, for a caller that wants to drive the run itself (e.g. to checkpoint between steps).
+
+## Checkpoint and resume
+
+`lib/flows/checkpoint.mjs` persists a run after every completed step to the project's machine-scoped state root (ADR-0066), so a long-horizon run survives an editor restart or a crash:
+
+```js
+import { runCheckpointed } from '../../lib/flows/index.mjs';
+
+const run = await runCheckpointed(process.cwd(), 'run-42', flow, { topic: 'flow engines' });
+```
+
+`runCheckpointed` resumes from the last checkpoint for `run-42` when one exists, otherwise starts fresh from the given initial state, and writes a checkpoint after every tick. The CLI wraps the same machinery: `construct flow resume <run-id> --flow=<path> [--state=<json>]` resumes (or starts) a run and drives it to completion; `construct flow status <run-id>` prints a checkpoint's persisted status without driving it.
+
+A checkpoint records the flow's `id` alongside the run; resuming against a differently-`id`'d flow throws `FlowCheckpointError` rather than silently reinterpreting history against the wrong step graph — always resume with the same flow definition (by id) a run was started under.
+
+**Idempotent re-entry.** A step already reflected in a checkpoint's `completed` set is never back in that checkpoint's `frontier`, so resuming never re-runs a step the engine itself already finished — that's a property of the `Run` shape, not something the checkpoint layer adds. The one window this doesn't close is a crash between a step's `run()` executing and the *following* checkpoint write landing; closing that is an authoring convention, not an engine guarantee: a step's `run()` must be idempotent under at-least-once execution — pure computation, or a naturally idempotent side effect (an upsert, not an append) — the same constraint the engine already implies by having steps record delegation intent rather than perform it. A step that must run an exactly-once side effect belongs outside the engine, driven by its recorded delegation, not inside `run()`.
+
+## What isn't here yet
+
+Artifact-passing-by-filesystem-reference is deliberately not implemented in the current engine. It is tracked as follow-on work, not silently deferred.

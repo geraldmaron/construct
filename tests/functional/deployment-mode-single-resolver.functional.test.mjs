@@ -20,11 +20,12 @@ import { isBrokered } from '../../lib/mcp/broker.mjs';
 import { buildBrokerStatusLine } from '../../lib/intake/session-prelude.mjs';
 import { resolveDocHygieneSchedule } from '../../lib/scheduler/index.mjs';
 import { CONFIG_SCHEMA_VERSION } from '../../lib/config/schema.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const tmpDirs = [];
 after(() => {
   for (const d of tmpDirs) {
-    try { fs.rmSync(d, { recursive: true, force: true }); } catch { /* best effort */ }
+    try { rmTmpDir(d); } catch { /* best effort */ }
   }
 });
 

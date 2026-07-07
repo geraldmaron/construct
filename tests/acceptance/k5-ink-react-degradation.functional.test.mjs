@@ -27,6 +27,7 @@ import { mkdtempSync, rmSync, existsSync, readFileSync, readdirSync } from 'node
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, '../../');
@@ -142,7 +143,19 @@ test('LMCP-K5: ink/react degradation', { timeout: 180_000 }, async (t) => {
 
   const nmRoot = join(tmpDir, 'node_modules');
   const binPath = join(nmRoot, '.bin', 'construct');
-  const soloEnv = { ...process.env, CONSTRUCT_DEPLOYMENT_MODE: 'solo' };
+
+  // lib/paths.mjs resolves the ADR-0066 state root from process.env.HOME /
+  // CX_HOME_OVERRIDE in the CHILD's own env, not this test process's env —
+  // every spawned `construct` call below must be pinned to a throwaway
+  // sandbox home or it leaks project-key directories into the real
+  // developer machine's ~/.construct/projects/.
+  const sandboxHome = mkdtempSync(join(tmpdir(), 'construct-k5-home-'));
+  const soloEnv = {
+    ...process.env,
+    CONSTRUCT_DEPLOYMENT_MODE: 'solo',
+    HOME: sandboxHome,
+    CX_HOME_OVERRIDE: sandboxHome,
+  };
 
   // ── Step 4: Verify ink and react are absent ──────────────────────────
   await t.test('ink and react are absent from node_modules (--no-optional)', () => {
@@ -168,7 +181,7 @@ test('LMCP-K5: ink/react degradation', { timeout: 180_000 }, async (t) => {
     for (const dep of [INK_DEP, REACT_DEP]) {
       const depPath = join(nmRoot, dep);
       if (existsSync(depPath)) {
-        rmSync(depPath, { recursive: true, force: true });
+        rmTmpDir(depPath);
         assert.ok(!existsSync(depPath), `${dep} should be removed from node_modules`);
       }
     }
@@ -277,11 +290,11 @@ test('LMCP-K5: ink/react degradation', { timeout: 180_000 }, async (t) => {
   // ── Cleanup ─────────────────────────────────────────────────────────
   await t.test('cleanup', () => {
     if (tmpDir && existsSync(tmpDir)) {
-      rmSync(tmpDir, { recursive: true, force: true });
-      assert.ok(!existsSync(tmpDir), 'Temp directory should be removed');
+      rmTmpDir(tmpDir);
     }
     if (tarballPath && existsSync(tarballPath)) {
       rmSync(tarballPath, { force: true });
     }
+    rmTmpDir(sandboxHome);
   });
 });

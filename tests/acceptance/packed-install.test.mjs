@@ -17,6 +17,7 @@ import { mkdtempSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, '../../');
@@ -132,11 +133,19 @@ test('packed consumer install (npm pack → clean install → smoke)', { timeout
 
   const binPath = join(tmpDir, 'node_modules', '.bin', 'construct');
 
+  // lib/paths.mjs resolves the ADR-0066 state root from process.env.HOME /
+  // CX_HOME_OVERRIDE in the CHILD's own env, not this test process's env —
+  // every spawned `construct` call below must be pinned to a throwaway
+  // sandbox home or it leaks project-key directories into the real
+  // developer machine's ~/.construct/projects/.
+  const sandboxHome = mkdtempSync(join(tmpdir(), 'construct-pack-test-home-'));
+  const soloEnv = { ...process.env, HOME: sandboxHome, CX_HOME_OVERRIDE: sandboxHome };
+
   // ── Step 5: construct version ─────────────────────────────────────────
   await t.test('construct version exits 0', () => {
     assert.ok(existsSync(binPath), `Binary should exist at ${binPath}`);
 
-    const result = run('node', [binPath, 'version'], { cwd: tmpDir });
+    const result = run('node', [binPath, 'version'], { cwd: tmpDir, env: soloEnv });
     const output = combinedOutput(result);
 
     assertNoModuleNotFound(output, 'construct version');
@@ -152,7 +161,7 @@ test('packed consumer install (npm pack → clean install → smoke)', { timeout
   await t.test('construct status --json exits 0 and returns valid JSON', () => {
     assert.ok(existsSync(binPath), `Binary should exist at ${binPath}`);
 
-    const result = run('node', [binPath, 'status', '--json'], { cwd: tmpDir });
+    const result = run('node', [binPath, 'status', '--json'], { cwd: tmpDir, env: soloEnv });
     const output = combinedOutput(result);
 
     assertNoModuleNotFound(output, 'construct status --json');
@@ -171,7 +180,7 @@ test('packed consumer install (npm pack → clean install → smoke)', { timeout
   await t.test('construct doctor does not crash (MODULE_NOT_FOUND check)', () => {
     assert.ok(existsSync(binPath), `Binary should exist at ${binPath}`);
 
-    const result = run('node', [binPath, 'doctor'], { cwd: tmpDir });
+    const result = run('node', [binPath, 'doctor'], { cwd: tmpDir, env: soloEnv });
     const output = combinedOutput(result);
 
     // doctor may exit non-zero in a minimal environment (missing config etc.)
@@ -194,12 +203,12 @@ test('packed consumer install (npm pack → clean install → smoke)', { timeout
   // ── Step 8: cleanup ───────────────────────────────────────────────────
   await t.test('cleanup temp directory', () => {
     if (tmpDir && existsSync(tmpDir)) {
-      rmSync(tmpDir, { recursive: true, force: true });
-      assert.ok(!existsSync(tmpDir), 'Temp directory should be removed');
+      rmTmpDir(tmpDir);
     }
 
     if (tarballPath && existsSync(tarballPath)) {
       rmSync(tarballPath, { force: true });
     }
+    rmTmpDir(sandboxHome);
   });
 });

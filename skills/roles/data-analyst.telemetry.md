@@ -6,7 +6,7 @@ artifactType: role-guidance
 role: data-analyst.telemetry
 applies_to:
   - cx-data-analyst
-  - cx-sre
+  - cx-operations
 inherits: data-analyst
 version: 2
 scopes:

@@ -47,8 +47,8 @@ jobs:
       templates: ${{ steps.filter.outputs.templates }}
       workflow: ${{ steps.filter.outputs.workflow }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706
         id: filter
         with:
           # `code` is the widest filter — any change to source / tests /
@@ -107,9 +107,14 @@ jobs:
             workflow:
               - '.github/workflows/**'
 
-  # Full OS × Node matrix on both PR and main push. Running Node 20 and macOS
-  # on PRs catches regressions on the minimum supported version before merge.
-  # Windows correctness is covered by the SEA binary build in release.yml.
+  # PR gate: ubuntu × Node 20/22 (min + max supported). The macOS legs run on
+  # main push / schedule / dispatch only — macOS runners are an order of
+  # magnitude more expensive, slower to schedule, and the per-PR macOS signal
+  # is largely redundant with bun-binary-smoke's darwin-arm64 build+doctor+demo
+  # job, which does run on every PR. A macOS-only regression still gates the
+  # release path (main push runs the full matrix; release.yml builds darwin
+  # SEA binaries). Windows correctness is covered by the SEA binary build in
+  # release.yml.
   test:
     name: test (${{ matrix.os }} / node ${{ matrix.node }})
     runs-on: ${{ matrix.os }}
@@ -118,18 +123,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-latest", "macos-latest"]
+        os: ${{ github.event_name == 'pull_request' && fromJSON('["ubuntu-latest"]') || fromJSON('["ubuntu-latest", "macos-latest"]') }}
         node: ["20", "22"]
     env:
       CONSTRUCT_EMBEDDING_MODEL: hashing
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version: ${{ matrix.node }}
           cache: npm
       - run: npm ci --ignore-scripts
-      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
           go-version: 'stable'
       - name: install bd (beads CLI)
@@ -149,6 +154,27 @@ jobs:
           fi
       - name: install typst (cargo install, official cross-platform method)
         run: cargo install --locked typst-cli
+      # The living graph (.cx/graph) is derived, gitignored state — the lint
+      # job's own graph-drift-gate step rebuilds it independently, but this
+      # job never did, so tests/graph/embed-nodes.test.mjs, tests/graph/
+      # explain.test.mjs, and tests/security/owasp-coverage.test.mjs (all of
+      # which read the real repo's built graph, not a fixture) had nothing to
+      # read on a fresh checkout. Build it once before the suite runs.
+      - name: build the living graph (test fixture for graph/embed/OWASP suites)
+        run: node ./bin/construct graph build
+      # tests/acceptance/modes/solo.acceptance.test.mjs's embedded-lancedb check
+      # calls storage_status against this checkout's real (machine-scoped,
+      # ADR-0066) LanceDB store, expecting 'healthy'. construct-rf26.17 made
+      # index provisioning lazy/opt-in (no more free eager seeding from
+      # `construct init`), so a fresh checkout's store is genuinely empty —
+      # call the same seeding function `construct init --seed-index` uses
+      # directly, rather than running full `construct init` in this shared
+      # job: init also scaffolds/rewrites tracked files (AGENTS.md, CLAUDE.md,
+      # construct.config.json), which would pollute the checkout other steps
+      # in this job (and npm run doctor/docs:verify right after) also read.
+      - name: seed the embedded vector index (test fixture for the lancedb acceptance leg)
+        run: |
+          node -e "import('./lib/storage/sync.mjs').then((m) => m.syncFileStateToSql(process.cwd(), { env: process.env, project: 'construct' }))"
       - run: npm test
       - run: npm run doctor
       - run: npm run docs:verify
@@ -169,7 +195,7 @@ jobs:
     if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
     continue-on-error: true
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version-file: .tool-versions
@@ -209,7 +235,7 @@ jobs:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/construct_team_harness
       CONSTRUCT_DEPLOYMENT_MODE: team
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version-file: .tool-versions
@@ -248,7 +274,7 @@ jobs:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/construct_enterprise_harness
       CONSTRUCT_DEPLOYMENT_MODE: enterprise
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version-file: .tool-versions
@@ -270,7 +296,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           fetch-depth: 0
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
@@ -355,7 +381,7 @@ jobs:
     env:
       CONSTRUCT_EMBEDDING_MODEL: hashing
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version-file: .tool-versions
@@ -370,7 +396,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.deps == 'true' || needs.changes.outputs.workflow == 'true'
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version-file: .tool-versions
@@ -394,7 +420,7 @@ jobs:
     name: secret scanning
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           fetch-depth: 0
       - name: gitleaks

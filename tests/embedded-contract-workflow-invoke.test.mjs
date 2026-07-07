@@ -46,7 +46,7 @@ test('auto strategy uses the workflow default chain and resolves a model', async
     { env: { CX_MODEL_REASONING: 'anthropic/claude-opus-4-6' } },
   );
   assert.equal(r.status, 'proposed');
-  assert.deepEqual(r.selectedRoles, ['architect', 'security', 'devil-advocate']);
+  assert.deepEqual(r.selectedRoles, ['architect', 'security', 'reviewer']);
   assert.equal(r.roleStrategy, 'auto');
   assert.ok(r.modelResolution.selectedModel, 'model resolution surfaced');
   assert.equal(r.skillsApplied.length > 0, true);
@@ -77,7 +77,7 @@ test('explicit strategy uses requested roles; unknown roles are dropped with a w
 test('constrained strategy intersects the default chain with requested roles', async () => {
   const r = await invokeWorkflow({ workflowType: 'architecture-review', roleStrategy: 'constrained', requestedRoles: ['architect', 'security'], approvalMode: 'proposal-only' }, { env: {} });
   assert.deepEqual(r.selectedRoles, ['architect', 'security']);
-  assert.ok(r.warnings.some((w) => w.includes('devil-advocate')));
+  assert.ok(r.warnings.some((w) => w.includes('reviewer')));
 });
 
 test('evidence requirements are satisfied only by present context keys', async () => {

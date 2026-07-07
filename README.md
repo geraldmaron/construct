@@ -199,7 +199,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct search` | Hybrid search across project state |
 | `construct storage` | Manage storage backend |
 | `construct tags` | Manage the controlled tag vocabulary (propose, add, deprecate, audit) |
-| `construct team` | Team review and template listing (`team:add` / `team:remove` are internal registry editors) |
+| `construct team` | Team review, template listing, and custom team authoring (`team:add` / `team:remove` are internal registry editors) |
 | `construct tools` | Detect optional publish pipeline binaries (Pandoc, D2, VHS, Playwright) |
 | `construct wireframe` | Generate wireframes from description |
 | `construct workflow` | Instantiate workflow templates (PRD-to-review chains, onboarding, handoffs) |
@@ -214,6 +214,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct claude:allow` | Manage Claude Code `permissions.allow` from the outside (auto-classifier blocks the agent from editing it) |
 | `construct db` | Inspect and migrate the optional Postgres backend |
 | `construct execution` | Resolve the execution-capability contract for an embedded workflow (orchestrated vs prompt-only; descriptive, not enforced) |
+| `construct flow` | Deterministic flow-engine runs: start or resume a checkpointed flow, or inspect its status |
 | `construct hosts` | Show host support for Construct orchestration |
 | `construct mcp` | Manage MCP integrations |
 | `construct models` | Show or update model tier assignments |
@@ -315,6 +316,7 @@ construct/
 ├── dev
 ├── docs             Architecture notes, runbooks, and documentation contract
 ├── examples         Example projects and persona fixtures
+├── Formula
 ├── lib              Core runtime: CLI, hooks, MCP, providers, oracle, sync
 ├── packages         Shared workspace packages (e.g. cx-ui)
 ├── personas         Persona prompt definitions

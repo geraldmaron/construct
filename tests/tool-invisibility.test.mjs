@@ -46,7 +46,7 @@ describe('comment-lint flags tool-identity leaks in consuming-project deliverabl
   });
 
   it('flags a cx-* role id inside a markdown table cell (where the real leak occurred)', () => {
-    const { dir, fp } = fixture('my-app', 'docs/x.md', '# S\n\n| Metric | Owner |\n|---|---|\n| North star | cx-business-strategist |\n');
+    const { dir, fp } = fixture('my-app', 'docs/x.md', '# S\n\n| Metric | Owner |\n|---|---|\n| North star | cx-data-analyst |\n');
     assert.ok(artifactWarnings(lintFile(fp, { rootDir: dir })).length >= 1);
   });
 

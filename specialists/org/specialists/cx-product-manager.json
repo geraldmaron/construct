@@ -14,11 +14,16 @@
     "docs/prfaq-workflow",
     "docs/backlog-proposal-workflow",
     "docs/product-intelligence-review",
-    "docs/strategy-workflow"
+    "docs/strategy-workflow",
+    "strategy/competitive-landscape",
+    "strategy/market-research-methods",
+    "strategy/pricing-positioning",
+    "strategy/narrative-arc"
   ],
   "events": [
     "backlog.stale",
-    "prd.requested"
+    "prd.requested",
+    "strategy.required"
   ],
   "fence": {
     "allowedPaths": [
@@ -27,13 +32,17 @@
       "docs/meta-prd/**",
       "docs/prfaq/**",
       "docs/one-pager/**",
-      ".cx/knowledge/**"
+      ".cx/knowledge/**",
+      "docs/strategy/**",
+      ".cx/knowledge/decisions/strategy/**"
     ],
     "allowedBdLabels": [
       "product",
       "prd",
       "backlog",
-      "feature"
+      "feature",
+      "strategy",
+      "business"
     ],
     "allowedCommands": [
       "bd create",
@@ -57,7 +66,8 @@
     "backlog-proposal",
     "prd-platform",
     "prd-business",
-    "customer-profile"
+    "customer-profile",
+    "strategy"
   ],
   "watchConditions": [
     {
@@ -72,22 +82,31 @@
       "requirements coverage",
       "delivery risk",
       "user-facing gaps",
-      "scope clarity"
+      "scope clarity",
+      "market positioning",
+      "competitive shifts",
+      "timing relevance",
+      "strategic coherence"
     ],
     "riskSignals": [
       "untraced requirements",
       "scope creep",
       "blocked dependencies",
-      "missing acceptance criteria"
+      "missing acceptance criteria",
+      "tactics dressed as strategy",
+      "ignored competitive moves",
+      "undifferentiated positioning",
+      "missing market timing"
     ],
     "artifactBias": [
       "prds",
       "intake",
-      "memos"
+      "memos",
+      "notes"
     ]
   },
   "canEdit": false,
-  "claudeTools": "Read,Grep,Glob,LS,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations",
+  "claudeTools": "Read,Grep,Glob,LS,WebSearch,WebFetch,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations",
   "internal": true,
   "killSwitchEnv": "CONSTRUCT_ROLE_PRODUCT_MANAGER",
   "handoffCandidates": [

@@ -1,6 +1,6 @@
 {
   "id": "accessibility-to-qa",
-  "producer": "cx-accessibility",
+  "producer": "cx-designer",
   "consumer": "cx-qa",
   "trigger": {
     "riskFlags": [
@@ -24,8 +24,16 @@
     "A11y findings filed against specific elements (file:line) before QA verification"
   ],
   "postconditions": [
-    "QA test plan covers keyboard-only and screen-reader paths for each finding",
-    "Findings flagged 'unverified' by accessibility get a verified test in QA before close"
+    {
+      "id": "accessibility-to-qa-pc-0-qa-test-plan-covers-keyboard-only",
+      "description": "QA test plan covers keyboard-only and screen-reader paths for each finding",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "accessibility-to-qa-pc-1-findings-flagged-unverified-by-accessibility-get",
+      "description": "Findings flagged 'unverified' by accessibility get a verified test in QA before close",
+      "postconditionType": "advisory"
+    }
   ],
   "description": "",
   "teamBoundary": {

@@ -7,18 +7,12 @@
   "roles": [
     "architect",
     "engineer",
-    "debugger",
-    "ai-engineer",
-    "data-engineer",
-    "platform-engineer"
+    "debugger"
   ],
   "specialists": [
-    "cx-ai-engineer",
     "cx-architect",
     "cx-engineer",
-    "cx-debugger",
-    "cx-platform-engineer",
-    "cx-data-engineer"
+    "cx-debugger"
   ],
   "collaborators": [],
   "decisionRights": [
@@ -34,10 +28,9 @@
   ],
   "escalationPath": [
     "architect",
-    "rd-lead",
     "orchestrator"
   ],
-  "charter": "Design, build, and harden the system. Owns architecture decisions, technology choices, code quality, debugging, AI integration, and the platform underneath. Does not own product framing, user research direction, or release timing. Escalates tech-debt conflicts to R&D leadership.",
+  "charter": "Design, build, and harden the system. Owns architecture decisions, technology choices, code quality, and debugging. AI integration, data pipelines, and platform/infra tooling are now cx-engineer skill bundles rather than separate specialists (ai-engineer, data-engineer, platform-engineer folded in; construct-rf26.11), and cx-architect absorbs the pre-architecture framing-gate function rd-lead previously owned. Does not own product framing, user research direction, or release timing.",
   "contact": {
     "slack": "#engineering",
     "email": "engineering@example.com",

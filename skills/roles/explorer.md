@@ -5,7 +5,7 @@ inputs: [repo, task-context]
 artifactType: guidance
 role: explorer
 applies_to:
-  - cx-explorer
+  - cx-researcher
 inherits: researcher
 version: 2
 scopes:

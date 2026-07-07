@@ -15,8 +15,22 @@ import { writeEnvValues } from '../lib/env-config.mjs';
 import { configDir, doctorRoot } from '../lib/config/xdg.mjs';
 import { writeGraph, nodeId } from '../lib/graph/store.mjs';
 import { listWorkflowDefs } from '../lib/embedded-contract/workflow-defs.mjs';
+import { saveRun } from '../lib/orchestration/run-store.mjs';
 
 import { tempDir } from './helpers.mjs';
+
+// Orchestration-run reads resolve through the machine-scoped state root
+// (ADR-0066), so CX_HOME_OVERRIDE is pinned for the whole file to keep them
+// off the real developer machine's $HOME.
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-status-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+test.after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 function writeJson(filePath, value) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -660,9 +674,12 @@ test('buildStatus detects MCP from Claude marketplace plugins', async () => {
 
 // ── recentRunExecutionStates: prepared vs executed recent runs (LMCP-F4) ────
 
+// Writes through saveRun (lib/orchestration/run-store.mjs) so the fixture
+// lands wherever the real writer resolves it — the machine-scoped state root
+// (ADR-0066), not a hardcoded project-relative path.
+
 function writeOrchestrationRun(rootDir, run) {
-  const dir = path.join(rootDir, '.cx', 'runtime', 'orchestration', 'runs');
-  writeJson(path.join(dir, `${run.runId}.json`), run);
+  saveRun(rootDir, run);
 }
 
 test('construct status distinguishes prepared vs executed recent runs', async () => {

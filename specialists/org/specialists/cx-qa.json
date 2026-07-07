@@ -18,13 +18,18 @@
   "fence": {
     "allowedPaths": [
       "docs/qa/**",
-      "docs/test-plans/**"
+      "docs/test-plans/**",
+      "tests/**",
+      "docs/test-automation/**"
     ],
     "allowedBdLabels": [
       "bug",
       "qa",
       "test",
-      "flake"
+      "flake",
+      "test-automation",
+      "ci",
+      "test-infra"
     ],
     "allowedCommands": [
       "bd create",
@@ -52,13 +57,19 @@
       "test effectiveness",
       "behavioral coverage",
       "regression risk",
-      "acceptance criteria traceability"
+      "acceptance criteria traceability",
+      "test determinism",
+      "flakiness trends",
+      "automation ROI"
     ],
     "riskSignals": [
       "tests that never fail",
       "coverage without behavioral assertions",
       "untested acceptance criteria",
-      "flaky tests ignored"
+      "flaky tests ignored",
+      "arbitrary sleeps",
+      "tests that never caught a bug",
+      "intermittent failures dismissed"
     ],
     "artifactBias": [
       "notes"
@@ -70,8 +81,7 @@
   "killSwitchEnv": "CONSTRUCT_ROLE_QA",
   "handoffCandidates": [
     "engineer",
-    "debugger",
-    "test-automation"
+    "debugger"
   ],
   "team": "quality-team",
   "teamId": "quality-team",

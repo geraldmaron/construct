@@ -27,9 +27,8 @@ Style constraint: do not produce a wall of bullets. Use paragraphs for reasoning
 ## Steps
 
 1. **cx-product-manager** produces the requirements package
-2. **cx-ux-researcher** grounds requirements in user behavior (invoke in parallel for new features)
-3. **cx-researcher** fills any evidence gaps
-4. **Write to the appropriate `docs/` subdirectory** using the selected template. Each `get_template()` call resolves `.cx/templates/docs/` first, then the Construct default.
+2. **cx-researcher** grounds requirements in user behavior and fills evidence gaps (invoke in parallel for new features)
+3. **Write to the appropriate `docs/` subdirectory** using the selected template. Each `get_template()` call resolves `.cx/templates/docs/` first, then the Construct default.
 
    | Template | Output path |
    |---|---|
@@ -39,8 +38,8 @@ Style constraint: do not produce a wall of bullets. Use paragraphs for reasoning
    | `meta-prd` | `docs/meta-prd/{YYYY-MM-DD}-{slug}.md` |
    | `rfc` | `docs/decisions/rfc/{YYYY-MM-DD}-{slug}.md` |
    | `rfc-platform` | `docs/decisions/rfc/{YYYY-MM-DD}-{slug}.md` |
-5. **cx-devil-advocate** runs the FMEA challenge pass (`roles/devil-advocate`) on the draft; highest-RPN failure modes need a mitigation or explicit accept-with-rationale before ship. Their specialist id must appear in `.cx/agent-log.jsonl` (manifest `releaseGate.requiredReviewers` for PRD-family types).
-6. **cx-docs-keeper** updates `.cx/context.md` with a link to the PRD
+4. **cx-reviewer** runs the FMEA challenge pass (`roles/devil-advocate`) on the draft; highest-RPN failure modes need a mitigation or explicit accept-with-rationale before ship. Their specialist id must appear in `.cx/agent-log.jsonl` (manifest `releaseGate.requiredReviewers` for PRD-family types).
+5. **cx-operations** updates `.cx/context.md` with a link to the PRD
 
 Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.
 
@@ -63,7 +62,7 @@ Once the PRD is approved, run `/plan feature {feature-slug}` to produce a struct
 
 ## Distribution (publish pipeline)
 
-**`construct workflow invoke` returns a plan only** — it does not draft the PRD. Run the listed specialists (cx-product-manager, cx-researcher, cx-ux-researcher as needed) to author the artifact from the template. **Do not hand-write a stub and publish.**
+**`construct workflow invoke` returns a plan only** — it does not draft the PRD. Run the listed specialists (cx-product-manager, cx-researcher as needed) to author the artifact from the template. **Do not hand-write a stub and publish.**
 
 Before distribution:
 

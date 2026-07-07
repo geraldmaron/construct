@@ -14,6 +14,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SYNC_SCRIPT = path.join(REPO_ROOT, 'scripts', 'sync-specialists.mjs');
@@ -47,12 +48,12 @@ function runBin(argv, extraEnv = {}) {
     child.stderr.on('data', (chunk) => { stderr += chunk; });
     child.on('error', (err) => {
       clearTimeout(guard);
-      fs.rmSync(home, { recursive: true, force: true });
+      rmTmpDir(home);
       reject(err);
     });
     child.on('close', (code) => {
       clearTimeout(guard);
-      fs.rmSync(home, { recursive: true, force: true });
+      rmTmpDir(home);
       resolve({ code, stdout, stderr });
     });
   });
@@ -118,12 +119,12 @@ test('OpenCode project sync remains the primary conversation surface wiring', ()
         } catch (err) {
           reject(err);
         } finally {
-          fs.rmSync(sandbox, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+          rmTmpDir(sandbox);
         }
       });
     });
   } catch (err) {
-    fs.rmSync(sandbox, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmTmpDir(sandbox);
     throw err;
   }
 });

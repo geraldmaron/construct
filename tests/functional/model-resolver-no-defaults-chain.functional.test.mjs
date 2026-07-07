@@ -10,7 +10,7 @@
  */
 
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -18,6 +18,7 @@ import test from 'node:test';
 import { readCurrentModels, resolveExecutionContractModelMetadata, resolveFallbackAction } from '../../lib/model-router.mjs';
 import { resolveModelTiers } from '../../lib/model-registry.mjs';
 import { estimateUsageCost } from '../../lib/telemetry/model-pricing-catalog.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 function emptyEnvPath() {
   const dir = mkdtempSync(join(tmpdir(), 'cx-resolver-chain-'));
@@ -37,7 +38,7 @@ test('readCurrentModels still returns null tiers when nothing is configured', ()
       assert.equal(models.sources[tier], 'not configured');
     }
   } finally {
-    rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmTmpDir(dir);
   }
 });
 
@@ -84,7 +85,7 @@ test('schema-infer throws a clear configuration error when fast tier is null and
       if (v === undefined) delete process.env[k];
       else process.env[k] = v;
     }
-    rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmTmpDir(dir);
   }
 });
 
