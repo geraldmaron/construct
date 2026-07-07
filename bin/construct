@@ -625,10 +625,10 @@ async function cmdDoctor() {
     if (!cxIgnored && wantsFixGitignore) {
       const prefix = giContent.length === 0 || giContent.endsWith('\n') ? '' : '\n';
       fs.writeFileSync(giPath, giContent + `${prefix}\n# Construct runtime state — local-only, never source\n${CONFIG_DIR_NAME}/\n`, 'utf8');
-      println(`  fix: appended .cx/ to ${path.relative(cwd, giPath)}`);
-      add('Project .gitignore covers .cx/', true);
+      println(`  fix: appended ${CONFIG_DIR_NAME}/ to ${path.relative(cwd, giPath)}`);
+      add(`Project .gitignore covers ${CONFIG_DIR_NAME}/`, true);
     } else {
-      add('Project .gitignore covers .cx/' + (cxIgnored ? '' : ' (run `construct doctor --fix-gitignore` to add)'), cxIgnored);
+      add(`Project .gitignore covers ${CONFIG_DIR_NAME}/` + (cxIgnored ? '' : ' (run `construct doctor --fix-gitignore` to add)'), cxIgnored);
     }
   }
 
@@ -757,9 +757,9 @@ async function cmdDoctor() {
 
   if (isProject) {
     const legacyHeavyDirs = [
-      { rel: path.join(CONFIG_DIR_NAME, 'runtime'), label: '.cx/runtime' },
-      { rel: path.join(CONFIG_DIR_NAME, 'traces'), label: '.cx/traces' },
-      { rel: path.join(CONFIG_DIR_NAME, 'lancedb'), label: '.cx/lancedb' },
+      { rel: path.join(CONFIG_DIR_NAME, 'runtime'), label: `${CONFIG_DIR_NAME}/runtime` },
+      { rel: path.join(CONFIG_DIR_NAME, 'traces'), label: `${CONFIG_DIR_NAME}/traces` },
+      { rel: path.join(CONFIG_DIR_NAME, 'lancedb'), label: `${CONFIG_DIR_NAME}/lancedb` },
     ]
       .map((d) => ({ ...d, full: path.join(cwd, d.rel) }))
       .filter((d) => fs.existsSync(d.full) && fs.readdirSync(d.full).length > 0);

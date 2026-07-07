@@ -49,12 +49,12 @@ test("construct init:update proposes a CI docs:verify check without rewriting AG
 
     assert.equal(fs.readFileSync(path.join(projectDir, "AGENTS.md"), "utf8"), agents, "AGENTS.md must not be rewritten");
     assert.equal(
-      fs.existsSync(path.join(projectDir, ".cx", "proposals", "AGENTS.md.construct-update.md")),
+      fs.existsSync(path.join(projectDir, ".construct", "proposals", "AGENTS.md.construct-update.md")),
       false,
       "init:update must not propose an AGENTS.md body rewrite",
     );
 
-    const ciProposal = path.join(projectDir, ".cx", "proposals", "ci.yml.construct-update.md");
+    const ciProposal = path.join(projectDir, ".construct", "proposals", "ci.yml.construct-update.md");
     assert.equal(fs.existsSync(ciProposal), true, "a CI proposal should be written");
     assert.match(fs.readFileSync(ciProposal, "utf8"), /docs:verify/);
   } finally {
@@ -70,7 +70,7 @@ test("construct init:update reports no proposals when standards are already met"
     const result = runInitUpdate(projectDir);
     assert.equal(result.status, 0, result.stderr || result.stdout);
     assert.match(result.stdout, /No proposals needed/);
-    assert.equal(fs.existsSync(path.join(projectDir, ".cx", "proposals")), false);
+    assert.equal(fs.existsSync(path.join(projectDir, ".construct", "proposals")), false);
   } finally {
     fs.rmSync(projectDir, { recursive: true, force: true });
   }
@@ -84,7 +84,7 @@ test("construct init:update dry-run reports proposals without writing files", ()
     const result = runInitUpdate(projectDir, ["--dry-run"]);
     assert.equal(result.status, 0, result.stderr || result.stdout);
     assert.match(result.stdout, /Planned proposals:/);
-    assert.equal(fs.existsSync(path.join(projectDir, ".cx", "proposals")), false);
+    assert.equal(fs.existsSync(path.join(projectDir, ".construct", "proposals")), false);
   } finally {
     fs.rmSync(projectDir, { recursive: true, force: true });
   }
@@ -93,15 +93,15 @@ test("construct init:update dry-run reports proposals without writing files", ()
 test("construct init:update proposes construct_guide refresh for stale .cx copy", () => {
   const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), "construct-init-update-guide-"));
   try {
-    fs.mkdirSync(path.join(projectDir, ".cx"), { recursive: true });
+    fs.mkdirSync(path.join(projectDir, ".construct"), { recursive: true });
     fs.writeFileSync(
-      path.join(projectDir, ".cx", "construct_guide.md"),
+      path.join(projectDir, ".construct", "construct_guide.md"),
       "# Welcome\n\nR&D intake queue instructions.\n",
     );
 
     const result = runInitUpdate(projectDir);
     assert.equal(result.status, 0, result.stderr || result.stdout);
-    const proposal = path.join(projectDir, ".cx", "proposals", "construct_guide.construct-update.md");
+    const proposal = path.join(projectDir, ".construct", "proposals", "construct_guide.construct-update.md");
     assert.equal(fs.existsSync(proposal), true);
     assert.match(fs.readFileSync(proposal, "utf8"), /construct intake --help/);
   } finally {

@@ -96,13 +96,13 @@ test('01-init-contract: construct init creates .cx/ structure', { timeout: 60_00
 
   await t.test('.cx/ directory created after init', () => {
     assert.ok(tmpDir, 'Temp dir must be created first');
-    const cxDir = join(tmpDir, '.cx');
+    const cxDir = join(tmpDir, '.construct');
     assert.ok(existsSync(cxDir), `.cx/ directory should exist at ${cxDir}`);
   });
 
   await t.test('.cx/context.md created after init', () => {
     assert.ok(tmpDir, 'Temp dir must be created first');
-    const contextMd = join(tmpDir, '.cx', 'context.md');
+    const contextMd = join(tmpDir, '.construct', 'context.md');
     assert.ok(existsSync(contextMd), `.cx/context.md should exist at ${contextMd}`);
   });
 

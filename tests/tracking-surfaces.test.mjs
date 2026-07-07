@@ -52,9 +52,9 @@ function makeShim(name, script) {
 }
 
 function seedContextMd(initialBody) {
-  mkdirSync(join(rootDir, '.cx'), { recursive: true });
-  writeFileSync(join(rootDir, '.cx', 'context.md'), initialBody, 'utf8');
-  writeFileSync(join(rootDir, '.cx', 'context.json'), JSON.stringify({ format: 'json' }), 'utf8');
+  mkdirSync(join(rootDir, '.construct'), { recursive: true });
+  writeFileSync(join(rootDir, '.construct', 'context.md'), initialBody, 'utf8');
+  writeFileSync(join(rootDir, '.construct', 'context.json'), JSON.stringify({ format: 'json' }), 'utf8');
 }
 
 beforeEach(() => {
@@ -106,7 +106,7 @@ This is user content; refresh must not touch it.
   const result = await refreshContextMd({ rootDir });
   assert.equal(result.ok, true);
 
-  const after = readFileSync(join(rootDir, '.cx', 'context.md'), 'utf8');
+  const after = readFileSync(join(rootDir, '.construct', 'context.md'), 'utf8');
   assert.match(after, /## Hand-curated section\n\nThis is user content; refresh must not touch it\./);
   assert.match(after, /preserved Q1/);
   assert.match(after, /preserved Q2/);
@@ -123,7 +123,7 @@ echo "[]"
   seedContextMd(`# context\n\n## Active Work\n\n_None in progress._\n\n## Recent Decisions\n\n_No recent decisions captured._\n\n## Architecture Notes\n\n_No new architecture notes._\n\n## Open Questions\n\n- existing\n`);
 
   await refreshContextMd({ rootDir });
-  const after = readFileSync(join(rootDir, '.cx', 'context.md'), 'utf8');
+  const after = readFileSync(join(rootDir, '.construct', 'context.md'), 'utf8');
   assert.match(after, /\*\*construct-abc\*\* · alpha/);
   assert.match(after, /\*\*construct-def\*\* · beta/);
 });
@@ -135,7 +135,7 @@ test('refreshContextMd stamps lastRefreshAt and counts in context.json', async (
   const now = new Date('2026-06-01T12:00:00.000Z');
   await refreshContextMd({ rootDir, now });
 
-  const json = JSON.parse(readFileSync(join(rootDir, '.cx', 'context.json'), 'utf8'));
+  const json = JSON.parse(readFileSync(join(rootDir, '.construct', 'context.json'), 'utf8'));
   assert.equal(json.lastRefreshAt, '2026-06-01T12:00:00.000Z');
   assert.ok(Array.isArray(json.activeWork));
   assert.ok(Array.isArray(json.recentDecisions));

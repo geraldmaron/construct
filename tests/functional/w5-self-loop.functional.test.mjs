@@ -151,10 +151,10 @@ test('processInboxFile classifies and writes a packet to .cx/intake/pending/', a
 
     assert.equal(result.didWork, true);
     assert.equal(result.route, 'pending');
-    const pendingFiles = readdirSync(join(cwd, '.cx', 'intake', 'pending'));
+    const pendingFiles = readdirSync(join(cwd, '.construct', 'intake', 'pending'));
     const packetFile = pendingFiles.find((f) => f.endsWith('.json'));
     assert.ok(packetFile, 'expected a pending packet file');
-    const packet = JSON.parse(readFileSync(join(cwd, '.cx', 'intake', 'pending', packetFile), 'utf8'));
+    const packet = JSON.parse(readFileSync(join(cwd, '.construct', 'intake', 'pending', packetFile), 'utf8'));
     assert.equal(packet.triage.intakeType, 'bug-report');
   } finally { cleanup(); }
 });
@@ -182,7 +182,7 @@ test('intake daemon enqueues only complete top-level files, ignoring .staging/ a
       new Promise((r) => setTimeout(() => { daemon.stop(); r({ reason: 'timeout' }); }, 300)),
     ]);
 
-    const pendingDir = join(cwd, '.cx', 'intake', 'pending');
+    const pendingDir = join(cwd, '.construct', 'intake', 'pending');
     const packets = existsSync(pendingDir) ? readdirSync(pendingDir).filter((f) => f.endsWith('.json')) : [];
     assert.equal(packets.length, 1, `exactly one packet from the top-level drop; got ${packets.length}`);
     const packet = JSON.parse(readFileSync(join(pendingDir, packets[0]), 'utf8'));

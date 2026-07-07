@@ -68,7 +68,7 @@ test('co_changes edge is derived from git history above the threshold', () => {
 test('reviving captureDependencyPatterns also writes the entity store', () => {
   const root = gitRepoWithCoChange();
   buildCoChange({ rootDir: root, sourceRels: [] });
-  const entitiesFile = path.join(root, '.cx', 'observations', 'entities.json');
+  const entitiesFile = path.join(root, '.construct', 'observations', 'entities.json');
   assert.ok(fs.existsSync(entitiesFile), 'entity store written by captureDependencyPatterns');
   const entities = JSON.parse(fs.readFileSync(entitiesFile, 'utf8'));
   assert.ok(entities.some((e) => e.type === 'file-group'), 'file-group entities recorded');

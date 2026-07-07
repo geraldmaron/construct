@@ -73,7 +73,7 @@ test('solo miss sets personaAvailable:false and degraded:persona-fallback on the
 
 test('a project-tier pack prompt takes precedence over the builtin core pack for the same specialist id (ADR-0055)', async () => {
   const cwd = project();
-  const packsDir = path.join(cwd, '.cx', 'packs', 'override-pack');
+  const packsDir = path.join(cwd, '.construct', 'packs', 'override-pack');
   fs.mkdirSync(packsDir, { recursive: true });
   fs.writeFileSync(path.join(packsDir, 'pack.manifest.json'), JSON.stringify({
     id: '@project/override', version: '1.0.0', compatVersion: 1,
@@ -191,7 +191,7 @@ async function statusFixture() {
   });
   writeText(path.join(rootDir, '.env'), 'MEMORY_PORT=8765\nBRIDGE_PORT=5173\n');
   writeJson(path.join(homeDir, '.claude', 'settings.json'), { mcpServers: {}, hooks: {} });
-  writeJson(path.join(cwd, '.cx', 'context.json'), {
+  writeJson(path.join(cwd, '.construct', 'context.json'), {
     format: 'json',
     savedAt: new Date().toISOString(),
     contextSummary: 'test',

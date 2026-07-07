@@ -5,7 +5,7 @@
  * Construct's footprint from host project content:
  *   - legacy-doctrine-strip  (ask) — collapses an un-fenced doctrine body in
  *     AGENTS.md/CLAUDE.md to the project header plus marker blocks
- *   - legacy-guide-decommit  (ask) — relocates a root construct_guide.md into .cx/
+ *   - legacy-guide-decommit  (ask) — relocates a root construct_guide.md into .construct/
  *
  * Each test runs from an isolated tmp cwd. For every task: a needsRepair case,
  * apply() fixes it, a second detect() returns needsRepair:false (idempotency),
@@ -183,7 +183,7 @@ x
   });
 });
 
-test('legacy-guide-decommit: relocates root construct_guide.md into .cx/, idempotent', async () => {
+test('legacy-guide-decommit: relocates root construct_guide.md into .construct/, idempotent', async () => {
   await withCwd(async ({ project }) => {
     writeFileSync(join(project, 'construct_guide.md'), '# Welcome to Construct\n\norientation\n');
     const task = await taskModule('legacy-guide-decommit.mjs');
@@ -194,23 +194,23 @@ test('legacy-guide-decommit: relocates root construct_guide.md into .cx/, idempo
     const applied = await task.apply();
     assert.match(applied.summary, /git rm --cached construct_guide\.md/);
     assert.ok(!existsSync(join(project, 'construct_guide.md')), 'root copy removed');
-    assert.equal(readFileSync(join(project, '.cx', 'construct_guide.md'), 'utf8'), '# Welcome to Construct\n\norientation\n');
+    assert.equal(readFileSync(join(project, '.construct', 'construct_guide.md'), 'utf8'), '# Welcome to Construct\n\norientation\n');
 
     const after = await task.detect();
     assert.equal(after.needsRepair, false, 'idempotent: second detect is no-op');
   });
 });
 
-test('legacy-guide-decommit: an existing .cx/ guide is the canonical copy and is not clobbered', async () => {
+test('legacy-guide-decommit: an existing .construct/ guide is the canonical copy and is not clobbered', async () => {
   await withCwd(async ({ project }) => {
-    mkdirSync(join(project, '.cx'), { recursive: true });
-    writeFileSync(join(project, '.cx', 'construct_guide.md'), 'CANONICAL\n');
+    mkdirSync(join(project, '.construct'), { recursive: true });
+    writeFileSync(join(project, '.construct', 'construct_guide.md'), 'CANONICAL\n');
     writeFileSync(join(project, 'construct_guide.md'), 'ROOT STALE\n');
     const task = await taskModule('legacy-guide-decommit.mjs');
 
     await task.apply();
     assert.ok(!existsSync(join(project, 'construct_guide.md')), 'root copy removed');
-    assert.equal(readFileSync(join(project, '.cx', 'construct_guide.md'), 'utf8'), 'CANONICAL\n', '.cx/ copy preserved');
+    assert.equal(readFileSync(join(project, '.construct', 'construct_guide.md'), 'utf8'), 'CANONICAL\n', '.construct/ copy preserved');
   });
 });
 

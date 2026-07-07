@@ -1,7 +1,7 @@
 /**
  * tests/artifacts/format-engines-manifest.test.mjs — LMCP-B7: FORMAT_ENGINES
  * moved from a hardcoded dict to lib/registry/manifests/format-engines.default.json,
- * with `.cx/registry/format-engines.json` project-override support. Asserts the
+ * with `.construct/registry/format-engines.json` project-override support. Asserts the
  * default surface is byte-identical to the prior hardcoded dict, and that a
  * project override in a fixture project adds a format without editing source.
  */
@@ -33,7 +33,7 @@ function withFixtureProject(overrideJson, fn) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-format-engines-'));
   try {
     if (overrideJson) {
-      const dir = path.join(root, '.cx', 'registry');
+      const dir = path.join(root, '.construct', 'registry');
       fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(path.join(dir, 'format-engines.json'), JSON.stringify(overrideJson, null, 2));
     }
@@ -63,7 +63,7 @@ test('detect() default behavior is unaffected by the manifest move (pdf format s
   });
 });
 
-test('a .cx/registry/format-engines.json override adds a new format without editing source', () => {
+test('a .construct/registry/format-engines.json override adds a new format without editing source', () => {
   withFixtureProject({
     json: { engine: 'copy', writer: null, pdfEngine: null, extraBinaries: [] },
   }, (root) => {
@@ -79,7 +79,7 @@ test('a .cx/registry/format-engines.json override adds a new format without edit
   });
 });
 
-test('a .cx/registry/format-engines.json override can replace a default format entry', () => {
+test('a .construct/registry/format-engines.json override can replace a default format entry', () => {
   withFixtureProject({
     md: { engine: 'copy', writer: null, pdfEngine: null, extraBinaries: [], overridden: true },
   }, (root) => {

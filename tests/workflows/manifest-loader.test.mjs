@@ -92,11 +92,11 @@ test('loadAllWorkflows: loads and merges across tiers', () => {
   const dirs = resolveWorkflowManifestDirs();
   assert.ok(dirs.builtin.includes('lib/embedded-contract/workflows'));
   assert.ok(Array.isArray(dirs.pack));
-  assert.ok(dirs.project.includes('.cx/workflows'));
+  assert.ok(dirs.project.includes('.construct/workflows'));
 
   // Create a temp override workflow
   const tmpOverrideDir = mkdtempSync(join(tmpdir(), 'wf-cx-'));
-  const projectOverrideDir = join(tmpOverrideDir, '.cx', 'workflows');
+  const projectOverrideDir = join(tmpOverrideDir, '.construct', 'workflows');
   mkdirSync(projectOverrideDir, { recursive: true });
 
   // Write an override for evidence-ingest

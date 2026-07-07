@@ -121,5 +121,10 @@ tests/fixtures/projects/agentic-hq/.cx/traces/*.jsonl
 
 # Construct — generated adapters, launcher, and runtime state.
 # Machine-specific, recreated by `construct sync`; never source (ADR-0027).
-.construct/
+# .construct/org/ is the project-committed tier for user-authored custom
+# specialists/teams (construct specialist|team create) — source, not runtime
+# state — so it is carved out of the otherwise-ignored .construct/ tree (ADR-0069).
+.construct/**
+!.construct/org/
+!.construct/org/**
 inbox/

@@ -19,7 +19,7 @@ const NO_TOOLING_ENV = { PATH: '/nonexistent-bin-dir' };
 
 test('renderEvidenceDir places images under a stable .cx/render path', () => {
   const dir = renderEvidenceDir('/repo', 'prd.pdf');
-  assert.equal(dir, path.join('/repo', '.cx', 'render', 'prd.pdf'));
+  assert.equal(dir, path.join('/repo', '.construct', 'render', 'prd.pdf'));
 });
 
 test('a degraded render records evidence that never lifts the ladder', () => {

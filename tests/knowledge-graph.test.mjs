@@ -26,12 +26,12 @@ after(() => {
 function freshRoot() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'graphrag-'));
   tmpDirs.push(root);
-  fs.mkdirSync(path.join(root, '.cx', 'observations'), { recursive: true });
+  fs.mkdirSync(path.join(root, '.construct', 'observations'), { recursive: true });
   return root;
 }
 
 function writeEntities(root, entities) {
-  fs.writeFileSync(path.join(root, '.cx', 'observations', 'entities.json'), JSON.stringify(entities, null, 2));
+  fs.writeFileSync(path.join(root, '.construct', 'observations', 'entities.json'), JSON.stringify(entities, null, 2));
 }
 
 test('buildGraph derives an undirected adjacency from relatedEntities[]', () => {

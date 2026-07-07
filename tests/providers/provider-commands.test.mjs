@@ -4,7 +4,7 @@
  * Spawns the real `bin/construct` binary against an isolated tmpdir project
  * so `provider health`, `provider status`, and `provider validate` are
  * exercised end to end: real process spawn, real exit codes, real stdout.
- * A project-scoped `.cx/providers.json` override registers the
+ * A project-scoped `.construct/providers.json` override registers the
  * always-unhealthy fixture provider (fixtures/failing-provider.mjs) so the
  * non-zero exit path is proven without touching any real built-in provider.
  */
@@ -38,9 +38,9 @@ function run(args, { cwd = ROOT, env = {} } = {}) {
 
 function withFailingProviderProject() {
   const dir = mkdtempSync(join(tmpdir(), 'construct-provider-cli-'));
-  mkdirSync(join(dir, '.cx'), { recursive: true });
+  mkdirSync(join(dir, '.construct'), { recursive: true });
   writeFileSync(
-    join(dir, '.cx', 'providers.json'),
+    join(dir, '.construct', 'providers.json'),
     JSON.stringify({ providers: [{ id: 'fixture-failing', package: FIXTURE_PROVIDER, options: {} }] }, null, 2),
   );
   return dir;

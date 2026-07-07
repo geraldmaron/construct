@@ -1,7 +1,7 @@
 /**
  * tests/packs/lifecycle.test.mjs — LMCP-E3 pack enable/disable lifecycle.
  *
- * Pins: the durable enable/disable round trip persists to .cx/packs.json and
+ * Pins: the durable enable/disable round trip persists to .construct/packs.json and
  * is reflected by isEnabled/loadEnabledPacks (which gates prompt/framework
  * resolution for callers that opt into it — see enablement.mjs header);
  * an incompatible compatVersion refuses enable with the exact validation
@@ -50,12 +50,12 @@ after(() => {
 });
 
 function writeProjectPack(rootDir, dirName, manifest) {
-  const packDir = path.join(rootDir, '.cx', 'packs', dirName);
+  const packDir = path.join(rootDir, '.construct', 'packs', dirName);
   fs.mkdirSync(packDir, { recursive: true });
   fs.writeFileSync(path.join(packDir, 'pack.manifest.json'), JSON.stringify(manifest, null, 2), 'utf8');
 }
 
-test('readEnablementState defaults to empty when no .cx/packs.json exists', () => {
+test('readEnablementState defaults to empty when no .construct/packs.json exists', () => {
   const root = freshRoot();
   const state = readEnablementState(root);
   assert.deepEqual(state, { version: 1, enabled: {} });
@@ -72,7 +72,7 @@ test('the core pack is always enabled and cannot be disabled', () => {
   assert.match(result.error, /core pack/);
 });
 
-test('enable/disable round-trips durably in .cx/packs.json', () => {
+test('enable/disable round-trips durably in .construct/packs.json', () => {
   const root = freshRoot();
   writeProjectPack(root, 'sample-pack', { id: '@fixture/sample', version: '1.0.0', compatVersion: 1 });
 
@@ -80,7 +80,7 @@ test('enable/disable round-trips durably in .cx/packs.json', () => {
   assert.equal(enableResult.ok, true);
   assert.equal(enableResult.tier, 'project');
 
-  const onDiskAfterEnable = JSON.parse(fs.readFileSync(path.join(root, '.cx', 'packs.json'), 'utf8'));
+  const onDiskAfterEnable = JSON.parse(fs.readFileSync(path.join(root, '.construct', 'packs.json'), 'utf8'));
   assert.ok(onDiskAfterEnable.enabled['@fixture/sample']);
   assert.equal(onDiskAfterEnable.enabled['@fixture/sample'].version, '1.0.0');
 

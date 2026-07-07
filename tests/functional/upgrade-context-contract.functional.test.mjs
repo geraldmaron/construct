@@ -34,13 +34,13 @@ This is user content; an upgrade refresh must never re-converge it without conse
 `;
 
 function seed(rootDir) {
-  mkdirSync(join(rootDir, '.cx'), { recursive: true });
-  writeFileSync(join(rootDir, '.cx', 'context.md'), `# context\n\n## Active Work\n\n_None in progress._\n\n## Recent Decisions\n\n_No recent decisions captured._\n\n## Architecture Notes\n\n_No new architecture notes._\n\n${USER_SECTION}`, 'utf8');
-  writeFileSync(join(rootDir, '.cx', 'context.json'), JSON.stringify({ format: 'json' }), 'utf8');
+  mkdirSync(join(rootDir, '.construct'), { recursive: true });
+  writeFileSync(join(rootDir, '.construct', 'context.md'), `# context\n\n## Active Work\n\n_None in progress._\n\n## Recent Decisions\n\n_No recent decisions captured._\n\n## Architecture Notes\n\n_No new architecture notes._\n\n${USER_SECTION}`, 'utf8');
+  writeFileSync(join(rootDir, '.construct', 'context.json'), JSON.stringify({ format: 'json' }), 'utf8');
 }
 
 function extractUserSection(rootDir) {
-  const body = readFileSync(join(rootDir, '.cx', 'context.md'), 'utf8');
+  const body = readFileSync(join(rootDir, '.construct', 'context.md'), 'utf8');
   const idx = body.indexOf('## Hand-curated section');
   return idx === -1 ? null : body.slice(idx);
 }
@@ -83,7 +83,7 @@ test('repeated upgrade refreshes never drift user content (consent contract: no 
 test('the managed-section structure survives refresh (refresh updates managed, not user, regions)', async () => {
   const rootDir = makeProject();
   await refreshContextMd({ rootDir });
-  const body = readFileSync(join(rootDir, '.cx', 'context.md'), 'utf8');
+  const body = readFileSync(join(rootDir, '.construct', 'context.md'), 'utf8');
   for (const heading of ['## Active Work', '## Recent Decisions', '## Architecture Notes', '## Hand-curated section']) {
     assert.ok(body.includes(heading), `${heading} present after refresh`);
   }
@@ -106,7 +106,7 @@ test('re-converge WITH consent resets to the scaffold, discarding user drift', a
   assert.equal(result.ok, true);
   assert.equal(result.reconverged, true);
   assert.equal(extractUserSection(rootDir), null, 'consented re-converge removes user drift');
-  const body = readFileSync(join(rootDir, '.cx', 'context.md'), 'utf8');
+  const body = readFileSync(join(rootDir, '.construct', 'context.md'), 'utf8');
   for (const heading of ['## Active Work', '## Recent Decisions', '## Architecture Notes', '## Open Questions']) {
     assert.ok(body.includes(heading), `scaffold heading ${heading} present after re-converge`);
   }
@@ -114,7 +114,7 @@ test('re-converge WITH consent resets to the scaffold, discarding user drift', a
 
 test('re-converge refuses cleanly when context.md is absent', async () => {
   const rootDir = makeProject();
-  rmSync(join(rootDir, '.cx', 'context.md'));
+  rmSync(join(rootDir, '.construct', 'context.md'));
   const result = await reconvergeContextMd({ rootDir, consent: true });
   assert.equal(result.ok, false);
   assert.equal(result.reason, 'no-context-md');

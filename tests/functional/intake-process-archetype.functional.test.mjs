@@ -78,7 +78,7 @@ function runConstruct(cwd, args, extraEnv = {}) {
 }
 
 function writeFakePollLock(projectRoot, pid, actor = 'fake-daemon') {
-  const dir = join(projectRoot, '.cx', 'runtime');
+  const dir = join(projectRoot, '.construct', 'runtime');
   mkdirSync(dir, { recursive: true });
   writeFileSync(
     join(dir, 'inbox-poll.lock'),
@@ -94,7 +94,7 @@ function writeFakePollLock(projectRoot, pid, actor = 'fake-daemon') {
 }
 
 function pendingPackets(projectRoot) {
-  const dir = join(projectRoot, '.cx', 'intake', 'pending');
+  const dir = join(projectRoot, '.construct', 'intake', 'pending');
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
     .filter((f) => f.endsWith('.json'))
@@ -125,8 +125,8 @@ test('intake process fails fast with exit 2 when the poll lock is held by a live
   const p = makeProject();
   try {
     mkdirSync(join(p.dir, 'inbox'), { recursive: true });
-    mkdirSync(join(p.dir, '.cx', 'intake'), { recursive: true });
-    writeFileSync(join(p.dir, '.cx', 'intake', 'manifest.json'), `${JSON.stringify({ version: 1, files: {} })}\n`, 'utf8');
+    mkdirSync(join(p.dir, '.construct', 'intake'), { recursive: true });
+    writeFileSync(join(p.dir, '.construct', 'intake', 'manifest.json'), `${JSON.stringify({ version: 1, files: {} })}\n`, 'utf8');
     writeFileSync(join(p.dir, 'inbox', 'sample.md'), '# Sample\n', 'utf8');
 
     writeFakePollLock(p.dir, process.pid, 'fake-daemon');
@@ -146,8 +146,8 @@ test('intake process --wait acquires the lock once it is released', () => {
   const p = makeProject();
   try {
     mkdirSync(join(p.dir, 'inbox'), { recursive: true });
-    mkdirSync(join(p.dir, '.cx', 'intake'), { recursive: true });
-    writeFileSync(join(p.dir, '.cx', 'intake', 'manifest.json'), `${JSON.stringify({ version: 1, files: {} })}\n`, 'utf8');
+    mkdirSync(join(p.dir, '.construct', 'intake'), { recursive: true });
+    writeFileSync(join(p.dir, '.construct', 'intake', 'manifest.json'), `${JSON.stringify({ version: 1, files: {} })}\n`, 'utf8');
     writeFileSync(join(p.dir, 'inbox', 'sample.md'), '# Sample\n\nbody\n', 'utf8');
 
     writeFakePollLock(p.dir, process.pid, 'fake-daemon');
@@ -156,7 +156,7 @@ test('intake process --wait acquires the lock once it is released', () => {
     // separate process avoids the parent-blocked deadlock that a
     // same-process timer would cause.
 
-    const lockPath = join(p.dir, '.cx', 'runtime', 'inbox-poll.lock');
+    const lockPath = join(p.dir, '.construct', 'runtime', 'inbox-poll.lock');
     const releaser = spawn(process.execPath, ['-e', `setTimeout(() => { try { require('fs').rmSync(${JSON.stringify(lockPath)}, { force: true }); } catch {} }, 400)`], {
       detached: true,
       stdio: 'ignore',
@@ -175,8 +175,8 @@ test('intake process clears a stale poll lock whose pid is gone, then runs', () 
   const p = makeProject();
   try {
     mkdirSync(join(p.dir, 'inbox'), { recursive: true });
-    mkdirSync(join(p.dir, '.cx', 'intake'), { recursive: true });
-    writeFileSync(join(p.dir, '.cx', 'intake', 'manifest.json'), `${JSON.stringify({ version: 1, files: {} })}\n`, 'utf8');
+    mkdirSync(join(p.dir, '.construct', 'intake'), { recursive: true });
+    writeFileSync(join(p.dir, '.construct', 'intake', 'manifest.json'), `${JSON.stringify({ version: 1, files: {} })}\n`, 'utf8');
     writeFileSync(join(p.dir, 'inbox', 'sample.md'), '# Sample\n\nbody\n', 'utf8');
 
     writeFakePollLock(p.dir, 999999, 'dead-pid');
@@ -193,7 +193,7 @@ test('intake process --dry-run is unaffected by the poll lock', () => {
   const p = makeProject();
   try {
     mkdirSync(join(p.dir, 'inbox'), { recursive: true });
-    mkdirSync(join(p.dir, '.cx', 'intake'), { recursive: true });
+    mkdirSync(join(p.dir, '.construct', 'intake'), { recursive: true });
 
     writeFakePollLock(p.dir, process.pid);
 
@@ -219,9 +219,9 @@ async function withArchetypeProject(fn) {
   try {
     mkdirSync(join(p.dir, 'inbox'), { recursive: true });
     writeFileSync(join(p.dir, 'inbox', '.gitignore'), '*\n!.gitignore\n', 'utf8');
-    mkdirSync(join(p.dir, '.cx', 'intake'), { recursive: true });
+    mkdirSync(join(p.dir, '.construct', 'intake'), { recursive: true });
     writeFileSync(
-      join(p.dir, '.cx', 'intake', 'manifest.json'),
+      join(p.dir, '.construct', 'intake', 'manifest.json'),
       `${JSON.stringify({ version: 1, files: {} }, null, 2)}\n`,
       'utf8',
     );
@@ -243,7 +243,7 @@ test('InboxWatcher.poll records the SHA-256 + attribution on a fresh ingest', as
     const result = await watcher.poll();
     assert.equal(result.processed.length, 1, `expected 1 processed: ${JSON.stringify(result)}`);
 
-    const manifest = JSON.parse(readFileSync(join(p.dir, '.cx', 'intake', 'manifest.json'), 'utf8'));
+    const manifest = JSON.parse(readFileSync(join(p.dir, '.construct', 'intake', 'manifest.json'), 'utf8'));
     const entries = Object.values(manifest.files);
     assert.equal(entries.length, 1);
     assert.match(entries[0].sourcePath, /inbox\/notes\.md/);
@@ -266,7 +266,7 @@ test('InboxWatcher.poll refuses to reprocess identical content under a new path'
     assert.equal(second.processed.length, 0, 'identical content must dedup via the manifest');
     assert.ok(second.skipped >= 1, 'second poll must report at least one skip');
 
-    const manifest = JSON.parse(readFileSync(join(p.dir, '.cx', 'intake', 'manifest.json'), 'utf8'));
+    const manifest = JSON.parse(readFileSync(join(p.dir, '.construct', 'intake', 'manifest.json'), 'utf8'));
     assert.equal(Object.keys(manifest.files).length, 1, 'manifest must hold exactly one entry');
   });
 });
@@ -309,7 +309,7 @@ test('two parallel InboxWatcher.poll calls serialize through the lock — no dou
     const packets = pendingPackets(p.dir);
     assert.equal(packets.length, 1, 'lock must prevent duplicate packets for one source');
 
-    const manifest = JSON.parse(readFileSync(join(p.dir, '.cx', 'intake', 'manifest.json'), 'utf8'));
+    const manifest = JSON.parse(readFileSync(join(p.dir, '.construct', 'intake', 'manifest.json'), 'utf8'));
     assert.equal(Object.keys(manifest.files).length, 1, 'manifest must hold exactly one entry');
   });
 });

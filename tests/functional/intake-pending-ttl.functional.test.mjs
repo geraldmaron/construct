@@ -1,11 +1,11 @@
 /**
  * tests/functional/intake-pending-ttl.functional.test.mjs — persisted
- * `.cx/intake/pending/` packets reach the daemon's TTL/dead-letter contract,
+ * `.construct/intake/pending/` packets reach the daemon's TTL/dead-letter contract,
  * re-ingesting a live source is idempotent, and the session prelude stops
  * advertising packets once their source has been swept away.
  *
  * The daemon tick reads the inbox path (listInboxFiles/processInboxFile) and
- * must also sweep packets already written to `.cx/intake/pending/`, so
+ * must also sweep packets already written to `.construct/intake/pending/`, so
  * orphaned/expired packets do not accumulate forever and re-ingesting the
  * same source refreshes one packet instead of producing a sibling.
  */
@@ -44,12 +44,12 @@ after(() => {
 function makeProject() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-r8wr7-'));
   tmpDirs.push(dir);
-  fs.mkdirSync(path.join(dir, '.cx', 'intake', 'pending'), { recursive: true });
+  fs.mkdirSync(path.join(dir, '.construct', 'intake', 'pending'), { recursive: true });
   return dir;
 }
 
 function pendingPath(dir, name) {
-  return path.join(dir, '.cx', 'intake', 'pending', `${name}.json`);
+  return path.join(dir, '.construct', 'intake', 'pending', `${name}.json`);
 }
 
 function writePending(dir, name, body) {
@@ -87,10 +87,10 @@ test('sweepPendingPackets dead-letters source-missing and TTL-expired packets, k
   assert.equal(swept.find((s) => s.id === 'orphan').reason, 'source-missing');
   assert.equal(swept.find((s) => s.id === 'expired').reason, 'ttl-expired');
 
-  const remaining = fs.readdirSync(path.join(project, '.cx', 'intake', 'pending')).filter((n) => n.endsWith('.json'));
+  const remaining = fs.readdirSync(path.join(project, '.construct', 'intake', 'pending')).filter((n) => n.endsWith('.json'));
   assert.deepEqual(remaining, ['valid.json']);
 
-  const deadLetterDir = path.join(project, '.cx', 'intake', 'dead-letter');
+  const deadLetterDir = path.join(project, '.construct', 'intake', 'dead-letter');
   const deadLettered = fs.readdirSync(deadLetterDir).filter((n) => n.endsWith('.json')).sort();
   assert.deepEqual(deadLettered, ['expired.json', 'orphan.json']);
   const orphanRecord = JSON.parse(fs.readFileSync(path.join(deadLetterDir, 'orphan.json'), 'utf8'));
@@ -116,7 +116,7 @@ test('re-ingesting the same source is idempotent — no README.md-N sibling pack
   assert.equal(second.packetId, first.packetId, 'second ingest must refresh the same packet id');
   assert.equal(second.refreshed, true);
 
-  const pendingFiles = fs.readdirSync(path.join(project, '.cx', 'intake', 'pending')).filter((n) => n.endsWith('.json'));
+  const pendingFiles = fs.readdirSync(path.join(project, '.construct', 'intake', 'pending')).filter((n) => n.endsWith('.json'));
   assert.equal(pendingFiles.length, 1, 'exactly one packet must exist per source — no sibling collision');
 });
 
@@ -134,9 +134,9 @@ test('daemon tick sweeps pending on every run alongside the inbox scan', async (
   const result = await daemon.run();
   assert.equal(result.reason, 'idle');
 
-  const pendingFiles = fs.readdirSync(path.join(project, '.cx', 'intake', 'pending')).filter((n) => n.endsWith('.json'));
+  const pendingFiles = fs.readdirSync(path.join(project, '.construct', 'intake', 'pending')).filter((n) => n.endsWith('.json'));
   assert.deepEqual(pendingFiles, []);
-  const deadLetterFiles = fs.readdirSync(path.join(project, '.cx', 'intake', 'dead-letter')).filter((n) => n.endsWith('.json'));
+  const deadLetterFiles = fs.readdirSync(path.join(project, '.construct', 'intake', 'dead-letter')).filter((n) => n.endsWith('.json'));
   assert.deepEqual(deadLetterFiles, ['stale.json']);
 });
 

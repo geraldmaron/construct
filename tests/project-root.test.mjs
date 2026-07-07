@@ -97,7 +97,7 @@ test('resolveProjectScope returns null outside a project, scope object inside', 
     const scope = resolveProjectScope(inside);
     assert.ok(scope, 'inside a project must return a scope object');
     assert.equal(scope.projectRoot, inside);
-    assert.equal(scope.cxDir, join(inside, '.cx'));
+    assert.equal(scope.cxDir, join(inside, '.construct'));
     assert.match(scope.projectId, /^[0-9a-f]{12}$/);
   } finally {
     rmSync(outside, { recursive: true, force: true });
@@ -113,7 +113,7 @@ test('resolveProjectScopedPath returns project path inside a project, doctor-roo
     mkdirSync(join(inside, '.cx'), { recursive: true });
 
     const insideP = resolveProjectScopedPath('audit-reads.jsonl', { cwd: inside, ensureDir: false });
-    assert.equal(insideP, join(inside, '.cx', 'audit-reads.jsonl'));
+    assert.equal(insideP, join(inside, '.construct', 'audit-reads.jsonl'));
 
     const outsideP = resolveProjectScopedPath('audit-reads.jsonl', { cwd: outside, ensureDir: false });
     assert.equal(outsideP, join(doctorRoot(), 'audit-reads.jsonl'));

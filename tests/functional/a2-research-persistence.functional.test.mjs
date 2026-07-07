@@ -35,7 +35,7 @@ function isolatedEnv(home) {
 test('A2 end-to-end: construct knowledge add writes a frontmatter-stamped research finding', { timeout: 90_000 }, () => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-functional-'));
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-home-'));
-  fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
 
   const body = [
     'FINDINGS',
@@ -63,7 +63,7 @@ test('A2 end-to-end: construct knowledge add writes a frontmatter-stamped resear
   assert.equal(result.status, 0, `CLI failed: ${result.stderr}`);
   assert.match(result.stdout, /wrote .* bytes/);
 
-  const outPath = path.join(cwd, '.cx', 'knowledge', 'external', 'research', 'npm-oidc-requirements.md');
+  const outPath = path.join(cwd, '.construct', 'knowledge', 'external', 'research', 'npm-oidc-requirements.md');
   assert.ok(fs.existsSync(outPath), 'research file not written at expected path');
 
   const content = fs.readFileSync(outPath, 'utf8');
@@ -81,7 +81,7 @@ test('A2 end-to-end: construct knowledge add writes a frontmatter-stamped resear
 test('A2 end-to-end: confidence=confirmed without --source-url is rejected', { timeout: 90_000 }, () => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-functional-noSources-'));
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-home-noSources-'));
-  fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
 
   const result = spawnSync('node', [BIN, 'knowledge', 'add',
     '--source=research',

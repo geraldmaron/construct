@@ -25,7 +25,7 @@ test('tool repo is detected as construct package', () => {
 test('syncProjectAdapters stages launcher in tmp project', () => {
   const dir = mkdtempSync(join(tmpdir(), 'cx-adapt-'));
   try {
-    mkdirSync(join(dir, '.cx'));
+    mkdirSync(join(dir, '.construct'));
     writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'demo-app' }));
     const result = syncProjectAdapters({
       projectRoot: dir,
@@ -34,7 +34,7 @@ test('syncProjectAdapters stages launcher in tmp project', () => {
       log: () => {},
     });
     assert.equal(result.staged, true);
-    assert.ok(existsSync(join(dir, '.construct', 'run.mjs')));
+    assert.ok(existsSync(join(dir, '.construct', 'launcher', 'run.mjs')));
   } finally {
     rmTmpDir(dir);
   }
