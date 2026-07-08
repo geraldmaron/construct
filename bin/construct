@@ -3395,6 +3395,56 @@ async function cmdSources(args) {
   process.exit(1);
 }
 
+// Read a `--flag value` or `--flag=value` option out of an argv slice.
+
+function readOption(args, flag) {
+  const eq = args.find((a) => a.startsWith(`${flag}=`));
+  if (eq) return eq.slice(flag.length + 1);
+  const idx = args.indexOf(flag);
+  if (idx >= 0 && args[idx + 1] && !args[idx + 1].startsWith('--')) return args[idx + 1];
+  return undefined;
+}
+
+async function cmdTemplates(args) {
+  const { registerArtifactType } = await import('../lib/artifact-manifest-overlay.mjs');
+  const { listTemplates } = await import('../lib/mcp/tools/skills.mjs');
+  const cwd = process.cwd();
+  const action = args[0] ?? 'list';
+
+  if (action === 'list' || action === 'show') {
+    const res = listTemplates({ ROOT_DIR });
+    println('Templates');
+    println(`  shipped:    ${res.shipped.join(', ')}`);
+    println(`  overridden: ${res.overridden.length ? res.overridden.join(', ') : '(none)'}`);
+    return;
+  }
+
+  if (action === 'register') {
+    const type = args.slice(1).find((a) => !a.startsWith('--'));
+    if (!type) {
+      errorln('Usage: construct templates register <type> [--description "..."] [--from <file>] [--force]');
+      process.exit(1);
+    }
+    const description = readOption(args, '--description');
+    const from = readOption(args, '--from');
+    const force = args.includes('--force');
+    try {
+      const r = registerArtifactType({ type, description, from, cwd, force });
+      ok(`registered document class '${r.type}'`);
+      info(`template: ${path.relative(cwd, r.templatePath)}`);
+      info(`overlay:  ${path.relative(cwd, r.overlayPath)}`);
+      info(`author it via MCP: author_artifact {type:"${r.type}", draft_markdown:"..."}`);
+    } catch (err) {
+      errorln(err.message);
+      process.exit(1);
+    }
+    return;
+  }
+
+  errorln(`Unknown templates action: ${action}. Available: list, register`);
+  process.exit(1);
+}
+
 async function cmdIntakeMetrics() {
   try {
     const { computeIntakeMetrics, pendingAge } = await import('../lib/embed/intake-metrics.mjs');
@@ -6545,6 +6595,7 @@ const handlers = new Map([
   ['config', cmdConfig],
   ['approvals', cmdApprovals],
   ['sources', cmdSources],
+  ['templates', cmdTemplates],
   ['intake', cmdIntake],
   ['recommendations', cmdRecommendations],
   ['integrations', cmdIntegrations],

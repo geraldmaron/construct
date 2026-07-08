@@ -29,6 +29,7 @@ description: Advanced commands for Construct.
 | `construct scheduler` | Manage scheduled background jobs (tag-mining, doc-hygiene, skill-rollup) |
 | `construct skills` | Skill relevance detection |
 | `construct sources` | Manage typed integration source targets in construct.config.json |
+| `construct templates` | List doc templates and register custom document classes (project-tier overlay; builtin manifest untouched) |
 | `construct uninstall` | Remove Construct state |
 | `construct update` | Reinstall this checkout |
 | `construct upgrade` | Upgrade to latest npm version |
@@ -323,6 +324,21 @@ construct sources list|add|remove|validate
 - `add <provider> <id> <selector-json>` — Add a typed target (github, jira, linear, slack)
 - `remove <id>` — Remove a config target by id
 - `validate` — Validate sources.targets in construct.config.json
+
+## construct templates
+
+List doc templates and register custom document classes (project-tier overlay; builtin manifest untouched)
+
+**Usage**
+
+```bash
+construct templates list|register <type>
+```
+
+**Subcommands**
+
+- `list` — Show shipped templates and project overrides
+- `register <type> [--description "..."] [--from <file>] [--force]` — Register a custom doc class: writes .cx/templates/docs/<type>.md + a project artifact-manifest overlay entry
 
 ## construct uninstall
 
