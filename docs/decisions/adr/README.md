@@ -34,7 +34,7 @@ Architecture decision records for decisions that have already been made.
 | [0024](./0024-document-io-optional-capability.md) | Document I/O optional capability | accepted | |
 | [0025](./0025-explicit-activation-model.md) | Explicit activation model | accepted | |
 | [0026](./0026-beads-git-native-sync.md) | Beads git-native sync | accepted | |
-| [0027](./0027-host-project-footprint-and-non-destructive-scaffolding.md) | Host/project footprint | accepted | Marker-block discipline affirmed; in-project heavy-state disposition superseded in part by ADR-0066 |
+| [0027](./0027-host-project-footprint-and-non-destructive-scaffolding.md) | Host/project footprint | accepted | Marker-block discipline affirmed; in-project heavy-state disposition superseded in part by ADR-0066; `.construct/`-launcher vs `.cx/`-config directory split superseded by ADR-0069 |
 | [0028](./0028-js-yaml-frontmatter-exception.md) | JS YAML frontmatter exception | accepted | |
 | [0029](./0029-install-scopes-and-hook-budgets.md) | Install scopes and hook budgets | proposed | |
 | [0030](./0030-chain-of-thought-disclosure.md) | Chain-of-thought disclosure | accepted | |
