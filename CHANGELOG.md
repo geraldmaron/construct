@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- `construct-760c.7`: model policy presets + explain, layered on the existing resolution chain. New `construct models policy show` renders the effective policy — resolved model and winning source per tier (env-pin override attributed over registry default) plus the work-category→tier map — and `construct models policy set <budget|free|frontier|local>` computes per-tier assignments from configured providers and persists them to `specialists/org/models.json`, the single edit surface (no env writes, no config-schema writes; env pins still override). New `construct models explain --role <specialist>` prints a per-specialist resolution trace matching `models resolve --json --tier <tier>`. The `budget` preset ranks candidates by live OpenRouter pricing (`lib/model-pricing.mjs`), hard-excludes flagship ids, and ranks any candidate with an unfetchable price LAST (never $0) — so with only an OpenRouter credential no frontier model resolves for any tier or work category, even when pricing is unreachable (it then falls back to a static ordering and says so). `free` writes only `:free` slugs and reports (never substitutes) a tier with no free model; each preset refuses with a clear message when no provider credential can back it, so a clean install stays all-tiers-null (release-gate d1r7.5 unbroken). New `lib/model-policy.mjs`; `bin/construct` `cmdModels` gains `policy`/`explain` subcommands (+ `--no-sync` on `policy set` for scripted runs). Tests: `tests/functional/model-policy.functional.test.mjs` (budget-invariant sweep through the real binary with a fetch-spy pricing fixture and PATH stripped, models.json-only mutation, env-pin attribution, free-preset reporting, and the missing-price safety guard). Docs: `docs/guides/cookbook/plug-in-your-own-llm.mdx` gains a "Model policy presets" section.
+
 ## [1.5.1] - 2026-07-07
 
 ### Fixed

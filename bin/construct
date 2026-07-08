@@ -4416,10 +4416,20 @@ async function cmdDb(args) {
 async function cmdModels(args) {
   const envPath = getUserEnvPath(HOME);
   const sub = args[0] && !args[0].startsWith('-') ? args[0] : null;
-  const KNOWN_SUBCOMMANDS = new Set(['list', 'set', 'free', 'reset', 'resolve']);
+  const KNOWN_SUBCOMMANDS = new Set(['list', 'set', 'free', 'reset', 'resolve', 'policy', 'explain']);
   if (sub && !KNOWN_SUBCOMMANDS.has(sub)) {
     errorln(`Unknown models subcommand: ${sub}. Run \`construct models --help\` for the supported set.`);
     process.exit(1);
+  }
+
+  if (sub === 'policy') {
+    await cmdModelsPolicy(args.slice(1));
+    return;
+  }
+
+  if (sub === 'explain') {
+    await cmdModelsExplain(args.slice(1));
+    return;
   }
 
   if (sub === 'resolve') {
@@ -4578,6 +4588,101 @@ async function cmdModels(args) {
     println('  • construct models set --tier=<reasoning|standard|fast> --model=<provider/model-id>');
     println('  • construct models --apply           Poll OpenRouter free catalog and seed all tiers');
   }
+}
+
+async function cmdModelsPolicy(args) {
+  const sub = args[0] && !args[0].startsWith('-') ? args[0] : 'show';
+  const asJson = args.includes('--json');
+  const {
+    computePolicyPreset, writeModelRegistry, readPolicyView, POLICY_PRESETS,
+  } = await import('../lib/model-policy.mjs');
+  const { defaultModelRegistryPath } = await import('../lib/model-router.mjs');
+  const registryPath = defaultModelRegistryPath(process.env);
+
+  if (sub === 'show') {
+    const view = readPolicyView({ env: process.env, registryPath });
+    if (asJson) {
+      println(JSON.stringify(view, null, 2));
+      return;
+    }
+    println('Effective model policy:');
+    for (const t of view.tiers) {
+      const model = t.model ?? '(not configured)';
+      println(`  ${t.tier.padEnd(11)}${model}  [${t.source}]`);
+    }
+    println('');
+    println('Work category → tier:');
+    for (const [category, tier] of Object.entries(view.workCategoryMap)) {
+      println(`  ${category.padEnd(11)}→ ${tier}`);
+    }
+    println('');
+    println(`Registry: ${registryPath}`);
+    println('Precedence: CX_MODEL_<TIER> env pins always win over registry defaults.');
+    return;
+  }
+
+  if (sub === 'set') {
+    const preset = args[1] && !args[1].startsWith('-') ? args[1] : null;
+    if (!preset) {
+      errorln(`Usage: construct models policy set <${POLICY_PRESETS.join('|')}>`);
+      process.exit(1);
+    }
+    const apiKey = process.env.OPENROUTER_API_KEY || readOpenRouterApiKeyFromOpenCodeConfig() || null;
+    const result = await computePolicyPreset(preset, { env: process.env, apiKey });
+    if (!result.ok) {
+      errorln(result.refusal);
+      for (const w of result.warnings ?? []) errorln(`  ${w}`);
+      process.exit(1);
+    }
+    writeModelRegistry(registryPath, result.models, { preset });
+    if (asJson) {
+      println(JSON.stringify({ preset, registryPath, models: result.models, warnings: result.warnings }, null, 2));
+      return;
+    }
+    println(`Applied \`${preset}\` policy to ${registryPath}:`);
+    for (const tier of ['reasoning', 'standard', 'fast']) {
+      const def = result.models[tier];
+      const primary = def?.primary ?? '(unset)';
+      const fallback = def?.fallback?.length ? `  (fallback: ${def.fallback.join(', ')})` : '';
+      println(`  ${tier.padEnd(11)}${primary}${fallback}`);
+    }
+    for (const w of result.warnings ?? []) errorln(`Note: ${w}`);
+    println('');
+    println('Env pins (CX_MODEL_<TIER>) still override these. Run `construct sync` to propagate.');
+    if (!args.includes('--no-sync')) await cmdSync([]);
+    return;
+  }
+
+  errorln(`Unknown models policy subcommand: ${sub}. Use \`show\` or \`set <preset>\`.`);
+  process.exit(1);
+}
+
+async function cmdModelsExplain(args) {
+  const asJson = args.includes('--json');
+  const roleFlagIdx = args.indexOf('--role');
+  const role = roleFlagIdx !== -1 ? args[roleFlagIdx + 1] : (args[0] && !args[0].startsWith('-') ? args[0] : null);
+  if (!role) {
+    errorln('Usage: construct models explain --role <specialist>');
+    process.exit(1);
+  }
+  const { explainRole } = await import('../lib/model-policy.mjs');
+  const trace = explainRole(role, { env: process.env, rootDir: ROOT_DIR });
+  if (!trace.ok) {
+    errorln(trace.error);
+    process.exit(1);
+  }
+  if (asJson) {
+    println(JSON.stringify(trace, null, 2));
+    return;
+  }
+  println(`Resolution trace for ${trace.role}:`);
+  println(`  declared tier:   ${trace.declaredTier ?? '(none)'}`);
+  if (trace.declaredModel) println(`  declared model:  ${trace.declaredModel}`);
+  println(`  resolved tier:   ${trace.tier}`);
+  println(`  resolved model:  ${trace.resolvedModel ?? '(not configured)'}`);
+  println(`  winning source:  ${trace.source}`);
+  println('');
+  println(`Matches: construct models resolve --json --tier ${trace.tier}`);
 }
 
 async function cmdMcp(args) {
