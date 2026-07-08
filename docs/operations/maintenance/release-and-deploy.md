@@ -155,6 +155,8 @@ Blocking step, run by both `npm run release:preflight` and `npm run release:chec
 
 If any of these fail, no artifacts ship. The prose lint is enforced at PR time only (changed-files scope) and is intentionally not in the release gate; running it `--all` on the current historical baseline would always fail until the cleanup PR (`construct-fj0`, `construct-ze6`) lands.
 
+`test:functional` includes `tests/functional/release-gate.functional.test.mjs`, which asserts the refit invariants on HEAD (`construct-d1r7.16`): no implicit active model defaults (every tier resolves to `not configured` on a clean install), optional MCP silence (catalog-only and disabled servers raise no diagnostics), and certified document I/O (the `--certified` matrix must pass when every export engine is installed, degrading to the graceful local matrix on a leaner leg).
+
 ## npm publish (OIDC, no stored token)
 
 Uses GitHub Actions OIDC + npm Trusted Publishers. **No `NPM_TOKEN` secret is set, stored, or needed.** Configuration:
