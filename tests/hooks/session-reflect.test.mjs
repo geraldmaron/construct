@@ -107,6 +107,7 @@ test('hook exits 0 within budget on valid Stop payload and writes an observation
     }),
     encoding: 'utf8',
     timeout: 10_000,
+    env: { ...process.env, HOME: cwd, CX_HOME_OVERRIDE: cwd },
   });
   const elapsed = Date.now() - t0;
 
@@ -148,6 +149,7 @@ test('hook skips trivial sessions with no tool calls and short final text', (t) 
     input: JSON.stringify({ cwd, transcript_path: transcriptPath }),
     encoding: 'utf8',
     timeout: 5_000,
+    env: { ...process.env, HOME: cwd, CX_HOME_OVERRIDE: cwd },
   });
 
   assert.equal(result.status, 0);
@@ -165,7 +167,7 @@ test('hook is a no-op when CONSTRUCT_REFLECT_AUTO=off', (t) => {
   const result = spawnSync('node', [HOOK_PATH], {
     cwd,
     input: JSON.stringify({ cwd, transcript_path: transcriptPath }),
-    env: { ...process.env, CONSTRUCT_REFLECT_AUTO: 'off' },
+    env: { ...process.env, CONSTRUCT_REFLECT_AUTO: 'off', HOME: cwd, CX_HOME_OVERRIDE: cwd },
     encoding: 'utf8',
     timeout: 5_000,
   });
@@ -186,6 +188,7 @@ test('hook skips when cwd is not a Construct project', (t) => {
     input: JSON.stringify({ cwd, transcript_path: transcriptPath }),
     encoding: 'utf8',
     timeout: 5_000,
+    env: { ...process.env, HOME: cwd, CX_HOME_OVERRIDE: cwd },
   });
 
   assert.equal(result.status, 0);
