@@ -28,6 +28,28 @@ construct init --with-all-docs
 Creates the requested documentation lanes such as `docs/specs/prd/`, `docs/decisions/adr/`, `docs/decisions/rfc/`, `docs/notes/memos/`, and `docs/operations/runbooks/`. For a narrower setup, use flags such as `--with-adrs`, `--with-rfcs`, `--with-runbooks`, or `--with-docs=adrs,rfcs`.
 with `README.md` indices and starter templates under each lane's `templates/` directory. Safe to re-run on an existing repo.
 
+## Generate a class the builtin manifest never registered
+
+The builtin `specialists/artifact-manifest.json` stays the shipped source of truth and is never modified. To generate a document class it doesn't list, either register it or use the sanctioned `adhoc` type.
+
+Register a reusable custom class (writes a project template plus a project-tier manifest overlay):
+
+```bash
+construct templates register convergence-brief \
+  --description "Cross-project strategy convergence brief" \
+  [--from .cx/templates/docs/convergence-brief.md]
+```
+
+This writes `.cx/templates/docs/convergence-brief.md` and adds the class to `.cx/artifact-manifest.overlay.json`, which merges over the builtin by three tiers (builtin → user → project). Afterward `get_template("convergence-brief")` resolves the project override and `author_artifact {type:"convergence-brief", ...}` drafts from it through the release gate.
+
+For a one-off with no fixed shape, skip registration and author an `adhoc` artifact — it needs an explicit `title` + `instructions`, follows the instructions for structure, and still passes the full gate:
+
+```
+author_artifact {type:"adhoc", title:"Q3 strategy convergence", instructions:"..."}
+```
+
+`adhoc` is not a bypass for a registered class (naming a known type through it is redirected), and an unknown non-adhoc class still returns a classification/registration prompt rather than silently becoming a PRD.
+
 ## Generate a new artifact from a template
 
 ```bash
