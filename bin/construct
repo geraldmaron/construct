@@ -4106,6 +4106,18 @@ async function cmdExecution(args) {
   println('Usage: construct execution resolve [--workflow-type T] [--strategy orchestrated|prompt-only|auto] [--host-model M] [--host-provider P] [--tier reasoning|standard|fast] [--no-construct] [--allow-cross-provider] [--json]');
 }
 
+// Human-readable summary of a shaped run's routePath (construct-d1r7.15) —
+// shared by `orchestrate run` and `orchestrate status <id>` so both print the
+// same team/specialist/rationale line rather than drifting formats.
+
+function printRoutePath(routePath) {
+  if (!routePath) return;
+  const team = (routePath.teamPath || []).join(' > ') || 'none';
+  const sequence = (routePath.specialistSequence || []).join(' → ') || 'none';
+  println(`  route: team=${team} · specialists=${sequence}`);
+  if (routePath.rationale) println(`  rationale: ${routePath.rationale}`);
+}
+
 async function cmdOrchestrate(args) {
   const sub = args[0];
   const rest = args.slice(1);
@@ -4235,6 +4247,7 @@ async function cmdOrchestrate(args) {
           // terminal-state taxonomy as a local one — never echo its raw status.
           const shaped = shapeRun(env.data);
           println(`Run ${env.data.runId} — ${shaped.status} · executionMode=${shaped.executionMode}${shaped.degraded ? ` · degraded: ${shaped.degradationReason}` : ''}`);
+          printRoutePath(shaped.routePath);
           for (const t of env.data.tasks || []) println(`  ${t.id} ${t.role} — ${t.status}${t.output ? ` (${t.output.length} chars)` : ''}`);
         } else {
           for (const r of env.data.runs || []) {
@@ -4294,6 +4307,7 @@ async function cmdOrchestrate(args) {
     const shaped = shapeRun(run);
     println(`Run ${run.runId} — ${shaped.status} · executionMode=${shaped.executionMode} · backend=${run.workerBackend} · hostRole=${run.hostRole}`);
     if (shaped.degraded) println(`  degraded: ${shaped.degradationReason}`);
+    printRoutePath(shaped.routePath);
     if (run.tasks.length) println(`  tasks: ${run.tasks.map((t) => `${t.role}(${t.status})`).join(' → ')}`);
     else println('  tasks: none (no Construct-owned specialist sequence for this execution mode)');
     for (const t of run.tasks) {
@@ -4312,6 +4326,7 @@ async function cmdOrchestrate(args) {
       if (wantsJson) { println(JSON.stringify(hostAdapterMetadata(run), null, 2)); return; }
       const shaped = shapeRun(run);
       println(`Run ${run.runId} — ${shaped.status} · executionMode=${shaped.executionMode}${shaped.degraded ? ` · degraded: ${shaped.degradationReason}` : ''}`);
+      printRoutePath(shaped.routePath);
       for (const t of run.tasks) {
         println(`  ${t.id} ${t.role} — ${t.status}`);
         if (t.reasoning) println(`    reasoning: ${t.reasoning.length > 300 ? `${t.reasoning.slice(0, 300)}…` : t.reasoning}`);
