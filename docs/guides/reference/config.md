@@ -35,6 +35,8 @@ When both exist, list-shaped settings (e.g. `sources.targets`, `intakePolicy.add
 
 Full resolution order for a single setting (most-specific wins): **env var (if set) ▷ project-local config ▷ project config ▷ default**.
 
+Both config files are **JSONC** — authored like `tsconfig.json`. `//` line comments, `/* … */` block comments, and a trailing comma are all tolerated (parsed by `lib/jsonc.mjs`), so you can keep piped-option hints inline. `construct init` scaffolds `construct.config.json` with commented stubs for the switchable settings (`deployment.mode`: `solo` | `team` | `enterprise`; `deployment.mcpBroker`: `auto` | `on` | `off`). Comments are stripped on load, so a commented stub never becomes a live value; an uncommented value that fails schema validation (e.g. an out-of-enum `deployment.mode`) surfaces a clear error and the loader falls back to defaults.
+
 ## `.env` precedence and shadow warnings
 
 Environment values are loaded by `lib/env-config.mjs` from three sources, most-specific wins: **project `.env` ▷ user `config.env` (XDG config dir) ▷ shell exports**. A repo's local `.env` is closer to the work than a machine-wide default, so it takes the file-tier precedence. (Materialized `op run` credentials injected into `process.env` still win over stored `op://` references so one 1Password unlock per invocation is enough.)

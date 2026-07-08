@@ -22,6 +22,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { parseJsonc } from '../lib/jsonc.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const binPath = path.join(root, 'bin', 'construct');
@@ -66,7 +67,7 @@ function runInit(extraEnv = {}) {
 function readIntakePolicy() {
   const cfgPath = path.join(tmpDir, 'construct.config.json');
   if (!fs.existsSync(cfgPath)) return null;
-  const raw = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+  const raw = parseJsonc(fs.readFileSync(cfgPath, 'utf8'));
   return raw.intakePolicy ?? null;
 }
 

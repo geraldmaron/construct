@@ -25,6 +25,7 @@ import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
+import { parseJsonc } from '../../lib/jsonc.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
@@ -120,7 +121,7 @@ test('issue #97: init defers to existing internal/meetings/, internal/memos/, cu
 
     const projectConfigPath = join(f.dir, 'construct.config.json');
     assert.equal(existsSync(projectConfigPath), true, 'construct.config.json must be written');
-    const projectConfig = JSON.parse(readFileSync(projectConfigPath, 'utf8'));
+    const projectConfig = parseJsonc(readFileSync(projectConfigPath, 'utf8'));
     assert.equal(
       'zones' in (projectConfig.intakePolicy ?? {}),
       false,
@@ -163,7 +164,7 @@ test('issue #97: --force scaffolds the full default tree even when project layou
       '--force must scaffold inbox/ even when ./ingest exists',
     );
 
-    const projectConfig = JSON.parse(readFileSync(join(f.dir, 'construct.config.json'), 'utf8'));
+    const projectConfig = parseJsonc(readFileSync(join(f.dir, 'construct.config.json'), 'utf8'));
     assert.equal(
       'zones' in (projectConfig.intakePolicy ?? {}),
       false,
