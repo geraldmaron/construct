@@ -127,17 +127,19 @@ describe('sync-specialists contract tests', () => {
   // under HOME, not the repo root — two --global syncs against different HOMEs
   // must not collide on a shared repo-root lock.
   describe('lockfile', () => {
-    it('creates .cx/sync.lock during sync and removes it after', () => {
-      const lockPath = path.join(tmpHome, '.cx', 'sync.lock');
+    it('creates .construct/sync.lock during sync and removes it after, leaving no stray .cx (construct-edkj)', () => {
+      const lockPath = path.join(tmpHome, '.construct', 'sync.lock');
       // Ensure no stale lock
       try { fs.unlinkSync(lockPath); } catch { /* ok */ }
+      try { fs.rmSync(path.join(tmpHome, '.cx'), { recursive: true, force: true }); } catch { /* ok */ }
       const result = runSync([], { HOME: tmpHome });
       assert.equal(result.status, 0, `sync failed:\n${result.stderr}`);
       assert.ok(!fs.existsSync(lockPath), 'lock file must be removed after successful sync');
+      assert.ok(!fs.existsSync(path.join(tmpHome, '.cx')), 'sync must not leave a stray .cx/ directory after ADR-0069 consolidation');
     });
 
     it('aborts with exit 1 when lock is already held by a live process', () => {
-      const lockPath = path.join(tmpHome, '.cx', 'sync.lock');
+      const lockPath = path.join(tmpHome, '.construct', 'sync.lock');
       fs.mkdirSync(path.dirname(lockPath), { recursive: true });
       // Write the current process PID — guaranteed to be alive
       fs.writeFileSync(lockPath, String(process.pid));
@@ -261,7 +263,7 @@ describe('sync-specialists contract tests', () => {
 
   describe('two-phase staging', () => {
     it('staging dir is cleaned up after successful sync', () => {
-      const stagingDir = path.join(tmpHome, '.cx', 'sync-staging');
+      const stagingDir = path.join(tmpHome, '.construct', 'sync-staging');
       const result = runSync([], { HOME: tmpHome });
       assert.equal(result.status, 0, `sync failed:\n${result.stderr}`);
       assert.ok(!fs.existsSync(stagingDir), 'sync-staging dir must be removed after successful sync');

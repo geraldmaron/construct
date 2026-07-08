@@ -72,7 +72,7 @@ import { stampFrontmatter } from "../lib/doc-stamp.mjs";
 import { buildSkillFrontmatter, stripLeadingFrontmatter } from "../lib/sync/skill-frontmatter.mjs";
 import { loadRegistry, clearCache } from "../lib/registry/loader.mjs";
 import { loadPluginRegistry } from "../lib/plugin-registry.mjs";
-import { PROJECT_MARKERS, LAUNCHER_REL_PATH } from "../lib/config-dir.mjs";
+import { PROJECT_MARKERS, LAUNCHER_REL_PATH, CONFIG_DIR_NAME } from "../lib/config-dir.mjs";
 
 const home = os.homedir();
 const root = path.resolve(import.meta.dirname, "..");
@@ -324,8 +324,8 @@ const projectDir = PROJECT_FLAG ? process.cwd() : detectedProject;
 // renames stay on the same filesystem as their destinations.
 
 const stateBase = projectDir || home;
-const lockPath = path.join(stateBase, ".cx", "sync.lock");
-const stagingDir = path.join(stateBase, ".cx", "sync-staging");
+const lockPath = path.join(stateBase, CONFIG_DIR_NAME, "sync.lock");
+const stagingDir = path.join(stateBase, CONFIG_DIR_NAME, "sync-staging");
 
 // Project-tier writes carry every registry entry. Global-tier writes carry only
 // the `construct` front-door agent — specialists live with the project, not the
@@ -349,7 +349,7 @@ function acquireLock() {
       try { process.kill(Number(holder), 0); holderAlive = true; } catch { /* dead */ }
       if (holderAlive) {
         console.error(`[sync] Another sync is already running (pid ${holder}). Aborting.`);
-        console.error(`[sync] If this is stale, remove .cx/sync.lock and retry.`);
+        console.error(`[sync] If this is stale, remove ${CONFIG_DIR_NAME}/sync.lock and retry.`);
         process.exit(1);
       }
       // Stale lock — steal it

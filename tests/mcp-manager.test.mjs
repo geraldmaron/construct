@@ -44,9 +44,11 @@ function makeRepoCopy(t) {
       if (hasPathSegment(rel, ".tmp")) return false;
       if (hasPathSegment(rel, "coverage")) return false;
 
-      // Carrying .cx/ into the copy is a flake source: a stale .cx/sync.lock from any
-      // earlier sync (local or CI step) gets cloned, and acquireLock() then aborts
-      // when process.kill(N, 0) happens to find a live PID on the runner.
+      // Carrying the config dir into the copy is a flake source: a stale sync.lock from any earlier
+      // sync (local or CI step) gets cloned, and acquireLock() then aborts when process.kill(N, 0)
+      // happens to find a live PID on the runner. sync regenerates .construct/ in the copy, so
+      // excluding it (plus the legacy .cx/) loses nothing. (construct-edkj moved the lock to .construct/.)
+      if (hasPathSegment(rel, ".construct")) return false;
       if (hasPathSegment(rel, ".cx")) return false;
 
       // `.claude/` is host-local Claude Code state that post-commit hooks mutate
