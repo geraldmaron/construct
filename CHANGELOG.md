@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- `construct-olpf`: the orchestration worker misrouted OpenRouter-served model slugs to the direct Anthropic API. `classifyWorkerProvider` (`lib/orchestration/worker.mjs`) tested `isAnthropic` against the model string, so `openrouter/anthropic/claude-*` matched on `claude` and was sent to `api.anthropic.com` with `ANTHROPIC_API_KEY` instead of OpenRouter — contradicting the module's own design (a direct endpoint is taken only when the provider is explicitly named, as already done for `openai/*`). An explicit `openrouter/` model prefix (or `provider === 'openrouter'`) now routes to OpenRouter before the substring heuristic. Surfaced by the `construct-f8w6.4` research smoke, whose provider-executed tasks failed against Anthropic-direct billing despite tiers pointing at OpenRouter. Regression test in `tests/orchestration-worker.test.mjs`.
+
 ### Added
 
 - `construct-d1r7.16`: release-gate coverage for the refit invariants, closing the d1r7 epic. `tests/functional/release-gate.functional.test.mjs` (run under `test:functional`, CI-enforced) now asserts three cross-cutting guarantees on HEAD: **no implicit active model defaults** — a clean install resolves every model tier to `null`/`not configured`, never a baked-in provider default (d1r7.5); **optional MCP silence** — catalog-only and installed-but-disabled servers raise no diagnostics, only an enabled server with an unresolved secret is actionable (d1r7.1–.3); and **certified document I/O** — when every export engine is present the certified matrix must pass (a format skipped for a missing tool is a hard failure), degrading to the graceful local matrix on a lean leg (d1r7.11). Cross-surface docs (document-io, config, custom-specialists/Org Studio, artifact completion states) were reconciled with the landed behavior across d1r7.9–.14.
