@@ -3292,6 +3292,11 @@ async function cmdSources(args) {
     findProjectConfigPath,
     PROJECT_CONFIG_FILENAME,
   } = await import('../lib/config/project-config.mjs');
+  const {
+    isCorpusTarget,
+    corpusFreshness,
+    syncCorpusTarget,
+  } = await import('../lib/sources/repo-cache.mjs');
 
   const cwd = process.cwd();
   const action = args[0] ?? 'list';
@@ -3305,7 +3310,15 @@ async function cmdSources(args) {
     println('');
     if (configTargets.length === 0) println('  (no targets in construct.config.json)');
     for (const t of configTargets) {
-      println(`  ${t.id} · ${t.provider} · ${JSON.stringify(t.selector)}`);
+      let content = '';
+      if (isCorpusTarget(t)) {
+        const fresh = corpusFreshness(t, { projectRoot: cwd });
+        const freshness = !fresh.cached
+          ? 'not synced'
+          : `synced ${fresh.lastFetch ?? 'unknown'}${fresh.stale ? ', stale' : ''}`;
+        content = ` · corpus(${fresh.ref}) · ${freshness}`;
+      }
+      println(`  ${t.id} · ${t.provider} · ${JSON.stringify(t.selector)}${content}`);
     }
     if (envTargets.length) {
       println('');
@@ -3391,7 +3404,87 @@ async function cmdSources(args) {
     return;
   }
 
-  errorln(`Unknown sources action: ${action}. Available: list, add, remove, validate`);
+  if (action === 'sync') {
+    const onlyId = args[1] ?? null;
+    const { config } = loadProjectConfig(cwd, process.env);
+    const targets = resolveEffectiveSourceTargetsFromConfig(config, process.env)
+      .filter((t) => isCorpusTarget(t))
+      .filter((t) => !onlyId || t.id === onlyId);
+
+    if (onlyId && !targets.length) {
+      errorln(`No corpus target with id: ${onlyId}`);
+      process.exit(1);
+    }
+    if (!targets.length) {
+      info('no corpus targets to sync');
+      return;
+    }
+
+    let failures = 0;
+    for (const t of targets) {
+      try {
+        const result = syncCorpusTarget(t, { projectRoot: cwd });
+        info(`synced ${t.id} (${result.mode}) → ${result.head.slice(0, 7)} @ ${result.dir}`);
+      } catch (err) {
+        failures++;
+        errorln(`failed to sync ${t.id}: ${err.message}`);
+      }
+    }
+    if (failures) process.exit(1);
+    return;
+  }
+
+  errorln(`Unknown sources action: ${action}. Available: list, add, remove, validate, sync`);
+  process.exit(1);
+}
+
+// Read a `--flag value` or `--flag=value` option out of an argv slice.
+
+function readOption(args, flag) {
+  const eq = args.find((a) => a.startsWith(`${flag}=`));
+  if (eq) return eq.slice(flag.length + 1);
+  const idx = args.indexOf(flag);
+  if (idx >= 0 && args[idx + 1] && !args[idx + 1].startsWith('--')) return args[idx + 1];
+  return undefined;
+}
+
+async function cmdTemplates(args) {
+  const { registerArtifactType } = await import('../lib/artifact-manifest-overlay.mjs');
+  const { listTemplates } = await import('../lib/mcp/tools/skills.mjs');
+  const cwd = process.cwd();
+  const action = args[0] ?? 'list';
+
+  if (action === 'list' || action === 'show') {
+    const res = listTemplates({ ROOT_DIR });
+    println('Templates');
+    println(`  shipped:    ${res.shipped.join(', ')}`);
+    println(`  overridden: ${res.overridden.length ? res.overridden.join(', ') : '(none)'}`);
+    return;
+  }
+
+  if (action === 'register') {
+    const type = args.slice(1).find((a) => !a.startsWith('--'));
+    if (!type) {
+      errorln('Usage: construct templates register <type> [--description "..."] [--from <file>] [--force]');
+      process.exit(1);
+    }
+    const description = readOption(args, '--description');
+    const from = readOption(args, '--from');
+    const force = args.includes('--force');
+    try {
+      const r = registerArtifactType({ type, description, from, cwd, force });
+      ok(`registered document class '${r.type}'`);
+      info(`template: ${path.relative(cwd, r.templatePath)}`);
+      info(`overlay:  ${path.relative(cwd, r.overlayPath)}`);
+      info(`author it via MCP: author_artifact {type:"${r.type}", draft_markdown:"..."}`);
+    } catch (err) {
+      errorln(err.message);
+      process.exit(1);
+    }
+    return;
+  }
+
+  errorln(`Unknown templates action: ${action}. Available: list, register`);
   process.exit(1);
 }
 
@@ -4416,10 +4509,20 @@ async function cmdDb(args) {
 async function cmdModels(args) {
   const envPath = getUserEnvPath(HOME);
   const sub = args[0] && !args[0].startsWith('-') ? args[0] : null;
-  const KNOWN_SUBCOMMANDS = new Set(['list', 'set', 'free', 'reset', 'resolve']);
+  const KNOWN_SUBCOMMANDS = new Set(['list', 'set', 'free', 'reset', 'resolve', 'policy', 'explain']);
   if (sub && !KNOWN_SUBCOMMANDS.has(sub)) {
     errorln(`Unknown models subcommand: ${sub}. Run \`construct models --help\` for the supported set.`);
     process.exit(1);
+  }
+
+  if (sub === 'policy') {
+    await cmdModelsPolicy(args.slice(1));
+    return;
+  }
+
+  if (sub === 'explain') {
+    await cmdModelsExplain(args.slice(1));
+    return;
   }
 
   if (sub === 'resolve') {
@@ -4578,6 +4681,101 @@ async function cmdModels(args) {
     println('  • construct models set --tier=<reasoning|standard|fast> --model=<provider/model-id>');
     println('  • construct models --apply           Poll OpenRouter free catalog and seed all tiers');
   }
+}
+
+async function cmdModelsPolicy(args) {
+  const sub = args[0] && !args[0].startsWith('-') ? args[0] : 'show';
+  const asJson = args.includes('--json');
+  const {
+    computePolicyPreset, writeModelRegistry, readPolicyView, POLICY_PRESETS,
+  } = await import('../lib/model-policy.mjs');
+  const { defaultModelRegistryPath } = await import('../lib/model-router.mjs');
+  const registryPath = defaultModelRegistryPath(process.env);
+
+  if (sub === 'show') {
+    const view = readPolicyView({ env: process.env, registryPath });
+    if (asJson) {
+      println(JSON.stringify(view, null, 2));
+      return;
+    }
+    println('Effective model policy:');
+    for (const t of view.tiers) {
+      const model = t.model ?? '(not configured)';
+      println(`  ${t.tier.padEnd(11)}${model}  [${t.source}]`);
+    }
+    println('');
+    println('Work category → tier:');
+    for (const [category, tier] of Object.entries(view.workCategoryMap)) {
+      println(`  ${category.padEnd(11)}→ ${tier}`);
+    }
+    println('');
+    println(`Registry: ${registryPath}`);
+    println('Precedence: CX_MODEL_<TIER> env pins always win over registry defaults.');
+    return;
+  }
+
+  if (sub === 'set') {
+    const preset = args[1] && !args[1].startsWith('-') ? args[1] : null;
+    if (!preset) {
+      errorln(`Usage: construct models policy set <${POLICY_PRESETS.join('|')}>`);
+      process.exit(1);
+    }
+    const apiKey = process.env.OPENROUTER_API_KEY || readOpenRouterApiKeyFromOpenCodeConfig() || null;
+    const result = await computePolicyPreset(preset, { env: process.env, apiKey });
+    if (!result.ok) {
+      errorln(result.refusal);
+      for (const w of result.warnings ?? []) errorln(`  ${w}`);
+      process.exit(1);
+    }
+    writeModelRegistry(registryPath, result.models, { preset });
+    if (asJson) {
+      println(JSON.stringify({ preset, registryPath, models: result.models, warnings: result.warnings }, null, 2));
+      return;
+    }
+    println(`Applied \`${preset}\` policy to ${registryPath}:`);
+    for (const tier of ['reasoning', 'standard', 'fast']) {
+      const def = result.models[tier];
+      const primary = def?.primary ?? '(unset)';
+      const fallback = def?.fallback?.length ? `  (fallback: ${def.fallback.join(', ')})` : '';
+      println(`  ${tier.padEnd(11)}${primary}${fallback}`);
+    }
+    for (const w of result.warnings ?? []) errorln(`Note: ${w}`);
+    println('');
+    println('Env pins (CX_MODEL_<TIER>) still override these. Run `construct sync` to propagate.');
+    if (!args.includes('--no-sync')) await cmdSync([]);
+    return;
+  }
+
+  errorln(`Unknown models policy subcommand: ${sub}. Use \`show\` or \`set <preset>\`.`);
+  process.exit(1);
+}
+
+async function cmdModelsExplain(args) {
+  const asJson = args.includes('--json');
+  const roleFlagIdx = args.indexOf('--role');
+  const role = roleFlagIdx !== -1 ? args[roleFlagIdx + 1] : (args[0] && !args[0].startsWith('-') ? args[0] : null);
+  if (!role) {
+    errorln('Usage: construct models explain --role <specialist>');
+    process.exit(1);
+  }
+  const { explainRole } = await import('../lib/model-policy.mjs');
+  const trace = explainRole(role, { env: process.env, rootDir: ROOT_DIR });
+  if (!trace.ok) {
+    errorln(trace.error);
+    process.exit(1);
+  }
+  if (asJson) {
+    println(JSON.stringify(trace, null, 2));
+    return;
+  }
+  println(`Resolution trace for ${trace.role}:`);
+  println(`  declared tier:   ${trace.declaredTier ?? '(none)'}`);
+  if (trace.declaredModel) println(`  declared model:  ${trace.declaredModel}`);
+  println(`  resolved tier:   ${trace.tier}`);
+  println(`  resolved model:  ${trace.resolvedModel ?? '(not configured)'}`);
+  println(`  winning source:  ${trace.source}`);
+  println('');
+  println(`Matches: construct models resolve --json --tier ${trace.tier}`);
 }
 
 async function cmdMcp(args) {
@@ -6545,6 +6743,7 @@ const handlers = new Map([
   ['config', cmdConfig],
   ['approvals', cmdApprovals],
   ['sources', cmdSources],
+  ['templates', cmdTemplates],
   ['intake', cmdIntake],
   ['recommendations', cmdRecommendations],
   ['integrations', cmdIntegrations],

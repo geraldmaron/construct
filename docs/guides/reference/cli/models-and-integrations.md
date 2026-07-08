@@ -131,7 +131,7 @@ Show or update model tier assignments
 **Usage**
 
 ```bash
-construct models <list|set|free|reset|resolve>
+construct models <list|set|free|reset|resolve|policy|explain>
 ```
 
 **Subcommands**
@@ -141,6 +141,9 @@ construct models <list|set|free|reset|resolve>
 - `free` — List available free models
 - `reset` — Reset all tier assignments
 - `resolve --json` — Resolve the model for an embedded workflow given host context
+- `policy show` — Show the effective policy: winning source per tier + work-category map
+- `policy set <budget|free|frontier|local>` — Compute a preset and persist it to specialists/org/models.json
+- `explain --role <specialist>` — Per-specialist model resolution trace
 
 ## construct orchestrate
 
