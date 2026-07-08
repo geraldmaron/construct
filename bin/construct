@@ -1513,6 +1513,27 @@ async function cmdDoctor() {
     add(`Reconciliation drift check failed: ${err.message}`, false, true);
   }
 
+  // Source-target health (B8): directory paths that vanished and corpus caches
+  // past TTL, plus soft credential-presence notices. Filesystem + env only — no
+  // outbound fetch — so the default doctor keeps its zero-network invariant. A
+  // project with no registered targets stays silent.
+  try {
+    const { checkSourceTargetHealth } = await import('../lib/doctor/source-target-health.mjs');
+    const { configured, findings } = checkSourceTargetHealth({ cwd: process.cwd() });
+    if (configured > 0) {
+      const problems = findings.filter((f) => !f.ok);
+      if (problems.length === 0) {
+        add(`Source targets healthy (${configured} configured)`, true);
+      } else {
+        for (const f of findings) {
+          if (!f.ok) add(f.label, false, Boolean(f.optional));
+        }
+      }
+    }
+  } catch (err) {
+    add(`Source-target health check failed: ${err.message}`, false, true);
+  }
+
   // Docling document-extraction runtime (Python venv via uv). Provisioned lazily
   // on first document ingest, or eagerly via `construct install --with-docling`.
   // Advisory: absence is fine until a document is ingested.
