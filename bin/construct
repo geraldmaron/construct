@@ -7639,6 +7639,31 @@ const handlers = new Map([
     errorln(`Unknown knowledge subcommand: ${sub}. Available: trends, index, add, search`);
     process.exit(1);
   }],
+  ['synthesize', async (args) => {
+    const flag = (name) => args.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3);
+    const projects = flag('projects') || 'all';
+    const ask = flag('ask') || args.filter((a) => !a.startsWith('--')).join(' ').trim();
+    const template = flag('template') || null;
+    const dryRun = args.includes('--dry-run');
+    const wantsJson = args.includes('--json');
+    if (!ask) {
+      errorln('Usage: construct synthesize --ask "<question>" [--projects=all|self|id,...] [--template <name>] [--dry-run] [--json]');
+      process.exit(1);
+    }
+    const { synthesize } = await import('../lib/knowledge/synthesis.mjs');
+    const result = await synthesize({ projects, ask, cwd: process.cwd(), template, dryRun, rootDir: ROOT_DIR });
+    if (!result.ok) { errorln(result.message); process.exit(1); }
+    if (wantsJson) { println(JSON.stringify(result, null, 2)); return; }
+    if (dryRun) {
+      println(result.context);
+      println('\n--- Reduce prompt (not sent in --dry-run) ---\n');
+      println(result.prompt);
+      return;
+    }
+    if (result.cliMissing) println('[claude CLI not available — showing assembled context]\n');
+    println(result.answer);
+    return;
+  }],
   ['sandbox', async (args) => {
     const sub = args[0] || 'create';
     const { createSandbox, listSandboxes, deleteSandbox, pruneSandboxes } = await import('../lib/sandbox.mjs');

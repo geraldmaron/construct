@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-08T18:20:25.035Z",
+  "generatedAt": "2026-07-08T20:36:08.600Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 818,
+    "testFiles": 820,
     "topLevelTestFiles": 352,
-    "nestedTestFiles": 466,
+    "nestedTestFiles": 468,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 42,
+    "capabilityMarkedFiles": 44,
     "byLayer": {
       "unit": 558,
-      "functional": 212,
+      "functional": 214,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
       "unit": 495,
-      "functional": 212,
+      "functional": 214,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -2357,6 +2357,16 @@
       "maintainerNotes": "tests/functional/auth-once.functional.test.mjs"
     },
     {
+      "path": "tests/functional/author-artifact-context-targets.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "research.cross-project-synthesis"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/author-artifact-context-targets.functional.test.mjs —"
+    },
+    {
       "path": "tests/functional/b1-profile-loader.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2483,6 +2493,16 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/cross-project-state-isolation.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/cross-project-synthesis.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "research.cross-project-synthesis"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/cross-project-synthesis.functional.test.mjs —"
     },
     {
       "path": "tests/functional/cursor-rules-delivery.functional.test.mjs",
