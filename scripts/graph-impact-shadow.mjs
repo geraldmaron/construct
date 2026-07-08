@@ -23,10 +23,11 @@
  */
 
 import { execFileSync, spawnSync } from 'node:child_process';
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { normalizeChangedFiles, readGraphImpacted } from './shadow-lib.mjs';
+import { isMainModule } from '../lib/roots.mjs';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_DIR, '..');
@@ -91,23 +92,64 @@ function run() {
   console.log(`[shadow-impact] Changed files: ${changedFiles.length}`);
   console.log(`[shadow-impact] Impacted tests: ${artifact.impacted_tests.length}`);
 
-  console.log('[shadow-impact] Running full test suite...');
-  const runResult = spawnSync(process.execPath, ['--test'], {
-    cwd: projectDir,
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
-
   artifact.all_tests_run = allDiscoveredTests(projectDir);
-  artifact.failed_tests = [];
-  artifact.outlier_failures = [];
-  artifact.result = 'ok';
+
+  console.log(`[shadow-impact] Running full test suite (${artifact.all_tests_run.length} files)...`);
+  // NODE_TEST_CONTEXT/NODE_TEST_WORKER_ID (set by an outer `node --test` run,
+  // e.g. when this script's own tests exercise it) flip the child test
+  // runner into child-reporting mode, changing its TAP shape and breaking
+  // parseTapFailedFiles's location: attribution — strip them so this child
+  // always emits standalone top-level TAP regardless of the parent context.
+  const childEnv = { ...process.env };
+  delete childEnv.NODE_TEST_CONTEXT;
+  delete childEnv.NODE_TEST_WORKER_ID;
+  const runResult = spawnSync(
+    process.execPath,
+    ['--test', '--test-reporter=tap', ...artifact.all_tests_run],
+    { cwd: projectDir, encoding: 'utf8', env: childEnv }
+  );
+
+  const impactedSet = new Set(artifact.impacted_tests);
+  artifact.failed_tests = parseTapFailedFiles(runResult.stdout, projectDir);
+  artifact.outlier_failures = artifact.failed_tests.filter(f => !impactedSet.has(f));
+  artifact.result = artifact.outlier_failures.length > 0 ? 'outliers' : 'ok';
 
   console.log(`[shadow-impact] Test suite exit code: ${runResult.status}`);
   console.log(`[shadow-impact] All tests discovered: ${artifact.all_tests_run.length}`);
-  console.log('[shadow-impact] (Failure parsing deferred to next iteration after observation data lands)');
+  console.log(`[shadow-impact] Failed test files: ${artifact.failed_tests.length}`);
+  console.log(`[shadow-impact] Outlier failures (outside impacted set): ${artifact.outlier_failures.length}`);
 
   writeArtifact(projectDir, artifact);
   return 0;
+}
+
+// A failing subtest's TAP block carries `location: '<absolute-path>:<line>:<col>'`
+// (Node's tap reporter, verified this session) — the only place a failure is
+// attributed to a source file, since TAP subtest names are free text with no
+// file field. Failures are deduplicated to their owning file: this artifact
+// tracks which FILES produced an outlier failure, not which individual tests.
+
+export function parseTapFailedFiles(tapOutput, projectDir) {
+  // Node's tap reporter resolves `location:` through any symlinks (e.g. macOS
+  // /tmp -> /private/tmp); projectDir must be resolved the same way or
+  // path.relative() computes a spurious ../../ walk instead of a clean
+  // repo-relative path.
+  let resolvedRoot = projectDir;
+  try { resolvedRoot = realpathSync(projectDir); } catch { /* fall back to as-given */ }
+
+  const files = new Set();
+  let lastResultWasFailure = false;
+  for (const line of String(tapOutput || '').split('\n')) {
+    const result = line.match(/^\s*(not )?ok \d+/);
+    if (result) { lastResultWasFailure = Boolean(result[1]); continue; }
+    if (!lastResultWasFailure) continue;
+    const location = line.match(/^\s*location:\s*'(.+?):\d+:\d+'/);
+    if (location) {
+      files.add(path.relative(resolvedRoot, location[1]).split(path.sep).join('/'));
+      lastResultWasFailure = false;
+    }
+  }
+  return [...files].sort();
 }
 
 function writeArtifact(projectDir, data) {
@@ -133,4 +175,4 @@ function allDiscoveredTests(projectDir) {
   return [];
 }
 
-process.exit(run());
+if (isMainModule(import.meta.url)) process.exit(run());
