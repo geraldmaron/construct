@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-08T17:08:58.723Z",
+  "generatedAt": "2026-07-08T17:55:40.201Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 814,
-    "topLevelTestFiles": 350,
-    "nestedTestFiles": 464,
+    "testFiles": 816,
+    "topLevelTestFiles": 351,
+    "nestedTestFiles": 465,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 40,
+    "capabilityMarkedFiles": 41,
     "byLayer": {
-      "unit": 556,
-      "functional": 210,
+      "unit": 557,
+      "functional": 211,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 493,
-      "functional": 210,
+      "unit": 494,
+      "functional": 211,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -3024,6 +3024,16 @@
       "maintainerNotes": "tests/functional/intake-process-archetype.functional.test.mjs"
     },
     {
+      "path": "tests/functional/knowledge-multiroot-corpus.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "research.multi-project-search"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/knowledge-multiroot-corpus.functional.test.mjs —"
+    },
+    {
       "path": "tests/functional/knowledge-search-project-scope.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -4591,6 +4601,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/knowledge-graph.test.mjs — Unit coverage for lib/knowledge/graph.mjs."
+    },
+    {
+      "path": "tests/knowledge-multiroot.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/knowledge-multiroot.test.mjs — unit coverage for multi-root corpus"
     },
     {
       "path": "tests/knowledge-rag.test.mjs",

@@ -7456,9 +7456,13 @@ const handlers = new Map([
       process.exit(1);
     }
     const { ask, buildCorpus } = await import('../lib/knowledge/rag.mjs');
+    const { resolveContentRootsFromConfig } = await import('../lib/sources/content-roots.mjs');
+    const { loadProjectConfig } = await import('../lib/config/project-config.mjs');
     const rootDir = process.cwd();
-    process.stdout.write('Building knowledge index…\n');
-    const corpus = buildCorpus(rootDir);
+    const { config } = loadProjectConfig(rootDir);
+    const roots = resolveContentRootsFromConfig(config, { projectRoot: rootDir });
+    process.stdout.write(`Building knowledge index${roots.length ? ` (+${roots.length} registered project${roots.length === 1 ? '' : 's'})` : ''}…\n`);
+    const corpus = buildCorpus(rootDir, { roots });
     process.stdout.write(`Indexed ${corpus.length} chunks. Retrieving…\n\n`);
     const result = await ask(question, { rootDir, corpus });
     if (result.cliMissing) {
@@ -7468,7 +7472,8 @@ const handlers = new Map([
     if (result.sources?.length) {
       process.stdout.write('\n--- Sources ---\n');
       for (const s of result.sources.slice(0, 5)) {
-        process.stdout.write(`  • [${s.source}] ${s.title} (score: ${s.score?.toFixed(3)})\n`);
+        const proj = s.origin?.projectKey && s.origin.projectKey !== 'self' ? ` «${s.origin.projectKey}»` : '';
+        process.stdout.write(`  • [${s.source}]${proj} ${s.title} (score: ${s.score?.toFixed(3)})\n`);
       }
     }
   }],
@@ -7583,9 +7588,10 @@ const handlers = new Map([
       const tagFlag = restArgs.find((a) => a.startsWith('--tag='))?.replace('--tag=', '');
       const tagMatchFlag = restArgs.find((a) => a.startsWith('--tag-match='))?.replace('--tag-match=', '');
       const topKFlag = restArgs.find((a) => a.startsWith('--top='))?.replace('--top=', '');
+      const projectsFlag = restArgs.find((a) => a.startsWith('--projects='))?.replace('--projects=', '');
       const queryParts = restArgs.filter((a) => !a.startsWith('--'));
       const query = queryParts.join(' ').trim();
-      if (!query) { errorln('Usage: construct knowledge search "<query>" [--tag=<tag>] [--tag-match=any|all]'); process.exit(1); }
+      if (!query) { errorln('Usage: construct knowledge search "<query>" [--tag=<tag>] [--tag-match=any|all] [--projects=<id,...>|all|self]'); process.exit(1); }
       const { knowledgeSearch } = await import('../lib/knowledge/search.mjs');
       const tags = tagFlag ? tagFlag.split(',') : undefined;
       const result = knowledgeSearch({
@@ -7595,11 +7601,13 @@ const handlers = new Map([
         rootDir: process.cwd(),
         tags,
         tagMatch: tagMatchFlag || 'any',
+        projects: projectsFlag,
       });
       if (!result.ok) { errorln(result.message); process.exit(1); }
-      println(`${result.hits.length} result(s) for "${query}"${tags ? ` [tag: ${tags.join(',')}]` : ''}\n`);
+      println(`${result.hits.length} result(s) for "${query}"${tags ? ` [tag: ${tags.join(',')}]` : ''}${projectsFlag ? ` [projects: ${projectsFlag}]` : ''}\n`);
       for (const h of result.hits) {
-        println(`  ${h.file}${h.heading ? ` § ${h.heading}` : ''}  (score: ${h.score})`);
+        const proj = h.origin?.projectKey && h.origin.projectKey !== 'self' ? `  «${h.origin.projectKey}»` : '';
+        println(`  ${h.file}${h.heading ? ` § ${h.heading}` : ''}${proj}  (score: ${h.score})`);
         println(`  ${h.text.slice(0, 120).replace(/\n/g, ' ')}`);
         println('');
       }
