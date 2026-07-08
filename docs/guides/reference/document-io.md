@@ -90,10 +90,16 @@ Per [ADR-0024](/decisions/adr/0024-document-io-optional-capability). **Input:** 
 | `pptx` | pptxgenjs | Yes — brand tokens | `pptxgenjs` (optional npm dep) |
 | `docx` | Pandoc + reference doc | Partial — `construct-reference.docx` when present | `pandoc` |
 | `doc` | Pandoc → DOCX → LibreOffice | Same as DOCX intermediate | `pandoc`, **LibreOffice** (`soffice`) |
+| `odp` | pptxgenjs → LibreOffice | Same as PPTX intermediate | `pptxgenjs`, **LibreOffice** (`soffice`) |
 | `rtf`, `odt`, `epub`, `tex`, `txt` | Pandoc defaults | No | `pandoc` |
+| `htmlfrag` | RichDocument HTML fragment | N/A — copy/paste target | — |
 | `md`, `mdx` | Copy source | N/A | — |
 
 Legacy `.doc` export: Pandoc writes branded DOCX, then LibreOffice headless down-converts. Override binary with `CONSTRUCT_LIBREOFFICE_BIN`. Cross-platform (macOS, Linux, Windows) when LibreOffice is installed.
+
+### RichDocument export adapters (ADR-0071)
+
+Per [ADR-0071](/decisions/adr/0071-richdocument-ir-html-canonical-surface), `lib/rich-document-export.mjs`'s `exportRichDocument({ doc, format, outputPath })` exports the RichDocument IR to every format above. Its canonical serialization is HTML: for typeset and office targets the IR is serialized to HTML and handed to the same engines via `exportMarkdown`'s `inputFormat: 'html'` path, rather than round-tripping through markdown. Two targets have no engine and are written directly — `md`/`mdx` from the RichDocument→markdown writer, and `htmlfrag`, the copy/paste fragment whose purpose is that merged table cells, figure/caption pairs, and callouts survive a clipboard paste that a markdown fragment would flatten. `odp` (OpenDocument Presentation) builds a pptxgenjs deck first, then LibreOffice down-converts. A missing engine returns the same actionable diagnostic `detect()` reports and is never counted as a certified pass; `lib/export-validate.mjs` validates each produced file — PDF page count, Office/OpenDocument/EPUB zip structure and slide counts, HTML DOM shape, and local reference integrity.
 
 ### Branded deck preview (local only)
 
