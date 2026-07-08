@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-08T17:55:40.201Z",
+  "generatedAt": "2026-07-08T18:20:25.035Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 816,
-    "topLevelTestFiles": 351,
-    "nestedTestFiles": 465,
+    "testFiles": 818,
+    "topLevelTestFiles": 352,
+    "nestedTestFiles": 466,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 41,
+    "capabilityMarkedFiles": 42,
     "byLayer": {
-      "unit": 557,
-      "functional": 211,
+      "unit": 558,
+      "functional": 212,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 494,
-      "functional": 211,
+      "unit": 495,
+      "functional": 212,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -3423,6 +3423,16 @@
       "maintainerNotes": "tests/functional/oracle-synthesis.functional.test.mjs —"
     },
     {
+      "path": "tests/functional/orchestration-context-bindings.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "orchestration.context-bindings"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/orchestration-context-bindings.functional.test.mjs —"
+    },
+    {
       "path": "tests/functional/orchestration-keys-no-tiers.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -5083,6 +5093,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/orchestration-chain-of-thought.test.mjs — chain-of-thought disclosure."
+    },
+    {
+      "path": "tests/orchestration-context-bindings.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration-context-bindings.test.mjs — unit coverage for the"
     },
     {
       "path": "tests/orchestration-delegation-flow.test.mjs",
