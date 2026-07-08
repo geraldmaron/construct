@@ -18,6 +18,7 @@ description: Models & Integrations commands for Construct.
 | `construct models` | Show or update model tier assignments |
 | `construct orchestrate` | Construct-owned local orchestration runtime and readiness preflight |
 | `construct plugin` | Manage external Construct plugin manifests |
+| `construct tracker` | Analyze registered projects and contribute governed issue proposals to an external tracker (Jira) |
 
 ## construct acp
 
@@ -178,3 +179,18 @@ construct plugin <list|info|init|validate|engine>
 - `init` — Scaffold a new plugin manifest
 - `validate` — Validate a plugin manifest against the schema
 - `engine` — Plugin engine operations
+
+## construct tracker
+
+Analyze registered projects and contribute governed issue proposals to an external tracker (Jira)
+
+**Usage**
+
+```bash
+construct tracker contribute --target <id> [--against <ids|all>] | --apply <proposal-id> [--approve <token>]
+```
+
+**Subcommands**
+
+- `contribute --target <id> [--against <ids|all>]` — Analyze corpora vs the tracker and emit an evidence-cited, deduped proposal artifact
+- `contribute --apply <proposal-id> [--approve <token>]` — Apply a proposal: dry-run by default; --approve executes the governed write batch

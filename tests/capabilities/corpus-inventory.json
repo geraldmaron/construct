@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-08T20:36:08.600Z",
+  "generatedAt": "2026-07-08T20:45:12.528Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 820,
+    "testFiles": 821,
     "topLevelTestFiles": 352,
-    "nestedTestFiles": 468,
+    "nestedTestFiles": 469,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 44,
+    "capabilityMarkedFiles": 45,
     "byLayer": {
       "unit": 558,
-      "functional": 214,
+      "functional": 215,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
       "unit": 495,
-      "functional": 214,
+      "functional": 215,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -3887,6 +3887,16 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/templates-register-adhoc.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/tracker-contribute.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "tracker.contribution"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/tracker-contribute.functional.test.mjs —"
     },
     {
       "path": "tests/functional/uninstall-coverage.functional.test.mjs",
