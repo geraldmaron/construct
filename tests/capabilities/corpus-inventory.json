@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-08T00:47:06.987Z",
+  "generatedAt": "2026-07-08T03:39:01.064Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 814,
-    "topLevelTestFiles": 350,
-    "nestedTestFiles": 464,
+    "testFiles": 821,
+    "topLevelTestFiles": 352,
+    "nestedTestFiles": 469,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 40,
     "byLayer": {
-      "unit": 558,
-      "functional": 208,
+      "unit": 562,
+      "functional": 211,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 495,
-      "functional": 208,
+      "unit": 499,
+      "functional": 211,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -2437,6 +2437,14 @@
       "maintainerNotes": "tests/functional/config-invalid-surfaces-warning.functional.test.mjs"
     },
     {
+      "path": "tests/functional/config-jsonc.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/config-jsonc.functional.test.mjs — JSONC config loader"
+    },
+    {
       "path": "tests/functional/construct-not-invoked-is-inert.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2968,6 +2976,14 @@
       "maintainerNotes": "tests/functional/init-lazy-embedding.functional.test.mjs"
     },
     {
+      "path": "tests/functional/init-no-daemons-in-test-context.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/init-no-daemons-in-test-context.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/init-no-project-secrets.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3120,6 +3136,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/mcp-core-tools.functional.test.mjs — Construct MCP stdio smoke."
+    },
+    {
+      "path": "tests/functional/mcp-doctor-diagnostics.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/mcp-doctor-diagnostics.functional.test.mjs — MCP doctor"
     },
     {
       "path": "tests/functional/mcp-dynamic-tool-registration.functional.test.mjs",
@@ -5123,6 +5147,14 @@
       "maintainerNotes": "tests/orchestration-remote-web-guard.test.mjs — fail-closed remote ingress guard (ADR-0050)."
     },
     {
+      "path": "tests/orchestration-route-path.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration-route-path.test.mjs — routePath payload end-to-end (construct-d1r7.15)."
+    },
+    {
       "path": "tests/orchestration-run-store-postgres.test.mjs",
       "layer": "integration",
       "category": "integration",
@@ -5715,6 +5747,14 @@
       "maintainerNotes": "tests/registry/docs-sync.test.mjs — Catalog-driven docs AUTO region sync."
     },
     {
+      "path": "tests/registry/org-api.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/registry/org-api.test.mjs — ADR-0072 no-code org authoring API CRUD gate."
+    },
+    {
       "path": "tests/registry/skill-consolidation.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -5769,6 +5809,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/retrieval-bench.test.mjs — retrieval benchmark runner contract."
+    },
+    {
+      "path": "tests/rich-document.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/rich-document.test.mjs — RichDocument IR: schema, markdown reader, HTML round-trip."
     },
     {
       "path": "tests/roles-catalog.test.mjs",
@@ -5873,6 +5921,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/scripts/graph-gate.test.mjs — LMCP-C8 self-test for the living-graph"
+    },
+    {
+      "path": "tests/scripts/graph-impact-shadow.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/scripts/graph-impact-shadow.test.mjs — self-test for TAP failure"
     },
     {
       "path": "tests/scripts/release-evidence-gate.test.mjs",
