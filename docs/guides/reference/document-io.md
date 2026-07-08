@@ -105,6 +105,16 @@ Per [ADR-0071](/decisions/adr/0071-richdocument-ir-html-canonical-surface), `lib
 
 `lib/document-assets.mjs` derives an asset manifest from the RichDocument IR — it is not a parallel structure. `buildAssetManifest(doc, { baseDir })` walks every figure/media/diagram block (including those nested in lists and callouts) and records each asset's role (photo / screenshot / diagram), local-vs-remote ref, resolved absolute path, sha256 content hash, byte size, MIME type, dimensions, caption, alt text, source ref, and embed/link policy. It is **generated on import** — `construct ingest` writes a `<name>.assets.json` sidecar beside the markdown — and **consumed on export**: `exportRichDocument` validates the manifest before any engine runs (a broken local media ref fails closed and blocks the export, writing no output) and rewrites local refs to absolute paths so a Pandoc/LibreOffice pass in a temp working directory still finds and embeds them. Local raster assets inline as data URIs in self-contained HTML; captions and alt text survive to whatever the target format preserves.
 
+### Certified I/O matrix
+
+```bash
+construct certify document-io            # local mode: missing engines skip gracefully
+construct certify document-io --certified   # release mode: a skipped format is a hard failure
+npm run certify:document-io                 # the certified profile
+```
+
+`lib/certification/document-io-matrix.mjs` exports a realistic RichDocument fixture (table, figure with caption/alt over a real raster asset, code, callout, diagram) to every output format and validates each. **Local** mode honours the graceful-degradation contract — a format whose engine is absent is skipped, not failed. **Certified** mode is the release contract — every declared format must have its engine (Pandoc, Typst, LibreOffice headless, pptxgenjs) present and must produce a file its validator accepts; a format skipped for a missing tool fails the run. Each row names the exact format, engine set, and validation detail. Intake-format coverage is asserted separately by the fixture catalog (`lib/certification/document-io-fixtures.mjs`).
+
 ### Branded deck preview (local only)
 
 Regenerate into `.tmp/distribution-examples/` for local review:
