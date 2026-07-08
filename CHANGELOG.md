@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- `construct-760c.5` (template-optional generation): a document class no longer has to be pre-registered in the builtin `specialists/artifact-manifest.json` to be generated. Two paths, both keeping the builtin manifest byte-identical (a new gate, `tests/functional/templates-register-adhoc.functional.test.mjs`, asserts this). (1) `construct templates register <type> [--description ...] [--from <file>] [--force]` writes a project template under `.cx/templates/docs/<type>.md` (the override dir that already wins `get_template` resolution) and a PROJECT-TIER overlay entry in `.cx/artifact-manifest.overlay.json`. `lib/artifact-manifest.mjs`'s `loadArtifactManifest` now deep-merges three tiers — builtin < user (`~/.config/construct/`) < project — via new `lib/artifact-manifest-overlay.mjs` (mirroring `lib/extensions/loader.mjs`), keyed by root+cwd+overlay-mtime so a register earlier in a long-running MCP process invalidates the cache. A registered class resolves author/reviewer chain and output path from memo-like defaults, overridable per overlay entry (e.g. `outputDir`). (2) A sanctioned `adhoc` type (code-injected below the builtin tier, so a builtin of the same name always wins) authors a one-off from `{type:"adhoc", title, instructions}` with zero prior registration, drafting from the instructions-driven synthetic scaffold in `lib/artifact-loop-core.mjs` and still clearing the full release gate — free-form structure, not free-form quality. `adhoc` requires explicit title + instructions and is not a bypass for a registered class (naming a known type through adhoc is redirected). `author_artifact` gained a `dry_run` scaffold-preview mode and now returns the classification/registration result for an unknown non-adhoc class instead of silently drafting a PRD (gate intact). Ships `templates/docs/adhoc.md` as the free-form starter shape (exempted in `lib/template-registry.mjs`).
+
 ## [1.5.1] - 2026-07-07
 
 ### Fixed
