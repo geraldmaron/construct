@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-07T20:29:53.148Z",
+  "generatedAt": "2026-07-08T00:47:06.987Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 812,
+    "testFiles": 814,
     "topLevelTestFiles": 350,
-    "nestedTestFiles": 462,
+    "nestedTestFiles": 464,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 40,
     "byLayer": {
-      "unit": 556,
+      "unit": 558,
       "functional": 208,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 493,
+      "unit": 495,
       "functional": 208,
       "visual": 12,
       "structural-guard": 19,
@@ -5883,12 +5883,28 @@
       "maintainerNotes": "tests/scripts/release-evidence-gate.test.mjs — LMCP-M5 self-test for the"
     },
     {
+      "path": "tests/scripts/run-tests-files-from.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/scripts/run-tests-files-from.test.mjs — self-test for --files-from flag."
+    },
+    {
       "path": "tests/scripts/run-tests-shard.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/scripts/run-tests-shard.test.mjs — self-test for the test runner's"
+    },
+    {
+      "path": "tests/scripts/shadow-lib.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/scripts/shadow-lib.test.mjs — self-test for graph-impact shadow-mode"
     },
     {
       "path": "tests/secret-audit-wiring.test.mjs",
