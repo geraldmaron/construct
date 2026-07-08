@@ -5,6 +5,8 @@ description: "Author your own specialist or team without touching the built-in r
 
 `construct specialist create <id> --custom` and `construct team create <id>` scaffold a user-authored specialist or team into your own config layer — never into `specialists/org/`, the built-in roster. This is the mechanism for adding a specialist Construct doesn't ship, without forking core or waiting on a roster change upstream.
 
+Prefer a visual surface? `construct studio` opens the **Org Studio** — a local, zero-dependency web app (`http://127.0.0.1:4321`) for authoring specialists, teams, relationships (contracts), and fences without editing JSON. It shows a live topology graph (specialists and teams as nodes, contracts as handoff edges, team membership dashed), inspector forms with inline validation, and route/fence previews. Every write goes through the same `lib/registry/org-api.mjs` writer this page's CLI commands use, so its validation is byte-for-byte identical and its output lands in the same tiers below. Export/import round-trips the whole project topology as one JSON payload. The server binds to loopback only and refuses cross-origin requests — it is a personal authoring tool, not a shared service.
+
 If you're a Construct maintainer adding to the *built-in* roster itself, see [Add a custom agent](/guides/cookbook/add-a-custom-agent) instead — that page edits `specialists/org/` directly, which this one deliberately does not touch.
 
 ## Where custom records live
