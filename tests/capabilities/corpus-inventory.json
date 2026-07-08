@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-08T20:45:12.528Z",
+  "generatedAt": "2026-07-08T20:53:17.978Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 821,
-    "topLevelTestFiles": 352,
-    "nestedTestFiles": 469,
+    "testFiles": 823,
+    "topLevelTestFiles": 353,
+    "nestedTestFiles": 470,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 45,
+    "capabilityMarkedFiles": 46,
     "byLayer": {
-      "unit": 558,
-      "functional": 215,
+      "unit": 559,
+      "functional": 216,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 495,
-      "functional": 215,
+      "unit": 496,
+      "functional": 216,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -1551,6 +1551,14 @@
       "maintainerNotes": "tests/doctor-source-checkout.test.mjs — published-package vs source-checkout detection."
     },
     {
+      "path": "tests/doctor-source-target-health.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/doctor-source-target-health.test.mjs — unit coverage for the"
+    },
+    {
       "path": "tests/doctor-stub-tier.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -2665,6 +2673,16 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/doctor-run-store-visibility.functional.test.mjs — the"
+    },
+    {
+      "path": "tests/functional/doctor-source-targets.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "sources.doctor-health"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/doctor-source-targets.functional.test.mjs —"
     },
     {
       "path": "tests/functional/doctor-vscode-host-readiness.functional.test.mjs",
