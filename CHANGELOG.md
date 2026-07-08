@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- Shadow-mode test-impact analysis infrastructure for PR CI. Introduces `--files-from=<path>` flag in `scripts/run-tests.mjs` that intersects a JSON-list of test files with the discovery set (applying the filter after `--exclude`, before `--shard`). Adds `scripts/shadow-lib.mjs` and `scripts/graph-impact-shadow.mjs` that compute the impacted test set via the living graph for each PR and record observations as `.construct/shadow-impact.json` — never failing the build. Fail-open behavior: if the graph is stale, missing, or the diff touches graph-blind files (`.github/workflows/**`, `package-lock.json`, `scripts/ci/**`), the script reports `cannot_compute` rather than silently returning a wrong set. Non-blocking step wired into PR test job (runs on ubuntu-latest, shard 1 only). Recall measurement (comparing real test failures against the computed impacted set) is not yet implemented — this lands the impacted-set computation and CI wiring only.
+
 ### Changed
 
 - Construct sync now treats optional MCP integrations as explicit opt-ins: generated host configs materialize only the Construct MCP server by default, leaving catalog/auth-only integrations such as GitHub or Context7 absent and silent until the user installs them. OpenCode sync no longer seeds an active root model, no longer backfills Construct model tiers with provider defaults, and strips legacy helper model pins so session title/summary/compaction follow user-owned OpenCode routing. Document ingest support now declares OpenDocument Presentation (`.odp`) and raster image inputs as high-fidelity/docling-backed formats with typed missing-engine diagnostics.
