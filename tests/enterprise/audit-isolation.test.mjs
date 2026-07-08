@@ -17,8 +17,13 @@
  *      is the enforcement layer under test: assertTenantMatch and
  *      scopeToTenant must throw/exclude on every cross-tenant read attempt,
  *      and fail closed (throw) when either side's tenant is unresolved.
+ *
+ * The observation/entity store cases resolve project state through the
+ * machine-scoped state root (ADR-0066), keyed by a hash of each tmp rootDir —
+ * so CX_HOME_OVERRIDE is pinned for the whole file to keep those writes off
+ * the real developer machine's $HOME.
  */
-import { describe, it, after } from 'node:test';
+import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -38,11 +43,23 @@ import {
 import { addObservation, listObservations } from '../../lib/observation-store.mjs';
 import { createEntity, listEntities } from '../../lib/entity-store.mjs';
 
+let homeOverride;
+let prevHomeOverride;
+
+before(() => {
+  homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-audit-isolation-home-'));
+  prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+  process.env.CX_HOME_OVERRIDE = homeOverride;
+});
+
 const tmpDirs = [];
 after(() => {
   for (const dir of tmpDirs) {
     try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* best-effort cleanup */ }
   }
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch { /* best-effort cleanup */ }
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
 });
 
 function tmp(prefix) {

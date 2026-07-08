@@ -6,18 +6,38 @@
  *   2. Hook exits 0 within the 500ms budget on a real-shaped Stop payload
  *   3. Hook writes one observation file under .cx/observations/ when given valid input
  *   4. Hook is a no-op when CONSTRUCT_REFLECT_AUTO=off
+ *
+ * The hook writes observations through the machine-scoped state root
+ * (ADR-0066), keyed by a hash of cwd — so CX_HOME_OVERRIDE is pinned for the
+ * whole file (inherited by every spawnSync call below via process.env) to
+ * keep that write off the real developer machine's $HOME.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import test from 'node:test';
+import test, { before, after } from 'node:test';
 import { spawnSync } from 'node:child_process';
 
 import { extractSessionObservation } from '../../lib/reflect/extractor.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const HOOK_PATH = path.join(REPO_ROOT, 'lib', 'hooks', 'session-reflect.mjs');
+
+let homeOverride;
+let prevHomeOverride;
+
+before(() => {
+  homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-session-reflect-home-'));
+  prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+  process.env.CX_HOME_OVERRIDE = homeOverride;
+});
+
+after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch { /* best-effort cleanup */ }
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 // Synthetic transcript matching Claude Code's JSONL shape: { type, message: { content: [...] } }
 const SAMPLE_TRANSCRIPT = [

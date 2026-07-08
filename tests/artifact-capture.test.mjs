@@ -4,8 +4,13 @@
  * Exercises captureSessionArtifacts end-to-end against a temp-dir fixture:
  * session-summary observation generation, capped decision extraction, and
  * file-group entity creation from changed-file patterns. Run via `npm test`.
+ *
+ * observation-store/entity-store resolve project state through the
+ * machine-scoped state root (ADR-0066), keyed by a hash of tmpDir — so
+ * CX_HOME_OVERRIDE is pinned for the whole file to keep that write off the
+ * real developer machine's $HOME.
  */
-import { describe, it, beforeEach, afterEach } from 'node:test';
+import { describe, it, before, beforeEach, after, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -15,6 +20,20 @@ import { listObservations, getObservation } from '../lib/observation-store.mjs';
 import { listEntities } from '../lib/entity-store.mjs';
 
 let tmpDir;
+let homeOverride;
+let prevHomeOverride;
+
+before(() => {
+  homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-artifact-capture-home-'));
+  prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+  process.env.CX_HOME_OVERRIDE = homeOverride;
+});
+
+after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch { /* best-effort cleanup */ }
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 beforeEach(() => {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'capture-test-'));
