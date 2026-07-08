@@ -8,5 +8,28 @@
   "securityClassification": "trusted",
   "owner": "construct-core",
   "compatVersion": 1,
-  "installSource": "builtin"
+  "installSource": "builtin",
+  "sourceTarget": {
+    "provider": "directory",
+    "selector": {
+      "field": "path",
+      "hint": "required existing directory path (tilde-expanded)",
+      "normalize": "trim",
+      "expand": "tilde",
+      "existsAs": "directory",
+      "existsHint": "path must exist and be a directory"
+    },
+    "signature": { "template": "directory:path:{value}", "valueMode": "path" },
+    "aliases": { "strategy": "path", "displayPrefix": null, "catchAll": false },
+    "demandFetch": {
+      "targetRefs": ["docs"],
+      "targetOptsField": "path",
+      "targetOptsKind": "scalar",
+      "targetDefaultLimit": 100,
+      "queryRefs": ["docs"],
+      "queryOptsField": "path",
+      "queryOptsKind": "scalar",
+      "queryDefaultLimit": 100
+    }
+  }
 }

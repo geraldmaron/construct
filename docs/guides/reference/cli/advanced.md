@@ -314,15 +314,16 @@ Manage typed integration source targets in construct.config.json
 **Usage**
 
 ```bash
-construct sources list|add|remove|validate
+construct sources list|add|remove|validate|sync
 ```
 
 **Subcommands**
 
-- `list` — Show config targets, legacy env merge, and effective set
-- `add <provider> <id> <selector-json>` — Add a typed target (github, jira, linear, slack)
+- `list` — Show config targets, legacy env merge, corpus freshness, and effective set
+- `add <provider> <id> <selector-json>` — Add a typed target (directory, github, jira, linear, slack)
 - `remove <id>` — Remove a config target by id
 - `validate` — Validate sources.targets in construct.config.json
+- `sync [<id>]` — Clone/fetch the content cache for corpus targets
 
 ## construct uninstall
 
