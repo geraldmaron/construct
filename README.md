@@ -198,6 +198,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct reflect` | Capture improvement feedback and update Construct core |
 | `construct search` | Hybrid search across project state |
 | `construct storage` | Manage storage backend |
+| `construct synthesize` | Cross-project synthesis: map each registered project, reduce to an origin-cited answer |
 | `construct tags` | Manage the controlled tag vocabulary (propose, add, deprecate, audit) |
 | `construct team` | Team review, template listing, and custom team authoring (`team:add` / `team:remove` are internal registry editors) |
 | `construct tools` | Detect optional publish pipeline binaries (Pandoc, D2, VHS, Playwright) |
