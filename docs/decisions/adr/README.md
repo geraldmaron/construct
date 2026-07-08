@@ -75,6 +75,7 @@ Architecture decision records for decisions that have already been made.
 | [0067](./0067-deterministic-flow-engine.md) | Deterministic flow engine | accepted | Supersedes chain-resolution role of orchestration-policy.mjs |
 | [0068](./0068-ingestion-sidecar-process-contract.md) | Ingestion sidecar process contract | accepted | Formalizes the docling sidecar's existing shape; not a supersession |
 | [0069](./0069-single-project-directory-consolidation.md) | Single project-directory consolidation | accepted | Consolidates `.cx/` + `.construct/` into one `.construct/` with the launcher at `.construct/launcher/`; supersedes the launcher/config split of ADR-0027, extends ADR-0066 |
+| [0070](./0070-explicit-mcp-install-states.md) | Explicit MCP install states — silence unconfigured servers | accepted | Defines MCP lifecycle: catalog → installed → enabled → healthy; auth independent from config |
 
 ## Starter templates
 
