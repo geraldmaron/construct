@@ -1695,12 +1695,16 @@ export function reconcileStaleManagedEntries(configMap, { registryMcp, rebuildEn
 // Start each session — the orchestrator's first move is an MCP call, so a dormant
 // server otherwise reads as "enable the MCP server". Neither removes the one-time
 // per-developer MCP trust grant, which VS Code stores locally, not in committed
-// config. Each key is applied only when unset, and a settings.json that is not
-// strict JSON (commented/JSONC or user-customized) is left untouched.
+// config. `files.associations` marks the JSONC config files (construct-d1r7.4 made
+// them commented JSONC) as `jsonc` so VS Code stops flagging their `//` comments as
+// invalid JSON. Scalar keys are applied only when unset; object-valued keys deep-merge
+// their missing sub-keys so a user's own associations/locations survive. A settings.json
+// that is not strict JSON (commented/JSONC or user-customized) is left untouched.
 
 const VSCODE_MANAGED_SETTINGS = {
   "chat.agentFilesLocations": { ".github/agents": true, ".claude/agents": false },
   "chat.mcp.autoStart": "always",
+  "files.associations": { "construct.config.json": "jsonc", "construct.config.local.json": "jsonc" },
 };
 
 // Strip full-line JSONC comments (`// …`) and trailing commas before JSON.parse.
@@ -1727,9 +1731,23 @@ export function pinVscodeChatSettings(targetDir) {
     try { settings = parseJsoncContent(fs.readFileSync(settingsPath, "utf8")) || {}; }
     catch { return; }
   }
+  // files.associations is the one managed key we deep-merge (add our JSONC mappings without dropping
+  // a user's own associations); every other key stays whole-key-when-unset so a user who customized
+  // chat.agentFilesLocations keeps their exact map rather than having our defaults folded in.
+
+  const DEEP_MERGE_KEYS = new Set(['files.associations']);
   let changed = false;
   for (const [key, value] of Object.entries(VSCODE_MANAGED_SETTINGS)) {
-    if (settings[key] === undefined) { settings[key] = value; changed = true; }
+    if (DEEP_MERGE_KEYS.has(key) && value && typeof value === 'object') {
+      const existing = (settings[key] && typeof settings[key] === 'object' && !Array.isArray(settings[key])) ? settings[key] : {};
+      let subChanged = false;
+      for (const [subKey, subValue] of Object.entries(value)) {
+        if (existing[subKey] === undefined) { existing[subKey] = subValue; subChanged = true; }
+      }
+      if (subChanged) { settings[key] = existing; changed = true; }
+    } else if (settings[key] === undefined) {
+      settings[key] = value; changed = true;
+    }
   }
   if (!changed) return;
   mkdirp(path.dirname(settingsPath));
