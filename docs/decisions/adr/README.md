@@ -76,6 +76,8 @@ Architecture decision records for decisions that have already been made.
 | [0068](./0068-ingestion-sidecar-process-contract.md) | Ingestion sidecar process contract | accepted | Formalizes the docling sidecar's existing shape; not a supersession |
 | [0069](./0069-single-project-directory-consolidation.md) | Single project-directory consolidation | accepted | Consolidates `.cx/` + `.construct/` into one `.construct/` with the launcher at `.construct/launcher/`; supersedes the launcher/config split of ADR-0027, extends ADR-0066 |
 | [0070](./0070-explicit-mcp-install-states.md) | Explicit MCP install states — silence unconfigured servers | accepted | Defines MCP lifecycle: catalog → installed → enabled → healthy; auth independent from config |
+| [0071](./0071-richdocument-ir-html-canonical-surface.md) | RichDocument IR with HTML-canonical serialization for preview and export | proposed | Revises the markdown-as-pivot framing of ADR-0024; sidecar RPC contract of ADR-0068 unchanged |
+| [0072](./0072-no-code-org-authoring-api.md) | No-code org authoring API — CRUD surface for specialists, teams, contracts, relationships, fences, skills | proposed | Foundation for a future visual editor (not itself in scope); wraps existing `lib/registry/validator.mjs` + `custom-schema.mjs` validation, writes to the same `specialists/org/**` / `.construct/org/**` files |
 
 ## Starter templates
 
