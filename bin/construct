@@ -7664,6 +7664,48 @@ const handlers = new Map([
     println(result.answer);
     return;
   }],
+  ['tracker', async (args) => {
+    const sub = args[0] || 'contribute';
+    const flag = (name) => args.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3)
+      ?? (args.includes(`--${name}`) ? args[args.indexOf(`--${name}`) + 1] : undefined);
+    if (sub !== 'contribute') { errorln(`Unknown tracker subcommand: ${sub}. Available: contribute`); process.exit(1); }
+    const wantsJson = args.includes('--json');
+    const applyId = flag('apply');
+    const { analyzeAndPropose, applyProposal } = await import('../lib/tracker/contribute.mjs');
+
+    if (applyId) {
+      const approve = flag('approve') || null;
+      const res = await applyProposal({ proposalId: applyId, approveToken: approve, cwd: process.cwd() });
+      if (!res.ok) { errorln(res.message); process.exit(1); }
+      if (wantsJson) { println(JSON.stringify(res, null, 2)); return; }
+      println(`Applied proposal ${res.proposalId} — ${res.dryRun ? 'DRY-RUN (nothing written)' : 'EXECUTED'}`);
+      for (const r of res.results) println(`  ${r.key} — ${r.status}`);
+      if (res.dryRun) println('\nRe-run with --approve <token> to write the governed batch.');
+      return;
+    }
+
+    const target = flag('target');
+    const against = flag('against') || 'all';
+    if (!target) {
+      errorln('Usage: construct tracker contribute --target <id> [--against <ids|all>] [--json]\n   or: construct tracker contribute --apply <proposal-id> [--approve <token>] [--json]');
+      process.exit(1);
+    }
+    let res;
+    try {
+      res = await analyzeAndPropose({ target, against, cwd: process.cwd() });
+    } catch (err) {
+      errorln(err.message); process.exit(1);
+    }
+    if (!res.ok) { errorln(res.message); process.exit(1); }
+    if (wantsJson) { println(JSON.stringify(res.proposal, null, 2)); return; }
+    const p = res.proposal;
+    println(`Proposal ${p.id} for ${p.projectKey} (${p.targetId}) — ${p.proposals.length} proposed, ${p.suppressed.length} suppressed (${p.existingIssueCount} existing issues)`);
+    println(`  artifact: ${res.paths.md}`);
+    for (const it of p.proposals) println(`  + ${it.summary}`);
+    for (const s of p.suppressed) println(`  ~ suppressed: ${s.summary} → ${s.matchedIssueKey} (${s.similarity})`);
+    println(`\nReview the artifact, then: construct tracker contribute --apply ${p.id} [--approve <token>]`);
+    return;
+  }],
   ['sandbox', async (args) => {
     const sub = args[0] || 'create';
     const { createSandbox, listSandboxes, deleteSandbox, pruneSandboxes } = await import('../lib/sandbox.mjs');

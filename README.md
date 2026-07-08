@@ -221,6 +221,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct models` | Show or update model tier assignments |
 | `construct orchestrate` | Construct-owned local orchestration runtime and readiness preflight |
 | `construct plugin` | Manage external Construct plugin manifests |
+| `construct tracker` | Analyze registered projects and contribute governed issue proposals to an external tracker (Jira) |
 
 ### Integrations
 
