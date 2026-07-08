@@ -4,7 +4,7 @@
  * Uses a real (temporary) rootDir with seeded observations to validate
  * clustering, escalation detection, and hot topic extraction.
  */
-import { test } from 'node:test';
+import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -19,6 +19,19 @@ import {
 } from '../lib/knowledge/trends.mjs';
 
 // ── Fixtures ───────────────────────────────────────────────────────────────
+
+// addObservation and the trend detectors resolve the machine-scoped state
+// root (ADR-0066) via CX_HOME_OVERRIDE read in-process, not via the rootDir
+// argument each test passes — pin it file-wide or every test below writes
+// into the real developer machine's ~/.construct/projects.
+const HOME_SANDBOX = mkdtempSync(join(tmpdir(), 'construct-trends-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = HOME_SANDBOX;
+after(() => {
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  rmSync(HOME_SANDBOX, { recursive: true, force: true });
+});
 
 function makeDir() {
   return mkdtempSync(join(tmpdir(), 'construct-trends-'));

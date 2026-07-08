@@ -26,7 +26,7 @@ test('session-start hook remains non-blocking and emits resume context', (t) => 
     input: JSON.stringify({ cwd }),
     encoding: 'utf8',
     timeout: 15000,
-    env: { ...process.env, CONSTRUCT_HOOK_OUTPUT_MODE: 'stdout' },
+    env: { ...process.env, CONSTRUCT_HOOK_OUTPUT_MODE: 'stdout', HOME: cwd, CX_HOME_OVERRIDE: cwd },
   });
 
   assert.equal(result.status, 0);
