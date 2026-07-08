@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-07T04:41:29.767Z",
+  "generatedAt": "2026-07-08T17:08:58.723Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 811,
+    "testFiles": 814,
     "topLevelTestFiles": 350,
-    "nestedTestFiles": 461,
+    "nestedTestFiles": 464,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 40,
     "byLayer": {
       "unit": 556,
-      "functional": 207,
+      "functional": 210,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
       "unit": 493,
-      "functional": 207,
+      "functional": 210,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -3190,6 +3190,14 @@
       "maintainerNotes": "tests/functional/model-catalog-visibility.functional.test.mjs — project config"
     },
     {
+      "path": "tests/functional/model-policy.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/model-policy.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/model-registry-wiring.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3745,6 +3753,14 @@
       "maintainerNotes": "tests/functional/shared-state.functional.test.mjs — LMCP-G10."
     },
     {
+      "path": "tests/functional/source-target-directory.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/source-target-directory.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/spawn-env-hermeticity.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3823,6 +3839,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/telemetry-backend-agnostic.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/templates-register-adhoc.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/templates-register-adhoc.functional.test.mjs"
     },
     {
       "path": "tests/functional/uninstall-coverage.functional.test.mjs",

@@ -1,6 +1,18 @@
 {
   "matrix": [
     {
+      "type": "adhoc",
+      "structureRequirements": [],
+      "visualRequirements": [],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": true,
+        "proseMinimum": 1,
+        "requiredReviewers": [],
+        "optionalReviewers": []
+      }
+    },
+    {
       "type": "prd",
       "structureRequirements": [
         "Problem",
