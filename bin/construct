@@ -4348,7 +4348,7 @@ async function cmdOrchestrate(args) {
     const { shapeRun } = await import('../lib/mcp/tools/orchestration-run.mjs');
     const positional = rest.filter((a, i) => !a.startsWith('--') && !(i > 0 && rest[i - 1].startsWith('--') && !['--no-construct', '--no-execute', '--json'].includes(rest[i - 1])));
     const text = flag('--text') || positional.join(' ').trim();
-    if (!text) { errorln('Usage: construct orchestrate run "<request>" [--workflow-type T] [--strategy orchestrated|prompt-only|auto] [--host H] [--host-model M] [--no-construct] [--no-execute] [--json]'); process.exit(1); }
+    if (!text) { errorln('Usage: construct orchestrate run "<request>" [--workflow-type T] [--strategy orchestrated|prompt-only|auto] [--context id[:role],...] [--host H] [--host-model M] [--no-construct] [--no-execute] [--json]'); process.exit(1); }
     const cliWorkerBackend = flag('--worker-backend');
     // The host worker backend materializes prompts for an attached MCP host
     // session to execute and submit back via orchestration_task_result — a
@@ -4360,6 +4360,19 @@ async function cmdOrchestrate(args) {
       errorln('--worker-backend=host requires an attached MCP host session to execute the materialized prompts and submit results back — the CLI has no such session. Use --worker-backend=inline (prepare only) or --worker-backend=provider (needs a provider key), or invoke orchestration_run through an MCP host instead.');
       process.exit(1);
     }
+    // --context=id[:role],id[:role] binds the run to registered source targets;
+    // an unknown id is rejected at plan time (below), never a silent skip. Accept
+    // both `--context=…` and `--context …` since the epic UX documents the former
+    // while sibling orchestrate flags use the latter.
+    const contextInline = rest.find((a) => a.startsWith('--context='));
+    const contextFlag = contextInline ? contextInline.slice('--context='.length) : flag('--context');
+    const contextTargets = contextFlag
+      ? contextFlag.split(',').map((s) => s.trim()).filter(Boolean).map((entry) => {
+          const colon = entry.indexOf(':');
+          return colon === -1 ? { id: entry } : { id: entry.slice(0, colon), role: entry.slice(colon + 1) || undefined };
+        })
+      : undefined;
+
     const request = {
       request: text,
       workflowType: flag('--workflow-type'),
@@ -4371,13 +4384,20 @@ async function cmdOrchestrate(args) {
       workerBackend: cliWorkerBackend,
       fileCount: Number(flag('--file-count') || 0),
       moduleCount: Number(flag('--module-count') || 0),
+      contextTargets,
     };
     // runOrchestration/executeRun resolve the worker backend from opts.workerBackend,
     // not from request — the flag must reach opts explicitly or an override is silently
     // dropped (construct-1xlz).
 
     const runOpts = cliWorkerBackend ? { workerBackend: cliWorkerBackend } : {};
-    const run = rest.includes('--no-execute') ? await planRun(request, runOpts) : await runOrchestration(request, runOpts);
+    let run;
+    try {
+      run = rest.includes('--no-execute') ? await planRun(request, runOpts) : await runOrchestration(request, runOpts);
+    } catch (err) {
+      if (err?.code === 'CONTEXT_TARGET_UNKNOWN') { errorln(err.message); process.exit(1); }
+      throw err;
+    }
     if (wantsJson) { println(JSON.stringify(hostAdapterMetadata(run), null, 2)); return; }
 
     // AP5.1/AP5.4: the CLI must never print the raw persisted status — a
@@ -4389,6 +4409,9 @@ async function cmdOrchestrate(args) {
     if (shaped.degraded) println(`  degraded: ${shaped.degradationReason}`);
     if (run.tasks.length) println(`  tasks: ${run.tasks.map((t) => `${t.role}(${t.status})`).join(' → ')}`);
     else println('  tasks: none (no Construct-owned specialist sequence for this execution mode)');
+    if (run.contextBindings?.length) {
+      println(`  context: ${run.contextBindings.map((b) => `${b.id}[${b.provider}${b.role ? `:${b.role}` : ''}]${b.contentRoot ? '✓' : ''}`).join(', ')}`);
+    }
     for (const t of run.tasks) {
       if (t.reasoning) println(`  ↳ ${t.role} reasoning: ${t.reasoning.length > 300 ? `${t.reasoning.slice(0, 300)}…` : t.reasoning}`);
     }
