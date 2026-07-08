@@ -6842,9 +6842,26 @@ async function readStdin() {
   return raw;
 }
 
+async function cmdStudio(args = []) {
+  const { startOrgStudio } = await import('../lib/org-studio/server.mjs');
+  const portArg = args.find((a) => a.startsWith('--port='));
+  const port = portArg ? Number(portArg.split('=')[1]) : 4321;
+  const { url } = await startOrgStudio({ rootDir: PROJECT_ROOT, port });
+  ok(`Org Studio → ${url}`);
+  info('Authoring specialists, teams, relationships, and fences. Writes go through org-api (same schema as the CLI). Ctrl-C to stop.');
+  if (!args.includes('--no-open')) {
+    const { platform } = await import('node:os');
+    const { spawn } = await import('node:child_process');
+    const opener = platform() === 'darwin' ? 'open' : platform() === 'win32' ? 'start' : 'xdg-open';
+    try { spawn(opener, [url], { stdio: 'ignore', detached: true }).unref(); } catch { /* headless: url already printed */ }
+  }
+  await new Promise(() => {});
+}
+
 const handlers = new Map([
   // Core
   ['dev', cmdDev],
+  ['studio', cmdStudio],
   ['stop', cmdStop],
   ['status', cmdStatus],
   ['workers', cmdWorkers],
