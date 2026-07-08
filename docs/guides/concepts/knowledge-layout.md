@@ -162,6 +162,8 @@ Use these tags in `searchObservations` calls or the dashboard to filter by type.
 inbox/                   ← project-root drop zone (visible; files ingested then moved to knowledge/)
 ```
 
+Corpus source targets keep their cloned content out of the project tree entirely. A github target opted into `content: {mode:"corpus"}` (and any future git-hosted provider whose manifest declares a `content` block) clones under the machine state root at `~/.construct/projects/<key>/context-repos/<targetId>/`, refreshed incrementally by `construct sources sync` (`lib/sources/repo-cache.mjs`); a `directory` target reads its docs in place and clones nothing. See [Project scopes](/concepts/project-scopes) for the full state-root table.
+
 ### Entity graph (GraphRAG)
 
 `entities.json` is the JSONL-backed graph. Each entity carries a

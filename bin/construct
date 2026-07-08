@@ -3292,6 +3292,11 @@ async function cmdSources(args) {
     findProjectConfigPath,
     PROJECT_CONFIG_FILENAME,
   } = await import('../lib/config/project-config.mjs');
+  const {
+    isCorpusTarget,
+    corpusFreshness,
+    syncCorpusTarget,
+  } = await import('../lib/sources/repo-cache.mjs');
 
   const cwd = process.cwd();
   const action = args[0] ?? 'list';
@@ -3305,7 +3310,15 @@ async function cmdSources(args) {
     println('');
     if (configTargets.length === 0) println('  (no targets in construct.config.json)');
     for (const t of configTargets) {
-      println(`  ${t.id} · ${t.provider} · ${JSON.stringify(t.selector)}`);
+      let content = '';
+      if (isCorpusTarget(t)) {
+        const fresh = corpusFreshness(t, { projectRoot: cwd });
+        const freshness = !fresh.cached
+          ? 'not synced'
+          : `synced ${fresh.lastFetch ?? 'unknown'}${fresh.stale ? ', stale' : ''}`;
+        content = ` · corpus(${fresh.ref}) · ${freshness}`;
+      }
+      println(`  ${t.id} · ${t.provider} · ${JSON.stringify(t.selector)}${content}`);
     }
     if (envTargets.length) {
       println('');
@@ -3391,7 +3404,37 @@ async function cmdSources(args) {
     return;
   }
 
-  errorln(`Unknown sources action: ${action}. Available: list, add, remove, validate`);
+  if (action === 'sync') {
+    const onlyId = args[1] ?? null;
+    const { config } = loadProjectConfig(cwd, process.env);
+    const targets = resolveEffectiveSourceTargetsFromConfig(config, process.env)
+      .filter((t) => isCorpusTarget(t))
+      .filter((t) => !onlyId || t.id === onlyId);
+
+    if (onlyId && !targets.length) {
+      errorln(`No corpus target with id: ${onlyId}`);
+      process.exit(1);
+    }
+    if (!targets.length) {
+      info('no corpus targets to sync');
+      return;
+    }
+
+    let failures = 0;
+    for (const t of targets) {
+      try {
+        const result = syncCorpusTarget(t, { projectRoot: cwd });
+        info(`synced ${t.id} (${result.mode}) → ${result.head.slice(0, 7)} @ ${result.dir}`);
+      } catch (err) {
+        failures++;
+        errorln(`failed to sync ${t.id}: ${err.message}`);
+      }
+    }
+    if (failures) process.exit(1);
+    return;
+  }
+
+  errorln(`Unknown sources action: ${action}. Available: list, add, remove, validate, sync`);
   process.exit(1);
 }
 
