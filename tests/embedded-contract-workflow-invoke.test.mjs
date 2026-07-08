@@ -7,15 +7,29 @@
  * records an observation; team mode flags the write as audited). Durable cases
  * use an isolated tmpdir cwd; the approval case suppresses the home-dir write
  * via CONSTRUCT_ROLES=off so the test never touches real state.
+ *
+ * The durable-write case resolves observation-store state through the
+ * machine-scoped state root (ADR-0066), keyed by a hash of the tmp cwd — so
+ * CX_HOME_OVERRIDE is pinned for the whole file to keep that write off the
+ * real developer machine's $HOME.
  */
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import test, { after } from 'node:test';
+import test, { before, after } from 'node:test';
 
 import { invokeWorkflow } from '../lib/embedded-contract/workflow-invoke.mjs';
+
+let homeOverride;
+let prevHomeOverride;
+
+before(() => {
+  homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-ecl-wf-home-'));
+  prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+  process.env.CX_HOME_OVERRIDE = homeOverride;
+});
 
 const tmpDirs = [];
 function freshCwd() {
@@ -27,6 +41,9 @@ after(() => {
   for (const dir of tmpDirs) {
     try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
   }
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch { /* best-effort cleanup */ }
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
 });
 
 test('unknown workflowType returns a structured error', async () => {

@@ -3,8 +3,13 @@
  *
  * Uses a real (temporary) rootDir with seeded observations to validate
  * clustering, escalation detection, and hot topic extraction.
+ *
+ * addObservation resolves project state through the machine-scoped state root
+ * (ADR-0066), keyed by a hash of the tmp rootDir — so CX_HOME_OVERRIDE is
+ * pinned for the whole file to keep that write off the real developer
+ * machine's $HOME.
  */
-import { test } from 'node:test';
+import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -17,6 +22,21 @@ import {
   detectDecisionDrift,
   buildTrendReport,
 } from '../lib/knowledge/trends.mjs';
+
+let homeOverride;
+let prevHomeOverride;
+
+before(() => {
+  homeOverride = mkdtempSync(join(tmpdir(), 'cx-knowledge-trends-home-'));
+  prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+  process.env.CX_HOME_OVERRIDE = homeOverride;
+});
+
+after(() => {
+  try { rmSync(homeOverride, { recursive: true, force: true }); } catch { /* best-effort cleanup */ }
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 // ── Fixtures ───────────────────────────────────────────────────────────────
 

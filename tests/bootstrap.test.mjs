@@ -4,8 +4,12 @@
  * Verifies seed corpus import is idempotent, parses all three files,
  * correctly maps categories, and skips already-present observations.
  * Isolated in a temp dir so real ~/.cx state is untouched.
+ *
+ * observation-store resolves project state through the machine-scoped state
+ * root (ADR-0066), keyed by a hash of tmpDir — so CX_HOME_OVERRIDE is pinned
+ * for the whole file to keep that write off the real developer machine's $HOME.
  */
-import { describe, it, beforeEach, afterEach } from 'node:test';
+import { describe, it, before, beforeEach, after, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -14,6 +18,20 @@ import { runBootstrap } from '../lib/bootstrap.mjs';
 import { listObservations, getObservation } from '../lib/observation-store.mjs';
 
 let tmpDir;
+let homeOverride;
+let prevHomeOverride;
+
+before(() => {
+  homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-bootstrap-home-'));
+  prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+  process.env.CX_HOME_OVERRIDE = homeOverride;
+});
+
+after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch { /* best-effort cleanup */ }
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 beforeEach(() => {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bootstrap-test-'));
