@@ -23,6 +23,7 @@ import {
   enablePack, disablePack, loadEnabledPacks, isCorePackId,
 } from '../../lib/packs/enablement.mjs';
 import { loadCorePack } from '../../lib/packs/core-pack.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(__dirname, '..', '..');
@@ -45,7 +46,7 @@ tmpDirs.push(HOME_DIR);
 
 after(() => {
   for (const dir of tmpDirs) {
-    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+    rmTmpDir(dir);
   }
 });
 

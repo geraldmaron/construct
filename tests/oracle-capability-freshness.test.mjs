@@ -21,11 +21,12 @@ import { spawnSync } from 'node:child_process';
 
 import { collectDependencyGraph } from '../lib/oracle/read-model.mjs';
 import { writeGraph } from '../lib/graph/store.mjs';
+import { rmTmpDir } from './helpers/cleanup.mjs';
 
 const tmpDirs = [];
 after(() => {
   for (const dir of tmpDirs) {
-    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+    rmTmpDir(dir);
   }
 });
 

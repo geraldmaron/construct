@@ -19,6 +19,16 @@
       "normalize": "trim"
     },
     "signature": { "template": "github:repo:{value}", "valueMode": "optionalLower" },
+    "content": {
+      "field": "content",
+      "modeField": "mode",
+      "modeValue": "corpus",
+      "refField": "ref",
+      "defaultRef": "main",
+      "remoteField": "remote",
+      "remoteTemplate": "https://github.com/{value}.git",
+      "clone": "git"
+    },
     "legacyEnv": { "vars": ["GITHUB_REPOS", "GITHUB_REPO"], "parse": "csv" },
     "aliases": { "strategy": "repoWords", "displayPrefix": null, "catchAll": false },
     "embed": {

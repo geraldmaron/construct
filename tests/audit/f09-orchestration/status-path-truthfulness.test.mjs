@@ -29,6 +29,20 @@ function tmpProject() {
   return cwd;
 }
 
+// orchestrationRun/orchestrationStatus resolve the machine-scoped state root
+// (ADR-0066) via CX_HOME_OVERRIDE read from real process.env, not from the
+// `env` option bag passed to these calls — the ENV/degradedEnv() HOME below
+// is inert for that purpose. Pin the real process env or these leak into the
+// real developer machine's ~/.construct/projects.
+function pinHome(cwd) {
+  const prev = process.env.CX_HOME_OVERRIDE;
+  process.env.CX_HOME_OVERRIDE = cwd;
+  return () => {
+    if (prev === undefined) delete process.env.CX_HOME_OVERRIDE;
+    else process.env.CX_HOME_OVERRIDE = prev;
+  };
+}
+
 const MODEL = 'anthropic/claude-sonnet-4-6';
 const ORCH_REQUEST = { request: 'design and implement a new authentication architecture', file_count: 20, module_count: 6, wait: true, worker_backend: 'inline' };
 const ENV = {
@@ -59,6 +73,7 @@ function degradedEnv() {
 
 test('[R-status] single-run status shapes prepare-only identically to the run envelope', async () => {
   const cwd = tmpProject();
+  const unpinHome = pinHome(cwd);
   try {
     const runEnvelope = await orchestrationRun(ORCH_REQUEST, { env: ENV, cwd });
     assert.equal(runEnvelope.status, 'completed-prepare-only'); // baseline the run path already honors
@@ -71,12 +86,14 @@ test('[R-status] single-run status shapes prepare-only identically to the run en
       `status path leaked raw '${statusEnvelope.status}'; must match the shaped run envelope`);
     assert.equal(statusEnvelope.prepareOnly, true);
   } finally {
+    unpinHome();
     fs.rmSync(cwd, { recursive: true, force: true });
   }
 });
 
 test('[R-status] a zero-task degraded run is never reported as prepared or bare completed', async () => {
   const cwd = tmpProject();
+  const unpinHome = pinHome(cwd);
   try {
     // Create a degraded zero-task run via orchestrationRun with no model configured
     const degradedRun = await orchestrationRun(
@@ -96,12 +113,14 @@ test('[R-status] a zero-task degraded run is never reported as prepared or bare 
     assert.equal(statusEnvelope.degraded, true);
     assert.equal(statusEnvelope.status, 'degraded');
   } finally {
+    unpinHome();
     fs.rmSync(cwd, { recursive: true, force: true });
   }
 });
 
 test('[R-status] list runs shapes all entries', async () => {
   const cwd = tmpProject();
+  const unpinHome = pinHome(cwd);
   try {
     // Create two runs: one prepare-only, one degraded zero-task
     const prepareRun = await orchestrationRun(ORCH_REQUEST, { env: ENV, cwd });
@@ -125,6 +144,7 @@ test('[R-status] list runs shapes all entries', async () => {
     assert.equal(degradedFromList.degraded, true);
     assert.notEqual(degradedFromList.status, 'completed');
   } finally {
+    unpinHome();
     fs.rmSync(cwd, { recursive: true, force: true });
   }
 });

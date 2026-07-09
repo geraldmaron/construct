@@ -19,10 +19,18 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = path.join(REPO, 'bin', 'construct');
 
+// These gates assert default / no-config behavior, so the spawned CLI must
+// resolve project config from a clean cwd — NOT the repo root, where a
+// developer's gitignored construct.config.local.json (e.g. workerBackend=
+// provider) would be read and flip the resolved backend (construct-1l11).
+// Isolating HOME alone is not enough: config resolution walks up from cwd.
+
 function env() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-worker-backend-vis-'));
+  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-worker-backend-vis-cwd-'));
   return {
     home,
+    cwd,
     env: {
       ...process.env,
       HOME: home,
@@ -31,7 +39,7 @@ function env() {
       BOOTSTRAP_CHECKED: '1',
       CONSTRUCT_DISABLE_AUTO_CLEANUP: '1',
     },
-    cleanup() { rmTmpDir(home); },
+    cleanup() { rmTmpDir(home); rmTmpDir(cwd); },
   };
 }
 
@@ -41,7 +49,7 @@ test('preflight --json reports workerBackend=inline (prepare-only) with no confi
     const result = spawnSync(process.execPath, [
       BIN, 'orchestrate', 'preflight', '--json', '--no-probe',
       '--observed-tools=orchestration_policy,orchestration_run',
-    ], { cwd: REPO, env: ctx.env, encoding: 'utf8', timeout: 20_000 });
+    ], { cwd: ctx.cwd, env: ctx.env, encoding: 'utf8', timeout: 20_000 });
     const payload = JSON.parse(result.stdout);
     assert.equal(payload.workerBackend, 'inline');
   } finally {
@@ -53,7 +61,7 @@ test('construct doctor prints the effective worker backend as an advisory line',
   const ctx = env();
   try {
     const result = spawnSync(process.execPath, [BIN, 'doctor'], {
-      cwd: REPO, env: ctx.env, encoding: 'utf8', timeout: 60_000,
+      cwd: ctx.cwd, env: ctx.env, encoding: 'utf8', timeout: 60_000,
     });
     const line = result.stdout.split('\n').find((l) => l.includes('Worker backend:'));
     assert.ok(line, `doctor output should include a Worker backend line.\nstdout: ${result.stdout.slice(0, 800)}`);
@@ -69,7 +77,7 @@ test('construct doctor prints the effective provider timeout/retry settings (con
   const ctx = env();
   try {
     const result = spawnSync(process.execPath, [BIN, 'doctor'], {
-      cwd: REPO, env: ctx.env, encoding: 'utf8', timeout: 60_000,
+      cwd: ctx.cwd, env: ctx.env, encoding: 'utf8', timeout: 60_000,
     });
     const line = result.stdout.split('\n').find((l) => l.includes('Provider timeout:'));
     assert.ok(line, `doctor output should include a Provider timeout line.\nstdout: ${result.stdout.slice(0, 800)}`);
@@ -85,7 +93,7 @@ test('construct doctor reflects a CONSTRUCT_PROVIDER_TIMEOUT_MS override, not th
   const ctx = env();
   try {
     const result = spawnSync(process.execPath, [BIN, 'doctor'], {
-      cwd: REPO, env: { ...ctx.env, CONSTRUCT_PROVIDER_TIMEOUT_MS: '45000' }, encoding: 'utf8', timeout: 60_000,
+      cwd: ctx.cwd, env: { ...ctx.env, CONSTRUCT_PROVIDER_TIMEOUT_MS: '45000' }, encoding: 'utf8', timeout: 60_000,
     });
     const line = result.stdout.split('\n').find((l) => l.includes('Provider timeout:'));
     assert.ok(line, `doctor output should include a Provider timeout line.\nstdout: ${result.stdout.slice(0, 800)}`);
@@ -100,7 +108,7 @@ test('construct orchestrate run completion line names the resolved backend', () 
   try {
     const result = spawnSync(process.execPath, [
       BIN, 'orchestrate', 'run', 'fix a flaky test', '--no-execute',
-    ], { cwd: REPO, env: ctx.env, encoding: 'utf8', timeout: 20_000 });
+    ], { cwd: ctx.cwd, env: ctx.env, encoding: 'utf8', timeout: 20_000 });
     assert.equal(result.status, 0, result.stderr || result.stdout);
     assert.match(result.stdout, /backend=inline/);
   } finally {

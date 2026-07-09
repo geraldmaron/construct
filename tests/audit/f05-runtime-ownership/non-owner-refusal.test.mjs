@@ -28,6 +28,7 @@ import test from 'node:test';
 
 import { stopServices } from '../../../lib/service-manager.mjs';
 import { getUserEnvPath } from '../../../lib/env-config.mjs';
+import { rmTmpDir } from '../../helpers/cleanup.mjs';
 
 const FOREIGN_PID = 999_000_001;
 
@@ -77,7 +78,7 @@ function lsofReturning(pid) {
 
 test('[R16] stop must NOT kill a configured-port owner that lacks Construct ownership markers', async (t) => {
   const home = makeHome(['MEMORY_PORT=7070', 'BRIDGE_PORT=5173', 'COPILOT_BRIDGE_PORT=5174']);
-  t.after(() => { try { fs.rmSync(home, { recursive: true, force: true }); } catch {} });
+  t.after(() => { rmTmpDir(home); });
 
   const { signalled, value: result } = await withKillRecorder(() => stopServices({
     homeDir: home,
@@ -93,7 +94,7 @@ test('[R16] stop must NOT kill a configured-port owner that lacks Construct owne
 
 test('[R16] an unverified port owner is REPORTED, not counted as stopped', async (t) => {
   const home = makeHome(['MEMORY_PORT=7070']);
-  t.after(() => { try { fs.rmSync(home, { recursive: true, force: true }); } catch {} });
+  t.after(() => { rmTmpDir(home); });
 
   const { value: result } = await withKillRecorder(() => stopServices({
     homeDir: home,

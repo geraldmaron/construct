@@ -5,11 +5,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, rmSync, mkdirSync, readFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { checkArtifactGateNotice } from '../../lib/artifact-gate-notice.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const HOOK = join(REPO_ROOT, 'lib', 'hooks', 'artifact-release-gate.mjs');
@@ -37,7 +38,7 @@ test('passes when typed artifact satisfies manifest structure', () => {
     const r = runHook(draft, dir);
     assert.equal(r.status, 0);
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -54,7 +55,7 @@ test('advises when a docs/adr draft is missing required sections', () => {
     const r = runHook(draft, dir);
     assert.equal(r.status, 0, 'advisory hook must not block');
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 

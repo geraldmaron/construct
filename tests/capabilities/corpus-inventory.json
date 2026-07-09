@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-07T04:41:29.767Z",
+  "generatedAt": "2026-07-09T04:33:19.891Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 811,
-    "topLevelTestFiles": 350,
-    "nestedTestFiles": 461,
+    "testFiles": 825,
+    "topLevelTestFiles": 355,
+    "nestedTestFiles": 470,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 40,
+    "capabilityMarkedFiles": 46,
     "byLayer": {
-      "unit": 556,
-      "functional": 207,
+      "unit": 561,
+      "functional": 216,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 493,
-      "functional": 207,
+      "unit": 498,
+      "functional": 216,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -1551,6 +1551,14 @@
       "maintainerNotes": "tests/doctor-source-checkout.test.mjs — published-package vs source-checkout detection."
     },
     {
+      "path": "tests/doctor-source-target-health.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/doctor-source-target-health.test.mjs — unit coverage for the"
+    },
+    {
       "path": "tests/doctor-stub-tier.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -2357,6 +2365,16 @@
       "maintainerNotes": "tests/functional/auth-once.functional.test.mjs"
     },
     {
+      "path": "tests/functional/author-artifact-context-targets.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "research.cross-project-synthesis"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/author-artifact-context-targets.functional.test.mjs —"
+    },
+    {
       "path": "tests/functional/b1-profile-loader.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2483,6 +2501,16 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/cross-project-state-isolation.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/cross-project-synthesis.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "research.cross-project-synthesis"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/cross-project-synthesis.functional.test.mjs —"
     },
     {
       "path": "tests/functional/cursor-rules-delivery.functional.test.mjs",
@@ -2645,6 +2673,16 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/doctor-run-store-visibility.functional.test.mjs — the"
+    },
+    {
+      "path": "tests/functional/doctor-source-targets.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "sources.doctor-health"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/doctor-source-targets.functional.test.mjs —"
     },
     {
       "path": "tests/functional/doctor-vscode-host-readiness.functional.test.mjs",
@@ -3024,6 +3062,16 @@
       "maintainerNotes": "tests/functional/intake-process-archetype.functional.test.mjs"
     },
     {
+      "path": "tests/functional/knowledge-multiroot-corpus.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "research.multi-project-search"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/knowledge-multiroot-corpus.functional.test.mjs —"
+    },
+    {
       "path": "tests/functional/knowledge-search-project-scope.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3188,6 +3236,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/model-catalog-visibility.functional.test.mjs — project config"
+    },
+    {
+      "path": "tests/functional/model-policy.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/model-policy.functional.test.mjs"
     },
     {
       "path": "tests/functional/model-registry-wiring.functional.test.mjs",
@@ -3403,6 +3459,16 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/oracle-synthesis.functional.test.mjs —"
+    },
+    {
+      "path": "tests/functional/orchestration-context-bindings.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "orchestration.context-bindings"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/orchestration-context-bindings.functional.test.mjs —"
     },
     {
       "path": "tests/functional/orchestration-keys-no-tiers.functional.test.mjs",
@@ -3745,6 +3811,14 @@
       "maintainerNotes": "tests/functional/shared-state.functional.test.mjs — LMCP-G10."
     },
     {
+      "path": "tests/functional/source-target-directory.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/source-target-directory.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/spawn-env-hermeticity.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3823,6 +3897,24 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/telemetry-backend-agnostic.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/templates-register-adhoc.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/templates-register-adhoc.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/tracker-contribute.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "tracker.contribution"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/tracker-contribute.functional.test.mjs —"
     },
     {
       "path": "tests/functional/uninstall-coverage.functional.test.mjs",
@@ -4569,6 +4661,14 @@
       "maintainerNotes": "tests/knowledge-graph.test.mjs — Unit coverage for lib/knowledge/graph.mjs."
     },
     {
+      "path": "tests/knowledge-multiroot.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/knowledge-multiroot.test.mjs — unit coverage for multi-root corpus"
+    },
+    {
       "path": "tests/knowledge-rag.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -5043,12 +5143,28 @@
       "maintainerNotes": "tests/orchestration-chain-of-thought.test.mjs — chain-of-thought disclosure."
     },
     {
+      "path": "tests/orchestration-context-bindings.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration-context-bindings.test.mjs — unit coverage for the"
+    },
+    {
       "path": "tests/orchestration-delegation-flow.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/orchestration-delegation-flow.test.mjs — flow-engine delegation chain"
+    },
+    {
+      "path": "tests/orchestration-doc-authoring-patterns.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration-doc-authoring-patterns.test.mjs — doc-type drift guard."
     },
     {
       "path": "tests/orchestration-events.test.mjs",
@@ -5113,6 +5229,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/orchestration-remote-web-guard.test.mjs — fail-closed remote ingress guard (ADR-0050)."
+    },
+    {
+      "path": "tests/orchestration-research-evidence-gate.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration-research-evidence-gate.test.mjs — kind-aware evidence gate."
     },
     {
       "path": "tests/orchestration-run-store-postgres.test.mjs",

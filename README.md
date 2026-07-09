@@ -198,6 +198,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct reflect` | Capture improvement feedback and update Construct core |
 | `construct search` | Hybrid search across project state |
 | `construct storage` | Manage storage backend |
+| `construct synthesize` | Cross-project synthesis: map each registered project, reduce to an origin-cited answer |
 | `construct tags` | Manage the controlled tag vocabulary (propose, add, deprecate, audit) |
 | `construct team` | Team review, template listing, and custom team authoring (`team:add` / `team:remove` are internal registry editors) |
 | `construct tools` | Detect optional publish pipeline binaries (Pandoc, D2, VHS, Playwright) |
@@ -220,6 +221,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct models` | Show or update model tier assignments |
 | `construct orchestrate` | Construct-owned local orchestration runtime and readiness preflight |
 | `construct plugin` | Manage external Construct plugin manifests |
+| `construct tracker` | Analyze registered projects and contribute governed issue proposals to an external tracker (Jira) |
 
 ### Integrations
 
@@ -288,6 +290,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct scheduler` | Manage scheduled background jobs (tag-mining, doc-hygiene, skill-rollup) |
 | `construct skills` | Skill relevance detection |
 | `construct sources` | Manage typed integration source targets in construct.config.json |
+| `construct templates` | List doc templates and register custom document classes (project-tier overlay; builtin manifest untouched) |
 | `construct uninstall` | Remove Construct state |
 | `construct update` | Reinstall this checkout |
 | `construct upgrade` | Upgrade to latest npm version |

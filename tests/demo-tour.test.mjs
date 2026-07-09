@@ -10,13 +10,14 @@
 
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test, { before, after } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import { renderTour } from '../lib/demo-tour-renderer.mjs';
+import { rmTmpDir } from './helpers/cleanup.mjs';
 import { loadDemoScript, listDemoScripts } from '../lib/demo-script.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -28,7 +29,7 @@ const BIN = path.join(REPO, 'bin', 'construct');
 
 let HOME;
 before(() => { HOME = mkdtempSync(path.join(os.tmpdir(), 'demo-tour-home-')); });
-after(() => { rmSync(HOME, { recursive: true, force: true }); });
+after(() => { rmTmpDir(HOME); });
 
 const ANSI = /\[[0-9;]*m/;
 

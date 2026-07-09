@@ -104,6 +104,33 @@ construct models set --tier=<reasoning|standard|fast> --model=<provider/model-id
 
 For smaller local checkpoints, set `CONSTRUCT_MODEL_PROFILE=small` in `~/.config/construct/config.env`. That keeps runtime prompts tighter, compresses role overlays, and biases prompt assembly toward retrieval-first context instead of broad prompt stuffing.
 
+## Model policy presets
+
+When you want every tier moved at once instead of setting them one by one, use the policy presets. A preset is **computed** from your configured providers' live pricing and **persisted** to `specialists/org/models.json` — the single edit surface for model assignment. Env pins (`CX_MODEL_<TIER>`) still override whatever a preset writes, so nothing new enters the resolution chain.
+
+```bash
+construct models policy show            # effective policy: winning source per tier + work-category map
+construct models policy set budget      # all tiers → cheapest eligible models for your providers
+construct models policy set free        # :free OpenRouter slugs only
+construct models policy set frontier    # best-available (flagship) models
+construct models policy set local       # Ollama / local server first
+```
+
+- **`budget`** ranks every configured provider's tier candidates by live pricing (via the OpenRouter pricing endpoint) and picks the cheapest. Flagship models are hard-excluded, and a candidate whose price can't be fetched is ranked last — never treated as free — so a budget policy on an OpenRouter-only setup provably resolves no frontier model for any tier. If pricing is unreachable it falls back to a static ordering (a `:free` slug first) and says so.
+- **`free`** assigns only `:free` slugs. A tier with no free model available is left unset and reported, never silently substituted.
+- **`frontier`** picks the best-available model per tier from your configured providers.
+- **`local`** prefers Ollama or a local OpenAI-compatible server.
+
+A preset **refuses** (non-zero exit, nothing written) when no provider credential can back it — `free` needs an OpenRouter key, `local` needs a running local provider — so it never writes an unbacked default. `policy set` writes only `models.json`; it touches no env file or `construct.config.json`.
+
+Trace how a single specialist resolves its model:
+
+```bash
+construct models explain --role cx-reviewer
+```
+
+It names the specialist's declared tier, the tier it maps to, the resolved model, and the winning rule — the same result `construct models resolve --json --tier <tier>` reports.
+
 ## Resolve keys from 1Password
 
 If you keep provider keys in 1Password and run other LLM CLIs through `op run`, point Construct at the same env-file:

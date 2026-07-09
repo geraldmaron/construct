@@ -24,6 +24,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
+import { rmTmpDir } from '../../helpers/cleanup.mjs';
+
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
 // Pack the working tree exactly as `npm publish` would, extract the single tarball, and
@@ -66,7 +68,7 @@ function packed() {
 
 test.after(() => {
   if (cached) {
-    try { fs.rmSync(cached.dir, { recursive: true, force: true }); } catch { /* tmp cleanup */ }
+    rmTmpDir(cached.dir);
   }
 });
 

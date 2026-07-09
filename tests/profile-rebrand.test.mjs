@@ -13,6 +13,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import { getRebrand, DEFAULT_REBRAND } from '../lib/scopes/rebrand.mjs';
+import { rmTmpDir } from './helpers/cleanup.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..');
@@ -27,7 +28,7 @@ function mkTmp(prefix = 'cx-rebrand-') {
 
 after(() => {
   for (const d of tmpDirs) {
-    try { fs.rmSync(d, { recursive: true, force: true }); } catch { /* ignore */ }
+    rmTmpDir(d);
   }
 });
 

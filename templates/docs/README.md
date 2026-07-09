@@ -62,6 +62,28 @@ cp templates/docs/prd.md .cx/templates/docs/prd.md
 
 Ask Construct for a PRD; it'll follow the new shape.
 
+### Registering a new document class
+
+Overriding a template reshapes an *existing* class. To generate a class the builtin manifest never registered, register it — this writes the template plus a project-tier manifest overlay, and never touches the builtin `specialists/artifact-manifest.json`:
+
+```bash
+construct templates register convergence-brief \
+  --description "Cross-project strategy convergence brief" \
+  [--from .cx/templates/docs/convergence-brief.md]
+```
+
+That writes `.cx/templates/docs/convergence-brief.md` (a starter, or your `--from` file) and adds `convergence-brief` to `.cx/artifact-manifest.overlay.json`. The overlay merges over the builtin by three tiers (builtin → user `~/.config/construct/` → project `.cx/`), so the registered class now resolves everywhere: `get_template("convergence-brief")` returns the project override, and `author_artifact {type:"convergence-brief", ...}` drafts from it and runs the release gate. A registered class inherits memo-like author/reviewer defaults; override them (including `outputDir`) by editing its overlay entry.
+
+### One-off adhoc documents
+
+For a genuinely one-off document with no fixed shape, skip registration entirely and use the sanctioned `adhoc` type:
+
+```
+author_artifact {type:"adhoc", title:"Q3 strategy convergence", instructions:"..."}
+```
+
+`adhoc` needs an explicit `title` and `instructions`; its structure follows the instructions, but it still runs the full release gate — free-form structure, not free-form quality. It is not a bypass for a registered class: naming a known type through `adhoc` is redirected to that class. An unknown, unregistered non-adhoc class still returns a classification/registration prompt rather than becoming a PRD.
+
 ## Role Anti-Patterns
 
 Each specialist is cognitively rooted in a **role** (product-manager, engineer, architect, etc.) with a core set of failure modes to avoid. Flavored specialists extend the core with an overlay.

@@ -12,10 +12,11 @@
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(ROOT, 'bin', 'construct');
@@ -26,7 +27,7 @@ const FIXTURE_PROVIDER = join(ROOT, 'tests', 'providers', 'fixtures', 'failing-p
 // every spawn below must be pinned to a throwaway home or it leaks a
 // project-key directory into the real developer machine's ~/.construct/projects/.
 const HOME_DIR = mkdtempSync(join(tmpdir(), 'construct-provider-cli-home-'));
-after(() => { rmSync(HOME_DIR, { recursive: true, force: true }); });
+after(() => { rmTmpDir(HOME_DIR); });
 
 function run(args, { cwd = ROOT, env = {} } = {}) {
   return spawnSync(process.execPath, [BIN, ...args], {
@@ -54,7 +55,7 @@ test('provider health <id> exits non-zero on a failing provider', () => {
     assert.match(res.stdout, /fixture-failing/);
     assert.match(res.stdout, /unhealthy/);
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -69,7 +70,7 @@ test('provider health <id> --json exits non-zero and reports ok:false', () => {
     assert.equal(entry.ok, false);
     assert.match(entry.detail, /intentionally unhealthy/);
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -81,7 +82,7 @@ test('provider health (no id) aggregates all providers and fails if any is unhea
     const parsed = JSON.parse(res.stdout);
     assert.ok(parsed.results.some((r) => r.id === 'fixture-failing' && r.ok === false));
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -134,7 +135,7 @@ test('provider validate <path> reports errors for a broken manifest', () => {
     assert.ok(parsed.errors.some((e) => /unknown kind/.test(e)));
     assert.ok(parsed.errors.some((e) => /id must match/.test(e)));
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 

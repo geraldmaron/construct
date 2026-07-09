@@ -18,6 +18,7 @@ description: Models & Integrations commands for Construct.
 | `construct models` | Show or update model tier assignments |
 | `construct orchestrate` | Construct-owned local orchestration runtime and readiness preflight |
 | `construct plugin` | Manage external Construct plugin manifests |
+| `construct tracker` | Analyze registered projects and contribute governed issue proposals to an external tracker (Jira) |
 
 ## construct acp
 
@@ -131,7 +132,7 @@ Show or update model tier assignments
 **Usage**
 
 ```bash
-construct models <list|set|free|reset|resolve>
+construct models <list|set|free|reset|resolve|policy|explain>
 ```
 
 **Subcommands**
@@ -141,6 +142,9 @@ construct models <list|set|free|reset|resolve>
 - `free` — List available free models
 - `reset` — Reset all tier assignments
 - `resolve --json` — Resolve the model for an embedded workflow given host context
+- `policy show` — Show the effective policy: winning source per tier + work-category map
+- `policy set <budget|free|frontier|local>` — Compute a preset and persist it to specialists/org/models.json
+- `explain --role <specialist>` — Per-specialist model resolution trace
 
 ## construct orchestrate
 
@@ -175,3 +179,18 @@ construct plugin <list|info|init|validate|engine>
 - `init` — Scaffold a new plugin manifest
 - `validate` — Validate a plugin manifest against the schema
 - `engine` — Plugin engine operations
+
+## construct tracker
+
+Analyze registered projects and contribute governed issue proposals to an external tracker (Jira)
+
+**Usage**
+
+```bash
+construct tracker contribute --target <id> [--against <ids|all>] | --apply <proposal-id> [--approve <token>]
+```
+
+**Subcommands**
+
+- `contribute --target <id> [--against <ids|all>]` — Analyze corpora vs the tracker and emit an evidence-cited, deduped proposal artifact
+- `contribute --apply <proposal-id> [--approve <token>]` — Apply a proposal: dry-run by default; --approve executes the governed write batch

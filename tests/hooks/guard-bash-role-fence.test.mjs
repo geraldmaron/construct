@@ -16,6 +16,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { describe, it, before, after, beforeEach } from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const HERE = path.dirname(new URL(import.meta.url).pathname);
 const ROOT = path.resolve(HERE, '..', '..');
@@ -29,7 +30,7 @@ before(() => {
 });
 
 after(() => {
-  fs.rmSync(cxDir, { recursive: true, force: true });
+  rmTmpDir(cxDir);
 });
 
 beforeEach(() => {
@@ -144,7 +145,7 @@ describe('guard-bash role-fence actor identity (construct-7164)', () => {
       assert.equal(r.status, 2, `expected block via the real tracker-written file; got ${r.status}. stderr:\n${r.stderr}`);
       assert.match(r.stderr, /cx-engineer cannot run this command/);
     } finally {
-      fs.rmSync(projectCwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+      rmTmpDir(projectCwd);
     }
   });
 });

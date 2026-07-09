@@ -29,6 +29,7 @@ description: Work commands for Construct.
 | `construct reflect` | Capture improvement feedback and update Construct core |
 | `construct search` | Hybrid search across project state |
 | `construct storage` | Manage storage backend |
+| `construct synthesize` | Cross-project synthesis: map each registered project, reduce to an origin-cited answer |
 | `construct tags` | Manage the controlled tag vocabulary (propose, add, deprecate, audit) |
 | `construct team` | Team review, template listing, and custom team authoring (`team:add` / `team:remove` are internal registry editors) |
 | `construct tools` | Detect optional publish pipeline binaries (Pandoc, D2, VHS, Playwright) |
@@ -341,6 +342,16 @@ Manage storage backend
 
 ```bash
 construct storage <status|reset>
+```
+
+## construct synthesize
+
+Cross-project synthesis: map each registered project, reduce to an origin-cited answer
+
+**Usage**
+
+```bash
+construct synthesize --ask "<question>" [--projects=all|self|id,...] [--template <name>] [--dry-run] [--json]
 ```
 
 ## construct tags

@@ -22,6 +22,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { rmTmpDir } from './helpers/cleanup.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const binPath = path.join(root, 'bin', 'construct');
@@ -35,8 +36,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  fs.rmSync(tmpDir, { recursive: true, force: true });
-  fs.rmSync(homeDir, { recursive: true, force: true });
+  rmTmpDir(tmpDir);
+  rmTmpDir(homeDir);
 });
 
 function seedProjectDirs(...names) {
