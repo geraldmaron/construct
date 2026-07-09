@@ -60,6 +60,7 @@
     "0067-deterministic-flow-engine",
     "0068-ingestion-sidecar-process-contract",
     "0069-ci-review-gate-deterministic-backend",
-    "0070-participation-pipeline-and-rules-schema"
+    "0070-participation-pipeline-and-rules-schema",
+    "0071-install-footprint-vs-org-scope-naming"
   ]
 }
