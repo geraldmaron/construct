@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Docs
+
+- `construct-ztksc.2`: the EXECUTE-vs-PLAN distinction (construct-vzg2i.1's first-run readiness line) was previously discoverable only via a buried readiness note in `lib/init-unified.mjs` and one sentence in `docs/guides/start/connect-your-editor.mdx` — a new user on a non-Claude-Code host got silent PLAN-only specialist output with no clear signal why. `docs/guides/start/install.mdx`, `docs/guides/start/first-task.mdx`, and `docs/guides/start/connect-your-editor.mdx` now each explain the distinction consistently with `formatFirstRunExecutionReadiness`'s actual wording (`lib/orchestration/readiness.mjs`): EXECUTE requires config-resolved `orchestration.workerBackend: "provider"` plus a materialized (non-`op://`) key for the selected provider family (`ANTHROPIC_API_KEY`/`OPENROUTER_API_KEY`/`OPENAI_API_KEY`); Claude Code and OpenCode EXECUTE via their attached host session with no key needed, every other host (Codex, Copilot, VS Code, Cursor) needs both the config key and a provider key to avoid silent PLAN-only degradation.
+
 ## [1.5.3] - 2026-07-09
 
 ### Fixed
