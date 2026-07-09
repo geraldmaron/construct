@@ -74,6 +74,17 @@ Good for: code review, architectural decisions, security-sensitive changes, PRDs
 </Card>
 </Cards>
 
+### Confirm specialists will actually run
+
+Both dispatch paths above route through specialists — but a specialist chain only runs a real LLM (**EXECUTE**) when a provider is attached; otherwise it only prepares prompts (**PLAN**) and returns no reasoned output. `construct init` printed a line telling you which one you're in:
+
+```
+specialists will EXECUTE (provider <family> + key found)
+specialists will only PLAN (fix: set orchestration.workerBackend=provider + a key)
+```
+
+If you're in Claude Code or OpenCode, a host session is already attached, so specialists EXECUTE with no extra setup. On any other host (Codex, Copilot, VS Code, Cursor), or if you want Claude Code to use a specific provider model instead of the host's own, set `orchestration.workerBackend: "provider"` in `construct.config.json` and export a materialized provider key (`ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY`, or `OPENAI_API_KEY`). Rerun `construct doctor` and check the last line before trusting specialist output. See [install → EXECUTE vs PLAN](/guides/start/install#execute-vs-plan-do-specialists-actually-run-an-llm).
+
 ## Drop a signal into the intake queue
 
 For work that arrives as a file — a bug report, a customer comment, a competitor scan, a postmortem draft — drop it into `inbox/` at the project root:
