@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-09T04:33:19.891Z",
+  "generatedAt": "2026-07-09T15:26:01.954Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 825,
+    "testFiles": 826,
     "topLevelTestFiles": 355,
-    "nestedTestFiles": 470,
+    "nestedTestFiles": 471,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 46,
     "byLayer": {
       "unit": 561,
-      "functional": 216,
+      "functional": 217,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
       "unit": 498,
-      "functional": 216,
+      "functional": 217,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -3713,6 +3713,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/resource-write-guard.functional.test.mjs — disk budget"
+    },
+    {
+      "path": "tests/functional/review-pr.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/review-pr.functional.test.mjs — `construct review pr`"
     },
     {
       "path": "tests/functional/routing-tables.test.mjs",

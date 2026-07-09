@@ -1886,10 +1886,10 @@ async function cmdMigrate(args) {
 }
 
 async function cmdReview(args) {
-  fs.mkdirSync(path.join(doctorRoot(), 'performance-reviews'), { recursive: true });
   const sub = args[0];
 
   if (!sub || sub === 'run') {
+    fs.mkdirSync(path.join(doctorRoot(), 'performance-reviews'), { recursive: true });
     const { runGenerator } = await import('../lib/performance/generate.mjs');
     const result = await runGenerator({ env: process.env });
     info(`Wrote ${result.filename} · ${result.agentCount} agent${result.agentCount === 1 ? '' : 's'}`);
@@ -1898,6 +1898,7 @@ async function cmdReview(args) {
   }
 
   if (sub === 'legacy') {
+    fs.mkdirSync(path.join(doctorRoot(), 'performance-reviews'), { recursive: true });
     if (!ENV.CONSTRUCT_TELEMETRY_PUBLIC_KEY || !ENV.CONSTRUCT_TELEMETRY_SECRET_KEY) {
       errorln('Error: CONSTRUCT_TELEMETRY_PUBLIC_KEY and CONSTRUCT_TELEMETRY_SECRET_KEY must be set.');
       errorln('Configure telemetry credentials in ~/.construct/config.env or .env.');
@@ -1907,7 +1908,22 @@ async function cmdReview(args) {
     return;
   }
 
-  errorln('Usage: construct review [run|legacy]');
+  if (sub === 'pr') {
+    const { runReviewPrCli } = await import('../lib/review-pr.mjs');
+    const { exitCode, error, result, json, outputPath } = runReviewPrCli(args.slice(1));
+    if (error) {
+      errorln(error);
+      process.exit(exitCode);
+    }
+    if (outputPath) {
+      info(`Wrote ${outputPath} · ${result.findings.length} finding${result.findings.length === 1 ? '' : 's'}`);
+    } else {
+      println(json);
+    }
+    return;
+  }
+
+  errorln('Usage: construct review [run|legacy|pr --base=<ref> [--output=<file>]]');
   process.exit(1);
 }
 
