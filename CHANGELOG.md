@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- `construct-jvjow.3`: `pm-repos` embed capability preset — the only shipped PM preset (`pm-feedback`) bound the product-manager specialist to feedback + Confluence; the most obvious missing pairing, a PM watching engineering repos and issues directly, had no preset. New `lib/embedded-contract/workflows/pm-repos.manifest.json` binds `cx-product-manager` to `github` + `atlassian-jira` (both already-shipped `sources.targets[]` providers, `lib/config/source-target-registry.mjs`) with a `PT24H` cadence and the new `pm-engineering-signals` output contract (`specialists/org/contracts/pm-engineering-signals.json`). New `lib/embed/presets/pm-repos.mjs` is a pure deterministic `reasoningExecutor`, mirroring `pm-feedback`'s shape exactly: it inventories bound pull requests and Jira issues, flags open PRs with no activity past 7 days (stalled-pr) and Jira issues marked In Progress with no linked PR (unlinked-in-progress), and emits an artifact-only digest — no writeIntent, no provider write. New `tests/acceptance/pm-repos-preset.acceptance.test.mjs` drives the real `runCapabilityTick` over a seeded snapshot built from `FakeGitHub`/`FakeJira` (no real network I/O, fetch-guarded), asserting the stalled-PR and unlinked-issue findings cite real source ids (never fabricated), zero adapter writes, and contract validation.
+
 ## [1.5.3] - 2026-07-09
 
 ### Fixed
