@@ -6,9 +6,10 @@
  */
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { rmTmpDir } from './helpers/cleanup.mjs';
 import { addObservation } from '../lib/observation-store.mjs';
 import {
   detectRecurringPatterns,
@@ -30,7 +31,7 @@ process.env.CX_HOME_OVERRIDE = HOME_SANDBOX;
 after(() => {
   if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
   else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
-  rmSync(HOME_SANDBOX, { recursive: true, force: true });
+  rmTmpDir(HOME_SANDBOX);
 });
 
 function makeDir() {
@@ -55,7 +56,7 @@ test('detectRecurringPatterns returns empty array when no observations', () => {
   try {
     const result = detectRecurringPatterns(dir);
     assert.deepEqual(result, []);
-  } finally { rmSync(dir, { recursive: true, force: true }); }
+  } finally { rmTmpDir(dir); }
 });
 
 test('detectRecurringPatterns clusters semantically similar observations', () => {
@@ -69,7 +70,7 @@ test('detectRecurringPatterns clusters semantically similar observations', () =>
     const result = detectRecurringPatterns(dir);
     // Should find at least one cluster with count >= 2
     assert.ok(result.some((r) => r.count >= 2), 'Expected a cluster with count >= 2');
-  } finally { rmSync(dir, { recursive: true, force: true }); }
+  } finally { rmTmpDir(dir); }
 });
 
 test('detectRecurringPatterns includes roles in cluster', () => {
@@ -84,7 +85,7 @@ test('detectRecurringPatterns includes roles in cluster', () => {
     if (cluster) {
       assert.ok(Array.isArray(cluster.roles));
     }
-  } finally { rmSync(dir, { recursive: true, force: true }); }
+  } finally { rmTmpDir(dir); }
 });
 
 // ── detectEscalatingRisks ─────────────────────────────────────────────────
@@ -97,7 +98,7 @@ test('detectEscalatingRisks returns empty when no anti-patterns', () => {
     ]);
     const result = detectEscalatingRisks(dir);
     assert.deepEqual(result, []);
-  } finally { rmSync(dir, { recursive: true, force: true }); }
+  } finally { rmTmpDir(dir); }
 });
 
 test('detectEscalatingRisks finds escalation when recent > older rate', () => {
@@ -117,7 +118,7 @@ test('detectEscalatingRisks finds escalation when recent > older rate', () => {
       assert.ok(r.type === 'escalating_risk');
       assert.ok(typeof r.recentCount === 'number');
     }
-  } finally { rmSync(dir, { recursive: true, force: true }); }
+  } finally { rmTmpDir(dir); }
 });
 
 // ── detectHotTopics ───────────────────────────────────────────────────────
@@ -127,7 +128,7 @@ test('detectHotTopics returns empty array when no observations', () => {
   try {
     const result = detectHotTopics(dir);
     assert.deepEqual(result, []);
-  } finally { rmSync(dir, { recursive: true, force: true }); }
+  } finally { rmTmpDir(dir); }
 });
 
 test('detectHotTopics returns terms sorted by weightedFrequency descending', () => {
@@ -147,7 +148,7 @@ test('detectHotTopics returns terms sorted by weightedFrequency descending', () 
     const terms = result.map((r) => r.term);
     assert.ok(terms.includes('authentication') || terms.includes('token'),
       'Expected "authentication" or "token" in hot topics');
-  } finally { rmSync(dir, { recursive: true, force: true }); }
+  } finally { rmTmpDir(dir); }
 });
 
 test('detectHotTopics result has required fields', () => {
@@ -163,7 +164,7 @@ test('detectHotTopics result has required fields', () => {
       assert.ok(typeof t.recentCount === 'number');
       assert.ok(typeof t.totalCount === 'number');
     }
-  } finally { rmSync(dir, { recursive: true, force: true }); }
+  } finally { rmTmpDir(dir); }
 });
 
 // ── detectDecisionDrift ───────────────────────────────────────────────────
@@ -176,7 +177,7 @@ test('detectDecisionDrift returns empty when no decisions', () => {
     ]);
     const result = detectDecisionDrift(dir);
     assert.deepEqual(result, []);
-  } finally { rmSync(dir, { recursive: true, force: true }); }
+  } finally { rmTmpDir(dir); }
 });
 
 test('detectDecisionDrift result has required fields when drift found', () => {
@@ -193,7 +194,7 @@ test('detectDecisionDrift result has required fields when drift found', () => {
       assert.ok(Array.isArray(d.conflictingObservations));
       assert.ok(typeof d.driftScore === 'number');
     }
-  } finally { rmSync(dir, { recursive: true, force: true }); }
+  } finally { rmTmpDir(dir); }
 });
 
 // ── buildTrendReport ──────────────────────────────────────────────────────
@@ -207,5 +208,5 @@ test('buildTrendReport returns all four detector results', () => {
     assert.ok(Array.isArray(report.decisionDrift));
     assert.ok(Array.isArray(report.hotTopics));
     assert.ok(typeof report.generatedAt === 'string');
-  } finally { rmSync(dir, { recursive: true, force: true }); }
+  } finally { rmTmpDir(dir); }
 });

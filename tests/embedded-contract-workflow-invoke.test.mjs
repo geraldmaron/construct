@@ -29,6 +29,20 @@ after(() => {
   }
 });
 
+// The allow-durable-write case records an observation through the machine-scoped
+// state root (ADR-0066, lib/observation-store.mjs -> resolveStateDir), so
+// CX_HOME_OVERRIDE is pinned for the whole file to keep that write off the real
+// developer machine's ~/.construct/projects.
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-ecl-wf-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
+
 test('unknown workflowType returns a structured error', async () => {
   const r = await invokeWorkflow({ workflowType: 'nope' }, { env: {} });
   assert.equal(r.status, 'error');
