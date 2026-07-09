@@ -4,6 +4,11 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- `pr-review.yml`: the `review` job failed on every fork PR — fork-triggered workflows get a read-only `GITHUB_TOKEN`, so the summary-comment step's `gh pr comment` was rejected (`Resource not accessible by integration`). Fork PRs now publish the cx-reviewer summary to the job summary instead; in-repo PRs keep the inline comment. First observed on #356.
+- `lib/auto-docs.mjs`: `buildStructureSection`'s `git ls-tree` call let git's stderr reach the user's terminal, so every `construct doctor` and `construct sync` run from the published package (where the package root is not a git repository) printed a stray `fatal: not a git repository` line before the health check output. The call now discards stderr, matching the `stdio: ['ignore', 'pipe', 'ignore']` pattern used elsewhere in the codebase; the existing catch already handled the fallback. Regression test spawns `regenerateDocs` in a non-git tmpdir and asserts clean stderr.
+
 ### Documentation
 
 - README: document the known `boolean` and `node-domexception` npm install deprecation warnings — both are transitive dependencies of upstream packages (`onnxruntime-node`, `@lancedb/lancedb`), harmless, and not silenceable from this package because npm ignores a package's own `overrides` on end-user installs.
