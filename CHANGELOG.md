@@ -6,6 +6,24 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Added
 
+- `construct-pteo2.21` (cdsp.82, prior-art and substrate validation research brief): new
+  `docs/notes/research/2026-07-09-cdsp-prior-art-and-substrate-validation.md` validates ADR-0070's
+  `participationRules` pipeline against ADR-0046 (registry model — consistent by construction, no
+  new merge boundary), ADR-0062 (persona reasoning frameworks — compatible but the recruited-role
+  vs. framework-`emits`-contract interaction is unstated in either ADR), and the bead's named
+  "ADR-0072 (org-api)": that ADR is real (`docs/decisions/adr/0072-no-code-org-authoring-api.md`,
+  status `proposed`, dated 2026-07-07) but does not exist on `staging` — it is stranded on
+  `refactor/consolidate-project-config-dir` at commit `ff1803b0`, and its branch's own `0070`/`0071`
+  numbers collide with `staging`'s already-merged ADR-0070/ADR-0071, a reconciliation-blocking fact
+  the cdsp.01 substrate audit's "stranded, needs cherry-pick" framing did not surface. Five external
+  sources (AutoGen, CrewAI, LangChain multi-agent docs, and two arXiv papers — DyLAN 2310.02170 and
+  the Embodied LLM Agents organizational-structure paper 2403.12482) were fetched and compared:
+  ADR-0070's centralized, declarative, non-learned recruitment is closest to AutoGen's rule-based
+  selector and CrewAI's manager-delegated allocation, furthest from LangChain's decentralized
+  Handoffs pattern, and has no analogue yet to the Embodied LLM Agents paper's runtime
+  role-reassignment loop — directly relevant prior art for the still-open `construct-pteo2.11`
+  (cdsp.40, join/leave). Passes `construct artifact validate --type=research-brief`.
+
 - `construct-ztksc.5` (implements ADR-0071's install-flag rename): `construct install` now accepts `--footprint=project|user|both` (`lib/setup.mjs`'s `parseFootprintFlag`) as the canonical flag disambiguating install-write-target from the unrelated `construct scope` org-profile command. `--scope=<value>` keeps working as a deprecated alias — same values, same semantics, identical dry-run/plan output — and prints a one-line `Deprecation notice: --scope is deprecated for \`construct install\`; use --footprint instead` to stderr; when both flags are passed, `--footprint` wins silently (no alias notice). `--help`, the bare-invocation hard-error, and the dry-run plan header now read `--footprint`/`Footprint:` as primary. `README.md`, `docs/guides/start/install.mdx`, `lib/cli-commands.mjs` (and its generated `docs/guides/reference/cli/core.md` via `construct docs:site`), `bin/construct-postinstall.mjs`, `lib/config/xdg.mjs`, `lib/doctor/watchers/credential-parity.mjs`, and the Stop-hook repair message in `bin/construct` now show `--footprint` in primary examples while still documenting `--scope` as a working alias. `docs/decisions/adr/0029-install-scopes-and-hook-budgets.md` gains an "Extended by" cross-reference to ADR-0071 — its `project|user|both` semantics are unchanged, only the flag spelling changed. `tests/functional/install-scope.functional.test.mjs` extended with `--footprint` coverage plus alias/precedence/deprecation-notice assertions; `tests/functional/install-legacy-global-cleanup.functional.test.mjs` and `tests/functional/postinstall-global-scope.functional.test.mjs` updated for the renamed primary flag and guidance text. `node bin/construct doctor` and `npm run docs:verify -- --strict` both pass.
 
 - `construct-b2t01.1`: `construct init` now asks once, at init time, whether to watch `inbox/` continuously with the embed daemon. On yes, wires `autoEmbed:true` into `construct.config.json` (`lib/embed/daemon.mjs`'s Job #9 `inbox-watcher` reads this flag) and, interactively, offers to run `construct embed supervise` to install background supervision (launchd/systemd) immediately; on no, prints the commands to enable it later (`construct config set autoEmbed true` and `construct embed supervise`). `--yes`/non-interactive runs never block on stdin — the default is off, taken instantly; pass `--watch-inbox` to opt in non-interactively (mirrors the existing `--with-adrs`/`--with-readme` flag pattern). Supervision install itself stays interactive-only so a non-interactive run never mutates system service state without a human present. New `tests/functional/init-watch-inbox-prompt.functional.test.mjs` spawns the real `construct init` binary in an isolated tmpdir and asserts both paths against the durable `construct.config.json` artifact.
