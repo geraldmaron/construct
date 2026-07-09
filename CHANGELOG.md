@@ -34,6 +34,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 - Dependency batch (construct-u835m — the 2026-07-06 dependabot PRs were batch-closed unmerged, applied deliberately here instead): `js-yaml` 4.2.0 → 5.2.1 (major: v5 drops the default export; all 11 import sites converted to namespace imports, `load`/`dump` API unchanged), in-range lockfile refresh via `npm update` (no majors crossed — `@ai-sdk/*` 4.x, `ai` 7.x, `apache-arrow` 21.x, `typescript` 7.x deferred to their own pass), `bun-binary-smoke.yml` checkout pin aligned to v7.0.0 (the other five action pins were already at the dependabot-target versions). `dependabot.yml` now targets `staging` on both ecosystems so update PRs follow the environment-promotion flow instead of landing unmergeable against `main`.
 
+### Removed
+
+- `lib/intake/daemon.mjs` (construct-b2t01.2): `buildIntakeDaemon`'s TTL/dead-letter/retry-budget inbox loop was reachable only from tests (`w5-self-loop`, `intake-pending-ttl`) — no CLI subcommand or daemon job ever called `buildIntakeDaemon`, `processInboxFile`, or `sweepPendingPackets`. The live continuous-inbox path is already covered by embed daemon Job #9 (`inbox-watcher` in `lib/embed/daemon.mjs`) and `construct intake process`, both of which scan `inbox/` via `lib/embed/inbox.mjs`'s `InboxWatcher` and persist packets through `lib/intake/queue.mjs` — a separate, actually-wired implementation. Deleted the module along with `tests/functional/intake-pending-ttl.functional.test.mjs` (entirely intake-daemon-scoped) and the intake-daemon-specific tests in `tests/functional/w5-self-loop.functional.test.mjs` (its daemon-safeguard-contract and rule-verifier tests, which exercise unrelated live modules, are unchanged). Corrected the stale `scripts/audit/02-deadcode.mjs` allowlist entry that claimed a `construct intake daemon start` entrypoint — no such CLI subcommand exists in `bin/construct`'s `cmdIntake` dispatch.
+
 ## [1.5.3] - 2026-07-09
 
 ### Fixed
