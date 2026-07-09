@@ -194,6 +194,35 @@ test('executeRun with provider backend marks tasks done with executor and output
   assert.ok(run.tasks.every((t) => t.output === 'specialist did the work'));
 });
 
+test('a research task whose output cites nothing is flagged by the evidence gate (construct-6yo6o)', async () => {
+  const cwd = project();
+  const unsourced = 'Agentic platforms are autonomous software ecosystems with decision layers and orchestration. '.repeat(15);
+  const fetchImpl = async () => ({ ok: true, json: async () => ({ content: [{ type: 'text', text: unsourced }] }) });
+  const run = await runOrchestration(
+    { request: 'Research agentic platforms and cite primary sources', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 0, moduleCount: 0 },
+    { env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test' }, cwd, workerBackend: 'provider', fetchImpl },
+  );
+  const researcher = run.tasks.find((t) => t.role === 'cx-researcher');
+  assert.ok(researcher, 'a research request dispatches a cx-researcher task');
+  assert.equal(researcher.status, 'done');
+  assert.ok(researcher.evidenceGate, 'the researcher task carries an evidence-gate verdict');
+  assert.equal(researcher.evidenceGate.ok, false, 'an unsourced research answer is flagged, not shipped as verified');
+  assert.equal(researcher.evidenceGate.kind, 'external');
+});
+
+test('a research task that cites a real source passes the evidence gate', async () => {
+  const cwd = project();
+  const sourced = `Node.js v24 is Active LTS per the release blog. See https://nodejs.org/en/blog/release/v24.0.0 for details. `.repeat(6);
+  const fetchImpl = async () => ({ ok: true, json: async () => ({ content: [{ type: 'text', text: sourced }] }) });
+  const run = await runOrchestration(
+    { request: 'Research the latest Node.js LTS and cite primary sources', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 0, moduleCount: 0 },
+    { env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test' }, cwd, workerBackend: 'provider', fetchImpl },
+  );
+  const researcher = run.tasks.find((t) => t.role === 'cx-researcher');
+  assert.ok(researcher?.evidenceGate, 'the researcher task carries an evidence-gate verdict');
+  assert.equal(researcher.evidenceGate.ok, true, 'a sourced research answer passes');
+});
+
 test('executeRun with provider backend records a failing task without crashing', async () => {
   const cwd = project();
   const fetchImpl = async () => ({ ok: false, status: 429, text: async () => 'rate limited' });
