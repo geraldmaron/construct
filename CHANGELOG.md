@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- `construct-b2t01.1`: `construct init` now asks once, at init time, whether to watch `inbox/` continuously with the embed daemon. On yes, wires `autoEmbed:true` into `construct.config.json` (`lib/embed/daemon.mjs`'s Job #9 `inbox-watcher` reads this flag) and, interactively, offers to run `construct embed supervise` to install background supervision (launchd/systemd) immediately; on no, prints the commands to enable it later (`construct config set autoEmbed true` and `construct embed supervise`). `--yes`/non-interactive runs never block on stdin — the default is off, taken instantly; pass `--watch-inbox` to opt in non-interactively (mirrors the existing `--with-adrs`/`--with-readme` flag pattern). Supervision install itself stays interactive-only so a non-interactive run never mutates system service state without a human present. New `tests/functional/init-watch-inbox-prompt.functional.test.mjs` spawns the real `construct init` binary in an isolated tmpdir and asserts both paths against the durable `construct.config.json` artifact.
+
 ## [1.5.3] - 2026-07-09
 
 ### Fixed
