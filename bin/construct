@@ -7617,12 +7617,13 @@ const handlers = new Map([
      if (typeof code === 'number' && code !== 0) process.exit(code);
    }],
    // `graph` carries two disjoint subcommand families: the living dependency
-   // graph (build/stat/query/validate/impacted/missing-tests/missing-docs/
-   // stale/dependencies/providers/surfaces/explain → lib/graph/cli.mjs) and the
-   // intake task graph (list/show/from-intake/status/recommend → cmdGraph).
+   // graph (build/build-targets/stat/query/validate/impacted/missing-tests/
+   // missing-docs/stale/dependencies/providers/surfaces/explain →
+   // lib/graph/cli.mjs) and the intake task graph (list/show/from-intake/
+   // status/recommend → cmdGraph).
    ['graph', async (args) => {
      const DEPENDENCY_GRAPH_SUBCOMMANDS = new Set([
-       'build', 'stat', 'query', 'validate', 'impacted',
+       'build', 'build-targets', 'stat', 'query', 'validate', 'impacted',
        'missing-tests', 'missing-docs', 'stale', 'dependencies', 'providers', 'surfaces', 'explain', 'owasp',
      ]);
      if (DEPENDENCY_GRAPH_SUBCOMMANDS.has(args[0])) {
