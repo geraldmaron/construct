@@ -1046,7 +1046,7 @@ async function cmdDoctor() {
       const missing = referenced.filter((scriptPath) => !fs.existsSync(scriptPath));
       if (referenced.length > 0 && missing.length > 0) {
         add(
-          `Claude Stop hooks broken: ${missing.length} hook${missing.length === 1 ? '' : 's'} do not resolve. Re-run \`construct install --scope=user\` (symlinks ${ROOT_DIR}/lib → ${installRoot.replace(/\/hooks$/, '')}).`,
+          `Claude Stop hooks broken: ${missing.length} hook${missing.length === 1 ? '' : 's'} do not resolve. Re-run \`construct install --footprint=user\` (symlinks ${ROOT_DIR}/lib → ${installRoot.replace(/\/hooks$/, '')}).`,
           false,
           false,
         );
