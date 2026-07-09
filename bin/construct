@@ -19,6 +19,7 @@ import { CLI_COMMANDS, CATEGORY_ORDER, formatCommandHelp } from '../lib/cli-comm
 import { buildStatus, formatStatusReport } from '../lib/status.mjs';
 import { validateRegistry } from '../lib/validator.mjs';
 import { readCurrentModels, readOpenRouterApiKeyFromOpenCodeConfig, applyToEnv, resetEnv, setModelWithTierInference, listAvailableModels } from '../lib/model-router.mjs';
+import { MODEL_TIERS } from '../lib/model-tiers.mjs';
 import { pollFreeModels, topForTier, selectForTier } from '../lib/model-free-selector.mjs';
 import { cmdMcpList, cmdMcpAdd, cmdMcpRemove, cmdMcpInfo } from '../lib/mcp-manager.mjs';
 import { cmdOllama } from '../lib/ollama-manager.mjs';
@@ -4297,7 +4298,7 @@ async function cmdOrchestrate(args) {
     println(summarizeOrchestrationReadiness(readiness));
     println(`Reason: ${readiness.reasonCode}`);
     println(`Next: ${readiness.nextStep}`);
-    const modelLine = ['reasoning', 'standard', 'fast']
+    const modelLine = MODEL_TIERS
       .map((tier) => `${tier}=${readiness.modelResolved?.[tier] ? 'resolved' : 'unresolved'}`)
       .join(' ');
     println(`Execution: workerBackend=${readiness.workerBackend} webMode=${readiness.webMode} credentialMaterializable=${readiness.credentialMaterializable} (${modelLine})`);
@@ -4634,7 +4635,7 @@ async function cmdModels(args) {
     }
     const models = await pollFreeModels(apiKey);
     println('Available free models on OpenRouter:\n');
-    for (const currentTier of ['reasoning', 'standard', 'fast']) {
+    for (const currentTier of MODEL_TIERS) {
       const top = topForTier(models, currentTier, 3);
       println(`  ${currentTier} (top ${top.length}):`);
       top.forEach((model, index) => println(`    ${index + 1}. ${model.id}`));
@@ -4646,7 +4647,7 @@ async function cmdModels(args) {
     const apiKey = process.env.OPENROUTER_API_KEY || readOpenRouterApiKeyFromOpenCodeConfig();
     const models = await pollFreeModels(apiKey);
     const selections = {};
-    for (const currentTier of ['reasoning', 'standard', 'fast']) {
+    for (const currentTier of MODEL_TIERS) {
       const fallbacks = [];
       const id = selectForTier(models, currentTier, fallbacks);
       if (id) selections[currentTier] = id;
@@ -4673,7 +4674,7 @@ async function cmdModels(args) {
       await import('../lib/model-cheapest-provider.mjs');
     const allTiers = args.includes('--all-tiers') || !args.find((arg) => arg.startsWith('--tier='));
     const tierArg = args.find((arg) => arg.startsWith('--tier='))?.split('=')[1];
-    const tiers = allTiers ? ['reasoning', 'standard', 'fast'] : (tierArg ? [tierArg] : ['standard']);
+    const tiers = allTiers ? [...MODEL_TIERS] : (tierArg ? [tierArg] : ['standard']);
     const selections = {};
     for (const currentTier of tiers) {
       const { selectCheapestProvider } = await import('../lib/model-cheapest-provider.mjs');
@@ -4710,9 +4711,9 @@ async function cmdModels(args) {
     return;
   }
   const result = readCurrentModels(envPath, {});
-  const nothingSelected = ['reasoning', 'standard', 'fast'].every((t) => !result[t]);
+  const nothingSelected = MODEL_TIERS.every((t) => !result[t]);
   println('Current model assignments:');
-  for (const currentTier of ['reasoning', 'standard', 'fast']) {
+  for (const currentTier of MODEL_TIERS) {
     const id = result[currentTier];
     const source = result.sources?.[currentTier] || (id ? 'registry' : 'not configured');
     println(`  ${currentTier.padEnd(11)}${id ? `${id} [${source}]` : '(not configured)'}`);
@@ -4777,7 +4778,7 @@ async function cmdModelsPolicy(args) {
       return;
     }
     println(`Applied \`${preset}\` policy to ${registryPath}:`);
-    for (const tier of ['reasoning', 'standard', 'fast']) {
+    for (const tier of MODEL_TIERS) {
       const def = result.models[tier];
       const primary = def?.primary ?? '(unset)';
       const fallback = def?.fallback?.length ? `  (fallback: ${def.fallback.join(', ')})` : '';
