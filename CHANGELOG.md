@@ -6,6 +6,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Fixed
 
+- `lib/setup.mjs` (construct-vzg2i.3): a bare `construct install` (no `--scope`) silently defaulted to the project-scope no-op and exited 0 having written nothing — a trap for every new user, since the machine-scope setup that actually installs Construct only ran when `--scope=user`/`--scope=both` was named explicitly. `parseScopeFlag` now reports whether `--scope` was passed at all; a bare invocation hard-errors (exit 1) naming the three valid scopes, while an explicit `--scope=project` keeps its documented guidance-only behavior (ADR-0029) unchanged. `--dry-run` without `--scope` is unaffected — it already discloses "no changes written" up front. README, the CLI reference, and the architecture footprint-contract doc updated to match; functional test in `tests/functional/install-scope.functional.test.mjs` asserts the new exit code and message.
+
 - `tests/acceptance/{packed-install,global-install,05-optional-dep-degradation}.test.mjs` (construct-rgqym): all three packing acceptance suites ran `npm pack` into the shared repo root and two deleted the tarball in cleanup, so under node --test's concurrent file execution one suite could install while another rewrote or removed the same `.tgz` — npm's `tarball data … seems to be corrupted` failure that broke the macOS legs (slower runners lose the race; Ubuntu usually wins it) of push-to-main CI on three consecutive merges. Each suite now packs into its own `--pack-destination` tmpdir and cleans up only its private copy.
 
 ### Changed

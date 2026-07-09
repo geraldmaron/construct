@@ -31,7 +31,7 @@ Bootstrap local services (once per machine, opt-in to machine-scope writes):
 construct install --scope=user --yes
 ```
 
-`construct install` defaults to `--scope=project`, which writes nothing and prints scope guidance — see the [footprint contract](#footprint-contract) below or [ADR 0029](docs/decisions/adr/0029-install-scopes-and-hook-budgets.md). Use `--scope=user` for machine setup, `--scope=both` for both.
+`construct install` requires an explicit `--scope` — a bare invocation hard-errors naming the flag rather than silently writing nothing. `--scope=project` prints scope guidance without writing anything (see the [footprint contract](#footprint-contract) below or [ADR 0029](docs/decisions/adr/0029-install-scopes-and-hook-budgets.md)); use `--scope=user` for machine setup, `--scope=both` for both.
 
 Initialize a project:
 
