@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- `tests/acceptance/{packed-install,global-install,05-optional-dep-degradation}.test.mjs` (construct-rgqym): all three packing acceptance suites ran `npm pack` into the shared repo root and two deleted the tarball in cleanup, so under node --test's concurrent file execution one suite could install while another rewrote or removed the same `.tgz` — npm's `tarball data … seems to be corrupted` failure that broke the macOS legs (slower runners lose the race; Ubuntu usually wins it) of push-to-main CI on three consecutive merges. Each suite now packs into its own `--pack-destination` tmpdir and cleans up only its private copy.
+
 ### Changed
 
 - Dependency batch (construct-u835m — the 2026-07-06 dependabot PRs were batch-closed unmerged, applied deliberately here instead): `js-yaml` 4.2.0 → 5.2.1 (major: v5 drops the default export; all 11 import sites converted to namespace imports, `load`/`dump` API unchanged), in-range lockfile refresh via `npm update` (no majors crossed — `@ai-sdk/*` 4.x, `ai` 7.x, `apache-arrow` 21.x, `typescript` 7.x deferred to their own pass), `bun-binary-smoke.yml` checkout pin aligned to v7.0.0 (the other five action pins were already at the dependabot-target versions). `dependabot.yml` now targets `staging` on both ecosystems so update PRs follow the environment-promotion flow instead of landing unmergeable against `main`.
