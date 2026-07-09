@@ -58,9 +58,14 @@ jobs:
             echo '{"findings":[],"summary":"construct review produced no output — manual review still required"}' > .cx/pr-review.json
           fi
 
+      # Fork PRs run with a read-only GITHUB_TOKEN (pull-requests: write is not
+      # granted to workflows triggered from forks), so `gh pr comment` fails with
+      # "Resource not accessible by integration". Publish to the job summary
+      # instead for forks; in-repo PRs keep the inline comment.
       - name: Post review summary as a PR comment
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IS_FORK: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
         run: |
           REPO="${GITHUB_REPOSITORY}"
           PR_NUMBER="${{ github.event.pull_request.number }}"
@@ -71,4 +76,8 @@ jobs:
              else "### Findings\n\n" + ((.findings | map("- **" + (.severity // "info") + "**: " + (.message // .summary // "(no message)"))) | join("\n"))
              end)
           ' .cx/pr-review.json)"
-          gh pr comment "$PR_NUMBER" --repo "$REPO" --body "$BODY"
+          if [ "$IS_FORK" = "true" ]; then
+            printf '%s\n' "$BODY" >> "$GITHUB_STEP_SUMMARY"
+          else
+            gh pr comment "$PR_NUMBER" --repo "$REPO" --body "$BODY"
+          fi
