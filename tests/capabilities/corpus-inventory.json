@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-09T15:26:01.954Z",
+  "generatedAt": "2026-07-09T15:50:36.767Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 826,
-    "topLevelTestFiles": 355,
+    "testFiles": 827,
+    "topLevelTestFiles": 356,
     "nestedTestFiles": 471,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 46,
     "byLayer": {
-      "unit": 561,
+      "unit": 562,
       "functional": 217,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 498,
+      "unit": 499,
       "functional": 217,
       "visual": 12,
       "structural-guard": 19,
@@ -6333,6 +6333,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/sync-contract.test.mjs — contract tests for sync-specialists.mjs platform output shapes."
+    },
+    {
+      "path": "tests/sync-copilot-deselect.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/sync-copilot-deselect.test.mjs — a sync that does not select the"
     },
     {
       "path": "tests/sync-specialists-header.test.mjs",
