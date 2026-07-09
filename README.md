@@ -10,7 +10,7 @@
 
 Construct sits on top of Claude Code, OpenCode, Codex, Cursor, and Copilot. You talk to one persona called `construct`. Behind it is a team of specialists shaped by your **org profile**: software R&D by default, with curated profiles for operations, creative, and research orgs, plus a schema-validated escape hatch for custom profiles. Each profile organizes its specialists by department (Product, Engineering, Operations, etc.) and carries its own intake taxonomy, doc templates, and role set. Sessions survive boundary changes via durable state in `.cx/`, beads, and a local vector index. Solo by default. Can deploy centrally for teams that want shared memory, telemetry, queues, and policy.
 
-`construct scope show|list|set <id>` to switch. See [Profile lifecycle](https://geraldmaron.github.io/construct/concepts/scope-lifecycle) for how new profiles are built (it's a research process, not a JSON exercise).
+`construct scope show|list|set <id>` to switch org-scope/profile. See [Profile lifecycle](https://geraldmaron.github.io/construct/concepts/scope-lifecycle) for how new profiles are built (it's a research process, not a JSON exercise). This is unrelated to the `--scope` flag on `construct install` below (install-write-target vs. org profile) — see [ADR-0071](docs/decisions/adr/0071-install-footprint-vs-org-scope-naming.md), which records the decision to rename the install flag to `--footprint`.
 
 The team and enterprise modes exist because I wanted to learn what shipping a real multi-tenant tool would look like. The project is still open source, the code is still public, and the bar is still "does this help me learn." Run it solo if that's all you need.
 
@@ -31,7 +31,7 @@ Bootstrap local services (once per machine, opt-in to machine-scope writes):
 construct install --scope=user --yes
 ```
 
-`construct install` requires an explicit `--scope` — a bare invocation hard-errors naming the flag rather than silently writing nothing. `--scope=project` prints scope guidance without writing anything (see the [footprint contract](#footprint-contract) below or [ADR 0029](docs/decisions/adr/0029-install-scopes-and-hook-budgets.md)); use `--scope=user` for machine setup, `--scope=both` for both.
+`construct install` requires an explicit `--scope` — a bare invocation hard-errors naming the flag rather than silently writing nothing. `--scope=project` prints scope guidance without writing anything (see the [footprint contract](#footprint-contract) below or [ADR 0029](docs/decisions/adr/0029-install-scopes-and-hook-budgets.md)); use `--scope=user` for machine setup, `--scope=both` for both. (`--scope` here means "where Construct writes on this machine," not the `construct scope` org-profile command above — [ADR-0071](docs/decisions/adr/0071-install-footprint-vs-org-scope-naming.md) is renaming this flag to `--footprint`.)
 
 Initialize a project:
 
