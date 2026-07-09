@@ -6851,6 +6851,10 @@ const handlers = new Map([
   ['config', cmdConfig],
   ['approvals', cmdApprovals],
   ['sources', cmdSources],
+  ['monitor', async (args) => {
+    const { runMonitorCli } = await import('../lib/monitor-cli.mjs');
+    return runMonitorCli(args, { cwd: process.cwd(), rootDir: ROOT_DIR, homeDir: HOME });
+  }],
   ['templates', cmdTemplates],
   ['intake', cmdIntake],
   ['recommendations', cmdRecommendations],
