@@ -4360,7 +4360,13 @@ async function cmdOrchestrate(args) {
         const env = await res.json();
         if (!res.ok) { errorln(`Daemon error (${res.status}): ${env.error || 'unknown'}`); process.exit(1); }
         if (wantsJson) { println(JSON.stringify(env.data, null, 2)); return; }
-        println(`Run ${env.data.runId} started on ${base} — ${env.data.status} · executionMode=${env.data.execution?.executionMode}. Poll: construct orchestrate status ${env.data.runId} --remote`);
+        // AP5.4: the remote payload is subject to the same honest terminal-status
+        // taxonomy as a local run (see the `status --remote` branch below) — shape
+        // it before printing so a prepare-only remote run reports the same way.
+        const { shapeRun: shapeRemoteRun } = await import('../lib/mcp/tools/orchestration-run.mjs');
+        const remoteShaped = shapeRemoteRun(env.data);
+        println(`Run ${env.data.runId} started on ${base} — ${remoteShaped.status} · executionMode=${env.data.execution?.executionMode}. Poll: construct orchestrate status ${env.data.runId} --remote`);
+        if (remoteShaped.message) println(`  ${remoteShaped.message}`);
         return;
       }
       if (sub === 'status') {
@@ -4455,6 +4461,10 @@ async function cmdOrchestrate(args) {
     const shaped = shapeRun(run);
     println(`Run ${run.runId} — ${shaped.status} · executionMode=${shaped.executionMode} · backend=${run.workerBackend} · hostRole=${run.hostRole}`);
     if (shaped.degraded) println(`  degraded: ${shaped.degradationReason}`);
+    // construct-vzg2i.2: shapeRun's message field carries the loud prepare-only
+    // statement + exact next step so it never sits only in run metadata a
+    // caller has to know to check.
+    if (shaped.message) println(`  ${shaped.message}`);
     if (run.tasks.length) println(`  tasks: ${run.tasks.map((t) => `${t.role}(${t.status})`).join(' → ')}`);
     else println('  tasks: none (no Construct-owned specialist sequence for this execution mode)');
     if (run.contextBindings?.length) {
