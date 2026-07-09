@@ -189,6 +189,19 @@ test('orchestrationPolicy omits draftTask for immediate requests', async () => {
   assert.equal(result.handoffPacket, null);
 });
 
+test('orchestrationPolicy hands back an explicit orchestration_run nextAction for orchestrated work, null for immediate', async () => {
+  const research = await orchestrationPolicy({ request: 'Research agentic platforms and cite primary sources' });
+  assert.notEqual(research.track, EXECUTION_TRACKS.immediate);
+  assert.ok(research.nextAction, 'a non-immediate plan carries a next action');
+  assert.equal(research.nextAction.tool, 'orchestration_run', 'routes to the governed run, not a workflow-type-as-tool');
+  assert.equal(research.nextAction.arguments.request, 'Research agentic platforms and cite primary sources');
+  assert.match(research.nextAction.instruction, /not a tool|do not call/i, 'warns against inventing a tool from the workflow type');
+
+  const immediate = await orchestrationPolicy({ request: 'explain how the caching layer works', fileCount: 1, moduleCount: 1 });
+  assert.equal(immediate.track, EXECUTION_TRACKS.immediate);
+  assert.equal(immediate.nextAction, null, 'immediate requests need no orchestration_run hop');
+});
+
 test('orchestrationPolicy includes approvalRequired and terminalStates', async () => {
   const result = await orchestrationPolicy({ request: 'build this feature end to end and ship it', fileCount: 4, moduleCount: 2 });
   assert.equal(typeof result.approvalRequired, 'boolean');
