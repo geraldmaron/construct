@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- `lib/auto-docs.mjs`: `buildStructureSection`'s `git ls-tree` call let git's stderr reach the user's terminal, so every `construct doctor` and `construct sync` run from the published package (where the package root is not a git repository) printed a stray `fatal: not a git repository` line before the health check output. The call now discards stderr, matching the `stdio: ['ignore', 'pipe', 'ignore']` pattern used elsewhere in the codebase; the existing catch already handled the fallback. Regression test spawns `regenerateDocs` in a non-git tmpdir and asserts clean stderr.
+
 ## [1.5.2] - 2026-07-09
 
 ### Added
