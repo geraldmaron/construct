@@ -13,11 +13,12 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { spawnSync } from 'node:child_process';
+import { rmTmpDir } from './helpers/cleanup.mjs';
 
 test('session-start hook remains non-blocking and emits resume context', (t) => {
   const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-session-start-'));
-  t.after(() => { try { fs.rmSync(cwd, { recursive: true, force: true }); } catch {} });
+  t.after(() => { rmTmpDir(cwd); });
   fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
   fs.writeFileSync(path.join(cwd, '.cx', 'context.json'), `${JSON.stringify({ format: 'json', savedAt: new Date().toISOString(), markdown: '# Session Context\n' }, null, 2)}\n`);
 
@@ -41,7 +42,7 @@ test('session-start hook remains non-blocking and emits resume context', (t) => 
 test('session-start names every configured provider_fetch source in the wired-sources hint', (t) => {
   const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-session-start-sources-'));
-  t.after(() => { try { fs.rmSync(cwd, { recursive: true, force: true }); } catch {} });
+  t.after(() => { rmTmpDir(cwd); });
 
   const result = spawnSync('node', [path.join(repoRoot, 'lib', 'hooks', 'session-start.mjs')], {
     cwd,

@@ -14,6 +14,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { describe, it, before, after, beforeEach } from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const HERE = path.dirname(new URL(import.meta.url).pathname);
 const ROOT = path.resolve(HERE, '..', '..');
@@ -28,7 +29,7 @@ before(() => {
 });
 
 after(() => {
-  fs.rmSync(tmpDir, { recursive: true, force: true });
+  rmTmpDir(tmpDir);
 });
 
 beforeEach(() => {

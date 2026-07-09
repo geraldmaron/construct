@@ -18,6 +18,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
+import { rmTmpDir } from '../helpers/cleanup.mjs';
+
 const SERVER = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'lib', 'mcp', 'server.mjs');
 
 function makeToolkitDir(version) {
@@ -80,7 +82,7 @@ test('status resource flips restartRequired when package.json version changes un
     assert.equal(after.restartRequired, true);
   } finally {
     proc.kill();
-    fs.rmSync(toolkitDir, { recursive: true, force: true });
+    rmTmpDir(toolkitDir);
   }
 });
 
@@ -125,6 +127,6 @@ test('no behavior change when versions match (idempotent, no restartRequired)', 
     assert.equal(payload.startedVersion, payload.diskVersion);
   } finally {
     proc.kill();
-    fs.rmSync(toolkitDir, { recursive: true, force: true });
+    rmTmpDir(toolkitDir);
   }
 });

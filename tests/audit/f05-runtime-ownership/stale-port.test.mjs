@@ -28,6 +28,7 @@ import test from 'node:test';
 
 import { stopServices } from '../../../lib/service-manager.mjs';
 import { getUserEnvPath } from '../../../lib/env-config.mjs';
+import { rmTmpDir } from '../../helpers/cleanup.mjs';
 
 function freePort() {
   return new Promise((resolve, reject) => {
@@ -76,7 +77,7 @@ test('[R16] stop must not kill the foreign owner of a stale configured port', as
   t.after(() => {
     process.kill = realKill;
     try { realKill.call(process, foreign.pid, 'SIGKILL'); } catch {}
-    try { fs.rmSync(home, { recursive: true, force: true }); } catch {}
+    rmTmpDir(home);
   });
 
   await new Promise((resolve) => setTimeout(resolve, 150));

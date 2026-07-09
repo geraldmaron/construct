@@ -11,6 +11,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { describe, it, before, after } from 'node:test';
+import { rmTmpDir } from './helpers/cleanup.mjs';
 
 const HERE = path.dirname(new URL(import.meta.url).pathname);
 const ROOT = path.resolve(HERE, '..');
@@ -19,7 +20,7 @@ const HOOK = path.join(ROOT, 'lib', 'hooks', 'scan-secrets.mjs');
 let tmpDir;
 
 before(() => { tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-secrets-')); });
-after(() => { fs.rmSync(tmpDir, { recursive: true, force: true }); });
+after(() => { rmTmpDir(tmpDir); });
 
 function runScanOn(content, ext = '.env') {
   const file = path.join(tmpDir, `fixture${ext}`);

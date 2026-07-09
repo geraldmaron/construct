@@ -27,6 +27,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
+import { rmTmpDir } from '../../helpers/cleanup.mjs';
+
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const POSTINSTALL = path.join(REPO_ROOT, 'bin', 'construct-postinstall.mjs');
 
@@ -78,8 +80,8 @@ function findInstallReceipt(projectRoot) {
 test('[R3] scripts-enabled postinstall must leave an itemized mutation manifest with a recovery command', (t) => {
   const { projectRoot, home, result } = runPostinstallInConsumer();
   t.after(() => {
-    try { fs.rmSync(projectRoot, { recursive: true, force: true }); } catch { /* tmp */ }
-    try { fs.rmSync(home, { recursive: true, force: true }); } catch { /* tmp */ }
+    rmTmpDir(projectRoot);
+    rmTmpDir(home);
   });
 
   assert.equal(result.status, 0, `postinstall should exit 0; got ${result.status}: ${result.stderr}`);
@@ -111,8 +113,8 @@ test('[R3] scripts-enabled postinstall must leave an itemized mutation manifest 
 test('[R3] the manifest must record the .gitignore append so it can be reverted', (t) => {
   const { projectRoot, home, result } = runPostinstallInConsumer();
   t.after(() => {
-    try { fs.rmSync(projectRoot, { recursive: true, force: true }); } catch { /* tmp */ }
-    try { fs.rmSync(home, { recursive: true, force: true }); } catch { /* tmp */ }
+    rmTmpDir(projectRoot);
+    rmTmpDir(home);
   });
 
   assert.equal(result.status, 0, `postinstall should exit 0; got ${result.status}: ${result.stderr}`);

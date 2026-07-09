@@ -4,10 +4,11 @@
 
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { describe, it } from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const HERE = path.dirname(new URL(import.meta.url).pathname);
 const ROOT = path.resolve(HERE, '..', '..');
@@ -37,7 +38,7 @@ describe('graph-impact-advisory hook', () => {
 
   it('advises when graph is absent on lib edits', (t) => {
     const emptyRoot = mkdtempSync(path.join(tmpdir(), 'construct-graph-hook-'));
-    t.after(() => rmSync(emptyRoot, { recursive: true, force: true }));
+    t.after(() => rmTmpDir(emptyRoot));
     const relFile = 'lib/example.mjs';
     const r = runHook({ filePath: path.join(emptyRoot, relFile), cwd: emptyRoot });
     assert.equal(r.status, 0);

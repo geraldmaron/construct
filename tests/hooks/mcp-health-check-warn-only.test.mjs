@@ -6,10 +6,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const HOOK = join(REPO_ROOT, 'lib', 'hooks', 'mcp-health-check.mjs');
@@ -43,7 +44,7 @@ test('a single tool failure never blocks the next tool use (warn-only)', () => {
     assert.equal(pre.status, 0, 'PreToolUse must exit 0 even with a recent failure');
     assert.match(pre.stderr, /failed 1 time/);
   } finally {
-    rmSync(home, { recursive: true, force: true });
+    rmTmpDir(home);
   }
 });
 
@@ -58,7 +59,7 @@ test('repeated failures still never block, and never exit 2', () => {
     assert.equal(pre.status, 0);
     assert.match(pre.stderr, /failed 5 times/);
   } finally {
-    rmSync(home, { recursive: true, force: true });
+    rmTmpDir(home);
   }
 });
 
@@ -81,7 +82,7 @@ test('failure counter resets once the failure window has elapsed', () => {
     assert.equal(after.Claude_Preview.failures, 0);
     assert.equal(after.Claude_Preview.status, 'healthy');
   } finally {
-    rmSync(home, { recursive: true, force: true });
+    rmTmpDir(home);
   }
 });
 
@@ -92,6 +93,6 @@ test('non-MCP tool calls pass through untouched', () => {
     assert.equal(pre.status, 0);
     assert.equal(pre.stdout.trim(), JSON.stringify({ tool_name: 'Read' }));
   } finally {
-    rmSync(home, { recursive: true, force: true });
+    rmTmpDir(home);
   }
 });

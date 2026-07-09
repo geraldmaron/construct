@@ -17,6 +17,7 @@ import { describe, it, beforeEach, afterEach } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import { FilesystemIntakeQueue } from '../lib/intake/queue.mjs';
+import { rmTmpDir } from './helpers/cleanup.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,8 +33,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  fs.rmSync(projectRoot, { recursive: true, force: true });
-  fs.rmSync(homeDir, { recursive: true, force: true });
+  rmTmpDir(projectRoot);
+  rmTmpDir(homeDir);
 });
 
 function runCli(args, env = {}) {
