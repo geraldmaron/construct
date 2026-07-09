@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- `construct-jvjow.1` (unified monitor entry): new `construct monitor --as <capability-id> --targets <provider:value>[,...]` assembles, in one command, the three durable artifacts that setting up continuous monitoring-as-a-role previously required hand-assembling across three separate commands: `construct.config.json` `sources.targets[]` (via the same `lib/config/source-targets.mjs`/`lib/config/project-config.mjs` functions `construct sources add` calls), embed.yaml's `roles{}` block and a regenerated `sources:` block (new `lib/embed/config.mjs` `serializeEmbedYaml`/`writeEmbedYaml`, the write-side counterpart of the existing `parseEmbedYaml`), and the enabled `.cx/embed/<id>.manifest.json` capability manifest (via `lib/embed/capability-lifecycle.mjs` `enableCapability`, the same function `construct embed enable <id>` calls) — then starts the daemon (via `lib/embed/cli.mjs` `runEmbedCli(['start', ...])`, the same function `construct embed start` calls; `--no-start` skips this, `--supervise` also installs OS-level supervision). `--as` must name a capability already discoverable via `construct embed list`; its `embed.specialist` becomes `embed.yaml` `roles.primary`. Re-running with the same `--targets` upserts by deterministic id rather than erroring on duplicates. Prints a summary naming every file and field it wrote. New `lib/monitor-cli.mjs`; functional test `tests/functional/monitor-cli.functional.test.mjs` (real-binary, isolated HOME/cwd): usage/unknown-capability fail closed and write nothing, a full run writes all three artifacts and the summary names them, idempotent re-run, and a second capability's specialist correctly drives `roles.primary`.
+
 ## [1.5.3] - 2026-07-09
 
 ### Fixed
