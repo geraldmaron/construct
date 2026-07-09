@@ -13,11 +13,12 @@
 
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { readFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { readFileSync, mkdtempSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import test, { before, after } from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = resolve(ROOT, 'bin', 'construct');
@@ -28,7 +29,7 @@ const BIN = resolve(ROOT, 'bin', 'construct');
 
 let HOME;
 before(() => { HOME = mkdtempSync(join(tmpdir(), 'optional-deps-absent-home-')); });
-after(() => { rmSync(HOME, { recursive: true, force: true }); });
+after(() => { rmTmpDir(HOME); });
 
 // Static top-level import patterns that would throw when ink/react are absent.
 

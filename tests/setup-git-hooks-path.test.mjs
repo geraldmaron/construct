@@ -14,6 +14,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { ensureGitHooksPath } from '../lib/setup.mjs';
+import { rmTmpDir } from './helpers/cleanup.mjs';
 
 // `GIT_CEILING_DIRECTORIES` stops git from walking past the tmp dir when it
 // looks for a parent repo. Without this, if `git init` in the tmp dir failed
@@ -26,7 +27,7 @@ function gitEnv(ceilingDir) {
 
 function mkProject(t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-setup-hookspath-'));
-  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(dir));
   const ceiling = os.tmpdir();
   const init = spawnSync('git', ['init', '-q'], { cwd: dir, env: gitEnv(ceiling) });
   if (init.status !== 0) {
@@ -89,7 +90,7 @@ describe('ensureGitHooksPath', () => {
 
   it('skips when no .beads/hooks/pre-commit exists in the project', (t) => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-setup-hookspath-skip-'));
-    t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+    t.after(() => rmTmpDir(dir));
     const env = { ...process.env, GIT_CEILING_DIRECTORIES: os.tmpdir() };
     const init = spawnSync('git', ['init', '-q'], { cwd: dir, env });
     if (init.status !== 0) throw new Error(`git init failed: ${init.stderr || init.stdout || ''}`);

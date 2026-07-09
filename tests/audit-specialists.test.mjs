@@ -4,10 +4,11 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { auditSpecialists } from '../lib/audit-specialists.mjs';
+import { rmTmpDir } from './helpers/cleanup.mjs';
 
 test('auditSpecialists covers all registry specialists', () => {
   const r = auditSpecialists({ silent: true });
@@ -25,7 +26,7 @@ test('auditSpecialists cross-checks docArtifacts against manifest', () => {
 test('construct audit specialists CLI emits JSON', async (t) => {
   const { execFileSync } = await import('node:child_process');
   const home = mkdtempSync(join(tmpdir(), 'audit-specialists-home-'));
-  t.after(() => rmSync(home, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(home));
   const out = execFileSync('node', ['bin/construct', 'audit', 'specialists', '--json'], {
     cwd: new URL('..', import.meta.url).pathname,
     encoding: 'utf8',
