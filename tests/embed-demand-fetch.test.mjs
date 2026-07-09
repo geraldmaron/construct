@@ -2,17 +2,19 @@
  * tests/embed-demand-fetch.test.mjs — demand-fetch unit tests.
  */
 
-import { describe, it } from 'node:test';
+import { after, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { resolveKnownSources, matchSourceFromQuery } from '../lib/embed/demand-fetch.mjs';
+import { rmTmpDir } from './helpers/cleanup.mjs';
 
 // The credential-only fallback fires only when no config target and no legacy-env
 // list target resolves. Run it from an empty tmpdir cwd so the repo's own
 // construct.config.json can never supply a target that shadows the fallback path.
 const EMPTY_CWD = mkdtempSync(join(tmpdir(), 'cx-demand-fetch-'));
+after(() => rmTmpDir(EMPTY_CWD));
 
 const ENV_GITHUB = {
   GITHUB_REPOS: 'hashicorp/project-iverson,hashicorp/cloud-reliability,hashicorp/team-delivery-intelligence',
