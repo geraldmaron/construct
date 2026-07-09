@@ -594,6 +594,10 @@ async function cmdDoctor() {
   const wantsFixMigrateState = wantsFixAll || args.includes('--fix-migrate-state');
 
   const checks = [];
+  // Set inside the worker-backend/web-capability readiness check below;
+  // printed as the last line of doctor's output regardless of pass/fail so a
+  // scrolled-past health-check table never buries the EXECUTE-vs-PLAN signal.
+  let firstRunReadinessLine = null;
   const { DOCTOR_STATES } = await import('../lib/doctor/diagnosis.mjs');
   const add = (label, pass, optional = false, failureState = pass ? DOCTOR_STATES.healthy : null) => checks.push({ label, pass, optional, failureState });
   const { isConstructSourceCheckout } = await import('../lib/doctor/source-checkout.mjs');
@@ -825,7 +829,7 @@ async function cmdDoctor() {
   // actually get. Both lines are advisory only; the resolved values never
   // fail the gate.
   try {
-    const { buildOrchestrationReadiness } = await import('../lib/orchestration/readiness.mjs');
+    const { buildOrchestrationReadiness, formatFirstRunExecutionReadiness } = await import('../lib/orchestration/readiness.mjs');
     const orchReadiness = buildOrchestrationReadiness({}, { env: process.env, cwd });
     const backendNote = orchReadiness.workerBackend === 'inline'
       ? 'inline (prepare-only — no specialist LLM reasoning runs; set orchestration.workerBackend=provider for real execution)'
@@ -836,6 +840,8 @@ async function cmdDoctor() {
       ? 'unavailable (set WEB_SEARCH_URL for governed mode, or CONSTRUCT_ORCHESTRATION_WEB_DELEGATE=1 to delegate to a tool-capable host)'
       : orchReadiness.webMode;
     add(`Web capability: ${webNote}`, true, true);
+
+    firstRunReadinessLine = formatFirstRunExecutionReadiness(orchReadiness);
   } catch (err) {
     add(`Worker backend / web capability check failed: ${err.message}`, false, true);
   }
@@ -1622,6 +1628,10 @@ async function cmdDoctor() {
 
   println('');
   println(`Results: ${okCount} passed, ${warnCount} warnings, ${failCount} failed`);
+  if (firstRunReadinessLine) {
+    println('');
+    println(firstRunReadinessLine);
+  }
   if (failCount > 0) process.exit(1);
 }
 
