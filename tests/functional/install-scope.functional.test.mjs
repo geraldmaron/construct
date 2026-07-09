@@ -1,12 +1,15 @@
 /**
  * tests/functional/install-scope.functional.test.mjs
  *
- * ADR-0029: `construct install` is scoped. The default scope is `project`,
- * which writes nothing and prints guidance — `~/.construct/config.env` and
- * `~/.claude/*` must remain untouched. Invalid scopes fail with exit 1 before
- * any machine setup. The `--scope=user` and `--scope=both` paths run the
- * machine-state body (covered by tests/functional/install-parity and the
- * setup-prompts suite — not duplicated here).
+ * ADR-0029: `construct install` is scoped. A bare invocation with no --scope
+ * hard-errors naming the flag (construct-vzg2i.3) rather than silently
+ * exiting 0 having written nothing; `--scope=project` remains an explicit,
+ * documented no-op that prints guidance and exits 0. `~/.construct/config.env`
+ * and `~/.claude/*` must remain untouched in every non-writing path. Invalid
+ * scopes fail with exit 1 before any machine setup. The `--scope=user` and
+ * `--scope=both` paths run the machine-state body (covered by
+ * tests/functional/install-parity and the setup-prompts suite — not
+ * duplicated here).
  */
 
 import assert from 'node:assert/strict';
@@ -42,15 +45,18 @@ function runInstall(args, env) {
   });
 }
 
-test('default scope is project: prints guidance, writes nothing', () => {
+test('bare install (no --scope) hard-errors naming the flag, writes nothing', () => {
   const home = freshHome();
   const res = runInstall([], { HOME: home });
-  assert.equal(res.status, 0, `expected exit 0, got ${res.status} — stderr: ${res.stderr}`);
-  assert.match(res.stdout, /scope: project/i);
-  assert.match(res.stdout, /construct install --scope=user/);
-  assert.equal(fs.existsSync(path.join(configDir(home), 'config.env')), false, 'project scope must not write config.env');
-  assert.equal(fs.existsSync(path.join(configDir(home), 'lib')), false, 'project scope must not create the lib symlink');
-  assert.equal(fs.existsSync(path.join(home, '.claude', 'settings.json')), false, 'project scope must not touch ~/.claude/');
+  assert.equal(res.status, 1, `expected exit 1, got ${res.status} — stdout: ${res.stdout}`);
+  const combined = `${res.stdout}${res.stderr}`;
+  assert.match(combined, /no scope specified/i);
+  assert.match(combined, /--scope=user/);
+  assert.match(combined, /--scope=both/);
+  assert.match(combined, /--scope=project/);
+  assert.equal(fs.existsSync(path.join(configDir(home), 'config.env')), false, 'bare invocation must not write config.env');
+  assert.equal(fs.existsSync(path.join(configDir(home), 'lib')), false, 'bare invocation must not create the lib symlink');
+  assert.equal(fs.existsSync(path.join(home, '.claude', 'settings.json')), false, 'bare invocation must not touch ~/.claude/');
 });
 
 test('--scope=project is explicit no-op for user-scope state', () => {

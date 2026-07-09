@@ -260,7 +260,7 @@ Kill switches throughout: `CONSTRUCT_ROLES=off` (global L1), `CONSTRUCT_ROLE_<NA
 
 ## Footprint contract
 
-Construct's install and init paths are governed by a per-scope opt-in contract codified in [ADR 0029](/decisions/adr/0029-install-scopes-and-hook-budgets). Two scopes; project is the default; the user scope is opt-in.
+Construct's install and init paths are governed by a per-scope opt-in contract codified in [ADR 0029](/decisions/adr/0029-install-scopes-and-hook-budgets). Two scopes; `construct install` requires the caller to name one explicitly (construct-vzg2i.3) — a bare invocation hard-errors rather than silently defaulting.
 
 ### Project scope — `construct init` (per repository)
 
@@ -281,7 +281,7 @@ Project scope writes are confined to the project root and the project's `.git/` 
 
 ### Machine scope — `construct install --scope=user` (per machine)
 
-Machine scope writes are opt-in. The default `construct install` (no flag, or `--scope=project`) prints scope guidance and exits without touching the machine. `--scope=user` writes the paths below; the marker-block writes to `~/.claude/*` require an itemized interactive consent prompt (or `--yes` for non-interactive contexts).
+Machine scope writes are opt-in. A bare `construct install` (no `--scope`) hard-errors naming the flag; `--scope=project` prints scope guidance and exits without touching the machine. `--scope=user` writes the paths below; the marker-block writes to `~/.claude/*` require an itemized interactive consent prompt (or `--yes` for non-interactive contexts).
 
 | Path | Purpose | Consent |
 |---|---|---|
