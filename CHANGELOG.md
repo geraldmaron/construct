@@ -4,6 +4,31 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- `construct-pteo2.20` (cdsp.81, threat/abuse review): documentation-only threat model for
+  condition-driven specialist recruitment over untrusted content — the `construct-pteo2` epic's
+  design where a recruited specialist reads a produced artifact's own content (a drafted PRD body,
+  feedback text) to decide whether to recruit further specialists. New
+  `docs/notes/research/2026-07-09-cdsp-participation-threat-review.md` covers three threats named
+  by the gating bead: (1) prompt injection via drafted content trying to trigger unwanted
+  recruitment/actions — mitigated by extending this repo's existing `EXTERNAL_UNAUTHENTICATED`
+  trust-stamp discipline (`lib/security/trust.mjs`, `lib/security/ingest-boundary.mjs`,
+  `lib/security/recall-wrapper.mjs`) to the artifact-content signal boundary `construct-pteo2.4`
+  (cdsp.11) is about to build, keeping recruitment resolved only through typed signals and
+  registry-declared `participationRules`, never free-text directives; (2) UI write-safety in the
+  Org Studio participation-rules canvas (`construct-pteo2.15`, cdsp.60) — verified the existing
+  loopback-bind + cross-origin-refusal guardrail in `lib/org-studio/server.mjs` (on
+  `refactor/consolidate-project-config-dir`) and required the new route to reuse the same
+  `org-api.mjs` validator and dispatcher rather than a bespoke handler; (3) content-signal
+  spoofing — an attacker crafting artifact text to force or evade which signals fire — mitigated by
+  an asymmetric fail-safe default (ambiguous matches against a *required*-reviewer signal default
+  to recruiting, not silence, mirroring `resolveTrustLevel`'s existing unrecognised-source-kind
+  fail-safe) plus preferring structural matches (tables, acceptance-criteria lists) over bare
+  keywords for high-value signals. No runtime code changed; this is a research artifact per
+  `construct-pteo2`'s epic acceptance criterion 5 ("challenge beads have mitigations recorded
+  before build beads close"), gating `construct-pteo2.4`/cdsp.11 and `construct-pteo2.15`/cdsp.60.
+
 ## [1.5.3] - 2026-07-09
 
 ### Fixed
