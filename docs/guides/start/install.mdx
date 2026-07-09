@@ -34,7 +34,7 @@ cd ~/your-project
 npx -y @geraldmaron/construct init .
 ```
 
-`init` does what the postinstall does, plus scaffolds `AGENTS.md`, `plan.md`, `.cx/`, `.beads/`, `docs/`, and `construct_guide.md` (a friendly orientation file you can keep or edit).
+`init` does what the postinstall does, plus scaffolds `AGENTS.md`, `plan.md`, `.cx/`, a local issue tracker, `docs/`, and `construct_guide.md` (a friendly orientation file you can keep or edit). See [durable state →](/guides/concepts/beads-and-state) for how that issue tracker fits into session continuity once you're past the basics.
 
 ### Homebrew (for users without Node)
 
@@ -60,7 +60,7 @@ What setup does, in order:
 3. Generates shell completions (bash + zsh) so `construct <tab>` works.
 4. Installs optional CLIs (`cm`, `cass`) if Homebrew or cargo is available and you consent.
 5. Installs the Pressure Guard background service (macOS LaunchAgent) so Construct can manage helper processes. Use `--no-launch-agent` to skip this.
-6. Wires `core.hooksPath` to `.beads/hooks/` if your repo has the beads hook directory — activates the local pre-commit policy gates.
+6. Wires `core.hooksPath` to your project's local hook directory if it has one — activates the local pre-commit policy gates.
 7. Prints a "Local services" summary block with local trace capture and the embedded LanceDB index path.
 
 Service consent is cached in `~/.config/construct/config.env` as `BOOTSTRAP_<NAME>=yes|no`. Re-running `construct install --scope=user` won't re-prompt for services you already answered about. Delete those keys to re-prompt.
@@ -104,7 +104,7 @@ construct doctor
 
 `doctor` runs ~35 health checks across config, services, agents, hooks, and integrations. Anything green is healthy. Warnings explain themselves. Failures point at a fix.
 
-You're installed in `solo` mode — everything runs locally, queue is the filesystem, telemetry is optional. Two other modes (`team` and `enterprise`) promote the intake queue and memory to shared Postgres and route MCP through a broker. Switch with `construct config mode [solo|team|enterprise]`. See [deployment model](/guides/concepts/deployment-model).
+You're installed in `solo` mode — everything runs locally, telemetry is optional. Two other modes (`team` and `enterprise`) promote local state and memory to shared, centrally-routed infrastructure for a whole team. Switch with `construct config mode [solo|team|enterprise]`. See [deployment model](/guides/concepts/deployment-model).
 
 You're installed. Now [do your first task →](/guides/start/first-task)
 

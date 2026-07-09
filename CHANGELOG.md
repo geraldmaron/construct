@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Documentation
+
+- `construct-ztksc.4`: `docs/guides/start/install.mdx` and `first-task.mdx` no longer surface internals vocabulary (intake, signal, triage packet, `graph from-intake`, beads, broker) on the first-run path — the onboarding audit's top complaint was jumping from a simple `@construct summarize this` example straight into that terminology. `install.mdx`'s scaffold/hook-wiring bullets and deployment-mode summary now describe behavior in plain terms and link forward to `docs/guides/concepts/beads-and-state.mdx` and `docs/guides/concepts/deployment-model.mdx`. `first-task.mdx`'s "Drop a signal into the intake queue" section (inbox example, `construct intake`/`construct graph from-intake` commands, evidence flags) is replaced with a one-paragraph forward pointer to the existing deep-reference doc `docs/guides/concepts/intake-and-triage.mdx`, which already documents the full pipeline and CLI — no content was deleted, only relocated off the first-five-minutes path.
+
 ## [1.5.3] - 2026-07-09
 
 ### Fixed
