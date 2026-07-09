@@ -4,6 +4,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.5.3] - 2026-07-09
+
 ### Fixed
 
 - `pr-review.yml`: the `review` job failed on every fork PR — fork-triggered workflows get a read-only `GITHUB_TOKEN`, so the summary-comment step's `gh pr comment` was rejected (`Resource not accessible by integration`). Fork PRs now publish the cx-reviewer summary to the job summary instead; in-repo PRs keep the inline comment. First observed on #356.
