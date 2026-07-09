@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- `construct-ztksc.1` (learning-curve epic, "scope" vocabulary collision): `construct install --scope=project|user|both` (`lib/setup.mjs`) and `construct scope create|set|show` (org-profile lifecycle, `lib/scopes/lifecycle.mjs`) name two unrelated concepts with the same word, and both surface within the first 20 lines of README.md. New `docs/decisions/adr/0071-install-footprint-vs-org-scope-naming.md` records the decision: rename the install flag to `--footprint` (matching vocabulary ADR-0027/the existing `#footprint-contract` section already use for this exact axis) and keep `construct scope`/org-profile vocabulary unchanged (it's the more deeply embedded usage — a schema, a directory name, and CLAUDE.md's own text). `lib/setup.mjs`'s `--help` output, `README.md`, and `docs/guides/start/install.mdx` now each carry a pointer to ADR-0071 disambiguating the two meanings at the two first-five-minutes surfaces; the actual `--footprint` flag/alias implementation is deferred to follow-up bead `construct-ztksc.5`.
+
 ## [1.5.3] - 2026-07-09
 
 ### Fixed
