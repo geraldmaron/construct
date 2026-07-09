@@ -22,7 +22,7 @@ Scaffolds the project:
 - `.cx/context.md` and `.cx/context.json` — durable per-project state Construct reads at session start.
 - `.cx/handoffs/` — gitignored directory where session handoffs land.
 - `docs/` documentation lanes if your project doesn't have them yet.
-- A `.beads/` directory if your project doesn't already track issues.
+- A local issue-tracking directory if your project doesn't already track issues (see [durable state →](/guides/concepts/beads-and-state)).
 
 Re-running `construct init` on an existing project is safe; it's idempotent.
 </Step>
@@ -74,42 +74,9 @@ Good for: code review, architectural decisions, security-sensitive changes, PRDs
 </Card>
 </Cards>
 
-## Drop a signal into the intake queue
+## When you need more: working from files instead of chat
 
-For work that arrives as a file — a bug report, a customer comment, a competitor scan, a postmortem draft — drop it into `inbox/` at the project root:
-
-```bash
-echo "Stack trace on login redirect — reproduce at /auth. authMiddleware crash." > inbox/login-bug.md
-```
-
-<FlowPipeline steps={[
-  { label: 'inbox/', sub: 'drop any file' },
-  { label: 'embed daemon', sub: 'classifies in ~1s\nno LLM call' },
-  { label: '.cx/intake/pending/', sub: 'triage packet\ntype · owner · chain' },
-  { label: 'your editor', sub: 'read packet · dispatch', highlight: true },
-]} />
-
-Inspect via:
-
-```bash
-construct intake list           # tabular: id, type, stage, owner, action
-construct intake show <id>      # full packet — triage, related artifacts, excerpt
-```
-
-For non-trivial signals, generate the work plan as a task graph:
-
-```bash
-construct graph from-intake <id>   # writes .cx/task-graphs/<graph-id>.json
-construct graph show <graph-id>    # nodes, edges, owners, evidence
-```
-
-The graph mirrors the triage's `recommendedChain` one-to-one. Node status updates carry evidence:
-
-```bash
-construct graph status <graph-id> <node-id> done --evidence="npm test green, 1192 pass"
-```
-
-See [intake and triage](/guides/concepts/intake-and-triage) for the full taxonomy.
+Everything above assumes you're typing requests directly. For work that arrives as a file instead — a bug report, a customer comment, a competitor scan, a postmortem draft — Construct can pick it up automatically, classify it, and route it to the right specialist without you retyping it as a prompt. See [processing incoming files →](/guides/concepts/intake-and-triage) once you're comfortable with the basics above.
 
 ## What just happened
 
