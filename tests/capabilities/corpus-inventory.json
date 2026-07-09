@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-08T20:53:17.978Z",
+  "generatedAt": "2026-07-09T04:33:19.891Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 823,
-    "topLevelTestFiles": 353,
+    "testFiles": 825,
+    "topLevelTestFiles": 355,
     "nestedTestFiles": 470,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 46,
     "byLayer": {
-      "unit": 559,
+      "unit": 561,
       "functional": 216,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 496,
+      "unit": 498,
       "functional": 216,
       "visual": 12,
       "structural-guard": 19,
@@ -5159,6 +5159,14 @@
       "maintainerNotes": "tests/orchestration-delegation-flow.test.mjs — flow-engine delegation chain"
     },
     {
+      "path": "tests/orchestration-doc-authoring-patterns.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration-doc-authoring-patterns.test.mjs — doc-type drift guard."
+    },
+    {
       "path": "tests/orchestration-events.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -5221,6 +5229,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/orchestration-remote-web-guard.test.mjs — fail-closed remote ingress guard (ADR-0050)."
+    },
+    {
+      "path": "tests/orchestration-research-evidence-gate.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration-research-evidence-gate.test.mjs — kind-aware evidence gate."
     },
     {
       "path": "tests/orchestration-run-store-postgres.test.mjs",

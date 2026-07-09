@@ -71,10 +71,6 @@
         "use": "Plan a manifest-backed artifact workflow; validate or export locally."
       },
       {
-        "name": "workflow_invoke",
-        "use": "Invoke an embedded Construct workflow (prd-draft, architecture-review, …)."
-      },
-      {
         "name": "triage_recommend",
         "use": "Recommend intake triage — type, owner, and routing — for a new signal."
       },
