@@ -285,6 +285,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct gates:audit` | Audit policy gates |
 | `construct hooks:health` | Check hook health |
 | `construct list` | List all agents |
+| `construct monitor` | One-command setup for continuous monitoring-as-a-role: sources.targets + embed.yaml roles + capability enable + daemon start |
 | `construct policy` | Show active policy gates with enforcement details |
 | `construct provider` | Provider management |
 | `construct role` | Role framework management |
