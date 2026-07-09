@@ -49,6 +49,10 @@
       "core": false
     },
     {
+      "name": "contribute --target <id> [--against <ids|all>]",
+      "core": true
+    },
+    {
       "name": "create [--profile=<id>]",
       "core": true
     },
@@ -437,8 +441,12 @@
       "core": false
     },
     {
+      "name": "tracker",
+      "core": false
+    },
+    {
       "name": "trends",
-      "core": true
+      "core": false
     },
     {
       "name": "update",
