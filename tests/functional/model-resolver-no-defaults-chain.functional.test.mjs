@@ -67,7 +67,15 @@ test('schema-infer throws a clear configuration error when fast tier is null and
   delete process.env.CX_MODEL_FAST;
   process.env.CX_USER_ENV_PATH = envPath;
   const originalHome = process.env.HOME;
-  process.env.HOME = dir; // Redirect HOME to isolation dir
+  process.env.HOME = dir;
+
+  // secret-resolver walks a project-env tier at process.cwd()/.env before falling
+  // back to the (now-isolated) HOME tiers, so the repo's own gitignored .env would
+  // supply a real OPENROUTER_API_KEY and defeat the only-Anthropic premise. Run
+  // from the empty isolation dir so no ambient .env resolves the OpenRouter path.
+
+  const originalCwd = process.cwd();
+  process.chdir(dir);
   try {
     const mod = await import(`../../lib/schema-infer.mjs?ts=${Date.now()}`);
     let caught;
@@ -80,6 +88,7 @@ test('schema-infer throws a clear configuration error when fast tier is null and
     assert.match(caught.message, /fast-tier|construct models --apply|CX_MODEL_FAST/);
     assert.equal(caught.name, 'Error', 'should be a clear Error, not TypeError');
   } finally {
+    process.chdir(originalCwd);
     process.env.HOME = originalHome;
     for (const [k, v] of Object.entries(prev)) {
       if (v === undefined) delete process.env[k];
