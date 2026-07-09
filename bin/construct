@@ -1099,6 +1099,33 @@ async function cmdDoctor() {
     add(`Resource budget check failed: ${err.message}`, false, true);
   }
 
+  // construct-95phc.3: cumulative spend must be re-verifiable from the real
+  // ledgers, not a placeholder — cost-ledger.mjs's USD/day figures and
+  // unattended-budget.mjs's token/day figures for daemon-originated spend.
+  try {
+    const { getTotalDailySpend, totalBudget, enforcementActive } = await import('../lib/cost-ledger.mjs');
+    const { unattendedSpendSummary } = await import('../lib/policy/unattended-budget.mjs');
+    const total = getTotalDailySpend();
+    const cap = totalBudget();
+    const pct = cap > 0 ? Math.round((total.costUsd / cap) * 100) : 0;
+    add(
+      `Cumulative spend today: $${total.costUsd.toFixed(4)} / $${cap.toFixed(2)} cap (${pct}%) — enforcement ${enforcementActive() ? 'on' : 'advisory'}`,
+      total.costUsd <= cap,
+      true,
+    );
+    const unattended = unattendedSpendSummary(process.cwd());
+    if (unattended.length) {
+      for (const row of unattended) {
+        const overCap = row.cap > 0 && row.tokensSpent > row.cap;
+        add(`Unattended spend — ${row.capability}: ${row.tokensSpent} / ${row.cap || 0} tokens today`, !overCap, true);
+      }
+    } else {
+      add('Unattended spend: no daemon-originated LLM spend recorded today', true, true);
+    }
+  } catch (err) {
+    add(`Cumulative spend check failed: ${err.message}`, false, true);
+  }
+
   // Pricing-catalog freshness + divergence are not surfaced in doctor output.
   // The underlying ledger writes and catalog refresh continue; consumer
   // surfaces land with the OTel + dashboard wiring (plan Workstream J).
