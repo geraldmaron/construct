@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- `construct-b2t01.3` (epic closer, "intake: one-step drop-and-forget"): a full-daemon functional test for the embed daemon's continuous inbox loop (`lib/embed/daemon.mjs` Job #9 "inbox-watcher", 2-minute cadence over `lib/embed/inbox.mjs`'s `InboxWatcher`). Previously the loop was covered only indirectly — unit tests of `InboxWatcher.poll()` and the `Scheduler` in isolation, never a real daemon boot. New `tests/functional/embed-daemon-inbox-loop.functional.test.mjs` spawns a child process (`tests/functional/fixtures/embed-daemon-inbox-tick-runner.mjs`, isolated via `sterileSpawnEnv`) that constructs a real `EmbedDaemon` with a zero-source config and calls the real `.start()`. Job #9 is registered with `{ runImmediately: true }`, so `Scheduler.start()` fires its first tick synchronously rather than waiting the full 2-minute interval; the runner polls the filesystem in short intervals for that tick's durable output instead of sleeping for the interval or mocking the scheduler. Asserts a real intake packet lands under `.cx/intake/pending/` or `.cx/intake/quarantine/` (`lib/intake/queue.mjs` contract) and an observation carrying `['inbox', 'ingested-doc']` tags lands under `.cx/observations/`, both traceable back to the dropped file. No network: the daemon config carries zero sources so `ProviderRegistry.fromEnv()` only resolves the credential-free `directory` adapter, and `CONSTRUCT_EMBEDDING_MODEL=hashing` keeps the observation-store embedding write local.
+
 ## [1.5.3] - 2026-07-09
 
 ### Fixed
