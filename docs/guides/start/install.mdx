@@ -50,7 +50,7 @@ want the Homebrew-managed binary to win.
 ## Run setup (one time per machine)
 
 ```bash
-construct install --scope=user
+construct install --footprint=user
 ```
 
 What setup does, in order:
@@ -63,15 +63,16 @@ What setup does, in order:
 6. Wires `core.hooksPath` to `.beads/hooks/` if your repo has the beads hook directory — activates the local pre-commit policy gates.
 7. Prints a "Local services" summary block with local trace capture and the embedded LanceDB index path.
 
-Service consent is cached in `~/.config/construct/config.env` as `BOOTSTRAP_<NAME>=yes|no`. Re-running `construct install --scope=user` won't re-prompt for services you already answered about. Delete those keys to re-prompt.
+Service consent is cached in `~/.config/construct/config.env` as `BOOTSTRAP_<NAME>=yes|no`. Re-running `construct install --footprint=user` won't re-prompt for services you already answered about. Delete those keys to re-prompt.
 
 ### Flags
 
 | Flag | Description |
 |---|---|
-| `--scope=project\|user\|both` | Define the installation scope — where Construct writes on this machine. Required — a bare `construct install` with no `--scope` hard-errors naming the flag rather than writing nothing silently. Unrelated to the `construct scope` org-profile command; [ADR-0071](../../decisions/adr/0071-install-footprint-vs-org-scope-naming.md) records the decision to rename this flag to `--footprint` in a follow-up bead. |
+| `--footprint=project\|user\|both` | Define the installation footprint — where Construct writes on this machine. Required — a bare `construct install` with no `--footprint` hard-errors naming the flag rather than writing nothing silently. Unrelated to the `construct scope` org-profile command; [ADR-0071](../../decisions/adr/0071-install-footprint-vs-org-scope-naming.md) renamed this flag from `--scope`. |
+| `--scope=project\|user\|both` | Deprecated alias for `--footprint` (same values). Prints a one-line deprecation notice; kept working for existing scripts. See [ADR-0071](../../decisions/adr/0071-install-footprint-vs-org-scope-naming.md). |
 | `--yes` | Accept all defaults without prompting. |
-| `--dry-run` | Preview the install plan (scopes, files, services) without writing anything. |
+| `--dry-run` | Preview the install plan (footprints, files, services) without writing anything. |
 | `--no-launch-agent` | Skip background macOS LaunchAgent registration. |
 | `--reconfigure` | Re-prompt for service consent, ignoring cached answers. |
 | `--with-docling` | Install the Docling runtime for local document extraction. |
