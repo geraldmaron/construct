@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-09T04:33:19.891Z",
+  "generatedAt": "2026-07-09T15:50:36.767Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 825,
-    "topLevelTestFiles": 355,
-    "nestedTestFiles": 470,
+    "testFiles": 827,
+    "topLevelTestFiles": 356,
+    "nestedTestFiles": 471,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 46,
     "byLayer": {
-      "unit": 561,
-      "functional": 216,
+      "unit": 562,
+      "functional": 217,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 498,
-      "functional": 216,
+      "unit": 499,
+      "functional": 217,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -3715,6 +3715,14 @@
       "maintainerNotes": "tests/functional/resource-write-guard.functional.test.mjs — disk budget"
     },
     {
+      "path": "tests/functional/review-pr.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/review-pr.functional.test.mjs — `construct review pr`"
+    },
+    {
       "path": "tests/functional/routing-tables.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -6325,6 +6333,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/sync-contract.test.mjs — contract tests for sync-specialists.mjs platform output shapes."
+    },
+    {
+      "path": "tests/sync-copilot-deselect.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/sync-copilot-deselect.test.mjs — a sync that does not select the"
     },
     {
       "path": "tests/sync-specialists-header.test.mjs",
