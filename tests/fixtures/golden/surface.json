@@ -309,6 +309,10 @@
       "core": false
     },
     {
+      "name": "monitor",
+      "core": false
+    },
+    {
       "name": "ollama",
       "core": false
     },
