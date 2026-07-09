@@ -20,7 +20,7 @@
     },
     "signature": { "template": "jira:project:{value}", "valueMode": "upperOrEmpty" },
     "legacyEnv": { "vars": ["JIRA_PROJECTS"], "parse": "csv", "valueTransform": "upper" },
-    "aliases": { "strategy": "simple", "displayPrefix": "Jira", "catchAll": true },
+    "aliases": { "strategy": "simple", "displayPrefix": "Jira", "catchAll": true, "catchAllCredentialEnv": ["JIRA_BASE_URL"] },
     "embed": {
       "mode": "perTarget",
       "valueField": "project",
