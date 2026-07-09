@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- `construct-1smc4.1` (epic construct-1smc4: multi-repo CODE knowledge — federation beyond markdown): registered directory/github source targets' actual source code, not just their markdown, now joins the federated knowledge corpus. `lib/knowledge/search.mjs` (backing `knowledge_search` and `construct knowledge search --projects=<id>`) and `lib/knowledge/rag.mjs`'s `buildCorpus` (backing `construct knowledge ask`/`index`) each gained a code-file walker — `walkCodeFiles` / `loadCodeChunks` — that folds in every file matching `UTF8_TEXT_EXTS` (`lib/document-extract.mjs`; `.ts`/`.py`/`.go`/`.rs`/... ) from a registered target's resolved content root, skipping `.md` (already covered by the existing markdown pass) and dependency/VCS directories (`node_modules`, `.git`, `dist`, `build`, `vendor`, `.venv`, `__pycache__`). Code chunks reuse the existing chunking/scoring/LanceDB-embedding pipeline verbatim — no parallel index — and carry the same structured `origin` shape as markdown target chunks (`targetId`/`provider`/`projectKey`/`relPath`/`ref`) plus `kind: 'code'`, so a code hit is attributable to its source repo and filterable via the existing `--projects`/`projects` mechanism with zero new filter code. Tests: `tests/functional/knowledge-search-code-federation.functional.test.mjs` (two local tmpdir fixture "repos", zero network — attributed `.py`/`.go` hits, `--projects` isolation, `node_modules`/non-`UTF8_TEXT_EXTS` exclusion, and a real-binary `construct knowledge search --projects=<id>` round-trip under a fetch-spy) and a `buildCorpus` case added to `tests/knowledge-multiroot.test.mjs`.
+
 ## [1.5.3] - 2026-07-09
 
 ### Fixed
