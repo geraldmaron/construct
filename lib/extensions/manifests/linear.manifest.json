@@ -20,7 +20,7 @@
     },
     "signature": { "template": "linear:team:{value}", "valueMode": "lowerOrEmpty" },
     "legacyEnv": { "vars": ["LINEAR_TEAMS"], "parse": "csv" },
-    "aliases": { "strategy": "simple", "displayPrefix": "Linear", "catchAll": true },
+    "aliases": { "strategy": "simple", "displayPrefix": "Linear", "catchAll": true, "catchAllCredentialEnv": ["LINEAR_API_KEY"] },
     "embed": {
       "mode": "perTarget",
       "valueField": "team",
