@@ -279,19 +279,19 @@ Project scope writes are confined to the project root and the project's `.git/` 
 | `.beads/` | bd issue tracker init | construct init |
 | `.git/config` `core.hooksPath` | Project-scoped git hooks path | construct init |
 
-### Machine scope — `construct install --scope=user` (per machine)
+### Machine scope — `construct install --footprint=user` (per machine)
 
-Machine scope writes are opt-in. A bare `construct install` (no `--scope`) hard-errors naming the flag; `--scope=project` prints scope guidance and exits without touching the machine. `--scope=user` writes the paths below; the marker-block writes to `~/.claude/*` require an itemized interactive consent prompt (or `--yes` for non-interactive contexts).
+Machine scope writes are opt-in. A bare `construct install` (no `--footprint`) hard-errors naming the flag; `--footprint=project` prints footprint guidance and exits without touching the machine. `--footprint=user` writes the paths below; the marker-block writes to `~/.claude/*` require an itemized interactive consent prompt (or `--yes` for non-interactive contexts). [ADR-0071](/decisions/adr/0071-install-footprint-vs-org-scope-naming) renamed this flag from `--scope`; `--scope=<value>` still works as a deprecated alias.
 
 | Path | Purpose | Consent |
 |---|---|---|
-| `~/.config/construct/config.env` | Machine credentials (mode 0600) | `--scope=user` |
-| `~/.config/construct/lib` (symlink) | Hook lib symlink to the active Construct checkout's `lib/` | `--scope=user` |
-| `~/.config/opencode/opencode.json` | MCP entries — Construct's section merged | `--scope=user` |
-| `~/.codex/config.toml` | MCP entries — Construct's section merged | `--scope=user` |
-| `~/.claude/CLAUDE.md` | Marker block — Construct's section only | `--scope=user` + interactive consent |
-| `~/.claude/settings.json` | Global safety-hook injection — Construct's section only | `--scope=user` + interactive consent |
-| `~/.claude.json` | `context7` MCP in the top-level `mcpServers` (Claude Code's user scope; settings.json does not carry MCP server definitions) — Construct's entries only | `--scope=user` + interactive consent |
+| `~/.config/construct/config.env` | Machine credentials (mode 0600) | `--footprint=user` |
+| `~/.config/construct/lib` (symlink) | Hook lib symlink to the active Construct checkout's `lib/` | `--footprint=user` |
+| `~/.config/opencode/opencode.json` | MCP entries — Construct's section merged | `--footprint=user` |
+| `~/.codex/config.toml` | MCP entries — Construct's section merged | `--footprint=user` |
+| `~/.claude/CLAUDE.md` | Marker block — Construct's section only | `--footprint=user` + interactive consent |
+| `~/.claude/settings.json` | Global safety-hook injection — Construct's section only | `--footprint=user` + interactive consent |
+| `~/.claude.json` | `context7` MCP in the top-level `mcpServers` (Claude Code's user scope; settings.json does not carry MCP server definitions) — Construct's entries only | `--footprint=user` + interactive consent |
 
 ### Never touched
 
