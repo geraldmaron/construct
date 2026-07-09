@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Documentation
+
+- README: document the known `boolean` and `node-domexception` npm install deprecation warnings — both are transitive dependencies of upstream packages (`onnxruntime-node`, `@lancedb/lancedb`), harmless, and not silenceable from this package because npm ignores a package's own `overrides` on end-user installs.
+
 ## [1.5.2] - 2026-07-09
 
 ### Added
