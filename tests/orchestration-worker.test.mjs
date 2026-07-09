@@ -139,6 +139,22 @@ test('claude-family model routes to Anthropic, others to OpenRouter', async () =
   assert.match(openrouterUrl, /openrouter\.ai/);
 });
 
+test('an openrouter/-prefixed claude slug routes to OpenRouter, not the direct Anthropic API (construct-olpf)', async () => {
+  const task = { role: 'cx-researcher' };
+  const run = { request: { summary: 'research it' } };
+  let calledUrl = null;
+  await runTaskViaProvider({
+    task,
+    run,
+    model: 'openrouter/anthropic/claude-sonnet-4-6',
+    provider: 'openrouter-anthropic',
+    env: { OPENROUTER_API_KEY: 'k', ANTHROPIC_API_KEY: 'should-not-be-used' },
+    fetchImpl: async (url) => { calledUrl = url; return { ok: true, json: async () => ({ choices: [{ message: { content: 'ok' } }] }) }; },
+  });
+  assert.match(calledUrl, /openrouter\.ai/, 'openrouter/-prefixed claude must hit OpenRouter');
+  assert.doesNotMatch(calledUrl, /anthropic\.com/, 'must not hit the direct Anthropic endpoint');
+});
+
 test('missing key under explicit env raises PROVIDER_KEY_MISSING', async () => {
   const task = { role: 'cx-engineer' };
   const run = { request: { summary: 'x' } };
