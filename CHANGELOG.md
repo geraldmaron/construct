@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- `construct-pteo2.19` (cdsp.80, FMEA challenge of the condition-driven participation model): `docs/notes/research/2026-07-09-cdsp-fmea-participation-model.md` runs the `skills/roles/devil-advocate.md` FMEA pass against ADR-0070's recruit→collaborate→execute→enforce pipeline, ranking 9 failure modes by RPN (severity × occurrence × detection). Highest-RPN finding (441): the binding advisory-default decision lets a high-risk artifact ship unsigned indistinguishably from a low-risk one, since `lib/artifact-release-gate.mjs`'s `ok` field is computed from `errors` only and `missingRequiredReviewers` (`lib/artifact-reviewers.mjs`) only ever contributes `warnings` — the doc defines the opt-in `gate: enforced` escalation criteria this bead's acceptance bar required. Also verified and recorded as concrete gates for `construct-pteo2.5`/`.6`/`.8` (cdsp.20/.21/.30): `lib/policy/unattended-budget.mjs`'s fail-closed budget governance (landed `f4d65975`) is wired into only the embed daemon and llm-judge, not into any recruitment-triggered execution path (model-spend blowup, RPN 240); `.cx/specialists/` overlay resolution (`lib/orchestration/routing-tables.mjs`'s `loadOverlays`) iterates `readdirSync` output unsorted, so overlay-vs-overlay rule conflicts resolve non-deterministically (RPN 192); a squad's `decisionRights` (e.g. `design-team.json`) is never cross-checked against its owning group's, so `participationRules`' `enforcementScope` schema has no structural guard against a squad self-declaring enforcement authority ADR-0070's own hierarchy semantics say it shouldn't hold (RPN 160). No runtime code changed; documentation-only artifact per this repo's no-fabrication rule, every claim traced to a `file:line` or `git show` output.
+
 ## [1.5.3] - 2026-07-09
 
 ### Fixed
