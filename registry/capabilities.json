@@ -1,7 +1,7 @@
 {
   "version": 1,
   "catalog": {
-    "generatedAt": "2026-07-06T22:40:56.862Z",
+    "generatedAt": "2026-07-09T04:29:22.395Z",
     "npmScripts": [
       "adapters",
       "audit:published",
@@ -11,6 +11,7 @@
       "catalog:regen",
       "catalog:validate",
       "certify:demos",
+      "ci:local",
       "clean:artifacts",
       "coverage",
       "deps:check",
@@ -747,6 +748,12 @@
         "internal": false
       },
       {
+        "name": "synthesize",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
         "name": "tags",
         "category": "Work",
         "core": false,
@@ -789,8 +796,20 @@
         "internal": false
       },
       {
+        "name": "templates",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
         "name": "tools",
         "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "tracker",
+        "category": "Models & Integrations",
         "core": false,
         "internal": false
       },
