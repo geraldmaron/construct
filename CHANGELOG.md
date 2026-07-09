@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Removed
+
+- `lib/intake/daemon.mjs` (construct-b2t01.2): `buildIntakeDaemon`'s TTL/dead-letter/retry-budget inbox loop was reachable only from tests (`w5-self-loop`, `intake-pending-ttl`) — no CLI subcommand or daemon job ever called `buildIntakeDaemon`, `processInboxFile`, or `sweepPendingPackets`. The live continuous-inbox path is already covered by embed daemon Job #9 (`inbox-watcher` in `lib/embed/daemon.mjs`) and `construct intake process`, both of which scan `inbox/` via `lib/embed/inbox.mjs`'s `InboxWatcher` and persist packets through `lib/intake/queue.mjs` — a separate, actually-wired implementation. Deleted the module along with `tests/functional/intake-pending-ttl.functional.test.mjs` (entirely intake-daemon-scoped) and the intake-daemon-specific tests in `tests/functional/w5-self-loop.functional.test.mjs` (its daemon-safeguard-contract and rule-verifier tests, which exercise unrelated live modules, are unchanged). Corrected the stale `scripts/audit/02-deadcode.mjs` allowlist entry that claimed a `construct intake daemon start` entrypoint — no such CLI subcommand exists in `bin/construct`'s `cmdIntake` dispatch.
+
 ## [1.5.3] - 2026-07-09
 
 ### Fixed
