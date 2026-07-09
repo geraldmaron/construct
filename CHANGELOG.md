@@ -6,6 +6,24 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Added
 
+- `construct-pteo2.21` (cdsp.82, prior-art and substrate validation research brief): new
+  `docs/notes/research/2026-07-09-cdsp-prior-art-and-substrate-validation.md` validates ADR-0070's
+  `participationRules` pipeline against ADR-0046 (registry model — consistent by construction, no
+  new merge boundary), ADR-0062 (persona reasoning frameworks — compatible but the recruited-role
+  vs. framework-`emits`-contract interaction is unstated in either ADR), and the bead's named
+  "ADR-0072 (org-api)": that ADR is real (`docs/decisions/adr/0072-no-code-org-authoring-api.md`,
+  status `proposed`, dated 2026-07-07) but does not exist on `staging` — it is stranded on
+  `refactor/consolidate-project-config-dir` at commit `ff1803b0`, and its branch's own `0070`/`0071`
+  numbers collide with `staging`'s already-merged ADR-0070/ADR-0071, a reconciliation-blocking fact
+  the cdsp.01 substrate audit's "stranded, needs cherry-pick" framing did not surface. Five external
+  sources (AutoGen, CrewAI, LangChain multi-agent docs, and two arXiv papers — DyLAN 2310.02170 and
+  the Embodied LLM Agents organizational-structure paper 2403.12482) were fetched and compared:
+  ADR-0070's centralized, declarative, non-learned recruitment is closest to AutoGen's rule-based
+  selector and CrewAI's manager-delegated allocation, furthest from LangChain's decentralized
+  Handoffs pattern, and has no analogue yet to the Embodied LLM Agents paper's runtime
+  role-reassignment loop — directly relevant prior art for the still-open `construct-pteo2.11`
+  (cdsp.40, join/leave). Passes `construct artifact validate --type=research-brief`.
+
 - `construct-pteo2.19` (cdsp.80, FMEA challenge of the condition-driven participation model): `docs/notes/research/2026-07-09-cdsp-fmea-participation-model.md` runs the `skills/roles/devil-advocate.md` FMEA pass against ADR-0070's recruit→collaborate→execute→enforce pipeline, ranking 9 failure modes by RPN (severity × occurrence × detection). Highest-RPN finding (441): the binding advisory-default decision lets a high-risk artifact ship unsigned indistinguishably from a low-risk one, since `lib/artifact-release-gate.mjs`'s `ok` field is computed from `errors` only and `missingRequiredReviewers` (`lib/artifact-reviewers.mjs`) only ever contributes `warnings` — the doc defines the opt-in `gate: enforced` escalation criteria this bead's acceptance bar required. Also verified and recorded as concrete gates for `construct-pteo2.5`/`.6`/`.8` (cdsp.20/.21/.30): `lib/policy/unattended-budget.mjs`'s fail-closed budget governance (landed `f4d65975`) is wired into only the embed daemon and llm-judge, not into any recruitment-triggered execution path (model-spend blowup, RPN 240); `.cx/specialists/` overlay resolution (`lib/orchestration/routing-tables.mjs`'s `loadOverlays`) iterates `readdirSync` output unsorted, so overlay-vs-overlay rule conflicts resolve non-deterministically (RPN 192); a squad's `decisionRights` (e.g. `design-team.json`) is never cross-checked against its owning group's, so `participationRules`' `enforcementScope` schema has no structural guard against a squad self-declaring enforcement authority ADR-0070's own hierarchy semantics say it shouldn't hold (RPN 160). No runtime code changed; documentation-only artifact per this repo's no-fabrication rule, every claim traced to a `file:line` or `git show` output.
 
 - `construct-ztksc.1` (learning-curve epic, "scope" vocabulary collision): `construct install --scope=project|user|both` (`lib/setup.mjs`) and `construct scope create|set|show` (org-profile lifecycle, `lib/scopes/lifecycle.mjs`) name two unrelated concepts with the same word, and both surface within the first 20 lines of README.md. New `docs/decisions/adr/0071-install-footprint-vs-org-scope-naming.md` records the decision: rename the install flag to `--footprint` (matching vocabulary ADR-0027/the existing `#footprint-contract` section already use for this exact axis) and keep `construct scope`/org-profile vocabulary unchanged (it's the more deeply embedded usage — a schema, a directory name, and CLAUDE.md's own text). `lib/setup.mjs`'s `--help` output, `README.md`, and `docs/guides/start/install.mdx` now each carry a pointer to ADR-0071 disambiguating the two meanings at the two first-five-minutes surfaces; the actual `--footprint` flag/alias implementation is deferred to follow-up bead `construct-ztksc.5`.
