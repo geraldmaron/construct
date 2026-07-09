@@ -18,6 +18,7 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Fixed
 
+- Linked `docs/guides/cookbook/multi-project-context.md` (shipped under `construct-760c.8`) into the `docs/README.md` cookbook index — it was unreachable from the README link-closure, which the `03-docs` orphaned-doc audit finder flagged as new drift beyond `scripts/audit/baseline.json` (failing the `audit-ratchet` gate). Linking the doc, rather than baselining the id, keeps the mandatory-docs invariant intact.
 - `construct-mtgs` (state-root HOME-isolation, round 4): three in-process test files leaked project-state directories into the real `~/.construct/projects/` on the machine running the suite. Each called durable observation code — `captureSessionArtifacts` (`tests/artifact-capture.test.mjs`), `runBootstrap` (`tests/bootstrap.test.mjs`), and `invokeWorkflow`'s allow-durable-write case (`tests/embedded-contract-workflow-invoke.test.mjs`) — against a `mkdtemp` project root without isolating `HOME`, so `addObservation → vectorClientFor → resolveStateDir` (ADR-0066) resolved against the developer's real home. Fixed by pinning `CX_HOME_OVERRIDE` to a throwaway home for the whole file (the `tests/orchestration/persona-degraded.test.mjs` idiom) and restoring it in an `after()` hook. Found via temporary stack-trace instrumentation in `lib/state-root.mjs` (reverted before commit) cross-referenced against the net-new project keys a full `npm test` run created — all 12 leaked keys traced to exactly these 3 files.
 
 ## [1.5.1] - 2026-07-07
