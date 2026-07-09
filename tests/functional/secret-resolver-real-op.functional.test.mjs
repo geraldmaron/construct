@@ -59,13 +59,22 @@ function makeSandbox() {
   return { dir, binDir, opLog, runner };
 }
 
+// resolveSecret's file tier reads a project-env `.env` at cwd and home-scoped
+// config/rc tiers before it materializes the injected op:// reference. This repo's
+// own gitignored .env carries a real ANTHROPIC_API_KEY, so an un-isolated child
+// resolves that materialized key and never spawns op (op read count 0). Run the
+// child from the empty sandbox with HOME repointed there so no ambient credential
+// pre-empts the op:// path, and drop the op-env-catalog pointer for good measure.
+
 function runResolver(sandbox) {
   const env = {
     ...process.env,
+    HOME: sandbox.dir,
     PATH: `${sandbox.binDir}${path.delimiter}${process.env.PATH || ''}`,
     OP_READ_LOG: sandbox.opLog,
   };
-  const result = spawnSync(process.execPath, [sandbox.runner], { env, encoding: 'utf8', timeout: 60_000 });
+  delete env.CONSTRUCT_OP_ENV_FILE;
+  const result = spawnSync(process.execPath, [sandbox.runner], { cwd: sandbox.dir, env, encoding: 'utf8', timeout: 60_000 });
   assert.equal(result.status, 0, `resolver run failed: ${result.stderr}`);
 }
 

@@ -139,6 +139,22 @@ test('claude-family model routes to Anthropic, others to OpenRouter', async () =
   assert.match(openrouterUrl, /openrouter\.ai/);
 });
 
+test('an openrouter/-prefixed claude slug routes to OpenRouter, not the direct Anthropic API (construct-olpf)', async () => {
+  const task = { role: 'cx-researcher' };
+  const run = { request: { summary: 'research it' } };
+  let calledUrl = null;
+  await runTaskViaProvider({
+    task,
+    run,
+    model: 'openrouter/anthropic/claude-sonnet-4-6',
+    provider: 'openrouter-anthropic',
+    env: { OPENROUTER_API_KEY: 'k', ANTHROPIC_API_KEY: 'should-not-be-used' },
+    fetchImpl: async (url) => { calledUrl = url; return { ok: true, json: async () => ({ choices: [{ message: { content: 'ok' } }] }) }; },
+  });
+  assert.match(calledUrl, /openrouter\.ai/, 'openrouter/-prefixed claude must hit OpenRouter');
+  assert.doesNotMatch(calledUrl, /anthropic\.com/, 'must not hit the direct Anthropic endpoint');
+});
+
 test('missing key under explicit env raises PROVIDER_KEY_MISSING', async () => {
   const task = { role: 'cx-engineer' };
   const run = { request: { summary: 'x' } };
@@ -176,6 +192,35 @@ test('executeRun with provider backend marks tasks done with executor and output
   assert.ok(run.tasks.every((t) => t.status === 'done'));
   assert.ok(run.tasks.every((t) => t.executor.startsWith('provider:anthropic:')));
   assert.ok(run.tasks.every((t) => t.output === 'specialist did the work'));
+});
+
+test('a research task whose output cites nothing is flagged by the evidence gate (construct-6yo6o)', async () => {
+  const cwd = project();
+  const unsourced = 'Agentic platforms are autonomous software ecosystems with decision layers and orchestration. '.repeat(15);
+  const fetchImpl = async () => ({ ok: true, json: async () => ({ content: [{ type: 'text', text: unsourced }] }) });
+  const run = await runOrchestration(
+    { request: 'Research agentic platforms and cite primary sources', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 0, moduleCount: 0 },
+    { env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test' }, cwd, workerBackend: 'provider', fetchImpl },
+  );
+  const researcher = run.tasks.find((t) => t.role === 'cx-researcher');
+  assert.ok(researcher, 'a research request dispatches a cx-researcher task');
+  assert.equal(researcher.status, 'done');
+  assert.ok(researcher.evidenceGate, 'the researcher task carries an evidence-gate verdict');
+  assert.equal(researcher.evidenceGate.ok, false, 'an unsourced research answer is flagged, not shipped as verified');
+  assert.equal(researcher.evidenceGate.kind, 'external');
+});
+
+test('a research task that cites a real source passes the evidence gate', async () => {
+  const cwd = project();
+  const sourced = `Node.js v24 is Active LTS per the release blog. See https://nodejs.org/en/blog/release/v24.0.0 for details. `.repeat(6);
+  const fetchImpl = async () => ({ ok: true, json: async () => ({ content: [{ type: 'text', text: sourced }] }) });
+  const run = await runOrchestration(
+    { request: 'Research the latest Node.js LTS and cite primary sources', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 0, moduleCount: 0 },
+    { env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test' }, cwd, workerBackend: 'provider', fetchImpl },
+  );
+  const researcher = run.tasks.find((t) => t.role === 'cx-researcher');
+  assert.ok(researcher?.evidenceGate, 'the researcher task carries an evidence-gate verdict');
+  assert.equal(researcher.evidenceGate.ok, true, 'a sourced research answer passes');
 });
 
 test('executeRun with provider backend records a failing task without crashing', async () => {

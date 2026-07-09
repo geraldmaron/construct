@@ -6,12 +6,13 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { readdirSync, readFileSync, mkdtempSync } from 'node:fs';
 import { dirname, resolve, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { buildCliServiceInventory } from '../lib/cli-service-inventory.mjs';
+import { rmTmpDir } from './helpers/cleanup.mjs';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -33,7 +34,7 @@ test('generated CLI reference contains rendered subcommands, not object coercion
 
 test('artifact workflow is both documented and available at runtime', (t) => {
   const home = mkdtempSync(join(tmpdir(), 'cli-service-inventory-home-'));
-  t.after(() => rmSync(home, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(home));
   const result = spawnSync(process.execPath, [resolve(REPO, 'bin/construct'), 'artifact', 'workflow', 'Create a runbook HTML.'], {
     cwd: REPO,
     encoding: 'utf8',

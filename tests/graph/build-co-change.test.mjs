@@ -11,11 +11,12 @@ import path from 'node:path';
 import { execSync } from 'node:child_process';
 
 import { buildCoChange } from '../../lib/graph/build-co-change.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const tmpDirs = [];
 after(() => {
   for (const dir of tmpDirs) {
-    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+    rmTmpDir(dir);
   }
 });
 

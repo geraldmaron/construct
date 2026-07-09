@@ -22,6 +22,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { describe, it, after } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { rmTmpDir } from './helpers/cleanup.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const BOOTSTRAP_SH = path.join(HERE, '..', 'templates', 'distribution', 'bootstrap.sh');
@@ -45,7 +46,7 @@ function runVerify(filePath, expectedDigest) {
 
 describe('bootstrap.sh verify_sha256', () => {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-bootstrap-sha-'));
-  after(() => { try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {} });
+  after(() => { rmTmpDir(tmpDir); });
   const binPath = path.join(tmpDir, 'fake-binary');
   fs.writeFileSync(binPath, 'pretend this is a construct binary');
   const realSha = sha256(fs.readFileSync(binPath));

@@ -162,6 +162,12 @@ Use these tags in `searchObservations` calls or the dashboard to filter by type.
 inbox/                   ← project-root drop zone (visible; files ingested then moved to knowledge/)
 ```
 
+Corpus source targets keep their cloned content out of the project tree entirely. A github target opted into `content: {mode:"corpus"}` (and any future git-hosted provider whose manifest declares a `content` block) clones under the machine state root at `~/.construct/projects/<key>/context-repos/<targetId>/`, refreshed incrementally by `construct sources sync` (`lib/sources/repo-cache.mjs`); a `directory` target reads its docs in place and clones nothing. See [Project scopes](/concepts/project-scopes) for the full state-root table.
+
+#### Multi-root corpus & chunk provenance
+
+The knowledge corpus is multi-root. `lib/sources/content-roots.mjs` resolves the content-capable subset of `sources.targets[]` — directory targets to their path, corpus targets to their synced cache — and both `buildCorpus` (`lib/knowledge/rag.mjs`, backing `construct ask`) and `buildSourceList` (`lib/knowledge/search.mjs`, backing `construct knowledge search` and MCP `knowledge_search`) fold those roots into a single searchable index. Every chunk carries a structured `origin` — `{targetId, provider, projectKey, relPath, ref, kind}` — so a hit is always attributable to its source project; the host project is the reserved origin (`targetId: null`, `projectKey: "self"`). Retrieval narrows by project with `--projects=<id,...>` (or `all` / `self`); an unknown id is a hard error, never a silent empty result. `construct ingest <dir> --as=<targetId>` stamps `origin_target_id`/`origin_provider` into the ingested file's frontmatter so imported knowledge stays re-verifiable back to its registered source.
+
 ### Entity graph (GraphRAG)
 
 `entities.json` is the JSONL-backed graph. Each entity carries a

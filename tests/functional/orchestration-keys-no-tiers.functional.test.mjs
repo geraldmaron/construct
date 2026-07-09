@@ -65,6 +65,11 @@ test('keys-no-tiers: resolveExecution resolves a model from the credential famil
 
 test('keys-no-tiers: orchestration_run (in-process) executes real tasks, never persists degraded:true with an empty task list as completed', async () => {
   const cwd = tmpProject();
+  // orchestrationRun's trace emission resolves the machine-scoped state root
+  // (ADR-0066) via CX_HOME_OVERRIDE read in-process, not via the `env` option
+  // above — pin it or the run writes into the real developer machine's home.
+  const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+  process.env.CX_HOME_OVERRIDE = cwd;
   try {
     const result = await orchestrationRun(
       { request: REQUEST, file_count: 20, module_count: 6, wait: true, worker_backend: 'inline' },
@@ -78,6 +83,8 @@ test('keys-no-tiers: orchestration_run (in-process) executes real tasks, never p
     assert.ok(Array.isArray(result.tasks) && result.tasks.length > 0, 'a keys-present run must resolve real tasks, not degrade to an empty plan');
     assert.equal(result.degraded, false);
   } finally {
+    if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+    else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
     rmTmpDir(cwd);
   }
 });

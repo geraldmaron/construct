@@ -9,9 +9,23 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import test from 'node:test';
+import test, { after } from 'node:test';
 
 import { addResearchFinding } from '../../lib/knowledge/research-store.mjs';
+
+// addResearchFinding calls syncFileStateToSql, which builds a VectorClient
+// whose db path falls back to resolveStateDir(process.cwd(), ...) — reading
+// the machine-scoped state root (ADR-0066) via CX_HOME_OVERRIDE in-process,
+// not via the `cwd` each test passes explicitly. Pin it file-wide or every
+// test below writes into the real developer machine's ~/.construct/projects.
+const HOME_SANDBOX = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-research-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = HOME_SANDBOX;
+after(() => {
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  fs.rmSync(HOME_SANDBOX, { recursive: true, force: true });
+});
 
 test('addResearchFinding writes a frontmatter-stamped markdown file', async (t) => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-research-'));

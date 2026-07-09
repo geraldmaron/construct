@@ -57,6 +57,7 @@ Everything else Construct writes under a project's `.cx/` is a small, project-lo
 | `runtime/worker/` | Worker execution logs | `lib/resources/budget.mjs` |
 | `runtime/docling/` | Shared docling venv | `lib/runtime/uv-bootstrap.mjs` |
 | `runtime/whisper/` | Whisper model cache | `lib/runtime/whisper-bootstrap.mjs` |
+| `context-repos/<targetId>/` | Cloned content cache for corpus source targets (`sources sync`); `<targetId>.meta.json` sibling holds remote/ref/HEAD/last-fetch | `lib/sources/repo-cache.mjs` |
 | `lancedb/` | LanceDB vector index (unless `CONSTRUCT_LANCEDB_PATH` overrides it) | `lib/storage/vector-client.mjs`, `lib/storage/admin.mjs` |
 
 `<key>` is `deriveProjectKey(projectRoot)`: the normalized git origin remote when one exists (so every clone/worktree of the same repository shares state), otherwise a hash of the canonical absolute project path. A project that still carries a non-empty `.cx/runtime/`, `.cx/traces/`, or `.cx/lancedb/` from before this split is flagged by `construct doctor` as legacy state — no auto-migration shim; the durable copy already lives at the state root, so the old directory is a manual `rm -rf` once confirmed unneeded.

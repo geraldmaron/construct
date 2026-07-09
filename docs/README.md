@@ -74,6 +74,7 @@ Step-by-step operator guides for common tasks:
 - [Plug in your own LLM](./guides/cookbook/plug-in-your-own-llm.mdx)
 - [Generate artifacts](./guides/cookbook/generate-artifacts.mdx)
 - [Query the knowledge base](./guides/cookbook/query-the-knowledge-base.md)
+- [Multi-project context — register, synthesize, contribute](./guides/cookbook/multi-project-context.md)
 - [Observability and cost](./guides/cookbook/observability-and-cost.md)
 - [Wireframe and drop commands](./guides/cookbook/wireframe-and-drop.md)
 - [Distill and infer commands](./guides/cookbook/distill-and-infer.md)

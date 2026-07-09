@@ -19,6 +19,7 @@ import { CLI_COMMANDS, CATEGORY_ORDER, formatCommandHelp } from '../lib/cli-comm
 import { buildStatus, formatStatusReport } from '../lib/status.mjs';
 import { validateRegistry } from '../lib/validator.mjs';
 import { readCurrentModels, readOpenRouterApiKeyFromOpenCodeConfig, applyToEnv, resetEnv, setModelWithTierInference, listAvailableModels } from '../lib/model-router.mjs';
+import { MODEL_TIERS } from '../lib/model-tiers.mjs';
 import { pollFreeModels, topForTier, selectForTier } from '../lib/model-free-selector.mjs';
 import { cmdMcpList, cmdMcpAdd, cmdMcpRemove, cmdMcpInfo } from '../lib/mcp-manager.mjs';
 import { cmdOllama } from '../lib/ollama-manager.mjs';
@@ -1511,6 +1512,27 @@ async function cmdDoctor() {
     );
   } catch (err) {
     add(`Reconciliation drift check failed: ${err.message}`, false, true);
+  }
+
+  // Source-target health (B8): directory paths that vanished and corpus caches
+  // past TTL, plus soft credential-presence notices. Filesystem + env only — no
+  // outbound fetch — so the default doctor keeps its zero-network invariant. A
+  // project with no registered targets stays silent.
+  try {
+    const { checkSourceTargetHealth } = await import('../lib/doctor/source-target-health.mjs');
+    const { configured, findings } = checkSourceTargetHealth({ cwd: process.cwd() });
+    if (configured > 0) {
+      const problems = findings.filter((f) => !f.ok);
+      if (problems.length === 0) {
+        add(`Source targets healthy (${configured} configured)`, true);
+      } else {
+        for (const f of findings) {
+          if (!f.ok) add(f.label, false, Boolean(f.optional));
+        }
+      }
+    }
+  } catch (err) {
+    add(`Source-target health check failed: ${err.message}`, false, true);
   }
 
   // Docling document-extraction runtime (Python venv via uv). Provisioned lazily
@@ -3292,6 +3314,11 @@ async function cmdSources(args) {
     findProjectConfigPath,
     PROJECT_CONFIG_FILENAME,
   } = await import('../lib/config/project-config.mjs');
+  const {
+    isCorpusTarget,
+    corpusFreshness,
+    syncCorpusTarget,
+  } = await import('../lib/sources/repo-cache.mjs');
 
   const cwd = process.cwd();
   const action = args[0] ?? 'list';
@@ -3305,7 +3332,15 @@ async function cmdSources(args) {
     println('');
     if (configTargets.length === 0) println('  (no targets in construct.config.json)');
     for (const t of configTargets) {
-      println(`  ${t.id} · ${t.provider} · ${JSON.stringify(t.selector)}`);
+      let content = '';
+      if (isCorpusTarget(t)) {
+        const fresh = corpusFreshness(t, { projectRoot: cwd });
+        const freshness = !fresh.cached
+          ? 'not synced'
+          : `synced ${fresh.lastFetch ?? 'unknown'}${fresh.stale ? ', stale' : ''}`;
+        content = ` · corpus(${fresh.ref}) · ${freshness}`;
+      }
+      println(`  ${t.id} · ${t.provider} · ${JSON.stringify(t.selector)}${content}`);
     }
     if (envTargets.length) {
       println('');
@@ -3391,7 +3426,87 @@ async function cmdSources(args) {
     return;
   }
 
-  errorln(`Unknown sources action: ${action}. Available: list, add, remove, validate`);
+  if (action === 'sync') {
+    const onlyId = args[1] ?? null;
+    const { config } = loadProjectConfig(cwd, process.env);
+    const targets = resolveEffectiveSourceTargetsFromConfig(config, process.env)
+      .filter((t) => isCorpusTarget(t))
+      .filter((t) => !onlyId || t.id === onlyId);
+
+    if (onlyId && !targets.length) {
+      errorln(`No corpus target with id: ${onlyId}`);
+      process.exit(1);
+    }
+    if (!targets.length) {
+      info('no corpus targets to sync');
+      return;
+    }
+
+    let failures = 0;
+    for (const t of targets) {
+      try {
+        const result = syncCorpusTarget(t, { projectRoot: cwd });
+        info(`synced ${t.id} (${result.mode}) → ${result.head.slice(0, 7)} @ ${result.dir}`);
+      } catch (err) {
+        failures++;
+        errorln(`failed to sync ${t.id}: ${err.message}`);
+      }
+    }
+    if (failures) process.exit(1);
+    return;
+  }
+
+  errorln(`Unknown sources action: ${action}. Available: list, add, remove, validate, sync`);
+  process.exit(1);
+}
+
+// Read a `--flag value` or `--flag=value` option out of an argv slice.
+
+function readOption(args, flag) {
+  const eq = args.find((a) => a.startsWith(`${flag}=`));
+  if (eq) return eq.slice(flag.length + 1);
+  const idx = args.indexOf(flag);
+  if (idx >= 0 && args[idx + 1] && !args[idx + 1].startsWith('--')) return args[idx + 1];
+  return undefined;
+}
+
+async function cmdTemplates(args) {
+  const { registerArtifactType } = await import('../lib/artifact-manifest-overlay.mjs');
+  const { listTemplates } = await import('../lib/mcp/tools/skills.mjs');
+  const cwd = process.cwd();
+  const action = args[0] ?? 'list';
+
+  if (action === 'list' || action === 'show') {
+    const res = listTemplates({ ROOT_DIR });
+    println('Templates');
+    println(`  shipped:    ${res.shipped.join(', ')}`);
+    println(`  overridden: ${res.overridden.length ? res.overridden.join(', ') : '(none)'}`);
+    return;
+  }
+
+  if (action === 'register') {
+    const type = args.slice(1).find((a) => !a.startsWith('--'));
+    if (!type) {
+      errorln('Usage: construct templates register <type> [--description "..."] [--from <file>] [--force]');
+      process.exit(1);
+    }
+    const description = readOption(args, '--description');
+    const from = readOption(args, '--from');
+    const force = args.includes('--force');
+    try {
+      const r = registerArtifactType({ type, description, from, cwd, force });
+      ok(`registered document class '${r.type}'`);
+      info(`template: ${path.relative(cwd, r.templatePath)}`);
+      info(`overlay:  ${path.relative(cwd, r.overlayPath)}`);
+      info(`author it via MCP: author_artifact {type:"${r.type}", draft_markdown:"..."}`);
+    } catch (err) {
+      errorln(err.message);
+      process.exit(1);
+    }
+    return;
+  }
+
+  errorln(`Unknown templates action: ${action}. Available: list, register`);
   process.exit(1);
 }
 
@@ -4183,7 +4298,7 @@ async function cmdOrchestrate(args) {
     println(summarizeOrchestrationReadiness(readiness));
     println(`Reason: ${readiness.reasonCode}`);
     println(`Next: ${readiness.nextStep}`);
-    const modelLine = ['reasoning', 'standard', 'fast']
+    const modelLine = MODEL_TIERS
       .map((tier) => `${tier}=${readiness.modelResolved?.[tier] ? 'resolved' : 'unresolved'}`)
       .join(' ');
     println(`Execution: workerBackend=${readiness.workerBackend} webMode=${readiness.webMode} credentialMaterializable=${readiness.credentialMaterializable} (${modelLine})`);
@@ -4255,7 +4370,7 @@ async function cmdOrchestrate(args) {
     const { shapeRun } = await import('../lib/mcp/tools/orchestration-run.mjs');
     const positional = rest.filter((a, i) => !a.startsWith('--') && !(i > 0 && rest[i - 1].startsWith('--') && !['--no-construct', '--no-execute', '--json'].includes(rest[i - 1])));
     const text = flag('--text') || positional.join(' ').trim();
-    if (!text) { errorln('Usage: construct orchestrate run "<request>" [--workflow-type T] [--strategy orchestrated|prompt-only|auto] [--host H] [--host-model M] [--no-construct] [--no-execute] [--json]'); process.exit(1); }
+    if (!text) { errorln('Usage: construct orchestrate run "<request>" [--workflow-type T] [--strategy orchestrated|prompt-only|auto] [--context id[:role],...] [--host H] [--host-model M] [--no-construct] [--no-execute] [--json]'); process.exit(1); }
     const cliWorkerBackend = flag('--worker-backend');
     // The host worker backend materializes prompts for an attached MCP host
     // session to execute and submit back via orchestration_task_result — a
@@ -4267,6 +4382,19 @@ async function cmdOrchestrate(args) {
       errorln('--worker-backend=host requires an attached MCP host session to execute the materialized prompts and submit results back — the CLI has no such session. Use --worker-backend=inline (prepare only) or --worker-backend=provider (needs a provider key), or invoke orchestration_run through an MCP host instead.');
       process.exit(1);
     }
+    // --context=id[:role],id[:role] binds the run to registered source targets;
+    // an unknown id is rejected at plan time (below), never a silent skip. Accept
+    // both `--context=…` and `--context …` since the epic UX documents the former
+    // while sibling orchestrate flags use the latter.
+    const contextInline = rest.find((a) => a.startsWith('--context='));
+    const contextFlag = contextInline ? contextInline.slice('--context='.length) : flag('--context');
+    const contextTargets = contextFlag
+      ? contextFlag.split(',').map((s) => s.trim()).filter(Boolean).map((entry) => {
+          const colon = entry.indexOf(':');
+          return colon === -1 ? { id: entry } : { id: entry.slice(0, colon), role: entry.slice(colon + 1) || undefined };
+        })
+      : undefined;
+
     const request = {
       request: text,
       workflowType: flag('--workflow-type'),
@@ -4278,13 +4406,20 @@ async function cmdOrchestrate(args) {
       workerBackend: cliWorkerBackend,
       fileCount: Number(flag('--file-count') || 0),
       moduleCount: Number(flag('--module-count') || 0),
+      contextTargets,
     };
     // runOrchestration/executeRun resolve the worker backend from opts.workerBackend,
     // not from request — the flag must reach opts explicitly or an override is silently
     // dropped (construct-1xlz).
 
     const runOpts = cliWorkerBackend ? { workerBackend: cliWorkerBackend } : {};
-    const run = rest.includes('--no-execute') ? await planRun(request, runOpts) : await runOrchestration(request, runOpts);
+    let run;
+    try {
+      run = rest.includes('--no-execute') ? await planRun(request, runOpts) : await runOrchestration(request, runOpts);
+    } catch (err) {
+      if (err?.code === 'CONTEXT_TARGET_UNKNOWN') { errorln(err.message); process.exit(1); }
+      throw err;
+    }
     if (wantsJson) { println(JSON.stringify(hostAdapterMetadata(run), null, 2)); return; }
 
     // AP5.1/AP5.4: the CLI must never print the raw persisted status — a
@@ -4296,6 +4431,9 @@ async function cmdOrchestrate(args) {
     if (shaped.degraded) println(`  degraded: ${shaped.degradationReason}`);
     if (run.tasks.length) println(`  tasks: ${run.tasks.map((t) => `${t.role}(${t.status})`).join(' → ')}`);
     else println('  tasks: none (no Construct-owned specialist sequence for this execution mode)');
+    if (run.contextBindings?.length) {
+      println(`  context: ${run.contextBindings.map((b) => `${b.id}[${b.provider}${b.role ? `:${b.role}` : ''}]${b.contentRoot ? '✓' : ''}`).join(', ')}`);
+    }
     for (const t of run.tasks) {
       if (t.reasoning) println(`  ↳ ${t.role} reasoning: ${t.reasoning.length > 300 ? `${t.reasoning.slice(0, 300)}…` : t.reasoning}`);
     }
@@ -4416,10 +4554,20 @@ async function cmdDb(args) {
 async function cmdModels(args) {
   const envPath = getUserEnvPath(HOME);
   const sub = args[0] && !args[0].startsWith('-') ? args[0] : null;
-  const KNOWN_SUBCOMMANDS = new Set(['list', 'set', 'free', 'reset', 'resolve']);
+  const KNOWN_SUBCOMMANDS = new Set(['list', 'set', 'free', 'reset', 'resolve', 'policy', 'explain']);
   if (sub && !KNOWN_SUBCOMMANDS.has(sub)) {
     errorln(`Unknown models subcommand: ${sub}. Run \`construct models --help\` for the supported set.`);
     process.exit(1);
+  }
+
+  if (sub === 'policy') {
+    await cmdModelsPolicy(args.slice(1));
+    return;
+  }
+
+  if (sub === 'explain') {
+    await cmdModelsExplain(args.slice(1));
+    return;
   }
 
   if (sub === 'resolve') {
@@ -4487,7 +4635,7 @@ async function cmdModels(args) {
     }
     const models = await pollFreeModels(apiKey);
     println('Available free models on OpenRouter:\n');
-    for (const currentTier of ['reasoning', 'standard', 'fast']) {
+    for (const currentTier of MODEL_TIERS) {
       const top = topForTier(models, currentTier, 3);
       println(`  ${currentTier} (top ${top.length}):`);
       top.forEach((model, index) => println(`    ${index + 1}. ${model.id}`));
@@ -4499,7 +4647,7 @@ async function cmdModels(args) {
     const apiKey = process.env.OPENROUTER_API_KEY || readOpenRouterApiKeyFromOpenCodeConfig();
     const models = await pollFreeModels(apiKey);
     const selections = {};
-    for (const currentTier of ['reasoning', 'standard', 'fast']) {
+    for (const currentTier of MODEL_TIERS) {
       const fallbacks = [];
       const id = selectForTier(models, currentTier, fallbacks);
       if (id) selections[currentTier] = id;
@@ -4526,7 +4674,7 @@ async function cmdModels(args) {
       await import('../lib/model-cheapest-provider.mjs');
     const allTiers = args.includes('--all-tiers') || !args.find((arg) => arg.startsWith('--tier='));
     const tierArg = args.find((arg) => arg.startsWith('--tier='))?.split('=')[1];
-    const tiers = allTiers ? ['reasoning', 'standard', 'fast'] : (tierArg ? [tierArg] : ['standard']);
+    const tiers = allTiers ? [...MODEL_TIERS] : (tierArg ? [tierArg] : ['standard']);
     const selections = {};
     for (const currentTier of tiers) {
       const { selectCheapestProvider } = await import('../lib/model-cheapest-provider.mjs');
@@ -4563,9 +4711,9 @@ async function cmdModels(args) {
     return;
   }
   const result = readCurrentModels(envPath, {});
-  const nothingSelected = ['reasoning', 'standard', 'fast'].every((t) => !result[t]);
+  const nothingSelected = MODEL_TIERS.every((t) => !result[t]);
   println('Current model assignments:');
-  for (const currentTier of ['reasoning', 'standard', 'fast']) {
+  for (const currentTier of MODEL_TIERS) {
     const id = result[currentTier];
     const source = result.sources?.[currentTier] || (id ? 'registry' : 'not configured');
     println(`  ${currentTier.padEnd(11)}${id ? `${id} [${source}]` : '(not configured)'}`);
@@ -4578,6 +4726,101 @@ async function cmdModels(args) {
     println('  • construct models set --tier=<reasoning|standard|fast> --model=<provider/model-id>');
     println('  • construct models --apply           Poll OpenRouter free catalog and seed all tiers');
   }
+}
+
+async function cmdModelsPolicy(args) {
+  const sub = args[0] && !args[0].startsWith('-') ? args[0] : 'show';
+  const asJson = args.includes('--json');
+  const {
+    computePolicyPreset, writeModelRegistry, readPolicyView, POLICY_PRESETS,
+  } = await import('../lib/model-policy.mjs');
+  const { defaultModelRegistryPath } = await import('../lib/model-router.mjs');
+  const registryPath = defaultModelRegistryPath(process.env);
+
+  if (sub === 'show') {
+    const view = readPolicyView({ env: process.env, registryPath });
+    if (asJson) {
+      println(JSON.stringify(view, null, 2));
+      return;
+    }
+    println('Effective model policy:');
+    for (const t of view.tiers) {
+      const model = t.model ?? '(not configured)';
+      println(`  ${t.tier.padEnd(11)}${model}  [${t.source}]`);
+    }
+    println('');
+    println('Work category → tier:');
+    for (const [category, tier] of Object.entries(view.workCategoryMap)) {
+      println(`  ${category.padEnd(11)}→ ${tier}`);
+    }
+    println('');
+    println(`Registry: ${registryPath}`);
+    println('Precedence: CX_MODEL_<TIER> env pins always win over registry defaults.');
+    return;
+  }
+
+  if (sub === 'set') {
+    const preset = args[1] && !args[1].startsWith('-') ? args[1] : null;
+    if (!preset) {
+      errorln(`Usage: construct models policy set <${POLICY_PRESETS.join('|')}>`);
+      process.exit(1);
+    }
+    const apiKey = process.env.OPENROUTER_API_KEY || readOpenRouterApiKeyFromOpenCodeConfig() || null;
+    const result = await computePolicyPreset(preset, { env: process.env, apiKey });
+    if (!result.ok) {
+      errorln(result.refusal);
+      for (const w of result.warnings ?? []) errorln(`  ${w}`);
+      process.exit(1);
+    }
+    writeModelRegistry(registryPath, result.models, { preset });
+    if (asJson) {
+      println(JSON.stringify({ preset, registryPath, models: result.models, warnings: result.warnings }, null, 2));
+      return;
+    }
+    println(`Applied \`${preset}\` policy to ${registryPath}:`);
+    for (const tier of MODEL_TIERS) {
+      const def = result.models[tier];
+      const primary = def?.primary ?? '(unset)';
+      const fallback = def?.fallback?.length ? `  (fallback: ${def.fallback.join(', ')})` : '';
+      println(`  ${tier.padEnd(11)}${primary}${fallback}`);
+    }
+    for (const w of result.warnings ?? []) errorln(`Note: ${w}`);
+    println('');
+    println('Env pins (CX_MODEL_<TIER>) still override these. Run `construct sync` to propagate.');
+    if (!args.includes('--no-sync')) await cmdSync([]);
+    return;
+  }
+
+  errorln(`Unknown models policy subcommand: ${sub}. Use \`show\` or \`set <preset>\`.`);
+  process.exit(1);
+}
+
+async function cmdModelsExplain(args) {
+  const asJson = args.includes('--json');
+  const roleFlagIdx = args.indexOf('--role');
+  const role = roleFlagIdx !== -1 ? args[roleFlagIdx + 1] : (args[0] && !args[0].startsWith('-') ? args[0] : null);
+  if (!role) {
+    errorln('Usage: construct models explain --role <specialist>');
+    process.exit(1);
+  }
+  const { explainRole } = await import('../lib/model-policy.mjs');
+  const trace = explainRole(role, { env: process.env, rootDir: ROOT_DIR });
+  if (!trace.ok) {
+    errorln(trace.error);
+    process.exit(1);
+  }
+  if (asJson) {
+    println(JSON.stringify(trace, null, 2));
+    return;
+  }
+  println(`Resolution trace for ${trace.role}:`);
+  println(`  declared tier:   ${trace.declaredTier ?? '(none)'}`);
+  if (trace.declaredModel) println(`  declared model:  ${trace.declaredModel}`);
+  println(`  resolved tier:   ${trace.tier}`);
+  println(`  resolved model:  ${trace.resolvedModel ?? '(not configured)'}`);
+  println(`  winning source:  ${trace.source}`);
+  println('');
+  println(`Matches: construct models resolve --json --tier ${trace.tier}`);
 }
 
 async function cmdMcp(args) {
@@ -6545,6 +6788,7 @@ const handlers = new Map([
   ['config', cmdConfig],
   ['approvals', cmdApprovals],
   ['sources', cmdSources],
+  ['templates', cmdTemplates],
   ['intake', cmdIntake],
   ['recommendations', cmdRecommendations],
   ['integrations', cmdIntegrations],
@@ -7257,9 +7501,13 @@ const handlers = new Map([
       process.exit(1);
     }
     const { ask, buildCorpus } = await import('../lib/knowledge/rag.mjs');
+    const { resolveContentRootsFromConfig } = await import('../lib/sources/content-roots.mjs');
+    const { loadProjectConfig } = await import('../lib/config/project-config.mjs');
     const rootDir = process.cwd();
-    process.stdout.write('Building knowledge index…\n');
-    const corpus = buildCorpus(rootDir);
+    const { config } = loadProjectConfig(rootDir);
+    const roots = resolveContentRootsFromConfig(config, { projectRoot: rootDir });
+    process.stdout.write(`Building knowledge index${roots.length ? ` (+${roots.length} registered project${roots.length === 1 ? '' : 's'})` : ''}…\n`);
+    const corpus = buildCorpus(rootDir, { roots });
     process.stdout.write(`Indexed ${corpus.length} chunks. Retrieving…\n\n`);
     const result = await ask(question, { rootDir, corpus });
     if (result.cliMissing) {
@@ -7269,7 +7517,8 @@ const handlers = new Map([
     if (result.sources?.length) {
       process.stdout.write('\n--- Sources ---\n');
       for (const s of result.sources.slice(0, 5)) {
-        process.stdout.write(`  • [${s.source}] ${s.title} (score: ${s.score?.toFixed(3)})\n`);
+        const proj = s.origin?.projectKey && s.origin.projectKey !== 'self' ? ` «${s.origin.projectKey}»` : '';
+        process.stdout.write(`  • [${s.source}]${proj} ${s.title} (score: ${s.score?.toFixed(3)})\n`);
       }
     }
   }],
@@ -7384,9 +7633,10 @@ const handlers = new Map([
       const tagFlag = restArgs.find((a) => a.startsWith('--tag='))?.replace('--tag=', '');
       const tagMatchFlag = restArgs.find((a) => a.startsWith('--tag-match='))?.replace('--tag-match=', '');
       const topKFlag = restArgs.find((a) => a.startsWith('--top='))?.replace('--top=', '');
+      const projectsFlag = restArgs.find((a) => a.startsWith('--projects='))?.replace('--projects=', '');
       const queryParts = restArgs.filter((a) => !a.startsWith('--'));
       const query = queryParts.join(' ').trim();
-      if (!query) { errorln('Usage: construct knowledge search "<query>" [--tag=<tag>] [--tag-match=any|all]'); process.exit(1); }
+      if (!query) { errorln('Usage: construct knowledge search "<query>" [--tag=<tag>] [--tag-match=any|all] [--projects=<id,...>|all|self]'); process.exit(1); }
       const { knowledgeSearch } = await import('../lib/knowledge/search.mjs');
       const tags = tagFlag ? tagFlag.split(',') : undefined;
       const result = knowledgeSearch({
@@ -7396,11 +7646,13 @@ const handlers = new Map([
         rootDir: process.cwd(),
         tags,
         tagMatch: tagMatchFlag || 'any',
+        projects: projectsFlag,
       });
       if (!result.ok) { errorln(result.message); process.exit(1); }
-      println(`${result.hits.length} result(s) for "${query}"${tags ? ` [tag: ${tags.join(',')}]` : ''}\n`);
+      println(`${result.hits.length} result(s) for "${query}"${tags ? ` [tag: ${tags.join(',')}]` : ''}${projectsFlag ? ` [projects: ${projectsFlag}]` : ''}\n`);
       for (const h of result.hits) {
-        println(`  ${h.file}${h.heading ? ` § ${h.heading}` : ''}  (score: ${h.score})`);
+        const proj = h.origin?.projectKey && h.origin.projectKey !== 'self' ? `  «${h.origin.projectKey}»` : '';
+        println(`  ${h.file}${h.heading ? ` § ${h.heading}` : ''}${proj}  (score: ${h.score})`);
         println(`  ${h.text.slice(0, 120).replace(/\n/g, ' ')}`);
         println('');
       }
@@ -7408,6 +7660,73 @@ const handlers = new Map([
     }
     errorln(`Unknown knowledge subcommand: ${sub}. Available: trends, index, add, search`);
     process.exit(1);
+  }],
+  ['synthesize', async (args) => {
+    const flag = (name) => args.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3);
+    const projects = flag('projects') || 'all';
+    const ask = flag('ask') || args.filter((a) => !a.startsWith('--')).join(' ').trim();
+    const template = flag('template') || null;
+    const dryRun = args.includes('--dry-run');
+    const wantsJson = args.includes('--json');
+    if (!ask) {
+      errorln('Usage: construct synthesize --ask "<question>" [--projects=all|self|id,...] [--template <name>] [--dry-run] [--json]');
+      process.exit(1);
+    }
+    const { synthesize } = await import('../lib/knowledge/synthesis.mjs');
+    const result = await synthesize({ projects, ask, cwd: process.cwd(), template, dryRun, rootDir: ROOT_DIR });
+    if (!result.ok) { errorln(result.message); process.exit(1); }
+    if (wantsJson) { println(JSON.stringify(result, null, 2)); return; }
+    if (dryRun) {
+      println(result.context);
+      println('\n--- Reduce prompt (not sent in --dry-run) ---\n');
+      println(result.prompt);
+      return;
+    }
+    if (result.cliMissing) println('[claude CLI not available — showing assembled context]\n');
+    println(result.answer);
+    return;
+  }],
+  ['tracker', async (args) => {
+    const sub = args[0] || 'contribute';
+    const flag = (name) => args.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3)
+      ?? (args.includes(`--${name}`) ? args[args.indexOf(`--${name}`) + 1] : undefined);
+    if (sub !== 'contribute') { errorln(`Unknown tracker subcommand: ${sub}. Available: contribute`); process.exit(1); }
+    const wantsJson = args.includes('--json');
+    const applyId = flag('apply');
+    const { analyzeAndPropose, applyProposal } = await import('../lib/tracker/contribute.mjs');
+
+    if (applyId) {
+      const approve = flag('approve') || null;
+      const res = await applyProposal({ proposalId: applyId, approveToken: approve, cwd: process.cwd() });
+      if (!res.ok) { errorln(res.message); process.exit(1); }
+      if (wantsJson) { println(JSON.stringify(res, null, 2)); return; }
+      println(`Applied proposal ${res.proposalId} — ${res.dryRun ? 'DRY-RUN (nothing written)' : 'EXECUTED'}`);
+      for (const r of res.results) println(`  ${r.key} — ${r.status}`);
+      if (res.dryRun) println('\nRe-run with --approve <token> to write the governed batch.');
+      return;
+    }
+
+    const target = flag('target');
+    const against = flag('against') || 'all';
+    if (!target) {
+      errorln('Usage: construct tracker contribute --target <id> [--against <ids|all>] [--json]\n   or: construct tracker contribute --apply <proposal-id> [--approve <token>] [--json]');
+      process.exit(1);
+    }
+    let res;
+    try {
+      res = await analyzeAndPropose({ target, against, cwd: process.cwd() });
+    } catch (err) {
+      errorln(err.message); process.exit(1);
+    }
+    if (!res.ok) { errorln(res.message); process.exit(1); }
+    if (wantsJson) { println(JSON.stringify(res.proposal, null, 2)); return; }
+    const p = res.proposal;
+    println(`Proposal ${p.id} for ${p.projectKey} (${p.targetId}) — ${p.proposals.length} proposed, ${p.suppressed.length} suppressed (${p.existingIssueCount} existing issues)`);
+    println(`  artifact: ${res.paths.md}`);
+    for (const it of p.proposals) println(`  + ${it.summary}`);
+    for (const s of p.suppressed) println(`  ~ suppressed: ${s.summary} → ${s.matchedIssueKey} (${s.similarity})`);
+    println(`\nReview the artifact, then: construct tracker contribute --apply ${p.id} [--approve <token>]`);
+    return;
   }],
   ['sandbox', async (args) => {
     const sub = args[0] || 'create';

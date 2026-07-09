@@ -72,7 +72,7 @@ test('models --help advertises only backed subcommands, never usage/cost', () =>
   const sb = freshSandbox();
   const res = runModels(sb, ['--help']);
   assert.equal(res.status, 0, res.stderr);
-  assert.match(res.stdout, /construct models <list\|set\|free\|reset\|resolve>/);
+  assert.match(res.stdout, /construct models <list\|set\|free\|reset\|resolve\|policy\|explain>/);
   assert.doesNotMatch(res.stdout, /Show token usage per tier/);
   assert.doesNotMatch(res.stdout, /Show cost breakdown/);
 });

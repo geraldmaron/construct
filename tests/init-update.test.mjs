@@ -12,6 +12,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { spawnSync } from "node:child_process";
+import { rmTmpDir } from "./helpers/cleanup.mjs";
 
 const ROOT_DIR = path.resolve(import.meta.dirname, "..");
 
@@ -58,7 +59,7 @@ test("construct init:update proposes a CI docs:verify check without rewriting AG
     assert.equal(fs.existsSync(ciProposal), true, "a CI proposal should be written");
     assert.match(fs.readFileSync(ciProposal, "utf8"), /docs:verify/);
   } finally {
-    fs.rmSync(projectDir, { recursive: true, force: true });
+    rmTmpDir(projectDir);
   }
 });
 
@@ -72,7 +73,7 @@ test("construct init:update reports no proposals when standards are already met"
     assert.match(result.stdout, /No proposals needed/);
     assert.equal(fs.existsSync(path.join(projectDir, ".cx", "proposals")), false);
   } finally {
-    fs.rmSync(projectDir, { recursive: true, force: true });
+    rmTmpDir(projectDir);
   }
 });
 
@@ -86,7 +87,7 @@ test("construct init:update dry-run reports proposals without writing files", ()
     assert.match(result.stdout, /Planned proposals:/);
     assert.equal(fs.existsSync(path.join(projectDir, ".cx", "proposals")), false);
   } finally {
-    fs.rmSync(projectDir, { recursive: true, force: true });
+    rmTmpDir(projectDir);
   }
 });
 
@@ -105,6 +106,6 @@ test("construct init:update proposes construct_guide refresh for stale .cx copy"
     assert.equal(fs.existsSync(proposal), true);
     assert.match(fs.readFileSync(proposal, "utf8"), /construct intake --help/);
   } finally {
-    fs.rmSync(projectDir, { recursive: true, force: true });
+    rmTmpDir(projectDir);
   }
 });

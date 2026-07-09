@@ -5,7 +5,7 @@
  * session-summary observation generation, capped decision extraction, and
  * file-group entity creation from changed-file patterns. Run via `npm test`.
  */
-import { describe, it, beforeEach, afterEach } from 'node:test';
+import { describe, it, beforeEach, afterEach, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -13,6 +13,20 @@ import os from 'node:os';
 import { captureSessionArtifacts } from '../lib/artifact-capture.mjs';
 import { listObservations, getObservation } from '../lib/observation-store.mjs';
 import { listEntities } from '../lib/entity-store.mjs';
+
+// captureSessionArtifacts writes observations through the machine-scoped state
+// root (ADR-0066, lib/observation-store.mjs -> resolveStateDir), so
+// CX_HOME_OVERRIDE is pinned for the whole file to keep those writes off the
+// real developer machine's ~/.construct/projects.
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-capture-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 let tmpDir;
 

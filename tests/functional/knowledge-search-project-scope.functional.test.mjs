@@ -11,7 +11,9 @@
  *   1. A research file dropped under `.cx/knowledge/external/research/` is in
  *      the source set.
  *   2. The project hit outranks the bundled Construct doc for the same query.
- *   3. The hit carries `origin: 'project'` so callers can distinguish.
+ *   3. The hit carries a structured `origin` whose `kind` is 'project' so
+ *      callers can distinguish (construct-760c.2 widened origin from a bare
+ *      string to {targetId, provider, projectKey, relPath, ref, kind}).
  *   4. When projectRoot equals repoRoot or is absent, the project enumeration
  *      is skipped (no double-counting on the Construct repo itself).
  */
@@ -70,7 +72,7 @@ test('project knowledge surfaces from a foreign project (construct-wxip core fix
   assert.ok(result.hits.length > 0, 'no hits returned for project content');
   const top = result.hits[0];
   assert.match(top.file, /external\/research\/.*\.md$/, `top hit must be a project research file; got ${top.file}`);
-  assert.equal(top.origin, 'project', 'top hit must be labeled origin: project');
+  assert.equal(top.origin.kind, 'project', 'top hit must be labeled origin.kind: project');
 });
 
 test('project knowledge outranks bundled docs on a tied-relevance query', () => {
@@ -95,9 +97,9 @@ test('project knowledge outranks bundled docs on a tied-relevance query', () => 
   });
 
   assert.equal(result.ok, true, `search returned not-ok: ${result.message}`);
-  const projectHits = result.hits.filter((h) => h.origin === 'project');
+  const projectHits = result.hits.filter((h) => h.origin.kind === 'project');
   assert.ok(projectHits.length > 0, 'expected at least one project hit; got none');
-  assert.equal(result.hits[0].origin, 'project', `project knowledge must rank first; top hit was ${result.hits[0].file} (${result.hits[0].origin})`);
+  assert.equal(result.hits[0].origin.kind, 'project', `project knowledge must rank first; top hit was ${result.hits[0].file} (${result.hits[0].origin.kind})`);
 });
 
 test('no source-list duplication when projectRoot equals repoRoot or is absent', () => {
@@ -111,7 +113,7 @@ test('no source-list duplication when projectRoot equals repoRoot or is absent',
   writeResearch(project, 'no-dup-marker-xyzqqq', '# Marker\n\nUnique no-dup-marker-xyzqqq.\n');
 
   const foreign = knowledgeSearch({ query: 'no-dup-marker-xyzqqq', repoRoot: REPO_ROOT, rootDir: project, topK: 100, minScore: 0 });
-  const projectHitsCount = foreign.hits.filter((h) => h.origin === 'project').length;
+  const projectHitsCount = foreign.hits.filter((h) => h.origin.kind === 'project').length;
   assert.ok(projectHitsCount > 0, 'foreign project must surface its research file');
 
   const sameRoot = knowledgeSearch({ query: 'no-dup-marker-xyzqqq', repoRoot: REPO_ROOT, rootDir: REPO_ROOT, topK: 100, minScore: 0 });

@@ -11,6 +11,8 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
+import { rmTmpDir } from '../../helpers/cleanup.mjs';
+
 const UNRESOLVED_REF = 'op://vault/item/field';
 const BAD_PATH = path.join(os.tmpdir(), 'cx-no-op-bin');
 
@@ -62,7 +64,7 @@ test('resolver-bypass consumers treat unresolved op:// refs as not configured an
   );
 
   t.after(() => {
-    fs.rmSync(tmpRoot, { recursive: true, force: true });
+    rmTmpDir(tmpRoot);
   });
 
   const fetchCalls = [];

@@ -27,13 +27,13 @@ import {
   mkdtempSync,
   readFileSync,
   readdirSync,
-  rmSync,
   utimesSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { rmTmpDir } from './helpers/cleanup.mjs';
 
 import {
   archivePlanIfLanded,
@@ -71,8 +71,8 @@ beforeEach(() => {
 
 afterEach(() => {
   process.env.PATH = savedPath;
-  rmSync(rootDir, { recursive: true, force: true });
-  rmSync(shimDir, { recursive: true, force: true });
+  rmTmpDir(rootDir);
+  rmTmpDir(shimDir);
 });
 
 // ── refreshContextMd ────────────────────────────────────────────────────────

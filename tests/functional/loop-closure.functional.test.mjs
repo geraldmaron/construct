@@ -43,6 +43,16 @@ test('loop stage 1 — observation capture, search, and consume close offline', 
   process.env.CONSTRUCT_EMBEDDING_MODEL = 'hashing';
   t.after(() => { delete process.env.CONSTRUCT_EMBEDDING_MODEL; });
 
+  // The observation store resolves the machine-scoped state root (ADR-0066)
+  // via CX_HOME_OVERRIDE read in-process, not via the `root` argument above —
+  // pin it or these calls write into the real developer machine's home.
+  const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+  process.env.CX_HOME_OVERRIDE = root;
+  t.after(() => {
+    if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+    else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  });
+
   const seeds = [
     'BM25 normalization merges with cosine in hybrid ranking',
     'Session-start hook injects top relevant observations',

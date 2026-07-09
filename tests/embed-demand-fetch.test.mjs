@@ -2,9 +2,19 @@
  * tests/embed-demand-fetch.test.mjs — demand-fetch unit tests.
  */
 
-import { describe, it } from 'node:test';
+import { after, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { resolveKnownSources, matchSourceFromQuery } from '../lib/embed/demand-fetch.mjs';
+import { rmTmpDir } from './helpers/cleanup.mjs';
+
+// The credential-only fallback fires only when no config target and no legacy-env
+// list target resolves. Run it from an empty tmpdir cwd so the repo's own
+// construct.config.json can never supply a target that shadows the fallback path.
+const EMPTY_CWD = mkdtempSync(join(tmpdir(), 'cx-demand-fetch-'));
+after(() => rmTmpDir(EMPTY_CWD));
 
 const ENV_GITHUB = {
   GITHUB_REPOS: 'hashicorp/project-iverson,hashicorp/cloud-reliability,hashicorp/team-delivery-intelligence',
@@ -66,6 +76,39 @@ describe('resolveKnownSources', () => {
   it('returns empty array when no sources configured', () => {
     const sources = resolveKnownSources({});
     assert.equal(sources.length, 0);
+  });
+});
+
+// The descriptor-driven credential-only fallback (construct-r70rz): a provider
+// reachable via a bare credential env with no explicit list is advertised as a
+// generic catch-all source, gated on aliases.catchAllCredentialEnv — no provider
+// name, env var, or display prefix hardcoded in demand-fetch.
+describe('resolveKnownSources credential-only fallback', () => {
+  it('advertises a generic jira source when JIRA_BASE_URL is set with no projects', () => {
+    const sources = resolveKnownSources({ JIRA_BASE_URL: 'https://acme.atlassian.net' }, EMPTY_CWD);
+    assert.deepEqual(sources, [{ id: 'jira', provider: 'jira', ref: null, display: 'Jira' }]);
+  });
+
+  it('advertises a generic linear source when LINEAR_API_KEY is set with no teams', () => {
+    const sources = resolveKnownSources({ LINEAR_API_KEY: 'lin_fake' }, EMPTY_CWD);
+    assert.deepEqual(sources, [{ id: 'linear', provider: 'linear', ref: null, display: 'Linear' }]);
+  });
+
+  it('does not advertise jira or linear without their credential env', () => {
+    const sources = resolveKnownSources({ JIRA_PROJECTS: '', LINEAR_TEAMS: '' }, EMPTY_CWD);
+    assert.equal(sources.length, 0);
+  });
+
+  it('does not advertise slack from a bare credential (no catchAllCredentialEnv gate)', () => {
+    const sources = resolveKnownSources({ SLACK_BOT_TOKEN: 'xoxb-fake', SLACK_TEAM_ID: 'T123' }, EMPTY_CWD);
+    assert.ok(!sources.some(s => s.provider === 'slack'), 'slack is not advertised without an explicit channel');
+    assert.equal(sources.length, 0);
+  });
+
+  it('advertises both jira and linear when both credentials are present', () => {
+    const sources = resolveKnownSources({ JIRA_BASE_URL: 'https://acme.atlassian.net', LINEAR_API_KEY: 'lin_fake' }, EMPTY_CWD);
+    const providers = sources.map(s => s.provider).sort();
+    assert.deepEqual(providers, ['jira', 'linear']);
   });
 });
 

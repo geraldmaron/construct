@@ -299,16 +299,26 @@ describe('cross-tenant isolation — memory (observation store)', () => {
     const rootA = tmp('cx-mem-tenant-a-');
     const rootB = tmp('cx-mem-tenant-b-');
 
-    await addObservation(rootA, { role: 'cx-engineer', category: 'insight', summary: 'tenant-a-secret-summary', content: 'tenant-a-secret-content', project: 'tenant-a' });
-    await addObservation(rootB, { role: 'cx-engineer', category: 'insight', summary: 'tenant-b-secret-summary', content: 'tenant-b-secret-content', project: 'tenant-b' });
+    // addObservation/listObservations resolve the machine-scoped state root
+    // (ADR-0066) via CX_HOME_OVERRIDE read in-process, not via rootA/rootB —
+    // pin it or they write into the real developer machine's home.
+    const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+    process.env.CX_HOME_OVERRIDE = rootA;
+    try {
+      await addObservation(rootA, { role: 'cx-engineer', category: 'insight', summary: 'tenant-a-secret-summary', content: 'tenant-a-secret-content', project: 'tenant-a' });
+      await addObservation(rootB, { role: 'cx-engineer', category: 'insight', summary: 'tenant-b-secret-summary', content: 'tenant-b-secret-content', project: 'tenant-b' });
 
-    const viewFromB = listObservations(rootB, { limit: 100 });
-    assert.ok(!viewFromB.some((o) => o.summary === 'tenant-a-secret-summary'), 'tenant A observation must never be visible from tenant B rootDir');
-    assert.ok(viewFromB.some((o) => o.summary === 'tenant-b-secret-summary'));
+      const viewFromB = listObservations(rootB, { limit: 100 });
+      assert.ok(!viewFromB.some((o) => o.summary === 'tenant-a-secret-summary'), 'tenant A observation must never be visible from tenant B rootDir');
+      assert.ok(viewFromB.some((o) => o.summary === 'tenant-b-secret-summary'));
 
-    const viewFromA = listObservations(rootA, { limit: 100 });
-    assert.ok(!viewFromA.some((o) => o.summary === 'tenant-b-secret-summary'), 'tenant B observation must never be visible from tenant A rootDir');
-    assert.ok(viewFromA.some((o) => o.summary === 'tenant-a-secret-summary'));
+      const viewFromA = listObservations(rootA, { limit: 100 });
+      assert.ok(!viewFromA.some((o) => o.summary === 'tenant-b-secret-summary'), 'tenant B observation must never be visible from tenant A rootDir');
+      assert.ok(viewFromA.some((o) => o.summary === 'tenant-a-secret-summary'));
+    } finally {
+      if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+      else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+    }
   });
 });
 

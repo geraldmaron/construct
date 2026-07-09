@@ -11,10 +11,11 @@
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(ROOT, 'bin', 'construct');
@@ -24,7 +25,7 @@ const BIN = join(ROOT, 'bin', 'construct');
 // every spawn below must be pinned to a throwaway home or it leaks a
 // project-key directory into the real developer machine's ~/.construct/projects/.
 const HOME_DIR = mkdtempSync(join(tmpdir(), 'construct-provider-configure-home-'));
-after(() => { rmSync(HOME_DIR, { recursive: true, force: true }); });
+after(() => { rmTmpDir(HOME_DIR); });
 
 function run(args, { cwd = ROOT } = {}) {
   return spawnSync(process.execPath, [BIN, ...args], {
@@ -52,7 +53,7 @@ test('provider add <id> scaffolds instance config from configSchema defaults (gi
     assert.equal(onDisk.providerId, 'github');
     assert.equal(onDisk.config.kind, 'issues');
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -66,7 +67,7 @@ test('provider add <id> refuses to clobber an existing instance config', () => {
     assert.equal(parsed.ok, false);
     assert.match(parsed.error, /already exists/);
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -95,7 +96,7 @@ test('provider configure merges valid keys and round-trips through status --json
     assert.equal(onDisk.config.jql, 'project = ABC');
     assert.equal(onDisk.config.maxResults, 25);
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -117,7 +118,7 @@ test('provider configure accepts a valid ADR-0060 filter block (jira scope.proje
     const row = statusParsed.providers.find((p) => p.id === 'atlassian-jira');
     assert.deepEqual(row.filter, { scope: { projects: ['ABC'] } });
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -132,7 +133,7 @@ test('provider configure rejects a filter key the manifest does not permit (slac
     assert.equal(parsed.ok, false);
     assert.ok(parsed.errors.some((e) => /config\.filter/.test(e) && /nativeQuery/.test(e)));
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -147,7 +148,7 @@ test('provider configure rejects an unknown scope key with the schema path named
     assert.equal(parsed.ok, false);
     assert.ok(parsed.errors.some((e) => /config\.filter/.test(e) && /scope key "spaces"/.test(e)));
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -169,7 +170,7 @@ test('provider configure rejects an invalid config key not declared in configSch
     assert.equal(parsed.ok, false);
     assert.ok(parsed.errors.some((e) => /config\.kind/.test(e) && /must be one of/.test(e)));
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -184,7 +185,7 @@ test('provider configure rejects a malformed jira issueKey pattern with the conf
     assert.equal(parsed.ok, false);
     assert.ok(parsed.errors.some((e) => /config\.issueKey/.test(e) && /pattern/.test(e)));
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -197,7 +198,7 @@ test('provider configure on an unconfigured id seeds from schema defaults before
     assert.equal(parsed.config.channel, 'C012AB3CD');
     assert.equal(parsed.config.count, 20);
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 

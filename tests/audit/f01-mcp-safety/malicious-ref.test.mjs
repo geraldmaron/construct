@@ -16,6 +16,7 @@ import { execSync } from 'node:child_process';
 import test from 'node:test';
 
 import { summarizeDiff } from '../../../lib/mcp/tools/project.mjs';
+import { rmTmpDir } from '../../helpers/cleanup.mjs';
 
 // A throwaway git repo so the git-diff codepath is reached normally; the payload's
 // effect (the sentinel file) is what proves command execution, independent of diff
@@ -33,7 +34,7 @@ function makeRepo() {
 test('[R9] summarizeDiff must not let a model-controlled base_ref reach a shell', (t) => {
   const repo = makeRepo();
   const sentinel = path.join(repo, 'PWNED_BY_BASE_REF');
-  t.after(() => { try { fs.rmSync(repo, { recursive: true, force: true }); } catch {} });
+  t.after(() => { rmTmpDir(repo); });
 
   // Command-substitution payload. If base_ref is interpolated into a shell
   // command, `$(...)` runs and creates the sentinel; a safe argv-based
