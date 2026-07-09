@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- `docs/guides/start/first-task.mdx` + `docs/guides/start/install.mdx` (construct-ztksc.3): the docs quickstart described `construct init`, `construct sync`, and `construct dev` as three separate required onboarding steps, contradicting README's 3-command quickstart, which claims `construct init` starts local services by default. Verified against `lib/init-unified.mjs`: `construct init` calls `stageProjectAdapters` (the same mechanism `construct sync` uses) and auto-starts services unless `--no-start` or `--interactive` is passed — so README was correct and the docs path was stale. `first-task.mdx`'s init walkthrough now leads with the single `construct init --yes` command and documents `construct sync`/`construct dev` as optional follow-up commands, not required steps; `docs/guides/start/index.mdx`'s pipeline label updated to match. `install.mdx`'s top-of-page `FlowPipeline` also mislabeled its machine-setup step as `construct init` (with `construct install`'s actual behavior — config/LanceDB/completions — in the subtitle) and listed a `construct sync` step nothing in the page's body describes; relabeled to `construct install` (machine) → `construct init` (project: adapters + services), matching both the page's own prose and README. New `tests/onboarding-docs-consistency.test.mjs` pins the `construct init` auto-start code path and blocks `construct sync`/`construct dev` from reappearing as separate `<Step>`s in `first-task.mdx`'s init section.
+
 ## [1.5.3] - 2026-07-09
 
 ### Fixed
