@@ -18,15 +18,23 @@ import { runWorkerLoop } from '../lib/worker/entrypoint.mjs';
 
 let projectRoot;
 let originalCwd;
+let prevHomeOverride;
 
 beforeEach(() => {
   projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-worker-loop-'));
   originalCwd = process.cwd();
   process.chdir(projectRoot);
+  // artifactsDir() resolves the machine-scoped state root (ADR-0066) via
+  // CX_HOME_OVERRIDE read in-process, not via rootDir — unpinned, writes
+  // land in the real developer machine's ~/.construct/projects.
+  prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+  process.env.CX_HOME_OVERRIDE = projectRoot;
 });
 
 afterEach(() => {
   process.chdir(originalCwd);
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
   fs.rmSync(projectRoot, { recursive: true, force: true });
 });
 

@@ -25,6 +25,20 @@ import { resetPricingCatalog } from "../lib/telemetry/model-pricing-catalog.mjs"
 import { doctorRoot } from "../lib/config/xdg.mjs";
 import { summarizeToolFailures } from "../lib/mcp/tool-recovery.mjs";
 
+// createConstructOpenCodePlugin's trace emission resolves the machine-scoped
+// state root (ADR-0066) via CX_HOME_OVERRIDE read in-process, not via the
+// `env` option passed to the factory — pin it around a test or the plugin
+// writes into the real developer machine's home. Callers register the
+// returned unpin function with t.after().
+function pinHomeOverride(home) {
+  const prev = process.env.CX_HOME_OVERRIDE;
+  process.env.CX_HOME_OVERRIDE = home;
+  return () => {
+    if (prev === undefined) delete process.env.CX_HOME_OVERRIDE;
+    else process.env.CX_HOME_OVERRIDE = prev;
+  };
+}
+
 test("buildRuntimeTracePayload creates deterministic OpenCode runtime trace metadata", () => {
   const payload = buildRuntimeTracePayload(
     {
@@ -346,7 +360,9 @@ test("buildRuntimeTracePayload skips message.updated for user role or incomplete
 test("plugin applies model fallback and logs warning when rate limit error hits", async (t) => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "construct-plugin-home-"));
   const toolkitDir = fs.mkdtempSync(path.join(os.tmpdir(), "construct-toolkit-"));
+  const unpinHome = pinHomeOverride(home);
   t.after(() => {
+    unpinHome();
     try { fs.rmSync(home, { recursive: true, force: true }); } catch {}
     try { fs.rmSync(toolkitDir, { recursive: true, force: true }); } catch {}
   });
@@ -413,7 +429,9 @@ test("plugin applies model fallback and logs warning when rate limit error hits"
 test("plugin falls back to a new target model when the current provider is unavailable", async (t) => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "construct-plugin-home-fallback-"));
   const toolkitDir = fs.mkdtempSync(path.join(os.tmpdir(), "construct-toolkit-fallback-"));
+  const unpinHome = pinHomeOverride(home);
   t.after(() => {
+    unpinHome();
     try { fs.rmSync(home, { recursive: true, force: true }); } catch {}
     try { fs.rmSync(toolkitDir, { recursive: true, force: true }); } catch {}
   });
@@ -482,7 +500,9 @@ test("plugin falls back to a new target model when the current provider is unava
 test("plugin no-ops when no safe fallback target exists", async (t) => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "construct-plugin-home-nosafe-"));
   const toolkitDir = fs.mkdtempSync(path.join(os.tmpdir(), "construct-toolkit-nosafe-"));
+  const unpinHome = pinHomeOverride(home);
   t.after(() => {
+    unpinHome();
     try { fs.rmSync(home, { recursive: true, force: true }); } catch {}
     try { fs.rmSync(toolkitDir, { recursive: true, force: true }); } catch {}
   });
@@ -539,7 +559,9 @@ test("plugin no-ops when no safe fallback target exists", async (t) => {
 test("plugin continues fallback even when telemetry logging fails", async (t) => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "construct-plugin-home-telemetry-"));
   const toolkitDir = fs.mkdtempSync(path.join(os.tmpdir(), "construct-toolkit-telemetry-"));
+  const unpinHome = pinHomeOverride(home);
   t.after(() => {
+    unpinHome();
     try { fs.rmSync(home, { recursive: true, force: true }); } catch {}
     try { fs.rmSync(toolkitDir, { recursive: true, force: true }); } catch {}
   });
@@ -601,7 +623,9 @@ test("plugin continues fallback even when telemetry logging fails", async (t) =>
 test("plugin does not crash when telemetry is not configured", async (t) => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "construct-plugin-notelemetry-"));
   const toolkitDir = fs.mkdtempSync(path.join(os.tmpdir(), "construct-toolkit-notelemetry-"));
+  const unpinHome = pinHomeOverride(home);
   t.after(() => {
+    unpinHome();
     try { fs.rmSync(home, { recursive: true, force: true }); } catch {}
     try { fs.rmSync(toolkitDir, { recursive: true, force: true }); } catch {}
   });
