@@ -1,6 +1,6 @@
 ---
 title: Your first task
-description: Initialize a project, sync agents, and dispatch one task end-to-end.
+description: Initialize a project and dispatch one task end-to-end.
 ---
 
 ## Pick a project
@@ -13,41 +13,17 @@ It needs to be a git repo (Construct uses `.git/` to wire pre-commit hooks). Bra
 
 ## Initialize Construct in the project
 
-<Steps>
-<Step>
-### `construct init`
+```bash
+construct init --yes
+```
 
-Scaffolds the project:
+One command does all of it:
 
-- `.cx/context.md` and `.cx/context.json` — durable per-project state Construct reads at session start.
-- `.cx/handoffs/` — gitignored directory where session handoffs land.
-- `docs/` documentation lanes if your project doesn't have them yet.
-- A `.beads/` directory if your project doesn't already track issues.
+- Scaffolds the project — `.cx/context.md` and `.cx/context.json` (durable per-project state Construct reads at session start), `.cx/handoffs/` (gitignored, session handoffs land here), `docs/` documentation lanes if your project doesn't have them yet, a `.beads/` directory if your project doesn't already track issues.
+- Syncs agent adapters into whichever editor configs it finds on disk — `~/.claude/agents/*.md` for Claude Code, `~/.config/opencode/opencode.json` for OpenCode, `~/.codex/agents/*.toml` for Codex, `~/.github/prompts/*.prompt.md` for Copilot prompt profiles, `~/.cursor/mcp.json` for Cursor MCP registrations if Cursor is already configured, VS Code user `settings.json` for GitHub Copilot MCP registrations if VS Code is already configured.
+- Starts the local runtime by default — local dashboard at `http://localhost:<port>` (port auto-selected), memory MCP server at `127.0.0.1:8765`, local trace capture in `.cx/traces/*.jsonl`. Pass `--no-start` to skip service startup, or `--interactive` for the guided flow.
 
-Re-running `construct init` on an existing project is safe; it's idempotent.
-</Step>
-<Step>
-### `construct sync`
-
-Writes the agent definitions to whichever editor configs it finds on disk:
-
-- `~/.claude/agents/*.md` for Claude Code
-- `~/.config/opencode/opencode.json` for OpenCode
-- `~/.codex/agents/*.toml` for Codex
-- `~/.github/prompts/*.prompt.md` for Copilot prompt profiles
-- `~/.cursor/mcp.json` for Cursor MCP registrations if Cursor is already configured
-- VS Code user `settings.json` for GitHub Copilot MCP registrations if VS Code is already configured
-</Step>
-<Step>
-### `construct dev`
-
-Starts the local runtime:
-
-- Local dashboard at `http://localhost:<port>` (port auto-selected)
-- Memory MCP server at `127.0.0.1:8765`
-- Local trace capture in `.cx/traces/*.jsonl`
-</Step>
-</Steps>
+Re-running `construct init` on an existing project is safe; it's idempotent. Re-run `construct sync` on its own any time you only need to refresh adapters (after a registry, prompt, or config change), and `construct dev` on its own any time you only need to (re)start services without touching adapters.
 
 ## Dispatch a task
 
