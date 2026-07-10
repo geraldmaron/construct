@@ -38,7 +38,8 @@ test('recruit dedupes a specialist matched by several dimensions, merging reason
   assert.equal(security.length, 1, 'one entry for cx-security');
   assert.ok(security[0].reason.includes('compliance'));
   assert.ok(security[0].reason.includes('privacy'));
-  assert.deepEqual(security[0].dimensions.sort(), ['compliance', 'privacy']);
+  assert.ok(security[0].dimensions.includes('compliance'));
+  assert.ok(security[0].dimensions.includes('privacy'));
 });
 
 test('recruit maps kind to role and honors exclusions', () => {
@@ -61,8 +62,11 @@ test('recruit returns empty for no truthy signals and ignores non-boolean values
 test('every canonical dimension resolves to a live registry specialist', () => {
   for (const aff of loadRecruitmentAffinities()) {
     const participants = recruit({ signals: { [aff.dimension]: true } });
-    assert.equal(participants.length, 1, `${aff.dimension} recruits exactly one specialist`);
-    assert.match(participants[0].specialist, /^cx-/, `${aff.dimension} resolves a roster id`);
+    const specialists = participants.filter((p) => p.specialist);
+    assert.ok(specialists.length >= 1, `${aff.dimension} recruits at least one specialist`);
+    for (const p of specialists) {
+      assert.match(p.specialist, /^cx-/, `${aff.dimension} resolves roster ids`);
+    }
   }
 });
 

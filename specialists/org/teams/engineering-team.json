@@ -39,5 +39,6 @@
   "evidence": [
     "AGENTS.md (rnd profile departments section)",
     "docs/guides/concepts/architecture.mdx"
-  ]
+  ],
+  "manualOnly": true
 }

@@ -112,5 +112,24 @@
   ],
   "team": "research-team",
   "teamId": "research-team",
-  "groupId": "product-group"
+  "groupId": "product-group",
+  "participationRules": {
+    "schemaVersion": 1,
+    "rules": [
+      {
+        "id": "high-ambiguity-research",
+        "when": {
+          "watchCondition": "high-ambiguity-deep-work"
+        },
+        "recruit": {
+          "specialists": [
+            "cx-researcher"
+          ]
+        },
+        "role": "advisor",
+        "gate": "advisory",
+        "reason": "high-ambiguity deep work — evidence gathering advisory"
+      }
+    ]
+  }
 }

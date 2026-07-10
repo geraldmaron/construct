@@ -64,5 +64,38 @@
   ],
   "team": "strategy-team",
   "teamId": "strategy-team",
-  "groupId": "strategy-group"
+  "groupId": "strategy-group",
+  "participationRules": {
+    "schemaVersion": 1,
+    "rules": [
+      {
+        "id": "cost-quant-review",
+        "when": {
+          "signalExpr": "cost"
+        },
+        "recruit": {
+          "specialists": [
+            "cx-data-analyst"
+          ]
+        },
+        "role": "reviewer",
+        "gate": "advisory",
+        "reason": "cost/quant"
+      },
+      {
+        "id": "data-quality-review",
+        "when": {
+          "signalExpr": "data"
+        },
+        "recruit": {
+          "specialists": [
+            "cx-data-analyst"
+          ]
+        },
+        "role": "reviewer",
+        "gate": "advisory",
+        "reason": "data/quant"
+      }
+    ]
+  }
 }

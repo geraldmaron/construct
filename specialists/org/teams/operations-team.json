@@ -36,5 +36,6 @@
   },
   "evidence": [
     "AGENTS.md (rnd profile departments section)"
-  ]
+  ],
+  "manualOnly": true
 }
