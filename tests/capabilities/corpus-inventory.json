@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-10T02:12:55.058Z",
+  "generatedAt": "2026-07-10T02:13:53.782Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 848,
+    "testFiles": 849,
     "topLevelTestFiles": 361,
-    "nestedTestFiles": 487,
+    "nestedTestFiles": 488,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 46,
     "byLayer": {
       "unit": 570,
-      "functional": 230,
+      "functional": 231,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
       "unit": 507,
-      "functional": 230,
+      "functional": 231,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -3380,6 +3380,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/monitor-cli.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/monitor-role-composed.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/monitor-role-composed.functional.test.mjs — composed"
     },
     {
       "path": "tests/functional/node-native-extraction.functional.test.mjs",
