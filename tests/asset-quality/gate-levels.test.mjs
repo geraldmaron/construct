@@ -59,12 +59,13 @@ test('runGateAtLevel resolves a per-artifact level and reports what is owed', ()
   const prd = runGateAtLevel({ filePath: golden('prd'), type: 'prd', rootDir: REPO });
   assert.equal(prd.gateLevel, 'render-smoke');
   assert.equal(prd.ok, true);
-  assert.deepEqual(prd.gatePlan.runs, ['source-lint']);
+  assert.deepEqual(prd.gatePlan.runs, ['source-lint', 'export-validation', 'content-roundtrip', 'reference-integrity']);
   assert.ok(prd.gatePlan.pending.some((e) => e.category === 'contrast'));
 
   const adr = runGateAtLevel({ filePath: golden('adr'), type: 'adr', rootDir: REPO });
   assert.equal(adr.gateLevel, 'standard');
-  assert.ok(adr.gatePlan.pending.some((e) => e.category === 'export-validation'));
+  assert.ok(adr.gatePlan.runs.includes('export-validation'), 'export-validation is available now (construct-d1r7.12), not owed');
+  assert.equal(adr.gatePlan.pending.length, 0, 'standard level owes nothing once export validation is implemented');
 });
 
 test('an explicit fast level runs cheap and owes nothing on a passing artifact', () => {

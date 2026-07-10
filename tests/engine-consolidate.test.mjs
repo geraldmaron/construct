@@ -33,12 +33,12 @@ after(() => {
 });
 
 beforeEach(() => {
-  fs.rmSync(path.join(tmpRoot, '.cx'), { recursive: true, force: true });
-  fs.mkdirSync(path.join(tmpRoot, '.cx', 'observations'), { recursive: true });
+  fs.rmSync(path.join(tmpRoot, '.construct'), { recursive: true, force: true });
+  fs.mkdirSync(path.join(tmpRoot, '.construct', 'observations'), { recursive: true });
 });
 
 function writeObservation(id, summary, embedding, extras = {}) {
-  const obsDir = path.join(tmpRoot, '.cx', 'observations');
+  const obsDir = path.join(tmpRoot, '.construct', 'observations');
   const record = {
     id,
     summary,
@@ -54,7 +54,7 @@ function writeObservation(id, summary, embedding, extras = {}) {
 }
 
 function writeIndexAndVectors(records) {
-  const obsDir = path.join(tmpRoot, '.cx', 'observations');
+  const obsDir = path.join(tmpRoot, '.construct', 'observations');
   const index = records.map((r) => ({ id: r.id, role: 'cx-engineer', category: 'pattern' }));
   fs.writeFileSync(path.join(obsDir, 'index.json'), JSON.stringify(index, null, 2));
   fs.writeFileSync(path.join(obsDir, 'vectors.json'), JSON.stringify(records, null, 2));
@@ -72,7 +72,7 @@ describe('consolidate', () => {
     assert.equal(result.clusters, 2);
 
     const consolidated = JSON.parse(
-      fs.readFileSync(path.join(tmpRoot, '.cx', 'observations', 'consolidated.json'), 'utf8')
+      fs.readFileSync(path.join(tmpRoot, '.construct', 'observations', 'consolidated.json'), 'utf8')
     );
     const merged = consolidated.find((c) => c.hitCount === 2);
     assert.ok(merged);
@@ -91,15 +91,15 @@ describe('consolidate', () => {
     });
     assert.deepEqual(result.archived, ['stale']);
     assert.equal(
-      fs.existsSync(path.join(tmpRoot, '.cx', 'observations', 'archive', 'stale.json')),
+      fs.existsSync(path.join(tmpRoot, '.construct', 'observations', 'archive', 'stale.json')),
       true
     );
     assert.equal(
-      fs.existsSync(path.join(tmpRoot, '.cx', 'observations', 'stale.json')),
+      fs.existsSync(path.join(tmpRoot, '.construct', 'observations', 'stale.json')),
       false
     );
     const index = JSON.parse(
-      fs.readFileSync(path.join(tmpRoot, '.cx', 'observations', 'index.json'), 'utf8')
+      fs.readFileSync(path.join(tmpRoot, '.construct', 'observations', 'index.json'), 'utf8')
     );
     assert.deepEqual(index.map((e) => e.id), ['fresh']);
   });
@@ -118,7 +118,7 @@ describe('consolidate', () => {
     };
     await consolidate(tmpRoot, { summariser });
     const consolidated = JSON.parse(
-      fs.readFileSync(path.join(tmpRoot, '.cx', 'observations', 'consolidated.json'), 'utf8')
+      fs.readFileSync(path.join(tmpRoot, '.construct', 'observations', 'consolidated.json'), 'utf8')
     );
     assert.equal(called, true);
     assert.equal(consolidated[0].summary, 'compressed');
@@ -132,13 +132,13 @@ describe('consolidate', () => {
     const first = await consolidate(tmpRoot);
     const second = await consolidate(tmpRoot);
     assert.equal(first.clusters, second.clusters);
-    const c1 = fs.readFileSync(path.join(tmpRoot, '.cx', 'observations', 'consolidated.json'), 'utf8');
-    const c2 = fs.readFileSync(path.join(tmpRoot, '.cx', 'observations', 'consolidated.json'), 'utf8');
+    const c1 = fs.readFileSync(path.join(tmpRoot, '.construct', 'observations', 'consolidated.json'), 'utf8');
+    const c2 = fs.readFileSync(path.join(tmpRoot, '.construct', 'observations', 'consolidated.json'), 'utf8');
     assert.equal(c1, c2);
   });
 
   it('returns zero counts when there are no observations', async () => {
-    fs.rmSync(path.join(tmpRoot, '.cx'), { recursive: true, force: true });
+    fs.rmSync(path.join(tmpRoot, '.construct'), { recursive: true, force: true });
     const result = await consolidate(tmpRoot);
     assert.equal(result.clustersBefore, 0);
     assert.equal(result.clusters, 0);
@@ -156,19 +156,19 @@ describe('consolidate', () => {
 
     assert.deepEqual(result.superseded, [{ id: 'weak', supersededBy: 'strong', reason: 'restatement' }],
       'the lower-salience member is superseded by the higher one');
-    assert.equal(fs.existsSync(path.join(tmpRoot, '.cx', 'observations', 'strong.json')), true,
+    assert.equal(fs.existsSync(path.join(tmpRoot, '.construct', 'observations', 'strong.json')), true,
       'the winner stays live');
-    assert.equal(fs.existsSync(path.join(tmpRoot, '.cx', 'observations', 'weak.json')), false,
+    assert.equal(fs.existsSync(path.join(tmpRoot, '.construct', 'observations', 'weak.json')), false,
       'the loser leaves the live store');
 
     const archived = JSON.parse(
-      fs.readFileSync(path.join(tmpRoot, '.cx', 'observations', 'archive', 'weak.json'), 'utf8')
+      fs.readFileSync(path.join(tmpRoot, '.construct', 'observations', 'archive', 'weak.json'), 'utf8')
     );
     assert.equal(archived.supersededBy, 'strong', 'the archived loser records what replaced it');
     assert.ok(archived.supersededAt, 'and when');
 
     const consolidated = JSON.parse(
-      fs.readFileSync(path.join(tmpRoot, '.cx', 'observations', 'consolidated.json'), 'utf8')
+      fs.readFileSync(path.join(tmpRoot, '.construct', 'observations', 'consolidated.json'), 'utf8')
     );
     assert.equal(consolidated[0].representativeId, 'strong', 'the winner is the representative');
     assert.deepEqual(consolidated[0].supersededIds, ['weak']);
@@ -181,7 +181,7 @@ describe('consolidate', () => {
 
     const result = await consolidate(tmpRoot, { similarityThreshold: 0.95, supersedeThreshold: 0.99 });
     assert.deepEqual(result.superseded, [], 'below the supersede bar, nothing is archived');
-    assert.equal(fs.existsSync(path.join(tmpRoot, '.cx', 'observations', 'b.json')), true);
+    assert.equal(fs.existsSync(path.join(tmpRoot, '.construct', 'observations', 'b.json')), true);
   });
 
   it('does not supersede when supersedeDuplicates is off', async () => {
@@ -191,7 +191,7 @@ describe('consolidate', () => {
 
     const result = await consolidate(tmpRoot, { supersedeDuplicates: false, detectContradictions: false });
     assert.deepEqual(result.superseded, []);
-    assert.equal(fs.existsSync(path.join(tmpRoot, '.cx', 'observations', 'weak.json')), true,
+    assert.equal(fs.existsSync(path.join(tmpRoot, '.construct', 'observations', 'weak.json')), true,
       'both members stay live when the decision layer is disabled');
   });
 
@@ -207,11 +207,11 @@ describe('consolidate', () => {
 
     const result = await consolidate(tmpRoot, { contradictionMinSimilarity: 0.75 });
     assert.deepEqual(result.superseded, [{ id: 'stale', supersededBy: 'fresh', reason: 'contradiction' }]);
-    assert.equal(fs.existsSync(path.join(tmpRoot, '.cx', 'observations', 'fresh.json')), true, 'the newer claim stays live');
-    assert.equal(fs.existsSync(path.join(tmpRoot, '.cx', 'observations', 'stale.json')), false, 'the contradicted older claim leaves the live store');
+    assert.equal(fs.existsSync(path.join(tmpRoot, '.construct', 'observations', 'fresh.json')), true, 'the newer claim stays live');
+    assert.equal(fs.existsSync(path.join(tmpRoot, '.construct', 'observations', 'stale.json')), false, 'the contradicted older claim leaves the live store');
 
     const archived = JSON.parse(
-      fs.readFileSync(path.join(tmpRoot, '.cx', 'observations', 'archive', 'stale.json'), 'utf8')
+      fs.readFileSync(path.join(tmpRoot, '.construct', 'observations', 'archive', 'stale.json'), 'utf8')
     );
     assert.equal(archived.supersededBy, 'fresh');
     assert.equal(archived.supersededReason, 'contradiction');
@@ -225,7 +225,7 @@ describe('consolidate', () => {
     const result = await consolidate(tmpRoot);
     assert.deepEqual(result.superseded.filter((s) => s.reason === 'contradiction'), [],
       'same polarity, no negation flip — not a contradiction');
-    assert.equal(fs.existsSync(path.join(tmpRoot, '.cx', 'observations', 'b.json')), true);
+    assert.equal(fs.existsSync(path.join(tmpRoot, '.construct', 'observations', 'b.json')), true);
   });
 
   it('an injected judge resolves a value-swap the heuristic abstains on', async () => {
@@ -240,7 +240,7 @@ describe('consolidate', () => {
     const judge = { judge: () => ({ contradicts: true }) };
     const result = await consolidate(tmpRoot, { contradictionJudge: judge });
     assert.deepEqual(result.superseded, [{ id: 'stale', supersededBy: 'fresh', reason: 'contradiction' }]);
-    assert.equal(fs.existsSync(path.join(tmpRoot, '.cx', 'observations', 'stale.json')), false);
+    assert.equal(fs.existsSync(path.join(tmpRoot, '.construct', 'observations', 'stale.json')), false);
   });
 
   it('without a judge, a value-swap is left alone (heuristic abstains)', async () => {
@@ -250,7 +250,7 @@ describe('consolidate', () => {
 
     const result = await consolidate(tmpRoot);
     assert.deepEqual(result.superseded.filter((s) => s.reason === 'contradiction'), []);
-    assert.equal(fs.existsSync(path.join(tmpRoot, '.cx', 'observations', 'stale.json')), true,
+    assert.equal(fs.existsSync(path.join(tmpRoot, '.construct', 'observations', 'stale.json')), true,
       'both values stay live when no judge is available');
   });
 
@@ -262,7 +262,7 @@ describe('consolidate', () => {
     const result = await consolidate(tmpRoot, { contradictionScanMax: 1 });
     assert.equal(result.contradictionScanSkipped, true);
     assert.deepEqual(result.superseded.filter((s) => s.reason === 'contradiction'), []);
-    assert.equal(fs.existsSync(path.join(tmpRoot, '.cx', 'observations', 'stale.json')), true,
+    assert.equal(fs.existsSync(path.join(tmpRoot, '.construct', 'observations', 'stale.json')), true,
       'nothing is archived when the scan is skipped');
   });
 });

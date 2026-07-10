@@ -166,7 +166,7 @@ test('global install + project init (npm pack -> global install -> 2 projects)',
   });
 
   // ── Step 6: Project A init ───────────────────────────────────────────
-  await t.test('project A: construct init --yes exits 0 and creates .cx/', () => {
+  await t.test('project A: construct init --yes exits 0 and creates .construct/', () => {
     assert.ok(projectA, 'Project A must exist');
     const result = run('node', [binPath, 'init', '--yes'], {
       cwd: projectA,
@@ -177,12 +177,12 @@ test('global install + project init (npm pack -> global install -> 2 projects)',
     assertNoModuleNotFound(output, 'project A init');
     assert.equal(result.status, 0, `project A init exited ${result.status}\n${output}`);
 
-    const cxDir = join(projectA, '.cx');
-    assert.ok(existsSync(cxDir), `.cx/ should exist in project A at ${cxDir}`);
+    const cxDir = join(projectA, '.construct');
+    assert.ok(existsSync(cxDir), `.construct/ should exist in project A at ${cxDir}`);
   });
 
   // ── Step 7: Project B init ───────────────────────────────────────────
-  await t.test('project B: construct init --yes exits 0 and creates .cx/', () => {
+  await t.test('project B: construct init --yes exits 0 and creates .construct/', () => {
     assert.ok(projectB, 'Project B must exist');
     const result = run('node', [binPath, 'init', '--yes'], {
       cwd: projectB,
@@ -193,8 +193,8 @@ test('global install + project init (npm pack -> global install -> 2 projects)',
     assertNoModuleNotFound(output, 'project B init');
     assert.equal(result.status, 0, `project B init exited ${result.status}\n${output}`);
 
-    const cxDir = join(projectB, '.cx');
-    assert.ok(existsSync(cxDir), `.cx/ should exist in project B at ${cxDir}`);
+    const cxDir = join(projectB, '.construct');
+    assert.ok(existsSync(cxDir), `.construct/ should exist in project B at ${cxDir}`);
   });
 
   // ── Step 8: Status check in both projects ────────────────────────────
@@ -253,14 +253,14 @@ test('global install + project init (npm pack -> global install -> 2 projects)',
   });
 
   // ── Step 9: No cross-project leakage ─────────────────────────────────
-  await t.test('no cross-project path leakage in .cx/ files', () => {
+  await t.test('no cross-project path leakage in .construct/ files', () => {
     assert.ok(projectA && projectB, 'Both projects must exist');
 
-    const cxDirA = join(projectA, '.cx');
-    const cxDirB = join(projectB, '.cx');
+    const cxDirA = join(projectA, '.construct');
+    const cxDirB = join(projectB, '.construct');
 
-    assert.ok(existsSync(cxDirA), '.cx/ should exist in project A');
-    assert.ok(existsSync(cxDirB), '.cx/ should exist in project B');
+    assert.ok(existsSync(cxDirA), '.construct/ should exist in project A');
+    assert.ok(existsSync(cxDirB), '.construct/ should exist in project B');
 
     const entriesA = readdirSync(cxDirA, { recursive: true }).filter(
       (e) => statSync(join(cxDirA, e)).isFile(),
@@ -273,7 +273,7 @@ test('global install + project init (npm pack -> global install -> 2 projects)',
       const content = readFileSync(join(cxDirA, file), 'utf8');
       assert.ok(
         !content.includes(projectB),
-        `Project A .cx/${file} should not reference project B path`,
+        `Project A .construct/${file} should not reference project B path`,
       );
     }
 
@@ -281,7 +281,7 @@ test('global install + project init (npm pack -> global install -> 2 projects)',
       const content = readFileSync(join(cxDirB, file), 'utf8');
       assert.ok(
         !content.includes(projectA),
-        `Project B .cx/${file} should not reference project A path`,
+        `Project B .construct/${file} should not reference project A path`,
       );
     }
   });
@@ -294,8 +294,8 @@ test('global install + project init (npm pack -> global install -> 2 projects)',
       assert.ok(existsSync(dir), `Created directory should still exist: ${dir}`);
     }
 
-    assert.ok(existsSync(join(projectA, '.cx')), 'Project A .cx/ should exist');
-    assert.ok(existsSync(join(projectB, '.cx')), 'Project B .cx/ should exist');
+    assert.ok(existsSync(join(projectA, '.construct')), 'Project A .construct/ should exist');
+    assert.ok(existsSync(join(projectB, '.construct')), 'Project B .construct/ should exist');
     assert.ok(existsSync(globalPrefix), 'Global prefix should still exist');
     assert.ok(existsSync(binPath), 'Global binary should still exist');
   });

@@ -4,7 +4,7 @@
  *
  * Parses the command string, dispatches to the appropriate handler, and
  * loads environment config from the resolved project root's .env (nearest
- * .cx/ or package.json ancestor of cwd, per lib/roots.mjs) and the user
+ * .construct/ or package.json ancestor of cwd, per lib/roots.mjs) and the user
  * config.env ($XDG_CONFIG_HOME/construct/config.env), with project .env
  * winning per lib/env-config.mjs's tier order. This is the only
  * public-facing binary; all commands are exported from lib/.
@@ -16,6 +16,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 import { CLI_COMMANDS, CATEGORY_ORDER, formatCommandHelp } from '../lib/cli-commands.mjs';
+import { CONFIG_DIR_NAME, PROJECT_MARKERS, configPath } from '../lib/config-dir.mjs';
 import { buildStatus, formatStatusReport } from '../lib/status.mjs';
 import { validateRegistry } from '../lib/validator.mjs';
 import { readCurrentModels, readOpenRouterApiKeyFromOpenCodeConfig, applyToEnv, resetEnv, setModelWithTierInference, listAvailableModels } from '../lib/model-router.mjs';
@@ -287,15 +288,14 @@ async function cmdStatus() {
 
   // Append the learning-loops summary so the operator gets a single answer
   // to "is this thing actually learning?" without remembering a second
-  // command. Cheap: just reads .cx/observations + .cx/outcomes summaries.
+  // command. Cheap: just reads .construct/observations + .construct/outcomes summaries.
   try {
     const { resolveActiveScope } = await import('../lib/scopes/loader.mjs');
     const { readSummary } = await import('../lib/outcomes/aggregate.mjs');
     const fs = await import('node:fs');
-    const path = await import('node:path');
     const cwd = process.cwd();
     const active = resolveActiveScope(cwd);
-    const obsIdxPath = path.join(cwd, '.cx', 'observations', 'index.json');
+    const obsIdxPath = configPath(cwd, 'observations', 'index.json');
     let obsTotal = 0;
     let obs24h = 0;
     if (fs.existsSync(obsIdxPath)) {
@@ -304,7 +304,7 @@ async function cmdStatus() {
       const since = Date.now() - 24 * 60 * 60 * 1000;
       obs24h = idx.filter((e) => Date.parse(e.createdAt) >= since).length;
     }
-    const researchDir = path.join(cwd, '.cx', 'knowledge', 'external', 'research');
+    const researchDir = configPath(cwd, 'knowledge', 'external', 'research');
     const researchCount = fs.existsSync(researchDir)
       ? fs.readdirSync(researchDir).filter((f) => f.endsWith('.md')).length
       : 0;
@@ -616,24 +616,24 @@ async function cmdDoctor() {
     add('Extension manifests: check failed', false);
   }
 
-  // Project .gitignore must cover .cx/. Auto-fix via --fix-gitignore.
-  // Only checks when cwd looks like a Construct project (has .cx/ or
-  // .construct/); non-project cwds get no warning.
+  // Project .gitignore must cover .construct/. Auto-fix via --fix-gitignore.
+  // Only checks when cwd looks like a Construct project (has .construct/);
+  // non-project cwds get no warning.
 
   const cwd = process.cwd();
-  const isProject = fs.existsSync(path.join(cwd, '.cx')) || fs.existsSync(path.join(cwd, '.construct'));
+  const isProject = PROJECT_MARKERS.some((m) => fs.existsSync(path.join(cwd, m)));
   if (isProject) {
     const giPath = path.join(cwd, '.gitignore');
     const giContent = fs.existsSync(giPath) ? fs.readFileSync(giPath, 'utf8') : '';
     const lines = giContent.split('\n').map((l) => l.trim());
-    const cxIgnored = lines.some((l) => l === '.cx' || l === '.cx/' || l === '.cx/**' || l === '*' || l === '**');
+    const cxIgnored = lines.some((l) => l === CONFIG_DIR_NAME || l === `${CONFIG_DIR_NAME}/` || l === `${CONFIG_DIR_NAME}/**` || l === '*' || l === '**');
     if (!cxIgnored && wantsFixGitignore) {
       const prefix = giContent.length === 0 || giContent.endsWith('\n') ? '' : '\n';
-      fs.writeFileSync(giPath, giContent + `${prefix}\n# Construct runtime state — local-only, never source\n.cx/\n`, 'utf8');
-      println(`  fix: appended .cx/ to ${path.relative(cwd, giPath)}`);
-      add('Project .gitignore covers .cx/', true);
+      fs.writeFileSync(giPath, giContent + `${prefix}\n# Construct runtime state — local-only, never source\n${CONFIG_DIR_NAME}/\n`, 'utf8');
+      println(`  fix: appended ${CONFIG_DIR_NAME}/ to ${path.relative(cwd, giPath)}`);
+      add(`Project .gitignore covers ${CONFIG_DIR_NAME}/`, true);
     } else {
-      add('Project .gitignore covers .cx/' + (cxIgnored ? '' : ' (run `construct doctor --fix-gitignore` to add)'), cxIgnored);
+      add(`Project .gitignore covers ${CONFIG_DIR_NAME}/` + (cxIgnored ? '' : ' (run `construct doctor --fix-gitignore` to add)'), cxIgnored);
     }
   }
 
@@ -762,9 +762,9 @@ async function cmdDoctor() {
 
   if (isProject) {
     const legacyHeavyDirs = [
-      { rel: path.join('.cx', 'runtime'), label: '.cx/runtime' },
-      { rel: path.join('.cx', 'traces'), label: '.cx/traces' },
-      { rel: path.join('.cx', 'lancedb'), label: '.cx/lancedb' },
+      { rel: path.join(CONFIG_DIR_NAME, 'runtime'), label: `${CONFIG_DIR_NAME}/runtime` },
+      { rel: path.join(CONFIG_DIR_NAME, 'traces'), label: `${CONFIG_DIR_NAME}/traces` },
+      { rel: path.join(CONFIG_DIR_NAME, 'lancedb'), label: `${CONFIG_DIR_NAME}/lancedb` },
     ]
       .map((d) => ({ ...d, full: path.join(cwd, d.rel) }))
       .filter((d) => fs.existsSync(d.full) && fs.readdirSync(d.full).length > 0);
@@ -1058,9 +1058,9 @@ async function cmdDoctor() {
     add(`Claude Stop hooks check failed: ${err.message}`, false, true);
   }
 
-  // Handoff hygiene. Files in .cx/handoffs/ accumulate per session; this
+  // Handoff hygiene. Files in .construct/handoffs/ accumulate per session; this
   // probe surfaces stale files past retention and files whose bead refs
-  // have all closed (safe to prune). Advisory — graceful when no .cx/
+  // have all closed (safe to prune). Advisory — graceful when no .construct/
   // handoffs/ directory exists.
   try {
     const { summarizeHandoffs } = await import('../lib/handoffs/inventory.mjs');
@@ -1078,7 +1078,7 @@ async function cmdDoctor() {
     add(`Handoff check failed: ${err.message}`, false, true);
   }
 
-  // Disk resource budgets. Construct writes .cx/traces/, .cx/intake/,
+  // Disk resource budgets. Construct writes .construct/traces/, .construct/intake/,
   // task graphs, backups, worker logs continuously. Without ceilings a
   // long-lived install can fill the user's disk. Doctor surfaces usage
   // vs cap as advisory at <=80%, warn at 80-100%, fail at >100%.
@@ -1089,11 +1089,11 @@ async function cmdDoctor() {
     const capMb = u.totalCxCap / 1024 / 1024;
     const pct = (u.totalCxUsageRatio * 100).toFixed(0);
     if (u.totalCxUsageRatio > 1) {
-      add(`.cx/ ${usedMb.toFixed(0)}MB / ${capMb.toFixed(0)}MB cap (${pct}% — over) — run \`construct prune\``, false, false);
+      add(`.construct/ ${usedMb.toFixed(0)}MB / ${capMb.toFixed(0)}MB cap (${pct}% — over) — run \`construct prune\``, false, false);
     } else if (u.totalCxUsageRatio > 0.8) {
-      add(`.cx/ ${usedMb.toFixed(1)}MB / ${capMb.toFixed(0)}MB cap (${pct}% — warning) — \`construct prune\` recommended`, false, true);
+      add(`.construct/ ${usedMb.toFixed(1)}MB / ${capMb.toFixed(0)}MB cap (${pct}% — warning) — \`construct prune\` recommended`, false, true);
     } else {
-      add(`.cx/ ${usedMb.toFixed(1)}MB / ${capMb.toFixed(0)}MB cap (${pct}%)`, true, true);
+      add(`.construct/ ${usedMb.toFixed(1)}MB / ${capMb.toFixed(0)}MB cap (${pct}%)`, true, true);
     }
   } catch (err) {
     add(`Resource budget check failed: ${err.message}`, false, true);
@@ -1339,7 +1339,7 @@ async function cmdDoctor() {
     try {
       const { recentViolations, violationLogPath } = await import('../lib/contracts/violation-log.mjs');
       const violations = recentViolations({ windowMs: 24 * 60 * 60 * 1000 });
-      // Path is project-scoped (.cx/contract-violations.jsonl in cwd when
+      // Path is project-scoped (.construct/contract-violations.jsonl in cwd when
       // inside a project, ~/.cx/ otherwise). Print the resolved one so
       // users find the real file, not a stale ~/.cx/ reference.
       const violationPath = violationLogPath();
@@ -1352,7 +1352,7 @@ async function cmdDoctor() {
     }
 
     try {
-      const capWarnPath = path.join(process.cwd(), '.cx', 'observation-cap-warnings.jsonl');
+      const capWarnPath = configPath(process.cwd(), 'observation-cap-warnings.jsonl');
       if (fs.existsSync(capWarnPath)) {
         const lines = fs.readFileSync(capWarnPath, 'utf8').trim().split('\n').filter(Boolean);
         const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
@@ -1445,7 +1445,7 @@ async function cmdDoctor() {
     }
 
     // Skills profile — if present, check staleness against current tags
-    const profilePath = path.join(process.cwd(), '.cx', 'skills-profile.json');
+    const profilePath = configPath(process.cwd(), 'skills-profile.json');
     if (fs.existsSync(profilePath)) {
       try {
         const { detectProjectProfile } = await import('../lib/project-profile.mjs');
@@ -1881,7 +1881,7 @@ async function cmdMigrate(args) {
     ? [pathArg]
     : [
         path.join(ROOT_DIR, 'specialists', 'unified-registry.json'),
-        path.join(process.cwd(), '.cx', 'config.json'),
+        configPath(process.cwd(), 'config.json'),
       ];
 
   let anyFailed = false;
@@ -2191,10 +2191,10 @@ async function cmdPrune(args) {
     }
   }
 
-  if (!pruned) { info('Nothing to prune. .cx/ is within all configured budgets.'); return; }
+  if (!pruned) { info('Nothing to prune. .construct/ is within all configured budgets.'); return; }
   if (dryRun) { info('--dry-run: no files removed.'); return; }
   const after = measureUsage(process.cwd(), process.env);
-  println(`.cx/ now at ${Math.round(after.totalCxBytes / 1024 / 1024)}MB / ${Math.round(after.totalCxCap / 1024 / 1024)}MB cap (${Math.round(after.totalCxUsageRatio * 100)}%).`);
+  println(`.construct/ now at ${Math.round(after.totalCxBytes / 1024 / 1024)}MB / ${Math.round(after.totalCxCap / 1024 / 1024)}MB cap (${Math.round(after.totalCxUsageRatio * 100)}%).`);
 }
 
 async function _cmdCosts(args) {
@@ -2248,7 +2248,7 @@ async function cmdHandoffs(args) {
   const { summarizeHandoffs } = await import('../lib/handoffs/inventory.mjs');
   const summary = summarizeHandoffs(process.cwd(), process.env);
   if (sub === 'status') {
-    if (summary.state === 'empty') { info('No handoffs in .cx/handoffs/.'); return; }
+    if (summary.state === 'empty') { info('No handoffs in .construct/handoffs/.'); return; }
     println(`Handoffs: ${summary.total} files · ${Math.round(summary.bytes / 1024)}KB · oldest ${summary.oldestAgeDays?.toFixed(1)}d`);
     println(`Retention: ${summary.maxDays}d / ${summary.maxItems} items`);
     println('');
@@ -2341,7 +2341,7 @@ async function cmdResources(args) {
     const u = measureUsage(process.cwd(), process.env);
     const totalMb = u.totalCxBytes / 1024 / 1024;
     const capMb = u.totalCxCap / 1024 / 1024;
-    println(`.cx/ total: ${totalMb.toFixed(1)}MB / ${capMb.toFixed(0)}MB (${(u.totalCxUsageRatio * 100).toFixed(0)}%)`);
+    println(`.construct/ total: ${totalMb.toFixed(1)}MB / ${capMb.toFixed(0)}MB (${(u.totalCxUsageRatio * 100).toFixed(0)}%)`);
     println('');
     println('Category                  Files     Size  Enforcement');
     for (const [name, c] of Object.entries(u.categories)) {
@@ -2718,7 +2718,7 @@ async function cmdIntake(args) {
     }
     // Show similar items if there are multiple pending packets
     try {
-      const pendingDir = path.join(cwd || process.cwd(), '.cx', 'intake', 'pending');
+      const pendingDir = configPath(cwd || process.cwd(), 'intake', 'pending');
       if (fs.existsSync(pendingDir)) {
         const allPackets = [];
         for (const f of fs.readdirSync(pendingDir)) {
@@ -3615,7 +3615,7 @@ async function cmdIntakeIntegrate(id, args, cwd) {
     process.exit(1);
   }
   // --publish-issues unlocks the demo-source gate (CONSTRUCT_DEMO env or
-  // packet sourcePath under tests/fixtures/ or .cx/intake/demo/). Required
+  // packet sourcePath under tests/fixtures/ or .construct/intake/demo/). Required
   // before any demo/fixture intake can publish a real external ticket.
   const publishDemo = args.includes('--publish-issues');
 
@@ -4992,7 +4992,7 @@ async function cmdPluginEngine(args) {
   const isGlobal = rest.includes('--global');
   const targetPath = isGlobal
     ? path.join(configDir(HOME), 'plugins.json')
-    : path.join(process.cwd(), '.cx', 'plugins.json');
+    : configPath(process.cwd(), 'plugins.json');
 
   function readPluginsJson() {
     if (!fs.existsSync(targetPath)) return { plugins: [] };
@@ -5259,7 +5259,7 @@ async function cmdDocsReconcile(args) {
 
   const cwd = process.cwd();
   const now = new Date().toISOString().slice(0, 10);
-  const driftDir = join(cwd, '.cx', 'doc-drift', now);
+  const driftDir = configPath(cwd, 'doc-drift', now);
   mkdirSync(driftDir, { recursive: true });
 
   const candidates = [];
@@ -5354,8 +5354,8 @@ async function cmdDocsReconcile(args) {
   println(`  current:    ${current.length}`);
   println(`  stale:      ${stale.length}`);
   println(`  unverified: ${unverified.length}`);
-  println(`\nDrift reports written to: .cx/doc-drift/${now}/`);
-  println(`Summary: .cx/doc-drift/${now}/summary.md`);
+  println(`\nDrift reports written to: .construct/doc-drift/${now}/`);
+  println(`Summary: .construct/doc-drift/${now}/summary.md`);
 }
 
 async function cmdDocsUpdate(args) {
@@ -5846,7 +5846,7 @@ async function cmdSpecialist(args) {
 // (construct-rf26.13) — distinct from the maintainer-facing `specialist create <role>`
 // above, which only stubs a prompt file for the built-in roster. `--custom` writes a
 // full registry-shaped JSON record (role, skills, fence, modelTier, delegation) into
-// the project's `.cx/org/` layer by default, or `~/.construct/org/` with `--user`.
+// the project's `.construct/org/` layer by default, or `~/.construct/org/` with `--user`.
 
 async function cmdSpecialistCreateCustom(args) {
   const id = args.find((a) => !a.startsWith('--'));
@@ -5929,18 +5929,18 @@ async function cmdTeamCreateCustom(args) {
 
 async function cmdBackup(args) {
   // Postgres-era backups were removed with the SQL backend (lib/storage/backup.mjs).
-  // State is now Git-backed (.cx/) plus the local LanceDB index under .cx/lancedb.
+  // State is now Git-backed (.construct/) plus the local LanceDB index under .construct/lancedb.
   void args;
-  errorln('construct backup is no longer supported: Postgres was removed. Commit .cx/ for Git-backed state; the LanceDB index lives under .cx/lancedb.');
+  errorln('construct backup is no longer supported: Postgres was removed. Commit .construct/ for Git-backed state; the LanceDB index lives under .construct/lancedb.');
   process.exit(1);
 }
 
-// `provider add|configure` persist to `.cx/providers/<id>.json`; every
+// `provider add|configure` persist to `.construct/providers/<id>.json`; every
 // success message names the path relative to cwd so output is copy-pasteable
 // and consistent whether the command ran from the project root or a subdir.
 
 function instanceConfigRelPath(id) {
-  return path.join('.cx', 'providers', `${id}.json`);
+  return path.join(CONFIG_DIR_NAME, 'providers', `${id}.json`);
 }
 
 async function cmdProvider(args) {
@@ -6169,7 +6169,7 @@ async function cmdProvider(args) {
       const isGlobal = args.includes('--global');
       const targetPath = isGlobal
         ? path.join(configDir(HOME), 'providers.json')
-        : path.join(process.cwd(), '.cx', 'providers.json');
+        : configPath(process.cwd(), 'providers.json');
       let data = { providers: [] };
       try { data = JSON.parse(fs.readFileSync(targetPath, 'utf8')); } catch { /* fresh */ }
       data.providers ??= [];
@@ -6343,7 +6343,7 @@ async function cmdTags(args) {
     const labelArg = args.find((a) => a.startsWith('--label='))?.replace('--label=', '');
     if (!id || !facetArg) { errorln('Usage: construct tags propose <id> --facet=<f> [--label="..."]'); process.exit(1); }
     proposeTag({ id, facet: facetArg, label: labelArg || id });
-    println(`Proposed tag ${id} written to .cx/tags/proposed.jsonl`);
+    println(`Proposed tag ${id} written to .construct/tags/proposed.jsonl`);
     return;
   }
 
@@ -6354,7 +6354,7 @@ async function cmdTags(args) {
     const scope = args.includes('--scope=project') ? 'project' : 'repo';
     if (!id || !facetArg) { errorln('Usage: construct tags add <id> --facet=<f> [--label="..."] [--scope=project]'); process.exit(1); }
     addTag({ id, facet: facetArg, label: labelArg || id, scope, cwd: process.cwd(), rootDir: ROOT_DIR });
-    println(`Tag ${id} added to ${scope === 'project' ? '.cx/tags/vocabulary-overrides.json' : 'config/tag-vocabulary.json'}`);
+    println(`Tag ${id} added to ${scope === 'project' ? '.construct/tags/vocabulary-overrides.json' : 'config/tag-vocabulary.json'}`);
     return;
   }
 
@@ -6396,7 +6396,7 @@ async function cmdTags(args) {
   }
 
   if (sub === 'backfill') {
-    println('Tag backfill reads .cx/knowledge/**/*.md frontmatter and writes tags to construct_documents.');
+    println('Tag backfill reads .construct/knowledge/**/*.md frontmatter and writes tags to construct_documents.');
     println('Requires DATABASE_URL. Use: node scripts/tag-candidate-mining.mjs for standalone mode.');
     return;
   }
@@ -7557,11 +7557,11 @@ const handlers = new Map([
     }
 
     if (sub === 'drift-report') {
-      // Writes a snapshot to .cx/handoffs/beads-drift-<date>.md for the
+      // Writes a snapshot to .construct/handoffs/beads-drift-<date>.md for the
       // weekly drift report mechanism the bd hygiene rule promises.
       const { detectBeadsDrift, formatDriftReport } = await import('../lib/beads/drift.mjs');
       const report = detectBeadsDrift();
-      const handoffsDir = path.join(process.cwd(), '.cx', 'handoffs');
+      const handoffsDir = configPath(process.cwd(), 'handoffs');
       fs.mkdirSync(handoffsDir, { recursive: true });
       const date = new Date().toISOString().slice(0, 10);
       const file = path.join(handoffsDir, `beads-drift-${date}.md`);
@@ -8133,7 +8133,7 @@ const handlers = new Map([
       if (!displayName) displayName = id;
 
       const pathMod = await import('node:path');
-      const draftRoot = pathMod.join(process.cwd(), '.cx', 'scopes', `draft-${id}`);
+      const draftRoot = configPath(process.cwd(), 'scopes', `draft-${id}`);
 
       println('');
       println(`About to scaffold a draft scope:`);
@@ -8253,8 +8253,8 @@ const handlers = new Map([
       println(`  ${pathMod.relative(process.cwd(), pathMod.join(dstDir, 'archive-note.md'))}  (new)`);
       println('');
       println(`What stays:`);
-      println(`  Observations under .cx/observations/ are not touched.`);
-      println(`  Outcomes under .cx/outcomes/ are not touched.`);
+      println(`  Observations under .construct/observations/ are not touched.`);
+      println(`  Outcomes under .construct/outcomes/ are not touched.`);
       println(`  Any project still configured with scope=${id} will fall back to rnd on next load.`);
       println('');
 

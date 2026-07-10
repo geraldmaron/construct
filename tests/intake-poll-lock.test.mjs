@@ -25,7 +25,7 @@ let rootDir;
 
 beforeEach(() => {
   rootDir = mkdtempSync(join(tmpdir(), 'poll-lock-'));
-  mkdirSync(join(rootDir, '.cx', 'runtime'), { recursive: true });
+  mkdirSync(join(rootDir, '.construct', 'runtime'), { recursive: true });
 });
 
 afterEach(() => {

@@ -28,7 +28,7 @@ Required answers:
 - Canonical output artifacts
 - At least 2 primary sources (interviews, internal docs, job specs)
 
-Evidence belongs in the requirements brief at `.cx/scopes/draft-<id>/requirements.md`. Without evidence, this is opinion, not research.
+Evidence belongs in the requirements brief at `.construct/scopes/draft-<id>/requirements.md`. Without evidence, this is opinion, not research.
 
 ## Stage 2: framing (cx-product-manager)
 
@@ -75,12 +75,12 @@ Curated path:
 
 Custom path (named, reusable) — reuses the construct-rf26.13 config layer instead of a scope-specific mechanism:
 
-1. Copy the draft `scope.json` to `<project>/.cx/org/scopes/<id>.json` (project tier, git-tracked, highest precedence) or `~/.construct/org/scopes/<id>.json` (user tier, shared across every project on the machine) — the same builtin -> user -> project precedence `lib/registry/assemble.mjs` gives custom specialists and teams.
+1. Copy the draft `scope.json` to `<project>/.construct/org/scopes/<id>.json` (project tier, git-tracked, highest precedence) or `~/.construct/org/scopes/<id>.json` (user tier, shared across every project on the machine) — the same builtin -> user -> project precedence `lib/registry/assemble.mjs` gives custom specialists and teams.
 2. `construct scope set <id>` switches to it exactly like a curated scope; a project-tier file with the same id as a curated one overrides it field-by-field.
 
 Custom path (anonymous, one-off) — the pre-rf26.13 escape hatch, still supported:
 
-1. Copy the draft `scope.json` to `<project>/.cx/scope.json` with `"custom": true`. Picked up automatically by the loader; there is no id to set.
+1. Copy the draft `scope.json` to `<project>/.construct/scope.json` with `"custom": true`. Picked up automatically by the loader; there is no id to set.
 
 ## Stage 6: health monitoring (cx-reviewer)
 
@@ -100,7 +100,7 @@ Retire a profile cleanly without losing the learning. `cx-operations` absorbed `
 construct scope archive <id> --reason="..."
 ```
 
-Moves `specialists/org/scopes/<id>.json` and its intake table into `archive/scopes/<id>/`, alongside an `archive-note.md` that records why. Observations and outcomes recorded under the archived profile remain in `.cx/observations/` and `.cx/outcomes/`. They are durable evidence.
+Moves `specialists/org/scopes/<id>.json` and its intake table into `archive/scopes/<id>/`, alongside an `archive-note.md` that records why. Observations and outcomes recorded under the archived profile remain in `.construct/observations/` and `.construct/outcomes/`. They are durable evidence.
 
 Restore: move the files back to their original paths and run `npm run lint:scopes`.
 
@@ -120,11 +120,11 @@ construct scope archive <id> --reason="..." # retire a curated profile
 
 - `specialists/org/scopes/<id>.json` — curated scope, source of truth (builtin tier)
 - `~/.construct/org/scopes/<id>.json` — named custom scope, user tier (construct-rf26.13 config layer)
-- `<project>/.cx/org/scopes/<id>.json` — named custom scope, project tier, highest precedence (construct-rf26.13 config layer)
-- `<project>/.cx/scope.json` — anonymous custom scope (pre-rf26.13 escape hatch, still supported)
+- `<project>/.construct/org/scopes/<id>.json` — named custom scope, project tier, highest precedence (construct-rf26.13 config layer)
+- `<project>/.construct/scope.json` — anonymous custom scope (pre-rf26.13 escape hatch, still supported)
 - `schemas/scope.schema.json` — shape validator
 - `lib/intake/tables/<id>.mjs` — per-profile classification table
-- `.cx/scopes/draft-<id>/` — draft + requirements brief
+- `.construct/scopes/draft-<id>/` — draft + requirements brief
 - `archive/scopes/<id>/` — archived profile + archive-note
 
 ## Why this discipline

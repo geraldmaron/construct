@@ -16,7 +16,7 @@ If the binary is missing, audio extraction throws `WHISPER_BINARY_MISSING` with 
 
 ## Model
 
-The `base.en` GGML model (~150 MB) auto-downloads on first use to `<project>/.cx/runtime/whisper/models/ggml-base.en.bin`. Subsequent runs reuse the cached model.
+The `base.en` GGML model (~150 MB) auto-downloads on first use to `<project>/.construct/runtime/whisper/models/ggml-base.en.bin`. Subsequent runs reuse the cached model.
 
 Override the default model via environment:
 
@@ -33,7 +33,7 @@ Supported model names: `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`
 construct ingest <audio-or-video-file>
 ```
 
-The pipeline produces a `## Transcript` markdown section, stores the result at `.cx/ingest/<sha256>/markdown.md`, and indexes it into `knowledge_search`. The same idempotent re-ingest behavior applies — re-running on the same content is a no-op.
+The pipeline produces a `## Transcript` markdown section, stores the result at `.construct/ingest/<sha256>/markdown.md`, and indexes it into `knowledge_search`. The same idempotent re-ingest behavior applies — re-running on the same content is a no-op.
 
 ## Performance
 

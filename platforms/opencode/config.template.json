@@ -1,6 +1,5 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "model": "openrouter/openrouter/free",
   "enabled_providers": [
     "anthropic",
     "openai",
@@ -40,10 +39,6 @@
     }
   },
   "mcp": {
-    "context7": {
-      "type": "local",
-      "command": ["npx", "-y", "@upstash/context7-mcp@latest"]
-    },
     "construct-mcp": {
       "type": "local",
       "command": ["node", "__CX_TOOLKIT_DIR__/lib/mcp/server.mjs"],

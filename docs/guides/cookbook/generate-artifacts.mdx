@@ -14,7 +14,7 @@ has a template under `templates/docs/` and a dedicated lane under `docs/`.
 <FlowPipeline steps={[
   { label: 'templates/docs/', sub: 'PRD · ADR · RFC · memo' },
   { label: 'draft artifact', sub: 'docs/specs/prd/ · docs/decisions/adr/ · docs/decisions/rfc/' },
-  { label: 'intake packet', sub: '.cx/intake/pending/<id>.json' },
+  { label: 'intake packet', sub: '.construct/intake/pending/<id>.json' },
   { label: 'construct intake done', sub: '--output=<path>' },
   { label: 'construct docs:verify', sub: '+ lint:comments', highlight: true },
 ]} />
@@ -88,7 +88,7 @@ intake: none
 ---
 ```
 
-`construct docs:verify` warns on any artifact in `docs/specs/prd/**`, `docs/notes/research/**`, or `.cx/knowledge/internal/**` that lacks either field. This keeps the corpus auditable: every document either traces to a source packet or consciously opted out.
+`construct docs:verify` warns on any artifact in `docs/specs/prd/**`, `docs/notes/research/**`, or `.construct/knowledge/internal/**` that lacks either field. This keeps the corpus auditable: every document either traces to a source packet or consciously opted out.
 
 ## Publish after validate passes
 

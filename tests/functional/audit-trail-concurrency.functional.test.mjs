@@ -40,7 +40,7 @@ function runHook(input, env) {
 test('audit-trail chain survives concurrent hook processes', async () => {
   const projectRoot = mkdtempSync(join(tmpdir(), 'cx-audit-conc-'));
   const fakeHome = mkdtempSync(join(tmpdir(), 'cx-audit-home-'));
-  mkdirSync(join(projectRoot, '.cx'), { recursive: true });
+  mkdirSync(join(projectRoot, '.construct'), { recursive: true });
   const targetFile = join(projectRoot, 'big.md');
   writeFileSync(targetFile, 'X'.repeat(4_000));
 
@@ -59,7 +59,7 @@ test('audit-trail chain survives concurrent hook processes', async () => {
       assert.equal(r.code, 0, `hook ${i} exited ${r.code}: ${r.stderr}`);
     }
 
-    const trail = join(projectRoot, '.cx', 'audit-trail.jsonl');
+    const trail = join(projectRoot, '.construct', 'audit-trail.jsonl');
     const chain = verifyChain(trail);
     assert.equal(chain.verified, N, `expected all ${N} concurrent records, got ${chain.verified}`);
     assert.equal(chain.ok, true, `chain broke under concurrency: ${chain.broken.length} break(s), first at line ${chain.broken[0]?.line}`);

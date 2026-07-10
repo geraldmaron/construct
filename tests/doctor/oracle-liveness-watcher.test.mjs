@@ -44,7 +44,7 @@ async function withProjectDir(fn) {
 }
 
 function writePending(projectDir, records) {
-  const dir = path.join(projectDir, '.cx', 'oracle');
+  const dir = path.join(projectDir, '.construct', 'oracle');
   fs.mkdirSync(dir, { recursive: true });
   const now = new Date().toISOString();
   const lines = records.map((r) => JSON.stringify({

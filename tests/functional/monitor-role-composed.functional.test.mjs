@@ -14,7 +14,7 @@
  *      binary (spawned with tests/helpers/sterile-env.mjs's allowlist env,
  *      HOME/CX_HOME_OVERRIDE pinned to the sandbox) writes
  *      construct.config.json sources.targets[], embed.yaml roles{}, and the
- *      enabled .cx/embed/operations.manifest.json.
+ *      enabled .construct/embed/operations.manifest.json.
  *   2. Schedule — the real Scheduler (lib/embed/scheduler.mjs) plus the real
  *      daemon-side registration (lib/embed/capability-jobs.mjs
  *      registerEmbedCapabilityJobs) discovers that enabled manifest from the
@@ -28,10 +28,10 @@
  *      resolveRuntime('auto') → in-process, and the provider seam never
  *      touches fetch.
  *   4. Durable finding — asserts the tick record at
- *      .cx/runtime/embed-capabilities/operations.json (honest `ran` status,
+ *      .construct/runtime/embed-capabilities/operations.json (honest `ran` status,
  *      contractStatus ok) and the approval-queue writeIntent at
- *      .cx/approvals/queue.jsonl, plus the spend ledger at
- *      .cx/consumption-budgets.json.
+ *      .construct/approvals/queue.jsonl, plus the spend ledger at
+ *      .construct/consumption-budgets.json.
  *
  * Honest-status counterpart: the same composed schedule without a wired
  * executor must record skipped-with-reason(reasoning-executor-not-available)
@@ -64,9 +64,9 @@ const CAPABILITY = 'operations';
 // sandbox tmpdirs.
 
 const DRIFT_GUARD_PATHS = [
-  join(REPO_ROOT, '.cx', 'runtime', 'embed-capabilities', `${CAPABILITY}.json`),
-  join(REPO_ROOT, '.cx', 'approvals', 'queue.jsonl'),
-  join(REPO_ROOT, '.cx', 'consumption-budgets.json'),
+  join(REPO_ROOT, '.construct', 'runtime', 'embed-capabilities', `${CAPABILITY}.json`),
+  join(REPO_ROOT, '.construct', 'approvals', 'queue.jsonl'),
+  join(REPO_ROOT, '.construct', 'consumption-budgets.json'),
 ];
 const driftBaseline = DRIFT_GUARD_PATHS.map((p) => existsSync(p));
 
@@ -75,8 +75,8 @@ function sandbox() {
   const root = mkdtempSync(join(tmpdir(), 'cx-monitor-composed-fn-'));
   const home = join(root, 'HOME');
   const project = join(root, 'project');
-  mkdirSync(join(project, '.cx'), { recursive: true });
-  writeFileSync(join(project, '.cx', 'context.md'), '# test project\n');
+  mkdirSync(join(project, '.construct'), { recursive: true });
+  writeFileSync(join(project, '.construct', 'context.md'), '# test project\n');
   mkdirSync(home, { recursive: true });
   tmpDirs.push(root);
   return { root, home, project };
@@ -107,7 +107,7 @@ function runMonitorSetup({ home, project }) {
   );
   assert.equal(res.status, 0, `construct monitor exit 0 — stderr: ${res.stderr}`);
 
-  const manifestPath = join(project, '.cx', 'embed', `${CAPABILITY}.manifest.json`);
+  const manifestPath = join(project, '.construct', 'embed', `${CAPABILITY}.manifest.json`);
   assert.ok(existsSync(manifestPath), 'monitor CLI wrote the enabled capability manifest');
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
   assert.equal(manifest.embed.enabled, true);
@@ -174,7 +174,7 @@ const conformingBriefing = {
 // so the test polls for the file instead of racing the fire-and-forget tick.
 
 function tickPath(project) {
-  return join(project, '.cx', 'runtime', 'embed-capabilities', `${CAPABILITY}.json`);
+  return join(project, '.construct', 'runtime', 'embed-capabilities', `${CAPABILITY}.json`);
 }
 
 async function runScheduledTick(project, registerOpts) {
@@ -218,7 +218,7 @@ test('composed: monitor CLI role setup + real scheduler + fake provider lands a 
   const executor = createReasoningExecutor({ rootDir: project, env, apiKey: 'fake-key', callProvider: fakeCallProvider });
   assert.equal(typeof executor, 'function');
 
-  const queuePath = join(project, '.cx', 'approvals', 'queue.jsonl');
+  const queuePath = join(project, '.construct', 'approvals', 'queue.jsonl');
   const approvalQueue = new ApprovalQueue({ persistPath: queuePath });
 
   const tick = await runScheduledTick(project, {
@@ -255,7 +255,7 @@ test('composed: monitor CLI role setup + real scheduler + fake provider lands a 
   // Real spend from the fake provider's reported usage must land in the
   // durable unattended-budget ledger inside the sandbox.
 
-  assert.ok(existsSync(join(project, '.cx', 'consumption-budgets.json')), 'spend ledger persisted inside the sandbox');
+  assert.ok(existsSync(join(project, '.construct', 'consumption-budgets.json')), 'spend ledger persisted inside the sandbox');
   const spend = checkUnattendedSpend(project, `embed-reasoning-${CAPABILITY}`, 0, { env });
   assert.equal(spend.spent, 1200);
 });
@@ -268,7 +268,7 @@ test('composed honest skip: the same schedule with no wired executor records ski
   const executor = createReasoningExecutor({ rootDir: project, env, apiKey: 'fake-key' });
   assert.equal(executor, null, 'reasoning stays opt-in: no executor is created without the flag');
 
-  const queuePath = join(project, '.cx', 'approvals', 'queue.jsonl');
+  const queuePath = join(project, '.construct', 'approvals', 'queue.jsonl');
   const approvalQueue = new ApprovalQueue({ persistPath: queuePath });
 
   const tick = await runScheduledTick(project, {
@@ -284,5 +284,5 @@ test('composed honest skip: the same schedule with no wired executor records ski
   assert.equal(tick.runtime, 'in-process');
   assert.ok(!('proposalsEnqueued' in tick), 'a skipped tick never fabricates proposal output');
   assert.equal(existsSync(queuePath), false, 'no writeIntent lands when reasoning never ran');
-  assert.equal(existsSync(join(project, '.cx', 'consumption-budgets.json')), false, 'no spend is ledgered when the provider was never called');
+  assert.equal(existsSync(join(project, '.construct', 'consumption-budgets.json')), false, 'no spend is ledgered when the provider was never called');
 });

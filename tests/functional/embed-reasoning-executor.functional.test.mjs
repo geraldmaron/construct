@@ -96,7 +96,7 @@ test('disabled by default: no env/config opt-in produces the exact pre-existing 
   assert.equal(executor, null, 'createReasoningExecutor must return null when not opted in');
 
   const manifest = opsManifest();
-  const approvalQueue = new ApprovalQueue({ persistPath: path.join(rootDir, '.cx', 'approvals', 'queue.jsonl') });
+  const approvalQueue = new ApprovalQueue({ persistPath: path.join(rootDir, '.construct', 'approvals', 'queue.jsonl') });
 
   const tick = await runCapabilityTick(manifest, {
     rootDir,
@@ -144,7 +144,7 @@ test('enabled + provider key + budget: a real reasoned call runs, output lands, 
   assert.equal(typeof executor, 'function');
 
   const manifest = opsManifest();
-  const approvalQueue = new ApprovalQueue({ persistPath: path.join(rootDir, '.cx', 'approvals', 'queue.jsonl') });
+  const approvalQueue = new ApprovalQueue({ persistPath: path.join(rootDir, '.construct', 'approvals', 'queue.jsonl') });
 
   const tick = await runCapabilityTick(manifest, {
     rootDir,
@@ -164,7 +164,7 @@ test('enabled + provider key + budget: a real reasoned call runs, output lands, 
   const spendCheck = checkUnattendedSpend(rootDir, 'embed-reasoning-operations', 0, { env });
   assert.equal(spendCheck.spent, 1200, 'ledger must reflect the real recorded usage (800 in + 400 out)');
 
-  const consumptionFile = path.join(rootDir, '.cx', 'consumption-budgets.json');
+  const consumptionFile = path.join(rootDir, '.construct', 'consumption-budgets.json');
   assert.ok(fs.existsSync(consumptionFile), 'spend must persist to the durable consumption-budgets store');
 });
 
@@ -191,7 +191,7 @@ test('enabled + budget exhausted: reasoning halts for the tick, provider is neve
   });
 
   const manifest = opsManifest();
-  const approvalQueue = new ApprovalQueue({ persistPath: path.join(rootDir, '.cx', 'approvals', 'queue.jsonl') });
+  const approvalQueue = new ApprovalQueue({ persistPath: path.join(rootDir, '.construct', 'approvals', 'queue.jsonl') });
 
   const tick = await runCapabilityTick(manifest, {
     rootDir,

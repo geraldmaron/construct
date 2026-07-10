@@ -24,7 +24,7 @@ test('ingestDocuments writes markdown into knowledge/internal by default', async
   assert.equal(result.status, 'ok');
   assert.equal(result.indexedLocally, true);
   assert.equal(result.files.length, 1);
-  assert.match(result.files[0].outputPath, /\.cx\/knowledge\/internal\/brief\.csv\.md$/);
+  assert.match(result.files[0].outputPath, /\.construct\/knowledge\/internal\/brief\.csv\.md$/);
 
   const markdown = fs.readFileSync(result.files[0].outputPath, 'utf8');
   assert.match(markdown, /source_extension: ".csv"/);

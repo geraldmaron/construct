@@ -107,7 +107,7 @@ run `construct distill` with a focused query and compact context before continui
 construct review --days=7
 ```
 
-Generates a performance report under `.cx/reviews/`. Check for agents with quality score < 0.7.
+Generates a performance report under `.construct/reviews/`. Check for agents with quality score < 0.7.
 
 If any agent is below threshold:
 
@@ -127,7 +127,7 @@ the agents table if the registry was modified.
 construct eval-datasets
 ```
 
-Pulls scored traces into `.cx/evals/` for regression testing. Run after a `review` cycle to
+Pulls scored traces into `.construct/evals/` for regression testing. Run after a `review` cycle to
 keep the eval corpus current.
 
 ---

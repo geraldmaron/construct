@@ -4,8 +4,8 @@
  *
  * Boots the real EmbedDaemon (lib/embed/daemon.mjs), lets its scheduler run,
  * and polls the filesystem for the inbox-watcher Job #9's durable output
- * (an intake packet under .cx/intake/pending|quarantine and an observation
- * under .cx/observations) instead of sleeping for the job's full 2-minute
+ * (an intake packet under .construct/intake/pending|quarantine and an observation
+ * under .construct/observations) instead of sleeping for the job's full 2-minute
  * interval. Job #9 is registered with `runImmediately: true` (daemon.mjs),
  * so `Scheduler.start()` fires its first tick synchronously-scheduled but
  * asynchronously-resolved — this script polls in short intervals until that
@@ -35,9 +35,9 @@ function readJsonFiles(dir) {
 }
 
 function findArtifacts() {
-  const pending = readJsonFiles(join(rootDir, '.cx', 'intake', 'pending'));
-  const quarantine = readJsonFiles(join(rootDir, '.cx', 'intake', 'quarantine'));
-  const observations = readJsonFiles(join(rootDir, '.cx', 'observations'))
+  const pending = readJsonFiles(join(rootDir, '.construct', 'intake', 'pending'));
+  const quarantine = readJsonFiles(join(rootDir, '.construct', 'intake', 'quarantine'));
+  const observations = readJsonFiles(join(rootDir, '.construct', 'observations'))
     .filter((o) => o.tags?.includes('inbox') && o.tags?.includes('ingested-doc'));
   return { pending, quarantine, observations };
 }

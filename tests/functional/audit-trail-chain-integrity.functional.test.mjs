@@ -65,7 +65,7 @@ function readAllRecordsAcrossSegments(activePath) {
 test('audit-trail chain replays without breakage across a forced rotation', () => {
   const projectRoot = mkdtempSync(join(tmpdir(), 'cx-audit-chain-'));
   const fakeHome = mkdtempSync(join(tmpdir(), 'cx-audit-home-'));
-  mkdirSync(join(projectRoot, '.cx'), { recursive: true });
+  mkdirSync(join(projectRoot, '.construct'), { recursive: true });
 
   // Stage a fake target file inside the project so audit-trail's content_hash
   // path is exercised (which is what pushes records past the small tail
@@ -106,8 +106,8 @@ test('audit-trail chain replays without breakage across a forced rotation', () =
       assert.equal(result.status, 0, `iteration ${i} exited ${result.status}: ${result.stderr}`);
     }
 
-    const activePath = join(projectRoot, '.cx', 'audit-trail.jsonl');
-    const segments = readdirSync(join(projectRoot, '.cx'))
+    const activePath = join(projectRoot, '.construct', 'audit-trail.jsonl');
+    const segments = readdirSync(join(projectRoot, '.construct'))
       .filter((f) => /^audit-trail\.\d+\.jsonl(\.gz)?$/.test(f));
     assert.ok(segments.length >= 1, `expected at least one rotated segment, got ${segments.length}: ${segments.join(', ')}`);
 
@@ -135,7 +135,7 @@ test('audit-trail chain replays without breakage across a forced rotation', () =
       `chain broken ${breaks} time(s); first break at record ${firstBreak} of ${records.length}`,
     );
 
-    const firstRecordAfterRotation = JSON.parse(records[records.length - readdirSync(join(projectRoot, '.cx')).filter((f) => f === 'audit-trail.jsonl').length]);
+    const firstRecordAfterRotation = JSON.parse(records[records.length - readdirSync(join(projectRoot, '.construct')).filter((f) => f === 'audit-trail.jsonl').length]);
     assert.ok(firstRecordAfterRotation.prev_line_hash, 'first record on a fresh segment must carry a non-null prev_line_hash sourced from the rotated tail');
   } finally {
     rmTmpDir(projectRoot);

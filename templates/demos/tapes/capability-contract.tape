@@ -1,7 +1,7 @@
 Require node
 Require vhs
 # construct demo: capability contract — describe, resolve, certify
-Output .cx/demos/capability-contract.mp4
+Output .construct/demos/capability-contract.mp4
 Set FontSize 18
 Set Width 1200
 Set Height 720

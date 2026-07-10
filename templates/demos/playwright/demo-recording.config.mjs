@@ -1,7 +1,7 @@
 /**
  * templates/demos/playwright/demo-recording.config.mjs — Playwright config scaffold.
  *
- * Copied to .cx/demos/playwright.config.mjs on `construct demo init`. webServer
+ * Copied to .construct/demos/playwright.config.mjs on `construct demo init`. webServer
  * command/url come from DEMO_WEB_SERVER_* env injected by recordPlaywrightDemo.
  */
 
@@ -10,13 +10,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const DEMO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const DEMO_OUTPUT = process.env.DEMO_OUTPUT_DIR || path.join(DEMO_ROOT, '.cx', 'demos');
+const DEMO_OUTPUT = process.env.DEMO_OUTPUT_DIR || path.join(DEMO_ROOT, '.construct', 'demos');
 
 const webServerCommand = process.env.DEMO_WEB_SERVER_COMMAND;
 const webServerUrl = process.env.DEMO_WEB_SERVER_URL;
 
 export default defineConfig({
-  testDir: path.join(DEMO_ROOT, '.cx', 'demos', 'specs'),
+  testDir: path.join(DEMO_ROOT, '.construct', 'demos', 'specs'),
   timeout: 180_000,
   fullyParallel: false,
   workers: 1,

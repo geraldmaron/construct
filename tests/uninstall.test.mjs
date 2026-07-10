@@ -1,16 +1,18 @@
 /**
  * tests/uninstall.test.mjs — coverage for the `construct uninstall` command.
  *
- * Verifies:
+ * Verifies (ADR-0074 consolidated layout: launcher nests at .construct/launcher/,
+ * per-project config + state is the top-level .construct/):
  *   - --dry-run reports the plan and changes nothing on disk.
- *   - --yes (default risk: auto) removes .construct/, agents listed in the
- *     manifest and the Construct hooks block from settings.json,
- *     and the XDG state workspace dir and the global doctor-root state dir.
+ *   - --yes (default risk: auto) removes .construct/launcher/, agents listed in
+ *     the manifest and the Construct hooks block from settings.json,
+ *     and the XDG state workspace dir and the global doctor-root state dir;
+ *     the ask-risk top-level .construct/ state is preserved.
  *   - User-added mcpServers and user-added top-level settings keys are preserved.
- *   - ask-risk items (.cx/, AGENTS.md/plan.md, embedding cache, config.env)
- *     are skipped unless --all is also passed.
+ *   - ask-risk items (.construct/ state, AGENTS.md/plan.md, embedding cache,
+ *     config.env) are skipped unless --all is also passed.
  *   - --scope=project leaves machine state alone, and vice versa.
- *   - --keep-state limits to .construct/ + .claude/ adapters + settings.json.
+ *   - --keep-state limits to .construct/launcher/ + .claude/ adapters + settings.json.
  *   - .mcp.json (construct-ranh's project-scope MCP write path) has
  *     Construct-managed servers stripped alongside settings.json, preserving
  *     user-added servers and deleting the file once it is Construct-only-empty.
@@ -41,9 +43,9 @@ afterEach(() => {
 });
 
 function seedProject(dir) {
-  fs.mkdirSync(path.join(dir, '.construct', 'cache', 'bin'), { recursive: true });
-  fs.writeFileSync(path.join(dir, '.construct', 'version'), '0.1.0\n');
-  fs.writeFileSync(path.join(dir, '.construct', 'run.mjs'), '// stub\n');
+  fs.mkdirSync(path.join(dir, '.construct', 'launcher', 'cache', 'bin'), { recursive: true });
+  fs.writeFileSync(path.join(dir, '.construct', 'launcher', 'version'), '0.1.0\n');
+  fs.writeFileSync(path.join(dir, '.construct', 'launcher', 'run.mjs'), '// stub\n');
 
   fs.mkdirSync(path.join(dir, '.claude', 'agents'), { recursive: true });
   fs.writeFileSync(path.join(dir, '.claude', 'agents', 'construct.md'), '# construct persona\n');
@@ -65,7 +67,7 @@ function seedProject(dir) {
     path.join(dir, '.claude', 'settings.json'),
     JSON.stringify(
       {
-        hooks: { 'pre:session': [{ command: 'node .construct/run.mjs hook pre-session' }] },
+        hooks: { 'pre:session': [{ command: 'node .construct/launcher/run.mjs hook pre-session' }] },
         permissions: { allow: ['Bash'] },
         mcpServers: {
           memory: { command: 'node', args: ['memory.mjs'] },
@@ -79,8 +81,8 @@ function seedProject(dir) {
     )
   );
 
-  fs.mkdirSync(path.join(dir, '.cx', 'inbox'), { recursive: true });
-  fs.writeFileSync(path.join(dir, '.cx', 'context.json'), '{}');
+  fs.mkdirSync(path.join(dir, '.construct', 'inbox'), { recursive: true });
+  fs.writeFileSync(path.join(dir, '.construct', 'context.json'), '{}');
 
   fs.writeFileSync(path.join(dir, 'AGENTS.md'), '# scaffolded\n');
   fs.writeFileSync(path.join(dir, 'plan.md'), '# plan\n');
@@ -148,6 +150,7 @@ describe('runUninstall --dry-run', () => {
     await silently(() =>
       runUninstall(['--dry-run', `--cwd=${projectDir}`, `--home=${homeDir}`])
     );
+    assert.ok(fs.existsSync(path.join(projectDir, '.construct', 'launcher')));
     assert.ok(fs.existsSync(path.join(projectDir, '.construct')));
     assert.ok(fs.existsSync(path.join(projectDir, '.claude', 'agents', 'construct.md')));
     assert.ok(fs.existsSync(path.join(projectDir, '.claude', 'settings.json')));
@@ -156,14 +159,16 @@ describe('runUninstall --dry-run', () => {
 });
 
 describe('runUninstall --yes (auto-risk only)', () => {
-  it('removes .construct, manifest entries, hooks block, workspace, ~/.cx', async () => {
+  it('removes .construct/launcher, manifest entries, hooks block, workspace, ~/.cx; preserves .construct state', async () => {
     const { result } = await silently(() =>
       runUninstall(['--yes', `--cwd=${projectDir}`, `--home=${homeDir}`])
     );
 
     assert.equal(result.canceled, false);
 
-    assert.equal(fs.existsSync(path.join(projectDir, '.construct')), false, '.construct removed');
+    assert.equal(fs.existsSync(path.join(projectDir, '.construct', 'launcher')), false, '.construct/launcher removed');
+    assert.ok(fs.existsSync(path.join(projectDir, '.construct')), '.construct state preserved (ask-risk)');
+    assert.ok(fs.existsSync(path.join(projectDir, '.construct', 'context.json')), '.construct/context.json preserved');
     assert.equal(
       fs.existsSync(path.join(projectDir, '.claude', 'agents', 'construct.md')),
       false,
@@ -205,7 +210,7 @@ describe('runUninstall --yes (auto-risk only)', () => {
     await silently(() =>
       runUninstall(['--yes', `--cwd=${projectDir}`, `--home=${homeDir}`])
     );
-    assert.ok(fs.existsSync(path.join(projectDir, '.cx')), 'project .cx preserved');
+    assert.ok(fs.existsSync(path.join(projectDir, '.construct')), 'project .construct state preserved');
     assert.ok(fs.existsSync(path.join(projectDir, 'AGENTS.md')), 'AGENTS.md preserved');
     assert.ok(fs.existsSync(path.join(projectDir, 'plan.md')), 'plan.md preserved');
     assert.ok(
@@ -224,7 +229,7 @@ describe('runUninstall --yes --all', () => {
     await silently(() =>
       runUninstall(['--yes', '--all', `--cwd=${projectDir}`, `--home=${homeDir}`])
     );
-    assert.equal(fs.existsSync(path.join(projectDir, '.cx')), false);
+    assert.equal(fs.existsSync(path.join(projectDir, '.construct')), false, '.construct state removed (subsumes launcher)');
     assert.equal(fs.existsSync(path.join(projectDir, 'AGENTS.md')), false);
     assert.equal(fs.existsSync(path.join(projectDir, 'plan.md')), false);
     assert.equal(
@@ -245,7 +250,7 @@ describe('runUninstall --scope=project', () => {
     await silently(() =>
       runUninstall(['--yes', '--scope=project', `--cwd=${projectDir}`, `--home=${homeDir}`])
     );
-    assert.equal(fs.existsSync(path.join(projectDir, '.construct')), false);
+    assert.equal(fs.existsSync(path.join(projectDir, '.construct', 'launcher')), false, '.construct/launcher removed');
     assert.ok(fs.existsSync(path.join(stateDir(homeDir), 'workspace')), 'machine workspace untouched');
     assert.ok(fs.existsSync(path.join(doctorRoot(homeDir), 'log.jsonl')), 'doctor-root state untouched');
   });
@@ -263,13 +268,13 @@ describe('runUninstall --scope=machine', () => {
 });
 
 describe('runUninstall --keep-state', () => {
-  it('removes only .construct + adapters + settings; preserves .cx/, scaffold files, all machine state', async () => {
+  it('removes only .construct/launcher + adapters + settings; preserves .construct/ state, scaffold files, all machine state', async () => {
     await silently(() =>
       runUninstall(['--yes', '--all', '--keep-state', `--cwd=${projectDir}`, `--home=${homeDir}`])
     );
-    assert.equal(fs.existsSync(path.join(projectDir, '.construct')), false);
+    assert.equal(fs.existsSync(path.join(projectDir, '.construct', 'launcher')), false, '.construct/launcher removed');
     assert.equal(fs.existsSync(path.join(projectDir, '.claude', 'agents', 'cx-engineer.md')), false);
-    assert.ok(fs.existsSync(path.join(projectDir, '.cx')), '.cx preserved');
+    assert.ok(fs.existsSync(path.join(projectDir, '.construct')), '.construct state preserved');
     assert.ok(fs.existsSync(path.join(projectDir, 'AGENTS.md')), 'AGENTS.md preserved');
     assert.ok(fs.existsSync(path.join(stateDir(homeDir), 'workspace')), 'machine workspace preserved');
     assert.ok(fs.existsSync(path.join(doctorRoot(homeDir), 'log.jsonl')), 'doctor-root state preserved');

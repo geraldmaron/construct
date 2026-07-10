@@ -6,18 +6,18 @@ description: What stays on your machine, what crosses the network, and how Const
 Construct is designed to keep your data local by default. This page explains exactly what leaves your machine, what doesn't, and what changes when you run Construct in embed mode or with multiple instances.
 
 <FlowPipeline steps={[
-  { label: 'Your machine', badge: 'local', sub: '.cx/ · beads · Postgres · git' },
+  { label: 'Your machine', badge: 'local', sub: '.construct/ · beads · Postgres · git' },
   { label: 'Context packet', sub: 'role-scoped excerpt\ntoken-budgeted', via: 'buildContextPacket' },
   { label: 'LLM API', badge: 'network', sub: 'Claude · OpenAI · Ollama', highlight: true },
 ]} />
 
 ## What stays local
 
-Everything in `.cx/` stays on your machine (or on your team's shared Dolt remote if you're in team mode, never on Construct's servers):
+Everything in `.construct/` stays on your machine (or on your team's shared Dolt remote if you're in team mode, never on Construct's servers):
 
-- **`.cx/knowledge/`**: ingested documents, ADRs, research briefs, meeting notes
-- **`.cx/observations/`**: session observations, vector embeddings, entity graph
-- **`.cx/sessions/`**: distilled session records
+- **`.construct/knowledge/`**: ingested documents, ADRs, research briefs, meeting notes
+- **`.construct/observations/`**: session observations, vector embeddings, entity graph
+- **`.construct/sessions/`**: distilled session records
 - **Postgres**: when running with Docker, the database is local. Schema, embeddings, and traces never leave your host.
 
 ## What crosses the network
@@ -47,14 +47,14 @@ The mode is detected automatically. You can check it with `construct status`.
 If you run Construct in multiple projects simultaneously, each instance is namespace-isolated:
 
 - **Config**: each instance reads its own `~/.config/construct/config.env` plus any project-level overrides
-- **Data**: `.cx/` directories are per-project; observations and sessions don't bleed between projects
+- **Data**: `.construct/` directories are per-project; observations and sessions don't bleed between projects
 - **Ports**: each instance is assigned its own dashboard port. Conflicts surface as warnings during `construct init`.
 
 Set `CONSTRUCT_INSTANCE_ID` in your config to give an instance a stable identity across restarts. This is mainly useful when a parent instance needs to reference a specific child.
 
 ## What Construct does not do
 
-- Does not send your `.cx/` contents to Anthropic or any third party
+- Does not send your `.construct/` contents to Anthropic or any third party
 - Does not phone home on install or runtime
 - Does not write back to GitHub, Jira, or Slack unless you run a command that explicitly does so
 - Does not share embeddings or knowledge between separate projects

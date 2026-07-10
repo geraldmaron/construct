@@ -15,7 +15,7 @@ Concept pages explain *why* Construct works the way it does. They're not how-to 
 
 - **Oracle health review.** The Oracle meta-controller collects project signals, synthesizes gaps, auto-executes safe maintenance, and queues consequential fixes for approval. [Read more →](/guides/concepts/architecture)
 
-- **Durable state.** Sessions survive boundary changes. Decisions get written to `.cx/context.md`, work-in-progress to beads, handoffs to `.cx/handoffs/`. The next session resumes from the right place. [Read more →](/guides/concepts/beads-and-state)
+- **Durable state.** Sessions survive boundary changes. Decisions get written to `.construct/context.md`, work-in-progress to beads, handoffs to `.construct/handoffs/`. The next session resumes from the right place. [Read more →](/guides/concepts/beads-and-state)
 
 - **R&D intake and triage.** Files dropped into `inbox/` are classified into the R&D loop (bug / experiment / incident / requirement / …), assigned a primary owner persona, and given a recommended handoff chain — all by a deterministic keyword classifier in the daemon, no LLM call. The `construct intake` CLI inspects and drives the queue. [Read more →](/guides/concepts/intake-and-triage)
 
@@ -32,5 +32,5 @@ Concept pages explain *why* Construct works the way it does. They're not how-to 
 A few topics earn dedicated concept pages because they affect many subsystems:
 
 - [Prompt surfaces](/guides/concepts/prompt-surfaces) — what the persona vs. specialists see at each stage.
-- [Knowledge layout](/guides/concepts/knowledge-layout) — how `.cx/`, beads, vector index, and SQL fit together.
+- [Knowledge layout](/guides/concepts/knowledge-layout) — how `.construct/`, beads, vector index, and SQL fit together.
 - [Embedding boundary](/guides/concepts/embedding-boundary) — what stays local vs. what crosses the network boundary.

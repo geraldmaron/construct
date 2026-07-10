@@ -28,14 +28,14 @@ test('isStaleConstructGuide detects R&D-specific legacy copy', () => {
 test('needsConstructGuideUpdate proposes refresh for stale .cx guide', () => {
   const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-guide-update-'));
   try {
-    fs.mkdirSync(path.join(projectDir, '.cx'), { recursive: true });
+    fs.mkdirSync(path.join(projectDir, '.construct'), { recursive: true });
     fs.writeFileSync(
-      path.join(projectDir, '.cx', 'construct_guide.md'),
+      path.join(projectDir, '.construct', 'construct_guide.md'),
       '# Welcome\n\nDrop files for R&D classification.\n',
     );
     const state = needsConstructGuideUpdate(projectDir);
     assert.equal(state.needed, true);
-    assert.equal(state.located.location, '.cx');
+    assert.equal(state.located.location, '.construct');
   } finally {
     fs.rmSync(projectDir, { recursive: true, force: true });
   }
@@ -46,7 +46,7 @@ test('applyConstructGuideUpdate writes shipped template and removes root legacy'
   try {
     fs.writeFileSync(path.join(projectDir, 'construct_guide.md'), '# legacy root\n');
     const dest = applyConstructGuideUpdate(projectDir, SHIPPED);
-    assert.equal(dest, path.join(projectDir, '.cx', 'construct_guide.md'));
+    assert.equal(dest, path.join(projectDir, '.construct', 'construct_guide.md'));
     assert.equal(fs.existsSync(path.join(projectDir, 'construct_guide.md')), false);
     assert.match(fs.readFileSync(dest, 'utf8'), /construct intake --help/);
   } finally {

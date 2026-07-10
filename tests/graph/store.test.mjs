@@ -136,7 +136,7 @@ test('nodes are written sorted by id for clean diffs', () => {
     ],
     edges: [],
   });
-  const raw = fs.readFileSync(path.join(root, '.cx', 'graph', 'nodes.jsonl'), 'utf8').trim().split('\n');
+  const raw = fs.readFileSync(path.join(root, '.construct', 'graph', 'nodes.jsonl'), 'utf8').trim().split('\n');
   const ids = raw.map((l) => JSON.parse(l).id);
   assert.deepEqual(ids, ['a:1', 'm:1', 'z:1']);
 });

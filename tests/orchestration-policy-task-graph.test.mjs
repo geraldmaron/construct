@@ -30,7 +30,7 @@ beforeEach(() => {
   // leaking into the dev box's real ~/.cx/. Set HOME too so any cross-
   // project writer fallback also lands in the sandbox.
 
-  fs.mkdirSync(path.join(projectRoot, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(projectRoot, '.construct'), { recursive: true });
   process.env.HOME = projectRoot;
   process.chdir(projectRoot);
 });
@@ -92,7 +92,7 @@ describe('orchestrationPolicy intakeId auto-generates task graph', () => {
       intakeId,
     });
     assert.ok(result.taskGraph);
-    const graphFile = path.join(projectRoot, '.cx', 'task-graphs', `${result.taskGraph.id}.json`);
+    const graphFile = path.join(projectRoot, '.construct', 'task-graphs', `${result.taskGraph.id}.json`);
     assert.ok(fs.existsSync(graphFile), 'graph persisted to disk');
     const persisted = JSON.parse(fs.readFileSync(graphFile, 'utf8'));
     assert.deepEqual(persisted.nodes.map((n) => n.owner), ['security', 'engineer', 'reviewer']);

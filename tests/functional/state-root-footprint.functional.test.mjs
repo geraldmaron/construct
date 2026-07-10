@@ -3,7 +3,7 @@
  *
  * End-to-end coverage for ADR-0066 (config-layer project footprint): a fresh
  * `construct init` produces a project tree with no heavy state directories
- * under `.cx/`, and an operation that would normally write traces or
+ * under `.construct/`, and an operation that would normally write traces or
  * orchestration runs instead lands under the machine-scoped state root at
  * `~/.construct/projects/<key>/`. Also covers `construct status` reading a
  * persisted orchestration run back from that same state root (pinning the
@@ -61,7 +61,7 @@ function walkEntries(dir, base = dir) {
   return out;
 }
 
-test('construct init produces only text under .cx/ — no heavy state directories', (t) => {
+test('construct init produces only text under .construct/ — no heavy state directories', (t) => {
   const { project, home, cleanup } = makeFixture();
   t.after(cleanup);
 
@@ -74,29 +74,29 @@ test('construct init produces only text under .cx/ — no heavy state directorie
   });
   assert.equal(result.status, 0, `init exited ${result.status}: ${result.stderr}`);
 
-  const cxDir = join(project, '.cx');
-  assert.ok(existsSync(cxDir), '.cx/ must exist after init');
+  const cxDir = join(project, '.construct');
+  assert.ok(existsSync(cxDir), '.construct/ must exist after init');
 
   const entries = walkEntries(cxDir);
   const heavyDirs = entries.filter((e) => e.isDirectory && HEAVY_STATE_DIRNAMES.has(e.rel));
   assert.deepEqual(
     heavyDirs.map((e) => e.rel),
     [],
-    `fresh init must not scaffold heavy state dirs under .cx/; found: ${heavyDirs.map((e) => e.rel).join(', ')}`,
+    `fresh init must not scaffold heavy state dirs under .construct/; found: ${heavyDirs.map((e) => e.rel).join(', ')}`,
   );
 
-  // Every remaining .cx/ entry an init can produce (context.md, context.json,
+  // Every remaining .construct/ entry an init can produce (context.md, context.json,
   // brand-voice.json, and profile-driven config like intake/manifest.json) is
   // a small text/JSON file, never a heavy multi-file tree.
 
   for (const entry of entries) {
     if (entry.isDirectory) continue;
     const size = statSync(join(cxDir, entry.rel)).size;
-    assert.ok(size < 100_000, `.cx/${entry.rel} is ${size} bytes — expected committed-text-sized, not heavy state`);
+    assert.ok(size < 100_000, `.construct/${entry.rel} is ${size} bytes — expected committed-text-sized, not heavy state`);
   }
 });
 
-test('a trace write after init lands under the machine-scoped state root, not .cx/traces', (t) => {
+test('a trace write after init lands under the machine-scoped state root, not .construct/traces', (t) => {
   const { project, home, cleanup } = makeFixture();
   t.after(cleanup);
 
@@ -123,9 +123,9 @@ test('a trace write after init lands under the machine-scoped state root, not .c
   const event = JSON.parse(traceResult.stdout);
   assert.equal(event.eventType, 'intake.received');
 
-  // .cx/traces/ must not exist — the write never touched the project tree.
+  // .construct/traces/ must not exist — the write never touched the project tree.
 
-  assert.equal(existsSync(join(project, '.cx', 'traces')), false, '.cx/traces/ must not be created by the write');
+  assert.equal(existsSync(join(project, '.construct', 'traces')), false, '.construct/traces/ must not be created by the write');
 
   // The durable copy lives under <home>/.construct/projects/<key>/traces/.
 
@@ -140,7 +140,7 @@ test('a trace write after init lands under the machine-scoped state root, not .c
   assert.match(line, /"probe":true/);
 });
 
-test('construct status reads a persisted orchestration run back from the state root, not .cx/runtime', (t) => {
+test('construct status reads a persisted orchestration run back from the state root, not .construct/runtime', (t) => {
   const { project, home, cleanup } = makeFixture();
   t.after(cleanup);
 
@@ -173,7 +173,7 @@ test('construct status reads a persisted orchestration run back from the state r
 
   // The run file never touches the project tree.
 
-  assert.equal(existsSync(join(project, '.cx', 'runtime')), false, '.cx/runtime/ must not be created by the write');
+  assert.equal(existsSync(join(project, '.construct', 'runtime')), false, '.construct/runtime/ must not be created by the write');
 
   const key = deriveProjectKey(project);
   const stateRunsDir = join(home, '.construct', 'projects', key, 'runtime', 'orchestration', 'runs');
@@ -214,11 +214,11 @@ test('construct doctor flags legacy in-project heavy state left over from a pre-
   });
   assert.equal(initResult.status, 0, `init exited ${initResult.status}: ${initResult.stderr}`);
 
-  // Simulate a pre-refit install: a project-local .cx/traces/ left behind by
+  // Simulate a pre-refit install: a project-local .construct/traces/ left behind by
   // an older Construct version.
 
-  mkdirSync(join(project, '.cx', 'traces'), { recursive: true });
-  writeFileSync(join(project, '.cx', 'traces', '2026-01-01.jsonl'), '{"eventType":"legacy"}\n');
+  mkdirSync(join(project, '.construct', 'traces'), { recursive: true });
+  writeFileSync(join(project, '.construct', 'traces', '2026-01-01.jsonl'), '{"eventType":"legacy"}\n');
 
   const doctorEnv = isolationEnv(home, { CONSTRUCT_SKIP_POSTINSTALL: '1' });
   const doctorResult = spawnSync(process.execPath, [BIN, 'doctor'], {
@@ -229,8 +229,8 @@ test('construct doctor flags legacy in-project heavy state left over from a pre-
   });
   assert.match(
     doctorResult.stdout,
-    /Legacy in-project heavy state found:.*\.cx\/traces/,
-    `doctor must flag the legacy .cx/traces/ dir; stdout:\n${doctorResult.stdout}`,
+    /Legacy in-project heavy state found:.*\.construct\/traces/,
+    `doctor must flag the legacy .construct/traces/ dir; stdout:\n${doctorResult.stdout}`,
   );
   assert.match(doctorResult.stdout, /~\/\.construct\/projects\/<key>\//, 'finding must point at the new state root');
 });

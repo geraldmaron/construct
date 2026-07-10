@@ -149,7 +149,7 @@ test('llm-judge spends up to its configured cap then hard-stops the rest of the 
     const spendCheck = checkUnattendedSpend(rootDir, 'embed-llm-judge', 0, { env });
     assert.equal(spendCheck.spent, 1500, 'the durable ledger must reflect the real recorded spend of the one call that ran');
 
-    const consumptionFile = path.join(rootDir, '.cx', 'consumption-budgets.json');
+    const consumptionFile = path.join(rootDir, '.construct', 'consumption-budgets.json');
     assert.ok(fs.existsSync(consumptionFile), 'spend must persist to the durable consumption-budgets store');
     const persisted = JSON.parse(fs.readFileSync(consumptionFile, 'utf8'));
     const key = Object.keys(persisted).find((k) => k.startsWith('unattended:embed-llm-judge::'));

@@ -34,9 +34,9 @@ async function taskModule(name) {
   return mod.default;
 }
 
-test('reconcile/gitignore-coverage: ensures .cx/ is ignored', async () => {
+test('reconcile/gitignore-coverage: ensures .construct/ is ignored', async () => {
   await withSandbox(async ({ project }) => {
-    mkdirSync(join(project, '.cx'), { recursive: true });
+    mkdirSync(join(project, '.construct'), { recursive: true });
     const gitignore = join(project, '.gitignore');
     writeFileSync(gitignore, 'node_modules\n');
     
@@ -45,6 +45,6 @@ test('reconcile/gitignore-coverage: ensures .cx/ is ignored', async () => {
     assert.equal(before.needsRepair, true);
 
     await task.apply();
-    assert.match(readFileSync(gitignore, 'utf8'), /\.cx\//);
+    assert.match(readFileSync(gitignore, 'utf8'), /\.construct\//);
   });
 });

@@ -74,8 +74,8 @@ test('expandProjectsFilter: an unknown id throws naming the known projects (R3)'
 
 test('buildCorpus: single-root signature keeps host chunks tagged self (R1 back-compat)', () => {
   const host = freshDir('cx-mr-host-');
-  fs.mkdirSync(path.join(host, '.cx', 'knowledge', 'internal'), { recursive: true });
-  fs.writeFileSync(path.join(host, '.cx', 'knowledge', 'internal', 'note.md'), '# Host note\n\nhostmarkerword content.\n');
+  fs.mkdirSync(path.join(host, '.construct', 'knowledge', 'internal'), { recursive: true });
+  fs.writeFileSync(path.join(host, '.construct', 'knowledge', 'internal', 'note.md'), '# Host note\n\nhostmarkerword content.\n');
 
   const corpus = buildCorpus(host);
   assert.ok(corpus.length > 0, 'host corpus non-empty');

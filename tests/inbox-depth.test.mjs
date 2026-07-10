@@ -31,7 +31,7 @@ let projectRoot;
 
 beforeEach(() => {
   projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-inbox-depth-'));
-  fs.mkdirSync(path.join(projectRoot, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(projectRoot, '.construct'), { recursive: true });
 });
 
 afterEach(() => {

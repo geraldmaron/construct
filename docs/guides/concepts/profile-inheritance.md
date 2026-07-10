@@ -112,7 +112,7 @@ The `extends` field is declared in `schemas/scope.schema.json`:
 "extends": { "type": ["string", "null"] }
 ```
 
-The loader lives in `lib/scopes/`. Curated profiles (e.g. `profiles/research.json`) always have `"extends": null`. Custom profiles at `.cx/scope.json` may point at any curated id.
+The loader lives in `lib/scopes/`. Curated profiles (e.g. `profiles/research.json`) always have `"extends": null`. Custom profiles at `.construct/scope.json` may point at any curated id.
 
 ## Constraints
 

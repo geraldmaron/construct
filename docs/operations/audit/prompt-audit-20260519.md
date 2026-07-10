@@ -106,7 +106,7 @@ The following updates were applied to all specialist prompts:
 
 4. **Telemetry Backend Configured**
    - Runs on `http://localhost:54330` (Docker via `construct dev`)
-   - Traces stay local in `.cx/traces/` and local Postgres
+   - Traces stay local in `.construct/traces/` and local Postgres
    - Dashboard at `http://localhost:54330` for trace visibility
 
 5. **All 8 Specialist Prompts Updated** with:
@@ -120,7 +120,7 @@ The following updates were applied to all specialist prompts:
 
 **Observation Store:**
 ```
-.cx/observations/
+.construct/observations/
 ├── obs-mpbb82ab-96b2d5c6.json  (session-summary)
 ├── obs-mpbbphhv-935f9fd3.json  (session-summary)
 ├── obs-mpbcdyk4-e803289e.json  (session-summary)
@@ -164,7 +164,7 @@ The following updates were applied to all specialist prompts:
 Location: `/embed.yaml`
 
 Configuration includes:
-- Sources: filesystem (.cx/inbox/), git, CI (GitHub)
+- Sources: filesystem (.construct/inbox/), git, CI (GitHub)
 - Roles: primary=architect, secondary=product-manager
 - Targets: knowledge, decisions, how-tos
 - Schedule: 4 scheduled activations (docs, classification, security, traces)

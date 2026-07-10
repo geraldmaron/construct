@@ -107,7 +107,7 @@ configured GitHub repos and Jira projects on a schedule.
 
 test('finds content in .cx/knowledge/internal', () => {
   const root = makeTmpRepo({
-    '.cx/knowledge/internal/team-setup.md': `# Team setup notes
+    '.construct/knowledge/internal/team-setup.md': `# Team setup notes
 
 We use construct with three GitHub repos. Config lives in ~/.construct/config.env.
 `,
@@ -165,7 +165,7 @@ test('returns message when no hits found', () => {
   // Use a non-priority source (.cx/knowledge/internal) with content that has
   // no overlap with the query tokens so it scores below minScore.
   const root = makeTmpRepo({
-    '.cx/knowledge/internal/notes.md': `# Notes\n\nsome unrelated content here with no overlap.\n`,
+    '.construct/knowledge/internal/notes.md': `# Notes\n\nsome unrelated content here with no overlap.\n`,
   });
   try {
     const result = knowledgeSearch({ query: 'xyzzyunmatchabletoken', repoRoot: root, rootDir: root });

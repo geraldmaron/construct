@@ -12,7 +12,7 @@
     },
     "qualityContract": {
       "gateLevel": "standard",
-      "requiredStates": ["exported"]
+      "requiredStates": ["exported", "file-valid"]
     }
   },
   "artifacts": {

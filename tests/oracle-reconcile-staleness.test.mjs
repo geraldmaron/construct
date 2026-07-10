@@ -25,13 +25,13 @@ after(() => {
 function freshProjectDir() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'oracle-reconcile-'));
   tmpDirs.push(dir);
-  fs.mkdirSync(path.join(dir, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(dir, '.construct'), { recursive: true });
   return dir;
 }
 
 function injectViolation(projectDir, contractId, direction, age) {
   const ts = new Date(Date.now() - age).toISOString();
-  const logFile = path.join(projectDir, '.cx', 'contract-violations.jsonl');
+  const logFile = path.join(projectDir, '.construct', 'contract-violations.jsonl');
   fs.mkdirSync(path.dirname(logFile), { recursive: true });
   const record = {
     ts,
@@ -56,7 +56,7 @@ describe('planContractViolationSupersede SLA window (24h)', () => {
 
   it('returns no supersede when violations are non-probe contract failures', () => {
     const projectDir = freshProjectDir();
-    const logFile = path.join(projectDir, '.cx', 'contract-violations.jsonl');
+    const logFile = path.join(projectDir, '.construct', 'contract-violations.jsonl');
     fs.mkdirSync(path.dirname(logFile), { recursive: true });
     const record = {
       ts: new Date().toISOString(),
@@ -78,7 +78,7 @@ describe('planContractViolationSupersede SLA window (24h)', () => {
   it('detects violations exactly at SLA boundary (24 hours)', () => {
     const projectDir = freshProjectDir();
     const boundaryMs = 24 * 60 * 60 * 1000;
-    const logFile = path.join(projectDir, '.cx', 'contract-violations.jsonl');
+    const logFile = path.join(projectDir, '.construct', 'contract-violations.jsonl');
     fs.mkdirSync(path.dirname(logFile), { recursive: true });
 
     // Pin one clock for both the fixture and the check: the boundary
@@ -106,7 +106,7 @@ describe('planContractViolationSupersede SLA window (24h)', () => {
   it('excludes violations older than SLA window (24 hours + 1ms)', () => {
     const projectDir = freshProjectDir();
     const boundaryMs = 24 * 60 * 60 * 1000;
-    const logFile = path.join(projectDir, '.cx', 'contract-violations.jsonl');
+    const logFile = path.join(projectDir, '.construct', 'contract-violations.jsonl');
     fs.mkdirSync(path.dirname(logFile), { recursive: true });
 
     const ts = new Date(Date.now() - boundaryMs - 1).toISOString();
@@ -129,7 +129,7 @@ describe('planContractViolationSupersede SLA window (24h)', () => {
   it('includes violations fresher than SLA window (24 hours - 1ms)', () => {
     const projectDir = freshProjectDir();
     const boundaryMs = 24 * 60 * 60 * 1000;
-    const logFile = path.join(projectDir, '.cx', 'contract-violations.jsonl');
+    const logFile = path.join(projectDir, '.construct', 'contract-violations.jsonl');
     fs.mkdirSync(path.dirname(logFile), { recursive: true });
 
     const ts = new Date(Date.now() - boundaryMs + 1).toISOString();
@@ -150,7 +150,7 @@ describe('planContractViolationSupersede SLA window (24h)', () => {
 
   it('counts multiple recent violations', () => {
     const projectDir = freshProjectDir();
-    const logFile = path.join(projectDir, '.cx', 'contract-violations.jsonl');
+    const logFile = path.join(projectDir, '.construct', 'contract-violations.jsonl');
     fs.mkdirSync(path.dirname(logFile), { recursive: true });
 
     for (let i = 0; i < 3; i++) {
@@ -172,7 +172,7 @@ describe('planContractViolationSupersede SLA window (24h)', () => {
 
   it('respects existing supersede marker: violations before marker are ignored', () => {
     const projectDir = freshProjectDir();
-    const logFile = path.join(projectDir, '.cx', 'contract-violations.jsonl');
+    const logFile = path.join(projectDir, '.construct', 'contract-violations.jsonl');
     fs.mkdirSync(path.dirname(logFile), { recursive: true });
 
     const beforeMarker = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
@@ -201,7 +201,7 @@ describe('planContractViolationSupersede SLA window (24h)', () => {
     fs.writeFileSync(logFile, JSON.stringify(beforeRecord) + '\n' + JSON.stringify(afterRecord) + '\n');
 
     const markerTime = new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString();
-    const markerFile = path.join(projectDir, '.cx', 'contract-violations-superseded.json');
+    const markerFile = path.join(projectDir, '.construct', 'contract-violations-superseded.json');
     fs.writeFileSync(markerFile, JSON.stringify({ supersededBefore: markerTime }) + '\n');
 
     const plan = planContractViolationSupersede(projectDir);

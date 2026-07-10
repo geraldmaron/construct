@@ -5,7 +5,7 @@
  * (construct-jvjow.1). Proves the one-command flow writes all three durable
  * artifacts that today require three separate commands — construct.config.json
  * `sources.targets[]`, embed.yaml `roles{}`/`sources:`, and the enabled
- * `.cx/embed/<id>.manifest.json` capability manifest — and prints a summary of
+ * `.construct/embed/<id>.manifest.json` capability manifest — and prints a summary of
  * what it assembled. The daemon-start step is exercised with `--no-start`
  * here (assembly only); the daemon actually starting is covered by the
  * `runEmbedCli(['start'], ...)` unit tests in tests/embed-cli.test.mjs, which
@@ -31,8 +31,8 @@ function sandbox() {
   const root = mkdtempSync(join(tmpdir(), 'cx-monitor-fn-'));
   const home = join(root, 'HOME');
   const project = join(root, 'project');
-  mkdirSync(join(project, '.cx'), { recursive: true });
-  writeFileSync(join(project, '.cx', 'context.md'), '# test project\n');
+  mkdirSync(join(project, '.construct'), { recursive: true });
+  writeFileSync(join(project, '.construct', 'context.md'), '# test project\n');
   mkdirSync(home, { recursive: true });
   tmpDirs.push(root);
   return { root, home, project };
@@ -100,8 +100,8 @@ test('construct monitor --as operations --targets ... assembles all three durabl
   assert.match(embedYaml, /provider: github/);
   assert.match(embedYaml, /provider: jira/);
 
-  // .cx/embed/<id>.manifest.json, enabled
-  const manifestPath = join(project, '.cx', 'embed', 'operations.manifest.json');
+  // .construct/embed/<id>.manifest.json, enabled
+  const manifestPath = join(project, '.construct', 'embed', 'operations.manifest.json');
   assert.ok(existsSync(manifestPath), 'capability manifest exists');
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
   assert.equal(manifest.embed.enabled, true);
@@ -135,7 +135,7 @@ test('construct monitor --as pm-feedback sets embed.yaml roles.primary from that
   const embedYaml = readFileSync(join(project, 'embed.yaml'), 'utf8');
   assert.match(embedYaml, /primary: product-manager/);
 
-  const manifestPath = join(project, '.cx', 'embed', 'pm-feedback.manifest.json');
+  const manifestPath = join(project, '.construct', 'embed', 'pm-feedback.manifest.json');
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
   assert.equal(manifest.embed.specialist, 'cx-product-manager');
   assert.equal(manifest.embed.enabled, true);

@@ -25,11 +25,11 @@ Hook count target: ≤ 30 (see projection below).
 |---|---|---|---|
 | `audit-trail.mjs` | PostToolUse | 15 | Append-only JSONL audit log for every mutation (project-scoped) |
 | `bash-output-logger.mjs` | PostToolUse | 20 | Saves long Bash stdout to `~/.cx/bash-logs/` |
-| `mcp-audit.mjs` | PostToolUse | 10 | Logs every `mcp__*` call to `.cx/mcp-audit.json` |
-| `audit-reads.mjs` | PostToolUse | 8 | Always-on: file-hash store for edit-guard staleness detection + read-tracker delta. Opt-in (`CONSTRUCT_AUDIT_READS=1`): tamper-evident audit chain to `.cx/audit-reads.jsonl`. |
+| `mcp-audit.mjs` | PostToolUse | 10 | Logs every `mcp__*` call to `.construct/mcp-audit.json` |
+| `audit-reads.mjs` | PostToolUse | 8 | Always-on: file-hash store for edit-guard staleness detection + read-tracker delta. Opt-in (`CONSTRUCT_AUDIT_READS=1`): tamper-evident audit chain to `.construct/audit-reads.jsonl`. |
 | `agent-tracker.mjs` | PostToolUse | 10 | Records last dispatched subagent + emits `handoff.received` events on `next:cx-<role>` results |
 | `stop-notify.mjs` | Stop | 500 | Session summary: cost, TS results, macOS notification |
-| `session-tracking-refresh.mjs` | Stop | 2000 | Refreshes `.cx/context.{md,json}` from observations/commits/beads; syncs plan.md bead-status table; archives plan.md to `.cx/handoffs/` when all referenced beads are closed |
+| `session-tracking-refresh.mjs` | Stop | 2000 | Refreshes `.construct/context.{md,json}` from observations/commits/beads; syncs plan.md bead-status table; archives plan.md to `.construct/handoffs/` when all referenced beads are closed |
 | `post-merge-tracking.mjs` | PostToolUse | 3000 | After `gh pr merge` succeeds, closes `construct-XXX` beads named in the PR body's `Refs:` / `Closes:` / `Fixes:` lines |
 | `context-watch.mjs` | UserPromptSubmit | 20 | Token usage monitoring and compaction recommendation |
 | `edit-accumulator.mjs` | PostToolUse | 10 | Tracks files-changed count; queues TS files for end-of-session typecheck |
@@ -59,7 +59,7 @@ Hook count target: ≤ 30 (see projection below).
 | `pre-compact.mjs` | PreCompact | 100 | Context summary before compaction |
 | `adaptive-lint.mjs` | PostToolUse | 800 | Auto-runs linter/formatter on edited file; flags debug logging |
 | `comment-lint.mjs` | PostToolUse | 50 | Blocks banned comment patterns and missing required headers |
-| `artifact-release-gate.mjs` | PostToolUse | 80 | Advisory: manifest structure/visual gaps on typed docs (`docs/**`, `.cx/research/**`) |
+| `artifact-release-gate.mjs` | PostToolUse | 80 | Advisory: manifest structure/visual gaps on typed docs (`docs/**`, `.construct/research/**`) |
 | `stop-typecheck.mjs` | Stop | 2000 | Runs `tsc --noEmit` at session end |
 | `edit-error-recovery.mjs` | PostToolUse | 10 | Recovery guide for failed Edit/Write calls |
 | `context-window-recovery.mjs` | PostToolUse | 10 | Detects context-limit errors; saves recovery snapshot |
