@@ -6643,6 +6643,7 @@ async function cmdWorkflow(args) {
       host: flag('--host'),
       hostModel: flag('--host-model'),
       hostProvider: flag('--host-provider'),
+      recruitment: flag('--recruitment'),
     };
     const { invokeWorkflow } = await import('../lib/embedded-contract/workflow-invoke.mjs');
     const { wrapContractResult } = await import('../lib/embedded-contract/envelope.mjs');
