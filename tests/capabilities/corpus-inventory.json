@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-10T01:43:49.791Z",
+  "generatedAt": "2026-07-10T01:55:08.042Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 846,
+    "testFiles": 847,
     "topLevelTestFiles": 360,
-    "nestedTestFiles": 486,
+    "nestedTestFiles": 487,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 46,
     "byLayer": {
-      "unit": 568,
+      "unit": 569,
       "functional": 230,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 505,
+      "unit": 506,
       "functional": 230,
       "visual": 12,
       "structural-guard": 19,
@@ -669,6 +669,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/audit/f09-orchestration/provider-timeout.red.mjs — F09 [R19] unbounded-provider proof."
+    },
+    {
+      "path": "tests/audit/f09-orchestration/recruited-honesty-surface.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f09-orchestration/recruited-honesty-surface.test.mjs —"
     },
     {
       "path": "tests/audit/f09-orchestration/remote-per-request-timeout.test.mjs",

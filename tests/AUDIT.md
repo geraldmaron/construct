@@ -11,8 +11,8 @@ A snapshot of what the test suite covers, why each file exists, and where the ga
 
 ## At a glance
 
-- **846 test files** total: 360 at `tests/` top level + 486 in subdirectories.
-- **Layers:** unit 568, functional 230, visual 12, live-provider 2, integration 34.
+- **847 test files** total: 360 at `tests/` top level + 487 in subdirectories.
+- **Layers:** unit 569, functional 230, visual 12, live-provider 2, integration 34.
 - **Functional layer:** 230 file(s) under `tests/functional/` or `*.functional.test.mjs`. End-to-end checks spawn the real binary or import real modules in an isolated tmpdir.
 - **Contract subsystems:** 44 file(s) under profile/outcomes/hooks/knowledge/intake/graph/evals and related subdirs.
 - **Hook tests:** 9 file(s) (including `tests/hooks/`).
