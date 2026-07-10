@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.5.4-alpha.1] - 2026-07-10
+
+Pre-release for tester validation off `staging`. Lands the ADR-0069 single-`.construct/` layout consolidation and the full-matrix CI hardening (launcher self-repo tests, OpenCode memory-bridge URL determinism, docs-site native-binary lockfile pins). Known-red on the full matrix: the RichDocument doc-io certification job (mermaid needs Chrome in CI + a remote-image diagnostic — `construct-gx24p`); the shipped package itself is unaffected. Not promoted to `main`/`latest`.
+
 ### Changed
 
 - `construct-1in3v` (fate of `lib/orchestration/delegation-flow.mjs`): resolved to **keep the module engine-internal**. The ADR-0067 stepwise delegation flow lost its last production caller when `orchestration-delegation-next.tool.mjs` was removed under the tool-surface budget (`db90bbf2`); rather than re-expose a dispatch surface (contradicting the deliberate trim) or delete working, parity-guarded machinery, the module stays as a reserved flow surface. A rationale block now records this in the file header, the `02-deadcode:module-test-only` baseline entry is retained by design (not removed), and `tests/orchestration-delegation-flow.test.mjs` + `tests/orchestration-route-path.test.mjs` keep pinning specialist-ordering and routePath parity against `routeRequest()` so a future surface can adopt the flow without regressing. Corrected the now-stale `docs/guides/concepts/architecture.mdx` claim that delegation is driven "via the self-registered MCP tool `orchestration_delegation_next`" (the tool no longer exists). The dangling references to that removed tool in `personas/construct.md` (an active instruction to call it), `scripts/sync-specialists.mjs` (`ORCHESTRATOR_DISPATCH_TOOLS` allowlist), and `STRATEGY.md` — plus the orchestrator's now-unsupported one-step-at-a-time dispatch model — are filed as a follow-up bead rather than bundled here.
