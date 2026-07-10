@@ -19,6 +19,7 @@ import { readCurrentModels } from '../../lib/model-router.mjs';
 import { classifyMcpState, diagnoseMcpStates } from '../../lib/mcp-manager.mjs';
 import { libreOfficePresent } from '../../lib/libreoffice-export.mjs';
 import { pptxgenPresent } from '../../lib/deck-export-pptx.mjs';
+import { detectRenderer } from '../../lib/render-pipeline.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
@@ -226,8 +227,12 @@ test('release gate (d1r7.11): certified document I/O passes when the engines are
   // When every export engine is installed, the certified matrix must pass — a format skipped for a
   // missing tool is a hard failure, not a pass (construct-d1r7.11). Where an engine is absent (e.g.
   // a lean CI leg), the graceful local matrix must still exit clean instead.
+  // mermaid is part of the certified matrix and needs a headless browser (mmdc/Puppeteer), not just
+  // its binary — a box with pandoc/typst/libreoffice but no browser (release:check, a lean CI leg)
+  // must run the graceful matrix, never --certified, or mermaid becomes a certified-mode hard failure.
   const bin = (name) => spawnSync(process.platform === 'win32' ? 'where' : 'which', [name]).status === 0;
-  const fullEngines = bin('pandoc') && bin('typst') && libreOfficePresent() && pptxgenPresent();
+  const fullEngines = bin('pandoc') && bin('typst') && libreOfficePresent() && pptxgenPresent()
+    && detectRenderer('mermaid').available;
   const args = fullEngines ? ['certify', 'document-io', '--certified'] : ['certify', 'document-io'];
   const result = run(args);
   assert.equal(result.status, 0, `certify document-io${fullEngines ? ' --certified' : ''} exited ${result.status}; stdout: ${result.stdout}\nstderr: ${result.stderr}`);
