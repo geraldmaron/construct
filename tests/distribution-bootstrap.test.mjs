@@ -200,12 +200,28 @@ describe('run.mjs resolution', () => {
   });
 });
 
+// Under ADR-0069 the construct repo's own .construct/launcher/ is gitignored
+// machine state and init skips staging it for the self-repo, so a fresh CI
+// checkout has no launcher file to inspect. Stage it from the committed
+// template — the exact copy stage-project's ensureProjectLauncher performs — so
+// the self-repo assertions below run against a launcher whether or not the
+// working tree already has one staged.
+
+function ensureSelfRepoLauncher() {
+  const staged = path.join(ROOT, '.construct', 'launcher', 'run.mjs');
+  if (fs.existsSync(staged)) return;
+  fs.mkdirSync(path.dirname(staged), { recursive: true });
+  fs.copyFileSync(path.join(ROOT, 'templates', 'distribution', 'run.mjs'), staged);
+}
+
 // The staged launcher is a copy of templates/distribution/run.mjs. A hand-edited
 // or stale staged copy silently diverges from the template, and template fixes
 // never reach it — exactly the drift that left this repo's own hooks dead-ending
 // at npx. Byte-equality is the guard that keeps the two from proliferating apart.
 
 describe('launcher drift guard', () => {
+  before(ensureSelfRepoLauncher);
+
   it('this repo\'s staged .construct/launcher/run.mjs is byte-identical to the template', () => {
     const staged = path.join(ROOT, '.construct', 'launcher', 'run.mjs');
     const template = path.join(ROOT, 'templates', 'distribution', 'run.mjs');
@@ -219,6 +235,8 @@ describe('launcher drift guard', () => {
 });
 
 describe('run.mjs self-repo resolution', () => {
+  before(ensureSelfRepoLauncher);
+
   it('invokes ./bin/construct when staged inside the @geraldmaron/construct checkout', () => {
     // No CONSTRUCT_DEV_PATH, no global construct on PATH, no node_modules — the
     // only resolver that may fire is trySelfRepo, keyed on the project's own
