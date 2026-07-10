@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-10T02:13:53.782Z",
+  "generatedAt": "2026-07-10T02:16:41.593Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 849,
+    "testFiles": 850,
     "topLevelTestFiles": 361,
-    "nestedTestFiles": 488,
+    "nestedTestFiles": 489,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 46,
     "byLayer": {
       "unit": 570,
-      "functional": 231,
+      "functional": 232,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
       "unit": 507,
-      "functional": 231,
+      "functional": 232,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -2559,6 +2559,14 @@
       ],
       "skipped": false,
       "maintainerNotes": "tests/functional/cross-project-synthesis.functional.test.mjs —"
+    },
+    {
+      "path": "tests/functional/cross-repo-code-retrieval.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/cross-repo-code-retrieval.functional.test.mjs —"
     },
     {
       "path": "tests/functional/cursor-rules-delivery.functional.test.mjs",
