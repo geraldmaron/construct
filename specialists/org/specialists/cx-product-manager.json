@@ -121,5 +121,25 @@
   ],
   "team": "product-management-team",
   "teamId": "product-management-team",
-  "groupId": "product-group"
+  "groupId": "product-group",
+  "participationRules": {
+    "schemaVersion": 1,
+    "rules": [
+      {
+        "id": "cost-value-tradeoff-review",
+        "dimension": "product",
+        "when": {
+          "signalExpr": "cost"
+        },
+        "recruit": {
+          "specialists": [
+            "cx-product-manager"
+          ]
+        },
+        "role": "reviewer",
+        "gate": "advisory",
+        "reason": "cost signal — value-tradeoff framework review (cx-pm-value-tradeoff)"
+      }
+    ]
+  }
 }
