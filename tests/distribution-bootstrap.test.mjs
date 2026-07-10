@@ -206,10 +206,10 @@ describe('run.mjs resolution', () => {
 // at npx. Byte-equality is the guard that keeps the two from proliferating apart.
 
 describe('launcher drift guard', () => {
-  it('this repo\'s staged .construct/run.mjs is byte-identical to the template', () => {
-    const staged = path.join(ROOT, '.construct', 'run.mjs');
+  it('this repo\'s staged .construct/launcher/run.mjs is byte-identical to the template', () => {
+    const staged = path.join(ROOT, '.construct', 'launcher', 'run.mjs');
     const template = path.join(ROOT, 'templates', 'distribution', 'run.mjs');
-    assert.ok(fs.existsSync(staged), 'repo .construct/run.mjs must exist');
+    assert.ok(fs.existsSync(staged), 'repo .construct/launcher/run.mjs must exist');
     assert.equal(
       fs.readFileSync(staged, 'utf8'),
       fs.readFileSync(template, 'utf8'),
@@ -228,7 +228,7 @@ describe('run.mjs self-repo resolution', () => {
       .join(':');
     const result = spawnSync(
       process.execPath,
-      [path.join(ROOT, '.construct', 'run.mjs'), 'version'],
+      [path.join(ROOT, '.construct', 'launcher', 'run.mjs'), 'version'],
       {
         encoding: 'utf8',
         cwd: ROOT,
