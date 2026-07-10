@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-10T01:36:22.133Z",
+  "generatedAt": "2026-07-10T01:43:49.791Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 845,
+    "testFiles": 846,
     "topLevelTestFiles": 360,
-    "nestedTestFiles": 485,
+    "nestedTestFiles": 486,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 46,
     "byLayer": {
       "unit": 568,
-      "functional": 229,
+      "functional": 230,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
       "unit": 505,
-      "functional": 229,
+      "functional": 230,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -2397,6 +2397,14 @@
       ],
       "skipped": false,
       "maintainerNotes": "tests/functional/author-artifact-context-targets.functional.test.mjs —"
+    },
+    {
+      "path": "tests/functional/author-artifact-recruits.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/author-artifact-recruits.functional.test.mjs —"
     },
     {
       "path": "tests/functional/b1-profile-loader.functional.test.mjs",
