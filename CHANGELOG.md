@@ -6,6 +6,7 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Fixed
 
+- MCP exposed-surface budget: adding `participation_rules` to the `call` gateway's long-tail enum pushed the serialized surface to 6059 estimated tokens against the <6000 small-window budget (the margin left by the previous trim). Tightened the `orchestration_run` and `call` descriptions — same semantics, documented in full in `docs/guides/reference/mcp-tools.md` — back to 5977. Golden surface snapshot regenerated for the two new cataloged CLI commands (`studio`, `participation`).
 - Test-suite hygiene for the pteo2.15/.16/.18 landings: the corpus inventory (`tests/capabilities/corpus-inventory.json`, `tests/AUDIT.md`) now indexes the four new test files, and `participation-cross-surface.functional.test.mjs` sets `CX_HOME_OVERRIDE` for its in-process MCP invocations (and spawned CLI) so the machine-scoped state root never registers tmp fixtures as real `~/.construct/projects` keys — the six leaked 40K lancedb shells from the first full-suite run were removed.
 
 ### Added
