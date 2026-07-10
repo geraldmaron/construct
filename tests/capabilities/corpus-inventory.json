@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-10T00:16:37.980Z",
+  "generatedAt": "2026-07-10T01:29:28.558Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 843,
-    "topLevelTestFiles": 359,
+    "testFiles": 844,
+    "topLevelTestFiles": 360,
     "nestedTestFiles": 484,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 46,
     "byLayer": {
-      "unit": 567,
+      "unit": 568,
       "functional": 228,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 504,
+      "unit": 505,
       "functional": 228,
       "visual": 12,
       "structural-guard": 19,
@@ -5901,6 +5901,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "read-tracker-store.test.mjs — batching tests for read-efficiency persistence."
+    },
+    {
+      "path": "tests/recruiter.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/recruiter.test.mjs — condition-driven participant assembly"
     },
     {
       "path": "tests/reflect-salience.test.mjs",
