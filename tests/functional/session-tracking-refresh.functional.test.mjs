@@ -32,9 +32,9 @@ function seed(opts = {}) {
   const cwd = mkdtempSync(join(tmpdir(), 'session-tracking-refresh-'));
   const shimDir = mkdtempSync(join(tmpdir(), 'session-tracking-shims-'));
   if (opts.withCx !== false) {
-    mkdirSync(join(cwd, '.cx'), { recursive: true });
+    mkdirSync(join(cwd, '.construct'), { recursive: true });
     writeFileSync(
-      join(cwd, '.cx', 'context.md'),
+      join(cwd, '.construct', 'context.md'),
       [
         '# project context',
         '',
@@ -56,7 +56,7 @@ function seed(opts = {}) {
         '',
       ].join('\n'),
     );
-    writeFileSync(join(cwd, '.cx', 'context.json'), JSON.stringify({ format: 'json' }));
+    writeFileSync(join(cwd, '.construct', 'context.json'), JSON.stringify({ format: 'json' }));
   }
   spawnSync('git', ['init', '--quiet', '--initial-branch=main'], { cwd });
   spawnSync('git', ['config', 'user.email', 'test@example.com'], { cwd });
@@ -94,7 +94,7 @@ test('session-tracking-refresh is a no-op outside Construct projects', () => {
     writeShim(env.shimDir, 'bd', 'echo "[]"');
     const r = runHook(env);
     assert.equal(r.status, 0);
-    assert.equal(existsSync(join(env.cwd, '.cx', 'context.md')), false);
+    assert.equal(existsSync(join(env.cwd, '.construct', 'context.md')), false);
   } finally {
     env.cleanup();
   }
@@ -112,7 +112,7 @@ echo "[]"
 `);
     const r = runHook(env);
     assert.equal(r.status, 0);
-    const contextMd = readFileSync(join(env.cwd, '.cx', 'context.md'), 'utf8');
+    const contextMd = readFileSync(join(env.cwd, '.construct', 'context.md'), 'utf8');
     assert.match(contextMd, /\*\*construct-active1\*\* · feature in flight/);
     assert.match(contextMd, /pre-existing question/, 'Open Questions must be preserved');
   } finally {
@@ -125,7 +125,7 @@ test('session-tracking-refresh stamps context.json with lastRefreshAt', () => {
   try {
     writeShim(env.shimDir, 'bd', 'echo "[]"');
     runHook(env);
-    const json = JSON.parse(readFileSync(join(env.cwd, '.cx', 'context.json'), 'utf8'));
+    const json = JSON.parse(readFileSync(join(env.cwd, '.construct', 'context.json'), 'utf8'));
     assert.ok(json.lastRefreshAt, 'lastRefreshAt must be set');
     assert.ok(new Date(json.lastRefreshAt).getTime() > 0);
   } finally {
@@ -148,11 +148,11 @@ echo "[]"
 
     const r = runHook(env);
     assert.equal(r.status, 0);
-    const handoffs = readdirSync(join(env.cwd, '.cx', 'handoffs'));
+    const handoffs = readdirSync(join(env.cwd, '.construct', 'handoffs'));
     const landedFile = handoffs.find((f) => /-plan-landed\.md$/.test(f));
     assert.ok(landedFile, `expected a -plan-landed.md handoff; got ${handoffs.join(', ')}`);
 
-    const archived = readFileSync(join(env.cwd, '.cx', 'handoffs', landedFile), 'utf8');
+    const archived = readFileSync(join(env.cwd, '.construct', 'handoffs', landedFile), 'utf8');
     assert.match(archived, /construct-landed/);
 
     const newPlan = readFileSync(planPath, 'utf8');

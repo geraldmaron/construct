@@ -15,11 +15,16 @@
  *   2. outcome record → read-back   (outcomes/record)
  *   3. role-queue fixture guard + manual-resolve semantics (roles/gateway)
  *   4. intake classification is deterministic (intake/classify)
+ *
+ * Stage 1 resolves observation-store state through the machine-scoped state
+ * root (ADR-0066), keyed by a hash of the tmp rootDir — so CX_HOME_OVERRIDE
+ * is pinned for the whole file to keep that write off the real developer
+ * machine's $HOME.
  */
 
-import test from 'node:test';
+import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, appendFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, appendFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -27,6 +32,21 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const LIB = join(REPO_ROOT, 'lib');
+
+let homeOverride;
+let prevHomeOverride;
+
+before(() => {
+  homeOverride = mkdtempSync(join(tmpdir(), 'cx-loop-closure-home-'));
+  prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+  process.env.CX_HOME_OVERRIDE = homeOverride;
+});
+
+after(() => {
+  try { rmSync(homeOverride, { recursive: true, force: true }); } catch { /* best-effort cleanup */ }
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 function tmp(prefix, t) {
   const dir = mkdtempSync(join(tmpdir(), prefix));

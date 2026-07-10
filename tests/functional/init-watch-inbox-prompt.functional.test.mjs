@@ -23,6 +23,7 @@ import { fileURLToPath } from 'node:url';
 
 import { sterileSpawnEnv } from '../helpers/sterile-env.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
+import { parseJsonc } from '../../lib/jsonc.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
@@ -63,7 +64,7 @@ function runInit(env, extraArgs) {
 }
 
 function readProjectConfig(env) {
-  return JSON.parse(readFileSync(join(env.project, 'construct.config.json'), 'utf8'));
+  return parseJsonc(readFileSync(join(env.project, 'construct.config.json'), 'utf8'));
 }
 
 test('construct init --yes (no --watch-inbox) defaults to off without blocking on stdin', async (t) => {

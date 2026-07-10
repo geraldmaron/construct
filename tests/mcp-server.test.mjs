@@ -104,7 +104,7 @@ test('projectContext exposes tracker-plus-plan public-health fields', async (t) 
   });
 
   fs.cpSync(path.join(process.cwd(), 'specialists', 'org'), path.join(rootDir, 'specialists', 'org'), { recursive: true });
-  fs.mkdirSync(path.join(rootDir, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, '.construct'), { recursive: true });
   fs.mkdirSync(path.join(rootDir, 'agents', 'prompts'), { recursive: true });
   fs.writeFileSync(path.join(rootDir, 'agents', 'registry.json'), JSON.stringify({
     models: {
@@ -115,7 +115,7 @@ test('projectContext exposes tracker-plus-plan public-health fields', async (t) 
     personas: [],
     agents: [],
   }, null, 2));
-  fs.writeFileSync(path.join(rootDir, '.cx', 'context.json'), JSON.stringify({
+  fs.writeFileSync(path.join(rootDir, '.construct', 'context.json'), JSON.stringify({
     format: 'json',
     savedAt: '2026-04-19T05:15:00.000Z',
     contextSummary: 'Phase 4 active.',
@@ -154,7 +154,7 @@ test('status and MCP surfaces agree on public-health metadata presence semantics
   });
 
   fs.cpSync(path.join(process.cwd(), 'specialists', 'org'), path.join(rootDir, 'specialists', 'org'), { recursive: true });
-  fs.mkdirSync(path.join(rootDir, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, '.construct'), { recursive: true });
   fs.mkdirSync(path.join(rootDir, 'agents'), { recursive: true });
   fs.writeFileSync(path.join(rootDir, 'package.json'), JSON.stringify({ name: 'construct', version: '1.0.0' }, null, 2));
   fs.writeFileSync(path.join(rootDir, 'agents', 'registry.json'), JSON.stringify({
@@ -238,15 +238,15 @@ test('ingestDocument writes a markdown artifact through the MCP helper', async (
 
   assert.equal(result.status, 'ok');
   assert.equal(result.files.length, 1);
-  assert.match(result.files[0].outputPath, /\.cx\/knowledge\/internal\/deck\.csv\.md$/);
+  assert.match(result.files[0].outputPath, /\.construct\/knowledge\/internal\/deck\.csv\.md$/);
   assert.equal(fs.existsSync(result.files[0].outputPath), true);
 });
 
 test('storage MCP helpers require confirmation for destructive actions; token enforcement is in the destructive gate', async (t) => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-mcp-storage-root-'));
   t.after(() => { try { fs.rmSync(rootDir, { recursive: true, force: true }); } catch {} });
-  fs.mkdirSync(path.join(rootDir, '.cx', 'knowledge', 'internal'), { recursive: true });
-  const brief = path.join(rootDir, '.cx', 'knowledge', 'internal', 'brief.md');
+  fs.mkdirSync(path.join(rootDir, '.construct', 'knowledge', 'internal'), { recursive: true });
+  const brief = path.join(rootDir, '.construct', 'knowledge', 'internal', 'brief.md');
   fs.writeFileSync(brief, '# Brief\n');
 
   const prevDoctorRoot = process.env.CONSTRUCT_DOCTOR_ROOT;

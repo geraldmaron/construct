@@ -56,7 +56,7 @@ test('A3 production trigger: agent-tracker writes outcome JSONL on a Task Subage
   // when run locally.
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'a3-tracker-'));
   const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'a3-tracker-home-'));
-  fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
 
   const payload = {
     tool_name: 'Task',
@@ -74,7 +74,7 @@ test('A3 production trigger: agent-tracker writes outcome JSONL on a Task Subage
   });
   assert.equal(result.status, 0, `tracker exited non-zero: ${result.stderr}`);
 
-  const outFile = path.join(cwd, '.cx', 'outcomes', 'engineer.jsonl');
+  const outFile = path.join(cwd, '.construct', 'outcomes', 'engineer.jsonl');
   assert.ok(fs.existsSync(outFile), 'outcome JSONL not written — agent-tracker is not wired to recordOutcome');
   const lines = fs.readFileSync(outFile, 'utf8').trim().split('\n').filter(Boolean);
   assert.equal(lines.length, 1);

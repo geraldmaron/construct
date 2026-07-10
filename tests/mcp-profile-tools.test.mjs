@@ -116,7 +116,7 @@ test('outcomes_record appends a JSONL line when confirmed', () => {
     notes: 'unit',
   });
   assert.ok(res.ok, `expected ok, got ${JSON.stringify(res)}`);
-  const file = join(cwd, '.cx', 'outcomes', 'cx-engineer.jsonl');
+  const file = join(cwd, '.construct', 'outcomes', 'cx-engineer.jsonl');
   assert.ok(existsSync(file));
   const lines = readFileSync(file, 'utf8').trim().split('\n');
   assert.equal(lines.length, 1);
@@ -144,7 +144,7 @@ test('knowledge_add writes a research finding when confirmed', async () => {
     confidence: 'inferred',
   });
   assert.ok(res.ok, `expected ok, got ${JSON.stringify(res)}`);
-  const expected = join(cwd, '.cx', 'knowledge', 'external', 'research', 'mcp-parity-smoke.md');
+  const expected = join(cwd, '.construct', 'knowledge', 'external', 'research', 'mcp-parity-smoke.md');
   assert.ok(existsSync(expected));
   const md = readFileSync(expected, 'utf8');
   assert.ok(md.includes('kind: research-finding'));
@@ -182,8 +182,8 @@ test('scope_create scaffolds a draft when confirmed', () => {
     seed_departments: [{ id: 'craft', displayName: 'Craft' }],
   });
   assert.ok(res.ok, `expected ok, got ${JSON.stringify(res)}`);
-  assert.ok(existsSync(join(cwd, '.cx', 'scopes', 'draft-mcp-smoke-draft', 'scope.json')));
-  assert.ok(existsSync(join(cwd, '.cx', 'scopes', 'draft-mcp-smoke-draft', 'requirements.md')));
+  assert.ok(existsSync(join(cwd, '.construct', 'scopes', 'draft-mcp-smoke-draft', 'scope.json')));
+  assert.ok(existsSync(join(cwd, '.construct', 'scopes', 'draft-mcp-smoke-draft', 'requirements.md')));
   assert.equal(res.personaPaths.length, 2);
   assert.equal(res.departmentPaths.length, 1);
 });
@@ -196,9 +196,9 @@ test('sandbox_list returns the sandbox roster as an array', () => {
 test('learning_status returns a structured one-shot dashboard for a fresh project', () => {
   const cwd = freshProject();
   // Seed one observation so observations.total exercises the read path.
-  mkdirSync(join(cwd, '.cx', 'observations'), { recursive: true });
+  mkdirSync(join(cwd, '.construct', 'observations'), { recursive: true });
   writeFileSync(
-    join(cwd, '.cx', 'observations', 'index.json'),
+    join(cwd, '.construct', 'observations', 'index.json'),
     JSON.stringify([{ createdAt: new Date().toISOString(), project: 'rnd' }]),
   );
   const res = learningStatus({ cwd });

@@ -21,8 +21,8 @@ function freshEnv() {
   const projectDir = mkdtempSync(join(tmpdir(), 'construct-oracle-noise-proj-'));
   const homeDir = mkdtempSync(join(tmpdir(), 'construct-oracle-noise-home-'));
   const rootDir = mkdtempSync(join(tmpdir(), 'construct-oracle-noise-root-'));
-  mkdirSync(join(projectDir, '.cx', 'observations'), { recursive: true });
-  mkdirSync(join(projectDir, '.cx', 'outcomes'), { recursive: true });
+  mkdirSync(join(projectDir, '.construct', 'observations'), { recursive: true });
+  mkdirSync(join(projectDir, '.construct', 'outcomes'), { recursive: true });
   mkdirSync(join(rootDir, 'audit-artifacts'), { recursive: true });
   mkdirSync(doctorRoot(homeDir), { recursive: true });
   mkdirSync(join(rootDir, 'specialists'), { recursive: true });
@@ -40,7 +40,7 @@ function freshEnv() {
 }
 
 function writeViolations(projectDir, rows) {
-  const file = join(projectDir, '.cx', 'contract-violations.jsonl');
+  const file = join(projectDir, '.construct', 'contract-violations.jsonl');
   writeFileSync(file, rows.map((row) => JSON.stringify(row)).join('\n') + '\n');
 }
 
@@ -133,7 +133,7 @@ test('oracle read model filters dev-session noise out of the degraded verdict pa
 
 test('explicit repoRoot keeps contract validation failures out of the live project log', () => {
   const env = freshEnv();
-  const liveLog = join(process.cwd(), '.cx', 'contract-violations.jsonl');
+  const liveLog = join(process.cwd(), '.construct', 'contract-violations.jsonl');
   try {
     const before = countLines(liveLog);
     const verdict = validateHandoff({
@@ -145,7 +145,7 @@ test('explicit repoRoot keeps contract validation failures out of the live proje
     });
     assert.equal(verdict.ok, false);
     assert.equal(countLines(liveLog), before, 'live repo log must stay untouched');
-    assert.equal(countLines(join(env.projectDir, '.cx', 'contract-violations.jsonl')), 1);
+    assert.equal(countLines(join(env.projectDir, '.construct', 'contract-violations.jsonl')), 1);
   } finally {
     env.cleanup();
   }

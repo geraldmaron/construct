@@ -19,7 +19,7 @@ after(() => {
 function makeTmpProject() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-cleanup-'));
   tmpDirs.push(root);
-  const handoffsDir = path.join(root, '.cx', 'handoffs');
+  const handoffsDir = path.join(root, '.construct', 'handoffs');
   const archiveDir = path.join(handoffsDir, 'archive');
   fs.mkdirSync(archiveDir, { recursive: true });
   fs.mkdirSync(path.join(root, '.construct'), { recursive: true });

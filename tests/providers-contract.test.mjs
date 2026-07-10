@@ -88,7 +88,7 @@ describe('provider registry', () => {
   });
 
   it('loads a plugin override from .cx/providers.json', async () => {
-    const cxDir = path.join(tmpRoot, '.cx');
+    const cxDir = path.join(tmpRoot, '.construct');
     fs.mkdirSync(cxDir, { recursive: true });
     const pluginPath = path.join(tmpRoot, 'fake-provider.mjs');
     fs.writeFileSync(pluginPath, `
@@ -113,7 +113,7 @@ describe('provider registry', () => {
   });
 
   it('captures a broken plugin in errors[] without breaking other providers', async () => {
-    const cxDir = path.join(tmpRoot, '.cx');
+    const cxDir = path.join(tmpRoot, '.construct');
     fs.mkdirSync(cxDir, { recursive: true });
     const brokenPath = path.join(tmpRoot, 'broken-provider.mjs');
     fs.writeFileSync(brokenPath, `

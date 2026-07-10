@@ -141,7 +141,7 @@ test('outcomes_record refuses without confirm but writes JSONL when confirmed (v
     assert.ok(acceptBody.ok);
   });
 
-  const file = path.join(cwd, '.cx', 'outcomes', 'cx-engineer.jsonl');
+  const file = path.join(cwd, '.construct', 'outcomes', 'cx-engineer.jsonl');
   assert.ok(fs.existsSync(file), 'outcomes_record did not write JSONL via MCP');
   const entry = JSON.parse(fs.readFileSync(file, 'utf8').trim());
   assert.equal(entry.success, true);

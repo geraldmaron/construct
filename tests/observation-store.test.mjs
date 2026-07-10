@@ -30,7 +30,7 @@ afterEach(() => {
 });
 
 function readIndex(rootDir) {
-  const p = path.join(rootDir, '.cx/observations/index.json');
+  const p = path.join(rootDir, '.construct/observations/index.json');
   return JSON.parse(fs.readFileSync(p, 'utf8'));
 }
 
@@ -51,7 +51,7 @@ describe('observation-store', () => {
       assert.equal(record.summary, 'Test summary');
 
       const full = JSON.parse(
-        fs.readFileSync(path.join(tmpDir, '.cx/observations', `${record.id}.json`), 'utf8'),
+        fs.readFileSync(path.join(tmpDir, '.construct/observations', `${record.id}.json`), 'utf8'),
       );
       assert.equal(full.content, 'Test content');
 
@@ -109,10 +109,10 @@ describe('observation-store', () => {
   describe('deleteObservation', () => {
     it('removes from disk and index', async () => {
       const obs = await addObservation(tmpDir, { summary: 'delete me', project: 'p' });
-      assert.ok(fs.existsSync(path.join(tmpDir, '.cx/observations', `${obs.id}.json`)));
+      assert.ok(fs.existsSync(path.join(tmpDir, '.construct/observations', `${obs.id}.json`)));
 
       deleteObservation(tmpDir, obs.id);
-      assert.ok(!fs.existsSync(path.join(tmpDir, '.cx/observations', `${obs.id}.json`)));
+      assert.ok(!fs.existsSync(path.join(tmpDir, '.construct/observations', `${obs.id}.json`)));
       assert.equal(readIndex(tmpDir).length, 0);
     });
   });

@@ -62,7 +62,7 @@ Stamp: `node scripts/run-capability-tests.mjs --tier=P0 --stamp` · Regenerate: 
 
 | Deliverable | Evidence |
 |---|---|
-| Closed loop | `.cx/oracle/verdicts/<date>.json`, idempotent beads raise, `construct oracle approve <id>` executes |
+| Closed loop | `.construct/oracle/verdicts/<date>.json`, idempotent beads raise, `construct oracle approve <id>` executes |
 | Org graph | `lib/oracle/org-graph.mjs` — workflow gates, legal intake, capability stamps, propagation-stale |
 | Sign-off metadata | Approve actions carry `{ gateType, requiredApprover, artifactPath }` |
 | Ambient | Oracle starts with `construct dev`; session-start prelude surfaces verdict + pending |

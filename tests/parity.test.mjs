@@ -199,9 +199,9 @@ describe('checkParity', () => {
 
   it('reports drift when vscode mcp settings are missing a managed server', () => {
     resetSurfaces();
-    fs.mkdirSync(path.join(tmpRoot, '.cx'), { recursive: true });
+    fs.mkdirSync(path.join(tmpRoot, '.construct'), { recursive: true });
     fs.writeFileSync(
-      path.join(tmpRoot, '.cx', 'unified-registry.json'),
+      path.join(tmpRoot, '.construct', 'unified-registry.json'),
       JSON.stringify({ mcpServers: { github: {}, context7: {} } }, null, 2),
     );
     const vscodeDir = getVsCodeUserDir(tmpHome);
@@ -244,9 +244,9 @@ describe('checkParity', () => {
 
   it('tolerates a user-added non-registry MCP server (extra is not drift)', () => {
     resetSurfaces();
-    fs.mkdirSync(path.join(tmpRoot, '.cx'), { recursive: true });
+    fs.mkdirSync(path.join(tmpRoot, '.construct'), { recursive: true });
     fs.writeFileSync(
-      path.join(tmpRoot, '.cx', 'unified-registry.json'),
+      path.join(tmpRoot, '.construct', 'unified-registry.json'),
       JSON.stringify({ mcpServers: { github: {}, context7: {} } }, null, 2),
     );
     const cursorDir = path.join(tmpHome, '.cursor');

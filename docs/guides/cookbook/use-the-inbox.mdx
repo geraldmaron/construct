@@ -9,8 +9,8 @@ The inbox watcher monitors one or more directories and automatically ingests new
   { label: 'Drop a file', sub: 'inbox/\nany supported format' },
   { label: 'Embed daemon', sub: 'detects within ~1s\nextracts text' },
   { label: 'Classify', sub: 'filename routing rules\n+ R&D triage', via: 'classifyRdIntake' },
-  { label: 'Knowledge store', sub: '.cx/knowledge/<subdir>/' },
-  { label: 'Triage packet', badge: '.cx/intake/', sub: 'owner · chain · confidence', highlight: true },
+  { label: 'Knowledge store', sub: '.construct/knowledge/<subdir>/' },
+  { label: 'Triage packet', badge: '.construct/intake/', sub: 'owner · chain · confidence', highlight: true },
 ]} />
 
 ## Default inbox directory
@@ -25,7 +25,7 @@ Drop any file there and it will be processed within two minutes.
 
 **Drop convention (atomic handoff).** To avoid the watcher reading a half-written file, assemble it under `inbox/.staging/` and then atomically `rename` it into `inbox/`. The watcher ignores dotfiles and `inbox/.staging/`, and skips any top-level file whose size is still changing — so a partial drop is never consumed.
 
-`inbox/` is the only drop zone. There is no `.cx/inbox/` or `docs/intake/` zone — drop everything into `inbox/`.
+`inbox/` is the only drop zone. There is no `.construct/inbox/` or `docs/intake/` zone — drop everything into `inbox/`.
 
 ## Add extra directories
 
@@ -60,7 +60,7 @@ Binary files that cannot be read as text are skipped with a warning observation.
 
 ## How routing works
 
-Files are routed to a typed subdirectory of `.cx/knowledge/` based on filename patterns:
+Files are routed to a typed subdirectory of `.construct/knowledge/` based on filename patterns:
 
 | Filename pattern | Knowledge subdirectory |
 |-----------------|----------------------|
@@ -84,10 +84,10 @@ Or use the dashboard Knowledge tab.
 
 ## Docs lane promotion
 
-When a file lands in `inbox/`, Construct ingests it into `.cx/knowledge/` and observations as usual. If the repo already has a matching docs lane such as `docs/notes/meetings/`, `templates/docs/prds/`, or `templates/docs/rfcs/`, the watcher also writes a promoted markdown copy into that lane for review and incorporation.
+When a file lands in `inbox/`, Construct ingests it into `.construct/knowledge/` and observations as usual. If the repo already has a matching docs lane such as `docs/notes/meetings/`, `templates/docs/prds/`, or `templates/docs/rfcs/`, the watcher also writes a promoted markdown copy into that lane for review and incorporation.
 
 ## R&D triage on every file
 
-After ingestion, the daemon classifies each file via `classifyRdIntake` and writes a triage packet to `.cx/intake/pending/<id>.json`. Inspect and drive the queue with `construct intake list / show / done / skip / reopen`. For non-trivial signals, generate a task graph with `construct graph from-intake <id>`.
+After ingestion, the daemon classifies each file via `classifyRdIntake` and writes a triage packet to `.construct/intake/pending/<id>.json`. Inspect and drive the queue with `construct intake list / show / done / skip / reopen`. For non-trivial signals, generate a task graph with `construct graph from-intake <id>`.
 
 A full walkthrough of the triage taxonomy (intake types, R&D stages, recommended chains, recommended actions) lives in [Concepts: Intake and triage](/guides/concepts/intake-and-triage). Session-start surfaces the most recent pending packets with a one-line triage summary per entry.

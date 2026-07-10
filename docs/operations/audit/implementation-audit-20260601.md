@@ -25,10 +25,10 @@ own gates: `.github/workflows/ci.yml` jobs `audit`, `secret-scan`, and the `cx-s
 ## 2. What Construct is / does
 
 CLI entrypoint (`bin/construct`) → specialist registry (`specialists/registry.json`) → profile-aware
-routing → unconditional enforcement hooks (`lib/hooks/*.mjs`) → durable state in `.cx/` plus a local
+routing → unconditional enforcement hooks (`lib/hooks/*.mjs`) → durable state in `.construct/` plus a local
 vector index. A single persona (`construct`) routes work to ~28 `cx-*` specialists, each with a model
 tier, tool allowlist, skill set, and postcondition contracts. Learning loops capture observations to
-`.cx/` and feed a local embedding daemon (`lib/embed/daemon.mjs`).
+`.construct/` and feed a local embedding daemon (`lib/embed/daemon.mjs`).
 
 ## 3. Strengths (substantiated)
 
@@ -55,7 +55,7 @@ tier, tool allowlist, skill set, and postcondition contracts. Learning loops cap
 - README uses AUTO-regenerated regions; `construct docs:update --check` is wired into the release gate
   (`package.json` `release:check`).
 - Artifact-lint (`lib/comment-lint.mjs`) enforces a no-fabrication prose pass on `docs/specs/prd/`, `docs/decisions/adr/`,
-  `docs/decisions/rfc/`, `.cx/knowledge/`, etc.
+  `docs/decisions/rfc/`, `.construct/knowledge/`, etc.
 
 **Safety is built into the toolchain, not bolted on.**
 - Hooks fire unconditionally; `tests/hooks/no-skip-vars.test.mjs` actively forbids reintroducing
@@ -165,7 +165,7 @@ The branch is safe to delete unless reviving self-hosted Langfuse is desired; no
 
 ## 8. Empirical validation (isolated, full-fidelity)
 
-§4–§5 inferred loop behavior from the dogfooded `.cx/`, which is polluted by test fixtures. To check
+§4–§5 inferred loop behavior from the dogfooded `.construct/`, which is polluted by test fixtures. To check
 those inferences, a clean Construct was stood up in an isolated tmp `HOME` + tmp project (the
 `tests/functional` recipe: real `bin/construct`, `--yes --no-docker`, `CONSTRUCT_SKIP_BOOTSTRAP_PROBE=1`),
 and the loop was exercised end-to-end. A live module harness (now preserved as
@@ -185,8 +185,8 @@ and the loop was exercised end-to-end. A live module harness (now preserved as
 - **"The learning loop runs open" — refuted.** The primary loop (session → observation via Stop hook +
   `agent-tracker` → injected at `session-start.mjs:127`) closes automatically. Search retrieval works
   offline. Outcomes record automatically.
-- **"717 observations → 10 knowledge notes ≈ broken synthesis (70:1)" — withdrawn.** `.cx/observations/`
-  and `.cx/knowledge/` are **different stores**, not a producer→consumer pair. Knowledge notes are
+- **"717 observations → 10 knowledge notes ≈ broken synthesis (70:1)" — withdrawn.** `.construct/observations/`
+  and `.construct/knowledge/` are **different stores**, not a producer→consumer pair. Knowledge notes are
   authored by explicit `construct reflect`/`ingest` (`lib/reflect.mjs`); there is **no** automatic
   observation→knowledge distiller. A low knowledge-note count is by design, not a failure. *(Whether an
   auto-distiller is a worthwhile feature is an open question — but its absence is not a defect.)*
@@ -281,7 +281,7 @@ The product intent is to avoid lock-in to Langfuse and prefer an open standard (
 trace data plane already meets that intent today** — verified by running `lib/telemetry/client.mjs`:
 
 - `resolveTraceBackend` supports five backends: `local`, `langfuse`, `http`, `otel`, `none`
-  (`client.mjs:17`). **Default with no env is `local`** (vendor-neutral JSONL in `.cx/traces/`).
+  (`client.mjs:17`). **Default with no env is `local`** (vendor-neutral JSONL in `.construct/traces/`).
 - **OTel is a first-class, implemented backend.** With `CONSTRUCT_TRACE_BACKEND=otel` +
   `CONSTRUCT_OTEL_EXPORTER_OTLP_ENDPOINT=<collector>/v1/traces`, `createRemoteClient` builds standard
   **OTLP** payloads (`buildOtlpPayload`, `resourceSpans`/`scopeSpans`/`spans`, `service.name`) and POSTs

@@ -38,7 +38,7 @@ test('every registered artifact resolves a qualityContract with a known gate lev
 test('an artifact with no override inherits the workflowDefaults gate level', () => {
   const contract = resolveArtifactWorkflowContract('adr', { rootDir: REPO });
   assert.equal(contract.qualityContract.gateLevel, 'standard');
-  assert.deepEqual(contract.qualityContract.requiredStates, ['exported']);
+  assert.deepEqual(contract.qualityContract.requiredStates, ['exported', 'file-valid']);
 });
 
 test('a high-stakes artifact overrides to a stricter gate level with per-format states', () => {

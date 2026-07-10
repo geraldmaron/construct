@@ -35,7 +35,7 @@ after(() => {
 });
 
 function writeProjectWorkflow(cwd, fileName, manifest) {
-  const dir = path.join(cwd, '.cx', 'workflows');
+  const dir = path.join(cwd, '.construct', 'workflows');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, fileName), JSON.stringify(manifest, null, 2), 'utf8');
 }

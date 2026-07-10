@@ -14,7 +14,7 @@ description: Add Construct to your project like any other dev dependency, then r
 - Node.js 20+ (`node --version`)
 - A git repo to play in. Construct expects `.git/` so it can wire pre-commit hooks.
 
-No database or Docker is required. Retrieval runs on an embedded LanceDB index and traces write to `.cx/traces/*.jsonl` — everything is local files.
+No database or Docker is required. Retrieval runs on an embedded LanceDB index and traces write to `.construct/traces/*.jsonl` — everything is local files.
 
 ## Install
 
@@ -34,7 +34,7 @@ cd ~/your-project
 npx -y @geraldmaron/construct init .
 ```
 
-`init` does what the postinstall does, plus scaffolds `AGENTS.md`, `plan.md`, `.cx/`, a local issue tracker, `docs/`, and `construct_guide.md` (a friendly orientation file you can keep or edit). See [durable state →](/guides/concepts/beads-and-state) for how that issue tracker fits into session continuity once you're past the basics.
+`init` does what the postinstall does, plus scaffolds `AGENTS.md`, `plan.md`, `.construct/`, a local issue tracker, `docs/`, and `construct_guide.md` (a friendly orientation file you can keep or edit). See [durable state →](/guides/concepts/beads-and-state) for how that issue tracker fits into session continuity once you're past the basics.
 
 ### Homebrew (for users without Node)
 
@@ -83,12 +83,12 @@ Everything is local files — setup opens no host ports and stands up no databas
 
 **Traces** — local-first observability
 
-- Local: `.cx/traces/*.jsonl`
+- Local: `.construct/traces/*.jsonl`
 - Remote export: optional with `CONSTRUCT_TRACE_BACKEND=langfuse|http|otel`
 
 **Vector storage** — semantic search on embedded LanceDB
 
-- Embedded LanceDB index at `~/.local/state/construct/vector/lancedb` (override with `CONSTRUCT_LANCEDB_PATH`; a project can keep it under `.cx/lancedb`)
+- Embedded LanceDB index at `~/.local/state/construct/vector/lancedb` (override with `CONSTRUCT_LANCEDB_PATH`; a project can keep it under `.construct/lancedb`)
 - 384-dim embeddings via `Xenova/all-MiniLM-L6-v2`
 - The embedding model auto-downloads to `~/.cache/construct/embeddings/` on first use (~22 MB, one time)
 - No database, no Docker: retrieval is a local file-backed index

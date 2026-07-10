@@ -22,11 +22,11 @@
  *
  * Asserts two durable artifacts land within that first tick:
  *   - an intake packet (lib/intake/queue.mjs contract) under
- *     .cx/intake/pending/ or .cx/intake/quarantine/ (low-confidence
+ *     .construct/intake/pending/ or .construct/intake/quarantine/ (low-confidence
  *     classifications route to quarantine per lib/intake/quarantine.mjs,
  *     so the test accepts either — both are real packets, just gated
  *     differently)
- *   - an observation under .cx/observations/ carrying the ['inbox',
+ *   - an observation under .construct/observations/ carrying the ['inbox',
  *     'ingested-doc'] tags lib/embed/inbox.mjs's recordInboxObservation()
  *     stamps on every successful ingest
  *
@@ -57,8 +57,8 @@ after(() => { for (const d of dirs) { try { rmTmpDir(d); } catch {} } });
 function freshProject() {
   const root = mkdtempSync(join(tmpdir(), 'cx-embed-daemon-inbox-'));
   dirs.push(root);
-  mkdirSync(join(root, '.cx'), { recursive: true });
-  writeFileSync(join(root, '.cx', 'context.md'), '# test project\n');
+  mkdirSync(join(root, '.construct'), { recursive: true });
+  writeFileSync(join(root, '.construct', 'context.md'), '# test project\n');
   mkdirSync(join(root, 'inbox'), { recursive: true });
   return root;
 }

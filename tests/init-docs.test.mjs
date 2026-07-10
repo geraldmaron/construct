@@ -29,13 +29,13 @@ test('construct init bootstraps repo state without overwriting existing AGENTS.m
 
   assert.equal(fs.readFileSync(path.join(cwd, 'AGENTS.md'), 'utf8'), existingAgents);
   assert.equal(fs.existsSync(path.join(cwd, 'plan.md')), true);
-  assert.equal(fs.existsSync(path.join(cwd, '.cx', 'context.json')), true);
-  assert.equal(fs.existsSync(path.join(cwd, '.cx', 'context.md')), true);
-  assert.ok(fs.statSync(path.join(cwd, '.cx')).isDirectory());
+  assert.equal(fs.existsSync(path.join(cwd, '.construct', 'context.json')), true);
+  assert.equal(fs.existsSync(path.join(cwd, '.construct', 'context.md')), true);
+  assert.ok(fs.statSync(path.join(cwd, '.construct')).isDirectory());
   assert.ok(fs.statSync(path.join(cwd, 'inbox', '.staging')).isDirectory());
 
   const plan = fs.readFileSync(path.join(cwd, 'plan.md'), 'utf8');
-  const context = fs.readFileSync(path.join(cwd, '.cx', 'context.md'), 'utf8');
+  const context = fs.readFileSync(path.join(cwd, '.construct', 'context.md'), 'utf8');
 
   assert.match(plan, /one writer per file/i);
   assert.match(context, /Beads/);

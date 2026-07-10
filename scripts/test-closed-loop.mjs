@@ -237,4 +237,4 @@ console.log('1. Run real agent tasks to generate performance data');
 console.log('2. Use `cx_trace` and `cx_score` for telemetry');
 console.log('3. Run `construct review` to see agent performance');
 console.log('4. Let system auto-optimize low performers');
-console.log('5. Monitor `.cx/optimization-logs/` for results');
+console.log('5. Monitor `.construct/optimization-logs/` for results');

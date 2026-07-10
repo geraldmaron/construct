@@ -63,7 +63,7 @@ test('proposal-only invocation returns a plan and writes nothing', () => {
   assert.equal(env.data.status, 'proposed');
   assert.deepEqual(env.data.durableWritesPerformed, []);
   assert.ok(env.data.traceId);
-  assert.equal(fs.existsSync(path.join(cwd, '.cx', 'observations')), false);
+  assert.equal(fs.existsSync(path.join(cwd, '.construct', 'observations')), false);
 });
 
 test('allow-durable-write lands an observation in the project', () => {
@@ -72,7 +72,7 @@ test('allow-durable-write lands an observation in the project', () => {
   const env = invoke(['--workflow-type', 'evidence-ingest', '--approval-mode', 'allow-durable-write', '--text', 'raw notes'], { cwd, home });
   assert.equal(env.data.status, 'recorded');
   assert.equal(env.data.durableWritesPerformed.length, 1);
-  assert.ok(fs.existsSync(path.join(cwd, '.cx', 'observations')));
+  assert.ok(fs.existsSync(path.join(cwd, '.construct', 'observations')));
 });
 
 test('a credential in the environment never leaks into workflow output', () => {

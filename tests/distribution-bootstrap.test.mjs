@@ -2,14 +2,14 @@
  * tests/distribution-bootstrap.test.mjs — peer-clone distribution invariants.
  *
  * Verifies:
- *   - postinstall stages `.construct/{version,bootstrap.sh,bootstrap.ps1,run.mjs}`
- *     and `.construct/cache/bin/` in the consumer project.
+ *   - postinstall stages `.construct/launcher/{version,bootstrap.sh,bootstrap.ps1,run.mjs}`
+ *     and `.construct/launcher/cache/bin/` in the consumer project.
  *   - The version file is the package's published version.
  *   - bootstrap.sh has executable bits.
  *   - run.mjs respects CONSTRUCT_DEV_PATH and forwards to the local checkout.
  *   - run.mjs exits 127 with a useful error when no runtime is reachable.
  *   - The materialised `.claude/settings.json` references hook commands as
- *     `node "${CLAUDE_PROJECT_DIR:-<absRoot>}/.construct/run.mjs" hook <name>` — the
+ *     `node "${CLAUDE_PROJECT_DIR:-<absRoot>}/.construct/launcher/run.mjs" hook <name>` — the
  *     fallback is the absolute project root (not cwd-relative `.`) so hooks resolve
  *     from any directory and under hosts that do not export CLAUDE_PROJECT_DIR
  *     (no `$HOME/.construct` paths).
@@ -81,44 +81,44 @@ after(() => {
 });
 
 describe('project-local launcher staging', () => {
-  it('stages every launcher file into .construct/', () => {
+  it('stages every launcher file into .construct/launcher/', () => {
     for (const name of ['version', 'run.mjs', 'bootstrap.sh', 'bootstrap.ps1']) {
-      const p = path.join(projectDir, '.construct', name);
-      assert.ok(fs.existsSync(p), `missing .construct/${name}`);
+      const p = path.join(projectDir, '.construct', 'launcher', name);
+      assert.ok(fs.existsSync(p), `missing .construct/launcher/${name}`);
     }
   });
 
   it('writes the package version into .construct/version', () => {
-    const v = fs.readFileSync(path.join(projectDir, '.construct', 'version'), 'utf8').trim();
+    const v = fs.readFileSync(path.join(projectDir, '.construct', 'launcher', 'version'), 'utf8').trim();
     assert.equal(v, PKG_VERSION);
   });
 
   it('marks bootstrap.sh executable', () => {
-    const stat = fs.statSync(path.join(projectDir, '.construct', 'bootstrap.sh'));
+    const stat = fs.statSync(path.join(projectDir, '.construct', 'launcher', 'bootstrap.sh'));
     assert.ok((stat.mode & 0o100) !== 0, 'bootstrap.sh must be user-executable');
   });
 
   it('creates the cache/bin scratch dir', () => {
-    const p = path.join(projectDir, '.construct', 'cache', 'bin');
+    const p = path.join(projectDir, '.construct', 'launcher', 'cache', 'bin');
     assert.ok(fs.existsSync(p) && fs.statSync(p).isDirectory());
   });
 });
 
 describe('settings.json hook command shape', () => {
-  it('hook commands anchor on ${CLAUDE_PROJECT_DIR:-<absRoot>}/.construct/run.mjs', () => {
+  it('hook commands anchor on ${CLAUDE_PROJECT_DIR:-<absRoot>}/.construct/launcher/run.mjs', () => {
     const settingsPath = path.join(projectDir, '.claude', 'settings.json');
     assert.ok(fs.existsSync(settingsPath));
     const text = fs.readFileSync(settingsPath, 'utf8');
     assert.ok(!/\$HOME\/\.construct/.test(text), 'must not reference $HOME paths');
-    assert.match(text, /\$\{CLAUDE_PROJECT_DIR:-\/[^}]+\}\/\.construct\/run\.mjs.{0,4}hook session-start/);
-    assert.match(text, /\$\{CLAUDE_PROJECT_DIR:-\/[^}]+\}\/\.construct\/run\.mjs.{0,4}hook pre-push-gate/);
+    assert.match(text, /\$\{CLAUDE_PROJECT_DIR:-\/[^}]+\}\/\.construct\/launcher\/run\.mjs.{0,4}hook session-start/);
+    assert.match(text, /\$\{CLAUDE_PROJECT_DIR:-\/[^}]+\}\/\.construct\/launcher\/run\.mjs.{0,4}hook pre-push-gate/);
     assert.ok(
       !/\$\{CLAUDE_PROJECT_DIR:-\.\}/.test(text),
       'cwd-relative :-. fallback breaks under cwd drift; fallback must be the absolute project root',
     );
     assert.ok(
-      !/node \.construct\/run\.mjs hook/.test(text),
-      'bare relative .construct/run.mjs breaks when the hook cwd is not the project root',
+      !/node \.construct\/launcher\/run\.mjs hook/.test(text),
+      'bare relative .construct/launcher/run.mjs breaks when the hook cwd is not the project root',
     );
   });
 });
@@ -127,7 +127,7 @@ describe('run.mjs resolution', () => {
   it('honours CONSTRUCT_DEV_PATH and invokes the local checkout', () => {
     const result = spawnSync(
       process.execPath,
-      [path.join(projectDir, '.construct', 'run.mjs'), 'version'],
+      [path.join(projectDir, '.construct', 'launcher', 'run.mjs'), 'version'],
       {
         encoding: 'utf8',
         cwd: projectDir,
@@ -143,7 +143,7 @@ describe('run.mjs resolution', () => {
     // Strip everything that could resolve construct from PATH and unset DEV path.
     const result = spawnSync(
       process.execPath,
-      [path.join(projectDir, '.construct', 'run.mjs'), 'doctor'],
+      [path.join(projectDir, '.construct', 'launcher', 'run.mjs'), 'doctor'],
       {
         encoding: 'utf8',
         cwd: projectDir,
@@ -165,7 +165,7 @@ describe('run.mjs resolution', () => {
   it('failure message names docker + the bootstrap shims as install options', () => {
     const result = spawnSync(
       process.execPath,
-      [path.join(projectDir, '.construct', 'run.mjs'), 'doctor'],
+      [path.join(projectDir, '.construct', 'launcher', 'run.mjs'), 'doctor'],
       {
         encoding: 'utf8',
         cwd: projectDir,
@@ -185,7 +185,7 @@ describe('run.mjs resolution', () => {
   });
 
   it('lists docker between cached binary and the failure path in the resolver source', () => {
-    const text = fs.readFileSync(path.join(projectDir, '.construct', 'run.mjs'), 'utf8');
+    const text = fs.readFileSync(path.join(projectDir, '.construct', 'launcher', 'run.mjs'), 'utf8');
     const cached = text.indexOf('tryCachedBinary()');
     const docker = text.indexOf('tryDocker(');
     const fail = text.indexOf('else fail();');
@@ -206,10 +206,10 @@ describe('run.mjs resolution', () => {
 // at npx. Byte-equality is the guard that keeps the two from proliferating apart.
 
 describe('launcher drift guard', () => {
-  it('this repo\'s staged .construct/run.mjs is byte-identical to the template', () => {
-    const staged = path.join(ROOT, '.construct', 'run.mjs');
+  it('this repo\'s staged .construct/launcher/run.mjs is byte-identical to the template', () => {
+    const staged = path.join(ROOT, '.construct', 'launcher', 'run.mjs');
     const template = path.join(ROOT, 'templates', 'distribution', 'run.mjs');
-    assert.ok(fs.existsSync(staged), 'repo .construct/run.mjs must exist');
+    assert.ok(fs.existsSync(staged), 'repo .construct/launcher/run.mjs must exist');
     assert.equal(
       fs.readFileSync(staged, 'utf8'),
       fs.readFileSync(template, 'utf8'),
@@ -228,7 +228,7 @@ describe('run.mjs self-repo resolution', () => {
       .join(':');
     const result = spawnSync(
       process.execPath,
-      [path.join(ROOT, '.construct', 'run.mjs'), 'version'],
+      [path.join(ROOT, '.construct', 'launcher', 'run.mjs'), 'version'],
       {
         encoding: 'utf8',
         cwd: ROOT,

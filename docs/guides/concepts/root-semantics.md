@@ -19,7 +19,7 @@ Use `packageRoot` to locate assets that ship **with Construct itself**: persona 
 
 ### resolveProjectRoot(cwd?)
 
-The root of the user's repository being operated on. Resolved at runtime by inspecting `--project <dir>` in `process.argv`, then walking upward from `cwd` looking for `.cx/` (Construct project marker) or `package.json` (generic JS root). Falls back to `cwd` when no marker is found.
+The root of the user's repository being operated on. Resolved at runtime by inspecting `--project <dir>` in `process.argv`, then walking upward from `cwd` looking for `.construct/` (Construct project marker) or `package.json` (generic JS root). Falls back to `cwd` when no marker is found.
 
 ```js
 import { resolveProjectRoot } from './lib/roots.mjs';
@@ -29,7 +29,7 @@ const projectRoot = resolveProjectRoot(); // uses process.cwd()
 
 Pass an explicit `cwd` in tests or sub-process workers to control the starting directory without relying on the ambient process cwd.
 
-Use `projectRoot` for everything that reads from or writes to **the user's repo**: `.cx/` state (observations, sessions, intake, task graphs), oracle verdicts, telemetry, beads, and provider configs.
+Use `projectRoot` for everything that reads from or writes to **the user's repo**: `.construct/` state (observations, sessions, intake, task graphs), oracle verdicts, telemetry, beads, and provider configs.
 
 ### process.cwd()
 
@@ -44,14 +44,14 @@ The raw working directory at the moment the process started. Useful for resolvin
 | Schema validation (`schemas/`) | `packageRoot` | Schemas are bundled with the package |
 | Hook scripts (`lib/hooks/`) | `packageRoot` | Hooks reference the install's lib/ |
 | Templates (`templates/`) | `packageRoot` | Doc templates ship with the package |
-| Observation store (`.cx/observations/`) | `projectRoot` | Per-project durable state |
-| Session store (`.cx/sessions/`) | `projectRoot` | Per-project durable state |
-| Intake queue (`.cx/intake/`) | `projectRoot` | Per-project durable state |
-| Task graphs (`.cx/task-graphs/`) | `projectRoot` | Per-project durable state |
-| Oracle verdicts (`.cx/oracle/`) | `projectRoot` | Per-project durable state |
-| Telemetry (`.cx/telemetry/`) | `projectRoot` | Per-project durable state |
+| Observation store (`.construct/observations/`) | `projectRoot` | Per-project durable state |
+| Session store (`.construct/sessions/`) | `projectRoot` | Per-project durable state |
+| Intake queue (`.construct/intake/`) | `projectRoot` | Per-project durable state |
+| Task graphs (`.construct/task-graphs/`) | `projectRoot` | Per-project durable state |
+| Oracle verdicts (`.construct/oracle/`) | `projectRoot` | Per-project durable state |
+| Telemetry (`.construct/telemetry/`) | `projectRoot` | Per-project durable state |
 | Beads tracker (`.beads/`) | `projectRoot` | Per-project issue tracker |
-| Provider config (`.cx/providers.yaml`) | `projectRoot` | Per-project credentials scope |
+| Provider config (`.construct/providers.yaml`) | `projectRoot` | Per-project credentials scope |
 | `construct.config.json` | `projectRoot` | Per-project configuration |
 
 ## Concrete example
@@ -61,10 +61,10 @@ Construct is installed globally at `/usr/local/lib/node_modules/construct`. The 
 | Expression | Resolves to |
 |---|---|
 | `packageRoot` | `/usr/local/lib/node_modules/construct` |
-| `resolveProjectRoot()` | `/myproject` (found `.cx/` marker) |
+| `resolveProjectRoot()` | `/myproject` (found `.construct/` marker) |
 | `process.cwd()` | `/myproject` (where the shell is) |
 
-In this scenario, `packageRoot` and `resolveProjectRoot()` differ. A skill loaded from `packageRoot/skills/engineering.md` is the same file regardless of which project the user is in. An observation written to `projectRoot/.cx/observations/` is scoped to `/myproject`.
+In this scenario, `packageRoot` and `resolveProjectRoot()` differ. A skill loaded from `packageRoot/skills/engineering.md` is the same file regardless of which project the user is in. An observation written to `projectRoot/.construct/observations/` is scoped to `/myproject`.
 
 When Construct is run inside its own source tree (self-hosting), the two roots coincide: both resolve to the construct repo. This is the only case where they are the same path.
 

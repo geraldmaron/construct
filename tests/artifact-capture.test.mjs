@@ -4,8 +4,13 @@
  * Exercises captureSessionArtifacts end-to-end against a temp-dir fixture:
  * session-summary observation generation, capped decision extraction, and
  * file-group entity creation from changed-file patterns. Run via `npm test`.
+ *
+ * observation-store/entity-store resolve project state through the
+ * machine-scoped state root (ADR-0066), keyed by a hash of tmpDir — so
+ * CX_HOME_OVERRIDE is pinned for the whole file to keep that write off the
+ * real developer machine's $HOME.
  */
-import { describe, it, beforeEach, afterEach, after } from 'node:test';
+import { describe, it, beforeEach, after, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';

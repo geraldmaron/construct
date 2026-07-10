@@ -2,7 +2,7 @@
 docs/operations/backup-restore.md: Backup, restore, and machine migration for Construct.
 
 Reflects the post-Postgres state model: durable state is the project git repo
-plus Beads issues in Dolt; `.cx/` is machine-local and rebuildable; credentials
+plus Beads issues in Dolt; `.construct/` is machine-local and rebuildable; credentials
 live in ~/.config/construct/config.env. `construct backup` (the old Postgres
 dump/restore family) was removed with the SQL backend.
 -->
@@ -18,7 +18,7 @@ Construct no longer runs a database you have to dump. The old `construct backup 
 | Source, docs, `specialists/org`, `construct.config.json`, `AGENTS.md`, `.beads/` config + hooks | Your project git repo | `git commit` + `git push` |
 | Beads issues (task graph, history) | Dolt (versioned), working copy at `.beads/construct.db` (gitignored) | `bd dolt push` to your Dolt remote |
 | Machine credentials | `~/.config/construct/config.env` (mode `0600`) | Copy it somewhere safe, or resolve from 1Password (see below) |
-| Observations, sessions, traces, intake, task-graph cache, the LanceDB vector index | `.cx/` (gitignored in full); vector index at `.cx/lancedb` or `~/.local/state/construct/vector/lancedb` | Machine-local and **rebuildable** — not backed up |
+| Observations, sessions, traces, intake, task-graph cache, the LanceDB vector index | `.construct/` (gitignored in full); vector index at `.construct/lancedb` or `~/.local/state/construct/vector/lancedb` | Machine-local and **rebuildable** — not backed up |
 
 The first three are your backup. Push your repo, run `bd dolt push`, and keep `config.env` safe, and you can reconstruct a machine.
 
@@ -45,7 +45,7 @@ If `config.env` holds `op://` references instead of plaintext keys — for examp
 
 ## What is *not* backed up (and why that is safe)
 
-Everything under `.cx/` is machine-local and gitignored in full. It rebuilds:
+Everything under `.construct/` is machine-local and gitignored in full. It rebuilds:
 
 - **LanceDB vector index** — re-embedded from your sources on demand; the embedding model re-downloads to `~/.cache/construct/embeddings/` (~22 MB, one time) on first use.
 - **Sessions, traces, observations, intake** — local session history. Losing them loses history, not versioned artifacts.

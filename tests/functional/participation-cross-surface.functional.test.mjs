@@ -3,7 +3,7 @@
  * request, four surfaces (construct-pteo2.18, cdsp.71): the recruited set and
  * its reasons must be identical on the CLI (`construct workflow invoke`, real
  * binary), MCP (`workflow_invoke` handler, real module), the durable trace
- * (the `.cx/observations` decision record the invoke writes under
+ * (the `.construct/observations` decision record the invoke writes under
  * allow-durable-write), and the UI (Org Studio's participation preview over
  * HTTP). Each surface runs in its own tmpdir fixture with HOME redirected so
  * nothing leaks into the repo. The routePath half of cdsp.71 is pinned by
@@ -97,7 +97,7 @@ test('CLI and MCP: the same request returns the same recruited set and reasons',
 
 test('traces: the durable observation carries the recruited roles AND their reasons', () => {
   for (const [surface, dir] of [['cli', fixtures.cli], ['mcp', fixtures.mcp]]) {
-    const obsDir = path.join(dir, '.cx', 'observations');
+    const obsDir = path.join(dir, '.construct', 'observations');
     const records = fs.readdirSync(obsDir)
       .filter((n) => n.endsWith('.json') && n !== 'index.json')
       .map((n) => JSON.parse(fs.readFileSync(path.join(obsDir, n), 'utf8')));
