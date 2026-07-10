@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-10T02:37:01.055Z",
+  "generatedAt": "2026-07-10T02:43:19.637Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 856,
+    "testFiles": 857,
     "topLevelTestFiles": 362,
-    "nestedTestFiles": 494,
+    "nestedTestFiles": 495,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 48,
     "byLayer": {
       "unit": 571,
-      "functional": 237,
+      "functional": 238,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
       "unit": 508,
-      "functional": 237,
+      "functional": 238,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -3700,6 +3700,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/orchestrator-dispatch-grant.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/participation-join-leave.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/participation-join-leave.functional.test.mjs —"
     },
     {
       "path": "tests/functional/perspective-differentiation.functional.test.mjs",
