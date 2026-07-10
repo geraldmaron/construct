@@ -16,6 +16,7 @@
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { rmTmpDir } from './helpers/cleanup.mjs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -75,8 +76,8 @@ before(() => {
 });
 
 after(() => {
-  fs.rmSync(projectDir, { recursive: true, force: true });
-  fs.rmSync(projectHome, { recursive: true, force: true });
+  rmTmpDir(projectDir);
+  rmTmpDir(projectHome);
 });
 
 describe('project-local launcher staging', () => {

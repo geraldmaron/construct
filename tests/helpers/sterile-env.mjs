@@ -13,6 +13,7 @@
  * through `overrides`.
  */
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync, chmodSync } from "node:fs";
+import { rmTmpDir } from "./cleanup.mjs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -98,7 +99,7 @@ export function createSterileEnv({ prefix = "construct-test-", env = {} } = {}) 
 
   const cleanup = () => {
     try {
-      rmSync(root, { recursive: true, force: true });
+      rmTmpDir(root);
     } catch (e) {
       console.error(`Cleanup failed for ${root}: ${e.message}`);
     }

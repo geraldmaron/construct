@@ -20,6 +20,7 @@
  * machine, so the fingerprint also covers the real `~/.construct/projects/` entry set.
  */
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync, readFileSync, readdirSync, chmodSync } from "node:fs";
+import { rmTmpDir } from "./cleanup.mjs";
 import { tmpdir, homedir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
@@ -202,7 +203,7 @@ export function createHostSandbox({ ollamaModels = [], stubOllama = true } = {})
     root,
     env,
     ollamaStateFile,
-    cleanup: () => { try { rmSync(root, { recursive: true, force: true }); } catch { /* ok */ } },
+    cleanup: () => { try { rmTmpDir(root); } catch { /* ok */ } },
   };
 }
 
