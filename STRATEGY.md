@@ -58,7 +58,7 @@ What is partial:
 - Provider coverage is uneven. GitHub, Slack, Jira, Confluence, Salesforce exist; depth varies.
 - Visual coverage in the docs site is thin (most concepts have no diagrams).
 - The 29-specialist roster consolidation to ~8–12 core roles is a drafted proposal (ADR-0065 roster-mapping appendix), not yet applied — the built-in roster is unchanged pending sign-off on specific groupings.
-- Contract-chain dispatch is ported onto the flow engine additively (`orchestration_delegation_next`), not as a full replacement — the older prompt-injected `dispatchPlan`/`dispatchSummary` path still runs alongside it because other contracts and callers still depend on it.
+- Contract-chain dispatch is ported onto the flow engine additively (`lib/orchestration/delegation-flow.mjs`), not as a full replacement — the flow stays engine-internal with no MCP surface (the `orchestration_delegation_next` tool was removed under the tool-surface budget; ADR-0074 / construct-1in3v), and the older prompt-injected `dispatchPlan`/`dispatchSummary` path still runs alongside it because other contracts and callers still depend on it.
 - Bun-compiled binary distribution builds and runs in isolation (all 4 platform targets, LanceDB + MCP SDK verified under Bun) but `bin/construct` itself doesn't yet run standalone under the compiled binary (a data-root resolution gap); npm remains the only working distribution channel.
 
 What is missing:
