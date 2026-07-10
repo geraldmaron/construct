@@ -122,14 +122,15 @@ test('validateInputPacket honors an explicit inputContractId override', () => {
 
 // ── Output packet validation (record + mark, never throw) ───────────────────
 
-test('invalid output packet marks the result contract-failed, logs, and preserves real model output', async () => {
+test('invalid output packet marks the result blocked-contract, logs, and preserves real model output', async () => {
   const cwd = tempDir('cx-worker-boundary-output-', test);
   const task = {
     // handoffContract is the producer-side contract id runtime.mjs already
-    // resolves (buildTasks); validateOutputPacket trusts it directly rather
-    // than re-deriving from role, so task.role need not match the contract's
-    // declared producer for this unit-level check. engineer-to-reviewer
-    // output requires verdict (enum-constrained) plus findings|noIssuesFoundAt.
+    // resolves (buildTasks); the in-run handoff check (construct-pteo2.14)
+    // trusts it directly rather than re-deriving from role, so task.role need
+    // not match the contract's declared producer for this unit-level check.
+    // engineer-to-reviewer output requires verdict (enum-constrained) plus
+    // findings|noIssuesFoundAt.
     role: 'cx-reviewer',
     handoffContract: 'engineer-to-reviewer',
     outputPacket: { verdict: 'LGTM' },
@@ -137,8 +138,8 @@ test('invalid output packet marks the result contract-failed, logs, and preserve
   const run = { request: { summary: 'implement the change' } };
   const result = await runTaskViaProvider({ task, run, model: MODEL, provider: 'anthropic', env: ENV, cwd, fetchImpl: fetchOk('real model output') });
 
-  assert.equal(result.output, 'real model output', 'contract-failed output is still real model output, not discarded');
-  assert.equal(result.contractStatus, 'contract-failed');
+  assert.equal(result.output, 'real model output', 'blocked output is still real model output, not discarded');
+  assert.equal(result.contractStatus, 'blocked-contract');
   assert.equal(result.contractId, 'engineer-to-reviewer');
   assert.ok(Array.isArray(result.contractViolations) && result.contractViolations.length > 0);
 
@@ -146,6 +147,7 @@ test('invalid output packet marks the result contract-failed, logs, and preserve
   assert.equal(violations.length, 1);
   assert.equal(violations[0].contractId, 'engineer-to-reviewer');
   assert.equal(violations[0].direction, 'output');
+  assert.equal(violations[0].verdict, 'BLOCKED_CONTRACT');
 });
 
 test('a conforming output packet marks the result contractStatus ok and logs nothing', async () => {
@@ -153,7 +155,19 @@ test('a conforming output packet marks the result contractStatus ok and logs not
   const task = {
     role: 'cx-reviewer',
     handoffContract: 'engineer-to-reviewer',
-    outputPacket: { verdict: 'APPROVED', findings: ['minor nit'] },
+    // The in-run check is the full both-ends validateHandoff pass
+    // (construct-pteo2.14), so a conforming packet carries the consumer-side
+    // input fields as well as the producer-side output fields.
+    outputPacket: {
+      verdict: 'APPROVED',
+      findings: ['minor nit'],
+      filesChanged: ['lib/auth.mjs'],
+      verificationChecklist: { testsRun: true, lintClean: true, typesClean: true },
+      feasibilityAssessment: 'fits current architecture',
+      effortClass: 'S',
+      debtNote: 'none',
+      blastRadius: 'narrow',
+    },
   };
   const run = { request: { summary: 'implement the change' } };
   const result = await runTaskViaProvider({ task, run, model: MODEL, provider: 'anthropic', env: ENV, cwd, fetchImpl: fetchOk() });
