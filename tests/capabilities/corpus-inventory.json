@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-10T02:23:49.786Z",
+  "generatedAt": "2026-07-10T02:37:01.055Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 854,
-    "topLevelTestFiles": 361,
-    "nestedTestFiles": 493,
+    "testFiles": 856,
+    "topLevelTestFiles": 362,
+    "nestedTestFiles": 494,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 47,
+    "capabilityMarkedFiles": 48,
     "byLayer": {
-      "unit": 570,
-      "functional": 236,
+      "unit": 571,
+      "functional": 237,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 507,
-      "functional": 236,
+      "unit": 508,
+      "functional": 237,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -2541,6 +2541,17 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "copilot-proxy-auth.functional.test.mjs — the Copilot bridge must authenticate its"
+    },
+    {
+      "path": "tests/functional/cost-vertical-recruitment.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "workflow.prd-draft",
+        "workflow.architecture-review"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/cost-vertical-recruitment.functional.test.mjs — the"
     },
     {
       "path": "tests/functional/credentials-diagnostics-no-leak.functional.test.mjs",
@@ -5599,6 +5610,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/participation-coverage.test.mjs — every specialist and team is"
+    },
+    {
+      "path": "tests/participation-matrix.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/participation-matrix.test.mjs — orphan-sweep matrix across"
     },
     {
       "path": "tests/perf/hook-budgets.test.mjs",
