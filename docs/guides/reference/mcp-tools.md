@@ -846,6 +846,18 @@ Advance a request's delegation chain by exactly one step (ADR-0067, flow-engine-
 | `introducesContract` | boolean | Whether the change introduces a new contract/dependency. |
 | `explicitDrive` | boolean | Whether drive/full-send mode is explicitly active. |
 
+### `participation_rules`
+Author and inspect ADR-0070 participation rules — condition-driven `when(signals) → recruit(specialists|teams)` declarations with role and gate semantics (construct-pteo2.16). Every action is a thin envelope over `lib/registry/org-api.mjs`, the same writer `construct participation` and Org Studio's participation canvas wrap, so all three surfaces produce identical config writes and identical validation errors. Writes land in the project or user tier only; the builtin tier is refused at the shared org-api layer.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `action` | string | **required** — One of `list`, `show`, `add`, `validate`, `remove`, `preview`, `meta`. |
+| `owner` | string | Owning specialist or team id the rule attaches to (`show`/`add`/`validate`/`remove`). |
+| `rule_id` | string | Rule id (`show`/`remove`). |
+| `rule` | object | The participation rule (`add`/`validate`), `schemas/participation-rules.schema.json` shape. |
+| `request` | string | Sample request text (`preview` — recruited set via the live `requestSignals` + recruiter path). |
+| `scope` | string | Write tier for `add`/`remove`: `project` (default) or `user`. |
+
 ### `orchestration_readiness`
 Report whether this MCP session has Construct orchestration tools attached and reachable now. Returns a pass/fail verdict, typed `reasonCode`, one deterministic `nextStep`, required/observed/missing tools, and a redacted diagnostic bundle. This is an observed attachment check, unlike `construct_execution_resolve`, which remains a descriptive planning/model-resolution contract.
 

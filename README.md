@@ -167,11 +167,13 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct install` | Machine setup (footprint per ADR-0029/ADR-0071): --footprint=project\|user\|both, default project |
 | `construct intake` | View and process the active profile's intake queue (queue label varies by profile) |
 | `construct oracle` | Oracle meta-controller — fleet health review and bounded-auto maintenance |
+| `construct participation` | Author and inspect ADR-0070 participation rules (condition → recruit with role/gate) over org-api — same writer and validation as Org Studio and the participation_rules MCP tool |
 | `construct recommendations` | View and manage artifact recommendations |
 | `construct sandbox` | Isolated tmpdir-based environment for QA / specialist dry-runs |
 | `construct scope` | Manage the active org scope and its lifecycle (draft, promote, archive, health) |
 | `construct status` | Show system health and credentials |
 | `construct stop` | Stop all running services |
+| `construct studio` | Org Studio — local, zero-dependency web app for authoring specialists, teams, relationships, fences, and participation rules over org-api (loopback-only) |
 | `construct sync` | Sync agent adapters to AI tools |
 | `construct workers` | List registered team workers and heartbeat freshness |
 
