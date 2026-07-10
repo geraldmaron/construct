@@ -118,8 +118,8 @@ test('runConstructArtifactLoop re-evaluates recruitment after buildDraftBody', a
     'late recruit folded into overlay specialists',
   );
   assert.ok(
-    res.summary.includes('Late recruitment (content signals)'),
-    'summary names the late recruitment',
+    res.summary.includes('Recruited (signals)'),
+    'summary names the recruitment',
   );
 });
 
@@ -139,6 +139,6 @@ test('a draft with no emergent conditions recruits nobody and leaves the result 
 
   assert.ok(res.path, 'artifact file materialized');
   assert.deepEqual(res.recruited, [], 'no signals, no recruits');
-  assert.equal(res.summary.includes('Late recruitment'), false);
+  assert.equal(res.summary.includes('Recruited ('), false);
   assert.ok(Array.isArray(res.overlay.specialists));
 });
