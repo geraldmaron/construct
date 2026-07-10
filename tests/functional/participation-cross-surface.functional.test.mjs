@@ -40,12 +40,22 @@ const home = fresh('cx-xsurface-home-');
 const fixtures = { cli: fresh('cx-xsurface-cli-'), mcp: fresh('cx-xsurface-mcp-'), ui: fresh('cx-xsurface-ui-') };
 fs.cpSync(path.join(REPO, 'specialists', 'org'), path.join(fixtures.ui, 'specialists', 'org'), { recursive: true });
 
+// The MCP surface runs in-process, so the machine-scoped state root
+// (~/.construct/projects/<key>, resolved via lib/paths.mjs homeDir()) must be
+// redirected for THIS process too, not just the spawned CLI — otherwise the
+// in-process workflowInvoke registers the tmp fixture as a real project key.
+
+const originalHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = home;
+
 let studio;
 before(async () => {
   studio = await startOrgStudio({ rootDir: fixtures.ui, port: 0 });
 });
 after(async () => {
   await studio?.close();
+  if (originalHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = originalHomeOverride;
   for (const dir of tmpDirs) fs.rmSync(dir, { recursive: true, force: true });
 });
 
@@ -63,7 +73,7 @@ test('CLI and MCP: the same request returns the same recruited set and reasons',
   const res = spawnSync('node', [BIN, 'workflow', 'invoke', '--json',
     '--workflow-type', 'prd-draft', '--approval-mode', 'allow-durable-write',
     '--text', COST_REQUEST,
-  ], { cwd: fixtures.cli, encoding: 'utf8', timeout: 60_000, env: { ...process.env, HOME: home, CONSTRUCT_ROLES: 'off' } });
+  ], { cwd: fixtures.cli, encoding: 'utf8', timeout: 60_000, env: { ...process.env, HOME: home, CX_HOME_OVERRIDE: home, CONSTRUCT_ROLES: 'off' } });
   assert.equal(res.status, 0, `exit 0 — stderr: ${res.stderr}`);
   cliData = JSON.parse(res.stdout).data;
 
@@ -123,7 +133,7 @@ test('MCP surface has no CLI-only recruitment capability: recruitment=off reconc
   const res = spawnSync('node', [BIN, 'workflow', 'invoke', '--json',
     '--workflow-type', 'prd-draft', '--approval-mode', 'proposal-only',
     '--recruitment', 'off', '--text', COST_REQUEST,
-  ], { cwd: fixtures.cli, encoding: 'utf8', timeout: 60_000, env: { ...process.env, HOME: home, CONSTRUCT_ROLES: 'off' } });
+  ], { cwd: fixtures.cli, encoding: 'utf8', timeout: 60_000, env: { ...process.env, HOME: home, CX_HOME_OVERRIDE: home, CONSTRUCT_ROLES: 'off' } });
   assert.equal(res.status, 0, `exit 0 — stderr: ${res.stderr}`);
   const cliOff = JSON.parse(res.stdout).data;
 
