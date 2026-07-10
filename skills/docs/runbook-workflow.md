@@ -16,6 +16,8 @@ Use when: creating operational procedures for services, alerts, or recurring ope
 3. **Link from the relevant alert** or monitoring dashboard
 4. **cx-operations** adds to `.cx/context.md` if it's a critical path runbook
 
+The steps above are the baseline, not the final roster. Authoring through `author_artifact` (type `runbook`) recruits additional participants from the request's content signals (ADR-0070), returned as `recruited` with a specialist, reason, role, and gate for each. Honor that set instead of treating this chain as fixed; `recruitment: "off"` or an explicit cx- id list overrides it.
+
 ## File naming
 - `docs/operations/runbooks/telemetry-restart.md`
 - `docs/operations/runbooks/db-migration.md`
