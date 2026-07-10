@@ -337,6 +337,10 @@
       "core": false
     },
     {
+      "name": "participation",
+      "core": false
+    },
+    {
       "name": "plugin",
       "core": false
     },
@@ -462,6 +466,10 @@
     },
     {
       "name": "storage",
+      "core": false
+    },
+    {
+      "name": "studio",
       "core": false
     },
     {
