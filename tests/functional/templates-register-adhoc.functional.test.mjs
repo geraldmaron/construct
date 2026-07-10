@@ -39,7 +39,22 @@ function freshProject() {
   dirs.push(dir);
   return dir;
 }
-test.after(() => { for (const d of dirs) { try { rmTmpDir(d); } catch { /* tmpdir teardown is best-effort */ } } });
+
+// In-process artifact-loop calls reach the machine-scoped state root through
+// the real HOME (observation-store vectorClientFor), so the whole process gets
+// a redirected CX_HOME_OVERRIDE or every fixture registers a real
+// ~/.construct/projects key (construct-9y93c).
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-templates-register-home-'));
+const originalHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+
+test.after(() => {
+  if (originalHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = originalHomeOverride;
+  try { rmTmpDir(homeOverride); } catch { /* tmpdir teardown is best-effort */ }
+  for (const d of dirs) { try { rmTmpDir(d); } catch { /* tmpdir teardown is best-effort */ } }
+});
 
 function builtinBytes() {
   return fs.readFileSync(BUILTIN_MANIFEST);
