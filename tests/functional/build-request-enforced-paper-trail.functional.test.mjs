@@ -33,7 +33,7 @@
  * implementation-side fields and the verdict-side fields. A blocked handoff
  * marks the task `contractStatus: 'blocked-contract'`, degrades the run
  * (never bare completed), and appends a runId-tagged BLOCKED_CONTRACT record
- * to .cx/contract-violations.jsonl, which
+ * to .construct/contract-violations.jsonl, which
  * lib/orchestration/build-audit-record.mjs (construct-ifwhw.1) joins with the
  * task chain and worker lifecycle trace events into one durable record.
  *
@@ -107,7 +107,7 @@ const ENV = {
 };
 
 function readViolationLog(cwd) {
-  const file = path.join(cwd, '.cx', 'contract-violations.jsonl');
+  const file = path.join(cwd, '.construct', 'contract-violations.jsonl');
   if (!fs.existsSync(file)) return [];
   return fs.readFileSync(file, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l));
 }
@@ -175,7 +175,7 @@ test('a build request drives a multi-specialist chain with in-run BLOCKED_CONTRA
   assert.equal(executed.status, 'degraded', 'terminal status never reads bare completed');
 
   const logged = readViolationLog(cwd).find((r) => r.contractId === CONTRACT_ID && r.verdict === 'BLOCKED_CONTRACT');
-  assert.ok(logged, 'the blocked handoff landed a durable BLOCKED_CONTRACT record in .cx/contract-violations.jsonl');
+  assert.ok(logged, 'the blocked handoff landed a durable BLOCKED_CONTRACT record in .construct/contract-violations.jsonl');
   assert.equal(logged.runId, planned.runId, 'the durable record is runId-tagged');
 
   const record = buildAuditRecord(cwd, planned.runId);

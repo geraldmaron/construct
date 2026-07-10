@@ -56,7 +56,7 @@ test('[R4] half-stage (synced=false) must leave a durable marker in the project'
   // state so doctor/init can find and repair it. None is written today.
 
   const markerCandidates = [
-    path.join(projectRoot, '.construct', 'stage-state.json'),
+    path.join(projectRoot, '.construct', 'launcher', 'stage-state.json'),
     path.join(projectRoot, '.construct', 'half-staged'),
     path.join(projectRoot, '.cx', 'stage-state.json'),
   ];

@@ -8,13 +8,13 @@
  *   1. Hot-load: a specialist scaffolded by the real CLI resolves through an
  *      ALREADY-WARM loader cache with no clearCache() call between scaffold
  *      and lookup — lib/registry/loader.mjs's orgDirMtime cache key must
- *      notice the new .cx/org file by mtime alone (rf26.13's "no daemon
+ *      notice the new .construct/org file by mtime alone (rf26.13's "no daemon
  *      restart" claim; the existing test clears the cache explicitly, so a
  *      broken mtime walk would still pass it).
  *   2. Edit round trip: re-scaffolding an existing id fails without --force,
  *      succeeds with --force, and the edited field is what a subsequent
  *      lookup resolves — author, edit, re-resolve, end to end via the CLI.
- *   3. Tier precedence on id collision: a project-tier (.cx/org) drop-in that
+ *   3. Tier precedence on id collision: a project-tier (.construct/org) drop-in that
  *      overrides one field of a built-in specialist wins on that field while
  *      inheriting the rest of the built-in record (assemble.mjs's documented
  *      builtin -> user -> project merge), and the merged registry still
@@ -147,7 +147,7 @@ test('edit round trip: re-scaffold refuses without --force, succeeds with it, an
   assert.equal(refused.status, 1, 'a second create for the same id must refuse without --force');
   assert.match(refused.stderr, /already exists/, 'the refusal names the collision');
 
-  const specFile = path.join(projectDir, '.cx', 'org', 'specialists', 'cx-hotload-specialist.json');
+  const specFile = path.join(projectDir, '.construct', 'org', 'specialists', 'cx-hotload-specialist.json');
   assert.match(
     JSON.parse(fs.readFileSync(specFile, 'utf8')).description,
     /Original description/,
@@ -185,7 +185,7 @@ test('a project-tier drop-in overriding one field of a built-in specialist wins 
   assert.ok(baseline, 'the built-in engineer resolves before any overlay exists');
   assert.notEqual(baseline.modelTier, 'reasoning', 'the field this test overrides must differ from the built-in value, or the pin is vacuous');
 
-  const overlayDir = path.join(projectDir, '.cx', 'org', 'specialists');
+  const overlayDir = path.join(projectDir, '.construct', 'org', 'specialists');
   fs.mkdirSync(overlayDir, { recursive: true });
   fs.writeFileSync(
     path.join(overlayDir, 'cx-engineer.json'),

@@ -179,7 +179,7 @@ construct embed start|stop|status|list|enable|disable|dry-run
 - `stop` — Stop the running embed daemon
 - `status [<id>] [--json]` — Daemon status, or per-capability bindings/filter/runtime/last-tick with an id
 - `list [--json]` — Available embed capabilities and per-project enabled state (ADR-0061)
-- `enable <id>` — Enable an embed capability: validate and write .cx/embed/<id>.manifest.json
+- `enable <id>` — Enable an embed capability: validate and write .construct/embed/<id>.manifest.json
 - `disable <id>` — Disable an embed capability (idempotent)
 - `dry-run <id> [--json]` — Resolve the specialist→providers→filter→framework→authority→runtime chain; no side effects
 
@@ -268,7 +268,7 @@ construct provider list|status|health|validate|test|add|configure
 - `validate <path|id> [--strict] [--json]` — Validate a manifest file or provider id against the B1 schema
 - `info <id>` — Show a single provider's metadata and config schema
 - `test <id>` — Run one provider's health probe; exits non-zero on failure
-- `add <id> [--json]` — Scaffold instance config from the provider's configSchema defaults, persisted to .cx/providers/<id>.json
+- `add <id> [--json]` — Scaffold instance config from the provider's configSchema defaults, persisted to .construct/providers/<id>.json
 - `configure <id> [--key.path value ...] [--json]` — Merge + validate instance config (incl. ADR-0060 filter block) against configSchema; rejects with the schema path on failure
 - `plugins <add|remove> <id> [<package>] [--global]` — Register or remove a plugin provider override
 - `new <name> [--capabilities=...]` — Scaffold a new provider module
@@ -380,7 +380,7 @@ construct uninstall [--dry-run] [--yes] [--all] [--keep-state] [--scope=project|
 | `--dry-run` | Print the plan and exit; change nothing |
 | `--yes` | Remove auto-risk (✓) categories without prompting |
 | `--all` | Combined with --yes: also remove ask-risk (◐) categories (project data, machine config) |
-| `--keep-state` | Only remove the launcher + adapters; preserve .cx/, ~/.config/construct, Postgres |
+| `--keep-state` | Only remove the launcher + adapters; preserve .construct/, ~/.config/construct, Postgres |
 | `--scope=<...>` | Limit to project | machine | all (default: all) |
 
 ## construct update

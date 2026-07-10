@@ -1,16 +1,36 @@
 /**
  * tests/functional/a1-session-reflect.functional.test.mjs
+ *
+ * The hook writes observations through the machine-scoped state root
+ * (ADR-0066), keyed by a hash of cwd — so CX_HOME_OVERRIDE is pinned for the
+ * whole file (and threaded into the hook's spawn env) to keep that write off
+ * the real developer machine's $HOME.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import test from 'node:test';
+import test, { before, after } from 'node:test';
 import { spawnSync } from 'node:child_process';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const HOOK = path.join(REPO, 'lib', 'hooks', 'session-reflect.mjs');
+
+let homeOverride;
+let prevHomeOverride;
+
+before(() => {
+  homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-a1-reflect-home-'));
+  prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+  process.env.CX_HOME_OVERRIDE = homeOverride;
+});
+
+after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch { /* best-effort cleanup */ }
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 function buildTranscript(turns) {
   return turns.map((t) => JSON.stringify(t)).join('\n') + '\n';
@@ -23,7 +43,7 @@ test('A1 end-to-end: hook writes searchable observation, accumulation works', as
   process.env.CONSTRUCT_EMBEDDING_MODEL = 'hashing';
 
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'a1-functional-'));
-  fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
 
   // listObservations/searchObservations below resolve the machine-scoped
   // state root (ADR-0066) via CX_HOME_OVERRIDE read in-process, not via any
@@ -57,7 +77,7 @@ test('A1 end-to-end: hook writes searchable observation, accumulation works', as
   });
   assert.equal(r1.status, 0, `hook failed: ${r1.stderr}`);
 
-  const obsDir = path.join(cwd, '.cx', 'observations');
+  const obsDir = path.join(cwd, '.construct', 'observations');
   const indexPath = path.join(obsDir, 'index.json');
   assert.ok(fs.existsSync(indexPath), 'observations index not written');
 

@@ -13,6 +13,6 @@ Drop a file into the project-root `inbox/` and the embed daemon ingests it: text
 
 The watcher enqueues only complete top-level files in `inbox/`: dotfiles and the `inbox/.staging/` assembly directory are ignored, and as a backstop for writers that drop in place, a file whose size is still changing between two stats is left for the next poll. Dropping a small file directly into `inbox/` is fine; stage-then-rename matters for large or slowly-written files.
 
-Processed items move to `.cx/intake/processed/`; machine/runtime intake state (pending, processed, skipped, quarantine, dead-letter) lives under the gitignored `.cx/intake/`.
+Processed items move to `.construct/intake/processed/`; machine/runtime intake state (pending, processed, skipped, quarantine, dead-letter) lives under the gitignored `.construct/intake/`.
 
 Watch depth and extra directories are configured under `intakePolicy` in the [config reference](../reference/config.md).

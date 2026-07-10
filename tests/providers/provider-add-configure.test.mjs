@@ -49,7 +49,7 @@ test('provider add <id> scaffolds instance config from configSchema defaults (gi
     assert.equal(parsed.providerId, 'github');
     assert.equal(parsed.config.kind, 'issues');
 
-    const onDisk = JSON.parse(readFileSync(join(dir, '.cx', 'providers', 'github.json'), 'utf8'));
+    const onDisk = JSON.parse(readFileSync(join(dir, '.construct', 'providers', 'github.json'), 'utf8'));
     assert.equal(onDisk.providerId, 'github');
     assert.equal(onDisk.config.kind, 'issues');
   } finally {
@@ -92,7 +92,7 @@ test('provider configure merges valid keys and round-trips through status --json
     const row = statusParsed.providers.find((p) => p.id === 'atlassian-jira');
     assert.ok(row, 'expected atlassian-jira row in status output');
 
-    const onDisk = JSON.parse(readFileSync(join(dir, '.cx', 'providers', 'atlassian-jira.json'), 'utf8'));
+    const onDisk = JSON.parse(readFileSync(join(dir, '.construct', 'providers', 'atlassian-jira.json'), 'utf8'));
     assert.equal(onDisk.config.jql, 'project = ABC');
     assert.equal(onDisk.config.maxResults, 25);
   } finally {

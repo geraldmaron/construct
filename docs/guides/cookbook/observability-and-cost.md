@@ -7,7 +7,7 @@ Construct's observability commands read from two sources:
 - **Trace adapter**: local JSONL by default; Langfuse-compatible, generic HTTP, or OTLP export when configured
 - **Local cost log**: file-backed token ledger read by `cost` and `efficiency` (no external dependency)
 
-R&D-loop trace events (`intake.received`, `intake.triaged`, `task_graph.created`, `worker.started`, `worker.completed`, `evidence.recorded`, `tool.called`, `approval.requested`, …) always write to `.cx/traces/<YYYY-MM-DD>.jsonl` with no credentials. When `CONSTRUCT_TRACE_BACKEND=langfuse|http|otel` is configured, the same events are exported remotely so the intake → graph → worker → evidence chain stays correlated end-to-end. Set `CONSTRUCT_TRACE_BACKEND=none` to suppress remote export while keeping the local JSONL log.
+R&D-loop trace events (`intake.received`, `intake.triaged`, `task_graph.created`, `worker.started`, `worker.completed`, `evidence.recorded`, `tool.called`, `approval.requested`, …) always write to `.construct/traces/<YYYY-MM-DD>.jsonl` with no credentials. When `CONSTRUCT_TRACE_BACKEND=langfuse|http|otel` is configured, the same events are exported remotely so the intake → graph → worker → evidence chain stays correlated end-to-end. Set `CONSTRUCT_TRACE_BACKEND=none` to suppress remote export while keeping the local JSONL log.
 
 ## Review agent performance
 
@@ -18,7 +18,7 @@ construct review --agent=cx-engineer
 ```
 
 Fetches traces from the configured trace source, computes per-agent quality scores, and writes a markdown report to
-`.cx/reviews/`. The report covers quality score distribution, latency, cost, and recurring failure
+`.construct/reviews/`. The report covers quality score distribution, latency, cost, and recurring failure
 patterns.
 
 | Flag | Effect |
@@ -75,5 +75,5 @@ construct eval-datasets --limit=50
 ```
 
 Pulls scored telemetry traces (those with a `quality` score) and writes them as eval datasets
-under `.cx/evals/`. Use these datasets for prompt regression testing or to seed a fine-tuning
+under `.construct/evals/`. Use these datasets for prompt regression testing or to seed a fine-tuning
 corpus. Requires a remote trace backend when the local JSONL store has no scored traces.

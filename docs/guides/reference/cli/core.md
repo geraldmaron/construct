@@ -11,7 +11,7 @@ description: Core commands for Construct.
 | `construct dev` | Start services for development |
 | `construct docs` | Documentation commands |
 | `construct doctor` | Check installation health |
-| `construct init` | Project setup (once per repo): scaffold .cx/, AGENTS.md, plan.md, adapters |
+| `construct init` | Project setup (once per repo): scaffold .construct/, AGENTS.md, plan.md, adapters |
 | `construct install` | Machine setup (footprint per ADR-0029/ADR-0071): --footprint=project\|user\|both, default project |
 | `construct intake` | View and process the active profile's intake queue (queue label varies by profile) |
 | `construct oracle` | Oracle meta-controller — fleet health review and bounded-auto maintenance |
@@ -104,7 +104,7 @@ construct doctor [<status|logs|tick|report|consistency|watch|stop|credentials>] 
 
 ## construct init
 
-Project setup (once per repo): scaffold .cx/, AGENTS.md, plan.md, adapters
+Project setup (once per repo): scaffold .construct/, AGENTS.md, plan.md, adapters
 
 **Usage**
 

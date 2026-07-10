@@ -33,8 +33,8 @@ after(() => {
 describe('resolveRootDir', () => {
   it('CX_DATA_DIR wins even when cwd is inside a project', () => {
     const project = mkTmp();
-    fs.mkdirSync(path.join(project, '.cx'), { recursive: true });
-    fs.writeFileSync(path.join(project, '.cx', 'context.md'), '# context');
+    fs.mkdirSync(path.join(project, '.construct'), { recursive: true });
+    fs.writeFileSync(path.join(project, '.construct', 'context.md'), '# context');
     const override = mkTmp();
     const result = resolveRootDir({ CX_DATA_DIR: override }, project);
     assert.equal(result, override);
@@ -42,8 +42,8 @@ describe('resolveRootDir', () => {
 
   it('walks up from cwd to find .cx/context.md', () => {
     const project = mkTmp();
-    fs.mkdirSync(path.join(project, '.cx'), { recursive: true });
-    fs.writeFileSync(path.join(project, '.cx', 'context.md'), '# context');
+    fs.mkdirSync(path.join(project, '.construct'), { recursive: true });
+    fs.writeFileSync(path.join(project, '.construct', 'context.md'), '# context');
     const nested = path.join(project, 'a', 'b', 'c');
     fs.mkdirSync(nested, { recursive: true });
     const result = resolveRootDir({}, nested);

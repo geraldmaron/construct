@@ -8,7 +8,7 @@
  * artifact file — when one got written at all — was the only trace an
  * `author_artifact` call had happened. This suite drives the real MCP
  * `author_artifact` entrypoint (lib/mcp/tools/artifact-author.mjs) against a
- * fresh mkdtemp project and asserts, by reading `.cx/observations/*.json`
+ * fresh mkdtemp project and asserts, by reading `.construct/observations/*.json`
  * back off disk, that a provenance record now exists in both branches:
  *
  *   - no draft content to materialize (artifact FILE not written)
@@ -59,7 +59,7 @@ function withHashingEmbeddings(t, cwd) {
 }
 
 function readObservations(cwd) {
-  const dir = path.join(cwd, '.cx', 'observations');
+  const dir = path.join(cwd, '.construct', 'observations');
   if (!fs.existsSync(dir)) return [];
   return fs.readdirSync(dir)
     .filter((name) => name.endsWith('.json') && name !== 'index.json')

@@ -20,6 +20,11 @@
  * and exits without running them — the shard-partition self-test and local
  * debugging both use it.
  *
+ * File filtering: --files-from=<path> reads a newline-separated list of test
+ * files from a JSON file (each key is a test path). The filter intersects with
+ * the discovered test list AFTER exclusions and BEFORE striping, so every shard
+ * partitions the same post-filter set, matching how --exclude composes.
+ *
  * Sterility guard: the suite is fingerprinted against the real user tool
  * configs (~/.config/opencode/opencode.json, ~/.claude/settings.json, the
  * Ollama model store) before and after the run. Any test that leaks a write
@@ -38,7 +43,7 @@
  * presence, so this scrub does not disable them.
  */
 import { spawnSync } from "node:child_process";
-import { readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { snapshotRealConfigs, diffRealConfigs } from "../tests/helpers/sterile-host-env.mjs";
 import { clearXdgVars } from "../lib/test-env-setup.mjs";
@@ -90,6 +95,25 @@ for (let i = args.length - 1; i >= 0; i--) {
   }
 }
 
+// --files-from=<path> reads a JSON file where each key is a test file path.
+// Intersects with the discovered tests AFTER exclusions and BEFORE sharding.
+
+let filesFromSet = null;
+for (let i = args.length - 1; i >= 0; i--) {
+  const arg = args[i];
+  if (typeof arg === "string" && arg.startsWith("--files-from=")) {
+    const filePath = arg.slice("--files-from=".length);
+    try {
+      const data = JSON.parse(readFileSync(filePath, "utf8"));
+      filesFromSet = new Set(Object.keys(data));
+    } catch (err) {
+      console.error(`Failed to read --files-from file ${filePath}: ${err.message}`);
+      process.exit(1);
+    }
+    args.splice(i, 1);
+  }
+}
+
 // --shard and --list are consumed here for the same reason --exclude is: any
 // unrecognized token left in `args` gets forwarded to `node --test` verbatim.
 
@@ -135,11 +159,12 @@ const subdirs = entries
   .filter((entry) => entry.isDirectory() && entry.name !== "node_modules" && entry.name !== "fixtures")
   .flatMap((entry) => walkRecursive(path.join(testsDir, entry.name), path.join("tests", entry.name)));
 
-// Sort + exclude first, stripe after, so every shard partitions the same
-// post-exclude list. The empty-list hard-fail stays after striping and names
-// which stage produced the empty set.
+// Sort + exclude first, apply files-from filter, then stripe, so every shard
+// partitions the same post-exclude and post-filter list. The empty-list hard-fail
+// stays after striping and names which stage produced the empty set.
 
 let files = [...topLevel, ...subdirs].sort().filter((f) => !isExcluded(f));
+if (filesFromSet) files = files.filter((f) => filesFromSet.has(f));
 const preShardCount = files.length;
 if (shard) files = stripeFiles(files, shard.index, shard.total);
 

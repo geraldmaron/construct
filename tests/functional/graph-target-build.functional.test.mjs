@@ -12,7 +12,7 @@
  *
  *   1. `buildTargetGraphs` (lib/graph/build-target-graph.mjs) derives an
  *      import edge between the fixture's two files and persists it under
- *      `.cx/graph/targets/<targetId>/` (lib/graph/store.mjs's JSONL shape),
+ *      `.construct/graph/targets/<targetId>/` (lib/graph/store.mjs's JSONL shape),
  *      with every node's attrs.origin carrying the target's id/kind.
  *   2. The persisted graph is readable straight off disk via a fresh
  *      `loadTargetGraph` call — not held in any in-memory cache.
@@ -72,7 +72,7 @@ function writeProjectConfig(project, targets) {
   }, null, 2));
 }
 
-test('buildTargetGraphs derives an import edge for a registered target and persists it under .cx/graph/targets/<id>/', () => {
+test('buildTargetGraphs derives an import edge for a registered target and persists it under .construct/graph/targets/<id>/', () => {
   const repo = makeFixtureRepo('zqTarget');
   const project = freshDir('cx-graph-target-proj-');
   writeProjectConfig(project, [{ id: 'repo-x', provider: 'directory', selector: { path: repo } }]);
@@ -82,7 +82,7 @@ test('buildTargetGraphs derives an import edge for a registered target and persi
   assert.equal(built[0].targetId, 'repo-x');
   assert.ok(built[0].nodeCount >= 2, 'main.mjs and lib/helper.mjs both become nodes');
 
-  const dir = path.join(project, '.cx', 'graph', 'targets', 'repo-x');
+  const dir = path.join(project, '.construct', 'graph', 'targets', 'repo-x');
   assert.ok(fs.existsSync(path.join(dir, 'nodes.jsonl')), 'nodes.jsonl persisted');
   assert.ok(fs.existsSync(path.join(dir, 'edges.jsonl')), 'edges.jsonl persisted');
   assert.ok(fs.existsSync(path.join(dir, 'meta.json')), 'meta.json persisted');

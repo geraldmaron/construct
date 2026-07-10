@@ -165,9 +165,9 @@ test("buildRuntimeTracePayload includes runtime-composed prompt and route metada
     try { fs.rmSync(rootDir, { recursive: true, force: true }); } catch {}
   });
   fs.cpSync(path.join(process.cwd(), "specialists", "org"), path.join(rootDir, "specialists", "org"), { recursive: true });
-  fs.mkdirSync(path.join(rootDir, ".cx"), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, ".construct"), { recursive: true });
   fs.mkdirSync(path.join(rootDir, "specialists", "prompts"), { recursive: true });
-  fs.writeFileSync(path.join(rootDir, ".cx", "unified-registry.json"), JSON.stringify({
+  fs.writeFileSync(path.join(rootDir, ".construct", "unified-registry.json"), JSON.stringify({
     version: 2,
     teams: {
       "engineering": {
@@ -200,7 +200,7 @@ test("buildRuntimeTracePayload includes runtime-composed prompt and route metada
   }, null, 2));
   fs.writeFileSync(path.join(rootDir, "specialists", "prompts", "cx-engineer.md"), "# Engineer\n\nExecute implementation work.\n");
   fs.writeFileSync(path.join(rootDir, "specialists", "prompts", "construct.md"), "# Construct\n\nExecute implementation work.\n");
-  fs.writeFileSync(path.join(rootDir, ".cx", "context.json"), JSON.stringify({
+  fs.writeFileSync(path.join(rootDir, ".construct", "context.json"), JSON.stringify({
     format: "json",
     savedAt: "2026-04-19T00:00:00.000Z",
     contextSummary: "Prompt routing is being moved into code.",
@@ -255,9 +255,9 @@ test("buildRuntimeTracePayload honors process env model overrides in execution-c
     try { fs.rmSync(rootDir, { recursive: true, force: true }); } catch {}
   });
   fs.cpSync(path.join(process.cwd(), "specialists", "org"), path.join(rootDir, "specialists", "org"), { recursive: true });
-  fs.mkdirSync(path.join(rootDir, ".cx"), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, ".construct"), { recursive: true });
   fs.mkdirSync(path.join(rootDir, "specialists", "prompts"), { recursive: true });
-  fs.writeFileSync(path.join(rootDir, ".cx", "unified-registry.json"), JSON.stringify({
+  fs.writeFileSync(path.join(rootDir, ".construct", "unified-registry.json"), JSON.stringify({
     version: 2,
     teams: {
       "engineering": {
@@ -371,12 +371,12 @@ test("plugin applies model fallback and logs warning when rate limit error hits"
   fs.mkdirSync(binDir, { recursive: true });
   fs.writeFileSync(path.join(binDir, "construct"), "#!/usr/bin/env bash\nexit 0\n");
   fs.chmodSync(path.join(binDir, "construct"), 0o755);
-  fs.mkdirSync(path.join(toolkitDir, ".cx"), { recursive: true });
+  fs.mkdirSync(path.join(toolkitDir, ".construct"), { recursive: true });
   fs.mkdirSync(path.join(toolkitDir, "specialists"), { recursive: true });
   fs.mkdirSync(path.join(toolkitDir, "specialists", "prompts"), { recursive: true });
   fs.cpSync(path.join(process.cwd(), "specialists", "org"), path.join(toolkitDir, "specialists", "org"), { recursive: true });
   fs.writeFileSync(path.join(toolkitDir, ".env"), "CX_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n");
-  fs.writeFileSync(path.join(toolkitDir, ".cx", "unified-registry.json"), JSON.stringify({
+  fs.writeFileSync(path.join(toolkitDir, ".construct", "unified-registry.json"), JSON.stringify({
     version: 2,
     teams: { "test": { id: "test", name: "Test", owner: "engineer", roles: ["engineer"], charter: "Test.", decisionRights: [], forbiddenDecisions: [], escalationPath: ["engineer"] } },
     specialists: { "engineer": { name: "engineer", displayName: "Engineer", team: "test", promptFile: "specialists/prompts/cx-engineer.md" } },
@@ -440,12 +440,12 @@ test("plugin falls back to a new target model when the current provider is unava
   fs.mkdirSync(binDir, { recursive: true });
   fs.writeFileSync(path.join(binDir, "construct"), "#!/usr/bin/env bash\nexit 0\n");
   fs.chmodSync(path.join(binDir, "construct"), 0o755);
-  fs.mkdirSync(path.join(toolkitDir, ".cx"), { recursive: true });
+  fs.mkdirSync(path.join(toolkitDir, ".construct"), { recursive: true });
   fs.mkdirSync(path.join(toolkitDir, "specialists"), { recursive: true });
   fs.mkdirSync(path.join(toolkitDir, "specialists", "prompts"), { recursive: true });
   fs.cpSync(path.join(process.cwd(), "specialists", "org"), path.join(toolkitDir, "specialists", "org"), { recursive: true });
   fs.writeFileSync(path.join(toolkitDir, ".env"), "CX_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n");
-  fs.writeFileSync(path.join(toolkitDir, ".cx", "unified-registry.json"), JSON.stringify({
+  fs.writeFileSync(path.join(toolkitDir, ".construct", "unified-registry.json"), JSON.stringify({
     version: 2,
     teams: { "test": { id: "test", name: "Test", owner: "engineer", roles: ["engineer"], charter: "Test.", decisionRights: [], forbiddenDecisions: [], escalationPath: ["engineer"] } },
     specialists: { "engineer": { name: "engineer", displayName: "Engineer", team: "test", promptFile: "specialists/prompts/cx-engineer.md" } },
@@ -511,12 +511,12 @@ test("plugin no-ops when no safe fallback target exists", async (t) => {
   fs.mkdirSync(binDir, { recursive: true });
   fs.writeFileSync(path.join(binDir, "construct"), "#!/usr/bin/env bash\nexit 0\n");
   fs.chmodSync(path.join(binDir, "construct"), 0o755);
-  fs.mkdirSync(path.join(toolkitDir, ".cx"), { recursive: true });
+  fs.mkdirSync(path.join(toolkitDir, ".construct"), { recursive: true });
   fs.mkdirSync(path.join(toolkitDir, "specialists"), { recursive: true });
   fs.mkdirSync(path.join(toolkitDir, "specialists", "prompts"), { recursive: true });
   fs.cpSync(path.join(process.cwd(), "specialists", "org"), path.join(toolkitDir, "specialists", "org"), { recursive: true });
   fs.writeFileSync(path.join(toolkitDir, ".env"), "CX_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n");
-  fs.writeFileSync(path.join(toolkitDir, ".cx", "unified-registry.json"), JSON.stringify({
+  fs.writeFileSync(path.join(toolkitDir, ".construct", "unified-registry.json"), JSON.stringify({
     version: 2,
     teams: { "test": { id: "test", name: "Test", owner: "engineer", roles: ["engineer"], charter: "Test.", decisionRights: [], forbiddenDecisions: [], escalationPath: ["engineer"] } },
     specialists: { "engineer": { name: "engineer", displayName: "Engineer", team: "test", promptFile: "specialists/prompts/cx-engineer.md" } },
@@ -570,12 +570,12 @@ test("plugin continues fallback even when telemetry logging fails", async (t) =>
   fs.mkdirSync(binDir, { recursive: true });
   fs.writeFileSync(path.join(binDir, "construct"), "#!/usr/bin/env bash\nexit 0\n");
   fs.chmodSync(path.join(binDir, "construct"), 0o755);
-  fs.mkdirSync(path.join(toolkitDir, ".cx"), { recursive: true });
+  fs.mkdirSync(path.join(toolkitDir, ".construct"), { recursive: true });
   fs.mkdirSync(path.join(toolkitDir, "specialists"), { recursive: true });
   fs.mkdirSync(path.join(toolkitDir, "specialists", "prompts"), { recursive: true });
   fs.cpSync(path.join(process.cwd(), "specialists", "org"), path.join(toolkitDir, "specialists", "org"), { recursive: true });
   fs.writeFileSync(path.join(toolkitDir, ".env"), "CX_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n");
-  fs.writeFileSync(path.join(toolkitDir, ".cx", "unified-registry.json"), JSON.stringify({
+  fs.writeFileSync(path.join(toolkitDir, ".construct", "unified-registry.json"), JSON.stringify({
     version: 2,
     teams: { "test": { id: "test", name: "Test", owner: "engineer", roles: ["engineer"], charter: "Test.", decisionRights: [], forbiddenDecisions: [], escalationPath: ["engineer"] } },
     specialists: { "engineer": { name: "engineer", displayName: "Engineer", team: "test", promptFile: "specialists/prompts/cx-engineer.md" } },
@@ -769,7 +769,7 @@ test("buildRuntimeTracePayload produces runtime_event kind with status for sessi
 test("emitSessionPrelude surfaces the broker status + pending intake on session.created via client.app.log", async () => {
   _resetPreludeForTests();
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cx-prelude-plugin-"));
-  const pendingDir = path.join(tmp, ".cx", "intake", "pending");
+  const pendingDir = path.join(tmp, ".construct", "intake", "pending");
   fs.mkdirSync(pendingDir, { recursive: true });
   fs.writeFileSync(path.join(pendingDir, "p1.json"), JSON.stringify({
     id: "p1",

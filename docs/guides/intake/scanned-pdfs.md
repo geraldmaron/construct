@@ -34,6 +34,6 @@ construct ingest output.pdf
 
 ## Behavior trade-off
 
-Docling's OCR runs synchronously during extraction. Multi-page scanned PDFs can take 30–90 s on first pass. The cache at `.cx/ingest/<sha256>/` makes re-ingest a no-op, so the cost is paid once per content hash.
+Docling's OCR runs synchronously during extraction. Multi-page scanned PDFs can take 30–90 s on first pass. The cache at `.construct/ingest/<sha256>/` makes re-ingest a no-op, so the cost is paid once per content hash.
 
 If latency matters more than recall, use `construct ingest --legacy-extractor` to fall back to the pre-docling `pdftotext`/`textutil`/`mdls` path. The legacy path is faster but produces lower-fidelity text and does no OCR — scanned pages will return empty.

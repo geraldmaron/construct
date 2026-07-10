@@ -4,7 +4,7 @@
  * Regression guard for the ADR-0027 §2 host-footprint contract: a freshly
  * `construct init`'d repo must not present Construct-the-tool as project content.
  * One real init, then assertions on the durable artifacts:
- *   - construct_guide.md is in the ignored .cx/ tree, never the repo root
+ *   - construct_guide.md is in the ignored .construct/ tree, never the repo root
  *   - AGENTS.md is the project header + marker blocks, with no un-fenced doctrine
  *   - docs/README.md indexes only the scaffolded lanes, with no `construct` commands
  *   - inbox/ is covered by the host .gitignore with no local keep-file
@@ -58,7 +58,7 @@ test('construct init produces a host footprint that does not conflate Construct 
 
   // construct_guide.md: dot-scoped, never at the repo root.
   assert.ok(!existsSync(join(dir, 'construct_guide.md')), 'construct_guide.md must not be at the repo root');
-  assert.ok(existsSync(join(dir, '.cx', 'construct_guide.md')), 'construct_guide.md belongs in .cx/');
+  assert.ok(existsSync(join(dir, '.construct', 'construct_guide.md')), 'construct_guide.md belongs in .construct/');
 
   // AGENTS.md: project header + marker blocks, no un-fenced doctrine.
   const agents = readFileSync(join(dir, 'AGENTS.md'), 'utf8');

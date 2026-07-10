@@ -1,7 +1,7 @@
 Require node
 Require vhs
 # construct demo: profile and health — list, consistency, skills audit
-Output .cx/demos/profile-doctor-health.mp4
+Output .construct/demos/profile-doctor-health.mp4
 Set FontSize 18
 Set Width 1200
 Set Height 720

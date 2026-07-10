@@ -28,7 +28,7 @@ The rule applies to every output: intake summaries, classification rationales, P
 
 ## Layer 2: Artifact-prose lint
 
-`lib/comment-lint.mjs` enforces a pattern bank against artifact files at `docs/specs/prd/**`, `docs/decisions/adr/**`, `docs/decisions/rfc/**`, `docs/notes/research/**`, `.cx/knowledge/**`, `.cx/handoffs/**`, and `.cx/research/**`. Non-artifact markdown (READMEs, cookbooks, concepts) is not in scope.
+`lib/comment-lint.mjs` enforces a pattern bank against artifact files at `docs/specs/prd/**`, `docs/decisions/adr/**`, `docs/decisions/rfc/**`, `docs/notes/research/**`, `.construct/knowledge/**`, `.construct/handoffs/**`, and `.construct/research/**`. Non-artifact markdown (READMEs, cookbooks, concepts) is not in scope.
 
 Blocked patterns in artifact prose:
 
@@ -66,7 +66,7 @@ intake: none
 ---
 ```
 
-`construct docs:verify` warns when an artifact in an intake-fed location (`docs/specs/prd/**`, `docs/notes/research/**`, `.cx/knowledge/internal/**`) lacks either `intake_id` or `intake: none`. This surfaces drift rather than blocking, so the gate is informational, not destructive.
+`construct docs:verify` warns when an artifact in an intake-fed location (`docs/specs/prd/**`, `docs/notes/research/**`, `.construct/knowledge/internal/**`) lacks either `intake_id` or `intake: none`. This surfaces drift rather than blocking, so the gate is informational, not destructive.
 
 ## Layer 4: Contract postconditions
 

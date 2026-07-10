@@ -184,7 +184,7 @@ addObservation(rootDir, {
 **Storage Structure:**
 
 ```
-.cx/observations/
+.construct/observations/
 ├── index.json           ← Lightweight listing
 ├── vectors.json         ← Local vector index
 ├── obs-ts-abc123.json   ← Individual observation
@@ -260,7 +260,7 @@ Results:
 │ Type: component                                             │
 │                                                             │
 │ Connected Documents:                                        │
-│   - .cx/knowledge/internal/adr-session-management.md       │
+│   - .construct/knowledge/internal/adr-session-management.md       │
 │   - inbox/session-timeout-bug-20260517.md                  │
 │   - inbox/login-feedback-20260518.md                       │
 │                                                             │
@@ -304,7 +304,7 @@ Results:
        │
        ▼
 ┌──────────────┐
-│   EVIDENCE   │  .cx/task-graphs/<id>.json
+│   EVIDENCE   │  .construct/task-graphs/<id>.json
 │              │  → Node transitions: pending → done
 └──────┬───────┘
        │
@@ -354,7 +354,7 @@ construct activation:status
 1. **Daemon never calls LLM**. Classification is deterministic (keyword/heuristic)
 2. **Agent does the analysis**. The LLM in your editor does the real thinking
 3. **Evidence required**. No task transitions to `done` without evidence
-4. **Everything traced**. Audit trail in `.cx/traces/<YYYY-MM-DD>.jsonl`
+4. **Everything traced**. Audit trail in `.construct/traces/<YYYY-MM-DD>.jsonl`
 5. **Degraded gracefully**. Works without Postgres, falls back to local JSON
 6. **Learning loop closed**. Feedback improves classification over time
 

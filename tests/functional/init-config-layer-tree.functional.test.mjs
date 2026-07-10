@@ -9,7 +9,7 @@
  * placement); none pins the tree itself, so a new init-time write landing in
  * the wrong layer passes them all. One real init against an isolated
  * HOME/CX_HOME_OVERRIDE, then three layer assertions on durable artifacts:
- *   - config layer (.cx/): the exact entry set, nothing more — a new entry
+ *   - config layer (.construct/): the exact entry set, nothing more — a new entry
  *     here must be a deliberate, reviewed footprint change;
  *   - machine layer (<home>/.construct): does not exist at all after init —
  *     machine-scoped state is strictly lazy, materialized by the first
@@ -30,6 +30,7 @@ import { fileURLToPath } from 'node:url';
 
 import { isolationEnv } from '../helpers/isolation-contract.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
+import { parseJsonc } from '../../lib/jsonc.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
@@ -65,7 +66,7 @@ function walkRelPaths(dir, base = dir) {
   return out.sort();
 }
 
-test('construct init writes each footprint layer exactly: pinned .cx/ tree, no machine layer, portable config files', (t) => {
+test('construct init writes each footprint layer exactly: pinned .construct/ tree, no machine layer, portable config files', (t) => {
   const { project, home, cleanup } = makeFixture();
   t.after(cleanup);
 
@@ -78,22 +79,30 @@ test('construct init writes each footprint layer exactly: pinned .cx/ tree, no m
   });
   assert.equal(result.status, 0, `init exited ${result.status}: ${result.stderr}`);
 
-  // Config layer: the exact .cx/ entry set a default `init --yes` produces.
+  // Config layer: the exact .construct/ entry set a default `init --yes` produces.
   // Set equality (not subset) is deliberate: an entry appearing here means the
   // committed config-layer footprint changed and this pin must be updated in
   // the same review, not discovered later on user machines.
 
   assert.deepEqual(
-    walkRelPaths(join(project, '.cx')),
+    walkRelPaths(join(project, '.construct')),
     [
       'construct_guide.md',
       'context.json',
       'context.md',
       'intake/',
       'intake/manifest.json',
+      'launcher/',
+      'launcher/bootstrap.ps1',
+      'launcher/bootstrap.sh',
+      'launcher/cache/',
+      'launcher/cache/bin/',
+      'launcher/run.mjs',
+      'launcher/stage-state.json',
+      'launcher/version',
       'workflow.json',
     ],
-    'the .cx/ config layer must contain exactly the pinned entry set',
+    'the .construct/ config layer must contain exactly the pinned entry set',
   );
 
   // Machine layer: strictly lazy. Not "no heavy subdirectory" (the existing
@@ -106,7 +115,7 @@ test('construct init writes each footprint layer exactly: pinned .cx/ tree, no m
   // Project config files: parseable and declarative.
 
   const configRaw = readFileSync(join(project, 'construct.config.json'), 'utf8');
-  const config = JSON.parse(configRaw);
+  const config = parseJsonc(configRaw);
   assert.equal(config.version, 1, 'construct.config.json must carry the config schema version');
   assert.ok(config.deployment && typeof config.deployment.mode === 'string', 'construct.config.json must declare a deployment mode');
   assert.ok(config.orchestration && typeof config.orchestration.workerBackend === 'string', 'construct.config.json must declare an orchestration worker backend');

@@ -93,7 +93,7 @@ describe('measureUsage', () => {
 
   it('sums file sizes per category', () => {
     writeFile('.cx/traces/2026-05-14.jsonl', 'x'.repeat(1024));
-    writeFile('.cx/task-graphs/g1.json', '{}');
+    writeFile('.construct/task-graphs/g1.json', '{}');
     const u = measureUsage(projectRoot);
     assert.equal(u.categories['traces'].bytes, 1024);
     assert.equal(u.categories['task-graphs'].bytes, 2);
@@ -126,7 +126,7 @@ describe('reserveOrReject', () => {
 
   it('soft-warns intake-archive when over cap (load-bearing — never rejects)', () => {
     writeConfig({ resources: { disk: { totalCxMaxMb: 1 } } });
-    writeFile('.cx/intake/processed/p1.json', 'x'.repeat(900_000));
+    writeFile('.construct/intake/processed/p1.json', 'x'.repeat(900_000));
     const r = reserveOrReject(projectRoot, 'intake-archive', 200_000);
     assert.equal(r.ok, true);
     assert.equal(r.warn, true);
@@ -170,7 +170,7 @@ describe('ensureDiskWrite + planEmergencyReclaim', () => {
 
   it('still rejects when emergency reclaim cannot free enough space', () => {
     writeConfig({ resources: { disk: { totalCxMaxMb: 1 } } });
-    writeFile('.cx/intake/processed/p1.json', 'x'.repeat(950_000));
+    writeFile('.construct/intake/processed/p1.json', 'x'.repeat(950_000));
     const gate = ensureDiskWrite(projectRoot, 'traces', 200_000);
     assert.equal(gate.ok, false);
     assert.equal(gate.reason, 'budget-exceeded');
@@ -191,7 +191,7 @@ describe('planPrune + executePrune', () => {
   it('plans removal of intake archive items above the count cap (newest kept)', () => {
     writeConfig({ resources: { disk: { intakeArchiveMaxItems: 2, intakeArchiveMaxDays: 999 } } });
     for (let i = 0; i < 5; i++) {
-      writeFile(`.cx/intake/processed/p${i}.json`, '{}', -i * 1000);
+      writeFile(`.construct/intake/processed/p${i}.json`, '{}', -i * 1000);
     }
     const actions = planPrune(projectRoot);
     const archiveActions = actions.filter((a) => a.category === 'intake-archive');
@@ -200,8 +200,8 @@ describe('planPrune + executePrune', () => {
 
   it('plans removal of backups older than backupsMaxDays', () => {
     writeConfig({ resources: { disk: { backupsMaxDays: 30 } } });
-    writeFile('.cx/backups/personas/construct.2025-01-01.md', 'old', -180 * 24 * 60 * 60 * 1000);
-    writeFile('.cx/backups/personas/construct.now.md', 'new');
+    writeFile('.construct/backups/personas/construct.2025-01-01.md', 'old', -180 * 24 * 60 * 60 * 1000);
+    writeFile('.construct/backups/personas/construct.now.md', 'new');
     const actions = planPrune(projectRoot);
     const backupActions = actions.filter((a) => a.category === 'backups');
     assert.equal(backupActions.length, 1);

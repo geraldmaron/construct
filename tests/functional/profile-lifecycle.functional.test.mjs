@@ -89,7 +89,7 @@ test('lifecycle: scopeHealth returns a zero-shaped report when no data exists', 
 
 test('lifecycle: scopeHealth counts per-role outcomes filtered by scope', () => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'profile-health-data-'));
-  const outDir = path.join(cwd, '.cx', 'outcomes');
+  const outDir = path.join(cwd, '.construct', 'outcomes');
   fs.mkdirSync(outDir, { recursive: true });
   const lines = [
     { ts: new Date().toISOString(), role: 'engineer', profile: 'rnd', success: true },

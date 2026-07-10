@@ -1,7 +1,7 @@
 Require node
 Require vhs
 # construct demo: intake triage — queue, classify, recommend
-Output .cx/demos/intake-triage.mp4
+Output .construct/demos/intake-triage.mp4
 Set FontSize 18
 Set Width 1200
 Set Height 720

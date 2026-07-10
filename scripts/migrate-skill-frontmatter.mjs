@@ -39,7 +39,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import * as yaml from 'js-yaml';
+import { load, dump } from 'js-yaml';
 
 const __filename = fileURLToPath(import.meta.url);
 const REPO_ROOT = path.resolve(path.dirname(__filename), '..');
@@ -99,7 +99,7 @@ function parseSource(content) {
   if (lines[i]?.trim() === '---') {
     const end = lines.findIndex((l, idx) => idx > i && l.trim() === '---');
     if (end > i) {
-      try { existingYaml = yaml.load(lines.slice(i + 1, end).join('\n')) || {}; }
+      try { existingYaml = load(lines.slice(i + 1, end).join('\n')) || {}; }
       catch (err) { existingYaml = { _parseError: err.message }; }
       i = end + 1;
       while (i < lines.length && lines[i].trim() === '') i++;
@@ -272,7 +272,7 @@ function buildFrontmatter(name, description, existingYaml) {
       if (key in existingYaml) out[key] = existingYaml[key];
     }
   }
-  return yaml.dump(out, { lineWidth: 1200, noRefs: true, quotingType: '"', forceQuotes: false });
+  return dump(out, { lineWidth: 1200, noRefs: true, quoteStyle: '"', forceQuotes: false });
 }
 
 function validateName(name) {

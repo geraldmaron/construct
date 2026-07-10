@@ -19,8 +19,8 @@ const SERVER = path.join(REPO, 'lib', 'mcp', 'server.mjs');
 
 function seedProject() {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'graphrag-fn-'));
-  fs.mkdirSync(path.join(cwd, '.cx', 'observations'), { recursive: true });
-  fs.writeFileSync(path.join(cwd, '.cx', 'observations', 'entities.json'), JSON.stringify([
+  fs.mkdirSync(path.join(cwd, '.construct', 'observations'), { recursive: true });
+  fs.writeFileSync(path.join(cwd, '.construct', 'observations', 'entities.json'), JSON.stringify([
     { name: 'oauth', summary: 'authentication protocol', relatedEntities: ['session', 'jwt'] },
     { name: 'session', summary: 'authentication state', relatedEntities: ['oauth', 'jwt'] },
     { name: 'jwt', summary: 'authentication token', relatedEntities: ['oauth', 'session'] },

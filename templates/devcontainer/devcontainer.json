@@ -15,7 +15,7 @@
       "onAutoForward": "notify"
     }
   },
-  "postCreateCommand": "node .construct/run.mjs setup --auto",
+  "postCreateCommand": "node .construct/launcher/run.mjs setup --auto",
   "remoteEnv": {
     "CONSTRUCT_VERSION": "${localEnv:CONSTRUCT_VERSION}",
     "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}"

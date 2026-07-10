@@ -76,7 +76,7 @@ test('promptVersion is a deterministic hash of the resolved persona body, not a 
 
 test('promptVersion changes when the resolved persona body changes (project-tier override)', async () => {
   const cwd = tempDir('cx-provenance-override-', test);
-  const packsDir = path.join(cwd, '.cx', 'packs', 'override-pack');
+  const packsDir = path.join(cwd, '.construct', 'packs', 'override-pack');
   fs.mkdirSync(path.join(packsDir, 'prompts'), { recursive: true });
   fs.writeFileSync(path.join(packsDir, 'pack.manifest.json'), JSON.stringify({
     id: '@project/override', version: '1.0.0', compatVersion: 1,

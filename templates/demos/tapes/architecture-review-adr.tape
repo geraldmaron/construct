@@ -1,7 +1,7 @@
 Require node
 Require vhs
 # construct demo: architecture review — plan-only to enforced decisions
-Output .cx/demos/architecture-review-adr.mp4
+Output .construct/demos/architecture-review-adr.mp4
 Set FontSize 18
 Set Width 1200
 Set Height 720

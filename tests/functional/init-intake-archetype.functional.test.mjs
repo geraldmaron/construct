@@ -75,7 +75,7 @@ test('init with rnd scope scaffolds inbox/, .gitignore, and the dedup manifest',
     assert.match(rootGitignore, /^inbox\/$/m, 'inbox/ must be covered by the host .gitignore');
     assert.ok(!existsSync(join(inboxDir, '.gitignore')), 'no local inbox/.gitignore keep-file');
 
-    const manifestPath = join(p.dir, '.cx', 'intake', 'manifest.json');
+    const manifestPath = join(p.dir, '.construct', 'intake', 'manifest.json');
     assert.ok(existsSync(manifestPath), 'expected .cx/intake/manifest.json');
     const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
     assert.equal(manifest.version, 1);
@@ -134,7 +134,7 @@ test('init.cx/context.json carries createdBy attribution when capability is on',
   try {
     const result = runInit(p.dir, p.home);
     assert.equal(result.status, 0);
-    const ctx = JSON.parse(readFileSync(join(p.dir, '.cx', 'context.json'), 'utf8'));
+    const ctx = JSON.parse(readFileSync(join(p.dir, '.construct', 'context.json'), 'utf8'));
     assert.equal(ctx.createdBy, 'Archetype Test <archetype-test@example.com>');
     assert.equal(ctx.createdByAgent, 'test-agent');
     assert.ok(typeof ctx.createdAt === 'string' && ctx.createdAt.length > 0);

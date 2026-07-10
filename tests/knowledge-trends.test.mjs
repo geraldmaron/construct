@@ -3,6 +3,11 @@
  *
  * Uses a real (temporary) rootDir with seeded observations to validate
  * clustering, escalation detection, and hot topic extraction.
+ *
+ * addObservation resolves project state through the machine-scoped state root
+ * (ADR-0066), keyed by a hash of the tmp rootDir — so CX_HOME_OVERRIDE is
+ * pinned for the whole file to keep that write off the real developer
+ * machine's $HOME.
  */
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -18,8 +23,6 @@ import {
   detectDecisionDrift,
   buildTrendReport,
 } from '../lib/knowledge/trends.mjs';
-
-// ── Fixtures ───────────────────────────────────────────────────────────────
 
 // addObservation and the trend detectors resolve the machine-scoped state
 // root (ADR-0066) via CX_HOME_OVERRIDE read in-process, not via the rootDir

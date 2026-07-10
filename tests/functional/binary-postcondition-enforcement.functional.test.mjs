@@ -28,7 +28,7 @@ let validateHandoff;
 
 beforeEach(async () => {
   tmpRoot = mkdtempSync(join(tmpdir(), 'cx-binary-pc-'));
-  mkdirSync(join(tmpRoot, '.cx'), { recursive: true });
+  mkdirSync(join(tmpRoot, '.construct'), { recursive: true });
   priorCwd = process.cwd();
   priorHome = process.env.HOME;
   process.env.HOME = tmpRoot;
@@ -44,7 +44,7 @@ afterEach(() => {
 });
 
 function readLog() {
-  const file = join(tmpRoot, '.cx', 'contract-violations.jsonl');
+  const file = join(tmpRoot, '.construct', 'contract-violations.jsonl');
   if (!existsSync(file)) return [];
   return readFileSync(file, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l));
 }

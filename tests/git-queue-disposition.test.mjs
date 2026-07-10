@@ -30,7 +30,7 @@ function makeTmpRoot() {
 }
 
 function seedPendingItem(rootDir, id = 'test-item-001') {
-  const pendingDir = path.join(rootDir, '.cx', 'team-inbox', 'pending');
+  const pendingDir = path.join(rootDir, '.construct', 'team-inbox', 'pending');
   fs.mkdirSync(pendingDir, { recursive: true });
   const filePath = path.join(pendingDir, `${id}.json`);
   fs.writeFileSync(filePath, JSON.stringify({
@@ -141,12 +141,12 @@ describe('GitIntakeQueue — disposition (LMCP-G7)', () => {
 
     // File should be in the claimed directory, not pending.
     const claimedFile = path.join(
-      rootDir, '.cx', 'team-inbox', 'claimed', 'agent-3', `${result.id}.json`
+      rootDir, '.construct', 'team-inbox', 'claimed', 'agent-3', `${result.id}.json`
     );
     assert.ok(fs.existsSync(claimedFile), 'claimed file should exist locally');
 
     // File must be absent from pending after a successful claim.
-    const pendingFile = path.join(rootDir, '.cx', 'team-inbox', 'pending', `${result.id}.json`);
+    const pendingFile = path.join(rootDir, '.construct', 'team-inbox', 'pending', `${result.id}.json`);
     assert.equal(fs.existsSync(pendingFile), false, 'file should have been moved from pending');
   });
 
@@ -190,14 +190,14 @@ describe('GitIntakeQueue — disposition (LMCP-G7)', () => {
     assert.equal(calls.length, 0, 'markSkipped must not call _exec (no push)');
 
     // File should be in the skipped directory.
-    const skippedFile = path.join(rootDir, '.cx', 'team-inbox', 'skipped', 'task-skip-001.json');
+    const skippedFile = path.join(rootDir, '.construct', 'team-inbox', 'skipped', 'task-skip-001.json');
     assert.ok(fs.existsSync(skippedFile), 'skipped file should exist');
 
     const skippedData = JSON.parse(fs.readFileSync(skippedFile, 'utf8'));
     assert.equal(skippedData.status, 'skipped');
 
     // Pending file should be gone.
-    const pendingFile = path.join(rootDir, '.cx', 'team-inbox', 'pending', 'task-skip-001.json');
+    const pendingFile = path.join(rootDir, '.construct', 'team-inbox', 'pending', 'task-skip-001.json');
     assert.equal(fs.existsSync(pendingFile), false, 'pending file should have been moved');
   });
 

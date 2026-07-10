@@ -6,7 +6,7 @@
  * For each `lib/hooks/*.mjs` carrying an `@lifecycle <event>` header and a
  * `@p95ms <N>` budget, the harness spawns the hook N times with a synthetic
  * stdin matching its event shape and records wall time per run. Output is a
- * JSON report at `.cx/bench/hooks-<ISO date>.json` with one entry per hook:
+ * JSON report at `.construct/bench/hooks-<ISO date>.json` with one entry per hook:
  * declared budget, median, p95, max, count, exits, lifecycle, status.
  *
  * The `@p95ms` budget is the hook's OWN marginal cost, not the Node interpreter
@@ -36,11 +36,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { performance } from 'node:perf_hooks';
+import { configPath } from '../lib/config-dir.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
 const HOOKS_DIR = path.join(ROOT, 'lib', 'hooks');
-const REPORT_DIR = path.join(ROOT, '.cx', 'bench');
+const REPORT_DIR = configPath(ROOT, 'bench');
 
 const args = Object.fromEntries(
   process.argv.slice(2).filter((a) => a.startsWith('--')).map((a) => {

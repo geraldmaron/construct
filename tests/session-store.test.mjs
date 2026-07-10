@@ -43,12 +43,12 @@ describe("createSession", () => {
     assert.deepEqual(session.taskSnapshot, []);
 
     // Verify file exists.
-    const filePath = path.join(tmpDir, ".cx", "sessions", `${session.id}.json`);
+    const filePath = path.join(tmpDir, ".construct", "sessions", `${session.id}.json`);
     assert.ok(fs.existsSync(filePath), "session file should exist");
 
     // Verify index.
     const index = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, ".cx", "sessions", "index.json"), "utf8")
+      fs.readFileSync(path.join(tmpDir, ".construct", "sessions", "index.json"), "utf8")
     );
     assert.equal(index.length, 1);
     assert.equal(index[0].id, session.id);
@@ -87,7 +87,7 @@ describe("updateSession", () => {
 
     // Verify index was updated.
     const index = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, ".cx", "sessions", "index.json"), "utf8")
+      fs.readFileSync(path.join(tmpDir, ".construct", "sessions", "index.json"), "utf8")
     );
     assert.equal(index[0].status, "completed");
     assert.equal(index[0].summary, "Implemented auth flow and wired tests");

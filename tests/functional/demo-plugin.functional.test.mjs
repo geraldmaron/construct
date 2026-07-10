@@ -4,7 +4,7 @@
  * @capability demo.terminal-fallback
  *
  * Contract: in a project, `construct demo init <name> --from-project` scaffolds
- * a project demo plug-in under .cx/demos/ — a manifest (<name>.project.json), a
+ * a project demo plug-in under .construct/demos/ — a manifest (<name>.project.json), a
  * guided script, and a terminal tape stub — seeded from real project
  * signals (no fabricated scenario content). The manifest must validate against
  * schemas/project-demo.schema.json, and the scaffolded script must load through
@@ -86,24 +86,24 @@ function makeProject(name) {
   return dir;
 }
 
-test('construct demo init --from-project scaffolds .cx/demos plug-in seeded from the project name', () => {
+test('construct demo init --from-project scaffolds .construct/demos plug-in seeded from the project name', () => {
   const dir = makeProject('acme-widgets');
   try {
     const result = run(['demo', 'init', 'walkthrough', '--from-project'], dir);
     assert.equal(result.status, 0, `expected exit 0, got ${result.status}. stderr: ${result.stderr}`);
 
-    const manifestPath = path.join(dir, '.cx', 'demos', 'walkthrough.project.json');
-    const scriptPath = path.join(dir, '.cx', 'demos', 'scripts', 'walkthrough.json');
-    const tapePath = path.join(dir, '.cx', 'demos', 'tapes', 'walkthrough.tape');
-    assert.ok(fs.existsSync(manifestPath), 'expected manifest .cx/demos/walkthrough.project.json');
-    assert.ok(fs.existsSync(scriptPath), 'expected script .cx/demos/scripts/walkthrough.json');
-    assert.ok(fs.existsSync(tapePath), 'expected tape .cx/demos/tapes/walkthrough.tape');
+    const manifestPath = path.join(dir, '.construct', 'demos', 'walkthrough.project.json');
+    const scriptPath = path.join(dir, '.construct', 'demos', 'scripts', 'walkthrough.json');
+    const tapePath = path.join(dir, '.construct', 'demos', 'tapes', 'walkthrough.tape');
+    assert.ok(fs.existsSync(manifestPath), 'expected manifest .construct/demos/walkthrough.project.json');
+    assert.ok(fs.existsSync(scriptPath), 'expected script .construct/demos/scripts/walkthrough.json');
+    assert.ok(fs.existsSync(tapePath), 'expected tape .construct/demos/tapes/walkthrough.tape');
 
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
     assert.equal(manifest.schema, PROJECT_DEMO_SCHEMA);
     assert.equal(manifest.name, 'walkthrough');
     assert.equal(manifest.project, 'acme-widgets', 'project name must come from the real package.json signal');
-    assert.equal(manifest.script, '.cx/demos/scripts/walkthrough.json');
+    assert.equal(manifest.script, '.construct/demos/scripts/walkthrough.json');
   } finally {
     rmTmpDir(dir);
   }
@@ -116,7 +116,7 @@ test('scaffolded manifest validates against schemas/project-demo.schema.json', (
     assert.equal(result.status, 0, result.stderr);
 
     const schema = JSON.parse(fs.readFileSync(SCHEMA_PATH, 'utf8'));
-    const manifest = JSON.parse(fs.readFileSync(path.join(dir, '.cx', 'demos', 'tour.project.json'), 'utf8'));
+    const manifest = JSON.parse(fs.readFileSync(path.join(dir, '.construct', 'demos', 'tour.project.json'), 'utf8'));
     const schemaErrors = validateAgainstSchema(schema, manifest);
     assert.deepEqual(schemaErrors, [], `schema errors: ${schemaErrors.join('; ')}`);
   } finally {
@@ -130,7 +130,7 @@ test('scaffolded script loads through the demo-script loader and runs read-only 
     assert.equal(run(['demo', 'init', 'intro', '--from-project'], dir).status, 0);
 
     const script = loadDemoScript('intro', { cwd: dir, repoRoot: REPO });
-    assert.ok(script, 'expected the scaffolded script to load from .cx/demos/scripts/');
+    assert.ok(script, 'expected the scaffolded script to load from .construct/demos/scripts/');
     assert.ok(script.steps.length >= 1, 'expected at least one step');
     for (const step of script.steps) {
       assert.match(step.command, /^node bin\/construct /, 'steps must invoke read-only construct commands');

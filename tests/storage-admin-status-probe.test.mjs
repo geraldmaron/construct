@@ -20,7 +20,7 @@ const LANCEDB_STATE_PATH = resolveStateDir(ROOT, 'lancedb', { ensureDir: false }
 function makeExistsStub({ cx, lancedb }) {
   return (p) => {
     if (p === LANCEDB_STATE_PATH) return lancedb;
-    if (p === path.join(ROOT, '.cx')) return cx;
+    if (p === path.join(ROOT, '.construct')) return cx;
     return false;
   };
 }
@@ -44,7 +44,7 @@ describe('getStorageStatus health probe', () => {
 
   it('honors CONSTRUCT_LANCEDB_PATH override for the vector store probe', async () => {
     const custom = '/custom/lancedb';
-    const existsStub = (p) => p === path.join(ROOT, '.cx') || p === custom;
+    const existsStub = (p) => p === path.join(ROOT, '.construct') || p === custom;
     const status = await getStorageStatus(ROOT, { env: { CONSTRUCT_LANCEDB_PATH: custom }, fsExistsSync: existsStub });
     assert.equal(status.status, 'healthy');
   });

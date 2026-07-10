@@ -12,7 +12,7 @@ Construct treats document I/O as an **optional capability** with two independent
 │ IN (many formats)          AUTHORING (canonical)         OUT (many)     │
 │ PDF, DOCX, PPTX, XLSX,  →  typed markdown artifacts  →  PDF, DOCX,    │
 │ email, AV, plain text,       under templates/docs/        DOC, HTML,    │
-│ transcripts, calendar…       + .cx/knowledge/ ingest       deck, PPTX,  │
+│ transcripts, calendar…       + .construct/knowledge/ ingest       deck, PPTX,  │
 │                                                            RTF, EPUB…   │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -59,8 +59,9 @@ On docling timeout or failure, Construct falls back to **node-native** extractio
 | PDF | `.pdf` | docling / unpdf | Images externalized with docling |
 | Word | `.docx`, `.doc` | docling / mammoth | Legacy `.doc` via docling only |
 | Excel | `.xlsx`, `.xls`, `.ods` | docling | Fast tier requires docling |
-| PowerPoint | `.pptx`, `.ppt` | docling | Fast tier requires docling |
+| Presentation | `.pptx`, `.ppt`, `.odp` | docling | Fast tier requires docling |
 | Rich text | `.rtf` | docling | — |
+| Images | `.png`, `.jpg`, `.jpeg`, `.tif`, `.tiff`, `.bmp`, `.webp` | docling vision | Fast tier requires docling (`IMAGE_REQUIRES_DOCLING`) |
 | Apple iWork | `.pages`, `.numbers`, `.key` | docling | — |
 | Audio/video | `.mp3`, `.wav`, `.mp4`, `.mov`, … | whisper.cpp | Requires `whisper-cli`; `ASR_REQUIRED` without backend |
 
@@ -89,10 +90,30 @@ Per [ADR-0024](/decisions/adr/0024-document-io-optional-capability). **Input:** 
 | `pptx` | pptxgenjs | Yes — brand tokens | `pptxgenjs` (optional npm dep) |
 | `docx` | Pandoc + reference doc | Partial — `construct-reference.docx` when present | `pandoc` |
 | `doc` | Pandoc → DOCX → LibreOffice | Same as DOCX intermediate | `pandoc`, **LibreOffice** (`soffice`) |
+| `odp` | pptxgenjs → LibreOffice | Same as PPTX intermediate | `pptxgenjs`, **LibreOffice** (`soffice`) |
 | `rtf`, `odt`, `epub`, `tex`, `txt` | Pandoc defaults | No | `pandoc` |
+| `htmlfrag` | RichDocument HTML fragment | N/A — copy/paste target | — |
 | `md`, `mdx` | Copy source | N/A | — |
 
 Legacy `.doc` export: Pandoc writes branded DOCX, then LibreOffice headless down-converts. Override binary with `CONSTRUCT_LIBREOFFICE_BIN`. Cross-platform (macOS, Linux, Windows) when LibreOffice is installed.
+
+### RichDocument export adapters (ADR-0073)
+
+Per [ADR-0073](/decisions/adr/0073-richdocument-ir-html-canonical-surface), `lib/rich-document-export.mjs`'s `exportRichDocument({ doc, format, outputPath })` exports the RichDocument IR to every format above. Its canonical serialization is HTML: for typeset and office targets the IR is serialized to HTML and handed to the same engines via `exportMarkdown`'s `inputFormat: 'html'` path, rather than round-tripping through markdown. Two targets have no engine and are written directly — `md`/`mdx` from the RichDocument→markdown writer, and `htmlfrag`, the copy/paste fragment whose purpose is that merged table cells, figure/caption pairs, and callouts survive a clipboard paste that a markdown fragment would flatten. `odp` (OpenDocument Presentation) builds a pptxgenjs deck first, then LibreOffice down-converts. A missing engine returns the same actionable diagnostic `detect()` reports and is never counted as a certified pass; `lib/export-validate.mjs` validates each produced file — PDF page count, Office/OpenDocument/EPUB zip structure and slide counts, HTML DOM shape, and local reference integrity.
+
+### Rich-media asset manifest (ADR-0073)
+
+`lib/document-assets.mjs` derives an asset manifest from the RichDocument IR — it is not a parallel structure. `buildAssetManifest(doc, { baseDir })` walks every figure/media/diagram block (including those nested in lists and callouts) and records each asset's role (photo / screenshot / diagram), local-vs-remote ref, resolved absolute path, sha256 content hash, byte size, MIME type, dimensions, caption, alt text, source ref, and embed/link policy. It is **generated on import** — `construct ingest` writes a `<name>.assets.json` sidecar beside the markdown — and **consumed on export**: `exportRichDocument` validates the manifest before any engine runs (a broken local media ref fails closed and blocks the export, writing no output) and rewrites local refs to absolute paths so a Pandoc/LibreOffice pass in a temp working directory still finds and embeds them. Local raster assets inline as data URIs in self-contained HTML; captions and alt text survive to whatever the target format preserves.
+
+### Certified I/O matrix
+
+```bash
+construct certify document-io            # local mode: missing engines skip gracefully
+construct certify document-io --certified   # release mode: a skipped format is a hard failure
+npm run certify:document-io                 # the certified profile
+```
+
+`lib/certification/document-io-matrix.mjs` exports a realistic RichDocument fixture (table, figure with caption/alt over a real raster asset, code, callout, diagram) to every output format and validates each. **Local** mode honours the graceful-degradation contract — a format whose engine is absent is skipped, not failed. **Certified** mode is the release contract — every declared format must have its engine (Pandoc, Typst, LibreOffice headless, pptxgenjs) present and must produce a file its validator accepts; a format skipped for a missing tool fails the run. Each row names the exact format, engine set, and validation detail. Intake-format coverage is asserted separately by the fixture catalog (`lib/certification/document-io-fixtures.mjs`).
 
 ### Branded deck preview (local only)
 
@@ -129,7 +150,7 @@ Typed artifacts map to PDF layouts (export only affects PDF/deck/HTML branding d
 | `construct-decision.typ` | adr, rfc, rfc-platform |
 | `construct-pdf.typ` | Fallback for all other manifest types |
 
-Project override: `.cx/publish-theme.typ`.
+Project override: `.construct/publish-theme.typ`.
 
 ### Diagrams at export
 

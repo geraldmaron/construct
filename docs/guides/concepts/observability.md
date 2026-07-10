@@ -99,7 +99,7 @@ Persona-to-specialist dispatches inject `traceparent` into `params._meta` per SE
 
 ## Audit trail (tamper-evidence)
 
-Every mutation Construct or a dispatched subagent makes (Edit, Write, MultiEdit, NotebookEdit, and state-mutating Bash) is appended to `.cx/audit-trail.jsonl` by the `audit-trail` PostToolUse hook. Each record carries a `prev_line_hash` — the SHA-256 of the previous line — so any after-the-fact reorder, deletion, or edit breaks the chain.
+Every mutation Construct or a dispatched subagent makes (Edit, Write, MultiEdit, NotebookEdit, and state-mutating Bash) is appended to `.construct/audit-trail.jsonl` by the `audit-trail` PostToolUse hook. Each record carries a `prev_line_hash` — the SHA-256 of the previous line — so any after-the-fact reorder, deletion, or edit breaks the chain.
 
 ```bash
 construct audit trail            # recent records

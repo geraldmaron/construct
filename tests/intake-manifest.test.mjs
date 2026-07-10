@@ -26,7 +26,7 @@ let projectRoot;
 
 beforeEach(() => {
   projectRoot = mkdtempSync(join(tmpdir(), 'manifest-test-'));
-  mkdirSync(join(projectRoot, '.cx', 'intake'), { recursive: true });
+  mkdirSync(join(projectRoot, '.construct', 'intake'), { recursive: true });
 });
 
 afterEach(() => {
@@ -84,7 +84,7 @@ test('loadManifest recovers from a corrupted manifest file by returning empty', 
 });
 
 test('saveManifest creates the .cx/intake directory if absent', () => {
-  rmSync(join(projectRoot, '.cx', 'intake'), { recursive: true, force: true });
+  rmSync(join(projectRoot, '.construct', 'intake'), { recursive: true, force: true });
   saveManifest(projectRoot, { version: 1, files: {} });
   assert.ok(existsSync(join(projectRoot, MANIFEST_REL_PATH)));
 });
