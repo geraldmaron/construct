@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-09T22:31:50.978Z",
+  "generatedAt": "2026-07-10T00:16:37.980Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 842,
-    "topLevelTestFiles": 358,
+    "testFiles": 843,
+    "topLevelTestFiles": 359,
     "nestedTestFiles": 484,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 46,
     "byLayer": {
-      "unit": 566,
+      "unit": 567,
       "functional": 228,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 503,
+      "unit": 504,
       "functional": 228,
       "visual": 12,
       "structural-guard": 19,
@@ -5885,6 +5885,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/publish/flag-parsing.test.mjs — construct-xj96.11 proof."
+    },
+    {
+      "path": "tests/published-scripts.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/published-scripts.test.mjs — every scripts/ file the CLI dispatches to"
     },
     {
       "path": "tests/read-tracker-store.test.mjs",
