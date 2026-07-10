@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- Test-suite hygiene for the pteo2.15/.16/.18 landings: the corpus inventory (`tests/capabilities/corpus-inventory.json`, `tests/AUDIT.md`) now indexes the four new test files, and `participation-cross-surface.functional.test.mjs` sets `CX_HOME_OVERRIDE` for its in-process MCP invocations (and spawned CLI) so the machine-scoped state root never registers tmp fixtures as real `~/.construct/projects` keys — the six leaked 40K lancedb shells from the first full-suite run were removed.
+
 ### Added
 
 - `construct-pteo2.18` (cdsp.71, cross-surface parity + routePath reconcile): one request now provably yields the same recruited set and the same reasons on all four surfaces. routePath (d1r7.15) was folded onto staging by the pteo2.15 substrate cherry-pick (`69ea7853`) and stays pinned by `tests/orchestration-route-path.test.mjs` (CLI/MCP/traces/handoffs, 6 tests). This bead closes the two remaining parity gaps: the MCP `workflow_invoke` tool now forwards the `recruitment` override (schema + handler — it was CLI-only, an agnosticism violation), and the durable decision observation written under `allow-durable-write` now records `recruited=` roles **with** `recruitmentRationale=` reasons (before, a trace audit saw who was added but not why). New `tests/functional/participation-cross-surface.functional.test.mjs` (4 tests): the cost-heavy PRD request through the real binary (CLI) and the real `workflowInvoke` MCP module returns deepEqual recruited sets + rationale; both surfaces' `.cx/observations` decision records carry every recruited role and every reason line; Org Studio's participation preview over HTTP surfaces the identical specialist→{role, gate, reason} map for the same request; and `recruitment: 'off'` reconciles identically on CLI and MCP.
