@@ -2081,17 +2081,20 @@ function syncOpencode(entries, targetDir = null, wants = true) {
     config.mcp["construct-mcp"] = templateMcp["construct-mcp"] ?? config.mcp["construct-mcp"];
   }
 
+  // The bridge URL is a concrete loopback address derived from the allocated
+  // MEMORY_PORT, not a credential — use the port-templated form so it materializes
+  // to a literal (http://127.0.0.1:<port>/). The whole-value `__NAME__` form flips
+  // to OpenCode's `{env:NAME}` secret reference (buildLocalEnvironment), which left a
+  // non-secret URL as an unresolvable env ref that only looked right when
+  // process.env.CONSTRUCT_MEMORY_BRIDGE_URL happened to be set.
+
   const memoryBridgeEntry = buildOpenCodeMcpEntry("memory", {
     command: "node",
     args: ["__CX_TOOLKIT_DIR__/lib/mcp/memory-bridge.mjs"],
-    env: { CONSTRUCT_MEMORY_BRIDGE_URL: "__CONSTRUCT_MEMORY_BRIDGE_URL__" },
+    env: { CONSTRUCT_MEMORY_BRIDGE_URL: "http://127.0.0.1:__MEMORY_PORT__/" },
   }, {
     ...process.env,
-    CONSTRUCT_MEMORY_BRIDGE_URL:
-      config.mcp.memory?.url
-      || config.mcp.cass?.url
-      || process.env.CONSTRUCT_MEMORY_BRIDGE_URL
-      || "http://127.0.0.1:8765/",
+    MEMORY_PORT: process.env.MEMORY_PORT || String(memoryPort()),
   }).entry;
   const staleMemoryRemote = config.mcp.memory && (config.mcp.memory.type === "remote" || config.mcp.memory.type === "http");
   const staleCassRemote = config.mcp.cass && (config.mcp.cass.type === "remote" || config.mcp.cass.type === "http");
