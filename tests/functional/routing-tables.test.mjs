@@ -174,9 +174,10 @@ test('registry covers the full set of routable doc artifact types', () => {
   assert.equal(docs.length, Object.keys(EXPECTED_DOCS).length);
 });
 
-test('all six watch conditions are bound to a specialist', () => {
+test('all seven registry-declared watch conditions are known', () => {
   const watchers = knownWatchers();
   assert.deepEqual(watchers.sort(), [
+    'architecture-risk',
     'architecture-without-metric',
     'auth-payments-non-narrow',
     'high-ambiguity-deep-work',

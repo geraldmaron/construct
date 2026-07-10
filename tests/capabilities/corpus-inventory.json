@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-10T01:55:08.042Z",
+  "generatedAt": "2026-07-10T02:12:55.058Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 847,
-    "topLevelTestFiles": 360,
+    "testFiles": 848,
+    "topLevelTestFiles": 361,
     "nestedTestFiles": 487,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 46,
     "byLayer": {
-      "unit": 569,
+      "unit": 570,
       "functional": 230,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 506,
+      "unit": 507,
       "functional": 230,
       "visual": 12,
       "structural-guard": 19,
@@ -5541,6 +5541,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/parity.test.mjs — cross-surface parity verifier tests."
+    },
+    {
+      "path": "tests/participation-coverage.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/participation-coverage.test.mjs — every specialist and team is"
     },
     {
       "path": "tests/perf/hook-budgets.test.mjs",

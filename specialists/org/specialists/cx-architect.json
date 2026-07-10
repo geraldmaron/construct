@@ -64,7 +64,12 @@
     "architecture-overview",
     "system-design"
   ],
-  "watchConditions": [],
+  "watchConditions": [
+    {
+      "watcher": "architecture-risk",
+      "reason": "architecture risk surface — design decision or interface contract needed"
+    }
+  ],
   "permissions": {},
   "promptFile": "specialists/prompts/cx-architect.md",
   "embedOrientation": {
