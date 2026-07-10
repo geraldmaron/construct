@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-10T01:29:28.558Z",
+  "generatedAt": "2026-07-10T01:36:22.133Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 844,
+    "testFiles": 845,
     "topLevelTestFiles": 360,
-    "nestedTestFiles": 484,
+    "nestedTestFiles": 485,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 46,
     "byLayer": {
       "unit": 568,
-      "functional": 228,
+      "functional": 229,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
       "unit": 505,
-      "functional": 228,
+      "functional": 229,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -2331,6 +2331,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/agentic-hq-integration.functional.test.mjs — end-to-end"
+    },
+    {
+      "path": "tests/functional/artifact-content-signals.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/artifact-content-signals.functional.test.mjs —"
     },
     {
       "path": "tests/functional/artifact-loop-provenance.functional.test.mjs",
