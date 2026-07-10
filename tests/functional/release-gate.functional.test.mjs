@@ -15,6 +15,10 @@ import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
+import { readCurrentModels } from '../../lib/model-router.mjs';
+import { classifyMcpState, diagnoseMcpStates } from '../../lib/mcp-manager.mjs';
+import { libreOfficePresent } from '../../lib/libreoffice-export.mjs';
+import { pptxgenPresent } from '../../lib/deck-export-pptx.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
@@ -190,4 +194,42 @@ test('release gate: construct certify gate passes on HEAD', () => {
 test('release gate: CHANGELOG.md Unreleased section exists', () => {
   const changelog = readFileSync(join(REPO_ROOT, 'CHANGELOG.md'), 'utf8');
   assert.match(changelog, /## \[Unreleased\]/, 'CHANGELOG.md must carry an Unreleased section');
+});
+
+test('release gate (d1r7.5): Construct ships no implicit active model defaults', () => {
+  // A clean install — no env file, empty registry — must resolve every tier to null with a
+  // `not configured` source, never a silently-baked-in provider default (construct-d1r7.5).
+  const models = readCurrentModels(join(tmpdir(), 'release-gate-nodef.env'), {});
+  for (const tier of ['reasoning', 'standard', 'fast']) {
+    assert.equal(models[tier], null, `${tier} must not resolve to a hardcoded default`);
+    assert.equal(models.sources[tier], 'not configured', `${tier} source must be 'not configured'`);
+  }
+});
+
+test('release gate (d1r7.1-.3): optional MCP servers stay silent until the user turns them on', () => {
+  // Catalog-only and installed-but-disabled servers are opt-ins the user has not enabled; only an
+  // enabled server with an unresolved required secret is actionable (construct-d1r7.1/.2/.3).
+  assert.equal(classifyMcpState({ installed: false, enabled: false }).class, 'catalog');
+  assert.equal(classifyMcpState({ installed: true, enabled: false }).class, 'disabled');
+  assert.equal(classifyMcpState({ installed: true, enabled: true, requiredEnv: ['TOKEN'] }, {}).class, 'missing-secret');
+
+  const diag = diagnoseMcpStates({
+    states: new Map([['catalog-only', { installed: false, enabled: false }], ['off', { installed: true, enabled: false }]]),
+    mcps: [{ id: 'catalog-only', requiredEnv: [] }, { id: 'off', requiredEnv: [] }],
+    env: {},
+  });
+  assert.equal(diag.actionable.length, 0, 'catalog-only and disabled servers must raise no diagnostics');
+  assert.equal(diag.silent.length, 2);
+});
+
+test('release gate (d1r7.11): certified document I/O passes when the engines are present', () => {
+  // When every export engine is installed, the certified matrix must pass — a format skipped for a
+  // missing tool is a hard failure, not a pass (construct-d1r7.11). Where an engine is absent (e.g.
+  // a lean CI leg), the graceful local matrix must still exit clean instead.
+  const bin = (name) => spawnSync(process.platform === 'win32' ? 'where' : 'which', [name]).status === 0;
+  const fullEngines = bin('pandoc') && bin('typst') && libreOfficePresent() && pptxgenPresent();
+  const args = fullEngines ? ['certify', 'document-io', '--certified'] : ['certify', 'document-io'];
+  const result = run(args);
+  assert.equal(result.status, 0, `certify document-io${fullEngines ? ' --certified' : ''} exited ${result.status}; stdout: ${result.stdout}\nstderr: ${result.stderr}`);
+  assert.match(result.stdout, /PASS/);
 });

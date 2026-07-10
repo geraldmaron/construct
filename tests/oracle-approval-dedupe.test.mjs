@@ -15,7 +15,7 @@ import { listPending, runOracleTick } from '../lib/oracle/actions.mjs';
 function freshProject() {
   const projectDir = mkdtempSync(join(tmpdir(), 'construct-oracle-queue-'));
   const homeDir = mkdtempSync(join(tmpdir(), 'construct-oracle-queue-home-'));
-  mkdirSync(join(projectDir, '.cx'), { recursive: true });
+  mkdirSync(join(projectDir, '.construct'), { recursive: true });
   mkdirSync(join(homeDir, '.cx'), { recursive: true });
   return {
     projectDir,
@@ -30,7 +30,7 @@ function freshProject() {
 }
 
 function pendingFile(projectDir) {
-  return join(projectDir, '.cx', 'oracle', 'pending.jsonl');
+  return join(projectDir, '.construct', 'oracle', 'pending.jsonl');
 }
 
 function readRows(projectDir) {
@@ -44,7 +44,7 @@ function readRows(projectDir) {
 test('runOracleTick dedupes identical approve actions and refreshes occurrence metadata', async () => {
   const env = freshProject();
   try {
-    writeFileSync(join(env.projectDir, '.cx', 'contract-violations.jsonl'), JSON.stringify({
+    writeFileSync(join(env.projectDir, '.construct', 'contract-violations.jsonl'), JSON.stringify({
       ts: new Date().toISOString(),
       contractId: 'test-contract',
       agent: 'cx-engineer',
@@ -71,7 +71,7 @@ test('runOracleTick dedupes identical approve actions and refreshes occurrence m
 test('listPending expires stale rows and enforces the queue cap', () => {
   const env = freshProject();
   try {
-    mkdirSync(join(env.projectDir, '.cx', 'oracle'), { recursive: true });
+    mkdirSync(join(env.projectDir, '.construct', 'oracle'), { recursive: true });
     const now = Date.now();
     const rows = [];
     for (let i = 0; i < 55; i++) {

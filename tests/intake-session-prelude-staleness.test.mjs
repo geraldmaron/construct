@@ -22,7 +22,7 @@ let staleAt;
 
 before(() => {
   tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-prelude-stale-'));
-  verdictsDir = path.join(tmpRoot, '.cx', 'oracle', 'verdicts');
+  verdictsDir = path.join(tmpRoot, '.construct', 'oracle', 'verdicts');
   fs.mkdirSync(verdictsDir, { recursive: true });
   staleAt = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
   writeVerdictFixture(staleAt.slice(0, 10), {
@@ -54,7 +54,7 @@ describe('buildOraclePrelude staleness', () => {
   it('renders an "as of" age without STALE for a ~2 hour old verdict', () => {
     const fresh = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-prelude-fresh-'));
     try {
-      const dir = path.join(fresh, '.cx', 'oracle', 'verdicts');
+      const dir = path.join(fresh, '.construct', 'oracle', 'verdicts');
       fs.mkdirSync(dir, { recursive: true });
       const at = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
       fs.writeFileSync(
@@ -76,7 +76,7 @@ describe('buildOraclePrelude staleness', () => {
   it('does not render a missing/malformed `at` as fresh', () => {
     const bad = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-prelude-bad-at-'));
     try {
-      const dir = path.join(bad, '.cx', 'oracle', 'verdicts');
+      const dir = path.join(bad, '.construct', 'oracle', 'verdicts');
       fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(
         path.join(dir, '2026-01-01.json'),
@@ -110,7 +110,7 @@ describe('readOracleDockState staleness parity', () => {
   it('returns stale: false for a fresh verdict', () => {
     const fresh = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-dock-fresh-'));
     try {
-      const dir = path.join(fresh, '.cx', 'oracle', 'verdicts');
+      const dir = path.join(fresh, '.construct', 'oracle', 'verdicts');
       fs.mkdirSync(dir, { recursive: true });
       const at = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
       fs.writeFileSync(

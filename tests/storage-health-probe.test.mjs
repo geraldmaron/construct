@@ -20,7 +20,7 @@ const LANCEDB_STATE_PATH = resolveStateDir(CWD, 'lancedb', { ensureDir: false })
 function makeExistsStub({ cx, lancedb }) {
   return (p) => {
     if (p === LANCEDB_STATE_PATH) return lancedb;
-    if (p === `${CWD}/.cx`) return cx;
+    if (p === `${CWD}/.construct`) return cx;
     return false;
   };
 }

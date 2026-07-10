@@ -20,7 +20,7 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 function freshProject() {
   const projectDir = mkdtempSync(join(tmpdir(), 'construct-oracle-loop-'));
   const homeDir = mkdtempSync(join(tmpdir(), 'construct-oracle-loop-home-'));
-  mkdirSync(join(projectDir, '.cx'), { recursive: true });
+  mkdirSync(join(projectDir, '.construct'), { recursive: true });
   mkdirSync(join(homeDir, '.cx'), { recursive: true });
   return {
     projectDir,
@@ -71,7 +71,7 @@ test('raiseIssuesForGaps skips verdict-only hygiene gaps without bd create', asy
       assert.equal(row.skipped, true);
       assert.equal(row.reason, 'verdict-only');
     }
-    const raisedFile = join(env.projectDir, '.cx', 'oracle', 'raised-issues.jsonl');
+    const raisedFile = join(env.projectDir, '.construct', 'oracle', 'raised-issues.jsonl');
     assert.equal(existsSync(raisedFile), false);
   } finally {
     env.cleanup();
@@ -82,9 +82,9 @@ test('raiseIssuesForGaps persistent dedup skips when raised-issues record exists
   const env = freshProject();
   try {
     const { raiseIssuesForGaps } = await import('../../lib/oracle/issues.mjs');
-    mkdirSync(join(env.projectDir, '.cx', 'oracle'), { recursive: true });
+    mkdirSync(join(env.projectDir, '.construct', 'oracle'), { recursive: true });
     writeFileSync(
-      join(env.projectDir, '.cx', 'oracle', 'raised-issues.jsonl'),
+      join(env.projectDir, '.construct', 'oracle', 'raised-issues.jsonl'),
       JSON.stringify({ fingerprint: 'dead-code-regression', gapId: 'dead-code-regression', beadId: 'construct-test' }) + '\n',
     );
     const gaps = [{ id: 'dead-code-regression', severity: 'high', detail: '1 new dead module' }];
@@ -102,7 +102,7 @@ test('approve executes outcomes-aggregate and creates outcomes summary', async (
   process.env.CONSTRUCT_ROLES_ROOT = join(env.homeDir, '.cx');
   try {
     process.env.CONSTRUCT_ORACLE_AUTO_RAISE = 'off';
-    mkdirSync(join(env.projectDir, '.cx', 'oracle'), { recursive: true });
+    mkdirSync(join(env.projectDir, '.construct', 'oracle'), { recursive: true });
     const action = {
       id: 'oracle-test-outcomes',
       kind: 'outcomes-aggregate',
@@ -110,7 +110,7 @@ test('approve executes outcomes-aggregate and creates outcomes summary', async (
       classification: 'approve',
       status: 'pending',
     };
-    writeFileSync(join(env.projectDir, '.cx', 'oracle', 'pending.jsonl'), JSON.stringify(action) + '\n');
+    writeFileSync(join(env.projectDir, '.construct', 'oracle', 'pending.jsonl'), JSON.stringify(action) + '\n');
     const result = await approvePending(env.projectDir, action.id, { execute: true, ...env });
     assert.equal(result.ok, true);
     assert.ok(result.action.executedAt);
@@ -127,7 +127,7 @@ test('high-severity tick writes routing artifact when gaps present', async () =>
   const env = freshProject();
   try {
     process.env.CONSTRUCT_ORACLE_AUTO_RAISE = 'off';
-    writeFileSync(join(env.projectDir, '.cx', 'contract-violations.jsonl'), JSON.stringify({
+    writeFileSync(join(env.projectDir, '.construct', 'contract-violations.jsonl'), JSON.stringify({
       ts: new Date().toISOString(),
       contractId: 'test',
       agent: 'cx-engineer',

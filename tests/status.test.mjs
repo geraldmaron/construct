@@ -58,7 +58,7 @@ async function createFixture() {
   });
   writeText(path.join(rootDir, '.env'), 'DASHBOARD_PORT=4242\nMEMORY_PORT=8765\nBRIDGE_PORT=5173\nCONSTRUCT_TELEMETRY_URL=https://telemetry.example.com\n');
   writeText(path.join(rootDir, 'plan.md'), '# Plan\n\n## Current slice\n\n- Keep coordination tracker-backed.\n- Assign one writer per file.\n');
-  writeJson(path.join(rootDir, '.cx', 'context.json'), {
+  writeJson(path.join(rootDir, '.construct', 'context.json'), {
     format: 'json',
     savedAt: '2026-04-19T05:15:00.000Z',
     contextSummary: 'Phase 3 complete, Phase 4 next.',
@@ -92,7 +92,7 @@ async function createFixture() {
     JSON.stringify({ ts: '2026-04-18T00:05:00.000Z', input_tokens: 80, output_tokens: 20, reasoning_tokens: 5, total_tokens: 105, cost_usd: 0.00054 }),
     '',
   ].join('\n'));
-  writeJson(path.join(rootDir, '.cx', 'domain-overlays', 'terraform.json'), {
+  writeJson(path.join(rootDir, '.construct', 'domain-overlays', 'terraform.json'), {
     id: 'terraform',
     type: 'domain-overlay',
     domain: 'terraform',
@@ -101,7 +101,7 @@ async function createFixture() {
     focus: 'architecture',
     status: 'active',
   });
-  writeJson(path.join(rootDir, '.cx', 'promotion-requests', 'terraform.json'), {
+  writeJson(path.join(rootDir, '.construct', 'promotion-requests', 'terraform.json'), {
     id: 'terraform',
     type: 'promotion-request',
     domain: 'terraform',
@@ -245,7 +245,7 @@ test('formatStatusReport prints canonical overall summary and integrations', asy
 
 test('buildStatus surfaces external plugin manifests and validation errors', async () => {
   const { rootDir, homeDir } = await createFixture();
-  const pluginDir = path.join(rootDir, '.cx', 'plugins');
+  const pluginDir = path.join(rootDir, '.construct', 'plugins');
   fs.mkdirSync(pluginDir, { recursive: true });
   writeJson(path.join(pluginDir, 'acme.json'), {
     version: 1,
@@ -422,7 +422,7 @@ test('buildStatus reflects env overrides in execution-contract model metadata', 
 
 test('buildStatus reports missing context source in public health surface when no context exists', async () => {
   const { rootDir, homeDir } = await createFixture();
-  fs.rmSync(path.join(rootDir, '.cx', 'context.json'));
+  fs.rmSync(path.join(rootDir, '.construct', 'context.json'));
 
   const status = await buildStatus({
     rootDir,
@@ -783,7 +783,7 @@ test('recentRunExecutionStates reports zero when no orchestration runs exist', a
 // LMCP-C7: workflows section sourced from the living graph (graph validate),
 // so status can never report a workflow healthy when the graph disagrees.
 
-test('workflows section reports graph-not-built when .cx/graph is absent', async () => {
+test('workflows section reports graph-not-built when .construct/graph is absent', async () => {
   const { rootDir, homeDir } = await createFixture();
 
   const status = await buildStatus({

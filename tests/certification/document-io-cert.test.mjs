@@ -10,6 +10,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { validateDocumentIoFixtures, DOCUMENT_IO_CATEGORIES } from '../../lib/certification/document-io-fixtures.mjs';
+import { EXTRACTABLE_DOCUMENT_EXTS } from '../../lib/document-extract.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -23,7 +24,13 @@ test('strict-mode error codes are documented in document-io reference', async ()
   const doc = await import('node:fs/promises').then((fs) =>
     fs.readFile(path.join(REPO, 'docs/guides/reference/document-io.md'), 'utf8'),
   );
-  for (const code of ['ASR_REQUIRED', 'OFFICE_REQUIRES_DOCLING']) {
+  for (const code of ['ASR_REQUIRED', 'OFFICE_REQUIRES_DOCLING', 'IMAGE_REQUIRES_DOCLING']) {
     assert.match(doc, new RegExp(code));
+  }
+});
+
+test('extractor declares presentation and raster image imports as supported', () => {
+  for (const ext of ['.odp', '.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp', '.webp']) {
+    assert.equal(EXTRACTABLE_DOCUMENT_EXTS.has(ext), true, `${ext} should be extractable through high-fidelity ingest`);
   }
 });

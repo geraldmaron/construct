@@ -17,7 +17,7 @@ Three tiers merge into the same registry every built-in specialist resolves thro
 |---|---|---|---|
 | builtin | `specialists/org/**` | ships with Construct | — |
 | user | `~/.construct/org/**` | every project on your machine | `--user` |
-| project | `<project>/.cx/org/**` | this project only, git-tracked | default |
+| project | `<project>/.construct/org/**` | this project only, git-tracked | default |
 
 A project-tier record overrides a user-tier record with the same id, which overrides a builtin one. Omit `--user` and you get the project tier: git-tracked, reviewable in a PR, shipped with the project.
 
@@ -37,7 +37,7 @@ construct team create widget-team \
   --escalation=widget-specialist,orchestrator
 ```
 
-This writes `.cx/org/teams/widget-team.json`:
+This writes `.construct/org/teams/widget-team.json`:
 
 ```json
 {
@@ -66,7 +66,7 @@ construct specialist create widget-specialist --custom \
   --handoff=engineer,qa
 ```
 
-This writes `.cx/org/specialists/cx-widget-specialist.json` and a prompt stub at `.cx/org/prompts/cx-widget-specialist.md` (fill in the stub with the specialist's actual voice and operating instructions — the scaffold only gets the registry entry validation-clean, not the prose).
+This writes `.construct/org/specialists/cx-widget-specialist.json` and a prompt stub at `.construct/org/prompts/cx-widget-specialist.md` (fill in the stub with the specialist's actual voice and operating instructions — the scaffold only gets the registry entry validation-clean, not the prose).
 
 ### 3. Sync and confirm
 
@@ -109,7 +109,7 @@ These land under `~/.construct/org/teams/gadget-team.json` and `~/.construct/org
 
 ## Overriding a builtin
 
-Because tiers merge by id, a user- or project-tier file with the same id as a builtin specialist patches it: e.g. `.cx/org/specialists/cx-engineer.json` with just `{ "modelTier": "reasoning" }` upgrades that one project's `cx-engineer` model tier without touching `specialists/org/specialists/cx-engineer.json`.
+Because tiers merge by id, a user- or project-tier file with the same id as a builtin specialist patches it: e.g. `.construct/org/specialists/cx-engineer.json` with just `{ "modelTier": "reasoning" }` upgrades that one project's `cx-engineer` model tier without touching `specialists/org/specialists/cx-engineer.json`.
 
 ## Reference
 

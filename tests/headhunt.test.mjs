@@ -16,7 +16,7 @@ import { tempDir } from './helpers.mjs';
 
 test('headhunt creates a temporary domain overlay by default', async () => {
   const cwd = tempDir('construct-headhunt-');
-  fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
 
   const result = await runHeadhunt({
     args: ['terraform', '--for=design our infra repo strategy', '--scope=aws platform', '--temp'],
@@ -35,7 +35,7 @@ test('headhunt creates a temporary domain overlay by default', async () => {
 
 test('headhunt save mode creates a promotion request', async () => {
   const cwd = tempDir('construct-headhunt-save-');
-  fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
 
   const result = await runHeadhunt({
     args: ['terraform', '--for=own reusable terraform architecture guidance', '--save'],
@@ -54,7 +54,7 @@ test('headhunt save mode creates a promotion request', async () => {
 
 test('headhunt overlays are visible through active overlay helper and can be promoted', async () => {
   const cwd = tempDir('construct-headhunt-promote-');
-  fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
 
   const created = await runHeadhunt({
     args: ['terraform', '--for=design account structure', '--temp'],
@@ -74,7 +74,7 @@ test('headhunt overlays are visible through active overlay helper and can be pro
 
 test('headhunt cleanup removes expired overlays', async () => {
   const cwd = tempDir('construct-headhunt-cleanup-');
-  const overlayDir = path.join(cwd, '.cx', 'domain-overlays');
+  const overlayDir = path.join(cwd, '.construct', 'domain-overlays');
   fs.mkdirSync(overlayDir, { recursive: true });
   const expiredId = 'terraform-expired';
   fs.writeFileSync(path.join(overlayDir, `${expiredId}.json`), `${JSON.stringify({
@@ -97,7 +97,7 @@ test('headhunt cleanup removes expired overlays', async () => {
 
 test('headhunt challenge updates promotion request state', async () => {
   const cwd = tempDir('construct-headhunt-challenge-');
-  fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
 
   const created = await runHeadhunt({
     args: ['terraform', '--for=own reusable terraform guidance', '--save'],
@@ -117,7 +117,7 @@ test('headhunt challenge updates promotion request state', async () => {
 
 test('headhunt persists overlays and promotion challenge state without workflow mutation', async () => {
   const cwd = tempDir('construct-headhunt-overlay-');
-  fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
 
   const created = await runHeadhunt({
     args: ['terraform', '--for=design account structure', '--save'],

@@ -89,6 +89,28 @@ test('respects an existing chat.agentFilesLocations choice', () => {
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
+test('associates the JSONC config files as jsonc so VS Code does not flag their comments (construct-zsng)', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'cx-vscode-settings-'));
+  try {
+    pinVscodeChatSettings(dir);
+    const s = JSON.parse(readFileSync(join(dir, '.vscode', 'settings.json'), 'utf8'));
+    assert.equal(s['files.associations']?.['construct.config.json'], 'jsonc');
+    assert.equal(s['files.associations']?.['construct.config.local.json'], 'jsonc');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('deep-merges files.associations into a user map without dropping their entries', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'cx-vscode-settings-'));
+  try {
+    mkdirSync(join(dir, '.vscode'), { recursive: true });
+    writeFileSync(join(dir, '.vscode', 'settings.json'), JSON.stringify({ 'files.associations': { '*.myext': 'json' } }));
+    pinVscodeChatSettings(dir);
+    const s = JSON.parse(readFileSync(join(dir, '.vscode', 'settings.json'), 'utf8'));
+    assert.equal(s['files.associations']['*.myext'], 'json', 'user association preserved');
+    assert.equal(s['files.associations']['construct.config.json'], 'jsonc', 'construct association added');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
 test('eager-starts MCP servers via chat.mcp.autoStart (camelCase, VS Code id) so construct-mcp is live without a manual Start', () => {
   const dir = mkdtempSync(join(tmpdir(), 'cx-vscode-settings-'));
   try {

@@ -61,7 +61,7 @@ async function createMinimalFixture({ degradationLines = null } = {}) {
   writeJson(path.join(homeDir, '.claude', 'settings.json'), { mcpServers: {}, hooks: {} });
 
   // .cx/context.json — read by inspectContextState
-  writeJson(path.join(cwd, '.cx', 'context.json'), {
+  writeJson(path.join(cwd, '.construct', 'context.json'), {
     format: 'json',
     savedAt: new Date().toISOString(),
     contextSummary: 'test',
@@ -71,7 +71,7 @@ async function createMinimalFixture({ degradationLines = null } = {}) {
 
   // Optionally write the degradation.jsonl file
   if (degradationLines !== null) {
-    const cxDir = path.join(cwd, '.cx');
+    const cxDir = path.join(cwd, '.construct');
     fs.mkdirSync(cxDir, { recursive: true });
     fs.writeFileSync(
       path.join(cxDir, 'degradation.jsonl'),
@@ -191,7 +191,7 @@ test('buildStatus: degradation record with explicit declared/actual/reason field
 
 test('buildStatus: malformed lines in degradation.jsonl are skipped', async () => {
   const { rootDir, homeDir, cwd } = await createMinimalFixture();
-  const cxDir = path.join(cwd, '.cx');
+  const cxDir = path.join(cwd, '.construct');
   fs.mkdirSync(cxDir, { recursive: true });
   fs.writeFileSync(
     path.join(cxDir, 'degradation.jsonl'),

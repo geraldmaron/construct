@@ -35,9 +35,9 @@ beforeEach(() => {
     path.join(projectRoot, 'construct.config.json'),
     JSON.stringify({ version: 1, resources: { disk: { totalCxMaxMb: 1 } } }),
   );
-  fs.mkdirSync(path.join(projectRoot, '.cx', 'intake', 'processed'), { recursive: true });
+  fs.mkdirSync(path.join(projectRoot, '.construct', 'intake', 'processed'), { recursive: true });
   fs.writeFileSync(
-    path.join(projectRoot, '.cx', 'intake', 'processed', 'heavy.json'),
+    path.join(projectRoot, '.construct', 'intake', 'processed', 'heavy.json'),
     'x'.repeat(1_050_000),
   );
 });
@@ -47,7 +47,7 @@ afterEach(() => {
 });
 
 describe('resource write guard (functional)', () => {
-  it('blocks trace append when .cx/ is over cap and reclaim cannot help', () => {
+  it('blocks trace append when .construct/ is over cap and reclaim cannot help', () => {
     const before = measureUsage(projectRoot);
     assert.ok(before.totalCxUsageRatio > 1);
 

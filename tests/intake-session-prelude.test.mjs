@@ -24,7 +24,7 @@ let pendingDir;
 
 before(() => {
   tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-prelude-'));
-  pendingDir = path.join(tmpRoot, '.cx', 'intake', 'pending');
+  pendingDir = path.join(tmpRoot, '.construct', 'intake', 'pending');
   fs.mkdirSync(pendingDir, { recursive: true });
 });
 

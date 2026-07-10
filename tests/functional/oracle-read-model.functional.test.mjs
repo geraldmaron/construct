@@ -19,8 +19,8 @@ function freshEnv() {
   const projectDir = mkdtempSync(join(tmpdir(), 'construct-oracle-proj-'));
   const homeDir = mkdtempSync(join(tmpdir(), 'construct-oracle-home-'));
   const rootDir = mkdtempSync(join(tmpdir(), 'construct-oracle-root-'));
-  mkdirSync(join(projectDir, '.cx', 'observations'), { recursive: true });
-  mkdirSync(join(projectDir, '.cx', 'outcomes'), { recursive: true });
+  mkdirSync(join(projectDir, '.construct', 'observations'), { recursive: true });
+  mkdirSync(join(projectDir, '.construct', 'outcomes'), { recursive: true });
   mkdirSync(join(rootDir, 'audit-artifacts'), { recursive: true });
   mkdirSync(doctorRoot(homeDir), { recursive: true });
   mkdirSync(join(rootDir, 'specialists'), { recursive: true });
@@ -58,7 +58,7 @@ test('collectReadModel returns empty sections for a minimal project', () => {
 test('collectReadModel ingests outcomes, violations, doctor log, and census', () => {
   const env = freshEnv();
   try {
-    writeFileSync(join(env.projectDir, '.cx', 'outcomes', '_summary.json'), JSON.stringify({
+    writeFileSync(join(env.projectDir, '.construct', 'outcomes', '_summary.json'), JSON.stringify({
       generatedAt: new Date().toISOString(),
       roles: { engineer: { count: 10, success: 8, successRate: 0.8, last30: { count: 5, successRate: 0.8 } } },
     }));
@@ -70,7 +70,7 @@ test('collectReadModel ingests outcomes, violations, doctor log, and census', ()
       verdict: 'CONTRACT_VIOLATION',
       direction: 'output',
     };
-    writeFileSync(join(env.projectDir, '.cx', 'contract-violations.jsonl'), JSON.stringify(violation) + '\n');
+    writeFileSync(join(env.projectDir, '.construct', 'contract-violations.jsonl'), JSON.stringify(violation) + '\n');
 
     writeFileSync(join(doctorRoot(env.homeDir), 'doctor-log.jsonl'), JSON.stringify({
       ts: Date.now(),
@@ -80,7 +80,7 @@ test('collectReadModel ingests outcomes, violations, doctor log, and census', ()
       summary: 'dashboard unreachable after 2 restarts',
     }) + '\n');
 
-    writeFileSync(join(env.projectDir, '.cx', 'observations', 'index.json'), JSON.stringify([
+    writeFileSync(join(env.projectDir, '.construct', 'observations', 'index.json'), JSON.stringify([
       { id: 'obs-1', role: 'cx-engineer', category: 'insight', summary: 'test observation', timestamp: new Date().toISOString() },
     ]));
 

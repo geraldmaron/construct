@@ -21,9 +21,10 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { launcherPath } from '../lib/config-dir.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const versionFile = resolve(root, '.construct', 'version');
+const versionFile = launcherPath(root, 'version');
 const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
 const target = pkg.version;
 

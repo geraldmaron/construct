@@ -6,12 +6,17 @@
  *   2. Hook exits 0 within the 500ms budget on a real-shaped Stop payload
  *   3. Hook writes one observation file under .cx/observations/ when given valid input
  *   4. Hook is a no-op when CONSTRUCT_REFLECT_AUTO=off
+ *
+ * The hook writes observations through the machine-scoped state root
+ * (ADR-0066), keyed by a hash of cwd — so CX_HOME_OVERRIDE is pinned for the
+ * whole file (inherited by every spawnSync call below via process.env) to
+ * keep that write off the real developer machine's $HOME.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import test from 'node:test';
+import test, { before, after } from 'node:test';
 import { spawnSync } from 'node:child_process';
 
 import { extractSessionObservation } from '../../lib/reflect/extractor.mjs';
@@ -19,6 +24,21 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const HOOK_PATH = path.join(REPO_ROOT, 'lib', 'hooks', 'session-reflect.mjs');
+
+let homeOverride;
+let prevHomeOverride;
+
+before(() => {
+  homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-session-reflect-home-'));
+  prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+  process.env.CX_HOME_OVERRIDE = homeOverride;
+});
+
+after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch { /* best-effort cleanup */ }
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 // Synthetic transcript matching Claude Code's JSONL shape: { type, message: { content: [...] } }
 const SAMPLE_TRANSCRIPT = [
@@ -90,7 +110,7 @@ test('extractor caps content at 5KB', () => {
 test('hook exits 0 within budget on valid Stop payload and writes an observation', (t) => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-reflect-'));
   t.after(() => rmTmpDir(cwd));
-  fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
   const transcriptPath = path.join(cwd, 'transcript.jsonl');
   fs.writeFileSync(
     transcriptPath,
@@ -117,7 +137,7 @@ test('hook exits 0 within budget on valid Stop payload and writes an observation
   // hook's internal hard budget is 500ms enforced at runtime.
   assert.ok(elapsed < 5_000, `hook took ${elapsed}ms`);
 
-  const obsDir = path.join(cwd, '.cx', 'observations');
+  const obsDir = path.join(cwd, '.construct', 'observations');
   const indexPath = path.join(obsDir, 'index.json');
   const vectorsPath = path.join(obsDir, 'vectors.json');
   assert.ok(fs.existsSync(indexPath), 'observations index was not written');
@@ -137,7 +157,7 @@ test('hook exits 0 within budget on valid Stop payload and writes an observation
 test('hook skips trivial sessions with no tool calls and short final text', (t) => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-reflect-trivial-'));
   t.after(() => rmTmpDir(cwd));
-  fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
   const transcriptPath = path.join(cwd, 'transcript.jsonl');
   const trivial = [
     { type: 'user', message: { content: 'hi' } },
@@ -154,14 +174,14 @@ test('hook skips trivial sessions with no tool calls and short final text', (t) 
   });
 
   assert.equal(result.status, 0);
-  const indexPath = path.join(cwd, '.cx', 'observations', 'index.json');
+  const indexPath = path.join(cwd, '.construct', 'observations', 'index.json');
   assert.equal(fs.existsSync(indexPath), false, 'trivial session should not be recorded');
 });
 
 test('hook is a no-op when CONSTRUCT_REFLECT_AUTO=off', (t) => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-reflect-off-'));
   t.after(() => rmTmpDir(cwd));
-  fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
   const transcriptPath = path.join(cwd, 'transcript.jsonl');
   fs.writeFileSync(transcriptPath, JSON.stringify(SAMPLE_TRANSCRIPT[0]) + '\n');
 
@@ -174,7 +194,7 @@ test('hook is a no-op when CONSTRUCT_REFLECT_AUTO=off', (t) => {
   });
 
   assert.equal(result.status, 0);
-  const obsDir = path.join(cwd, '.cx', 'observations');
+  const obsDir = path.join(cwd, '.construct', 'observations');
   assert.equal(fs.existsSync(obsDir), false, 'opt-out should not create observations dir');
 });
 
@@ -193,5 +213,5 @@ test('hook skips when cwd is not a Construct project', (t) => {
   });
 
   assert.equal(result.status, 0);
-  assert.equal(fs.existsSync(path.join(cwd, '.cx')), false);
+  assert.equal(fs.existsSync(path.join(cwd, '.construct')), false);
 });

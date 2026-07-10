@@ -37,7 +37,7 @@ function withFixtureProject(overrideJson, fn) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-surface-map-'));
   try {
     if (overrideJson) {
-      const dir = path.join(root, '.cx', 'registry');
+      const dir = path.join(root, '.construct', 'registry');
       fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(path.join(dir, 'surface-map.json'), JSON.stringify(overrideJson, null, 2));
     }

@@ -23,7 +23,7 @@ publish:
 <!-- How the question was investigated:
   - Domain starting point used (arXiv, NVD, Stack Overflow Survey, vendor docs, etc.)
   - Date filter applied (search from YYYY-first)
-  - Internal paths checked (.cx/research/, .cx/knowledge/, ADRs, etc.)
+  - Internal paths checked (.construct/research/, .construct/knowledge/, ADRs, etc.)
   - Search terms and queries run
   - Systems and indexes consulted
   - Inclusion/exclusion decisions

@@ -40,7 +40,7 @@ test.after(() => {
 // marker probeStorageHealth checks first.
 function makeLancedbFixture() {
   const cwd = tempDir('construct-storage-probe-');
-  fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
   const lancedbPath = resolveStateDir(cwd, 'lancedb', { ensureDir: false });
   fs.mkdirSync(lancedbPath, { recursive: true });
   return { cwd, lancedbPath };
@@ -161,7 +161,7 @@ test('probeStorageHealth absent .cx/: returns unavailable without calling opener
 
 test('probeStorageHealth absent .cx/lancedb: returns degraded without calling opener', async () => {
   const cwd = tempDir('construct-storage-probe-nolancedb-');
-  fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
   // .cx/ exists but .cx/lancedb does not.
 
   let openerCalled = false;

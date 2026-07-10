@@ -122,7 +122,7 @@ Rollout proceeds stage by stage with a rollback lever at each stage. [unverified
 `;
 
 function writeOverlay(dir, reviewerGate) {
-  const cx = join(dir, '.cx');
+  const cx = join(dir, '.construct');
   fsMkdir(cx);
   writeFileSync(join(cx, 'artifact-manifest.overlay.json'), JSON.stringify({
     artifacts: { prd: { releaseGate: { reviewerGate } } },

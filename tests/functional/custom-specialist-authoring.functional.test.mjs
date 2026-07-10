@@ -62,8 +62,8 @@ test('custom specialist/team authoring: scaffold, validate, resolve (project sco
   ], env);
   assert.equal(teamResult.status, 0, teamResult.stderr || teamResult.stdout);
 
-  const teamFile = path.join(projectDir, '.cx', 'org', 'teams', 'widget-team.json');
-  assert.ok(fs.existsSync(teamFile), 'team scaffold must write .cx/org/teams/widget-team.json');
+  const teamFile = path.join(projectDir, '.construct', 'org', 'teams', 'widget-team.json');
+  assert.ok(fs.existsSync(teamFile), 'team scaffold must write .construct/org/teams/widget-team.json');
   const teamRecord = JSON.parse(fs.readFileSync(teamFile, 'utf8'));
   assert.equal(teamRecord.owner, 'widget-specialist');
   assert.ok(teamRecord.roles.includes('widget-specialist'));
@@ -79,8 +79,8 @@ test('custom specialist/team authoring: scaffold, validate, resolve (project sco
   ], env);
   assert.equal(specResult.status, 0, specResult.stderr || specResult.stdout);
 
-  const specFile = path.join(projectDir, '.cx', 'org', 'specialists', 'cx-widget-specialist.json');
-  assert.ok(fs.existsSync(specFile), 'specialist scaffold must write .cx/org/specialists/cx-widget-specialist.json');
+  const specFile = path.join(projectDir, '.construct', 'org', 'specialists', 'cx-widget-specialist.json');
+  assert.ok(fs.existsSync(specFile), 'specialist scaffold must write .construct/org/specialists/cx-widget-specialist.json');
   const specRecord = JSON.parse(fs.readFileSync(specFile, 'utf8'));
   assert.equal(specRecord.role, 'widget-specialist');
   assert.equal(specRecord.team, 'widget-team');
@@ -92,19 +92,19 @@ test('custom specialist/team authoring: scaffold, validate, resolve (project sco
   assertPathUnderRoot(specFile, projectDir, 'custom specialist file');
   assertPathUnderRoot(promptFile, projectDir, 'custom specialist prompt stub');
 
-  // .cx/** is otherwise gitignored (per this repo's own .gitignore); .cx/org/
-  // carries a negation so a scaffolded custom specialist/team is genuinely
-  // version-controlled, not silently dropped from the project's git history.
+  // .construct/** is otherwise gitignored (per this repo's own .gitignore);
+  // .construct/org/ carries a negation so a scaffolded custom specialist/team is
+  // genuinely version-controlled, not silently dropped from the project's git history.
   fs.cpSync(path.join(REPO, '.gitignore'), path.join(projectDir, '.gitignore'));
   spawnSync('git', ['init', '-q'], { cwd: projectDir });
   const checkIgnore = spawnSync('git', ['check-ignore', '-q', '--', path.relative(projectDir, teamFile)], {
     cwd: projectDir,
   });
-  assert.equal(checkIgnore.status, 1, '.cx/org/teams/widget-team.json must not be gitignored — it is the project-committed tier');
+  assert.equal(checkIgnore.status, 1, '.construct/org/teams/widget-team.json must not be gitignored — it is the project-committed tier');
   const checkIgnoreSpec = spawnSync('git', ['check-ignore', '-q', '--', path.relative(projectDir, specFile)], {
     cwd: projectDir,
   });
-  assert.equal(checkIgnoreSpec.status, 1, '.cx/org/specialists/cx-widget-specialist.json must not be gitignored — it is the project-committed tier');
+  assert.equal(checkIgnoreSpec.status, 1, '.construct/org/specialists/cx-widget-specialist.json must not be gitignored — it is the project-committed tier');
 
   const { loadRegistry, getSpecialist, getTeam, clearCache } = await import('../../lib/registry/loader.mjs');
   const { validate } = await import('../../lib/registry/validator.mjs');

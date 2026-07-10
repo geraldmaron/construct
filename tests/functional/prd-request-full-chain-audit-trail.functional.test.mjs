@@ -163,7 +163,7 @@ test('write-me-a-PRD drives the full specialist chain to a durable PRD file with
   assert.equal(fs.existsSync(artifactAbsPath), true, 'the PRD file exists on disk');
   assert.ok(authored.provenance?.ok, `author_artifact provenance write failed: ${authored.provenance?.error}`);
 
-  const observationsDir = path.join(cwd, '.cx', 'observations');
+  const observationsDir = path.join(cwd, '.construct', 'observations');
   const observations = fs.readdirSync(observationsDir)
     .filter((name) => name.endsWith('.json') && name !== 'index.json')
     .map((name) => JSON.parse(fs.readFileSync(path.join(observationsDir, name), 'utf8')))

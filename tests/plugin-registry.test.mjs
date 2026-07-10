@@ -51,7 +51,7 @@ test("validatePluginManifest accepts a minimal valid plugin manifest", () => {
 test("loadPluginRegistry merges external manifests with built-ins", () => {
   const cwd = tempDir("construct-plugin-cwd-");
   const home = tempDir("construct-plugin-home-");
-  const pluginDir = path.join(cwd, ".cx", "plugins");
+  const pluginDir = path.join(cwd, ".construct", "plugins");
   fs.mkdirSync(pluginDir, { recursive: true });
   fs.writeFileSync(path.join(pluginDir, "acme.json"), JSON.stringify({
     version: 1,
@@ -94,7 +94,7 @@ test("loadPluginRegistry merges external manifests with built-ins", () => {
 test("loadPluginRegistry reports duplicate MCP ids across manifests", () => {
   const cwd = tempDir("construct-plugin-dup-cwd-");
   const home = tempDir("construct-plugin-dup-home-");
-  const pluginDir = path.join(cwd, ".cx", "plugins");
+  const pluginDir = path.join(cwd, ".construct", "plugins");
   fs.mkdirSync(pluginDir, { recursive: true });
 
   for (const file of ["one.json", "two.json"]) {

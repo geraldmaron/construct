@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-10T03:50:37.782Z",
+  "generatedAt": "2026-07-10T05:43:32.268Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 863,
-    "topLevelTestFiles": 363,
-    "nestedTestFiles": 500,
+    "testFiles": 875,
+    "topLevelTestFiles": 364,
+    "nestedTestFiles": 511,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 49,
+    "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 573,
-      "functional": 242,
+      "unit": 578,
+      "functional": 249,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 510,
-      "functional": 242,
+      "unit": 515,
+      "functional": 249,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -1065,6 +1065,16 @@
       ],
       "skipped": false,
       "maintainerNotes": "tests/certification/document-io-cert.test.mjs — fidelity and strict-mode certification."
+    },
+    {
+      "path": "tests/certification/document-io-matrix.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [
+        "ingest.document-io"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/document-io-matrix.test.mjs — certified document I/O matrix contract"
     },
     {
       "path": "tests/certification/document-workflow.test.mjs",
@@ -2341,6 +2351,14 @@
       "maintainerNotes": "tests/functional/agentic-hq-integration.functional.test.mjs — end-to-end"
     },
     {
+      "path": "tests/functional/artifact-completion-file-valid.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/artifact-completion-file-valid.functional.test.mjs — export is not completion"
+    },
+    {
       "path": "tests/functional/artifact-content-signals.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2517,6 +2535,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/config-invalid-surfaces-warning.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/config-jsonc.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/config-jsonc.functional.test.mjs — JSONC config loader"
     },
     {
       "path": "tests/functional/construct-not-invoked-is-inert.functional.test.mjs",
@@ -2790,6 +2816,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "doctor-warning-paths.functional.test.mjs — doctor messages that reference"
+    },
+    {
+      "path": "tests/functional/document-assets.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/document-assets.functional.test.mjs — rich-media asset manifest and preservation"
     },
     {
       "path": "tests/functional/document-export.functional.test.mjs",
@@ -3147,6 +3181,14 @@
       "maintainerNotes": "tests/functional/init-lazy-embedding.functional.test.mjs"
     },
     {
+      "path": "tests/functional/init-no-daemons-in-test-context.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/init-no-daemons-in-test-context.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/init-no-project-secrets.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3239,6 +3281,14 @@
       "maintainerNotes": "tests/functional/learning-loop-capture.functional.test.mjs"
     },
     {
+      "path": "tests/functional/legacy-layout-migration.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/legacy-layout-migration.functional.test.mjs — the ADR-0074"
+    },
+    {
       "path": "tests/functional/lifecycle-event-emission.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3309,6 +3359,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/mcp-core-tools.functional.test.mjs — Construct MCP stdio smoke."
+    },
+    {
+      "path": "tests/functional/mcp-doctor-diagnostics.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/mcp-doctor-diagnostics.functional.test.mjs — MCP doctor"
     },
     {
       "path": "tests/functional/mcp-dynamic-tool-registration.functional.test.mjs",
@@ -3936,6 +3994,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/review-pr.functional.test.mjs — `construct review pr`"
+    },
+    {
+      "path": "tests/functional/rich-document-export.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/rich-document-export.functional.test.mjs — RichDocument (ADR-0071) export"
     },
     {
       "path": "tests/functional/routing-tables.test.mjs",
@@ -6190,6 +6256,14 @@
       "maintainerNotes": "tests/retrieval-bench.test.mjs — retrieval benchmark runner contract."
     },
     {
+      "path": "tests/rich-document.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/rich-document.test.mjs — RichDocument IR: schema, markdown reader, HTML round-trip."
+    },
+    {
       "path": "tests/roles-catalog.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -6294,6 +6368,14 @@
       "maintainerNotes": "tests/scripts/graph-gate.test.mjs — LMCP-C8 self-test for the living-graph"
     },
     {
+      "path": "tests/scripts/graph-impact-shadow.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/scripts/graph-impact-shadow.test.mjs — self-test for TAP failure"
+    },
+    {
       "path": "tests/scripts/release-evidence-gate.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -6302,12 +6384,28 @@
       "maintainerNotes": "tests/scripts/release-evidence-gate.test.mjs — LMCP-M5 self-test for the"
     },
     {
+      "path": "tests/scripts/run-tests-files-from.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/scripts/run-tests-files-from.test.mjs — self-test for --files-from flag."
+    },
+    {
       "path": "tests/scripts/run-tests-shard.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/scripts/run-tests-shard.test.mjs — self-test for the test runner's"
+    },
+    {
+      "path": "tests/scripts/shadow-lib.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/scripts/shadow-lib.test.mjs — self-test for graph-impact shadow-mode"
     },
     {
       "path": "tests/secret-audit-wiring.test.mjs",
