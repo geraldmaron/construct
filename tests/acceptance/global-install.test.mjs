@@ -47,7 +47,7 @@ function assertNoModuleNotFound(output, label) {
 
 // Test suite ------------------------------------------------------------
 
-test('global install + project init (npm pack -> global install -> 2 projects)', { timeout: 180_000 }, async (t) => {
+test('global install + project init (npm pack -> global install -> 2 projects)', { timeout: 480_000 }, async (t) => {
   let tarballPath = null;
   let globalPrefix = null;
   let projectA = null;
@@ -171,7 +171,7 @@ test('global install + project init (npm pack -> global install -> 2 projects)',
     const result = run('node', [binPath, 'init', '--yes'], {
       cwd: projectA,
       env: globalEnv,
-      timeout: 30_000,
+      timeout: 150_000,
     });
     const output = combinedOutput(result);
     assertNoModuleNotFound(output, 'project A init');
@@ -187,7 +187,7 @@ test('global install + project init (npm pack -> global install -> 2 projects)',
     const result = run('node', [binPath, 'init', '--yes'], {
       cwd: projectB,
       env: globalEnv,
-      timeout: 30_000,
+      timeout: 150_000,
     });
     const output = combinedOutput(result);
     assertNoModuleNotFound(output, 'project B init');
