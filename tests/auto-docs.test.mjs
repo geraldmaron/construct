@@ -10,6 +10,7 @@
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { rmTmpDir } from './helpers/cleanup.mjs';
 import os from 'node:os';
 import path from 'node:path';
 import test, { after } from 'node:test';
@@ -19,7 +20,7 @@ import { regenerateDocs } from '../lib/auto-docs.mjs';
 const tmpDirs = [];
 after(() => {
   for (const dir of tmpDirs) {
-    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+    try { rmTmpDir(dir); } catch {}
   }
 });
 

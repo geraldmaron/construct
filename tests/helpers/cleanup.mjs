@@ -21,17 +21,26 @@
  */
 import { rmSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { resolve, sep } from "node:path";
+import { dirname, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
 
-// Refuse silently-swallowed removal outside the OS tmpdir: a caller passing a
-// repo or HOME path by mistake should fail loudly, not lose data quietly.
-// Roots are compared both as-given and realpath'd because macOS's tmpdir is a
-// symlink (/var/folders → /private/var/folders) and tests pass either form.
+// Refuse silently-swallowed removal outside the OS tmpdir or the repo's own
+// .tmp scratch root: a caller passing a repo or HOME path by mistake should
+// fail loudly, not lose data quietly. Roots are compared both as-given and
+// realpath'd because macOS's tmpdir is a symlink (/var/folders →
+// /private/var/folders) and tests pass either form. <repo>/.tmp is a root
+// because distribution/sync-contract sandboxes live there and hit the same
+// spawned-child ENOTEMPTY teardown race (construct-nl9f).
+
+const REPO_TMP = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", ".tmp");
 
 function tmpRoots() {
-  const roots = new Set([resolve(tmpdir())]);
+  const roots = new Set([resolve(tmpdir()), REPO_TMP]);
   try {
     roots.add(realpathSync(tmpdir()));
+  } catch {}
+  try {
+    roots.add(realpathSync(REPO_TMP));
   } catch {}
   return [...roots];
 }
@@ -43,7 +52,7 @@ function assertUnderTmpdir(dir) {
     throw new Error(`rmTmpDir refuses to remove the tmpdir root itself: ${target}`);
   }
   if (!roots.some((root) => target.startsWith(root + sep))) {
-    throw new Error(`rmTmpDir only removes paths under os.tmpdir() (${roots.join(", ")}); got: ${target}`);
+    throw new Error(`rmTmpDir only removes paths under os.tmpdir() or <repo>/.tmp (${roots.join(", ")}); got: ${target}`);
   }
 }
 

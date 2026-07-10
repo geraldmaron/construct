@@ -10,6 +10,7 @@
  *   CX_TOOLKIT_DIR       Override the construct toolkit root (default: repo root)
  */
 import fs from 'node:fs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 import path from 'node:path';
 import os from 'node:os';
 import assert from 'node:assert/strict';
@@ -22,7 +23,7 @@ const RUNNER = 'node';
 let sandboxDir;
 let originalCwd;
 
-function rmrf(p) { fs.rmSync(p, { recursive: true, force: true }); }
+function rmrf(p) { rmTmpDir(p); }
 function mkdirp(p) { fs.mkdirSync(p, { recursive: true }); }
 
 function tmpdir() {

@@ -7,6 +7,7 @@
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { rmTmpDir } from './helpers/cleanup.mjs';
 import os from 'node:os';
 import path from 'node:path';
 import { describe, it, before, after } from 'node:test';
@@ -71,8 +72,8 @@ before(() => {
 });
 
 after(() => {
-  fs.rmSync(tmpHome, { recursive: true, force: true });
-  fs.rmSync(tmpProject, { recursive: true, force: true });
+  rmTmpDir(tmpHome);
+  rmTmpDir(tmpProject);
 });
 
 /** Run sync-specialists.mjs with the given extra args and env, return result.
@@ -280,7 +281,7 @@ describe('sync-specialists contract tests', () => {
     });
 
     after(() => {
-      fs.rmSync(projectDir, { recursive: true, force: true });
+      rmTmpDir(projectDir);
     });
 
     it('writes a self-contained .claude/settings.json with portable hook commands', () => {
@@ -377,7 +378,7 @@ describe('sync-specialists contract tests', () => {
     });
 
     after(() => {
-      fs.rmSync(projectDir, { recursive: true, force: true });
+      rmTmpDir(projectDir);
     });
 
     it('refreshes an existing construct-mcp entry missing the registry env block', () => {
