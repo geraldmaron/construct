@@ -129,3 +129,77 @@ test('a cross-origin write is refused; a same-origin write is allowed', async ()
   });
   assert.notEqual(allowed.status, 403, 'a same-origin request is not refused');
 });
+
+// === Participation canvas (construct-pteo2.15) ===
+
+test('the served SPA carries the participation canvas', async () => {
+  const res = await fetch(studio.url + '/');
+  const html = await res.text();
+  assert.match(html, /Participation/, 'the participation tab ships in the SPA');
+  assert.match(html, /\/api\/participation/, 'the SPA talks to the participation API');
+});
+
+test('participation meta exposes the same vocabulary org-api validates against', async () => {
+  const meta = await j('GET', '/api/participation/meta');
+  assert.ok(meta.watchers.includes('wide-blast-radius'));
+  assert.deepEqual(meta.roles, ['author', 'reviewer', 'advisor']);
+  assert.deepEqual(meta.gates, ['advisory', 'enforced']);
+  assert.equal(meta.specialists.length >= 12, true);
+});
+
+test('a participation rule created through the API lands in project org config the recruiter reads', async () => {
+  const rule = {
+    id: 'studio-visual-review',
+    when: { signalExpr: 'visualDeliverable' },
+    recruit: { specialists: ['cx-designer'] },
+    role: 'reviewer', gate: 'advisory',
+    reason: 'visual deliverable — design review',
+  };
+  const created = await j('POST', '/api/participation/cx-designer?scope=project', rule);
+  assert.equal(created.ok, true, JSON.stringify(created.errors));
+  assert.ok(created.path.includes(path.join('org', 'specialists')), 'the write patches the owning specialist entry');
+
+  const dropIn = JSON.parse(fs.readFileSync(created.path, 'utf8'));
+  assert.equal(dropIn.participationRules.rules.some((r) => r.id === 'studio-visual-review'), true);
+
+  const list = await j('GET', '/api/participation');
+  const row = list.items.find((it) => it.rule.id === 'studio-visual-review');
+  assert.ok(row, 'the rule reads back through the list API');
+  assert.equal(row.owner, 'cx-designer');
+  assert.equal(row.scope, 'project');
+});
+
+test('inline participation validation is the same org-api schema, errors and all', async () => {
+  const bad = await j('POST', '/api/validate/participation', {
+    ownerId: 'cx-designer',
+    rule: { id: 'Bad Id', when: {}, recruit: {}, role: 'boss', gate: 'maybe' },
+  });
+  assert.equal(bad.ok, false);
+  const ids = bad.errors.map((e) => e.id);
+  assert.ok(ids.includes('participation-rule-id-shape'));
+  assert.ok(ids.includes('participation-role-enum'));
+
+  const refused = await j('POST', '/api/participation/cx-designer?scope=project', { id: 'Bad Id', when: {}, recruit: {}, role: 'boss', gate: 'maybe' });
+  assert.equal(refused.ok, false, 'the write path refuses what validation refuses — one schema');
+});
+
+test('participation preview shows the recruited set for a sample request', async () => {
+  const preview = await j('POST', '/api/preview/participation', { request: 'design the new dashboard mockups and wireframes' });
+  assert.equal(preview.signals.visualDeliverable, true);
+  const designer = preview.recruited.find((p) => p.specialist === 'cx-designer' && p.rule === 'studio-visual-review');
+  assert.ok(designer, `the rule created above recruits in the preview: ${JSON.stringify(preview.recruited)}`);
+});
+
+test('a participation rule can be deleted through the API', async () => {
+  const gone = await j('DELETE', '/api/participation/cx-designer/studio-visual-review?scope=project');
+  assert.equal(gone.ok, true, JSON.stringify(gone.errors));
+  const list = await j('GET', '/api/participation');
+  assert.equal(list.items.some((it) => it.rule.id === 'studio-visual-review'), false);
+});
+
+test('a cross-origin participation write is refused', async () => {
+  const blocked = await fetch(studio.url + '/api/participation/cx-designer?scope=project', {
+    method: 'POST', headers: { 'content-type': 'application/json', origin: 'http://evil.example' }, body: '{}',
+  });
+  assert.equal(blocked.status, 403);
+});

@@ -111,6 +111,19 @@
   .banner { padding: 9px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; display: flex; gap: 8px; align-items: flex-start; }
   .banner.ok { background: color-mix(in srgb, var(--ok) 12%, transparent); color: var(--ok); }
   .banner.err { background: color-mix(in srgb, var(--err) 12%, transparent); color: var(--err); }
+  .banner.warn { background: color-mix(in srgb, var(--warn) 12%, transparent); color: var(--warn); }
+  .dropzone { min-height: 40px; border: 1.5px dashed var(--border); border-radius: 8px; padding: 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: flex-start; background: var(--bg); }
+  .dropzone.over { border-color: var(--accent); background: var(--accent-soft); }
+  .dropzone .placeholder { color: var(--muted); font-size: 12px; padding: 4px 6px; }
+  .palette { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; max-height: 120px; overflow-y: auto; }
+  .palette .opt { cursor: grab; }
+  .pipe-stage rect { fill: var(--surface-2); stroke: var(--border); }
+  .pipe-stage text { fill: var(--muted); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .part-preview { position: absolute; bottom: 14px; left: 14px; right: 14px; z-index: 5; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); padding: 8px; }
+  .part-preview input { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); }
+  .part-preview-out { display: flex; flex-wrap: wrap; gap: 5px; }
+  .part-preview-out:not(:empty) { margin-top: 8px; }
+  .part-preview .placeholder { color: var(--muted); font-size: 12px; }
   .preview { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--border); }
   .preview h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 8px; }
   .preview .row { font-size: 12.5px; padding: 4px 0; }
@@ -171,10 +184,11 @@ const KINDS = [
   { id: 'team', label: 'Teams' },
   { id: 'contract', label: 'Relationships' },
   { id: 'fence', label: 'Fences' },
+  { id: 'participation', label: 'Participation' },
   { id: 'skill', label: 'Skills' },
 ];
 
-const state = { org: {}, kind: 'specialist', selectedId: null, draft: null, creating: false, view: 'graph' };
+const state = { org: {}, kind: 'specialist', selectedId: null, draft: null, creating: false, view: 'graph', participation: { items: [], count: 0 }, participationMeta: null };
 
 // api() centralizes the JSON envelope so every call surfaces org-api's { ok, errors } shape the
 // same way; a non-2xx still returns parsed JSON so validation failures render inline.
@@ -188,8 +202,16 @@ async function api(method, url, body) {
   return res.json();
 }
 
+// Hyphenated keys (data-field, aria-*) must go through setAttribute —
+// Object.assign would set them as expando properties invisible to CSS
+// attribute selectors, which paintErrors relies on to attach field errors.
+
 const el = (tag, props = {}, ...kids) => {
-  const n = Object.assign(document.createElement(tag), props);
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k.includes('-')) n.setAttribute(k, v);
+    else n[k] = v;
+  }
   for (const k of kids.flat()) n.append(k?.nodeType ? k : document.createTextNode(k ?? ''));
   return n;
 };
@@ -199,7 +221,17 @@ const toast = (msg) => { const t = document.getElementById('toast'); t.textConte
 async function loadOrg() {
   const { org } = await api('GET', '/api/org');
   state.org = org;
+  state.participation = await api('GET', '/api/participation');
+  state.participationMeta = state.participationMeta || await api('GET', '/api/participation/meta');
   render();
+}
+
+// Participation rules are keyed owner:ruleId — a rule is a sub-object of its
+// owning specialist/team entry, so the list row carries both.
+
+const ruleKey = (it) => `${it.owner}:${it.rule.id}`;
+function findRule(key) {
+  return (state.participation.items || []).find((it) => ruleKey(it) === key) || null;
 }
 
 function specialistNames() {
@@ -211,7 +243,7 @@ function specialistNames() {
 function renderTabs() {
   const tabs = document.getElementById('tabs');
   tabs.replaceChildren(...KINDS.map((k) => {
-    const count = state.org[k.id]?.count ?? 0;
+    const count = k.id === 'participation' ? (state.participation.count ?? 0) : (state.org[k.id]?.count ?? 0);
     const b = el('button', { className: 'tab' + (state.kind === k.id ? ' active' : '') });
     b.append(k.label, el('span', { className: 'count' }, String(count)));
     b.onclick = () => { state.kind = k.id; state.selectedId = null; state.draft = null; state.creating = false; render(); };
@@ -221,6 +253,21 @@ function renderTabs() {
 
 function renderList() {
   const list = document.getElementById('list');
+  if (state.kind === 'participation') {
+    const items = state.participation.items || [];
+    if (!items.length) { list.replaceChildren(el('div', { className: 'empty' }, 'No participation rules declared yet.')); return; }
+    list.replaceChildren(...items.map((it) => {
+      const key = ruleKey(it);
+      const node = el('div', { className: 'item' + (state.selectedId === key ? ' active' : '') });
+      const top = el('div', { style: 'display:flex;align-items:center;gap:8px;justify-content:space-between' },
+        el('span', { className: 'id' }, it.rule.id),
+        el('span', { className: 'badge ' + (it.scope || 'project') }, it.scope || 'project'));
+      node.append(top, el('div', { className: 'sub' }, summaryOf(it)));
+      node.onclick = () => selectRule(key);
+      return node;
+    }));
+    return;
+  }
   const items = state.org[state.kind]?.items || [];
   if (!items.length) { list.replaceChildren(el('div', { className: 'empty' }, 'No entities in this scope.')); return; }
   list.replaceChildren(...items.map((it) => {
@@ -238,6 +285,11 @@ function summaryOf(it) {
   if (state.kind === 'contract') return `${it.producer} → ${it.consumer}`;
   if (state.kind === 'team') return `${(it.roles || []).length} members · owner ${it.owner || '—'}`;
   if (state.kind === 'fence') return `${(it.fence?.allowedPaths || []).length} allowed paths`;
+  if (state.kind === 'participation') {
+    const cond = it.rule.when?.watchCondition || it.rule.when?.signalExpr || '?';
+    const who = [...(it.rule.recruit?.specialists || []), ...(it.rule.recruit?.teams || []).map((t) => `team:${t}`)].join(', ');
+    return `${cond} → ${who} · ${it.rule.role}/${it.rule.gate} · on ${it.owner}`;
+  }
   return it.description || it.displayName || '';
 }
 
@@ -246,6 +298,14 @@ async function selectEntity(id) {
   state.creating = false;
   const entity = await api('GET', `/api/entities/${state.kind}/${encodeURIComponent(id)}`);
   state.draft = toDraft(state.kind, entity);
+  render();
+}
+
+function selectRule(key) {
+  state.selectedId = key;
+  state.creating = false;
+  const it = findRule(key);
+  state.draft = it ? toDraft('participation', it) : null;
   render();
 }
 
@@ -259,6 +319,18 @@ function newEntity() {
 // === Draft <-> record mapping per kind ===
 
 function toDraft(kind, entity) {
+  if (kind === 'participation') {
+    const rule = entity.rule;
+    return {
+      owner: entity.owner, id: rule.id, dimension: rule.dimension || '',
+      whenMode: rule.when?.watchCondition !== undefined ? 'watchCondition' : 'signalExpr',
+      watchCondition: rule.when?.watchCondition || '', signalExpr: rule.when?.signalExpr || '',
+      recruitSpecialists: [...(rule.recruit?.specialists || [])], recruitTeams: [...(rule.recruit?.teams || [])],
+      role: rule.role || 'reviewer', gate: rule.gate || 'advisory',
+      enforcementTeam: rule.enforcementScope?.team || '', enforcementRight: rule.enforcementScope?.decisionRight || '',
+      reason: rule.reason || '',
+    };
+  }
   const r = entity.record || entity;
   if (kind === 'specialist') return { id: entity.id, name: r.name || entity.id?.replace(/^cx-/, ''), description: r.description || '', role: r.role || r.name || '', modelTier: r.modelTier || 'standard', team: r.team || r.teamId || '', skills: r.skills || [], whenToUse: r.whenToUse || '', allowedPaths: r.fence?.allowedPaths || [], handoffCandidates: r.handoffCandidates || [] };
   if (kind === 'team') return { id: entity.id, name: r.name || entity.id, owner: r.owner || '', charter: r.charter || '', roles: r.roles || [], decisionRights: r.decisionRights || [], forbiddenDecisions: r.forbiddenDecisions || [] };
@@ -268,6 +340,7 @@ function toDraft(kind, entity) {
 }
 
 function blankDraft(kind) {
+  if (kind === 'participation') return { owner: '', id: '', dimension: '', whenMode: 'signalExpr', watchCondition: '', signalExpr: '', recruitSpecialists: [], recruitTeams: [], role: 'reviewer', gate: 'advisory', enforcementTeam: '', enforcementRight: '', reason: '' };
   if (kind === 'specialist') return { name: '', description: '', role: '', modelTier: 'standard', team: '', skills: [], whenToUse: '', allowedPaths: [], handoffCandidates: [] };
   if (kind === 'team') return { id: '', name: '', owner: '', charter: '', roles: [], decisionRights: [], forbiddenDecisions: [] };
   if (kind === 'contract') return { id: '', producer: '', consumer: '', riskFlags: [], inputShape: '', outputType: '' };
@@ -280,6 +353,22 @@ function blankDraft(kind) {
 // are the same id in practice, so the form derives one from the other rather than asking twice.
 
 function draftToRecord(kind, d) {
+  if (kind === 'participation') {
+    const rule = {
+      id: d.id,
+      when: d.whenMode === 'watchCondition' ? { watchCondition: d.watchCondition } : { signalExpr: d.signalExpr },
+      recruit: {
+        ...(d.recruitSpecialists.length ? { specialists: d.recruitSpecialists } : {}),
+        ...(d.recruitTeams.length ? { teams: d.recruitTeams } : {}),
+      },
+      role: d.role,
+      gate: d.gate,
+    };
+    if (d.dimension) rule.dimension = d.dimension;
+    if (d.gate === 'enforced') rule.enforcementScope = { team: d.enforcementTeam, decisionRight: d.enforcementRight };
+    if (d.reason) rule.reason = d.reason;
+    return rule;
+  }
   if (kind === 'specialist') return { name: d.name, role: d.role || d.name, description: d.description, modelTier: d.modelTier, team: d.team, skills: d.skills, whenToUse: d.whenToUse, handoffCandidates: d.handoffCandidates, fence: { allowedPaths: d.allowedPaths } };
   if (kind === 'team') return { id: d.id, name: d.name, owner: d.owner, charter: d.charter, roles: d.roles, decisionRights: d.decisionRights, forbiddenDecisions: d.forbiddenDecisions };
   if (kind === 'contract') return { id: d.id, producer: d.producer, consumer: d.consumer, trigger: { riskFlags: d.riskFlags }, input: { shape: d.inputShape }, output: { type: d.outputType } };
@@ -298,23 +387,27 @@ function scheduleValidate() {
 async function runValidate() {
   if (!state.draft || state.kind === 'skill') return;
   const record = draftToRecord(state.kind, state.draft);
-  const result = await api('POST', `/api/validate/${state.kind}`, record);
-  paintErrors(result.errors || []);
+  const result = state.kind === 'participation'
+    ? await api('POST', '/api/validate/participation', { ownerId: state.draft.owner, rule: record })
+    : await api('POST', `/api/validate/${state.kind}`, record);
+  paintErrors(result.errors || [], result.warnings || []);
 }
 
-function paintErrors(errors) {
+function paintErrors(errors, warnings = []) {
   document.querySelectorAll('.field').forEach((f) => { f.classList.remove('invalid'); const e = f.querySelector('.err'); if (e) e.remove(); });
-  const banner = document.getElementById('valBanner');
-  if (banner) banner.remove();
+  for (const stale of ['valBanner', 'warnBanner']) { const b = document.getElementById(stale); if (b) b.remove(); }
   for (const err of errors) {
     const field = err.field || (err.location || '').split('/').pop();
     const f = document.querySelector(`.field[data-field="${field}"]`);
     if (f) { f.classList.add('invalid'); f.append(el('div', { className: 'err' }, err.message)); }
   }
   const unattached = errors.filter((e) => !document.querySelector(`.field[data-field="${e.field || (e.location || '').split('/').pop()}"]`));
+  const ins = document.getElementById('inspector');
   if (unattached.length) {
-    const ins = document.getElementById('inspector');
     ins.prepend(el('div', { className: 'banner err', id: 'valBanner' }, unattached.map((e) => e.message).join(' · ')));
+  }
+  if (warnings.length) {
+    ins.prepend(el('div', { className: 'banner warn', id: 'warnBanner' }, warnings.map((w) => w.message).join(' · ')));
   }
 }
 
@@ -323,7 +416,7 @@ function textField(label, key, hint) {
   const lab = el('label', {}, label);
   if (hint) lab.append(el('span', { className: 'hint' }, ' — ' + hint));
   const input = el('input', { type: 'text', value: state.draft[key] ?? '' });
-  input.oninput = () => { state.draft[key] = input.value; scheduleValidate(); };
+  input.oninput = () => { state.draft[key] = input.value; scheduleValidate(); if (state.kind === 'participation') renderGraph(); };
   wrap.append(lab, input);
   return wrap;
 }
@@ -358,7 +451,14 @@ function selectField(label, key, options, hint) {
   wrap.append(el('label', {}, label, hint ? el('span', { className: 'hint' }, ' — ' + hint) : ''));
   const sel = el('select');
   sel.append(el('option', { value: '' }, '— select —'), ...options.map((o) => el('option', { value: o, selected: state.draft[key] === o }, o)));
-  sel.onchange = () => { state.draft[key] = sel.value; scheduleValidate(); };
+  sel.onchange = () => {
+    state.draft[key] = sel.value;
+    scheduleValidate();
+    // gate/team choices change which participation fields exist, so the form
+    // rebuilds; the canvas re-draws for any participation edit.
+    if (state.kind === 'participation' && ['gate', 'enforcementTeam'].includes(key)) renderInspector();
+    else if (state.kind === 'participation') renderGraph();
+  };
   wrap.append(sel);
   return wrap;
 }
@@ -377,9 +477,104 @@ function multiField(label, key, options, hint) {
   return wrap;
 }
 
+// Drag a specialist/team chip from the palette into the recruit zone (or click
+// it) — both paths mutate the same draft array, and validation stays entirely
+// server-side per the thin-skin guardrail.
+
+function dropZoneField(label, key, options, hint) {
+  const wrap = el('div', { className: 'field', 'data-field': key });
+  wrap.append(el('label', {}, label, hint ? el('span', { className: 'hint' }, ' — ' + hint) : ''));
+  const zone = el('div', { className: 'dropzone' });
+  const paint = () => {
+    zone.replaceChildren(...(state.draft[key].length
+      ? state.draft[key].map((v, i) => {
+          const c = el('span', { className: 'chip' }, v);
+          const x = el('button', { title: 'Remove' }, '×');
+          x.onclick = () => { state.draft[key].splice(i, 1); paint(); paintPalette(); scheduleValidate(); renderGraph(); };
+          c.append(x); return c;
+        })
+      : [el('span', { className: 'placeholder' }, 'drag from the palette below, or click to add')]));
+  };
+  const add = (v) => { if (!state.draft[key].includes(v)) { state.draft[key].push(v); paint(); paintPalette(); scheduleValidate(); renderGraph(); } };
+  zone.ondragover = (e) => { e.preventDefault(); zone.classList.add('over'); };
+  zone.ondragleave = () => zone.classList.remove('over');
+  zone.ondrop = (e) => { e.preventDefault(); zone.classList.remove('over'); const v = e.dataTransfer.getData('text/plain'); if (options.includes(v)) add(v); };
+  const palette = el('div', { className: 'palette' });
+  const paintPalette = () => palette.replaceChildren(...options.map((o) => {
+    const on = state.draft[key].includes(o);
+    const b = el('button', { className: 'opt' + (on ? ' on' : ''), draggable: true }, o);
+    b.ondragstart = (e) => e.dataTransfer.setData('text/plain', o);
+    b.onclick = () => (on ? null : add(o));
+    return b;
+  }));
+  paint(); paintPalette();
+  wrap.append(zone, palette);
+  return wrap;
+}
+
+function participationFields() {
+  const meta = state.participationMeta || { watchers: [], signalKeys: [], roles: [], gates: [], dimensions: [], specialists: [], teams: [] };
+  const fields = [
+    selectField('Owner', 'owner', [...meta.specialists, ...meta.teams], 'the registry entry this rule attaches to'),
+    textField('Rule id', 'id', 'lowercase kebab, unique registry-wide'),
+    selectField('Dimension', 'dimension', meta.dimensions, 'optional concern; legal-compliance must recruit cx-security'),
+  ];
+
+  const whenWrap = el('div', { className: 'field', 'data-field': 'when' });
+  whenWrap.append(el('label', {}, 'Condition', el('span', { className: 'hint' }, ' — when(signals) fires the rule')));
+  const modeSel = el('select');
+  modeSel.append(
+    el('option', { value: 'signalExpr', selected: state.draft.whenMode === 'signalExpr' }, 'signal expression'),
+    el('option', { value: 'watchCondition', selected: state.draft.whenMode === 'watchCondition' }, 'declared watcher'),
+  );
+  const condBox = el('div', { style: 'margin-top:6px' });
+  const paintCond = () => {
+    if (state.draft.whenMode === 'watchCondition') {
+      const sel = el('select');
+      sel.append(el('option', { value: '' }, '— select watcher —'), ...meta.watchers.map((w) => el('option', { value: w, selected: state.draft.watchCondition === w }, w)));
+      sel.onchange = () => { state.draft.watchCondition = sel.value; scheduleValidate(); renderGraph(); };
+      condBox.replaceChildren(sel);
+    } else {
+      const input = el('input', { type: 'text', value: state.draft.signalExpr, placeholder: 'e.g. cost && !privacy' });
+      input.oninput = () => { state.draft.signalExpr = input.value; scheduleValidate(); renderGraph(); };
+      condBox.replaceChildren(input, el('div', { className: 'hint', style: 'margin-top:4px' }, 'signals: ' + meta.signalKeys.join(', ')));
+    }
+  };
+  modeSel.onchange = () => { state.draft.whenMode = modeSel.value; paintCond(); scheduleValidate(); renderGraph(); };
+  paintCond();
+  whenWrap.append(modeSel, condBox);
+  fields.push(whenWrap);
+
+  fields.push(
+    dropZoneField('Recruit specialists', 'recruitSpecialists', meta.specialists),
+    dropZoneField('Recruit teams', 'recruitTeams', meta.teams, 'a team joins as a unit with its members'),
+    selectField('Role', 'role', meta.roles, 'the recruit’s function on the artifact'),
+    selectField('Gate', 'gate', meta.gates, 'advisory records sign-off; enforced can block'),
+  );
+
+  if (state.draft.gate === 'enforced') {
+    const teamSel = selectField('Enforcement team', 'enforcementTeam', meta.teams, 'must list the decision right to block');
+    fields.push(teamSel);
+    const team = (state.org.team?.items || []).find((t) => t.id === state.draft.enforcementTeam);
+    const rights = team?.decisionRights || [];
+    const rightWrap = el('div', { className: 'field', 'data-field': 'enforcementScope' });
+    rightWrap.append(el('label', {}, 'Decision right', el('span', { className: 'hint' }, rights.length ? '' : ' — selected team declares none yet')));
+    const rightInput = el('input', { type: 'text', value: state.draft.enforcementRight, list: 'rightOpts', placeholder: 'decision right id' });
+    const dl = el('datalist', { id: 'rightOpts' });
+    dl.append(...rights.map((r) => el('option', { value: r })));
+    rightInput.oninput = () => { state.draft.enforcementRight = rightInput.value; scheduleValidate(); };
+    rightWrap.append(rightInput, dl);
+    fields.push(rightWrap);
+  }
+
+  fields.push(textField('Reason', 'reason', 'surfaced in trace output, max 200 chars'));
+  return fields;
+}
+
 function formFields() {
   const k = state.kind, specs = specialistNames();
   const teamIds = (state.org.team?.items || []).map((t) => t.id);
+  if (k === 'participation') return participationFields();
   if (k === 'specialist') return [
     textField('Name', 'name', 'lowercase kebab; becomes cx-<name>'),
     areaField('Description', 'description', 'min 20 chars; drives routing'),
@@ -416,22 +611,26 @@ function formFields() {
 
 function renderInspector() {
   const ins = document.getElementById('inspector');
-  if (!state.draft) { ins.replaceChildren(el('div', { className: 'empty' }, 'Select an entity, or press + New.')); return; }
+  if (!state.draft) { ins.replaceChildren(el('div', { className: 'empty' }, state.kind === 'participation' ? 'Select a rule, press + New, or try the sample-request preview on the canvas.' : 'Select an entity, or press + New.')); return; }
   if (state.kind === 'skill') { ins.replaceChildren(el('div', { className: 'empty' }, 'Skills are read-only references.')); return; }
-  const title = state.creating ? `New ${state.kind}` : (state.selectedId || '');
-  const readOnly = !state.creating && isBuiltin();
+  const title = state.creating ? `New ${state.kind === 'participation' ? 'participation rule' : state.kind}` : (state.selectedId || '');
+  const readOnly = !state.creating && state.kind !== 'participation' && isBuiltin();
   const head = el('div', { className: 'insp-head' }, el('h2', {}, title));
-  ins.replaceChildren(head, el('div', { className: 'insp-sub' }, readOnly ? 'builtin — edits save a project-scope override' : (scopeVal() + ' scope')));
+  const subText = state.kind === 'participation'
+    ? (isBuiltin() && !state.creating ? 'builtin rule — edits save a project-scope override on the owner' : (scopeVal() + ' scope — writes patch the owning registry entry'))
+    : (readOnly ? 'builtin — edits save a project-scope override' : (scopeVal() + ' scope'));
+  ins.replaceChildren(head, el('div', { className: 'insp-sub' }, subText));
   formFields().forEach((f) => ins.append(f));
   const actions = el('div', { className: 'actions' });
   actions.append(el('button', { className: 'btn primary', onclick: save }, state.creating ? 'Create' : 'Save'));
-  if (!state.creating && !isBuiltin()) actions.append(el('button', { className: 'btn danger', onclick: remove }, 'Delete'));
+  if (!state.creating && (state.kind === 'participation' || !isBuiltin())) actions.append(el('button', { className: 'btn danger', onclick: remove }, 'Delete'));
   ins.append(actions);
   if (state.kind === 'specialist') ins.append(routePreview());
   runValidate();
 }
 
 function isBuiltin() {
+  if (state.kind === 'participation') return findRule(state.selectedId)?.scope === 'builtin';
   const it = (state.org[state.kind]?.items || []).find((x) => x.id === state.selectedId);
   return it?.scope === 'builtin';
 }
@@ -449,6 +648,20 @@ function routePreview() {
 async function save() {
   const record = draftToRecord(state.kind, state.draft);
   const scope = scopeVal();
+  if (state.kind === 'participation') {
+    const result = await api('POST', `/api/participation/${encodeURIComponent(state.draft.owner)}?scope=${scope}`, record);
+    if (result.ok) {
+      toast(state.creating ? 'Rule created' : 'Rule saved');
+      state.creating = false;
+      state.selectedId = `${state.draft.owner}:${record.id}`;
+      await loadOrg();
+      selectRule(state.selectedId);
+    } else {
+      paintErrors(result.errors || [{ message: 'Save failed' }], result.warnings || []);
+      toast('Validation failed');
+    }
+    return;
+  }
   const result = state.creating
     ? await api('POST', `/api/entities/${state.kind}?scope=${scope}`, record)
     : await api('PUT', `/api/entities/${state.kind}/${encodeURIComponent(state.selectedId)}?scope=${scope}`, record);
@@ -466,6 +679,13 @@ async function save() {
 
 async function remove() {
   if (!confirm(`Delete ${state.selectedId}?`)) return;
+  if (state.kind === 'participation') {
+    const it = findRule(state.selectedId);
+    const result = await api('DELETE', `/api/participation/${encodeURIComponent(it.owner)}/${encodeURIComponent(it.rule.id)}?scope=${scopeVal()}`);
+    if (result.ok) { toast('Rule deleted'); state.selectedId = null; state.draft = null; await loadOrg(); }
+    else toast(result.errors?.[0]?.message || 'Delete failed');
+    return;
+  }
   const result = await api('DELETE', `/api/entities/${state.kind}/${encodeURIComponent(state.selectedId)}?scope=${scopeVal()}`);
   if (result.ok) { toast('Deleted'); state.selectedId = null; state.draft = null; await loadOrg(); }
   else toast(result.errors?.[0]?.message || 'Delete failed');
@@ -473,8 +693,73 @@ async function remove() {
 
 // === Topology graph: specialists + teams as nodes, contracts as handoff edges, membership dashed ===
 
+// === Participation canvas: condition -> rule -> recruited participants, with the
+// draft (unsaved) rule drawn from live form state so edits appear as they are made ===
+
+function renderParticipationCanvas(vp, mk) {
+  const items = (state.participation.items || []).map((it) => ({ it, key: ruleKey(it), draft: false }));
+  if (state.draft && state.creating) items.push({ it: { owner: state.draft.owner || '?', rule: draftToRecord('participation', state.draft) }, key: null, draft: true });
+
+  const stages = [['Condition', 40], ['Rule', 300], ['Recruits', 560]];
+  for (const [label, x] of stages) {
+    const g = mk('g', { class: 'pipe-stage' });
+    g.append(mk('rect', { x, y: 8, width: 200, height: 22, rx: 6 }));
+    g.append(Object.assign(mk('text', { x: x + 10, y: 23 }), { textContent: label + (label === 'Rule' ? ' · role/gate' : '') }));
+    vp.append(g);
+  }
+
+  let y = 56;
+  for (const { it, key, draft } of items) {
+    const rule = it.rule;
+    const cond = rule.when?.watchCondition || rule.when?.signalExpr || '—';
+    const recruits = [...(rule.recruit?.specialists || []), ...(rule.recruit?.teams || []).map((t) => `team:${t}`)];
+    const rowH = Math.max(1, recruits.length) * 30 + 26;
+    const sel = state.selectedId === key || draft;
+
+    const condG = mk('g', { class: 'node-card' + (sel ? ' sel' : '') });
+    condG.append(mk('rect', { x: 40, y, width: 200, height: 36, rx: 8 }));
+    condG.append(Object.assign(mk('text', { x: 52, y: y + 22 }), { textContent: truncate(cond, 26) }));
+    vp.append(condG);
+
+    const ruleG = mk('g', { class: 'node-card' + (sel ? ' sel' : '') });
+    ruleG.append(mk('rect', { x: 300, y, width: 200, height: 44, rx: 8 }));
+    ruleG.append(Object.assign(mk('text', { x: 312, y: y + 18 }), { textContent: truncate(rule.id || '(new rule)', 24) }));
+    ruleG.append(Object.assign(mk('text', { class: 'kindtag', x: 312, y: y + 34 }), { textContent: `${rule.role || '?'} · ${rule.gate || '?'} · on ${it.owner}` }));
+    if (key) ruleG.onclick = () => selectRule(key);
+    vp.append(ruleG);
+
+    vp.append(mk('path', { class: 'edge' + (sel ? ' hot' : ''), d: `M 240 ${y + 18} C 270 ${y + 18}, 270 ${y + 22}, 300 ${y + 22}` }));
+
+    recruits.forEach((r, i) => {
+      const ry = y + i * 30;
+      const isTeam = r.startsWith('team:');
+      const rg = mk('g', { class: 'node-card' + (isTeam ? ' team' : '') + (sel ? ' sel' : '') });
+      rg.append(mk('rect', { x: 560, y: ry, width: 180, height: 26, rx: 7 }));
+      rg.append(Object.assign(mk('text', { x: 570, y: ry + 17 }), { textContent: truncate(r, 22) }));
+      vp.append(rg);
+      vp.append(mk('path', { class: 'edge' + (sel ? ' hot' : ''), d: `M 500 ${y + 22} C 530 ${y + 22}, 530 ${ry + 13}, 560 ${ry + 13}` }));
+    });
+
+    y += rowH + 14;
+  }
+
+  if (!items.length) {
+    vp.append(Object.assign(mk('text', { x: 40, y: 70, class: 'kindtag' }), { textContent: 'No participation rules yet — press + New to assemble one.' }));
+  }
+}
+
 function renderGraph() {
   const vp = document.getElementById('viewport');
+  if (state.kind === 'participation') {
+    const ns = 'http://www.w3.org/2000/svg';
+    const mk = (tag, attrs) => { const e = document.createElementNS(ns, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); return e; };
+    vp.replaceChildren();
+    renderParticipationCanvas(vp, mk);
+    fitGraph();
+    renderParticipationPreviewBar();
+    return;
+  }
+  removeParticipationPreviewBar();
   const specs = state.org.specialist?.items || [];
   const teams = state.org.team?.items || [];
   const contracts = state.org.contract?.items || [];
@@ -531,6 +816,35 @@ function fitGraph() {
   if (!b.width) return;
   const pad = 40;
   svg.setAttribute('viewBox', `${b.x - pad} ${b.y - pad} ${b.width + pad * 2} ${b.height + pad * 2}`);
+}
+
+// === Participation preview bar: sample request in, recruited set out — the same
+// requestSignals + recruiter path real dispatch uses, via /api/preview/participation ===
+
+function removeParticipationPreviewBar() {
+  document.getElementById('partPreview')?.remove();
+}
+
+function renderParticipationPreviewBar() {
+  if (document.getElementById('partPreview')) return;
+  const center = document.querySelector('.center');
+  const bar = el('div', { className: 'part-preview', id: 'partPreview' });
+  const input = el('input', { type: 'text', placeholder: 'Preview: type a sample request to see who gets recruited…', id: 'partPreviewInput' });
+  const out = el('div', { className: 'part-preview-out', id: 'partPreviewOut' });
+  let timer = null;
+  input.oninput = () => {
+    clearTimeout(timer);
+    timer = setTimeout(async () => {
+      if (!input.value.trim()) { out.replaceChildren(); return; }
+      const r = await api('POST', '/api/preview/participation', { request: input.value });
+      const recruited = r.recruited || [];
+      out.replaceChildren(recruited.length
+        ? el('div', {}, ...recruited.map((p) => el('span', { className: 'chip', title: p.reason }, `${p.specialist || 'team:' + p.team} · ${p.role}/${p.gate}${p.rule ? ' · ' + p.rule : ''}`)))
+        : el('span', { className: 'placeholder' }, 'no condition-driven recruits for this request'));
+    }, 300);
+  };
+  bar.append(input, out);
+  center.append(bar);
 }
 
 // === Import / export ===
