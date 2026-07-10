@@ -23,6 +23,8 @@ Use when: an architectural decision is made that affects the system structure, d
 3. **Also write a shorter entry to `.cx/decisions/`** for session context
 4. **cx-operations** updates `.cx/context.md` Architecture Notes with a one-line summary and link
 
+The steps above are the baseline, not the final roster. Authoring through `author_artifact` (type `adr`) recruits additional participants from the request's content signals (ADR-0070) and returns them as `recruited: [{specialist, reason, role, gate, source}]`. Honor that set — run recruited participants at their stated role and gate; do not substitute a memorized roster. Pass `recruitment: "off"` or an explicit cx- id list to override.
+
 ## File naming
 - `docs/decisions/adr/ADR-001-use-postgres-over-mysql.md`
 - `docs/decisions/adr/ADR-002-jwt-auth-strategy.md`
