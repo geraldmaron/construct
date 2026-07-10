@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-10T02:43:19.637Z",
+  "generatedAt": "2026-07-10T02:44:12.684Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 857,
+    "testFiles": 858,
     "topLevelTestFiles": 362,
-    "nestedTestFiles": 495,
+    "nestedTestFiles": 496,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 48,
     "byLayer": {
       "unit": 571,
-      "functional": 238,
+      "functional": 239,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
       "unit": 508,
-      "functional": 238,
+      "functional": 239,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -2453,6 +2453,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/build-audit-record.functional.test.mjs — construct-ifwhw.1."
+    },
+    {
+      "path": "tests/functional/build-request-enforced-paper-trail.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/build-request-enforced-paper-trail.functional.test.mjs —"
     },
     {
       "path": "tests/functional/bun-compiled-binary.functional.test.mjs",
