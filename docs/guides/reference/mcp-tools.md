@@ -769,6 +769,7 @@ Invoke a named Construct workflow (roles/skills) non-interactively and return a 
 | `host` | string | Host/IDE identifier (advisory). |
 | `host_model` | string | Model the host uses, for model resolution. |
 | `host_provider` | string | Provider family the host uses, for model resolution. |
+| `recruitment` | string | Signal-driven recruitment onto the manifest chain (construct-pteo2.9): `auto` (default) appends recruits, `off` disables. Recruits and their reasons return in `recruitment`; under `allow-durable-write` they are also recorded in the `.cx/observations` decision trace (construct-pteo2.18). |
 
 ### `capability_describe`
 Describe what this Construct install can do: versions, contract interfaces (CLI/MCP/SDK), roles, skills, workflows, schemas, models/providers, policies, telemetry posture, and plugins. Read-only and secret-free — provider entries carry env-key names and a configured boolean only, never credential values. Reads live registries so the published contract cannot drift from reality.
