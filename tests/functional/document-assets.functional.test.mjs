@@ -109,7 +109,7 @@ test('local assets embed on export when the engine is present, else an actionabl
 test('resolveDocAssets rewrites local refs to absolute paths and leaves remote refs intact', () => {
   const dir = tmpDir();
   const doc = mediaDoc(dir);
-  const resolved = resolveDocAssets(doc, { baseDir: dir });
+  const { doc: resolved } = resolveDocAssets(doc, { baseDir: dir });
   const blocks = resolved.sections[0].blocks;
   assert.equal(blocks[1].media.uri, path.resolve(dir, 'photo.png'));
   assert.equal(blocks[3].media.uri, 'https://example.com/remote.png');
