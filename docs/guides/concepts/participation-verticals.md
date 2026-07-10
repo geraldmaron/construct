@@ -78,6 +78,6 @@ Each vertical fills the same four slots. Current state of the substrate:
 To complete a vertical, copy the cost template:
 
 1. Confirm (or overlay) the dimension keywords in `lib/orchestration/signal-dimensions.mjs`.
-2. Add a `participationRules` rule on the recruited specialist's registry JSON with `signalExpr` naming the dimension, `role: reviewer`, `gate: advisory`, and a `reason` that names the framework the reviewer applies.
+2. Add a `participationRules` rule on the recruited specialist's registry JSON with `signalExpr` naming the dimension, `role: reviewer`, `gate: advisory`, and a `reason` that names the framework the reviewer applies. Rules can also be authored without editing JSON: `construct studio` (construct-pteo2.15) has a Participation canvas whose editor writes through `lib/registry/org-api.mjs`'s `upsertParticipationRule` — the same validation the coverage gate enforces — and a sample-request preview that shows the recruited set live via the real `requestSignals` + recruiter path.
 3. If the role lacks a reasoning framework, author one in `specialists/org/frameworks/` following ADR-0062 (`appliesToRole` frontmatter) — derived from the role's existing skills and prompt, never invented.
 4. Run `node bin/construct registry:validate --unified` and `node --test tests/participation-coverage.test.mjs`, then add a functional test modeled on `tests/functional/cost-vertical-recruitment.functional.test.mjs` asserting the recruited set and rationale end-to-end.

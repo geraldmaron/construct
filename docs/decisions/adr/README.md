@@ -76,6 +76,9 @@ Architecture decision records for decisions that have already been made.
 | [0068](./0068-ingestion-sidecar-process-contract.md) | Ingestion sidecar process contract | accepted | Formalizes the docling sidecar's existing shape; not a supersession |
 | [0069](./0069-ci-review-gate-deterministic-backend.md) | CI review gate: deterministic diff review backend | accepted | |
 | [0070](./0070-participation-pipeline-and-rules-schema.md) | Condition-driven participation: recruit/collaborate/execute/enforce pipeline + participationRules schema | proposed | Supersedes recruitment scope of construct-ca4's WATCHERS/evaluateWatchConditions |
+| [0071](./0071-install-footprint-vs-org-scope-naming.md) | Rename install "scope" to "footprint"; keep org-scope vocabulary as-is | accepted | |
+| [0072](./0072-no-code-org-authoring-api.md) | No-code org authoring API — CRUD surface for specialists, teams, contracts, relationships, fences, skills | proposed | Foundation for a future visual editor (not itself in scope); wraps existing `lib/registry/validator.mjs` + `custom-schema.mjs` validation, writes to the same `specialists/org/**` / `.cx/org/**` files |
+| [0073](./0073-richdocument-ir-html-canonical-surface.md) | RichDocument IR with HTML-canonical serialization for preview and export | proposed | Revises the markdown-as-pivot framing of ADR-0024; sidecar RPC contract of ADR-0068 unchanged; numbered 0071 on `refactor/consolidate-project-config-dir` before reconciliation |
 
 ## Starter templates
 
