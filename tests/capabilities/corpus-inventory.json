@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-10T02:16:41.593Z",
+  "generatedAt": "2026-07-10T02:23:49.786Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 850,
+    "testFiles": 854,
     "topLevelTestFiles": 361,
-    "nestedTestFiles": 489,
+    "nestedTestFiles": 493,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 46,
+    "capabilityMarkedFiles": 47,
     "byLayer": {
       "unit": 570,
-      "functional": 232,
+      "functional": 236,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
       "unit": 507,
-      "functional": 232,
+      "functional": 236,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -2431,6 +2431,14 @@
       "maintainerNotes": "beads-concurrent-write.functional.test.mjs — parallel bd writes via optimistic locking."
     },
     {
+      "path": "tests/functional/binary-flow-state-smoke.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/binary-flow-state-smoke.functional.test.mjs — durable-state"
+    },
+    {
       "path": "tests/functional/binary-postcondition-enforcement.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2583,6 +2591,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/custom-specialist-authoring.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/custom-specialist-round-trip.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/custom-specialist-round-trip.functional.test.mjs —"
     },
     {
       "path": "tests/functional/deck-export.functional.test.mjs",
@@ -2911,6 +2927,16 @@
       "maintainerNotes": "tests/functional/flow-checkpoint-resume.functional.test.mjs — flow-engine"
     },
     {
+      "path": "tests/functional/flow-join-resume.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "flows.checkpoint"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/flow-join-resume.functional.test.mjs — flow-engine fan-out,"
+    },
+    {
       "path": "tests/functional/gate-worker-backend-visibility.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3060,6 +3086,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/init-beads-fail-closed.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/init-config-layer-tree.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/init-config-layer-tree.functional.test.mjs — per-layer tree"
     },
     {
       "path": "tests/functional/init-gitignores-cx.functional.test.mjs",
