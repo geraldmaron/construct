@@ -415,15 +415,34 @@ function writeFile(file, content, { stamp = true } = {}) {
   _stagedPairs.push({ real: file, staging: stagingPath, content: stamped });
 }
 
-/** Atomically rename all staged files into their real destinations. */
+/**
+ * Rename every staged file into its real destination. Each rename is
+ * individually atomic, but the batch is not: a failure partway (a
+ * destination directory that turned unwritable mid-run) must not stop the
+ * rest of the batch from committing, or leave the caller unaware of which
+ * files actually landed. Returns the committed and failed sets so the driver
+ * can report per-host outcomes rather than a single opaque success/failure.
+ */
 function commitStaging() {
+  const committed = [];
+  const failed = [];
   for (const { real, staging } of _stagedPairs) {
     if (!staging) continue;
-    mkdirp(path.dirname(real));
-    fs.renameSync(staging, real);
+    try {
+      mkdirp(path.dirname(real));
+      fs.renameSync(staging, real);
+      committed.push(real);
+    } catch (err) {
+      failed.push({ real, staging, error: err });
+    }
   }
-  // Clean up staging dir.
-  try { fs.rmSync(stagingDir, { recursive: true, force: true }); } catch { /* ok */ }
+  // Clean up staging dir — only the entries that failed to commit remain in
+  // it, so a full success removes it entirely and a partial failure leaves
+  // just the uncommitted files behind for inspection.
+  if (failed.length === 0) {
+    try { fs.rmSync(stagingDir, { recursive: true, force: true }); } catch { /* ok */ }
+  }
+  return { committed, failed };
 }
 
 /** Print a human-readable diff summary for --dry-run mode. */
@@ -2496,57 +2515,91 @@ if (COMPRESS_PERSONAS) {
   }
 }
 
+// One host throwing (an unwritable directory, a malformed existing config)
+// must not prevent the others from running or from having their already-
+// staged files committed — the previous shape was a single try/finally
+// around every host, so the first throw aborted the rest mid-sequence
+// while leaving whatever had already run partially applied.
+
+function runHostSync(label, fn) {
+  try {
+    return { label, ok: true, result: fn() };
+  } catch (err) {
+    console.error(`[sync] ${label} failed: ${err.message}`);
+    return { label, ok: false, result: undefined, error: err };
+  }
+}
+
+// A run with any host failure (or a staged file that failed to commit) must
+// exit nonzero even though the successfully-synced hosts still get their
+// normal summary line — silently reporting "Synced …" when part of the run
+// actually failed is the stage-project.mjs "clean state" claim this same
+// gap produces one layer up.
+
+function reportSyncFailures(hostResults, commitFailed) {
+  const failedHosts = hostResults.filter((r) => !r.ok);
+  if (failedHosts.length === 0 && commitFailed.length === 0) return;
+  console.error(`[sync] ${failedHosts.length} host(s) failed, ${commitFailed.length} staged file(s) could not commit:`);
+  for (const { label, error } of failedHosts) console.error(`  ✗ ${label}: ${error.message}`);
+  for (const { real, error } of commitFailed) console.error(`  ✗ commit ${real}: ${error.message}`);
+  process.exitCode = 1;
+}
+
 acquireLock();
 try {
   if (projectDir) {
-    syncClaude(entries, projectDir, wantsHost("claude"));
-    syncCodex(entries, projectDir, wantsHost("codex"));
-    syncCopilot(entries, projectDir, wantsHost("copilot"));
-    const opencodeOk = syncOpencode(entries, projectDir, wantsHost("opencode"));
-    const vscodeOk = syncVSCode(projectDir, wantsHost("vscode"));
-    const cursorOk = syncCursor(projectDir, wantsHost("cursor"));
-    const cmdCount = wantsHost("claude") ? syncCommands(projectDir) : 0;
-    const skillCount = wantsHost("claude") ? syncSkills(projectDir) : 0;
+    const claude = runHostSync("Claude Code", () => syncClaude(entries, projectDir, wantsHost("claude")));
+    const codex = runHostSync("Codex", () => syncCodex(entries, projectDir, wantsHost("codex")));
+    const copilot = runHostSync("Copilot", () => syncCopilot(entries, projectDir, wantsHost("copilot")));
+    const opencode = runHostSync("OpenCode", () => syncOpencode(entries, projectDir, wantsHost("opencode")));
+    const vscode = runHostSync("VS Code", () => syncVSCode(projectDir, wantsHost("vscode")));
+    const cursor = runHostSync("Cursor", () => syncCursor(projectDir, wantsHost("cursor")));
+    const commands = runHostSync("Commands", () => (wantsHost("claude") ? syncCommands(projectDir) : 0));
+    const skills = runHostSync("Skills", () => (wantsHost("claude") ? syncSkills(projectDir) : 0));
+    const cmdCount = commands.ok ? commands.result : 0;
+    const skillCount = skills.ok ? skills.result : 0;
 
     if (DRY_RUN) {
       printDryRunDiff();
     } else {
-      commitStaging();
+      const { failed: commitFailed } = commitStaging();
       const targets = [
-        wantsHost("claude") && "Claude Code",
-        wantsHost("codex") && "Codex",
-        wantsHost("copilot") && "Copilot",
-        opencodeOk && "OpenCode",
-        vscodeOk && "VS Code",
-        cursorOk && "Cursor",
+        claude.ok && wantsHost("claude") && "Claude Code",
+        codex.ok && wantsHost("codex") && "Codex",
+        copilot.ok && wantsHost("copilot") && "Copilot",
+        opencode.ok && opencode.result && "OpenCode",
+        vscode.ok && vscode.result && "VS Code",
+        cursor.ok && cursor.result && "Cursor",
       ].filter(Boolean).join(", ");
       summary(`Synced ${entries.length} agents + ${cmdCount} commands + ${skillCount} skills to ${path.relative(process.cwd(), projectDir) || "."} (project mode → ${targets}).`);
+      reportSyncFailures([claude, codex, copilot, opencode, vscode, cursor, commands, skills], commitFailed);
     }
   } else {
     const personaCount = entries.filter((e) => e.isOrchestrator).length;
 
-    syncCodex(entries, null, wantsHost("codex"));
-    syncClaude(entries, null, wantsHost("claude"));
-    syncCopilot(entries, null, wantsHost("copilot"));
-    const opencodeOk = syncOpencode(entries, null, wantsHost("opencode"));
-    const vscodeOk = syncVSCode(null, wantsHost("vscode"));
-    const cursorOk = syncCursor(null, wantsHost("cursor"));
-    syncCommands();
-    syncSkills();
+    const codex = runHostSync("Codex", () => syncCodex(entries, null, wantsHost("codex")));
+    const claude = runHostSync("Claude Code", () => syncClaude(entries, null, wantsHost("claude")));
+    const copilot = runHostSync("Copilot", () => syncCopilot(entries, null, wantsHost("copilot")));
+    const opencode = runHostSync("OpenCode", () => syncOpencode(entries, null, wantsHost("opencode")));
+    const vscode = runHostSync("VS Code", () => syncVSCode(null, wantsHost("vscode")));
+    const cursor = runHostSync("Cursor", () => syncCursor(null, wantsHost("cursor")));
+    const commands = runHostSync("Commands", () => syncCommands());
+    const skills = runHostSync("Skills", () => syncSkills());
 
     if (DRY_RUN) {
       printDryRunDiff();
     } else {
-      commitStaging();
+      const { failed: commitFailed } = commitStaging();
       const targets = [
-        "Codex",
-        "Claude Code",
-        "Copilot",
-        opencodeOk && "OpenCode",
-        vscodeOk && "VS Code",
-        cursorOk && "Cursor",
+        codex.ok && wantsHost("codex") && "Codex",
+        claude.ok && wantsHost("claude") && "Claude Code",
+        copilot.ok && wantsHost("copilot") && "Copilot",
+        opencode.ok && opencode.result && "OpenCode",
+        vscode.ok && vscode.result && "VS Code",
+        cursor.ok && cursor.result && "Cursor",
       ].filter(Boolean).join(", ");
       summary(`Synced ${personaCount} front-door agent to global scope (${targets}). Specialists, commands, and skills are project-only — run \`construct init\` inside a project to scaffold them.`);
+      reportSyncFailures([codex, claude, copilot, opencode, vscode, cursor, commands, skills], commitFailed);
 
       const completionsDir = generateCompletions();
       if (completionsDir) {
