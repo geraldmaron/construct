@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-11T23:33:11.345Z",
+  "generatedAt": "2026-07-11T23:49:44.338Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 884,
+    "testFiles": 885,
     "topLevelTestFiles": 365,
-    "nestedTestFiles": 519,
+    "nestedTestFiles": 520,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
       "unit": 580,
-      "functional": 256,
+      "functional": 257,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
       "unit": 517,
-      "functional": 256,
+      "functional": 257,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -3954,6 +3954,14 @@
       ],
       "skipped": false,
       "maintainerNotes": "publish.functional.test.mjs — `construct publish` and `construct tools detect`."
+    },
+    {
+      "path": "tests/functional/published-package-smoke.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/published-package-smoke.functional.test.mjs — proves the"
     },
     {
       "path": "tests/functional/readiness-honesty.functional.test.mjs",
