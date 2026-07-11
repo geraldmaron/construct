@@ -9,7 +9,7 @@ import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { assessArtifactQuality } from './lib/artifact-quality.mjs';
+import { assessArtifactQuality } from '../../lib/artifact-quality.mjs';
 
 // A PRD with every required section, real multi-sentence paragraphs, and two
 // dated primary-source citations — the shape the specialist chain should produce.

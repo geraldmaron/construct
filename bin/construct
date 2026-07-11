@@ -5589,7 +5589,7 @@ async function cmdCiPreview(args) {
 
   const ciPath = join(ROOT_DIR, '.github', 'workflows', 'ci.yml');
   if (!existsSync(ciPath)) {
-    errorln('No .github/workflows/ci.yml found');
+    errorln('construct ci:preview requires a source checkout of Construct — .github/ is not part of the published npm package.');
     process.exit(1);
   }
 
@@ -6423,7 +6423,7 @@ async function cmdTags(args) {
 
   if (sub === 'backfill') {
     println('Tag backfill reads .construct/knowledge/**/*.md frontmatter and writes tags to construct_documents.');
-    println('Requires DATABASE_URL. Use: node scripts/tag-candidate-mining.mjs for standalone mode.');
+    println('Requires DATABASE_URL. Standalone mode: node scripts/tag-candidate-mining.mjs');
     return;
   }
 
