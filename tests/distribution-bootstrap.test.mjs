@@ -22,6 +22,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { describe, it, before, after } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { stageProjectAdapters } from '../lib/install/stage-project.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
@@ -101,6 +102,31 @@ describe('project-local launcher staging', () => {
   it('creates the cache/bin scratch dir', () => {
     const p = path.join(projectDir, '.construct', 'launcher', 'cache', 'bin');
     assert.ok(fs.existsSync(p) && fs.statSync(p).isDirectory());
+  });
+});
+
+// A consumer upgrade is: install a newer global package, then re-run `construct
+// init`/`sync` in an existing project. That re-run must bump the staged pin, or
+// the launcher's pinned-npx resolver keeps serving the old version indefinitely.
+
+describe('re-staging an existing project (upgrade)', () => {
+  it('bumps .construct/launcher/version to the newly-running package version', () => {
+    const upgradeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-dist-upgrade-'));
+    try {
+      stageProjectAdapters({ projectRoot: upgradeDir, packageRoot: ROOT, pkgVersion: '1.5.1', log: () => {} });
+      const versionFile = path.join(upgradeDir, '.construct', 'launcher', 'version');
+      assert.equal(fs.readFileSync(versionFile, 'utf8').trim(), '1.5.1', 'first stage pins the given version');
+
+      stageProjectAdapters({ projectRoot: upgradeDir, packageRoot: ROOT, pkgVersion: '1.5.4', log: () => {} });
+      assert.equal(
+        fs.readFileSync(versionFile, 'utf8').trim(),
+        '1.5.4',
+        're-staging with a newer pkgVersion must move the pin — an unmoved pin means the launcher ' +
+          'keeps npx-resolving the old version even after a newer global install',
+      );
+    } finally {
+      rmTmpDir(upgradeDir);
+    }
   });
 });
 
