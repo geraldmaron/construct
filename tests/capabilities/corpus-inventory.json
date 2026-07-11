@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-11T22:22:07.997Z",
+  "generatedAt": "2026-07-11T22:55:54.343Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 879,
+    "testFiles": 880,
     "topLevelTestFiles": 365,
-    "nestedTestFiles": 514,
+    "nestedTestFiles": 515,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
       "unit": 579,
-      "functional": 252,
+      "functional": 253,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
       "unit": 516,
-      "functional": 252,
+      "functional": 253,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -4180,6 +4180,14 @@
       "maintainerNotes": "tests/functional/sync-no-double-frontmatter.functional.test.mjs"
     },
     {
+      "path": "tests/functional/sync-per-host-isolation.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/sync-per-host-isolation.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/sync-prune-safety.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -6141,7 +6149,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/published-scripts.test.mjs — every scripts/ file the CLI dispatches to"
+      "maintainerNotes": "tests/published-scripts.test.mjs — every scripts/ file dispatched at runtime"
     },
     {
       "path": "tests/read-tracker-store.test.mjs",
