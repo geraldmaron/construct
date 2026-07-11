@@ -73,6 +73,7 @@ import { buildSkillFrontmatter, stripLeadingFrontmatter } from "../lib/sync/skil
 import { loadRegistry, clearCache } from "../lib/registry/loader.mjs";
 import { loadPluginRegistry } from "../lib/plugin-registry.mjs";
 import { PROJECT_MARKERS, LAUNCHER_REL_PATH, CONFIG_DIR_NAME } from "../lib/config-dir.mjs";
+import { getVSCodeUserDirs as sharedGetVSCodeUserDirs } from "../lib/vscode-paths.mjs";
 
 const home = os.homedir();
 const root = path.resolve(import.meta.dirname, "..");
@@ -1534,36 +1535,13 @@ ${list || "(no front-door prompts to surface)"}`;
 
 // --- VS Code adapter ---
 
-function getVSCodeUserDirs() {
-  const platform = os.platform();
-  const dirs = [];
-  if (platform === "darwin") {
-    dirs.push(
-      path.join(home, "Library", "Application Support", "Code", "User"),
-      path.join(home, "Library", "Application Support", "Code - Insiders", "User"),
-    );
-  } else if (platform === "linux") {
-    dirs.push(
-      path.join(home, ".config", "Code", "User"),
-      path.join(home, ".config", "Code - Insiders", "User"),
-    );
-  } else if (platform === "win32") {
-    const appData = process.env.APPDATA ?? path.join(home, "AppData", "Roaming");
-    dirs.push(
-      path.join(appData, "Code", "User"),
-      path.join(appData, "Code - Insiders", "User"),
-    );
-  }
-  return dirs;
-}
-
 function getVSCodeUserMcpPaths() {
   // VS Code's "MCP: Open User Configuration" edits `<User>/mcp.json` (top-level
   // `servers`). Global sync returns only files that already exist — per-window
   // MCP config is never seeded, mirroring the non-polluting Cursor/OpenCode
   // global behavior.
 
-  return getVSCodeUserDirs()
+  return sharedGetVSCodeUserDirs(home)
     .map((dir) => path.join(dir, "mcp.json"))
     .filter((file) => fs.existsSync(file));
 }
