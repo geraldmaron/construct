@@ -102,8 +102,8 @@ function writeFixture({ overlay, mutate } = {}) {
   fs.cpSync(path.join(ROOT_DIR, 'specialists', 'org'), path.join(dir, 'specialists', 'org'), { recursive: true });
   if (mutate) mutate(dir);
   if (overlay) {
-    fs.mkdirSync(path.join(dir, '.cx'), { recursive: true });
-    fs.writeFileSync(path.join(dir, '.cx', 'unified-registry.json'), JSON.stringify(overlay, null, 2) + '\n');
+    fs.mkdirSync(path.join(dir, '.construct'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '.construct', 'unified-registry.json'), JSON.stringify(overlay, null, 2) + '\n');
   }
   return dir;
 }

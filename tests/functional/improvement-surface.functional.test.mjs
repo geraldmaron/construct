@@ -3,7 +3,7 @@
  * improvement operator surface (construct-6zga.1.11).
  *
  * Drives submit → review → approve → apply through the real CLI module and
- * asserts durable artifacts under `.cx/improvement/proposals/`.
+ * asserts durable artifacts under `.construct/improvement/proposals/`.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -60,9 +60,9 @@ function writeJson(dir, name, data) {
 test('CLI improvement surface closes submit → approve → apply with durable records', async () => {
   const tmp = mkdtempSync(path.join(os.tmpdir(), 'cx-improvement-'));
   try {
-    fs.mkdirSync(path.join(tmp, '.cx', 'improvement'), { recursive: true });
+    fs.mkdirSync(path.join(tmp, '.construct', 'improvement'), { recursive: true });
     fs.writeFileSync(
-      path.join(tmp, '.cx', 'improvement', 'approvers.json'),
+      path.join(tmp, '.construct', 'improvement', 'approvers.json'),
       JSON.stringify({ identities: ['test-operator'] }),
     );
 

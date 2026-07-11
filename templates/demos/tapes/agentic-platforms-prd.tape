@@ -1,7 +1,7 @@
 Require node
 Require vhs
 # construct demo: publish guardrails via the construct cockpit (violet theme)
-Output .cx/demos/agentic-platforms-prd.mp4
+Output .construct/demos/agentic-platforms-prd.mp4
 Set FontSize 18
 Set Width 1200
 Set Height 720

@@ -166,5 +166,6 @@
   ],
   "team": "engineering-team",
   "teamId": "engineering-team",
-  "groupId": "engineering-group"
+  "groupId": "engineering-group",
+  "manualOnly": true
 }

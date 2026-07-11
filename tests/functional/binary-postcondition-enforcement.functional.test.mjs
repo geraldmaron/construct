@@ -28,7 +28,7 @@ let validateHandoff;
 
 beforeEach(async () => {
   tmpRoot = mkdtempSync(join(tmpdir(), 'cx-binary-pc-'));
-  mkdirSync(join(tmpRoot, '.cx'), { recursive: true });
+  mkdirSync(join(tmpRoot, '.construct'), { recursive: true });
   priorCwd = process.cwd();
   priorHome = process.env.HOME;
   process.env.HOME = tmpRoot;
@@ -44,7 +44,7 @@ afterEach(() => {
 });
 
 function readLog() {
-  const file = join(tmpRoot, '.cx', 'contract-violations.jsonl');
+  const file = join(tmpRoot, '.construct', 'contract-violations.jsonl');
   if (!existsSync(file)) return [];
   return readFileSync(file, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l));
 }
@@ -115,4 +115,96 @@ describe('binary postcondition enforcement', () => {
       assert.ok(hasSelfEnforcing, `expected self-enforcing error mentioning '${c.producer}': ${JSON.stringify(result.errors)}`);
     });
   }
+});
+
+// In-run enforcement (construct-pteo2.14): the run path itself calls the full
+// validateHandoff pass on a task's output handoff — a PRD handoff whose packet
+// misses required fields produces BLOCKED_CONTRACT on the task, degrades the
+// run, and lands a runId-tagged record in .cx/contract-violations.jsonl.
+
+describe('in-run enforcement through the provider execution path', () => {
+  test('a deliberately incomplete PRD handoff packet blocks in-run with a durable verdict', async () => {
+    const { planRun, executeRun } = await import(`../../lib/orchestration/runtime.mjs?cache=${Date.now()}`);
+    const { loadRun, saveRun } = await import(`../../lib/orchestration/run-store.mjs?cache=${Date.now()}`);
+
+    const prevOverride = process.env.CX_HOME_OVERRIDE;
+    process.env.CX_HOME_OVERRIDE = tmpRoot;
+    try {
+      const MODEL = 'anthropic/claude-sonnet-4-6';
+      const env = { CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL, ANTHROPIC_API_KEY: 'sk-test' };
+      const planned = await planRun(
+        { request: 'research user needs and write a PRD for the search feature', requestedStrategy: 'orchestrated', hostModel: MODEL },
+        { env, cwd: tmpRoot },
+      );
+
+      const run = loadRun(tmpRoot, planned.runId);
+      const researcher = run.tasks.find((t) => t.role === 'cx-researcher') ?? run.tasks[0];
+      researcher.outputContractId = 'researcher-to-product-manager';
+      researcher.outputPacket = { problem: 'observed problem statement' };
+      saveRun(tmpRoot, run);
+
+      const fetchImpl = async () => ({ ok: true, json: async () => ({ content: [{ type: 'text', text: 'specialist output' }] }) });
+      const executed = await executeRun(tmpRoot, planned.runId, { env, workerBackend: 'provider', fetchImpl });
+
+      const blockedTask = executed.tasks.find((t) => t.contractStatus === 'blocked-contract');
+      assert.ok(blockedTask, `a task carries blocked-contract; got ${JSON.stringify(executed.tasks.map((t) => ({ role: t.role, contractStatus: t.contractStatus ?? null })))}`);
+      assert.equal(blockedTask.contractId, 'researcher-to-product-manager');
+      assert.ok(blockedTask.contractViolations.some((v) => v.includes('users')), 'missing required field named');
+
+      assert.equal(executed.degraded, true, 'run degrades on a blocked contract');
+      assert.equal(executed.degradationReason, 'blocked-contract');
+      assert.equal(executed.status, 'degraded', 'terminal status never reads bare completed');
+
+      const log = readLog();
+      const verdict = log.find((r) => r.contractId === 'researcher-to-product-manager' && r.verdict === 'BLOCKED_CONTRACT');
+      assert.ok(verdict, 'BLOCKED_CONTRACT recorded in .cx/contract-violations.jsonl');
+      assert.equal(verdict.runId, planned.runId, 'the record is runId-tagged');
+    } finally {
+      if (prevOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+      else process.env.CX_HOME_OVERRIDE = prevOverride;
+    }
+  });
+
+  test('a conforming handoff packet passes in-run with contractStatus ok', async () => {
+    const { planRun, executeRun } = await import(`../../lib/orchestration/runtime.mjs?cache=${Date.now()}`);
+    const { loadRun, saveRun } = await import(`../../lib/orchestration/run-store.mjs?cache=${Date.now()}`);
+
+    const prevOverride = process.env.CX_HOME_OVERRIDE;
+    process.env.CX_HOME_OVERRIDE = tmpRoot;
+    try {
+      const MODEL = 'anthropic/claude-sonnet-4-6';
+      const env = { CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL, ANTHROPIC_API_KEY: 'sk-test' };
+      const planned = await planRun(
+        { request: 'research user needs and write a PRD for the search feature', requestedStrategy: 'orchestrated', hostModel: MODEL },
+        { env, cwd: tmpRoot },
+      );
+
+      const run = loadRun(tmpRoot, planned.runId);
+      const researcher = run.tasks.find((t) => t.role === 'cx-researcher') ?? run.tasks[0];
+      researcher.outputContractId = 'researcher-to-product-manager';
+      researcher.outputPacket = {
+        question: 'what slows enterprise admins during weekly audits',
+        findings: 'audit completion is dominated by manual cross-referencing',
+        sources: 'six user interviews, support ticket clustering [unverified]',
+        confidence: 'medium',
+        openQuestions: 'does the skew to large accounts change the ranking',
+        problem: 'observed problem statement grounded in interviews',
+        users: 'enterprise admins running weekly audits',
+        functionalRequirements: 'bulk cross-reference view with export',
+        acceptanceCriteria: 'audit completion time drops below five minutes',
+      };
+      saveRun(tmpRoot, run);
+
+      const fetchImpl = async () => ({ ok: true, json: async () => ({ content: [{ type: 'text', text: 'specialist output' }] }) });
+      const executed = await executeRun(tmpRoot, planned.runId, { env, workerBackend: 'provider', fetchImpl });
+
+      const checkedTask = executed.tasks.find((t) => t.contractId === 'researcher-to-product-manager');
+      assert.ok(checkedTask, 'the seeded task was checked in-run');
+      assert.equal(checkedTask.contractStatus, 'ok', `conforming packet passes: ${JSON.stringify(checkedTask.contractViolations ?? null)}`);
+      assert.notEqual(executed.degradationReason, 'blocked-contract');
+    } finally {
+      if (prevOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+      else process.env.CX_HOME_OVERRIDE = prevOverride;
+    }
+  });
 });

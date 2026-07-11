@@ -6,13 +6,18 @@
  * into embed source records tagged by team/target, the registry schema accepts a
  * team with sources, and provider_fetch (demandFetch) rejects a target outside
  * the team with a typed OUT_OF_SCOPE error rather than a silent wrong-source fetch.
+ *
+ * demandFetch writes observations through the machine-scoped state root
+ * (ADR-0066), keyed by a hash of the tmp rootDir — so CX_HOME_OVERRIDE is
+ * pinned for the whole file to keep that write off the real developer
+ * machine's $HOME.
  */
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import test from 'node:test';
+import test, { before, after } from 'node:test';
 
 import {
   resolveTeamSources,
@@ -23,6 +28,21 @@ import { loadRegistry } from '../../lib/registry/loader.mjs';
 import { demandFetch } from '../../lib/embed/demand-fetch.mjs';
 import { listObservations, getObservation } from '../../lib/observation-store.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
+
+let homeOverride;
+let prevHomeOverride;
+
+before(() => {
+  homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-team-sources-home-'));
+  prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+  process.env.CX_HOME_OVERRIDE = homeOverride;
+});
+
+after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch { /* best-effort cleanup */ }
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 const REGISTRY = {
   teams: {

@@ -1,0 +1,893 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Construct Org Studio</title>
+<style>
+  :root {
+    --bg: #f7f8fa; --surface: #ffffff; --surface-2: #f0f2f5; --border: #e2e5ea;
+    --text: #1c2024; --muted: #6b7280; --accent: #4f46e5; --accent-soft: #eef2ff;
+    --ok: #16a34a; --warn: #d97706; --err: #dc2626; --edge: #b8bec9;
+    --radius: 10px; --shadow: 0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.1);
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0e1013; --surface: #16191d; --surface-2: #1d2126; --border: #2a2f36;
+      --text: #e6e9ee; --muted: #98a2b3; --accent: #818cf8; --accent-soft: #1e2130;
+      --edge: #3a4049; --shadow: 0 1px 3px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e1013; --surface: #16191d; --surface-2: #1d2126; --border: #2a2f36;
+    --text: #e6e9ee; --muted: #98a2b3; --accent: #818cf8; --accent-soft: #1e2130;
+    --edge: #3a4049; --shadow: 0 1px 3px rgba(0,0,0,.4);
+  }
+  :root[data-theme="light"] {
+    --bg: #f7f8fa; --surface: #ffffff; --surface-2: #f0f2f5; --border: #e2e5ea;
+    --text: #1c2024; --muted: #6b7280; --accent: #4f46e5; --accent-soft: #eef2ff; --edge: #b8bec9;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: var(--sans); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
+  button { font: inherit; cursor: pointer; }
+  input, select, textarea { font: inherit; color: inherit; }
+  header {
+    display: flex; align-items: center; gap: 16px; padding: 12px 20px;
+    background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 20;
+  }
+  .brand { font-weight: 650; letter-spacing: -.01em; display: flex; align-items: center; gap: 9px; }
+  .brand .dot { width: 10px; height: 10px; border-radius: 3px; background: var(--accent); }
+  .grow { flex: 1; }
+  .btn {
+    border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    padding: 7px 13px; border-radius: 8px; font-weight: 500; transition: .12s;
+  }
+  .btn:hover { background: var(--surface-2); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .btn.danger { color: var(--err); border-color: var(--border); }
+  .btn.danger:hover { background: color-mix(in srgb, var(--err) 12%, transparent); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn.ghost { border-color: transparent; background: transparent; }
+  select.scope { padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); }
+  main { display: grid; grid-template-columns: 260px 1fr 380px; height: calc(100vh - 57px); }
+  aside, .inspector { overflow-y: auto; background: var(--surface); }
+  aside { border-right: 1px solid var(--border); }
+  .inspector { border-left: 1px solid var(--border); }
+  .tabs { display: flex; gap: 2px; padding: 10px; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
+  .tab { padding: 5px 11px; border-radius: 999px; border: 1px solid transparent; color: var(--muted); font-weight: 500; font-size: 13px; background: transparent; }
+  .tab.active { background: var(--accent-soft); color: var(--accent); }
+  .tab .count { opacity: .65; margin-left: 4px; font-variant-numeric: tabular-nums; }
+  .list { padding: 6px; }
+  .item {
+    padding: 9px 11px; border-radius: 8px; border: 1px solid transparent; cursor: pointer; margin-bottom: 2px;
+  }
+  .item:hover { background: var(--surface-2); }
+  .item.active { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
+  .item .id { font-weight: 550; }
+  .item .sub { color: var(--muted); font-size: 12px; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .badge { font-size: 10.5px; font-weight: 600; padding: 1px 6px; border-radius: 5px; background: var(--surface-2); color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+  .badge.builtin { color: var(--muted); }
+  .badge.project { color: var(--accent); background: var(--accent-soft); }
+  .center { position: relative; overflow: hidden; background:
+    radial-gradient(circle at 1px 1px, var(--border) 1px, transparent 0) 0 0 / 22px 22px; }
+  .graph-toolbar { position: absolute; top: 12px; left: 12px; z-index: 5; display: flex; gap: 6px; background: var(--surface); padding: 5px; border-radius: 10px; border: 1px solid var(--border); box-shadow: var(--shadow); }
+  .graph-toolbar .seg { padding: 5px 10px; border-radius: 7px; border: none; background: transparent; color: var(--muted); font-weight: 500; font-size: 13px; }
+  .graph-toolbar .seg.active { background: var(--accent-soft); color: var(--accent); }
+  svg.graph { width: 100%; height: 100%; display: block; }
+  .node-card { cursor: pointer; }
+  .node-card rect { fill: var(--surface); stroke: var(--border); stroke-width: 1.5; transition: .12s; }
+  .node-card.team rect { fill: var(--surface-2); stroke-dasharray: 4 3; }
+  .node-card.sel rect { stroke: var(--accent); stroke-width: 2.5; }
+  .node-card text { fill: var(--text); font-size: 12px; font-weight: 550; }
+  .node-card .kindtag { fill: var(--muted); font-size: 9.5px; font-weight: 600; text-transform: uppercase; }
+  .edge { fill: none; stroke: var(--edge); stroke-width: 1.5; marker-end: url(#arrow); opacity: .8; }
+  .edge.member { stroke-dasharray: 3 3; marker-end: none; opacity: .55; }
+  .edge.hot { stroke: var(--accent); opacity: 1; stroke-width: 2; }
+  .empty { color: var(--muted); text-align: center; padding: 40px 20px; }
+  .inspector-inner { padding: 18px; }
+  .insp-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .insp-head h2 { font-size: 16px; margin: 0; letter-spacing: -.01em; }
+  .insp-sub { color: var(--muted); font-size: 12px; font-family: var(--mono); word-break: break-all; margin-bottom: 16px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-weight: 550; font-size: 12.5px; margin-bottom: 5px; }
+  .field .hint { color: var(--muted); font-weight: 400; font-size: 11.5px; }
+  .field input[type=text], .field textarea, .field select {
+    width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg);
+  }
+  .field textarea { resize: vertical; min-height: 62px; font-family: var(--mono); font-size: 12.5px; }
+  .field input:focus, .field textarea:focus, .field select:focus { outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: -1px; border-color: var(--accent); }
+  .field.invalid input, .field.invalid textarea { border-color: var(--err); }
+  .field .err { color: var(--err); font-size: 12px; margin-top: 4px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+  .chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 999px; background: var(--surface-2); font-size: 12px; }
+  .chip button { border: none; background: none; color: var(--muted); padding: 0; line-height: 1; font-size: 14px; }
+  .multiselect { display: flex; flex-wrap: wrap; gap: 5px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); max-height: 140px; overflow-y: auto; }
+  .opt { padding: 3px 9px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); font-size: 12.5px; }
+  .opt.on { background: var(--accent-soft); color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+  .actions { display: flex; gap: 8px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .banner { padding: 9px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; display: flex; gap: 8px; align-items: flex-start; }
+  .banner.ok { background: color-mix(in srgb, var(--ok) 12%, transparent); color: var(--ok); }
+  .banner.err { background: color-mix(in srgb, var(--err) 12%, transparent); color: var(--err); }
+  .banner.warn { background: color-mix(in srgb, var(--warn) 12%, transparent); color: var(--warn); }
+  .dropzone { min-height: 40px; border: 1.5px dashed var(--border); border-radius: 8px; padding: 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: flex-start; background: var(--bg); }
+  .dropzone.over { border-color: var(--accent); background: var(--accent-soft); }
+  .dropzone .placeholder { color: var(--muted); font-size: 12px; padding: 4px 6px; }
+  .palette { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; max-height: 120px; overflow-y: auto; }
+  .palette .opt { cursor: grab; }
+  .pipe-stage rect { fill: var(--surface-2); stroke: var(--border); }
+  .pipe-stage text { fill: var(--muted); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .part-preview { position: absolute; bottom: 14px; left: 14px; right: 14px; z-index: 5; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); padding: 8px; }
+  .part-preview input { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); }
+  .part-preview-out { display: flex; flex-wrap: wrap; gap: 5px; }
+  .part-preview-out:not(:empty) { margin-top: 8px; }
+  .part-preview .placeholder { color: var(--muted); font-size: 12px; }
+  .preview { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--border); }
+  .preview h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 8px; }
+  .preview .row { font-size: 12.5px; padding: 4px 0; }
+  .preview .row code { font-family: var(--mono); color: var(--accent); }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 18px; border-radius: 10px; box-shadow: var(--shadow); z-index: 50; font-weight: 500; opacity: 0; transition: .2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  dialog { border: 1px solid var(--border); border-radius: 14px; background: var(--surface); color: var(--text); padding: 0; max-width: 560px; width: 92vw; box-shadow: 0 20px 50px rgba(0,0,0,.3); }
+  dialog::backdrop { background: rgba(0,0,0,.4); }
+  .dlg-body { padding: 20px; }
+  .dlg-body h2 { margin: 0 0 12px; font-size: 16px; }
+  .dlg-body textarea { width: 100%; min-height: 220px; font-family: var(--mono); font-size: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); padding: 10px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="dot"></span> Construct Org Studio</div>
+  <select class="scope" id="scope" title="Write scope">
+    <option value="project">project scope</option>
+    <option value="user">user scope</option>
+  </select>
+  <div class="grow"></div>
+  <button class="btn ghost" id="theme" title="Toggle theme">◐</button>
+  <button class="btn" id="import">Import</button>
+  <button class="btn" id="export">Export</button>
+  <button class="btn primary" id="new">+ New</button>
+</header>
+<main>
+  <aside>
+    <div class="tabs" id="tabs"></div>
+    <div class="list" id="list"></div>
+  </aside>
+  <section class="center">
+    <div class="graph-toolbar">
+      <button class="seg active" data-view="graph">Topology</button>
+      <button class="seg" data-view="fit">Fit</button>
+    </div>
+    <svg class="graph" id="graph">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--edge)"></path>
+        </marker>
+      </defs>
+      <g id="viewport"></g>
+    </svg>
+  </section>
+  <div class="inspector"><div class="inspector-inner" id="inspector"></div></div>
+</main>
+<div class="toast" id="toast"></div>
+<dialog id="ioDialog"><div class="dlg-body">
+  <h2 id="dlgTitle">Import org</h2>
+  <textarea id="dlgText" spellcheck="false"></textarea>
+  <div class="actions"><button class="btn primary" id="dlgConfirm">Apply</button><button class="btn" id="dlgClose">Close</button></div>
+</div></dialog>
+
+<script type="module">
+const KINDS = [
+  { id: 'specialist', label: 'Specialists' },
+  { id: 'team', label: 'Teams' },
+  { id: 'contract', label: 'Relationships' },
+  { id: 'fence', label: 'Fences' },
+  { id: 'participation', label: 'Participation' },
+  { id: 'skill', label: 'Skills' },
+];
+
+const state = { org: {}, kind: 'specialist', selectedId: null, draft: null, creating: false, view: 'graph', participation: { items: [], count: 0 }, participationMeta: null };
+
+// api() centralizes the JSON envelope so every call surfaces org-api's { ok, errors } shape the
+// same way; a non-2xx still returns parsed JSON so validation failures render inline.
+
+async function api(method, url, body) {
+  const res = await fetch(url, {
+    method,
+    headers: body ? { 'content-type': 'application/json' } : {},
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  return res.json();
+}
+
+// Hyphenated keys (data-field, aria-*) must go through setAttribute —
+// Object.assign would set them as expando properties invisible to CSS
+// attribute selectors, which paintErrors relies on to attach field errors.
+
+const el = (tag, props = {}, ...kids) => {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k.includes('-')) n.setAttribute(k, v);
+    else n[k] = v;
+  }
+  for (const k of kids.flat()) n.append(k?.nodeType ? k : document.createTextNode(k ?? ''));
+  return n;
+};
+const scopeVal = () => document.getElementById('scope').value;
+const toast = (msg) => { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1800); };
+
+async function loadOrg() {
+  const { org } = await api('GET', '/api/org');
+  state.org = org;
+  state.participation = await api('GET', '/api/participation');
+  state.participationMeta = state.participationMeta || await api('GET', '/api/participation/meta');
+  render();
+}
+
+// Participation rules are keyed owner:ruleId — a rule is a sub-object of its
+// owning specialist/team entry, so the list row carries both.
+
+const ruleKey = (it) => `${it.owner}:${it.rule.id}`;
+function findRule(key) {
+  return (state.participation.items || []).find((it) => ruleKey(it) === key) || null;
+}
+
+function specialistNames() {
+  return (state.org.specialist?.items || []).map((s) => s.name || s.id.replace(/^cx-/, ''));
+}
+
+// === Left rail: kind tabs + entity list ===
+
+function renderTabs() {
+  const tabs = document.getElementById('tabs');
+  tabs.replaceChildren(...KINDS.map((k) => {
+    const count = k.id === 'participation' ? (state.participation.count ?? 0) : (state.org[k.id]?.count ?? 0);
+    const b = el('button', { className: 'tab' + (state.kind === k.id ? ' active' : '') });
+    b.append(k.label, el('span', { className: 'count' }, String(count)));
+    b.onclick = () => { state.kind = k.id; state.selectedId = null; state.draft = null; state.creating = false; render(); };
+    return b;
+  }));
+}
+
+function renderList() {
+  const list = document.getElementById('list');
+  if (state.kind === 'participation') {
+    const items = state.participation.items || [];
+    if (!items.length) { list.replaceChildren(el('div', { className: 'empty' }, 'No participation rules declared yet.')); return; }
+    list.replaceChildren(...items.map((it) => {
+      const key = ruleKey(it);
+      const node = el('div', { className: 'item' + (state.selectedId === key ? ' active' : '') });
+      const top = el('div', { style: 'display:flex;align-items:center;gap:8px;justify-content:space-between' },
+        el('span', { className: 'id' }, it.rule.id),
+        el('span', { className: 'badge ' + (it.scope || 'project') }, it.scope || 'project'));
+      node.append(top, el('div', { className: 'sub' }, summaryOf(it)));
+      node.onclick = () => selectRule(key);
+      return node;
+    }));
+    return;
+  }
+  const items = state.org[state.kind]?.items || [];
+  if (!items.length) { list.replaceChildren(el('div', { className: 'empty' }, 'No entities in this scope.')); return; }
+  list.replaceChildren(...items.map((it) => {
+    const node = el('div', { className: 'item' + (state.selectedId === it.id ? ' active' : '') });
+    const top = el('div', { style: 'display:flex;align-items:center;gap:8px;justify-content:space-between' },
+      el('span', { className: 'id' }, it.id),
+      el('span', { className: 'badge ' + (it.scope || 'project') }, it.scope || 'project'));
+    node.append(top, el('div', { className: 'sub' }, summaryOf(it)));
+    node.onclick = () => selectEntity(it.id);
+    return node;
+  }));
+}
+
+function summaryOf(it) {
+  if (state.kind === 'contract') return `${it.producer} → ${it.consumer}`;
+  if (state.kind === 'team') return `${(it.roles || []).length} members · owner ${it.owner || '—'}`;
+  if (state.kind === 'fence') return `${(it.fence?.allowedPaths || []).length} allowed paths`;
+  if (state.kind === 'participation') {
+    const cond = it.rule.when?.watchCondition || it.rule.when?.signalExpr || '?';
+    const who = [...(it.rule.recruit?.specialists || []), ...(it.rule.recruit?.teams || []).map((t) => `team:${t}`)].join(', ');
+    return `${cond} → ${who} · ${it.rule.role}/${it.rule.gate} · on ${it.owner}`;
+  }
+  return it.description || it.displayName || '';
+}
+
+async function selectEntity(id) {
+  state.selectedId = id;
+  state.creating = false;
+  const entity = await api('GET', `/api/entities/${state.kind}/${encodeURIComponent(id)}`);
+  state.draft = toDraft(state.kind, entity);
+  render();
+}
+
+function selectRule(key) {
+  state.selectedId = key;
+  state.creating = false;
+  const it = findRule(key);
+  state.draft = it ? toDraft('participation', it) : null;
+  render();
+}
+
+function newEntity() {
+  state.creating = true;
+  state.selectedId = null;
+  state.draft = blankDraft(state.kind);
+  render();
+}
+
+// === Draft <-> record mapping per kind ===
+
+function toDraft(kind, entity) {
+  if (kind === 'participation') {
+    const rule = entity.rule;
+    return {
+      owner: entity.owner, id: rule.id, dimension: rule.dimension || '',
+      whenMode: rule.when?.watchCondition !== undefined ? 'watchCondition' : 'signalExpr',
+      watchCondition: rule.when?.watchCondition || '', signalExpr: rule.when?.signalExpr || '',
+      recruitSpecialists: [...(rule.recruit?.specialists || [])], recruitTeams: [...(rule.recruit?.teams || [])],
+      role: rule.role || 'reviewer', gate: rule.gate || 'advisory',
+      enforcementTeam: rule.enforcementScope?.team || '', enforcementRight: rule.enforcementScope?.decisionRight || '',
+      reason: rule.reason || '',
+    };
+  }
+  const r = entity.record || entity;
+  if (kind === 'specialist') return { id: entity.id, name: r.name || entity.id?.replace(/^cx-/, ''), description: r.description || '', role: r.role || r.name || '', modelTier: r.modelTier || 'standard', team: r.team || r.teamId || '', skills: r.skills || [], whenToUse: r.whenToUse || '', allowedPaths: r.fence?.allowedPaths || [], handoffCandidates: r.handoffCandidates || [] };
+  if (kind === 'team') return { id: entity.id, name: r.name || entity.id, owner: r.owner || '', charter: r.charter || '', roles: r.roles || [], decisionRights: r.decisionRights || [], forbiddenDecisions: r.forbiddenDecisions || [] };
+  if (kind === 'contract') return { id: entity.id, producer: r.producer || '', consumer: r.consumer || '', riskFlags: r.trigger?.riskFlags || [], inputShape: r.input?.shape || '', outputType: r.output?.type || '' };
+  if (kind === 'fence') return { specialistId: entity.id, allowedPaths: (entity.record?.allowedPaths) || entity.fence?.allowedPaths || r.allowedPaths || [] };
+  return { id: entity.id };
+}
+
+function blankDraft(kind) {
+  if (kind === 'participation') return { owner: '', id: '', dimension: '', whenMode: 'signalExpr', watchCondition: '', signalExpr: '', recruitSpecialists: [], recruitTeams: [], role: 'reviewer', gate: 'advisory', enforcementTeam: '', enforcementRight: '', reason: '' };
+  if (kind === 'specialist') return { name: '', description: '', role: '', modelTier: 'standard', team: '', skills: [], whenToUse: '', allowedPaths: [], handoffCandidates: [] };
+  if (kind === 'team') return { id: '', name: '', owner: '', charter: '', roles: [], decisionRights: [], forbiddenDecisions: [] };
+  if (kind === 'contract') return { id: '', producer: '', consumer: '', riskFlags: [], inputShape: '', outputType: '' };
+  if (kind === 'fence') return { specialistId: '', allowedPaths: [] };
+  return { id: '' };
+}
+
+// draftToRecord mirrors org-api's expected record shape per kind, so the same object validates and
+// then saves without a second transform. role defaults to name — the schema requires both but they
+// are the same id in practice, so the form derives one from the other rather than asking twice.
+
+function draftToRecord(kind, d) {
+  if (kind === 'participation') {
+    const rule = {
+      id: d.id,
+      when: d.whenMode === 'watchCondition' ? { watchCondition: d.watchCondition } : { signalExpr: d.signalExpr },
+      recruit: {
+        ...(d.recruitSpecialists.length ? { specialists: d.recruitSpecialists } : {}),
+        ...(d.recruitTeams.length ? { teams: d.recruitTeams } : {}),
+      },
+      role: d.role,
+      gate: d.gate,
+    };
+    if (d.dimension) rule.dimension = d.dimension;
+    if (d.gate === 'enforced') rule.enforcementScope = { team: d.enforcementTeam, decisionRight: d.enforcementRight };
+    if (d.reason) rule.reason = d.reason;
+    return rule;
+  }
+  if (kind === 'specialist') return { name: d.name, role: d.role || d.name, description: d.description, modelTier: d.modelTier, team: d.team, skills: d.skills, whenToUse: d.whenToUse, handoffCandidates: d.handoffCandidates, fence: { allowedPaths: d.allowedPaths } };
+  if (kind === 'team') return { id: d.id, name: d.name, owner: d.owner, charter: d.charter, roles: d.roles, decisionRights: d.decisionRights, forbiddenDecisions: d.forbiddenDecisions };
+  if (kind === 'contract') return { id: d.id, producer: d.producer, consumer: d.consumer, trigger: { riskFlags: d.riskFlags }, input: { shape: d.inputShape }, output: { type: d.outputType } };
+  if (kind === 'fence') return { specialistId: d.specialistId, fence: { allowedPaths: d.allowedPaths } };
+  return d;
+}
+
+// === Inspector forms ===
+
+let validateTimer = null;
+function scheduleValidate() {
+  clearTimeout(validateTimer);
+  validateTimer = setTimeout(runValidate, 250);
+}
+
+async function runValidate() {
+  if (!state.draft || state.kind === 'skill') return;
+  const record = draftToRecord(state.kind, state.draft);
+  const result = state.kind === 'participation'
+    ? await api('POST', '/api/validate/participation', { ownerId: state.draft.owner, rule: record })
+    : await api('POST', `/api/validate/${state.kind}`, record);
+  paintErrors(result.errors || [], result.warnings || []);
+}
+
+function paintErrors(errors, warnings = []) {
+  document.querySelectorAll('.field').forEach((f) => { f.classList.remove('invalid'); const e = f.querySelector('.err'); if (e) e.remove(); });
+  for (const stale of ['valBanner', 'warnBanner']) { const b = document.getElementById(stale); if (b) b.remove(); }
+  for (const err of errors) {
+    const field = err.field || (err.location || '').split('/').pop();
+    const f = document.querySelector(`.field[data-field="${field}"]`);
+    if (f) { f.classList.add('invalid'); f.append(el('div', { className: 'err' }, err.message)); }
+  }
+  const unattached = errors.filter((e) => !document.querySelector(`.field[data-field="${e.field || (e.location || '').split('/').pop()}"]`));
+  const ins = document.getElementById('inspector');
+  if (unattached.length) {
+    ins.prepend(el('div', { className: 'banner err', id: 'valBanner' }, unattached.map((e) => e.message).join(' · ')));
+  }
+  if (warnings.length) {
+    ins.prepend(el('div', { className: 'banner warn', id: 'warnBanner' }, warnings.map((w) => w.message).join(' · ')));
+  }
+}
+
+function textField(label, key, hint) {
+  const wrap = el('div', { className: 'field', 'data-field': key });
+  const lab = el('label', {}, label);
+  if (hint) lab.append(el('span', { className: 'hint' }, ' — ' + hint));
+  const input = el('input', { type: 'text', value: state.draft[key] ?? '' });
+  input.oninput = () => { state.draft[key] = input.value; scheduleValidate(); if (state.kind === 'participation') renderGraph(); };
+  wrap.append(lab, input);
+  return wrap;
+}
+
+function areaField(label, key, hint) {
+  const wrap = el('div', { className: 'field', 'data-field': key });
+  const lab = el('label', {}, label); if (hint) lab.append(el('span', { className: 'hint' }, ' — ' + hint));
+  const ta = el('textarea', { value: state.draft[key] ?? '' });
+  ta.oninput = () => { state.draft[key] = ta.value; scheduleValidate(); };
+  wrap.append(lab, ta);
+  return wrap;
+}
+
+function listField(label, key, hint) {
+  const wrap = el('div', { className: 'field', 'data-field': key });
+  wrap.append(el('label', {}, label, hint ? el('span', { className: 'hint' }, ' — ' + hint) : ''));
+  const chips = el('div', { className: 'chips' });
+  const paint = () => chips.replaceChildren(...state.draft[key].map((v, i) => {
+    const c = el('span', { className: 'chip' }, v);
+    const x = el('button', { title: 'Remove' }, '×'); x.onclick = () => { state.draft[key].splice(i, 1); paint(); scheduleValidate(); };
+    c.append(x); return c;
+  }));
+  const input = el('input', { type: 'text', placeholder: 'type and press Enter' });
+  input.onkeydown = (e) => { if (e.key === 'Enter' && input.value.trim()) { e.preventDefault(); state.draft[key].push(input.value.trim()); input.value = ''; paint(); scheduleValidate(); } };
+  paint();
+  wrap.append(chips, input);
+  return wrap;
+}
+
+function selectField(label, key, options, hint) {
+  const wrap = el('div', { className: 'field', 'data-field': key });
+  wrap.append(el('label', {}, label, hint ? el('span', { className: 'hint' }, ' — ' + hint) : ''));
+  const sel = el('select');
+  sel.append(el('option', { value: '' }, '— select —'), ...options.map((o) => el('option', { value: o, selected: state.draft[key] === o }, o)));
+  sel.onchange = () => {
+    state.draft[key] = sel.value;
+    scheduleValidate();
+    // gate/team choices change which participation fields exist, so the form
+    // rebuilds; the canvas re-draws for any participation edit.
+    if (state.kind === 'participation' && ['gate', 'enforcementTeam'].includes(key)) renderInspector();
+    else if (state.kind === 'participation') renderGraph();
+  };
+  wrap.append(sel);
+  return wrap;
+}
+
+function multiField(label, key, options, hint) {
+  const wrap = el('div', { className: 'field', 'data-field': key });
+  wrap.append(el('label', {}, label, hint ? el('span', { className: 'hint' }, ' — ' + hint) : ''));
+  const box = el('div', { className: 'multiselect' });
+  box.replaceChildren(...options.map((o) => {
+    const on = state.draft[key].includes(o);
+    const b = el('button', { className: 'opt' + (on ? ' on' : '') }, o);
+    b.onclick = () => { const i = state.draft[key].indexOf(o); if (i >= 0) state.draft[key].splice(i, 1); else state.draft[key].push(o); b.classList.toggle('on'); scheduleValidate(); };
+    return b;
+  }));
+  wrap.append(box);
+  return wrap;
+}
+
+// Drag a specialist/team chip from the palette into the recruit zone (or click
+// it) — both paths mutate the same draft array, and validation stays entirely
+// server-side per the thin-skin guardrail.
+
+function dropZoneField(label, key, options, hint) {
+  const wrap = el('div', { className: 'field', 'data-field': key });
+  wrap.append(el('label', {}, label, hint ? el('span', { className: 'hint' }, ' — ' + hint) : ''));
+  const zone = el('div', { className: 'dropzone' });
+  const paint = () => {
+    zone.replaceChildren(...(state.draft[key].length
+      ? state.draft[key].map((v, i) => {
+          const c = el('span', { className: 'chip' }, v);
+          const x = el('button', { title: 'Remove' }, '×');
+          x.onclick = () => { state.draft[key].splice(i, 1); paint(); paintPalette(); scheduleValidate(); renderGraph(); };
+          c.append(x); return c;
+        })
+      : [el('span', { className: 'placeholder' }, 'drag from the palette below, or click to add')]));
+  };
+  const add = (v) => { if (!state.draft[key].includes(v)) { state.draft[key].push(v); paint(); paintPalette(); scheduleValidate(); renderGraph(); } };
+  zone.ondragover = (e) => { e.preventDefault(); zone.classList.add('over'); };
+  zone.ondragleave = () => zone.classList.remove('over');
+  zone.ondrop = (e) => { e.preventDefault(); zone.classList.remove('over'); const v = e.dataTransfer.getData('text/plain'); if (options.includes(v)) add(v); };
+  const palette = el('div', { className: 'palette' });
+  const paintPalette = () => palette.replaceChildren(...options.map((o) => {
+    const on = state.draft[key].includes(o);
+    const b = el('button', { className: 'opt' + (on ? ' on' : ''), draggable: true }, o);
+    b.ondragstart = (e) => e.dataTransfer.setData('text/plain', o);
+    b.onclick = () => (on ? null : add(o));
+    return b;
+  }));
+  paint(); paintPalette();
+  wrap.append(zone, palette);
+  return wrap;
+}
+
+function participationFields() {
+  const meta = state.participationMeta || { watchers: [], signalKeys: [], roles: [], gates: [], dimensions: [], specialists: [], teams: [] };
+  const fields = [
+    selectField('Owner', 'owner', [...meta.specialists, ...meta.teams], 'the registry entry this rule attaches to'),
+    textField('Rule id', 'id', 'lowercase kebab, unique registry-wide'),
+    selectField('Dimension', 'dimension', meta.dimensions, 'optional concern; legal-compliance must recruit cx-security'),
+  ];
+
+  const whenWrap = el('div', { className: 'field', 'data-field': 'when' });
+  whenWrap.append(el('label', {}, 'Condition', el('span', { className: 'hint' }, ' — when(signals) fires the rule')));
+  const modeSel = el('select');
+  modeSel.append(
+    el('option', { value: 'signalExpr', selected: state.draft.whenMode === 'signalExpr' }, 'signal expression'),
+    el('option', { value: 'watchCondition', selected: state.draft.whenMode === 'watchCondition' }, 'declared watcher'),
+  );
+  const condBox = el('div', { style: 'margin-top:6px' });
+  const paintCond = () => {
+    if (state.draft.whenMode === 'watchCondition') {
+      const sel = el('select');
+      sel.append(el('option', { value: '' }, '— select watcher —'), ...meta.watchers.map((w) => el('option', { value: w, selected: state.draft.watchCondition === w }, w)));
+      sel.onchange = () => { state.draft.watchCondition = sel.value; scheduleValidate(); renderGraph(); };
+      condBox.replaceChildren(sel);
+    } else {
+      const input = el('input', { type: 'text', value: state.draft.signalExpr, placeholder: 'e.g. cost && !privacy' });
+      input.oninput = () => { state.draft.signalExpr = input.value; scheduleValidate(); renderGraph(); };
+      condBox.replaceChildren(input, el('div', { className: 'hint', style: 'margin-top:4px' }, 'signals: ' + meta.signalKeys.join(', ')));
+    }
+  };
+  modeSel.onchange = () => { state.draft.whenMode = modeSel.value; paintCond(); scheduleValidate(); renderGraph(); };
+  paintCond();
+  whenWrap.append(modeSel, condBox);
+  fields.push(whenWrap);
+
+  fields.push(
+    dropZoneField('Recruit specialists', 'recruitSpecialists', meta.specialists),
+    dropZoneField('Recruit teams', 'recruitTeams', meta.teams, 'a team joins as a unit with its members'),
+    selectField('Role', 'role', meta.roles, 'the recruit’s function on the artifact'),
+    selectField('Gate', 'gate', meta.gates, 'advisory records sign-off; enforced can block'),
+  );
+
+  if (state.draft.gate === 'enforced') {
+    const teamSel = selectField('Enforcement team', 'enforcementTeam', meta.teams, 'must list the decision right to block');
+    fields.push(teamSel);
+    const team = (state.org.team?.items || []).find((t) => t.id === state.draft.enforcementTeam);
+    const rights = team?.decisionRights || [];
+    const rightWrap = el('div', { className: 'field', 'data-field': 'enforcementScope' });
+    rightWrap.append(el('label', {}, 'Decision right', el('span', { className: 'hint' }, rights.length ? '' : ' — selected team declares none yet')));
+    const rightInput = el('input', { type: 'text', value: state.draft.enforcementRight, list: 'rightOpts', placeholder: 'decision right id' });
+    const dl = el('datalist', { id: 'rightOpts' });
+    dl.append(...rights.map((r) => el('option', { value: r })));
+    rightInput.oninput = () => { state.draft.enforcementRight = rightInput.value; scheduleValidate(); };
+    rightWrap.append(rightInput, dl);
+    fields.push(rightWrap);
+  }
+
+  fields.push(textField('Reason', 'reason', 'surfaced in trace output, max 200 chars'));
+  return fields;
+}
+
+function formFields() {
+  const k = state.kind, specs = specialistNames();
+  const teamIds = (state.org.team?.items || []).map((t) => t.id);
+  if (k === 'participation') return participationFields();
+  if (k === 'specialist') return [
+    textField('Name', 'name', 'lowercase kebab; becomes cx-<name>'),
+    areaField('Description', 'description', 'min 20 chars; drives routing'),
+    selectField('Model tier', 'modelTier', ['fast', 'standard', 'reasoning']),
+    selectField('Team', 'team', teamIds, 'the team this specialist belongs to'),
+    listField('Skills', 'skills', 'bundle/skill refs, e.g. frontend-design/accessibility'),
+    areaField('When to use', 'whenToUse'),
+    listField('Allowed paths (fence)', 'allowedPaths', 'glob patterns'),
+    multiField('Handoff candidates', 'handoffCandidates', specs, 'roles this specialist delegates to'),
+  ];
+  if (k === 'team') return [
+    textField('Team id', 'id', 'lowercase kebab'),
+    textField('Display name', 'name'),
+    selectField('Owner', 'owner', specs, 'must also be a member'),
+    areaField('Charter', 'charter', 'min 20 chars; the team mission'),
+    multiField('Members', 'roles', specs),
+    listField('Decision rights', 'decisionRights'),
+    listField('Forbidden decisions', 'forbiddenDecisions'),
+  ];
+  if (k === 'contract') return [
+    textField('Relationship id', 'id'),
+    selectField('Producer', 'producer', state.org.specialist.items.map((s) => s.id)),
+    selectField('Consumer', 'consumer', state.org.specialist.items.map((s) => s.id)),
+    listField('Trigger risk flags', 'riskFlags'),
+    textField('Input shape', 'inputShape'),
+    textField('Output type', 'outputType'),
+  ];
+  if (k === 'fence') return [
+    selectField('Specialist', 'specialistId', state.org.specialist.items.map((s) => s.id)),
+    listField('Allowed paths', 'allowedPaths', 'glob patterns'),
+  ];
+  return [];
+}
+
+function renderInspector() {
+  const ins = document.getElementById('inspector');
+  if (!state.draft) { ins.replaceChildren(el('div', { className: 'empty' }, state.kind === 'participation' ? 'Select a rule, press + New, or try the sample-request preview on the canvas.' : 'Select an entity, or press + New.')); return; }
+  if (state.kind === 'skill') { ins.replaceChildren(el('div', { className: 'empty' }, 'Skills are read-only references.')); return; }
+  const title = state.creating ? `New ${state.kind === 'participation' ? 'participation rule' : state.kind}` : (state.selectedId || '');
+  const readOnly = !state.creating && state.kind !== 'participation' && isBuiltin();
+  const head = el('div', { className: 'insp-head' }, el('h2', {}, title));
+  const subText = state.kind === 'participation'
+    ? (isBuiltin() && !state.creating ? 'builtin rule — edits save a project-scope override on the owner' : (scopeVal() + ' scope — writes patch the owning registry entry'))
+    : (readOnly ? 'builtin — edits save a project-scope override' : (scopeVal() + ' scope'));
+  ins.replaceChildren(head, el('div', { className: 'insp-sub' }, subText));
+  formFields().forEach((f) => ins.append(f));
+  const actions = el('div', { className: 'actions' });
+  actions.append(el('button', { className: 'btn primary', onclick: save }, state.creating ? 'Create' : 'Save'));
+  if (!state.creating && (state.kind === 'participation' || !isBuiltin())) actions.append(el('button', { className: 'btn danger', onclick: remove }, 'Delete'));
+  ins.append(actions);
+  if (state.kind === 'specialist') ins.append(routePreview());
+  runValidate();
+}
+
+function isBuiltin() {
+  if (state.kind === 'participation') return findRule(state.selectedId)?.scope === 'builtin';
+  const it = (state.org[state.kind]?.items || []).find((x) => x.id === state.selectedId);
+  return it?.scope === 'builtin';
+}
+
+function routePreview() {
+  const box = el('div', { className: 'preview', id: 'routePrev' }, el('h3', {}, 'Route preview'));
+  api('POST', '/api/preview/route', { draftSpecialist: { description: state.draft.description, skills: state.draft.skills } }).then((r) => {
+    const cands = r.candidates || [];
+    if (!cands.length) { box.append(el('div', { className: 'row' }, 'No overlapping specialists — this would be a distinct route.')); return; }
+    cands.slice(0, 4).forEach((c) => box.append(el('div', { className: 'row' }, el('code', {}, c.id), ' — ' + c.matchReason)));
+  });
+  return box;
+}
+
+async function save() {
+  const record = draftToRecord(state.kind, state.draft);
+  const scope = scopeVal();
+  if (state.kind === 'participation') {
+    const result = await api('POST', `/api/participation/${encodeURIComponent(state.draft.owner)}?scope=${scope}`, record);
+    if (result.ok) {
+      toast(state.creating ? 'Rule created' : 'Rule saved');
+      state.creating = false;
+      state.selectedId = `${state.draft.owner}:${record.id}`;
+      await loadOrg();
+      selectRule(state.selectedId);
+    } else {
+      paintErrors(result.errors || [{ message: 'Save failed' }], result.warnings || []);
+      toast('Validation failed');
+    }
+    return;
+  }
+  const result = state.creating
+    ? await api('POST', `/api/entities/${state.kind}?scope=${scope}`, record)
+    : await api('PUT', `/api/entities/${state.kind}/${encodeURIComponent(state.selectedId)}?scope=${scope}`, record);
+  if (result.ok) {
+    toast(state.creating ? 'Created' : 'Saved');
+    state.creating = false;
+    state.selectedId = result.record?.id || state.draft.id || (state.draft.name && `cx-${state.draft.name}`) || state.draft.specialistId;
+    await loadOrg();
+    if (state.selectedId) selectEntity(state.selectedId);
+  } else {
+    paintErrors(result.errors || [{ message: 'Save failed' }]);
+    toast('Validation failed');
+  }
+}
+
+async function remove() {
+  if (!confirm(`Delete ${state.selectedId}?`)) return;
+  if (state.kind === 'participation') {
+    const it = findRule(state.selectedId);
+    const result = await api('DELETE', `/api/participation/${encodeURIComponent(it.owner)}/${encodeURIComponent(it.rule.id)}?scope=${scopeVal()}`);
+    if (result.ok) { toast('Rule deleted'); state.selectedId = null; state.draft = null; await loadOrg(); }
+    else toast(result.errors?.[0]?.message || 'Delete failed');
+    return;
+  }
+  const result = await api('DELETE', `/api/entities/${state.kind}/${encodeURIComponent(state.selectedId)}?scope=${scopeVal()}`);
+  if (result.ok) { toast('Deleted'); state.selectedId = null; state.draft = null; await loadOrg(); }
+  else toast(result.errors?.[0]?.message || 'Delete failed');
+}
+
+// === Topology graph: specialists + teams as nodes, contracts as handoff edges, membership dashed ===
+
+// === Participation canvas: condition -> rule -> recruited participants, with the
+// draft (unsaved) rule drawn from live form state so edits appear as they are made ===
+
+function renderParticipationCanvas(vp, mk) {
+  const items = (state.participation.items || []).map((it) => ({ it, key: ruleKey(it), draft: false }));
+  if (state.draft && state.creating) items.push({ it: { owner: state.draft.owner || '?', rule: draftToRecord('participation', state.draft) }, key: null, draft: true });
+
+  const stages = [['Condition', 40], ['Rule', 300], ['Recruits', 560]];
+  for (const [label, x] of stages) {
+    const g = mk('g', { class: 'pipe-stage' });
+    g.append(mk('rect', { x, y: 8, width: 200, height: 22, rx: 6 }));
+    g.append(Object.assign(mk('text', { x: x + 10, y: 23 }), { textContent: label + (label === 'Rule' ? ' · role/gate' : '') }));
+    vp.append(g);
+  }
+
+  let y = 56;
+  for (const { it, key, draft } of items) {
+    const rule = it.rule;
+    const cond = rule.when?.watchCondition || rule.when?.signalExpr || '—';
+    const recruits = [...(rule.recruit?.specialists || []), ...(rule.recruit?.teams || []).map((t) => `team:${t}`)];
+    const rowH = Math.max(1, recruits.length) * 30 + 26;
+    const sel = state.selectedId === key || draft;
+
+    const condG = mk('g', { class: 'node-card' + (sel ? ' sel' : '') });
+    condG.append(mk('rect', { x: 40, y, width: 200, height: 36, rx: 8 }));
+    condG.append(Object.assign(mk('text', { x: 52, y: y + 22 }), { textContent: truncate(cond, 26) }));
+    vp.append(condG);
+
+    const ruleG = mk('g', { class: 'node-card' + (sel ? ' sel' : '') });
+    ruleG.append(mk('rect', { x: 300, y, width: 200, height: 44, rx: 8 }));
+    ruleG.append(Object.assign(mk('text', { x: 312, y: y + 18 }), { textContent: truncate(rule.id || '(new rule)', 24) }));
+    ruleG.append(Object.assign(mk('text', { class: 'kindtag', x: 312, y: y + 34 }), { textContent: `${rule.role || '?'} · ${rule.gate || '?'} · on ${it.owner}` }));
+    if (key) ruleG.onclick = () => selectRule(key);
+    vp.append(ruleG);
+
+    vp.append(mk('path', { class: 'edge' + (sel ? ' hot' : ''), d: `M 240 ${y + 18} C 270 ${y + 18}, 270 ${y + 22}, 300 ${y + 22}` }));
+
+    recruits.forEach((r, i) => {
+      const ry = y + i * 30;
+      const isTeam = r.startsWith('team:');
+      const rg = mk('g', { class: 'node-card' + (isTeam ? ' team' : '') + (sel ? ' sel' : '') });
+      rg.append(mk('rect', { x: 560, y: ry, width: 180, height: 26, rx: 7 }));
+      rg.append(Object.assign(mk('text', { x: 570, y: ry + 17 }), { textContent: truncate(r, 22) }));
+      vp.append(rg);
+      vp.append(mk('path', { class: 'edge' + (sel ? ' hot' : ''), d: `M 500 ${y + 22} C 530 ${y + 22}, 530 ${ry + 13}, 560 ${ry + 13}` }));
+    });
+
+    y += rowH + 14;
+  }
+
+  if (!items.length) {
+    vp.append(Object.assign(mk('text', { x: 40, y: 70, class: 'kindtag' }), { textContent: 'No participation rules yet — press + New to assemble one.' }));
+  }
+}
+
+function renderGraph() {
+  const vp = document.getElementById('viewport');
+  if (state.kind === 'participation') {
+    const ns = 'http://www.w3.org/2000/svg';
+    const mk = (tag, attrs) => { const e = document.createElementNS(ns, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); return e; };
+    vp.replaceChildren();
+    renderParticipationCanvas(vp, mk);
+    fitGraph();
+    renderParticipationPreviewBar();
+    return;
+  }
+  removeParticipationPreviewBar();
+  const specs = state.org.specialist?.items || [];
+  const teams = state.org.team?.items || [];
+  const contracts = state.org.contract?.items || [];
+  const nodes = [];
+  const idIndex = new Map();
+
+  const cols = Math.max(3, Math.ceil(Math.sqrt(specs.length)));
+  specs.forEach((s, i) => {
+    const n = { id: s.id, label: s.name || s.id.replace(/^cx-/, ''), kind: 'specialist', x: 60 + (i % cols) * 180, y: 70 + Math.floor(i / cols) * 96 };
+    nodes.push(n); idIndex.set(s.id, n); idIndex.set(n.label, n);
+  });
+  const teamRowY = 90 + Math.ceil(specs.length / cols) * 96;
+  teams.forEach((t, i) => {
+    const n = { id: t.id, label: t.name || t.id, kind: 'team', roles: t.roles || [], x: 60 + i * 200, y: teamRowY };
+    nodes.push(n);
+  });
+
+  const edges = [];
+  for (const c of contracts) {
+    const a = idIndex.get(c.producer), b = idIndex.get(c.consumer);
+    if (a && b) edges.push({ a, b, kind: 'contract', id: c.id });
+  }
+  for (const t of teams) {
+    const tn = nodes.find((n) => n.kind === 'team' && n.id === t.id);
+    for (const role of t.roles || []) { const rn = idIndex.get(role); if (rn && tn) edges.push({ a: tn, b: rn, kind: 'member' }); }
+  }
+
+  const ns = 'http://www.w3.org/2000/svg';
+  const mk = (tag, attrs) => { const e = document.createElementNS(ns, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); return e; };
+  vp.replaceChildren();
+
+  for (const e of edges) {
+    const hot = (state.selectedId && (e.a.id === state.selectedId || e.b.id === state.selectedId));
+    const mx = (e.a.x + e.b.x) / 2;
+    const path = mk('path', { class: 'edge ' + e.kind + (hot ? ' hot' : ''), d: `M ${e.a.x + 70} ${e.a.y + 22} C ${mx} ${e.a.y + 22}, ${mx} ${e.b.y + 22}, ${e.b.x + 70} ${e.b.y + 22}` });
+    vp.append(path);
+  }
+  for (const n of nodes) {
+    const g = mk('g', { class: 'node-card ' + n.kind + (state.selectedId === n.id ? ' sel' : '') });
+    g.append(mk('rect', { x: n.x, y: n.y, width: 140, height: 44, rx: 9 }));
+    g.append(Object.assign(mk('text', { x: n.x + 12, y: n.y + 18 }), { textContent: truncate(n.label, 17) }));
+    g.append(Object.assign(mk('text', { class: 'kindtag', x: n.x + 12, y: n.y + 34 }), { textContent: n.kind }));
+    g.onclick = () => { state.kind = n.kind; state.selectedId = n.id; selectEntity(n.id); };
+    vp.append(g);
+  }
+  fitGraph();
+}
+
+function truncate(s, n) { return s.length > n ? s.slice(0, n - 1) + '…' : s; }
+
+function fitGraph() {
+  const svg = document.getElementById('graph'), vp = document.getElementById('viewport');
+  const b = vp.getBBox();
+  if (!b.width) return;
+  const pad = 40;
+  svg.setAttribute('viewBox', `${b.x - pad} ${b.y - pad} ${b.width + pad * 2} ${b.height + pad * 2}`);
+}
+
+// === Participation preview bar: sample request in, recruited set out — the same
+// requestSignals + recruiter path real dispatch uses, via /api/preview/participation ===
+
+function removeParticipationPreviewBar() {
+  document.getElementById('partPreview')?.remove();
+}
+
+function renderParticipationPreviewBar() {
+  if (document.getElementById('partPreview')) return;
+  const center = document.querySelector('.center');
+  const bar = el('div', { className: 'part-preview', id: 'partPreview' });
+  const input = el('input', { type: 'text', placeholder: 'Preview: type a sample request to see who gets recruited…', id: 'partPreviewInput' });
+  const out = el('div', { className: 'part-preview-out', id: 'partPreviewOut' });
+  let timer = null;
+  input.oninput = () => {
+    clearTimeout(timer);
+    timer = setTimeout(async () => {
+      if (!input.value.trim()) { out.replaceChildren(); return; }
+      const r = await api('POST', '/api/preview/participation', { request: input.value });
+      const recruited = r.recruited || [];
+      out.replaceChildren(recruited.length
+        ? el('div', {}, ...recruited.map((p) => el('span', { className: 'chip', title: p.reason }, `${p.specialist || 'team:' + p.team} · ${p.role}/${p.gate}${p.rule ? ' · ' + p.rule : ''}`)))
+        : el('span', { className: 'placeholder' }, 'no condition-driven recruits for this request'));
+    }, 300);
+  };
+  bar.append(input, out);
+  center.append(bar);
+}
+
+// === Import / export ===
+
+function openIODialog(mode) {
+  const dlg = document.getElementById('ioDialog');
+  document.getElementById('dlgTitle').textContent = mode === 'import' ? 'Import org (paste JSON)' : 'Export org';
+  const ta = document.getElementById('dlgText');
+  const confirm = document.getElementById('dlgConfirm');
+  if (mode === 'export') {
+    api('GET', `/api/export?scope=${scopeVal()}`).then((data) => { ta.value = JSON.stringify(data, null, 2); });
+    confirm.textContent = 'Copy';
+    confirm.onclick = () => { navigator.clipboard?.writeText(ta.value); toast('Copied'); };
+  } else {
+    ta.value = '';
+    confirm.textContent = 'Apply';
+    confirm.onclick = async () => {
+      let payload; try { payload = JSON.parse(ta.value); } catch { toast('Invalid JSON'); return; }
+      const result = await api('POST', `/api/import?scope=${scopeVal()}`, payload);
+      if (result.ok) { toast(`Imported ${result.written.length} file(s)`); dlg.close(); loadOrg(); }
+      else toast(result.errors?.[0]?.message || 'Import failed');
+    };
+  }
+  dlg.showModal();
+}
+
+// === Wiring ===
+
+function render() { renderTabs(); renderList(); renderInspector(); renderGraph(); }
+
+document.getElementById('new').onclick = newEntity;
+document.getElementById('export').onclick = () => openIODialog('export');
+document.getElementById('import').onclick = () => openIODialog('import');
+document.getElementById('dlgClose').onclick = () => document.getElementById('ioDialog').close();
+document.getElementById('scope').onchange = () => render();
+document.querySelectorAll('.graph-toolbar .seg').forEach((b) => { b.onclick = () => { document.querySelectorAll('.graph-toolbar .seg').forEach((x) => x.classList.remove('active')); b.classList.add('active'); if (b.dataset.view === 'fit') fitGraph(); }; });
+document.getElementById('theme').onclick = () => {
+  const root = document.documentElement;
+  const cur = root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  root.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+};
+
+loadOrg();
+</script>
+</body>
+</html>

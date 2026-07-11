@@ -43,8 +43,8 @@ test('construct version exits 0 and prints version string', () => {
     env: { ...process.env, HOME, CX_HOME_OVERRIDE: HOME },
   });
 
-  assert.match(stdout.trim(), /^construct v\d+\.\d+\.\d+$/,
-    'version output must match "construct vX.Y.Z"');
+  assert.match(stdout.trim(), /^construct v\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/,
+    'version output must match "construct vX.Y.Z" (with an optional -prerelease suffix)');
 });
 
 test('construct evals --json exits 0 and returns valid JSON', () => {

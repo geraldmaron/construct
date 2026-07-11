@@ -19,6 +19,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import {
+  assessRecruitmentHonesty,
   planRun,
   executeRun,
   runOrchestration,
@@ -321,4 +322,68 @@ test('submitHostTaskResult rejection matrix: unknown run, unknown task, wrong st
     () => submitHostTaskResult(cwd, run.runId, taskId, { output: 'too late' }, { env: ENV }),
     (err) => err.code === 'RUN_ALREADY_TERMINAL',
   );
+});
+
+// Recruited-participant execution honesty (construct-pteo2.12): a recruited
+// reviewer either executes or the run says, unmistakably, that the review did
+// not happen — never a bare 'completed'.
+
+test('assessRecruitmentHonesty: null without recruits or when every recruit executed', () => {
+  assert.equal(assessRecruitmentHonesty([]), null);
+  assert.equal(assessRecruitmentHonesty([
+    { role: 'engineer', recruited: false, executionState: 'prepared' },
+  ]), null, 'non-recruited prepared tasks are the prepare-only signal, not a recruitment gap');
+  assert.equal(assessRecruitmentHonesty([
+    { role: 'operations', recruited: true, executionState: 'executed' },
+    { role: 'security', recruited: true, executionState: 'degraded-executed' },
+  ]), null, 'executed recruits are honest');
+});
+
+test('assessRecruitmentHonesty: an unexecuted recruit is named, with its state and reason', () => {
+  const honesty = assessRecruitmentHonesty([
+    { role: 'engineer', recruited: false, executionState: 'executed' },
+    { role: 'operations', recruited: true, executionState: 'prepared', reason: 'wide blast radius' },
+  ]);
+  assert.ok(honesty, 'mixed executed+recruited-prepared is the silent no-op this flags');
+  assert.equal(honesty.unexecutedRecruits.length, 1);
+  assert.deepEqual(honesty.unexecutedRecruits[0], {
+    role: 'operations', executionState: 'prepared', reason: 'wide blast radius',
+  });
+  assert.match(honesty.note, /NOT performed/);
+});
+
+test('a watcher-recruited task carries recruited:true and its dispatch reason', async () => {
+  const cwd = project();
+  const run = await runOrchestration(
+    { request: 'migrate the billing schema for all users across the org', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 6 },
+    { env: ENV, cwd },
+  );
+  const recruitedTasks = run.tasks.filter((t) => t.recruited);
+  assert.ok(recruitedTasks.length >= 1, `wide-blast-radius watcher recruits at least one task; roles: ${run.tasks.map((t) => t.role).join(',')}`);
+  assert.ok(recruitedTasks.every((t) => t.reason), 'every recruited task names why it joined');
+});
+
+test('inline run with recruits reports prepare-only AND lists the unexecuted recruits', async () => {
+  const cwd = project();
+  const run = await runOrchestration(
+    { request: 'migrate the billing schema for all users across the org', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 6 },
+    { env: ENV, cwd },
+  );
+  assert.equal(run.status, 'completed-prepare-only', 'all-prepared stays the more specific signal');
+  assert.ok(run.recruitmentHonesty, 'unexecuted recruits are still named');
+  assert.ok(run.recruitmentHonesty.unexecutedRecruits.length >= 1);
+});
+
+test('provider run executes recruits: honest completion with no recruitment gap', async () => {
+  const cwd = project();
+  const fetchImpl = async () => new Response(JSON.stringify({
+    content: [{ type: 'text', text: 'reviewed: operational readiness confirmed' }],
+    usage: { input_tokens: 10, output_tokens: 10 },
+  }), { status: 200, headers: { 'content-type': 'application/json' } });
+  const run = await runOrchestration(
+    { request: 'migrate the billing schema for all users across the org', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 6 },
+    { env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test' }, cwd, workerBackend: 'provider', fetchImpl },
+  );
+  assert.equal(run.recruitmentHonesty ?? null, null, 'executed recruits leave no honesty gap');
+  assert.ok(run.tasks.filter((t) => t.recruited).every((t) => t.executionState === 'executed'));
 });

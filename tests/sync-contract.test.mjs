@@ -7,6 +7,7 @@
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { rmTmpDir } from './helpers/cleanup.mjs';
 import os from 'node:os';
 import path from 'node:path';
 import { describe, it, before, after } from 'node:test';
@@ -71,8 +72,8 @@ before(() => {
 });
 
 after(() => {
-  fs.rmSync(tmpHome, { recursive: true, force: true });
-  fs.rmSync(tmpProject, { recursive: true, force: true });
+  rmTmpDir(tmpHome);
+  rmTmpDir(tmpProject);
 });
 
 /** Run sync-specialists.mjs with the given extra args and env, return result.
@@ -127,17 +128,19 @@ describe('sync-specialists contract tests', () => {
   // under HOME, not the repo root — two --global syncs against different HOMEs
   // must not collide on a shared repo-root lock.
   describe('lockfile', () => {
-    it('creates .cx/sync.lock during sync and removes it after', () => {
-      const lockPath = path.join(tmpHome, '.cx', 'sync.lock');
+    it('creates .construct/sync.lock during sync and removes it after, leaving no stray .cx (construct-edkj)', () => {
+      const lockPath = path.join(tmpHome, '.construct', 'sync.lock');
       // Ensure no stale lock
       try { fs.unlinkSync(lockPath); } catch { /* ok */ }
+      try { fs.rmSync(path.join(tmpHome, '.cx'), { recursive: true, force: true }); } catch { /* ok */ }
       const result = runSync([], { HOME: tmpHome });
       assert.equal(result.status, 0, `sync failed:\n${result.stderr}`);
       assert.ok(!fs.existsSync(lockPath), 'lock file must be removed after successful sync');
+      assert.ok(!fs.existsSync(path.join(tmpHome, '.cx')), 'sync must not leave a stray .cx/ directory after ADR-0074 consolidation');
     });
 
     it('aborts with exit 1 when lock is already held by a live process', () => {
-      const lockPath = path.join(tmpHome, '.cx', 'sync.lock');
+      const lockPath = path.join(tmpHome, '.construct', 'sync.lock');
       fs.mkdirSync(path.dirname(lockPath), { recursive: true });
       // Write the current process PID — guaranteed to be alive
       fs.writeFileSync(lockPath, String(process.pid));
@@ -221,13 +224,9 @@ describe('sync-specialists contract tests', () => {
         'sequential-thinking',
       ]);
 
-      // context7 is on the global Claude managed allowlist (globalMcpAllowlist),
-      // so a floating `@latest` fixture entry converges to the catalog's pinned
-      // version instead of surviving untouched.
-      const catalog = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'lib', 'mcp-catalog.json'), 'utf8'));
-      const context7Pin = catalog.mcps.find((m) => m.id === 'context7').args;
-      assert.deepEqual(userConfig.mcpServers.context7.args, context7Pin);
-      assert.ok(!userConfig.mcpServers.context7.args.some((a) => a.endsWith('@latest')), 'catalog pin must not be @latest');
+      // Optional MCPs are not managed by sync just because they exist in the
+      // catalog. A user/global Context7 entry is preserved, not refreshed.
+      assert.deepEqual(userConfig.mcpServers.context7.args, ['-y', '@upstash/context7-mcp@latest']);
     });
   });
 
@@ -265,7 +264,7 @@ describe('sync-specialists contract tests', () => {
 
   describe('two-phase staging', () => {
     it('staging dir is cleaned up after successful sync', () => {
-      const stagingDir = path.join(tmpHome, '.cx', 'sync-staging');
+      const stagingDir = path.join(tmpHome, '.construct', 'sync-staging');
       const result = runSync([], { HOME: tmpHome });
       assert.equal(result.status, 0, `sync failed:\n${result.stderr}`);
       assert.ok(!fs.existsSync(stagingDir), 'sync-staging dir must be removed after successful sync');
@@ -280,7 +279,7 @@ describe('sync-specialists contract tests', () => {
     });
 
     after(() => {
-      fs.rmSync(projectDir, { recursive: true, force: true });
+      rmTmpDir(projectDir);
     });
 
     it('writes a self-contained .claude/settings.json with portable hook commands', () => {
@@ -307,14 +306,14 @@ describe('sync-specialists contract tests', () => {
         !/\$HOME\/\.construct/.test(allCommands),
         'project-mode settings must not reference $HOME/.construct paths'
       );
-      assert.match(allCommands, /\$\{CLAUDE_PROJECT_DIR:-\/[^}]+\}\/\.construct\/run\.mjs.{0,4}hook session-start/);
-      assert.match(allCommands, /\$\{CLAUDE_PROJECT_DIR:-\/[^}]+\}\/\.construct\/run\.mjs.{0,4}hook pre-push-gate/);
+      assert.match(allCommands, /\$\{CLAUDE_PROJECT_DIR:-\/[^}]+\}\/\.construct\/launcher\/run\.mjs.{0,4}hook session-start/);
+      assert.match(allCommands, /\$\{CLAUDE_PROJECT_DIR:-\/[^}]+\}\/\.construct\/launcher\/run\.mjs.{0,4}hook pre-push-gate/);
       assert.ok(
         !/\$\{CLAUDE_PROJECT_DIR:-\.\}/.test(allCommands),
         'cwd-relative :-. fallback breaks under cwd drift; fallback must be the absolute project root'
       );
       assert.ok(
-        !/node \.construct\/run\.mjs hook/.test(allCommands),
+        !/node \.construct\/launcher\/run\.mjs hook/.test(allCommands),
         'hook commands must anchor on ${CLAUDE_PROJECT_DIR:-<absRoot>} so they resolve from any cwd'
       );
     });
@@ -324,7 +323,8 @@ describe('sync-specialists contract tests', () => {
         fs.readFileSync(path.join(projectDir, '.mcp.json'), 'utf8'),
       );
       const ids = Object.keys(mcpJson.mcpServers ?? {});
-      assert.ok(ids.includes('context7'), 'project .mcp.json keeps the core context7 MCP');
+      assert.ok(ids.includes('construct-mcp'), 'project .mcp.json keeps the Construct MCP');
+      assert.ok(!ids.includes('context7'), 'context7 is opt-in, not synced by default');
       assert.ok(!ids.includes('playwright'), 'playwright is opt-in (construct mcp add), not synced by default');
     });
 
@@ -377,7 +377,7 @@ describe('sync-specialists contract tests', () => {
     });
 
     after(() => {
-      fs.rmSync(projectDir, { recursive: true, force: true });
+      rmTmpDir(projectDir);
     });
 
     it('refreshes an existing construct-mcp entry missing the registry env block', () => {
@@ -393,13 +393,11 @@ describe('sync-specialists contract tests', () => {
       ]);
     });
 
-    it('refreshes an existing context7 entry pinned to a stale version to the catalog pin', () => {
+    it('leaves an existing optional context7 entry untouched until explicitly managed', () => {
       const mcpJson = JSON.parse(
         fs.readFileSync(path.join(projectDir, '.mcp.json'), 'utf8'),
       );
-      const catalog = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'lib', 'mcp-catalog.json'), 'utf8'));
-      const context7Pin = catalog.mcps.find((m) => m.id === 'context7').args;
-      assert.deepEqual(mcpJson.mcpServers.context7.args, context7Pin);
+      assert.deepEqual(mcpJson.mcpServers.context7.args, ['-y', '@upstash/context7-mcp@1.0.0']);
     });
 
     it('is idempotent: a second sync makes no further change', () => {
@@ -427,7 +425,7 @@ describe('sync-specialists contract tests', () => {
         fs.readFileSync(path.join(projectDir, '.vscode', 'mcp.json'), 'utf8'),
       );
       assert.equal(vscodeConfig.servers['construct-mcp'].cwd, '${workspaceFolder}');
-      assert.equal(vscodeConfig.servers.context7.cwd, '${workspaceFolder}');
+      assert.equal(vscodeConfig.servers.context7, undefined, 'optional context7 is not generated by sync');
     });
 
     it('does not pin cwd on the Cursor mcp.json entries (only VS Code is pinned)', () => {

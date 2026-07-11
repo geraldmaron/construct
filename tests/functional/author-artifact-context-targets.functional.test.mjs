@@ -29,7 +29,22 @@ const REPO = path.resolve(__dirname, '..', '..');
 const BIN = path.join(REPO, 'bin', 'construct');
 
 const dirs = [];
-test.after(() => { for (const d of dirs) { try { rmTmpDir(d); } catch {} } });
+
+// In-process authorArtifact reaches the machine-scoped state root through the
+// real HOME (observation-store vectorClientFor), so the whole process gets a
+// redirected CX_HOME_OVERRIDE or every tmp fixture registers a real
+// ~/.construct/projects key (construct-9y93c).
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-authorctx-home-'));
+const originalHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+
+test.after(() => {
+  if (originalHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = originalHomeOverride;
+  try { rmTmpDir(homeOverride); } catch {}
+  for (const d of dirs) { try { rmTmpDir(d); } catch {} }
+});
 
 function projectWithTarget() {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-authorctx-'));
@@ -66,6 +81,7 @@ test('AC4: a valid context_targets author pass passes the release gate', async (
   assert.equal(res.ok, true, `author failed: ${JSON.stringify(res.errors)}`);
   assert.equal(res.gate, 'PASS', `gate did not pass: ${JSON.stringify(res.errors)}`);
   assert.ok(res.path, 'artifact written to a path');
+  assert.ok(Array.isArray(res.recruited), 'result carries the recruited participants field (construct-pteo2.8)');
 });
 
 test('R3: a bogus context id is a hard error before authoring', async () => {

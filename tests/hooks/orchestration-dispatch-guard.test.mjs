@@ -38,7 +38,7 @@ beforeEach(() => {
 });
 
 function withCx() {
-  fs.mkdirSync(path.join(repoDir, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(repoDir, '.construct'), { recursive: true });
 }
 
 function run(payload) {
@@ -146,7 +146,7 @@ describe('orchestration-dispatch-guard', () => {
   it('disarms on a stale marker', () => {
     withCx();
     classify('orchestrated');
-    const sp = path.join(repoDir, '.cx', 'runtime', 'orchestration-guard.json');
+    const sp = path.join(repoDir, '.construct', 'runtime', 'orchestration-guard.json');
     const stale = JSON.parse(fs.readFileSync(sp, 'utf8'));
     stale.ts = 1; // far in the past
     fs.writeFileSync(sp, JSON.stringify(stale));

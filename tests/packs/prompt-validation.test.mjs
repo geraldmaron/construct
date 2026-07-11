@@ -201,12 +201,12 @@ test('loadAllPacks core pack prompt validation', async (t) => {
 test('loadAllPacks project-tier pack precedence (ADR-0055)', async (t) => {
   await t.test('a project pack prompt for an existing specialist id takes precedence in the merged list ordering by tier', () => {
     const projectDir = tmpRoot('cx-project-override-');
-    const packsDir = path.join(projectDir, '.cx', 'packs');
+    const packsDir = path.join(projectDir, '.construct', 'packs');
     writeManifest(path.join(packsDir, 'override-pack'), {
       id: '@project/override', version: '1.0.0', compatVersion: 1,
       prompts: { 'cx-engineer': 'prompts/cx-engineer.md' },
     });
-    writePromptFile(projectDir, '.cx/packs/override-pack/prompts/cx-engineer.md', 'name: cx-engineer\nrole: engineer');
+    writePromptFile(projectDir, '.construct/packs/override-pack/prompts/cx-engineer.md', 'name: cx-engineer\nrole: engineer');
 
     const result = loadAllPacks({ deploymentMode: 'solo', rootDir: projectDir });
     const projectPack = result.packs.find((p) => p.id === '@project/override');

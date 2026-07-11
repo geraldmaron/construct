@@ -6,7 +6,7 @@
  * (specialists/artifact-manifest.json) held byte-identical throughout:
  *
  *   1. `construct templates register <type>` (real spawned binary) writes a
- *      project template under .cx/templates/docs/<type>.md and a project-tier
+ *      project template under .construct/templates/docs/<type>.md and a project-tier
  *      artifact-manifest overlay entry; the registered class then resolves and
  *      author_artifact (dry-run scaffold, no live model) drafts from the user's
  *      template and runs the release gate.
@@ -39,7 +39,22 @@ function freshProject() {
   dirs.push(dir);
   return dir;
 }
-test.after(() => { for (const d of dirs) { try { rmTmpDir(d); } catch { /* tmpdir teardown is best-effort */ } } });
+
+// In-process artifact-loop calls reach the machine-scoped state root through
+// the real HOME (observation-store vectorClientFor), so the whole process gets
+// a redirected CX_HOME_OVERRIDE or every fixture registers a real
+// ~/.construct/projects key (construct-9y93c).
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-templates-register-home-'));
+const originalHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+
+test.after(() => {
+  if (originalHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = originalHomeOverride;
+  try { rmTmpDir(homeOverride); } catch { /* tmpdir teardown is best-effort */ }
+  for (const d of dirs) { try { rmTmpDir(d); } catch { /* tmpdir teardown is best-effort */ } }
+});
 
 function builtinBytes() {
   return fs.readFileSync(BUILTIN_MANIFEST);
@@ -56,8 +71,8 @@ test('construct templates register writes a project template + overlay, leaving 
   });
   assert.equal(res.status, 0, res.stderr || res.stdout);
 
-  const templatePath = path.join(cwd, '.cx', 'templates', 'docs', 'convergence-brief.md');
-  const overlayPath = path.join(cwd, '.cx', 'artifact-manifest.overlay.json');
+  const templatePath = path.join(cwd, '.construct', 'templates', 'docs', 'convergence-brief.md');
+  const overlayPath = path.join(cwd, '.construct', 'artifact-manifest.overlay.json');
   assert.ok(fs.existsSync(templatePath), 'project template written');
   assert.ok(fs.existsSync(overlayPath), 'project overlay written');
 

@@ -33,14 +33,14 @@ For the full enforcement model, see [Concepts → Gates and enforcement](/guides
 
 ## "Commit blocked: code changed but docs unchanged"
 
-**You see:** `git commit` refuses with `Code changed but CHANGELOG.md / docs / .cx/context not updated.`
+**You see:** `git commit` refuses with `Code changed but CHANGELOG.md / docs / .construct/context not updated.`
 
 **What fired:** Layer 2 `.beads/hooks/pre-commit`: specifically the `construct docs:verify` check.
 
 **Fix:**
 
 - Add an entry to `CHANGELOG.md` describing what changed.
-- If the change is genuinely operational (a build script tweak, a config file update) and doesn't warrant a CHANGELOG entry, update `.cx/context.md` or relevant `docs/**` to reflect the work.
+- If the change is genuinely operational (a build script tweak, a config file update) and doesn't warrant a CHANGELOG entry, update `.construct/context.md` or relevant `docs/**` to reflect the work.
 - The gate scope is `lib/`, `bin/`, `src/`, `app/`. Tweaks to `tests/`, `scripts/`, and `agents/` don't trip the gate.
 
 **When the gate is wrong:** there is no `CONSTRUCT_SKIP_*` for this gate. If the doc-coupling check fires on a change that legitimately doesn't need docs, fix the scope in `lib/docs-verify.mjs` instead of bypassing.
@@ -97,7 +97,7 @@ For unblocking on a non-required job that's intermittently failing (e.g., a CDN 
 
 1. **Red CI on the current branch**: fix the failure or `CONSTRUCT_STOP_OK_RED_CI=1` to acknowledge.
 2. **Open `in_progress` beads issues**: close them with `bd close <id>` (or `bd update <id> --status open` to defer back to ready), or `CONSTRUCT_STOP_OK_OPEN_BD=1` to acknowledge.
-3. **Drive mode active with unmet criteria**: set the criterion's `met: true` evidence in `.cx/drive-state.json`, or `CONSTRUCT_STOP_OK_OPEN_BD=1` for an explicit override.
+3. **Drive mode active with unmet criteria**: set the criterion's `met: true` evidence in `.construct/drive-state.json`, or `CONSTRUCT_STOP_OK_OPEN_BD=1` for an explicit override.
 
 ## When the gates themselves are wrong
 

@@ -71,5 +71,24 @@
   ],
   "team": "engineering-team",
   "teamId": "engineering-team",
-  "groupId": "engineering-group"
+  "groupId": "engineering-group",
+  "participationRules": {
+    "schemaVersion": 1,
+    "rules": [
+      {
+        "id": "reliability-root-cause",
+        "when": {
+          "signalExpr": "reliability"
+        },
+        "recruit": {
+          "specialists": [
+            "cx-debugger"
+          ]
+        },
+        "role": "advisor",
+        "gate": "advisory",
+        "reason": "reliability/incident language — root-cause advisory"
+      }
+    ]
+  }
 }

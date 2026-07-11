@@ -85,5 +85,24 @@
   ],
   "team": "quality-team",
   "teamId": "quality-team",
-  "groupId": "quality-group"
+  "groupId": "quality-group",
+  "participationRules": {
+    "schemaVersion": 1,
+    "rules": [
+      {
+        "id": "wide-blast-test-coverage",
+        "when": {
+          "watchCondition": "wide-blast-radius"
+        },
+        "recruit": {
+          "specialists": [
+            "cx-qa"
+          ]
+        },
+        "role": "reviewer",
+        "gate": "advisory",
+        "reason": "wide blast radius — test coverage review"
+      }
+    ]
+  }
 }

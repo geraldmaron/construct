@@ -40,5 +40,6 @@
     "slack": "#product",
     "email": "product@example.com",
     "owner": "product-manager"
-  }
+  },
+  "manualOnly": true
 }

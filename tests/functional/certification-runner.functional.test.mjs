@@ -20,7 +20,7 @@ test('construct certify run executes a hermetic scenario in an isolated project'
     rmTmpDir(rootDir);
     rmTmpDir(home);
   });
-  fs.mkdirSync(path.join(rootDir, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, '.construct'), { recursive: true });
   fs.writeFileSync(path.join(rootDir, 'package.json'), '{}\n');
 
   const result = spawnSync(BIN, ['certify', 'run', 'artifact.release-gate.prd'], {
@@ -30,7 +30,7 @@ test('construct certify run executes a hermetic scenario in an isolated project'
   });
 
   assert.equal(result.status, 0, result.stderr || result.stdout);
-  const runsDir = path.join(rootDir, '.cx', 'certification', 'runs');
+  const runsDir = path.join(rootDir, '.construct', 'certification', 'runs');
   assert.ok(fs.existsSync(runsDir));
   const runDirs = fs.readdirSync(runsDir);
   assert.ok(runDirs.length >= 1);

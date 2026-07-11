@@ -28,8 +28,8 @@ test('contract-violations doctor warning prints the real project-scoped path', (
     // project root, so the violation log resolves under fakeRoot/.cx/.
 
     fs.writeFileSync(path.join(fakeRoot, 'package.json'), JSON.stringify({ name: 'fixture' }));
-    fs.mkdirSync(path.join(fakeRoot, '.cx'), { recursive: true });
-    const violationsFile = path.join(fakeRoot, '.cx', 'contract-violations.jsonl');
+    fs.mkdirSync(path.join(fakeRoot, '.construct'), { recursive: true });
+    const violationsFile = path.join(fakeRoot, '.construct', 'contract-violations.jsonl');
     fs.writeFileSync(
       violationsFile,
       JSON.stringify({

@@ -18,7 +18,7 @@ import { listPending, triagePending, approvePending } from '../lib/oracle/action
 
 function freshProject() {
   const projectDir = mkdtempSync(join(tmpdir(), 'construct-oracle-triage-'));
-  mkdirSync(join(projectDir, '.cx', 'oracle'), { recursive: true });
+  mkdirSync(join(projectDir, '.construct', 'oracle'), { recursive: true });
   return {
     projectDir,
     cleanup() {
@@ -28,11 +28,11 @@ function freshProject() {
 }
 
 function pendingFile(projectDir) {
-  return join(projectDir, '.cx', 'oracle', 'pending.jsonl');
+  return join(projectDir, '.construct', 'oracle', 'pending.jsonl');
 }
 
 function archiveFile(projectDir) {
-  return join(projectDir, '.cx', 'oracle', 'pending-archive.jsonl');
+  return join(projectDir, '.construct', 'oracle', 'pending-archive.jsonl');
 }
 
 function readJsonl(filePath) {

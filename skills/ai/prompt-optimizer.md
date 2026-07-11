@@ -1,58 +1,57 @@
 ---
 name: ai-prompt-optimizer
-description: Closed-loop prompt auto-optimization guide. Use when the task matches the trigger conditions described in the body.
+description: Closed-loop prompt optimization guide. Use when the task matches the trigger conditions described in the body.
 inputs: [prompt, model-output, eval-dataset]
 artifactType: prompt
 ---
-# Prompt Auto-Optimization Loop
+# Prompt Optimization Loop
 
-Construct's prompt improvement system uses telemetry traces and quality scores as the feedback signal, Claude as the optimizer, and the modular org registry (`specialists/org/`, assembled at runtime via `loadRegistry()`) as the deployment layer. This is a closed loop: production data → failure analysis → improved prompt → staging → promotion.
+Construct's prompt improvement system uses telemetry traces and quality scores as the feedback signal, an LLM as the optimizer, and the role skill files (`skills/roles/<role>.md`, inlined into specialist prompts at sync time) as the deployment layer. This is a closed loop with a human gate: production data → failure analysis → proposed patch → **manual apply** → sync → monitoring → rollback if needed.
+
+`construct optimize` (implemented by `scripts/optimize.mjs`) runs the whole loop. It never mutates anything without an explicit `--apply`.
 
 ## Running the optimizer
 
 ```bash
-# Analyze and push staging version
+# Dry run (the default) — diagnose failures and print the proposed patch
 construct optimize cx-engineer
 
-# Dry run — see failure patterns without pushing
-construct optimize cx-engineer --dry-run
+# Apply the patch to the agent's role skill file
+construct optimize cx-engineer --apply
+
+# Restore the most recent backup
+construct optimize cx-engineer --rollback
 
 # List all agents with current quality scores
 construct optimize --list
 
 # Tune parameters
-construct optimize cx-debugger --threshold=0.65 --days=14 --min-traces=15
+construct optimize cx-debugger --threshold=0.65 --days=14 --min-traces=5
 ```
 
-The optimizer requires Python 3.12+ (`pip3` must be available). It will auto-install `dspy-ai` and `requests` on first run. Set `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` in `.env`. DSPy uses the same LLM key Construct uses: no separate setup.
+Requires the telemetry backend: set `CONSTRUCT_TELEMETRY_BASEURL`, `CONSTRUCT_TELEMETRY_PUBLIC_KEY`, and `CONSTRUCT_TELEMETRY_SECRET_KEY`.
 
 ## When to run
 
-- Triggered by `/work:optimize-prompts` (manual) or the scheduled task `prompt-optimization-weekly`
-- Automatically suggested when `cx-trace-reviewer` finds an agent with median quality score below 0.65 over the past 7 days
-- Never run optimization on prompts with fewer than 20 scored traces: insufficient signal
+- Triggered by `/work:optimize-prompts` (manual), the weekly `optimize-loop` scheduled job, or the session-end hook — the scheduled and hook cadences run **dry-run only** and never apply; applying is always a human act.
+- Suggested when the latest performance review (`construct review`) flags an agent with an average quality score below 0.7 across at least 3 scored invocations.
+- Optimization needs at least `--min-traces` low-scoring traces (default 3) to have enough signal; raise it for noisy agents.
 
 ## Step 1: Gather signal
 
-Retrieve the current production prompt for the target agent from the specialist entry under `specialists/org/specialists/` (or the corresponding `promptFile` if using extracted prompts).
-
-Then retrieve recent traces via the telemetry backend REST API:
+The optimizer fetches recent traces and their quality scores for the target agent from the telemetry backend REST API:
 
 ```
-GET {CONSTRUCT_TELEMETRY_URL}/api/public/traces?tags={agentName}&limit=50
+GET {CONSTRUCT_TELEMETRY_BASEURL}/api/public/traces?tags={agentName}&limit=50
+GET {CONSTRUCT_TELEMETRY_BASEURL}/api/public/scores?traceId={id}&name=quality
 # Auth: Basic base64(CONSTRUCT_TELEMETRY_PUBLIC_KEY:CONSTRUCT_TELEMETRY_SECRET_KEY)
 ```
 
-To fetch quality scores for traces:
-```
-GET {CONSTRUCT_TELEMETRY_URL}/api/public/scores?traceId={id}&name=quality
-```
-
-Filter to scores where `value < 0.7`. For each low-scoring trace, extract: the prompt used, the user input, the model output, the quality score, and any human comments.
+It filters to scores below the threshold (default 0.7) and extracts, per low-scoring trace: the prompt used, the user input, the model output, the quality score, and any human comments. It also reads the latest `~/.cx/performance-reviews/*-raw.json` for per-agent context.
 
 ## Step 2: Diagnose failure patterns
 
-Analyze the low-scoring traces as a batch. Identify recurring failure modes. Common patterns:
+Low-scoring traces are analyzed as a batch for recurring failure modes. Common patterns:
 
 | Pattern | Diagnostic signal |
 |---|---|
@@ -63,52 +62,48 @@ Analyze the low-scoring traces as a batch. Identify recurring failure modes. Com
 | Format drift | Output format varies; scoring is inconsistent on structure |
 | Insufficient depth | Outputs are correct but shallow; scored down for missing detail |
 
-Write a failure summary: top 3 patterns with supporting trace count and representative examples.
+The diagnosis names the top 1–3 patterns with supporting trace counts and representative examples.
 
-## Step 3: Generate improved prompt
+## Step 3: Generate the improved prompt
 
-Write an improved prompt that directly addresses the diagnosed failures. Rules:
+The optimizer proposes a patch that directly addresses the diagnosed failures. Rules it follows (and you should hold it to when reviewing the dry-run output):
 
 1. **Keep what works**: compare high-scoring traces (>0.8) to low-scoring ones. Only change what's associated with failures.
-2. **Surgical edits, not rewrites**: changing everything risks breaking current strengths. Identify the specific clauses that correlate with failures.
+2. **Surgical edits, not rewrites**: changing everything risks breaking current strengths.
 3. **Be explicit, not vague**: if the failure is "too verbose", add a concrete rule ("respond in under 150 words for questions that fit on one line") not a general note ("be concise").
-4. **Add a self-check instruction**: append a brief checklist the agent runs before responding, derived from the top failure patterns.
+4. **Add a self-check instruction**: a brief checklist derived from the top failure patterns.
 
-## Step 4: Push to staging
+## Step 4: Apply (human gate)
 
-Update the agent's prompt in `specialists/org/specialists/<agent>.json` (or the corresponding `promptFile`) with a staging marker comment. Tag the version by writing to `.cx/decisions/prompt-staging-{agent}-{date}.md`.
+Read the dry-run output first — always review the proposed patch before applying. Then:
 
-Log the candidate prompt as a span attribute on a test run batch using `cx_trace`. Tag spans with `promptVersion: staging-{timestamp}` and score them with `cx_score` as traces complete.
+```bash
+construct optimize <agent> --apply
+```
 
-Do not overwrite the production prompt in the registry until promotion is confirmed.
+What `--apply` does, in order:
 
-## Step 5: Monitor staging
+1. **Rate limit**: refuses if the agent was applied within the last 7 days.
+2. **Patch target**: writes to the agent's role skill file `skills/roles/<role>.md` (e.g. `cx-engineer` → `skills/roles/engineer.md`). It never touches `specialists/org/**` manifests or `personas/construct.md`.
+3. **Backup**: saves a `.bak` of the previous file (most recent 5 kept) — `--rollback` restores it.
+4. **History**: appends the patch record to `~/.cx/prompt-history/<agent>.jsonl`.
+5. **Integrity check**: verifies the patched file is structurally sane (non-empty, still a markdown document).
+6. **Sync**: runs `construct sync` so the updated skill propagates to all host adapters — sync's prompt composition is the contract gate and fails loudly on a skill that does not compose.
 
-After at least 20 scored traces on the staging version:
-- Compare median quality score: staging vs production
-- If staging median > production median + 0.05: promote
-- If staging median ≤ production median: rollback (restore previous prompt, document why)
+## Step 5: Monitor and roll back
 
-To promote: update the agent registry with the accepted prompt and run `construct sync`.
+After applying, watch the agent's next scored invocations:
 
-## Step 6: Document the optimization
+- `construct review` regenerates per-agent quality aggregates (`~/.cx/performance-reviews/`).
+- If the agent's average score drops after the patch, restore the previous prompt:
 
-Write to `.cx/decisions/` with:
-- Which agent was optimized
-- Previous vs new median quality score
-- Top 3 failure patterns addressed
-- What changed in the prompt (diff summary)
-- Date and version numbers
+```bash
+construct optimize <agent> --rollback
+```
 
-This becomes the audit trail for future optimizations and regression analysis.
-
-## Regression detection
-
-Run `cx-trace-reviewer` after every promotion. If the newly promoted prompt shows worse performance after 48 hours of production traffic:
-1. Revert to the previous prompt in the registry and run `construct sync`
-2. Start a new optimization cycle with the regression as the primary failure signal
+Rollback restores the latest `.bak` and records the reversal in the same history JSONL, so the audit trail stays complete.
 
 ## What this does not replace
 
-- **DSPy**: If you need algorithmic optimization over large datasets with measurable metrics (classification, structured output), DSPy is the right tool and integrates with telemetry backend for tracing. This skill is for natural-language agent prompts where the metric is quality score.
-- **Human review**: Always read the generated prompt before pushing to staging. The LLM optimizer can introduce subtle regressions. Automated promotion should only happen after confirming the diff makes sense.
+- **DSPy-style algorithmic optimization**: if you need optimization over large datasets with measurable metrics (classification, structured output), use a dedicated framework. This loop is for natural-language agent prompts where the metric is the quality score.
+- **Human review**: the LLM optimizer can introduce subtle regressions. Applying is deliberately manual and rate-limited; automated cadences only ever propose.

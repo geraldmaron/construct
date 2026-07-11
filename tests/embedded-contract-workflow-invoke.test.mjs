@@ -7,6 +7,11 @@
  * records an observation; team mode flags the write as audited). Durable cases
  * use an isolated tmpdir cwd; the approval case suppresses the home-dir write
  * via CONSTRUCT_ROLES=off so the test never touches real state.
+ *
+ * The durable-write case resolves observation-store state through the
+ * machine-scoped state root (ADR-0066), keyed by a hash of the tmp cwd — so
+ * CX_HOME_OVERRIDE is pinned for the whole file to keep that write off the
+ * real developer machine's $HOME.
  */
 
 import assert from 'node:assert/strict';
@@ -111,7 +116,7 @@ test('proposal-only performs no durable write', async () => {
   const r = await invokeWorkflow({ workflowType: 'evidence-ingest', approvalMode: 'proposal-only' }, { env: {}, cwd });
   assert.equal(r.status, 'proposed');
   assert.deepEqual(r.durableWritesPerformed, []);
-  assert.equal(fs.existsSync(path.join(cwd, '.cx', 'observations')), false);
+  assert.equal(fs.existsSync(path.join(cwd, '.construct', 'observations')), false);
 });
 
 test('allow-durable-write records an observation; team mode marks it audited', async () => {
@@ -121,7 +126,7 @@ test('allow-durable-write records an observation; team mode marks it audited', a
   assert.equal(r.durableWritesPerformed.length, 1);
   assert.equal(r.durableWritesPerformed[0].kind, 'observation');
   assert.equal(r.durableWritesPerformed[0].audited, true);
-  assert.ok(fs.existsSync(path.join(cwd, '.cx', 'observations')));
+  assert.ok(fs.existsSync(path.join(cwd, '.construct', 'observations')));
 });
 
 test('requires-human-approval gates writes and records an approval request', async () => {

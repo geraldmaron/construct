@@ -16,26 +16,26 @@ You don't need to manage any of that: it all runs locally.
 
 ## Files Construct created or manages
 
-Generated tooling (`.construct/`, `.claude/`, `.cx/`, `plan.md`) is gitignored; the user-owned files (`AGENTS.md`, `docs/`) are the ones committed as project content.
+Generated tooling (`.construct/`, `.claude/`, `plan.md`) is gitignored; the user-owned files (`AGENTS.md`, `docs/`) are the ones committed as project content.
 
 | Path | What it is | Touch? |
 |---|---|---|
-| `.construct/` | Launcher for hooks. Don't edit. Regenerated on `npm install`. Gitignored. | No |
+| `.construct/launcher/` | Launcher for hooks. Don't edit. Regenerated on `npm install`. Gitignored. | No |
 | `.claude/agents/` | The persona definitions. Regenerated on `npm install`. Gitignored. | No |
 | `.claude/commands/` | Slash commands. Regenerated on `npm install`. Gitignored. | No |
 | `.claude/settings.json` | Hooks + MCP server config. Construct keys are managed; your additions are preserved. Gitignored. | Carefully |
-| `.cx/` | Per-project session state (active work, decisions, this guide). Construct writes here. Gitignored. | Read-mostly |
+| `.construct/` | Per-project session state (active work, decisions, this guide). Construct writes here. Gitignored. | Read-mostly |
 | `.beads/` | Issue tracker data. Use `bd <cmd>` to interact. | Via CLI |
 | `AGENTS.md` | Agent guide. Construct owns only its fenced integration block; the rest is yours. | Yes: your house rules go here |
 | `plan.md` | Active work plan. Local-only (gitignored). | Yes: your current focus |
 | `docs/` | Documentation lanes (ADRs, PRDs, memos, …). | Yes: this is your team's docs |
-| `.cx/construct_guide.md` | This file. Friendly orientation. Gitignored. | Yes: adapt to your team |
+| `.construct/construct_guide.md` | This file. Friendly orientation. Gitignored. | Yes: adapt to your team |
 
 ## Where to drop information you want Construct to use
 
 Two intake paths, ordered by formality:
 
-1. **`inbox/`** — the single canonical drop zone. Drop a file here (URL, screenshot, paste, anything). The embed daemon watches the directory; when a file lands, it ingests it into the local knowledge base within a second or two and writes a triage packet to `.cx/intake/pending/` describing the new content, its classification (intake type, stage, owner persona, recommended chain), its suggested docs lane, and existing docs that overlap. The agent surfaces pending items at the next session start and you can ask it to process them. For large or slowly-written files, stage under `inbox/.staging/` and rename in so the watcher never sees a half-written file.
+1. **`inbox/`** — the single canonical drop zone. Drop a file here (URL, screenshot, paste, anything). The embed daemon watches the directory; when a file lands, it ingests it into the local knowledge base within a second or two and writes a triage packet to `.construct/intake/pending/` describing the new content, its classification (intake type, stage, owner persona, recommended chain), its suggested docs lane, and existing docs that overlap. The agent surfaces pending items at the next session start and you can ask it to process them. For large or slowly-written files, stage under `inbox/.staging/` and rename in so the watcher never sees a half-written file.
 2. **`AGENTS.md`**: for rules and conventions you want the agent to follow every time. "We prefer functional components. Don't introduce new dependencies without flagging." Read at session start.
 
 For URLs or quick notes, the easiest path is to drop a file into `~/Downloads` and run:
@@ -104,7 +104,7 @@ All ports bind to `127.0.0.1` only; nothing is reachable from other machines on 
 | Command | What it does |
 |---|---|
 | `construct install` | Machine setup, once per machine: Docker, local services, `~/.construct` config |
-| `construct init` | Project setup, once per repo: scaffold `.cx/`, AGENTS.md, plan.md, adapters |
+| `construct init` | Project setup, once per repo: scaffold `.construct/`, AGENTS.md, plan.md, adapters |
 | `construct config [mode <m>]` | Show active deployment mode (solo / team / enterprise) or set a new one |
 | `construct doctor` | Health check across config, services, agents, hooks |
 | `construct sync` | Regenerate platform adapters (Claude Code, OpenCode, Codex, Cursor) |
@@ -124,7 +124,7 @@ Full reference: <https://geraldmaron.github.io/construct/reference/cli>
 npm update @geraldmaron/construct
 ```
 
-That refreshes the agents, hooks, and slash commands in `.claude/` and `.construct/`. Your `.cx/`, `AGENTS.md`, `plan.md`, and `docs/` content is untouched.
+That refreshes the agents, hooks, and slash commands in `.claude/` and `.construct/launcher/`. Your `.construct/` state, `AGENTS.md`, `plan.md`, and `docs/` content is untouched.
 
 ## When things go wrong
 

@@ -48,7 +48,7 @@ construct knowledge index
 ```
 
 Re-indexes all observations, artifacts, and snapshots from the local store. Run after bulk
-ingest operations or after manually editing `.cx/knowledge/` files.
+ingest operations or after manually editing `.construct/knowledge/` files.
 
 ## Ingest a document
 
@@ -57,7 +57,7 @@ construct ingest report.pdf
 construct ingest ./meeting-notes/ --target=knowledge/decisions
 ```
 
-Converts PDFs, DOCX, XLSX, and plain text into indexed markdown artifacts under `.cx/knowledge/`.
+Converts PDFs, DOCX, XLSX, and plain text into indexed markdown artifacts under `.construct/knowledge/`.
 The `--sync` flag also writes chunks into the vector index immediately.
 
 | Flag | Effect |

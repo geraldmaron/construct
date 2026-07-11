@@ -16,7 +16,7 @@
  *   - Codex .toml output is untouched (regression guard — TOML never stamped).
  *
  * Single shared sync runs because the node test runner parallelizes test
- * cases inside a file. Concurrent sync invocations trip .cx/sync.lock.
+ * cases inside a file. Concurrent sync invocations trip .construct/sync.lock.
  */
 
 import { spawnSync } from 'node:child_process';

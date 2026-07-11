@@ -25,6 +25,6 @@ test('context state prefers JSON and preserves markdown compatibility', (t) => {
   assert.equal(state.format, 'json');
   assert.equal(state.source, 'test');
   assert.deepEqual(state.activeWork, ['A']);
-  assert.equal(fs.existsSync(path.join(root, '.cx', 'context.json')), true);
-  assert.equal(fs.existsSync(path.join(root, '.cx', 'context.md')), true);
+  assert.equal(fs.existsSync(path.join(root, '.construct', 'context.json')), true);
+  assert.equal(fs.existsSync(path.join(root, '.construct', 'context.md')), true);
 });

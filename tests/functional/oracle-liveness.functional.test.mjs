@@ -37,7 +37,7 @@ function makeScenario({ tickAgoMs, verdictAgoMs, pendingCount }) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-oracle-live-home-'));
   dirs.push(cwd, home);
 
-  const oracleDir = path.join(cwd, '.cx', 'oracle');
+  const oracleDir = path.join(cwd, '.construct', 'oracle');
   fs.mkdirSync(path.join(oracleDir, 'verdicts'), { recursive: true });
 
   if (verdictAgoMs != null) {

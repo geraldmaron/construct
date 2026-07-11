@@ -67,11 +67,11 @@ test('project-scoped path helper returns <project>/.cx in project, ~/.cx outside
   try {
     withCwd(env.projectA, () => {
       const p = resolveProjectScopedPath('contract-violations.jsonl', { ensureDir: false });
-      assert.equal(p, join(env.projectA, '.cx', 'contract-violations.jsonl'));
+      assert.equal(p, join(env.projectA, '.construct', 'contract-violations.jsonl'));
     });
     withCwd(env.projectB, () => {
       const p = resolveProjectScopedPath('audit-reads.jsonl', { ensureDir: false });
-      assert.equal(p, join(env.projectB, '.cx', 'audit-reads.jsonl'));
+      assert.equal(p, join(env.projectB, '.construct', 'audit-reads.jsonl'));
     });
   } finally { env.cleanup(); }
 });
@@ -111,8 +111,8 @@ test('intent-verifications writer routes to <project>/.cx in a project', () => {
         source: 'test',
       });
     });
-    const aPath = join(env.projectA, '.cx', 'intent-verifications.jsonl');
-    assert.ok(existsSync(aPath), `expected entry in <projectA>/.cx; got files: ${readdirSync(join(env.projectA, '.cx')).join(', ')}`);
+    const aPath = join(env.projectA, '.construct', 'intent-verifications.jsonl');
+    assert.ok(existsSync(aPath), `expected entry in <projectA>/.construct; got files: ${readdirSync(join(env.projectA, '.construct')).join(', ')}`);
     const entries = readFileSync(aPath, 'utf8').trim().split('\n').map((l) => JSON.parse(l));
     assert.equal(entries.length, 1);
     assert.equal(entries[0].specialist, 'cx-reviewer');
@@ -131,8 +131,8 @@ test('project A and project B writers do not bleed into each other', () => {
     // resolved-path helper. After both write, neither file should contain
     // the other's data — concrete test of isolation.
 
-    const APath = join(env.projectA, '.cx', 'contract-violations.jsonl');
-    const BPath = join(env.projectB, '.cx', 'contract-violations.jsonl');
+    const APath = join(env.projectA, '.construct', 'contract-violations.jsonl');
+    const BPath = join(env.projectB, '.construct', 'contract-violations.jsonl');
 
     withCwd(env.projectA, () => {
       const p = resolveProjectScopedPath('contract-violations.jsonl', { ensureDir: true });

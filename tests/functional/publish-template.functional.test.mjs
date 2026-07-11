@@ -51,7 +51,7 @@ test('resolvePdfTemplatePath selects bundled type template', () => {
 test('resolvePdfTemplatePath prefers project override', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'publish-theme-'));
   try {
-    const override = path.join(dir, '.cx', 'publish-theme.typ');
+    const override = path.join(dir, '.construct', 'publish-theme.typ');
     fs.mkdirSync(path.dirname(override), { recursive: true });
     fs.writeFileSync(override, '#set text(size: 12pt)\n$body$', 'utf8');
     const resolved = resolvePdfTemplatePath({ artifactType: 'prd-platform', cwd: dir, repoRoot: REPO });

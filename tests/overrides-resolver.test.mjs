@@ -4,7 +4,7 @@
  * Pins the {original → override → backup} flow for every editable
  * Construct primitive. Verifies: resolver picks override over original
  * when one exists, applyEdit snapshots prior content into a timestamped
- * backup, restoreFromBackup is the inverse, .cx/.gitignore excludes
+ * backup, restoreFromBackup is the inverse, .construct/.gitignore excludes
  * backups/ automatically, and pruneBackups respects the 60-day cap.
  */
 import { describe, it, beforeEach, afterEach } from 'node:test';
@@ -56,7 +56,7 @@ describe('resolveOverride', () => {
     const r = resolveOverride(projectRoot, 'personas', 'construct');
     assert.equal(r.source, 'override');
     assert.equal(r.overrideExists, true);
-    assert.ok(r.path.includes('.cx/personas/construct.md'));
+    assert.ok(r.path.includes('.construct/personas/construct.md'));
   });
 
   it('reports source=missing when neither original nor override exists', () => {
@@ -91,12 +91,12 @@ describe('applyEdit', () => {
     assert.equal(r.wrote, '# changed'.length);
   });
 
-  it('snapshots the prior content to .cx/backups/<category>/<name>.<iso>.<ext>', () => {
+  it('snapshots the prior content to .construct/backups/<category>/<name>.<iso>.<ext>', () => {
     writeOriginal('personas', 'construct', '# original');
     const r = applyEdit(projectRoot, 'personas', 'construct', '# changed');
     assert.ok(r.backupPath, 'first edit must back up the original');
     assert.equal(fs.readFileSync(r.backupPath, 'utf8'), '# original');
-    assert.match(r.backupPath, /\.cx\/backups\/personas\/construct\..+\.md$/);
+    assert.match(r.backupPath, /\.construct\/backups\/personas\/construct\..+\.md$/);
   });
 
   it('snapshots subsequent edits from the override, not the original', () => {
@@ -113,10 +113,10 @@ describe('applyEdit', () => {
     assert.equal(r.backupPath, null);
   });
 
-  it('creates .cx/.gitignore excluding backups/ on first apply', () => {
+  it('creates .construct/.gitignore excluding backups/ on first apply', () => {
     writeOriginal('personas', 'construct', '# x');
     applyEdit(projectRoot, 'personas', 'construct', '# y');
-    const gi = fs.readFileSync(path.join(projectRoot, '.cx', '.gitignore'), 'utf8');
+    const gi = fs.readFileSync(path.join(projectRoot, '.construct', '.gitignore'), 'utf8');
     assert.match(gi, /^backups\/$/m);
   });
 });
@@ -151,7 +151,7 @@ describe('pruneBackups', () => {
     applyEdit(projectRoot, 'personas', 'construct', '# v1');
     const backups = listBackups(projectRoot, 'personas', 'construct');
     const fresh = backups[0].path;
-    const oldDir = path.join(projectRoot, '.cx', 'backups', 'personas');
+    const oldDir = path.join(projectRoot, '.construct', 'backups', 'personas');
     const stalePath = path.join(oldDir, 'construct.stale.md');
     fs.writeFileSync(stalePath, '# stale');
     const sevenYearsAgo = Date.now() - 7 * 365 * 24 * 60 * 60 * 1000;
@@ -163,7 +163,7 @@ describe('pruneBackups', () => {
     assert.ok(!fs.existsSync(stalePath), 'stale backup must be deleted');
   });
 
-  it('is a no-op when .cx/backups/ does not exist', () => {
+  it('is a no-op when .construct/backups/ does not exist', () => {
     const result = pruneBackups(projectRoot, { maxDays: 60 });
     assert.deepEqual(result.pruned, []);
   });

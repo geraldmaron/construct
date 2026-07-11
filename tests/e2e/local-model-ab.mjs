@@ -22,6 +22,7 @@
  * Usage: node tests/e2e/local-model-ab.mjs [--model=qwen2.5-coder:7b] [--profile=fixed]
  */
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
+import { rmTmpDir } from "../helpers/cleanup.mjs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawn, spawnSync } from "node:child_process";
@@ -104,7 +105,7 @@ async function runProfile(profile, port) {
   await proxy.close();
 
   const main = proxy.records.reduce((a, b) => ((b.toolCount || 0) > (a.toolCount || 0) ? b : a), {});
-  rmSync(project, { recursive: true, force: true });
+  rmTmpDir(project);
 
   return {
     profile,

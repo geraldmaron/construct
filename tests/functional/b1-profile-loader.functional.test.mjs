@@ -4,7 +4,7 @@
  * Validates the scope resolution path the way `construct init` / `construct
  * sync` would invoke it. Confirms each curated scope loads, each ships an
  * intake table that the classifier can use, and the escape hatch (custom
- * scope in .cx/scope.json) overrides the default.
+ * scope in .construct/scope.json) overrides the default.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -38,10 +38,10 @@ test('every curated scope classifies a representative input through its own inta
   }
 });
 
-test('escape hatch: .cx/scope.json with custom:true overrides the default', () => {
+test('escape hatch: .construct/scope.json with custom:true overrides the default', () => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'b1-functional-custom-'));
-  fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
-  fs.writeFileSync(path.join(cwd, '.cx', 'scope.json'), JSON.stringify({
+  fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
+  fs.writeFileSync(path.join(cwd, '.construct', 'scope.json'), JSON.stringify({
     id: 'game-studio',
     displayName: 'My Game Studio',
     custom: true,

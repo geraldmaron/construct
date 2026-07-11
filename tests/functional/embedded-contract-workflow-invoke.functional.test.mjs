@@ -63,7 +63,7 @@ test('proposal-only invocation returns a plan and writes nothing', () => {
   assert.equal(env.data.status, 'proposed');
   assert.deepEqual(env.data.durableWritesPerformed, []);
   assert.ok(env.data.traceId);
-  assert.equal(fs.existsSync(path.join(cwd, '.cx', 'observations')), false);
+  assert.equal(fs.existsSync(path.join(cwd, '.construct', 'observations')), false);
 });
 
 test('allow-durable-write lands an observation in the project', () => {
@@ -72,7 +72,7 @@ test('allow-durable-write lands an observation in the project', () => {
   const env = invoke(['--workflow-type', 'evidence-ingest', '--approval-mode', 'allow-durable-write', '--text', 'raw notes'], { cwd, home });
   assert.equal(env.data.status, 'recorded');
   assert.equal(env.data.durableWritesPerformed.length, 1);
-  assert.ok(fs.existsSync(path.join(cwd, '.cx', 'observations')));
+  assert.ok(fs.existsSync(path.join(cwd, '.construct', 'observations')));
 });
 
 test('a credential in the environment never leaks into workflow output', () => {
@@ -84,4 +84,34 @@ test('a credential in the environment never leaks into workflow output', () => {
   });
   assert.equal(res.status, 0, `exit 0 — stderr: ${res.stderr}`);
   assert.equal(res.stdout.includes('cred-canary-wf-0001'), false, 'secret must not leak');
+});
+
+test('roleChain is a floor: cost/privacy signals recruit reviewers onto prd-draft (construct-pteo2.9)', () => {
+  const cwd = fresh('cx-wf-recruit-');
+  const home = fresh('cx-wf-home-');
+  const env = invoke([
+    '--workflow-type', 'prd-draft', '--approval-mode', 'proposal-only',
+    '--text', 'PRD for billing cost optimization with strict PII data retention and consent handling',
+  ], { cwd, home });
+
+  assert.ok(env.data.selectedRoles.indexOf('product-manager') === 0, 'manifest chain honored as minimum, in order');
+  assert.equal(env.data.selectedRoles[1], 'architect', 'manifest chain honored as minimum, in order');
+  assert.ok(env.data.selectedRoles.includes('data-analyst'), `cost signal recruits data-analyst; got ${env.data.selectedRoles.join(',')}`);
+  assert.ok(env.data.selectedRoles.includes('security'), `privacy signal recruits security; got ${env.data.selectedRoles.join(',')}`);
+
+  assert.ok(Array.isArray(env.data.recruitment.rationale), '--json carries recruitment rationale');
+  assert.ok(env.data.recruitment.rationale.some((r) => r.includes('cx-data-analyst')), 'rationale names the recruit');
+  assert.deepEqual(env.data.recruitment.addedRoles.slice().sort(), ['data-analyst', 'security']);
+});
+
+test('recruitment off keeps the bare manifest chain for the same signals', () => {
+  const cwd = fresh('cx-wf-recruit-off-');
+  const home = fresh('cx-wf-home-');
+  const env = invoke([
+    '--workflow-type', 'prd-draft', '--approval-mode', 'proposal-only', '--recruitment', 'off',
+    '--text', 'PRD for billing cost optimization with strict PII data retention and consent handling',
+  ], { cwd, home });
+
+  assert.deepEqual(env.data.selectedRoles, ['product-manager', 'architect'], 'chain untouched when recruitment is off');
+  assert.deepEqual(env.data.recruitment.addedRoles, []);
 });

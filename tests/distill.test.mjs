@@ -70,8 +70,8 @@ test('distill bounds reads for very large files and reports truncation metadata'
 
 test('distill includes active domain overlays in structured output', async () => {
   const root = tempDir('construct-distill-overlay-');
-  fs.mkdirSync(path.join(root, '.cx', 'domain-overlays'), { recursive: true });
-  fs.writeFileSync(path.join(root, '.cx', 'domain-overlays', 'terraform.json'), `${JSON.stringify({
+  fs.mkdirSync(path.join(root, '.construct', 'domain-overlays'), { recursive: true });
+  fs.writeFileSync(path.join(root, '.construct', 'domain-overlays', 'terraform.json'), `${JSON.stringify({
     id: 'terraform',
     type: 'domain-overlay',
     domain: 'terraform',

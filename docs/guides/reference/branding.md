@@ -49,7 +49,7 @@ Typed artifacts resolve tone from:
 
 1. [`specialists/artifact-manifest.json`](../../specialists/artifact-manifest.json) `toneDefault` / `toneAllowed`
 2. [`specialists/tone-profiles.json`](../../specialists/tone-profiles.json)
-3. Optional project override [`.cx/brand-voice.json`](../../schemas/brand-voice.schema.json)
+3. Optional project override [`.construct/brand-voice.json`](../../schemas/brand-voice.schema.json)
 
 Validate before ship: `construct artifact validate <path> --type=<doc-type>`.
 
@@ -90,7 +90,7 @@ Init templates and guides should use profile-neutral language and point readers 
 | `tests/functional/publish-template.functional.test.mjs` | Typst/HTML deck brand fonts |
 | `scripts/audit/03d-brand.mjs` | Retired fonts, marketing voice, Construct/cli naming, hardcoded dashboard intake titles |
 | `lib/hooks/brand-prose-lint.mjs` | PostToolUse block on the same rules for governed paths |
-| `construct init:update` | Proposes or applies (`--apply-guide`) stale `.cx/construct_guide.md` refresh |
+| `construct init:update` | Proposes or applies (`--apply-guide`) stale `.construct/construct_guide.md` refresh |
 | `construct artifact validate` | Typed doc structure, visuals, tone |
 
 Run the brand audit: `node scripts/audit/03d-brand.mjs`.

@@ -35,5 +35,28 @@
   },
   "evidence": [
     "AGENTS.md (rnd profile departments section)"
-  ]
+  ],
+  "participationRules": {
+    "schemaVersion": 1,
+    "rules": [
+      {
+        "id": "legal-compliance-participation",
+        "dimension": "legal-compliance",
+        "when": {
+          "signalExpr": "compliance"
+        },
+        "recruit": {
+          "specialists": [
+            "cx-security"
+          ],
+          "teams": [
+            "governance-team"
+          ]
+        },
+        "role": "reviewer",
+        "gate": "advisory",
+        "reason": "compliance-flagged work — governance review (ADR-0070 legal-compliance binding)"
+      }
+    ]
+  }
 }

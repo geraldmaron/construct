@@ -41,7 +41,7 @@ function makeProject() {
 }
 
 function writeResearch(projectDir, slug, body) {
-  const dir = path.join(projectDir, '.cx', 'knowledge', 'external', 'research');
+  const dir = path.join(projectDir, '.construct', 'knowledge', 'external', 'research');
   fs.mkdirSync(dir, { recursive: true });
   const file = path.join(dir, `${slug}.md`);
   fs.writeFileSync(file, body, 'utf8');
@@ -119,7 +119,7 @@ test('no source-list duplication when projectRoot equals repoRoot or is absent',
   const sameRoot = knowledgeSearch({ query: 'no-dup-marker-xyzqqq', repoRoot: REPO_ROOT, rootDir: REPO_ROOT, topK: 100, minScore: 0 });
   const noRoot = knowledgeSearch({ query: 'no-dup-marker-xyzqqq', repoRoot: REPO_ROOT, topK: 100, minScore: 0 });
   for (const r of [sameRoot, noRoot]) {
-    const dupes = r.hits.filter((h) => h.file.startsWith('.cx/knowledge/external/research/no-dup-marker'));
+    const dupes = r.hits.filter((h) => h.file.startsWith('.construct/knowledge/external/research/no-dup-marker'));
     assert.equal(dupes.length, 0, 'projectRoot===repoRoot or absent must not surface the foreign project hit');
   }
 });

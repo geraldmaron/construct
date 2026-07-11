@@ -35,6 +35,23 @@ Construct classifies every host honestly — no surface is cosmetic. `construct 
 
 `mcp-orchestrated` hosts get genuine multi-specialist results — the engine owns orchestration, the editor is a thin client (see [orchestrated outcomes in VS Code](#orchestrated-outcomes-in-vs-code) and ADR-0022). A host would only be `prompt-only` if it had neither native dispatch nor MCP — none of the supported hosts are.
 
+## EXECUTE vs PLAN: which hosts need a provider key
+
+`full-native` and `mcp-orchestrated` both describe whether a host can *reach* the specialist chain — not whether that chain actually calls an LLM. `construct init` and `construct doctor` print the real verdict as their last line:
+
+```
+specialists will EXECUTE (provider <family> + key found)
+specialists will only PLAN (fix: set orchestration.workerBackend=provider + a key)
+```
+
+EXECUTE requires the config-resolved `orchestration.workerBackend` to be `"provider"` **and** a materialized (not `op://...`) key present for the selected provider family. Anything else — the default `inline` backend, `host` with no attached session, or `provider` with no key — degrades to PLAN: Construct still prepares specialist prompts/tasks, but no LLM ever reasons over them.
+
+- **Claude Code and OpenCode** (`full-native`) run the specialist chain through the host's own attached session, so they EXECUTE with no provider key required — the host's own model does the reasoning.
+- **Codex, Copilot, VS Code, Cursor** (`mcp-orchestrated`) have no attached subagent session to fall back on. They need `orchestration.workerBackend: "provider"` in `construct.config.json`, plus a materialized `ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY`, or `OPENAI_API_KEY` in the environment the MCP server runs in — without both, `orchestration_run` on these hosts only plans.
+- Even inside Claude Code or OpenCode, set `orchestration.workerBackend: "provider"` (+ a key) if you want a specific provider model instead of the host's own.
+
+Verify with `construct doctor` (reads the last line) or `construct orchestrate preflight --json` (full `workerBackend`/`credentialMaterializable`/`modelResolved` detail).
+
 ## Claude Code
 
 **Global tier** writes safety hooks and global instructions — but **no agent file** (the orchestrator is project-scoped, so it isn't duplicated in editors that read both scopes):
@@ -47,7 +64,7 @@ Construct classifies every host honestly — no surface is cosmetic. `construct 
 **Project tier** writes the front door + project-local Claude config:
 
 - `<project>/.claude/agents/construct.md` — orchestrator only (Single Front Door)
-- `<project>/.claude/settings.json` — full project-portable hook suite (relative paths via `.construct/run.mjs`); hooks and permissions only, never MCP server definitions
+- `<project>/.claude/settings.json` — full project-portable hook suite (relative paths via `.construct/launcher/run.mjs`); hooks and permissions only, never MCP server definitions
 - `<project>/.mcp.json` — project-scope MCP servers (Claude Code's documented project scope, meant to be checked into version control)
 - `<project>/.claude/commands/*.md` — slash commands
 - `<project>/.claude/skills/<name>/SKILL.md` — Anthropic Agent Skills
@@ -83,7 +100,7 @@ Construct writes `<project>/.vscode/mcp.json` (top-level `servers`) per the offi
 VS Code/Copilot has no extension-facing subagent primitive, so the editor's own agent can't run a multi-specialist chain itself. Construct closes that gap the way Claude Code and OpenCode do — **the engine runs the orchestration; the editor is a thin client.** Reach it two ways:
 
 - **From the editor's chat, via MCP** — the Construct MCP server exposes `orchestration_readiness` to verify attachment, `orchestration_run` to execute a real run and return per-specialist output, and `orchestration_status` to inspect runs. Solo runs execute in-process — no daemon, no port, no token. MCP tools are exactly what VS Code/Copilot and Cursor *do* expose, so the host gets a genuine multi-specialist outcome through a tool it can actually call — no subagent primitive required.
-- **From a script/CI** — `construct orchestrate run "<request>"` runs in-process and stores runs in the current project's `.cx/`. For a shared team service, set `CONSTRUCT_ORCHESTRATION_URL` (and `CONSTRUCT_ORCHESTRATION_TOKEN`) and use `construct orchestrate run --remote "<request>"`, which proxies the same call over HTTP.
+- **From a script/CI** — `construct orchestrate run "<request>"` runs in-process and stores runs in the current project's `.construct/`. For a shared team service, set `CONSTRUCT_ORCHESTRATION_URL` (and `CONSTRUCT_ORCHESTRATION_TOKEN`) and use `construct orchestrate run --remote "<request>"`, which proxies the same call over HTTP.
 
 A run executed with the `provider` worker backend (set `orchestration.workerBackend` and a provider key) returns real specialist output — the same outcome a Claude Code user gets. See [architecture → engine-as-service](/guides/concepts/architecture) and ADR-0022.
 

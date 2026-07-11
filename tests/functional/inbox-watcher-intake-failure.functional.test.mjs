@@ -47,12 +47,12 @@ function makeProject() {
   // The canonical project-root inbox/ is always watched (ADR-0045 §C); no
   // intake-config is needed to enable a scan.
   fs.mkdirSync(path.join(dir, 'inbox'), { recursive: true });
-  fs.mkdirSync(path.join(dir, '.cx', 'intake', 'pending'), { recursive: true });
+  fs.mkdirSync(path.join(dir, '.construct', 'intake', 'pending'), { recursive: true });
   // Seed an empty dedup manifest — its presence is the watcher's signal to
   // compute SHAs and consult the manifest gate at all. Mirrors what init does
   // for archetype profiles via intake/manifest.mjs:saveManifest.
   fs.writeFileSync(
-    path.join(dir, '.cx', 'intake', 'manifest.json'),
+    path.join(dir, '.construct', 'intake', 'manifest.json'),
     JSON.stringify({ version: 1, files: {} }, null, 2),
     'utf8',
   );

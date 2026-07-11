@@ -40,7 +40,7 @@ beforeEach(() => {
 });
 
 function withCx() {
-  fs.mkdirSync(path.join(repoDir, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(repoDir, '.construct'), { recursive: true });
 }
 
 function run(payload) {

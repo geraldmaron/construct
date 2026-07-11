@@ -94,7 +94,7 @@ describe('engine contracts', () => {
 
 describe('engine plugin overrides', () => {
   it('loads a project-local plugin override from .cx/plugins.json', async () => {
-    const cxDir = path.join(tmpDir, '.cx');
+    const cxDir = path.join(tmpDir, '.construct');
     const pluginPath = path.join(tmpDir, 'fake-fuser.mjs');
     fs.mkdirSync(cxDir, { recursive: true });
     fs.writeFileSync(pluginPath, `
@@ -116,7 +116,7 @@ describe('engine plugin overrides', () => {
   });
 
   it('falls back to default and records error when override fails contract', async () => {
-    const cxDir = path.join(tmpDir, '.cx');
+    const cxDir = path.join(tmpDir, '.construct');
     const pluginPath = path.join(tmpDir, 'broken-embedder.mjs');
     fs.mkdirSync(cxDir, { recursive: true });
     fs.writeFileSync(pluginPath, `
@@ -136,7 +136,7 @@ describe('engine plugin overrides', () => {
   });
 
   it('rejects github: spec with a clear error', async () => {
-    const cxDir = path.join(tmpDir, '.cx');
+    const cxDir = path.join(tmpDir, '.construct');
     fs.mkdirSync(cxDir, { recursive: true });
     fs.writeFileSync(
       path.join(cxDir, 'plugins.json'),
