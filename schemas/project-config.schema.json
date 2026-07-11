@@ -76,6 +76,12 @@
           "enum": ["hidden", "surface", "telemetry_only"],
           "default": "hidden",
           "examples": ["hidden", "surface", "telemetry_only"]
+        },
+        "outcomeRouting": {
+          "type": "string",
+          "description": "Whether recruitment breaks ties between equally-specialized candidates using each role's recent outcome success rate (a bounded ±0.05 nudge that can never override the primary specialization signal). 'off' restores plain alphabetical tie-breaking.",
+          "enum": ["on", "off"],
+          "default": "on"
         }
       }
     },

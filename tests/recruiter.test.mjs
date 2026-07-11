@@ -9,6 +9,9 @@
 
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 
 import {
   recruit,
@@ -18,6 +21,8 @@ import {
 } from '../lib/orchestration/recruiter.mjs';
 import { watcherFires } from '../lib/orchestration/routing-tables.mjs';
 import { resolveRemediationDispatch } from '../lib/oracle/remediation-dispatch.mjs';
+import { recordOutcome } from '../lib/outcomes/record.mjs';
+import { aggregateOutcomes } from '../lib/outcomes/aggregate.mjs';
 
 test('recruit maps cost + accessibility signals to the most specialized skill matches', () => {
   const participants = recruit({ signals: { cost: true, accessibility: true }, kind: 'review' });
@@ -190,4 +195,116 @@ test('resolveRemediationDispatch delegates to the recruiter with unchanged outpu
   assert.ok(Array.isArray(dispatch.specialists));
   assert.ok(dispatch.specialists.includes('cx-operations'));
   assert.ok(dispatch.teamRouting);
+});
+
+// outcomeBoost tie-breaker (ADR-0076): a bounded ±0.05 nudge between candidates
+// the specialization signal already ranked equal. Each test gets an isolated
+// tmpdir so outcome history from one case never leaks into another.
+
+function tmpProject() {
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'recruiter-outcome-boost-'));
+}
+
+function seedOutcomes(cwd, role, { successes = 0, failures = 0 } = {}) {
+  for (let i = 0; i < successes; i++) {
+    recordOutcome(cwd, { role, success: true, notes: 'test', source: 'test' });
+  }
+  for (let i = 0; i < failures; i++) {
+    recordOutcome(cwd, { role, success: false, notes: 'test', source: 'test' });
+  }
+  aggregateOutcomes(cwd);
+}
+
+const TIED_REGISTRY = {
+  specialists: {
+    'cx-data-analyst': { skills: ['cost-optimization'], team: null },
+    'cx-finance-ops': { skills: ['pricing-positioning'], team: null },
+  },
+};
+
+test('outcomeBoost re-ranks candidates the specialization signal left tied', () => {
+  const cwd = tmpProject();
+  try {
+    const baseline = recruit({ signals: { cost: true }, kind: 'review', registry: TIED_REGISTRY, cwd });
+    assert.deepEqual(
+      baseline.map((p) => p.specialist),
+      ['cx-data-analyst'],
+      'with no outcome history, the alphabetical tie-break picks cx-data-analyst',
+    );
+
+    seedOutcomes(cwd, 'data-analyst', { failures: 5 });
+    seedOutcomes(cwd, 'finance-ops', { successes: 5 });
+
+    const boosted = recruit({ signals: { cost: true }, kind: 'review', registry: TIED_REGISTRY, cwd });
+    assert.deepEqual(
+      boosted.map((p) => p.specialist),
+      ['cx-finance-ops'],
+      'cx-finance-ops\' strong recent outcomes flip the tie-break',
+    );
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('outcomeBoost can never override a lower declared-skill-count (most-specialized-wins)', () => {
+  const cwd = tmpProject();
+  const registry = {
+    specialists: {
+      'cx-narrow': { skills: ['cost-optimization'], team: null },
+      'cx-broad': {
+        skills: ['cost-optimization', 'pricing-positioning', 'raw-data-structuring'],
+        team: null,
+      },
+    },
+  };
+  try {
+    // The narrower (more specialized) candidate gets the worst possible outcome
+    // history and the broader one the best — the boost must still lose to skillCount.
+    seedOutcomes(cwd, 'narrow', { failures: 5 });
+    seedOutcomes(cwd, 'broad', { successes: 5 });
+
+    const picks = recruit({ signals: { cost: true }, kind: 'review', registry, cwd });
+    assert.deepEqual(
+      picks.map((p) => p.specialist),
+      ['cx-narrow'],
+      'a 1-skill candidate must beat a 3-skill candidate regardless of outcome history',
+    );
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('orchestration.outcomeRouting=off restores plain alphabetical tie-breaking', () => {
+  const cwd = tmpProject();
+  try {
+    seedOutcomes(cwd, 'data-analyst', { failures: 5 });
+    seedOutcomes(cwd, 'finance-ops', { successes: 5 });
+    fs.writeFileSync(
+      path.join(cwd, 'construct.config.json'),
+      JSON.stringify({ version: 1, orchestration: { outcomeRouting: 'off' } }),
+    );
+
+    const picks = recruit({ signals: { cost: true }, kind: 'review', registry: TIED_REGISTRY, cwd });
+    assert.deepEqual(
+      picks.map((p) => p.specialist),
+      ['cx-data-analyst'],
+      'outcomeRouting=off must ignore outcome history entirely',
+    );
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('missing outcome summary leaves recruitment order unchanged', () => {
+  const cwd = tmpProject();
+  try {
+    const picks = recruit({ signals: { cost: true }, kind: 'review', registry: TIED_REGISTRY, cwd });
+    assert.deepEqual(
+      picks.map((p) => p.specialist),
+      ['cx-data-analyst'],
+      'no outcome data must fall back to the pre-existing alphabetical tie-break',
+    );
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
 });

@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-11T00:32:05.671Z",
+  "generatedAt": "2026-07-11T01:17:50.172Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 876,
+    "testFiles": 877,
     "topLevelTestFiles": 365,
-    "nestedTestFiles": 511,
+    "nestedTestFiles": 512,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
       "unit": 579,
-      "functional": 249,
+      "functional": 250,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
       "unit": 516,
-      "functional": 249,
+      "functional": 250,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -3782,6 +3782,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/org-studio.functional.test.mjs — the Org Studio web surface (construct-d1r7.14)."
+    },
+    {
+      "path": "tests/functional/outcome-routing.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/outcome-routing.functional.test.mjs — ADR-0076 end-to-end."
     },
     {
       "path": "tests/functional/participation-cross-surface.functional.test.mjs",
