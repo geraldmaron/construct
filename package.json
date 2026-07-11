@@ -36,6 +36,7 @@
     "scripts/optimize.mjs",
     "scripts/review.mjs",
     "scripts/seed-traces.mjs",
+    "scripts/tag-candidate-mining.mjs",
     "scripts/refresh-ci-status.mjs",
     "README.md",
     ".env.example"
