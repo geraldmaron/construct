@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-11T22:55:54.343Z",
+  "generatedAt": "2026-07-11T23:06:27.713Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 880,
+    "testFiles": 881,
     "topLevelTestFiles": 365,
-    "nestedTestFiles": 515,
+    "nestedTestFiles": 516,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 579,
+      "unit": 580,
       "functional": 253,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 516,
+      "unit": 517,
       "functional": 253,
       "visual": 12,
       "structural-guard": 19,
@@ -6390,6 +6390,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/schema-validation.test.mjs — Validate unified registry schema and test with fixtures."
+    },
+    {
+      "path": "tests/scripts/check-workflow-defs-drift.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/scripts/check-workflow-defs-drift.test.mjs — exit-code contract for"
     },
     {
       "path": "tests/scripts/ci-repro-drift.test.mjs",

@@ -417,8 +417,13 @@ async function cmdSync(args) {
 
   try {
     const driftStatus = runNodeScript(path.join(ROOT_DIR, 'scripts', 'check-workflow-defs-drift.mjs'), ['--check'], {}, { exitOnError: false });
-    if (driftStatus !== 0) {
+    // Exit 1 is the script's own signal for a real drift finding; any other
+    // nonzero status means the check itself failed to run (see the script's
+    // main().catch — exit 2 for a crash) and must not be reported as drift.
+    if (driftStatus === 1) {
       errorln('workflow-defs.mjs drift detected — run: npm run workflow-defs:check');
+    } else if (driftStatus !== 0) {
+      errorln(`workflow-defs.mjs drift check did not run (exit ${driftStatus}) — see output above`);
     }
     opLog.event('workflow-defs-check', { status: driftStatus });
   } catch (err) {
