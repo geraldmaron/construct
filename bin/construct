@@ -5217,7 +5217,7 @@ async function cmdEvals(args) {
   if (sub === 'retrieval') {
     const jsonOutput = args.includes('--json');
     const fixtureArg = args.find((a) => a.startsWith('--fixture='));
-    const defaultFixture = path.join(ROOT_DIR, 'tests', 'fixtures', 'retrieval-eval', 'queries.json');
+    const defaultFixture = path.join(ROOT_DIR, 'config', 'evals', 'retrieval-queries.json');
     const fixturePath = fixtureArg ? fixtureArg.split('=')[1] : defaultFixture;
 
     const { evaluateFixture, formatReport } = await import('../lib/engine/eval-retrieval.mjs');

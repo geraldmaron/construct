@@ -1,10 +1,11 @@
 /**
  * tests/engine-eval-retrieval.test.mjs — retrieval quality regression test.
  *
- * Loads tests/fixtures/retrieval-eval/queries.json, runs it through the
- * engine's retrieval pipeline (BM25 + cosine → RRF fuse → MMR rerank), and
- * asserts the metrics meet a baseline. The baseline is set conservatively
- * — failures here mean the pipeline regressed against a known dataset, not
+ * Loads config/evals/retrieval-queries.json (the same fixture the packaged
+ * `construct evals retrieval` CLI ships), runs it through the engine's
+ * retrieval pipeline (BM25 + cosine → RRF fuse → MMR rerank), and asserts
+ * the metrics meet a baseline. The baseline is set conservatively —
+ * failures here mean the pipeline regressed against a known dataset, not
  * that production retrieval is broken — but it provides a guardrail when
  * swapping plugins.
  *
@@ -18,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { evaluateFixture, formatReport } from '../lib/engine/eval-retrieval.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const FIXTURE = path.join(__dirname, 'fixtures', 'retrieval-eval', 'queries.json');
+const FIXTURE = path.join(__dirname, '..', 'config', 'evals', 'retrieval-queries.json');
 
 describe('retrieval quality (BM25 + cosine + RRF + MMR)', () => {
   it('meets the baseline metrics on the fixture query set', async () => {
