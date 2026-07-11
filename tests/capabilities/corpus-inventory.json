@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-10T20:51:54.684Z",
+  "generatedAt": "2026-07-11T01:54:19.917Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 875,
-    "topLevelTestFiles": 364,
-    "nestedTestFiles": 511,
+    "testFiles": 877,
+    "topLevelTestFiles": 365,
+    "nestedTestFiles": 512,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 578,
-      "functional": 249,
+      "unit": 579,
+      "functional": 250,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 515,
-      "functional": 249,
+      "unit": 516,
+      "functional": 250,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -1535,6 +1535,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/doc-stamp.test.mjs — tests for lib/doc-stamp.mjs UUIDv7 identity, SHA-256 body hash, and frontmatter stamp verification."
+    },
+    {
+      "path": "tests/docs-optimize-consistency.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/docs-optimize-consistency.test.mjs — guards the prompt-optimizer docs"
     },
     {
       "path": "tests/doctor-command-on-path.test.mjs",
@@ -3774,6 +3782,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/org-studio.functional.test.mjs — the Org Studio web surface (construct-d1r7.14)."
+    },
+    {
+      "path": "tests/functional/outcome-routing.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/outcome-routing.functional.test.mjs — ADR-0076 end-to-end."
     },
     {
       "path": "tests/functional/participation-cross-surface.functional.test.mjs",

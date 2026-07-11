@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-06T14:48:55.443Z",
+  "generatedAt": "2026-07-11T01:07:05.152Z",
   "generator": "lib/certification/skill-inventory.mjs",
   "skillCount": 153,
   "skills": [
@@ -104,7 +104,7 @@
         "cx-reviewer"
       ],
       "activationTriggers": [
-        "Closed-loop prompt auto-optimization guide. Use when the task matches the trigger conditions described in the body."
+        "Closed-loop prompt optimization guide. Use when the task matches the trigger conditions described in the body."
       ],
       "inputs": [
         "[prompt, model-output, eval-dataset]"
@@ -2972,5 +2972,5 @@
   ],
   "blockingFindings": [],
   "effectivenessFindings": [],
-  "digest": "04f93d2a7cc82aeb4d3eddd53feb40611ef4f26777c9261b5d3a352a32ce96c8"
+  "digest": "caa928ff5d9352644ae9d5860c25f6c5f5740a2fe779761b5352da59c2c111e9"
 }

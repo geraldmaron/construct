@@ -81,6 +81,8 @@ Architecture decision records for decisions that have already been made.
 | [0073](./0073-richdocument-ir-html-canonical-surface.md) | RichDocument IR with HTML-canonical serialization for preview and export | proposed | Revises the markdown-as-pivot framing of ADR-0024; sidecar RPC contract of ADR-0068 unchanged; numbered 0071 on `refactor/consolidate-project-config-dir` before reconciliation |
 | [0074](./0074-single-project-directory-consolidation.md) | Single project-directory consolidation | accepted | Consolidates `.cx/` + `.construct/` into one `.construct/` with the launcher at `.construct/launcher/`; supersedes the launcher/config split of ADR-0027, extends ADR-0066; numbered 0069 on `refactor/consolidate-project-config-dir` before reconciliation |
 | [0075](./0075-explicit-mcp-install-states.md) | Explicit MCP install states — silence unconfigured servers | accepted | Defines MCP lifecycle: catalog → installed → enabled → healthy; auth independent from config; numbered 0070 on `refactor/consolidate-project-config-dir` before reconciliation |
+| [0076](./0076-outcome-aware-recruitment-tiebreaker.md) | Outcome-aware recruitment tie-breaker | accepted | `outcomeBoost` (±0.05) breaks recruiter ties left by declared-skill count; classify.mjs's determinism contract stays untouched; gated by `orchestration.outcomeRouting` config field |
+| [0077](./0077-prompt-optimization-auto-apply-tier.md) | Opt-in auto-apply tier for prompt optimization | proposed | Config-gated canary/full auto-apply for `construct optimize`, scoped to `skills/roles/*.md` only; deliberately does not route through `lib/improvement/`'s stricter per-proposal governance; awaits explicit acceptance before implementation |
 
 ## Starter templates
 
