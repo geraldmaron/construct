@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- Functional tests for two previously untested PostToolUseFailure hooks. `tests/functional/edit-error-recovery.functional.test.mjs` spawns the real `lib/hooks/edit-error-recovery.mjs` over stdin JSON and pins the contract: a matching edit tool + edit-failure error prints recovery steps naming the failed `file_path` (including the `tool_response`-JSON match path), while a non-edit tool, a non-matching error, or malformed stdin stays silent at exit 0. `tests/functional/context-window-recovery.functional.test.mjs` spawns `lib/hooks/context-window-recovery.mjs` in a sterile env (`sterileSpawnEnv()`, HOME/CX_HOME_OVERRIDE pinned to a fresh tmpdir) and asserts the durable artifacts: a context-limit error writes `.construct/context.md` + `context.json` in both the project cwd and `doctorRoot()`, records the `context-recovery.json` cooldown stamp, a second trigger inside the 10-minute cooldown is a full no-op, an expired cooldown fires again, and a non-matching error writes nothing. Rebased onto current `staging` — the original PR predated ADR-0074's `.cx` → `.construct` project-directory rename, so the context-window-recovery assertions were updated to the current path. ([#372](https://github.com/geraldmaron/construct/pull/372), @ssskay)
+
 ### Documentation
 
 - `lib/state-root.mjs`'s `deriveProjectKey` (git-origin hash) and `lib/orchestration/store.mjs`'s `projectKey` (config `projectName` or raw cwd) answer "which project is this" independently, so the same repo can fragment across the two stores — e.g. two clones of one repository share traces/observations/vector index (same git-origin hash) but get separate orchestration-run histories (different cwd), and vice versa. No code change: unifying the two changes existing users' state/rows at both sites and needs a migration design, not a drive-by patch. Filed as `construct-36w10` (an ADR + migration is the next step) and cross-referenced in both modules' file headers so the divergence isn't silently rediscovered again.

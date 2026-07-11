@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-11T23:25:18.458Z",
+  "generatedAt": "2026-07-11T23:33:11.345Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 882,
+    "testFiles": 884,
     "topLevelTestFiles": 365,
-    "nestedTestFiles": 517,
+    "nestedTestFiles": 519,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
       "unit": 580,
-      "functional": 254,
+      "functional": 256,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
       "unit": 517,
-      "functional": 254,
+      "functional": 256,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -2569,6 +2569,14 @@
       "maintainerNotes": "tests/functional/construct-shim.functional.test.mjs — construct-rf26.19."
     },
     {
+      "path": "tests/functional/context-window-recovery.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/context-window-recovery.functional.test.mjs — end-to-end"
+    },
+    {
       "path": "tests/functional/copilot-auth.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2850,6 +2858,14 @@
       ],
       "skipped": false,
       "maintainerNotes": "dogfood-certification.functional.test.mjs — Construct certifies its own distribution gallery."
+    },
+    {
+      "path": "tests/functional/edit-error-recovery.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/edit-error-recovery.functional.test.mjs — end-to-end"
     },
     {
       "path": "tests/functional/embed-capability-lifecycle.functional.test.mjs",
