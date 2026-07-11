@@ -287,6 +287,18 @@ function parseHostSelection() {
       } catch { /* advisory */ }
     }
 
+    // Same rationale for Codex: an existing `~/.codex/agents/` dir means the
+    // user has it even when the `codex` binary is not on PATH — the same dir
+    // doctor's parity check reads, so both sides agree on "installed". A
+    // detection miss without this fallback prunes the managed adapter and
+    // config.toml block, and doctor then reports permanent drift with no
+    // self-heal short of putting `codex` on PATH.
+    if (!detected.has("codex")) {
+      try {
+        if (fs.existsSync(path.join(home, ".codex", "agents"))) detected.add("codex");
+      } catch { /* advisory */ }
+    }
+
     // Always include Claude as the baseline if nothing else is detected.
     if (detected.size === 0) detected.add("claude");
     return detected;
@@ -1209,7 +1221,15 @@ function syncClaude(entries, targetDir = null, wants = true) {
     const md = claudeAgentMarkdown(entry, entries);
     writeFile(path.join(claudeAgentsDir, `${name}.md`), md, { stamp: false });
   }
-  removeStaleAdapters(claudeAgentsDir, ".md", writeEntries);
+  // A project sync with Claude deselected or undetected must not delete the
+  // project's existing front-door agent — pruning on `!wants` turns a
+  // detection miss into data loss (construct-lqp4c's copilot precedent).
+  // Global scope keeps its unconditional sweep: it never writes an agent
+  // file by design, so `wants` does not change what belongs there.
+
+  if (!(targetDir && !wants)) {
+    removeStaleAdapters(claudeAgentsDir, ".md", writeEntries);
+  }
   if (!targetDir) {
     sweepLegacyPrefixedFiles(claudeAgentsDir, ".md", []);
   }
@@ -1324,13 +1344,20 @@ function codexMcpEnvResolves(id, def, env = process.env) {
 }
 
 function syncCodex(entries, targetDir = null, wants = true) {
+  // Deselected or undetected host: leave prior Codex outputs untouched. An
+  // empty writeEntries set would otherwise prune every managed
+  // `agents/*.toml` file and strip the managed config.toml block on a plain
+  // detection miss (construct-lqp4c's copilot precedent, generalized here).
+
+  if (!wants) return;
+
   const codexDir = targetDir
     ? path.join(targetDir, ".codex")
     : path.join(home, ".codex");
   const codexAgentsDir = path.join(codexDir, "agents");
-  if (!DRY_RUN && wants) mkdirp(codexAgentsDir);
+  if (!DRY_RUN) mkdirp(codexAgentsDir);
 
-  const writeEntries = wants ? globalEntries(entries) : [];
+  const writeEntries = globalEntries(entries);
 
   for (const entry of writeEntries) {
     writeFile(path.join(codexAgentsDir, `${adapterName(entry)}.toml`), codexAgentToml(entry, entries));
@@ -1775,28 +1802,13 @@ function syncVSCode(targetDir = null, wants = true) {
   if (targetDir) {
     const mcpPath = path.join(targetDir, ".vscode", "mcp.json");
 
-    if (!wants) {
-      if (!DRY_RUN && fs.existsSync(mcpPath)) {
-        // Only delete if it matches our managed block pattern or is a simple
-        // Construct-only file. For now, simple removal of the file if it
-        // matches our expected content.
-        try {
-          const config = JSON.parse(fs.readFileSync(mcpPath, "utf8"));
-          const keys = Object.keys(config?.servers ?? {});
-          const allManaged = keys.every(id => id in registryMcp);
-          if (allManaged) {
-          fs.rmSync(mcpPath, { force: true });
-          try {
-            const vscodeDir = path.dirname(mcpPath);
-            if (fs.existsSync(vscodeDir) && fs.readdirSync(vscodeDir).length === 0) {
-              fs.rmdirSync(vscodeDir);
-            }
-          } catch { /* ignore non-empty */ }
-        }
-        } catch { /* skip cleanup of unreadable file */ }
-      }
-      return false;
-    }
+    // Deselected or undetected host: leave prior output untouched. An
+    // "every key is managed" check looks safe but is a near-no-op in the
+    // common case — a project's mcp.json is almost always 100% Construct-
+    // managed — so it still deleted the file on a plain detection miss
+    // (construct-lqp4c's copilot precedent, generalized here).
+
+    if (!wants) return false;
 
     let config = { servers: {} };
     if (fs.existsSync(mcpPath)) {
@@ -1857,34 +1869,13 @@ function syncCursor(targetDir = null, wants = true) {
 
   if (!targetDir && !fs.existsSync(cursorMcpPath)) return false;
 
-  if (!wants) {
-    if (!DRY_RUN && fs.existsSync(cursorMcpPath)) {
-      try {
-        const config = JSON.parse(fs.readFileSync(cursorMcpPath, "utf8"));
-        const keys = Object.keys(config?.mcpServers ?? {});
-        const allManaged = keys.every(id => id in registryMcp);
-        if (allManaged) {
-          fs.rmSync(cursorMcpPath, { force: true });
-          // Also clean up rules if this was a project sync
-          if (targetDir) {
-            const rulesPath = path.join(cursorDir, "rules", "construct.mdc");
-            if (fs.existsSync(rulesPath)) fs.rmSync(rulesPath, { force: true });
-            // Remove .cursor if empty
-            try {
-              const rulesDir = path.join(cursorDir, "rules");
-              if (fs.existsSync(rulesDir) && fs.readdirSync(rulesDir).length === 0) {
-                fs.rmdirSync(rulesDir);
-              }
-              if (fs.existsSync(cursorDir) && fs.readdirSync(cursorDir).length === 0) {
-                fs.rmdirSync(cursorDir);
-              }
-            } catch { /* ignore non-empty or access errors */ }
-          }
-        }
-      } catch { /* skip cleanup of unreadable file */ }
-    }
-    return false;
-  }
+  // Deselected or undetected host: leave prior output untouched. An "every
+  // key is managed" check looks safe but is a near-no-op in the common case
+  // — a project's mcp.json is almost always 100% Construct-managed — so it
+  // still deleted the file and its rules on a plain detection miss
+  // (construct-lqp4c's copilot precedent, generalized here).
+
+  if (!wants) return false;
 
   let config = { mcpServers: {} };
   if (fs.existsSync(cursorMcpPath)) {
@@ -1995,28 +1986,15 @@ function syncOpencode(entries, targetDir = null, wants = true) {
 
   if (!targetDir && !fs.existsSync(configPath)) return false;
 
-  if (!wants) {
-    if (!DRY_RUN && fs.existsSync(configPath)) {
-      try {
-        const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
-        const agentKeys = Object.keys(config?.agent ?? {});
-        const allManaged = agentKeys.every(id => id === 'construct' || (registry.specialists || []).some(s => s.name === id.replace(/^cx-/, '')));
-        if (allManaged) {
-          fs.rmSync(configPath, { force: true });
-          if (targetDir) {
-            const pluginsDir = path.join(targetDir, ".opencode", "plugins");
-            if (fs.existsSync(pluginsDir)) fs.rmSync(pluginsDir, { recursive: true, force: true });
-            try {
-              if (fs.readdirSync(path.join(targetDir, ".opencode")).length === 0) {
-                fs.rmdirSync(path.join(targetDir, ".opencode"));
-              }
-            } catch { /* ignore non-empty */ }
-          }
-        }
-      } catch { /* skip cleanup */ }
-    }
-    return false;
-  }
+  // Deselected or undetected host: leave prior output untouched. An "every
+  // agent key is managed" check looks safe but depends on an exact registry
+  // name match that can silently miss, and even when it works it is a
+  // near-no-op in the common case — a project's config is almost always
+  // 100% Construct-managed — so it still deleted the file and its plugins on
+  // a plain detection miss (construct-lqp4c's copilot precedent, generalized
+  // here).
+
+  if (!wants) return false;
 
   if (targetDir) {
     mkdirp(path.dirname(configPath));
