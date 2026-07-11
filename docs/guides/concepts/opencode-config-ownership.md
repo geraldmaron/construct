@@ -36,8 +36,9 @@ because both are about protecting the user rather than expressing taste:
 - **Safety** — the orchestrator's `bash` permission is scoped so destructive
   commands are denied and remote/history rewrites prompt.
 - **Helper quality** — OpenCode's built-in `title`, `summary`, and `compaction`
-  agents are normalized onto a stronger auxiliary model so session naming and
-  summaries do not inherit a stale low-end coder default.
+  agents have their model pin stripped so OpenCode uses its own session-model/
+  small_model routing instead of failing when a pinned model's provider lacks
+  user credentials.
 
 Everything else that is a matter of preference — the primary `model`, `share`,
 `autoupdate`, and the entire `tui.json` (theme, keybinds, notifications) — is
@@ -63,7 +64,7 @@ auth headers and non-managed agents are explicitly preserved on merge.
 | `provider.openrouter.models` | shared | The registry's curated `:free` models are seeded; any models you add are preserved |
 | `provider.anthropic.models` | Construct (derived) | Derived from tier definitions; your custom entries preserved |
 | `plugin[]` (construct-fallback) | Construct | Seeded; the array is normalized on write — deduped, with non-existent file paths and stray non-path tokens dropped |
-| `agent.title`, `agent.summary`, `agent.compaction` | Construct | Normalized to the managed auxiliary model so helper surfaces stay coherent |
+| `agent.title`, `agent.summary`, `agent.compaction` | Construct | Model pin is stripped (entries kept); OpenCode falls back to session-model/small_model routing |
 | `model` | user | Construct removes the legacy pinned default and never writes a new one |
 | `share`, `autoupdate`, `enabled_providers` | user | Never written |
 | `tui.json` (theme, attention, keybinds, scroll) | user | Never touched — separate file |
@@ -89,8 +90,9 @@ writes the result — it does not regenerate the file wholesale:
 - **MCP servers** are only rewritten when the existing entry still carries a
   `__placeholder__`, has a transport mismatch, or is missing — otherwise the
   existing entry stands.
-- **Helper agents** are normalized so `agent.title`, `agent.summary`, and
-  `agent.compaction` stay on the managed auxiliary model.
+- **Helper agents** have their model pin stripped so `agent.title`, `agent.summary`,
+  and `agent.compaction` fall back to OpenCode's own session-model/small_model
+  routing (entries are kept present for tests and hosts to rely on).
 - **`model`** is stripped only for the legacy Construct seed, so the user's
   remembered selection can take effect instead of a stale pin.
 
@@ -115,13 +117,14 @@ Because Construct never writes these, they are yours to set directly in
 {
   "$schema": "https://opencode.ai/tui.json",
   "theme": "opencode",
-  "attention": { "enabled": true, "sound": true }
+  "attention": { "enabled": true, "sound": true },
+  "diff_style": "auto"  // "auto" = side-by-side on wide terminals; "stacked" = single pane
 }
 ```
 
-Construct keeps the built-in helper agents aligned to the managed auxiliary
-model and does not pin your primary `model`. If you want a different primary
-model, choose it in OpenCode and let the app remember it.
+Construct does not pin your primary `model`. If you want a different primary
+model, choose it in OpenCode and let the app remember it. Helper agents have
+their model pin stripped, so they fall back to OpenCode's own routing.
 
 ## See also
 

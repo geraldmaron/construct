@@ -1,28 +1,28 @@
 ---
 title: Knowledge layout
-description: How .cx/, beads, the vector index, and SQL fit together to make context durable across sessions.
+description: How .construct/, beads, the vector index, and SQL fit together to make context durable across sessions.
 ---
 
-`.cx/` is Construct's knowledge store. It's a directory in your project root that persists everything Construct learns: ingested documents, architectural decisions, session history, and observations from past work.
+`.construct/` is Construct's knowledge store. It's a directory in your project root that persists everything Construct learns: ingested documents, architectural decisions, session history, and observations from past work.
 
 ## Overview
 
-`.cx/` has three layers:
+`.construct/` has three layers:
 
 | Layer | Dirs | Purpose |
 |---|---|---|
-| **Knowledge** | `.cx/knowledge/` | Typed, persistent, human-curated or inbox-ingested documents |
-| **R&D loop** | `inbox/` (drop zone), `.cx/intake/{pending,processed,skipped}/`, `.cx/task-graphs/`, `.cx/traces/` | Per-signal drop zone + triage queue, per-signal execution plans, append-only trace event log |
-| **Runtime** | `.cx/observations/`, `.cx/sessions/`, `.cx/runtime/` | Machine-written, high-churn, agent working memory |
+| **Knowledge** | `.construct/knowledge/` | Typed, persistent, human-curated or inbox-ingested documents |
+| **R&D loop** | `inbox/` (drop zone), `.construct/intake/{pending,processed,skipped}/`, `.construct/task-graphs/`, `.construct/traces/` | Per-signal drop zone + triage queue, per-signal execution plans, append-only trace event log |
+| **Runtime** | `.construct/observations/`, `.construct/sessions/`, `.construct/runtime/` | Machine-written, high-churn, agent working memory |
 
-Runtime dirs are **never** hand-edited. Knowledge dirs **are** hand-editable — but like the rest of `.cx/` they are local-only: `construct init` gitignores `.cx/` in full, so knowledge persists on the machine across sessions and is never committed to the repo (see the [README](../../README.md) section "`.cx/` is local-only runtime state"). R&D-loop dirs are written by the daemon and the CLI; agents update them via `construct intake` / `construct graph`, not by editing files.
+Runtime dirs are **never** hand-edited. Knowledge dirs **are** hand-editable — but like the rest of `.construct/` they are local-only: `construct init` gitignores `.construct/` in full, so knowledge persists on the machine across sessions and is never committed to the repo (see the [README](../../README.md) section "`.cx/` is local-only runtime state"). R&D-loop dirs are written by the daemon and the CLI; agents update them via `construct intake` / `construct graph`, not by editing files.
 
 ---
 
 ## Knowledge Subdirectories
 
 ```
-.cx/knowledge/
+.construct/knowledge/
   internal/              ← team notes, meeting minutes, internal specs, ADRs, PRDs, incident records
   external/              ← customer feedback, support tickets, field notes, external research
   decisions/             ← architecture decision records (ADRs), design decisions, RFCs accepted
@@ -73,9 +73,9 @@ Drop any supported file into `inbox/` and the embed daemon will:
 1. Detect it on the next inbox-watcher cycle (reactive within a second or two; scheduler fallback every two minutes)
 2. Classify it using the filename rules above
 3. Extract text (PDF, DOCX, XLSX, PPTX, Markdown, plain text, code…)
-4. Write a normalised Markdown artifact to `.cx/knowledge/<subdir>/<filename>.md`
-5. Record a typed observation in `.cx/observations/` with tag `knowledge:<subdir>`
-6. Run `classifyRdIntake` and write an R&D triage packet to `.cx/intake/pending/<id>.json`: intake type, R&D stage, primary owner persona, recommended chain, recommended action, risk, confidence, rationale. Drive the queue with `construct intake list / show / done / skip / reopen`. See [intake and triage](/guides/concepts/intake-and-triage).
+4. Write a normalised Markdown artifact to `.construct/knowledge/<subdir>/<filename>.md`
+5. Record a typed observation in `.construct/observations/` with tag `knowledge:<subdir>`
+6. Run `classifyRdIntake` and write an R&D triage packet to `.construct/intake/pending/<id>.json`: intake type, R&D stage, primary owner persona, recommended chain, recommended action, risk, confidence, rationale. Drive the queue with `construct intake list / show / done / skip / reopen`. See [intake and triage](/guides/concepts/intake-and-triage).
 
 Supported formats:
 - **Plain text / Code**: `.md`, `.txt`, `.rst`, `.adoc`, `.json`, `.yaml`, `.yml`, `.toml`, `.js`, `.mjs`, `.ts`, `.tsx`, `.jsx`, `.py`, `.go`, `.rs`, `.sh`, `.bash`, `.html`, `.css`, `.csv`, `.tsv`, `.xml`, `.env`, `.conf`, `.ini`, `.sql`, `.log`
@@ -88,7 +88,7 @@ Supported formats:
 
 High-fidelity extraction runs through the docling Python sidecar (provisioned automatically via [uv](https://github.com/astral-sh/uv) on first use into a machine-shared `~/.construct/runtime/docling/.venv` — one venv per machine, not one per project). Pass `--legacy-extractor` to `construct ingest` to fall back to the pre-docling regex path. Audio/video transcription requires `whisper-cli` (`brew install whisper-cpp` on macOS); see [Audio and Video Intake](/intake/audio-video).
 
-Ingested documents are also stored content-addressed at `.cx/ingest/<sha256>/{source,markdown,meta}.json` for idempotent re-ingest, and indexed into `knowledge_search` so dropped documents become retrievable from any agent session.
+Ingested documents are also stored content-addressed at `.construct/ingest/<sha256>/{source,markdown,meta}.json` for idempotent re-ingest, and indexed into `knowledge_search` so dropped documents become retrievable from any agent session.
 
 Full list in `lib/document-extract.mjs`.
 
@@ -144,7 +144,7 @@ Use these tags in `searchObservations` calls or the dashboard to filter by type.
 ## Runtime Directories (do not hand-edit)
 
 ```
-.cx/
+.construct/
   observations/          ← machine-written observations (addObservation)
     entities.json        ← entity store: name, type, summary, relatedEntities[] (graph edges)
     entity-vectors.json  ← entity embeddings for hybrid search
@@ -162,11 +162,13 @@ Use these tags in `searchObservations` calls or the dashboard to filter by type.
 inbox/                   ← project-root drop zone (visible; files ingested then moved to knowledge/)
 ```
 
-Corpus source targets keep their cloned content out of the project tree entirely. A github target opted into `content: {mode:"corpus"}` (and any future git-hosted provider whose manifest declares a `content` block) clones under the machine state root at `~/.construct/projects/<key>/context-repos/<targetId>/`, refreshed incrementally by `construct sources sync` (`lib/sources/repo-cache.mjs`); a `directory` target reads its docs in place and clones nothing. See [Project scopes](/concepts/project-scopes) for the full state-root table.
+Corpus source targets keep their cloned content out of the project tree entirely. A github target opted into `content: {mode:"corpus"}` (and any future git-hosted provider whose manifest declares a `content` block) clones under the machine state root at `~/.construct/projects/<key>/context-repos/<targetId>/`, refreshed incrementally by `construct sources sync` (`lib/sources/repo-cache.mjs`); a `directory` target reads its content — docs and code — in place and clones nothing. See [Project scopes](/concepts/project-scopes) for the full state-root table.
 
 #### Multi-root corpus & chunk provenance
 
-The knowledge corpus is multi-root. `lib/sources/content-roots.mjs` resolves the content-capable subset of `sources.targets[]` — directory targets to their path, corpus targets to their synced cache — and both `buildCorpus` (`lib/knowledge/rag.mjs`, backing `construct ask`) and `buildSourceList` (`lib/knowledge/search.mjs`, backing `construct knowledge search` and MCP `knowledge_search`) fold those roots into a single searchable index. Every chunk carries a structured `origin` — `{targetId, provider, projectKey, relPath, ref, kind}` — so a hit is always attributable to its source project; the host project is the reserved origin (`targetId: null`, `projectKey: "self"`). Retrieval narrows by project with `--projects=<id,...>` (or `all` / `self`); an unknown id is a hard error, never a silent empty result. `construct ingest <dir> --as=<targetId>` stamps `origin_target_id`/`origin_provider` into the ingested file's frontmatter so imported knowledge stays re-verifiable back to its registered source.
+The knowledge corpus is multi-root, and cross-repo federation covers code as well as docs. `lib/sources/content-roots.mjs` resolves the content-capable subset of `sources.targets[]` — directory targets to their path, corpus targets to their synced cache — and both `buildCorpus` (`lib/knowledge/rag.mjs`, backing `construct ask`) and `buildSourceList` (`lib/knowledge/search.mjs`, backing `construct knowledge search` and MCP `knowledge_search`) fold those roots into a single searchable index: every markdown file, plus every code/text file whose extension is in `UTF8_TEXT_EXTS` (`lib/document-extract.mjs` — `.js`/`.mjs`/`.ts`/`.tsx`/`.jsx`/`.py`/`.go`/`.rs`/`.sh` plus config, data, and markup text formats), skipping vendored/build directories (`.git`, `node_modules`, `dist`, `build`, `vendor`, `.venv`, `__pycache__`). Binary and non-text files never join the corpus. Every chunk carries a structured `origin` — `{targetId, provider, projectKey, relPath, ref, kind}`, with code chunks tagged `kind: 'code'` — so a hit is always attributable to its source project; the host project is the reserved origin (`targetId: null`, `projectKey: "self"`). Retrieval narrows by project with `--projects=<id,...>` (or `all` / `self`); an unknown id is a hard error, never a silent empty result. `construct ingest <dir> --as=<targetId>` stamps `origin_target_id`/`origin_provider` into the ingested file's frontmatter so imported knowledge stays re-verifiable back to its registered source.
+
+Alongside the searchable corpus, `construct graph build-targets` builds a per-repo import/symbol code map for the same registered targets, persisted at `.cx/graph/targets/<targetId>/` and queried with `construct graph query <node-id> --projects=<id,...>|all|self` (same id semantics and unknown-id hard error as knowledge search). The code map covers JavaScript-family sources only (`.js`/`.mjs`/`.cjs`, resolved from relative import/export/require specifiers — `lib/graph/build-import-graph.mjs`); files in other languages are searchable in the knowledge corpus but do not appear in the import graph.
 
 ### Entity graph (GraphRAG)
 
@@ -209,11 +211,11 @@ SLACK_CHANNELS=#eng-general,#incidents:risk,#decisions:decision,#customer-feedba
 
 ## Migration from `product-intel/`
 
-`product-intel` is retired. New ingests and cleanup tools use `.cx/knowledge/` only.
+`product-intel` is retired. New ingests and cleanup tools use `.construct/knowledge/` only.
 
 If an older project still has `.cx/product-intel/sources/ingested/`, move those markdown files into the closest matching `.cx/knowledge/<subdir>/` directory.
 
-Structured Product Intelligence stores now live under `.cx/knowledge/internal/` as well:
+Structured Product Intelligence stores now live under `.construct/knowledge/internal/` as well:
 
 - `customer-profiles/`
 - `workspaces/`

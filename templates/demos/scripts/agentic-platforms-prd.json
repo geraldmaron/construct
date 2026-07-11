@@ -37,8 +37,8 @@
     },
     {
       "title": "Publish PASS — styled PDF",
-      "prompt": "Publish the golden fixture with --type=prd-platform --figures to .cx/publish/golden-prd-platform.pdf, then confirm the file exists.",
-      "command": "node bin/construct publish tests/fixtures/publish/golden-prd-platform.md --type=prd-platform --figures --output .cx/publish/golden-prd-platform.pdf"
+      "prompt": "Publish the golden fixture with --type=prd-platform --figures to .construct/publish/golden-prd-platform.pdf, then confirm the file exists.",
+      "command": "node bin/construct publish tests/fixtures/publish/golden-prd-platform.md --type=prd-platform --figures --output .construct/publish/golden-prd-platform.pdf"
     }
   ]
 }

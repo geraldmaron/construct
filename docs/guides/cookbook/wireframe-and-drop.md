@@ -10,10 +10,10 @@ construct wireframe "user settings page with avatar, display name, and notificat
 ```
 
 Auto-detects the best output format (Mermaid diagram or sketch-style HTML) based on the
-description. Writes the file to `.cx/wireframes/` and prints the path.
+description. Writes the file to `.construct/wireframes/` and prints the path.
 
 ```bash
-open ".cx/wireframes/user-settings-2026-04-30T00-00-00.html"
+open ".construct/wireframes/user-settings-2026-04-30T00-00-00.html"
 ```
 
 ### Force a specific diagram type

@@ -21,6 +21,7 @@ description: Advanced commands for Construct.
 | `construct gates:audit` | Audit policy gates |
 | `construct hooks:health` | Check hook health |
 | `construct list` | List all agents |
+| `construct monitor` | One-command setup for continuous monitoring-as-a-role: sources.targets + embed.yaml roles + capability enable + daemon start |
 | `construct policy` | Show active policy gates with enforcement details |
 | `construct provider` | Provider management |
 | `construct role` | Role framework management |
@@ -178,7 +179,7 @@ construct embed start|stop|status|list|enable|disable|dry-run
 - `stop` — Stop the running embed daemon
 - `status [<id>] [--json]` — Daemon status, or per-capability bindings/filter/runtime/last-tick with an id
 - `list [--json]` — Available embed capabilities and per-project enabled state (ADR-0061)
-- `enable <id>` — Enable an embed capability: validate and write .cx/embed/<id>.manifest.json
+- `enable <id>` — Enable an embed capability: validate and write .construct/embed/<id>.manifest.json
 - `disable <id>` — Disable an embed capability (idempotent)
 - `dry-run <id> [--json]` — Resolve the specialist→providers→filter→framework→authority→runtime chain; no side effects
 
@@ -211,6 +212,27 @@ List all agents
 ```bash
 construct list
 ```
+
+## construct monitor
+
+One-command setup for continuous monitoring-as-a-role: sources.targets + embed.yaml roles + capability enable + daemon start
+
+**Usage**
+
+```bash
+construct monitor --as <capability-id> --targets <provider:value>[,...] [--secondary <role>] [--config <path>] [--no-start] [--supervise]
+```
+
+**Options**
+
+| Flag | Description |
+|---|---|
+| `--as <capability-id>` | Embed capability to enable (see `construct embed list`); its specialist becomes embed.yaml roles.primary |
+| `--targets <spec>[,<spec>...]` | Comma-separated provider:value targets (e.g. github:org/repo, jira:PROJ, slack:channel:intent); repeatable |
+| `--secondary <role>` | Set embed.yaml roles.secondary |
+| `--config <path>` | embed.yaml path (default: ./embed.yaml) |
+| `--no-start` | Assemble config and enable the capability but do not start the daemon |
+| `--supervise` | Also install OS-level supervision (construct embed supervise) after starting |
 
 ## construct policy
 
@@ -246,7 +268,7 @@ construct provider list|status|health|validate|test|add|configure
 - `validate <path|id> [--strict] [--json]` — Validate a manifest file or provider id against the B1 schema
 - `info <id>` — Show a single provider's metadata and config schema
 - `test <id>` — Run one provider's health probe; exits non-zero on failure
-- `add <id> [--json]` — Scaffold instance config from the provider's configSchema defaults, persisted to .cx/providers/<id>.json
+- `add <id> [--json]` — Scaffold instance config from the provider's configSchema defaults, persisted to .construct/providers/<id>.json
 - `configure <id> [--key.path value ...] [--json]` — Merge + validate instance config (incl. ADR-0060 filter block) against configSchema; rejects with the schema path on failure
 - `plugins <add|remove> <id> [<package>] [--global]` — Register or remove a plugin provider override
 - `new <name> [--capabilities=...]` — Scaffold a new provider module
@@ -358,7 +380,7 @@ construct uninstall [--dry-run] [--yes] [--all] [--keep-state] [--scope=project|
 | `--dry-run` | Print the plan and exit; change nothing |
 | `--yes` | Remove auto-risk (✓) categories without prompting |
 | `--all` | Combined with --yes: also remove ask-risk (◐) categories (project data, machine config) |
-| `--keep-state` | Only remove the launcher + adapters; preserve .cx/, ~/.config/construct, Postgres |
+| `--keep-state` | Only remove the launcher + adapters; preserve .construct/, ~/.config/construct, Postgres |
 | `--scope=<...>` | Limit to project | machine | all (default: all) |
 
 ## construct update

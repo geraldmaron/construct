@@ -3,7 +3,7 @@
  *
  * End-to-end coverage for the `construct doctor --fix-*` migration flags
  * added to clean up state that pre-2.0 installs left behind:
- *   - `.cx/` missing from project .gitignore (bead construct-1vv5)
+ *   - `.construct/` missing from project .gitignore (bead construct-1vv5)
  *   - Legacy cx-* files at user scope (sync-scope refactor cleanup)
  *   - Embed daemon log > 500MB (bead construct-88i)
  *
@@ -33,7 +33,7 @@ function makeEnv(args, extraEnv = {}) {
   mkdirSync(home, { recursive: true });
   // Mark as a Construct project so the gitignore check runs.
 
-  mkdirSync(join(project, '.cx'), { recursive: true });
+  mkdirSync(join(project, '.construct'), { recursive: true });
   return {
     sandbox, project, home,
     runDoctor: (...moreArgs) => spawnSync(process.execPath, [BIN, 'doctor', ...args, ...moreArgs], {
@@ -46,20 +46,20 @@ function makeEnv(args, extraEnv = {}) {
   };
 }
 
-test('doctor flags missing .cx/ in project .gitignore and --fix-gitignore appends it', { timeout: 60_000 }, async () => {
+test('doctor flags missing .construct/ in project .gitignore and --fix-gitignore appends it', { timeout: 60_000 }, async () => {
   const env = makeEnv([]);
   try {
     const before = env.runDoctor();
     assert.ok(
-      /\.cx\/.*--fix-gitignore/.test(before.stdout),
-      `doctor should flag the missing .cx/ entry; stdout:\n${before.stdout}`,
+      /\.construct\/.*--fix-gitignore/.test(before.stdout),
+      `doctor should flag the missing .construct/ entry; stdout:\n${before.stdout}`,
     );
     assert.equal(existsSync(join(env.project, '.gitignore')), false, 'precondition: no .gitignore');
 
     const fix = env.runDoctor('--fix-gitignore');
-    assert.match(fix.stdout, /appended \.cx\//, `fix run must announce the append; stdout:\n${fix.stdout}`);
+    assert.match(fix.stdout, /appended \.construct\//, `fix run must announce the append; stdout:\n${fix.stdout}`);
     const gi = readFileSync(join(env.project, '.gitignore'), 'utf8');
-    assert.match(gi, /\.cx\/\s*$/m, '.cx/ must be in .gitignore after --fix-gitignore');
+    assert.match(gi, /\.construct\/\s*$/m, '.construct/ must be in .gitignore after --fix-gitignore');
     assert.match(gi, /Construct runtime state/, 'fix block must include the explanation');
   } finally { env.cleanup(); }
 });
@@ -168,13 +168,13 @@ test('doctor --fix-all runs every available fix in one invocation', { timeout: 1
     writeFileSync(join(claude, 'cx-architect.md'), '# legacy\n');
 
     const result = env.runDoctor('--fix-all');
-    assert.match(result.stdout, /appended \.cx\//, 'fix-all must run --fix-gitignore');
+    assert.match(result.stdout, /appended \.construct\//, 'fix-all must run --fix-gitignore');
     assert.match(result.stdout, /swept 1 legacy cx-\* file/, 'fix-all must run --fix-legacy-agents');
 
     // Verify both took effect.
 
     const gi = readFileSync(join(env.project, '.gitignore'), 'utf8');
-    assert.match(gi, /\.cx\//, '.gitignore must contain .cx/');
+    assert.match(gi, /\.construct\//, '.gitignore must contain .construct/');
     assert.equal(existsSync(join(claude, 'cx-architect.md')), false, 'legacy file swept');
   } finally { env.cleanup(); }
 });

@@ -4,7 +4,7 @@
 # local Docker replica (scripts/ci-repro/job-test.sh); run it from the repo
 # root after `npm ci`.
 #
-# Living graph: .cx/graph is derived, gitignored state — the lint job's
+# Living graph: .construct/graph is derived, gitignored state — the lint job's
 # graph-drift-gate step rebuilds it independently, but the test job never did,
 # so tests/graph/embed-nodes.test.mjs, tests/graph/explain.test.mjs, and
 # tests/security/owasp-coverage.test.mjs (all of which read the real repo's

@@ -38,7 +38,7 @@ Fires when you try to land changes.
 
 - ECC secret scan: blocks high-signal secret patterns in staged content.
 - `construct lint:comments`: same banned-pattern check as Layer 1, across the full worktree so local commit behavior matches CI.
-- `construct docs:verify`: blocks a commit that changes `lib/`, `bin/`, `src/`, or `app/` without a matching `CHANGELOG.md` / `docs/` / `.cx/context.*` update.
+- `construct docs:verify`: blocks a commit that changes `lib/`, `bin/`, `src/`, or `app/` without a matching `CHANGELOG.md` / `docs/` / `.construct/context.*` update.
 
 **Push-time (`lib/hooks/pre-push-gate.mjs` + `.beads/hooks/pre-push`):**
 
@@ -112,7 +112,7 @@ signal category. Regenerate it with `node scripts/generate-test-corpus-inventory
 or validate freshness with `construct audit tests --corpus`.
 
 Certification runs (scenario-based live evaluation) persist under
-`.cx/certification/runs/<run-id>/run.json` with optional redacted `output.md` /
+`.construct/certification/runs/<run-id>/run.json` with optional redacted `output.md` /
 `output.json` siblings. The record shape is defined in
 `schemas/certification-run.schema.json` and validated by `lib/certification/run.mjs`.
 Skipped provider calls must be recorded as `inconclusive` and never as `pass`.
@@ -123,7 +123,7 @@ Skipped provider calls must be recorded as `inconclusive` and never as `pass`.
 |---|---|---|
 | Edit got rejected with "banned pattern" | Layer 1 comment-lint | [`rules/common/comments.md`](https://github.com/geraldmaron/construct/blob/main/rules/common/comments.md) — repair the comment or the policy |
 | `git commit` refuses with "comment policy violations" | Layer 2 comment-lint | run `construct lint:comments` locally; remove the violation |
-| `git commit` refuses with "code changed but docs unchanged" | Layer 2 doc-coupling | update `CHANGELOG.md`, `docs/`, or `.cx/context.*` to match the code change |
+| `git commit` refuses with "code changed but docs unchanged" | Layer 2 doc-coupling | update `CHANGELOG.md`, `docs/`, or `.construct/context.*` to match the code change |
 | `git push` refuses | Layer 2 pre-push | check whether HEAD is the SHA CI rejected; fix-forward with a new commit |
 | `gh pr create` refuses | Layer 2.5 template policy | `construct lint:templates --body-file=path/to/draft` |
 | CI green but PR can't merge | Layer 3 branch protection | required status check missing or pending |

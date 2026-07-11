@@ -11,7 +11,7 @@ description: Capture session feedback and trace which specialists ran for a task
 construct reflect --summary="Jira webhook auth requires HMAC-SHA256, not HMAC-SHA1"
 ```
 
-This writes a timestamped markdown file to `.cx/knowledge/internal/` and records an observation in the observation store.
+This writes a timestamped markdown file to `.construct/knowledge/internal/` and records an observation in the observation store.
 
 ## Specify a target subdirectory
 
@@ -39,7 +39,7 @@ Both shorthand (`internal`) and full form (`knowledge/internal`) are accepted.
 ```sh
 construct reflect \
   --target=decisions \
-  --summary="Chose typed .cx/knowledge/ layout over flat product-intel/" \
+  --summary="Chose typed .construct/knowledge/ layout over flat product-intel/" \
   --content="Reasoning: typed subdirs enable automated routing, cleaner MCP tool descriptions, and future ACL per type. Migration: no backward compat needed (pre-launch)."
 ```
 

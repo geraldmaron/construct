@@ -181,7 +181,7 @@ Add to `~/.config/construct/providers.json`:
 
 ### Project-local
 
-Add to `.cx/providers.json` in the project root:
+Add to `.construct/providers.json` in the project root:
 
 ```json
 {

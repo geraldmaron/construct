@@ -1,7 +1,7 @@
 /**
  * templates/demos/specs/_helpers/scroll-artifact.ts — shared Act 2 scroll helpers.
  *
- * Used by Construct cockpit demos and copied into project .cx/demos/specs/ on init.
+ * Used by Construct cockpit demos and copied into project .construct/demos/specs/ on init.
  */
 
 import { type Page, expect } from '@playwright/test';

@@ -26,6 +26,8 @@ Style constraint: do not produce a wall of bullets. Use paragraphs for reasoning
 
 ## Steps
 
+The numbered chain below is the manifest baseline, not the final roster. `construct workflow invoke` and `author_artifact` evaluate the request's content signals and append condition-recruited participants after the baseline chain (ADR-0070): the invoke result carries `recruitment: {recruited, addedRoles, rationale}`, and `author_artifact` returns `recruited: [{specialist, reason, role, gate, source}]`. Honor the recruited set — run those participants at their stated role and gate alongside the baseline; do not substitute a memorized roster. Override only on explicit request: `recruitment: "off"` skips recruitment for the run; on `author_artifact`, an explicit list of cx- ids replaces the signal-derived set.
+
 1. **cx-product-manager** produces the requirements package
 2. **cx-researcher** grounds requirements in user behavior and fills evidence gaps (invoke in parallel for new features)
 3. **Write to the appropriate `docs/` subdirectory** using the selected template. Each `get_template()` call resolves `.cx/templates/docs/` first, then the Construct default.
@@ -62,7 +64,7 @@ Once the PRD is approved, run `/plan feature {feature-slug}` to produce a struct
 
 ## Distribution (publish pipeline)
 
-**`construct workflow invoke` returns a plan only** — it does not draft the PRD. Run the listed specialists (cx-product-manager, cx-researcher as needed) to author the artifact from the template. **Do not hand-write a stub and publish.**
+**`construct workflow invoke` returns a plan only** — it does not draft the PRD. Run the specialists the plan returns — the baseline chain plus every entry in its `recruitment.recruited` block — to author and review the artifact from the template. **Do not hand-write a stub and publish.**
 
 Before distribution:
 

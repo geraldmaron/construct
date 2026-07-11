@@ -8,8 +8,8 @@
 | File | Purpose | Update when |
 |---|---|---|
 | `AGENTS.md` | Canonical agent operating contract | Workflow rules, tracker hierarchy, or repo-wide guardrails change |
-| `.cx/context.md` | Human-readable resumable project context | Active work, decisions, architecture assumptions, or open questions change |
-| `.cx/context.json` | Machine-readable resumable context | Context state needs to stay in sync with `.cx/context.md` |
+| `.construct/context.md` | Human-readable resumable project context | Active work, decisions, architecture assumptions, or open questions change |
+| `.construct/context.json` | Machine-readable resumable context | Context state needs to stay in sync with `.construct/context.md` |
 | `docs/README.md` | Docs index and maintenance contract | Core docs set or maintenance expectations change |
 | `docs/guides/concepts/architecture.mdx` | Canonical architecture and invariants | Runtime shape, contracts, boundaries, or major dependencies change |
 
@@ -32,8 +32,8 @@ Use **`.md`** for every prose page (CommonMark + YAML frontmatter). Reserve **`.
 - [Agents and personas](./guides/concepts/agents-and-personas.mdx). One public persona with specialists behind it
 - [Deployment model](./guides/concepts/deployment-model.mdx). Solo, team, and enterprise topology
 - [Prompt surface architecture](./guides/concepts/prompt-surfaces.mdx). Persona, specialist, skill, rule, and fixture surfaces
-- [Knowledge layout](./guides/concepts/knowledge-layout.md). `.cx/` directory structure, inbox routing, and durable knowledge lanes
-- [Project scopes](./guides/concepts/project-scopes.md). `.construct` vs `.cx` vs user home — what belongs in git
+- [Knowledge layout](./guides/concepts/knowledge-layout.md). `.construct/` directory structure, inbox routing, and durable knowledge lanes
+- [Project scopes](./guides/concepts/project-scopes.md). `.construct` vs `.construct` vs user home — what belongs in git
 - [Intake and triage](./guides/concepts/intake-and-triage.mdx). How dropped signals become owner-assigned work
 - [Gates and enforcement](./guides/concepts/gates-and-enforcement.mdx). Write-time, commit-time, and CI guardrails
 - [Style](./STYLE.md). Voice, punctuation, structure rules (canonical reference for prose lint)
@@ -124,7 +124,7 @@ Parallel work rule: one writer per file. If multiple agent or harness sessions a
 > Narrative docs index — this table is regenerated from `registry/capabilities.json`.
 > Run `npm run docs:sync` after catalog changes. Do not hand-edit inside the AUTO markers.
 
-Catalog census: 131 CLI commands, 43 npm scripts, 11 embedded workflows.
+Catalog census: 136 CLI commands, 46 npm scripts, 11 embedded workflows.
 
 | Capability | Criticality | CLI surface | Verification |
 |---|---|---|---|

@@ -1,14 +1,14 @@
 Require node
 Require vhs
 # construct demo: resource guard rails — disk budget walkthrough
-Output .cx/demos/resource-guard-rails.mp4
+Output .construct/demos/resource-guard-rails.mp4
 Set FontSize 18
 Set Width 1200
 Set Height 680
 Set Theme "Dracula"
 Set TypingSpeed 55ms
 
-Type "# 1) Show .cx/ usage vs cap in doctor"
+Type "# 1) Show .construct/ usage vs cap in doctor"
 Sleep 400ms
 Enter
 Sleep 800ms

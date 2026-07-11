@@ -84,8 +84,8 @@ test('team deployment without DATABASE_URL falls back to filesystem', () => {
 
 test('project storage manifest can select a fixture run-store backend', () => {
   const cwd = project();
-  fs.mkdirSync(path.join(cwd, '.cx', 'providers'), { recursive: true });
-  fs.writeFileSync(path.join(cwd, '.cx', 'providers', 'fixture-store.manifest.json'), `${JSON.stringify({
+  fs.mkdirSync(path.join(cwd, '.construct', 'providers'), { recursive: true });
+  fs.writeFileSync(path.join(cwd, '.construct', 'providers', 'fixture-store.manifest.json'), `${JSON.stringify({
     id: 'fixture-store',
     version: '1.0.0',
     kind: 'storage',

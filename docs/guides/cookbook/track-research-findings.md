@@ -3,7 +3,7 @@ title: Track research findings
 description: Capture a research note with sources, claims, and confidence — then promote it into the knowledge base so the next session can find it.
 ---
 
-Research findings live in three states: as a fresh note in the cookbook intake, as a stamped artifact in `.cx/knowledge/external/research/`, and as a citable source threaded through PRDs and ADRs. The `new-feature` workflow (and any ad-hoc research) wires them through.
+Research findings live in three states: as a fresh note in the cookbook intake, as a stamped artifact in `.construct/knowledge/external/research/`, and as a citable source threaded through PRDs and ADRs. The `new-feature` workflow (and any ad-hoc research) wires them through.
 
 ## Capture as you go
 
@@ -27,7 +27,7 @@ construct knowledge add \
   --source-url=https://github.com/open-telemetry/semantic-conventions/releases
 ```
 
-This writes a frontmatter-stamped file under `.cx/knowledge/external/research/<slug>.md` and registers it in the RAG corpus.
+This writes a frontmatter-stamped file under `.construct/knowledge/external/research/<slug>.md` and registers it in the RAG corpus.
 
 ## What gets stamped
 

@@ -2,7 +2,7 @@
  * scripts/clean-artifacts.mjs — remove local build caches and exported static trees.
  *
  * Safe to run anytime; only deletes gitignored or reproducible outputs. Does not
- * touch source, .cx/, or beads data.
+ * touch source, .construct/, or beads data.
  */
 
 import fs from 'node:fs';

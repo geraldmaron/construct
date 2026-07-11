@@ -59,6 +59,14 @@
     "0066-config-layer-project-footprint",
     "0067-deterministic-flow-engine",
     "0068-ingestion-sidecar-process-contract",
-    "0069-ci-review-gate-deterministic-backend"
+    "0069-ci-review-gate-deterministic-backend",
+    "0070-participation-pipeline-and-rules-schema",
+    "0071-install-footprint-vs-org-scope-naming",
+    "0072-no-code-org-authoring-api",
+    "0073-richdocument-ir-html-canonical-surface",
+    "0074-single-project-directory-consolidation",
+    "0075-explicit-mcp-install-states",
+    "0076-outcome-aware-recruitment-tiebreaker",
+    "0077-prompt-optimization-auto-apply-tier"
   ]
 }

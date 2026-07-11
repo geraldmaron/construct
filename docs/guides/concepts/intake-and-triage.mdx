@@ -13,7 +13,7 @@ This page explains the pipeline once, then walks the taxonomy under each curated
   { label: 'ingester', sub: 'normalize to markdown\n+ index for retrieval' },
   { label: 'prepareIntake', sub: 'lane · related\nexcerpt · triage' },
   { label: 'classifyRdIntake', sub: 'deterministic\nno LLM' },
-  { label: '.cx/intake/pending/', sub: 'triage block' },
+  { label: '.construct/intake/pending/', sub: 'triage block' },
   { label: 'session start', sub: 'surfaces pending\npackets' },
   { label: 'agent', sub: 'reads packet\ndoes analysis', highlight: true },
 ]} />
@@ -29,7 +29,7 @@ The daemon path (watcher through classification) never calls an LLM. The agent i
    - **related-doc retrieval** via the hybrid corpus query
    - **excerpt extraction** for the agent to see without reopening the file
    - **triage** via `classifyRdIntake` (keyword/heuristic, no LLM) against the active profile's table
-4. The result is written to `.cx/intake/pending/<id>.json`.
+4. The result is written to `.construct/intake/pending/<id>.json`.
 5. At the next session start, the hook surfaces a one-line summary per pending packet:
 
    ```
@@ -92,7 +92,7 @@ Intake types: `question`, `study`, `synthesis`, `report`, `experiment`, `ops`, `
 
 ### Custom
 
-Drop a `.cx/scope.json` with `custom: true` and an `intake.classificationTable` path that lives under `.cx/`. The validator at `lib/scopes/validate-custom.mjs` enforces the cap structure. See [Profile lifecycle](/guides/concepts/profile-lifecycle).
+Drop a `.construct/scope.json` with `custom: true` and an `intake.classificationTable` path that lives under `.construct/`. The validator at `lib/scopes/validate-custom.mjs` enforces the cap structure. See [Profile lifecycle](/guides/concepts/profile-lifecycle).
 
 ## Triage block schema (same across profiles)
 
@@ -120,7 +120,7 @@ This is a fast-tier classifier, not a final answer. The agent in the user's edit
 ## On-disk layout
 
 ```
-<project>/.cx/intake/
+<project>/.construct/intake/
   pending/
     2026-05-14T15-22-08-login-feedback.json     newly arrived signal
   processed/
@@ -146,7 +146,7 @@ construct scope show                         # which taxonomy is currently activ
 
 `--output=<path>` stamps the artifact at `<path>` with `intake_id`, `intake_confidence`, and `intake_rationale` in its YAML frontmatter. Every intake-derived artifact carries verifiable provenance back to the source packet. The stamp is refused if the artifact already has a different `intake_id`. Use `intake: none` frontmatter in an artifact that intentionally has no intake source.
 
-In `solo` mode the queue is the filesystem (`.cx/intake/`). In `team` and `enterprise` modes the same CLI talks to a Postgres-backed queue with row-locked worker claims; the contract is identical.
+In `solo` mode the queue is the filesystem (`.construct/intake/`). In `team` and `enterprise` modes the same CLI talks to a Postgres-backed queue with row-locked worker claims; the contract is identical.
 
 ## See also
 

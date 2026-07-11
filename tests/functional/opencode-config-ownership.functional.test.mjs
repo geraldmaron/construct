@@ -5,8 +5,8 @@
  * keys in the GLOBAL opencode config. Spawns the real sync-specialists.mjs into
  * an isolated tmp HOME seeded with a user-personal global config, runs
  * `--global`, and verifies that Construct-managed keys are emitted correctly
- * (scoped bash permission, real attribution headers with no `__placeholder__`,
- * an OAuth-default github MCP entry that carries no token on disk) while every user-personal
+ * (scoped bash permission and real attribution headers with no `__placeholder__`)
+ * while every user-personal
  * key (share, autoupdate, a user agent, user openrouter models) survives
  * byte-for-byte. The host binary is never executed.
  * See docs/guides/concepts/opencode-config-ownership.md.
@@ -80,11 +80,9 @@ test("global sync emits Construct-managed keys correctly and preserves user-pers
       assert.ok(!String(v).includes("__"), `unresolved placeholder leaked into header: ${v}`);
     }
 
-    const gh = out.mcp?.github;
-    assert.ok(gh, "github MCP must be wired");
-    assert.equal(gh.url, "https://api.githubcopilot.com/mcp/");
-    assert.equal(gh.headers, undefined, "OAuth default: no Authorization header / token on disk");
-    assert.ok(!/gh[oprs]_/.test(JSON.stringify(gh)), "no plaintext github token may be written");
+    assert.ok(out.mcp?.["construct-mcp"], "construct MCP must be wired");
+    assert.equal(out.mcp?.github, undefined, "github MCP must not be wired until explicitly installed");
+    assert.equal(out.construct?.models, undefined, "Construct must not backfill model tiers");
 
     assert.equal(out.model, "anthropic/claude-opus-4-6", "user model preserved");
     assert.equal(out.share, "disabled", "user share preserved");

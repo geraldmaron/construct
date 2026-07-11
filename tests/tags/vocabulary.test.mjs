@@ -23,8 +23,8 @@ function makeTempRoot(vocab, overrides = null) {
   fs.mkdirSync(path.join(tmp, 'config'), { recursive: true });
   fs.writeFileSync(path.join(tmp, 'config', 'tag-vocabulary.json'), JSON.stringify(vocab), 'utf8');
   if (overrides) {
-    fs.mkdirSync(path.join(tmp, '.cx', 'tags'), { recursive: true });
-    fs.writeFileSync(path.join(tmp, '.cx', 'tags', 'vocabulary-overrides.json'), JSON.stringify(overrides), 'utf8');
+    fs.mkdirSync(path.join(tmp, '.construct', 'tags'), { recursive: true });
+    fs.writeFileSync(path.join(tmp, '.construct', 'tags', 'vocabulary-overrides.json'), JSON.stringify(overrides), 'utf8');
   }
   return tmp;
 }

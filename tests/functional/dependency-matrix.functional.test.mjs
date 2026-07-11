@@ -58,7 +58,7 @@ test('construct matrix build writes a durable graph with capability nodes', () =
   const res = runConstruct(['matrix', 'build', '--no-co-change'], project);
   assert.equal(res.status, 0, res.stderr);
 
-  const nodesFile = path.join(project, '.cx', 'graph', 'nodes.jsonl');
+  const nodesFile = path.join(project, '.construct', 'graph', 'nodes.jsonl');
   assert.ok(fs.existsSync(nodesFile), 'nodes.jsonl persisted under the project .cx/graph');
   const ids = new Set(fs.readFileSync(nodesFile, 'utf8').trim().split('\n').map((l) => JSON.parse(l).id));
   assert.ok(ids.has('capability:oracle.meta-review'), 'capability nodes are present');

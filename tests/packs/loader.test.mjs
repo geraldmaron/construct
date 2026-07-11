@@ -60,7 +60,7 @@ test('resolvePackDirs', async (t) => {
     const dirs = resolvePackDirs({ rootDir: '/tmp', homeDir: '/home/user' });
     assert.ok(dirs.builtin.includes('lib/packs/manifests'));
     assert.ok(dirs.user.includes('.config/construct/packs'));
-    assert.ok(dirs.project.includes('.cx/packs'));
+    assert.ok(dirs.project.includes('.construct/packs'));
   });
 });
 

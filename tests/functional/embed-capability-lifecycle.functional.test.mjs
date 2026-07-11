@@ -25,8 +25,8 @@ const BIN = path.resolve(__dirname, '..', '..', 'bin', 'construct');
 const tmpDirs = [];
 function freshCwd() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-embed-cap-fn-'));
-  fs.mkdirSync(path.join(dir, '.cx'), { recursive: true });
-  fs.writeFileSync(path.join(dir, '.cx', 'context.md'), '# test project\n');
+  fs.mkdirSync(path.join(dir, '.construct'), { recursive: true });
+  fs.writeFileSync(path.join(dir, '.construct', 'context.md'), '# test project\n');
   tmpDirs.push(dir);
   return dir;
 }
@@ -55,7 +55,7 @@ function validManifest(id = 'operations') {
 }
 
 function writeProjectManifest(cwd, id, manifest) {
-  const dir = path.join(cwd, '.cx', 'embed');
+  const dir = path.join(cwd, '.construct', 'embed');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, `${id}.manifest.json`), JSON.stringify(manifest));
 }
@@ -73,7 +73,7 @@ test('embed list --json reports all shipped builtin capabilities in a project wi
   // preset, the operations-triage preset, and the pm-feedback preset), each
   // available-but-not-enabled in a project that has enabled none. Sort first
   // — discovery order is not a contract.
-  assert.deepEqual(out.capabilities.map((c) => c.id).sort(), ['operations', 'operations-triage', 'pm-feedback']);
+  assert.deepEqual(out.capabilities.map((c) => c.id).sort(), ['operations', 'operations-triage', 'pm-feedback', 'pm-repos']);
   for (const cap of out.capabilities) {
     assert.equal(cap.enabled, false);
   }
@@ -92,7 +92,7 @@ test('embed enable fails closed on an invalid manifest with a JSON-schema path, 
 
   // The pre-existing project-tier file is untouched (still the invalid one,
   // not overwritten with an "enabled: true" stamp) — enable failed closed.
-  const onDisk = JSON.parse(fs.readFileSync(path.join(cwd, '.cx', 'embed', 'broken.manifest.json'), 'utf8'));
+  const onDisk = JSON.parse(fs.readFileSync(path.join(cwd, '.construct', 'embed', 'broken.manifest.json'), 'utf8'));
   assert.equal(onDisk.embed.enabled, undefined, 'invalid manifest must not be stamped enabled');
 });
 
@@ -103,7 +103,7 @@ test('enable/disable round-trips through .cx/embed/<id>.manifest.json', () => {
   const enableRes = runCli(['enable', 'operations'], cwd);
   assert.equal(enableRes.status, 0, `enable exit 0 — stderr: ${enableRes.stderr}`);
 
-  const manifestPath = path.join(cwd, '.cx', 'embed', 'operations.manifest.json');
+  const manifestPath = path.join(cwd, '.construct', 'embed', 'operations.manifest.json');
   assert.ok(fs.existsSync(manifestPath), 'project-tier manifest exists after enable');
   let onDisk = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   assert.equal(onDisk.embed.enabled, true);
@@ -164,7 +164,7 @@ test('embed dry-run <id> --json resolves the full chain without writing a last-t
   assert.equal(result.chain.proposalAuthority, 'propose-only');
   assert.ok(result.chain.runtime.declared === 'auto');
 
-  const tickPath = path.join(cwd, '.cx', 'runtime', 'embed-capabilities', 'operations.json');
+  const tickPath = path.join(cwd, '.construct', 'runtime', 'embed-capabilities', 'operations.json');
   assert.equal(fs.existsSync(tickPath), false, 'dry-run must not write a last-tick record');
 });
 

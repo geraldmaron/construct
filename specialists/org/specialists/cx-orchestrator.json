@@ -89,5 +89,6 @@
   ],
   "team": "strategy-team",
   "teamId": "strategy-team",
-  "groupId": "strategy-group"
+  "groupId": "strategy-group",
+  "manualOnly": true
 }

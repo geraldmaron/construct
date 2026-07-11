@@ -122,7 +122,7 @@ test('AC4: ingest --as stamps origin provenance; without --as is unchanged', () 
 
   const withAs = runCx(cwd, ['ingest', srcFile, '--as=proj-app', '--fidelity=fast']);
   assert.equal(withAs.status, 0, `ingest --as failed: ${withAs.stderr}`);
-  const knowledgeDir = path.join(cwd, '.cx', 'knowledge', 'internal');
+  const knowledgeDir = path.join(cwd, '.construct', 'knowledge', 'internal');
   const stamped = fs.readdirSync(knowledgeDir).map((f) => fs.readFileSync(path.join(knowledgeDir, f), 'utf8'));
   const provenanced = stamped.find((c) => c.includes('origin_target_id: proj-app'));
   assert.ok(provenanced, 'ingest --as must stamp origin_target_id');

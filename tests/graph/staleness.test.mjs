@@ -78,7 +78,7 @@ test('computeSourceHashes returns a hash per named seed group', () => {
 
 test('touching .cx/providers.json flips stale=true naming providerManifests; rebuild clears it', () => {
   const root = freshRoot();
-  fs.mkdirSync(path.join(root, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(root, '.construct'), { recursive: true });
 
   const initialHashes = computeSourceHashes(root);
   writeGraph(root, { nodes: [{ id: 'workflow:w', type: 'workflow' }], edges: [], sourceHashes: initialHashes });
@@ -87,7 +87,7 @@ test('touching .cx/providers.json flips stale=true naming providerManifests; reb
   assert.equal(clean.stale, false);
   assert.deepEqual(clean.staleSources, []);
 
-  fs.writeFileSync(path.join(root, '.cx', 'providers.json'), JSON.stringify({ anthropic: { apiKey: 'test' } }));
+  fs.writeFileSync(path.join(root, '.construct', 'providers.json'), JSON.stringify({ anthropic: { apiKey: 'test' } }));
 
   const dirty = checkGraphStaleness(root);
   assert.equal(dirty.stale, true);

@@ -17,12 +17,12 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 test('project recording manifest validates and resolves spec path', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'demo-rec-fn-'));
   try {
-    const specRel = '.cx/demos/specs/tour.spec.ts';
+    const specRel = '.construct/demos/specs/tour.spec.ts';
     const specPath = path.join(dir, specRel);
     fs.mkdirSync(path.dirname(specPath), { recursive: true });
     fs.writeFileSync(specPath, 'export {};\n', 'utf8');
 
-    const recDir = path.join(dir, '.cx', 'demos', 'recordings');
+    const recDir = path.join(dir, '.construct', 'demos', 'recordings');
     fs.mkdirSync(recDir, { recursive: true });
     fs.writeFileSync(path.join(recDir, 'tour.json'), JSON.stringify({
       name: 'tour',
@@ -31,7 +31,7 @@ test('project recording manifest validates and resolves spec path', () => {
       spec: specRel,
       baseUrl: 'http://127.0.0.1:3456',
       skipWebServer: true,
-      output: { format: 'mp4', path: '.cx/demos/tour.mp4' },
+      output: { format: 'mp4', path: '.construct/demos/tour.mp4' },
     }, null, 2), 'utf8');
 
     const validated = loadDemoRecordingValidated('tour', { cwd: dir, repoRoot: dir });

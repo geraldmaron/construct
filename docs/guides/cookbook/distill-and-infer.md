@@ -29,7 +29,7 @@ construct distill docs/ --format=extract       # raw chunk text, no synthesis
 ### Write output to a file
 
 ```bash
-construct distill docs/ --query="storage layer" --out=.cx/distill-storage.md
+construct distill docs/ --query="storage layer" --out=.construct/distill-storage.md
 ```
 
 The file can be passed as context to a fresh agent session or committed alongside a plan.
@@ -76,5 +76,5 @@ are excluded by default.
 ### Save the schema as an artifact
 
 The MCP tool `infer_document_schema` accepts a `save: true` flag that writes the result to
-`.cx/knowledge/reference/schemas/<name>.schema.json`. This is not available via the CLI flag
+`.construct/knowledge/reference/schemas/<name>.schema.json`. This is not available via the CLI flag
 yet: use the MCP surface directly when saving to the schema registry is needed.

@@ -6,14 +6,14 @@ description: Install Construct, do your first task, connect your editor. ~5 minu
 By the end of this section you will have:
 
 1. Construct installed globally on your machine.
-2. A working project with `.cx/` scaffolding, agent adapters synced to your editor, and the local services running.
+2. A working project with `.construct/` scaffolding, agent adapters synced to your editor, and the local services running.
 3. Dispatched your first task to the construct persona and watched it run end-to-end.
 
 If anything goes wrong, jump to [troubleshooting](/operations/troubleshooting).
 
 <FlowPipeline steps={[
   { label: 'Install', badge: '5 min', sub: 'npm or brew' },
-  { label: 'First task', sub: 'construct init · sync · dev' },
+  { label: 'First task', sub: 'construct init' },
   { label: 'Connect editor', sub: 'Claude · OpenCode · Codex · Copilot' },
   { label: 'What next', sub: 'intake · concepts · cookbook' },
 ]} />
@@ -31,9 +31,9 @@ If anything goes wrong, jump to [troubleshooting](/operations/troubleshooting).
 
 - A CLI (`construct`) that bootstraps and operates the system locally.
 - A set of host adapters that get written into your editor's config: full agent adapters for Claude Code, OpenCode, Codex, and Copilot prompt profiles; MCP registrations for VS Code/Copilot and Cursor when those configs already exist.
-- An embedded LanceDB vector index for semantic retrieval. No database or Docker required. Trace capture writes local `.cx/traces/*.jsonl` by default; remote export is optional.
+- An embedded LanceDB vector index for semantic retrieval. No database or Docker required. Trace capture writes local `.construct/traces/*.jsonl` by default; remote export is optional.
 
-You install in `solo` mode by default — everything runs locally, the intake queue is the filesystem under `.cx/intake/`, and there's no Construct cloud account. Two other deployment modes (`team` and `enterprise`) promote the queue and memory to shared Postgres and route MCP through a broker — see [deployment model](/guides/concepts/deployment-model).
+You install in `solo` mode by default — everything runs locally, the intake queue is the filesystem under `.construct/intake/`, and there's no Construct cloud account. Two other deployment modes (`team` and `enterprise`) promote the queue and memory to shared Postgres and route MCP through a broker — see [deployment model](/guides/concepts/deployment-model).
 
 Run **`construct sync`** to install or refresh the OpenCode front-door agent plus MCP wiring for the other supported editor surfaces. Use OpenCode as the primary conversational UI; keep the `construct` CLI for setup, status, intake, orchestration, and CI/headless contracts.
 

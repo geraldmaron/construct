@@ -27,7 +27,7 @@ is a policy violation: `construct doctor` checks this ledger against the hooks m
 ### drive-guard.mjs
 - **Original event:** Stop
 - **Original behavior:** Blocked Stop when drive mode was active and acceptance criteria lacked evidence.
-- **Now:** `lib/hooks/policy-engine.mjs` Stop handler: drive section. Reads `.cx/drive-state.json` (per-project) and `~/.cx/drive-session.json` (global advisory).
+- **Now:** `lib/hooks/policy-engine.mjs` Stop handler: drive section. Reads `.construct/drive-state.json` (per-project) and `~/.cx/drive-session.json` (global advisory).
 
 ### continuation-enforcer.mjs
 - **Original event:** PostToolUse (TodoWrite)

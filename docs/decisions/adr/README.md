@@ -34,7 +34,7 @@ Architecture decision records for decisions that have already been made.
 | [0024](./0024-document-io-optional-capability.md) | Document I/O optional capability | accepted | |
 | [0025](./0025-explicit-activation-model.md) | Explicit activation model | accepted | |
 | [0026](./0026-beads-git-native-sync.md) | Beads git-native sync | accepted | |
-| [0027](./0027-host-project-footprint-and-non-destructive-scaffolding.md) | Host/project footprint | accepted | Marker-block discipline affirmed; in-project heavy-state disposition superseded in part by ADR-0066 |
+| [0027](./0027-host-project-footprint-and-non-destructive-scaffolding.md) | Host/project footprint | accepted | Marker-block discipline affirmed; in-project heavy-state disposition superseded in part by ADR-0066; `.construct/`-launcher vs `.cx/`-config directory split superseded by ADR-0069 |
 | [0028](./0028-js-yaml-frontmatter-exception.md) | JS YAML frontmatter exception | accepted | |
 | [0029](./0029-install-scopes-and-hook-budgets.md) | Install scopes and hook budgets | proposed | |
 | [0030](./0030-chain-of-thought-disclosure.md) | Chain-of-thought disclosure | accepted | |
@@ -74,6 +74,15 @@ Architecture decision records for decisions that have already been made.
 | [0066](./0066-config-layer-project-footprint.md) | Config-layer project footprint — machine-scoped heavy state | accepted | Supersedes in-project heavy-state disposition of ADR-0027 |
 | [0067](./0067-deterministic-flow-engine.md) | Deterministic flow engine | accepted | Supersedes chain-resolution role of orchestration-policy.mjs |
 | [0068](./0068-ingestion-sidecar-process-contract.md) | Ingestion sidecar process contract | accepted | Formalizes the docling sidecar's existing shape; not a supersession |
+| [0069](./0069-ci-review-gate-deterministic-backend.md) | CI review gate: deterministic diff review backend | accepted | |
+| [0070](./0070-participation-pipeline-and-rules-schema.md) | Condition-driven participation: recruit/collaborate/execute/enforce pipeline + participationRules schema | proposed | Supersedes recruitment scope of construct-ca4's WATCHERS/evaluateWatchConditions |
+| [0071](./0071-install-footprint-vs-org-scope-naming.md) | Rename install "scope" to "footprint"; keep org-scope vocabulary as-is | accepted | |
+| [0072](./0072-no-code-org-authoring-api.md) | No-code org authoring API — CRUD surface for specialists, teams, contracts, relationships, fences, skills | proposed | Foundation for a future visual editor (not itself in scope); wraps existing `lib/registry/validator.mjs` + `custom-schema.mjs` validation, writes to the same `specialists/org/**` / `.construct/org/**` files |
+| [0073](./0073-richdocument-ir-html-canonical-surface.md) | RichDocument IR with HTML-canonical serialization for preview and export | proposed | Revises the markdown-as-pivot framing of ADR-0024; sidecar RPC contract of ADR-0068 unchanged; numbered 0071 on `refactor/consolidate-project-config-dir` before reconciliation |
+| [0074](./0074-single-project-directory-consolidation.md) | Single project-directory consolidation | accepted | Consolidates `.cx/` + `.construct/` into one `.construct/` with the launcher at `.construct/launcher/`; supersedes the launcher/config split of ADR-0027, extends ADR-0066; numbered 0069 on `refactor/consolidate-project-config-dir` before reconciliation |
+| [0075](./0075-explicit-mcp-install-states.md) | Explicit MCP install states — silence unconfigured servers | accepted | Defines MCP lifecycle: catalog → installed → enabled → healthy; auth independent from config; numbered 0070 on `refactor/consolidate-project-config-dir` before reconciliation |
+| [0076](./0076-outcome-aware-recruitment-tiebreaker.md) | Outcome-aware recruitment tie-breaker | accepted | `outcomeBoost` (±0.05) breaks recruiter ties left by declared-skill count; classify.mjs's determinism contract stays untouched; gated by `orchestration.outcomeRouting` config field |
+| [0077](./0077-prompt-optimization-auto-apply-tier.md) | Opt-in auto-apply tier for prompt optimization | proposed | Config-gated canary/full auto-apply for `construct optimize`, scoped to `skills/roles/*.md` only; deliberately does not route through `lib/improvement/`'s stricter per-proposal governance; awaits explicit acceptance before implementation |
 
 ## Starter templates
 

@@ -1,6 +1,6 @@
 /**
  * tests/functional/project-root-isolation.functional.test.mjs — regression
- * tests proving construct dev writes .cx to the project directory, not to
+ * tests proving construct dev writes .construct to the project directory, not to
  * the construct package directory.
  *
  * Guards the invariant introduced in lib/roots.mjs: resolveProjectRoot(cwd)
@@ -70,13 +70,13 @@ test('resolveProjectRoot does not resolve to packageRoot for a temp fixture proj
 test('buildRuntimeRecoverySummary with rootDir=tmpDir reads durable paths under tmpDir', () => {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-root-isolation-'));
   try {
-    fs.mkdirSync(path.join(tmpDir, '.cx'), { recursive: true });
-    fs.writeFileSync(path.join(tmpDir, '.cx', 'context.md'), '# context\n');
+    fs.mkdirSync(path.join(tmpDir, '.construct'), { recursive: true });
+    fs.writeFileSync(path.join(tmpDir, '.construct', 'context.md'), '# context\n');
     fs.writeFileSync(path.join(tmpDir, 'plan.md'), '# plan\n');
 
     const summary = buildRuntimeRecoverySummary({ rootDir: tmpDir, results: [] });
 
-    assert.equal(summary.durable.context, '.cx/context.md', 'context.md should be found under tmpDir');
+    assert.equal(summary.durable.context, '.construct/context.md', 'context.md should be found under tmpDir');
     assert.equal(summary.durable.plan, 'plan.md', 'plan.md should be found under tmpDir');
     assert.ok(summary.canResumeFromFiles, 'canResumeFromFiles must be true when durable files exist');
   } finally {
@@ -87,13 +87,13 @@ test('buildRuntimeRecoverySummary with rootDir=tmpDir reads durable paths under 
 test('buildRuntimeRecoverySummary with rootDir=packageRoot does NOT pick up tmpDir files', () => {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-root-isolation-'));
   try {
-    fs.mkdirSync(path.join(tmpDir, '.cx'), { recursive: true });
-    fs.writeFileSync(path.join(tmpDir, '.cx', 'context.md'), '# context\n');
+    fs.mkdirSync(path.join(tmpDir, '.construct'), { recursive: true });
+    fs.writeFileSync(path.join(tmpDir, '.construct', 'context.md'), '# context\n');
 
     // Pass packageRoot instead of tmpDir — the context.md inside tmpDir must be invisible.
     const summary = buildRuntimeRecoverySummary({ rootDir: packageRoot, results: [] });
 
-    // The summary's context path, if present, must point at packageRoot's .cx/context.md,
+    // The summary's context path, if present, must point at packageRoot's .construct/context.md,
     // not the one we just created in tmpDir.
     if (summary.durable.context) {
       const resolvedContext = path.resolve(packageRoot, summary.durable.context);

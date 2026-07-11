@@ -9,6 +9,12 @@
  * consumer API. The Wave-4 follow-on (a doctor watcher / oracle action that reads the file and
  * raises beads for repeatedly-misnamed tools, plus the full session->observe->consolidate->inject
  * loop and failure capture) flips the consumer-absence assertion deliberately.
+ *
+ * construct-bh8h4 closes the remaining gap: the aggregated misses reached learning-status but
+ * never the Oracle gap pipeline. collectReadModel now attaches toolDiscoverability, synthesizeVerdict
+ * emits a 'tool-discoverability' gap once unrecovered misses cross the threshold, and the gap is
+ * verdict-only (lib/oracle/policy.mjs's VERDICT_ONLY_GAP_IDS) — it surfaces in doctor/prelude/
+ * `construct oracle gaps` but can never auto-raise a bead, matching the ADR-0043 auto-envelope.
  */
 
 import test from 'node:test';
@@ -19,6 +25,10 @@ import path from 'node:path';
 
 import * as toolRecovery from '../../lib/mcp/tool-recovery.mjs';
 import { recordToolNameMiss } from '../../lib/mcp/tool-recovery.mjs';
+import { collectReadModel } from '../../lib/oracle/read-model.mjs';
+import { synthesizeVerdict } from '../../lib/oracle/synthesize.mjs';
+import { isVerdictOnlyGap, autoRaiseEnabledForGap } from '../../lib/oracle/policy.mjs';
+import { doctorRoot } from '../../lib/config/xdg.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const roots = [];
@@ -28,7 +38,7 @@ function root() {
   return dir;
 }
 function readMisses(rootDir) {
-  const file = path.join(rootDir, '.cx', 'observations', 'tool-name-misses.jsonl');
+  const file = path.join(rootDir, '.construct', 'observations', 'tool-name-misses.jsonl');
   if (!fs.existsSync(file)) return [];
   return fs.readFileSync(file, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l));
 }
@@ -82,4 +92,72 @@ test('failure capture records and aggregates tool failures into a learnable anti
   assert.equal(summary.total, 3, 'all failures counted');
   assert.equal(summary.top[0].name, 'ingest_document', 'most-failed tool ranks first');
   assert.equal(summary.top[0].count, 2);
+});
+
+// construct-bh8h4: the Oracle read model / synthesize / policy pipeline, not just
+// learning-status, must surface a tool-discoverability signal. collectReadModel needs a real
+// specialists/org tree to assemble the registry (collectTeamGovernance), so rootDir is a fresh
+// copy of it rather than a bare tmpdir — the same fixture shape as
+// tests/functional/oracle-read-model.functional.test.mjs.
+
+function freshOracleEnv() {
+  const projectDir = root();
+  const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-toolmiss-home-'));
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-toolmiss-root-'));
+  roots.push(homeDir, rootDir);
+  fs.mkdirSync(path.join(projectDir, '.construct', 'observations'), { recursive: true });
+  fs.mkdirSync(path.join(projectDir, '.construct', 'outcomes'), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, 'audit-artifacts'), { recursive: true });
+  fs.mkdirSync(doctorRoot(homeDir), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, 'specialists'), { recursive: true });
+  fs.cpSync(
+    path.join(process.cwd(), 'specialists', 'org'),
+    path.join(rootDir, 'specialists', 'org'),
+    { recursive: true },
+  );
+  return { projectDir, homeDir, rootDir };
+}
+
+test('collectReadModel attaches toolDiscoverability from the recorded misses/failures', () => {
+  const env = freshOracleEnv();
+  recordToolNameMiss(env.projectDir, { name: 'orchestration_delegation_next', recovered: false });
+  recordToolNameMiss(env.projectDir, { name: 'orchestration_delegation_next', recovered: false });
+  toolRecovery.recordToolFailure(env.projectDir, { tool: 'ingest_document', code: 'TIMEOUT', message: 'x' });
+
+  const model = collectReadModel(env);
+  assert.equal(model.toolDiscoverability.misses.total, 2);
+  assert.equal(model.toolDiscoverability.misses.top[0].name, 'orchestration_delegation_next');
+  assert.equal(model.toolDiscoverability.failures.total, 1);
+});
+
+test('synthesizeVerdict emits a verdict-only tool-discoverability gap once unrecovered misses cross the threshold', () => {
+  const env = freshOracleEnv();
+  for (let i = 0; i < 6; i++) {
+    recordToolNameMiss(env.projectDir, { name: 'orchestration_delegation_next', recovered: false });
+  }
+
+  const verdict = synthesizeVerdict(collectReadModel(env));
+  const gapEntry = verdict.gaps.find((g) => g.id === 'tool-discoverability');
+  assert.ok(gapEntry, 'gap must appear once unrecovered misses cross the threshold');
+  assert.equal(gapEntry.severity, 'low');
+  assert.match(gapEntry.detail, /orchestration_delegation_next/);
+  assert.equal(isVerdictOnlyGap(gapEntry), true, 'must be classified verdict-only');
+  assert.equal(
+    autoRaiseEnabledForGap({ ...gapEntry, severity: 'high' }),
+    false,
+    'verdict-only must block auto-raise even if severity were forced to high',
+  );
+});
+
+test('synthesizeVerdict stays silent on tool-discoverability below the threshold', () => {
+  const env = freshOracleEnv();
+  recordToolNameMiss(env.projectDir, { name: 'some_tool', recovered: false });
+  recordToolNameMiss(env.projectDir, { name: 'some_tool', recovered: false });
+
+  const verdict = synthesizeVerdict(collectReadModel(env));
+  assert.equal(
+    verdict.gaps.find((g) => g.id === 'tool-discoverability'),
+    undefined,
+    'below-threshold misses must not raise a gap',
+  );
 });

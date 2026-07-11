@@ -44,9 +44,11 @@ function makeRepoCopy(t) {
       if (hasPathSegment(rel, ".tmp")) return false;
       if (hasPathSegment(rel, "coverage")) return false;
 
-      // Carrying .cx/ into the copy is a flake source: a stale .cx/sync.lock from any
-      // earlier sync (local or CI step) gets cloned, and acquireLock() then aborts
-      // when process.kill(N, 0) happens to find a live PID on the runner.
+      // Carrying the config dir into the copy is a flake source: a stale sync.lock from any earlier
+      // sync (local or CI step) gets cloned, and acquireLock() then aborts when process.kill(N, 0)
+      // happens to find a live PID on the runner. sync regenerates .construct/ in the copy, so
+      // excluding it (plus the legacy .cx/) loses nothing. (construct-edkj moved the lock to .construct/.)
+      if (hasPathSegment(rel, ".construct")) return false;
       if (hasPathSegment(rel, ".cx")) return false;
 
       // `.claude/` is host-local Claude Code state that post-commit hooks mutate
@@ -117,6 +119,24 @@ function runMcpRemove(id, { home, cwd, env = {} }) {
       ...env,
     },
     stdio: "pipe",
+  });
+}
+
+function runMcpList({ home, cwd, env = {} }) {
+  const script = `
+    const { cmdMcpList } = await import(${JSON.stringify(mcpManagerPath)});
+    cmdMcpList();
+  `;
+
+  return execFileSync(process.execPath, ["--input-type=module", "-e", script], {
+    cwd,
+    env: {
+      ...process.env,
+      HOME: home,
+      ...env,
+    },
+    stdio: "pipe",
+    encoding: "utf8",
   });
 }
 
@@ -236,6 +256,28 @@ test("github MCP wires Claude/OpenCode directly and skips a standalone Codex MCP
   }
 });
 
+test("mcp list distinguishes catalog entries from active and disabled config", (t) => {
+  const home = tempDir("construct-mcp-list-home-", t);
+  const cwd = tempDir("construct-mcp-list-cwd-", t);
+  const opencodeDir = path.join(home, ".config", "opencode");
+  fs.mkdirSync(opencodeDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(opencodeDir, "opencode.json"),
+    JSON.stringify({
+      mcp: {
+        "construct-mcp": { type: "local", command: ["node", "/tmp/construct.mjs"] },
+        context7: { type: "local", command: ["npx", "-y", "@upstash/context7-mcp@latest"], enabled: false },
+      },
+    }, null, 2) + "\n",
+  );
+
+  const output = runMcpList({ home, cwd });
+  assert.match(output, /● active\s+Construct MCP/i, "construct-mcp should render active");
+  assert.match(output, /\[surfaces: opencode\]/i, "active entry should name its surface");
+  assert.match(output, /◌ installed-disabled\s+Context7/i, "disabled optional entry should not render active");
+  assert.match(output, /`catalog` = known but not configured here/i, "legend should explain catalog vs active");
+});
+
 test("mcp remove clears the entry from VS Code (servers) and Cursor (mcpServers) too", (t) => {
   const home = tempDir("construct-remove-editors-home-", t);
   const cwd = tempDir("construct-remove-editors-cwd-", t);
@@ -277,7 +319,7 @@ test("catalog declares setup modes for auto/manual capable integrations", (t) =>
 test("external plugin manifest entries are available to mcp add without editing built-ins", (t) => {
   const home = tempDir("construct-plugin-mcp-home-", t);
   const cwd = tempDir("construct-plugin-mcp-cwd-", t);
-  const pluginDir = path.join(cwd, ".cx", "plugins");
+  const pluginDir = path.join(cwd, ".construct", "plugins");
   fs.mkdirSync(pluginDir, { recursive: true });
   fs.writeFileSync(path.join(pluginDir, "acme.json"), JSON.stringify({
     version: 1,

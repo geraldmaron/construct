@@ -60,7 +60,7 @@ test('construct demo init scaffolds project tape', () => {
   try {
     const result = run(['demo', 'init', 'my-demo', '--from=diagram'], dir);
     assert.equal(result.status, 0, result.stderr);
-    assert.ok(fs.existsSync(path.join(dir, '.cx', 'demos', 'tapes', 'my-demo.tape')));
+    assert.ok(fs.existsSync(path.join(dir, '.construct', 'demos', 'tapes', 'my-demo.tape')));
   } finally {
     rmTmpDir(dir);
   }
@@ -75,11 +75,11 @@ test('construct demo: tape always produced; recording when recorder present; exi
     const result = run(['demo', 'record', name, '--format', 'gif'], cwd);
     assert.equal(result.status, 0, `expected exit 0, got ${result.status}. stderr: ${result.stderr}`);
 
-    const outDir = path.join(cwd, '.cx', 'demos');
-    assert.ok(fs.existsSync(outDir), 'expected .cx/demos/ to exist');
+    const outDir = path.join(cwd, '.construct', 'demos');
+    assert.ok(fs.existsSync(outDir), 'expected .construct/demos/ to exist');
     const files = fs.readdirSync(outDir);
 
-    assert.ok(files.some((f) => f.endsWith('.tape')) || fs.existsSync(path.join(cwd, '.cx', 'demos', 'tapes', `${name}.tape`)),
+    assert.ok(files.some((f) => f.endsWith('.tape')) || fs.existsSync(path.join(cwd, '.construct', 'demos', 'tapes', `${name}.tape`)),
       `expected a .tape source; got: ${files.join(', ')}`);
 
     if (recorder) {
@@ -169,7 +169,7 @@ test('construct demo --surface=tape --source-only writes direct tape output', ()
   try {
     const result = run(['demo', 'quickstart', '--surface=tape', '--source-only'], dir);
     assert.equal(result.status, 0, `expected exit 0, got ${result.status}. stderr: ${result.stderr}`);
-    const files = fs.readdirSync(path.join(dir, '.cx', 'demos'));
+    const files = fs.readdirSync(path.join(dir, '.construct', 'demos'));
     assert.ok(files.some((f) => f.endsWith('.tape')), `expected .tape source; got: ${files.join(', ')}`);
     assert.ok(!files.some((f) => /\.(gif|mp4|webm|cast)$/.test(f)), `--source-only should not record; got: ${files.join(', ')}`);
   } finally {

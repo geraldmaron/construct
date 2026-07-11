@@ -27,7 +27,7 @@ let readViolationSupersedeCutoff;
 
 beforeEach(async () => {
   tmpRoot = mkdtempSync(join(tmpdir(), 'cx-violation-log-'));
-  mkdirSync(join(tmpRoot, '.cx'), { recursive: true });
+  mkdirSync(join(tmpRoot, '.construct'), { recursive: true });
   priorCwd = process.cwd();
   priorHome = process.env.HOME;
   process.env.HOME = tmpRoot;
@@ -51,13 +51,13 @@ afterEach(() => {
 });
 
 function readLog() {
-  const file = join(tmpRoot, '.cx', 'contract-violations.jsonl');
+  const file = join(tmpRoot, '.construct', 'contract-violations.jsonl');
   if (!existsSync(file)) return [];
   return readFileSync(file, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l));
 }
 
 function rawLines() {
-  const file = join(tmpRoot, '.cx', 'contract-violations.jsonl');
+  const file = join(tmpRoot, '.construct', 'contract-violations.jsonl');
   if (!existsSync(file)) return [];
   return readFileSync(file, 'utf8').trim().split('\n').filter(Boolean);
 }
@@ -119,7 +119,7 @@ describe('violation-log', () => {
     logViolation('contract-a', 'output', ['x'], { x: 1 });
     logViolation('contract-a', 'output', ['y'], { y: 2 });
 
-    const file = join(tmpRoot, '.cx', 'contract-violations.jsonl');
+    const file = join(tmpRoot, '.construct', 'contract-violations.jsonl');
     const lines = rawLines();
     const forged = JSON.parse(lines[1]);
     forged.sequence = 3;
@@ -134,7 +134,7 @@ describe('violation-log', () => {
     logViolation('contract-a', 'output', ['x'], { x: 1 });
     logViolation('contract-a', 'output', ['y'], { y: 2 });
 
-    const file = join(tmpRoot, '.cx', 'contract-violations.jsonl');
+    const file = join(tmpRoot, '.construct', 'contract-violations.jsonl');
     const lines = rawLines();
     const tampered = JSON.parse(lines[0]);
     tampered.missing = ['MUTATED'];

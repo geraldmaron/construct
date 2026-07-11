@@ -12,7 +12,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { mkdtempSync, existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, delimiter } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -47,16 +47,23 @@ function assertNoModuleNotFound(output, label) {
 
 // Test suite ------------------------------------------------------------
 
-test('global install + project init (npm pack -> global install -> 2 projects)', { timeout: 180_000 }, async (t) => {
+test('global install + project init (npm pack -> global install -> 2 projects)', { timeout: 480_000 }, async (t) => {
   let tarballPath = null;
   let globalPrefix = null;
   let projectA = null;
   let projectB = null;
   const createdDirs = [];
 
+  // Suite-private pack destination: the packing acceptance suites run
+  // concurrently under node --test, and a shared repo-root tarball let one
+  // suite install while another rewrote or deleted the same file — npm's
+  // "tarball data ... seems to be corrupted" on slow runners (construct-rgqym).
+
+  const packDir = mkdtempSync(join(tmpdir(), 'construct-global-tgz-'));
+
   // ── Step 1: npm pack ─────────────────────────────────────────────────
   await t.test('npm pack produces a tarball', () => {
-    const packResult = run('npm', ['pack', '--json'], { cwd: PROJECT_ROOT });
+    const packResult = run('npm', ['pack', '--json', '--pack-destination', packDir], { cwd: PROJECT_ROOT });
 
     if (packResult.status !== 0) {
       t.todo(`npm pack failed (status ${packResult.status}): ${combinedOutput(packResult)}`);
@@ -79,7 +86,7 @@ test('global install + project init (npm pack -> global install -> 2 projects)',
     const filename = packJson[0]?.filename;
     assert.ok(filename, 'npm pack should emit a filename in JSON output');
 
-    tarballPath = resolve(PROJECT_ROOT, filename);
+    tarballPath = resolve(packDir, filename);
     assert.ok(existsSync(tarballPath), `Tarball should exist at ${tarballPath}`);
   });
 
@@ -159,35 +166,35 @@ test('global install + project init (npm pack -> global install -> 2 projects)',
   });
 
   // ── Step 6: Project A init ───────────────────────────────────────────
-  await t.test('project A: construct init --yes exits 0 and creates .cx/', () => {
+  await t.test('project A: construct init --yes exits 0 and creates .construct/', () => {
     assert.ok(projectA, 'Project A must exist');
     const result = run('node', [binPath, 'init', '--yes'], {
       cwd: projectA,
       env: globalEnv,
-      timeout: 30_000,
+      timeout: 150_000,
     });
     const output = combinedOutput(result);
     assertNoModuleNotFound(output, 'project A init');
     assert.equal(result.status, 0, `project A init exited ${result.status}\n${output}`);
 
-    const cxDir = join(projectA, '.cx');
-    assert.ok(existsSync(cxDir), `.cx/ should exist in project A at ${cxDir}`);
+    const cxDir = join(projectA, '.construct');
+    assert.ok(existsSync(cxDir), `.construct/ should exist in project A at ${cxDir}`);
   });
 
   // ── Step 7: Project B init ───────────────────────────────────────────
-  await t.test('project B: construct init --yes exits 0 and creates .cx/', () => {
+  await t.test('project B: construct init --yes exits 0 and creates .construct/', () => {
     assert.ok(projectB, 'Project B must exist');
     const result = run('node', [binPath, 'init', '--yes'], {
       cwd: projectB,
       env: globalEnv,
-      timeout: 30_000,
+      timeout: 150_000,
     });
     const output = combinedOutput(result);
     assertNoModuleNotFound(output, 'project B init');
     assert.equal(result.status, 0, `project B init exited ${result.status}\n${output}`);
 
-    const cxDir = join(projectB, '.cx');
-    assert.ok(existsSync(cxDir), `.cx/ should exist in project B at ${cxDir}`);
+    const cxDir = join(projectB, '.construct');
+    assert.ok(existsSync(cxDir), `.construct/ should exist in project B at ${cxDir}`);
   });
 
   // ── Step 8: Status check in both projects ────────────────────────────
@@ -246,14 +253,14 @@ test('global install + project init (npm pack -> global install -> 2 projects)',
   });
 
   // ── Step 9: No cross-project leakage ─────────────────────────────────
-  await t.test('no cross-project path leakage in .cx/ files', () => {
+  await t.test('no cross-project path leakage in .construct/ files', () => {
     assert.ok(projectA && projectB, 'Both projects must exist');
 
-    const cxDirA = join(projectA, '.cx');
-    const cxDirB = join(projectB, '.cx');
+    const cxDirA = join(projectA, '.construct');
+    const cxDirB = join(projectB, '.construct');
 
-    assert.ok(existsSync(cxDirA), '.cx/ should exist in project A');
-    assert.ok(existsSync(cxDirB), '.cx/ should exist in project B');
+    assert.ok(existsSync(cxDirA), '.construct/ should exist in project A');
+    assert.ok(existsSync(cxDirB), '.construct/ should exist in project B');
 
     const entriesA = readdirSync(cxDirA, { recursive: true }).filter(
       (e) => statSync(join(cxDirA, e)).isFile(),
@@ -266,7 +273,7 @@ test('global install + project init (npm pack -> global install -> 2 projects)',
       const content = readFileSync(join(cxDirA, file), 'utf8');
       assert.ok(
         !content.includes(projectB),
-        `Project A .cx/${file} should not reference project B path`,
+        `Project A .construct/${file} should not reference project B path`,
       );
     }
 
@@ -274,7 +281,7 @@ test('global install + project init (npm pack -> global install -> 2 projects)',
       const content = readFileSync(join(cxDirB, file), 'utf8');
       assert.ok(
         !content.includes(projectA),
-        `Project B .cx/${file} should not reference project A path`,
+        `Project B .construct/${file} should not reference project A path`,
       );
     }
   });
@@ -287,8 +294,8 @@ test('global install + project init (npm pack -> global install -> 2 projects)',
       assert.ok(existsSync(dir), `Created directory should still exist: ${dir}`);
     }
 
-    assert.ok(existsSync(join(projectA, '.cx')), 'Project A .cx/ should exist');
-    assert.ok(existsSync(join(projectB, '.cx')), 'Project B .cx/ should exist');
+    assert.ok(existsSync(join(projectA, '.construct')), 'Project A .construct/ should exist');
+    assert.ok(existsSync(join(projectB, '.construct')), 'Project B .construct/ should exist');
     assert.ok(existsSync(globalPrefix), 'Global prefix should still exist');
     assert.ok(existsSync(binPath), 'Global binary should still exist');
   });
@@ -301,8 +308,6 @@ test('global install + project init (npm pack -> global install -> 2 projects)',
       }
     }
 
-    if (tarballPath && existsSync(tarballPath)) {
-      rmSync(tarballPath, { force: true });
-    }
+    rmTmpDir(packDir);
   });
 });
