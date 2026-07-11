@@ -33,13 +33,15 @@ patterns.
 
 ```bash
 construct optimize --list
-construct optimize cx-engineer --dry-run
 construct optimize cx-engineer
+construct optimize cx-engineer --apply
 ```
 
 `--list` shows every agent with a quality score and trace count. Use it to decide which agent
-to target. `--dry-run` previews changes without applying. Without `--dry-run`, it rewrites the
-agent's system prompt slice in `registry.json`.
+to target. The bare command is a dry-run: it prints the failure diagnosis and proposed patch
+without writing anything. `--apply` is the explicit gate that rewrites the agent's role skill
+file (`skills/roles/<role>.md`) — rate-limited to one apply per agent per 7 days, with a `.bak`
+backup restorable via `--rollback`.
 
 | Flag | Effect |
 |---|---|

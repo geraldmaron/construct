@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-10T20:51:54.684Z",
+  "generatedAt": "2026-07-11T00:32:05.671Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 875,
-    "topLevelTestFiles": 364,
+    "testFiles": 876,
+    "topLevelTestFiles": 365,
     "nestedTestFiles": 511,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 578,
+      "unit": 579,
       "functional": 249,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 515,
+      "unit": 516,
       "functional": 249,
       "visual": 12,
       "structural-guard": 19,
@@ -1535,6 +1535,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/doc-stamp.test.mjs — tests for lib/doc-stamp.mjs UUIDv7 identity, SHA-256 body hash, and frontmatter stamp verification."
+    },
+    {
+      "path": "tests/docs-optimize-consistency.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/docs-optimize-consistency.test.mjs — guards the prompt-optimizer docs"
     },
     {
       "path": "tests/doctor-command-on-path.test.mjs",
