@@ -25,6 +25,7 @@ import { tmpdir, homedir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
+import { doctorRoot } from "../../lib/config/xdg.mjs";
 
 // Real host paths a host-config test must never mutate. The guard fingerprints
 // these before and after; any change fails the test loudly.
@@ -53,6 +54,31 @@ function realConstructProjectKeys(home) {
     return existsSync(dir) ? readdirSync(dir).sort().join(",") : "absent";
   } catch {
     return "unreadable";
+  }
+}
+
+// The audit trail is an append-only log real sessions write to continuously
+// (construct-mtgs's own dogfood usage adds thousands of lines/day), so a
+// content-hash "unchanged" fingerprint would flap on legitimate concurrent
+// writes — the same false-positive class the MCP-surface fix solved for
+// ~/.claude.json. Instead, count only records tagged `"source":"test"`, the
+// literal every test-fixture policy decision in tests/mcp-broker*.test.mjs
+// uses and no real policy engine ever emits; a leak shows up as a delta,
+// legitimate real usage never moves this count.
+
+function countAuditTrailTestLeaks(home) {
+  const file = doctorRoot(home);
+  const auditPath = join(file, "audit-trail.jsonl");
+  try {
+    if (!existsSync(auditPath)) return 0;
+    const contents = readFileSync(auditPath, "utf8");
+    let count = 0;
+    for (const line of contents.split("\n")) {
+      if (line.includes('"source":"test"')) count++;
+    }
+    return count;
+  } catch {
+    return 0;
   }
 }
 
@@ -139,6 +165,7 @@ export function snapshotRealConfigs(home = homedir()) {
   return {
     fingerprint: fingerprintRealConfigs(home),
     projectKeys: realConstructProjectKeys(home).split(",").filter(Boolean),
+    auditTrailTestLeaks: countAuditTrailTestLeaks(home),
   };
 }
 
@@ -153,6 +180,7 @@ export function diffRealConfigs(beforeSnapshot, home = homedir()) {
     drifted,
     addedProjectKeys: [...afterKeys].filter((k) => !beforeKeys.has(k)),
     removedProjectKeys: [...beforeKeys].filter((k) => !afterKeys.has(k)),
+    auditTrailLeaks: after.auditTrailTestLeaks - (beforeSnapshot.auditTrailTestLeaks ?? 0),
   };
 }
 
