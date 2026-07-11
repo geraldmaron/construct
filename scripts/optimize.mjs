@@ -386,28 +386,13 @@ async function runOptimize(agentName) {
   println(`\nPatch applied to ${path.relative(ROOT_DIR, skillFile)}`);
   println(`Backup written to ${path.relative(ROOT_DIR, backup)}; --rollback restores it.`);
 
-  // Trigger validation of the optimized persona
-  try {
-    println('\n🧪 Triggering persona validation...');
-    const validationResult = spawnSync(process.execPath, [
-      path.join(__dirname, '../lib/hooks/persona-validator.mjs')
-    ], {
-      cwd: ROOT_DIR,
-      input: JSON.stringify({
-        tool_name: 'optimize',
-        tool_result: {
-          result: `Optimized ${agentName} persona with patch: ${patch.slice(0, 200)}...`
-        }
-      }),
-      encoding: 'utf8',
-      timeout: 30000
-    });
-    
-    if (validationResult.status === 0) {
-      println('✅ Persona validation triggered');
-    }
-  } catch (error) {
-    warn(`Validation trigger failed: ${error.message}`);
+  // Post-apply validation is two deterministic layers: an integrity check that the patch left a
+  // structurally sane skill file, then the sync below — its prompt composition is the contract
+  // gate and fails loudly on a skill that does not compose.
+
+  const patched = fs.readFileSync(skillFile, 'utf8');
+  if (!patched.trim() || !/^#{1,6}\s+\S/m.test(patched)) {
+    warn(`Patched ${path.relative(ROOT_DIR, skillFile)} lost its structure (empty or no markdown heading) — use --rollback to restore the backup.`);
   }
 
   // Auto-trigger sync to propagate updated skill to all hosts
