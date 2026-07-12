@@ -4,6 +4,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.5.5] - 2026-07-12
+
 ### Added
 
 - `tests/functional/published-package-smoke.functional.test.mjs`: a standing gate that `npm pack`s the real artifact, installs the tarball into a sterile tmpdir project, and drives the installed CLI (`doctor`, `sync --dry-run`, `evals retrieval --json`, `certify status`) exactly as an npm consumer would — asserting no `MODULE_NOT_FOUND` and no unshipped-`tests/`-path `ENOENT`. This repo has repeatedly rediscovered the "works in a git clone, crashes for a real install" class (unshipped `scripts/` files, an unshipped hook dispatch, an unshipped eval fixture, an unshipped certification module) because nothing previously exercised the actual published tarball end to end — every other gate reasons about `package.json`'s whitelist or individual file paths, not the real consumer experience. Verified RED against pristine `staging` (fails on the still-unshipped `scripts/refresh-ci-status.mjs`) and GREEN once merged with the fixes for that gap plus the evals-fixture and certify-guard fixes.
