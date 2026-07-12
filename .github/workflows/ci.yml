@@ -356,8 +356,8 @@ jobs:
       # Advisory gate: PR-body shape has no local-pre-flight equivalent (the
       # body doesn't exist until `gh pr create` runs), so a hard failure forces
       # a close+reopen to retrigger CI after a body fix. Step `continue-on-error`
-      # surfaces violations in the logs without failing the job; a follow-up
-      # adds a local `construct lint:pr` pre-flight so devs catch this pre-push.
+      # surfaces violations in the logs without failing the job; no local
+      # pre-flight command exists yet to catch this pre-push.
       - name: template policy
         if: needs.changes.outputs.templates == 'true' || needs.changes.outputs.workflow == 'true'
         env:

@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-11T02:48:00.835Z",
+  "generatedAt": "2026-07-11T23:55:38.463Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 877,
+    "testFiles": 886,
     "topLevelTestFiles": 365,
-    "nestedTestFiles": 512,
+    "nestedTestFiles": 521,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 579,
-      "functional": 250,
+      "unit": 580,
+      "functional": 258,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 516,
-      "functional": 250,
+      "unit": 517,
+      "functional": 258,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -2569,6 +2569,14 @@
       "maintainerNotes": "tests/functional/construct-shim.functional.test.mjs — construct-rf26.19."
     },
     {
+      "path": "tests/functional/context-window-recovery.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/context-window-recovery.functional.test.mjs — end-to-end"
+    },
+    {
       "path": "tests/functional/copilot-auth.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2850,6 +2858,14 @@
       ],
       "skipped": false,
       "maintainerNotes": "dogfood-certification.functional.test.mjs — Construct certifies its own distribution gallery."
+    },
+    {
+      "path": "tests/functional/edit-error-recovery.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/edit-error-recovery.functional.test.mjs — end-to-end"
     },
     {
       "path": "tests/functional/embed-capability-lifecycle.functional.test.mjs",
@@ -3243,6 +3259,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/install-scope.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/install-writability-preflight.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/install-writability-preflight.functional.test.mjs"
     },
     {
       "path": "tests/functional/intake-process-archetype.functional.test.mjs",
@@ -3940,6 +3964,14 @@
       "maintainerNotes": "publish.functional.test.mjs — `construct publish` and `construct tools detect`."
     },
     {
+      "path": "tests/functional/published-package-smoke.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/published-package-smoke.functional.test.mjs — proves the"
+    },
+    {
       "path": "tests/functional/readiness-honesty.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -4116,6 +4148,14 @@
       "maintainerNotes": "tests/functional/shared-state.functional.test.mjs — LMCP-G10."
     },
     {
+      "path": "tests/functional/skill-quality-signal.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "skill-quality-signal.functional.test.mjs — phase 1 of the skill"
+    },
+    {
       "path": "tests/functional/source-target-directory.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -4156,6 +4196,14 @@
       "maintainerNotes": "tests/functional/state-root-footprint.functional.test.mjs"
     },
     {
+      "path": "tests/functional/state-root-toolkit-isolation.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/state-root-toolkit-isolation.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/surface-smoke-matrix.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -4170,6 +4218,22 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/sync-no-double-frontmatter.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/sync-per-host-isolation.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/sync-per-host-isolation.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/sync-prune-safety.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/sync-prune-safety.functional.test.mjs"
     },
     {
       "path": "tests/functional/sync-respects-scope.functional.test.mjs",
@@ -6125,7 +6189,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/published-scripts.test.mjs — every scripts/ file the CLI dispatches to"
+      "maintainerNotes": "tests/published-scripts.test.mjs — every scripts/ file dispatched at runtime"
     },
     {
       "path": "tests/read-tracker-store.test.mjs",
@@ -6366,6 +6430,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/schema-validation.test.mjs — Validate unified registry schema and test with fixtures."
+    },
+    {
+      "path": "tests/scripts/check-workflow-defs-drift.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/scripts/check-workflow-defs-drift.test.mjs — exit-code contract for"
     },
     {
       "path": "tests/scripts/ci-repro-drift.test.mjs",

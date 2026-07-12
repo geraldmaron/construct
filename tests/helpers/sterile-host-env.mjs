@@ -25,6 +25,7 @@ import { tmpdir, homedir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
+import { doctorRoot } from "../../lib/config/xdg.mjs";
 
 // Real host paths a host-config test must never mutate. The guard fingerprints
 // these before and after; any change fails the test loudly.
@@ -35,7 +36,9 @@ export function realProtectedPaths(home = homedir()) {
     join(home, ".claude", "settings.json"),
     // Claude Code's user-scope MCP servers live here, not in settings.json
     // (construct-ranh) — guard it too so a sandbox leak into the real ~/.claude.json
-    // (which also carries unrelated Claude Code runtime state) is caught.
+    // is caught. This file also carries Claude Code runtime state that any live
+    // Claude session rewrites, so it is fingerprinted by its MCP surface only
+    // (hashClaudeUserMcpSurface), not by content hash.
     join(home, ".claude.json"),
     join(home, ".codex", "config.toml"),
   ];
@@ -54,12 +57,74 @@ function realConstructProjectKeys(home) {
   }
 }
 
+// The audit trail is an append-only log real sessions write to continuously
+// (construct-mtgs's own dogfood usage adds thousands of lines/day), so a
+// content-hash "unchanged" fingerprint would flap on legitimate concurrent
+// writes — the same false-positive class the MCP-surface fix solved for
+// ~/.claude.json. Instead, count only records tagged `"source":"test"`, the
+// literal every test-fixture policy decision in tests/mcp-broker*.test.mjs
+// uses and no real policy engine ever emits; a leak shows up as a delta,
+// legitimate real usage never moves this count.
+
+function countAuditTrailTestLeaks(home) {
+  const file = doctorRoot(home);
+  const auditPath = join(file, "audit-trail.jsonl");
+  try {
+    if (!existsSync(auditPath)) return 0;
+    const contents = readFileSync(auditPath, "utf8");
+    let count = 0;
+    for (const line of contents.split("\n")) {
+      if (line.includes('"source":"test"')) count++;
+    }
+    return count;
+  } catch {
+    return 0;
+  }
+}
+
 function hashPath(p) {
   try {
     return existsSync(p) ? createHash("sha256").update(readFileSync(p)).digest("hex").slice(0, 16) : "absent";
   } catch {
     return "unreadable";
   }
+}
+
+// ~/.claude.json interleaves Claude Code's volatile runtime state (pluginUsage
+// counters, growthbook cache stamps, per-project history — rewritten by any live
+// Claude session, including the one a developer is running the suite from) with
+// the one surface Construct manages there: MCP server definitions. Hashing the
+// whole file makes the guard flap on ambient telemetry writes, so fingerprint
+// only the MCP surface — top-level `mcpServers` plus each project's `mcpServers`
+// — canonicalized by key order. Same volatility trim as the `ollama list`
+// fingerprint above. An unparseable file falls back to the content hash so a
+// test that corrupts it is still caught.
+
+function canonicalize(value) {
+  if (Array.isArray(value)) return value.map(canonicalize);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.keys(value).sort().map((k) => [k, canonicalize(value[k])]));
+  }
+  return value;
+}
+
+function hashClaudeUserMcpSurface(p) {
+  if (!existsSync(p)) return "absent";
+  let config;
+  try {
+    config = JSON.parse(readFileSync(p, "utf8"));
+  } catch {
+    return hashPath(p);
+  }
+  const surface = {
+    mcpServers: config?.mcpServers ?? {},
+    projects: Object.fromEntries(
+      Object.entries(config?.projects ?? {})
+        .filter(([, v]) => v?.mcpServers && Object.keys(v.mcpServers).length)
+        .map(([k, v]) => [k, v.mcpServers]),
+    ),
+  };
+  return createHash("sha256").update(JSON.stringify(canonicalize(surface))).digest("hex").slice(0, 16);
 }
 
 // Fingerprint the durable model identity (sorted names) only — `ollama list`'s
@@ -81,7 +146,10 @@ function realOllamaList() {
 
 export function fingerprintRealConfigs(home = homedir()) {
   const fp = {};
-  for (const p of realProtectedPaths(home)) fp[p] = hashPath(p);
+  const claudeUserConfigPath = join(home, ".claude.json");
+  for (const p of realProtectedPaths(home)) {
+    fp[p] = p === claudeUserConfigPath ? hashClaudeUserMcpSurface(p) : hashPath(p);
+  }
   fp["ollama:list"] = createHash("sha256").update(realOllamaList()).digest("hex").slice(0, 16);
   fp["construct:projects"] = createHash("sha256").update(realConstructProjectKeys(home)).digest("hex").slice(0, 16);
   return fp;
@@ -97,6 +165,7 @@ export function snapshotRealConfigs(home = homedir()) {
   return {
     fingerprint: fingerprintRealConfigs(home),
     projectKeys: realConstructProjectKeys(home).split(",").filter(Boolean),
+    auditTrailTestLeaks: countAuditTrailTestLeaks(home),
   };
 }
 
@@ -111,6 +180,7 @@ export function diffRealConfigs(beforeSnapshot, home = homedir()) {
     drifted,
     addedProjectKeys: [...afterKeys].filter((k) => !beforeKeys.has(k)),
     removedProjectKeys: [...beforeKeys].filter((k) => !afterKeys.has(k)),
+    auditTrailLeaks: after.auditTrailTestLeaks - (beforeSnapshot.auditTrailTestLeaks ?? 0),
   };
 }
 

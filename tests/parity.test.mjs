@@ -138,6 +138,28 @@ describe('checkParity', () => {
     assert.equal(report.surfaces.find((s) => s.surface === 'cursor').status, 'ok');
   });
 
+  it('finds a real OpenCode install at opencode.jsonc, the same candidate path sync writes to', () => {
+    resetSurfaces();
+    const opencodeDir = path.join(tmpHome, '.config', 'opencode');
+    fs.mkdirSync(opencodeDir, { recursive: true });
+    fs.writeFileSync(path.join(opencodeDir, 'opencode.jsonc'), JSON.stringify({ agent: { construct: {} } }));
+
+    const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
+    const opencode = report.surfaces.find((s) => s.surface === 'opencode');
+    assert.equal(opencode.status, 'ok', JSON.stringify(opencode));
+  });
+
+  it('finds a real OpenCode install at the legacy config.json path when no opencode.json/.jsonc exists', () => {
+    resetSurfaces();
+    const opencodeDir = path.join(tmpHome, '.config', 'opencode');
+    fs.mkdirSync(opencodeDir, { recursive: true });
+    fs.writeFileSync(path.join(opencodeDir, 'config.json'), JSON.stringify({ agent: { construct: {} } }));
+
+    const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
+    const opencode = report.surfaces.find((s) => s.surface === 'opencode');
+    assert.equal(opencode.status, 'ok', JSON.stringify(opencode));
+  });
+
   it('user-scope claude ships no front-door agent (the project orchestrator is the front door)', () => {
     resetSurfaces();
     const claudeDir = path.join(tmpHome, '.claude', 'agents');

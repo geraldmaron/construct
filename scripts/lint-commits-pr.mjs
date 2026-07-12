@@ -22,7 +22,10 @@ import { readFileSync } from "node:fs";
 const COMMIT_SUBJECT_RE =
   /^(feat|fix|refactor|perf|docs|test|chore|ci|build|style)(\([\w/.,:-]+\))?(!)?: \S.{0,139}$/;
 
-const FORBIDDEN_TRAILER_RE = /^Co-[Aa]uthored-[Bb]y:/im;
+// .gitmessage forbids "Co-Authored-By: Claude*" specifically (AI attribution),
+// not a genuine human co-author trailer (e.g. crediting an external
+// contributor whose commits were preserved via cherry-pick then squashed).
+const FORBIDDEN_TRAILER_RE = /^Co-[Aa]uthored-[Bb]y:\s*Claude\b/im;
 
 // Legacy commits that predate this policy, on the shared `staging` branch
 // (already pushed, referenced by closed PRs) — rewriting history to fix the
@@ -157,7 +160,7 @@ function lintCommits() {
       violations.push(`${sha.slice(0, 9)}: subject does not match \`type(scope): subject\` (≤140 chars, no leading space): ${JSON.stringify(subject)}`);
     }
     if (FORBIDDEN_TRAILER_RE.test(body ?? "")) {
-      violations.push(`${sha.slice(0, 9)}: forbidden Co-Authored-By trailer detected`);
+      violations.push(`${sha.slice(0, 9)}: forbidden Co-Authored-By: Claude* trailer detected`);
     }
   }
   return violations;

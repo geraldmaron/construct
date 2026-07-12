@@ -212,11 +212,12 @@ const result = spawnSync(process.execPath, [...nodeArgs, ...files, ...args], {
 // dev machines keep the hard gate unconditionally.
 
 const drift = diffRealConfigs(sterileBefore);
-if (drift.drifted.length) {
+if (drift.drifted.length || drift.auditTrailLeaks > 0) {
   const detail = [
-    `Sterile drift — real host config changed: ${drift.drifted.join(", ")}`,
+    drift.drifted.length ? `Sterile drift — real host config changed: ${drift.drifted.join(", ")}` : null,
     drift.addedProjectKeys.length ? `  project keys added:   ${drift.addedProjectKeys.join(", ")}` : null,
     drift.removedProjectKeys.length ? `  project keys removed: ${drift.removedProjectKeys.join(", ")}` : null,
+    drift.auditTrailLeaks > 0 ? `Sterile drift — ${drift.auditTrailLeaks} test-tagged record(s) appended to the real audit trail (a Broker was constructed without pinning the doctor root or injecting auditRecorder)` : null,
   ].filter(Boolean).join("\n");
   if (process.env.CI === "true") {
     console.warn(`\n[sterile-guard] WARNING (non-blocking on CI): ${detail}`);

@@ -1,6 +1,6 @@
 {
   "name": "@geraldmaron/construct",
-  "version": "1.5.4",
+  "version": "1.5.5",
   "type": "module",
   "packageManager": "npm@11.5.1",
   "description": "Construct — agent orchestration layer for OpenCode, Claude Code, and other coding surfaces",
@@ -36,6 +36,8 @@
     "scripts/optimize.mjs",
     "scripts/review.mjs",
     "scripts/seed-traces.mjs",
+    "scripts/tag-candidate-mining.mjs",
+    "scripts/refresh-ci-status.mjs",
     "README.md",
     ".env.example"
   ],
