@@ -43,7 +43,7 @@ Inspect and run scenario-based certification under .construct/certification/
 **Usage**
 
 ```bash
-construct certify list|show|scenarios|models|demos|status|gate|run <scenario-id>
+construct certify list|show|scenarios|models|demos|parity|document-io|status|gate|run <scenario-id>
 ```
 
 **Subcommands**
@@ -52,6 +52,9 @@ construct certify list|show|scenarios|models|demos|status|gate|run <scenario-id>
 - `show` — Show one certification run record as JSON
 - `scenarios` — List available certification scenarios with model tier
 - `models` — List routable certification models (free by default)
+- `demos` — Canonical demo scenario catalog for Tauri/web/VHS parity
+- `parity` — Cross-surface demo parity report (--write persists under tests/certification/demos/)
+- `document-io` — Export matrix over every output format (--certified hard-fails on a format skipped for a missing engine)
 - `status` — Roll up certification posture across capabilities and surfaces
 - `gate` — Release candidate gate — stale or failing release-critical certification evidence blocks
 - `run` — Execute a scenario (live requires CONSTRUCT_CERTIFY_LIVE=1; paid requires CONSTRUCT_CERTIFY_ALLOW_PAID=1)

@@ -117,5 +117,12 @@ async function main() {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  main();
+  // Exit 1 is reserved for a real drift finding (diffs.length > 0). An
+  // uncaught exception here (a missing dependency, a broken import) would
+  // otherwise also exit 1 by Node's default, making the two indistinguishable
+  // to a caller — exit 2 marks "the check itself could not run" instead.
+  main().catch((err) => {
+    console.error(`check-workflow-defs-drift.mjs crashed: ${err.message}`);
+    process.exit(2);
+  });
 }

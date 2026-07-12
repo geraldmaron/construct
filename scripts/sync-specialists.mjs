@@ -73,6 +73,7 @@ import { buildSkillFrontmatter, stripLeadingFrontmatter } from "../lib/sync/skil
 import { loadRegistry, clearCache } from "../lib/registry/loader.mjs";
 import { loadPluginRegistry } from "../lib/plugin-registry.mjs";
 import { PROJECT_MARKERS, LAUNCHER_REL_PATH, CONFIG_DIR_NAME } from "../lib/config-dir.mjs";
+import { getVSCodeUserDirs as sharedGetVSCodeUserDirs } from "../lib/vscode-paths.mjs";
 
 const home = os.homedir();
 const root = path.resolve(import.meta.dirname, "..");
@@ -287,6 +288,18 @@ function parseHostSelection() {
       } catch { /* advisory */ }
     }
 
+    // Same rationale for Codex: an existing `~/.codex/agents/` dir means the
+    // user has it even when the `codex` binary is not on PATH — the same dir
+    // doctor's parity check reads, so both sides agree on "installed". A
+    // detection miss without this fallback prunes the managed adapter and
+    // config.toml block, and doctor then reports permanent drift with no
+    // self-heal short of putting `codex` on PATH.
+    if (!detected.has("codex")) {
+      try {
+        if (fs.existsSync(path.join(home, ".codex", "agents"))) detected.add("codex");
+      } catch { /* advisory */ }
+    }
+
     // Always include Claude as the baseline if nothing else is detected.
     if (detected.size === 0) detected.add("claude");
     return detected;
@@ -402,15 +415,34 @@ function writeFile(file, content, { stamp = true } = {}) {
   _stagedPairs.push({ real: file, staging: stagingPath, content: stamped });
 }
 
-/** Atomically rename all staged files into their real destinations. */
+/**
+ * Rename every staged file into its real destination. Each rename is
+ * individually atomic, but the batch is not: a failure partway (a
+ * destination directory that turned unwritable mid-run) must not stop the
+ * rest of the batch from committing, or leave the caller unaware of which
+ * files actually landed. Returns the committed and failed sets so the driver
+ * can report per-host outcomes rather than a single opaque success/failure.
+ */
 function commitStaging() {
+  const committed = [];
+  const failed = [];
   for (const { real, staging } of _stagedPairs) {
     if (!staging) continue;
-    mkdirp(path.dirname(real));
-    fs.renameSync(staging, real);
+    try {
+      mkdirp(path.dirname(real));
+      fs.renameSync(staging, real);
+      committed.push(real);
+    } catch (err) {
+      failed.push({ real, staging, error: err });
+    }
   }
-  // Clean up staging dir.
-  try { fs.rmSync(stagingDir, { recursive: true, force: true }); } catch { /* ok */ }
+  // Clean up staging dir — only the entries that failed to commit remain in
+  // it, so a full success removes it entirely and a partial failure leaves
+  // just the uncommitted files behind for inspection.
+  if (failed.length === 0) {
+    try { fs.rmSync(stagingDir, { recursive: true, force: true }); } catch { /* ok */ }
+  }
+  return { committed, failed };
 }
 
 /** Print a human-readable diff summary for --dry-run mode. */
@@ -1209,7 +1241,15 @@ function syncClaude(entries, targetDir = null, wants = true) {
     const md = claudeAgentMarkdown(entry, entries);
     writeFile(path.join(claudeAgentsDir, `${name}.md`), md, { stamp: false });
   }
-  removeStaleAdapters(claudeAgentsDir, ".md", writeEntries);
+  // A project sync with Claude deselected or undetected must not delete the
+  // project's existing front-door agent — pruning on `!wants` turns a
+  // detection miss into data loss (construct-lqp4c's copilot precedent).
+  // Global scope keeps its unconditional sweep: it never writes an agent
+  // file by design, so `wants` does not change what belongs there.
+
+  if (!(targetDir && !wants)) {
+    removeStaleAdapters(claudeAgentsDir, ".md", writeEntries);
+  }
   if (!targetDir) {
     sweepLegacyPrefixedFiles(claudeAgentsDir, ".md", []);
   }
@@ -1324,13 +1364,20 @@ function codexMcpEnvResolves(id, def, env = process.env) {
 }
 
 function syncCodex(entries, targetDir = null, wants = true) {
+  // Deselected or undetected host: leave prior Codex outputs untouched. An
+  // empty writeEntries set would otherwise prune every managed
+  // `agents/*.toml` file and strip the managed config.toml block on a plain
+  // detection miss (construct-lqp4c's copilot precedent, generalized here).
+
+  if (!wants) return;
+
   const codexDir = targetDir
     ? path.join(targetDir, ".codex")
     : path.join(home, ".codex");
   const codexAgentsDir = path.join(codexDir, "agents");
-  if (!DRY_RUN && wants) mkdirp(codexAgentsDir);
+  if (!DRY_RUN) mkdirp(codexAgentsDir);
 
-  const writeEntries = wants ? globalEntries(entries) : [];
+  const writeEntries = globalEntries(entries);
 
   for (const entry of writeEntries) {
     writeFile(path.join(codexAgentsDir, `${adapterName(entry)}.toml`), codexAgentToml(entry, entries));
@@ -1507,36 +1554,13 @@ ${list || "(no front-door prompts to surface)"}`;
 
 // --- VS Code adapter ---
 
-function getVSCodeUserDirs() {
-  const platform = os.platform();
-  const dirs = [];
-  if (platform === "darwin") {
-    dirs.push(
-      path.join(home, "Library", "Application Support", "Code", "User"),
-      path.join(home, "Library", "Application Support", "Code - Insiders", "User"),
-    );
-  } else if (platform === "linux") {
-    dirs.push(
-      path.join(home, ".config", "Code", "User"),
-      path.join(home, ".config", "Code - Insiders", "User"),
-    );
-  } else if (platform === "win32") {
-    const appData = process.env.APPDATA ?? path.join(home, "AppData", "Roaming");
-    dirs.push(
-      path.join(appData, "Code", "User"),
-      path.join(appData, "Code - Insiders", "User"),
-    );
-  }
-  return dirs;
-}
-
 function getVSCodeUserMcpPaths() {
   // VS Code's "MCP: Open User Configuration" edits `<User>/mcp.json` (top-level
   // `servers`). Global sync returns only files that already exist — per-window
   // MCP config is never seeded, mirroring the non-polluting Cursor/OpenCode
   // global behavior.
 
-  return getVSCodeUserDirs()
+  return sharedGetVSCodeUserDirs(home)
     .map((dir) => path.join(dir, "mcp.json"))
     .filter((file) => fs.existsSync(file));
 }
@@ -1775,28 +1799,13 @@ function syncVSCode(targetDir = null, wants = true) {
   if (targetDir) {
     const mcpPath = path.join(targetDir, ".vscode", "mcp.json");
 
-    if (!wants) {
-      if (!DRY_RUN && fs.existsSync(mcpPath)) {
-        // Only delete if it matches our managed block pattern or is a simple
-        // Construct-only file. For now, simple removal of the file if it
-        // matches our expected content.
-        try {
-          const config = JSON.parse(fs.readFileSync(mcpPath, "utf8"));
-          const keys = Object.keys(config?.servers ?? {});
-          const allManaged = keys.every(id => id in registryMcp);
-          if (allManaged) {
-          fs.rmSync(mcpPath, { force: true });
-          try {
-            const vscodeDir = path.dirname(mcpPath);
-            if (fs.existsSync(vscodeDir) && fs.readdirSync(vscodeDir).length === 0) {
-              fs.rmdirSync(vscodeDir);
-            }
-          } catch { /* ignore non-empty */ }
-        }
-        } catch { /* skip cleanup of unreadable file */ }
-      }
-      return false;
-    }
+    // Deselected or undetected host: leave prior output untouched. An
+    // "every key is managed" check looks safe but is a near-no-op in the
+    // common case — a project's mcp.json is almost always 100% Construct-
+    // managed — so it still deleted the file on a plain detection miss
+    // (construct-lqp4c's copilot precedent, generalized here).
+
+    if (!wants) return false;
 
     let config = { servers: {} };
     if (fs.existsSync(mcpPath)) {
@@ -1857,34 +1866,13 @@ function syncCursor(targetDir = null, wants = true) {
 
   if (!targetDir && !fs.existsSync(cursorMcpPath)) return false;
 
-  if (!wants) {
-    if (!DRY_RUN && fs.existsSync(cursorMcpPath)) {
-      try {
-        const config = JSON.parse(fs.readFileSync(cursorMcpPath, "utf8"));
-        const keys = Object.keys(config?.mcpServers ?? {});
-        const allManaged = keys.every(id => id in registryMcp);
-        if (allManaged) {
-          fs.rmSync(cursorMcpPath, { force: true });
-          // Also clean up rules if this was a project sync
-          if (targetDir) {
-            const rulesPath = path.join(cursorDir, "rules", "construct.mdc");
-            if (fs.existsSync(rulesPath)) fs.rmSync(rulesPath, { force: true });
-            // Remove .cursor if empty
-            try {
-              const rulesDir = path.join(cursorDir, "rules");
-              if (fs.existsSync(rulesDir) && fs.readdirSync(rulesDir).length === 0) {
-                fs.rmdirSync(rulesDir);
-              }
-              if (fs.existsSync(cursorDir) && fs.readdirSync(cursorDir).length === 0) {
-                fs.rmdirSync(cursorDir);
-              }
-            } catch { /* ignore non-empty or access errors */ }
-          }
-        }
-      } catch { /* skip cleanup of unreadable file */ }
-    }
-    return false;
-  }
+  // Deselected or undetected host: leave prior output untouched. An "every
+  // key is managed" check looks safe but is a near-no-op in the common case
+  // — a project's mcp.json is almost always 100% Construct-managed — so it
+  // still deleted the file and its rules on a plain detection miss
+  // (construct-lqp4c's copilot precedent, generalized here).
+
+  if (!wants) return false;
 
   let config = { mcpServers: {} };
   if (fs.existsSync(cursorMcpPath)) {
@@ -1995,28 +1983,15 @@ function syncOpencode(entries, targetDir = null, wants = true) {
 
   if (!targetDir && !fs.existsSync(configPath)) return false;
 
-  if (!wants) {
-    if (!DRY_RUN && fs.existsSync(configPath)) {
-      try {
-        const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
-        const agentKeys = Object.keys(config?.agent ?? {});
-        const allManaged = agentKeys.every(id => id === 'construct' || (registry.specialists || []).some(s => s.name === id.replace(/^cx-/, '')));
-        if (allManaged) {
-          fs.rmSync(configPath, { force: true });
-          if (targetDir) {
-            const pluginsDir = path.join(targetDir, ".opencode", "plugins");
-            if (fs.existsSync(pluginsDir)) fs.rmSync(pluginsDir, { recursive: true, force: true });
-            try {
-              if (fs.readdirSync(path.join(targetDir, ".opencode")).length === 0) {
-                fs.rmdirSync(path.join(targetDir, ".opencode"));
-              }
-            } catch { /* ignore non-empty */ }
-          }
-        }
-      } catch { /* skip cleanup */ }
-    }
-    return false;
-  }
+  // Deselected or undetected host: leave prior output untouched. An "every
+  // agent key is managed" check looks safe but depends on an exact registry
+  // name match that can silently miss, and even when it works it is a
+  // near-no-op in the common case — a project's config is almost always
+  // 100% Construct-managed — so it still deleted the file and its plugins on
+  // a plain detection miss (construct-lqp4c's copilot precedent, generalized
+  // here).
+
+  if (!wants) return false;
 
   if (targetDir) {
     mkdirp(path.dirname(configPath));
@@ -2540,57 +2515,91 @@ if (COMPRESS_PERSONAS) {
   }
 }
 
+// One host throwing (an unwritable directory, a malformed existing config)
+// must not prevent the others from running or from having their already-
+// staged files committed — the previous shape was a single try/finally
+// around every host, so the first throw aborted the rest mid-sequence
+// while leaving whatever had already run partially applied.
+
+function runHostSync(label, fn) {
+  try {
+    return { label, ok: true, result: fn() };
+  } catch (err) {
+    console.error(`[sync] ${label} failed: ${err.message}`);
+    return { label, ok: false, result: undefined, error: err };
+  }
+}
+
+// A run with any host failure (or a staged file that failed to commit) must
+// exit nonzero even though the successfully-synced hosts still get their
+// normal summary line — silently reporting "Synced …" when part of the run
+// actually failed is the stage-project.mjs "clean state" claim this same
+// gap produces one layer up.
+
+function reportSyncFailures(hostResults, commitFailed) {
+  const failedHosts = hostResults.filter((r) => !r.ok);
+  if (failedHosts.length === 0 && commitFailed.length === 0) return;
+  console.error(`[sync] ${failedHosts.length} host(s) failed, ${commitFailed.length} staged file(s) could not commit:`);
+  for (const { label, error } of failedHosts) console.error(`  ✗ ${label}: ${error.message}`);
+  for (const { real, error } of commitFailed) console.error(`  ✗ commit ${real}: ${error.message}`);
+  process.exitCode = 1;
+}
+
 acquireLock();
 try {
   if (projectDir) {
-    syncClaude(entries, projectDir, wantsHost("claude"));
-    syncCodex(entries, projectDir, wantsHost("codex"));
-    syncCopilot(entries, projectDir, wantsHost("copilot"));
-    const opencodeOk = syncOpencode(entries, projectDir, wantsHost("opencode"));
-    const vscodeOk = syncVSCode(projectDir, wantsHost("vscode"));
-    const cursorOk = syncCursor(projectDir, wantsHost("cursor"));
-    const cmdCount = wantsHost("claude") ? syncCommands(projectDir) : 0;
-    const skillCount = wantsHost("claude") ? syncSkills(projectDir) : 0;
+    const claude = runHostSync("Claude Code", () => syncClaude(entries, projectDir, wantsHost("claude")));
+    const codex = runHostSync("Codex", () => syncCodex(entries, projectDir, wantsHost("codex")));
+    const copilot = runHostSync("Copilot", () => syncCopilot(entries, projectDir, wantsHost("copilot")));
+    const opencode = runHostSync("OpenCode", () => syncOpencode(entries, projectDir, wantsHost("opencode")));
+    const vscode = runHostSync("VS Code", () => syncVSCode(projectDir, wantsHost("vscode")));
+    const cursor = runHostSync("Cursor", () => syncCursor(projectDir, wantsHost("cursor")));
+    const commands = runHostSync("Commands", () => (wantsHost("claude") ? syncCommands(projectDir) : 0));
+    const skills = runHostSync("Skills", () => (wantsHost("claude") ? syncSkills(projectDir) : 0));
+    const cmdCount = commands.ok ? commands.result : 0;
+    const skillCount = skills.ok ? skills.result : 0;
 
     if (DRY_RUN) {
       printDryRunDiff();
     } else {
-      commitStaging();
+      const { failed: commitFailed } = commitStaging();
       const targets = [
-        wantsHost("claude") && "Claude Code",
-        wantsHost("codex") && "Codex",
-        wantsHost("copilot") && "Copilot",
-        opencodeOk && "OpenCode",
-        vscodeOk && "VS Code",
-        cursorOk && "Cursor",
+        claude.ok && wantsHost("claude") && "Claude Code",
+        codex.ok && wantsHost("codex") && "Codex",
+        copilot.ok && wantsHost("copilot") && "Copilot",
+        opencode.ok && opencode.result && "OpenCode",
+        vscode.ok && vscode.result && "VS Code",
+        cursor.ok && cursor.result && "Cursor",
       ].filter(Boolean).join(", ");
       summary(`Synced ${entries.length} agents + ${cmdCount} commands + ${skillCount} skills to ${path.relative(process.cwd(), projectDir) || "."} (project mode → ${targets}).`);
+      reportSyncFailures([claude, codex, copilot, opencode, vscode, cursor, commands, skills], commitFailed);
     }
   } else {
     const personaCount = entries.filter((e) => e.isOrchestrator).length;
 
-    syncCodex(entries, null, wantsHost("codex"));
-    syncClaude(entries, null, wantsHost("claude"));
-    syncCopilot(entries, null, wantsHost("copilot"));
-    const opencodeOk = syncOpencode(entries, null, wantsHost("opencode"));
-    const vscodeOk = syncVSCode(null, wantsHost("vscode"));
-    const cursorOk = syncCursor(null, wantsHost("cursor"));
-    syncCommands();
-    syncSkills();
+    const codex = runHostSync("Codex", () => syncCodex(entries, null, wantsHost("codex")));
+    const claude = runHostSync("Claude Code", () => syncClaude(entries, null, wantsHost("claude")));
+    const copilot = runHostSync("Copilot", () => syncCopilot(entries, null, wantsHost("copilot")));
+    const opencode = runHostSync("OpenCode", () => syncOpencode(entries, null, wantsHost("opencode")));
+    const vscode = runHostSync("VS Code", () => syncVSCode(null, wantsHost("vscode")));
+    const cursor = runHostSync("Cursor", () => syncCursor(null, wantsHost("cursor")));
+    const commands = runHostSync("Commands", () => syncCommands());
+    const skills = runHostSync("Skills", () => syncSkills());
 
     if (DRY_RUN) {
       printDryRunDiff();
     } else {
-      commitStaging();
+      const { failed: commitFailed } = commitStaging();
       const targets = [
-        "Codex",
-        "Claude Code",
-        "Copilot",
-        opencodeOk && "OpenCode",
-        vscodeOk && "VS Code",
-        cursorOk && "Cursor",
+        codex.ok && wantsHost("codex") && "Codex",
+        claude.ok && wantsHost("claude") && "Claude Code",
+        copilot.ok && wantsHost("copilot") && "Copilot",
+        opencode.ok && opencode.result && "OpenCode",
+        vscode.ok && vscode.result && "VS Code",
+        cursor.ok && cursor.result && "Cursor",
       ].filter(Boolean).join(", ");
       summary(`Synced ${personaCount} front-door agent to global scope (${targets}). Specialists, commands, and skills are project-only — run \`construct init\` inside a project to scaffold them.`);
+      reportSyncFailures([codex, claude, copilot, opencode, vscode, cursor, commands, skills], commitFailed);
 
       const completionsDir = generateCompletions();
       if (completionsDir) {
