@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-11T23:49:44.338Z",
+  "generatedAt": "2026-07-11T23:55:38.463Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 885,
+    "testFiles": 886,
     "topLevelTestFiles": 365,
-    "nestedTestFiles": 520,
+    "nestedTestFiles": 521,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
       "unit": 580,
-      "functional": 257,
+      "functional": 258,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
       "unit": 517,
-      "functional": 257,
+      "functional": 258,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -3259,6 +3259,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/install-scope.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/install-writability-preflight.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/install-writability-preflight.functional.test.mjs"
     },
     {
       "path": "tests/functional/intake-process-archetype.functional.test.mjs",
