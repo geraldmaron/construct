@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-13T20:13:30.445Z",
+  "generatedAt": "2026-07-13T21:29:06.436Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 891,
+    "testFiles": 892,
     "topLevelTestFiles": 365,
-    "nestedTestFiles": 526,
+    "nestedTestFiles": 527,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
       "unit": 584,
-      "functional": 259,
+      "functional": 260,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
       "unit": 521,
-      "functional": 259,
+      "functional": 260,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -3052,6 +3052,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/graphrag-ask.functional.test.mjs — End-to-end GraphRAG."
+    },
+    {
+      "path": "tests/functional/handoff-context-flow.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/handoff-context-flow.functional.test.mjs — construct-72gqn.10 (H6a)."
     },
     {
       "path": "tests/functional/headhunt-profile-teams.functional.test.mjs",
