@@ -62,6 +62,22 @@ test('a keyword part >=5 chars matches an inflected token via prefix', () => {
   assert.ok(suggestions.some((s) => s.path === 'quality-gates/verify-security'), JSON.stringify(suggestions));
 });
 
+test('a stopword shared between a keyword phrase and an unrelated intent does not misfire', () => {
+  // exploration/repo-map's authored trigger "how is this structured" is 3/4
+  // stopwords; brand/output-vibe's "write a prd" contains the stopword "a".
+  // Neither intent below shares a single significant word with either
+  // skill's real triggers — only the stopword overlaps.
+  const probes = [
+    ['feeling codependent in this relationship', 'exploration/repo-map'],
+    ['a raggedy old blanket', 'brand/output-vibe'],
+  ];
+  for (const [intent, mustNotMatch] of probes) {
+    const { suggestions } = suggestSkills({ intent, rootDir: REPO, limit: 10 });
+    const paths = suggestions.map((s) => s.path);
+    assert.ok(!paths.includes(mustNotMatch), `"${intent}" must not match ${mustNotMatch} via a shared stopword; got ${JSON.stringify(paths)}`);
+  }
+});
+
 test('workflow-skill boost requires an exact prd/adr token, not a substring', () => {
   const { suggestions: withAdr } = suggestSkills({ intent: 'write an adr for this decision', rootDir: REPO, limit: 10 });
   assert.ok(withAdr.length > 0);
