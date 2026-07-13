@@ -354,7 +354,7 @@
         "description": "Append-only audit log of every mutation — attribution (agent/task) and tamper-evidence chain"
       },
       {
-        "matcher": "mcp__.*__orchestration_policy|mcp__.*__orchestration_run|mcp__.*__worker_run|Task",
+        "matcher": "mcp__.*__orchestration_policy|mcp__.*__orchestration_run|mcp__.*__worker_run|mcp__.*__orchestration_task_result|Task",
         "hooks": [
           {
             "type": "command",
