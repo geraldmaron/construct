@@ -20,7 +20,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { runTaskViaProvider, validateInputPacket, validateOutputPacket, _resetPackRegistryCache } from '../lib/orchestration/worker.mjs';
+import { runTaskViaProvider, validateInputPacket, validateOutputPacket, resolveInputContractId, resolveOutputContractId, _resetPackRegistryCache } from '../lib/orchestration/worker.mjs';
 import { violationLogPath } from '../lib/contracts/violation-log.mjs';
 import { tempDir } from './helpers.mjs';
 
@@ -105,6 +105,53 @@ test('validateInputPacket skips validation when no contract resolves unambiguous
   // packet stays unchecked instead of being validated against a guessed contract.
   const result = validateInputPacket({ role: 'cx-engineer', packet: { anything: true } }, { cwd: tempDir('cx-worker-boundary-ambiguous-', test) });
   assert.equal(result.checked, false);
+});
+
+// ── Adjacent-task disambiguation (construct-72gqn.11, H6b) ──────────────────
+//
+// Most roles have several outgoing/incoming contracts post-consolidation, so
+// the single-candidate fallback above rarely resolves for the DEFAULT
+// orchestrated base chain. When the actual dispatched run.tasks sequence is
+// known, the adjacent task's role narrows the candidates by producer/consumer
+// match — still returns null (never guesses) when that narrowing still
+// leaves more than one candidate.
+
+test('resolveOutputContractId disambiguates by the next dispatched task\'s role when the bare role is ambiguous', () => {
+  // cx-architect alone has 15 outgoing contracts (ambiguous), but exactly one
+  // has consumer cx-security: architect-to-legal-compliance.
+  const run = { tasks: [
+    { id: 't1', seq: 0, role: 'cx-architect', status: 'done' },
+    { id: 't2', seq: 1, role: 'cx-security', status: 'awaiting-host' },
+  ] };
+  assert.equal(resolveOutputContractId(run.tasks[0], run), 'architect-to-legal-compliance');
+});
+
+test('resolveInputContractId disambiguates by the previous dispatched task\'s role when the bare role is ambiguous', () => {
+  const run = { tasks: [
+    { id: 't1', seq: 0, role: 'cx-architect', status: 'done' },
+    { id: 't2', seq: 1, role: 'cx-security', status: 'awaiting-host' },
+  ] };
+  assert.equal(resolveInputContractId(run.tasks[1], run), 'architect-to-legal-compliance');
+});
+
+test('adjacent-task disambiguation still returns null (never guesses) when several candidates share the same consumer', () => {
+  // cx-architect -> cx-engineer is still ambiguous even narrowed by consumer
+  // role: architect-to-ai-engineer, architect-to-data-engineer,
+  // architect-to-engineer, and architect-to-platform-engineer (a real,
+  // pre-existing 29-role-era contract-corpus gap — construct-72gqn epic D1
+  // reconciles it; this bead's job is correct plumbing, not guessing).
+  const run = { tasks: [
+    { id: 't1', seq: 0, role: 'cx-architect', status: 'done' },
+    { id: 't2', seq: 1, role: 'cx-engineer', status: 'awaiting-host' },
+  ] };
+  assert.equal(resolveOutputContractId(run.tasks[0], run), null);
+});
+
+test('resolveOutputContractId without a run argument behaves exactly as before disambiguation existed', () => {
+  // lib/orchestration/build-audit-record.mjs calls resolveOutputContractId(task)
+  // with no run — must keep working unchanged.
+  assert.equal(resolveOutputContractId({ role: 'cx-architect' }), null);
+  assert.equal(resolveOutputContractId({ role: 'cx-architect', handoffContract: 'architect-to-engineer' }), 'architect-to-engineer');
 });
 
 test('validateInputPacket honors an explicit inputContractId override', () => {
@@ -203,4 +250,55 @@ test('a bare task with no packet fields behaves exactly as pre-F2 (no throw, no 
   assert.equal(result.output, 'engineer result');
   assert.equal(result.provider, 'anthropic');
   assert.equal(readViolations(cwd).length, 0);
+});
+
+// ── End-to-end auto-population through two real dispatched tasks (H6b) ──────
+
+test('a real two-task run auto-populates packets, disambiguates the contract, and records real observability without degrading', async () => {
+  const cwd = tempDir('cx-worker-boundary-e2e-', test);
+  const run = { runId: 'run-e2e-1', request: { summary: 'implement and verify a rate limiter' }, tasks: [] };
+  const engineerTask = { id: 't1', seq: 0, role: 'cx-engineer', reason: 'implement the change', handoffContract: null };
+  const qaTask = { id: 't2', seq: 1, role: 'cx-qa', reason: 'verify the change', handoffContract: null };
+  run.tasks.push(engineerTask, qaTask);
+
+  const engineerResult = await runTaskViaProvider({
+    task: engineerTask, run, model: MODEL, provider: 'anthropic', env: ENV, cwd,
+    fetchImpl: fetchOk('Implemented a token-bucket rate limiter in lib/rate-limiter.mjs.'),
+  });
+  engineerTask.output = engineerResult.output;
+  engineerTask.status = 'done';
+
+  // engineer's output packet auto-populated from real free-text output —
+  // engineer-to-qa is the one contract with cx-qa as consumer, so the
+  // adjacent-task disambiguation resolves it even though cx-engineer alone
+  // has 9 ambiguous outgoing contracts.
+  assert.deepEqual(engineerTask.outputPacket, { content: engineerResult.output });
+  assert.equal(engineerResult.contractId, 'engineer-to-qa');
+  // Free text does not satisfy engineer-to-qa's structured fields, so
+  // validateHandoff finds and logs a real violation — but warn mode (an
+  // auto-populated packet, not a caller-supplied one) never blocks it:
+  // contractStatus stays 'ok' and the real violation rides as
+  // contractViolations instead of degrading the run.
+  assert.equal(engineerResult.contractStatus, 'ok');
+  assert.ok(Array.isArray(engineerResult.contractViolations) && engineerResult.contractViolations.length > 0);
+  const afterEngineer = readViolations(cwd);
+  assert.equal(afterEngineer.length, 1);
+  assert.equal(afterEngineer[0].contractId, 'engineer-to-qa');
+  assert.equal(afterEngineer[0].direction, 'output');
+  assert.equal(afterEngineer[0].runId, 'run-e2e-1');
+
+  const qaResult = await runTaskViaProvider({
+    task: qaTask, run, model: MODEL, provider: 'anthropic', env: ENV, cwd,
+    fetchImpl: fetchOk('Ran the new rate-limiter tests; all passed.'),
+  });
+
+  // qa's INPUT packet auto-populated from engineer's real output (LMCP-B) —
+  // the downstream task's handoff carries the real upstream artifact H6a/H6b
+  // exist to prove, not a fabricated one.
+  assert.deepEqual(qaTask.packet, { fromRole: 'cx-engineer', content: engineerResult.output });
+  assert.equal(qaResult.output, 'Ran the new rate-limiter tests; all passed.', 'real, already-paid-for output is never discarded by a contract violation');
+
+  const allViolations = readViolations(cwd);
+  assert.ok(allViolations.length >= 2, 'both the output-side and input-side violations are real, observable log entries');
+  assert.ok(allViolations.some((v) => v.direction === 'input' && v.contractId === 'engineer-to-qa'));
 });
