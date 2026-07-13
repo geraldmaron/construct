@@ -1,454 +1,66 @@
 {
-  "$comment": "Human-equivalent metadata for construct audit specialists. Merged with live registry data by lib/audit-specialists.mjs.",
-  "version": 1,
+  "$comment": "Human-equivalent metadata for construct audit specialists, merged with live registry/certification-store evidence by lib/audit-specialists.mjs. grade/gap are computed (lib/certification/evidence-tiers.mjs), never declared here.",
+  "version": 2,
   "specialists": {
     "orchestrator": {
       "humanEquivalent": "Engineering program manager",
       "researchProfile": null,
-      "toneProfile": "direct",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
-    },
-    "oracle": {
-      "humanEquivalent": "Platform SRE / fleet health owner",
-      "researchProfile": "external",
-      "toneProfile": "direct",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
-    },
-    "rd-lead": {
-      "humanEquivalent": "Research lead / principal investigator",
-      "researchProfile": "external",
-      "toneProfile": "pedagogical",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
+      "toneProfile": "direct"
     },
     "product-manager": {
       "humanEquivalent": "Senior product manager",
       "researchProfile": "user",
-      "toneProfile": "decision-forcing-direct",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
-    },
-    "ux-researcher": {
-      "humanEquivalent": "UX researcher",
-      "researchProfile": "user",
-      "toneProfile": "pedagogical",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
+      "toneProfile": "decision-forcing-direct"
     },
     "operations": {
       "humanEquivalent": "Technical program manager",
       "researchProfile": null,
-      "toneProfile": "direct",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
+      "toneProfile": "direct"
     },
     "researcher": {
       "humanEquivalent": "Research analyst",
       "researchProfile": "external",
-      "toneProfile": "direct",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
-    },
-    "business-strategist": {
-      "humanEquivalent": "Strategy / bizops lead",
-      "researchProfile": "market",
-      "toneProfile": "executive-concise",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
+      "toneProfile": "direct"
     },
     "data-analyst": {
       "humanEquivalent": "Product data analyst",
       "researchProfile": "external",
-      "toneProfile": "direct",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
-    },
-    "evaluator": {
-      "humanEquivalent": "ML / product evaluator",
-      "researchProfile": "external",
-      "toneProfile": "direct",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
-    },
-    "ai-engineer": {
-      "humanEquivalent": "AI engineer",
-      "researchProfile": "external",
-      "toneProfile": "direct",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
+      "toneProfile": "direct"
     },
     "architect": {
       "humanEquivalent": "Staff software architect",
       "researchProfile": "external",
-      "toneProfile": "decision-forcing-direct",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
+      "toneProfile": "decision-forcing-direct"
     },
     "engineer": {
       "humanEquivalent": "Senior software engineer",
       "researchProfile": "codebase",
-      "toneProfile": "direct",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
-    },
-    "devil-advocate": {
-      "humanEquivalent": "Red-team reviewer",
-      "researchProfile": null,
-      "toneProfile": "direct",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
+      "toneProfile": "direct"
     },
     "reviewer": {
       "humanEquivalent": "Staff engineer reviewer",
       "researchProfile": "codebase",
-      "toneProfile": "direct",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
+      "toneProfile": "direct"
     },
     "security": {
       "humanEquivalent": "Application security engineer",
       "researchProfile": "compliance",
-      "toneProfile": "direct",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
+      "toneProfile": "direct"
     },
     "qa": {
       "humanEquivalent": "QA lead",
       "researchProfile": "codebase",
-      "toneProfile": "direct",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
+      "toneProfile": "direct"
     },
     "debugger": {
       "humanEquivalent": "Senior debugger / SRE investigator",
       "researchProfile": "codebase",
-      "toneProfile": "direct",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
-    },
-    "sre": {
-      "humanEquivalent": "Site reliability engineer",
-      "researchProfile": "external",
-      "toneProfile": "blameless",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
-    },
-    "platform-engineer": {
-      "humanEquivalent": "Platform engineer",
-      "researchProfile": "codebase",
-      "toneProfile": "direct",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
-    },
-    "legal-compliance": {
-      "humanEquivalent": "Legal / compliance counsel (technical)",
-      "researchProfile": "compliance",
-      "toneProfile": "direct",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
-    },
-    "release-manager": {
-      "humanEquivalent": "Release manager",
-      "researchProfile": null,
-      "toneProfile": "direct",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
-    },
-    "docs-keeper": {
-      "humanEquivalent": "Staff technical writer",
-      "researchProfile": null,
-      "toneProfile": "friendly",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
+      "toneProfile": "direct"
     },
     "designer": {
       "humanEquivalent": "Product designer",
       "researchProfile": "user",
-      "toneProfile": "friendly",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
-    },
-    "accessibility": {
-      "humanEquivalent": "Accessibility specialist",
-      "researchProfile": "user",
-      "toneProfile": "pedagogical",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
-    },
-    "explorer": {
-      "humanEquivalent": "Staff engineer (onboarding / exploration)",
-      "researchProfile": "codebase",
-      "toneProfile": "pedagogical",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
-    },
-    "trace-reviewer": {
-      "humanEquivalent": "Observability / eval analyst",
-      "researchProfile": "external",
-      "toneProfile": "direct",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
-    },
-    "data-engineer": {
-      "humanEquivalent": "Data engineer",
-      "researchProfile": "external",
-      "toneProfile": "direct",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
-    },
-    "test-automation": {
-      "humanEquivalent": "Test automation engineer",
-      "researchProfile": "codebase",
-      "toneProfile": "direct",
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-hcr9"
-    }
-  },
-  "roleOverlays": {
-    "architect": {
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-fb8s.11"
-    },
-    "architect.ai-systems": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "architect.data": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "architect.enterprise": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "architect.integration": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "architect.platform": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "data-analyst": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "data-analyst.experiment": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "data-analyst.product": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "data-analyst.product-intelligence": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "data-analyst.telemetry": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "data-engineer.pipeline": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "data-engineer.vector-retrieval": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "data-engineer.warehouse": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "debugger": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "designer": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "designer.accessibility": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "engineer": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "ai-engineer": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "data-engineer": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "platform-engineer": {
-      "grade": "strong",
-      "gap": "—",
-      "beadId": "construct-fb8s.7"
-    },
-    "operations": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "docs-keeper": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "release-manager": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "sre": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "orchestrator": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "product-manager": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "product-manager.ai-product": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "business-strategist": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "product-manager.enterprise": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "product-manager.growth": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "product-manager.platform": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "product-manager.product": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "qa": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "qa.ai-eval": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "qa.api-contract": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "qa.data-pipeline": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "test-automation": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "qa.web-ui": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "researcher": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "explorer": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "ux-researcher": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "reviewer": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "devil-advocate": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "evaluator": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "trace-reviewer": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "security": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "security.ai": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "security.appsec": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "security.cloud": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "security.legal-compliance": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "security.privacy": {
-      "grade": "strong",
-      "gap": "—"
-    },
-    "security.supply-chain": {
-      "grade": "strong",
-      "gap": "—"
+      "toneProfile": "friendly"
     }
   }
 }
