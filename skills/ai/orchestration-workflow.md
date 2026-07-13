@@ -3,6 +3,7 @@ name: ai-orchestration-workflow
 description: Use this skill when the request involves agent orchestration, phase transitions, task keys, handoff quality, workflow state, or project alignment.
 inputs: [agent-spec, workflow-state]
 artifactType: guidance
+triggers: ["orchestration", "handoff contract", "workflow state"]
 ---
 # Construct Orchestration Workflow
 

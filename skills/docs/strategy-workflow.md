@@ -4,6 +4,7 @@ description: "Use when: the user asks about product direction, strategic bets, w
 inputs: [signal, decision-context]
 artifactType: strategy
 verificationBar: "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
+triggers: ["strategy", "bets", "non-bets"]
 ---
 # Strategy Workflow
 

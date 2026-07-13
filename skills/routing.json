@@ -1,18 +1,1272 @@
 {
-  "version": 1,
+  "version": 2,
   "routes": [
-    { "domain": "exploration", "keywords": ["explore repo", "map codebase", "codebase map", "unfamiliar codebase", "how is this structured"], "path": "exploration/repo-map", "priority": 10 },
-    { "domain": "quality-gates", "keywords": ["security scan", "vulnerability", "secrets", "auth audit"], "path": "quality-gates/verify-security", "priority": 10 },
-    { "domain": "quality-gates", "keywords": ["code quality", "complexity", "code smell"], "path": "quality-gates/verify-quality", "priority": 10 },
-    { "domain": "quality-gates", "keywords": ["change impact", "regression", "what broke"], "path": "quality-gates/verify-change", "priority": 10 },
-    { "domain": "docs", "keywords": ["prd", "product requirements", "write a prd"], "path": "docs/prd-workflow", "priority": 20 },
-    { "domain": "docs", "keywords": ["adr", "architecture decision"], "path": "docs/adr-workflow", "priority": 20 },
-    { "domain": "docs", "keywords": ["research brief", "user research"], "path": "docs/research-workflow", "priority": 15 },
-    { "domain": "docs", "keywords": ["strategy", "bets", "non-bets"], "path": "docs/strategy-workflow", "priority": 15 },
-    { "domain": "ai", "keywords": ["rag", "retrieval", "vector database", "embedding"], "path": "ai/rag-system", "priority": 10 },
-    { "domain": "ai", "keywords": ["orchestration", "handoff contract", "workflow state"], "path": "ai/orchestration-workflow", "priority": 10 },
-    { "domain": "security", "keywords": ["pentest", "owasp", "sql injection", "xss"], "path": "security/pentest", "priority": 10 },
-    { "domain": "brand", "keywords": ["prd", "write a prd", "product requirements doc"], "path": "brand/output-vibe", "priority": 12 },
-    { "domain": "brand", "keywords": ["export", "deck", "pdf", "presentation", "artifact vibe"], "path": "brand/output-vibe", "priority": 5 }
+    {
+      "domain": "ai",
+      "keywords": [
+        "agent dev",
+        "building",
+        "agents",
+        "tool-use",
+        "systems",
+        "multi-agent"
+      ],
+      "path": "ai/agent-dev",
+      "priority": 5
+    },
+    {
+      "domain": "ai",
+      "keywords": [
+        "llm security",
+        "securing",
+        "llm-powered",
+        "applications",
+        "against",
+        "prompt"
+      ],
+      "path": "ai/llm-security",
+      "priority": 5
+    },
+    {
+      "domain": "ai",
+      "keywords": [
+        "ml ops",
+        "patterns",
+        "anti-patterns",
+        "reference",
+        "guidance",
+        "operations"
+      ],
+      "path": "ai/ml-ops",
+      "priority": 5
+    },
+    {
+      "domain": "ai",
+      "keywords": [
+        "orchestration",
+        "handoff contract",
+        "workflow state"
+      ],
+      "path": "ai/orchestration-workflow",
+      "priority": 10
+    },
+    {
+      "domain": "ai",
+      "keywords": [
+        "prompt and eval",
+        "designing",
+        "prompts",
+        "evaluating",
+        "model",
+        "performance"
+      ],
+      "path": "ai/prompt-and-eval",
+      "priority": 5
+    },
+    {
+      "domain": "ai",
+      "keywords": [
+        "prompt optimizer",
+        "closed-loop",
+        "prompt",
+        "optimization",
+        "guide",
+        "task"
+      ],
+      "path": "ai/prompt-optimizer",
+      "priority": 5
+    },
+    {
+      "domain": "ai",
+      "keywords": [
+        "rag",
+        "retrieval",
+        "vector database",
+        "embedding"
+      ],
+      "path": "ai/rag-system",
+      "priority": 10
+    },
+    {
+      "domain": "ai",
+      "keywords": [
+        "trace triage",
+        "agent",
+        "telemetry",
+        "traces",
+        "need",
+        "triage"
+      ],
+      "path": "ai/trace-triage",
+      "priority": 5
+    },
+    {
+      "domain": "architecture",
+      "keywords": [
+        "api design",
+        "designing",
+        "rest",
+        "graphql",
+        "grpc",
+        "apis"
+      ],
+      "path": "architecture/api-design",
+      "priority": 5
+    },
+    {
+      "domain": "architecture",
+      "keywords": [
+        "caching",
+        "designing",
+        "strategies",
+        "applications",
+        "apis",
+        "infrastructure"
+      ],
+      "path": "architecture/caching",
+      "priority": 5
+    },
+    {
+      "domain": "architecture",
+      "keywords": [
+        "cloud native",
+        "designing",
+        "containerized",
+        "orchestrated",
+        "microservice-based",
+        "systems"
+      ],
+      "path": "architecture/cloud-native",
+      "priority": 5
+    },
+    {
+      "domain": "architecture",
+      "keywords": [
+        "message queue",
+        "designing",
+        "asynchronous",
+        "communication",
+        "event-driven",
+        "systems"
+      ],
+      "path": "architecture/message-queue",
+      "priority": 5
+    },
+    {
+      "domain": "architecture",
+      "keywords": [
+        "security arch",
+        "designing",
+        "authentication",
+        "authorization",
+        "network",
+        "security"
+      ],
+      "path": "architecture/security-arch",
+      "priority": 5
+    },
+    {
+      "domain": "brand",
+      "keywords": [
+        "prd",
+        "write a prd",
+        "product requirements doc",
+        "export",
+        "deck",
+        "pdf",
+        "presentation",
+        "artifact vibe"
+      ],
+      "path": "brand/output-vibe",
+      "priority": 10
+    },
+    {
+      "domain": "compliance",
+      "keywords": [
+        "ai disclosure",
+        "reviewing",
+        "features",
+        "disclosure",
+        "requirements",
+        "transparency"
+      ],
+      "path": "compliance/ai-disclosure",
+      "priority": 5
+    },
+    {
+      "domain": "compliance",
+      "keywords": [
+        "data privacy",
+        "reviewing",
+        "data",
+        "collection",
+        "storage",
+        "processing"
+      ],
+      "path": "compliance/data-privacy",
+      "priority": 5
+    },
+    {
+      "domain": "compliance",
+      "keywords": [
+        "license audit",
+        "auditing",
+        "dependency",
+        "licenses",
+        "evaluating",
+        "compliance"
+      ],
+      "path": "compliance/license-audit",
+      "priority": 5
+    },
+    {
+      "domain": "compliance",
+      "keywords": [
+        "regulatory review",
+        "conducting",
+        "compliance",
+        "review",
+        "shipping",
+        "features"
+      ],
+      "path": "compliance/regulatory-review",
+      "priority": 5
+    },
+    {
+      "domain": "development",
+      "keywords": [
+        "cpp",
+        "writing",
+        "reviewing",
+        "debugging",
+        "code"
+      ],
+      "path": "development/cpp",
+      "priority": 5
+    },
+    {
+      "domain": "development",
+      "keywords": [
+        "go",
+        "writing",
+        "reviewing",
+        "debugging",
+        "code"
+      ],
+      "path": "development/go",
+      "priority": 5
+    },
+    {
+      "domain": "development",
+      "keywords": [
+        "java",
+        "writing",
+        "reviewing",
+        "debugging",
+        "kotlin",
+        "code"
+      ],
+      "path": "development/java",
+      "priority": 5
+    },
+    {
+      "domain": "development",
+      "keywords": [
+        "kotlin",
+        "patterns",
+        "anti-patterns",
+        "reference",
+        "guidance",
+        "android"
+      ],
+      "path": "development/kotlin",
+      "priority": 5
+    },
+    {
+      "domain": "development",
+      "keywords": [
+        "mobile crossplatform",
+        "choosing",
+        "framework",
+        "answer",
+        "task",
+        "matches"
+      ],
+      "path": "development/mobile-crossplatform",
+      "priority": 5
+    },
+    {
+      "domain": "development",
+      "keywords": [
+        "python",
+        "writing",
+        "reviewing",
+        "debugging",
+        "code"
+      ],
+      "path": "development/python",
+      "priority": 5
+    },
+    {
+      "domain": "development",
+      "keywords": [
+        "rust",
+        "writing",
+        "reviewing",
+        "debugging",
+        "code"
+      ],
+      "path": "development/rust",
+      "priority": 5
+    },
+    {
+      "domain": "development",
+      "keywords": [
+        "shell",
+        "writing",
+        "reviewing",
+        "debugging",
+        "bash",
+        "posix"
+      ],
+      "path": "development/shell",
+      "priority": 5
+    },
+    {
+      "domain": "development",
+      "keywords": [
+        "swift",
+        "enforces",
+        "data-race",
+        "safety",
+        "compile",
+        "time"
+      ],
+      "path": "development/swift",
+      "priority": 5
+    },
+    {
+      "domain": "development",
+      "keywords": [
+        "typescript",
+        "writing",
+        "reviewing",
+        "debugging",
+        "javascript",
+        "code"
+      ],
+      "path": "development/typescript",
+      "priority": 5
+    },
+    {
+      "domain": "devops",
+      "keywords": [
+        "ci cd",
+        "designing",
+        "debugging",
+        "optimizing",
+        "pipelines"
+      ],
+      "path": "devops/ci-cd",
+      "priority": 5
+    },
+    {
+      "domain": "devops",
+      "keywords": [
+        "containerization",
+        "writing",
+        "dockerfiles",
+        "optimizing",
+        "image",
+        "size"
+      ],
+      "path": "devops/containerization",
+      "priority": 5
+    },
+    {
+      "domain": "devops",
+      "keywords": [
+        "cost optimization",
+        "reducing",
+        "cloud",
+        "spend",
+        "right-sizing",
+        "resources"
+      ],
+      "path": "devops/cost-optimization",
+      "priority": 5
+    },
+    {
+      "domain": "devops",
+      "keywords": [
+        "data engineering",
+        "idempotency",
+        "pipelines",
+        "multiple",
+        "times",
+        "without"
+      ],
+      "path": "devops/data-engineering",
+      "priority": 5
+    },
+    {
+      "domain": "devops",
+      "keywords": [
+        "database",
+        "designing",
+        "schemas",
+        "writing",
+        "migrations",
+        "optimizing"
+      ],
+      "path": "devops/database",
+      "priority": 5
+    },
+    {
+      "domain": "devops",
+      "keywords": [
+        "dependency management",
+        "managing",
+        "package",
+        "upgrades",
+        "resolving",
+        "cves"
+      ],
+      "path": "devops/dependency-management",
+      "priority": 5
+    },
+    {
+      "domain": "devops",
+      "keywords": [
+        "devsecops",
+        "integrating",
+        "security",
+        "pipelines",
+        "managing",
+        "supply"
+      ],
+      "path": "devops/devsecops",
+      "priority": 5
+    },
+    {
+      "domain": "devops",
+      "keywords": [
+        "git workflow",
+        "establishing",
+        "branching",
+        "strategies",
+        "commit",
+        "conventions"
+      ],
+      "path": "devops/git-workflow",
+      "priority": 5
+    },
+    {
+      "domain": "devops",
+      "keywords": [
+        "incident response",
+        "define",
+        "severity",
+        "runbook",
+        "assign",
+        "early"
+      ],
+      "path": "devops/incident-response",
+      "priority": 5
+    },
+    {
+      "domain": "devops",
+      "keywords": [
+        "monorepo",
+        "selecting",
+        "tooling",
+        "structuring",
+        "packages",
+        "optimizing"
+      ],
+      "path": "devops/monorepo",
+      "priority": 5
+    },
+    {
+      "domain": "devops",
+      "keywords": [
+        "observability",
+        "designing",
+        "logging",
+        "tracing",
+        "metrics",
+        "alerting"
+      ],
+      "path": "devops/observability",
+      "priority": 5
+    },
+    {
+      "domain": "devops",
+      "keywords": [
+        "performance",
+        "profiling",
+        "load",
+        "testing",
+        "optimizing",
+        "application"
+      ],
+      "path": "devops/performance",
+      "priority": 5
+    },
+    {
+      "domain": "devops",
+      "keywords": [
+        "testing",
+        "planning",
+        "test",
+        "coverage",
+        "selecting",
+        "types"
+      ],
+      "path": "devops/testing",
+      "priority": 5
+    },
+    {
+      "domain": "docs",
+      "keywords": [
+        "adr",
+        "architecture decision"
+      ],
+      "path": "docs/adr-workflow",
+      "priority": 10
+    },
+    {
+      "domain": "docs",
+      "keywords": [
+        "backlog proposal workflow",
+        "product",
+        "evidence",
+        "create",
+        "update",
+        "jira"
+      ],
+      "path": "docs/backlog-proposal-workflow",
+      "priority": 5
+    },
+    {
+      "domain": "docs",
+      "keywords": [
+        "codebase research workflow",
+        "cx-researcher",
+        "maps",
+        "repo",
+        "entry",
+        "points"
+      ],
+      "path": "docs/codebase-research-workflow",
+      "priority": 5
+    },
+    {
+      "domain": "docs",
+      "keywords": [
+        "customer profile workflow",
+        "customer",
+        "evidence",
+        "update",
+        "durable",
+        "product"
+      ],
+      "path": "docs/customer-profile-workflow",
+      "priority": 5
+    },
+    {
+      "domain": "docs",
+      "keywords": [
+        "document ingest workflow",
+        "user",
+        "points",
+        "word",
+        "spreadsheet",
+        "slide"
+      ],
+      "path": "docs/document-ingest-workflow",
+      "priority": 5
+    },
+    {
+      "domain": "docs",
+      "keywords": [
+        "evidence ingest workflow",
+        "user",
+        "pastes",
+        "customer",
+        "notes",
+        "slack"
+      ],
+      "path": "docs/evidence-ingest-workflow",
+      "priority": 5
+    },
+    {
+      "domain": "docs",
+      "keywords": [
+        "init docs",
+        "init",
+        "docs",
+        "create",
+        "structure",
+        "documentation"
+      ],
+      "path": "docs/init-docs",
+      "priority": 5
+    },
+    {
+      "domain": "docs",
+      "keywords": [
+        "init project",
+        "starting",
+        "work",
+        "project",
+        "joining",
+        "existing"
+      ],
+      "path": "docs/init-project",
+      "priority": 5
+    },
+    {
+      "domain": "docs",
+      "keywords": [
+        "memo and decision capture",
+        "decision",
+        "status",
+        "update",
+        "announcement",
+        "needs"
+      ],
+      "path": "docs/memo-and-decision-capture",
+      "priority": 5
+    },
+    {
+      "domain": "docs",
+      "keywords": [
+        "prd",
+        "product requirements",
+        "write a prd"
+      ],
+      "path": "docs/prd-workflow",
+      "priority": 10
+    },
+    {
+      "domain": "docs",
+      "keywords": [
+        "prfaq workflow",
+        "user",
+        "asks",
+        "prfaq",
+        "working-backwards",
+        "launch"
+      ],
+      "path": "docs/prfaq-workflow",
+      "priority": 5
+    },
+    {
+      "domain": "docs",
+      "keywords": [
+        "product intelligence review",
+        "reviewing",
+        "prds",
+        "meta",
+        "prfaqs",
+        "evidence"
+      ],
+      "path": "docs/product-intelligence-review",
+      "priority": 5
+    },
+    {
+      "domain": "docs",
+      "keywords": [
+        "product intelligence workflow",
+        "request",
+        "involves",
+        "customer",
+        "evidence",
+        "synthesis"
+      ],
+      "path": "docs/product-intelligence-workflow",
+      "priority": 5
+    },
+    {
+      "domain": "docs",
+      "keywords": [
+        "product signal workflow",
+        "user",
+        "asks",
+        "customers",
+        "asking",
+        "themes"
+      ],
+      "path": "docs/product-signal-workflow",
+      "priority": 5
+    },
+    {
+      "domain": "docs",
+      "keywords": [
+        "research brief",
+        "user research"
+      ],
+      "path": "docs/research-workflow",
+      "priority": 10
+    },
+    {
+      "domain": "docs",
+      "keywords": [
+        "runbook workflow",
+        "creating",
+        "operational",
+        "procedures",
+        "services",
+        "alerts"
+      ],
+      "path": "docs/runbook-workflow",
+      "priority": 5
+    },
+    {
+      "domain": "docs",
+      "keywords": [
+        "strategy",
+        "bets",
+        "non-bets"
+      ],
+      "path": "docs/strategy-workflow",
+      "priority": 10
+    },
+    {
+      "domain": "docs",
+      "keywords": [
+        "transcript synthesis",
+        "meeting",
+        "call",
+        "interview",
+        "transcript",
+        "needs"
+      ],
+      "path": "docs/transcript-synthesis",
+      "priority": 5
+    },
+    {
+      "domain": "docs",
+      "keywords": [
+        "user research workflow",
+        "cx-researcher",
+        "synthesizes",
+        "user",
+        "evidence",
+        "interviews"
+      ],
+      "path": "docs/user-research-workflow",
+      "priority": 5
+    },
+    {
+      "domain": "exploration",
+      "keywords": [
+        "dependency graph reading",
+        "assessing",
+        "risk",
+        "surface",
+        "project",
+        "dependencies"
+      ],
+      "path": "exploration/dependency-graph-reading",
+      "priority": 5
+    },
+    {
+      "domain": "exploration",
+      "keywords": [
+        "explore repo",
+        "map codebase",
+        "codebase map",
+        "unfamiliar codebase",
+        "how is this structured"
+      ],
+      "path": "exploration/repo-map",
+      "priority": 10
+    },
+    {
+      "domain": "exploration",
+      "keywords": [
+        "tracer bullet method",
+        "beginning",
+        "implementation",
+        "system",
+        "integration",
+        "architectural"
+      ],
+      "path": "exploration/tracer-bullet-method",
+      "priority": 5
+    },
+    {
+      "domain": "exploration",
+      "keywords": [
+        "unknown codebase onboarding",
+        "entering",
+        "unfamiliar",
+        "codebase",
+        "first",
+        "time"
+      ],
+      "path": "exploration/unknown-codebase-onboarding",
+      "priority": 5
+    },
+    {
+      "domain": "frameworks",
+      "keywords": [
+        "django",
+        "patterns",
+        "anti-patterns",
+        "reference",
+        "guidance",
+        "task"
+      ],
+      "path": "frameworks/django",
+      "priority": 5
+    },
+    {
+      "domain": "frameworks",
+      "keywords": [
+        "nextjs",
+        "patterns",
+        "anti-patterns",
+        "reference",
+        "guidance",
+        "next"
+      ],
+      "path": "frameworks/nextjs",
+      "priority": 5
+    },
+    {
+      "domain": "frameworks",
+      "keywords": [
+        "react",
+        "default",
+        "components",
+        "server",
+        "they",
+        "state"
+      ],
+      "path": "frameworks/react",
+      "priority": 5
+    },
+    {
+      "domain": "frameworks",
+      "keywords": [
+        "spring boot",
+        "patterns",
+        "anti-patterns",
+        "reference",
+        "guidance",
+        "spring"
+      ],
+      "path": "frameworks/spring-boot",
+      "priority": 5
+    },
+    {
+      "domain": "frontend-design",
+      "keywords": [
+        "accessibility",
+        "target",
+        "wcag",
+        "minimum",
+        "public-facing",
+        "product"
+      ],
+      "path": "frontend-design/accessibility",
+      "priority": 5
+    },
+    {
+      "domain": "frontend-design",
+      "keywords": [
+        "component patterns",
+        "designing",
+        "component",
+        "architecture",
+        "building",
+        "design"
+      ],
+      "path": "frontend-design/component-patterns",
+      "priority": 5
+    },
+    {
+      "domain": "frontend-design",
+      "keywords": [
+        "engineering",
+        "working",
+        "build",
+        "tooling",
+        "bundling",
+        "rendering"
+      ],
+      "path": "frontend-design/engineering",
+      "priority": 5
+    },
+    {
+      "domain": "frontend-design",
+      "keywords": [
+        "screen reader testing",
+        "needs",
+        "tested",
+        "screen",
+        "reader",
+        "keyboard"
+      ],
+      "path": "frontend-design/screen-reader-testing",
+      "priority": 5
+    },
+    {
+      "domain": "frontend-design",
+      "keywords": [
+        "state management",
+        "choosing",
+        "state",
+        "management",
+        "tools",
+        "structuring"
+      ],
+      "path": "frontend-design/state-management",
+      "priority": 5
+    },
+    {
+      "domain": "frontend-design",
+      "keywords": [
+        "ui aesthetics",
+        "making",
+        "visual",
+        "design",
+        "decisions",
+        "color"
+      ],
+      "path": "frontend-design/ui-aesthetics",
+      "priority": 5
+    },
+    {
+      "domain": "frontend-design",
+      "keywords": [
+        "ux principles",
+        "designing",
+        "user",
+        "flows",
+        "evaluating",
+        "usability"
+      ],
+      "path": "frontend-design/ux-principles",
+      "priority": 5
+    },
+    {
+      "domain": "operating",
+      "keywords": [
+        "change management",
+        "change",
+        "needs",
+        "categorized",
+        "reversibility",
+        "designing"
+      ],
+      "path": "operating/change-management",
+      "priority": 5
+    },
+    {
+      "domain": "operating",
+      "keywords": [
+        "fleet health routing",
+        "fleet-level",
+        "routing",
+        "bounded-auto",
+        "policy",
+        "cx-orchestrator"
+      ],
+      "path": "operating/fleet-health-routing",
+      "priority": 5
+    },
+    {
+      "domain": "operating",
+      "keywords": [
+        "incident response",
+        "issue",
+        "active",
+        "production",
+        "building",
+        "incident"
+      ],
+      "path": "operating/incident-response",
+      "priority": 5
+    },
+    {
+      "domain": "operating",
+      "keywords": [
+        "oncall rotation",
+        "setting",
+        "on-call",
+        "reviewing",
+        "health",
+        "handling"
+      ],
+      "path": "operating/oncall-rotation",
+      "priority": 5
+    },
+    {
+      "domain": "operating",
+      "keywords": [
+        "orchestration reference",
+        "detailed",
+        "orchestration",
+        "reference",
+        "loaded",
+        "demand"
+      ],
+      "path": "operating/orchestration-reference",
+      "priority": 5
+    },
+    {
+      "domain": "operating",
+      "keywords": [
+        "raw data structuring",
+        "dataset",
+        "json",
+        "export",
+        "dump",
+        "needs"
+      ],
+      "path": "operating/raw-data-structuring",
+      "priority": 5
+    },
+    {
+      "domain": "operating",
+      "keywords": [
+        "unstructured triage",
+        "brain-dump",
+        "rough",
+        "notes",
+        "free-form",
+        "input"
+      ],
+      "path": "operating/unstructured-triage",
+      "priority": 5
+    },
+    {
+      "domain": "quality-gates",
+      "keywords": [
+        "premortem",
+        "plan",
+        "design",
+        "needs",
+        "imagining",
+        "already"
+      ],
+      "path": "quality-gates/premortem",
+      "priority": 5
+    },
+    {
+      "domain": "quality-gates",
+      "keywords": [
+        "review work",
+        "methodology",
+        "change",
+        "needs",
+        "rigorous",
+        "pre-merge"
+      ],
+      "path": "quality-gates/review-work",
+      "priority": 5
+    },
+    {
+      "domain": "quality-gates",
+      "keywords": [
+        "change impact",
+        "regression",
+        "what broke"
+      ],
+      "path": "quality-gates/verify-change",
+      "priority": 10
+    },
+    {
+      "domain": "quality-gates",
+      "keywords": [
+        "verify module",
+        "check",
+        "module",
+        "package",
+        "structurally",
+        "complete"
+      ],
+      "path": "quality-gates/verify-module",
+      "priority": 5
+    },
+    {
+      "domain": "quality-gates",
+      "keywords": [
+        "code quality",
+        "complexity",
+        "code smell"
+      ],
+      "path": "quality-gates/verify-quality",
+      "priority": 10
+    },
+    {
+      "domain": "quality-gates",
+      "keywords": [
+        "security scan",
+        "vulnerability",
+        "secrets",
+        "auth audit"
+      ],
+      "path": "quality-gates/verify-security",
+      "priority": 10
+    },
+    {
+      "domain": "security",
+      "keywords": [
+        "blue team",
+        "defending",
+        "systems",
+        "responding",
+        "incidents",
+        "building"
+      ],
+      "path": "security/blue-team",
+      "priority": 5
+    },
+    {
+      "domain": "security",
+      "keywords": [
+        "code audit",
+        "reviewing",
+        "source",
+        "code",
+        "security",
+        "vulnerabilities"
+      ],
+      "path": "security/code-audit",
+      "priority": 5
+    },
+    {
+      "domain": "security",
+      "keywords": [
+        "pentest",
+        "owasp",
+        "sql injection",
+        "xss"
+      ],
+      "path": "security/pentest",
+      "priority": 10
+    },
+    {
+      "domain": "security",
+      "keywords": [
+        "red team",
+        "planning",
+        "executing",
+        "offensive",
+        "security",
+        "assessments"
+      ],
+      "path": "security/red-team",
+      "priority": 5
+    },
+    {
+      "domain": "security",
+      "keywords": [
+        "threat intel",
+        "performing",
+        "osint",
+        "threat",
+        "modeling",
+        "building"
+      ],
+      "path": "security/threat-intel",
+      "priority": 5
+    },
+    {
+      "domain": "security",
+      "keywords": [
+        "vuln research",
+        "analyzing",
+        "binaries",
+        "fuzzing",
+        "software",
+        "developing"
+      ],
+      "path": "security/vuln-research",
+      "priority": 5
+    },
+    {
+      "domain": "strategy",
+      "keywords": [
+        "competitive landscape",
+        "team",
+        "needs",
+        "structured",
+        "read",
+        "market"
+      ],
+      "path": "strategy/competitive-landscape",
+      "priority": 5
+    },
+    {
+      "domain": "strategy",
+      "keywords": [
+        "jobs to be done",
+        "user",
+        "research",
+        "needs",
+        "uncover",
+        "hiring"
+      ],
+      "path": "strategy/jobs-to-be-done",
+      "priority": 5
+    },
+    {
+      "domain": "strategy",
+      "keywords": [
+        "market research methods",
+        "team",
+        "needs",
+        "validate",
+        "assumptions",
+        "committing"
+      ],
+      "path": "strategy/market-research-methods",
+      "priority": 5
+    },
+    {
+      "domain": "strategy",
+      "keywords": [
+        "narrative arc",
+        "argument",
+        "must",
+        "move",
+        "people",
+        "just"
+      ],
+      "path": "strategy/narrative-arc",
+      "priority": 5
+    },
+    {
+      "domain": "strategy",
+      "keywords": [
+        "pricing positioning",
+        "team",
+        "needs",
+        "price",
+        "adjust",
+        "positioning"
+      ],
+      "path": "strategy/pricing-positioning",
+      "priority": 5
+    },
+    {
+      "domain": "utility",
+      "keywords": [
+        "clean code",
+        "patterns",
+        "heuristics",
+        "identifying",
+        "removing",
+        "ai-generated"
+      ],
+      "path": "utility/clean-code",
+      "priority": 5
+    }
   ]
 }
