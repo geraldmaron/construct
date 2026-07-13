@@ -1,0 +1,35 @@
+{
+  "$comment": "Labeled intents for the skill-routing benchmark (construct-72gqn.6, H4.2). Every expectedIds/mustNotInclude pair was verified against the real lib/skills/router.mjs before being locked in here — none is a hypothetical. legacy-* fixtures preserve the 12 skills that were already routed before scripts/generate-skill-routing.mjs existed; derived-* fixtures prove the auto-derived fallback keywords make a previously-unreachable skill (0/153 -> 0 unreachable per auditSkillComposition) actually suggestible; fp-* fixtures pin the false-positive classes lib/skills/router.mjs's matcher was rewritten to eliminate (bidirectional substring, and a keyword-phrase stopword spuriously matching an unrelated intent).",
+  "fixtures": [
+    { "name": "legacy-repo-map-1", "query": "explore this repo", "expectedIds": ["exploration/repo-map"] },
+    { "name": "legacy-repo-map-2", "query": "help me map the codebase", "expectedIds": ["exploration/repo-map"] },
+    { "name": "legacy-verify-security", "query": "run a security scan on this diff", "expectedIds": ["quality-gates/verify-security"] },
+    { "name": "legacy-verify-quality", "query": "check code quality after this change", "expectedIds": ["quality-gates/verify-quality"] },
+    { "name": "legacy-verify-change", "query": "what broke in this regression", "expectedIds": ["quality-gates/verify-change"] },
+    { "name": "legacy-prd-workflow", "query": "write a prd for the new feature", "expectedIds": ["docs/prd-workflow"] },
+    { "name": "legacy-adr-workflow", "query": "need an architecture decision record", "expectedIds": ["docs/adr-workflow"] },
+    { "name": "legacy-research-workflow", "query": "do some user research", "expectedIds": ["docs/research-workflow"] },
+    { "name": "legacy-strategy-workflow", "query": "what are our strategic bets", "expectedIds": ["docs/strategy-workflow"] },
+    { "name": "legacy-rag-system", "query": "building a retrieval augmented generation pipeline", "expectedIds": ["ai/rag-system"] },
+    { "name": "legacy-orchestration-workflow", "query": "need a handoff contract for this workflow", "expectedIds": ["ai/orchestration-workflow"] },
+    { "name": "legacy-pentest", "query": "owasp top 10 pentest", "expectedIds": ["security/pentest"] },
+    { "name": "legacy-output-vibe", "query": "export this as a deck", "expectedIds": ["brand/output-vibe"] },
+
+    { "name": "derived-api-design", "query": "designing a rest api", "expectedIds": ["architecture/api-design"] },
+    { "name": "derived-caching", "query": "caching strategy for this service", "expectedIds": ["architecture/caching"] },
+    { "name": "derived-message-queue", "query": "message queue architecture", "expectedIds": ["architecture/message-queue"] },
+    { "name": "derived-python", "query": "python type hints", "expectedIds": ["development/python"] },
+    { "name": "derived-accessibility", "query": "accessibility audit for this ui", "expectedIds": ["frontend-design/accessibility"] },
+    { "name": "derived-jobs-to-be-done", "query": "jobs to be done framework", "expectedIds": ["strategy/jobs-to-be-done"] },
+    { "name": "derived-database", "query": "designing database schemas and migrations", "expectedIds": ["devops/database"] },
+    { "name": "derived-cost-optimization", "query": "reducing our cloud spend", "expectedIds": ["devops/cost-optimization"] },
+    { "name": "derived-ci-cd", "query": "setting up ci cd pipelines", "expectedIds": ["devops/ci-cd"] },
+
+    { "name": "fp-rag-average", "query": "average latency dashboard", "expectedIds": [], "mustNotInclude": ["ai/rag-system"] },
+    { "name": "fp-rag-drag", "query": "drag and drop ui", "expectedIds": [], "mustNotInclude": ["ai/rag-system"] },
+    { "name": "fp-rag-fragrance", "query": "the fragrance of this release", "expectedIds": [], "mustNotInclude": ["ai/rag-system"] },
+    { "name": "fp-adr-address", "query": "my address changed recently", "expectedIds": [], "mustNotInclude": ["docs/adr-workflow"] },
+    { "name": "fp-stopword-repo-map", "query": "feeling codependent in this relationship", "expectedIds": [], "mustNotInclude": ["exploration/repo-map"] },
+    { "name": "fp-stopword-output-vibe", "query": "a raggedy old blanket", "expectedIds": [], "mustNotInclude": ["brand/output-vibe"] }
+  ]
+}

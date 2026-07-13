@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-13T18:37:58.320Z",
+  "generatedAt": "2026-07-13T20:13:30.445Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 887,
+    "testFiles": 891,
     "topLevelTestFiles": 365,
-    "nestedTestFiles": 522,
+    "nestedTestFiles": 526,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 580,
+      "unit": 584,
       "functional": 259,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 517,
+      "unit": 521,
       "functional": 259,
       "visual": 12,
       "structural-guard": 19,
@@ -1083,6 +1083,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/certification/document-workflow.test.mjs — ingest to export workflow certification."
+    },
+    {
+      "path": "tests/certification/evidence-tiers.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/evidence-tiers.test.mjs — specialist evidence-tier ladder."
     },
     {
       "path": "tests/certification/export-format-cert.test.mjs",
@@ -5278,6 +5286,14 @@
       "maintainerNotes": "tests/mcp/enforcement-proof.functional.test.mjs — LMCP-I4."
     },
     {
+      "path": "tests/mcp/get-skill-entitlement.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mcp/get-skill-entitlement.test.mjs — get_skill's specialistId entitlement path."
+    },
+    {
       "path": "tests/mcp/host-role-clientinfo.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -6670,6 +6686,22 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "skills-apply.test.mjs — Regression coverage for per-host skill sidecar writers."
+    },
+    {
+      "path": "tests/skills/router.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/skills/router.test.mjs — skill route matching and suggestion."
+    },
+    {
+      "path": "tests/skills/skill-routing-benchmark.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/skills/skill-routing-benchmark.test.mjs — skill-routing retrieval regression gate."
     },
     {
       "path": "tests/source-targets.test.mjs",
