@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-13T21:29:06.436Z",
+  "generatedAt": "2026-07-13T21:56:28.966Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 892,
-    "topLevelTestFiles": 365,
+    "testFiles": 893,
+    "topLevelTestFiles": 366,
     "nestedTestFiles": 527,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 584,
+      "unit": 585,
       "functional": 260,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 521,
+      "unit": 522,
       "functional": 260,
       "visual": 12,
       "structural-guard": 19,
@@ -5590,6 +5590,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/orchestration-events.test.mjs — run lifecycle event bus + cancel registry."
+    },
+    {
+      "path": "tests/orchestration-host-contract-revalidation.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration-host-contract-revalidation.test.mjs — construct-72gqn.12 (H6c)."
     },
     {
       "path": "tests/orchestration-policy-context-packets.test.mjs",
