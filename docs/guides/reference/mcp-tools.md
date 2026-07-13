@@ -15,7 +15,7 @@ Construct exposes a Model Context Protocol (MCP) server consumed by Claude Code,
 
 ## Tool surface (gateway)
 
-To keep the serialized tool schema small enough for any context window — a flat 76-tool surface (~15k tokens) overran a 32k local-model window — `ListTools` exposes a **curated core** plus the `call` **gateway** and the `find_tool` **discovery** tool. The core front-loads the read/think tools (`orchestration_policy`, `orchestration_readiness`, `get_skill`, `get_template`, `search_skills`, `knowledge_search`, `memory_search`, `project_context`, `summarize_diff`, `find_tool`) **and the high-value action tools agents reach for directly** (`author_artifact`, `document_export`, `publish_run`, `artifact_workflow`, `workflow_invoke`, `triage_recommend`), since burying those behind the gateway made the common case the failing case. Every other tool stays reachable through `call`, and `find_tool` ranks the whole catalog by intent so the surface scales without a hand-maintained list (ADR-0048).
+To keep the serialized tool schema small enough for any context window — a flat 76-tool surface (~15k tokens) overran a 32k local-model window — `ListTools` exposes a **curated core** plus the `call` **gateway** and the `find_tool` **discovery** tool. The core front-loads the read/think tools (`orchestration_policy`, `orchestration_run`, `orchestration_readiness`, `get_skill`, `get_template`, `search_skills`, `suggest_skills`, `knowledge_search`, `memory_search`, `project_context`, `summarize_diff`, `find_tool`) **and the high-value action tools agents reach for directly** (`author_artifact`, `document_export`, `publish_run`, `artifact_workflow`, `triage_recommend`), since burying those behind the gateway made the common case the failing case. Every other tool stays reachable through `call`, and `find_tool` ranks the whole catalog by intent so the surface scales without a hand-maintained list (ADR-0048).
 
 ### `find_tool`
 Find Construct tools by intent when you do not know the exact name. Pass a natural-language `query` (and optional `limit`) describing the task; returns the best-matching tools with their full input schemas, ranked by hybrid local-embedding semantic similarity merged with normalized BM25 — degrading to BM25-only when no semantic model is provisioned, so it works offline. Then invoke a result via `call` (or directly when it is a flat tool). E.g. `find_tool({ query: "export a markdown file to pdf" })` → `document_export`.
@@ -202,11 +202,13 @@ Deletes ingested markdown artifacts. Requires explicit `confirm: true`.
 Lists all available categories and playbooks in the Construct knowledge base.
 
 ### `get_skill`
-Reads a specific skill playbook from the knowledge base.
+Reads a specific skill playbook from the knowledge base. Pass `specialistId` when reading on a specialist's behalf: if that specialist has a non-empty entitlement list and the skill is not on it, the response carries an entitlement warning (or, under `CONSTRUCT_STRICT_SKILLS=1`, an error instead of the content) — entitlement is advisory by default, since a bare MCP call carries no authenticated specialist identity to enforce against.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `path` | string | Yes | Relative path to the skill (without `.md` extension, e.g. `security/security-arch`) |
+| `specialistId` | string | No | The specialist this read is on behalf of (e.g. `cx-reviewer` or `reviewer`), for entitlement checking. Accepts either the specialistId or `agentId` name. |
+| `agentId` | string | No | Alias for `specialistId`. |
 
 ### `search_skills`
 Searches for a pattern within the Construct knowledge base skills.

@@ -35,6 +35,10 @@
         "use": "Find relevant skills by query."
       },
       {
+        "name": "suggest_skills",
+        "use": "Get ranked skill suggestions for the current intent, with per-specialist entitlement annotated on each result."
+      },
+      {
         "name": "knowledge_search",
         "use": "Search the project knowledge base."
       },
