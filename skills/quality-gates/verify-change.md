@@ -3,6 +3,7 @@ name: quality-gates-verify-change
 description: Use this skill to analyze the impact of code changes and verify documentation and tests are in sync.
 inputs: [change-or-diff]
 artifactType: review-report
+triggers: ["change impact", "regression", "what broke"]
 ---
 # Verify Change
 

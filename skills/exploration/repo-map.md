@@ -3,6 +3,7 @@ name: exploration-repo-map
 description: Use this skill when entering an unfamiliar codebase, doing deep investigation work, or producing a `.cx/codebase-map.md` artifact for future sessions.
 inputs: [repo, codebase]
 artifactType: repo-map
+triggers: ["explore repo", "map codebase", "codebase map", "unfamiliar codebase", "how is this structured"]
 ---
 # Repo Exploration: Codebase Mapping Playbook
 
