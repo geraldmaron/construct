@@ -75,3 +75,27 @@ Reconciled into the wave-1 plan two ways:
 
 No code changed in this bead (repro-only). Comment posted to #248 pending user review before
 closing or re-scoping the GitHub issue itself (posting to GitHub is an explicit-permission action).
+
+## Addendum (H9.2 landed, commit `b8788515`)
+
+H9.2 closed the **disclosure** half of this finding, not by forbidding a bare `"completed"` +
+empty-`tasks` response — on reflection, that combination is legitimately honest for a genuinely
+trivial request (nothing is wrong with a run correctly deciding it needs zero specialists). The
+actual defect was that a caller reading `routePath.specialistSequence` alone could not tell a real
+dispatch from the display-fallback's hypothetical one. Fixed by adding the real `specialists`
+array to `hostAdapterMetadata` (mirroring `shapeRun`, which already had it) — a caller now sees
+`specialists: []` alongside `routePath.specialistSequence: ["cx-engineer"]` in the same `--json`
+payload and can tell them apart, instead of `routePath` being the only specialist-list field in
+that output.
+
+H9.2 separately fixed the taxonomy-consistency bug this repro surfaced as a side effect:
+`hostAdapterMetadata` (what `--json` actually calls) echoed the raw `run.status`, never
+`shapeRun`'s `deriveHonestRunStatus` taxonomy — so a *different* class of run (top-level-degraded,
+or all-tasks-prepared) could print bare `"completed"` in `--json` while the human-readable text
+output for the identical run correctly said `degraded`/`completed-prepare-only`. That inconsistency
+is now gone; both readers derive status from the same function.
+
+**Revised scope for H9.3** (terminal-result contract test): assert `specialists` is present and,
+whenever `tasks.length === 0`, is consistent with it (both empty) — not that `status:"completed"`
+with empty `tasks` can never occur. Also assert `hostAdapterMetadata` and `shapeRun` never disagree
+on `status`/`degraded` for the same run (regression coverage for the taxonomy-consistency fix).
