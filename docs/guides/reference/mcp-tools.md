@@ -809,6 +809,8 @@ Three worker backends. `host` (the default for MCP-originated runs when neither 
 
 A `host`-backend run whose materialization completes returns `status: 'awaiting-host'` — a real, non-terminal standing state (never rendered as `completed` or `degraded`) — plus every task's materialized `system`/`user` prompt and a `hostInstructions` string describing exactly what to do next.
 
+The response's `specialists` field is the real, dispatched role list — authoritative. `routePath.specialistSequence` can be non-empty even when `specialists`/`tasks` are empty: a short request with no scope signal (no `file_count`/`module_count`, no "end to end"/"ship"/"full" keyword) can classify as trivial and dispatch zero specialists even with `requested_strategy: "orchestrated"`, while `routePath` still shows the specialist a *focused* classification would have picked, for display purposes. Read `specialists`/`tasks`, not `routePath`, to know what actually ran.
+
 | Parameter | Type | Description |
 |---|---|---|
 | `request` | string | **required** — Natural-language description of the work to orchestrate. |
@@ -818,7 +820,7 @@ A `host`-backend run whose materialization completes returns `status: 'awaiting-
 | `host` | string | Host/IDE identifier (advisory). |
 | `host_model` | string | Model the host uses, for model resolution. |
 | `host_provider` | string | Provider family the host uses, for model resolution. |
-| `file_count` | number | Optional planning hint: number of files in scope. |
+| `file_count` | number | Optional planning hint: number of files in scope. Pass this (or `module_count`) when the work has real scope — see the specialists/routePath note above. |
 | `module_count` | number | Optional planning hint: number of modules in scope. |
 | `wait` | boolean | Wait for a terminal state and return task output (default true); `false` returns the runId to poll. |
 | `timeout_ms` | number | Max wait when `wait=true` (default 120000); on timeout the runId is returned to poll. |
@@ -865,7 +867,7 @@ Reason codes: `attached`, `host_not_attached`, `server_unreachable`, `auth_unava
 | `observation_scope` | string | `host-session` or `local-config`. MCP calls normally use `host-session`. |
 
 ### `orchestration_status`
-Inspect orchestration runs on the local Construct daemon: pass `run_id` for the full record (status, per-task status/executor/output/error), or omit it for a list of recent runs. Fails fast if the daemon is unreachable.
+Inspect orchestration runs: pass `run_id` for the full shaped record (status, per-task status/executor/output/error), or omit it for a list of recent runs. Solo runs are in-process (no daemon); a remote/team orchestration service is opt-in via `CONSTRUCT_ORCHESTRATION_URL`, and only that path can be unreachable.
 
 | Parameter | Type | Description |
 |---|---|---|
