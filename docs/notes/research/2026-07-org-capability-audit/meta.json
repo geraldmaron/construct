@@ -2,6 +2,7 @@
   "title": "Org-Capability Audit & Remediation (2026-07)",
   "pages": [
     "baseline",
+    "l5-comparison",
     "subagents",
     "synthesis"
   ]

@@ -43,7 +43,7 @@ Inspect and run scenario-based certification under .construct/certification/
 **Usage**
 
 ```bash
-construct certify list|show|scenarios|models|demos|parity|document-io|status|gate|run <scenario-id>
+construct certify list|show|scenarios|models|demos|parity|document-io|status|gate|run <scenario-id>|compare
 ```
 
 **Subcommands**
