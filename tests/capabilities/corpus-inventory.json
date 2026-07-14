@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-13T21:56:28.966Z",
+  "generatedAt": "2026-07-13T23:58:59.081Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 893,
-    "topLevelTestFiles": 366,
+    "testFiles": 894,
+    "topLevelTestFiles": 367,
     "nestedTestFiles": 527,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 585,
+      "unit": 586,
       "functional": 260,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 522,
+      "unit": 523,
       "functional": 260,
       "visual": 12,
       "structural-guard": 19,
@@ -6742,6 +6742,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "specialist-contracts.test.mjs — Runtime contract-chain enforcement tests."
+    },
+    {
+      "path": "tests/specialist-coverage.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/specialist-coverage.test.mjs — construct-72gqn.31 (H5-gen)."
     },
     {
       "path": "tests/specialist-loop.test.mjs",

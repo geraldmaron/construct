@@ -1,7 +1,7 @@
 {
   "version": 1,
   "catalog": {
-    "generatedAt": "2026-07-13T20:13:52.340Z",
+    "generatedAt": "2026-07-13T23:56:59.734Z",
     "npmScripts": [
       "adapters",
       "audit:published",
@@ -46,6 +46,7 @@
       "release:preflight",
       "release:preflight:no-auth",
       "skills:routes",
+      "specialists:coverage",
       "test",
       "test:functional",
       "test:unit",
