@@ -49,7 +49,7 @@ Do not duplicate skill internals inside agent prompts. Reference the relevant sk
 
 ## Agent-to-agent service contracts
 
-Every producer→consumer pair has an explicit contract in `specialists/contracts.json`, loaded via `lib/specialist-contracts.mjs`. Specialists call the MCP tool `agent_contract` at the start of a handoff to see:
+Every producer→consumer pair has an explicit contract under `specialists/org/contracts/`, loaded via `lib/specialist-contracts.mjs`. Specialists call the MCP tool `agent_contract` at the start of a handoff to see:
 
 - `input.mustContain`: fields the packet must carry
 - `input.schema`: JSON schema (when applicable) from `lib/contract-schemas/`
@@ -57,7 +57,7 @@ Every producer→consumer pair has an explicit contract in `specialists/contract
 - `output.schema` / `output.shape`: expected return shape
 - `postconditions`: what must be true before marking DONE
 
-Examples of contracts (full list in `specialists/contracts.json`):
+Examples of contracts (full list under `specialists/org/contracts/`):
 
 - `researcher-to-architect`: research brief with ≥2 primary sources → decision
 - `product-manager-to-architect`: PRD handoff → decision with Rejected alternatives
