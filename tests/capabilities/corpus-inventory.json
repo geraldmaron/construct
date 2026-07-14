@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-14T02:25:06.192Z",
+  "generatedAt": "2026-07-14T03:06:34.335Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 903,
+    "testFiles": 904,
     "topLevelTestFiles": 367,
-    "nestedTestFiles": 536,
+    "nestedTestFiles": 537,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
       "unit": 590,
-      "functional": 265,
+      "functional": 266,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
       "unit": 527,
-      "functional": 265,
+      "functional": 266,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -2599,6 +2599,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/construct-shim.functional.test.mjs — construct-rf26.19."
+    },
+    {
+      "path": "tests/functional/context-router-orchestration.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/context-router-orchestration.functional.test.mjs — construct-72gqn.23 (D3)."
     },
     {
       "path": "tests/functional/context-window-recovery.functional.test.mjs",
