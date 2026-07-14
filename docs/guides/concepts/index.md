@@ -7,7 +7,7 @@ Concept pages explain *why* Construct works the way it does. They're not how-to 
 
 ## The core model
 
-- **One persona, many specialists.** You address `@construct`. It dispatches work to a team of 28 specialists (architect, engineer, reviewer, QA, security, designer, …) under typed contracts. [Read more →](/guides/concepts/agents-and-personas)
+- **One persona, many specialists.** You address `@construct`. It dispatches work to a team of 12 specialists (architect, engineer, reviewer, QA, security, designer, …) under typed contracts. [Read more →](/guides/concepts/agents-and-personas)
 
 - **Hard gates, not vibes.** Every code mutation runs through enforcement: no secrets, tests green, docs current, comments lint-clean, CI passes. Gates live in three places (write-time, commit-time, CI safety-net). Quality gates fire unconditionally; notice-only signals auto-suppress in CI and non-TTY contexts. [Read more →](/guides/concepts/gates-and-enforcement)
 

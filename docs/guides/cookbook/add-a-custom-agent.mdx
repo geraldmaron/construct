@@ -3,14 +3,14 @@ title: Add a custom specialist
 description: "Add a new specialist to your Construct team: registry entry, prompt file, sync to every editor, smoke test."
 ---
 
-You want a `cx-performance-auditor` for your project (or any other specialist that doesn't ship in the default 28). This walks the full flow: registry entry, prompt, model tier, contract wiring, sync to every editor, smoke test.
+You want a `cx-performance-auditor` for your project (or any other specialist that doesn't ship in the default 12). This walks the full flow: registry entry, prompt, model tier, contract wiring, sync to every editor, smoke test.
 
 ## The shape of a specialist
 
 <FlowPipeline steps={[
   { label: 'specialists/org', badge: 'required', sub: 'name · tier · platforms' },
   { label: 'specialists/prompts/cx-<name>.md', badge: 'required', sub: 'voice · authority · boundaries' },
-  { label: 'specialists/contracts.json', badge: 'optional', sub: 'typed handoffs' },
+  { label: 'specialists/org/contracts/', badge: 'optional', sub: 'typed handoffs' },
   { label: 'construct sync', highlight: true },
   { label: 'Claude · OpenCode · Codex · Copilot', sub: 'editor adapters written' },
 ]} />
@@ -19,7 +19,7 @@ Every specialist has four pieces:
 
 1. **An entry in `specialists/org`**: declares name, role, model tier, capability list, and (optionally) skills allowlist.
 2. **A prompt file at `specialists/prompts/cx-<name>.md`**: defines the specialist's voice, decision authority, and operating boundaries.
-3. **(Optional) An entry in `specialists/contracts.json`**: typed input/output for handoffs from other specialists.
+3. **(Optional) An entry under `specialists/org/contracts/`**: typed input/output for handoffs from other specialists.
 4. **(Optional) A role manifest entry in `specialists/role-manifests.json`**: for personas that should also operate as an organizational role (with fences, allowed bd labels, event ownership).
 
 For a basic specialist, only the first two are required.
@@ -119,8 +119,8 @@ For the routing test: ask `construct` (the persona) something performance-shaped
 
 If your specialist needs to receive structured handoffs from other specialists, add entries to:
 
-- **`specialists/contracts.json`**: declares `producer → consumer` contracts with required input fields and postconditions. See existing contracts for shape.
-- **`specialists/role-manifests.json`**: declares the role's fence (allowed paths, allowed bd labels), event ownership (which events route to this role), and approval-required actions.
+- **`specialists/org/contracts/`**: declares `producer → consumer` contracts with required input fields and postconditions. See existing contracts for shape.
+- **the specialist's `fence` block** (in its `specialists/org/specialists/<id>.json` entry): declares allowed paths, allowed bd labels, event ownership, and approval-required actions.
 
 These are required for the role framework to dispatch your specialist on event-driven triggers (e.g., a `perf.regression` event auto-routing to `cx-performance-auditor`). For a specialist that's only addressed by name, you can skip.
 
@@ -133,7 +133,7 @@ These are required for the role framework to dispatch your specialist on event-d
 
 ## Reference
 
-- [Specialist registry source: `specialists/org`](https://github.com/geraldmaron/construct/blob/main/specialists/org)
+- [Specialist registry source: `specialists/org`](https://github.com/geraldmaron/construct/tree/main/specialists/org)
 - [Prompt examples: `specialists/prompts/`](https://github.com/geraldmaron/construct/tree/main/specialists/prompts)
-- [Contract definitions: `specialists/contracts.json`](https://github.com/geraldmaron/construct/blob/main/specialists/contracts.json)
+- [Contract definitions: `specialists/org/contracts/`](https://github.com/geraldmaron/construct/tree/main/specialists/org/contracts)
 - [Concepts → Agents and personas](/guides/concepts/agents-and-personas): the model behind one-persona, many-specialists.

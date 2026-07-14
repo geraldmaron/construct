@@ -46,7 +46,7 @@ test('every specialist in unified registry appears as producer or consumer in co
   assert.deepEqual(
     missing,
     [],
-    `specialists missing from specialists/contracts.json: ${missing.join(', ')}`,
+    `specialists missing from specialists/org/contracts/: ${missing.join(', ')}`,
   );
 });
 
