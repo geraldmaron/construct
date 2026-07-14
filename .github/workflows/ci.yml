@@ -353,17 +353,18 @@ jobs:
             export CHANGED_FILES
           fi
           node scripts/run-graph-gate.mjs
-      # Advisory gate: PR-body shape has no local-pre-flight equivalent (the
-      # body doesn't exist until `gh pr create` runs), so a hard failure forces
-      # a close+reopen to retrigger CI after a body fix. Step `continue-on-error`
-      # surfaces violations in the logs without failing the job; no local
-      # pre-flight command exists yet to catch this pre-push.
+      # Blocking gate on PR-body shape. It has no local pre-flight (the body does
+      # not exist until `gh pr create` runs), so a human fixes a violation by
+      # editing the body and close+reopening to retrigger CI. Bot PRs (dependabot)
+      # are exempt inside scripts/lint-commits-pr.mjs by author — a bot cannot
+      # fill the human template — so the step stays hard-failing for humans.
       - name: template policy
         if: needs.changes.outputs.templates == 'true' || needs.changes.outputs.workflow == 'true'
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_BASE_REF: ${{ github.event.pull_request.base.ref || github.base_ref }}
           PR_BODY: ${{ github.event.pull_request.body }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
         run: npm run lint:templates
 
   evals:
