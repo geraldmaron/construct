@@ -13,9 +13,12 @@ import {
 
 test('resolveWriteAuthorityKey maps known governed writes to their authority key', () => {
   assert.equal(resolveWriteAuthorityKey('jira', 'issue'), 'createIssues');
+  assert.equal(resolveWriteAuthorityKey('jira', 'issue-update'), 'updateIssues');
   assert.equal(resolveWriteAuthorityKey('jira', 'comment'), 'updateIssues');
   assert.equal(resolveWriteAuthorityKey('github', 'pr'), 'repoWrites');
   assert.equal(resolveWriteAuthorityKey('confluence', 'page'), 'publishDocs');
+  assert.equal(resolveWriteAuthorityKey('slack', 'message'), 'externalPost');
+  assert.equal(resolveWriteAuthorityKey('slack', 'reply'), 'externalPost');
 });
 
 test('resolveWriteAuthorityKey fails safe to externalPost for an unlisted kind', () => {

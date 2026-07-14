@@ -143,6 +143,73 @@ describe('Jira issue create through the governed envelope', () => {
   });
 });
 
+describe('Jira issue update through the governed envelope', () => {
+  it('updates summary and description on an existing issue, no createmeta call', async () => {
+    const transport = createFakeJiraTransport();
+    const provider = createGovernedJiraProvider({ jiraTransport: transport });
+    await writeWithEnvelope({
+      provider, config: {},
+      payload: { type: 'issue', project: 'PROJ', issueType: 'Task', summary: 'original' },
+    });
+    const createmetaCallsBeforeUpdate = transport.createmetaCallCount();
+
+    const result = await writeWithEnvelope({
+      provider, config: {},
+      payload: { type: 'issue-update', issueKey: 'PROJ-1', summary: 'updated summary', description: 'more detail' },
+    });
+
+    assert.equal(result.status, 'sent');
+    assert.equal(result.envelope.result.type, 'issue-updated');
+    assert.equal(transport.updateIssueCallCount(), 1);
+    assert.equal(transport.createmetaCallCount(), createmetaCallsBeforeUpdate, 'issue-update must not re-run createmeta validation');
+  });
+
+  it('requires issueKey', async () => {
+    const transport = createFakeJiraTransport();
+    const provider = createGovernedJiraProvider({ jiraTransport: transport });
+    const result = await writeWithEnvelope({
+      provider, config: {},
+      payload: { type: 'issue-update', summary: 'no issue key' },
+    });
+    assert.equal(result.status, 'error');
+    assert.match(result.envelope.error, /issueKey is required/);
+  });
+
+  it('requires at least one updatable field', async () => {
+    const transport = createFakeJiraTransport();
+    const provider = createGovernedJiraProvider({ jiraTransport: transport });
+    const result = await writeWithEnvelope({
+      provider, config: {},
+      payload: { type: 'issue-update', issueKey: 'PROJ-1' },
+    });
+    assert.equal(result.status, 'error');
+    assert.match(result.envelope.error, /at least one of summary\/description\/labels\/assignee/);
+  });
+
+  it('permission-denied on update maps to an actionable message naming the issue', async () => {
+    const transport = createFakeJiraTransport();
+    transport.setMode('permission-denied');
+    const provider = createGovernedJiraProvider({ jiraTransport: transport });
+
+    const result = await writeWithEnvelope({
+      provider, config: {},
+      payload: { type: 'issue-update', issueKey: 'PROJ-1', summary: 'x' },
+    });
+
+    assert.equal(result.status, 'error');
+    assert.match(result.envelope.error, /Forbidden.*permission to write to issue "PROJ-1"/i);
+  });
+
+  it('renderDryRun renders an ADF preview without calling the transport', () => {
+    const transport = createFakeJiraTransport();
+    const provider = createGovernedJiraProvider({ jiraTransport: transport });
+    const diff = provider.renderDryRun({ type: 'issue-update', issueKey: 'PROJ-1', description: 'preview text' });
+    assert.equal(diff.fields.issueKey, 'PROJ-1');
+    assert.ok(diff.adfPreview.description);
+    assert.equal(transport.updateIssueCallCount(), 0);
+  });
+});
+
 describe('Jira comment create through the governed envelope', () => {
   it('creates a comment with an ADF body', async () => {
     const transport = createFakeJiraTransport();
