@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-14T02:16:43.305Z",
+  "generatedAt": "2026-07-14T02:25:06.192Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 902,
+    "testFiles": 903,
     "topLevelTestFiles": 367,
-    "nestedTestFiles": 535,
+    "nestedTestFiles": 536,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 589,
+      "unit": 590,
       "functional": 265,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 526,
+      "unit": 527,
       "functional": 265,
       "visual": 12,
       "structural-guard": 19,
@@ -6358,6 +6358,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/registry/docs-sync.test.mjs — Catalog-driven docs AUTO region sync."
+    },
+    {
+      "path": "tests/registry/group-squad-consistency.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/registry/group-squad-consistency.test.mjs — construct-72gqn.29 (D9)."
     },
     {
       "path": "tests/registry/org-api.test.mjs",
