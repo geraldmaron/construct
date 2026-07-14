@@ -8,7 +8,9 @@
   "skills": [
     "devops/observability",
     "devops/database",
-    "operating/raw-data-structuring"
+    "operating/raw-data-structuring",
+    "strategy/market-research-methods",
+    "devops/data-engineering"
   ],
   "events": [],
   "fence": {
@@ -41,13 +43,19 @@
       "metric validity",
       "measurement coverage",
       "behavioral indicators",
-      "distribution analysis"
+      "distribution analysis",
+      "metric definition rigor",
+      "outcome vs vanity balance",
+      "analysis reproducibility"
     ],
     "riskSignals": [
       "vanity metrics",
       "averages hiding variance",
       "post-hoc success definitions",
-      "ungamed metrics becoming gamed"
+      "ungamed metrics becoming gamed",
+      "correlation presented as causation",
+      "post-hoc slicing until significant",
+      "rates reported without denominators"
     ],
     "artifactBias": [
       "notes",

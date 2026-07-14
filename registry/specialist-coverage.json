@@ -1,0 +1,557 @@
+{
+  "version": 1,
+  "floor": {
+    "minSkills": 5,
+    "minFocusAreas": 6
+  },
+  "generatedFrom": "specialists/org (registry) + skills/** + specialists/prompts/**",
+  "specialistCount": 12,
+  "allPass": true,
+  "specialists": [
+    {
+      "specialistId": "cx-architect",
+      "role": "architect",
+      "team": "engineering-team",
+      "skills": {
+        "count": 10,
+        "entitled": [
+          "architecture/api-design",
+          "architecture/caching",
+          "architecture/cloud-native",
+          "architecture/message-queue",
+          "architecture/security-arch",
+          "ai/agent-dev",
+          "ai/prompt-and-eval",
+          "docs/research-workflow",
+          "docs/adr-workflow",
+          "exploration/dependency-graph-reading"
+        ],
+        "unresolved": []
+      },
+      "roleOverlay": {
+        "base": "roles/architect",
+        "present": true,
+        "subOverlays": [
+          "roles/architect",
+          "roles/architect.ai-systems",
+          "roles/architect.data",
+          "roles/architect.enterprise",
+          "roles/architect.integration",
+          "roles/architect.platform"
+        ]
+      },
+      "guardrails": {
+        "refusalBoundaries": true,
+        "antiFabrication": true,
+        "fenceGatesCommitPush": true
+      },
+      "guidance": {
+        "promptPresent": true,
+        "focusAreas": 8,
+        "riskSignals": 8,
+        "watchConditions": 1,
+        "participationRules": 0
+      },
+      "pass": true,
+      "fails": []
+    },
+    {
+      "specialistId": "cx-data-analyst",
+      "role": "data-analyst",
+      "team": "strategy-team",
+      "skills": {
+        "count": 5,
+        "entitled": [
+          "devops/observability",
+          "devops/database",
+          "operating/raw-data-structuring",
+          "strategy/market-research-methods",
+          "devops/data-engineering"
+        ],
+        "unresolved": []
+      },
+      "roleOverlay": {
+        "base": "roles/data-analyst",
+        "present": true,
+        "subOverlays": [
+          "roles/data-analyst",
+          "roles/data-analyst.experiment",
+          "roles/data-analyst.product",
+          "roles/data-analyst.product-intelligence",
+          "roles/data-analyst.telemetry"
+        ]
+      },
+      "guardrails": {
+        "refusalBoundaries": true,
+        "antiFabrication": true,
+        "fenceGatesCommitPush": true
+      },
+      "guidance": {
+        "promptPresent": true,
+        "focusAreas": 7,
+        "riskSignals": 7,
+        "watchConditions": 0,
+        "participationRules": 2
+      },
+      "pass": true,
+      "fails": []
+    },
+    {
+      "specialistId": "cx-debugger",
+      "role": "debugger",
+      "team": "engineering-team",
+      "skills": {
+        "count": 6,
+        "entitled": [
+          "quality-gates/verify-change",
+          "devops/observability",
+          "devops/performance",
+          "exploration/unknown-codebase-onboarding",
+          "exploration/dependency-graph-reading",
+          "ai/trace-triage"
+        ],
+        "unresolved": []
+      },
+      "roleOverlay": {
+        "base": "roles/debugger",
+        "present": true,
+        "subOverlays": [
+          "roles/debugger"
+        ]
+      },
+      "guardrails": {
+        "refusalBoundaries": true,
+        "antiFabrication": true,
+        "fenceGatesCommitPush": true
+      },
+      "guidance": {
+        "promptPresent": true,
+        "focusAreas": 7,
+        "riskSignals": 7,
+        "watchConditions": 0,
+        "participationRules": 1
+      },
+      "pass": true,
+      "fails": []
+    },
+    {
+      "specialistId": "cx-designer",
+      "role": "designer",
+      "team": "design-team",
+      "skills": {
+        "count": 8,
+        "entitled": [
+          "frontend-design/ui-aesthetics",
+          "frontend-design/ux-principles",
+          "frontend-design/component-patterns",
+          "frontend-design/state-management",
+          "frontend-design/engineering",
+          "frontend-design/accessibility",
+          "frontend-design/screen-reader-testing",
+          "brand/output-vibe"
+        ],
+        "unresolved": []
+      },
+      "roleOverlay": {
+        "base": "roles/designer",
+        "present": true,
+        "subOverlays": [
+          "roles/designer",
+          "roles/designer.accessibility"
+        ]
+      },
+      "guardrails": {
+        "refusalBoundaries": true,
+        "antiFabrication": true,
+        "fenceGatesCommitPush": true
+      },
+      "guidance": {
+        "promptPresent": true,
+        "focusAreas": 8,
+        "riskSignals": 8,
+        "watchConditions": 1,
+        "participationRules": 0
+      },
+      "pass": true,
+      "fails": []
+    },
+    {
+      "specialistId": "cx-engineer",
+      "role": "engineer",
+      "team": "engineering-team",
+      "skills": {
+        "count": 35,
+        "entitled": [
+          "development/typescript",
+          "development/python",
+          "development/go",
+          "development/rust",
+          "development/java",
+          "development/cpp",
+          "development/shell",
+          "development/swift",
+          "development/kotlin",
+          "development/mobile-crossplatform",
+          "quality-gates/verify-change",
+          "utility/clean-code",
+          "frameworks/react",
+          "frameworks/nextjs",
+          "frameworks/django",
+          "frameworks/spring-boot",
+          "exploration/unknown-codebase-onboarding",
+          "exploration/tracer-bullet-method",
+          "exploration/dependency-graph-reading",
+          "ai/agent-dev",
+          "ai/rag-system",
+          "ai/llm-security",
+          "ai/prompt-and-eval",
+          "ai/prompt-optimizer",
+          "ai/ml-ops",
+          "devops/data-engineering",
+          "devops/database",
+          "devops/observability",
+          "operating/raw-data-structuring",
+          "devops/ci-cd",
+          "devops/monorepo",
+          "devops/containerization",
+          "devops/dependency-management",
+          "devops/devsecops",
+          "devops/cost-optimization"
+        ],
+        "unresolved": []
+      },
+      "roleOverlay": {
+        "base": "roles/engineer",
+        "present": true,
+        "subOverlays": [
+          "roles/engineer"
+        ]
+      },
+      "guardrails": {
+        "refusalBoundaries": true,
+        "antiFabrication": true,
+        "fenceGatesCommitPush": true
+      },
+      "guidance": {
+        "promptPresent": true,
+        "focusAreas": 14,
+        "riskSignals": 16,
+        "watchConditions": 0,
+        "participationRules": 0
+      },
+      "pass": true,
+      "fails": []
+    },
+    {
+      "specialistId": "cx-operations",
+      "role": "operations",
+      "team": "operations-team",
+      "skills": {
+        "count": 16,
+        "entitled": [
+          "roles/operations",
+          "docs/init-project",
+          "operating/incident-response",
+          "operating/oncall-rotation",
+          "operating/change-management",
+          "devops/observability",
+          "devops/ci-cd",
+          "devops/performance",
+          "devops/incident-response",
+          "devops/git-workflow",
+          "quality-gates/verify-change",
+          "docs/memo-and-decision-capture",
+          "docs/adr-workflow",
+          "docs/runbook-workflow",
+          "docs/init-docs",
+          "docs/document-ingest-workflow"
+        ],
+        "unresolved": []
+      },
+      "roleOverlay": {
+        "base": "roles/operations",
+        "present": true,
+        "subOverlays": [
+          "roles/operations"
+        ]
+      },
+      "guardrails": {
+        "refusalBoundaries": true,
+        "antiFabrication": true,
+        "fenceGatesCommitPush": true
+      },
+      "guidance": {
+        "promptPresent": true,
+        "focusAreas": 16,
+        "riskSignals": 16,
+        "watchConditions": 1,
+        "participationRules": 0
+      },
+      "pass": true,
+      "fails": []
+    },
+    {
+      "specialistId": "cx-orchestrator",
+      "role": "orchestrator",
+      "team": "strategy-team",
+      "skills": {
+        "count": 7,
+        "entitled": [
+          "ai/orchestration-workflow",
+          "operating/orchestration-reference",
+          "operating/change-management",
+          "operating/unstructured-triage",
+          "exploration/dependency-graph-reading",
+          "roles/trace-reviewer",
+          "operating/fleet-health-routing"
+        ],
+        "unresolved": []
+      },
+      "roleOverlay": {
+        "base": "roles/orchestrator",
+        "present": true,
+        "subOverlays": [
+          "roles/orchestrator"
+        ]
+      },
+      "guardrails": {
+        "refusalBoundaries": true,
+        "antiFabrication": true,
+        "fenceGatesCommitPush": true
+      },
+      "guidance": {
+        "promptPresent": true,
+        "focusAreas": 9,
+        "riskSignals": 8,
+        "watchConditions": 0,
+        "participationRules": 0
+      },
+      "pass": true,
+      "fails": []
+    },
+    {
+      "specialistId": "cx-product-manager",
+      "role": "product-manager",
+      "team": "product-management-team",
+      "skills": {
+        "count": 13,
+        "entitled": [
+          "docs/product-intelligence-workflow",
+          "docs/evidence-ingest-workflow",
+          "docs/product-signal-workflow",
+          "docs/customer-profile-workflow",
+          "docs/prd-workflow",
+          "docs/prfaq-workflow",
+          "docs/backlog-proposal-workflow",
+          "docs/product-intelligence-review",
+          "docs/strategy-workflow",
+          "strategy/competitive-landscape",
+          "strategy/market-research-methods",
+          "strategy/pricing-positioning",
+          "strategy/narrative-arc"
+        ],
+        "unresolved": []
+      },
+      "roleOverlay": {
+        "base": "roles/product-manager",
+        "present": true,
+        "subOverlays": [
+          "roles/product-manager",
+          "roles/product-manager.ai-product",
+          "roles/product-manager.enterprise",
+          "roles/product-manager.growth",
+          "roles/product-manager.platform",
+          "roles/product-manager.product"
+        ]
+      },
+      "guardrails": {
+        "refusalBoundaries": true,
+        "antiFabrication": true,
+        "fenceGatesCommitPush": true
+      },
+      "guidance": {
+        "promptPresent": true,
+        "focusAreas": 8,
+        "riskSignals": 8,
+        "watchConditions": 2,
+        "participationRules": 1
+      },
+      "pass": true,
+      "fails": []
+    },
+    {
+      "specialistId": "cx-qa",
+      "role": "qa",
+      "team": "quality-team",
+      "skills": {
+        "count": 6,
+        "entitled": [
+          "devops/testing",
+          "quality-gates/verify-change",
+          "quality-gates/verify-module",
+          "quality-gates/verify-quality",
+          "quality-gates/review-work",
+          "quality-gates/premortem"
+        ],
+        "unresolved": []
+      },
+      "roleOverlay": {
+        "base": "roles/qa",
+        "present": true,
+        "subOverlays": [
+          "roles/qa",
+          "roles/qa.ai-eval",
+          "roles/qa.api-contract",
+          "roles/qa.data-pipeline",
+          "roles/qa.web-ui"
+        ]
+      },
+      "guardrails": {
+        "refusalBoundaries": true,
+        "antiFabrication": true,
+        "fenceGatesCommitPush": true
+      },
+      "guidance": {
+        "promptPresent": true,
+        "focusAreas": 7,
+        "riskSignals": 7,
+        "watchConditions": 0,
+        "participationRules": 1
+      },
+      "pass": true,
+      "fails": []
+    },
+    {
+      "specialistId": "cx-researcher",
+      "role": "researcher",
+      "team": "research-team",
+      "skills": {
+        "count": 11,
+        "entitled": [
+          "docs/research-workflow",
+          "devops/dependency-management",
+          "docs/transcript-synthesis",
+          "docs/codebase-research-workflow",
+          "exploration/repo-map",
+          "exploration/unknown-codebase-onboarding",
+          "exploration/tracer-bullet-method",
+          "exploration/dependency-graph-reading",
+          "docs/user-research-workflow",
+          "docs/evidence-ingest-workflow",
+          "strategy/jobs-to-be-done"
+        ],
+        "unresolved": []
+      },
+      "roleOverlay": {
+        "base": "roles/researcher",
+        "present": true,
+        "subOverlays": [
+          "roles/researcher"
+        ]
+      },
+      "guardrails": {
+        "refusalBoundaries": true,
+        "antiFabrication": true,
+        "fenceGatesCommitPush": true
+      },
+      "guidance": {
+        "promptPresent": true,
+        "focusAreas": 12,
+        "riskSignals": 12,
+        "watchConditions": 0,
+        "participationRules": 1
+      },
+      "pass": true,
+      "fails": []
+    },
+    {
+      "specialistId": "cx-reviewer",
+      "role": "reviewer",
+      "team": "quality-team",
+      "skills": {
+        "count": 7,
+        "entitled": [
+          "quality-gates/verify-quality",
+          "quality-gates/review-work",
+          "quality-gates/verify-module",
+          "quality-gates/premortem",
+          "ai/prompt-and-eval",
+          "ai/prompt-optimizer",
+          "ai/trace-triage"
+        ],
+        "unresolved": []
+      },
+      "roleOverlay": {
+        "base": "roles/reviewer",
+        "present": true,
+        "subOverlays": [
+          "roles/reviewer"
+        ]
+      },
+      "guardrails": {
+        "refusalBoundaries": true,
+        "antiFabrication": true,
+        "fenceGatesCommitPush": true
+      },
+      "guidance": {
+        "promptPresent": true,
+        "focusAreas": 16,
+        "riskSignals": 15,
+        "watchConditions": 1,
+        "participationRules": 0
+      },
+      "pass": true,
+      "fails": []
+    },
+    {
+      "specialistId": "cx-security",
+      "role": "security",
+      "team": "governance-team",
+      "skills": {
+        "count": 12,
+        "entitled": [
+          "security/red-team",
+          "security/blue-team",
+          "security/pentest",
+          "security/code-audit",
+          "security/vuln-research",
+          "security/threat-intel",
+          "quality-gates/verify-security",
+          "architecture/security-arch",
+          "compliance/license-audit",
+          "compliance/data-privacy",
+          "compliance/ai-disclosure",
+          "compliance/regulatory-review"
+        ],
+        "unresolved": []
+      },
+      "roleOverlay": {
+        "base": "roles/security",
+        "present": true,
+        "subOverlays": [
+          "roles/security",
+          "roles/security.ai",
+          "roles/security.appsec",
+          "roles/security.cloud",
+          "roles/security.legal-compliance",
+          "roles/security.privacy",
+          "roles/security.supply-chain"
+        ]
+      },
+      "guardrails": {
+        "refusalBoundaries": true,
+        "antiFabrication": true,
+        "fenceGatesCommitPush": true
+      },
+      "guidance": {
+        "promptPresent": true,
+        "focusAreas": 8,
+        "riskSignals": 8,
+        "watchConditions": 1,
+        "participationRules": 0
+      },
+      "pass": true,
+      "fails": []
+    }
+  ]
+}
