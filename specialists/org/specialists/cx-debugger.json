@@ -8,7 +8,10 @@
   "skills": [
     "quality-gates/verify-change",
     "devops/observability",
-    "devops/performance"
+    "devops/performance",
+    "exploration/unknown-codebase-onboarding",
+    "exploration/dependency-graph-reading",
+    "ai/trace-triage"
   ],
   "events": [
     "regression.detected",
@@ -48,13 +51,19 @@
       "root cause identification",
       "reproduction reliability",
       "fix verification",
-      "regression prevention"
+      "regression prevention",
+      "invariant articulation",
+      "causal chain integrity",
+      "intermittent failure investigation"
     ],
     "riskSignals": [
       "symptom fixes without root cause",
       "non-reproducible bugs closed",
       "missing regression tests",
-      "repeated failure patterns"
+      "repeated failure patterns",
+      "hypotheses asserted without a disproving test",
+      "first log error treated as the cause",
+      "intermittent failures shelved as flaky"
     ],
     "artifactBias": [
       "notes"

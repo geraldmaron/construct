@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 2,
+  "specialistId": "cx-designer",
+  "capabilityId": "specialist.prompt",
+  "mode": "normal",
+  "scenarioKind": "happy-path-representative",
+  "representativeTask": {
+    "prompt": "Design the file-upload interaction for the settings page. Cover every state the user can land in, not just a successful upload.",
+    "inputs": { "surface": "settings page file upload" }
+  },
+  "expectedBehavior": {
+    "mustContainAny": ["error state", "empty state", "loading state", "accessibility", "keyboard", "focus"],
+    "mustNotContain": [],
+    "mustRefuse": false,
+    "mustEscalateTo": [],
+    "mustStateAssumptions": false
+  }
+}

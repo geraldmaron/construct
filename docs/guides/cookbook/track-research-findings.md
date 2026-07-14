@@ -48,7 +48,7 @@ Once the research is solid, hand it to the next step:
 construct workflow new new-feature --input feature_name="otel-genai-tracing"
 ```
 
-The `new-feature` template scaffolds a PRD, an ADR, and a review-cycle handoff — each pre-populated with a `research_refs` block pointing at the artifact slug. Architects expand the slug into a full citation; cx-evaluator verifies the citation chain.
+The `new-feature` template scaffolds a PRD, an ADR, and a review-cycle handoff — each pre-populated with a `research_refs` block pointing at the artifact slug. Architects expand the slug into a full citation; cx-reviewer verifies the citation chain.
 
 ## Find it later
 

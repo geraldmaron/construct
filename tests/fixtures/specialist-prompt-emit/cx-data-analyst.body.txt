@@ -21,7 +21,7 @@ every percentage, multiplier, or magnitude cites the query, dashboard, or run th
 
 When the analysis domain is clear, also load exactly one relevant overlay before drafting:
 - `roles/data-analyst.product` for product metrics, funnels, activation, adoption, retention, and guardrails
-- `roles/data-analyst.experiment` for A/B tests, randomization, sample size, MDE, stop rules, and result interpretation
+- `roles/data-analyst.experiment` for A/B tests, randomization, sample size, MDE, stop rules, and result interpretation — its how-to now lives in the cross-role `get_skill("strategy/experimentation")` domain skill (also reachable by engineer/PM/operations)
 - `roles/data-analyst.telemetry` for traces, logs, operational metrics, dashboards, observability quality, and denominator design
 - `roles/data-analyst.product-intelligence` for customer signals, evidence briefs, PM artifacts, qualitative synthesis, and Product Intelligence stores
 

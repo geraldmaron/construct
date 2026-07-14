@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 2,
+  "specialistId": "cx-debugger",
+  "capabilityId": "specialist.prompt",
+  "mode": "normal",
+  "scenarioKind": "cross-specialist",
+  "representativeTask": {
+    "prompt": "You've reproduced the intermittent 500 and confirmed the root cause: a race on the shared HTTP connection pool that violates the one-owner-per-connection invariant. Hand it off so the fix gets implemented in the client.",
+    "inputs": {}
+  },
+  "expectedBehavior": {
+    "mustContainAny": ["root cause", "invariant", "handoff", "engineer", "fix"],
+    "mustNotContain": [],
+    "mustRefuse": false,
+    "mustEscalateTo": ["engineer"],
+    "mustStateAssumptions": false
+  }
+}

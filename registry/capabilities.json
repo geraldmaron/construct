@@ -1,7 +1,7 @@
 {
   "version": 1,
   "catalog": {
-    "generatedAt": "2026-07-09T04:29:22.395Z",
+    "generatedAt": "2026-07-14T01:58:48.067Z",
     "npmScripts": [
       "adapters",
       "audit:published",
@@ -11,6 +11,7 @@
       "catalog:regen",
       "catalog:validate",
       "certify:demos",
+      "certify:document-io",
       "ci:local",
       "clean:artifacts",
       "coverage",
@@ -24,6 +25,7 @@
       "docs:verify",
       "doctor",
       "eval:routing",
+      "eval:skill-routing",
       "evals",
       "examples:deck",
       "examples:distribution",
@@ -43,6 +45,8 @@
       "release:gate",
       "release:preflight",
       "release:preflight:no-auth",
+      "skills:routes",
+      "specialists:coverage",
       "test",
       "test:functional",
       "test:unit",
@@ -514,6 +518,12 @@
         "internal": false
       },
       {
+        "name": "monitor",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
         "name": "ollama",
         "category": "Integrations",
         "core": false,
@@ -546,6 +556,12 @@
       {
         "name": "pack",
         "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "participation",
+        "category": "Core",
         "core": false,
         "internal": false
       },
@@ -738,6 +754,12 @@
       {
         "name": "storage",
         "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "studio",
+        "category": "Core",
         "core": false,
         "internal": false
       },

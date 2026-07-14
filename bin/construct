@@ -4431,8 +4431,8 @@ async function cmdOrchestrate(args) {
         if (!res.ok) { errorln(`Daemon error (${res.status}): ${env.error || 'unknown'}`); process.exit(1); }
         if (wantsJson) { println(JSON.stringify(env.data, null, 2)); return; }
         // AP5.4: the remote payload is subject to the same honest terminal-status
-        // taxonomy as a local run (see the `status --remote` branch below) — shape
-        // it before printing so a prepare-only remote run reports the same way.
+        // taxonomy as a local run (see the `status --remote` branch below) — shaped
+        // before printing so a prepare-only remote run reports the same way.
         const { shapeRun: shapeRemoteRun } = await import('../lib/mcp/tools/orchestration-run.mjs');
         const remoteShaped = shapeRemoteRun(env.data);
         println(`Run ${env.data.runId} started on ${base} — ${remoteShaped.status} · executionMode=${env.data.execution?.executionMode}. Poll: construct orchestrate status ${env.data.runId} --remote`);
@@ -4575,7 +4575,21 @@ async function cmdOrchestrate(args) {
     return;
   }
 
-  println('Usage: construct orchestrate <run|status|preflight> [options]');
+  if (sub === 'cancel') {
+    const runId = rest.filter((a) => !a.startsWith('--'))[0];
+    if (!runId) { errorln('Usage: construct orchestrate cancel <runId> [--json]'); process.exit(1); }
+    const { cancelOrchestrationRun } = await import('../lib/orchestration/runtime.mjs');
+    const result = await cancelOrchestrationRun(runId, { cwd: process.cwd(), env: process.env });
+    if (wantsJson) { println(JSON.stringify(result)); process.exit(result.ok ? 0 : 1); }
+    if (result.ok) {
+      println(`Cancel requested for ${runId} (was ${result.previousStatus}). The run stops cleanly before its next task — an in-flight model call is not aborted.`);
+      process.exit(0);
+    }
+    errorln(`Cannot cancel ${runId}: ${result.reason}${result.previousStatus ? ` (status ${result.previousStatus})` : ''}`);
+    process.exit(1);
+  }
+
+  println('Usage: construct orchestrate <run|status|cancel|preflight> [options]');
   println('  run "<request>" [--workflow-type T] [--strategy S] [--host H] [--host-model M] [--no-construct] [--no-execute] [--json]');
   println('  status [run-id] [--json]');
   println('  preflight [--host H] [--json] [--no-probe] [--observed-tools=a,b] [--reachable-tools=a,b]');

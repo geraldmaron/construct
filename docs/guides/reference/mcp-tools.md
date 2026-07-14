@@ -15,7 +15,7 @@ Construct exposes a Model Context Protocol (MCP) server consumed by Claude Code,
 
 ## Tool surface (gateway)
 
-To keep the serialized tool schema small enough for any context window — a flat 76-tool surface (~15k tokens) overran a 32k local-model window — `ListTools` exposes a **curated core** plus the `call` **gateway** and the `find_tool` **discovery** tool. The core front-loads the read/think tools (`orchestration_policy`, `orchestration_readiness`, `get_skill`, `get_template`, `search_skills`, `knowledge_search`, `memory_search`, `project_context`, `summarize_diff`, `find_tool`) **and the high-value action tools agents reach for directly** (`author_artifact`, `document_export`, `publish_run`, `artifact_workflow`, `workflow_invoke`, `triage_recommend`), since burying those behind the gateway made the common case the failing case. Every other tool stays reachable through `call`, and `find_tool` ranks the whole catalog by intent so the surface scales without a hand-maintained list (ADR-0048).
+To keep the serialized tool schema small enough for any context window — a flat 77-tool surface (~15k tokens) overran a 32k local-model window — `ListTools` exposes a **curated core** plus the `call` **gateway** and the `find_tool` **discovery** tool. The core front-loads the read/think tools (`orchestration_policy`, `orchestration_run`, `orchestration_readiness`, `get_skill`, `get_template`, `search_skills`, `suggest_skills`, `knowledge_search`, `memory_search`, `project_context`, `summarize_diff`, `find_tool`) **and the high-value action tools agents reach for directly** (`author_artifact`, `document_export`, `publish_run`, `artifact_workflow`, `triage_recommend`), since burying those behind the gateway made the common case the failing case. Every other tool stays reachable through `call`, and `find_tool` ranks the whole catalog by intent so the surface scales without a hand-maintained list (ADR-0048).
 
 ### `find_tool`
 Find Construct tools by intent when you do not know the exact name. Pass a natural-language `query` (and optional `limit`) describing the task; returns the best-matching tools with their full input schemas, ranked by hybrid local-embedding semantic similarity merged with normalized BM25 — degrading to BM25-only when no semantic model is provisioned, so it works offline. Then invoke a result via `call` (or directly when it is a flat tool). E.g. `find_tool({ query: "export a markdown file to pdf" })` → `document_export`.
@@ -202,11 +202,13 @@ Deletes ingested markdown artifacts. Requires explicit `confirm: true`.
 Lists all available categories and playbooks in the Construct knowledge base.
 
 ### `get_skill`
-Reads a specific skill playbook from the knowledge base.
+Reads a specific skill playbook from the knowledge base. Pass `specialistId` when reading on a specialist's behalf: if that specialist has a non-empty entitlement list and the skill is not on it, the response carries an entitlement warning (or, under `CONSTRUCT_STRICT_SKILLS=1`, an error instead of the content) — entitlement is advisory by default, since a bare MCP call carries no authenticated specialist identity to enforce against.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `path` | string | Yes | Relative path to the skill (without `.md` extension, e.g. `security/security-arch`) |
+| `specialistId` | string | No | The specialist this read is on behalf of (e.g. `cx-reviewer` or `reviewer`), for entitlement checking. Accepts either the specialistId or `agentId` name. |
+| `agentId` | string | No | Alias for `specialistId`. |
 
 ### `search_skills`
 Searches for a pattern within the Construct knowledge base skills.
@@ -510,7 +512,7 @@ Add a task to the current workflow. Pass `request` for intent-based routing (the
 | `verification` | string | Command(s) or description of how to verify the task is done. |
 | `dependsOn` | array | Task keys this task depends on. |
 | `overlays` | array | Role flavors that augment the owner persona for this task. |
-| `challengeRequired` | boolean | Force a cx-devil-advocate challenge before the task can complete. |
+| `challengeRequired` | boolean | Force a cx-reviewer challenge (devil's-advocate overlay) before the task can complete. |
 | `challengeStatus` | string | Initial challenge status when seeded. |
 | `tokenBudget` | number | Per-task token budget for cost tracking. |
 | `status` | string | Initial status override. |
@@ -809,6 +811,10 @@ Three worker backends. `host` (the default for MCP-originated runs when neither 
 
 A `host`-backend run whose materialization completes returns `status: 'awaiting-host'` — a real, non-terminal standing state (never rendered as `completed` or `degraded`) — plus every task's materialized `system`/`user` prompt and a `hostInstructions` string describing exactly what to do next.
 
+The response's `specialists` field is the real, dispatched role list — authoritative. `routePath.specialistSequence` can be non-empty even when `specialists`/`tasks` are empty: a short request with no scope signal (no `file_count`/`module_count`, no "end to end"/"ship"/"full" keyword) can classify as trivial and dispatch zero specialists even with `requested_strategy: "orchestrated"`, while `routePath` still shows the specialist a *focused* classification would have picked, for display purposes. Read `specialists`/`tasks`, not `routePath`, to know what actually ran.
+
+Pass `candidates` to route pre-retrieved artifacts to specialists as role-aware context (D3). The caller does retrieval up front; each dispatched specialist's prompt then carries a trust-wrapped `## Role context` section holding only the artifact kinds its role policy prefers, within a token budget — a `target-file` reaches the engineer, a `prd` the product-manager, and a kind on a role's avoid list never reaches it. A `kind: "skill"` candidate is dropped for any role not entitled to that skill. The candidate list is snapshotted on the run, so a `provider`-executed and a `host`-executed task materialize the same context bytes. Omit `candidates` for no injected context (byte-identical to a pre-D3 prompt).
+
 | Parameter | Type | Description |
 |---|---|---|
 | `request` | string | **required** — Natural-language description of the work to orchestrate. |
@@ -818,8 +824,11 @@ A `host`-backend run whose materialization completes returns `status: 'awaiting-
 | `host` | string | Host/IDE identifier (advisory). |
 | `host_model` | string | Model the host uses, for model resolution. |
 | `host_provider` | string | Provider family the host uses, for model resolution. |
-| `file_count` | number | Optional planning hint: number of files in scope. |
+| `file_count` | number | Optional planning hint: number of files in scope. Pass this (or `module_count`) when the work has real scope — see the specialists/routePath note above. |
 | `module_count` | number | Optional planning hint: number of modules in scope. |
+| `context_targets` | array | Optional registered source targets to bind for context (`[{id, role?}]`); an unknown id is rejected at plan time. |
+| `candidates` | array | Optional pre-retrieved artifacts routed to specialists as role-aware context (`[{path, title, kind, summary, score?, skillId?}]`). Filtered per role by the context policy; a `kind: "skill"` entry is dropped for any role not entitled to it. |
+| `context_budget` | object | Optional `{maxTokens}` cap for the injected role context (default ~6000 tokens per specialist). |
 | `wait` | boolean | Wait for a terminal state and return task output (default true); `false` returns the runId to poll. |
 | `timeout_ms` | number | Max wait when `wait=true` (default 120000); on timeout the runId is returned to poll. |
 
@@ -865,12 +874,19 @@ Reason codes: `attached`, `host_not_attached`, `server_unreachable`, `auth_unava
 | `observation_scope` | string | `host-session` or `local-config`. MCP calls normally use `host-session`. |
 
 ### `orchestration_status`
-Inspect orchestration runs on the local Construct daemon: pass `run_id` for the full record (status, per-task status/executor/output/error), or omit it for a list of recent runs. Fails fast if the daemon is unreachable.
+Inspect orchestration runs: pass `run_id` for the full shaped record (status, per-task status/executor/output/error), or omit it for a list of recent runs. Solo runs are in-process (no daemon); a remote/team orchestration service is opt-in via `CONSTRUCT_ORCHESTRATION_URL`, and only that path can be unreachable.
 
 | Parameter | Type | Description |
 |---|---|---|
 | `run_id` | string | Run id to fetch. Omit to list recent runs. |
 | `limit` | number | Max runs to list when `run_id` is omitted (default 20). |
+
+### `orchestration_cancel`
+Request cancellation of an in-progress orchestration run by `run_id`. A soft, cooperative cancel: the run stops cleanly before its next task (an in-flight model call is not aborted), and the request is persisted on the run so a run executing in another process observes it. Returns an error for an unknown or already-terminal run.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `run_id` | string | **required** — Run id to cancel. |
 
 ## Telemetry (additional)
 

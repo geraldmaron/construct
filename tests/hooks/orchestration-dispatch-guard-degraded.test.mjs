@@ -9,6 +9,12 @@
  * a real prepared-task response clears it, and Task dispatches (which carry no
  * envelope) still clear it — guarding against the fix over-tightening into a
  * positive allowlist that would require a clean envelope.
+ *
+ * Also pinned (H9.1, construct-72gqn.8): the awaiting-host case. The MCP
+ * default backend returns status:"awaiting-host" with materialized prompts
+ * and zero executed work, which must leave the guard armed — not treated as
+ * a completed dispatch — until the first orchestration_task_result
+ * submission with accepted:true.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -71,6 +77,14 @@ function dispatch(toolResponse) {
   });
 }
 
+function taskResult(toolResponse) {
+  return run({
+    hook_event_name: 'PostToolUse',
+    tool_name: 'mcp__construct__orchestration_task_result',
+    tool_response: toolResponse,
+  });
+}
+
 function writeDoc(filePath, content) {
   return run({
     hook_event_name: 'PreToolUse',
@@ -115,5 +129,40 @@ describe('orchestration-dispatch-guard degraded dispatch handling', () => {
     assert.equal(d.status, 0);
     const r = writeDoc('docs/terraform-agent-strategy.md', bigDoc());
     assert.equal(r.status, 0, `expected fail-open pass; got ${r.status}. stderr:\n${r.stderr}`);
+  });
+
+  it('leaves the guard armed on an awaiting-host dispatch response (prompts materialized, nothing executed)', () => {
+    withCx();
+    classify('orchestrated');
+    const d = dispatch({
+      status: 'awaiting-host',
+      tasks: [{ id: 't1', role: 'cx-architect', status: 'awaiting-host', system: 'persona', user: 'do your part' }],
+    });
+    assert.equal(d.status, 0);
+    const r = writeDoc('docs/terraform-agent-strategy.md', bigDoc());
+    assert.equal(r.status, 2, `expected still-blocked on awaiting-host; got ${r.status}. stderr:\n${r.stderr}`);
+    assert.match(r.stderr, /orchestration_task_result/);
+  });
+
+  it('does not clear the guard on a rejected orchestration_task_result submission', () => {
+    withCx();
+    classify('orchestrated');
+    dispatch({ status: 'awaiting-host', tasks: [{ id: 't1', role: 'cx-architect', status: 'awaiting-host' }] });
+    const t = taskResult({ accepted: false, error: 'unknown task_id', code: 'HOST_RESULT_REJECTED' });
+    assert.equal(t.status, 0);
+    const r = writeDoc('docs/terraform-agent-strategy.md', bigDoc());
+    assert.equal(r.status, 2, `expected still-blocked on rejected result; got ${r.status}. stderr:\n${r.stderr}`);
+  });
+
+  it('clears the guard once an orchestration_task_result submission is accepted', () => {
+    withCx();
+    classify('orchestrated');
+    dispatch({ status: 'awaiting-host', tasks: [{ id: 't1', role: 'cx-architect', status: 'awaiting-host' }] });
+    const blocked = writeDoc('docs/terraform-agent-strategy.md', bigDoc());
+    assert.equal(blocked.status, 2, 'sanity: still armed before the result is submitted');
+    const t = taskResult({ accepted: true, run_status: 'awaiting-host', next_task: { task_id: 't2', role: 'cx-engineer' } });
+    assert.equal(t.status, 0);
+    const r = writeDoc('docs/terraform-agent-strategy.md', bigDoc());
+    assert.equal(r.status, 0, `expected pass after accepted task result; got ${r.status}. stderr:\n${r.stderr}`);
   });
 });

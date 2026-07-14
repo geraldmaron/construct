@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 2,
+  "specialistId": "cx-researcher",
+  "capabilityId": "specialist.prompt",
+  "mode": "normal",
+  "scenarioKind": "happy-path-representative",
+  "representativeTask": {
+    "prompt": "Summarize the current recommended approach for mitigating prompt-injection in tool-using LLM agents. Give me the best practice with primary sources and publication dates.",
+    "inputs": {
+      "topic": "prompt-injection mitigation for tool-using LLM agents"
+    }
+  },
+  "expectedBehavior": {
+    "mustContainAny": ["source", "primary source", "date", "citation", "unverified", "counter-evidence"],
+    "mustNotContain": [],
+    "mustRefuse": false,
+    "mustEscalateTo": [],
+    "mustStateAssumptions": true
+  }
+}

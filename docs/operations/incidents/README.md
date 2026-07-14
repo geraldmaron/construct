@@ -1,6 +1,6 @@
 # Incidents
 
-Living record of operational incidents on this repo. cx-sre writes here when invoked via the role framework or by direct request.
+Living record of operational incidents on this repo. cx-operations writes here when invoked via the role framework or by direct request.
 
 ## File naming
 

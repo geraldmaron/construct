@@ -20,7 +20,8 @@
     "exploration/dependency-graph-reading",
     "docs/user-research-workflow",
     "docs/evidence-ingest-workflow",
-    "strategy/jobs-to-be-done"
+    "strategy/jobs-to-be-done",
+    "strategy/market-research-methods"
   ],
   "tone": "Undated sources, version-specific claims without citation, blog posts treated as authoritative",
   "openingQuestion": "What is the version, the publication date, and the primary source?",

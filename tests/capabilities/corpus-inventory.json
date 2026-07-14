@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-11T23:55:38.463Z",
+  "generatedAt": "2026-07-14T13:36:07.493Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 886,
-    "topLevelTestFiles": 365,
-    "nestedTestFiles": 521,
+    "testFiles": 907,
+    "topLevelTestFiles": 369,
+    "nestedTestFiles": 538,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 580,
-      "functional": 258,
+      "unit": 592,
+      "functional": 267,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 517,
-      "functional": 258,
+      "unit": 529,
+      "functional": 267,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -1085,6 +1085,14 @@
       "maintainerNotes": "tests/certification/document-workflow.test.mjs — ingest to export workflow certification."
     },
     {
+      "path": "tests/certification/evidence-tiers.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/evidence-tiers.test.mjs — specialist evidence-tier ladder."
+    },
+    {
       "path": "tests/certification/export-format-cert.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -1174,7 +1182,15 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/certification/specialist-scenarios.test.mjs — per-specialist scenario fixtures."
+      "maintainerNotes": "tests/certification/specialist-scenarios.test.mjs — per-specialist scenario fixtures (schema v2)."
+    },
+    {
+      "path": "tests/certification/specialist-status-aggregation.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/specialist-status-aggregation.test.mjs — construct-72gqn.14 (H2.2)."
     },
     {
       "path": "tests/certification/stale-impact.test.mjs",
@@ -2449,6 +2465,14 @@
       "maintainerNotes": "tests/functional/b1-profile-loader.functional.test.mjs — B1 end-to-end loop."
     },
     {
+      "path": "tests/functional/bash-output-logger-redaction.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "bash-output-logger-redaction.functional.test.mjs — resolved secrets in Bash"
+    },
+    {
       "path": "tests/functional/beads-concurrent-write.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2503,6 +2527,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/certification-runner.functional.test.mjs — end-to-end construct certify run."
+    },
+    {
+      "path": "tests/functional/certification-specialist-behavior.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/certification-specialist-behavior.functional.test.mjs — construct-72gqn.14 (H2.2)."
     },
     {
       "path": "tests/functional/claude-orchestration-prompt.functional.test.mjs",
@@ -2567,6 +2599,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/construct-shim.functional.test.mjs — construct-rf26.19."
+    },
+    {
+      "path": "tests/functional/context-router-orchestration.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/context-router-orchestration.functional.test.mjs — construct-72gqn.23 (D3)."
     },
     {
       "path": "tests/functional/context-window-recovery.functional.test.mjs",
@@ -3036,6 +3076,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/graphrag-ask.functional.test.mjs — End-to-end GraphRAG."
+    },
+    {
+      "path": "tests/functional/handoff-context-flow.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/handoff-context-flow.functional.test.mjs — construct-72gqn.10 (H6a)."
     },
     {
       "path": "tests/functional/headhunt-profile-teams.functional.test.mjs",
@@ -3716,6 +3764,14 @@
       "maintainerNotes": "tests/functional/oracle-synthesis.functional.test.mjs —"
     },
     {
+      "path": "tests/functional/orchestration-cancel.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/orchestration-cancel.functional.test.mjs — construct-72gqn.22 (D2)."
+    },
+    {
       "path": "tests/functional/orchestration-context-bindings.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3774,6 +3830,22 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/orchestration-readiness.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/orchestration-revise-loop.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/orchestration-revise-loop.functional.test.mjs — construct-72gqn.30 (D10)."
+    },
+    {
+      "path": "tests/functional/orchestration-terminal-contract.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/orchestration-terminal-contract.functional.test.mjs — construct-72gqn.16 (H9.3)."
     },
     {
       "path": "tests/functional/orchestration-truth-negative.functional.test.mjs",
@@ -4244,6 +4316,14 @@
       "maintainerNotes": "tests/functional/sync-respects-scope.functional.test.mjs"
     },
     {
+      "path": "tests/functional/team-arbitration.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/team-arbitration.functional.test.mjs — construct-72gqn.17 (L4, hermetic)."
+    },
+    {
       "path": "tests/functional/team-aware-fence.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -4258,6 +4338,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/team-sources.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/team-vs-solo-comparison.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/team-vs-solo-comparison.functional.test.mjs — construct-72gqn.18 (L5)."
     },
     {
       "path": "tests/functional/telemetry-backend-agnostic.functional.test.mjs",
@@ -5094,6 +5182,14 @@
       "maintainerNotes": "tests/libreoffice-export.test.mjs — LibreOffice bin resolution and detect contract."
     },
     {
+      "path": "tests/lint-commits-pr-bot-exemption.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/lint-commits-pr-bot-exemption.test.mjs — template-policy bot exemption."
+    },
+    {
       "path": "tests/logging-rotate.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -5268,6 +5364,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/mcp/enforcement-proof.functional.test.mjs — LMCP-I4."
+    },
+    {
+      "path": "tests/mcp/get-skill-entitlement.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mcp/get-skill-entitlement.test.mjs — get_skill's specialistId entitlement path."
     },
     {
       "path": "tests/mcp/host-role-clientinfo.test.mjs",
@@ -5560,6 +5664,14 @@
       "maintainerNotes": "tests/orchestration-events.test.mjs — run lifecycle event bus + cancel registry."
     },
     {
+      "path": "tests/orchestration-host-contract-revalidation.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration-host-contract-revalidation.test.mjs — construct-72gqn.12 (H6c)."
+    },
+    {
       "path": "tests/orchestration-policy-context-packets.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -5622,6 +5734,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/orchestration-research-evidence-gate.test.mjs — kind-aware evidence gate."
+    },
+    {
+      "path": "tests/orchestration-revise-loop.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration-revise-loop.test.mjs — construct-72gqn.30 (D10)."
     },
     {
       "path": "tests/orchestration-route-path.test.mjs",
@@ -6272,6 +6392,14 @@
       "maintainerNotes": "tests/registry/docs-sync.test.mjs — Catalog-driven docs AUTO region sync."
     },
     {
+      "path": "tests/registry/group-squad-consistency.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/registry/group-squad-consistency.test.mjs — construct-72gqn.29 (D9)."
+    },
+    {
       "path": "tests/registry/org-api.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -6664,6 +6792,38 @@
       "maintainerNotes": "skills-apply.test.mjs — Regression coverage for per-host skill sidecar writers."
     },
     {
+      "path": "tests/skills/experimentation.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/skills/experimentation.test.mjs — construct-72gqn.32 (H5-deep)."
+    },
+    {
+      "path": "tests/skills/prioritization-methods.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/skills/prioritization-methods.test.mjs — construct-72gqn.15 (H5)."
+    },
+    {
+      "path": "tests/skills/router.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/skills/router.test.mjs — skill route matching and suggestion."
+    },
+    {
+      "path": "tests/skills/skill-routing-benchmark.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/skills/skill-routing-benchmark.test.mjs — skill-routing retrieval regression gate."
+    },
+    {
       "path": "tests/source-targets.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -6686,6 +6846,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "specialist-contracts.test.mjs — Runtime contract-chain enforcement tests."
+    },
+    {
+      "path": "tests/specialist-coverage.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/specialist-coverage.test.mjs — construct-72gqn.31 (H5-gen)."
     },
     {
       "path": "tests/specialist-loop.test.mjs",

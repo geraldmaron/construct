@@ -35,12 +35,12 @@ A team is defined by:
 ### Product Group
 
 **Owner**: Product Manager  
-**Roles**: product-manager, ux-researcher, designer, researcher, accessibility
+**Roles**: product-manager, designer, researcher
 
 **Decision Rights**: intake-triage, design-approval, scope-change, evidence-requirement  
 **Forbidden Decisions**: deployment, security-override, infra-change
 
-**Escalation**: product-manager → rd-lead → orchestrator
+**Escalation**: product-manager → architect → orchestrator
 
 **Charter**: Translate user reality into shippable change. Owns problem framing, requirements, evidence gathering, design decisions, and acceptance criteria. Does not own implementation choices, deployment decisions, or security policy. Escalates scope conflicts to R&D leadership.
 
@@ -49,12 +49,12 @@ A team is defined by:
 ### Engineering Group
 
 **Owner**: Architect  
-**Roles**: architect, engineer, debugger, ai-engineer, data-engineer, platform-engineer
+**Roles**: architect, engineer, debugger
 
 **Decision Rights**: architecture, technology-selection, implementation-approach, performance-optimization  
 **Forbidden Decisions**: product-scope, user-research, deployment-timing
 
-**Escalation**: architect → rd-lead → orchestrator
+**Escalation**: architect → orchestrator
 
 **Charter**: Design, build, and harden the system. Owns architecture decisions, technology choices, code quality, debugging, AI integration, and the platform underneath. Does not own product framing, user research direction, or release timing. Escalates tech-debt conflicts to R&D leadership.
 
@@ -63,12 +63,12 @@ A team is defined by:
 ### Quality Group
 
 **Owner**: Reviewer  
-**Roles**: reviewer, qa, test-automation, evaluator, trace-reviewer, devil-advocate
+**Roles**: reviewer, qa
 
 **Decision Rights**: quality-gate-approval, test-strategy, evaluation-design, release-readiness  
 **Forbidden Decisions**: scope-change, deployment-timing, architecture
 
-**Escalation**: reviewer → architect → rd-lead
+**Escalation**: reviewer → architect → orchestrator
 
 **Charter**: Verify the system does what it claims and surface what is broken. Owns review, testing, evaluation, trace analysis, and devil's-advocate framing. Does not own implementation or product decisions. Escalates quality vs. schedule conflicts to architecture/R&D.
 
@@ -77,7 +77,7 @@ A team is defined by:
 ### Governance Group
 
 **Owner**: Security  
-**Roles**: security, legal-compliance
+**Roles**: security
 
 **Decision Rights**: security-approval, compliance-review, risk-assessment, policy-definition  
 **Forbidden Decisions**: product-scope, implementation-approach, deployment-readiness
@@ -90,13 +90,13 @@ A team is defined by:
 
 ### Operations Group
 
-**Owner**: SRE  
-**Roles**: release-manager, sre, operations, docs-keeper
+**Owner**: Operations  
+**Roles**: operations
 
 **Decision Rights**: deployment, rollback, incident-response, runbook-approval, ops-procedure  
 **Forbidden Decisions**: architecture, product-scope, security-policy
 
-**Escalation**: sre → architect → orchestrator
+**Escalation**: operations → architect → orchestrator
 
 **Charter**: Keep the system running and shipping. Owns release management, SRE response, ops runbooks, documentation upkeep, and deployment execution. Does not own architecture or product decisions. Escalates reliability vs. change-rate conflicts to architecture/leadership.
 
@@ -104,13 +104,13 @@ A team is defined by:
 
 ### Strategy Group
 
-**Owner**: R&D Lead  
-**Roles**: rd-lead, business-strategist, data-analyst, explorer, orchestrator
+**Owner**: Orchestrator  
+**Roles**: orchestrator, data-analyst
 
 **Decision Rights**: direction-setting, strategic-prioritization, measurement-design, research-scope, cross-team-orchestration  
 **Forbidden Decisions**: implementation-details, user-research-methods, ops-procedures
 
-**Escalation**: rd-lead → orchestrator
+**Escalation**: architect → orchestrator
 
 **Charter**: Hold the long view: what to build next, what to measure, what to retire. Owns R&D direction, strategic prioritization, measurement design, cross-team orchestration, and exploration. Does not own implementation or day-to-day operations. Arbitrates escalations from other groups.
 
@@ -148,9 +148,9 @@ const decision = policyDecision({
 ```
 
 ```javascript
-// SRE tries to deploy
+// Operations tries to deploy
 const decision = policyDecision({
-  role: 'sre',
+  role: 'operations',
   tool: 'deploy',
   action: 'ship',
   decision: 'deployment'
@@ -215,7 +215,7 @@ Add a new entry under the `teams` object:
       "roles": ["example-owner", "example-member"],
       "decisionRights": ["decision-1", "decision-2"],
       "forbiddenDecisions": ["forbidden-1"],
-      "escalationPath": ["example-owner", "rd-lead", "orchestrator"],
+      "escalationPath": ["example-owner", "architect", "orchestrator"],
       "charter": "Team charter describing scope and responsibility.",
       "contact": {
         "slack": "#example",
@@ -421,14 +421,14 @@ Run the displayed commands to clean up after removals.
 
 1. **Product Group** proposes scope change (within their decision rights)
 2. **Engineering Group** disagrees or flags technical blocker (may veto)
-3. **Escalation**: Product owner escalates to rd-lead
-4. **R&D Lead** (Strategy Group owner) arbitrates and makes final call
+3. **Escalation**: Product owner escalates to architect
+4. **Orchestrator** (Strategy Group owner) arbitrates and makes final call
 
 ### Scenario: Someone tries to make a forbidden decision
 
 1. **Product Group** attempts deployment decision (forbidden for them)
 2. **Gateway** records forbidden-decision event
-3. **Escalation path** is invoked automatically: product-manager → rd-lead → orchestrator
+3. **Escalation path** is invoked automatically: product-manager → architect → orchestrator
 4. The decision does not proceed until proper authority approves
 
 ## Implementation: Headhunt Integration
@@ -501,7 +501,7 @@ Operations-scope routing maps objectives to existing squads (`operations-team`, 
 
 **Naming:** overlay id matches specialist `name` (`ai-engineer`, `platform-engineer`, `business-strategist`). Generalists keep variants under their prefix (`architect.platform`, `qa.web-ui`). Split specialists get a base file; classifiers may add sub-flavors (`data-engineer.pipeline`).
 
-**Bindings:** `lib/roles/flavor-bindings.mjs` maps specialist → classifier key → overlay path. Routing swaps `cx-engineer` for `cx-ai-engineer` / `cx-platform-engineer` / `cx-data-engineer` when keywords match.
+**Bindings:** `lib/roles/flavor-bindings.mjs` maps specialist → classifier key → overlay path. Routing applies the `ai-engineer` / `platform-engineer` / `data-engineer` flavor overlay to `cx-engineer` when keywords match (those roles folded into `cx-engineer`; the overlay loads, no separate specialist is dispatched).
 
 ## Current Implementation Status
 

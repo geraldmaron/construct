@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 2,
+  "specialistId": "cx-qa",
+  "capabilityId": "specialist.prompt",
+  "mode": "normal",
+  "scenarioKind": "happy-path-representative",
+  "representativeTask": {
+    "prompt": "We just shipped a bulk CSV export endpoint with three acceptance criteria: exports are auth-gated, results are paginated at 500 rows, and requests are rate-limited to 10/min. Design the test plan.",
+    "inputs": { "surface": "export endpoint", "acceptanceCriteria": ["auth-gated", "paginated at 500 rows", "rate-limited to 10/min"] }
+  },
+  "expectedBehavior": {
+    "mustContainAny": ["acceptance criterion", "acceptance criteria", "how does the test fail", "behavioral", "test pyramid", "coverage"],
+    "mustNotContain": ["ship it, tests pass", "coverage alone proves it works"],
+    "mustRefuse": false,
+    "mustEscalateTo": [],
+    "mustStateAssumptions": true
+  }
+}
