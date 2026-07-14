@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-14T20:19:32.264Z",
+  "generatedAt": "2026-07-14T23:08:38.956Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 918,
+    "testFiles": 920,
     "topLevelTestFiles": 370,
-    "nestedTestFiles": 548,
+    "nestedTestFiles": 550,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 599,
+      "unit": 601,
       "functional": 271,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 534,
+      "unit": 536,
       "functional": 271,
       "visual": 12,
       "structural-guard": 19,
@@ -5910,6 +5910,22 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/orchestration/provenance.test.mjs — full execution provenance in traces (LMCP-F1)."
+    },
+    {
+      "path": "tests/orchestration/write-proposal-parser.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration/write-proposal-parser.test.mjs — parseWriteProposals"
+    },
+    {
+      "path": "tests/orchestration/write-proposal-worker-integration.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration/write-proposal-worker-integration.test.mjs —"
     },
     {
       "path": "tests/outcomes/record.test.mjs",
