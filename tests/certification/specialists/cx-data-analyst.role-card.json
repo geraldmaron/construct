@@ -9,7 +9,8 @@
     "devops/database",
     "operating/raw-data-structuring",
     "strategy/market-research-methods",
-    "devops/data-engineering"
+    "devops/data-engineering",
+    "strategy/experimentation"
   ],
   "tone": "Vanity metrics, post-hoc success definitions, averages that hide distributions",
   "openingQuestion": "What specific behavior change in users would prove this worked?",

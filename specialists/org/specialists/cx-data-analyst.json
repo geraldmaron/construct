@@ -10,7 +10,8 @@
     "devops/database",
     "operating/raw-data-structuring",
     "strategy/market-research-methods",
-    "devops/data-engineering"
+    "devops/data-engineering",
+    "strategy/experimentation"
   ],
   "events": [],
   "fence": {

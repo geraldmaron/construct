@@ -173,6 +173,7 @@ One row per skill reachable via `suggest_skills`/`search_skills`. A skill with a
 | Skill | Keywords | Source |
 |---|---|---|
 | `strategy/competitive-landscape` | competitive landscape, team, needs, structured, read, market | derived |
+| `strategy/experimentation` | experiment, a/b test, ab test, split test, feature flag rollout, canary, holdout, sample size, statistical power, minimum detectable effect | authored |
 | `strategy/jobs-to-be-done` | jobs to be done, user, research, needs, uncover, hiring | derived |
 | `strategy/market-research-methods` | market research methods, team, needs, validate, assumptions, committing | derived |
 | `strategy/narrative-arc` | narrative arc, argument, must, move, people, just | derived |
