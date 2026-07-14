@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-14T03:06:34.335Z",
+  "generatedAt": "2026-07-14T04:38:10.781Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 904,
-    "topLevelTestFiles": 367,
-    "nestedTestFiles": 537,
+    "testFiles": 906,
+    "topLevelTestFiles": 368,
+    "nestedTestFiles": 538,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 590,
-      "functional": 266,
+      "unit": 591,
+      "functional": 267,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 527,
-      "functional": 266,
+      "unit": 528,
+      "functional": 267,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -3832,6 +3832,14 @@
       "maintainerNotes": "tests/functional/orchestration-readiness.functional.test.mjs"
     },
     {
+      "path": "tests/functional/orchestration-revise-loop.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/orchestration-revise-loop.functional.test.mjs — construct-72gqn.30 (D10)."
+    },
+    {
       "path": "tests/functional/orchestration-terminal-contract.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -5718,6 +5726,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/orchestration-research-evidence-gate.test.mjs — kind-aware evidence gate."
+    },
+    {
+      "path": "tests/orchestration-revise-loop.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration-revise-loop.test.mjs — construct-72gqn.30 (D10)."
     },
     {
       "path": "tests/orchestration-route-path.test.mjs",
