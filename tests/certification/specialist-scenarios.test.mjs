@@ -88,17 +88,23 @@ test('syncSpecialistScenarioCatalog registers one hermetic entry per fixture and
 
     const result = syncSpecialistScenarioCatalog({ rootDir: tmp });
     assert.equal(result.fixtureCount, 36);
-    assert.equal(result.catalogEntries, 36);
+    assert.equal(result.catalogEntries, 72, '36 hermetic + 36 live entries');
 
     const catalog = JSON.parse(fs.readFileSync(path.join(tmp, 'tests', 'certification', 'scenarios', 'catalog.json'), 'utf8'));
     const ids = new Set(catalog.scenarios.map((s) => s.id));
     assert.ok(ids.has('specialist.role-cards'), 'role-cards entry preserved');
     assert.ok(!ids.has('specialist.normal.architect'), 'stale v1 entry dropped');
-    assert.ok(ids.has('specialist.representative.architect'), 'v2 representative entry registered');
-    assert.ok(ids.has('specialist.adversarial.qa'), 'v2 adversarial entry registered');
+    assert.ok(ids.has('specialist.representative.architect'), 'v2 representative hermetic entry registered');
+    assert.ok(ids.has('specialist.adversarial.qa'), 'v2 adversarial hermetic entry registered');
+    assert.ok(ids.has('specialist.live.architect.representative'), 'v2 live behavioral entry registered');
     for (const entry of catalog.scenarios.filter((s) => /^specialist\.(representative|adversarial|ambiguous|boundary|cross)\./.test(s.id))) {
       assert.equal(entry.gates[0].type, 'specialist-scenario-audit');
       assert.equal(entry.mode, 'hermetic');
+    }
+    for (const entry of catalog.scenarios.filter((s) => /^specialist\.live\./.test(s.id))) {
+      assert.equal(entry.gates[0].type, 'specialist-behavior-live');
+      assert.equal(entry.mode, 'live');
+      assert.equal(entry.requiresEnv, 'CONSTRUCT_CERTIFY_LIVE');
     }
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });

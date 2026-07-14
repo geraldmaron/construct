@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-14T00:57:18.821Z",
+  "generatedAt": "2026-07-14T01:10:01.154Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 896,
+    "testFiles": 898,
     "topLevelTestFiles": 367,
-    "nestedTestFiles": 529,
+    "nestedTestFiles": 531,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 588,
-      "functional": 260,
+      "unit": 589,
+      "functional": 261,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 525,
-      "functional": 260,
+      "unit": 526,
+      "functional": 261,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -1183,6 +1183,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/certification/specialist-scenarios.test.mjs — per-specialist scenario fixtures (schema v2)."
+    },
+    {
+      "path": "tests/certification/specialist-status-aggregation.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/specialist-status-aggregation.test.mjs — construct-72gqn.14 (H2.2)."
     },
     {
       "path": "tests/certification/stale-impact.test.mjs",
@@ -2519,6 +2527,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/certification-runner.functional.test.mjs — end-to-end construct certify run."
+    },
+    {
+      "path": "tests/functional/certification-specialist-behavior.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/certification-specialist-behavior.functional.test.mjs — construct-72gqn.14 (H2.2)."
     },
     {
       "path": "tests/functional/claude-orchestration-prompt.functional.test.mjs",
