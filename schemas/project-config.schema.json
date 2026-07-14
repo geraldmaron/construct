@@ -143,6 +143,17 @@
         }
       }
     },
+    "writes": {
+      "type": "object",
+      "description": "Governed external-write policy (lib/writes/). Fail-safe default is 'approval' for any write not listed here.",
+      "properties": {
+        "policy": {
+          "type": "object",
+          "description": "Per-\"<providerId>.<writeKind>\" auto/approval/deny mode, e.g. {\"jira.comment\": \"auto\"}.",
+          "additionalProperties": { "type": "string", "enum": ["auto", "approval", "deny"] }
+        }
+      }
+    },
     "intakePolicy": {
       "type": "object",
       "description": "Filesystem inbox watcher policy. The canonical drop zone is inbox/ at the project root (always watched, ADR-0045 §C); maxDepth and additionalDirs tune the scan.",
