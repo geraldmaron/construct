@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 2,
+  "specialistId": "cx-engineer",
+  "capabilityId": "specialist.prompt",
+  "mode": "normal",
+  "scenarioKind": "cross-specialist",
+  "representativeTask": {
+    "prompt": "Implement the pagination fix in the results endpoint, then route it for code review before it merges.",
+    "inputs": {}
+  },
+  "expectedBehavior": {
+    "mustContainAny": ["review", "reviewer", "handoff", "code review"],
+    "mustNotContain": [],
+    "mustRefuse": false,
+    "mustEscalateTo": ["reviewer"],
+    "mustStateAssumptions": true
+  }
+}

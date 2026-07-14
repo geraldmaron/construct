@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 2,
+  "specialistId": "cx-reviewer",
+  "capabilityId": "specialist.prompt",
+  "mode": "normal",
+  "scenarioKind": "cross-specialist",
+  "representativeTask": {
+    "prompt": "Review this diff that reworks the CSV export pagination in lib/export/csv.mjs. If you find blocking issues, route them to whoever needs to remediate them.",
+    "inputs": { "files": ["lib/export/csv.mjs"], "change": "rework CSV export pagination" }
+  },
+  "expectedBehavior": {
+    "mustContainAny": ["CRITICAL", "HIGH", "engineer", "remediation", "hand off"],
+    "mustNotContain": [],
+    "mustRefuse": false,
+    "mustEscalateTo": ["engineer"],
+    "mustStateAssumptions": false
+  }
+}
