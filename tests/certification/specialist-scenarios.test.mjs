@@ -26,11 +26,10 @@ import {
 import { writeRoleCards } from '../../lib/certification/role-cards.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const BASE_CHAIN = ['cx-architect', 'cx-engineer', 'cx-reviewer', 'cx-qa'];
 
 test('every authored specialist fixture validates against schema v2', () => {
   const fixtures = readSpecialistScenarioFixtures({ rootDir: REPO });
-  assert.equal(fixtures.length, 36, 'expected 36 fixtures (12x2 + 4 base-chain x 3 extra kinds)');
+  assert.equal(fixtures.length, 60, 'expected 60 fixtures (the full 12 specialists x 5 kinds)');
   for (const { relPath, fixture } of fixtures) {
     const result = validateSpecialistScenarioFixture(fixture, { rootDir: REPO });
     assert.equal(result.pass, true, `${relPath}: ${result.errors.join(', ')}`);
@@ -40,7 +39,7 @@ test('every authored specialist fixture validates against schema v2', () => {
   }
 });
 
-test('the base-chain four carry all five scenario kinds; every other specialist carries the core two', () => {
+test('every specialist carries all five scenario kinds (the full 12x5 matrix)', () => {
   const fixtures = readSpecialistScenarioFixtures({ rootDir: REPO });
   const bySpecialist = new Map();
   for (const { specialistId, fixture } of fixtures) {
@@ -49,12 +48,8 @@ test('the base-chain four carry all five scenario kinds; every other specialist 
   }
   assert.equal(bySpecialist.size, 12, 'all 12 specialists have fixtures');
   for (const [specialistId, kinds] of bySpecialist) {
-    assert.ok(kinds.has('happy-path-representative'), `${specialistId} has a representative fixture`);
-    assert.ok(kinds.has('adversarial-role-tailored'), `${specialistId} has an adversarial fixture`);
-    if (BASE_CHAIN.includes(specialistId)) {
-      for (const kind of SPECIALIST_SCENARIO_KINDS) {
-        assert.ok(kinds.has(kind), `${specialistId} (base chain) has a ${kind} fixture`);
-      }
+    for (const kind of SPECIALIST_SCENARIO_KINDS) {
+      assert.ok(kinds.has(kind), `${specialistId} has a ${kind} fixture`);
     }
   }
 });
@@ -87,8 +82,8 @@ test('syncSpecialistScenarioCatalog registers one hermetic entry per fixture and
     );
 
     const result = syncSpecialistScenarioCatalog({ rootDir: tmp });
-    assert.equal(result.fixtureCount, 36);
-    assert.equal(result.catalogEntries, 72, '36 hermetic + 36 live entries');
+    assert.equal(result.fixtureCount, 60);
+    assert.equal(result.catalogEntries, 120, '60 hermetic + 60 live entries');
 
     const catalog = JSON.parse(fs.readFileSync(path.join(tmp, 'tests', 'certification', 'scenarios', 'catalog.json'), 'utf8'));
     const ids = new Set(catalog.scenarios.map((s) => s.id));
