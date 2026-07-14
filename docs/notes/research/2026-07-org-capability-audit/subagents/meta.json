@@ -1,6 +1,7 @@
 {
   "title": "Subagent reports",
   "pages": [
-    "issue-248-repro"
+    "issue-248-repro",
+    "issue-323-reconciliation"
   ]
 }
