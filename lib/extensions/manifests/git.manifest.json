@@ -1,0 +1,32 @@
+{
+  "id": "git",
+  "version": "1.0.0",
+  "kind": "data-source",
+  "capabilities": ["read"],
+  "secretEnvKeys": [],
+  "operations": ["read"],
+  "securityClassification": "trusted",
+  "owner": "construct-core",
+  "compatVersion": 1,
+  "installSource": "builtin",
+  "sourceTarget": {
+    "provider": "git",
+    "selector": {
+      "field": "remote",
+      "hint": "required git remote (ssh/https URL, file:// URL, or local path)",
+      "normalize": "trim",
+      "expand": "tilde"
+    },
+    "signature": { "template": "git:remote:{value}", "valueMode": "path" },
+    "content": {
+      "field": "content",
+      "modeField": "mode",
+      "modeValue": "corpus",
+      "refField": "ref",
+      "defaultRef": "main",
+      "remoteField": "remote",
+      "clone": "git"
+    },
+    "aliases": { "strategy": "path", "displayPrefix": null, "catchAll": false }
+  }
+}
