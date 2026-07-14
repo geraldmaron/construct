@@ -161,6 +161,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 |---|---|
 | `construct approvals` | Manage pending MCP tool approvals |
 | `construct dev` | Start services for development |
+| `construct directives` | View standing directives (construct.config.json directives[]) and their due status |
 | `construct docs` | Documentation commands |
 | `construct doctor` | Check installation health |
 | `construct init` | Project setup (once per repo): scaffold .construct/, AGENTS.md, plan.md, adapters |

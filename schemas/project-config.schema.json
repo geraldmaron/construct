@@ -165,6 +165,35 @@
         }
       }
     },
+    "directives": {
+      "type": "array",
+      "description": "Standing instructions attached to a provider (e.g. \"watch Jira, summarize what the team is working on\"). lib/directives/directive-config.mjs validateDirectives() is the authoritative check, run by writeProjectConfig(); a directive never executes on its own — lib/embed/daemon.mjs's write-intent-drain-adjacent \"directive-runner\" job only records that one is due.",
+      "items": {
+        "type": "object",
+        "required": ["id", "provider", "specialist", "instruction", "trigger", "action", "output"],
+        "properties": {
+          "id": { "type": "string" },
+          "provider": { "type": "string" },
+          "specialist": { "type": "string" },
+          "instruction": { "type": "string" },
+          "trigger": {
+            "type": "object",
+            "properties": {
+              "kind": { "type": "string", "enum": ["interval", "on-demand"] },
+              "intervalMinutes": { "type": "number" }
+            }
+          },
+          "action": { "type": "string", "enum": ["summarize", "draft-artifact", "file-beads", "dispatch-specialist"] },
+          "output": {
+            "type": "object",
+            "properties": {
+              "kind": { "type": "string", "enum": ["knowledge-note", "artifact-draft", "beads", "pr"] }
+            }
+          },
+          "autoRun": { "type": "boolean", "default": false }
+        }
+      }
+    },
     "intakePolicy": {
       "type": "object",
       "description": "Filesystem inbox watcher policy. The canonical drop zone is inbox/ at the project root (always watched, ADR-0045 §C); maxDepth and additionalDirs tune the scan.",
