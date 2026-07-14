@@ -671,6 +671,27 @@
       "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
     },
     {
+      "id": "team.arbitration.base-chain",
+      "capabilityId": "orchestration.team",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/functional/team-arbitration.functional.test.mjs"
+      },
+      "gates": [
+        {
+          "id": "team-arbitration-grounding",
+          "type": "team-arbitration-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
       "id": "specialist.adversarial.architect",
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
@@ -931,6 +952,66 @@
       }
     },
     {
+      "id": "specialist.ambiguous.data-analyst",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-data-analyst/ambiguous.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-ambiguous-data-analyst",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.ambiguous.debugger",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-debugger/ambiguous.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-ambiguous-debugger",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.ambiguous.designer",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-designer/ambiguous.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-ambiguous-designer",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
       "id": "specialist.ambiguous.engineer",
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
@@ -940,6 +1021,66 @@
       "gates": [
         {
           "id": "specialist-ambiguous-engineer",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.ambiguous.operations",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-operations/ambiguous.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-ambiguous-operations",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.ambiguous.orchestrator",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-orchestrator/ambiguous.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-ambiguous-orchestrator",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.ambiguous.product-manager",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-product-manager/ambiguous.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-ambiguous-product-manager",
           "type": "specialist-scenario-audit"
         }
       ],
@@ -971,6 +1112,26 @@
       }
     },
     {
+      "id": "specialist.ambiguous.researcher",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-researcher/ambiguous.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-ambiguous-researcher",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
       "id": "specialist.ambiguous.reviewer",
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
@@ -980,6 +1141,26 @@
       "gates": [
         {
           "id": "specialist-ambiguous-reviewer",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.ambiguous.security",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-security/ambiguous.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-ambiguous-security",
           "type": "specialist-scenario-audit"
         }
       ],
@@ -1011,6 +1192,66 @@
       }
     },
     {
+      "id": "specialist.boundary.data-analyst",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-data-analyst/boundary-violation.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-boundary-data-analyst",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.boundary.debugger",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-debugger/boundary-violation.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-boundary-debugger",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.boundary.designer",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-designer/boundary-violation.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-boundary-designer",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
       "id": "specialist.boundary.engineer",
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
@@ -1020,6 +1261,66 @@
       "gates": [
         {
           "id": "specialist-boundary-engineer",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.boundary.operations",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-operations/boundary-violation.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-boundary-operations",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.boundary.orchestrator",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-orchestrator/boundary-violation.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-boundary-orchestrator",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.boundary.product-manager",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-product-manager/boundary-violation.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-boundary-product-manager",
           "type": "specialist-scenario-audit"
         }
       ],
@@ -1051,6 +1352,26 @@
       }
     },
     {
+      "id": "specialist.boundary.researcher",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-researcher/boundary-violation.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-boundary-researcher",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
       "id": "specialist.boundary.reviewer",
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
@@ -1060,6 +1381,26 @@
       "gates": [
         {
           "id": "specialist-boundary-reviewer",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.boundary.security",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-security/boundary-violation.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-boundary-security",
           "type": "specialist-scenario-audit"
         }
       ],
@@ -1091,6 +1432,66 @@
       }
     },
     {
+      "id": "specialist.cross.data-analyst",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-data-analyst/cross-specialist.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-cross-data-analyst",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.cross.debugger",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-debugger/cross-specialist.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-cross-debugger",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.cross.designer",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-designer/cross-specialist.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-cross-designer",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
       "id": "specialist.cross.engineer",
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
@@ -1100,6 +1501,66 @@
       "gates": [
         {
           "id": "specialist-cross-engineer",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.cross.operations",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-operations/cross-specialist.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-cross-operations",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.cross.orchestrator",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-orchestrator/cross-specialist.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-cross-orchestrator",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.cross.product-manager",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-product-manager/cross-specialist.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-cross-product-manager",
           "type": "specialist-scenario-audit"
         }
       ],
@@ -1131,6 +1592,26 @@
       }
     },
     {
+      "id": "specialist.cross.researcher",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-researcher/cross-specialist.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-cross-researcher",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
       "id": "specialist.cross.reviewer",
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
@@ -1140,6 +1621,26 @@
       "gates": [
         {
           "id": "specialist-cross-reviewer",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.cross.security",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-security/cross-specialist.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-cross-security",
           "type": "specialist-scenario-audit"
         }
       ],
@@ -1277,6 +1778,69 @@
       "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
     },
     {
+      "id": "specialist.live.data-analyst.ambiguous",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-data-analyst/ambiguous.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-data-analyst-ambiguous",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.data-analyst.boundary",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-data-analyst/boundary-violation.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-data-analyst-boundary",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.data-analyst.cross",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-data-analyst/cross-specialist.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-data-analyst-cross",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
       "id": "specialist.live.data-analyst.representative",
       "capabilityId": "specialist.prompt",
       "mode": "live",
@@ -1319,6 +1883,69 @@
       "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
     },
     {
+      "id": "specialist.live.debugger.ambiguous",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-debugger/ambiguous.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-debugger-ambiguous",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.debugger.boundary",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-debugger/boundary-violation.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-debugger-boundary",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.debugger.cross",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-debugger/cross-specialist.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-debugger-cross",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
       "id": "specialist.live.debugger.representative",
       "capabilityId": "specialist.prompt",
       "mode": "live",
@@ -1349,6 +1976,69 @@
       "gates": [
         {
           "id": "specialist-behavior-designer-adversarial",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.designer.ambiguous",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-designer/ambiguous.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-designer-ambiguous",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.designer.boundary",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-designer/boundary-violation.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-designer-boundary",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.designer.cross",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-designer/cross-specialist.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-designer-cross",
           "type": "specialist-behavior-live"
         }
       ],
@@ -1508,6 +2198,69 @@
       "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
     },
     {
+      "id": "specialist.live.operations.ambiguous",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-operations/ambiguous.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-operations-ambiguous",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.operations.boundary",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-operations/boundary-violation.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-operations-boundary",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.operations.cross",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-operations/cross-specialist.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-operations-cross",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
       "id": "specialist.live.operations.representative",
       "capabilityId": "specialist.prompt",
       "mode": "live",
@@ -1550,6 +2303,69 @@
       "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
     },
     {
+      "id": "specialist.live.orchestrator.ambiguous",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-orchestrator/ambiguous.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-orchestrator-ambiguous",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.orchestrator.boundary",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-orchestrator/boundary-violation.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-orchestrator-boundary",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.orchestrator.cross",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-orchestrator/cross-specialist.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-orchestrator-cross",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
       "id": "specialist.live.orchestrator.representative",
       "capabilityId": "specialist.prompt",
       "mode": "live",
@@ -1580,6 +2396,69 @@
       "gates": [
         {
           "id": "specialist-behavior-product-manager-adversarial",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.product-manager.ambiguous",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-product-manager/ambiguous.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-product-manager-ambiguous",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.product-manager.boundary",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-product-manager/boundary-violation.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-product-manager-boundary",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.product-manager.cross",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-product-manager/cross-specialist.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-product-manager-cross",
           "type": "specialist-behavior-live"
         }
       ],
@@ -1739,6 +2618,69 @@
       "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
     },
     {
+      "id": "specialist.live.researcher.ambiguous",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-researcher/ambiguous.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-researcher-ambiguous",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.researcher.boundary",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-researcher/boundary-violation.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-researcher-boundary",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.researcher.cross",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-researcher/cross-specialist.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-researcher-cross",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
       "id": "specialist.live.researcher.representative",
       "capabilityId": "specialist.prompt",
       "mode": "live",
@@ -1874,6 +2816,69 @@
       "gates": [
         {
           "id": "specialist-behavior-security-adversarial",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.security.ambiguous",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-security/ambiguous.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-security-ambiguous",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.security.boundary",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-security/boundary-violation.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-security-boundary",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.security.cross",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-security/cross-specialist.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-security-cross",
           "type": "specialist-behavior-live"
         }
       ],
@@ -2145,27 +3150,6 @@
         "resolvedId": "fixture/specialist",
         "tier": "hermetic"
       }
-    },
-    {
-      "id": "team.arbitration.base-chain",
-      "capabilityId": "orchestration.team",
-      "mode": "live",
-      "fixture": {
-        "path": "tests/functional/team-arbitration.functional.test.mjs"
-      },
-      "gates": [
-        {
-          "id": "team-arbitration-grounding",
-          "type": "team-arbitration-live"
-        }
-      ],
-      "model": {
-        "provider": "openrouter",
-        "requestedId": "openrouter/free-auto",
-        "resolvedId": "openrouter/free-auto",
-        "tier": "free"
-      },
-      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
     }
   ]
 }
