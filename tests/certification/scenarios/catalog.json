@@ -1151,6 +1151,762 @@
       }
     },
     {
+      "id": "specialist.live.architect.adversarial",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-architect/adversarial-role-tailored.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-architect-adversarial",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.architect.ambiguous",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-architect/ambiguous.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-architect-ambiguous",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.architect.boundary",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-architect/boundary-violation.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-architect-boundary",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.architect.cross",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-architect/cross-specialist.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-architect-cross",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.architect.representative",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-architect/happy-path-representative.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-architect-representative",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.data-analyst.adversarial",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-data-analyst/adversarial-role-tailored.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-data-analyst-adversarial",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.data-analyst.representative",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-data-analyst/happy-path-representative.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-data-analyst-representative",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.debugger.adversarial",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-debugger/adversarial-role-tailored.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-debugger-adversarial",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.debugger.representative",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-debugger/happy-path-representative.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-debugger-representative",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.designer.adversarial",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-designer/adversarial-role-tailored.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-designer-adversarial",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.designer.representative",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-designer/happy-path-representative.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-designer-representative",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.engineer.adversarial",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-engineer/adversarial-role-tailored.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-engineer-adversarial",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.engineer.ambiguous",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-engineer/ambiguous.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-engineer-ambiguous",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.engineer.boundary",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-engineer/boundary-violation.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-engineer-boundary",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.engineer.cross",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-engineer/cross-specialist.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-engineer-cross",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.engineer.representative",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-engineer/happy-path-representative.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-engineer-representative",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.operations.adversarial",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-operations/adversarial-role-tailored.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-operations-adversarial",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.operations.representative",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-operations/happy-path-representative.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-operations-representative",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.orchestrator.adversarial",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-orchestrator/adversarial-role-tailored.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-orchestrator-adversarial",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.orchestrator.representative",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-orchestrator/happy-path-representative.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-orchestrator-representative",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.product-manager.adversarial",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-product-manager/adversarial-role-tailored.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-product-manager-adversarial",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.product-manager.representative",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-product-manager/happy-path-representative.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-product-manager-representative",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.qa.adversarial",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-qa/adversarial-role-tailored.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-qa-adversarial",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.qa.ambiguous",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-qa/ambiguous.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-qa-ambiguous",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.qa.boundary",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-qa/boundary-violation.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-qa-boundary",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.qa.cross",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-qa/cross-specialist.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-qa-cross",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.qa.representative",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-qa/happy-path-representative.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-qa-representative",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.researcher.adversarial",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-researcher/adversarial-role-tailored.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-researcher-adversarial",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.researcher.representative",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-researcher/happy-path-representative.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-researcher-representative",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.reviewer.adversarial",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-reviewer/adversarial-role-tailored.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-reviewer-adversarial",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.reviewer.ambiguous",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-reviewer/ambiguous.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-reviewer-ambiguous",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.reviewer.boundary",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-reviewer/boundary-violation.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-reviewer-boundary",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.reviewer.cross",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-reviewer/cross-specialist.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-reviewer-cross",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.reviewer.representative",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-reviewer/happy-path-representative.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-reviewer-representative",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.security.adversarial",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-security/adversarial-role-tailored.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-security-adversarial",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.live.security.representative",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-security/happy-path-representative.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-behavior-security-representative",
+          "type": "specialist-behavior-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
       "id": "specialist.representative.architect",
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
