@@ -166,7 +166,19 @@ function lintCommits() {
   return violations;
 }
 
+// A bot (dependabot, renovate, …) cannot fill the human PR template, and its
+// change traceability lives in the release notes it generates, so the required-
+// heading policy does not apply to a bot author. The gate stays blocking for
+// human PRs — the exemption is by author, not by soft-failing the CI step.
+
+function isBotAuthor(author) {
+  const a = String(author || "").toLowerCase();
+  return a.endsWith("[bot]") || a === "dependabot" || a === "renovate";
+}
+
 function lintPrBody() {
+  if (isBotAuthor(process.env.PR_AUTHOR)) return [];
+
   const path = process.env.PR_BODY_FILE;
   let body = process.env.PR_BODY;
   if (!body && path) {
