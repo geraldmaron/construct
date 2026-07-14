@@ -19,7 +19,7 @@ Generated from `lib/hooks/`; each entry shows what triggers the hook and what it
 
 ## Specialists
 
-[The construct persona + 28 specialists →](/guides/reference/specialists)
+[The construct persona + 12 specialists →](/guides/reference/specialists)
 
 Generated from `specialists/org`; each entry shows the specialist's role, model tier, and one-line purpose.
 

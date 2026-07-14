@@ -102,7 +102,7 @@ A persona ships when:
 3. Its output contract is precise enough that another role can consume it.
 4. It scores well on a persona-eval: ten representative scenarios, the persona produces outputs that match the contract.
 
-The classifier already has a golden test; persona quality should be evaluated the same way. The `cx-evaluator` specialist owns the persona-eval phase.
+The classifier already has a golden test; persona quality should be evaluated the same way. The `cx-reviewer` specialist owns the persona-eval phase (via its evaluator overlay).
 
 ## When to add vs reuse
 
@@ -128,10 +128,10 @@ Caps are bounds, not targets. Most well-shaped profiles use a fraction.
 
 The phases in `docs/guides/concepts/profile-lifecycle.md` map to this methodology:
 
-- **Discover** runs the persona research method, owned by `cx-ux-researcher`.
+- **Discover** runs the persona research method, owned by `cx-researcher` (via its ux-researcher overlay).
 - **Frame** runs Galbraith STAR for departmental structure, owned by `cx-product-manager`.
 - **Architect** runs the skill composition and reuse check, owned by `cx-architect`.
-- **Validate** runs the persona-eval and classifier-eval, owned by `cx-evaluator`.
+- **Validate** runs the persona-eval and classifier-eval, owned by `cx-reviewer` (via its evaluator overlay).
 - **Promote** is the operator decision; the PR description cites the evidence.
 - **Monitor** runs the health rollup; failures here re-open Discover.
 - **Archive** retires a profile with the final health report as evidence.

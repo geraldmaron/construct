@@ -1,0 +1,44 @@
+{
+  "id": "any-to-reviewer",
+  "producer": "*",
+  "consumer": "cx-reviewer",
+  "trigger": {
+    "trace.anomaly": true
+  },
+  "input": {
+    "shape": "trace-analysis-request",
+    "mustContain": [
+      "scope",
+      "window"
+    ]
+  },
+  "output": {
+    "shape": "trace-analysis",
+    "mustContain": [
+      "flaggedAgents",
+      "evidence",
+      "recommendation"
+    ]
+  },
+  "preconditions": [
+    "Trace backend reachable via the configured `CONSTRUCT_TRACE_BACKEND` adapter"
+  ],
+  "postconditions": [
+    {
+      "id": "any-to-reviewer-pc-0-every-performance-claim-cites-the-trace",
+      "description": "Every performance claim cites the trace id and span",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "any-to-reviewer-pc-1-promotion-verdicts-cite-the-staging-vs",
+      "description": "Promotion verdicts cite the staging-vs-production score delta, not a vibe",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "any-to-reviewer-pc-2-variance-and-trend-reported-alongside-median",
+      "description": "Variance and trend reported alongside median; stable medians that hide tail variance are surfaced",
+      "postconditionType": "advisory"
+    }
+  ],
+  "description": ""
+}

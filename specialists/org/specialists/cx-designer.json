@@ -12,7 +12,8 @@
     "frontend-design/state-management",
     "frontend-design/engineering",
     "frontend-design/accessibility",
-    "frontend-design/screen-reader-testing"
+    "frontend-design/screen-reader-testing",
+    "brand/output-vibe"
   ],
   "events": [
     "design.requested",

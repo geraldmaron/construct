@@ -6,6 +6,7 @@ artifactType: research-brief
 toneDefault: direct
 toneAllowed: [direct]
 verificationBar: "Every load-bearing claim cites a verifiable primary source; label inference confidence; satisfy template structure requirements."
+triggers: ["research brief", "user research"]
 ---
 # External Research Workflow
 

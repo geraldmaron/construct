@@ -1,147 +1,66 @@
 # Construct Org Chart
 
-> **Org-in-a-box framing:** Construct is your AI R&D organization. You are the founder/CEO: you give outcomes, the org figures out execution.
+> **Org-in-a-box framing:** Construct is your AI R&D organization. You are the founder/CEO: you give outcomes, the org figures out execution. You talk to `construct` (the orchestrator); it assembles the right specialists in the right sequence.
 
-## Reporting Structure
+The roster is **12 specialists** organized into **8 squads** that roll up into **6 macro groups**. Groups own decision rights; squads own day-to-day collaboration (see [teams.md](teams.md)). This roster is the consolidated result of ADR-0065 (a prior 29-role roster folded down to 12); the full 29→12 mapping is recorded in [appendix-0065-roster-mapping.md](../../decisions/adr/appendix-0065-roster-mapping.md).
+
+The source of truth is `specialists/org/specialists/*.json` (each specialist's `teamId`/`groupId`), not this page — regenerate your mental model from `construct team list` / `construct list` if they diverge.
+
+## Reporting structure
 
 ```
-Construct (Your AI R&D Organization)
+Construct (orchestrator — classifies, sequences, dispatches)
 │
-├── R&D (Research & Development) — TOP LEVEL
-│   │
-│   ├── Product Department
-│   │   ├── cx-product-manager — Product strategy, PRDs, backlog
-│   │   ├── cx-designer — UI/UX design, wireframes, flows
-│   │   ├── cx-ux-researcher — User interviews, usability studies
-│   │   └── cx-accessibility — WCAG compliance, inclusive design
-│   │
-│   ├── Engineering Department
-│   │   ├── cx-architect — System design, ADRs, RFCs, tech strategy
-│   │   ├── cx-engineer — Implementation, features, bug fixes
-│   │   ├── cx-debugger — Root cause analysis, complex debugging
-│   │   ├── cx-qa — Test strategy, quality gates, coverage
-│   │   ├── cx-sre — Reliability, incidents, runbooks, SLOs
-│   │   ├── cx-platform-engineer — Infrastructure, CI/CD, devex
-│   │   └── cx-test-automation — Test frameworks, CI integration, flake prevention
-│   │
-│   └── Intelligence Department
-│       ├── cx-researcher — Market research, competitive analysis, SOTA
-│       ├── cx-data-analyst — Metrics, experiments, product intelligence
-│       ├── cx-data-engineer — Data pipelines, ETL, data quality
-│       ├── cx-ai-engineer — AI/ML workflows, agent design, evals
-│       ├── cx-evaluator — Quality scoring, rubric design, judge systems
-│       ├── cx-trace-reviewer — Trace analysis, performance patterns
-│       └── cx-explorer — Code exploration, pattern discovery, unknown surfaces
+├── product-group
+│   ├── product-management-team → cx-product-manager
+│   ├── design-team             → cx-designer
+│   └── research-team           → cx-researcher
 │
-├── Governance (independent oversight)
-│   ├── cx-security — Threat modeling, security reviews, CVE response
-│   ├── cx-legal-compliance — GDPR, CCPA, SOC2, licensing
-│   ├── cx-reviewer — Code review, design review, critical feedback
-│   └── cx-devil-advocate — Challenges assumptions, stress-tests plans
+├── engineering-group
+│   └── engineering-team        → cx-architect · cx-engineer · cx-debugger
 │
-├── Operations (shipping & documentation)
-│   ├── cx-release-manager — Release coordination, versioning, changelogs
-│   └── cx-docs-keeper — Documentation strategy, knowledge management
+├── quality-group
+│   └── quality-team            → cx-qa · cx-reviewer
 │
-└── Strategy (business alignment)
-    ├── cx-business-strategist — Market positioning, business models
-    ├── cx-operations — Logistics, dependencies, sequencing
-    ├── cx-orchestrator — Multi-specialist coordination, dispatch optimization
-    └── cx-rd-lead — Hypothesis validation, experiment design, assumption tracking
+├── governance-group
+│   └── governance-team         → cx-security
+│
+├── operations-group
+│   └── operations-team         → cx-operations
+│
+└── strategy-group
+    └── strategy-team           → cx-data-analyst · cx-orchestrator
 ```
 
-## Key Principle: R&D Is The Top Level
+## The 12 specialists
 
-**R&D (Research & Development)** is the **entire product-building organization**, not a department. It contains:
+Each `displayName` is the specialist's own perspective bias, verbatim from its registry entry.
 
-1. **Product**: defines what to build
-2. **Engineering**: builds it
-3. **Intelligence**: discovers what's possible and measures what's broken
+| Specialist | Squad (group) | Tier | Perspective |
+|---|---|---|---|
+| cx-architect | engineering-team (engineering-group) | reasoning | Makes trade-offs explicit before implementation locks them in — suspicious of clever solutions and unwritten interface contracts. |
+| cx-engineer | engineering-team (engineering-group) | standard | Reads before writing — understanding the existing pattern matters more than having the better one. |
+| cx-debugger | engineering-team (engineering-group) | reasoning | Traces to root cause before proposing a fix — the real bug is always one layer deeper than where it presents. |
+| cx-qa | quality-team (quality-group) | standard | Asks whether the tests test what matters — coverage numbers are hypotheses about quality, not proof of it. |
+| cx-reviewer | quality-team (quality-group) | reasoning | Finds bugs by looking at the conditions the author didn't test for — happy-path review is not review. |
+| cx-security | governance-team (governance-group) | reasoning | Thinks like an attacker — sees the attack surface the developer didn't know existed. |
+| cx-product-manager | product-management-team (product-group) | reasoning | Translates user reality into technical deliverables — skeptical of any requirement that can't be traced to observed user behavior. |
+| cx-designer | design-team (product-group) | standard | Treats visual decisions as interaction decisions — a design that only exists in the happy state is incomplete. |
+| cx-researcher | research-team (product-group) | standard | Never trusts recall alone — sources every claim with a primary reference and a date. |
+| cx-data-analyst | strategy-team (strategy-group) | standard | Measures carefully because measurement shapes behavior — suspicious of metrics that can be hit without solving the problem. |
+| cx-operations | operations-team (operations-group) | standard | The logistics mind who maps dependencies, sequences, and ownership — because hidden dependencies surface as blocked work. |
+| cx-orchestrator | strategy-team (strategy-group) | standard | Sees the whole board — routes each request to the perspectives that will see what others miss. |
 
-This mirrors real-world tech orgs where the CTO/VP Engineering organization is called "R&D" and encompasses all product development.
+## What the consolidation absorbed
 
-## Department Missions
+The 12 anchors absorbed the retired roles as **skill overlays** (`skills/roles/<role>.*`) and prompt sections, not as separate personas — capability was folded in, not dropped. The high-traffic examples:
 
-### Product Department (within R&D)
-**Mission:** Define what to build and why. Own the user outcome.
+- **cx-engineer** absorbs AI-engineering, data-engineering, and platform-engineering as skill bundles it loads by task.
+- **cx-reviewer** absorbs the pre-implementation challenge (devil's-advocate), eval scoring (evaluator), and fleet-trace review (trace-reviewer).
+- **cx-operations** absorbs SRE, release-management, and docs-keeping.
+- **cx-researcher** absorbs UX-research and code-exploration.
+- **cx-security** absorbs legal/compliance.
+- **cx-designer** absorbs accessibility.
+- **cx-product-manager** absorbs business-strategy; **cx-architect** absorbs the R&D-lead framing gate; **cx-orchestrator** absorbs oracle's fleet-health routing.
 
-| Role | Focus | Key Artifacts |
-|------|-------|---------------|
-| cx-product-manager | Product strategy, prioritization | PRDs, backlogs, one-pagers |
-| cx-designer | Visual + interaction design | Wireframes, flows, mockups |
-| cx-ux-researcher | User understanding | Interview transcripts, usability reports |
-| cx-accessibility | WCAG compliance, inclusive design | Accessibility audits, screen reader tests |
-
-### Engineering Department (within R&D)
-**Mission:** Build it right. Own the implementation.
-
-| Role | Focus | Key Artifacts |
-|------|-------|---------------|
-| cx-architect | Technical direction | ADRs, RFCs, system designs |
-| cx-engineer | Feature implementation | Code, tests, documentation |
-| cx-debugger | Complex problem solving | Root cause analysis, fixes |
-| cx-qa | Quality assurance | Test plans, coverage reports |
-| cx-sre | Reliability | Runbooks, incident reports, SLOs |
-| cx-platform-engineer | Developer experience | CI/CD, infra, tooling |
-| cx-test-automation | Test frameworks | Flake prevention, CI integration |
-
-### Intelligence Department (within R&D)
-**Mission:** Discover what's possible and what's broken. Own the learning loop.
-
-| Role | Focus | Key Artifacts |
-|------|-------|---------------|
-| cx-researcher | External intelligence | Research briefs, evidence briefs |
-| cx-data-analyst | Product intelligence | Dashboards, experiment results |
-| cx-data-engineer | Data pipelines | ETL, data quality, freshness |
-| cx-ai-engineer | AI system design | Agent workflows, eval frameworks |
-| cx-evaluator | Quality measurement | Rubrics, eval datasets, scores |
-| cx-trace-reviewer | Performance analysis | Trace summaries, optimization recs |
-| cx-explorer | Code exploration | Pattern discovery, unknown surfaces |
-
-### Governance (independent from R&D)
-**Mission:** Keep it safe and sound. Own the risk surface.
-
-| Role | Focus | Key Artifacts |
-|------|-------|---------------|
-| cx-security | Security posture | Threat models, security reviews |
-| cx-legal-compliance | Regulatory compliance | Compliance checklists, audits |
-| cx-reviewer | Quality gate | Review feedback, approval decisions |
-| cx-devil-advocate | Assumption challenging | Counter-arguments, risk analysis |
-
-### Operations (supports R&D)
-**Mission:** Ship it smoothly. Own the release process.
-
-| Role | Focus | Key Artifacts |
-|------|-------|---------------|
-| cx-release-manager | Release coordination | Release plans, changelogs |
-| cx-docs-keeper | Knowledge management | Documentation strategy, audits |
-
-### Strategy (guides R&D)
-**Mission:** Align with business goals. Own the market fit.
-
-| Role | Focus | Key Artifacts |
-|------|-------|---------------|
-| cx-business-strategist | Business model | Market analysis, positioning |
-| cx-operations | Execution planning | Project plans, dependency maps |
-| cx-orchestrator | Coordination | Dispatch optimization, multi-specialist workflows |
-
-## Consolidated Roles (28 → 12)
-
-For simpler projects, the 28 specialists can be **consolidated into 12** without losing capability:
-
-| Consolidated Role | Absorbs | When to Use |
-|-------------------|---------|-------------|
-| **product-lead** | product-manager + designer + ux-researcher | Small teams, early-stage products |
-| **tech-lead** | architect + engineer + debugger | Startups, MVP development |
-| **quality-lead** | qa + accessibility + reviewer | Projects with compliance needs |
-| **reliability-lead** | sre + platform-engineer + release-manager | Production systems |
-| **intelligence-lead** | researcher + data-analyst + evaluator | Data-driven products |
-| **ai-lead** | ai-engineer + trace-reviewer | AI/ML products |
-| **security-lead** | security + legal-compliance | Regulated industries |
-| **strategy-lead** | business-strategist + operations | Growth-stage companies |
-| **docs-lead** | docs-keeper | Documentation-heavy projects |
-| **orchestrator** | orchestrator + rd-lead | Complex multi-team initiatives |
-| **critic** | devil-advocate + evaluator | High-stakes decisions |
-| **generalist** | engineer (default) | General purpose |
-
-**Note:** The org-in-a-box framing remains intact. You still talk to `construct` (the chief of staff), who dispatches to the right department heads.
+The mechanism that swaps a base specialist for a flavor overlay at dispatch time is documented in [teams.md](teams.md) (§ Specialists vs role flavors) and ADR-0047.

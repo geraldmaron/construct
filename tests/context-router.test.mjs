@@ -8,7 +8,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { buildContextPacket, ROLE_POLICIES } from '../lib/context-router.mjs';
+import { buildContextPacket, ROLE_POLICIES, normalizeContextCandidates, filterEntitledSkillCandidates } from '../lib/context-router.mjs';
 
 function artifact(overrides = {}) {
   return {
@@ -143,6 +143,85 @@ describe('buildContextPacket', () => {
     });
     assert.match(r.contextPacket.taskSummary, /incident/);
     assert.match(r.contextPacket.taskSummary, /sre/);
+  });
+});
+
+describe('normalizeContextCandidates', () => {
+  it('returns [] for non-array input', () => {
+    assert.deepEqual(normalizeContextCandidates(null), []);
+    assert.deepEqual(normalizeContextCandidates('nope'), []);
+    assert.deepEqual(normalizeContextCandidates(undefined), []);
+  });
+
+  it('coerces fields to strings and drops content-less entries', () => {
+    const out = normalizeContextCandidates([
+      { path: 123, title: null, kind: 'prd', summary: 'ok' },
+      { kind: 'prd' },
+      null,
+      42,
+    ]);
+    assert.equal(out.length, 1);
+    assert.equal(out[0].path, '123');
+    assert.equal(out[0].kind, 'prd');
+  });
+
+  it('caps count, path, title, and summary length', () => {
+    const many = Array.from({ length: 100 }, (_, i) => ({ path: `p${i}`, kind: 'target-file', summary: 'x'.repeat(5000), title: 'y'.repeat(5000) }));
+    const out = normalizeContextCandidates(many);
+    assert.equal(out.length, 40);
+    assert.ok(out[0].summary.length <= 600);
+    assert.ok(out[0].title.length <= 200);
+  });
+
+  it('defaults skillId to path for kind "skill" and preserves an explicit skillId', () => {
+    const out = normalizeContextCandidates([
+      { path: 'strategy/prioritization-methods', kind: 'skill', summary: 's' },
+      { path: 'x', kind: 'skill', skillId: 'development/testing', summary: 's' },
+      { path: 'lib/a.mjs', kind: 'target-file', summary: 's' },
+    ]);
+    assert.equal(out[0].skillId, 'strategy/prioritization-methods');
+    assert.equal(out[1].skillId, 'development/testing');
+    assert.equal(out[2].skillId, undefined);
+  });
+
+  it('keeps a finite score and drops a non-finite one', () => {
+    const out = normalizeContextCandidates([
+      { path: 'a', kind: 'prd', summary: 's', score: 0.7 },
+      { path: 'b', kind: 'prd', summary: 's', score: Number.NaN },
+    ]);
+    assert.equal(out[0].score, 0.7);
+    assert.equal(out[1].score, undefined);
+  });
+});
+
+describe('filterEntitledSkillCandidates', () => {
+  const artifacts = [
+    { path: 'lib/a.mjs', kind: 'target-file', summary: 's' },
+    { path: 'strategy/prioritization-methods', kind: 'skill', skillId: 'strategy/prioritization-methods', summary: 's' },
+    { path: 'operating/fleet-health-routing', kind: 'skill', skillId: 'operating/fleet-health-routing', summary: 's' },
+  ];
+
+  it('drops skill candidates the role is not entitled to and keeps non-skill artifacts', () => {
+    const entitled = new Set(['strategy/prioritization-methods']);
+    const { kept, denied } = filterEntitledSkillCandidates(artifacts, entitled);
+    const keptIds = kept.map((c) => c.path);
+    assert.ok(keptIds.includes('lib/a.mjs'));
+    assert.ok(keptIds.includes('strategy/prioritization-methods'));
+    assert.ok(!keptIds.includes('operating/fleet-health-routing'));
+    assert.equal(denied.length, 1);
+    assert.match(denied[0].reason, /entitlement list/);
+  });
+
+  it('treats a null or empty entitlement set as unrestricted', () => {
+    assert.equal(filterEntitledSkillCandidates(artifacts, null).kept.length, 3);
+    assert.equal(filterEntitledSkillCandidates(artifacts, new Set()).kept.length, 3);
+  });
+
+  it('gates a kind:"skill" candidate by path when no explicit skillId is set', () => {
+    const cands = [{ path: 'security/threat-modeling', kind: 'skill', summary: 's' }];
+    const { kept, denied } = filterEntitledSkillCandidates(cands, new Set(['strategy/prioritization-methods']));
+    assert.equal(kept.length, 0);
+    assert.equal(denied.length, 1);
   });
 });
 

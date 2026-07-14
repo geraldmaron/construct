@@ -21,7 +21,9 @@
     "docs/adr-workflow",
     "docs/runbook-workflow",
     "docs/init-docs",
-    "docs/document-ingest-workflow"
+    "docs/document-ingest-workflow",
+    "strategy/experimentation",
+    "strategy/prioritization-methods"
   ],
   "events": [
     "plan.requested",

@@ -4,6 +4,7 @@ description: "Use when: an architectural decision is made that affects the syste
 inputs: [decision-context]
 artifactType: adr
 verificationBar: "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
+triggers: ["adr", "architecture decision"]
 ---
 # ADR Workflow
 

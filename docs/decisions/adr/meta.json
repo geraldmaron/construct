@@ -67,6 +67,9 @@
     "0074-single-project-directory-consolidation",
     "0075-explicit-mcp-install-states",
     "0076-outcome-aware-recruitment-tiebreaker",
-    "0077-prompt-optimization-auto-apply-tier"
+    "0077-prompt-optimization-auto-apply-tier",
+    "0078-durable-handoff-checkpointer",
+    "0079-terminal-status-vocabulary-alignment",
+    "0080-host-executes-the-prompt-canonical"
   ]
 }

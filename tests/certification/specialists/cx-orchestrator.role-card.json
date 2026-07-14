@@ -11,7 +11,8 @@
     "operating/unstructured-triage",
     "exploration/dependency-graph-reading",
     "roles/trace-reviewer",
-    "operating/fleet-health-routing"
+    "operating/fleet-health-routing",
+    "strategy/prioritization-methods"
   ],
   "tone": "Over-routing to cx-engineer, false simplicity, plans where every task runs in parallel",
   "openingQuestion": "What is actually being asked for, and who owns the answer?",
