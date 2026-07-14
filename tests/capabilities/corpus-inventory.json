@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-14T00:12:42.572Z",
+  "generatedAt": "2026-07-14T00:38:16.959Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 895,
+    "testFiles": 896,
     "topLevelTestFiles": 367,
-    "nestedTestFiles": 528,
+    "nestedTestFiles": 529,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 587,
+      "unit": 588,
       "functional": 260,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 524,
+      "unit": 525,
       "functional": 260,
       "visual": 12,
       "structural-guard": 19,
@@ -6702,6 +6702,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "skills-apply.test.mjs — Regression coverage for per-host skill sidecar writers."
+    },
+    {
+      "path": "tests/skills/experimentation.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/skills/experimentation.test.mjs — construct-72gqn.32 (H5-deep)."
     },
     {
       "path": "tests/skills/prioritization-methods.test.mjs",

@@ -1206,6 +1206,23 @@
     {
       "domain": "strategy",
       "keywords": [
+        "experiment",
+        "a/b test",
+        "ab test",
+        "split test",
+        "feature flag rollout",
+        "canary",
+        "holdout",
+        "sample size",
+        "statistical power",
+        "minimum detectable effect"
+      ],
+      "path": "strategy/experimentation",
+      "priority": 10
+    },
+    {
+      "domain": "strategy",
+      "keywords": [
         "jobs to be done",
         "user",
         "research",

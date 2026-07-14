@@ -19,7 +19,8 @@
     "strategy/market-research-methods",
     "strategy/pricing-positioning",
     "strategy/narrative-arc",
-    "strategy/prioritization-methods"
+    "strategy/prioritization-methods",
+    "strategy/experimentation"
   ],
   "events": [
     "backlog.stale",
