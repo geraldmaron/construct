@@ -4431,8 +4431,8 @@ async function cmdOrchestrate(args) {
         if (!res.ok) { errorln(`Daemon error (${res.status}): ${env.error || 'unknown'}`); process.exit(1); }
         if (wantsJson) { println(JSON.stringify(env.data, null, 2)); return; }
         // AP5.4: the remote payload is subject to the same honest terminal-status
-        // taxonomy as a local run (see the `status --remote` branch below) — shape
-        // it before printing so a prepare-only remote run reports the same way.
+        // taxonomy as a local run (see the `status --remote` branch below) — shaped
+        // before printing so a prepare-only remote run reports the same way.
         const { shapeRun: shapeRemoteRun } = await import('../lib/mcp/tools/orchestration-run.mjs');
         const remoteShaped = shapeRemoteRun(env.data);
         println(`Run ${env.data.runId} started on ${base} — ${remoteShaped.status} · executionMode=${env.data.execution?.executionMode}. Poll: construct orchestrate status ${env.data.runId} --remote`);

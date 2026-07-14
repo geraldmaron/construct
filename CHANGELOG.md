@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- `construct-fperd` (bash-output-logger wrote unredacted secrets to a world-readable log): `lib/hooks/bash-output-logger.mjs` persisted the full Bash stdout/stderr for any command over the 4000-char threshold to `~/.local/state/construct/bash-logs/` with no redaction, at the default 0644/0755 modes. Confirmed live: two existing logs from a real-`op` test run carried a resolved OpenRouter key (`sk-or-v1-...`) in plaintext. The hook now runs `command`/`stdout`/`stderr` through `lib/audit-trail.mjs`'s `redactRecord` — the same known-secret-value and token-shape patterns that keep the audit chain clean — before writing, and creates the log directory/file at 0700/0600. That redaction pass alone would not have caught the actual leaked key: `audit-trail.mjs`'s `api-key` pattern matched `sk-[A-Za-z0-9]{16,}`, a body class that stops at the first internal hyphen, so it never matched the hyphenated provider-tag formats most current sk- keys actually use (`sk-ant-api03-...`, `sk-proj-...`, `sk-or-v1-...`) — which is how the real key got past it in the first place. The pattern's body now allows embedded hyphens (`sk-[A-Za-z0-9][A-Za-z0-9-]{14,}[A-Za-z0-9]`), verified against the full existing `tests/security/audit-redaction.test.mjs` suite (unaffected — no fixture there uses a hyphenated body) plus a new case. New `tests/functional/bash-output-logger-redaction.functional.test.mjs` spawns the real hook against a synthetic hyphenated-key payload and asserts on the durable log: no raw key, a redaction marker present, and 0700/0600 permissions.
+
 ## [1.5.5] - 2026-07-12
 
 ### Added
