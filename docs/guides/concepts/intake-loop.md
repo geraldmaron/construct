@@ -124,15 +124,14 @@ Dispatch Chain:
 // For user-signal intake:
 Dispatch Chain:
   1. cx-product-manager (primary. clarify requirements)
-  2. cx-ux-researcher  (user research)
-  3. cx-researcher     (competitive analysis)
+  2. cx-researcher     (user research + competitive analysis)
 ```
 
 **Parallel Checks** (new in 2026 enhancements):
 
 ```javascript
 identifyParallelChecks({ request, riskFlags })
-// Returns: ['cx-security', 'cx-accessibility']
+// Returns: ['cx-security', 'cx-designer']
 
 // These run concurrently with implementation for faster feedback
 ```
