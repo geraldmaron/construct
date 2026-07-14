@@ -512,7 +512,7 @@ Add a task to the current workflow. Pass `request` for intent-based routing (the
 | `verification` | string | Command(s) or description of how to verify the task is done. |
 | `dependsOn` | array | Task keys this task depends on. |
 | `overlays` | array | Role flavors that augment the owner persona for this task. |
-| `challengeRequired` | boolean | Force a cx-devil-advocate challenge before the task can complete. |
+| `challengeRequired` | boolean | Force a cx-reviewer challenge (devil's-advocate overlay) before the task can complete. |
 | `challengeStatus` | string | Initial challenge status when seeded. |
 | `tokenBudget` | number | Per-task token budget for cost tracking. |
 | `status` | string | Initial status override. |
