@@ -41,6 +41,16 @@
  * tests/functional/real-llm-scenarios.functional.test.mjs) gate on the
  * CONSTRUCT_CERTIFY_LIVE=1 / CONSTRUCT_E2E_REAL_LLM=1 flags, not on ambient key
  * presence, so this scrub does not disable them.
+ *
+ * Batched execution: `node --test` accumulates every file's module graph and
+ * test state in ONE process, so handing it the whole ~900-file suite at once
+ * exhausted memory and the process was SIGKILLed (construct-ox25y) — the run
+ * never finished and every release:check step after it never ran. The selected
+ * files run in bounded sequential batches of fresh child processes instead
+ * (CX_TEST_BATCH_SIZE, default 120); memory is released between batches and the
+ * aggregate status is non-zero if any batch fails. --shard composes (its subset
+ * is simply batched within), and --coverage stays single-process because
+ * per-batch coverage reports do not merge.
  */
 import { spawnSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
@@ -195,9 +205,27 @@ if (enableCoverage) {
 }
 const sterileBefore = snapshotRealConfigs();
 
-const result = spawnSync(process.execPath, [...nodeArgs, ...files, ...args], {
-  stdio: "inherit",
-});
+// One node --test process per bounded batch keeps peak memory flat regardless of
+// suite size. Batches run sequentially and every batch runs even after an earlier
+// one fails, so the full pass/fail signal matches the old single-process run; the
+// aggregate status is the first non-zero child status. Coverage keeps its single
+// process so its one report is complete.
+
+const BATCH_SIZE = Number(process.env.CX_TEST_BATCH_SIZE) || 120;
+
+function runFiles(batchFiles) {
+  return spawnSync(process.execPath, [...nodeArgs, ...batchFiles, ...args], { stdio: "inherit" }).status ?? 1;
+}
+
+let runStatus = 0;
+if (enableCoverage) {
+  runStatus = runFiles(files);
+} else {
+  for (let i = 0; i < files.length; i += BATCH_SIZE) {
+    const status = runFiles(files.slice(i, i + BATCH_SIZE));
+    if (status !== 0 && runStatus === 0) runStatus = status;
+  }
+}
 
 // A non-zero test status already fails the run; still check sterility so a
 // leak is reported even when tests otherwise pass. A drift here means a test
@@ -229,4 +257,4 @@ if (drift.drifted.length || drift.auditTrailLeaks > 0) {
   }
 }
 
-process.exit(result.status ?? 1);
+process.exit(runStatus);

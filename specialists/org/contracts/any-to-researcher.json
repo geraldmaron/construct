@@ -1,0 +1,48 @@
+{
+  "id": "any-to-researcher",
+  "producer": "*",
+  "consumer": "cx-researcher",
+  "trigger": {
+    "intent": "investigation",
+    "category": "exploration"
+  },
+  "input": {
+    "shape": "exploration-request",
+    "mustContain": [
+      "question",
+      "scope"
+    ]
+  },
+  "output": {
+    "shape": "exploration-findings",
+    "mustContain": [
+      "entryPoints",
+      "executionPath",
+      "keyFiles",
+      "dataFlow",
+      "gaps"
+    ]
+  },
+  "preconditions": [
+    "Scope tagged; investigation does not follow imports past two hops from named entry points"
+  ],
+  "postconditions": [
+    {
+      "id": "any-to-researcher-pc-0-every-claim-about-existing-code-cites",
+      "description": "Every claim about existing code cites file:line from a read actually performed",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "any-to-researcher-pc-1-one-match-is-not-called-a",
+      "description": "One match is not called a pattern; multi-callsite patterns cite each call site",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "exploration-findings-claims-cited",
+      "description": "Every load-bearing claim cites file:line or a primary external reference",
+      "check": "artifact-claims-cited",
+      "postconditionType": "executable"
+    }
+  ],
+  "description": ""
+}

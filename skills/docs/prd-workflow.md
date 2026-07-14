@@ -4,6 +4,7 @@ description: "Use when: the user asks to create a PRD, platform spec, business c
 inputs: [research-question, evidence-brief]
 artifactType: prd
 verificationBar: "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
+triggers: ["prd", "product requirements", "write a prd"]
 ---
 # PRD Workflow
 

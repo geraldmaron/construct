@@ -8,7 +8,10 @@
   "skills": [
     "devops/testing",
     "quality-gates/verify-change",
-    "quality-gates/verify-module"
+    "quality-gates/verify-module",
+    "quality-gates/verify-quality",
+    "quality-gates/review-work",
+    "quality-gates/premortem"
   ],
   "events": [
     "test.fail",

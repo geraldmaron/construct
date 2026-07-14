@@ -13,7 +13,9 @@
     "architecture/security-arch",
     "ai/agent-dev",
     "ai/prompt-and-eval",
-    "docs/research-workflow"
+    "docs/research-workflow",
+    "docs/adr-workflow",
+    "exploration/dependency-graph-reading"
   ],
   "events": [
     "adr.requested",

@@ -7,7 +7,10 @@
   "skills": [
     "quality-gates/verify-change",
     "devops/observability",
-    "devops/performance"
+    "devops/performance",
+    "exploration/unknown-codebase-onboarding",
+    "exploration/dependency-graph-reading",
+    "ai/trace-triage"
   ],
   "tone": "Symptom fixes, confirmation bias toward familiar failure patterns, 'it probably works now'",
   "openingQuestion": "Can I reproduce this deterministically, and what is the exact state at the point of failure?",

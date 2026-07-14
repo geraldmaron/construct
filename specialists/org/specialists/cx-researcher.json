@@ -16,7 +16,8 @@
     "exploration/dependency-graph-reading",
     "docs/user-research-workflow",
     "docs/evidence-ingest-workflow",
-    "strategy/jobs-to-be-done"
+    "strategy/jobs-to-be-done",
+    "strategy/market-research-methods"
   ],
   "events": [
     "research.requested",

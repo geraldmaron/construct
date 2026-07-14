@@ -83,7 +83,7 @@ Typical event-to-role mappings:
 
 - `jira:issue_created` with label `bug` → `cx-debugger`
 - `jira:issue_in_review` → `cx-reviewer`
-- `confluence:page_published` with parent "Runbooks" → `cx-sre` (for ingest)
+- `confluence:page_published` with parent "Runbooks" → `cx-operations` (for ingest)
 
 ## Common gotchas
 

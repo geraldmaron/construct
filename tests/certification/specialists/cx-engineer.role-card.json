@@ -39,7 +39,8 @@
     "devops/containerization",
     "devops/dependency-management",
     "devops/devsecops",
-    "devops/cost-optimization"
+    "devops/cost-optimization",
+    "strategy/experimentation"
   ],
   "tone": "Implementations that ignore existing conventions, abstractions that complicate the simple case",
   "openingQuestion": "What does the existing pattern look like, and where does my change fit?",

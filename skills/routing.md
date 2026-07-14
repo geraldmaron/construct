@@ -1,148 +1,188 @@
 <!--
-skills/routing.md (Construct AI Agent) Skill Routing: Read the matching skill file before responding when the user's request matches t
-
-Read the matching skill file before responding when the user's request matches trigger keywords below. ## Exploration Domain
+skills/routing.md — generated render of skills/routing.json. Do not hand-edit: run
+`node scripts/generate-skill-routing.mjs --write` (or `construct skills:routes --write`).
 -->
-# Construct AI Agent: Skill Routing
 
-Read the matching skill file before responding when the user's request matches trigger keywords below.
+# Skill routing
 
-## Exploration Domain
+One row per skill reachable via `suggest_skills`/`search_skills`. A skill with authored
+`triggers:` frontmatter is marked **authored**; everything else gets a lower-priority
+**derived** entry from its own name/description so it stays reachable regardless.
 
-| Trigger Keywords | Skill File | Description |
+## ai
+
+| Skill | Keywords | Source |
 |---|---|---|
-| explore repo, map codebase, understand codebase, unfamiliar codebase, slog through, get oriented, codebase map, how is this structured, how does this work, where is X, entry point, hot path, code map | `skills/exploration/repo-map.md` | Systematic repo exploration: produce .cx/codebase-map.md |
+| `ai/agent-dev` | agent dev, building, agents, tool-use, systems, multi-agent | derived |
+| `ai/llm-security` | llm security, securing, llm-powered, applications, against, prompt | derived |
+| `ai/ml-ops` | ml ops, patterns, anti-patterns, reference, guidance, operations | derived |
+| `ai/orchestration-workflow` | orchestration, handoff contract, workflow state | authored |
+| `ai/prompt-and-eval` | prompt and eval, designing, prompts, evaluating, model, performance | derived |
+| `ai/prompt-optimizer` | prompt optimizer, closed-loop, prompt, optimization, guide, task | derived |
+| `ai/rag-system` | rag, retrieval, vector database, embedding | authored |
+| `ai/trace-triage` | trace triage, agent, telemetry, traces, need, triage | derived |
 
-## Quality Gates
+## architecture
 
-| Trigger Keywords | Skill File | Description |
+| Skill | Keywords | Source |
 |---|---|---|
-| security scan, vulnerability, secrets, auth audit | `skills/quality-gates/verify-security.md` | Security vulnerability scan |
-| code quality, complexity, code smell, naming | `skills/quality-gates/verify-quality.md` | Code quality analysis |
-| change impact, what broke, doc sync, regression | `skills/quality-gates/verify-change.md` | Change impact analysis |
-| module structure, exports, completeness | `skills/quality-gates/verify-module.md` | Module structure check |
-| parallel review, adversarial review, 5-reviewer, pre-merge review | `skills/quality-gates/review-work.md` | 5-role parallel adversarial review methodology |
+| `architecture/api-design` | api design, designing, rest, graphql, grpc, apis | derived |
+| `architecture/caching` | caching, designing, strategies, applications, apis, infrastructure | derived |
+| `architecture/cloud-native` | cloud native, designing, containerized, orchestrated, microservice-based, systems | derived |
+| `architecture/message-queue` | message queue, designing, asynchronous, communication, event-driven, systems | derived |
+| `architecture/security-arch` | security arch, designing, authentication, authorization, network, security | derived |
 
-## Utility Domain
+## brand
 
-| Trigger Keywords | Skill File | Description |
+| Skill | Keywords | Source |
 |---|---|---|
-| ai slop, verbose code, over-commented, clean code, hedging names, dead comments, unnecessary wrapper | `skills/utility/clean-code.md` | AI slop removal patterns and heuristics |
+| `brand/output-vibe` | prd, write a prd, product requirements doc, export, deck, pdf, presentation, artifact vibe | authored |
 
-## Security Domain
+## compliance
 
-| Trigger Keywords | Skill File | Description |
+| Skill | Keywords | Source |
 |---|---|---|
-| pentest, red team, exploit, C2, lateral movement, privilege escalation, evasion, persistence | `skills/security/red-team.md` | Red team attack techniques |
-| blue team, alert, IOC, incident response, forensics, SIEM, EDR, containment | `skills/security/blue-team.md` | Blue team defense and incident response |
-| web pentest, API security, OWASP, SQLi, XSS, SSRF, RCE, injection | `skills/security/pentest.md` | Web and API penetration testing |
-| code audit, dangerous function, taint analysis, sink, source | `skills/security/code-audit.md` | Source code security audit |
-| binary, reversing, PWN, fuzzing, stack overflow, heap overflow, ROP | `skills/security/vuln-research.md` | Vulnerability research and exploitation |
-| OSINT, threat intelligence, threat modeling, ATT&CK, threat hunting | `skills/security/threat-intel.md` | Threat intelligence and OSINT |
+| `compliance/ai-disclosure` | ai disclosure, reviewing, features, disclosure, requirements, transparency | derived |
+| `compliance/data-privacy` | data privacy, reviewing, data, collection, storage, processing | derived |
+| `compliance/license-audit` | license audit, auditing, dependency, licenses, evaluating, compliance | derived |
+| `compliance/regulatory-review` | regulatory review, conducting, compliance, review, shipping, features | derived |
 
-## Architecture Domain
+## development
 
-| Trigger Keywords | Skill File | Description |
+| Skill | Keywords | Source |
 |---|---|---|
-| API design, REST, GraphQL, gRPC, endpoint, versioning | `skills/architecture/api-design.md` | API design patterns |
-| caching, Redis, Memcached, cache invalidation, CDN | `skills/architecture/caching.md` | Caching strategies |
-| cloud native, Kubernetes, Docker, microservice, service mesh | `skills/architecture/cloud-native.md` | Cloud-native architecture |
-| message queue, Kafka, RabbitMQ, event driven, pub/sub | `skills/architecture/message-queue.md` | Message queue and event-driven patterns |
-| security architecture, zero trust, defense in depth, IAM | `skills/architecture/security-arch.md` | Security architecture |
+| `development/cpp` | cpp, writing, reviewing, debugging, code | derived |
+| `development/go` | go, writing, reviewing, debugging, code | derived |
+| `development/java` | java, writing, reviewing, debugging, kotlin, code | derived |
+| `development/kotlin` | kotlin, patterns, anti-patterns, reference, guidance, android | derived |
+| `development/mobile-crossplatform` | mobile crossplatform, choosing, framework, answer, task, matches | derived |
+| `development/python` | python, writing, reviewing, debugging, code | derived |
+| `development/rust` | rust, writing, reviewing, debugging, code | derived |
+| `development/shell` | shell, writing, reviewing, debugging, bash, posix | derived |
+| `development/swift` | swift, enforces, data-race, safety, compile, time | derived |
+| `development/typescript` | typescript, writing, reviewing, debugging, javascript, code | derived |
 
-## AI / MLOps Domain
+## devops
 
-| Trigger Keywords | Skill File | Description |
+| Skill | Keywords | Source |
 |---|---|---|
-| RAG, retrieval augmented, vector database, embedding, chunking | `skills/ai/rag-system.md` | RAG system design |
-| AI agent, tool use, function calling, agent framework, orchestration | `skills/ai/agent-dev.md` | AI agent development |
-| workflow state, orchestration state, task key, handoff contract, phase gate, project alignment | `skills/ai/orchestration-workflow.md` | Construct-style workflow state and phase alignment |
-| LLM security, prompt injection, jailbreak, guardrail | `skills/ai/llm-security.md` | LLM security and guardrails |
-| prompt engineering, model evaluation, benchmark, fine-tuning | `skills/ai/prompt-and-eval.md` | Prompt engineering and evaluation |
-| prompt optimization, improve prompt, optimize agent, quality score, prompt rollback | `skills/ai/prompt-optimizer.md` | Closed-loop prompt optimization via telemetry traces (human-gated apply) |
-| MLOps, ML pipeline, model registry, model deployment, feature store, drift detection, model monitoring, training pipeline | `skills/ai/ml-ops.md` | ML operations and model lifecycle |
+| `devops/ci-cd` | ci cd, designing, debugging, optimizing, pipelines | derived |
+| `devops/containerization` | containerization, writing, dockerfiles, optimizing, image, size | derived |
+| `devops/cost-optimization` | cost optimization, reducing, cloud, spend, right-sizing, resources | derived |
+| `devops/data-engineering` | data engineering, idempotency, pipelines, multiple, times, without | derived |
+| `devops/database` | database, designing, schemas, writing, migrations, optimizing | derived |
+| `devops/dependency-management` | dependency management, managing, package, upgrades, resolving, cves | derived |
+| `devops/devsecops` | devsecops, integrating, security, pipelines, managing, supply | derived |
+| `devops/git-workflow` | git workflow, establishing, branching, strategies, commit, conventions | derived |
+| `devops/incident-response` | incident response, define, severity, runbook, assign, early | derived |
+| `devops/monorepo` | monorepo, selecting, tooling, structuring, packages, optimizing | derived |
+| `devops/observability` | observability, designing, logging, tracing, metrics, alerting | derived |
+| `devops/performance` | performance, profiling, load, testing, optimizing, application | derived |
+| `devops/testing` | testing, planning, test, coverage, selecting, types | derived |
 
-## DevOps Domain
+## docs
 
-| Trigger Keywords | Skill File | Description |
+| Skill | Keywords | Source |
 |---|---|---|
-| Git workflow, branching strategy, trunk-based, GitFlow | `skills/devops/git-workflow.md` | Git workflow patterns |
-| testing strategy, unit test, integration test, e2e, test pyramid | `skills/devops/testing.md` | Testing strategy |
-| database, migration, schema design, indexing, query optimization | `skills/devops/database.md` | Database patterns |
-| performance, profiling, load test, latency, throughput | `skills/devops/performance.md` | Performance engineering |
-| observability, logging, tracing, metrics, Prometheus, Grafana | `skills/devops/observability.md` | Observability and monitoring |
-| DevSecOps, CI security, SAST, DAST, supply chain | `skills/devops/devsecops.md` | DevSecOps practices |
-| cost optimization, cloud cost, FinOps, resource right-sizing | `skills/devops/cost-optimization.md` | Cloud cost optimization |
-| CI/CD, pipeline, GitHub Actions, GitLab CI, workflow, continuous integration, continuous deployment, build pipeline | `skills/devops/ci-cd.md` | CI/CD pipeline design and optimization |
-| monorepo, pnpm workspaces, Turborepo, Nx, Bazel, workspace, multi-package, affected builds | `skills/devops/monorepo.md` | Monorepo tooling and management |
-| dependency upgrade, package update, lock file, Dependabot, Renovate, transitive CVE, npm audit, vulnerability, outdated packages | `skills/devops/dependency-management.md` | Dependency management and upgrade safety |
-| Docker, container, Dockerfile, multi-stage, image scanning, Trivy, Snyk, OCI, containerize | `skills/devops/containerization.md` | Docker and OCI container best practices |
-| incident response, on-call, runbook, post-mortem, blameless, PagerDuty, SLA, outage, escalation | `skills/devops/incident-response.md` | Incident response and post-mortem process |
-| data pipeline, ELT, ETL, dbt, Airflow, Kafka, Spark, Flink, data warehouse, feature store, data contract | `skills/devops/data-engineering.md` | Data pipeline and warehouse engineering |
+| `docs/adr-workflow` | adr, architecture decision | authored |
+| `docs/backlog-proposal-workflow` | backlog proposal workflow, product, evidence, create, update, jira | derived |
+| `docs/codebase-research-workflow` | codebase research workflow, cx-researcher, maps, repo, entry, points | derived |
+| `docs/customer-profile-workflow` | customer profile workflow, customer, evidence, update, durable, product | derived |
+| `docs/document-ingest-workflow` | document ingest workflow, user, points, word, spreadsheet, slide | derived |
+| `docs/evidence-ingest-workflow` | evidence ingest workflow, user, pastes, customer, notes, slack | derived |
+| `docs/init-docs` | init docs, init, docs, create, structure, documentation | derived |
+| `docs/init-project` | init project, starting, work, project, joining, existing | derived |
+| `docs/memo-and-decision-capture` | memo and decision capture, decision, status, update, announcement, needs | derived |
+| `docs/prd-workflow` | prd, product requirements, write a prd | authored |
+| `docs/prfaq-workflow` | prfaq workflow, user, asks, prfaq, working-backwards, launch | derived |
+| `docs/product-intelligence-review` | product intelligence review, reviewing, prds, meta, prfaqs, evidence | derived |
+| `docs/product-intelligence-workflow` | product intelligence workflow, request, involves, customer, evidence, synthesis | derived |
+| `docs/product-signal-workflow` | product signal workflow, user, asks, customers, asking, themes | derived |
+| `docs/research-workflow` | research brief, user research | authored |
+| `docs/runbook-workflow` | runbook workflow, creating, operational, procedures, services, alerts | derived |
+| `docs/strategy-workflow` | strategy, bets, non-bets | authored |
+| `docs/transcript-synthesis` | transcript synthesis, meeting, call, interview, transcript, needs | derived |
+| `docs/user-research-workflow` | user research workflow, cx-researcher, synthesizes, user, evidence, interviews | derived |
 
-## Development Domain
+## exploration
 
-| Trigger Keywords | Skill File | Description |
+| Skill | Keywords | Source |
 |---|---|---|
-| Python, Django, Flask, FastAPI, pip, poetry | `skills/development/python.md` | Python best practices |
-| Go, Golang, goroutine, channel | `skills/development/go.md` | Go best practices |
-| Rust, cargo, borrow checker, lifetime | `skills/development/rust.md` | Rust best practices |
-| TypeScript, JavaScript, Node, Deno, Bun | `skills/development/typescript.md` | TypeScript best practices |
-| Java, Kotlin, Spring, JVM, Maven, Gradle | `skills/development/java.md` | Java best practices |
-| C, C++, CMake, pointer, memory management | `skills/development/cpp.md` | C/C++ best practices |
-| Shell, Bash, Zsh, scripting, CLI | `skills/development/shell.md` | Shell scripting best practices |
-| Swift, iOS, SwiftUI, Xcode, UIKit, Combine | `skills/development/swift.md` | Swift / iOS development |
-| Kotlin Android, Jetpack Compose, coroutines, Android, Hilt | `skills/development/kotlin.md` | Kotlin / Android development |
-| Flutter, React Native, cross-platform mobile, Dart, Expo | `skills/development/mobile-crossplatform.md` | Cross-platform mobile frameworks |
+| `exploration/dependency-graph-reading` | dependency graph reading, assessing, risk, surface, project, dependencies | derived |
+| `exploration/repo-map` | explore repo, map codebase, codebase map, unfamiliar codebase, how is this structured | authored |
+| `exploration/tracer-bullet-method` | tracer bullet method, beginning, implementation, system, integration, architectural | derived |
+| `exploration/unknown-codebase-onboarding` | unknown codebase onboarding, entering, unfamiliar, codebase, first, time | derived |
 
-## Frontend Design Domain
+## frameworks
 
-| Trigger Keywords | Skill File | Description |
+| Skill | Keywords | Source |
 |---|---|---|
-| UI aesthetics, visual design, color theory, layout | `skills/frontend-design/ui-aesthetics.md` | UI visual design |
-| UX principles, usability, user flow, information architecture | `skills/frontend-design/ux-principles.md` | UX design principles |
-| component patterns, design system, atomic design | `skills/frontend-design/component-patterns.md` | Component architecture |
-| state management, Redux, Zustand, Pinia, context | `skills/frontend-design/state-management.md` | Frontend state management |
-| frontend engineering, build tool, bundler, SSR, SSG | `skills/frontend-design/engineering.md` | Frontend engineering |
-| accessibility, WCAG, ARIA, screen reader, keyboard navigation, a11y, color contrast, inclusive design | `skills/frontend-design/accessibility.md` | WCAG 2.2 accessibility and inclusive design |
+| `frameworks/django` | django, patterns, anti-patterns, reference, guidance, task | derived |
+| `frameworks/nextjs` | nextjs, patterns, anti-patterns, reference, guidance, next | derived |
+| `frameworks/react` | react, default, components, server, they, state | derived |
+| `frameworks/spring-boot` | spring boot, patterns, anti-patterns, reference, guidance, spring | derived |
 
-## Frameworks Domain
+## frontend-design
 
-| Trigger Keywords | Skill File | Description |
+| Skill | Keywords | Source |
 |---|---|---|
-| React, JSX, hooks, useState, useEffect, RSC, Server Components | `skills/frameworks/react.md` | React patterns and best practices |
-| Next.js, App Router, Server Actions, ISR, route handler, Vercel | `skills/frameworks/nextjs.md` | Next.js App Router |
-| Django, DRF, Django REST, Django ORM, Django views | `skills/frameworks/django.md` | Django and Django REST Framework |
-| Spring Boot, Spring Security, JPA, @RestController, @Service | `skills/frameworks/spring-boot.md` | Spring Boot layered architecture |
+| `frontend-design/accessibility` | accessibility, target, wcag, minimum, public-facing, product | derived |
+| `frontend-design/component-patterns` | component patterns, designing, component, architecture, building, design | derived |
+| `frontend-design/engineering` | engineering, working, build, tooling, bundling, rendering | derived |
+| `frontend-design/screen-reader-testing` | screen reader testing, needs, tested, screen, reader, keyboard | derived |
+| `frontend-design/state-management` | state management, choosing, state, management, tools, structuring | derived |
+| `frontend-design/ui-aesthetics` | ui aesthetics, making, visual, design, decisions, color | derived |
+| `frontend-design/ux-principles` | ux principles, designing, user, flows, evaluating, usability | derived |
 
-## Documentation Domain
+## operating
 
-| Trigger Keywords | Skill File | Description |
+| Skill | Keywords | Source |
 |---|---|---|
-| init docs, create docs structure, set up documentation, docs scaffold, documentation init | `skills/docs/init-docs.md` | Initialize required project-state docs and documentation structure |
-| research X, investigate X, find evidence, gather evidence, CVE, vendor docs, market data | `skills/docs/research-workflow.md` | External research workflow (cx-researcher) |
-| user research, interview synthesis, support tickets, UX evidence, field notes | `skills/docs/user-research-workflow.md` | User research workflow (cx-ux-researcher) |
-| map codebase, explore repo structure, dependency graph, hot path | `skills/docs/codebase-research-workflow.md` | Codebase research workflow (cx-explorer) |
-| product intelligence, customer notes, field notes, product signals, customer profile, evidence brief, signal brief, backlog proposal | `skills/docs/product-intelligence-workflow.md` | Product Intelligence workflow: evidence to product artifacts |
-| strategy, product strategy, strategic bet, non-bet, north star, time horizon, competitive positioning | `skills/docs/strategy-workflow.md` | Product strategy: read, update, and reason about the strategy store |
-| ingest evidence, ingest customer notes, ingest Slack thread, ingest support ticket, normalize field notes | `skills/docs/evidence-ingest-workflow.md` | Evidence ingest workflow: raw source to .cx/knowledge/ |
-| write a PRD, create requirements, spec out, requirements document, Meta PRD, platform PRD | `skills/docs/prd-workflow.md` | PRD workflow: requirements to docs/specs/prd/ or docs/meta-prd/ |
-| write a PRFAQ, working backwards doc, press release FAQ | `skills/docs/prfaq-workflow.md` | PRFAQ workflow: launch narrative from PRD or evidence |
-| create Jira proposal, update Linear, backlog proposal, issue proposal | `skills/docs/backlog-proposal-workflow.md` | Backlog proposal workflow: approval-gated issue tracker changes |
-| record this decision, create an ADR, architecture decision | `skills/docs/adr-workflow.md` | ADR workflow: decision to docs/decisions/adr/ file |
-| write a runbook, document this operation, operational procedure | `skills/docs/runbook-workflow.md` | Runbook workflow: operation to docs/operations/runbooks/ file |
-| init project, new project setup, join project, set up doc structure | `skills/docs/init-project.md` | Project initialization via `construct init --docs-preset=*` |
+| `operating/change-management` | change management, change, needs, categorized, reversibility, designing | derived |
+| `operating/fleet-health-routing` | fleet health routing, fleet-level, routing, bounded-auto, policy, cx-orchestrator | derived |
+| `operating/incident-response` | incident response, issue, active, production, building, incident | derived |
+| `operating/oncall-rotation` | oncall rotation, setting, on-call, reviewing, health, handling | derived |
+| `operating/orchestration-reference` | orchestration reference, detailed, orchestration, reference, loaded, demand | derived |
+| `operating/raw-data-structuring` | raw data structuring, dataset, json, export, dump, needs | derived |
+| `operating/unstructured-triage` | unstructured triage, brain-dump, rough, notes, free-form, input | derived |
 
-## Routing Rules
+## quality-gates
 
-1. Match on intent, not exact string. "How do I prevent SQL injection" triggers `pentest.md`.
-2. When a request spans two domains, read both skill files.
-3. Detect programming language from file extensions or context and read the corresponding development skill.
-4. Read each skill file once per conversation.
-5. Skill file content is authoritative over training data when they conflict.
+| Skill | Keywords | Source |
+|---|---|---|
+| `quality-gates/premortem` | premortem, plan, design, needs, imagining, already | derived |
+| `quality-gates/review-work` | review work, methodology, change, needs, rigorous, pre-merge | derived |
+| `quality-gates/verify-change` | change impact, regression, what broke | authored |
+| `quality-gates/verify-module` | verify module, check, module, package, structurally, complete | derived |
+| `quality-gates/verify-quality` | code quality, complexity, code smell | authored |
+| `quality-gates/verify-security` | security scan, vulnerability, secrets, auth audit | authored |
 
-## Agent Roster Disambiguation
+## security
 
-**cx-engineer vs cx-platform-engineer:** cx-engineer builds product features for end users. cx-platform-engineer builds the internal platform: CI/CD, deployment tooling, developer environments, internal APIs, and reliability infrastructure. They operate in distinct domains with different quality bars (user-facing UX vs. developer ergonomics and system reliability). Use cx-platform-engineer when the subject is a platform service, internal tool, build pipeline, or infrastructure component that engineers consume, not end users.
+| Skill | Keywords | Source |
+|---|---|---|
+| `security/blue-team` | blue team, defending, systems, responding, incidents, building | derived |
+| `security/code-audit` | code audit, reviewing, source, code, security, vulnerabilities | derived |
+| `security/pentest` | pentest, owasp, sql injection, xss | authored |
+| `security/red-team` | red team, planning, executing, offensive, security, assessments | derived |
+| `security/threat-intel` | threat intel, performing, osint, threat, modeling, building | derived |
+| `security/vuln-research` | vuln research, analyzing, binaries, fuzzing, software, developing | derived |
 
-**Platform domain overlays** (`roles/product-manager.platform`, `roles/architect.platform`) apply when the **product** being designed is a developer-facing platform (API, SDK, extensibility). **Platform engineering work** (CI/CD, internal tooling, IaC) routes to `cx-platform-engineer` and loads `roles/platform-engineer` per ADR-0047.
+## strategy
+
+| Skill | Keywords | Source |
+|---|---|---|
+| `strategy/competitive-landscape` | competitive landscape, team, needs, structured, read, market | derived |
+| `strategy/experimentation` | experiment, a/b test, ab test, split test, feature flag rollout, canary, holdout, sample size, statistical power, minimum detectable effect | authored |
+| `strategy/jobs-to-be-done` | jobs to be done, user, research, needs, uncover, hiring | derived |
+| `strategy/market-research-methods` | market research methods, team, needs, validate, assumptions, committing | derived |
+| `strategy/narrative-arc` | narrative arc, argument, must, move, people, just | derived |
+| `strategy/pricing-positioning` | pricing positioning, team, needs, price, adjust, positioning | derived |
+| `strategy/prioritization-methods` | prioritize, prioritization, backlog ranking, roadmap prioritization, rice score, wsjf, cost of delay, value versus effort, which to build first, what to build next | authored |
+
+## utility
+
+| Skill | Keywords | Source |
+|---|---|---|
+| `utility/clean-code` | clean code, patterns, heuristics, identifying, removing, ai-generated | derived |
+

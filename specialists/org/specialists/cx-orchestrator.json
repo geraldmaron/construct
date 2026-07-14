@@ -12,7 +12,8 @@
     "operating/unstructured-triage",
     "exploration/dependency-graph-reading",
     "roles/trace-reviewer",
-    "operating/fleet-health-routing"
+    "operating/fleet-health-routing",
+    "strategy/prioritization-methods"
   ],
   "events": [
     "handoff.received"
