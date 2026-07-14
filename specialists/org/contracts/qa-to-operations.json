@@ -1,5 +1,5 @@
 {
-  "id": "qa-to-release-manager",
+  "id": "qa-to-operations",
   "producer": "cx-qa",
   "consumer": "cx-operations",
   "trigger": {
@@ -30,12 +30,12 @@
   ],
   "postconditions": [
     {
-      "id": "qa-to-release-manager-pc-0-rollback-plan-tested-not-just-described",
+      "id": "qa-to-operations-pc-0-rollback-plan-tested-not-just-described",
       "description": "Rollback plan tested, not just described",
       "postconditionType": "advisory"
     },
     {
-      "id": "qa-to-release-manager-pc-1-rollout-plan-has-concrete-checkpoint-signals",
+      "id": "qa-to-operations-pc-1-rollout-plan-has-concrete-checkpoint-signals",
       "description": "Rollout plan has concrete checkpoint signals",
       "postconditionType": "advisory"
     }

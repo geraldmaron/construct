@@ -69,7 +69,7 @@ function makeNoiseRows(ts = new Date().toISOString()) {
     });
     rows.push({
       ts,
-      contractId: 'accessibility-to-qa',
+      contractId: 'designer-to-qa',
       agent: 'cx-accessibility',
       verdict: 'CONTRACT_VIOLATION',
       direction: 'output',
