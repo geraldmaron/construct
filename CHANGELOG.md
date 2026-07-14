@@ -4,6 +4,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.5.6] - 2026-07-14
+
 ### Fixed
 
 - CI `template policy` gate now exempts bot authors (`scripts/lint-commits-pr.mjs`): the gate requires a PR body carrying the human PR-template headings (`## Summary`, `## Beads issue`, `## Test plan`, …), which a dependabot/renovate PR's auto-generated body structurally cannot satisfy — so every dependabot PR failed `ci-required` on a documentation policy despite passing every correctness check (tests, build, lint, evals). The body check now skips PRs authored by a `*[bot]` account (dependabot, renovate), by author: the CI step keeps no `continue-on-error` (the blocking-gate invariant the audit's `tests/ci-parity.test.mjs` pins stays intact) and humans are still hard-failed, while a bot's dependency-bump traceability rides its own release notes. `ci.yml`'s `template policy` step now passes `PR_AUTHOR`; new `tests/lint-commits-pr-bot-exemption.test.mjs` pins bot-exempt / human-enforced / fail-closed-when-author-unknown, and the stale `continue-on-error` comment on the step (the gate has been blocking) was corrected.
