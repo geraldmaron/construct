@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-14T04:38:10.781Z",
+  "generatedAt": "2026-07-14T13:36:07.493Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 906,
-    "topLevelTestFiles": 368,
+    "testFiles": 907,
+    "topLevelTestFiles": 369,
     "nestedTestFiles": 538,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 591,
+      "unit": 592,
       "functional": 267,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 528,
+      "unit": 529,
       "functional": 267,
       "visual": 12,
       "structural-guard": 19,
@@ -5180,6 +5180,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/libreoffice-export.test.mjs — LibreOffice bin resolution and detect contract."
+    },
+    {
+      "path": "tests/lint-commits-pr-bot-exemption.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/lint-commits-pr-bot-exemption.test.mjs — template-policy bot exemption."
     },
     {
       "path": "tests/logging-rotate.test.mjs",
