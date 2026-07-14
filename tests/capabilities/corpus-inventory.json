@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-14T01:21:48.531Z",
+  "generatedAt": "2026-07-14T01:27:47.770Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 899,
+    "testFiles": 900,
     "topLevelTestFiles": 367,
-    "nestedTestFiles": 532,
+    "nestedTestFiles": 533,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
       "unit": 589,
-      "functional": 262,
+      "functional": 263,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
       "unit": 526,
-      "functional": 262,
+      "functional": 263,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -4306,6 +4306,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/team-sources.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/team-vs-solo-comparison.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/team-vs-solo-comparison.functional.test.mjs — construct-72gqn.18 (L5)."
     },
     {
       "path": "tests/functional/telemetry-backend-agnostic.functional.test.mjs",
