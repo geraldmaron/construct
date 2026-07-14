@@ -49,6 +49,7 @@ export function createFakeJiraTransport({ projects } = {}) {
   let mode = 'normal'; // 'normal' | 'createmeta-unknown-project' | 'createmeta-missing-field' | 'permission-denied' | 'not-found'
   let createmetaCallCount = 0;
   let createIssueCallCount = 0;
+  let updateIssueCallCount = 0;
 
   function buildCreatemetaResponse(projectKey, issueTypeName) {
     const project = projectDefs[projectKey];
@@ -97,6 +98,7 @@ export function createFakeJiraTransport({ projects } = {}) {
     reset: () => { issues.length = 0; comments.length = 0; mode = 'normal'; },
     createmetaCallCount: () => createmetaCallCount,
     createIssueCallCount: () => createIssueCallCount,
+    updateIssueCallCount: () => updateIssueCallCount,
 
     // ── jiraTransport contract ────────────────────────────────────────────
 
@@ -134,6 +136,23 @@ export function createFakeJiraTransport({ projects } = {}) {
       const url = `https://jira.example.com/browse/${key}`;
       issues.push({ id, key, url, project, issueType, summary, description, labels, assignee });
       return { id, key, url };
+    },
+
+    async updateIssue(issueKey, fields) {
+      updateIssueCallCount += 1;
+      if (mode === 'permission-denied') {
+        const err = new Error('Forbidden');
+        err.status = 403;
+        throw err;
+      }
+      if (mode === 'not-found') {
+        const err = new Error('Not Found');
+        err.status = 404;
+        throw err;
+      }
+      const issue = issues.find((i) => i.key === issueKey);
+      if (issue) Object.assign(issue, fields);
+      return { key: issueKey, url: `https://jira.example.com/browse/${issueKey}` };
     },
 
     async createComment(issueKey, adfBody) {
