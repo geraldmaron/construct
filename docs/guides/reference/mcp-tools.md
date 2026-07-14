@@ -876,6 +876,13 @@ Inspect orchestration runs: pass `run_id` for the full shaped record (status, pe
 | `run_id` | string | Run id to fetch. Omit to list recent runs. |
 | `limit` | number | Max runs to list when `run_id` is omitted (default 20). |
 
+### `orchestration_cancel`
+Request cancellation of an in-progress orchestration run by `run_id`. A soft, cooperative cancel: the run stops cleanly before its next task (an in-flight model call is not aborted), and the request is persisted on the run so a run executing in another process observes it. Returns an error for an unknown or already-terminal run.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `run_id` | string | **required** — Run id to cancel. |
+
 ## Telemetry (additional)
 
 ### `cx_trace_telemetry`

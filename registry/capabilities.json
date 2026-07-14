@@ -1,7 +1,7 @@
 {
   "version": 1,
   "catalog": {
-    "generatedAt": "2026-07-14T01:29:45.721Z",
+    "generatedAt": "2026-07-14T01:58:48.067Z",
     "npmScripts": [
       "adapters",
       "audit:published",
