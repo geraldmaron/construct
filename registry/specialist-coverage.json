@@ -334,7 +334,7 @@
       "role": "product-manager",
       "team": "product-management-team",
       "skills": {
-        "count": 13,
+        "count": 14,
         "entitled": [
           "docs/product-intelligence-workflow",
           "docs/evidence-ingest-workflow",
@@ -348,7 +348,8 @@
           "strategy/competitive-landscape",
           "strategy/market-research-methods",
           "strategy/pricing-positioning",
-          "strategy/narrative-arc"
+          "strategy/narrative-arc",
+          "strategy/prioritization-methods"
         ],
         "unresolved": []
       },

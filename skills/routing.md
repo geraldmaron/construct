@@ -177,6 +177,7 @@ One row per skill reachable via `suggest_skills`/`search_skills`. A skill with a
 | `strategy/market-research-methods` | market research methods, team, needs, validate, assumptions, committing | derived |
 | `strategy/narrative-arc` | narrative arc, argument, must, move, people, just | derived |
 | `strategy/pricing-positioning` | pricing positioning, team, needs, price, adjust, positioning | derived |
+| `strategy/prioritization-methods` | prioritize, prioritization, backlog ranking, roadmap prioritization, rice score, wsjf, cost of delay, value versus effort, which to build first, what to build next | authored |
 
 ## utility
 
