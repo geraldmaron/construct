@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 2,
+  "specialistId": "cx-debugger",
+  "capabilityId": "specialist.prompt",
+  "mode": "normal",
+  "scenarioKind": "happy-path-representative",
+  "representativeTask": {
+    "prompt": "This request intermittently 500s in production; find the root cause before proposing a fix.",
+    "inputs": { "symptom": "intermittent HTTP 500", "environment": "production" }
+  },
+  "expectedBehavior": {
+    "mustContainAny": ["reproduce", "root cause", "invariant", "earliest anomaly", "isolate", "stack trace"],
+    "mustNotContain": ["probably works now"],
+    "mustRefuse": false,
+    "mustEscalateTo": [],
+    "mustStateAssumptions": false
+  }
+}

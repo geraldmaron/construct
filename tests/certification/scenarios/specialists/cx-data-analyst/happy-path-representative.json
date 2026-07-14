@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 2,
+  "specialistId": "cx-data-analyst",
+  "capabilityId": "specialist.prompt",
+  "mode": "normal",
+  "scenarioKind": "happy-path-representative",
+  "representativeTask": {
+    "prompt": "Define the success metric for the new onboarding flow and how we'll know it actually worked — not just that we shipped it.",
+    "inputs": { "surface": "new user onboarding flow" }
+  },
+  "expectedBehavior": {
+    "mustContainAny": ["primary metric", "guardrail", "baseline", "randomization", "minimum detectable effect", "MDE", "vanity"],
+    "mustNotContain": [],
+    "mustRefuse": false,
+    "mustEscalateTo": [],
+    "mustStateAssumptions": true
+  }
+}

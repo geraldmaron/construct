@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-14T00:38:16.959Z",
+  "generatedAt": "2026-07-14T00:57:18.821Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
     "testFiles": 896,
@@ -1182,7 +1182,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/certification/specialist-scenarios.test.mjs — per-specialist scenario fixtures."
+      "maintainerNotes": "tests/certification/specialist-scenarios.test.mjs — per-specialist scenario fixtures (schema v2)."
     },
     {
       "path": "tests/certification/stale-impact.test.mjs",
