@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-11T01:07:05.152Z",
+  "generatedAt": "2026-07-14T03:06:34.245Z",
   "generator": "lib/certification/skill-inventory.mjs",
-  "skillCount": 153,
+  "skillCount": 155,
   "skills": [
     {
       "id": "ai/agent-dev",
@@ -137,6 +137,7 @@
     {
       "id": "ai/trace-triage",
       "owners": [
+        "cx-debugger",
         "cx-reviewer"
       ],
       "activationTriggers": [
@@ -571,6 +572,7 @@
     {
       "id": "devops/data-engineering",
       "owners": [
+        "cx-data-analyst",
         "cx-engineer"
       ],
       "activationTriggers": [
@@ -757,6 +759,7 @@
     {
       "id": "docs/adr-workflow",
       "owners": [
+        "cx-architect",
         "cx-operations"
       ],
       "activationTriggers": [
@@ -1283,6 +1286,8 @@
     {
       "id": "exploration/dependency-graph-reading",
       "owners": [
+        "cx-architect",
+        "cx-debugger",
         "cx-engineer",
         "cx-orchestrator",
         "cx-researcher"
@@ -1340,6 +1345,7 @@
     {
       "id": "exploration/unknown-codebase-onboarding",
       "owners": [
+        "cx-debugger",
         "cx-engineer",
         "cx-researcher"
       ],
@@ -1685,6 +1691,7 @@
     {
       "id": "quality-gates/premortem",
       "owners": [
+        "cx-qa",
         "cx-reviewer"
       ],
       "activationTriggers": [
@@ -1703,6 +1710,7 @@
     {
       "id": "quality-gates/review-work",
       "owners": [
+        "cx-qa",
         "cx-reviewer"
       ],
       "activationTriggers": [
@@ -1761,6 +1769,7 @@
     {
       "id": "quality-gates/verify-quality",
       "owners": [
+        "cx-qa",
         "cx-reviewer"
       ],
       "activationTriggers": [
@@ -2880,6 +2889,27 @@
       "workflowSkill": false
     },
     {
+      "id": "strategy/experimentation",
+      "owners": [
+        "cx-data-analyst",
+        "cx-engineer",
+        "cx-operations",
+        "cx-product-manager"
+      ],
+      "activationTriggers": [
+        "Use when: a change's effect must be measured causally rather than asserted — designing or reading an A/B test, a feature-flag rollout, a canary, or a holdout — so the decision to ship rests on evidence, not the shape of a chart."
+      ],
+      "inputs": [
+        "[experiment-plan, metrics]"
+      ],
+      "outputs": {
+        "artifactType": "experiment-plan",
+        "name": "strategy-experimentation"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
       "id": "strategy/jobs-to-be-done",
       "owners": [
         "cx-researcher"
@@ -2900,7 +2930,9 @@
     {
       "id": "strategy/market-research-methods",
       "owners": [
-        "cx-product-manager"
+        "cx-data-analyst",
+        "cx-product-manager",
+        "cx-researcher"
       ],
       "activationTriggers": [
         "Use when the team needs to validate assumptions before committing resources, or when a decision is being made on vibes rather than signal."
@@ -2952,6 +2984,26 @@
       "workflowSkill": false
     },
     {
+      "id": "strategy/prioritization-methods",
+      "owners": [
+        "cx-operations",
+        "cx-orchestrator",
+        "cx-product-manager"
+      ],
+      "activationTriggers": [
+        "Use when: a backlog, roadmap, or set of bets must be ordered by value and the call is being made on gut feel rather than a defensible method — selecting and applying RICE, WSJF/cost-of-delay, value-effort, Kano, risk-reduction, or mandatory-vs-discretionary, with the uncertainty and the counterargument made explicit."
+      ],
+      "inputs": [
+        "[backlog, roadmap-candidates]"
+      ],
+      "outputs": {
+        "artifactType": "prioritization-rationale",
+        "name": "strategy-prioritization-methods"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
       "id": "utility/clean-code",
       "owners": [
         "cx-engineer"
@@ -2972,5 +3024,5 @@
   ],
   "blockingFindings": [],
   "effectivenessFindings": [],
-  "digest": "caa928ff5d9352644ae9d5860c25f6c5f5740a2fe779761b5352da59c2c111e9"
+  "digest": "af2a811cf9a1a24cd3a30bc2fc1d97886c217c1d779c0cab0a7e65fe959206d9"
 }

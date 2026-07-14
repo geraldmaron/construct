@@ -15,7 +15,7 @@ Construct exposes a Model Context Protocol (MCP) server consumed by Claude Code,
 
 ## Tool surface (gateway)
 
-To keep the serialized tool schema small enough for any context window — a flat 76-tool surface (~15k tokens) overran a 32k local-model window — `ListTools` exposes a **curated core** plus the `call` **gateway** and the `find_tool` **discovery** tool. The core front-loads the read/think tools (`orchestration_policy`, `orchestration_run`, `orchestration_readiness`, `get_skill`, `get_template`, `search_skills`, `suggest_skills`, `knowledge_search`, `memory_search`, `project_context`, `summarize_diff`, `find_tool`) **and the high-value action tools agents reach for directly** (`author_artifact`, `document_export`, `publish_run`, `artifact_workflow`, `triage_recommend`), since burying those behind the gateway made the common case the failing case. Every other tool stays reachable through `call`, and `find_tool` ranks the whole catalog by intent so the surface scales without a hand-maintained list (ADR-0048).
+To keep the serialized tool schema small enough for any context window — a flat 77-tool surface (~15k tokens) overran a 32k local-model window — `ListTools` exposes a **curated core** plus the `call` **gateway** and the `find_tool` **discovery** tool. The core front-loads the read/think tools (`orchestration_policy`, `orchestration_run`, `orchestration_readiness`, `get_skill`, `get_template`, `search_skills`, `suggest_skills`, `knowledge_search`, `memory_search`, `project_context`, `summarize_diff`, `find_tool`) **and the high-value action tools agents reach for directly** (`author_artifact`, `document_export`, `publish_run`, `artifact_workflow`, `triage_recommend`), since burying those behind the gateway made the common case the failing case. Every other tool stays reachable through `call`, and `find_tool` ranks the whole catalog by intent so the surface scales without a hand-maintained list (ADR-0048).
 
 ### `find_tool`
 Find Construct tools by intent when you do not know the exact name. Pass a natural-language `query` (and optional `limit`) describing the task; returns the best-matching tools with their full input schemas, ranked by hybrid local-embedding semantic similarity merged with normalized BM25 — degrading to BM25-only when no semantic model is provisioned, so it works offline. Then invoke a result via `call` (or directly when it is a flat tool). E.g. `find_tool({ query: "export a markdown file to pdf" })` → `document_export`.
@@ -813,6 +813,8 @@ A `host`-backend run whose materialization completes returns `status: 'awaiting-
 
 The response's `specialists` field is the real, dispatched role list — authoritative. `routePath.specialistSequence` can be non-empty even when `specialists`/`tasks` are empty: a short request with no scope signal (no `file_count`/`module_count`, no "end to end"/"ship"/"full" keyword) can classify as trivial and dispatch zero specialists even with `requested_strategy: "orchestrated"`, while `routePath` still shows the specialist a *focused* classification would have picked, for display purposes. Read `specialists`/`tasks`, not `routePath`, to know what actually ran.
 
+Pass `candidates` to route pre-retrieved artifacts to specialists as role-aware context (D3). The caller does retrieval up front; each dispatched specialist's prompt then carries a trust-wrapped `## Role context` section holding only the artifact kinds its role policy prefers, within a token budget — a `target-file` reaches the engineer, a `prd` the product-manager, and a kind on a role's avoid list never reaches it. A `kind: "skill"` candidate is dropped for any role not entitled to that skill. The candidate list is snapshotted on the run, so a `provider`-executed and a `host`-executed task materialize the same context bytes. Omit `candidates` for no injected context (byte-identical to a pre-D3 prompt).
+
 | Parameter | Type | Description |
 |---|---|---|
 | `request` | string | **required** — Natural-language description of the work to orchestrate. |
@@ -824,6 +826,9 @@ The response's `specialists` field is the real, dispatched role list — authori
 | `host_provider` | string | Provider family the host uses, for model resolution. |
 | `file_count` | number | Optional planning hint: number of files in scope. Pass this (or `module_count`) when the work has real scope — see the specialists/routePath note above. |
 | `module_count` | number | Optional planning hint: number of modules in scope. |
+| `context_targets` | array | Optional registered source targets to bind for context (`[{id, role?}]`); an unknown id is rejected at plan time. |
+| `candidates` | array | Optional pre-retrieved artifacts routed to specialists as role-aware context (`[{path, title, kind, summary, score?, skillId?}]`). Filtered per role by the context policy; a `kind: "skill"` entry is dropped for any role not entitled to it. |
+| `context_budget` | object | Optional `{maxTokens}` cap for the injected role context (default ~6000 tokens per specialist). |
 | `wait` | boolean | Wait for a terminal state and return task output (default true); `false` returns the runId to poll. |
 | `timeout_ms` | number | Max wait when `wait=true` (default 120000); on timeout the runId is returned to poll. |
 
