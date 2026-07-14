@@ -24,6 +24,20 @@ test('critiqueRequestsRevision fires only when the critic asked for changes, not
   assert.equal(critiqueRequestsRevision('Rejected: revise the interface contract.'), true);
 });
 
+test('critiqueRequestsRevision recognizes the vocabulary real structured reviews use (construct-72gqn.30 live finding)', () => {
+  // A live gpt-4o-mini review of insecure code flagged a HIGH issue with a fix
+  // directive but never said "changes requested" — the loop must still fire.
+  assert.equal(critiqueRequestsRevision('# Code Review\n### SEVERITY HIGH | lib/x.js:9 | ISSUE: Missing input validation | RECOMMENDED FIX: implement validation.'), true);
+  assert.equal(critiqueRequestsRevision('There are no tests implemented, which is a critical gap.'), true);
+  assert.equal(critiqueRequestsRevision('The endpoint has a SQL injection vulnerability that must be addressed.'), true);
+  assert.equal(critiqueRequestsRevision('Overall the structure looks good, but SEVERITY HIGH: the API key is not validated.'), true);
+  // The same model emits the same finding as JSON on another run — must still fire.
+  assert.equal(critiqueRequestsRevision('{ "findings": [ { "severity": "CRITICAL", "issue": "Absence of input validation", "recommendedFix": "Implement it" } ] }'), true);
+  // A low-severity nit with an approval must NOT fire.
+  assert.equal(critiqueRequestsRevision('SEVERITY LOW: consider renaming a variable. Otherwise APPROVED.'), false);
+  assert.equal(critiqueRequestsRevision('No high-severity issues; APPROVED.'), false);
+});
+
 const engineerTask = (output) => ({ role: 'cx-engineer', status: 'done', output });
 const reviewerTask = (output) => ({ role: 'cx-reviewer', status: 'done', output });
 
