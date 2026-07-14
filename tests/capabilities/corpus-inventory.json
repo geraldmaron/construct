@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-14T01:10:01.154Z",
+  "generatedAt": "2026-07-14T01:21:48.531Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 898,
+    "testFiles": 899,
     "topLevelTestFiles": 367,
-    "nestedTestFiles": 531,
+    "nestedTestFiles": 532,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
       "unit": 589,
-      "functional": 261,
+      "functional": 262,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
       "unit": 526,
-      "functional": 261,
+      "functional": 262,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -4282,6 +4282,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/sync-respects-scope.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/team-arbitration.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/team-arbitration.functional.test.mjs — construct-72gqn.17 (L4, hermetic)."
     },
     {
       "path": "tests/functional/team-aware-fence.functional.test.mjs",

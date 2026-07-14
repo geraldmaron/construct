@@ -2145,6 +2145,27 @@
         "resolvedId": "fixture/specialist",
         "tier": "hermetic"
       }
+    },
+    {
+      "id": "team.arbitration.base-chain",
+      "capabilityId": "orchestration.team",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/functional/team-arbitration.functional.test.mjs"
+      },
+      "gates": [
+        {
+          "id": "team-arbitration-grounding",
+          "type": "team-arbitration-live"
+        }
+      ],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/free-auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
     }
   ]
 }
