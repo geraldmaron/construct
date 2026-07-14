@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-14T23:08:38.956Z",
+  "generatedAt": "2026-07-14T23:29:37.789Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 920,
+    "testFiles": 924,
     "topLevelTestFiles": 370,
-    "nestedTestFiles": 550,
+    "nestedTestFiles": 554,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 601,
+      "unit": 605,
       "functional": 271,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 536,
+      "unit": 540,
       "functional": 271,
       "visual": 12,
       "structural-guard": 19,
@@ -5694,6 +5694,38 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/oracle-reconcile-staleness.test.mjs — contract violation SLA window logic."
+    },
+    {
+      "path": "tests/oracle/directive-executor.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/oracle/directive-executor.test.mjs — construct-p4cba.6 (WS-B5)"
+    },
+    {
+      "path": "tests/oracle/execute-directive-due.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/oracle/execute-directive-due.test.mjs — construct-p4cba.6 (WS-B5)"
+    },
+    {
+      "path": "tests/oracle/read-model-directives.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/oracle/read-model-directives.test.mjs — construct-p4cba.6 (WS-B5)"
+    },
+    {
+      "path": "tests/oracle/synthesize-directive-due.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/oracle/synthesize-directive-due.test.mjs — construct-p4cba.6 (WS-B5)"
     },
     {
       "path": "tests/orchestration-chain-of-thought.test.mjs",
