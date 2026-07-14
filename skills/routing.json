@@ -1256,6 +1256,23 @@
       "priority": 5
     },
     {
+      "domain": "strategy",
+      "keywords": [
+        "prioritize",
+        "prioritization",
+        "backlog ranking",
+        "roadmap prioritization",
+        "rice score",
+        "wsjf",
+        "cost of delay",
+        "value versus effort",
+        "which to build first",
+        "what to build next"
+      ],
+      "path": "strategy/prioritization-methods",
+      "priority": 10
+    },
+    {
       "domain": "utility",
       "keywords": [
         "clean code",

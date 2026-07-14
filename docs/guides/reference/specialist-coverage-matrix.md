@@ -23,7 +23,7 @@ Floor status: **all pass** — 12 specialists.
 | `cx-engineer` | engineer | 35 | ✓ +1 | refusal/anti-fab/fence | 14/16 | ✅ |
 | `cx-operations` | operations | 16 | ✓ +1 | refusal/anti-fab/fence | 16/16 | ✅ |
 | `cx-orchestrator` | orchestrator | 7 | ✓ +1 | refusal/anti-fab/fence | 9/8 | ✅ |
-| `cx-product-manager` | product-manager | 13 | ✓ +6 | refusal/anti-fab/fence | 8/8 | ✅ |
+| `cx-product-manager` | product-manager | 14 | ✓ +6 | refusal/anti-fab/fence | 8/8 | ✅ |
 | `cx-qa` | qa | 6 | ✓ +5 | refusal/anti-fab/fence | 7/7 | ✅ |
 | `cx-researcher` | researcher | 11 | ✓ +1 | refusal/anti-fab/fence | 12/12 | ✅ |
 | `cx-reviewer` | reviewer | 7 | ✓ +1 | refusal/anti-fab/fence | 16/15 | ✅ |

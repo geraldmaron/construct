@@ -62,7 +62,10 @@ Must reference:
 ## Goals
 <!--
 What success looks like, in outcome terms. Three to five goals max. Each
-goal is the *change* you want, not the activity. Order by importance.
+goal is the *change* you want, not the activity. Order by importance — when
+the ordering is contested or drives what ships first, apply an explicit
+method (see the strategy/prioritization-methods skill) rather than ranking
+on gut feel.
 
 Examples:
 - Reduce p95 onboarding time from 12m to under 4m for new accounts.
