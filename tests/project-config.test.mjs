@@ -223,6 +223,25 @@ describe('writeProjectConfig + initProjectConfig', () => {
     }
   });
 
+  it('refuses to write an invalid writes.policy block', () => {
+    const cfgPath = path.join(tmpRoot, PROJECT_CONFIG_FILENAME);
+    assert.throws(
+      () => writeProjectConfig(cfgPath, { ...DEFAULT_PROJECT_CONFIG, writes: { policy: { 'jira.issue': 'sometimes' } } }),
+      /refusing to write invalid config/,
+    );
+  });
+
+  it('writes a valid writes.policy block and round-trips through load', () => {
+    const cfgPath = path.join(tmpRoot, PROJECT_CONFIG_FILENAME);
+    writeProjectConfig(cfgPath, { ...DEFAULT_PROJECT_CONFIG, writes: { policy: { 'jira.comment': 'auto' } } });
+    try {
+      const loaded = loadProjectConfig(tmpRoot, {});
+      assert.equal(loaded.config.writes.policy['jira.comment'], 'auto');
+    } finally {
+      fs.unlinkSync(cfgPath);
+    }
+  });
+
   it('initProjectConfig refuses to overwrite an existing file', () => {
     const cfgPath = path.join(tmpRoot, PROJECT_CONFIG_FILENAME);
     fs.writeFileSync(cfgPath, '{}');
