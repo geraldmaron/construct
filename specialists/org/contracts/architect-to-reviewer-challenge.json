@@ -1,5 +1,5 @@
 {
-  "id": "architect-to-devil-advocate",
+  "id": "architect-to-reviewer-challenge",
   "producer": "cx-architect",
   "consumer": "cx-reviewer",
   "trigger": {
@@ -26,12 +26,12 @@
   ],
   "postconditions": [
     {
-      "id": "architect-to-devil-advocate-pc-0-if-verdict-is-blocked-architect-revises",
+      "id": "architect-to-reviewer-challenge-pc-0-if-verdict-is-blocked-architect-revises",
       "description": "If verdict is BLOCKED, architect revises framing before proceeding",
       "postconditionType": "advisory"
     },
     {
-      "id": "architect-to-devil-advocate-pc-1-challenge-checkpoint-logged-to-audit-trail",
+      "id": "architect-to-reviewer-challenge-pc-1-challenge-checkpoint-logged-to-audit-trail",
       "description": "Challenge checkpoint logged to audit trail",
       "postconditionType": "advisory"
     }

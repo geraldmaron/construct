@@ -1,5 +1,5 @@
 {
-  "id": "architect-to-evaluator",
+  "id": "architect-to-reviewer-eval",
   "producer": "cx-architect",
   "consumer": "cx-reviewer",
   "trigger": {
@@ -35,12 +35,12 @@
   ],
   "postconditions": [
     {
-      "id": "architect-to-evaluator-pc-0-failing-case-is-defined-before-results",
+      "id": "architect-to-reviewer-eval-pc-0-failing-case-is-defined-before-results",
       "description": "Failing case is defined before results are seen",
       "postconditionType": "advisory"
     },
     {
-      "id": "architect-to-evaluator-pc-1-regression-checks-enumerated-not-just-success",
+      "id": "architect-to-reviewer-eval-pc-1-regression-checks-enumerated-not-just-success",
       "description": "Regression checks enumerated; not just success-path test cases",
       "postconditionType": "advisory"
     },

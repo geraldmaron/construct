@@ -94,12 +94,12 @@ test('designer postcondition requires accessibility check ran', () => {
 });
 
 test('docs-keeper postcondition requires a coherence diff', () => {
-  const noDiff = validatePacket('any-to-docs-keeper', { updatedDocs: ['CHANGELOG.md'], crossReferencesAdded: [] }, 'output');
+  const noDiff = validatePacket('any-to-operations-docs', { updatedDocs: ['CHANGELOG.md'], crossReferencesAdded: [] }, 'output');
   assert.equal(noDiff.ok, false);
   assert.ok(noDiff.missing.includes('crossDocCoherenceCheckRan'));
   assert.ok(noDiff.missing.includes('coherenceDiff'));
 
-  const withDiff = validatePacket('any-to-docs-keeper', {
+  const withDiff = validatePacket('any-to-operations-docs', {
     updatedDocs: ['CHANGELOG.md'],
     crossReferencesAdded: ['docs/guides/concepts/architecture.md'],
     crossDocCoherenceCheckRan: true,

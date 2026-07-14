@@ -118,12 +118,12 @@ test('validateInputPacket skips validation when no contract resolves unambiguous
 
 test('resolveOutputContractId disambiguates by the next dispatched task\'s role when the bare role is ambiguous', () => {
   // cx-architect alone has 15 outgoing contracts (ambiguous), but exactly one
-  // has consumer cx-security: architect-to-legal-compliance.
+  // has consumer cx-security: architect-to-security.
   const run = { tasks: [
     { id: 't1', seq: 0, role: 'cx-architect', status: 'done' },
     { id: 't2', seq: 1, role: 'cx-security', status: 'awaiting-host' },
   ] };
-  assert.equal(resolveOutputContractId(run.tasks[0], run), 'architect-to-legal-compliance');
+  assert.equal(resolveOutputContractId(run.tasks[0], run), 'architect-to-security');
 });
 
 test('resolveInputContractId disambiguates by the previous dispatched task\'s role when the bare role is ambiguous', () => {
@@ -131,13 +131,13 @@ test('resolveInputContractId disambiguates by the previous dispatched task\'s ro
     { id: 't1', seq: 0, role: 'cx-architect', status: 'done' },
     { id: 't2', seq: 1, role: 'cx-security', status: 'awaiting-host' },
   ] };
-  assert.equal(resolveInputContractId(run.tasks[1], run), 'architect-to-legal-compliance');
+  assert.equal(resolveInputContractId(run.tasks[1], run), 'architect-to-security');
 });
 
 test('adjacent-task disambiguation still returns null (never guesses) when several candidates share the same consumer', () => {
   // cx-architect -> cx-engineer is still ambiguous even narrowed by consumer
-  // role: architect-to-ai-engineer, architect-to-data-engineer,
-  // architect-to-engineer, and architect-to-platform-engineer (a real,
+  // role: architect-to-engineer-ai, architect-to-engineer-data,
+  // architect-to-engineer, and architect-to-engineer-platform (a real,
   // pre-existing 29-role-era contract-corpus gap — construct-72gqn epic D1
   // reconciles it; this bead's job is correct plumbing, not guessing).
   const run = { tasks: [

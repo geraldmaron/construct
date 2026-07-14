@@ -1,5 +1,5 @@
 {
-  "id": "architect-to-platform-engineer",
+  "id": "architect-to-engineer-platform",
   "producer": "cx-architect",
   "consumer": "cx-engineer",
   "trigger": {
@@ -35,21 +35,21 @@
   ],
   "postconditions": [
     {
-      "id": "architect-to-platform-engineer-pc-0-migration-path-described-for-existing-workflows",
+      "id": "architect-to-engineer-platform-pc-0-migration-path-described-for-existing-workflows",
       "description": "Migration path described for existing workflows",
       "postconditionType": "executable",
       "enforcedVia": "output-shape",
       "enforcedBy": "migration"
     },
     {
-      "id": "architect-to-platform-engineer-pc-1-rollback-procedure-exists-in-case-the",
+      "id": "architect-to-engineer-platform-pc-1-rollback-procedure-exists-in-case-the",
       "description": "Rollback procedure exists in case the change makes things worse",
       "postconditionType": "executable",
       "enforcedVia": "output-shape",
       "enforcedBy": "rollback"
     },
     {
-      "id": "architect-to-platform-engineer-pc-2-improvement-removes-more-configuration-than-it",
+      "id": "architect-to-engineer-platform-pc-2-improvement-removes-more-configuration-than-it",
       "description": "Improvement removes more configuration than it adds, or the added config is justified",
       "postconditionType": "advisory"
     }

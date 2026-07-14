@@ -1,5 +1,5 @@
 {
-  "id": "legal-compliance-to-release-manager",
+  "id": "security-to-operations",
   "producer": "cx-security",
   "consumer": "cx-operations",
   "trigger": {
@@ -31,12 +31,12 @@
   ],
   "postconditions": [
     {
-      "id": "legal-compliance-to-release-manager-pc-0-release-blocks-if-any-must-fix",
+      "id": "security-to-operations-pc-0-release-blocks-if-any-must-fix",
       "description": "Release blocks if any must-fix item is unresolved",
       "postconditionType": "advisory"
     },
     {
-      "id": "legal-compliance-to-release-manager-pc-1-should-fix-items-carry-a-tracking",
+      "id": "security-to-operations-pc-1-should-fix-items-carry-a-tracking",
       "description": "Should-fix items carry a tracking issue and an owner",
       "postconditionType": "advisory"
     }

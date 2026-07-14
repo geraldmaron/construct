@@ -1,5 +1,5 @@
 {
-  "id": "architect-to-ai-engineer",
+  "id": "architect-to-engineer-ai",
   "producer": "cx-architect",
   "consumer": "cx-engineer",
   "trigger": {
@@ -27,7 +27,7 @@
   ],
   "postconditions": [
     {
-      "id": "architect-to-ai-engineer-pc-0-eval-verdict-from-cx-evaluator-before",
+      "id": "architect-to-engineer-ai-pc-0-eval-verdict-from-cx-evaluator-before",
       "description": "Eval verdict from cx-reviewer before DONE",
       "postconditionType": "advisory"
     }

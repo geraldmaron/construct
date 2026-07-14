@@ -1,5 +1,5 @@
 {
-  "id": "any-to-sre-incident",
+  "id": "any-to-operations-incident",
   "producer": "*",
   "consumer": "cx-operations",
   "trigger": {
@@ -28,7 +28,7 @@
   ],
   "postconditions": [
     {
-      "id": "any-to-sre-incident-pc-0-blameless-postmortem-no-tickets-in-problem",
+      "id": "any-to-operations-incident-pc-0-blameless-postmortem-no-tickets-in-problem",
       "description": "Blameless postmortem; no tickets in Problem statement",
       "postconditionType": "advisory"
     }

@@ -1,5 +1,5 @@
 {
-  "id": "any-to-business-strategist",
+  "id": "any-to-product-manager",
   "producer": "*",
   "consumer": "cx-product-manager",
   "trigger": {
@@ -28,12 +28,12 @@
   ],
   "postconditions": [
     {
-      "id": "any-to-business-strategist-pc-0-options-section-contains-2-4-genuinely",
+      "id": "any-to-product-manager-pc-0-options-section-contains-2-4-genuinely",
       "description": "Options section contains 2-4 genuinely distinct strategic paths, not implementation variants",
       "postconditionType": "advisory"
     },
     {
-      "id": "any-to-business-strategist-pc-1-any-recommendation-that-contradicts-a-declared",
+      "id": "any-to-product-manager-pc-1-any-recommendation-that-contradicts-a-declared",
       "description": "Any recommendation that contradicts a declared Non-bet is surfaced explicitly with a user-decision marker",
       "postconditionType": "advisory"
     },

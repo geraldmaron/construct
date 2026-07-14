@@ -1,5 +1,5 @@
 {
-  "id": "accessibility-to-qa",
+  "id": "designer-to-qa",
   "producer": "cx-designer",
   "consumer": "cx-qa",
   "trigger": {
@@ -25,12 +25,12 @@
   ],
   "postconditions": [
     {
-      "id": "accessibility-to-qa-pc-0-qa-test-plan-covers-keyboard-only",
+      "id": "designer-to-qa-pc-0-qa-test-plan-covers-keyboard-only",
       "description": "QA test plan covers keyboard-only and screen-reader paths for each finding",
       "postconditionType": "advisory"
     },
     {
-      "id": "accessibility-to-qa-pc-1-findings-flagged-unverified-by-accessibility-get",
+      "id": "designer-to-qa-pc-1-findings-flagged-unverified-by-accessibility-get",
       "description": "Findings flagged 'unverified' by accessibility get a verified test in QA before close",
       "postconditionType": "advisory"
     }

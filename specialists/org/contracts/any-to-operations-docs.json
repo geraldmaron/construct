@@ -1,5 +1,5 @@
 {
-  "id": "any-to-docs-keeper",
+  "id": "any-to-operations-docs",
   "producer": "*",
   "consumer": "cx-operations",
   "trigger": {
@@ -27,17 +27,17 @@
   ],
   "postconditions": [
     {
-      "id": "any-to-docs-keeper-pc-0-cross-doc-coherence-preserved-prd-adr",
+      "id": "any-to-operations-docs-pc-0-cross-doc-coherence-preserved-prd-adr",
       "description": "Cross-doc coherence preserved (PRD ↔ ADR ↔ code)",
       "postconditionType": "advisory"
     },
     {
-      "id": "any-to-docs-keeper-pc-1-auto-managed-regions-regenerated-via-construct",
+      "id": "any-to-operations-docs-pc-1-auto-managed-regions-regenerated-via-construct",
       "description": "AUTO-managed regions regenerated via construct sync",
       "postconditionType": "advisory"
     },
     {
-      "id": "any-to-docs-keeper-pc-2-crossdoccoherencecheckran-true-with-a-named-coherencediff",
+      "id": "any-to-operations-docs-pc-2-crossdoccoherencecheckran-true-with-a-named-coherencediff",
       "description": "crossDocCoherenceCheckRan=true with a named coherenceDiff — prevents stale-doc PRs that claim 'docs updated' without a real diff",
       "postconditionType": "executable",
       "enforcedVia": "binary-postcondition",

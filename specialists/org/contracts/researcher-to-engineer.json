@@ -1,5 +1,5 @@
 {
-  "id": "explorer-to-engineer",
+  "id": "researcher-to-engineer",
   "producer": "cx-researcher",
   "consumer": "cx-engineer",
   "trigger": {
@@ -26,12 +26,12 @@
   ],
   "postconditions": [
     {
-      "id": "explorer-to-engineer-pc-0-implementation-reads-the-files-cited-in",
+      "id": "researcher-to-engineer-pc-0-implementation-reads-the-files-cited-in",
       "description": "Implementation reads the files cited in keyFiles before edits",
       "postconditionType": "advisory"
     },
     {
-      "id": "explorer-to-engineer-pc-1-gaps-named-by-explorer-missing-tests",
+      "id": "researcher-to-engineer-pc-1-gaps-named-by-explorer-missing-tests",
       "description": "Gaps named by explorer (missing tests, missing error handling) are addressed or filed",
       "postconditionType": "advisory"
     }

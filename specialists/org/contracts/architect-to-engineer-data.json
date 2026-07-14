@@ -1,5 +1,5 @@
 {
-  "id": "architect-to-data-engineer",
+  "id": "architect-to-engineer-data",
   "producer": "cx-architect",
   "consumer": "cx-engineer",
   "trigger": {
@@ -34,12 +34,12 @@
   ],
   "postconditions": [
     {
-      "id": "architect-to-data-engineer-pc-0-pipeline-is-idempotent-and-observable-not",
+      "id": "architect-to-engineer-data-pc-0-pipeline-is-idempotent-and-observable-not",
       "description": "Pipeline is idempotent and observable; not running on faith",
       "postconditionType": "advisory"
     },
     {
-      "id": "architect-to-data-engineer-pc-1-data-contract-is-written-down-quality",
+      "id": "architect-to-engineer-data-pc-1-data-contract-is-written-down-quality",
       "description": "Data contract is written down; quality gates defined as part of the design",
       "postconditionType": "executable",
       "enforcedVia": "output-shape",

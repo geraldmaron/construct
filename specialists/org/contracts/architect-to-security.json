@@ -1,5 +1,5 @@
 {
-  "id": "architect-to-legal-compliance",
+  "id": "architect-to-security",
   "producer": "cx-architect",
   "consumer": "cx-security",
   "trigger": {
@@ -31,12 +31,12 @@
   ],
   "postconditions": [
     {
-      "id": "architect-to-legal-compliance-pc-0-every-assertion-cites-the-regulation-standard",
+      "id": "architect-to-security-pc-0-every-assertion-cites-the-regulation-standard",
       "description": "Every assertion cites the regulation, standard, or contract clause it rests on",
       "postconditionType": "advisory"
     },
     {
-      "id": "architect-to-legal-compliance-pc-1-ai-generated-user-facing-content-has",
+      "id": "architect-to-security-pc-1-ai-generated-user-facing-content-has",
       "description": "AI-generated user-facing content has a disclosure strategy noted, or is marked not-applicable with reason",
       "postconditionType": "advisory"
     },

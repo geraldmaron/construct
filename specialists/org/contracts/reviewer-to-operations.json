@@ -1,5 +1,5 @@
 {
-  "id": "trace-reviewer-to-sre",
+  "id": "reviewer-to-operations",
   "producer": "cx-reviewer",
   "consumer": "cx-operations",
   "trigger": {
@@ -29,12 +29,12 @@
   ],
   "postconditions": [
     {
-      "id": "trace-reviewer-to-sre-pc-0-sre-adjusts-alert-thresholds-or-slos",
+      "id": "reviewer-to-operations-pc-0-sre-adjusts-alert-thresholds-or-slos",
       "description": "SRE adjusts alert thresholds or SLOs based on the cited trace evidence",
       "postconditionType": "advisory"
     },
     {
-      "id": "trace-reviewer-to-sre-pc-1-runbook-updated-for-the-failure-pattern",
+      "id": "reviewer-to-operations-pc-1-runbook-updated-for-the-failure-pattern",
       "description": "Runbook updated for the failure pattern identified at fleet level",
       "postconditionType": "advisory"
     }
