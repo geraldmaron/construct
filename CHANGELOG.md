@@ -4,6 +4,12 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.5.7] - 2026-07-14
+
+### Changed
+
+- Dependabot now holds the `typescript` major (`.github/dependabot.yml` — `ignore` on `version-update:semver-major` for the npm ecosystem): `typescript@7.0.2` ships as a non-functional stub (no `lib/typescript.js`, no compiler API — `require('typescript').createProgram` is `undefined`), which broke the `apps/docs` Next.js build-time type-check in CI ("do not have the required package(s) installed"). The `typescript 6→7` bump PR was closed for this; `6.x` minor/patch still flow, and the major resumes after a coordinated upgrade to a Next.js release that supports TS 7.
+
 ## [1.5.6] - 2026-07-14
 
 ### Fixed

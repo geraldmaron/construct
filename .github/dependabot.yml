@@ -12,6 +12,15 @@ updates:
       time: "09:00"
       timezone: "UTC"
     open-pull-requests-limit: 5
+    # typescript 7.0.2 as published is a non-functional stub — no lib/typescript.js,
+    # no compiler API (require('typescript').createProgram is undefined) — so the
+    # apps/docs Next.js build-time type-check fails in CI ("do not have the required
+    # package(s) installed"). The typescript-7 bump PR was closed for this. Hold the
+    # TS major until a coordinated upgrade to a Next.js release that supports it;
+    # 6.x minor/patch still flow.
+    ignore:
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
     groups:
       dev-tools:
         patterns:
