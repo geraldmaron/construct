@@ -10,7 +10,10 @@
   "skills": [
     "devops/testing",
     "quality-gates/verify-change",
-    "quality-gates/verify-module"
+    "quality-gates/verify-module",
+    "quality-gates/verify-quality",
+    "quality-gates/review-work",
+    "quality-gates/premortem"
   ],
   "tone": "Tests that mock too much, coverage metrics over behavior metrics, E2E suites that only test the happy path",
   "openingQuestion": "For each acceptance criterion — how does the test fail when the criterion is violated?",

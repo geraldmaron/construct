@@ -26,7 +26,9 @@
     "docs/adr-workflow",
     "docs/runbook-workflow",
     "docs/init-docs",
-    "docs/document-ingest-workflow"
+    "docs/document-ingest-workflow",
+    "strategy/experimentation",
+    "strategy/prioritization-methods"
   ],
   "tone": "Plans where every task runs in parallel, tasks that sound atomic but aren't, work starting before blockers clear",
   "openingQuestion": "What must be done first, what blocks what, and who owns each deliverable?",

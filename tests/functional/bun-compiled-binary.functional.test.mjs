@@ -73,14 +73,18 @@ test('a Bun-compiled binary of bin/construct runs real commands instead of silen
     assert.equal(build.status, 0, `bun build --compile failed:\n${build.stdout}\n${build.stderr}`);
     assert.ok(existsSync(outfile), 'compiled binary was not produced');
 
-    const version = spawnSync(outfile, ['version'], { encoding: 'utf8', timeout: 15_000 });
+    // Timeouts carry headroom for a loaded machine: the full suite now runs to
+    // completion (construct-ox25y), so this heavy build-and-run test can execute
+    // while the box is still warm, where a tight bound flakes the correctness
+    // assertion (a killed subprocess truncates stdout) rather than the behavior.
+    const version = spawnSync(outfile, ['version'], { encoding: 'utf8', timeout: 30_000 });
     assert.equal(version.status, 0, `construct version failed: stdout=${version.stdout} stderr=${version.stderr}`);
     assert.match(version.stdout, /^construct v\d+\.\d+\.\d+/, 'version did not print a real version string');
 
-    const help = spawnSync(outfile, ['--help'], { encoding: 'utf8', timeout: 15_000 });
+    const help = spawnSync(outfile, ['--help'], { encoding: 'utf8', timeout: 30_000 });
     assert.match(help.stdout, /Usage: construct <command>/, '--help did not print real usage text');
 
-    const doctor = spawnSync(outfile, ['doctor'], { encoding: 'utf8', timeout: 30_000 });
+    const doctor = spawnSync(outfile, ['doctor'], { encoding: 'utf8', timeout: 60_000 });
     assert.match(doctor.stdout, /^Results: \d+ passed, \d+ warnings?, \d+ failed/m, 'doctor did not print a real health report');
   } finally {
     rmSync(BUILD_ENTRY, { force: true });

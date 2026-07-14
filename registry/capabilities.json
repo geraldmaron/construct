@@ -1,7 +1,7 @@
 {
   "version": 1,
   "catalog": {
-    "generatedAt": "2026-07-13T18:32:02.742Z",
+    "generatedAt": "2026-07-14T01:58:48.067Z",
     "npmScripts": [
       "adapters",
       "audit:published",
@@ -25,6 +25,7 @@
       "docs:verify",
       "doctor",
       "eval:routing",
+      "eval:skill-routing",
       "evals",
       "examples:deck",
       "examples:distribution",
@@ -44,6 +45,8 @@
       "release:gate",
       "release:preflight",
       "release:preflight:no-auth",
+      "skills:routes",
+      "specialists:coverage",
       "test",
       "test:functional",
       "test:unit",
