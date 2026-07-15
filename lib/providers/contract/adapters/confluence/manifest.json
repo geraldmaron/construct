@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "kind": "data-source",
   "capabilities": ["write", "search"],
-  "secretEnvKeys": ["CONFLUENCE_URL", "CONFLUENCE_EMAIL", "CONFLUENCE_TOKEN"],
+  "secretEnvKeys": ["CONFLUENCE_BASE_URL", "CONFLUENCE_EMAIL", "CONFLUENCE_API_TOKEN"],
   "operations": ["write:page", "write:page-update", "search"],
   "securityClassification": "trusted",
   "owner": "construct-core",

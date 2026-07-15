@@ -2,13 +2,26 @@
  * tests/directives/due-tracker.test.mjs — per-directive last-run bookkeeping
  * (lib/directives/due-tracker.mjs).
  */
-import { describe, it, beforeEach, afterEach } from 'node:test';
+import { describe, it, beforeEach, afterEach, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
 import { readDirectiveState, writeDirectiveState, isDirectiveDue } from '../../lib/directives/due-tracker.mjs';
+
+// readDirectiveState/writeDirectiveState resolve through the machine-scoped
+// state root (ADR-0066, lib/state-root.mjs) — CX_HOME_OVERRIDE keeps that
+// off the real developer machine's $HOME for the whole file.
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-due-tracker-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 let projectRoot;
 

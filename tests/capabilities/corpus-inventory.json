@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-14T23:29:37.789Z",
+  "generatedAt": "2026-07-15T00:51:47.613Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 924,
+    "testFiles": 927,
     "topLevelTestFiles": 370,
-    "nestedTestFiles": 554,
+    "nestedTestFiles": 557,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 605,
-      "functional": 271,
+      "unit": 606,
+      "functional": 273,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 540,
-      "functional": 271,
+      "unit": 541,
+      "functional": 273,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 46,
@@ -2964,6 +2964,14 @@
       "maintainerNotes": "tests/functional/embed-capability-lifecycle.functional.test.mjs"
     },
     {
+      "path": "tests/functional/embed-daemon-cross-process-approval.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/embed-daemon-cross-process-approval.functional.test.mjs —"
+    },
+    {
       "path": "tests/functional/embed-daemon-directive-runner.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2986,6 +2994,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/embed-daemon-inbox-loop.functional.test.mjs —"
+    },
+    {
+      "path": "tests/functional/embed-daemon-roadmap-slack-proposal.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/embed-daemon-roadmap-slack-proposal.functional.test.mjs —"
     },
     {
       "path": "tests/functional/embed-daemon-write-drain.functional.test.mjs",
@@ -7512,6 +7528,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/writes/slack.functional.test.mjs — Slack writes routed through the"
+    },
+    {
+      "path": "tests/writes/transport-env-resolution.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/writes/transport-env-resolution.test.mjs — jira and confluence"
     },
     {
       "path": "tests/writes/write-policy.test.mjs",
