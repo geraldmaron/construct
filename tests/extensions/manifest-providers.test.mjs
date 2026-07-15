@@ -5,9 +5,11 @@
  * atlassian-confluence, slack, salesforce, directory, feedback) load
  * correctly, have the correct kind, and that resolveProviders() discovers
  * the ones with a unified lib/providers/<id> adapter. Linear (added in
- * LMCP-B3) has a manifest but no unified adapter yet — it is asserted
- * separately from resolveProviders() coverage rather than folded into
- * EXPECTED_PROVIDERS.
+ * LMCP-B3) and git (construct-wjap9.1 — a source-target-only provider with
+ * no unified read/write adapter, only corpus-caching via
+ * lib/sources/repo-cache.mjs) have manifests but no unified adapter yet —
+ * both are asserted separately from resolveProviders() coverage rather
+ * than folded into EXPECTED_PROVIDERS.
  */
 
 import test from 'node:test';
@@ -21,17 +23,17 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const MANIFESTS_DIR = join(__dirname, '../../lib/extensions/manifests');
 
 const EXPECTED_PROVIDERS = ['github', 'atlassian-jira', 'atlassian-confluence', 'slack', 'salesforce', 'directory', 'feedback'];
-const MANIFEST_ONLY_PROVIDERS = ['linear'];
+const MANIFEST_ONLY_PROVIDERS = ['linear', 'git'];
 
 test('built-in provider manifests', async (t) => {
-  await t.test('loadManifestsFromDir loads all 8 manifests without errors', () => {
+  await t.test('loadManifestsFromDir loads all 9 manifests without errors', () => {
     const { manifests, errors } = loadManifestsFromDir(MANIFESTS_DIR);
     assert.deepEqual(errors, [], 'manifest loading should produce no errors');
     const dataSourceManifests = manifests.filter((m) => m.kind === 'data-source');
     assert.equal(
       dataSourceManifests.length,
-      8,
-      'should have exactly 8 data-source manifests (7 unified + 1 manifest-only)',
+      9,
+      'should have exactly 9 data-source manifests (7 unified + 2 manifest-only)',
     );
   });
 
@@ -73,5 +75,14 @@ test('built-in provider manifests', async (t) => {
     assert.ok(linear, 'linear manifest should exist (LMCP-B3 — not silently dropped)');
     assert.equal(linear.kind, 'data-source');
     assert.ok(linear.capabilities.includes('read'));
+  });
+
+  await t.test('git manifest exists but has no unified lib/providers/<id> adapter (source-target + corpus cache only)', () => {
+    const { manifests } = loadManifestsFromDir(MANIFESTS_DIR);
+    const git = manifests.find((m) => m.id === 'git');
+    assert.ok(git, 'git manifest should exist (construct-wjap9.1 — not silently dropped)');
+    assert.equal(git.kind, 'data-source');
+    assert.ok(git.capabilities.includes('read'));
+    assert.ok(git.sourceTarget, 'git is source-target-eligible');
   });
 });
