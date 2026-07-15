@@ -4,6 +4,14 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- **Cross-source watching (bead `construct-wjap9.3`–`.6`, WS-B6)**: `lib/sources/watch.mjs` detects upstream drift for configured source targets without a full corpus sync — `git ls-remote` for corpus (git) targets and a recursive directory hash for directory targets — and persists per-target watch state in the ADR-0066 machine state root. A staleness ledger (`lib/sources/staleness-ledger.mjs`) records every detected change (`recordSourceChange`), surfaced by the new hourly `source-watch` doctor watcher (`lib/doctor/watchers/source-watch.mjs`) and in `construct status` via `sourceWatch`. Functional tests: `tests/functional/source-watch-git.functional.test.mjs`, `tests/functional/source-watch-directory.functional.test.mjs`.
+
+### Fixed
+
+- **Full-matrix CI now gates staging (bead `construct-wrfcx`)**: staging could diverge from main for days with no full-matrix validation because `ci.yml` only ran the full OS×Node matrix on push-to-main / schedule / `workflow_dispatch`. Added `.github/workflows/staging-full-matrix.yml` — a daily full matrix + lint suite against `staging` that fails loudly and notifies watchers within ~1 day — and a gate in `Promote staging → main` that refuses to open the promotion PR unless the latest `staging-full-matrix` run concluded `success`. Documented in `docs/operations/maintenance/release-and-deploy.md`.
+
 ## [1.5.7] - 2026-07-14
 
 ### Changed

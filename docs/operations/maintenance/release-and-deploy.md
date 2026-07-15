@@ -16,6 +16,7 @@ The intent: stop re-deriving the release flow on every cycle. If a step is not a
 | `docs` | `.github/workflows/docs.yml` | push to main affecting docs | Auto-regenerates AUTO doc regions |
 | `deploy` | `.github/workflows/deploy.yml` | push to main | Container deploy (if configured) |
 | `aws-smoke` | `.github/workflows/aws-smoke.yml` | manual | ECS smoke test (gated, optional) |
+| `staging-full-matrix` | `.github/workflows/staging-full-matrix.yml` | daily 09:17 UTC, manual | Full OS×Node matrix + lint suite **on `staging`** — surfaces a red matrix within ~1 day; gates `staging → main` promotion |
 
 ## Pre-release channels
 
@@ -234,6 +235,15 @@ work integrates on `staging` (pre-production) and is promoted to `main` (product
    ```
 
 `main` is never targeted by feature PRs directly. A hotfix that must bypass `staging` is an explicit, documented exception (PR straight to `main`), not the default.
+
+### Staging full-matrix gate (construct-wrfcx)
+
+`ci.yml` only runs the full OS×Node matrix on push-to-main / schedule / `workflow_dispatch`; PRs and pushes to `staging` ran a single ubuntu runner + lint, so `staging` could diverge from `main` for days with platform/engine failures uncaught until release (17 days in the incident that opened this bead). Two enforced mechanisms close the gap:
+
+1. **Daily full matrix on `staging`** — `.github/workflows/staging-full-matrix.yml` runs the same `test` legs (ubuntu/macos × Node 20/22 × shards) plus the lint suite against the `staging` ref every day at 09:17 UTC (and on `workflow_dispatch`). A red run notifies repo watchers by default, so a broken matrix on `staging` surfaces within ~1 day, not at release time.
+2. **Promotion guard** — `Promote staging → main` (`.github/workflows/promote-staging-to-main.yml`) will not open or refresh the `staging → main` PR unless the most recent `staging-full-matrix` run concluded `success`. A red staging matrix therefore blocks the promotion before production is at risk.
+
+If promotion fails with `Refusing to promote: staging full matrix is not green`, fix `staging`, wait for the next scheduled run (or trigger `staging full matrix` via `workflow_dispatch`), and re-run the promote workflow once it is green.
 
 ### Staging deploy (follow-up)
 
