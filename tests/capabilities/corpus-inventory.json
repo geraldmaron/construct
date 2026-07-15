@@ -1,26 +1,26 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-15T02:19:51.754Z",
+  "generatedAt": "2026-07-15T03:10:14.402Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 908,
+    "testFiles": 910,
     "topLevelTestFiles": 369,
-    "nestedTestFiles": 539,
+    "nestedTestFiles": 541,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 592,
-      "functional": 268,
+      "unit": 593,
+      "functional": 269,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
       "unit": 529,
-      "functional": 268,
+      "functional": 269,
       "visual": 12,
       "structural-guard": 19,
-      "contract-subsystem": 44,
+      "contract-subsystem": 45,
       "live-provider": 2,
       "integration": 25,
       "hook": 9
@@ -4228,6 +4228,14 @@
       "maintainerNotes": "skill-quality-signal.functional.test.mjs — phase 1 of the skill"
     },
     {
+      "path": "tests/functional/source-links.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/source-links.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/source-target-directory.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -4548,6 +4556,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/graph/build-import-graph.test.mjs — static import derivation must"
+    },
+    {
+      "path": "tests/graph/build-source-links.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/graph/build-source-links.test.mjs — unit coverage for"
     },
     {
       "path": "tests/graph/cli.test.mjs",
