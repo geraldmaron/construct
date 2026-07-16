@@ -18,6 +18,21 @@
  * — a real host path most tests never touch on purpose. A test that spins up a project
  * in a tmp dir but forgets to override HOME now has a second way to leak into the real
  * machine, so the fingerprint also covers the real `~/.construct/projects/` entry set.
+ *
+ * ADR-0084 found that `doctorRoot()` (`lib/config/xdg.mjs:55`) — the resolution point
+ * for nearly a hundred production call sites under `~/.local/state/construct/` — was
+ * fingerprinted for exactly one of its real-state-file classes (the audit trail). Every
+ * other class (approval queues, Oracle state, embed-daemon runtime state, doctor watcher
+ * state, cost/model tracking, sandboxes, performance reviews, scheduler logs, contract
+ * violations) was invisible to this guard, so a test that failed to isolate `HOME`/XDG
+ * could write into any of them undetected. The extension below widens coverage to those
+ * classes, generalizing the two strategies this file already established: a test-tagged
+ * record count for append-only logs a real session writes to continuously (matching
+ * `countAuditTrailTestLeaks`), and a content or directory-entry-set hash for state that
+ * is otherwise stable between test-triggered writes (matching `hashPath` and
+ * `realConstructProjectKeys`). `approvals/queue.jsonl` is the bead's named priority
+ * target — the audit's truth-matrix (row 42) names it as the one real-state-file class
+ * with a claimed historical contamination incident.
  */
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync, readFileSync, readdirSync, chmodSync } from "node:fs";
 import { rmTmpDir } from "./cleanup.mjs";
@@ -57,6 +72,76 @@ function realConstructProjectKeys(home) {
   }
 }
 
+// Generalizes realConstructProjectKeys() above to any doctorRoot()-scoped directory:
+// a leaking test typically creates a new file/dir under a real state root rather than
+// mutating an existing one's bytes, so the sorted entry list is the stable "unchanged"
+// signal — content within an existing entry (e.g. a rewritten heartbeat.json) is allowed
+// to churn from legitimate real activity without flapping the guard.
+
+function dirEntryKeys(dir) {
+  try {
+    return existsSync(dir) ? readdirSync(dir).sort().join(",") : "absent";
+  } catch {
+    return "unreadable";
+  }
+}
+
+// Directory-shaped real-state-file classes from ADR-0084's Context table, each a real
+// doctorRoot()-resolved production path with low enough real-world write frequency
+// (CLI-triggered, Stop-hook-triggered once per session, or OS-scheduler-triggered) that
+// an entry-set hash won't flap on legitimate background activity the way a raw content
+// hash of a continuously-appended file would:
+//   sandboxes            — lib/sandbox.mjs:27 (construct sandbox CLI; developer-triggered)
+//   performance-reviews  — lib/hooks/session-optimize.mjs:30, lib/performance/generate.mjs:31,
+//                           lib/mcp/tools/project.mjs:69 (Stop hook, once per session end)
+//   scheduler/logs       — lib/scheduler/solo.mjs:87,89,125-126 (OS launchd/systemd stdout/
+//                           stderr redirect targets; only move if a scheduled job fires)
+//   runtime               — lib/embed/daemon.mjs:134,669, lib/embed/supervision.mjs:243
+//                           (embed-daemon runtime state: embed-daemon.json, embed-daemon.log,
+//                           per-service logs)
+//   runtime/oracle        — lib/oracle/index.mjs:21 (Oracle runtime state)
+
+function realDoctorRootDirClasses(home) {
+  const root = doctorRoot(home);
+  return {
+    sandboxes: join(root, "sandboxes"),
+    "performance-reviews": join(root, "performance-reviews"),
+    "scheduler:logs": join(root, "scheduler", "logs"),
+    runtime: join(root, "runtime"),
+    "runtime:oracle": join(root, "runtime", "oracle"),
+  };
+}
+
+// Small, mostly-static single-file real-state classes from ADR-0084's Context table.
+// Each resolves under doctorRoot() and is overwritten wholesale rather than appended, at
+// a real-world write frequency low enough (CLI-triggered budget/pricing lookups, or a
+// `construct doctor --watch` watcher tick that only runs when explicitly started) that a
+// whole-content hash — matching hashPath's existing pattern — won't flap on legitimate
+// background activity during a hermetic test run:
+//   cost-ledger.json           — lib/cost-ledger.mjs:30
+//   model-pricing.json         — lib/model-pricing.mjs:23 (5-minute OpenRouter cache)
+//   pricing-cache.json         — lib/telemetry/model-pricing-catalog.mjs:25
+//   cost-watcher-state.json    — lib/doctor/watchers/cost.mjs:30 (only moves under an
+//                                 actively running `construct doctor --watch`)
+//   bd-watch-seen.json         — lib/doctor/watchers/bd-watch.mjs:28 (same)
+//   contract-violations.jsonl  — lib/contracts/violation-log.mjs:34; this is the
+//                                 doctorRoot() *fallback* copy only — resolveProjectScopedPath
+//                                 (lib/project-root.mjs:94-99) routes real project-scoped
+//                                 invocations to <project>/.construct/ instead, so this path
+//                                 only moves for standalone (no `.construct/` marker) runs
+
+function realDoctorRootHashPaths(home) {
+  const root = doctorRoot(home);
+  return {
+    "cost-ledger.json": join(root, "cost-ledger.json"),
+    "model-pricing.json": join(root, "model-pricing.json"),
+    "pricing-cache.json": join(root, "pricing-cache.json"),
+    "cost-watcher-state.json": join(root, "cost-watcher-state.json"),
+    "bd-watch-seen.json": join(root, "bd-watch-seen.json"),
+    "contract-violations.jsonl": join(root, "contract-violations.jsonl"),
+  };
+}
+
 // The audit trail is an append-only log real sessions write to continuously
 // (construct-mtgs's own dogfood usage adds thousands of lines/day), so a
 // content-hash "unchanged" fingerprint would flap on legitimate concurrent
@@ -75,6 +160,33 @@ function countAuditTrailTestLeaks(home) {
     let count = 0;
     for (const line of contents.split("\n")) {
       if (line.includes('"source":"test"')) count++;
+    }
+    return count;
+  } catch {
+    return 0;
+  }
+}
+
+// approvals/queue.jsonl (ApprovalQueue.resolvePersistPath, lib/embed/approval-queue.mjs:271)
+// is append-only real session state shaped like audit-trail.jsonl, and the audit's
+// truth-matrix (row 42) names it as the one real-state-file class with a claimed
+// historical contamination incident — the bead's named priority target. ApprovalQueue's
+// enqueue() (lib/embed/approval-queue.mjs:83-100) does not pass caller fields through
+// generically: requestedBy is rebuilt field-by-field from a fixed whitelist
+// (userId/serviceId/tenantId/sessionId/role), so — unlike audit-trail's freeform
+// `source` — a leak proof has exactly one passthrough field it can tag. This mirrors
+// countAuditTrailTestLeaks's marker-count pattern using requestedBy.role as the carrier.
+
+const APPROVAL_QUEUE_TEST_MARKER = '"role":"__sterile_test__"';
+
+function countApprovalQueueTestLeaks(home) {
+  const file = join(doctorRoot(home), "approvals", "queue.jsonl");
+  try {
+    if (!existsSync(file)) return 0;
+    const contents = readFileSync(file, "utf8");
+    let count = 0;
+    for (const line of contents.split("\n")) {
+      if (line.includes(APPROVAL_QUEUE_TEST_MARKER)) count++;
     }
     return count;
   } catch {
@@ -152,6 +264,14 @@ export function fingerprintRealConfigs(home = homedir()) {
   }
   fp["ollama:list"] = createHash("sha256").update(realOllamaList()).digest("hex").slice(0, 16);
   fp["construct:projects"] = createHash("sha256").update(realConstructProjectKeys(home)).digest("hex").slice(0, 16);
+
+  for (const [key, dir] of Object.entries(realDoctorRootDirClasses(home))) {
+    fp[`doctorRoot:${key}`] = createHash("sha256").update(dirEntryKeys(dir)).digest("hex").slice(0, 16);
+  }
+  for (const [key, p] of Object.entries(realDoctorRootHashPaths(home))) {
+    fp[`doctorRoot:${key}`] = hashPath(p);
+  }
+
   return fp;
 }
 
@@ -166,6 +286,7 @@ export function snapshotRealConfigs(home = homedir()) {
     fingerprint: fingerprintRealConfigs(home),
     projectKeys: realConstructProjectKeys(home).split(",").filter(Boolean),
     auditTrailTestLeaks: countAuditTrailTestLeaks(home),
+    approvalQueueTestLeaks: countApprovalQueueTestLeaks(home),
   };
 }
 
@@ -181,6 +302,7 @@ export function diffRealConfigs(beforeSnapshot, home = homedir()) {
     addedProjectKeys: [...afterKeys].filter((k) => !beforeKeys.has(k)),
     removedProjectKeys: [...beforeKeys].filter((k) => !afterKeys.has(k)),
     auditTrailLeaks: after.auditTrailTestLeaks - (beforeSnapshot.auditTrailTestLeaks ?? 0),
+    approvalQueueLeaks: after.approvalQueueTestLeaks - (beforeSnapshot.approvalQueueTestLeaks ?? 0),
   };
 }
 
