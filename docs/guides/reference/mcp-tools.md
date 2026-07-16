@@ -228,7 +228,7 @@ Reads a doc template by name. Resolves `.construct/templates/docs/{name}.md` fir
 Lists shipped and project-override doc templates.
 
 ### `agent_contract`
-Looks up agent-to-agent service contracts from `specialists/contracts.json`.
+Looks up agent-to-agent service contracts from `specialists/org/contracts/`.
 
 | Parameter | Type | Description |
 |---|---|---|
@@ -552,7 +552,7 @@ Validate the current workflow state against the schema and run consistency check
 | `cwd` | string | Project root (default: server cwd). |
 
 ### `workflow_contract_validate`
-Validate a producer→consumer handoff against specialists/contracts.json. Required when a specialist hands off to another role: enforces input.mustContain, output schema, disk-artifact postconditions, and binary postconditions per producer (rubber-stamp prevention, post-hoc threat-model prevention, etc.). Self-enforcing: a producer with binary rules MUST pass `packet`, or the call itself is a contract violation.
+Validate a producer→consumer handoff against the contract under specialists/org/contracts/. Required when a specialist hands off to another role: enforces input.mustContain, output schema, disk-artifact postconditions, and binary postconditions per producer (rubber-stamp prevention, post-hoc threat-model prevention, etc.). Self-enforcing: a producer with binary rules MUST pass `packet`, or the call itself is a contract violation.
 
 | Parameter | Type | Description |
 |---|---|---|

@@ -1,3 +1,10 @@
+# DORMANT: gated off by `vars.AWS_DEPLOY_ENABLED` (unset → jobs below never run).
+# The runtime this deploys was removed by ADR-0039 (lib/server/, apps/dashboard/
+# deleted 2026-06-25) and never replaced; there is no root Dockerfile for the
+# `docker build .` step; the ECS health check targets /api/auth/status, which
+# has no handler anywhere in the tree. Do not set AWS_DEPLOY_ENABLED=true until
+# WS-C (bead construct-2ec1y: construct serve entrypoint, real Dockerfile,
+# terraform repair) lands.
 name: Deploy
 
 on:

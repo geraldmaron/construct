@@ -118,7 +118,7 @@ Individual developers and small teams working with AI coding agents (Claude, Cod
 
 ## References
 
-- Architecture: `docs/architecture.md`
+- Architecture: `docs/guides/concepts/architecture.mdx`
 - ADR on layered restructure: `docs/decisions/adr/0002-layered-architecture.md`
-- Agent registry: `specialists/registry.json`
+- Agent registry: `specialists/org/` (modular org tree; see ADR-0046)
 - Orchestration policy: `lib/orchestration-policy.mjs`
