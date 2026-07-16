@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-16T22:33:36.954Z",
+  "generatedAt": "2026-07-16T22:57:01.414Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 929,
-    "topLevelTestFiles": 375,
-    "nestedTestFiles": 554,
+    "testFiles": 939,
+    "topLevelTestFiles": 383,
+    "nestedTestFiles": 556,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 52,
     "byLayer": {
-      "unit": 606,
-      "functional": 274,
+      "unit": 614,
+      "functional": 276,
       "visual": 12,
       "live-provider": 2,
       "integration": 35
     },
     "byCategory": {
-      "unit": 541,
-      "functional": 274,
+      "unit": 549,
+      "functional": 276,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 46,
@@ -2966,6 +2966,14 @@
       "maintainerNotes": "tests/functional/embed-daemon-inbox-loop.functional.test.mjs —"
     },
     {
+      "path": "tests/functional/embed-daemon-write-intent-drain.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/embed-daemon-write-intent-drain.functional.test.mjs —"
+    },
+    {
       "path": "tests/functional/embed-reasoning-executor.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -4546,6 +4554,14 @@
       "maintainerNotes": "tests/functional/web-search.functional.test.mjs"
     },
     {
+      "path": "tests/functional/worker-pg-queue-integration.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/worker-pg-queue-integration.functional.test.mjs — real"
+    },
+    {
       "path": "tests/functional/workflow-contribution.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -5724,6 +5740,22 @@
       "maintainerNotes": "tests/oracle-gaps-detection.test.mjs — oracle gaps detection and filtering."
     },
     {
+      "path": "tests/oracle-invariants-analysis-success-requires-execution-evidence.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/oracle-invariants-analysis-success-requires-execution-evidence.test.mjs — the"
+    },
+    {
+      "path": "tests/oracle-invariants-cli-references-resolve-to-real-handlers.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/oracle-invariants-cli-references-resolve-to-real-handlers.test.mjs — the"
+    },
+    {
       "path": "tests/oracle-invariants-closed-bead-sha.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -5732,12 +5764,60 @@
       "maintainerNotes": "tests/oracle-invariants-closed-bead-sha.test.mjs — the `closed-bead-sha-reachable-"
     },
     {
+      "path": "tests/oracle-invariants-config-roundtrip-preserves-declared-fields.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/oracle-invariants-config-roundtrip-preserves-declared-fields.test.mjs — the"
+    },
+    {
+      "path": "tests/oracle-invariants-config-schema-has-no-shadowed-properties.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/oracle-invariants-config-schema-has-no-shadowed-properties.test.mjs — the"
+    },
+    {
+      "path": "tests/oracle-invariants-cross-process-state-has-one-authoritative-location.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/oracle-invariants-cross-process-state-has-one-authoritative-location.test.mjs —"
+    },
+    {
+      "path": "tests/oracle-invariants-deployment-workflow-targets-real-artifacts.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/oracle-invariants-deployment-workflow-targets-real-artifacts.test.mjs — the"
+    },
+    {
+      "path": "tests/oracle-invariants-external-write-has-idempotency-and-reconciliation.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/oracle-invariants-external-write-has-idempotency-and-reconciliation.test.mjs —"
+    },
+    {
       "path": "tests/oracle-invariants-registry.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/oracle-invariants-registry.test.mjs — the Layer 1 invariant-registry framework"
+    },
+    {
+      "path": "tests/oracle-invariants-tests-never-write-real-user-state.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/oracle-invariants-tests-never-write-real-user-state.test.mjs — the"
     },
     {
       "path": "tests/oracle-reconcile-staleness.test.mjs",
