@@ -1,7 +1,7 @@
 # ADR-0087: AWS deployment topology for Standing Assignment execution — EventBridge Scheduler + SQS + Fargate workers (Option A), recommended pending user ratification
 
 - **Date**: 2026-07-16
-- **Status**: proposed
+- **Status**: accepted
 - **Deciders**: Gerald Dagher
 - **Supersedes**: none
 - **Resolves**: the AWS topology question `construct-4uxq0.4.12` (ADR-L) raised — which of three shapes executes recurring, per-tenant Standing Assignment work on AWS: (A) EventBridge Scheduler + SQS + ECS/Fargate workers + RDS, (B) a long-running ECS control-plane service with a Postgres-backed scheduler, or (C) EventBridge Scheduler launching ECS tasks directly with no queue. This is a from-scratch infrastructure-topology decision, not a repair of existing infrastructure.

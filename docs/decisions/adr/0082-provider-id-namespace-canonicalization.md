@@ -1,7 +1,7 @@
 # ADR-0082: Write control-plane provider IDs canonicalize to the manifest namespace
 
 - **Date**: 2026-07-16
-- **Status**: proposed
+- **Status**: accepted
 - **Deciders**: Gerald Dagher
 - **Supersedes**: none
 - **Resolves**: `construct-4uxq0.4.5` (ADR-E, provider-ID namespace canonicalization) from the continuous-work audit's ADR-beads table in `docs/notes/research/2026-07-continuous-work-audit/target-architecture.md`

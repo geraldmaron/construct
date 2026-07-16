@@ -1,7 +1,7 @@
 # ADR-0095: Migrate the Jira governed-write adapter off deprecated createmeta and search endpoints; flag token-expiry exposure
 
 - **Date**: 2026-07-16
-- **Status**: proposed
+- **Status**: accepted
 - **Deciders**: Gerald Dagher
 - **Supersedes**: none
 - **Resolves**: `construct-4uxq0.4.15` (ADR-O: Jira API migration plan)

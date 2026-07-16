@@ -1,7 +1,7 @@
 # ADR-0091: Oracle 3-layer assurance model + evidence-status vocabulary
 
 - **Date**: 2026-07-16
-- **Status**: proposed
+- **Status**: accepted
 - **Deciders**: Gerald Dagher
 - **Supersedes**: none
 - **Resolves (decision only)**: `construct-4uxq0.4.7` (ADR-G) — the vocabulary and layering *decision*. The implementation work it unblocks (`construct-4uxq0.12.2`, `.12.3`, `.12.4`, and the rest of the E4 epic) is separate, tracked work that starts only once this is ratified.

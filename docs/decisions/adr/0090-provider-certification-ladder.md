@@ -1,7 +1,7 @@
 # ADR-0090: Provider certification ladder — six evidence tiers gate what a provider manifest may claim; the production-gate threshold is left open for the user
 
 - **Date**: 2026-07-16
-- **Status**: proposed
+- **Status**: accepted
 - **Deciders**: Gerald Dagher
 - **Supersedes**: none
 - **Resolves (decision only)**: `construct-4uxq0.4.6` (ADR-F: provider certification ladder + production gate level). The ladder vocabulary is the decision this ADR makes; the implementation (computing and persisting tiers) is `construct-4uxq0.13.2`, and the Jira migration that depends on an honest tier for the Jira adapter is `construct-4uxq0.4.15` (ADR-O) — both tracked separately and left open by this ADR.

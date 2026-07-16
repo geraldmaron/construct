@@ -85,6 +85,7 @@
     "0092-single-project-identity-derivation",
     "0093-state-root-consolidation",
     "0094-approval-drain-lifecycle",
-    "0095-jira-api-migration-plan"
+    "0095-jira-api-migration-plan",
+    "0096-approval-drain-lifecycle-resolution"
   ]
 }

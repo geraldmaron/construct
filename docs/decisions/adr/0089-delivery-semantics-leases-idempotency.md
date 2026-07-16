@@ -1,7 +1,7 @@
 # ADR-0089: At-least-once delivery with durable execution leases + idempotency keys for external writes and worker jobs
 
 - **Date**: 2026-07-16
-- **Status**: proposed
+- **Status**: accepted
 - **Deciders**: Gerald Dagher
 - **Supersedes**: none
 - **Resolves (decision only)**: `construct-4uxq0.4.4` (ADR-D) — the delivery-semantics question the continuous-work audit's WP4 flagged as "audit-decidable now and unblocks all P0 beads." This ADR decides the *model* (at-least-once + durable lease + idempotency key); it does not implement the lease primitive itself. Per the bead: Audit drafts, User ratifies.

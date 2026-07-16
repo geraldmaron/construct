@@ -1,7 +1,7 @@
 # ADR-0092: Single project-identity derivation — git-origin-hash canonical, explicit config override
 
 - **Date**: 2026-07-16
-- **Status**: proposed
+- **Status**: accepted
 - **Deciders**: Gerald Dagher
 - **Supersedes**: none
 - **Resolves**: `construct-4uxq0.4.10` (ADR-J); promotes and formalizes the decision already tracked in the open bead `construct-36w10`

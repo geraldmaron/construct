@@ -1,7 +1,7 @@
 # ADR-0088: Actuation default posture — conservative double opt-in for reasoning, approval as the default action policy
 
 - **Date**: 2026-07-16
-- **Status**: proposed
+- **Status**: accepted
 - **Deciders**: Gerald Dagher
 - **Supersedes**: none
 - **Resolves**: `construct-4uxq0.4.13` (ADR-M: actuation default posture) — ratifies or revises the current default posture where the embed reasoning executor is off by default and `approval` (not `autonomous`) is the default action policy for anything beyond read/summarize/draft

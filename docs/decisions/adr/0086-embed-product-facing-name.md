@@ -1,7 +1,7 @@
 # ADR-0086: "Embed" retires as product-facing vocabulary, survives as the internal daemon name
 
 - **Date**: 2026-07-16
-- **Status**: proposed
+- **Status**: accepted
 - **Deciders**: Gerald Dagher
 - **Supersedes**: none
 - **Resolves**: `construct-4uxq0.4.2` (ADR-B) — whether "embed" survives as Construct's product-facing name, per the 2026-07 continuous-work audit's `target-architecture.md` ADR roster (ADR B, "Owner: User")
