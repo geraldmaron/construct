@@ -12,6 +12,14 @@
  * settles; a queue stub without heartbeat/fail proves FilesystemIntakeQueue
  * (solo mode) is unaffected by the wiring.
  *
+ * Also covers construct-4uxq0.11.3: FilesystemIntakeQueue has no claim() at
+ * all (solo mode is single-process and never needs concurrent-claim leasing;
+ * see lib/intake/filesystem-queue.mjs and lib/intake/queue.mjs#resolveBackend,
+ * which resolves the filesystem backend only in solo mode). runWorkerLoop
+ * must fail fast with QueueClaimUnsupportedError against the real
+ * FilesystemIntakeQueue instead of throwing the raw "claim is not a
+ * function" TypeError a misconfigured invocation would otherwise hit.
+ *
  * runWorkerLoop writes trace events through the machine-scoped state root
  * (ADR-0066), keyed by a hash of projectRoot — so CX_HOME_OVERRIDE is pinned
  * per test to keep that write off the real developer machine's $HOME.
@@ -22,7 +30,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-import { runWorkerLoop } from '../lib/worker/entrypoint.mjs';
+import { runWorkerLoop, QueueClaimUnsupportedError } from '../lib/worker/entrypoint.mjs';
+import { FilesystemIntakeQueue } from '../lib/intake/filesystem-queue.mjs';
 
 let projectRoot;
 let originalCwd;
@@ -305,5 +314,49 @@ describe('runWorkerLoop — execution lease heartbeat (ADR-0089)', () => {
     assert.equal(summary.processed, 1);
     assert.equal(processed.length, 1);
     assert.equal(typeof handle.heartbeat, 'undefined', 'a solo-mode-shaped queue never gains a heartbeat method from the wiring');
+  });
+});
+
+describe('runWorkerLoop — filesystem-backend claim capability guard (construct-4uxq0.11.3)', () => {
+  it('rejects with QueueClaimUnsupportedError against the real FilesystemIntakeQueue instead of a raw TypeError', async () => {
+    const queue = new FilesystemIntakeQueue(projectRoot);
+    assert.equal(typeof queue.claim, 'undefined', 'precondition: FilesystemIntakeQueue has no claim() to begin with');
+
+    await assert.rejects(
+      () => runWorkerLoop({
+        rootDir: projectRoot,
+        workspace: projectRoot,
+        project: 'test',
+        queue,
+        idleTimeoutSeconds: 0,
+        pollIntervalMs: 10,
+      }),
+      (err) => {
+        assert.ok(err instanceof QueueClaimUnsupportedError, `expected QueueClaimUnsupportedError, got ${err.constructor.name}: ${err.message}`);
+        assert.equal(err.name, 'QueueClaimUnsupportedError');
+        assert.match(err.message, /does not implement claim/);
+        assert.match(err.message, /FilesystemIntakeQueue/);
+        assert.equal(err.backend, 'FilesystemIntakeQueue');
+        return true;
+      },
+    );
+  });
+
+  it('still rejects clearly for a bare object queue with no claim() and no backend name', async () => {
+    await assert.rejects(
+      () => runWorkerLoop({
+        rootDir: projectRoot,
+        workspace: projectRoot,
+        project: 'test',
+        queue: { markProcessed: async () => {}, markSkipped: async () => {} },
+        idleTimeoutSeconds: 0,
+        pollIntervalMs: 10,
+      }),
+      (err) => {
+        assert.ok(err instanceof QueueClaimUnsupportedError);
+        assert.match(err.message, /queue backend 'Object' does not implement claim/);
+        return true;
+      },
+    );
   });
 });
