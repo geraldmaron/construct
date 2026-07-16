@@ -78,7 +78,7 @@ describe('provider_write — destructive gate: without a token the adapter is ne
     // itself refuses, then assert that a caller respecting that refusal
     // never invokes providerWrite — so the adapter's create-issue path is
     // never reached.
-    const gateArgs = { provider: 'jira', item: ISSUE_ITEM, dry_run: false };
+    const gateArgs = { provider: 'atlassian-jira', item: ISSUE_ITEM, dry_run: false };
     const gate = checkDestructiveGate('provider_write', gateArgs);
     assert.equal(gate.gated, true);
     assert.equal(gate.allowed, false);
@@ -116,7 +116,7 @@ describe('provider_write — with a valid token, exactly one adapter call + enve
 
     const sentLog = new WriteSentLog({ persistPath: path.join(rootDir, '.cx', 'writes', 'sent-log.jsonl') });
     const result = await providerWrite(
-      { provider: 'jira', item: ISSUE_ITEM, dry_run: false, approval_token: token },
+      { provider: 'atlassian-jira', item: ISSUE_ITEM, dry_run: false, approval_token: token },
       { ...makeAdapterDeps(transport), sentLog, rootDir },
     );
 
@@ -143,10 +143,10 @@ describe('provider_write — with a valid token, exactly one adapter call + enve
     const sentLog = new WriteSentLog({ persistPath: path.join(rootDir, '.cx', 'writes', 'sent-log.jsonl') });
     const deps = { ...makeAdapterDeps(transport), sentLog, rootDir };
 
-    const first = await providerWrite({ provider: 'jira', item: ISSUE_ITEM, dry_run: false }, deps);
+    const first = await providerWrite({ provider: 'atlassian-jira', item: ISSUE_ITEM, dry_run: false }, deps);
     assert.equal(first.status, 'sent');
 
-    const second = await providerWrite({ provider: 'jira', item: ISSUE_ITEM, dry_run: false }, deps);
+    const second = await providerWrite({ provider: 'atlassian-jira', item: ISSUE_ITEM, dry_run: false }, deps);
     assert.equal(second.status, 'cached');
 
     assert.equal(transport.createIssueCallCount(), 1, 'dedup must prevent a second real adapter call');
@@ -162,7 +162,7 @@ describe('provider_write — dry_run=true never touches the adapter write path',
     });
 
     const result = await providerWrite(
-      { provider: 'jira', item: ISSUE_ITEM, dry_run: true },
+      { provider: 'atlassian-jira', item: ISSUE_ITEM, dry_run: true },
       makeAdapterDeps(transport),
     );
 
@@ -180,7 +180,7 @@ describe('provider_write — dry_run=true never touches the adapter write path',
     const transport = createFakeJiraTransport({
       projects: { PROJ: { issueTypes: { Task: {} } } },
     });
-    const result = await providerWrite({ provider: 'jira', item: ISSUE_ITEM }, makeAdapterDeps(transport));
+    const result = await providerWrite({ provider: 'atlassian-jira', item: ISSUE_ITEM }, makeAdapterDeps(transport));
     assert.equal(result.dryRun, true);
     assert.equal(transport.createIssueCallCount(), 0);
   });
@@ -188,7 +188,7 @@ describe('provider_write — dry_run=true never touches the adapter write path',
   it('an invalid payload surfaces as dry-run-invalid rather than throwing or writing', async () => {
     const transport = createFakeJiraTransport({ projects: { PROJ: { issueTypes: { Task: {} } } } });
     const result = await providerWrite(
-      { provider: 'jira', item: { type: 'unsupported-type' }, dry_run: true },
+      { provider: 'atlassian-jira', item: { type: 'unsupported-type' }, dry_run: true },
       makeAdapterDeps(transport),
     );
     assert.equal(result.status, 'dry-run-invalid');
@@ -208,7 +208,7 @@ describe('provider_write — unknown provider and missing args', () => {
     const missingProvider = await providerWrite({ item: {} }, {});
     assert.match(missingProvider.error, /provider is required/);
 
-    const missingItem = await providerWrite({ provider: 'jira' }, {});
+    const missingItem = await providerWrite({ provider: 'atlassian-jira' }, {});
     assert.match(missingItem.error, /item is required/);
   });
 });
@@ -217,11 +217,11 @@ describe('provider_write — E4 embedBindings enforcement for embedded-specialis
   it('denies a specialist proposal outside its embedBindings grant, before the adapter is resolved', async () => {
     const transport = createFakeJiraTransport({ projects: { PROJ: { issueTypes: { Task: {} } } } });
     const embedBindings = {
-      writer: { providers: ['jira'], proposals: ['confluence.page'] },
+      writer: { providers: ['atlassian-jira'], proposals: ['atlassian-confluence.page'] },
     };
 
     const result = await providerWrite(
-      { provider: 'jira', item: ISSUE_ITEM, dry_run: false, specialist_id: 'writer' },
+      { provider: 'atlassian-jira', item: ISSUE_ITEM, dry_run: false, specialist_id: 'writer' },
       { ...makeAdapterDeps(transport), embedBindings },
     );
 
@@ -233,7 +233,7 @@ describe('provider_write — E4 embedBindings enforcement for embedded-specialis
   it('denies a specialist with no embedBindings entry at all', async () => {
     const transport = createFakeJiraTransport({ projects: { PROJ: { issueTypes: { Task: {} } } } });
     const result = await providerWrite(
-      { provider: 'jira', item: ISSUE_ITEM, dry_run: false, specialist_id: 'unbound-specialist' },
+      { provider: 'atlassian-jira', item: ISSUE_ITEM, dry_run: false, specialist_id: 'unbound-specialist' },
       { ...makeAdapterDeps(transport), embedBindings: {} },
     );
     assert.equal(result.status, 'denied');
@@ -244,11 +244,11 @@ describe('provider_write — E4 embedBindings enforcement for embedded-specialis
   it('allows a specialist proposal that matches its embedBindings grant to proceed to dry-run', async () => {
     const transport = createFakeJiraTransport({ projects: { PROJ: { issueTypes: { Task: {} } } } });
     const embedBindings = {
-      writer: { providers: ['jira'], proposals: ['jira.issue'] },
+      writer: { providers: ['atlassian-jira'], proposals: ['atlassian-jira.issue'] },
     };
 
     const result = await providerWrite(
-      { provider: 'jira', item: ISSUE_ITEM, dry_run: true, specialist_id: 'writer' },
+      { provider: 'atlassian-jira', item: ISSUE_ITEM, dry_run: true, specialist_id: 'writer' },
       { ...makeAdapterDeps(transport), embedBindings },
     );
 
@@ -259,7 +259,7 @@ describe('provider_write — E4 embedBindings enforcement for embedded-specialis
   it('non-embed callers (no specialist_id) are unaffected by embedBindings', async () => {
     const transport = createFakeJiraTransport({ projects: { PROJ: { issueTypes: { Task: {} } } } });
     const result = await providerWrite(
-      { provider: 'jira', item: ISSUE_ITEM, dry_run: true },
+      { provider: 'atlassian-jira', item: ISSUE_ITEM, dry_run: true },
       { ...makeAdapterDeps(transport), embedBindings: {} },
     );
     assert.equal(result.status, 'dry-run');

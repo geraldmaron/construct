@@ -36,7 +36,7 @@ afterEach(() => {
 });
 
 function jiraFactories(transport) {
-  return { jira: () => createGovernedJiraProvider({ jiraTransport: transport }) };
+  return { 'atlassian-jira': () => createGovernedJiraProvider({ jiraTransport: transport }) };
 }
 
 describe('LMCP-J6 — a specialist-produced writeIntent executes only after plane authorization', () => {
@@ -48,7 +48,7 @@ describe('LMCP-J6 — a specialist-produced writeIntent executes only after plan
     // The specialist step: recommend, never execute. buildWriteIntent is the
     // only shape a specialist may produce; it does not import an adapter.
     const intent = buildWriteIntent({
-      providerId: 'jira',
+      providerId: 'atlassian-jira',
       writeKind: 'issue',
       payload: { project: 'PROJ', issueType: 'Task', summary: 'Flaky test in CI' },
       requestedBy: { specialistId: 'qa-analyst', role: 'cx-qa-analyst' },
@@ -108,7 +108,7 @@ describe('LMCP-J6 — a specialist-produced writeIntent executes only after plan
     const sentLog = new WriteSentLog({ persistPath: path.join(tmpRoot, 'sent-log.jsonl') });
 
     const intent = buildWriteIntent({
-      providerId: 'jira',
+      providerId: 'atlassian-jira',
       writeKind: 'issue',
       payload: { project: 'PROJ', issueType: 'Task', summary: 'Should not ship' },
       requestedBy: { specialistId: 'qa-analyst' },
@@ -141,7 +141,7 @@ describe('LMCP-J6 — embed-daemon-originated writeIntent executes only post-app
     // (lib/embed/capability-jobs.mjs) reads.
     const snapshot = {
       generatedAt: new Date().toISOString(),
-      sections: [{ provider: 'jira', items: [{ id: 'OPS-1', title: 'Pager fired: disk usage' }] }],
+      sections: [{ provider: 'atlassian-jira', items: [{ id: 'OPS-1', title: 'Pager fired: disk usage' }] }],
     };
 
     // Step 2: specialist plan — the embed capability's reasoningExecutor
@@ -149,7 +149,7 @@ describe('LMCP-J6 — embed-daemon-originated writeIntent executes only post-app
     // reasoning engine would return per ADR-0061 §3. This is the specialist
     // "recommending" — it returns proposals, it does not call an adapter.
     const writeProposals = [
-      { providerId: 'jira', writeKind: 'issue', payload: { project: 'OPS', issueType: 'Task', summary: 'Disk usage pager: create ticket' } },
+      { providerId: 'atlassian-jira', writeKind: 'issue', payload: { project: 'OPS', issueType: 'Task', summary: 'Disk usage pager: create ticket' } },
     ];
 
     // Step 3: writeIntent in queue — mirrors runCapabilityTick's enqueue
@@ -188,5 +188,114 @@ describe('LMCP-J6 — embed-daemon-originated writeIntent executes only post-app
 
     const sentRecords = sentLog.list({ status: 'sent' });
     assert.equal(sentRecords.length, 1, 'the envelope recorded exactly one sent audit entry');
+  });
+});
+
+// ADR-0082 round-trip: DEFAULT_ADAPTER_FACTORIES (control-plane.mjs) resolves
+// only the manifest-namespace provider IDs; the short IDs "jira" and
+// "confluence" resolve to nothing. Credential env vars are cleared so a
+// resolved atlassian-jira/atlassian-confluence/slack factory fails fast on
+// AuthError at transport construction — proof of resolution with no real
+// network call, since AuthError is thrown before any I/O.
+
+const CREDENTIAL_ENV_KEYS = [
+  'JIRA_URL', 'JIRA_EMAIL', 'JIRA_TOKEN',
+  'CONFLUENCE_URL', 'CONFLUENCE_EMAIL', 'CONFLUENCE_TOKEN',
+  'SLACK_BOT_TOKEN',
+];
+
+function approvedRecord(queue, { tool, args = {} }) {
+  const record = queue.enqueue({ tool, args, surface: 'test', requestedBy: { specialistId: 'namespace-test' } });
+  queue.approve(record.approvalId, { decidedBy: { userId: 'reviewer-1' } });
+  return queue.getById(record.approvalId);
+}
+
+describe('ADR-0082 — provider-ID namespace canonicalization round-trip (construct-4uxq0.9.4)', () => {
+  const savedEnv = {};
+
+  beforeEach(() => {
+    for (const key of CREDENTIAL_ENV_KEYS) {
+      savedEnv[key] = process.env[key];
+      delete process.env[key];
+    }
+  });
+
+  afterEach(() => {
+    for (const key of CREDENTIAL_ENV_KEYS) {
+      if (savedEnv[key] === undefined) delete process.env[key];
+      else process.env[key] = savedEnv[key];
+    }
+  });
+
+  it('resolves the real DEFAULT_ADAPTER_FACTORIES entry for "atlassian-jira" (fails on missing credentials, not on missing adapter)', async () => {
+    const queue = new ApprovalQueue({ persistPath: path.join(tmpRoot, 'ns-queue.jsonl') });
+    const record = approvedRecord(queue, { tool: 'atlassian-jira.issue', args: { project: 'PROJ', issueType: 'Task', summary: 'x' } });
+
+    await assert.rejects(
+      () => executeApprovedWriteIntent(record, { rootDir: tmpRoot }),
+      /Jira transport requires JIRA_URL/,
+    );
+  });
+
+  it('resolves the real DEFAULT_ADAPTER_FACTORIES entry for "atlassian-confluence" (fails on missing credentials, not on missing adapter)', async () => {
+    const queue = new ApprovalQueue({ persistPath: path.join(tmpRoot, 'ns-queue.jsonl') });
+    const record = approvedRecord(queue, { tool: 'atlassian-confluence.page', args: { spaceKey: 'OPS', title: 'x' } });
+
+    await assert.rejects(
+      () => executeApprovedWriteIntent(record, { rootDir: tmpRoot }),
+      /Confluence transport requires CONFLUENCE_URL/,
+    );
+  });
+
+  it('resolves the real DEFAULT_ADAPTER_FACTORIES entry for "slack" (fails on missing credentials, not on missing adapter)', async () => {
+    const queue = new ApprovalQueue({ persistPath: path.join(tmpRoot, 'ns-queue.jsonl') });
+    const record = approvedRecord(queue, { tool: 'slack.message', args: { channel: '#general', text: 'x' } });
+
+    await assert.rejects(
+      () => executeApprovedWriteIntent(record, { rootDir: tmpRoot }),
+      /Slack transport requires SLACK_BOT_TOKEN/,
+    );
+  });
+
+  it('resolves the real DEFAULT_ADAPTER_FACTORIES entry for "github" (unaffected by the rename)', async () => {
+    const queue = new ApprovalQueue({ persistPath: path.join(tmpRoot, 'ns-queue.jsonl') });
+    const sentLog = new WriteSentLog({ persistPath: path.join(tmpRoot, 'ns-sent-log.jsonl') });
+    const fakeGithubAdapter = {
+      meta: { id: 'github' },
+      async write() {
+        return { type: 'issue-created', url: 'https://github.com/example/issues/1', id: '1' };
+      },
+    };
+    const record = approvedRecord(queue, { tool: 'github.issue', args: { title: 'x' } });
+
+    // github's real factory constructs no transport at call time (the gh CLI
+    // is invoked lazily inside .write()), so this stays a real
+    // DEFAULT_ADAPTER_FACTORIES resolution while still avoiding any real gh
+    // CLI invocation: only the .write() call is swapped for a fake.
+    const result = await executeApprovedWriteIntent(record, {
+      sentLog,
+      adapterFactories: { github: () => fakeGithubAdapter },
+    });
+    assert.equal(result.status, 'sent');
+  });
+
+  it('the pre-rename short ID "jira" is unresolvable in the real DEFAULT_ADAPTER_FACTORIES', async () => {
+    const queue = new ApprovalQueue({ persistPath: path.join(tmpRoot, 'ns-queue.jsonl') });
+    const record = approvedRecord(queue, { tool: 'jira.issue', args: { project: 'PROJ', issueType: 'Task', summary: 'x' } });
+
+    await assert.rejects(
+      () => executeApprovedWriteIntent(record, { rootDir: tmpRoot }),
+      /no governed adapter registered for provider "jira"/,
+    );
+  });
+
+  it('the pre-rename short ID "confluence" is unresolvable in the real DEFAULT_ADAPTER_FACTORIES', async () => {
+    const queue = new ApprovalQueue({ persistPath: path.join(tmpRoot, 'ns-queue.jsonl') });
+    const record = approvedRecord(queue, { tool: 'confluence.page', args: { spaceKey: 'OPS', title: 'x' } });
+
+    await assert.rejects(
+      () => executeApprovedWriteIntent(record, { rootDir: tmpRoot }),
+      /no governed adapter registered for provider "confluence"/,
+    );
   });
 });
