@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { writeWithEnvelope } from '../../lib/writes/envelope.mjs';
 import { WriteSentLog } from '../../lib/writes/sent-log.mjs';
+import { PolicyDenied, ApprovalRequired, RateLimited, BudgetExceeded } from '../../lib/mcp/broker.mjs';
 
 function makeFakeProvider() {
   let callCount = 0;
@@ -151,5 +152,61 @@ describe('writeWithEnvelope', () => {
     });
     assert.equal(result.status, 'error');
     assert.ok(result.envelope.error.includes('API timeout'));
+  });
+});
+
+describe('writeWithEnvelope: broker throw handling', () => {
+  // Broker.invoke() throws PolicyDenied/ApprovalRequired/RateLimited (lib/mcp/broker.mjs)
+  // and BudgetExceeded (lib/policy/consumption-budget.mjs) for callers with no
+  // approvalQueue configured. Each must block the write the same way the non-throw
+  // denied/awaiting_approval paths do, never fall through to provider.write().
+
+  function makeTrappedProvider() {
+    let calls = 0;
+    return {
+      meta: { id: 'fake-github' },
+      write: async () => { calls++; throw new Error('provider.write must not run when the broker gate blocks'); },
+      calls: () => calls,
+    };
+  }
+
+  it('PolicyDenied throw blocks execution and returns denied', async () => {
+    const provider = makeTrappedProvider();
+    const broker = { invoke: async () => { throw new PolicyDenied({ reason: 'no write access' }); } };
+    const result = await writeWithEnvelope({ provider, config: {}, broker, payload: { type: 'issue' } });
+    assert.equal(result.status, 'denied');
+    assert.notEqual(result.status, 'sent');
+    assert.equal(provider.calls(), 0);
+  });
+
+  it('ApprovalRequired throw blocks execution and returns awaiting_approval', async () => {
+    const provider = makeTrappedProvider();
+    const broker = { invoke: async () => { throw new ApprovalRequired({ reason: 'needs approval' }); } };
+    const result = await writeWithEnvelope({ provider, config: {}, broker, payload: { type: 'issue' } });
+    assert.equal(result.status, 'awaiting_approval');
+    assert.notEqual(result.status, 'sent');
+    assert.equal(provider.calls(), 0);
+  });
+
+  it('BudgetExceeded throw blocks execution and returns denied', async () => {
+    const provider = makeTrappedProvider();
+    const broker = {
+      invoke: async () => {
+        throw new BudgetExceeded({ actor: 'user1', runId: 'run1', kind: 'toolCalls', cap: 10, projected: 11 });
+      },
+    };
+    const result = await writeWithEnvelope({ provider, config: {}, broker, payload: { type: 'issue' } });
+    assert.equal(result.status, 'denied');
+    assert.notEqual(result.status, 'sent');
+    assert.equal(provider.calls(), 0);
+  });
+
+  it('RateLimited throw blocks execution and returns denied', async () => {
+    const provider = makeTrappedProvider();
+    const broker = { invoke: async () => { throw new RateLimited('member', 'write:fake-github:issue', 30); } };
+    const result = await writeWithEnvelope({ provider, config: {}, broker, payload: { type: 'issue' } });
+    assert.equal(result.status, 'denied');
+    assert.notEqual(result.status, 'sent');
+    assert.equal(provider.calls(), 0);
   });
 });
