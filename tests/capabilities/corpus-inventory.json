@@ -1,26 +1,26 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-16T18:58:01.098Z",
+  "generatedAt": "2026-07-16T19:21:24.269Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 914,
-    "topLevelTestFiles": 370,
-    "nestedTestFiles": 544,
+    "testFiles": 918,
+    "topLevelTestFiles": 372,
+    "nestedTestFiles": 546,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 50,
+    "capabilityMarkedFiles": 51,
     "byLayer": {
-      "unit": 595,
-      "functional": 271,
+      "unit": 598,
+      "functional": 272,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 531,
-      "functional": 271,
+      "unit": 533,
+      "functional": 272,
       "visual": 12,
       "structural-guard": 19,
-      "contract-subsystem": 45,
+      "contract-subsystem": 46,
       "live-provider": 2,
       "integration": 25,
       "hook": 9
@@ -1923,6 +1923,14 @@
       "maintainerNotes": "semantic.test.mjs — Tests for the embed semantic analysis module."
     },
     {
+      "path": "tests/embed/supervision-templates.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/embed/supervision-templates.test.mjs — Unit tests for the"
+    },
+    {
       "path": "tests/embedded-contract-capability.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -2708,6 +2716,16 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/custom-specialist-round-trip.functional.test.mjs —"
+    },
+    {
+      "path": "tests/functional/daemon-contract-tick-error-heartbeat.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "daemons.contract"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/daemon-contract-tick-error-heartbeat.functional.test.mjs —"
     },
     {
       "path": "tests/functional/deck-export.functional.test.mjs",
@@ -5236,6 +5254,22 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/lint-commits-pr-bot-exemption.test.mjs — template-policy bot exemption."
+    },
+    {
+      "path": "tests/lint-commits-pr-script-entry.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/lint-commits-pr-script-entry.test.mjs — CLI-entry-guard regression."
+    },
+    {
+      "path": "tests/lint-pr-cli.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/lint-pr-cli.test.mjs — construct lint:pr body/base-ref resolution."
     },
     {
       "path": "tests/logging-rotate.test.mjs",
