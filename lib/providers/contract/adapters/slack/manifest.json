@@ -1,0 +1,17 @@
+{
+  "id": "slack-write",
+  "version": "1.0.0",
+  "kind": "data-source",
+  "capabilities": ["write"],
+  "secretEnvKeys": ["SLACK_BOT_TOKEN"],
+  "operations": ["write:message", "write:reply"],
+  "securityClassification": "trusted",
+  "owner": "construct-core",
+  "compatVersion": 1,
+  "installSource": "builtin",
+  "exposure": "envelope-only",
+  "envelopeModule": "lib/writes/envelope.mjs",
+  "adapterModule": "lib/providers/contract/adapters/slack/governed-write.mjs",
+  "transportModule": "lib/providers/contract/adapters/slack/transport.mjs",
+  "notes": "Colocated write-capability manifest (construct-p4cba.2). Follows the lib/extensions/manifests/*.manifest.json schema (see slack.manifest.json, which declares read/search only). Wiring this into the shared lib/extensions/manifests/ discovery directory is out of scope; capabilities here are reachable only via writeWithEnvelope(), never a direct provider-registry lookup."
+}
