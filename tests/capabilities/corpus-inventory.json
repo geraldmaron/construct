@@ -1,28 +1,28 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-16T22:17:11.992Z",
+  "generatedAt": "2026-07-16T22:33:36.954Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 925,
+    "testFiles": 929,
     "topLevelTestFiles": 375,
-    "nestedTestFiles": 550,
+    "nestedTestFiles": 554,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 52,
     "byLayer": {
-      "unit": 603,
+      "unit": 606,
       "functional": 274,
       "visual": 12,
       "live-provider": 2,
-      "integration": 34
+      "integration": 35
     },
     "byCategory": {
-      "unit": 538,
+      "unit": 541,
       "functional": 274,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 46,
       "live-provider": 2,
-      "integration": 25,
+      "integration": 26,
       "hook": 9
     }
   },
@@ -6388,6 +6388,30 @@
       "maintainerNotes": "tests/providers/feedback-provider.test.mjs — feedback provider tests."
     },
     {
+      "path": "tests/providers/github-gh-cli-adapter.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/providers/github-gh-cli-adapter.test.mjs — real behavior of"
+    },
+    {
+      "path": "tests/providers/github-read-search.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/providers/github-read-search.test.mjs — real read()/search()/health()"
+    },
+    {
+      "path": "tests/providers/github-webhook.test.mjs",
+      "layer": "integration",
+      "category": "integration",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/providers/github-webhook.test.mjs — real HMAC-SHA256 webhook"
+    },
+    {
       "path": "tests/providers/op-discovery.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -6962,6 +6986,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/source-taxonomy.test.mjs — source credibility taxonomy is wired in."
+    },
+    {
+      "path": "tests/sources/repo-cache-git-behaviors.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/sources/repo-cache-git-behaviors.test.mjs — real-git contract tests"
     },
     {
       "path": "tests/specialist-contracts.test.mjs",

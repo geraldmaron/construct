@@ -32,11 +32,11 @@
   "certification": {
     "tier": "process-boundary-tested",
     "computedAt": "2026-07-16",
-    "computedBy": "lib/certification/provider-evidence-tiers.mjs#auditKnownProviderManifests (construct-4uxq0.13.2)",
+    "computedBy": "lib/certification/provider-evidence-tiers.mjs#auditKnownProviderManifests (construct-4uxq0.13.3)",
     "reason": "a functional test crosses a real subprocess boundary, but live-sandbox verification requires an explicit human attestation not present in the manifest",
     "evidence": {
-      "contractTestFiles": [],
-      "processBoundaryTestFiles": ["tests/functional/source-links.functional.test.mjs", "tests/functional/source-target-git.functional.test.mjs"]
+      "contractTestFiles": ["tests/extensions/manifest-providers.test.mjs"],
+      "processBoundaryTestFiles": ["tests/functional/source-links.functional.test.mjs", "tests/functional/source-target-directory.functional.test.mjs", "tests/functional/source-target-git.functional.test.mjs", "tests/sources/repo-cache-git-behaviors.test.mjs"]
     },
     "manualAttestation": {
       "liveSandboxTested": { "attested": false, "attestedAt": null, "attestedBy": null, "note": null },
