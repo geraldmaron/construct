@@ -242,6 +242,39 @@ describe('writeProjectConfig + initProjectConfig', () => {
     }
   });
 
+  it('strict-mode write recognizes writes + directives as known fields and round-trips both unchanged', () => {
+    const cfgPath = path.join(tmpRoot, PROJECT_CONFIG_FILENAME);
+    const config = {
+      ...DEFAULT_PROJECT_CONFIG,
+      writes: { policy: { 'jira.comment': 'auto', 'slack.message': 'approval' } },
+      directives: [
+        {
+          id: 'watch-jira-roadmap',
+          provider: 'jira',
+          specialist: 'cx-researcher',
+          instruction: 'Watch Jira, summarize what the team is working on.',
+          trigger: { kind: 'interval', intervalMinutes: 1440 },
+          action: 'summarize',
+          output: { kind: 'knowledge-note' },
+          autoRun: false,
+        },
+      ],
+    };
+    // strict:true throws on unknown top-level fields — this call proves
+    // writes/directives are recognized, not just tolerated in non-strict mode.
+    writeProjectConfig(cfgPath, config, { strict: true });
+    try {
+      const onDisk = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+      assert.deepEqual(onDisk.writes, config.writes);
+      assert.deepEqual(onDisk.directives, config.directives);
+      const loaded = loadProjectConfig(tmpRoot, {});
+      assert.equal(loaded.config.writes.policy['jira.comment'], 'auto');
+      assert.equal(loaded.config.directives[0].id, 'watch-jira-roadmap');
+    } finally {
+      fs.unlinkSync(cfgPath);
+    }
+  });
+
   it('initProjectConfig refuses to overwrite an existing file', () => {
     const cfgPath = path.join(tmpRoot, PROJECT_CONFIG_FILENAME);
     fs.writeFileSync(cfgPath, '{}');
