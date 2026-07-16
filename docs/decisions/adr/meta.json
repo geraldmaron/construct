@@ -74,6 +74,10 @@
     "0081-atomic-persistence-standard",
     "0082-provider-id-namespace-canonicalization",
     "0083-job-truth-status-vocabulary",
-    "0084-test-isolation-hermetic-state-roots"
+    "0084-test-isolation-hermetic-state-roots",
+    "0085-canonical-continuous-work-model",
+    "0086-embed-product-facing-name",
+    "0087-aws-deployment-topology",
+    "0088-actuation-default-posture"
   ]
 }
