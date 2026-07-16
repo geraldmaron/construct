@@ -6,7 +6,11 @@
  * queue in order, passing jobs are markProcessed'd with worker
  * identity, failed/timed-out jobs are markSkipped'd with a structured
  * reason, the idle timeout terminates the loop, and stopAfter stops
- * after N drained items.
+ * after N drained items. Also covers the ADR-0089 execution-lease
+ * heartbeat: a lease-capable queue stub (heartbeat/fail spies) proves
+ * heartbeat fires periodically while a job is in flight and stops once it
+ * settles; a queue stub without heartbeat/fail proves FilesystemIntakeQueue
+ * (solo mode) is unaffected by the wiring.
  *
  * runWorkerLoop writes trace events through the machine-scoped state root
  * (ADR-0066), keyed by a hash of projectRoot — so CX_HOME_OVERRIDE is pinned
@@ -64,6 +68,33 @@ function buildStubQueue(scriptedPackets) {
     },
     processed,
     skipped,
+  };
+}
+
+/**
+ * Same contract as buildStubQueue, plus heartbeat()/fail() spies —
+ * PostgresIntakeQueue's shape (lib/queue/pg-queue.mjs) — so the heartbeat
+ * wiring in lib/worker/entrypoint.mjs has something lease-capable to call.
+ */
+function buildLeaseQueue(scriptedPackets, { leaseSeconds } = {}) {
+  const queue = scriptedPackets.slice();
+  const processed = [];
+  const skipped = [];
+  const heartbeats = [];
+  const fails = [];
+  return {
+    handle: {
+      leaseSeconds,
+      claim: async () => queue.shift() || null,
+      markProcessed: async (id, meta) => { processed.push({ id, meta }); return { id }; },
+      markSkipped: async (id, meta) => { skipped.push({ id, meta }); return { id }; },
+      heartbeat: async (id, opts) => { heartbeats.push({ id, opts, at: Date.now() }); return { id, renewed: true }; },
+      fail: async (id, opts) => { fails.push({ id, opts }); return { id, status: 'pending' }; },
+    },
+    processed,
+    skipped,
+    heartbeats,
+    fails,
   };
 }
 
@@ -159,5 +190,56 @@ describe('runWorkerLoop', () => {
     });
     assert.equal(summary.processed, 2);
     assert.deepEqual(processed.map((p) => p.id), ['p1', 'p2']);
+  });
+});
+
+describe('runWorkerLoop — execution lease heartbeat (ADR-0089)', () => {
+  it('heartbeats a lease-capable queue periodically while a job runs, and stops once it settles', async () => {
+    const { handle, processed, heartbeats, fails } = buildLeaseQueue([
+      { id: 'slow-1', intake: { project: 'test' }, workerCommand: 'sleep 0.3' },
+    ], { leaseSeconds: 5 });
+
+    const summary = await runWorkerLoop({
+      rootDir: projectRoot,
+      workspace: projectRoot,
+      project: 'test',
+      queue: handle,
+      idleTimeoutSeconds: 0,
+      pollIntervalMs: 10,
+      stopAfter: 1,
+      heartbeatIntervalMs: 50,
+    });
+
+    assert.equal(summary.processed, 1);
+    assert.equal(processed.length, 1);
+    assert.ok(heartbeats.length >= 2, `expected multiple heartbeat calls during a ~300ms job, got ${heartbeats.length}`);
+    assert.equal(heartbeats[0].id, 'slow-1');
+    assert.match(heartbeats[0].opts.workerId, /worker-/);
+    assert.equal(fails.length, 0, 'a successful job must never call fail()');
+
+    const countAfterSettle = heartbeats.length;
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    assert.equal(heartbeats.length, countAfterSettle, 'the heartbeat interval must be cleared once the job settles — no calls after completion');
+  });
+
+  it('never calls heartbeat for a queue that does not implement it (FilesystemIntakeQueue-shaped)', async () => {
+    const { handle, processed } = buildStubQueue([
+      { id: 'fs-1', intake: { project: 'test' }, workerCommand: 'echo ok' },
+    ]);
+
+    const summary = await runWorkerLoop({
+      rootDir: projectRoot,
+      workspace: projectRoot,
+      project: 'test',
+      queue: handle,
+      idleTimeoutSeconds: 0,
+      pollIntervalMs: 10,
+      stopAfter: 1,
+      heartbeatIntervalMs: 20,
+    });
+
+    assert.equal(summary.processed, 1);
+    assert.equal(processed.length, 1);
+    assert.equal(typeof handle.heartbeat, 'undefined', 'a solo-mode-shaped queue never gains a heartbeat method from the wiring');
   });
 });
