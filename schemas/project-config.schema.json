@@ -145,18 +145,7 @@
     },
     "writes": {
       "type": "object",
-      "description": "Governed external-write policy (lib/writes/). Fail-safe default is 'approval' for any write not listed here.",
-      "properties": {
-        "policy": {
-          "type": "object",
-          "description": "Per-\"<providerId>.<writeKind>\" auto/approval/deny mode, e.g. {\"jira.comment\": \"auto\"}.",
-          "additionalProperties": { "type": "string", "enum": ["auto", "approval", "deny"] }
-        }
-      }
-    },
-    "writes": {
-      "type": "object",
-      "description": "Governed external write policy (lib/writes/). Not enforced by this schema alone — lib/writes/write-policy.mjs validateWritePolicyConfig() is the authoritative check, run by writeProjectConfig().",
+      "description": "Governed external-write policy (lib/writes/). Fail-safe default is 'approval' for any write not listed here. Not enforced by this schema alone — lib/writes/write-policy.mjs validateWritePolicyConfig() is the authoritative check, run by writeProjectConfig().",
       "properties": {
         "policy": {
           "type": "object",
