@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-16T21:06:12.114Z",
+  "generatedAt": "2026-07-16T21:46:36.773Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 919,
-    "topLevelTestFiles": 373,
-    "nestedTestFiles": 546,
+    "testFiles": 925,
+    "topLevelTestFiles": 375,
+    "nestedTestFiles": 550,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 51,
+    "capabilityMarkedFiles": 52,
     "byLayer": {
-      "unit": 599,
-      "functional": 272,
+      "unit": 603,
+      "functional": 274,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 534,
-      "functional": 272,
+      "unit": 538,
+      "functional": 274,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 46,
@@ -1127,6 +1127,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/certification/prompt-budget.test.mjs — composed prompt budget evidence."
+    },
+    {
+      "path": "tests/certification/provider-evidence-tiers.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/provider-evidence-tiers.test.mjs — provider evidence-tier ladder."
     },
     {
       "path": "tests/certification/rc-gate.test.mjs",
@@ -3798,6 +3806,16 @@
       "maintainerNotes": "tests/functional/oracle-synthesis.functional.test.mjs —"
     },
     {
+      "path": "tests/functional/oracle-verdict-vocabulary.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "oracle.meta-review"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/oracle-verdict-vocabulary.functional.test.mjs —"
+    },
+    {
       "path": "tests/functional/orchestration-cancel.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -5706,6 +5724,22 @@
       "maintainerNotes": "tests/oracle-gaps-detection.test.mjs — oracle gaps detection and filtering."
     },
     {
+      "path": "tests/oracle-invariants-closed-bead-sha.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/oracle-invariants-closed-bead-sha.test.mjs — the `closed-bead-sha-reachable-"
+    },
+    {
+      "path": "tests/oracle-invariants-registry.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/oracle-invariants-registry.test.mjs — the Layer 1 invariant-registry framework"
+    },
+    {
       "path": "tests/oracle-reconcile-staleness.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -7468,6 +7502,14 @@
       "maintainerNotes": "tests/writes/import-guard.test.mjs — LMCP-J6 guard: no orchestration or"
     },
     {
+      "path": "tests/writes/jira-transport.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/writes/jira-transport.test.mjs — real Jira Cloud REST v3 transport"
+    },
+    {
       "path": "tests/writes/jira.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -7482,6 +7524,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/writes/sent-log.test.mjs — WriteSentLog persist/load fault-injection."
+    },
+    {
+      "path": "tests/writes/slack.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/writes/slack.functional.test.mjs — Slack writes routed through the"
     },
     {
       "path": "tests/xdg-config.test.mjs",
