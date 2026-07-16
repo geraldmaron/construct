@@ -7,7 +7,7 @@
  * the new HEAD + propagates the change to the staleness ledger.
  */
 
-import test from 'node:test';
+import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -17,6 +17,20 @@ import { execSync } from 'node:child_process';
 
 import { refreshWatch, readWatchState } from '../../lib/sources/watch.mjs';
 import { readSourceLedger } from '../../lib/sources/staleness-ledger.mjs';
+
+// refreshWatch persists watch state via resolveStatePath (lib/state-root.mjs),
+// which anchors to the real user home unless CX_HOME_OVERRIDE is set — an
+// unpinned run leaks a fresh ~/.construct/projects/<hash>/context-repos/ key
+// per run (the hash covers a random tmpdir projectRoot).
+
+const HOME_OVERRIDE = fs.mkdtempSync(path.join(tmpdir(), 'watch-git-home-'));
+const PREV_HOME_OVERRIDE = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = HOME_OVERRIDE;
+after(() => {
+  if (PREV_HOME_OVERRIDE === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = PREV_HOME_OVERRIDE;
+  fs.rmSync(HOME_OVERRIDE, { recursive: true, force: true });
+});
 
 function makeTempDir(prefix) {
   return fs.mkdtempSync(path.join(tmpdir(), prefix));

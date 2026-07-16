@@ -16,6 +16,7 @@ import path from "node:path";
 import { execSync } from "node:child_process";
 
 import { resolvePrContext, runLintPrCli } from "../lib/lint-pr-cli.mjs";
+import { rmTmpDir } from "./helpers/cleanup.mjs";
 
 const HEAD = execSync("git rev-parse HEAD", { encoding: "utf8" }).trim();
 
@@ -74,8 +75,9 @@ function makeOpenPrRunner(pr) {
   };
 }
 
-test("resolvePrContext: --file wins even when a fake gh would resolve a PR", () => {
+test("resolvePrContext: --file wins even when a fake gh would resolve a PR", (t) => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lint-pr-cli-"));
+  t.after(() => rmTmpDir(tmp));
   const file = path.join(tmp, "body.md");
   fs.writeFileSync(file, "## Summary\nx\n");
   const ctx = resolvePrContext(["--file", file], {
@@ -119,9 +121,10 @@ test("resolvePrContext: gh authenticated with an open PR resolves body/baseRef/a
   assert.equal(overridden.baseRef, "staging");
 });
 
-test("runLintPrCli: --file with no PR-template headings exits non-zero and prints the CI violation format", () =>
+test("runLintPrCli: --file with no PR-template headings exits non-zero and prints the CI violation format", (t) =>
   withIsolatedPrEnv(async () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lint-pr-cli-"));
+    t.after(() => rmTmpDir(tmp));
     const file = path.join(tmp, "bad-body.md");
     fs.writeFileSync(file, "no headings here at all\n");
     const cap = captureConsole();
@@ -136,9 +139,10 @@ test("runLintPrCli: --file with no PR-template headings exits non-zero and print
     assert.match(cap.err(), /PR body missing required heading: ## Summary/);
   }));
 
-test("runLintPrCli: --file with a well-formed body exits 0 with 'Template policy: clean.'", () =>
+test("runLintPrCli: --file with a well-formed body exits 0 with 'Template policy: clean.'", (t) =>
   withIsolatedPrEnv(async () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lint-pr-cli-"));
+    t.after(() => rmTmpDir(tmp));
     const file = path.join(tmp, "good-body.md");
     fs.writeFileSync(
       file,
@@ -203,10 +207,11 @@ test("runLintPrCli: gh-resolved PR body with violations still exits non-zero", (
     assert.match(cap.err(), /PR body missing required heading: ## Summary/);
   }));
 
-test("runLintPrCli: restores PR_* env vars after running, even on the violation path", () =>
+test("runLintPrCli: restores PR_* env vars after running, even on the violation path", (t) =>
   withIsolatedPrEnv(async () => {
     process.env.PR_AUTHOR = "sentinel-value";
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lint-pr-cli-"));
+    t.after(() => rmTmpDir(tmp));
     const file = path.join(tmp, "bad-body.md");
     fs.writeFileSync(file, "no headings\n");
     const cap = captureConsole();
