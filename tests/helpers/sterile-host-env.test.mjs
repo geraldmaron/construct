@@ -192,3 +192,89 @@ test("an unparseable ~/.claude.json still trips the guard on content change", ()
     rmSync(home, { recursive: true, force: true });
   }
 });
+
+// ADR-0084: approvals/queue.jsonl is the bead's named priority target — the audit's
+// truth-matrix (row 42) names it as the one real-state-file class with a claimed
+// historical contamination incident. Like audit-trail.jsonl, it is append-only real
+// session state, so a whole-content hash would flap on legitimate concurrent approval
+// activity; the guard instead counts records tagged via ApprovalQueue's one caller-
+// controlled passthrough field, requestedBy.role, exactly as countAuditTrailTestLeaks
+// counts audit-trail's `"source":"test"` records.
+
+test("real approval-queue records unrelated to tests are not reported as a leak", () => {
+  const home = mkdtempSync(join(tmpdir(), "sterile-approvals-home-"));
+  try {
+    const stateDir = doctorRoot(home);
+    const approvalsDir = join(stateDir, "approvals");
+    mkdirSync(approvalsDir, { recursive: true });
+    const queuePath = join(approvalsDir, "queue.jsonl");
+    writeFileSync(queuePath, "");
+
+    const before = snapshotRealConfigs(home);
+    appendFileSync(queuePath, JSON.stringify({
+      approvalId: "appr-real-1",
+      toolCall: { tool: "github.pr.merge", args: { number: 42 }, surface: "mcp", argsHash: "deadbeef" },
+      requestedBy: { userId: null, serviceId: null, tenantId: null, sessionId: null, role: "engineer" },
+      state: "awaiting_approval",
+    }) + "\n");
+    const drift = diffRealConfigs(before, home);
+
+    assert.equal(drift.approvalQueueLeaks, 0, "a real (non-test-tagged) approval record must not count as a leak");
+  } finally {
+    rmTmpDir(home);
+  }
+});
+
+test("a test-tagged record appended to the real approval queue is detected as a leak", () => {
+  const home = mkdtempSync(join(tmpdir(), "sterile-approvals-home-"));
+  try {
+    const stateDir = doctorRoot(home);
+    const approvalsDir = join(stateDir, "approvals");
+    mkdirSync(approvalsDir, { recursive: true });
+    const queuePath = join(approvalsDir, "queue.jsonl");
+    writeFileSync(queuePath, "");
+
+    const before = snapshotRealConfigs(home);
+    // Same shape ApprovalQueue.enqueue() persists (lib/embed/approval-queue.mjs:83-100):
+    // requestedBy.role is the one caller-controlled field that survives the whitelist.
+    appendFileSync(queuePath, JSON.stringify({
+      approvalId: "appr-test-1",
+      toolCall: { tool: "test", args: {}, surface: "mcp", argsHash: "deadbeef" },
+      requestedBy: { userId: null, serviceId: null, tenantId: null, sessionId: null, role: "__sterile_test__" },
+      state: "awaiting_approval",
+    }) + "\n");
+    appendFileSync(queuePath, JSON.stringify({
+      approvalId: "appr-test-2",
+      toolCall: { tool: "test", args: {}, surface: "mcp", argsHash: "beadfeed" },
+      requestedBy: { userId: null, serviceId: null, tenantId: null, sessionId: null, role: "__sterile_test__" },
+      state: "awaiting_approval",
+    }) + "\n");
+    const drift = diffRealConfigs(before, home);
+
+    assert.equal(drift.approvalQueueLeaks, 2, "both test-tagged approval records must be counted as leaks");
+  } finally {
+    rmTmpDir(home);
+  }
+});
+
+// The dir-entry-set classes (sandboxes, performance-reviews, scheduler/logs, runtime,
+// runtime/oracle — ADR-0084) generalize realConstructProjectKeys()'s pattern: a file
+// appearing under a real doctorRoot()-scoped directory a hermetically-isolated test
+// should never touch must show up as fingerprint drift on that class's own key, without
+// requiring a content-level test marker.
+
+test("a new file under a doctorRoot() dir-entry class is reported as fingerprint drift", () => {
+  const home = mkdtempSync(join(tmpdir(), "sterile-sandboxes-home-"));
+  try {
+    const sandboxesDir = join(doctorRoot(home), "sandboxes");
+    mkdirSync(sandboxesDir, { recursive: true });
+
+    const before = fingerprintRealConfigs(home);
+    mkdirSync(join(sandboxesDir, "leaked-sandbox-id"), { recursive: true });
+    const after = fingerprintRealConfigs(home);
+
+    assert.notEqual(before["doctorRoot:sandboxes"], after["doctorRoot:sandboxes"], "a new sandbox dir entry must change the fingerprint");
+  } finally {
+    rmTmpDir(home);
+  }
+});

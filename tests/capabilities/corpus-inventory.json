@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-16T19:21:24.269Z",
+  "generatedAt": "2026-07-16T21:06:12.114Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 918,
-    "topLevelTestFiles": 372,
+    "testFiles": 919,
+    "topLevelTestFiles": 373,
     "nestedTestFiles": 546,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 51,
     "byLayer": {
-      "unit": 598,
+      "unit": 599,
       "functional": 272,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 533,
+      "unit": 534,
       "functional": 272,
       "visual": 12,
       "structural-guard": 19,
@@ -1721,6 +1721,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/embed-approval-queue-concurrency.test.mjs — cross-process dedup and"
+    },
+    {
+      "path": "tests/embed-approval-queue-lease.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/embed-approval-queue-lease.test.mjs — durable execution lease"
     },
     {
       "path": "tests/embed-approval-queue.test.mjs",
