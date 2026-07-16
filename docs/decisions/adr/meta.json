@@ -70,6 +70,10 @@
     "0077-prompt-optimization-auto-apply-tier",
     "0078-durable-handoff-checkpointer",
     "0079-terminal-status-vocabulary-alignment",
-    "0080-host-executes-the-prompt-canonical"
+    "0080-host-executes-the-prompt-canonical",
+    "0081-atomic-persistence-standard",
+    "0082-provider-id-namespace-canonicalization",
+    "0083-job-truth-status-vocabulary",
+    "0084-test-isolation-hermetic-state-roots"
   ]
 }
