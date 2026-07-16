@@ -1,0 +1,161 @@
+/**
+ * tests/sources/repo-cache-git-behaviors.test.mjs — real-git contract tests
+ * for lib/sources/repo-cache.mjs's syncCorpusTarget(), the generic `git`
+ * source-target provider's actual sync implementation (construct-4uxq0.13.3,
+ * Phase 9 audit checklist: shallow clones, rewritten history / force pushes,
+ * deleted branches).
+ *
+ * Calls syncCorpusTarget() directly against real local bare repos built with
+ * the real `git` binary (no bin/construct spawn, no fake wire boundary) —
+ * git fixture setup is an unavoidable real subprocess, but the module under
+ * test is exercised in-process through its actual exported function, not
+ * through the CLI. CX_HOME_OVERRIDE isolates the state root per test so the
+ * corpus cache never touches the real machine's ~/.construct.
+ */
+
+import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import test from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
+
+const dirs = [];
+function freshDir(prefix) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  dirs.push(dir);
+  return dir;
+}
+test.after(() => { for (const d of dirs) { try { rmTmpDir(d); } catch {} } });
+
+function git(cwd, args) {
+  return execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+}
+
+/**
+ * A bare origin plus a working `src` checkout wired as its `origin` remote —
+ * unlike a one-shot `git clone --bare` snapshot, this lets a test push new
+ * history (including a force push) to the same bare repo syncCorpusTarget
+ * reads from.
+ */
+function makeLiveRepoPair() {
+  const bare = freshDir('cx-repocache-bare-');
+  git(bare, ['init', '-q', '--bare', '-b', 'main']);
+  const src = freshDir('cx-repocache-src-');
+  git(src, ['init', '-q', '-b', 'main']);
+  git(src, ['config', 'user.email', 'test@construct.dev']);
+  git(src, ['config', 'user.name', 'Construct Test']);
+  fs.writeFileSync(path.join(src, 'README.md'), '# v1\n');
+  git(src, ['add', '-A']);
+  git(src, ['commit', '-qm', 'init']);
+  git(src, ['remote', 'add', 'origin', bare]);
+  git(src, ['push', '-q', 'origin', 'main']);
+  return { bareUrl: `file://${bare}`, src };
+}
+
+/**
+ * Runs `fn` with CX_HOME_OVERRIDE pointed at a fresh tmpdir, so
+ * resolveStateRoot's corpus cache lands under an isolated fake home rather
+ * than the real machine's ~/.construct, then restores the prior value.
+ */
+function withIsolatedHome(fn) {
+  const home = freshDir('cx-repocache-home-');
+  const previous = process.env.CX_HOME_OVERRIDE;
+  process.env.CX_HOME_OVERRIDE = home;
+  try {
+    return fn();
+  } finally {
+    if (previous === undefined) delete process.env.CX_HOME_OVERRIDE;
+    else process.env.CX_HOME_OVERRIDE = previous;
+  }
+}
+
+test('syncCorpusTarget: first sync produces a real shallow clone (.git/shallow present)', async () => {
+  const { syncCorpusTarget, corpusCacheDir } = await import('../../lib/sources/repo-cache.mjs');
+  const { bareUrl } = makeLiveRepoPair();
+  const projectRoot = freshDir('cx-repocache-proj-');
+
+  withIsolatedHome(() => {
+    const target = { id: 'shallow-check', provider: 'git', selector: { remote: bareUrl, content: { mode: 'corpus', ref: 'main' } } };
+    const result = syncCorpusTarget(target, { projectRoot });
+    assert.equal(result.mode, 'clone');
+    const cacheDir = corpusCacheDir(target, { projectRoot });
+    assert.ok(fs.existsSync(path.join(cacheDir, '.git', 'shallow')), 'a --depth 1 clone must produce a real .git/shallow marker');
+  });
+});
+
+test('syncCorpusTarget: a force-pushed, rewritten upstream history is picked up on resync, not blocked', async () => {
+  const { syncCorpusTarget, corpusCacheDir } = await import('../../lib/sources/repo-cache.mjs');
+  const { bareUrl, src } = makeLiveRepoPair();
+  const projectRoot = freshDir('cx-repocache-proj-');
+
+  withIsolatedHome(() => {
+    const target = { id: 'rewrite-check', provider: 'git', selector: { remote: bareUrl, content: { mode: 'corpus', ref: 'main' } } };
+    const first = syncCorpusTarget(target, { projectRoot });
+    assert.equal(first.mode, 'clone');
+
+    // Rewrite history in place (amend, not a new commit on top) and force-push —
+    // a non-fast-forward update the plain `fetch` path cannot follow without
+    // `checkout -f` discarding the stale local ref.
+    fs.writeFileSync(path.join(src, 'README.md'), '# v2 rewritten\n');
+    git(src, ['add', '-A']);
+    git(src, ['commit', '--amend', '-qm', 'init (rewritten)']);
+    git(src, ['push', '-q', '--force', 'origin', 'main']);
+
+    const second = syncCorpusTarget(target, { projectRoot });
+    assert.equal(second.mode, 'fetch');
+    assert.notEqual(second.head, first.head, 'resync must land on the rewritten commit, not the stale one');
+
+    const cacheDir = corpusCacheDir(target, { projectRoot });
+    assert.equal(fs.readFileSync(path.join(cacheDir, 'README.md'), 'utf8'), '# v2 rewritten\n', 'checkout -f must reflect the rewritten content, not fail or leave the old tree');
+  });
+});
+
+test('syncCorpusTarget: resync throws once the tracked branch is deleted upstream', async () => {
+  const { syncCorpusTarget } = await import('../../lib/sources/repo-cache.mjs');
+  const { bareUrl, src } = makeLiveRepoPair();
+  const projectRoot = freshDir('cx-repocache-proj-');
+
+  withIsolatedHome(() => {
+    git(src, ['checkout', '-qb', 'feature']);
+    fs.writeFileSync(path.join(src, 'feature.txt'), 'x');
+    git(src, ['add', '-A']);
+    git(src, ['commit', '-qm', 'feature commit']);
+    git(src, ['push', '-q', 'origin', 'feature']);
+    git(src, ['checkout', '-q', 'main']);
+
+    const target = { id: 'deleted-branch-check', provider: 'git', selector: { remote: bareUrl, content: { mode: 'corpus', ref: 'feature' } } };
+    const first = syncCorpusTarget(target, { projectRoot });
+    assert.equal(first.mode, 'clone');
+
+    git(src, ['push', '-q', 'origin', '--delete', 'feature']);
+
+    // syncCorpusTarget has no branch-deleted classification (unlike github's
+    // index.mjs, which maps auth/not-found failures to typed errors) — the
+    // raw execFileSync failure propagates, a documented gap rather than a
+    // typed error the code does not actually raise.
+    assert.throws(
+      () => syncCorpusTarget(target, { projectRoot }),
+      /couldn't find remote ref|fetch --depth 1 origin feature/,
+    );
+  });
+});
+
+test('syncCorpusTarget: a second sync on an unchanged remote is a no-op fetch, cache dir is reused', async () => {
+  const { syncCorpusTarget, corpusCacheDir } = await import('../../lib/sources/repo-cache.mjs');
+  const { bareUrl } = makeLiveRepoPair();
+  const projectRoot = freshDir('cx-repocache-proj-');
+
+  withIsolatedHome(() => {
+    const target = { id: 'idempotent-check', provider: 'git', selector: { remote: bareUrl, content: { mode: 'corpus', ref: 'main' } } };
+    const first = syncCorpusTarget(target, { projectRoot });
+    const cacheDir = corpusCacheDir(target, { projectRoot });
+    const gitDirBirth = fs.statSync(path.join(cacheDir, '.git')).birthtimeMs;
+
+    const second = syncCorpusTarget(target, { projectRoot });
+    assert.equal(second.mode, 'fetch');
+    assert.equal(second.head, first.head, 'head is unchanged when upstream has not moved');
+    assert.equal(fs.statSync(path.join(cacheDir, '.git')).birthtimeMs, gitDirBirth, 'the existing .git dir is reused, not recreated');
+  });
+});
