@@ -1,7 +1,7 @@
 # ADR-0084: Test-isolation standard — hermetic state roots for every real-state-file class
 
 - **Date**: 2026-07-16
-- **Status**: proposed
+- **Status**: accepted
 - **Deciders**: Gerald Dagher
 - **Supersedes**: none
 - **Resolves**: `construct-4uxq0.4.9` (ADR-I, the test-isolation standard the 2026-07 continuous-work audit flagged); blocks `construct-4uxq0.14.1` (P0: extend the sterility fingerprint and re-run the suite hermetically)

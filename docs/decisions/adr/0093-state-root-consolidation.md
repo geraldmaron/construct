@@ -1,7 +1,7 @@
 # ADR-0093: State-root consolidation — three physical roots into a documented, minimal set
 
 - **Date**: 2026-07-16
-- **Status**: proposed
+- **Status**: accepted
 - **Deciders**: Gerald Dagher
 - **Supersedes**: none
 - **Resolves**: `construct-4uxq0.4.11` (ADR-K); depends on `construct-4uxq0.4.10` (ADR-J, single project-identity derivation); blocks `construct-4uxq0.14.3` (project-identity + state-root consolidation execution) and the "purge stale `~/.cx` comments" deletion-list item
@@ -13,6 +13,8 @@ Construct writes durable state to three physically distinct roots, each resolved
 ## Context
 
 **This ADR is sequenced after ADR-J (`construct-4uxq0.4.10`, single project-identity derivation) and depends on its outcome.** At the time of writing, `docs/decisions/adr/0092-single-project-identity-derivation.md` does not yet exist — a sibling agent is drafting it in parallel. This document proceeds on the bead's stated working assumption (identity must unify on one derivation before physical roots consolidate, or a root-consolidation migration keys data under the wrong identity) but **must be re-checked against ADR-0092's actual Decision section before ratification**: if ADR-J lands on a different derivation than `deriveProjectKey`, or defers unification, the target shape and migration plan below need re-validation against that outcome.
+
+**Re-checked at ratification time**: `docs/decisions/adr/0092-single-project-identity-derivation.md` has since landed. Its Decision adopts a single canonical derivation — `deriveProjectKey`'s existing git-origin-hash (path-hash fallback) as the computed default, plus a new explicit `deployment.projectKey` override field that wins when set — which is exactly the "converges on a single derivation" shape this ADR's target-shape table assumed, not a different one. No re-validation of the root-ownership table above is needed; this ADR is ratified as originally drafted.
 
 ### What the truth matrix says (rows 41-42)
 

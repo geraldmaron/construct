@@ -1,7 +1,7 @@
 # ADR-0081: Atomic persistence is the mandatory standard for durable JSON/JSONL state
 
 - **Date**: 2026-07-16
-- **Status**: proposed
+- **Status**: accepted
 - **Deciders**: Gerald Dagher
 - **Supersedes**: none
 - **Resolves**: `construct-4uxq0.4.3` (ADR-C, atomic persistence standard) from the continuous-work audit's ADR-beads table in `docs/notes/research/2026-07-continuous-work-audit/target-architecture.md`

@@ -1,7 +1,7 @@
 # ADR-0085: Standing Assignment is the canonical continuous-work concept; embed capabilities, PR #408 directives, and PR #410 watch triggers converge into it
 
 - **Date**: 2026-07-16
-- **Status**: proposed
+- **Status**: accepted
 - **Deciders**: Gerald Dagher
 - **Supersedes**: none
 - **Resolves**: `construct-4uxq0.4.1` (ADR-A) — the continuous-work audit's naming/architecture gate. Directly unblocks `construct-4uxq0.10.2` (directive due-stamp-before-execution fix, P0-4), `construct-4uxq0.10.3`, the CLI/product-facing naming work the audit flags as ADR-A-gated, and PR #408c's re-authoring (`docs/notes/research/2026-07-continuous-work-audit/pr-reconciliation.md` §3). Does not resolve ADR-B (whether "embed" survives as a product-facing name) or ADR-D (delivery-semantics/lease ratification) — those remain open, separate gates.

@@ -1,7 +1,7 @@
 # ADR-0083: Job truth-status vocabulary — ran/supported/evidenceFresh/resultStatus/error
 
 - **Date**: 2026-07-16
-- **Status**: proposed
+- **Status**: accepted
 - **Deciders**: Gerald Dagher
 - **Supersedes**: none
 - **Resolves**: `construct-4uxq0.4.8` (ADR-H, decision only). The 17-call-site generalization this vocabulary implies is separately tracked as `construct-4uxq0.9.6`, currently blocked (see Consequences) — not resolved by this ADR.
