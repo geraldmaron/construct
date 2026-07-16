@@ -67,6 +67,29 @@ test('extractCitedSha finds the first hex-shaped SHA in real observed close-reas
   assert.equal(extractCitedSha('Landed on staging via commit f81f08f3, merged at HEAD 6e3d05be.'), 'f81f08f3');
 });
 
+test('extractCitedSha skips hyphen-joined identifiers that are not SHA citations (real observed false positives)', () => {
+  assert.equal(
+    extractCitedSha('tests/functional/regression-run-02158a157d53.functional.test.mjs pins the fixture'),
+    null,
+  );
+  assert.equal(
+    extractCitedSha('fast=claude-haiku-4-5-20251001); all resolve tier-default.'),
+    null,
+  );
+  assert.equal(
+    extractCitedSha('remove once o6t8.1 merges — done in 2dcc5cf9.'),
+    '2dcc5cf9',
+    'a real SHA elsewhere in the same reason is still found once the false positive is skipped',
+  );
+});
+
+test('extractCitedSha skips an audit-event fingerprint (real observed false positive)', () => {
+  assert.equal(
+    extractCitedSha('Duplicate audit records (identical fingerprint 0833aee255ba0780) for a legitimate, merged edit.'),
+    null,
+  );
+});
+
 test('extractCitedSha returns null when no SHA-shaped token is present', () => {
   assert.equal(extractCitedSha('Closed as superseded, epic retired without a code change.'), null);
   assert.equal(extractCitedSha(''), null);
@@ -183,6 +206,31 @@ test('check(): an unresolvable SHA with no violations rolls up to unknown, not p
   assert.equal(result.status, 'unknown');
   assert.equal(result.violations.length, 0);
   assert.equal(result.unresolved.length, 1);
+});
+
+test('evaluateBead: a non-ancestor SHA resolves via a single rewritten-SHA commit naming the bead id on mainRef', (t) => {
+  const { cwd, featureSha } = makeRepo(t);
+  git(cwd, ['commit', '--allow-empty', '-q', '-m', 'fix(thing): landed after rebase (rewrite-test-1)']);
+  const result = evaluateBead(
+    { id: 'rewrite-test-1', close_reason: `Implemented in ${featureSha} per the plan.` },
+    { cwd, mainRef: 'main' },
+  );
+  assert.equal(result.status, 'passed');
+  assert.ok(!result.violation);
+  assert.match(result.supersededBy, /^[0-9a-f]{7,40}$/);
+});
+
+test('evaluateBead: a non-ancestor SHA stays a violation when the bead id matches more than one mainRef commit', (t) => {
+  const { cwd, featureSha } = makeRepo(t);
+  git(cwd, ['commit', '--allow-empty', '-q', '-m', 'fix(thing): first pass (rewrite-test-2)']);
+  git(cwd, ['commit', '--allow-empty', '-q', '-m', 'fix(thing): follow-up (rewrite-test-2)']);
+  const result = evaluateBead(
+    { id: 'rewrite-test-2', close_reason: `Implemented in ${featureSha} per the plan.` },
+    { cwd, mainRef: 'main' },
+  );
+  assert.equal(result.status, 'failed');
+  assert.equal(result.violation, true);
+  assert.equal(result.supersededBy, undefined);
 });
 
 test('check(): a throwing listClosedBeads degrades to collection-error, not a crash', async () => {
