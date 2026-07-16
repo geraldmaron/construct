@@ -5,6 +5,7 @@
     "truth-matrix",
     "oracle-miss-report",
     "target-architecture",
-    "pr-reconciliation"
+    "pr-reconciliation",
+    "invariant-live-run-remediation"
   ]
 }
