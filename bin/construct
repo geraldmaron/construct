@@ -5860,6 +5860,12 @@ async function cmdLintTemplates(args) {
   process.exit(result.status ?? 0);
 }
 
+async function cmdLintPr(args) {
+  const { runLintPrCli } = await import('../lib/lint-pr-cli.mjs');
+  const exitCode = await runLintPrCli(args, { cwd: process.cwd() });
+  if (exitCode !== 0) process.exit(exitCode);
+}
+
 async function cmdLintResearch() {
   const { lintResearchRepo, formatResearchLintResults } = await import('../lib/research-lint.mjs');
   const results = lintResearchRepo({ rootDir: process.cwd() });
@@ -7310,6 +7316,7 @@ const handlers = new Map([
   ['lint:agents', cmdLintAgents],
   ['lint:contracts', cmdLintContracts],
   ['lint:prompts', cmdLintPrompts],
+  ['lint:pr', cmdLintPr],
   ['specialist', cmdSpecialist],
   ['decisions', async (args) => {
     const { runDecisionsCli } = await import('../lib/decisions/registry.mjs');
