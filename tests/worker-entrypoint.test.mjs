@@ -193,6 +193,70 @@ describe('runWorkerLoop', () => {
   });
 });
 
+/**
+ * Simulates PostgresIntakeQueue's real lease-exclusivity contract (unlike
+ * buildLeaseQueue's spies, claim() here actually enforces it): a claim only
+ * succeeds while the record is pending, or once its lease has genuinely
+ * expired (a crashed worker that stopped heartbeating). heartbeat() renews
+ * the expiry the same way pg-queue.mjs's real UPDATE ... WHERE lease_expires_at
+ * does. This is the fixture construct-4uxq0.11.2 asks for: proof that a
+ * second worker cannot reclaim a job the first is still heartbeating.
+ */
+function buildRacingLeaseQueue({ leaseSeconds }) {
+  const record = { status: 'pending', leaseExpiresAt: 0 };
+  const claimsGranted = [];
+  const processed = [];
+  return {
+    handle: {
+      leaseSeconds,
+      claim: async ({ claimedBy }) => {
+        if (record.status === 'done') return null;
+        const expired = record.status === 'claimed' && Date.now() > record.leaseExpiresAt;
+        if (record.status !== 'claimed' || expired) {
+          record.status = 'claimed';
+          record.leaseExpiresAt = Date.now() + leaseSeconds * 1000;
+          claimsGranted.push({ by: claimedBy, reclaimed: expired });
+          return { id: 'race-1', intake: { project: 'test' }, workerCommand: 'sleep 0.3' };
+        }
+        return null;
+      },
+      heartbeat: async (id) => { record.leaseExpiresAt = Date.now() + leaseSeconds * 1000; return { id, renewed: true }; },
+      markProcessed: async (id, meta) => { record.status = 'done'; processed.push({ id, meta }); return { id }; },
+      markSkipped: async (id) => { record.status = 'done'; return { id }; },
+      fail: async (id) => { record.status = 'pending'; record.leaseExpiresAt = 0; return { id }; },
+    },
+    claimsGranted,
+    processed,
+  };
+}
+
+describe('runWorkerLoop — concurrent-claim exclusivity under a slow job (construct-4uxq0.11.2)', () => {
+  it('a heartbeat-renewed lease prevents a second worker from reclaiming an in-flight job — no double execution', async () => {
+    // Lease (100ms) shorter than the job (300ms) reproduces the pre-fix race
+    // without heartbeat renewal: the static lease expires mid-job and a
+    // second worker's claim would succeed on the still-running packet.
+    const { handle, claimsGranted, processed } = buildRacingLeaseQueue({ leaseSeconds: 0.1 });
+
+    const workerA = runWorkerLoop({
+      rootDir: projectRoot, workspace: projectRoot, project: 'test',
+      queue: handle, idleTimeoutSeconds: 0, pollIntervalMs: 10, stopAfter: 1,
+      heartbeatIntervalMs: 20,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 15)); // let A claim before B starts polling
+    const workerB = runWorkerLoop({
+      rootDir: projectRoot, workspace: projectRoot, project: 'test',
+      queue: handle, idleTimeoutSeconds: 0.35, pollIntervalMs: 10,
+    });
+
+    const [summaryA, summaryB] = await Promise.all([workerA, workerB]);
+
+    assert.equal(summaryA.processed, 1);
+    assert.equal(summaryB.processed, 0, 'worker B must never successfully claim the still-heartbeating job');
+    assert.equal(processed.length, 1);
+    assert.equal(claimsGranted.length, 1, 'only one claim was ever granted — no reclaim while the lease kept renewing');
+  });
+});
+
 describe('runWorkerLoop — execution lease heartbeat (ADR-0089)', () => {
   it('heartbeats a lease-capable queue periodically while a job runs, and stops once it settles', async () => {
     const { handle, processed, heartbeats, fails } = buildLeaseQueue([
