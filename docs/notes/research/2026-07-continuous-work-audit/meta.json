@@ -7,6 +7,7 @@
     "target-architecture",
     "pr-reconciliation",
     "invariant-live-run-remediation",
-    "phantom-followup-reconciliation"
+    "phantom-followup-reconciliation",
+    "sha-reconciliation-report"
   ]
 }
