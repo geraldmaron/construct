@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-16T22:57:01.414Z",
+  "generatedAt": "2026-07-16T23:50:28.532Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 939,
+    "testFiles": 940,
     "topLevelTestFiles": 383,
-    "nestedTestFiles": 556,
+    "nestedTestFiles": 557,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 52,
     "byLayer": {
       "unit": 614,
-      "functional": 276,
+      "functional": 277,
       "visual": 12,
       "live-provider": 2,
       "integration": 35
     },
     "byCategory": {
       "unit": 549,
-      "functional": 276,
+      "functional": 277,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 46,
@@ -4350,6 +4350,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/sql-client.functional.test.mjs — G1 SQL client contract."
+    },
+    {
+      "path": "tests/functional/standing-assignments.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/standing-assignments.functional.test.mjs"
     },
     {
       "path": "tests/functional/state-root-footprint.functional.test.mjs",
