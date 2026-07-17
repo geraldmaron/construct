@@ -3,7 +3,7 @@
 - **Date**: 2026-07-16
 - **Status**: accepted
 - **Deciders**: Gerald Dagher
-- **Supersedes**: `docs/decisions/adr/0094-approval-drain-lifecycle.md` (ADR-N) — that document explicitly declined to choose a drain model, deferring to "a new revision or superseding ADR" once ADR-D landed with a concrete lease mechanism. This is that document.
+- **Supersedes**: ADR-0094 (`docs/decisions/adr/0094-approval-drain-lifecycle.md`, ADR-N) — that document explicitly declined to choose a drain model, deferring to "a new revision or superseding ADR" once ADR-D landed with a concrete lease mechanism. This is that document.
 - **Resolves**: `construct-4uxq0.4.14` (ADR-N) — the actual production-drain-model choice ADR-0094 could not make at draft time.
 
 ## Problem
