@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-17T05:15:58.881Z",
+  "generatedAt": "2026-07-17T07:24:28.304Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 962,
+    "testFiles": 966,
     "topLevelTestFiles": 385,
-    "nestedTestFiles": 577,
+    "nestedTestFiles": 581,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 52,
     "byLayer": {
-      "unit": 630,
-      "functional": 283,
+      "unit": 631,
+      "functional": 286,
       "visual": 12,
       "live-provider": 2,
       "integration": 35
     },
     "byCategory": {
-      "unit": 563,
-      "functional": 283,
+      "unit": 564,
+      "functional": 286,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 48,
@@ -2898,6 +2898,14 @@
       "maintainerNotes": "tests/functional/docling-shared-venv.functional.test.mjs — one machine, one docling venv."
     },
     {
+      "path": "tests/functional/docling-sidecar-fault-handling.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/docling-sidecar-fault-handling.functional.test.mjs —"
+    },
+    {
       "path": "tests/functional/docs-redirect-stubs.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3214,6 +3222,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/gate-worker-backend-visibility.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/graph-build-partial-failures.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/graph-build-partial-failures.functional.test.mjs —"
     },
     {
       "path": "tests/functional/graph-target-build.functional.test.mjs",
@@ -4092,6 +4108,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/pg-queue.functional.test.mjs — live Postgres queue semantics."
+    },
+    {
+      "path": "tests/functional/playwright-demo-recording.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/playwright-demo-recording.functional.test.mjs — recording spawn"
     },
     {
       "path": "tests/functional/post-merge-tracking.functional.test.mjs",
@@ -7066,6 +7090,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/security/destructive-gate.test.mjs — destructive-tool gate unit tests."
+    },
+    {
+      "path": "tests/security/mermaid-sanitize.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/security/mermaid-sanitize.test.mjs — construct-4uxq0.9.11 Mermaid"
     },
     {
       "path": "tests/security/misinformation-evidence-grounding.test.mjs",
