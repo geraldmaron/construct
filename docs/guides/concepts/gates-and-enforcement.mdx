@@ -117,6 +117,13 @@ Certification runs (scenario-based live evaluation) persist under
 `schemas/certification-run.schema.json` and validated by `lib/certification/run.mjs`.
 Skipped provider calls must be recorded as `inconclusive` and never as `pass`.
 
+The certification scenario corpus is split across five catalogs under
+`lib/certification/` (specialist-behavior, workflow-skill, demo-parity, and live-provider
+concerns), each feeding a distinct gate rather than one another. `lib/certification/corpus-contract.mjs`
+inventories which catalog owns which concern, its consumer, and why it stays separate from
+its siblings — read it before adding a scenario, and extend the catalog that already owns
+the concern rather than adding a sixth.
+
 ## Where to look when something is blocking
 
 | Symptom | Likely gate | Where to start |
