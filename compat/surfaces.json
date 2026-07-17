@@ -1,0 +1,82 @@
+[
+  {
+    "id": "cli-matrix-graph-alias",
+    "location": "bin/construct:7798-7806",
+    "description": "`construct matrix` is a deprecated CLI alias for `construct graph` (build/stat/query/validate); both delegate to lib/graph/cli.mjs's runGraphCli.",
+    "adr": "ADR-0053",
+    "owner": "Gerald Dagher",
+    "expiration": {
+      "type": "date",
+      "date": "2026-09-01",
+      "statedIn": "Extension — see extensionHistory. Original ADR-committed expiration: releaseCount sinceVersion 1.4.2, cycles 2 (ADR-0053 Decision, CLI naming: \"construct matrix becomes an alias ... will be removed after 2 release cycles\")."
+    },
+    "extensionHistory": [
+      {
+        "extendedOn": "2026-07-17",
+        "previousExpiration": {
+          "type": "releaseCount",
+          "sinceVersion": "1.4.2",
+          "cycles": 2,
+          "statedIn": "ADR-0053 Decision, CLI naming section: \"construct matrix becomes an alias; it emits a deprecation warning and will be removed after 2 release cycles.\""
+        },
+        "newExpiration": {
+          "type": "date",
+          "date": "2026-09-01"
+        },
+        "reason": "ADR-0053's 2-release-cycle window (since v1.4.2, 2026-07-01) already passed as of 2026-07-17 — 8+ subsequent versions (1.5.0 through 1.5.7) shipped with the alias still present, still emitting only a deprecation warning. Removal is not safe to force from this bead alone: a real functional test (tests/functional/dependency-matrix.functional.test.mjs) invokes `construct matrix build` and asserts exit 0, and CLI catalog/help text (lib/cli-commands.mjs:1351) still documents it. Actual removal is already scoped as a sequenced sibling epic, construct-tsyfe.8 (Legacy Surface Decommissioning): construct-tsyfe.8.1 (discover real-world consumers before removal) gates construct-tsyfe.8.5 (remove once confirmed safe by that discovery); neither has landed yet. Forcing removal here would jump ahead of that discovery step. Extended to 2026-09-01 as a concrete re-review checkpoint — if construct-tsyfe.8.1/8.5 have not landed by then, extend again with a fresh dated reason rather than let this lapse silently."
+      }
+    ]
+  },
+  {
+    "id": "install-scope-footprint-alias",
+    "location": "lib/setup.mjs:312-357",
+    "description": "`--scope=<value>` is a deprecated alias for `--footprint=<value>` on `construct install` (same three values: project|user|both); `--footprint` wins silently when both are passed.",
+    "adr": "ADR-0071",
+    "owner": "Gerald Dagher",
+    "expiration": {
+      "type": "date",
+      "date": "2026-10-09",
+      "statedIn": "ADR-0071 Consequences: \"--scope continues to work as a deprecated alias for at least one release\" states only a minimum retention, not a removal deadline. 2026-10-09 (3 months after the ADR's 2026-07-09 acceptance) is an owner-assigned provisional re-review date set during construct-tsyfe.10.6 registry population, not an ADR commitment."
+    },
+    "extensionHistory": []
+  },
+  {
+    "id": "cli-models-legacy-flags",
+    "location": "bin/construct:4719-4768",
+    "description": "`--reset`, `--set=<model>` (with `--tier=<tier>`), and `--poll` on `construct models` are deprecated flag forms of the `models reset|set|free` subcommands.",
+    "adr": null,
+    "owner": "Gerald Dagher",
+    "expiration": {
+      "type": "date",
+      "date": "2026-10-24",
+      "statedIn": "No ADR governs this alias family. It shipped alongside the models reset|set|free subcommands (first present in v1.2.3, 2026-06-24 per git history at commit d64ebd3f) and no removal deadline has ever been stated. 2026-10-24 is an owner-assigned provisional re-review date set during construct-tsyfe.10.6 registry population."
+    },
+    "extensionHistory": []
+  },
+  {
+    "id": "legacy-config-migration-module",
+    "location": "lib/config/legacy-config-migration.mjs",
+    "description": "One-time forward migration of CX_MODEL_/CONSTRUCT_MODEL_ tier overrides and CONSTRUCT_OP_ENV_FILE/credential env vars from the pre-XDG ~/.construct/config.env into the active XDG config.env.",
+    "adr": "ADR-0045",
+    "owner": "Gerald Dagher",
+    "expiration": {
+      "type": "date",
+      "date": "2026-10-17",
+      "statedIn": "ADR-0045 states a \"clean break (no back-compat)\" for the XDG config move but does not itself define when this one-time migration shim may be deleted. construct-tsyfe.8.4 (sibling bead, open) owns defining a measurable expiration condition for this module. 2026-10-17 is a provisional placeholder re-review date set during construct-tsyfe.10.6 registry population, pending that bead's more rigorous condition."
+    },
+    "extensionHistory": []
+  },
+  {
+    "id": "legacy-global-cleanup-module",
+    "location": "lib/install/legacy-global-cleanup.mjs",
+    "description": "Opt-in removal of pre-project-scope Construct footprints from user-global tool configs (Claude/OpenCode/VS Code/Codex/Gemini/Cursor), invoked via `construct install --cleanup-legacy-global`.",
+    "adr": null,
+    "owner": "Gerald Dagher",
+    "expiration": {
+      "type": "date",
+      "date": "2026-10-17",
+      "statedIn": "No ADR states a removal deadline for this opt-in cleanup utility. construct-tsyfe.8.4 (sibling bead, open) owns defining a measurable expiration condition for this module alongside legacy-config-migration.mjs. 2026-10-17 is a provisional placeholder re-review date set during construct-tsyfe.10.6 registry population."
+    },
+    "extensionHistory": []
+  }
+]

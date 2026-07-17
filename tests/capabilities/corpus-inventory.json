@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-17T13:34:27.789Z",
+  "generatedAt": "2026-07-17T13:55:23.110Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 973,
-    "topLevelTestFiles": 388,
-    "nestedTestFiles": 585,
+    "testFiles": 975,
+    "topLevelTestFiles": 389,
+    "nestedTestFiles": 586,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 54,
     "byLayer": {
-      "unit": 633,
+      "unit": 635,
       "functional": 290,
       "visual": 12,
       "live-provider": 2,
       "integration": 36
     },
     "byCategory": {
-      "unit": 565,
+      "unit": 567,
       "functional": 290,
       "visual": 12,
       "structural-guard": 19,
@@ -999,6 +999,14 @@
       "maintainerNotes": "tests/certification/artifact-provenance.test.mjs — provenance and accessibility gates."
     },
     {
+      "path": "tests/certification/corpus-contract.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/corpus-contract.test.mjs — certification scenario corpus contract."
+    },
+    {
       "path": "tests/certification/demo-parity.test.mjs",
       "layer": "unit",
       "category": "structural-guard",
@@ -1247,6 +1255,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/comment-lint.test.mjs — tests for lib/comment-lint.mjs policy enforcement."
+    },
+    {
+      "path": "tests/compat-surfaces.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/compat-surfaces.test.mjs — Compat-surface registry integrity gate."
     },
     {
       "path": "tests/concierge-routing.test.mjs",
