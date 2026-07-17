@@ -1,0 +1,31 @@
+{
+  "purpose": "Round-trip fidelity corpus for construct-tsyfe.3.2 (unified/remark/rehype vs. hand-rolled RichDocument parser prototype), structured for reuse by construct-tsyfe.3.3's adapter migration regression tests regardless of the adopt/retain decision.",
+  "pulled_at": "2026-07-17",
+  "fixtures": [
+    {
+      "file": "adr-0001-zero-npm-core.md",
+      "source": "docs/decisions/adr/0001-zero-npm-core.md",
+      "why": "Small doc; a genuine mid-document thematic break (`---`) distinct from frontmatter delimiters."
+    },
+    {
+      "file": "adr-0029-install-scopes-and-hook-budgets.md",
+      "source": "docs/decisions/adr/0029-install-scopes-and-hook-budgets.md",
+      "why": "Pipe table, nested links, bold, long paragraphs."
+    },
+    {
+      "file": "adr-0073-richdocument-ir-html-canonical-surface.md",
+      "source": "docs/decisions/adr/0073-richdocument-ir-html-canonical-surface.md",
+      "why": "Fenced code blocks, blockquotes, deep nesting -- and it is the ADR defining the IR under test."
+    },
+    {
+      "file": "adr-0097-capability-delegation-rubric.md",
+      "source": "docs/decisions/adr/0097-capability-delegation-rubric.md",
+      "why": "Nested lists, bold, inline links, no table -- the ADR this bead applies."
+    },
+    {
+      "file": "readme.md",
+      "source": "README.md",
+      "why": "Largest fixture; emoji, badges/images, inline code, a blockquote, and a thematic break -- closest to a realistic long-form document."
+    }
+  ]
+}
