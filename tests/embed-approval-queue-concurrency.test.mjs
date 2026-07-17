@@ -11,6 +11,13 @@
  *      either the prior complete file or the new complete file — never a
  *      torn/partial line — including when a read is forced to interleave
  *      with an in-flight write.
+ *   3. approve()/deny()/expireStale()/reclaimExpiredLeases() reload before
+ *      persisting (construct-4uxq0.9.9), so a decider or sweeper holding a
+ *      stale instance never drops records sibling processes persisted, and
+ *      a decision racing a sibling's opposite decision is refused with the
+ *      state machine's invalid-transition error instead of clobbering it.
+ *   4. Pure readers (getById/list/getPending/getByResumeToken/findByToolArgs)
+ *      reload per call, so long-lived processes observe sibling transitions.
  */
 import { describe, it, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -147,5 +154,126 @@ describe('ApprovalQueue — atomic persist under racing reads', () => {
 
     const finalLines = assertValidJsonl(persistPath);
     assert.equal(finalLines.length, 6, 'seed record plus one deduped record per race.tool.N survive with no corruption');
+  });
+});
+
+describe('ApprovalQueue — decide path reloads before persisting', () => {
+  it('a record enqueued by process B survives an approve() by process A whose instance predates it', () => {
+    const persistPath = freshPersistPath();
+    const q1 = new ApprovalQueue({ persistPath });
+    const recA = q1.enqueue({ tool: 'a.tool', args: { n: 1 } });
+
+    // qStale models a decider process (CLI) that loaded the queue before the
+    // daemon persisted recB; without the pre-decide reload its whole-file
+    // persist would silently drop recB.
+    const qStale = new ApprovalQueue({ persistPath });
+    const recB = q1.enqueue({ tool: 'b.tool', args: { n: 2 } });
+
+    const approved = qStale.approve(recA.approvalId, { decidedBy: { userId: 'alice' } });
+    assert.equal(approved.state, 'approved');
+
+    const fresh = new ApprovalQueue({ persistPath });
+    const survivor = fresh.getById(recB.approvalId);
+    assert.ok(survivor, 'record enqueued by the sibling process must survive the stale decider\'s persist');
+    assert.equal(survivor.state, 'awaiting_approval');
+    assert.equal(fresh.getById(recA.approvalId).state, 'approved');
+    assert.equal(assertValidJsonl(persistPath).length, 2, 'both records persisted, no lost update');
+  });
+
+  it('approve() racing a sibling\'s deny() is refused with the invalid-transition error, not clobbered', () => {
+    const persistPath = freshPersistPath();
+    const q1 = new ApprovalQueue({ persistPath });
+    const rec = q1.enqueue({ tool: 'contested.tool', args: {} });
+
+    const qStale = new ApprovalQueue({ persistPath });
+    q1.deny(rec.approvalId, { reason: 'sibling said no' });
+
+    assert.throws(
+      () => qStale.approve(rec.approvalId, { decidedBy: { userId: 'bob' } }),
+      /already denied/,
+      'the stale approver must be refused once the reload reveals the sibling\'s denial',
+    );
+
+    const fresh = new ApprovalQueue({ persistPath });
+    const final = fresh.getById(rec.approvalId);
+    assert.equal(final.state, 'denied', 'the sibling\'s denial must stand');
+    assert.equal(final.reason, 'sibling said no');
+  });
+
+  it('expireStale() on a stale instance neither drops sibling records nor expires ones a sibling already resolved', async () => {
+    const persistPath = freshPersistPath();
+    const q1 = new ApprovalQueue({ persistPath, timeoutMs: 10 });
+    const doomed = q1.enqueue({ tool: 'doomed.tool', args: {} });
+    const saved = q1.enqueue({ tool: 'saved.tool', args: {} });
+
+    const qStale = new ApprovalQueue({ persistPath, timeoutMs: 10 });
+    const late = q1.enqueue({ tool: 'late.tool', args: {} });
+    q1.approve(saved.approvalId);
+
+    await new Promise((r) => setTimeout(r, 20));
+    const expired = qStale.expireStale();
+    const expiredIds = expired.map((r) => r.approvalId).sort();
+    assert.deepEqual(expiredIds, [doomed.approvalId, late.approvalId].sort(), 'only still-awaiting past-expiry records expire; the sibling-approved one does not');
+
+    const fresh = new ApprovalQueue({ persistPath });
+    assert.equal(fresh.getById(late.approvalId).state, 'expired', 'sibling-enqueued record survives the sweep\'s persist');
+    assert.equal(fresh.getById(saved.approvalId).state, 'approved', 'sibling\'s approval survives the sweep');
+    assert.equal(assertValidJsonl(persistPath).length, 3);
+  });
+
+  it('reclaimExpiredLeases() on a stale instance preserves sibling-enqueued records', async () => {
+    const persistPath = freshPersistPath();
+    const q1 = new ApprovalQueue({ persistPath });
+    const leased = q1.enqueue({ tool: 'leased.tool', args: {} });
+    q1.approve(leased.approvalId);
+    q1.acquireLease(leased.approvalId, { leaseSeconds: 0.01, workerId: 'crashed-worker' });
+
+    const qStale = new ApprovalQueue({ persistPath });
+    const late = q1.enqueue({ tool: 'late.tool', args: {} });
+
+    await new Promise((r) => setTimeout(r, 30));
+    const reclaimed = qStale.reclaimExpiredLeases();
+    assert.equal(reclaimed.length, 1);
+    assert.equal(reclaimed[0].state, 'approved');
+
+    const fresh = new ApprovalQueue({ persistPath });
+    assert.ok(fresh.getById(late.approvalId), 'sibling-enqueued record survives the reclaim sweep\'s persist');
+    assert.equal(assertValidJsonl(persistPath).length, 2);
+  });
+});
+
+describe('ApprovalQueue — pure readers observe sibling-process state', () => {
+  it('getById/list/getPending/getByResumeToken/findByToolArgs reflect transitions persisted by a sibling instance', () => {
+    const persistPath = freshPersistPath();
+    const longLived = new ApprovalQueue({ persistPath });
+    const rec = longLived.enqueue({ tool: 'watched.tool', args: { n: 1 } });
+
+    const sibling = new ApprovalQueue({ persistPath });
+    sibling.approve(rec.approvalId, { decidedBy: { userId: 'alice' } });
+    const other = sibling.enqueue({ tool: 'other.tool', args: { n: 2 } });
+
+    assert.equal(longLived.getById(rec.approvalId).state, 'approved', 'getById must not serve the construction-time snapshot');
+    assert.equal(longLived.list('approved').length, 1);
+    assert.equal(longLived.list().length, 2, 'list must surface the sibling\'s new record');
+    assert.deepEqual(longLived.getPending().map((r) => r.approvalId), [other.approvalId]);
+    assert.equal(longLived.getByResumeToken(other.resumeToken)?.approvalId, other.approvalId);
+    assert.equal(
+      longLived.findByToolArgs('other.tool', other.toolCall.argsHash)?.approvalId,
+      other.approvalId,
+    );
+  });
+
+  it('reload preserves reference identity: a record held across a sibling transition updates in place', () => {
+    const persistPath = freshPersistPath();
+    const longLived = new ApprovalQueue({ persistPath });
+    const held = longLived.enqueue({ tool: 'held.tool', args: {} });
+
+    const sibling = new ApprovalQueue({ persistPath });
+    sibling.deny(held.approvalId, { reason: 'nope' });
+
+    const reread = longLived.getById(held.approvalId);
+    assert.equal(reread, held, 'reload must merge into the existing object, not replace it');
+    assert.equal(held.state, 'denied');
+    assert.equal(held.reason, 'nope');
   });
 });
