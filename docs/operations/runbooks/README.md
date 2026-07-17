@@ -8,6 +8,7 @@
 - MCP setup and recovery
 - Documentation/bootstrap recovery
 - Release and validation checks
+- [Host-adapter certification](./host-adapter-certification.md) — harness classification vs VS Code/Copilot readiness evidence
 
 ## Starter templates
 

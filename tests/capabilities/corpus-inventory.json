@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-17T13:55:23.110Z",
+  "generatedAt": "2026-07-17T14:12:46.190Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 975,
-    "topLevelTestFiles": 389,
-    "nestedTestFiles": 586,
+    "testFiles": 979,
+    "topLevelTestFiles": 390,
+    "nestedTestFiles": 589,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 54,
     "byLayer": {
-      "unit": 635,
-      "functional": 290,
+      "unit": 637,
+      "functional": 292,
       "visual": 12,
       "live-provider": 2,
       "integration": 36
     },
     "byCategory": {
-      "unit": 567,
-      "functional": 290,
+      "unit": 569,
+      "functional": 292,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 49,
@@ -1077,6 +1077,14 @@
       ],
       "skipped": false,
       "maintainerNotes": "tests/certification/export-format-cert.test.mjs — deck/pptx/doc/pdf export certification."
+    },
+    {
+      "path": "tests/certification/host-adapter-certification.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/host-adapter-certification.test.mjs — two-axis host-adapter"
     },
     {
       "path": "tests/certification/p2-surface-harness.test.mjs",
@@ -3268,6 +3276,14 @@
       "maintainerNotes": "tests/functional/graph-build-partial-failures.functional.test.mjs —"
     },
     {
+      "path": "tests/functional/graph-strict-schema.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/graph-strict-schema.functional.test.mjs —"
+    },
+    {
       "path": "tests/functional/graph-target-build.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -4232,6 +4248,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/project-root-isolation.functional.test.mjs — regression"
+    },
+    {
+      "path": "tests/functional/provider-card-registry.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/provider-card-registry.functional.test.mjs — Provider Card"
     },
     {
       "path": "tests/functional/provider-filter-enforcement.functional.test.mjs",
@@ -6622,6 +6646,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/provider-behavior-matrix.test.mjs — behavior matrix producer (construct-6zga.1.4)."
+    },
+    {
+      "path": "tests/provider-card-schema.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/provider-card-schema.test.mjs — Provider Card schema + validator unit tests."
     },
     {
       "path": "tests/provider-confluence.test.mjs",

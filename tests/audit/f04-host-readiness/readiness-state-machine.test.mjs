@@ -68,3 +68,26 @@ test('[F04] readiness must enumerate the distinct host-config states, not a bina
     );
   }
 });
+
+// The four runtime-only states (untrusted/server_start_failure/missing_tool/
+// sandbox_disabled) had no direct coverage anywhere in the suite before
+// construct-tsyfe.9.4 — every prior case only ever supplied static
+// settingsPath/mcpPath inputs. These confirm classifyHostReadiness actually
+// resolves a caller-supplied runtimeState once no earlier static check fires.
+
+for (const runtimeState of ['untrusted', 'server_start_failure', 'missing_tool', 'sandbox_disabled']) {
+  test(`[F04] classifyHostReadiness resolves the runtime-only state "${runtimeState}" when no static check fires first`, () => {
+    assert.equal(mod.classifyHostReadiness({ host: 'vscode', runtimeState }), runtimeState);
+  });
+}
+
+test('[F04] a static blocking condition still wins over a supplied runtimeState — resolution order is missing_config first', () => {
+  assert.equal(
+    mod.classifyHostReadiness({ host: 'vscode', mcpPath: '/nonexistent/mcp.json', runtimeState: 'untrusted' }),
+    'missing_config',
+  );
+});
+
+test('[F04] no runtimeState and no static blocker resolves to healthy', () => {
+  assert.equal(mod.classifyHostReadiness({ host: 'vscode' }), 'healthy');
+});
