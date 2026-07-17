@@ -11,6 +11,15 @@
  * test is exercised in-process through its actual exported function, not
  * through the CLI. CX_HOME_OVERRIDE isolates the state root per test so the
  * corpus cache never touches the real machine's ~/.construct.
+ *
+ * Typed error classification (construct-h48jh): sync failures surface as the
+ * shared provider error hierarchy (lib/providers/contract/errors.mjs) — a
+ * deleted upstream branch and a nonexistent remote are reproduced against
+ * real git and asserted as NotFoundError; auth and rate-limit stderr
+ * vocabularies (unreachable without a live credentialed server) are driven
+ * through classifyGitFailure() with error objects shaped exactly like
+ * execFileSync failures (string .stderr, pipe stdio), the same object the
+ * real path passes it.
  */
 
 import assert from 'node:assert/strict';
@@ -112,8 +121,9 @@ test('syncCorpusTarget: a force-pushed, rewritten upstream history is picked up 
   });
 });
 
-test('syncCorpusTarget: resync throws once the tracked branch is deleted upstream', async () => {
+test('syncCorpusTarget: resync throws a typed NotFoundError once the tracked branch is deleted upstream', async () => {
   const { syncCorpusTarget } = await import('../../lib/sources/repo-cache.mjs');
+  const { NotFoundError } = await import('../../lib/providers/contract/errors.mjs');
   const { bareUrl, src } = makeLiveRepoPair();
   const projectRoot = freshDir('cx-repocache-proj-');
 
@@ -131,15 +141,99 @@ test('syncCorpusTarget: resync throws once the tracked branch is deleted upstrea
 
     git(src, ['push', '-q', 'origin', '--delete', 'feature']);
 
-    // syncCorpusTarget has no branch-deleted classification (unlike github's
-    // index.mjs, which maps auth/not-found failures to typed errors) — the
-    // raw execFileSync failure propagates, a documented gap rather than a
-    // typed error the code does not actually raise.
     assert.throws(
       () => syncCorpusTarget(target, { projectRoot }),
-      /couldn't find remote ref|fetch --depth 1 origin feature/,
+      (err) => {
+        assert.ok(err instanceof NotFoundError, `expected NotFoundError, got ${err.name}: ${err.message}`);
+        assert.equal(err.code, 'NOT_FOUND');
+        assert.equal(err.provider, 'git');
+        assert.match(err.message, /deleted-branch-check/);
+        assert.ok(err.cause, 'the original execFileSync failure must ride along as cause');
+        return true;
+      },
     );
   });
+});
+
+test('syncCorpusTarget: cloning a branch that never existed throws a typed NotFoundError (real git, clone path)', async () => {
+  const { syncCorpusTarget } = await import('../../lib/sources/repo-cache.mjs');
+  const { NotFoundError } = await import('../../lib/providers/contract/errors.mjs');
+  const { bareUrl } = makeLiveRepoPair();
+  const projectRoot = freshDir('cx-repocache-proj-');
+
+  withIsolatedHome(() => {
+    const target = { id: 'missing-ref-check', provider: 'git', selector: { remote: bareUrl, content: { mode: 'corpus', ref: 'no-such-branch' } } };
+    assert.throws(
+      () => syncCorpusTarget(target, { projectRoot }),
+      (err) => err instanceof NotFoundError && err.code === 'NOT_FOUND',
+    );
+  });
+});
+
+test('syncCorpusTarget: a nonexistent remote throws a typed NotFoundError (real git, bad remote)', async () => {
+  const { syncCorpusTarget } = await import('../../lib/sources/repo-cache.mjs');
+  const { NotFoundError } = await import('../../lib/providers/contract/errors.mjs');
+  const projectRoot = freshDir('cx-repocache-proj-');
+  const missing = path.join(freshDir('cx-repocache-missing-'), 'no-such-repo');
+
+  withIsolatedHome(() => {
+    const target = { id: 'bad-remote-check', provider: 'git', selector: { remote: `file://${missing}`, content: { mode: 'corpus', ref: 'main' } } };
+    assert.throws(
+      () => syncCorpusTarget(target, { projectRoot }),
+      (err) => {
+        assert.ok(err instanceof NotFoundError, `expected NotFoundError, got ${err.name}: ${err.message}`);
+        assert.equal(err.provider, 'git');
+        return true;
+      },
+    );
+  });
+});
+
+// Auth and rate-limit failures need a live credentialed/throttling server to
+// reproduce for real; the classifier is instead driven with error objects
+// carrying git's verbatim stderr vocabulary in the exact shape execFileSync
+// produces (string .stderr under encoding:'utf8', pipe stdio) — the same
+// object syncCorpusTarget's wrapper hands to classifyGitFailure.
+
+test('classifyGitFailure: real git auth-failure stderr vocabularies map to AuthError', async () => {
+  const { classifyGitFailure } = await import('../../lib/sources/repo-cache.mjs');
+  const { AuthError } = await import('../../lib/providers/contract/errors.mjs');
+
+  const stderrs = [
+    "fatal: Authentication failed for 'https://github.com/acme/private.git/'",
+    "fatal: could not read Username for 'https://github.com': terminal prompts disabled",
+    'git@github.com: Permission denied (publickey).\nfatal: Could not read from remote repository.',
+    'remote: Support for password authentication was removed on August 13, 2021.',
+    'remote: Invalid username or token. Password authentication is not supported for Git operations.',
+  ];
+  for (const stderr of stderrs) {
+    const raw = Object.assign(new Error('Command failed: git fetch'), { stderr, status: 128 });
+    const classified = classifyGitFailure(raw, { targetId: 't1', provider: 'git', remote: 'https://github.com/acme/private.git', ref: 'main' });
+    assert.ok(classified instanceof AuthError, `expected AuthError for stderr: ${stderr}`);
+    assert.equal(classified.code, 'AUTH_ERROR');
+    assert.equal(classified.cause, raw);
+  }
+});
+
+test('classifyGitFailure: throttled-remote stderr maps to RateLimitError', async () => {
+  const { classifyGitFailure } = await import('../../lib/sources/repo-cache.mjs');
+  const { RateLimitError } = await import('../../lib/providers/contract/errors.mjs');
+
+  const raw = Object.assign(new Error('Command failed: git clone'), {
+    stderr: "error: RPC failed; HTTP 429 curl 22 The requested URL returned error: 429 Too Many Requests",
+    status: 128,
+  });
+  const classified = classifyGitFailure(raw, { targetId: 't2', provider: 'git', remote: 'https://example.com/x.git', ref: 'main' });
+  assert.ok(classified instanceof RateLimitError);
+  assert.equal(classified.code, 'RATE_LIMIT');
+});
+
+test('classifyGitFailure: an unrecognized failure returns the original error unchanged, not a mistyped wrapper', async () => {
+  const { classifyGitFailure } = await import('../../lib/sources/repo-cache.mjs');
+
+  const raw = Object.assign(new Error('Command failed: git fetch'), { stderr: 'fatal: the remote end hung up unexpectedly', status: 128 });
+  const classified = classifyGitFailure(raw, { targetId: 't3', provider: 'git', remote: 'https://example.com/x.git', ref: 'main' });
+  assert.equal(classified, raw);
 });
 
 test('syncCorpusTarget: a second sync on an unchanged remote is a no-op fetch, cache dir is reused', async () => {
