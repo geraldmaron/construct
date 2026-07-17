@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-16T23:50:28.532Z",
+  "generatedAt": "2026-07-17T02:09:58.149Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 940,
+    "testFiles": 941,
     "topLevelTestFiles": 383,
-    "nestedTestFiles": 557,
+    "nestedTestFiles": 558,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 52,
     "byLayer": {
-      "unit": 614,
+      "unit": 615,
       "functional": 277,
       "visual": 12,
       "live-provider": 2,
       "integration": 35
     },
     "byCategory": {
-      "unit": 549,
+      "unit": 550,
       "functional": 277,
       "visual": 12,
       "structural-guard": 19,
@@ -6474,6 +6474,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/providers/feedback-provider.test.mjs — feedback provider tests."
+    },
+    {
+      "path": "tests/providers/github-delivery-log.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/providers/github-delivery-log.test.mjs — WebhookDeliveryLog"
     },
     {
       "path": "tests/providers/github-gh-cli-adapter.test.mjs",
