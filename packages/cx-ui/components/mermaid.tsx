@@ -7,6 +7,13 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import {
+  MERMAID_CHART_SIZE_LIMIT,
+  MERMAID_RENDER_TIMEOUT_MS,
+  isChartOversized,
+  sanitizeMermaidSvg,
+  withTimeout,
+} from './mermaid-sanitize';
 
 type MermaidProps = {
   id: string;
@@ -21,6 +28,13 @@ export function Mermaid({ id, chart, theme }: MermaidProps) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      // A pathological chart string can hang the layout engine on the client
+      // thread. Reject above the cap before touching mermaid.render at all,
+      // so the cost of a runaway diagram is bounded to a string-length check.
+      if (isChartOversized(chart)) {
+        if (!cancelled) setError(`diagram source exceeds ${MERMAID_CHART_SIZE_LIMIT} characters`);
+        return;
+      }
       try {
         const mermaid = (await import('mermaid')).default;
         const palette = theme === 'light'
@@ -41,11 +55,20 @@ export function Mermaid({ id, chart, theme }: MermaidProps) {
             fontSize: '13px',
           },
           flowchart: { curve: 'basis', padding: 14 },
-          securityLevel: 'loose',
+          securityLevel: 'strict',
         });
         const renderId = `${id}-svg`;
-        const { svg } = await mermaid.render(renderId, chart);
-        if (!cancelled && ref.current) ref.current.innerHTML = svg;
+        // Mermaid's own `strict` mode is the primary defense; the render
+        // call is still raced against a bounded timeout so a hung layout
+        // (adversarial input the size cap didn't catch) lands in the error
+        // state instead of leaving the component pending indefinitely.
+        const { svg } = await withTimeout(mermaid.render(renderId, chart), MERMAID_RENDER_TIMEOUT_MS);
+        // Defense in depth on top of `strict`: neutralize any script,
+        // event-handler, foreignObject, or javascript:/data: URL that
+        // survives into the rendered SVG string before it is ever assigned
+        // to innerHTML.
+        const safeSvg = sanitizeMermaidSvg(svg);
+        if (!cancelled && ref.current) ref.current.innerHTML = safeSvg;
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : 'render failed');
       }
