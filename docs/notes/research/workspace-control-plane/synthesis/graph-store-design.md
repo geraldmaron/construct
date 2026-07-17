@@ -428,3 +428,40 @@ b0nny.3 builds this design. Non-negotiables it inherits:
   is the graph representation layer that indexes them.
 - It does **not** choose artifact storage or database *technology beyond* the directive-mandated
   SQLite/Postgres — those §7 decisions are `construct-b0nny.4`.
+
+## 14. Corrections found building construct-b0nny.3 (post-design, pre-merge)
+
+Two genuine problems surfaced implementing this design against the live 16-node/16-edge-relation
+corpus (not the ~35/~30 target ontology this design's §8 maps *toward* but does not itself build).
+Both are fixed in the shipped code and in the companion `.sql` files; recorded here per program rule
+("fix the design doc, don't silently diverge").
+
+**14.1 — four query templates hardcoded not-yet-existing rel names.** The `impact`
+(`e.rel = 'depends-on'`), `requirements` (`e.rel IN ('depends-on','consumes','implements')`),
+orphaned-capability (`e.rel IN ('implements','tested-by','validates','exposes')`), and `owners`
+(`e.rel = 'owned-by'`, hyphenated) templates in `graph-store/queries.sql` used §8.2's *target*
+edge-relation names as literal SQL string constants. b0nny.3 ports the *existing* 16-relation
+vocabulary (`imports`, `uses`, `realizes`, `validates`, `owned_by` underscored, …) onto this schema —
+the ontology rename itself is out of this build's scope (§8 states the mapping; nothing in the b0nny.3
+handoff, §12, asks the build to execute the rename). Against real seeded data every one of these four
+queries would have silently returned zero rows forever — a query that "runs" but is quietly wrong is
+worse than one that errors. Fixed by turning the hardcoded literals into bind parameters
+(`:impact_rel`, `:requirement_rel_1..3`, `:coverage_rel_1..2`, `:owner_rel`) in both `queries.sql` and
+`lib/graph/relational/queries.mjs`, with the latter's defaults bound to the current-vocabulary
+equivalents (`imports`, `uses`/`realizes`, `owned_by`). Re-running the ontology rename later is then a
+one-line default change at each call site, not a query rewrite.
+
+**14.2 — the `cycles` query's default relation set was too permissive to run routinely.** Seeding
+the `reach` CTE from *every* active node (§6, §7) and traversing a dense relation is exactly the
+"whole-graph cycle scan" this design already flags as "a Spike-A latency measurement, not a routine
+query" (§6 comment) — but the first implementation's chosen default rel set included `imports`, which
+carries 4,276 edges on this repo's own graph (construct-b0nny.3 build-time measurement, not Spike A).
+`construct graph cycles` with no `--rel` filter took long enough against the live corpus to require a
+kill (no completion observed within several minutes) before the default was narrowed. Fixed by
+defaulting to the small-cardinality, genuinely acyclic-by-intent relations (`embeds`, `contains`,
+`requires`, `owned_by` — tens of edges each, not thousands) and lowering the default `max_depth` from
+50 to 15; a caller who wants the wider, slower scan still gets it via an explicit `--rel imports`.
+This is exactly the workload data Spike A's measure #4 (cycle/orphan detection latency) needs, not a
+disproof of the relational approach — a targeted, correctly-scoped cycle query returns instantly
+against the same corpus (verified: 0 cycles among embeds/contains/requires/owned_by on this repo's
+2,323-node/6,283-edge graph, <1s).

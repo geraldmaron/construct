@@ -71,6 +71,14 @@ test('the security gap list covers embed presets and executable workflows', () =
 });
 
 test('a @secures naming a nonexistent node fails graph validate --strict', () => {
+  // Only this test writes a synthetic graph instead of reading REPO_ROOT's
+  // real one — isolate its relational graph.db under its own
+  // CX_HOME_OVERRIDE for the duration, restored immediately after so the
+  // other REPO_ROOT-reading tests in this file keep seeing the real fixture
+  // scripts/ci/build-test-fixtures.sh built.
+  const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-owasp-home-'));
+  const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+  process.env.CX_HOME_OVERRIDE = homeOverride;
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-owasp-'));
   try {
     writeGraph(tmp, {
@@ -84,5 +92,8 @@ test('a @secures naming a nonexistent node fails graph validate --strict', () =>
     assert.ok(strict.errors.some((e) => /@secures 'workflow:ghost'/.test(e)));
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
+    fs.rmSync(homeOverride, { recursive: true, force: true });
+    if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+    else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
   }
 });
