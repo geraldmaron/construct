@@ -25,7 +25,8 @@ Dependencies are allowed freely. No ADR required. These never ship to end users.
 
 1. Write `docs/decisions/adr/NNNN-<title>.md` using the MADR template (see `docs/decisions/adr/0001-zero-npm-core.md` for format).
 2. Answer all three questions above in the ADR body.
-3. PR must link the ADR. Reviewer confirms the ADR is complete before approving the dependency addition.
+3. If the candidate falls into one of ADR-0097's named delegation classes (markdown/HTML parsing, MIME/RFC message parsing, schema validation, graph/diagram rendering), apply its lifecycle-cost rubric explicitly — install footprint, maintenance burden transferred, security surface, replaceability, evidence bar — citing the class's standing verdict rather than re-arguing whether the class is delegable at all. See `docs/decisions/adr/0097-capability-delegation-rubric.md`.
+4. PR must link the ADR. Reviewer confirms the ADR is complete before approving the dependency addition.
 
 ## Promotion trigger
 
