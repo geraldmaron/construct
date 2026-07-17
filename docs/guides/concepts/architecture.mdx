@@ -165,6 +165,7 @@ The foundation. Handles orchestration, specialist dispatch, memory, sessions, an
 - **Hooks / enforcement**. `lib/hooks/` (session-start, bash-output-logger, edit-guard, context-watch, audit-trail)
 - **Audit trail**. `lib/audit-trail.mjs`, `<stateDir>/audit-trail.jsonl` (XDG state dir, default `~/.local/state/construct/audit-trail.jsonl`; `CONSTRUCT_DOCTOR_ROOT` overrides) with tamper-evidence chain
 - **Doc stamps**. UUIDv7 front-matter on all generated `.md` files for identity, provenance, and tamper detection
+- **Compat-surface registry**. `compat/surfaces.json` records, per retained compatibility shim (deprecated CLI alias, one-time migration module, opt-in legacy-cleanup module), its location, owning ADR, owner, and expiration condition (a calendar date or an ADR-committed release-count window), following the `deps/intent.json` flat-JSON precedent. `lib/compat/surfaces.mjs` implements the expiration check (a release-count window counts any subsequently-shipped CHANGELOG version, not just minor bumps); `scripts/validate-compat-surfaces.mjs` (`npm run compat:check`) and `tests/compat-surfaces.test.mjs` report any entry whose expiration has passed while the surface is still shipping. An expired entry is triaged — removed, or given a documented `extensionHistory` entry with a new expiration and a stated reason — never left silently past-expiration.
 
 ### Providers
 
