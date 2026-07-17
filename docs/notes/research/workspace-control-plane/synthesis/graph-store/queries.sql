@@ -17,6 +17,22 @@
  * query/impact/path/owners/requirements/orphans/cycles/drift/explain/export). The
  * bounded-depth guard (:max_depth) implements the directive's "first-order and
  * bounded transitive dependents".
+ *
+ * CORRECTION (construct-b0nny.3 build, 2026-07-17): the impact/requirements/
+ * orphaned-capability/owners templates below originally hardcoded target-
+ * ontology rel literals ('depends-on', 'consumes', 'implements', 'tested-by',
+ * 'owned-by' hyphenated) as SQL string literals rather than bind parameters.
+ * The b0nny.3 build ports the *existing* 16-relation vocabulary (imports,
+ * uses, realizes, validates, owned_by underscored, …) onto this schema — the
+ * ontology rename to the ~30 target edge types (design doc §8.2) is not part
+ * of this build, so those literal target-ontology names never match any edge
+ * the live seeders actually produce, and every one of these four queries
+ * would silently return zero rows against real data. Fixed by parameterizing
+ * the rel filter in each (:impact_rel, :requirement_rel_N, :coverage_rel_N,
+ * :owner_rel) so the caller binds whatever vocabulary is live — portable
+ * (plain `IN (:a,:b)` / `= :x`, no backend-specific functions) either way.
+ * See lib/graph/relational/queries.mjs for the parameterized versions and
+ * their current-vocabulary default bindings.
  */
 
 -- QUERY down (dependents / impact direction): nodes that transitively point AT
@@ -133,7 +149,7 @@ WHERE n.workspace = :workspace
   AND NOT EXISTS (
     SELECT 1 FROM construct_graph_edges e
     WHERE e.workspace = n.workspace AND e.to_id = n.id
-      AND e.rel IN ('implements', 'tested-by', 'validates', 'exposes')
+      AND e.rel IN (:coverage_rel_1, :coverage_rel_2)
       AND e.state = 'active'
   )
 ORDER BY n.id;
@@ -145,7 +161,7 @@ SELECT n.id AS node_id, n.owner AS owning_subsystem, e.to_id AS owner_node
 FROM construct_graph_nodes n
 LEFT JOIN construct_graph_edges e
   ON e.workspace = n.workspace AND e.from_id = n.id
-     AND e.rel = 'owned-by' AND e.state = 'active'
+     AND e.rel = :owner_rel AND e.state = 'active'
 WHERE n.workspace = :workspace AND n.id = :node_id;
 
 -- QUERY requirements (direct): the declared/discovered requirements of :node_id
@@ -156,7 +172,7 @@ SELECT e.to_id AS requirement, e.rel, e.inferred
 FROM construct_graph_edges e
 WHERE e.workspace = :workspace
   AND e.from_id = :node_id
-  AND e.rel IN ('depends-on', 'consumes', 'implements')
+  AND e.rel IN (:requirement_rel_1, :requirement_rel_2, :requirement_rel_3)
   AND e.state = 'active'
 ORDER BY e.rel, e.to_id;
 
@@ -172,7 +188,7 @@ WITH RECURSIVE dependents(id, depth, path) AS (
   FROM construct_graph_edges e
   JOIN dependents dpt ON e.to_id = dpt.id
   WHERE e.workspace = :workspace
-    AND e.rel = 'depends-on'
+    AND e.rel = :impact_rel
     AND e.state = 'active'
     AND dpt.depth < :max_depth
     AND dpt.path NOT LIKE '%|' || e.from_id || '|%'
@@ -181,7 +197,7 @@ SELECT DISTINCT d.id
 FROM dependents d
 JOIN construct_graph_nodes n
   ON n.workspace = :workspace AND n.id = d.id
-WHERE n.node_type = 'test'
+WHERE n.node_type = :impact_node_type
 ORDER BY d.id;
 
 -- QUERY drift (stored side): the per-source hashes recorded at last build. The

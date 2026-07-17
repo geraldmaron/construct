@@ -7813,6 +7813,7 @@ const handlers = new Map([
      const DEPENDENCY_GRAPH_SUBCOMMANDS = new Set([
        'build', 'build-targets', 'stat', 'query', 'validate', 'impacted',
        'missing-tests', 'missing-docs', 'stale', 'dependencies', 'providers', 'surfaces', 'explain', 'owasp',
+       'update', 'reconcile', 'path', 'orphans', 'cycles', 'owners', 'requirements', 'export',
      ]);
      if (DEPENDENCY_GRAPH_SUBCOMMANDS.has(args[0])) {
        const { runGraphCli } = await import('../lib/graph/cli.mjs');

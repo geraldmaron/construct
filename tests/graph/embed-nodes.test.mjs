@@ -59,6 +59,15 @@ test('each shipped preset has an inbound validates edge from its acceptance test
 });
 
 test('a broken binding target fails graph validate --strict', () => {
+  // Unlike every other test in this file, this one writes a synthetic graph
+  // (not REPO_ROOT's real one) — the relational store resolves that write's
+  // graph.db under the machine-scoped state root (ADR-0066), so it needs its
+  // own isolated CX_HOME_OVERRIDE for the duration of the write/validate,
+  // restored immediately after so the file's other REPO_ROOT-reading tests
+  // keep seeing the real fixture `scripts/ci/build-test-fixtures.sh` built.
+  const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-embed-home-'));
+  const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+  process.env.CX_HOME_OVERRIDE = homeOverride;
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-embed-'));
   try {
     // An embed that binds a provider with no node of its own, and no test.
@@ -77,6 +86,9 @@ test('a broken binding target fails graph validate --strict', () => {
     assert.ok(strict.errors.some((e) => /zero validating tests/.test(e)), 'an untested embed is also an error');
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
+    fs.rmSync(homeOverride, { recursive: true, force: true });
+    if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+    else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
   }
 });
 
