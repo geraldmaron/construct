@@ -384,6 +384,154 @@ test('future-state marker: .mdx guide docs are checked (architecture.mdx / deplo
   }
 });
 
+// --- follow-up tracking claims (construct-4uxq0.17) ---
+//
+// A "follow-up filed/tracked" claim on a session-truth surface must carry a
+// resolvable construct-* bead id on the same line. Resolver is injected so
+// these tests never spawn the real bd binary.
+
+const RESOLVE_EXISTS = () => 'exists';
+const RESOLVE_MISSING = () => 'missing';
+const RESOLVE_UNKNOWN = () => 'unknown';
+
+function researchNote(extra) {
+  return ['<!--', 'docs/notes/research/fixture.md — test fixture.', '-->', '', '# Fixture note', '', extra].join('\n');
+}
+
+function followupHits(result) {
+  return [...result.errors, ...result.warnings].filter((v) => v.label.includes('follow-up tracking claim'));
+}
+
+test('follow-up claim: "follow-up filed" with no bead id is flagged', () => {
+  const { dir, full } = makeTempFile('docs/notes/research/fixture.md', researchNote('Team-mode rootDir mismatch — follow-up filed.'));
+  delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  const result = lintFile(full, { rootDir: dir, beadResolver: RESOLVE_EXISTS });
+  const hits = followupHits(result);
+  assert.equal(hits.length, 1, `expected one hit; got ${JSON.stringify(result.warnings)}`);
+  assert.ok(hits[0].kind === 'artifact');
+});
+
+test('follow-up claim: "noted as follow-up" with no bead id is flagged', () => {
+  const { dir, full } = makeTempFile('docs/notes/research/fixture.md', researchNote('Deferred sterility classes noted as follow-up, not silently dropped.'));
+  delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  const result = lintFile(full, { rootDir: dir, beadResolver: RESOLVE_EXISTS });
+  assert.equal(followupHits(result).length, 1, `expected one hit; got ${JSON.stringify(result.warnings)}`);
+});
+
+test('follow-up claim: same-line bead id that resolves passes', () => {
+  const { dir, full } = makeTempFile('docs/notes/research/fixture.md', researchNote('Residual gap — follow-up filed as `construct-4uxq0.9.9`.'));
+  delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  const result = lintFile(full, { rootDir: dir, beadResolver: RESOLVE_EXISTS });
+  assert.equal(followupHits(result).length, 0, `resolvable id should pass; got ${JSON.stringify(result.warnings)}`);
+});
+
+test('follow-up claim: shape-valid bead id that does not resolve is flagged', () => {
+  const { dir, full } = makeTempFile('docs/notes/research/fixture.md', researchNote('Residual gap — follow-up filed as `construct-zzznotreal`.'));
+  delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  const result = lintFile(full, { rootDir: dir, beadResolver: RESOLVE_MISSING });
+  const hits = followupHits(result);
+  assert.equal(hits.length, 1, `unresolvable id should be flagged; got ${JSON.stringify(result.warnings)}`);
+  assert.ok(hits[0].label.includes('does not resolve'), `label should name the resolution failure; got ${hits[0].label}`);
+});
+
+test('follow-up claim: bd unavailable degrades to shape-only validation', () => {
+  const { dir, full } = makeTempFile('docs/notes/research/fixture.md', researchNote('Residual gap — follow-up filed as `construct-zzznotreal`.'));
+  delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  const result = lintFile(full, { rootDir: dir, beadResolver: RESOLVE_UNKNOWN });
+  assert.equal(followupHits(result).length, 0, `unknown verdict must not flag; got ${JSON.stringify(result.warnings)}`);
+});
+
+test('follow-up claim: default resolver never crashes and degrades when bd is off PATH', () => {
+  const { dir, full } = makeTempFile('docs/notes/research/fixture.md', researchNote('Residual gap — follow-up filed as `construct-zzznotreal`.'));
+  delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  const priorPath = process.env.PATH;
+  process.env.PATH = '';
+  try {
+    const result = lintFile(full, { rootDir: dir });
+    assert.equal(followupHits(result).length, 0, `missing bd must degrade to shape-only; got ${JSON.stringify(result.warnings)}`);
+  } finally {
+    process.env.PATH = priorPath;
+  }
+});
+
+test('follow-up claim: conversational follow-up prose is not flagged', () => {
+  const body = researchNote('Schedule a follow-up review next week. The follow-up questions created some confusion. As a follow-up to the meeting, read the notes.');
+  const { dir, full } = makeTempFile('docs/notes/research/fixture.md', body);
+  delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  const result = lintFile(full, { rootDir: dir, beadResolver: RESOLVE_EXISTS });
+  assert.equal(followupHits(result).length, 0, `conversational prose must not fire; got ${JSON.stringify(result.warnings)}`);
+});
+
+test('follow-up claim: quoted claim (mention, not assertion) is not flagged', () => {
+  const body = researchNote('Prior summaries claimed "follow-up filed" with nothing behind the claim.');
+  const { dir, full } = makeTempFile('docs/notes/research/fixture.md', body);
+  delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  const result = lintFile(full, { rootDir: dir, beadResolver: RESOLVE_EXISTS });
+  assert.equal(followupHits(result).length, 0, `quoted mention must not fire; got ${JSON.stringify(result.warnings)}`);
+});
+
+test('follow-up claim: future intent "will be filed as" is not flagged', () => {
+  const body = researchNote('The residual gap will be filed as a follow-up bead before release.');
+  const { dir, full } = makeTempFile('docs/notes/research/fixture.md', body);
+  delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  const result = lintFile(full, { rootDir: dir, beadResolver: RESOLVE_EXISTS });
+  assert.equal(followupHits(result).length, 0, `future intent must not fire; got ${JSON.stringify(result.warnings)}`);
+});
+
+test('follow-up claim: external issue citation on the line passes', () => {
+  const body = researchNote('The boundary ambiguity was filed as a bug ([issue #1180](https://github.com/x/y/issues/1180)).');
+  const { dir, full } = makeTempFile('docs/notes/research/fixture.md', body);
+  delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  const result = lintFile(full, { rootDir: dir, beadResolver: RESOLVE_EXISTS });
+  assert.equal(followupHits(result).length, 0, `cited external filing must pass; got ${JSON.stringify(result.warnings)}`);
+});
+
+test('follow-up claim: markdown table rows are skipped', () => {
+  const body = researchNote(['| Claim | State |', '|---|---|', '| follow-up filed | no bead |'].join('\n'));
+  const { dir, full } = makeTempFile('docs/notes/research/fixture.md', body);
+  delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  const result = lintFile(full, { rootDir: dir, beadResolver: RESOLVE_EXISTS });
+  assert.equal(followupHits(result).length, 0, `table rows must be skipped; got ${JSON.stringify(result.warnings)}`);
+});
+
+test('follow-up claim: ADR paths are out of scope', () => {
+  const body = researchNote('Understanding the directory form (tracked as a follow-up).');
+  const { dir, full } = makeTempFile('docs/decisions/adr/fixture.md', body);
+  delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  const result = lintFile(full, { rootDir: dir, beadResolver: RESOLVE_EXISTS });
+  assert.equal(followupHits(result).length, 0, `ADR prose is out of scope; got ${JSON.stringify(result.warnings)}`);
+});
+
+test('follow-up claim: session context.md is in scope', () => {
+  const body = '# Session context\n\nKnown bugs flagged as follow-up chips this session — follow-up filed.\n';
+  const { dir, full } = makeTempFile('.construct/context.md', body);
+  delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  const result = lintFile(full, { rootDir: dir, beadResolver: RESOLVE_EXISTS });
+  assert.equal(followupHits(result).length, 1, `context.md claim must be flagged; got ${JSON.stringify(result.warnings)}`);
+});
+
+test('follow-up claim: durable memory notes are in scope', () => {
+  const body = '# Memory\n\n- team-mode mismatch — follow-up filed\n';
+  const { dir, full } = makeTempFile('.claude/projects/-slug/memory/MEMORY.md', body);
+  delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  const result = lintFile(full, { rootDir: dir, beadResolver: RESOLVE_EXISTS });
+  assert.equal(followupHits(result).length, 1, `memory-note claim must be flagged; got ${JSON.stringify(result.warnings)}`);
+});
+
+test('follow-up claim: block mode routes hits to errors', () => {
+  const { dir, full } = makeTempFile('docs/notes/research/fixture.md', researchNote('Team-mode rootDir mismatch — follow-up filed.'));
+  process.env.CONSTRUCT_ARTIFACT_LINT_MODE = 'block';
+  try {
+    const result = lintFile(full, { rootDir: dir, beadResolver: RESOLVE_EXISTS });
+    assert.ok(
+      result.errors.some((e) => e.label.includes('follow-up tracking claim')),
+      `block mode should put hits in errors[]; got ${JSON.stringify(result)}`,
+    );
+  } finally {
+    delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  }
+});
+
 // --- external project name in a code comment ---
 //
 // Comparisons against other software projects belong in decision documents
