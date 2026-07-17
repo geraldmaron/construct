@@ -4,6 +4,18 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- Workspace-control-plane re-architecture program, Wave 0 (epic `construct-b0nny`, branch `feat/workspace-control-plane`): Construct's target as a workspace-level work/governance control plane over replaceable runtimes, founded on the dependency graph as a day-one subsystem. `docs/notes/research/workspace-control-plane/` now carries the program charter (waves, routing, naming and cleanup invariants — neutral capability names only, every replacement carries its deletion), the condensed source-directive requirements, the Phase-0 baseline (including the shared-checkout contention incident record), and four evidence reports: an execution-surfaces truth map (111-command CLI, three daemons, ~40 hook registrations, MCP call-gateway dynamic dispatch, five competing approval surfaces, three schedulers, dead `lib/flows/`), a graph/state audit (verdict: ~60–70% of the target graph substrate already exists in `lib/graph/` — typed 16×16 model, provenance, impact analysis, 3,250 nodes/8,522 edges live; the gap is relational SQLite/Postgres storage, recursive-CTE traversal, incremental update), an intent/docs-drift report, and the dispatcher routing plan. Synthesis reconciles the reports into an amalgamation seed (D1–D9), deletion candidates (X1–X5), and a load-bearing assumption register (A1–A5). Waves 1–4 are filed as dependent beads (`construct-b0nny.1`–`.6`) plus five independent cleanup beads (`.7`–`.11`); each wave needs explicit maintainer opt-in.
+
+### Fixed
+
+- Docs drift, Wave-0 quick wins: `docs/README.md` duplicate-operand bug ("`.construct` vs `.construct`" → "`.construct` vs the machine state root vs user home"); `docs/guides/concepts/architecture.mdx` used the deprecated `construct matrix build` alias in canonical prose (→ `construct graph build`); `STRATEGY.md` still claimed the ADR-0065 roster consolidation was "not yet applied" in three places — 12 `cx-*` specialists ship today (verified against `specialists/prompts/` and `specialists/org/specialists/`).
+
+### Removed
+
+- `scripts/patch-registry-readers-v2.mjs` — spent one-shot codemod (its migration completed when the monolithic registry JSONs were removed); only remaining reference was its own entry in `lib/registry/retired-paths.mjs`'s lint-gate allowlist, removed with it.
+
 ## [1.5.7] - 2026-07-14
 
 ### Changed

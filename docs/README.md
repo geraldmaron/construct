@@ -33,7 +33,7 @@ Use **`.md`** for every prose page (CommonMark + YAML frontmatter). Reserve **`.
 - [Deployment model](./guides/concepts/deployment-model.mdx). Solo, team, and enterprise topology
 - [Prompt surface architecture](./guides/concepts/prompt-surfaces.mdx). Persona, specialist, skill, rule, and fixture surfaces
 - [Knowledge layout](./guides/concepts/knowledge-layout.md). `.construct/` directory structure, inbox routing, and durable knowledge lanes
-- [Project scopes](./guides/concepts/project-scopes.md). `.construct` vs `.construct` vs user home — what belongs in git
+- [Project scopes](./guides/concepts/project-scopes.md). `.construct` vs the machine state root vs user home — what belongs in git
 - [Intake and triage](./guides/concepts/intake-and-triage.mdx). How dropped signals become owner-assigned work
 - [Gates and enforcement](./guides/concepts/gates-and-enforcement.mdx). Write-time, commit-time, and CI guardrails
 - [Style](./STYLE.md). Voice, punctuation, structure rules (canonical reference for prose lint)
