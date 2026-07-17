@@ -353,13 +353,22 @@ jobs:
             export CHANGED_FILES
           fi
           node scripts/run-graph-gate.mjs
-      # Blocking gate on PR-body shape. It has no local pre-flight (the body does
-      # not exist until `gh pr create` runs), so a human fixes a violation by
-      # editing the body and close+reopening to retrigger CI. Bot PRs (dependabot)
-      # are exempt inside scripts/lint-commits-pr.mjs by author — a bot cannot
-      # fill the human template — so the step stays hard-failing for humans.
+      # Blocking gate on commit-subject convention and PR-body shape. Runs on
+      # every pull_request event unconditionally (not gated by the templates/
+      # workflow change-filter) — a staging-merge PR whose diff happens to
+      # touch neither would otherwise skip commit-subject linting entirely,
+      # the gap that let 26 non-conforming subjects accumulate silently across
+      # staging merges until the next release-promotion PR's much wider commit
+      # range caught them as a batch (construct-9tg43). PR-body-shape checking
+      # has no local pre-flight (the body does not exist until `gh pr create`
+      # runs), so a human fixes a violation by editing the body and
+      # close+reopening to retrigger CI. Bot PRs (dependabot) are exempt
+      # inside scripts/lint-commits-pr.mjs by author — a bot cannot fill the
+      # human template — so the step stays hard-failing for humans. Still
+      # conditioned on the workflow filter for push-to-main runs, where there
+      # is no PR body/commit range to check.
       - name: template policy
-        if: needs.changes.outputs.templates == 'true' || needs.changes.outputs.workflow == 'true'
+        if: github.event_name == 'pull_request' || needs.changes.outputs.templates == 'true' || needs.changes.outputs.workflow == 'true'
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_BASE_REF: ${{ github.event.pull_request.base.ref || github.base_ref }}
