@@ -34,6 +34,11 @@
     "02-deadcode:module-test-only:lib/certification/provider-evidence-tiers.mjs",
     "02-deadcode:module-test-only:lib/render-visual-check.mjs",
     "02-deadcode:module-test-only:lib/init-unified.mjs",
-    "02-deadcode:module-test-only:lib/orchestration/delegation-flow.mjs"
+    "02-deadcode:module-test-only:lib/orchestration/delegation-flow.mjs",
+    "02-deadcode:module-test-only:lib/contracts/extraction-provider.mjs",
+    "02-deadcode:module-test-only:lib/demo-manifest.mjs",
+    "02-deadcode:module-test-only:lib/diagram-card.mjs",
+    "02-deadcode:module-test-only:lib/engine/knowledge-store-contract.mjs",
+    "02-deadcode:module-test-only:lib/export-provider-contract.mjs"
   ]
 }

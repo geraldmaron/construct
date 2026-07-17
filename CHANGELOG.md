@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- **Audit-ratchet gate drift from this session's new contract modules and ADR-0097**: `docs/decisions/adr/meta.json` was missing the `0097-capability-delegation-rubric` entry, flagging it as an orphaned doc — added. Five new Wave-1 contract modules (`lib/contracts/extraction-provider.mjs`, `lib/demo-manifest.mjs`, `lib/diagram-card.mjs`, `lib/engine/knowledge-store-contract.mjs`, `lib/export-provider-contract.mjs`) are exercised only by their own tests today, by explicit design — each bead's scope is contract-definition only, with a separate downstream bead wiring in a production caller — so their `module-test-only` deadcode findings are added to `scripts/audit/baseline.json`'s ratchet, to be removed once each is wired in.
+
 ### Added
 
 - **Wave 0 false-success certification (bead `construct-4uxq0.9.18`)**: after `construct-4uxq0.9.12` (demo), `.9.13` (Docling), and `.9.16` (graph build) each independently fixed a false-success/silent-failure defect, nothing re-verified that all three hold together in one run or produced a single re-verifiable artifact for "Wave 0's false-success remediation is done." New `tests/functional/wave0-false-success-certification.functional.test.mjs`: re-runs all three dependency suites together as a subprocess, then in the same process forces a script-only demo fallback, a malformed Docling sidecar message, and a malformed embed manifest graph build, asserting none of the three reports unconditional success. Scope excludes the mermaid/playwright/tracker-integrity fixes (security/supply-chain/data-integrity, not false-success paths) per the bead's own non-goals.
