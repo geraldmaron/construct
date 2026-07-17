@@ -9,6 +9,7 @@ description: Core commands for Construct.
 |---|---|
 | `construct approvals` | Manage pending MCP tool approvals |
 | `construct dev` | Start services for development |
+| `construct directives` | View standing directives (construct.config.json directives[]) and their due status |
 | `construct docs` | Documentation commands |
 | `construct doctor` | Check installation health |
 | `construct init` | Project setup (once per repo): scaffold .construct/, AGENTS.md, plan.md, adapters |
@@ -58,6 +59,21 @@ construct dev [--select] [--only=memory,opencode,...]
 |---|---|
 | `--select` | Pick which services to start from an interactive checklist |
 | `--only=<a,b,c>` | Start only the named services (telemetry, memory, opencode, copilot-bridge) |
+
+## construct directives
+
+View standing directives (construct.config.json directives[]) and their due status
+
+**Usage**
+
+```bash
+construct directives list|status
+```
+
+**Subcommands**
+
+- `list` — List configured directives and their due status
+- `status <id>` — Show the full status of a specific directive
 
 ## construct docs
 

@@ -275,6 +275,12 @@ async function cmdApprovals(args = []) {
   if (code) process.exit(code);
 }
 
+async function cmdDirectives(args = []) {
+  const { runDirectivesCli } = await import('../lib/cli/directives.mjs');
+  const code = await runDirectivesCli(args, { rootDir: ROOT_DIR, env: process.env, println, errorln });
+  if (code) process.exit(code);
+}
+
 async function cmdStatus() {
   const jsonOutput = restArgsCache.includes('--json');
   const status = await buildStatus({ rootDir: ROOT_DIR, cwd: process.cwd(), homeDir: HOME, env: process.env });
@@ -7101,6 +7107,7 @@ const handlers = new Map([
   ['install', cmdInstall],
   ['config', cmdConfig],
   ['approvals', cmdApprovals],
+  ['directives', cmdDirectives],
   ['sources', cmdSources],
   ['monitor', async (args) => {
     const { runMonitorCli } = await import('../lib/monitor-cli.mjs');

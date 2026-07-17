@@ -22,15 +22,33 @@ import { RateLimitError } from '../../lib/providers/contract/errors.mjs';
  */
 function makeFakeGhAdapter({ rateLimitedAttempts = 0, retryAfterSeconds = 1 } = {}) {
   const issues = [];
+  const prs = [];
   let nextNumber = 1;
+  let nextPrNumber = 1;
   let callsSeen = 0;
   let rateLimitCallsRemaining = rateLimitedAttempts;
 
   return {
     issues,
+    prs,
     callCount: () => callsSeen,
     async write(item) {
       callsSeen += 1;
+
+      if (item.type === 'pr') {
+        if (rateLimitCallsRemaining > 0) {
+          rateLimitCallsRemaining -= 1;
+          throw new RateLimitError('secondary rate limit exceeded', {
+            provider: 'github',
+            retryAfter: retryAfterSeconds,
+          });
+        }
+        const number = nextPrNumber++;
+        const url = `https://github.com/test-owner/test-repo/pull/${number}`;
+        prs.push({ number, title: item.title, body: item.body, headRefName: item.head, baseRefName: item.base ?? 'main', url });
+        return { type: 'pr-created', url };
+      }
+
       if (item.type !== 'issue') throw new Error(`unsupported type: ${item.type}`);
 
       if (rateLimitCallsRemaining > 0) {
@@ -46,7 +64,14 @@ function makeFakeGhAdapter({ rateLimitedAttempts = 0, retryAfterSeconds = 1 } = 
       issues.push({ number, title: item.title, body: item.body, url });
       return { type: 'issue-created', url };
     },
-    async search(query) {
+    async search(query, opts = {}) {
+      if (opts.scope === 'prs') {
+        const headMatch = /^head:(.*)$/.exec(query);
+        const head = headMatch ? headMatch[1] : query;
+        return prs
+          .filter((p) => p.headRefName === head)
+          .map((p) => ({ number: p.number, title: p.title, headRefName: p.headRefName, baseRefName: p.baseRefName, url: p.url }));
+      }
       const titleMatch = /^(.*) in:title$/.exec(query);
       const titleNeedle = titleMatch ? titleMatch[1] : query;
       return issues
@@ -161,5 +186,70 @@ describe('GitHub writes through the governed envelope', () => {
     const record = sentLog.findByIdempotencyKey('audit-key-1');
     assert.equal(record.status, 'sent');
     assert.ok(record.externalUrl.startsWith('https://github.com/'));
+  });
+});
+
+describe('GitHub PR writes through the governed envelope (head-branch dedup)', () => {
+  it('creates a PR for a new head branch', async () => {
+    const ghAdapter = makeFakeGhAdapter();
+    const provider = createGovernedGithubProvider({ ghAdapter });
+
+    const result = await writeWithEnvelope({
+      provider, config: {},
+      payload: { type: 'pr', title: 'Add feature X', body: 'desc', head: 'feature-x', base: 'main' },
+    });
+
+    assert.equal(result.status, 'sent');
+    assert.equal(ghAdapter.prs.length, 1);
+    assert.equal(result.envelope.result.type, 'pr-created');
+  });
+
+  it('a second PR for the same head branch yields a linkback, not a new PR', async () => {
+    const ghAdapter = makeFakeGhAdapter();
+    const provider = createGovernedGithubProvider({ ghAdapter });
+    const payload = { type: 'pr', title: 'Add feature X', body: 'desc', head: 'feature-x', base: 'main' };
+
+    const first = await writeWithEnvelope({ provider, config: {}, sentLog: new WriteSentLog(), payload, idempotencyKey: 'run-1' });
+    assert.equal(ghAdapter.prs.length, 1);
+
+    // Fresh sent-log simulates a second, independent run — proves GitHub-side
+    // head-branch dedup, not just local idempotency-key replay.
+    const second = await writeWithEnvelope({ provider, config: {}, sentLog: new WriteSentLog(), payload, idempotencyKey: 'run-2' });
+
+    assert.equal(second.status, 'sent');
+    assert.equal(ghAdapter.prs.length, 1, 'no second PR should be created on GitHub');
+    assert.equal(second.envelope.result.type, 'pr-duplicate');
+    assert.equal(second.envelope.result.linkback, first.envelope.result.url);
+  });
+
+  it('distinct head branches create distinct PRs', async () => {
+    const ghAdapter = makeFakeGhAdapter();
+    const provider = createGovernedGithubProvider({ ghAdapter });
+
+    await writeWithEnvelope({ provider, config: {}, payload: { type: 'pr', title: 'A', head: 'branch-a', idempotencyKey: 'a' } });
+    await writeWithEnvelope({ provider, config: {}, payload: { type: 'pr', title: 'B', head: 'branch-b', idempotencyKey: 'b' } });
+
+    assert.equal(ghAdapter.prs.length, 2);
+  });
+
+  it('requires title and head', async () => {
+    const provider = createGovernedGithubProvider({ ghAdapter: makeFakeGhAdapter() });
+    await assert.rejects(() => provider.write({}, { type: 'pr', head: 'x' }), /title is required/);
+    await assert.rejects(() => provider.write({}, { type: 'pr', title: 'x' }), /head is required/);
+  });
+
+  it('secondary-rate-limit on PR create retries then succeeds', async () => {
+    const ghAdapter = makeFakeGhAdapter({ rateLimitedAttempts: 1, retryAfterSeconds: 1 });
+    const waits = [];
+    const provider = createGovernedGithubProvider({ ghAdapter, sleepFn: async (ms) => { waits.push(ms); } });
+
+    const result = await writeWithEnvelope({
+      provider, config: {},
+      payload: { type: 'pr', title: 'Retried PR', head: 'retry-branch' },
+    });
+
+    assert.equal(result.status, 'sent');
+    assert.equal(waits.length, 1);
+    assert.equal(ghAdapter.prs.length, 1);
   });
 });

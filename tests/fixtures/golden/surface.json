@@ -109,6 +109,10 @@
       "core": false
     },
     {
+      "name": "directives",
+      "core": true
+    },
+    {
       "name": "distill",
       "core": false
     },
