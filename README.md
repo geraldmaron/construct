@@ -320,6 +320,7 @@ construct/
 ├── apps             User-facing apps shipped from this repo (dashboard, docs)
 ├── bin              CLI entrypoint (`construct`)
 ├── commands         Command prompt assets
+├── compat
 ├── config           Repo-wide controlled vocabulary (tag-vocabulary.json)
 ├── deploy           Terraform and deployment configs
 ├── deps
