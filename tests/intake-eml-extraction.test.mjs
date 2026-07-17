@@ -1,6 +1,7 @@
 /**
  * tests/intake-eml-extraction.test.mjs — .eml support for
- * `lib/document-extract.mjs#extractDocumentText`.
+ * `lib/document-extract.mjs#extractDocumentText` and the mailparser-backed
+ * async path (`extractEmlMessageAsync`/`extractEmlAsync`, construct-tsyfe.2.7).
  *
  * Locks the contract for the customer-email-as-signal workflow:
  *   - Plain-text RFC 5322 messages produce text containing Subject, From,
@@ -10,18 +11,28 @@
  *     on the result's `attachments` array.
  *   - Messages above the 50 MB hard cap return empty text plus a `skipped`
  *     marker rather than throwing.
+ *   - The async path decodes RFC 2047 headers, recovers HTML-only bodies,
+ *     recurses into nested message/rfc822 forwards, quarantines
+ *     oversized/zip-bomb-suspect attachments and sanitizes unsafe filenames
+ *     (construct-tsyfe.2.7 acceptance criteria 1-4), and both the sync and
+ *     async paths fail loud on `.msg`/OLE input instead of mis-decoding it.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 import {
   extractDocumentText,
+  extractEmlMessageAsync,
+  extractEmlAsync,
   EXTRACTABLE_DOCUMENT_EXTS,
   isExtractableDocumentPath,
 } from '../lib/document-extract.mjs';
+
+const FIXTURE_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures', 'email-mime');
 
 function mkTmp() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'eml-test-'));
@@ -151,4 +162,66 @@ test('email above 50 MB hard cap returns empty text and a skipped marker', (t) =
   assert.equal(result.text, '');
   assert.equal(result.skipped, 'too large');
   assert.equal(result.extractionMethod, 'eml-skipped');
+});
+
+test('AC4: baseline clean email extracts fully via the mailparser-backed async path', async () => {
+  const result = await extractEmlAsync(path.join(FIXTURE_DIR, '01-plain-text.eml'));
+  assert.equal(result.method, 'eml-mailparser');
+  assert.match(result.text, /Subject: Quarterly numbers attached/);
+  assert.match(result.text, /Nothing surprising this quarter/);
+  assert.deepEqual(result.attachments, []);
+  assert.deepEqual(result.droppedInfo, []);
+});
+
+test('async path decodes RFC 2047 encoded-word headers the sync parser leaves raw', async () => {
+  const message = await extractEmlMessageAsync(path.join(FIXTURE_DIR, '05-encoded-header-subject.eml'));
+  assert.match(message.headers.subject, /École: café project — résumé attached/);
+  assert.match(message.headers.from, /Renée Dupont/);
+});
+
+test('async path recovers HTML-only bodies the sync parser drops with no plain-text fallback', async () => {
+  const message = await extractEmlMessageAsync(path.join(FIXTURE_DIR, '02-html-only.eml'));
+  assert.match(message.text, /weekly digest/i);
+  assert.doesNotMatch(message.text, /<html>/i);
+});
+
+test('async path recurses into a nested message/rfc822 forward instead of dropping it with zero signal', async () => {
+  const message = await extractEmlMessageAsync(path.join(FIXTURE_DIR, '06-nested-forward.eml'));
+  assert.equal(message.droppedNestedCount, 0);
+  assert.equal(message.nestedMessages.length, 1);
+  assert.match(message.nestedMessages[0].subject, /Original: budget approval/);
+  assert.match(message.nestedMessages[0].text, /Approved, go ahead with the Q3 budget/);
+});
+
+test('.msg/OLE input fails loud with a typed error instead of mis-decoding the binary as text', async () => {
+  const fixture = path.join(FIXTURE_DIR, '07-synthetic-ole.msg');
+  assert.throws(() => extractDocumentText(fixture), (err) => err.code === 'MSG_OLE_UNSUPPORTED');
+  await assert.rejects(() => extractEmlAsync(fixture), (err) => err.code === 'MSG_OLE_UNSUPPORTED');
+});
+
+test('AC1: an oversized attachment is quarantined and the rest of the message still extracts', async () => {
+  const result = await extractEmlAsync(path.join(FIXTURE_DIR, '04-multipart-attachment.eml'), {
+    attachmentPolicy: { maxAttachmentBytes: 10 },
+  });
+  assert.match(result.text, /See the attached report/);
+  assert.deepEqual(result.attachments, [], 'the oversized attachment is withheld, not kept');
+  assert.equal(result.attachmentProvenance.length, 1);
+  assert.equal(result.attachmentProvenance[0].disposition, 'quarantined');
+  assert.match(result.attachmentProvenance[0].quarantineReason, /exceeds the 10-byte per-attachment limit/);
+  assert.ok(result.droppedInfo.some((d) => d.kind === 'attachment-quarantined'));
+});
+
+test('AC2: a path-traversal attachment filename is sanitized before any filesystem write', async () => {
+  const result = await extractEmlAsync(path.join(FIXTURE_DIR, '08-attachment-path-traversal.eml'));
+  assert.deepEqual(result.attachments, ['passwd'], 'traversal sequence and directory components are stripped');
+  assert.ok(!result.attachments.some((name) => name.includes('..') || name.includes('/')));
+  assert.equal(result.attachmentProvenance[0].filenameSanitized, true);
+  assert.equal(result.attachmentProvenance[0].originalFilename, '../../../../etc/passwd');
+});
+
+test('AC3: an attachment at/over the zip-bomb ratio threshold is refused, not silently expanded', async () => {
+  const result = await extractEmlAsync(path.join(FIXTURE_DIR, '09-zip-bomb-suspect.eml'));
+  assert.deepEqual(result.attachments, []);
+  assert.equal(result.attachmentProvenance[0].disposition, 'quarantined');
+  assert.match(result.attachmentProvenance[0].quarantineReason, /zip-bomb threshold/);
 });

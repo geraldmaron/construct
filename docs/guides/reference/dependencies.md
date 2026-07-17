@@ -4,9 +4,11 @@
 
 ### Core zone: `lib/`, `bin/`
 
-**Allowed:** Node.js built-ins (`node:fs`, `node:path`, `node:crypto`, etc.) plus the two declared runtime dependencies:
+**Allowed:** Node.js built-ins (`node:fs`, `node:path`, `node:crypto`, etc.) plus the ADR-sanctioned runtime dependencies tracked in `tests/core-dependency-policy.test.mjs`'s `SANCTIONED` allowlist:
 - `@modelcontextprotocol/sdk`: MCP server/client protocol
-- `postgres`: PostgreSQL client for SQL storage backend
+- `@lancedb/lancedb` + `apache-arrow`: vector storage backend (retain-as-canonical decision, `construct-tsyfe.7.2`)
+- `js-yaml`: markdown frontmatter parse/emit only (ADR-0028)
+- `mailparser`: RFC 5322/MIME email parsing only (ADR-0098)
 
 **Not allowed:** Any other npm package without an ADR (see below).
 
