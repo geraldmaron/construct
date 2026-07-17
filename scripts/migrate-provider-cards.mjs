@@ -33,6 +33,20 @@
  *     migrated card records that gap explicitly as
  *     "unknown (not recorded in lib/extensions/manifests/<id>.manifest.json)"
  *     rather than inventing removal conditions the source doesn't state.
+ *   - construct-tsyfe.6.5 adds Pandoc and Typst as the first `kind: 'binary'`
+ *     cards, migrated from deps/intent.json's `binary-sidecar` entries for
+ *     those two ids only — libreoffice/uv/docker/gh/op stay unmigrated,
+ *     reserved for sibling beads .6.7/.10.3 per this file's header note
+ *     above. `healthCheck` free text ("pandoc --version"/"typst --version")
+ *     splits on whitespace into `{ command, args }` for the
+ *     `subprocess-version` shape. `fallback.description` carries the exact
+ *     install-hint strings lib/document-export.mjs's `installHint()` already
+ *     returns for these two names (BINARY_INSTALL_HINTS below) — that
+ *     function now looks the card up via findProviderCard() first, so the
+ *     two copies must stay byte-identical. `degradationBehavior`
+ *     ("graceful-skip" for both, the reviewed classification already in
+ *     deps/intent.json) is carried through unchanged rather than
+ *     re-litigated.
  *
  * Idempotent: re-run any time deps/intent.json or the ingestion-provider
  * manifests change. Does not modify either source file.
@@ -49,6 +63,15 @@ const MANIFESTS_DIR = join(REPO_ROOT, 'lib', 'extensions', 'manifests');
 const OUTPUT_PATH = join(REPO_ROOT, 'registry', 'provider-cards.json');
 
 const DEFAULT_OWNER = 'construct-core';
+
+// Sourced verbatim from lib/document-export.mjs's installHint() so
+// findProviderCard()-backed lookups there return byte-identical text.
+
+const BINARY_IDS = ['pandoc', 'typst'];
+const BINARY_INSTALL_HINTS = {
+  pandoc: 'Install pandoc to enable document export (e.g. `brew install pandoc` on macOS, `apt install pandoc` on Debian/Ubuntu, or https://pandoc.org/installing.html).',
+  typst: 'Install typst to enable PDF export via Pandoc (`brew install typst` on macOS, https://github.com/typst/typst/releases for binaries).',
+};
 
 function readJson(path) {
   return JSON.parse(readFileSync(path, 'utf8'));
@@ -108,6 +131,35 @@ function sidecarCard(id) {
   };
 }
 
+function binaryCard(entry) {
+  const [command, ...args] = entry.healthCheck.split(' ');
+  const securityConcerns = entry.securityConcerns === 'null' ? null : entry.securityConcerns ?? null;
+  return {
+    id: entry.id,
+    kind: 'binary',
+    purpose: entry.purpose,
+    owningWorkflow: entry.owningWorkflow,
+    modeRequirement: entry.modeRequirement,
+    securityConcerns,
+    versionPolicy: {
+      type: 'unmanaged',
+      notes: 'Resolved via PATH at export time; no enforced version pin (pinning/checksums are construct-tsyfe.10.3\'s scope). Version (if any) is reported by the health-check subprocess only.',
+    },
+    healthCheck: {
+      kind: 'subprocess-version',
+      detail: `Runs \`${entry.healthCheck}\`; matches lib/document-export.mjs's binVersion() helper used by detect().`,
+      command,
+      args,
+    },
+    fallback: {
+      behavior: entry.degradationBehavior,
+      description: BINARY_INSTALL_HINTS[entry.id],
+    },
+    owner: DEFAULT_OWNER,
+    removalCriteria: entry.removalCriteria,
+  };
+}
+
 function buildPkgRanges(pkg) {
   return { ...pkg.dependencies, ...pkg.optionalDependencies, ...pkg.devDependencies };
 }
@@ -123,7 +175,11 @@ function main() {
 
   const sidecarCards = ['docling', 'whisper'].map(sidecarCard);
 
-  const providers = [...npmCards, ...sidecarCards].sort((a, b) => a.id.localeCompare(b.id));
+  const binaryCards = intentEntries
+    .filter((e) => e.kind === 'binary-sidecar' && BINARY_IDS.includes(e.id))
+    .map(binaryCard);
+
+  const providers = [...npmCards, ...sidecarCards, ...binaryCards].sort((a, b) => a.id.localeCompare(b.id));
 
   const doc = {
     version: 1,
