@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-17T13:51:28.133Z",
+  "generatedAt": "2026-07-17T14:38:43.341Z",
   "providers": [
     {
       "id": "@ai-sdk/anthropic",
@@ -298,6 +298,32 @@
       "removalCriteria": "DOCX reading is handled by docling or another document processing pipeline"
     },
     {
+      "id": "pandoc",
+      "kind": "binary",
+      "purpose": "Document conversion engine for PDF, DOCX, HTML, RTF, EPUB, and other export formats via the document-export workflow",
+      "owningWorkflow": "document-export (pdf, docx, html, rtf, odt, epub, tex, txt formats)",
+      "modeRequirement": "all",
+      "securityConcerns": "Executes as a subprocess with user-supplied input; pandoc has had CVEs related to Lua filter execution — do not allow user-supplied Lua filters",
+      "versionPolicy": {
+        "type": "unmanaged",
+        "notes": "Resolved via PATH at export time; no enforced version pin (pinning/checksums are construct-tsyfe.10.3's scope). Version (if any) is reported by the health-check subprocess only."
+      },
+      "healthCheck": {
+        "kind": "subprocess-version",
+        "detail": "Runs `pandoc --version`; matches lib/document-export.mjs's binVersion() helper used by detect().",
+        "command": "pandoc",
+        "args": [
+          "--version"
+        ]
+      },
+      "fallback": {
+        "behavior": "graceful-skip",
+        "description": "Install pandoc to enable document export (e.g. `brew install pandoc` on macOS, `apt install pandoc` on Debian/Ubuntu, or https://pandoc.org/installing.html)."
+      },
+      "owner": "construct-core",
+      "removalCriteria": "Document export is replaced with a pure-JS solution for all formats"
+    },
+    {
       "id": "postgres",
       "kind": "npm-optional",
       "purpose": "Postgres.js tagged-template SQL client for optional shared run-store and migration-backed team-mode storage",
@@ -382,6 +408,32 @@
       "removalCriteria": "Removed when ink is removed"
     },
     {
+      "id": "typst",
+      "kind": "binary",
+      "purpose": "PDF rendering engine used alongside pandoc for high-quality PDF output",
+      "owningWorkflow": "document-export (pdf format)",
+      "modeRequirement": "all",
+      "securityConcerns": "Executes as a subprocess; typst scripts can import files from the filesystem — ensure input is sandboxed",
+      "versionPolicy": {
+        "type": "unmanaged",
+        "notes": "Resolved via PATH at export time; no enforced version pin (pinning/checksums are construct-tsyfe.10.3's scope). Version (if any) is reported by the health-check subprocess only."
+      },
+      "healthCheck": {
+        "kind": "subprocess-version",
+        "detail": "Runs `typst --version`; matches lib/document-export.mjs's binVersion() helper used by detect().",
+        "command": "typst",
+        "args": [
+          "--version"
+        ]
+      },
+      "fallback": {
+        "behavior": "graceful-skip",
+        "description": "Install typst to enable PDF export via Pandoc (`brew install typst` on macOS, https://github.com/typst/typst/releases for binaries)."
+      },
+      "owner": "construct-core",
+      "removalCriteria": "PDF export moves to a different engine (e.g. WeasyPrint) or pandoc's built-in PDF engine is sufficient"
+    },
+    {
       "id": "unpdf",
       "kind": "npm-optional",
       "purpose": "PDF text extraction for document ingestion workflows (pure-JS, no native binary required)",
@@ -443,8 +495,8 @@
     {
       "id": "zod",
       "kind": "npm-optional",
-      "purpose": "Schema validation and type-safe parsing for MCP tool inputs, config files, and artifact manifests",
-      "owningWorkflow": "mcp-server tool validation, config parsing, artifact-release-gate",
+      "purpose": "Declared for future schema validation and type-safe parsing; as of 2026-07-17 it has zero load-bearing imports anywhere in the repo — MCP tool inputs, config files, and artifact manifests are all validated by hand-rolled checks per ADR-0001 (lib/config/schema.mjs, lib/flows/schema.mjs, lib/platforms/capabilities.mjs each explicitly avoid it)",
+      "owningWorkflow": "none (unused)",
       "modeRequirement": "all",
       "securityConcerns": null,
       "versionPolicy": {
@@ -453,7 +505,7 @@
       },
       "healthCheck": {
         "kind": "import-check",
-        "detail": "require('zod') — absent means schema validation falls back to manual checks; construct doctor warns"
+        "detail": "require('zod') always resolves to a no-op for this repo's current code paths — no consumer calls it, so presence or absence has no runtime effect today"
       },
       "fallback": {
         "behavior": "graceful-skip"
