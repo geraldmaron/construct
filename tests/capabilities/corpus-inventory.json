@@ -1,15 +1,15 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-17T02:46:44.934Z",
+  "generatedAt": "2026-07-17T02:58:51.568Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 943,
+    "testFiles": 944,
     "topLevelTestFiles": 384,
-    "nestedTestFiles": 559,
+    "nestedTestFiles": 560,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 52,
     "byLayer": {
-      "unit": 616,
+      "unit": 617,
       "functional": 278,
       "visual": 12,
       "live-provider": 2,
@@ -20,7 +20,7 @@
       "functional": 278,
       "visual": 12,
       "structural-guard": 19,
-      "contract-subsystem": 46,
+      "contract-subsystem": 47,
       "live-provider": 2,
       "integration": 26,
       "hook": 9
@@ -1671,6 +1671,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/doctor/provider-breaker-watcher.test.mjs — LMCP-B9 doctor watcher."
+    },
+    {
+      "path": "tests/doctor/write-pipeline-watcher.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/doctor/write-pipeline-watcher.test.mjs — governed-write pipeline watcher."
     },
     {
       "path": "tests/document-extract-rtf.test.mjs",
