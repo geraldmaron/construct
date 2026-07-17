@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- **Certification scenario corpus now carries a documented, dedup-guarded contract (`construct-72gqn.37`).** `lib/certification/corpus-contract.mjs` inventories all five `lib/certification/` scenario catalogs — `scenarios.mjs` (the shared `catalog.json` accessor), `specialist-scenarios.mjs` (per-specialist behavioral fixtures), `canonical-scenarios.mjs` (demo-parity, confirmed out of the specialist-behavior corpus), `real-llm-scenarios.mjs` (S3/S8 live harness), and `skill-scenarios.mjs` (workflow-skill fixtures) — naming each catalog's consumer and a stays-separate decision, every claim citing file:line. No true duplicate scenario coverage was found between the catalogs, so none were merged or removed (`construct certify scenarios --json` reports 154 scenarios before and after this change). `validateCorpusContract()` is a standing guard that fails closed on any future duplicate scenario id landing in `tests/certification/scenarios/catalog.json`; proven by `tests/certification/corpus-contract.test.mjs`.
+
 ## [1.5.7] - 2026-07-14
 
 ### Changed
