@@ -13,6 +13,7 @@ import test from 'node:test';
 
 import { runOracleTick, approvePending } from '../../lib/oracle/actions.mjs';
 import { verdictsDir } from '../../lib/oracle/verdicts.mjs';
+import { VERDICT_STATES } from '../../lib/oracle/synthesize.mjs';
 import { gapFingerprint } from '../../lib/oracle/issues.mjs';
 import { routingDir } from '../../lib/oracle/dispatch.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
@@ -44,7 +45,7 @@ test('runOracleTick writes verdict history under .cx/oracle/verdicts/', async ()
     const files = readFileSync(join(dir, `${new Date().toISOString().slice(0, 10)}.json`), 'utf8');
     const parsed = JSON.parse(files);
     assert.ok(parsed.latest);
-    assert.ok(['healthy', 'attention', 'degraded'].includes(parsed.latest.verdict));
+    assert.ok(VERDICT_STATES.includes(parsed.latest.verdict));
   } finally {
     delete process.env.CONSTRUCT_ORACLE_AUTO_RAISE;
     env.cleanup();

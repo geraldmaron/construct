@@ -136,8 +136,19 @@
             "required": ["id", "provider", "selector"],
             "properties": {
               "id": { "type": "string" },
-              "provider": { "type": "string", "enum": ["github", "jira", "linear", "slack"] },
-              "selector": { "type": "object" }
+              "provider": {
+                "type": "string",
+                "description": "A manifest-declared sourceTarget provider id (lib/config/source-target-registry.mjs SOURCE_TARGET_PROVIDERS) — not enumerated here since the real, authoritative set is derived from installed extension manifests, not fixed at schema-authoring time."
+              },
+              "selector": { "type": "object" },
+              "watch": {
+                "type": "object",
+                "description": "Opt this target into the embed daemon's source-refresh polling.",
+                "properties": {
+                  "enabled": { "type": "boolean", "default": false },
+                  "intervalMinutes": { "type": "number", "description": "Per-target minimum interval; the daemon's own tick cadence still applies as a floor." }
+                }
+              }
             }
           }
         }

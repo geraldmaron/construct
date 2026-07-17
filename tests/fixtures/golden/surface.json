@@ -269,6 +269,10 @@
       "core": false
     },
     {
+      "name": "lint:pr",
+      "core": false
+    },
+    {
       "name": "lint:prompts",
       "core": false
     },

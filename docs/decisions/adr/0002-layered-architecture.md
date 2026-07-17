@@ -76,5 +76,5 @@ Two-way door for the layering. The provider interface shape is a soft one-way do
 ## References
 
 - PRD: `docs/specs/prd/0001-construct-org-in-a-box.md`
-- Architecture: `docs/architecture.md`
+- Architecture: `docs/guides/concepts/architecture.mdx`
 - ADR-0001: Zero npm core: `docs/decisions/adr/0001-zero-npm-core.md`

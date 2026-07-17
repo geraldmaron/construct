@@ -99,7 +99,7 @@ In drive mode, Construct is in a tight iteration loop and will not pause for con
 
 ## Routing substrate
 
-Read `specialists/contracts.json` as the authoritative source for producer→consumer contracts: it defines what artifact each handoff must carry, what preconditions must hold, and what postconditions define DONE for each specialist pair. Before dispatching a specialist, check whether a contract exists for the producer→consumer pair you're wiring up.
+Read `specialists/org/contracts/` as the authoritative source for producer→consumer contracts: it defines what artifact each handoff must carry, what preconditions must hold, and what postconditions define DONE for each specialist pair. Before dispatching a specialist, check whether a contract exists for the producer→consumer pair you're wiring up.
 
 ## Routing rules
 

@@ -9,6 +9,11 @@
  *
  * Exit 0 on pass, 1 on any violation. Runs as the ci.yml `template policy`
  * job and is also runnable locally before push.
+ *
+ * `lintCommits`/`lintPrBody`/`getRange`/`isBotAuthor`/`reportTemplatePolicy` are
+ * exported for reuse by `construct lint:pr` (lib/lint-pr-cli.mjs). The checks
+ * only run as a side effect when this file executes as the CLI entry point
+ * (`node scripts/lint-commits-pr.mjs`) — importing it never calls process.exit.
  */
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -90,7 +95,7 @@ const REQUIRED_GATE_GROUPS = [
   { label: "Local gates", marker: "## Local gates" },
 ];
 
-function getRange() {
+export function getRange() {
   const currentBranch = process.env.GIT_BRANCH;
   const upstreamRef = process.env.GIT_UPSTREAM_REF;
   const baseSha = process.env.PR_BASE_SHA;
@@ -137,7 +142,7 @@ function getRange() {
   }
 }
 
-function lintCommits() {
+export function lintCommits() {
   const range = getRange();
   let log;
   try {
@@ -171,12 +176,12 @@ function lintCommits() {
 // heading policy does not apply to a bot author. The gate stays blocking for
 // human PRs — the exemption is by author, not by soft-failing the CI step.
 
-function isBotAuthor(author) {
+export function isBotAuthor(author) {
   const a = String(author || "").toLowerCase();
   return a.endsWith("[bot]") || a === "dependabot" || a === "renovate";
 }
 
-function lintPrBody() {
+export function lintPrBody() {
   if (isBotAuthor(process.env.PR_AUTHOR)) return [];
 
   const path = process.env.PR_BODY_FILE;
@@ -213,16 +218,33 @@ function lintPrBody() {
   return violations;
 }
 
-const commitViolations = lintCommits();
-const prViolations = lintPrBody();
-const all = [...commitViolations, ...prViolations];
+// Shared by the raw CI invocation (`npm run lint:templates`) and by
+// `construct lint:pr` (lib/lint-pr-cli.mjs), which imports this module as a
+// library — both must print byte-identical violation output so they never
+// drift apart on format.
 
-if (all.length > 0) {
+export function printTemplatePolicyViolations(violations) {
   console.error("\nTemplate policy violations:\n");
-  for (const v of all) console.error(`  - ${v}`);
+  for (const v of violations) console.error(`  - ${v}`);
   console.error("\nSee .gitmessage and .github/pull_request_template.md for the required shape.");
   console.error("Run `git config commit.template .gitmessage` once per clone to load the commit template.\n");
-  process.exit(1);
 }
 
-console.log("Template policy: clean.");
+export function reportTemplatePolicy(violations) {
+  if (violations.length > 0) {
+    printTemplatePolicyViolations(violations);
+    return 1;
+  }
+  console.log("Template policy: clean.");
+  return 0;
+}
+
+// Importing this module (e.g. from construct lint:pr) must not trigger the
+// checks or call process.exit — only running it directly as a script does.
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const commitViolations = lintCommits();
+  const prViolations = lintPrBody();
+  const exitCode = reportTemplatePolicy([...commitViolations, ...prViolations]);
+  if (exitCode !== 0) process.exit(exitCode);
+}

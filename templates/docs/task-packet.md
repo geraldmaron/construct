@@ -8,7 +8,7 @@
 
 <!--
 The shape emitted by Construct when dispatching to a specialist. Mirrors the
-`construct-to-orchestrator` contract in `specialists/contracts.json`. Required fields below
+`construct-to-orchestrator` contract in `specialists/org/contracts/`. Required fields below
 are validated by the contract — a packet missing any required field BLOCKED_CONTRACTs at
 handoff. The specialist's response is one terminal state (DONE | BLOCKED | NEEDS_MAIN_INPUT),
 referencing this packet by id.

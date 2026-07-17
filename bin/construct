@@ -3510,6 +3510,70 @@ async function cmdSources(args) {
     return;
   }
 
+  if (action === 'link' || action === 'unlink') {
+    const artifactRel = args[1];
+    const targetId = args[2];
+    if (!artifactRel || !targetId) {
+      errorln(`Usage: construct sources ${action} <artifact-path> <target-id> ${action === 'link' ? '[--pinned <value>]' : ''}`);
+      process.exit(1);
+    }
+    const { config } = loadProjectConfig(cwd, process.env);
+    const effective = resolveEffectiveSourceTargetsFromConfig(config, process.env);
+    if (action === 'link' && !effective.some((t) => t.id === targetId)) {
+      errorln(`No such source target: ${targetId} (run \`construct sources list\` to see configured targets)`);
+      process.exit(1);
+    }
+
+    const artifactPath = path.resolve(cwd, artifactRel);
+    if (!fs.existsSync(artifactPath)) {
+      errorln(`No such file: ${artifactRel}`);
+      process.exit(1);
+    }
+
+    const { load: loadYaml, dump: dumpYaml } = await import('js-yaml');
+    const raw = fs.readFileSync(artifactPath, 'utf8');
+    const fmMatch = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
+    const body = fmMatch ? raw.slice(fmMatch[0].length) : raw;
+    let frontmatter = {};
+    if (fmMatch) {
+      try { frontmatter = loadYaml(fmMatch[1]) || {}; } catch (err) {
+        errorln(`Existing frontmatter is not valid YAML: ${err.message}`);
+        process.exit(1);
+      }
+    }
+
+    const existingLinks = Array.isArray(frontmatter.sources) ? frontmatter.sources : [];
+
+    if (action === 'unlink') {
+      const nextLinks = existingLinks.filter((l) => (typeof l === 'string' ? l : l?.target) !== targetId);
+      if (nextLinks.length === existingLinks.length) {
+        errorln(`${artifactRel} has no link to ${targetId}`);
+        process.exit(1);
+      }
+      frontmatter = { ...frontmatter, sources: nextLinks };
+      if (!nextLinks.length) delete frontmatter.sources;
+    } else {
+      const pinnedFlag = readOption(args, '--pinned');
+      let pinned = pinnedFlag ?? null;
+      if (pinned == null) {
+        try {
+          const { isCorpusTarget: isCorpus, corpusFreshness: freshnessOf } = await import('../lib/sources/repo-cache.mjs');
+          const target = effective.find((t) => t.id === targetId);
+          if (target && isCorpus(target)) pinned = freshnessOf(target, { projectRoot: cwd }).head ?? null;
+        } catch { /* leave unpinned — the caller can re-link with --pinned once available */ }
+      }
+      const nextLinks = existingLinks.filter((l) => (typeof l === 'string' ? l : l?.target) !== targetId);
+      nextLinks.push(pinned != null ? { target: targetId, pinned } : { target: targetId });
+      frontmatter = { ...frontmatter, sources: nextLinks };
+    }
+
+    const hasFrontmatter = Object.keys(frontmatter).length > 0;
+    const nextRaw = hasFrontmatter ? `---\n${dumpYaml(frontmatter).trimEnd()}\n---\n${body}` : body;
+    fs.writeFileSync(artifactPath, nextRaw, 'utf8');
+    info(`${action === 'link' ? 'linked' : 'unlinked'} ${artifactRel} ${action === 'link' ? '→' : '⇏'} ${targetId} — run \`construct graph build\` to refresh the edge`);
+    return;
+  }
+
   if (action === 'sync') {
     const onlyId = args[1] ?? null;
     const { config } = loadProjectConfig(cwd, process.env);
@@ -3540,7 +3604,7 @@ async function cmdSources(args) {
     return;
   }
 
-  errorln(`Unknown sources action: ${action}. Available: list, add, remove, validate, sync`);
+  errorln(`Unknown sources action: ${action}. Available: list, add, remove, validate, sync, link, unlink`);
   process.exit(1);
 }
 
@@ -5796,6 +5860,12 @@ async function cmdLintTemplates(args) {
   process.exit(result.status ?? 0);
 }
 
+async function cmdLintPr(args) {
+  const { runLintPrCli } = await import('../lib/lint-pr-cli.mjs');
+  const exitCode = await runLintPrCli(args, { cwd: process.cwd() });
+  if (exitCode !== 0) process.exit(exitCode);
+}
+
 async function cmdLintResearch() {
   const { lintResearchRepo, formatResearchLintResults } = await import('../lib/research-lint.mjs');
   const results = lintResearchRepo({ rootDir: process.cwd() });
@@ -7246,6 +7316,7 @@ const handlers = new Map([
   ['lint:agents', cmdLintAgents],
   ['lint:contracts', cmdLintContracts],
   ['lint:prompts', cmdLintPrompts],
+  ['lint:pr', cmdLintPr],
   ['specialist', cmdSpecialist],
   ['decisions', async (args) => {
     const { runDecisionsCli } = await import('../lib/decisions/registry.mjs');

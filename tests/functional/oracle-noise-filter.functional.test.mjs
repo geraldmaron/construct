@@ -87,6 +87,12 @@ function countLines(file) {
   return text.split('\n').filter(Boolean).length;
 }
 
+// Isolates the contract-violations signal from every other verdict input,
+// including the ADR-0091 collection-outcome signals real collectors can
+// surface on a synthetic tmpdir project/root (an empty audit-artifacts or
+// registry directory reads as not-run/collection-error otherwise), so a
+// verdict assertion here only reflects the noise-filtering behavior under
+// test.
 function neutralizeUnrelatedHighSignals(readModel) {
   return {
     ...readModel,
@@ -94,18 +100,24 @@ function neutralizeUnrelatedHighSignals(readModel) {
     doctorLog: { present: false, recentCount: 0, recent: [] },
     orgGraph: {},
     hookFailures: { count: 0, recent: [] },
-    beads: { stuckInProgress: 0, staleOpen: 0 },
-    deadCode: { regressions: [] },
+    beads: { present: true, stuckInProgress: 0, staleOpen: 0 },
+    deadCode: { present: false, skipped: true, regressions: [] },
+    registryValidate: { needsRun: false, warningCount: 0, errorCount: 0, valid: true },
+    alignmentCensus: { present: true, stale: false, generatedAt: new Date().toISOString(), audit: { regressions: [] }, skills: {} },
+    outcomes: { present: true, roles: {} },
+    observations: { present: true, count: 1 },
+    dependencyGraph: { present: false, applicable: false },
+    artifactGate: { specialistAudit: { present: true, pass: true } },
   };
 }
 
-test('oracle read model filters dev-session noise out of the degraded verdict path', () => {
+test('oracle read model filters dev-session noise out of the failed verdict path', () => {
   const env = freshEnv();
   try {
     writeViolations(env.projectDir, makeNoiseRows());
 
     const noiseOnly = synthesizeVerdict(neutralizeUnrelatedHighSignals(collectReadModel(env)));
-    assert.notEqual(noiseOnly.verdict, 'degraded');
+    assert.notEqual(noiseOnly.verdict, 'failed');
     assert.equal(
       noiseOnly.gaps.some((entry) => entry.id === 'contract-violations'),
       false,
@@ -124,7 +136,7 @@ test('oracle read model filters dev-session noise out of the degraded verdict pa
     writeViolations(env.projectDir, makeNoiseRows().concat(genuineRows));
 
     const genuine = synthesizeVerdict(neutralizeUnrelatedHighSignals(collectReadModel(env)));
-    assert.equal(genuine.verdict, 'degraded');
+    assert.equal(genuine.verdict, 'failed');
     assert.equal(genuine.gaps.some((entry) => entry.id === 'contract-violations'), true);
   } finally {
     env.cleanup();

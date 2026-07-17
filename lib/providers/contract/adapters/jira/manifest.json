@@ -13,5 +13,19 @@
   "envelopeModule": "lib/writes/envelope.mjs",
   "adapterModule": "lib/providers/contract/adapters/jira/governed-write.mjs",
   "transportModule": "lib/providers/contract/adapters/jira/transport.mjs",
-  "notes": "Colocated write-capability manifest for LMCP-J3. Follows the lib/extensions/manifests/*.manifest.json schema (see atlassian-jira.manifest.json, which declares read/search only). Wiring this into the shared lib/extensions/manifests/ discovery directory is out of scope for this bead; capabilities here are reachable only via writeWithEnvelope(), never a direct provider-registry lookup."
+  "notes": "Colocated write-capability manifest for LMCP-J3. Follows the lib/extensions/manifests/*.manifest.json schema (see atlassian-jira.manifest.json, which declares read/search only). Wiring this into the shared lib/extensions/manifests/ discovery directory is out of scope for this bead; capabilities here are reachable only via writeWithEnvelope(), never a direct provider-registry lookup.",
+  "certification": {
+    "tier": "contract-tested",
+    "computedAt": "2026-07-16",
+    "computedBy": "lib/certification/provider-evidence-tiers.mjs#auditKnownProviderManifests (construct-4uxq0.13.2)",
+    "reason": "adapter code is exercised against a fake wire boundary, but no test crosses a real subprocess/HTTP boundary",
+    "evidence": {
+      "contractTestFiles": ["tests/mcp/provider-write-tool.test.mjs", "tests/provider-jira.test.mjs", "tests/security/ssrf.test.mjs", "tests/writes/control-plane-execution.functional.test.mjs", "tests/writes/import-guard.test.mjs", "tests/writes/jira.functional.test.mjs"]
+    },
+    "manualAttestation": {
+      "liveSandboxTested": { "attested": false, "attestedAt": null, "attestedBy": null, "note": null },
+      "productionProven": { "attested": false, "attestedAt": null, "attestedBy": null, "note": null }
+    },
+    "notes": "ADR-0090 (docs/decisions/adr/0090-provider-certification-ladder.md) rows 29-30 of docs/notes/research/2026-07-continuous-work-audit/truth-matrix.md: this adapter's transport.mjs calls GET /rest/api/3/issue/createmeta (line 70, confirmed deprecated 2024, not yet removed) and POST /rest/api/3/search (line 105, confirmed deprecated and effectively removed as of Aug 2025 on many tenants — 410 Gone). contract-tested evidence here validates request/response shape and error mapping against tests/fakes/fake-jira-transport.mjs, not current-tenant compatibility — the fake transport cannot detect a real 410. See construct-4uxq0.4.15 (ADR-O) for the migration plan."
+  }
 }
