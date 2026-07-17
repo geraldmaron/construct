@@ -42,9 +42,9 @@ evidence: [subagents/](subagents/) · Synthesis: [synthesis/](synthesis/).
 |---|---|---|---|
 | 0 | (this branch) | Baseline, truth map, graph audit, intent/drift, routing, synthesis, quick-win cleanups | **Done 2026-07-17** |
 | 1 | `construct-b0nny.1` | Target product/conceptual model + work schemas (single lead) | **Done 2026-07-17** — [target-model.md](synthesis/target-model.md) |
-| 2 | `construct-b0nny.2` → `.3` | Graph foundation design → build (port lib/graph onto relational store, incremental update, day-one milestone) | Ready — needs opt-in (Wave 1 done; re-verify `lib/graph/` state first — the pre-change-intent feature `ff17508e` referenced in reconciliation 3 above never landed on any surviving branch, see assumption A3) |
-| 2∥ | `construct-b0nny.4` | Retain/rebuild/replace/remove matrix + migration/cleanup strategy | Ready — needs opt-in (Wave 1 done) |
-| 3 | `construct-b0nny.5` | Validation spikes A–F (disposable) | Blocked on Wave 2 |
+| 2 | `construct-b0nny.2` → `.3` | Graph foundation design → build (port lib/graph onto relational store, incremental update, day-one milestone) | **Done 2026-07-17** — [graph-store-design.md](synthesis/graph-store-design.md), `lib/graph/relational/`, all 12 day-one milestones pinned as functional tests |
+| 2∥ | `construct-b0nny.4` | Retain/rebuild/replace/remove matrix + migration/cleanup strategy | **Done 2026-07-17** — [disposition-matrix.md](synthesis/disposition-matrix.md) |
+| 3 | `construct-b0nny.5` | Validation spikes A–F (disposable) | Ready — needs opt-in (Wave 2 done) |
 | 4 | `construct-b0nny.6` | Executable bead program + neutral JSON export | Blocked on Waves 2∥/3 |
 | — | `construct-b0nny.7`–`.11` | Independent cleanup/doc-debt beads (README `.cx/` rewrite, embeddings-legacy rename, scheduler + legacy-provider verification/removal, undocumented-systems docs) | **Done 2026-07-17** — `.9` and `.10` reached keep-verdicts (see synthesis/), only `dispatch-batch.js` and `scripts/patch-registry-readers-v2.mjs` were actually removed |
 
