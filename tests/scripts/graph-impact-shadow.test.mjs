@@ -13,11 +13,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 import { parseTapFailedFiles } from '../../scripts/graph-impact-shadow.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 function runTap(fixtureDir, files) {
   // Strip NODE_TEST_CONTEXT/NODE_TEST_WORKER_ID: this file itself runs under
@@ -37,7 +38,7 @@ function runTap(fixtureDir, files) {
 
 test('parseTapFailedFiles attributes a failure to its real file, not a passing one', () => {
   const fixture = mkdtempSync(path.join(tmpdir(), 'shadow-tap-'));
-  test.after(() => rmSync(fixture, { recursive: true, force: true }));
+  test.after(() => rmTmpDir(fixture));
 
   writeFileSync(path.join(fixture, 'a.test.mjs'), `
 import test from 'node:test';
@@ -57,7 +58,7 @@ test('fails', () => assert.ok(false, 'boom'));
 
 test('parseTapFailedFiles returns an empty array when every test passes', () => {
   const fixture = mkdtempSync(path.join(tmpdir(), 'shadow-tap-clean-'));
-  test.after(() => rmSync(fixture, { recursive: true, force: true }));
+  test.after(() => rmTmpDir(fixture));
 
   writeFileSync(path.join(fixture, 'a.test.mjs'), `
 import test from 'node:test';
@@ -71,7 +72,7 @@ test('passes', () => assert.ok(true));
 
 test('parseTapFailedFiles dedupes multiple failing subtests in the same file', () => {
   const fixture = mkdtempSync(path.join(tmpdir(), 'shadow-tap-dedupe-'));
-  test.after(() => rmSync(fixture, { recursive: true, force: true }));
+  test.after(() => rmTmpDir(fixture));
 
   writeFileSync(path.join(fixture, 'multi.test.mjs'), `
 import test from 'node:test';

@@ -24,6 +24,7 @@ import { fileURLToPath } from 'node:url';
 import { startOrgStudio } from '../../lib/org-studio/server.mjs';
 import { participationRules } from '../../lib/mcp/tools/participation.tool.mjs';
 import { customOrgDir } from '../../lib/registry/custom-scaffold.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const BIN = path.join(REPO, 'bin', 'construct');
@@ -49,7 +50,7 @@ after(async () => {
   await studio?.close();
   if (originalHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
   else process.env.CX_HOME_OVERRIDE = originalHomeOverride;
-  for (const dir of [...Object.values(fixtures), homeOverride]) fs.rmSync(dir, { recursive: true, force: true });
+  for (const dir of [...Object.values(fixtures), homeOverride]) rmTmpDir(dir);
 });
 
 function cli(fixture, args, { expectFailure = false } = {}) {
