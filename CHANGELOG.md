@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- **Contract-violation test fixtures no longer leak into the real `.construct/contract-violations.jsonl` (bead `construct-cdvtm`)**: `lib/contracts/validate.mjs`'s `validateHandoff()` only routes a violation-log write through an isolated fixture when the caller passes an explicit `repoRoot` (intentional — see the comment at `validate.mjs:208-213`); without it, `lib/contracts/violation-log.mjs`'s cwd-based project-scope fallback finds this repo's real `.construct/` marker whenever a test runs with cwd at the repo root, writing synthetic test violations into the real log (confirmed: 375 lines, several timestamped from same-second test runs, `verdict`/`missing` shapes matching test fixtures verbatim). Auditing the six files the bead named found only one genuine unisolated call site — `tests/contracts-construct-handoff.test.mjs`'s `validateHandoff()` call — now wrapped in a `withRepoRoot()` tmpdir helper matching the pattern `tests/contracts-team-boundaries.test.mjs`/`tests/orchestration-policy.test.mjs` already use. The other five named files were false positives from the bead's substring grep: `tests/contracts-worker-boundary.test.mjs` already threads `cwd` through as `repoRoot` via `lib/orchestration/worker.mjs`'s existing plumbing; `tests/engine-contracts.test.mjs`'s `checkContract` and `tests/handoff-contract.test.mjs`'s `validateHandoffFile` are unrelated, identically-named functions in other modules; `tests/participation-matrix.test.mjs` and `tests/prompt-surface.test.mjs` only mention `validateHandoff`/`checkContract` in comments, never call them. Verified via `node --test` on all six files: 59/59 pass, and the worktree's `.construct/contract-violations.jsonl` line count is unchanged (absent/0 lines before and after).
+
 ## [1.5.7] - 2026-07-14
 
 ### Changed
