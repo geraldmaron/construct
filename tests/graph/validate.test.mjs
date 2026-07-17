@@ -181,3 +181,90 @@ test('graph validate reports surface-parity errors regardless of deployment mode
   const strictSurfaceErrors = strictResult.errors.filter((e) => e.includes('surface'));
   assert.deepEqual(soloSurfaceErrors, strictSurfaceErrors);
 });
+
+// Schema-layer checks (construct-4uxq0.11.6): NODE_TYPES/EDGE_RELS
+// membership, edge provenance, and per-type required attrs. Mode-gated like
+// every other check in this file (warning in lenient mode, error in strict),
+// consistent with the doc/provider checks above.
+
+test('a node with a type outside NODE_TYPES is a warning in lenient mode, an error in strict mode', () => {
+  const root = freshRoot();
+  writeGraph(root, {
+    nodes: [{ id: 'flie:x', type: 'flie', name: 'x' }],
+    edges: [],
+  });
+  const lenient = validateGraph(root, { strict: false });
+  assert.equal(lenient.valid, true);
+  assert.ok(lenient.warnings.some((w) => w.includes("unknown type 'flie'")));
+
+  const strict = validateGraph(root, { strict: true });
+  assert.equal(strict.valid, false);
+  assert.ok(strict.errors.some((e) => e.includes("unknown type 'flie'")));
+});
+
+test('an edge with a rel outside EDGE_RELS is a warning in lenient mode, an error in strict mode', () => {
+  const root = freshRoot();
+  writeGraph(root, {
+    nodes: [
+      { id: nodeId('capability', 'a'), type: 'capability' },
+      { id: nodeId('capability', 'b'), type: 'capability' },
+    ],
+    edges: [
+      { from: nodeId('capability', 'a'), to: nodeId('capability', 'b'), rel: 'improts', source: 'registry' },
+    ],
+  });
+  const lenient = validateGraph(root, { strict: false });
+  assert.ok(lenient.warnings.some((w) => w.includes("unknown rel 'improts'")));
+
+  const strict = validateGraph(root, { strict: true });
+  assert.equal(strict.valid, false);
+  assert.ok(strict.errors.some((e) => e.includes("unknown rel 'improts'")));
+});
+
+test('an edge with no source/sources is flagged as a provenance gap in strict mode', () => {
+  const root = freshRoot();
+  writeGraph(root, {
+    nodes: [
+      { id: nodeId('capability', 'a'), type: 'capability' },
+      { id: nodeId('workflow', 'w'), type: 'workflow' },
+    ],
+    edges: [
+      { from: nodeId('capability', 'a'), to: nodeId('workflow', 'w'), rel: 'embeds' },
+    ],
+  });
+  const result = validateGraph(root, { strict: true });
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.some((e) => e.includes('has no provenance (empty sources)')));
+});
+
+test('a doc node missing attrs.path is flagged as a schema error in strict mode', () => {
+  const root = freshRoot();
+  writeGraph(root, {
+    nodes: [{ id: nodeId('doc', 'docs/a.md'), type: 'doc', name: 'docs/a.md' }],
+    edges: [],
+  });
+  const result = validateGraph(root, { strict: true });
+  assert.ok(result.errors.some((e) => e.includes('missing required attrs.path')));
+});
+
+// Partial-graph gating (construct-4uxq0.11.6): a graph marked partial in
+// meta.json is an unconditional error — not mode-gated — unless the caller
+// passes allowPartial.
+
+test('a partial graph fails validate regardless of deployment mode unless allowPartial is passed', () => {
+  const root = freshRoot();
+  writeGraph(root, {
+    nodes: [{ id: 'file:a', type: 'file' }],
+    edges: [],
+    partial: true,
+    partialReasons: ['buildFromRegistry threw: Modular org not found'],
+  });
+
+  const solo = validateGraph(root, { deploymentMode: 'solo' });
+  assert.equal(solo.valid, false);
+  assert.ok(solo.errors.some((e) => e.includes('graph is partial') && e.includes('Modular org not found')));
+
+  const allowed = validateGraph(root, { deploymentMode: 'solo', allowPartial: true });
+  assert.equal(allowed.valid, true);
+  assert.deepEqual(allowed.errors, []);
+});
