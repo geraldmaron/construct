@@ -67,6 +67,8 @@ Ingestion and export are optional halves bound to external tooling ([ADR-0024](/
 
 Canonical format matrix: [Document I/O reference](/guides/reference/document-io). Brand tokens live in `lib/brand-tokens.mjs` and flow to PDF/HTML/deck/PPTX via `lib/publish-template.mjs`.
 
+Extraction is dispatched purely on file extension today (`lib/document-extract.mjs`'s extension sets), and each backend — node-native, the docling sidecar, Docling Serve — returns a slightly different ad hoc shape. `schemas/extraction-provider.schema.json` (provider identity: name, version, config fingerprint, declared capabilities) and `schemas/extraction-result.schema.json` (what one extraction call must report: `losslessWhereAvailable`, RichDocument-shaped output per [ADR-0073](/decisions/adr/0073-richdocument-ir-html-canonical-surface.md), `pageRefs`/`layoutRefs`/`tables`/`figures`/`assets`, `droppedInfo` reusing `lib/extractors/shared/drop-info.mjs`'s shape, `qualityReport`, `sourceGrounding`) define this as a hand-rolled JSON Schema contract per ADR-0001, validated by `lib/contracts/extraction-provider.mjs` (construct-tsyfe.2.1). This is a contract definition only — no extractor is migrated to it yet, and extraction dispatch is unchanged; that is separate, dependent work (construct-tsyfe.2.2, construct-tsyfe.2.3).
+
 ## Where things live
 
 <Cards>
