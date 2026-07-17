@@ -272,6 +272,16 @@ export function fingerprintRealConfigs(home = homedir()) {
     fp[`doctorRoot:${key}`] = hashPath(p);
   }
 
+  // The shared OS tmpdir root must never grow a .construct project dir: a
+  // leaked $TMPDIR/.construct was construct-4uxq0.14.6's self-perpetuating
+  // attractor for every hook/test writer under tmpdir. findProjectRoot
+  // refuses tmpdir as a stop boundary since 0af2a060, but a writer that
+  // CREATES the dir is still a leak — fingerprinted here so the whole-suite
+  // gate catches any new writer. Healthy-host baseline: `hashPath`'s
+  // missing-path token.
+
+  fp["tmpdir:.construct"] = hashPath(join(tmpdir(), ".construct"));
+
   return fp;
 }
 
