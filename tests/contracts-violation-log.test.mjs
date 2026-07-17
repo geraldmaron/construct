@@ -17,6 +17,7 @@ import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 
 let tmpRoot;
+let homeRoot;
 let priorCwd;
 let priorHome;
 let logViolation;
@@ -27,10 +28,14 @@ let readViolationSupersedeCutoff;
 
 beforeEach(async () => {
   tmpRoot = mkdtempSync(join(tmpdir(), 'cx-violation-log-'));
+  homeRoot = mkdtempSync(join(tmpdir(), 'cx-violation-log-home-'));
   mkdirSync(join(tmpRoot, '.construct'), { recursive: true });
   priorCwd = process.cwd();
   priorHome = process.env.HOME;
-  process.env.HOME = tmpRoot;
+  // HOME must differ from the project fixture: findProjectRoot never treats
+  // $HOME itself as a project root, so a fixture where cwd === $HOME would
+  // fall back to the doctor root instead of the .construct dir under test.
+  process.env.HOME = homeRoot;
   process.chdir(tmpRoot);
 
   // Force fresh module load so logFile() resolves against the new cwd/HOME.
@@ -48,6 +53,7 @@ afterEach(() => {
   process.chdir(priorCwd);
   process.env.HOME = priorHome;
   rmSync(tmpRoot, { recursive: true, force: true });
+  rmSync(homeRoot, { recursive: true, force: true });
 });
 
 function readLog() {

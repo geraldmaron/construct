@@ -14,7 +14,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { classifyAction, AUTO_ACTIONS, APPROVE_ACTIONS } from '../../lib/oracle/policy.mjs';
-import { synthesizeVerdict } from '../../lib/oracle/synthesize.mjs';
+import { synthesizeVerdict, VERDICT_STATES } from '../../lib/oracle/synthesize.mjs';
 import { runOracleTick, listPending, approvePending } from '../../lib/oracle/actions.mjs';
 import { createDaemon } from '../../lib/daemons/contract.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
@@ -57,7 +57,7 @@ test('synthesizeVerdict flags parity drift and missing census', () => {
     observations: { present: false, count: 0 },
   };
   const { verdict, gaps, recommendedActions } = synthesizeVerdict(readModel);
-  assert.equal(verdict, 'degraded');
+  assert.equal(verdict, 'failed');
   assert.ok(gaps.some((g) => g.id === 'parity-drift'));
   assert.ok(gaps.some((g) => g.id === 'census-stale'));
   assert.ok(recommendedActions.some((a) => a.kind === 'adapters-sync'));
@@ -68,7 +68,7 @@ test('runOracleTick dry-run executes auto actions without writing pending queue'
   try {
     process.env.CONSTRUCT_ORACLE_AUTO_RAISE = 'off';
     const result = await runOracleTick({ ...env, dryRun: true });
-    assert.ok(['healthy', 'attention', 'degraded'].includes(result.verdict));
+    assert.ok(VERDICT_STATES.includes(result.verdict));
     const hasRegistryAuto = result.tick.executed.some((e) => e.kind === 'registry-validate');
     assert.equal(hasRegistryAuto, result.recommendedActions.some((a) => a.kind === 'registry-validate'));
     const pendingFile = join(env.projectDir, '.cx', 'oracle', 'pending.jsonl');

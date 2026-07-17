@@ -3,7 +3,7 @@
  * faithfully project the authoritative catalogs into the dependency graph.
  *
  * Runs against the real repo seeds (registry/capabilities.json,
- * specialists/contracts.json, workflow-defs) so the test fails if a capability
+ * specialists/org/contracts/, workflow-defs) so the test fails if a capability
  * loses its workflow/test/contract links — the traceability the matrix depends on.
  */
 import test from 'node:test';

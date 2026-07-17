@@ -49,6 +49,7 @@ Fires when you try to land changes.
 **`gh pr create` / `gh pr edit` (Layer 2.5):**
 
 - The pre-push hook also intercepts these commands and runs `construct lint:templates` on the body to catch PR-template policy violations before the PR even opens. Severity is conditional: hard-block (exit 2) when a specialist sub-agent is active; warning-only otherwise so a human driving the session can override editorial nits.
+- `construct lint:pr` is the standalone pre-flight for the same gate: pass `--file <path>` against a draft body, or run it with no flags once a PR is open and it auto-detects the body/base ref via `gh pr view`. If neither is available it prints an honest skip notice (still running the commit-subject check) rather than faking a pass.
 
 ### Local-only by design
 
@@ -125,7 +126,7 @@ Skipped provider calls must be recorded as `inconclusive` and never as `pass`.
 | `git commit` refuses with "comment policy violations" | Layer 2 comment-lint | run `construct lint:comments` locally; remove the violation |
 | `git commit` refuses with "code changed but docs unchanged" | Layer 2 doc-coupling | update `CHANGELOG.md`, `docs/`, or `.construct/context.*` to match the code change |
 | `git push` refuses | Layer 2 pre-push | check whether HEAD is the SHA CI rejected; fix-forward with a new commit |
-| `gh pr create` refuses | Layer 2.5 template policy | `construct lint:templates --body-file=path/to/draft` |
+| `gh pr create` refuses | Layer 2.5 template policy | `construct lint:templates --body-file=path/to/draft`, or `construct lint:pr --file path/to/draft` / `construct lint:pr` once the PR is open |
 | CI green but PR can't merge | Layer 3 branch protection | required status check missing or pending |
 | Session won't end | Layer 3 policy-engine Stop | red CI, open beads, or drive criteria: output tells you which |
 

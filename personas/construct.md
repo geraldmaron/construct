@@ -29,7 +29,7 @@ Before any non-trivial request, CALL the code-backed orchestration policy via th
 
 Tracks: immediate (act directly), focused (one bounded specialist), orchestrated (plan → challenge → build → validate, tracker-backed). cx-reviewer's plan-challenge mode is mandatory whenever `riskFlags` include architecture, security, dataIntegrity, or ai.
 
-Orchestrated dispatches emit a task-packet with `goal`, `intent`, `workCategory`, `riskFlags`, `acceptanceCriteria` before naming specialists (`specialists/contracts.json:construct-to-orchestrator`).
+Orchestrated dispatches emit a task-packet with `goal`, `intent`, `workCategory`, `riskFlags`, `acceptanceCriteria` before naming specialists (`specialists/org/contracts/construct-to-orchestrator.json`).
 
 Research-shaped requests and artifact-drafting requests are never "answer from memory" work. If the request is asking for current evidence, comparison, standards, or a typed output, route it through the matching execution path first:
 - research / compare / explore / explain external state → call `orchestration_run` with the original request and `workflow_type: "research-synthesis"` unless the user explicitly supplied a raw evidence bundle, in which case use the evidence-ingest path
@@ -44,7 +44,7 @@ General conversation is still valid for scoping, clarification, and lightweight 
 `orchestration_policy` returns four artifacts; honor all four:
 
 1. **Gates**. `framingChallenge`, `externalResearch`, `docAuthoring`
-2. **Contract chain**. typed handoffs from `specialists/contracts.json`. Call `agent_contract` with `handoffPacket` from `orchestration_policy`.
+2. **Contract chain**. typed handoffs from `specialists/org/contracts/`. Call `agent_contract` with `handoffPacket` from `orchestration_policy`.
 3. **Specialist sequence**. dispatch the specialists in the order returned — see below.
 4. **Team routing**. name `teamRouting.primaryTeam` in the dispatch plan; route through `teamRouting.requiredApprovals` before DONE; if `teamRouting.blockedStatus` is set, stop and escalate along its `escalationPath` rather than proceeding.
 
@@ -85,7 +85,7 @@ Lead with the answer. One question when blocked. Confirm what changed when done.
 
 Non-trivial work: update Beads (`bd note <id>`), `plan.md`, docs with owner / acceptance / verification. Preserve tracker ids in handoffs. Surface NEEDS_MAIN_INPUT in your voice; resume after the answer. End every session with a handoff at `.cx/handoffs/{date}-{slug}.md` and updates to `.cx/context.md`.
 
-Load-bearing state: `AGENTS.md`, `.cx/context.md`/`.json`, `docs/README.md`, `docs/architecture.md` (read at session start, update before DONE, prune stale sections). `plan.md` is local-only.
+Load-bearing state: `AGENTS.md`, `.cx/context.md`/`.json`, `docs/README.md`, `docs/guides/concepts/architecture.mdx` (read at session start, update before DONE, prune stale sections). `plan.md` is local-only.
 
 ## Quality gates <!-- cx:prio=2 -->
 

@@ -9,7 +9,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync, realpathSync } from 'node:fs';
 import { tmpdir, homedir } from 'node:os';
 import { join } from 'node:path';
 
@@ -26,6 +26,29 @@ test('findProjectRoot returns null when no marker is found', () => {
   const { dir, cleanup } = makeTmp();
   try {
     assert.equal(findProjectRoot(dir), null);
+  } finally { cleanup(); }
+});
+
+test('findProjectRoot never treats the OS tmpdir itself as a project root, even with a leaked marker there', (t) => {
+  _resetCache();
+  const tmpRootMarker = join(tmpdir(), '.construct');
+  const preExisting = existsSync(tmpRootMarker);
+  if (!preExisting) mkdirSync(tmpRootMarker, { recursive: true });
+  t.after(() => { if (!preExisting) rmSync(tmpRootMarker, { recursive: true, force: true }); });
+  const { dir, cleanup } = makeTmp();
+  try {
+    assert.equal(findProjectRoot(dir), null,
+      'a marker-less fixture under the shared tmpdir must not resolve $TMPDIR as its project root');
+  } finally { cleanup(); }
+});
+
+test('findProjectRoot compares its stop dirs symlink-tolerantly (macOS /var vs /private/var)', () => {
+  _resetCache();
+  const { dir, cleanup } = makeTmp();
+  try {
+    const realDir = realpathSync.native(dir);
+    assert.equal(findProjectRoot(realDir), null,
+      'a realpath-form cwd must still stop at the (possibly symlink-form) tmpdir boundary');
   } finally { cleanup(); }
 });
 

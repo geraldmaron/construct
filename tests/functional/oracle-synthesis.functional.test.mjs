@@ -218,7 +218,7 @@ test('synthesizeVerdict surfaces cross-team-handoff-blocked when an approver tea
   assert.equal(blocked.severity, 'high');
   assert.equal(blocked.remediationRoute.primary, 'cx-operations', 'cross-team handoff blocks route to operations (rd-lead retired, construct-rf26.11)');
   assert.ok(blocked.detail.includes('engineer-to-reviewer'));
-  assert.equal(verdict, 'degraded');
+  assert.equal(verdict, 'failed');
   assert.ok(recommendedActions.some((a) => a.kind === 'specialist-review' && a.summary.includes('approver team')));
 });
 

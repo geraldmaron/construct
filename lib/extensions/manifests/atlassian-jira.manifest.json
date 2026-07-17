@@ -49,5 +49,19 @@
       },
       "queryDefaultLimit": 50
     }
+  },
+  "certification": {
+    "tier": "contract-tested",
+    "computedAt": "2026-07-16",
+    "computedBy": "lib/certification/provider-evidence-tiers.mjs#auditKnownProviderManifests (construct-4uxq0.13.2)",
+    "reason": "adapter code is exercised against a fake wire boundary, but no test crosses a real subprocess/HTTP boundary",
+    "evidence": {
+      "contractTestFiles": ["tests/embed/providers.test.mjs", "tests/functional/provider-filter-enforcement.functional.test.mjs"]
+    },
+    "manualAttestation": {
+      "liveSandboxTested": { "attested": false, "attestedAt": null, "attestedBy": null, "note": null },
+      "productionProven": { "attested": false, "attestedAt": null, "attestedBy": null, "note": null }
+    },
+    "notes": "The embed adapter behind this manifest (lib/embed/providers/jira.mjs, resolved via lib/embed/providers/registry.mjs) calls /rest/api/3/search/jql, not the deprecated /rest/api/3/search endpoint ADR-0090 rows 29-30 flag. That deprecated/removed-endpoint finding applies to a different Jira read implementation in this repo (lib/providers/atlassian-jira/index.mjs) and to the jira-write manifest's transport (lib/providers/contract/adapters/jira/transport.mjs) — see that manifest's certification.notes for the confirmed-deprecated-endpoint evidence."
   }
 }

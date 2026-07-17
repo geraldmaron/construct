@@ -57,11 +57,11 @@ Hooks can only warn (exit 0) or block (exit 2). They never modify the tool's out
 
 | Policy | Source file | Enforcement file | Mode |
 |---|---|---|---|
-| File-path fence | `specialists/role-manifests.json` | `lib/roles/fence.mjs#checkAction` | Deterministic (100%) |
-| Action approval | `specialists/role-manifests.json` | `lib/roles/fence.mjs#checkAction` | Deterministic (100%) |
+| File-path fence | `specialists/org/specialists/*.json` (`fence`) | `lib/roles/fence.mjs#checkAction` | Deterministic (100%) |
+| Action approval | `specialists/org/specialists/*.json` (`fence`) | `lib/roles/fence.mjs#checkAction` | Deterministic (100%) |
 | Anti-fabrication | `rules/common/no-fabrication.md` | `lib/comment-lint.mjs` | Deterministic (~85%) |
 | Release gates | `rules/common/release-gates.md` | `lib/hooks/pre-push-gate.mjs` | Deterministic (95%) |
-| Contract postconditions | `specialists/contracts.json` | `lib/contracts/validate.mjs` | Deterministic (100%) |
+| Contract postconditions | `specialists/org/contracts/` | `lib/contracts/validate.mjs` | Deterministic (100%) |
 | Bash safety | built-in | `lib/hooks/guard-bash.mjs` | Deterministic (100%) |
 | Bootstrap state | built-in | `lib/hooks/policy-engine.mjs` | Deterministic (100%) |
 | Secret scan | built-in | `lib/hooks/scan-secrets.mjs` | Deterministic (100%) |

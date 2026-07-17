@@ -1,3 +1,9 @@
+# DORMANT: manually triggered only, and will fail at "Build Docker image" (no
+# root Dockerfile exists). The /api/auth/status and /api/approvals routes this
+# smoke test checks have no handler anywhere in the tree — the runtime they
+# target was removed by ADR-0039 (lib/server/ deleted 2026-06-25) and never
+# replaced. Do not run until WS-C (bead construct-2ec1y) lands a real
+# `construct serve` entrypoint with those routes.
 name: aws-smoke
 
 # Manual-only workflow: deploys an ephemeral stack, runs integration tests, tears it down.
