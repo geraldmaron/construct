@@ -4,6 +4,11 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Security
+
+- Closed a supply-chain gap in Playwright demo recording (`lib/playwright-demo.mjs`): `resolvePlaywrightPackage` already located a locally installed `@playwright/test`, but only for pre-flight detection — the actual recording spawn ran `spawnSync('npx', ['playwright', 'test', ...])`, which resolves `playwright` however `npx` resolves it at spawn time. On a machine without `@playwright/test` installed, that meant fetching and executing an unpinned, unaudited package from the npm registry on every recording, potentially in CI. The recorder now resolves the local package's own CLI entry (`resolvePlaywrightBinary`, reading the package's declared `bin` field with a `cli.js` fallback) and spawns it directly via `node <resolved-cli.js> test --config <config> <spec>` — no `npx`, no registry resolution. When no local `@playwright/test` install is found, recording now fails closed with the existing "Install Playwright demo deps" message instead of falling through to npx auto-install; **this is a breaking change for any environment that relied on that auto-fetch** — install `@playwright/test` locally in the demo workspace before recording.
+- Replaced mtime-based video artifact selection with deterministic before/after ownership (`lib/playwright-demo.mjs`). After a recording run, artifact selection picked the most-recently-modified `.webm`/`.mp4` file in the output directories — a stale video left by a prior or concurrent run could be silently misattributed as the current run's output if its mtime happened to be newest. `snapshotVideoState` now snapshots the candidate directories before the run starts, and `selectRunVideo` only considers files absent from that snapshot (created during the run) or whose mtime advanced past both the snapshot and the run's start time (rewritten during the run); a stale file with an artificially advanced mtime is no longer selectable. The final `destPath` placement contract is unchanged — only artifact *selection* was fixed.
+
 ## [1.5.7] - 2026-07-14
 
 ### Changed
