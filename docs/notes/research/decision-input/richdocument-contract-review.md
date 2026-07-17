@@ -1,3 +1,8 @@
+---
+intake: none
+intake_rationale: Read-and-review decision-input for construct-tsyfe.3.1; evidence is this repo's own committed schemas/code plus a local pandoc/mmdc/d2 probe run against this repo's own serializer output, not external sources.
+---
+
 # RichDocument contract review vs. extraction-provider contract and export wiring (construct-tsyfe.3.1)
 
 ## Method
