@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- `construct-tsyfe.6.1` (export had no shared provider contract — `lib/document-export.mjs`'s `exportMarkdown()` and `lib/rich-document-export.mjs`'s `exportRichDocument()` each returned success/path only, with no engine identity, no dropped-content accounting, and no output hash a caller could use to verify or compare two export runs): defined the `ExportProvider` result contract every exporter (Pandoc, Typst, pptxgenjs, LibreOffice, and the future sanitized-HTML provider) will report once wired to it — `provider: { name, version }`, `contentHash` (`sha256:<hex>` over output bytes only), and `fidelity: { droppedBlocks[], degraded }` derived by diffing a provider's declared per-format RichDocument block-type coverage (`ExportProviderCapabilities`) against a real document's block inventory, not asserted in prose. New `schemas/export-provider-result.schema.json` documents the shape and `lib/export-provider-contract.mjs` hand-rolls the validator (`validateExportProviderResult`, `validateExportProviderCapabilities`, `computeFidelityReport`, `hashExportOutput`) — no Ajv/zod, following the same twin-file convention as `lib/certification/run.mjs` + `schemas/certification-run.schema.json`, per ADR-0001. `lib/rich-document.mjs`'s `BLOCK_TYPES` is now exported so the contract enumerates the same block vocabulary the IR itself validates against, rather than redeclaring it. Contract definition only — no existing exporter is wired to emit this shape yet (`construct-tsyfe.6.2` routes production callers through it with fidelity/hash computed live). New `tests/export/provider-contract.test.mjs`: a fixture RichDocument run through a stub provider validates clean and reports the correct dropped-figure entry, six negative cases each name their missing/malformed field, and a self-check confirms the module contains no Ajv/zod reference.
+
 ## [1.5.7] - 2026-07-14
 
 ### Changed

@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://construct.dev/schemas/export-provider-result.schema.json",
+  "title": "ExportProviderResult",
+  "description": "Result envelope every export provider (Pandoc, Typst, pptxgenjs, LibreOffice, sanitized-HTML, ...) returns for one RichDocument-to-format conversion. Defined by construct-tsyfe.6.1 (ADR-0073 RichDocument IR); no existing exporter is wired to emit this shape yet — see lib/export-provider-contract.mjs for the hand-rolled validator (ADR-0001: no Ajv/zod in core) and construct-tsyfe.6.2 for production wiring.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["ok", "format", "outputPath", "provider", "contentHash", "fidelity"],
+  "properties": {
+    "ok": {
+      "type": "boolean",
+      "description": "Whether the export produced a usable output file."
+    },
+    "format": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Output format identifier (e.g. pdf, docx, pptx, html) — the same vocabulary lib/rich-document-export.mjs's RICH_EXPORT_FORMATS declares."
+    },
+    "outputPath": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Absolute path to the written output file."
+    },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "description": "Identity of the engine that produced the output — never the Construct module name, the external tool/library (pandoc, typst, pptxgenjs, libreoffice, ...).",
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": ["string", "null"] }
+      }
+    },
+    "contentHash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "description": "sha256 of the output file's bytes only (lib/export-provider-contract.mjs hashExportOutput) — never a filesystem path or environment-derived value, so two runs are comparable independent of which engine produced the file."
+    },
+    "fidelity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["droppedBlocks", "degraded"],
+      "description": "What survived the RichDocument-to-output conversion, derived from the provider's declared per-format block coverage (ExportProviderCapabilities) diffed against the input document's real block-type inventory — not asserted in prose.",
+      "properties": {
+        "droppedBlocks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["blockType", "count", "reason"],
+            "properties": {
+              "blockType": { "type": "string", "minLength": 1 },
+              "count": { "type": "integer", "minimum": 1 },
+              "reason": { "type": "string", "minLength": 1 },
+              "recoverable": { "type": "boolean" }
+            }
+          }
+        },
+        "degraded": {
+          "type": "boolean",
+          "description": "True whenever droppedBlocks is non-empty — a caller can rely on this flag alone without re-deriving it from the array length."
+        }
+      }
+    },
+    "message": { "type": ["string", "null"] },
+    "engine": { "type": ["string", "null"] },
+    "bytes": { "type": ["number", "null"] }
+  }
+}
