@@ -56,6 +56,8 @@ they are buildable surfaces, not the installed runtime spine:
 - **`apps/`** — buildable front-end surfaces that compile to an artifact the
   core loads or serves, never imported into the zero-dep core.
 
-## Exception path
+## Exception path (amended 2026-07-17, ADR-0097)
 
-To add a new core dependency, write a new ADR in this directory answering the three questions in `docs/dependencies.md`. Do not add the dep without a merged ADR.
+To add a new core dependency, write a new ADR in this directory answering the three questions in `docs/guides/reference/dependencies.md`. Do not add the dep without a merged ADR.
+
+ADR-0097 (`docs/decisions/adr/0097-capability-delegation-rubric.md`) supersedes the bare instruction above with a named lifecycle-cost rubric (install footprint, maintenance burden transferred, security surface, replaceability, evidence bar) and four pre-evaluated delegation classes (markdown/HTML parsing, MIME/RFC message parsing, schema validation, graph/diagram rendering). The zero-supply-chain-risk goal for the core zone is unchanged; the candidate ADR now applies ADR-0097's rubric explicitly rather than starting from a blank page.
