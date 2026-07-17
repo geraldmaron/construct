@@ -1,0 +1,4724 @@
+[
+  {
+    "from": "capability:document-type.adr",
+    "to": "skill:docs/adr-workflow",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:document-type.evidence-brief",
+    "to": "skill:docs/evidence-ingest-workflow",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:document-type.ingested-markdown",
+    "to": "surface:cli",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:document-type.ingested-markdown",
+    "to": "surface:mcp",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:document-type.ingested-markdown",
+    "to": "skill:docs/document-ingest-workflow",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:document-type.prd",
+    "to": "skill:docs/prd-workflow",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:document-type.research-brief",
+    "to": "surface:cli",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:document-type.research-brief",
+    "to": "surface:mcp",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:document-type.research-brief",
+    "to": "skill:docs/research-workflow",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:ingest.adapter",
+    "to": "surface:cli",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:ingest.adapter",
+    "to": "surface:mcp",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:ingest.docling-remote",
+    "to": "surface:cli",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:ingest.docling",
+    "to": "surface:cli",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:local.model.tier",
+    "to": "surface:cli",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:mcp.broker.connection",
+    "to": "surface:claude",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:mcp.broker.connection",
+    "to": "surface:cursor",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:mcp.broker.connection",
+    "to": "surface:mcp",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:mcp.broker.connection",
+    "to": "surface:opencode",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:mcp.broker.connection",
+    "to": "surface:vscode",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:mcp.tool-budget.trim",
+    "to": "surface:opencode",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:oracle.meta-review",
+    "to": "surface:cli",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:oracle.meta-review",
+    "to": "rule:rules/common/no-fabrication.md",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:oracle.meta-review",
+    "to": "skill:ai/orchestration-workflow",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:oracle.meta-review",
+    "to": "skill:exploration/dependency-graph-reading",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:oracle.meta-review",
+    "to": "skill:roles/trace-reviewer",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:orchestration.routing",
+    "to": "surface:claude",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:orchestration.routing",
+    "to": "surface:cli",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:orchestration.routing",
+    "to": "surface:cursor",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:orchestration.routing",
+    "to": "surface:mcp",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:orchestration.routing",
+    "to": "surface:opencode",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:orchestration.routing",
+    "to": "contract:construct-to-orchestrator",
+    "rel": "governed_by",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:orchestration.routing",
+    "to": "contract:user-to-construct",
+    "rel": "governed_by",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:orchestration.routing",
+    "to": "rule:rules/common/no-fabrication.md",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:orchestration.routing",
+    "to": "skill:ai/orchestration-workflow",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:orchestration.routing",
+    "to": "skill:operating/orchestration-reference",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:skill.roles-architect-ai-systems",
+    "to": "surface:mcp",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:skill.roles-architect-ai-systems",
+    "to": "skill:roles/architect.ai-systems",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:skill.roles-engineer",
+    "to": "surface:mcp",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:skill.roles-engineer",
+    "to": "skill:roles/engineer",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:surfaces.opencode-primary",
+    "to": "surface:cli",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:surfaces.opencode-primary",
+    "to": "surface:mcp",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:surfaces.opencode-primary",
+    "to": "surface:opencode",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.architecture-review",
+    "to": "workflow:architecture-review",
+    "rel": "embeds",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.architecture-review",
+    "to": "surface:cli",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.architecture-review",
+    "to": "surface:mcp",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.data-structure",
+    "to": "workflow:data-structure",
+    "rel": "embeds",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.data-structure",
+    "to": "surface:cli",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.data-structure",
+    "to": "surface:mcp",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.evidence-ingest",
+    "to": "workflow:evidence-ingest",
+    "rel": "embeds",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.evidence-ingest",
+    "to": "surface:cli",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.evidence-ingest",
+    "to": "surface:mcp",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.evidence-ingest",
+    "to": "rule:rules/common/no-fabrication.md",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.evidence-ingest",
+    "to": "rule:rules/common/research.md",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.evidence-ingest",
+    "to": "skill:docs/evidence-ingest-workflow",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.memo-draft",
+    "to": "workflow:memo-draft",
+    "rel": "embeds",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.memo-draft",
+    "to": "surface:cli",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.memo-draft",
+    "to": "surface:mcp",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.prd-draft",
+    "to": "workflow:prd-draft",
+    "rel": "embeds",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.prd-draft",
+    "to": "surface:cli",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.prd-draft",
+    "to": "surface:mcp",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.prd-draft",
+    "to": "contract:product-manager-to-architect",
+    "rel": "governed_by",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.prd-draft",
+    "to": "rule:rules/common/no-fabrication.md",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.prd-draft",
+    "to": "skill:docs/prd-workflow",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.proposal-review",
+    "to": "workflow:proposal-review",
+    "rel": "embeds",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.proposal-review",
+    "to": "surface:cli",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.proposal-review",
+    "to": "surface:mcp",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.research-synthesis",
+    "to": "workflow:research-synthesis",
+    "rel": "embeds",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.research-synthesis",
+    "to": "surface:claude",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.research-synthesis",
+    "to": "surface:cli",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.research-synthesis",
+    "to": "surface:mcp",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.research-synthesis",
+    "to": "contract:researcher-to-architect",
+    "rel": "governed_by",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.research-synthesis",
+    "to": "rule:rules/common/research.md",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.research-synthesis",
+    "to": "skill:docs/research-workflow",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.risk-review",
+    "to": "workflow:risk-review",
+    "rel": "embeds",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.risk-review",
+    "to": "surface:cli",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.risk-review",
+    "to": "surface:mcp",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.structure-notes",
+    "to": "workflow:structure-notes",
+    "rel": "embeds",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.structure-notes",
+    "to": "surface:cli",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.structure-notes",
+    "to": "surface:mcp",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.structure-notes",
+    "to": "skill:operating/unstructured-triage",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.transcript-process",
+    "to": "workflow:transcript-process",
+    "rel": "embeds",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.transcript-process",
+    "to": "surface:cli",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.transcript-process",
+    "to": "surface:mcp",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.triage",
+    "to": "workflow:triage",
+    "rel": "embeds",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.triage",
+    "to": "surface:cli",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "capability:workflow.triage",
+    "to": "surface:mcp",
+    "rel": "exposes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0003-provider-interface.md",
+    "to": "provider:anthropic",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0003-provider-interface.md",
+    "to": "provider:atlassian-confluence",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0003-provider-interface.md",
+    "to": "provider:atlassian-jira",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0003-provider-interface.md",
+    "to": "provider:directory",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0003-provider-interface.md",
+    "to": "provider:docling",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0003-provider-interface.md",
+    "to": "provider:echo",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0003-provider-interface.md",
+    "to": "provider:feedback",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0003-provider-interface.md",
+    "to": "provider:git",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0003-provider-interface.md",
+    "to": "provider:github",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0003-provider-interface.md",
+    "to": "provider:github-copilot",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0003-provider-interface.md",
+    "to": "provider:linear",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0003-provider-interface.md",
+    "to": "provider:local",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0003-provider-interface.md",
+    "to": "provider:ollama",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0003-provider-interface.md",
+    "to": "provider:openai",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0003-provider-interface.md",
+    "to": "provider:openrouter",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0003-provider-interface.md",
+    "to": "provider:openrouter-anthropic",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0003-provider-interface.md",
+    "to": "provider:openrouter-deepseek",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0003-provider-interface.md",
+    "to": "provider:openrouter-google",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0003-provider-interface.md",
+    "to": "provider:openrouter-llama",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0003-provider-interface.md",
+    "to": "provider:openrouter-qwen",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0003-provider-interface.md",
+    "to": "provider:postgres",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0003-provider-interface.md",
+    "to": "provider:salesforce",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0003-provider-interface.md",
+    "to": "provider:slack",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0003-provider-interface.md",
+    "to": "provider:whisper",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md",
+    "to": "provider:anthropic",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md",
+    "to": "provider:atlassian-confluence",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md",
+    "to": "provider:atlassian-jira",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md",
+    "to": "provider:directory",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md",
+    "to": "provider:docling",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md",
+    "to": "provider:echo",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md",
+    "to": "provider:feedback",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md",
+    "to": "provider:git",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md",
+    "to": "provider:github",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md",
+    "to": "provider:github-copilot",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md",
+    "to": "provider:linear",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md",
+    "to": "provider:local",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md",
+    "to": "provider:ollama",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md",
+    "to": "provider:openai",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md",
+    "to": "provider:openrouter",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md",
+    "to": "provider:openrouter-anthropic",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md",
+    "to": "provider:openrouter-deepseek",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md",
+    "to": "provider:openrouter-google",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md",
+    "to": "provider:openrouter-llama",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md",
+    "to": "provider:openrouter-qwen",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md",
+    "to": "provider:postgres",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md",
+    "to": "provider:salesforce",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md",
+    "to": "provider:slack",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "doc:docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md",
+    "to": "provider:whisper",
+    "rel": "documents",
+    "weight": 1,
+    "sources": [
+      "doc-scan"
+    ]
+  },
+  {
+    "from": "embed:operations-triage",
+    "to": "contract:operations-triage",
+    "rel": "governed_by",
+    "weight": 1,
+    "sources": [
+      "embed-manifest"
+    ]
+  },
+  {
+    "from": "embed:operations-triage",
+    "to": "specialist:cx-operations",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "embed-manifest"
+    ]
+  },
+  {
+    "from": "embed:operations-triage",
+    "to": "provider:atlassian-confluence",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "embed-manifest"
+    ]
+  },
+  {
+    "from": "embed:operations-triage",
+    "to": "provider:atlassian-jira",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "embed-manifest"
+    ]
+  },
+  {
+    "from": "embed:operations-triage",
+    "to": "provider:directory",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "embed-manifest"
+    ]
+  },
+  {
+    "from": "embed:operations",
+    "to": "contract:operations-tpm-briefing",
+    "rel": "governed_by",
+    "weight": 1,
+    "sources": [
+      "embed-manifest"
+    ]
+  },
+  {
+    "from": "embed:operations",
+    "to": "specialist:cx-operations",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "embed-manifest"
+    ]
+  },
+  {
+    "from": "embed:operations",
+    "to": "provider:atlassian-confluence",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "embed-manifest"
+    ]
+  },
+  {
+    "from": "embed:operations",
+    "to": "provider:atlassian-jira",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "embed-manifest"
+    ]
+  },
+  {
+    "from": "embed:operations",
+    "to": "provider:slack",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "embed-manifest"
+    ]
+  },
+  {
+    "from": "embed:pm-feedback",
+    "to": "contract:pm-requirements-candidates",
+    "rel": "governed_by",
+    "weight": 1,
+    "sources": [
+      "embed-manifest"
+    ]
+  },
+  {
+    "from": "embed:pm-feedback",
+    "to": "specialist:cx-product-manager",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "embed-manifest"
+    ]
+  },
+  {
+    "from": "embed:pm-feedback",
+    "to": "provider:atlassian-confluence",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "embed-manifest"
+    ]
+  },
+  {
+    "from": "embed:pm-feedback",
+    "to": "provider:feedback",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "embed-manifest"
+    ]
+  },
+  {
+    "from": "embed:pm-repos",
+    "to": "contract:pm-engineering-signals",
+    "rel": "governed_by",
+    "weight": 1,
+    "sources": [
+      "embed-manifest"
+    ]
+  },
+  {
+    "from": "embed:pm-repos",
+    "to": "specialist:cx-product-manager",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "embed-manifest"
+    ]
+  },
+  {
+    "from": "embed:pm-repos",
+    "to": "provider:atlassian-jira",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "embed-manifest"
+    ]
+  },
+  {
+    "from": "embed:pm-repos",
+    "to": "provider:github",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "embed-manifest"
+    ]
+  },
+  {
+    "from": "file:bin/construct-postinstall.mjs",
+    "to": "file:lib/adapters-sync.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:bin/construct",
+    "to": "file:lib/acp/server.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:bin/construct",
+    "to": "file:lib/artifact-manifest-overlay.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:bin/construct",
+    "to": "file:lib/artifact-release-gate.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:bin/construct",
+    "to": "file:lib/artifact-workflow.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:bin/construct",
+    "to": "file:lib/audit-skills.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:bin/construct",
+    "to": "file:lib/audit-specialists.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:bin/construct",
+    "to": "file:lib/audit-trail.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:bin/construct",
+    "to": "file:lib/auto-docs.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:bin/construct",
+    "to": "file:lib/beads-client.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:bin/construct",
+    "to": "file:lib/beads-lock.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:bin/construct",
+    "to": "file:lib/beads-optimistic.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:bin/construct",
+    "to": "file:lib/beads/drift.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:bin/construct",
+    "to": "file:lib/bootstrap.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:bin/construct",
+    "to": "file:lib/bootstrap/built-ins.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:bin/construct",
+    "to": "file:lib/bootstrap/resources.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:bin/construct",
+    "to": "file:lib/capability-ledger.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:bin/construct",
+    "to": "file:lib/certification/cli.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/a11y-audit.mjs",
+    "to": "file:lib/brand-contrast.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/a11y-audit.mjs",
+    "to": "capability:mcp.broker.connection",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/a11y-audit.mjs",
+    "to": "capability:publish.distribution",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/adapters-sync.mjs",
+    "to": "capability:oracle.meta-review",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-completion-states.mjs",
+    "to": "capability:artifact.release-gate",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-completion-states.mjs",
+    "to": "capability:document-type.adr",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-completion-states.mjs",
+    "to": "capability:document-type.prd",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-completion-states.mjs",
+    "to": "capability:document-type.research-brief",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-completion-states.mjs",
+    "to": "capability:mcp.broker.connection",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-completion-states.mjs",
+    "to": "capability:oracle.meta-review",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-completion-states.mjs",
+    "to": "capability:orchestration.routing",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-completion-states.mjs",
+    "to": "capability:publish.distribution",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-completion-states.mjs",
+    "to": "capability:test-system.certification-runner",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-completion-states.mjs",
+    "to": "capability:workflow.prd-draft",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-completion.mjs",
+    "to": "file:lib/artifact-completion-states.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-completion.mjs",
+    "to": "capability:mcp.broker.connection",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-completion.mjs",
+    "to": "capability:publish.distribution",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-completion.mjs",
+    "to": "capability:workflow.prd-draft",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-gate-levels.mjs",
+    "to": "file:lib/artifact-manifest.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-gate-levels.mjs",
+    "to": "capability:artifact.release-gate",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-gate-levels.mjs",
+    "to": "capability:document-type.adr",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-gate-levels.mjs",
+    "to": "capability:document-type.prd",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-gate-levels.mjs",
+    "to": "capability:document-type.research-brief",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-gate-levels.mjs",
+    "to": "capability:mcp.broker.connection",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-gate-levels.mjs",
+    "to": "capability:publish.distribution",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-gate-levels.mjs",
+    "to": "capability:test-system.certification-runner",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-gate-levels.mjs",
+    "to": "capability:workflow.prd-draft",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-gate-notice.mjs",
+    "to": "file:lib/artifact-type-from-path.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-loop-core.mjs",
+    "to": "file:lib/artifact-manifest.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-loop-core.mjs",
+    "to": "file:lib/artifact-release-gate.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-loop-core.mjs",
+    "to": "capability:mcp.broker.connection",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-manifest-overlay.mjs",
+    "to": "capability:artifact.release-gate",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-manifest-overlay.mjs",
+    "to": "capability:document-type.adr",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-manifest-overlay.mjs",
+    "to": "capability:document-type.prd",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-manifest-overlay.mjs",
+    "to": "capability:document-type.research-brief",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-manifest-overlay.mjs",
+    "to": "capability:mcp.broker.connection",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-manifest-overlay.mjs",
+    "to": "capability:oracle.meta-review",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-manifest-overlay.mjs",
+    "to": "capability:orchestration.routing",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-manifest-overlay.mjs",
+    "to": "capability:publish.distribution",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-manifest-overlay.mjs",
+    "to": "capability:test-system.certification-runner",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-manifest-overlay.mjs",
+    "to": "capability:workflow.prd-draft",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-manifest.mjs",
+    "to": "file:lib/artifact-completion-states.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-manifest.mjs",
+    "to": "file:lib/artifact-manifest-overlay.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-manifest.mjs",
+    "to": "capability:artifact.release-gate",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-manifest.mjs",
+    "to": "capability:document-type.adr",
+    "rel": "realizes",
+    "weight": 2,
+    "sources": [
+      "registry",
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-manifest.mjs",
+    "to": "capability:document-type.evidence-brief",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-manifest.mjs",
+    "to": "capability:document-type.ingested-markdown",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-manifest.mjs",
+    "to": "capability:document-type.prd",
+    "rel": "realizes",
+    "weight": 2,
+    "sources": [
+      "registry",
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-manifest.mjs",
+    "to": "capability:document-type.research-brief",
+    "rel": "realizes",
+    "weight": 2,
+    "sources": [
+      "registry",
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-manifest.mjs",
+    "to": "capability:mcp.broker.connection",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-manifest.mjs",
+    "to": "capability:oracle.meta-review",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-manifest.mjs",
+    "to": "capability:orchestration.routing",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-manifest.mjs",
+    "to": "capability:publish.distribution",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-manifest.mjs",
+    "to": "capability:test-system.certification-runner",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-manifest.mjs",
+    "to": "capability:workflow.prd-draft",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-quality.mjs",
+    "to": "capability:test-system.certification-runner",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-release-gate.mjs",
+    "to": "file:lib/artifact-gate-levels.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-release-gate.mjs",
+    "to": "file:lib/artifact-manifest.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-release-gate.mjs",
+    "to": "file:lib/artifact-reviewers.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-release-gate.mjs",
+    "to": "file:lib/artifact-type-from-path.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-release-gate.mjs",
+    "to": "capability:artifact.release-gate",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-release-gate.mjs",
+    "to": "capability:document-type.adr",
+    "rel": "realizes",
+    "weight": 2,
+    "sources": [
+      "registry",
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-release-gate.mjs",
+    "to": "capability:document-type.evidence-brief",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-release-gate.mjs",
+    "to": "capability:document-type.ingested-markdown",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-release-gate.mjs",
+    "to": "capability:document-type.prd",
+    "rel": "realizes",
+    "weight": 2,
+    "sources": [
+      "registry",
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-release-gate.mjs",
+    "to": "capability:document-type.research-brief",
+    "rel": "realizes",
+    "weight": 2,
+    "sources": [
+      "registry",
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-release-gate.mjs",
+    "to": "capability:mcp.broker.connection",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-release-gate.mjs",
+    "to": "capability:publish.distribution",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-release-gate.mjs",
+    "to": "capability:test-system.certification-runner",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-release-gate.mjs",
+    "to": "capability:workflow.prd-draft",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-reviewers.mjs",
+    "to": "file:lib/artifact-manifest.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-reviewers.mjs",
+    "to": "file:lib/artifact-type-from-path.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-reviewers.mjs",
+    "to": "capability:artifact.release-gate",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-reviewers.mjs",
+    "to": "capability:document-type.adr",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-reviewers.mjs",
+    "to": "capability:document-type.prd",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-reviewers.mjs",
+    "to": "capability:document-type.research-brief",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-reviewers.mjs",
+    "to": "capability:mcp.broker.connection",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-reviewers.mjs",
+    "to": "capability:oracle.meta-review",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-reviewers.mjs",
+    "to": "capability:orchestration.routing",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-reviewers.mjs",
+    "to": "capability:publish.distribution",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-reviewers.mjs",
+    "to": "capability:test-system.certification-runner",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-reviewers.mjs",
+    "to": "capability:workflow.prd-draft",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-type-from-path.mjs",
+    "to": "file:lib/artifact-manifest.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-type-from-path.mjs",
+    "to": "capability:artifact.release-gate",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-type-from-path.mjs",
+    "to": "capability:document-type.adr",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-type-from-path.mjs",
+    "to": "capability:document-type.prd",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-type-from-path.mjs",
+    "to": "capability:document-type.research-brief",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-type-from-path.mjs",
+    "to": "capability:mcp.broker.connection",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-type-from-path.mjs",
+    "to": "capability:oracle.meta-review",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-type-from-path.mjs",
+    "to": "capability:orchestration.routing",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-type-from-path.mjs",
+    "to": "capability:publish.distribution",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-type-from-path.mjs",
+    "to": "capability:test-system.certification-runner",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-type-from-path.mjs",
+    "to": "capability:workflow.prd-draft",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-workflow.mjs",
+    "to": "file:lib/artifact-completion-states.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-workflow.mjs",
+    "to": "file:lib/artifact-completion.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-workflow.mjs",
+    "to": "file:lib/artifact-manifest.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-workflow.mjs",
+    "to": "file:lib/artifact-release-gate.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-workflow.mjs",
+    "to": "file:lib/artifact-type-from-path.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-workflow.mjs",
+    "to": "capability:mcp.broker.connection",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/artifact-workflow.mjs",
+    "to": "capability:workflow.prd-draft",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/audit-skills.mjs",
+    "to": "capability:oracle.meta-review",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/audit-specialists.mjs",
+    "to": "file:lib/artifact-manifest.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/audit-specialists.mjs",
+    "to": "file:lib/audit-skills.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/audit-specialists.mjs",
+    "to": "file:lib/certification/evidence-tiers.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/audit-specialists.mjs",
+    "to": "capability:oracle.meta-review",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/audit-trail.mjs",
+    "to": "capability:mcp.broker.connection",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/audit-trail.mjs",
+    "to": "capability:oracle.meta-review",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/auto-docs.mjs",
+    "to": "capability:document.auto-docs",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/beads-automation.mjs",
+    "to": "file:lib/beads-client.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/beads-client.mjs",
+    "to": "file:lib/beads-lock.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/beads-client.mjs",
+    "to": "file:lib/beads-optimistic.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/beads-client.mjs",
+    "to": "capability:oracle.meta-review",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/beads-lock.mjs",
+    "to": "capability:oracle.meta-review",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/beads-optimistic.mjs",
+    "to": "capability:oracle.meta-review",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/beads/drift.mjs",
+    "to": "capability:oracle.meta-review",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/bootstrap/built-ins.mjs",
+    "to": "file:lib/bootstrap/resources.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/brand-contrast.mjs",
+    "to": "file:lib/brand-tokens.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/brand-contrast.mjs",
+    "to": "capability:mcp.broker.connection",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/brand-contrast.mjs",
+    "to": "capability:publish.distribution",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/brand-fonts.mjs",
+    "to": "file:lib/brand-tokens.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/brand-fonts.mjs",
+    "to": "capability:mcp.broker.connection",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/brand-fonts.mjs",
+    "to": "capability:publish.distribution",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/brand-fonts.mjs",
+    "to": "capability:test-system.certification-runner",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/brand-fonts.mjs",
+    "to": "capability:workflow.prd-draft",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/brand-tokens.mjs",
+    "to": "capability:diagram.graceful-render",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/brand-tokens.mjs",
+    "to": "capability:mcp.broker.connection",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/brand-tokens.mjs",
+    "to": "capability:publish.distribution",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/brand-tokens.mjs",
+    "to": "capability:test-system.certification-runner",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/brand-tokens.mjs",
+    "to": "capability:workflow.prd-draft",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/cache-strategy.js",
+    "to": "file:lib/cache-strategy-anthropic.js",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/cache-strategy.js",
+    "to": "file:lib/cache-strategy-google.js",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/cache-strategy.js",
+    "to": "file:lib/cache-strategy-none.js",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/cache-strategy.js",
+    "to": "file:lib/cache-strategy-openai.js",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/capability-ledger.mjs",
+    "to": "capability:test-system.certification-runner",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/capability-ledger.mjs",
+    "to": "capability:test-system.corpus-inventory",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/artifact-fixtures.mjs",
+    "to": "file:lib/artifact-manifest.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/artifact-fixtures.mjs",
+    "to": "file:lib/artifact-release-gate.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/artifact-fixtures.mjs",
+    "to": "capability:artifact.release-gate",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/artifact-fixtures.mjs",
+    "to": "capability:document-type.adr",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/artifact-fixtures.mjs",
+    "to": "capability:document-type.prd",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/artifact-fixtures.mjs",
+    "to": "capability:document-type.research-brief",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/artifact-fixtures.mjs",
+    "to": "capability:test-system.certification-runner",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/artifact-gates.mjs",
+    "to": "file:lib/artifact-manifest.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/artifact-gates.mjs",
+    "to": "file:lib/artifact-release-gate.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/artifact-gates.mjs",
+    "to": "file:lib/certification/artifact-fixtures.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/artifact-gates.mjs",
+    "to": "capability:artifact.release-gate",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/artifact-gates.mjs",
+    "to": "capability:document-type.adr",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/artifact-gates.mjs",
+    "to": "capability:document-type.prd",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/artifact-gates.mjs",
+    "to": "capability:document-type.research-brief",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/artifact-gates.mjs",
+    "to": "capability:test-system.certification-runner",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/artifact-provenance.mjs",
+    "to": "file:lib/artifact-manifest.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/artifact-provenance.mjs",
+    "to": "file:lib/certification/artifact-fixtures.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/artifact-provenance.mjs",
+    "to": "capability:test-system.certification-runner",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/canonical-scenarios.mjs",
+    "to": "capability:test-system.certification-runner",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/cli.mjs",
+    "to": "file:lib/certification/canonical-scenarios.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/cli.mjs",
+    "to": "file:lib/certification/comparisons.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/cli.mjs",
+    "to": "file:lib/certification/demo-parity.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/cli.mjs",
+    "to": "file:lib/certification/document-io-matrix.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/cli.mjs",
+    "to": "file:lib/certification/model-routing.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/cli.mjs",
+    "to": "capability:test-system.certification-runner",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/comparisons.mjs",
+    "to": "capability:test-system.certification-runner",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/demo-parity.mjs",
+    "to": "file:lib/certification/canonical-scenarios.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/demo-parity.mjs",
+    "to": "capability:test-system.certification-runner",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/document-io-fixtures.mjs",
+    "to": "capability:test-system.certification-runner",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/document-io-matrix.mjs",
+    "to": "file:lib/certification/document-io-fixtures.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/document-io-matrix.mjs",
+    "to": "capability:test-system.certification-runner",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/document-workflow.mjs",
+    "to": "file:lib/certification/document-io-fixtures.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/document-workflow.mjs",
+    "to": "capability:test-system.certification-runner",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/eval-bridge.mjs",
+    "to": "capability:test-system.certification-runner",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/evidence-tiers.mjs",
+    "to": "capability:oracle.meta-review",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/model-routing.mjs",
+    "to": "capability:test-system.certification-runner",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "file:lib/certification/prompt-budget.mjs",
+    "to": "capability:test-system.certification-runner",
+    "rel": "realizes",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:CHANGELOG.md",
+    "to": "module:docs/guides",
+    "rel": "co_changes",
+    "weight": 4,
+    "sources": [
+      "co-change"
+    ]
+  },
+  {
+    "from": "module:bin/construct-postinstall.mjs",
+    "to": "file:bin/construct-postinstall.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:bin/construct-shim.mjs",
+    "to": "file:bin/construct-shim.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:bin/construct",
+    "to": "file:bin/construct",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/a11y-audit.mjs",
+    "to": "file:lib/a11y-audit.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/acp",
+    "to": "file:lib/acp/server.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/adapters-sync.mjs",
+    "to": "file:lib/adapters-sync.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/agent-instructions",
+    "to": "file:lib/agent-instructions/inject.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/artifact-capture.mjs",
+    "to": "file:lib/artifact-capture.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/artifact-completion-states.mjs",
+    "to": "file:lib/artifact-completion-states.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/artifact-completion.mjs",
+    "to": "file:lib/artifact-completion.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/artifact-gate-levels.mjs",
+    "to": "file:lib/artifact-gate-levels.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/artifact-gate-notice.mjs",
+    "to": "file:lib/artifact-gate-notice.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/artifact-loop-core.mjs",
+    "to": "file:lib/artifact-loop-core.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/artifact-manifest-overlay.mjs",
+    "to": "file:lib/artifact-manifest-overlay.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/artifact-manifest.mjs",
+    "to": "file:lib/artifact-manifest.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/artifact-quality.mjs",
+    "to": "file:lib/artifact-quality.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/artifact-release-gate.mjs",
+    "to": "file:lib/artifact-release-gate.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/artifact-reviewers.mjs",
+    "to": "file:lib/artifact-reviewers.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/artifact-type-from-path.mjs",
+    "to": "file:lib/artifact-type-from-path.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/artifact-workflow.mjs",
+    "to": "file:lib/artifact-workflow.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/audit-rules.mjs",
+    "to": "file:lib/audit-rules.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/audit-skills.mjs",
+    "to": "file:lib/audit-skills.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/audit-specialists.mjs",
+    "to": "file:lib/audit-specialists.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/audit-trail.mjs",
+    "to": "file:lib/audit-trail.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/auto-docs.mjs",
+    "to": "file:lib/auto-docs.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/beads-automation.mjs",
+    "to": "file:lib/beads-automation.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/beads-client.mjs",
+    "to": "file:lib/beads-client.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/beads-lock.mjs",
+    "to": "file:lib/beads-lock.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/beads-optimistic.mjs",
+    "to": "file:lib/beads-optimistic.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/beads",
+    "to": "file:lib/beads/auto-close.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/beads",
+    "to": "file:lib/beads/drift.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/bootstrap.mjs",
+    "to": "file:lib/bootstrap.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/bootstrap",
+    "to": "file:lib/bootstrap/built-ins.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/bootstrap",
+    "to": "file:lib/bootstrap/resources.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/brand-contrast.mjs",
+    "to": "file:lib/brand-contrast.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/brand-fonts.mjs",
+    "to": "file:lib/brand-fonts.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/brand-prose.mjs",
+    "to": "file:lib/brand-prose.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/brand-tokens.mjs",
+    "to": "file:lib/brand-tokens.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/bridges",
+    "to": "file:lib/bridges/copilot-proxy.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/cache-governor.js",
+    "to": "file:lib/cache-governor.js",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/cache-strategy-anthropic.js",
+    "to": "file:lib/cache-strategy-anthropic.js",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/cache-strategy-google.js",
+    "to": "file:lib/cache-strategy-google.js",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/cache-strategy-none.js",
+    "to": "file:lib/cache-strategy-none.js",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/cache-strategy-openai.js",
+    "to": "file:lib/cache-strategy-openai.js",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/cache-strategy.js",
+    "to": "file:lib/cache-strategy.js",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/capability-ledger.mjs",
+    "to": "file:lib/capability-ledger.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/certification",
+    "to": "file:lib/certification/artifact-fixtures.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/certification",
+    "to": "file:lib/certification/artifact-gates.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/certification",
+    "to": "file:lib/certification/artifact-provenance.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/certification",
+    "to": "file:lib/certification/canonical-scenarios.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/certification",
+    "to": "file:lib/certification/cli.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/certification",
+    "to": "file:lib/certification/comparisons.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/certification",
+    "to": "file:lib/certification/demo-parity.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/certification",
+    "to": "file:lib/certification/document-io-fixtures.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/certification",
+    "to": "file:lib/certification/document-io-matrix.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/certification",
+    "to": "file:lib/certification/document-workflow.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/certification",
+    "to": "file:lib/certification/eval-bridge.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/certification",
+    "to": "file:lib/certification/evidence-tiers.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/certification",
+    "to": "file:lib/certification/model-routing.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "module:lib/certification",
+    "to": "file:lib/certification/prompt-budget.mjs",
+    "rel": "contains",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "provider:anthropic",
+    "to": "specialist:construct-core",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:anthropic",
+    "to": "tool:chat",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:atlassian-confluence",
+    "to": "specialist:construct-core",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:atlassian-confluence",
+    "to": "tool:read",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:atlassian-confluence",
+    "to": "tool:search",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:atlassian-confluence",
+    "to": "tool:write",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:atlassian-jira",
+    "to": "specialist:construct-core",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:atlassian-jira",
+    "to": "tool:read",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:atlassian-jira",
+    "to": "tool:search",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:atlassian-jira",
+    "to": "tool:write",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:directory",
+    "to": "specialist:construct-core",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:directory",
+    "to": "tool:read",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:directory",
+    "to": "tool:search",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:docling",
+    "to": "specialist:construct-core",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:docling",
+    "to": "tool:document-extraction",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:echo",
+    "to": "specialist:construct-core",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:feedback",
+    "to": "specialist:construct-core",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:feedback",
+    "to": "tool:read",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:feedback",
+    "to": "tool:search",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:github-copilot",
+    "to": "specialist:construct-core",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:github-copilot",
+    "to": "tool:chat",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:github",
+    "to": "specialist:construct-core",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:github",
+    "to": "tool:read",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:github",
+    "to": "tool:search",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:github",
+    "to": "tool:webhook",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:github",
+    "to": "tool:write",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:git",
+    "to": "specialist:construct-core",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:git",
+    "to": "tool:read",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:linear",
+    "to": "specialist:construct-core",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:linear",
+    "to": "tool:read",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:local",
+    "to": "specialist:construct-core",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:local",
+    "to": "tool:chat",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:ollama",
+    "to": "specialist:construct-core",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:ollama",
+    "to": "tool:chat",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:openai",
+    "to": "specialist:construct-core",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:openai",
+    "to": "tool:chat",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:openrouter-anthropic",
+    "to": "specialist:construct-core",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:openrouter-anthropic",
+    "to": "tool:chat",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:openrouter-deepseek",
+    "to": "specialist:construct-core",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:openrouter-deepseek",
+    "to": "tool:chat",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:openrouter-google",
+    "to": "specialist:construct-core",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:openrouter-google",
+    "to": "tool:chat",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:openrouter-llama",
+    "to": "specialist:construct-core",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:openrouter-llama",
+    "to": "tool:chat",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:openrouter-qwen",
+    "to": "specialist:construct-core",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:openrouter-qwen",
+    "to": "tool:chat",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:openrouter",
+    "to": "specialist:construct-core",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:openrouter",
+    "to": "tool:chat",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:postgres",
+    "to": "specialist:construct-core",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:postgres",
+    "to": "tool:claim",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:postgres",
+    "to": "tool:complete",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:postgres",
+    "to": "tool:enqueue",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:postgres",
+    "to": "tool:heartbeat",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:postgres",
+    "to": "tool:lease",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:postgres",
+    "to": "tool:reclaim",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:postgres",
+    "to": "tool:reopen",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:postgres",
+    "to": "tool:skip",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:salesforce",
+    "to": "specialist:construct-core",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:salesforce",
+    "to": "tool:read",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:salesforce",
+    "to": "tool:search",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:slack",
+    "to": "specialist:construct-core",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:slack",
+    "to": "tool:read",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:slack",
+    "to": "tool:search",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:slack",
+    "to": "tool:write",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:whisper",
+    "to": "specialist:construct-core",
+    "rel": "owned_by",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "provider:whisper",
+    "to": "tool:audio-transcription",
+    "rel": "requires",
+    "weight": 1,
+    "sources": [
+      "manifest-loader"
+    ]
+  },
+  {
+    "from": "runtime-evidence:run-0ab099ad29b0",
+    "to": "workflow:research-synthesis",
+    "rel": "evidenced_by",
+    "weight": 1,
+    "sources": [
+      "runtime-evidence"
+    ]
+  },
+  {
+    "from": "runtime-evidence:run-43d96c13f424",
+    "to": "workflow:research-synthesis",
+    "rel": "evidenced_by",
+    "weight": 1,
+    "sources": [
+      "runtime-evidence"
+    ]
+  },
+  {
+    "from": "runtime-evidence:run-541ea7a7f6a0",
+    "to": "workflow:research-synthesis",
+    "rel": "evidenced_by",
+    "weight": 1,
+    "sources": [
+      "runtime-evidence"
+    ]
+  },
+  {
+    "from": "specialist:cx-architect",
+    "to": "skill:docs/adr-workflow",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "specialist:cx-architect",
+    "to": "skill:docs/research-workflow",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "specialist:cx-architect",
+    "to": "skill:exploration/dependency-graph-reading",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "specialist:cx-debugger",
+    "to": "skill:exploration/dependency-graph-reading",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "specialist:cx-engineer",
+    "to": "provider:atlassian-jira",
+    "rel": "reads",
+    "weight": 1,
+    "sources": [
+      "pack-embed-binding"
+    ]
+  },
+  {
+    "from": "specialist:cx-engineer",
+    "to": "provider:github",
+    "rel": "reads",
+    "weight": 1,
+    "sources": [
+      "pack-embed-binding"
+    ]
+  },
+  {
+    "from": "specialist:cx-engineer",
+    "to": "skill:exploration/dependency-graph-reading",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "specialist:cx-operations",
+    "to": "provider:atlassian-confluence",
+    "rel": "reads",
+    "weight": 1,
+    "sources": [
+      "pack-embed-binding"
+    ]
+  },
+  {
+    "from": "specialist:cx-operations",
+    "to": "provider:atlassian-jira",
+    "rel": "reads",
+    "weight": 1,
+    "sources": [
+      "pack-embed-binding"
+    ]
+  },
+  {
+    "from": "specialist:cx-operations",
+    "to": "provider:slack",
+    "rel": "reads",
+    "weight": 1,
+    "sources": [
+      "pack-embed-binding"
+    ]
+  },
+  {
+    "from": "specialist:cx-operations",
+    "to": "skill:docs/adr-workflow",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "specialist:cx-operations",
+    "to": "skill:docs/document-ingest-workflow",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "specialist:cx-orchestrator",
+    "to": "skill:ai/orchestration-workflow",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "specialist:cx-orchestrator",
+    "to": "skill:exploration/dependency-graph-reading",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "specialist:cx-orchestrator",
+    "to": "skill:operating/orchestration-reference",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "specialist:cx-orchestrator",
+    "to": "skill:operating/unstructured-triage",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "specialist:cx-orchestrator",
+    "to": "skill:roles/trace-reviewer",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "specialist:cx-product-manager",
+    "to": "provider:atlassian-confluence",
+    "rel": "reads",
+    "weight": 1,
+    "sources": [
+      "pack-embed-binding"
+    ]
+  },
+  {
+    "from": "specialist:cx-product-manager",
+    "to": "provider:atlassian-jira",
+    "rel": "reads",
+    "weight": 1,
+    "sources": [
+      "pack-embed-binding"
+    ]
+  },
+  {
+    "from": "specialist:cx-product-manager",
+    "to": "skill:docs/evidence-ingest-workflow",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "specialist:cx-product-manager",
+    "to": "skill:docs/prd-workflow",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "specialist:cx-researcher",
+    "to": "skill:docs/evidence-ingest-workflow",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "specialist:cx-researcher",
+    "to": "skill:docs/research-workflow",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "specialist:cx-researcher",
+    "to": "skill:exploration/dependency-graph-reading",
+    "rel": "uses",
+    "weight": 1,
+    "sources": [
+      "registry"
+    ]
+  },
+  {
+    "from": "test:tests/acceptance/modes/enterprise.acceptance.test.mjs",
+    "to": "file:lib/audit-trail.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "test:tests/acceptance/ops-triage-preset.acceptance.test.mjs",
+    "to": "embed:operations-triage",
+    "rel": "validates",
+    "weight": 1,
+    "sources": [
+      "embed-manifest"
+    ]
+  },
+  {
+    "from": "test:tests/acceptance/pm-feedback-preset.acceptance.test.mjs",
+    "to": "embed:pm-feedback",
+    "rel": "validates",
+    "weight": 1,
+    "sources": [
+      "embed-manifest"
+    ]
+  },
+  {
+    "from": "test:tests/acceptance/pm-repos-preset.acceptance.test.mjs",
+    "to": "embed:pm-repos",
+    "rel": "validates",
+    "weight": 1,
+    "sources": [
+      "embed-manifest"
+    ]
+  },
+  {
+    "from": "test:tests/acceptance/tpm-preset.acceptance.test.mjs",
+    "to": "embed:operations",
+    "rel": "validates",
+    "weight": 1,
+    "sources": [
+      "embed-manifest"
+    ]
+  },
+  {
+    "from": "test:tests/artifact-capture.test.mjs",
+    "to": "file:lib/artifact-capture.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "test:tests/artifact-manifest.test.mjs",
+    "to": "file:lib/artifact-manifest.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "test:tests/artifact-release-gate.test.mjs",
+    "to": "file:lib/artifact-release-gate.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "test:tests/artifact-release-gate.test.mjs",
+    "to": "capability:artifact.release-gate",
+    "rel": "validates",
+    "weight": 1,
+    "sources": [
+      "corpus-annotation"
+    ]
+  },
+  {
+    "from": "test:tests/artifact-reviewers.test.mjs",
+    "to": "file:lib/artifact-release-gate.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "test:tests/artifact-reviewers.test.mjs",
+    "to": "file:lib/artifact-reviewers.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "test:tests/artifact-workflow.test.mjs",
+    "to": "file:lib/artifact-workflow.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "test:tests/asset-quality/a11y-audit.test.mjs",
+    "to": "file:lib/a11y-audit.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "test:tests/asset-quality/brand-contrast.test.mjs",
+    "to": "file:lib/brand-contrast.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "test:tests/asset-quality/brand-contrast.test.mjs",
+    "to": "file:lib/brand-tokens.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "test:tests/asset-quality/completion-evidence.test.mjs",
+    "to": "file:lib/artifact-completion.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "test:tests/asset-quality/completion-evidence.test.mjs",
+    "to": "file:lib/artifact-workflow.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "test:tests/asset-quality/completion-states.test.mjs",
+    "to": "file:lib/artifact-completion-states.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "test:tests/asset-quality/completion-states.test.mjs",
+    "to": "file:lib/artifact-manifest.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "test:tests/asset-quality/completion-truth.test.mjs",
+    "to": "file:lib/artifact-completion-states.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "test:tests/asset-quality/completion-truth.test.mjs",
+    "to": "file:lib/artifact-workflow.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "test:tests/asset-quality/gate-levels.test.mjs",
+    "to": "file:lib/artifact-gate-levels.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "test:tests/asset-quality/gate-levels.test.mjs",
+    "to": "file:lib/artifact-release-gate.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "test:tests/asset-quality/quality-contract.test.mjs",
+    "to": "file:lib/artifact-manifest.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "test:tests/asset-quality/render-evidence.test.mjs",
+    "to": "file:lib/artifact-completion.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "test:tests/asset-quality/render-pipeline.test.mjs",
+    "to": "file:lib/artifact-completion.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "test:tests/asset-quality/visual-review.test.mjs",
+    "to": "file:lib/artifact-completion.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  },
+  {
+    "from": "test:tests/audit-rules.test.mjs",
+    "to": "file:lib/audit-rules.mjs",
+    "rel": "imports",
+    "weight": 1,
+    "sources": [
+      "import-graph"
+    ]
+  }
+]

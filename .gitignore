@@ -78,6 +78,7 @@ dashboard-*.png
 dashboard/dist/
 lib/server/static/
 /dist/
+packages/cx-ui/prototypes/graph-viewer/dist/
 
 # npm's package-lock.json is the committed source of truth; `bun install`
 # (used only to exercise scripts/build-binary.mjs) migrates it into a local
