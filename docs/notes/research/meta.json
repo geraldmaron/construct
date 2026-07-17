@@ -8,6 +8,7 @@
     "construct-asset-quality",
     "construct-self-audit",
     "decision-input",
+    "lancedb-vs-sqlite-vec-benchmark",
     "vector-search-best-practices"
   ]
 }
