@@ -23,6 +23,7 @@ concurrency:
   group: promote-staging-to-main
   cancel-in-progress: false
 
+jobs:
   # construct-wrfcx gate: the daily staging full matrix must be green before we
   # open/refresh the promotion PR. Without this, staging could carry a red
   # matrix into production undetected. Fails the workflow (and notifies watchers)
