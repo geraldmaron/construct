@@ -33,7 +33,7 @@ test("direct invocation: violating PR body exits 1 with the exact violation bloc
   const r = run({ PR_AUTHOR: "someone", PR_BODY: "no headings at all" });
   assert.equal(r.status, 1);
   assert.match(r.stderr, /^\nTemplate policy violations:\n\n/);
-  assert.match(r.stderr, /  - PR body missing required heading: ## Summary\n/);
+  assert.match(r.stderr, / {2}- PR body missing required heading: ## Summary\n/);
   assert.match(r.stderr, /See \.gitmessage and \.github\/pull_request_template\.md for the required shape\.\n/);
   assert.match(r.stderr, /Run `git config commit\.template \.gitmessage` once per clone to load the commit template\.\n/);
 });
