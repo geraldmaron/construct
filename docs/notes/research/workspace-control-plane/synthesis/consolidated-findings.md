@@ -58,7 +58,7 @@ Dead/disconnected (deletion candidates with verification status):
 | X2 | `lib/policy/engine.mjs.bak`, `lib/roles/manifest.mjs.bak` | stale `.bak` files | **Not tracked on main** — untracked debris in the primary checkout's working tree only; left for that checkout's owner to clear |
 | X3 | `scripts/patch-registry-readers-v2.mjs` | spent one-shot codemod; only reference was its own lint-gate allowlist entry | Deleted this session after zero-reference check (allowlist entry removed with it) |
 | X4 | `lib/scheduler/` | orphaned (mutual import with `hygiene/scan` only) | **Not orphaned** — construct-b0nny.9 verified real callers (`bin/construct`'s `scheduler` CLI command, 4 test files, ADR-0077). Keep-verdict: `synthesis/b0nny-9-keep-verdict.md` |
-| X5 | Legacy provider `.js` tier (`provider-capabilities-*.js`, `cache-strategy-*.js`, `token-estimator-*.js`, `token-engine.js`, `dispatch-batch.js`) | pre-`lib/models/` generation | Bead filed — needs import + dynamic-dispatch check before deletion |
+| X5 | Legacy provider `.js` tier (`provider-capabilities-*.js`, `cache-strategy-*.js`, `token-estimator-*.js`, `token-engine.js`, `dispatch-batch.js`) | pre-`lib/models/` generation | Split verdict (construct-b0nny.10): `dispatch-batch.js` was truly dead and deleted; the other four families are load-bearing (`lib/models/execution-capability-profile.mjs` itself imports `provider-capabilities.js`) — see [b0nny-10-keep-verdict.md](b0nny-10-keep-verdict.md) |
 
 ## Load-bearing assumption register (seed — directive output 14.4)
 
