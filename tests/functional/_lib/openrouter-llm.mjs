@@ -113,7 +113,8 @@ export function createLlmHarness({ capUsdCents = 25, model: defaultModel = 'open
       );
       totalCents += callCents;
       const text = data.choices?.[0]?.message?.content ?? '';
-      calls.push({ model, usage, callCents, totalCents, textLength: text.length });
+      const finishReason = data.choices?.[0]?.finish_reason ?? null;
+      calls.push({ model, usage, callCents, totalCents, textLength: text.length, finishReason });
 
       if (totalCents > capUsdCents) {
         throw new LlmCostError(
@@ -122,7 +123,13 @@ export function createLlmHarness({ capUsdCents = 25, model: defaultModel = 'open
         );
       }
 
-      return { text, usage, model: data.model ?? model };
+      // finish_reason surfaces whether the model completed its answer or was
+      // cut off mid-generation by maxTokens — a caller expecting a specific
+      // response shape needs this to tell "the model never got to answer"
+      // (live truncation variance) apart from "the model answered and the
+      // shape check is wrong".
+
+      return { text, usage, model: data.model ?? model, finishReason };
     },
   };
 }
