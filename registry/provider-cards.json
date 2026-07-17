@@ -1,0 +1,465 @@
+{
+  "version": 1,
+  "generatedAt": "2026-07-17T13:51:28.133Z",
+  "providers": [
+    {
+      "id": "@ai-sdk/anthropic",
+      "kind": "npm-optional",
+      "purpose": "Anthropic Claude provider adapter enabling AI-powered specialist execution via the Vercel AI SDK",
+      "owningWorkflow": "orchestration-run, specialist dispatch (provider backend)",
+      "modeRequirement": "all",
+      "securityConcerns": "Transmits prompts and context to Anthropic API; API key must be stored in environment, not config files",
+      "versionPolicy": {
+        "type": "npm-semver",
+        "range": "^4.0.9"
+      },
+      "healthCheck": {
+        "kind": "import-check",
+        "detail": "require('@ai-sdk/anthropic') — present when user has installed the package; construct doctor warns if absent and ANTHROPIC_API_KEY is set"
+      },
+      "fallback": {
+        "behavior": "graceful-skip"
+      },
+      "owner": "construct-core",
+      "removalCriteria": "Anthropic stops supporting the Vercel AI SDK adapter format, or provider management moves to a different abstraction"
+    },
+    {
+      "id": "@ai-sdk/openai",
+      "kind": "npm-optional",
+      "purpose": "OpenAI provider adapter enabling AI-powered specialist execution via the Vercel AI SDK",
+      "owningWorkflow": "orchestration-run, specialist dispatch (provider backend)",
+      "modeRequirement": "all",
+      "securityConcerns": "Transmits prompts and context to OpenAI API; API key must be stored in environment, not config files",
+      "versionPolicy": {
+        "type": "npm-semver",
+        "range": "^4.0.8"
+      },
+      "healthCheck": {
+        "kind": "import-check",
+        "detail": "require('@ai-sdk/openai') — present when user has installed the package; construct doctor warns if absent and OPENAI_API_KEY is set"
+      },
+      "fallback": {
+        "behavior": "graceful-skip"
+      },
+      "owner": "construct-core",
+      "removalCriteria": "OpenAI stops supporting the Vercel AI SDK adapter format, or provider management moves to a different abstraction"
+    },
+    {
+      "id": "@ai-sdk/openai-compatible",
+      "kind": "npm-optional",
+      "purpose": "OpenAI-compatible provider adapter for local models (Ollama, LM Studio, vLLM) via the Vercel AI SDK",
+      "owningWorkflow": "orchestration-run, specialist dispatch (provider backend)",
+      "modeRequirement": "all",
+      "securityConcerns": "Transmits prompts to a user-specified endpoint; endpoint is user-controlled so SSRF risk is user-accepted",
+      "versionPolicy": {
+        "type": "npm-semver",
+        "range": "^3.0.5"
+      },
+      "healthCheck": {
+        "kind": "import-check",
+        "detail": "require('@ai-sdk/openai-compatible') — present when user configures a custom base URL provider"
+      },
+      "fallback": {
+        "behavior": "graceful-skip"
+      },
+      "owner": "construct-core",
+      "removalCriteria": "OpenAI-compatible protocol is superseded or Vercel AI SDK drops support"
+    },
+    {
+      "id": "@huggingface/transformers",
+      "kind": "npm-optional",
+      "purpose": "Local embedding model execution for vector search without requiring an external API (offline/privacy mode)",
+      "owningWorkflow": "knowledge-search, evidence-ingest (local embedding path)",
+      "modeRequirement": "solo",
+      "securityConcerns": "Downloads model weights from HuggingFace Hub on first use — network access required; model files are untrusted binary artifacts; supply-chain risk if model is swapped; users should pin specific model revisions",
+      "versionPolicy": {
+        "type": "npm-semver",
+        "range": "^4.2.0"
+      },
+      "healthCheck": {
+        "kind": "import-check",
+        "detail": "require('@huggingface/transformers') — absent means local embedding unavailable; hashing fallback activates automatically"
+      },
+      "fallback": {
+        "behavior": "graceful-skip"
+      },
+      "owner": "construct-core",
+      "removalCriteria": "Local embedding is handled by a different mechanism (e.g. llama.cpp bindings) or removed from the feature set"
+    },
+    {
+      "id": "@lancedb/lancedb",
+      "kind": "npm-dep",
+      "purpose": "Vector store for semantic search, embedding storage, and retrieval-augmented generation (RAG) pipelines",
+      "owningWorkflow": "knowledge-search, evidence-ingest, session-storage, embed-observations",
+      "modeRequirement": "all",
+      "securityConcerns": "Native binary bundled per-platform via optional deps; supply-chain risk on binary download at install time",
+      "versionPolicy": {
+        "type": "npm-semver",
+        "range": "^0.31.0"
+      },
+      "healthCheck": {
+        "kind": "import-check",
+        "detail": "require('@lancedb/lancedb') — verified at import time; no CLI binary"
+      },
+      "fallback": {
+        "behavior": "error"
+      },
+      "owner": "construct-core",
+      "removalCriteria": "Replaced by a different vector store (e.g. sqlite-vec, hnswlib-node) and all RAG pipelines migrated"
+    },
+    {
+      "id": "@modelcontextprotocol/sdk",
+      "kind": "npm-dep",
+      "purpose": "MCP server/client protocol implementation enabling Construct to expose tools to OpenCode, Claude Code, and other MCP hosts",
+      "owningWorkflow": "mcp-server, all tool dispatch workflows",
+      "modeRequirement": "all",
+      "securityConcerns": "Handles all inbound tool calls from the AI host; any deserialization vulnerability here is high-severity",
+      "versionPolicy": {
+        "type": "npm-semver",
+        "range": "^1.12.0"
+      },
+      "healthCheck": {
+        "kind": "import-check",
+        "detail": "require('@modelcontextprotocol/sdk') — verified at import time; MCP server startup fails if absent"
+      },
+      "fallback": {
+        "behavior": "error"
+      },
+      "owner": "construct-core",
+      "removalCriteria": "MCP protocol is replaced by a different inter-process communication mechanism"
+    },
+    {
+      "id": "@opentelemetry/api",
+      "kind": "npm-optional",
+      "purpose": "OpenTelemetry instrumentation API for tracing specialist runs, workflow phases, and MCP tool calls",
+      "owningWorkflow": "cx-trace, orchestration telemetry, session tracing",
+      "modeRequirement": "team",
+      "securityConcerns": "Trace data may include prompt fragments or tool outputs; ensure OTLP endpoints are access-controlled",
+      "versionPolicy": {
+        "type": "npm-semver",
+        "range": "^1.9.0"
+      },
+      "healthCheck": {
+        "kind": "import-check",
+        "detail": "require('@opentelemetry/api') — absent means tracing is silently skipped; no doctor check required"
+      },
+      "fallback": {
+        "behavior": "graceful-skip"
+      },
+      "owner": "construct-core",
+      "removalCriteria": "Telemetry is removed from Construct or replaced with a non-OTEL mechanism"
+    },
+    {
+      "id": "ai",
+      "kind": "npm-optional",
+      "purpose": "Vercel AI SDK core — unified interface for streaming LLM calls, tool use, and structured output across all provider adapters",
+      "owningWorkflow": "orchestration-run, specialist dispatch (provider backend)",
+      "modeRequirement": "all",
+      "securityConcerns": "Streams model output; ensure tool-call deserialization is sandboxed and does not allow arbitrary code execution",
+      "versionPolicy": {
+        "type": "npm-semver",
+        "range": "^7.0.17"
+      },
+      "healthCheck": {
+        "kind": "import-check",
+        "detail": "require('ai') — absent when no provider backend is configured; construct doctor warns"
+      },
+      "fallback": {
+        "behavior": "graceful-skip"
+      },
+      "owner": "construct-core",
+      "removalCriteria": "Provider execution moves to a different SDK abstraction not based on the Vercel AI SDK"
+    },
+    {
+      "id": "apache-arrow",
+      "kind": "npm-dep",
+      "purpose": "IPC and data serialization layer required by @lancedb/lancedb for query results and batch operations",
+      "owningWorkflow": "knowledge-search, evidence-ingest, session-storage",
+      "modeRequirement": "all",
+      "securityConcerns": null,
+      "versionPolicy": {
+        "type": "npm-semver",
+        "range": "^18.1.0"
+      },
+      "healthCheck": {
+        "kind": "import-check",
+        "detail": "require('apache-arrow') — verified at import time alongside lancedb"
+      },
+      "fallback": {
+        "behavior": "error"
+      },
+      "owner": "construct-core",
+      "removalCriteria": "Removed when @lancedb/lancedb no longer depends on apache-arrow or is itself removed"
+    },
+    {
+      "id": "docling",
+      "kind": "sidecar",
+      "purpose": "Layout-aware document ingestion (PDF, DOCX/XLSX/PPTX/ODT/ODS, rich-text, Spotlight-indexable formats) via a Python sidecar provisioned through uv. Governed provider: install/health are probed, not assumed, and failure follows a declared degradation chain rather than crashing ingest.",
+      "owningWorkflow": "document-extraction",
+      "securityConcerns": "installSource='uv-venv', securityClassification='trusted' per lib/extensions/manifests/docling.manifest.json",
+      "versionPolicy": {
+        "type": "unmanaged",
+        "notes": "Provisioned via uv-venv; no enforced version pin, version (if any) is reported by the health-check subprocess only."
+      },
+      "healthCheck": {
+        "kind": "subprocess-version",
+        "detail": "Runs the venv-installed `docling` console script directly (not `uv run`, which expects a pyproject-based project rather than a bare venv). A non-zero exit, timeout, or missing venv is unhealthy; stdout carries the docling/docling-core/docling-parse version lines.",
+        "command": "<runtimeDir>/.venv/bin/docling",
+        "args": [
+          "--version"
+        ],
+        "timeoutMs": 15000
+      },
+      "fallback": {
+        "behavior": "degraded-chain",
+        "chain": [
+          {
+            "id": "docling",
+            "mode": "sidecar",
+            "description": "Layout-aware extraction (tables, OCR, all formats) via the local Python sidecar."
+          },
+          {
+            "id": "node-native",
+            "mode": "adapter",
+            "description": "unpdf (PDF) or mammoth (DOCX) — pure-JS, lower fidelity, no OCR, no XLSX/PPTX/ODT/ODS support."
+          },
+          {
+            "id": "refuse",
+            "mode": "error",
+            "description": "No extractor available for this format; ingest fails loud with an actionable install hint."
+          }
+        ],
+        "terminal": "refuse"
+      },
+      "owner": "construct-core",
+      "removalCriteria": "unknown (not recorded in lib/extensions/manifests/docling.manifest.json)"
+    },
+    {
+      "id": "ink",
+      "kind": "npm-optional",
+      "purpose": "React-based terminal UI renderer for interactive CLI components (progress, prompts, live output)",
+      "owningWorkflow": "construct CLI interactive commands",
+      "modeRequirement": "all",
+      "securityConcerns": null,
+      "versionPolicy": {
+        "type": "npm-semver",
+        "range": "^7.1.0"
+      },
+      "healthCheck": {
+        "kind": "import-check",
+        "detail": "require('ink') — absent means interactive TUI falls back to plain text output"
+      },
+      "fallback": {
+        "behavior": "graceful-skip"
+      },
+      "owner": "construct-core",
+      "removalCriteria": "TUI layer is removed from Construct or replaced with a different terminal rendering library"
+    },
+    {
+      "id": "js-yaml",
+      "kind": "npm-dep",
+      "purpose": "YAML parsing for skill frontmatter, specialist manifests, scope configs, and ADR document headers",
+      "owningWorkflow": "skill-load, scope-management, artifact-workflow, docs-verify",
+      "modeRequirement": "all",
+      "securityConcerns": "YAML parsing of untrusted input can trigger prototype pollution if safeLoad is not used; all usages must use yaml.load with schema: yaml.DEFAULT_SAFE_SCHEMA or yaml.safeLoad",
+      "versionPolicy": {
+        "type": "npm-semver",
+        "range": "^5.2.1"
+      },
+      "healthCheck": {
+        "kind": "import-check",
+        "detail": "require('js-yaml') — verified at import time"
+      },
+      "fallback": {
+        "behavior": "error"
+      },
+      "owner": "construct-core",
+      "removalCriteria": "YAML is replaced with TOML or JSON frontmatter across all documents and manifests"
+    },
+    {
+      "id": "mammoth",
+      "kind": "npm-optional",
+      "purpose": "DOCX document reading and conversion to HTML/markdown for document ingestion workflows",
+      "owningWorkflow": "docs-document-ingest-workflow, extract-document-text",
+      "modeRequirement": "all",
+      "securityConcerns": "Parses untrusted DOCX files; DOCX is a ZIP-based format with macro and OLE object risks — mammoth does not execute macros but malformed XML could trigger parse errors",
+      "versionPolicy": {
+        "type": "npm-semver",
+        "range": "^1.12.0"
+      },
+      "healthCheck": {
+        "kind": "import-check",
+        "detail": "require('mammoth') — absent means DOCX ingestion is unavailable; construct doctor warns"
+      },
+      "fallback": {
+        "behavior": "graceful-skip"
+      },
+      "owner": "construct-core",
+      "removalCriteria": "DOCX reading is handled by docling or another document processing pipeline"
+    },
+    {
+      "id": "postgres",
+      "kind": "npm-optional",
+      "purpose": "Postgres.js tagged-template SQL client for optional shared run-store and migration-backed team-mode storage",
+      "owningWorkflow": "orchestration-run-store, db-migrations, team-mode-storage",
+      "modeRequirement": "team",
+      "securityConcerns": "Connects to operator-configured database endpoints; database URLs may contain credentials and must be redacted from logs",
+      "versionPolicy": {
+        "type": "npm-semver",
+        "range": "^3.4.9"
+      },
+      "healthCheck": {
+        "kind": "import-check",
+        "detail": "require('postgres') plus SELECT 1 when DATABASE_URL or CONSTRUCT_DATABASE_URL is configured"
+      },
+      "fallback": {
+        "behavior": "graceful-skip"
+      },
+      "owner": "construct-core",
+      "removalCriteria": "Postgres-backed shared storage is removed or replaced by a different SQL client/adapter"
+    },
+    {
+      "id": "pptx-embed-fonts",
+      "kind": "npm-optional",
+      "purpose": "Font embedding helper for pptxgenjs to ensure consistent typography in generated PPTX files",
+      "owningWorkflow": "document-export (pptx format)",
+      "modeRequirement": "all",
+      "securityConcerns": null,
+      "versionPolicy": {
+        "type": "npm-semver",
+        "range": "^0.0.6"
+      },
+      "healthCheck": {
+        "kind": "import-check",
+        "detail": "require('pptx-embed-fonts') — absent means fonts are not embedded in PPTX output"
+      },
+      "fallback": {
+        "behavior": "graceful-skip"
+      },
+      "owner": "construct-core",
+      "removalCriteria": "Removed when pptxgenjs is removed or when font embedding is handled differently"
+    },
+    {
+      "id": "pptxgenjs",
+      "kind": "npm-optional",
+      "purpose": "PPTX slide deck generation for document export workflows",
+      "owningWorkflow": "document-export (pptx format)",
+      "modeRequirement": "all",
+      "securityConcerns": null,
+      "versionPolicy": {
+        "type": "npm-semver",
+        "range": "^4.0.1"
+      },
+      "healthCheck": {
+        "kind": "import-check",
+        "detail": "require('pptxgenjs') — absent means PPTX export is unavailable; construct doctor warns when PPTX export is attempted"
+      },
+      "fallback": {
+        "behavior": "graceful-skip"
+      },
+      "owner": "construct-core",
+      "removalCriteria": "PPTX export is removed from Construct or replaced with pandoc-based conversion"
+    },
+    {
+      "id": "react",
+      "kind": "npm-optional",
+      "purpose": "React runtime required by ink for terminal UI component rendering",
+      "owningWorkflow": "construct CLI interactive commands",
+      "modeRequirement": "all",
+      "securityConcerns": null,
+      "versionPolicy": {
+        "type": "npm-semver",
+        "range": "^19.2.7"
+      },
+      "healthCheck": {
+        "kind": "import-check",
+        "detail": "require('react') — co-required with ink; absent when ink is absent"
+      },
+      "fallback": {
+        "behavior": "graceful-skip"
+      },
+      "owner": "construct-core",
+      "removalCriteria": "Removed when ink is removed"
+    },
+    {
+      "id": "unpdf",
+      "kind": "npm-optional",
+      "purpose": "PDF text extraction for document ingestion workflows (pure-JS, no native binary required)",
+      "owningWorkflow": "docs-document-ingest-workflow, extract-document-text",
+      "modeRequirement": "all",
+      "securityConcerns": "Parses untrusted PDF files; PDF format has historically had parser vulnerabilities; unpdf uses pdf.js which is well-maintained",
+      "versionPolicy": {
+        "type": "npm-semver",
+        "range": "^1.6.2"
+      },
+      "healthCheck": {
+        "kind": "import-check",
+        "detail": "require('unpdf') — absent means PDF ingestion falls back to docling or is unavailable"
+      },
+      "fallback": {
+        "behavior": "graceful-skip"
+      },
+      "owner": "construct-core",
+      "removalCriteria": "PDF reading is fully handled by docling or another pipeline making unpdf redundant"
+    },
+    {
+      "id": "whisper",
+      "kind": "sidecar",
+      "purpose": "Local audio/video transcription via whisper.cpp (Metal-accelerated on macOS). No npm dependency — the binary and model weights are provisioned outside npm and probed, not assumed.",
+      "owningWorkflow": "audio-transcription",
+      "securityConcerns": "installSource='system-binary', securityClassification='trusted' per lib/extensions/manifests/whisper.manifest.json",
+      "versionPolicy": {
+        "type": "unmanaged",
+        "notes": "Provisioned via system-binary; no enforced version pin, version (if any) is reported by the health-check subprocess only."
+      },
+      "healthCheck": {
+        "kind": "subprocess-version",
+        "detail": "whisper.cpp CLI has no --version flag; health runs the binary with --help and treats a clean exit (or the expected usage banner) as healthy. A missing binary or non-zero exit is unhealthy.",
+        "command": "<resolvedBinary>",
+        "args": [
+          "--help"
+        ],
+        "timeoutMs": 10000
+      },
+      "fallback": {
+        "behavior": "degraded-chain",
+        "chain": [
+          {
+            "id": "whisper",
+            "mode": "sidecar",
+            "description": "Local ASR transcription via whisper.cpp."
+          },
+          {
+            "id": "refuse",
+            "mode": "error",
+            "description": "No transcription backend available; audio/video ingest fails loud (ASR_REQUIRED) with an install hint (brew install whisper-cpp)."
+          }
+        ],
+        "terminal": "refuse"
+      },
+      "owner": "construct-core",
+      "removalCriteria": "unknown (not recorded in lib/extensions/manifests/whisper.manifest.json)"
+    },
+    {
+      "id": "zod",
+      "kind": "npm-optional",
+      "purpose": "Schema validation and type-safe parsing for MCP tool inputs, config files, and artifact manifests",
+      "owningWorkflow": "mcp-server tool validation, config parsing, artifact-release-gate",
+      "modeRequirement": "all",
+      "securityConcerns": null,
+      "versionPolicy": {
+        "type": "npm-semver",
+        "range": "^4.4.3"
+      },
+      "healthCheck": {
+        "kind": "import-check",
+        "detail": "require('zod') — absent means schema validation falls back to manual checks; construct doctor warns"
+      },
+      "fallback": {
+        "behavior": "graceful-skip"
+      },
+      "owner": "construct-core",
+      "removalCriteria": "Schema validation is replaced by a different library (e.g. valibot) or inlined"
+    }
+  ]
+}
