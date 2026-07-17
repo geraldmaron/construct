@@ -1,26 +1,26 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-17T02:58:51.568Z",
+  "generatedAt": "2026-07-17T05:15:58.881Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 944,
-    "topLevelTestFiles": 384,
-    "nestedTestFiles": 560,
+    "testFiles": 962,
+    "topLevelTestFiles": 385,
+    "nestedTestFiles": 577,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 52,
     "byLayer": {
-      "unit": 617,
-      "functional": 278,
+      "unit": 630,
+      "functional": 283,
       "visual": 12,
       "live-provider": 2,
       "integration": 35
     },
     "byCategory": {
-      "unit": 551,
-      "functional": 278,
+      "unit": 563,
+      "functional": 283,
       "visual": 12,
       "structural-guard": 19,
-      "contract-subsystem": 47,
+      "contract-subsystem": 48,
       "live-provider": 2,
       "integration": 26,
       "hook": 9
@@ -1265,6 +1265,14 @@
       "maintainerNotes": "tests/cli-surface.test.mjs — validates public CLI behavior against the current project cwd."
     },
     {
+      "path": "tests/cli/directives-cli.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/cli/directives-cli.test.mjs — `construct directives` CLI handler"
+    },
+    {
       "path": "tests/comment-lint.test.mjs",
       "layer": "unit",
       "category": "structural-guard",
@@ -1529,6 +1537,22 @@
       "maintainerNotes": "tests/deprecate.test.mjs — deprecation warning behaviour."
     },
     {
+      "path": "tests/directives/directive-config.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/directives/directive-config.test.mjs — directive shape validation"
+    },
+    {
+      "path": "tests/directives/due-tracker.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/directives/due-tracker.test.mjs — per-directive last-run bookkeeping"
+    },
+    {
       "path": "tests/distill.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -1655,6 +1679,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/doctor/cost-ledger.test.mjs — daily budget tracking and enforcement."
+    },
+    {
+      "path": "tests/doctor/degradation-watcher.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/doctor/degradation-watcher.test.mjs — daemon capability-decline watcher."
     },
     {
       "path": "tests/doctor/oracle-liveness-watcher.test.mjs",
@@ -1801,6 +1833,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/embed-config.test.mjs — embed config loader and YAML parser tests."
+    },
+    {
+      "path": "tests/embed-degradation.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/embed-degradation.test.mjs — durable capability-decline ledger"
     },
     {
       "path": "tests/embed-demand-fetch.test.mjs",
@@ -2974,6 +3014,30 @@
       "maintainerNotes": "tests/functional/embed-capability-lifecycle.functional.test.mjs"
     },
     {
+      "path": "tests/functional/embed-daemon-cross-process-approval.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/embed-daemon-cross-process-approval.functional.test.mjs —"
+    },
+    {
+      "path": "tests/functional/embed-daemon-directive-runner.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/embed-daemon-directive-runner.functional.test.mjs —"
+    },
+    {
+      "path": "tests/functional/embed-daemon-execution-gap.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/embed-daemon-execution-gap.functional.test.mjs —"
+    },
+    {
       "path": "tests/functional/embed-daemon-inbox-loop.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2982,12 +3046,28 @@
       "maintainerNotes": "tests/functional/embed-daemon-inbox-loop.functional.test.mjs —"
     },
     {
+      "path": "tests/functional/embed-daemon-roadmap-slack-proposal.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/embed-daemon-roadmap-slack-proposal.functional.test.mjs —"
+    },
+    {
       "path": "tests/functional/embed-daemon-status-pending-approvals.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/embed-daemon-status-pending-approvals.functional.test.mjs —"
+    },
+    {
+      "path": "tests/functional/embed-daemon-write-drain.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/embed-daemon-write-drain.functional.test.mjs —"
     },
     {
       "path": "tests/functional/embed-daemon-write-intent-drain.functional.test.mjs",
@@ -5860,6 +5940,38 @@
       "maintainerNotes": "tests/oracle-reconcile-staleness.test.mjs — contract violation SLA window logic."
     },
     {
+      "path": "tests/oracle/directive-executor.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/oracle/directive-executor.test.mjs — construct-p4cba.6 (WS-B5)"
+    },
+    {
+      "path": "tests/oracle/execute-directive-due.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/oracle/execute-directive-due.test.mjs — construct-p4cba.6 (WS-B5)"
+    },
+    {
+      "path": "tests/oracle/read-model-directives.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/oracle/read-model-directives.test.mjs — construct-p4cba.6 (WS-B5)"
+    },
+    {
+      "path": "tests/oracle/synthesize-directive-due.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/oracle/synthesize-directive-due.test.mjs — construct-p4cba.6 (WS-B5)"
+    },
+    {
       "path": "tests/orchestration-chain-of-thought.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -6074,6 +6186,22 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/orchestration/provenance.test.mjs — full execution provenance in traces (LMCP-F1)."
+    },
+    {
+      "path": "tests/orchestration/write-proposal-parser.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration/write-proposal-parser.test.mjs — parseWriteProposals"
+    },
+    {
+      "path": "tests/orchestration/write-proposal-worker-integration.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration/write-proposal-worker-integration.test.mjs —"
     },
     {
       "path": "tests/outcomes/record.test.mjs",
@@ -7684,6 +7812,22 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/writes/slack.functional.test.mjs — Slack writes routed through the"
+    },
+    {
+      "path": "tests/writes/transport-env-resolution.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/writes/transport-env-resolution.test.mjs — jira and confluence"
+    },
+    {
+      "path": "tests/writes/write-policy.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/writes/write-policy.test.mjs — per-write-kind auto/approval/deny policy."
     },
     {
       "path": "tests/xdg-config.test.mjs",
