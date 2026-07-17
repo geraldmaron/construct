@@ -1,0 +1,210 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://construct.dev/schemas/extraction-result.schema.json",
+  "title": "Construct Extraction Result",
+  "description": "What a single extraction call must report (construct-tsyfe.2.1), generalizing the ad hoc shapes already in use: node-native's buildExtractionResult envelope (lib/document-extract.mjs), the docling sidecar's { markdown, metadata, droppedInfo } (lib/document-extract/docling-client.mjs), and Docling Serve's { text, extractionMethod, characters, truncated, droppedInfo } (documented only as a comment at lib/ingest/docling-remote.mjs:24-26, not previously an enforced schema). Net-new contract definition: no extractor is migrated to this schema here, no routing logic changes.",
+  "type": "object",
+  "required": [
+    "provider",
+    "extractionMethod",
+    "text",
+    "characters",
+    "truncated",
+    "losslessWhereAvailable",
+    "richDocument",
+    "pageRefs",
+    "layoutRefs",
+    "tables",
+    "figures",
+    "assets",
+    "droppedInfo",
+    "qualityReport",
+    "sourceGrounding"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "provider": {
+      "type": "object",
+      "required": ["name", "version", "configFingerprint"],
+      "additionalProperties": false,
+      "description": "Embedded provider identity subset — mirrors the required core of schemas/extraction-provider.schema.json.",
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "configFingerprint": { "type": "string", "minLength": 1 }
+      }
+    },
+    "extractionMethod": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Which concrete path produced this result, e.g. 'docling-sidecar', 'node-native-pdf', 'docling-serve', 'whisper'."
+    },
+    "text": {
+      "type": "string",
+      "description": "Normalized flat text (existing ad hoc contracts' 'text' field), kept alongside richDocument for indexing/search callers that do not need structure."
+    },
+    "characters": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "truncated": {
+      "type": "boolean"
+    },
+    "losslessWhereAvailable": {
+      "type": "boolean",
+      "description": "Whether THIS extraction preserved source structure losslessly where the source format allowed it."
+    },
+    "losslessReason": {
+      "type": ["string", "null"],
+      "description": "Required (non-null, non-empty) when losslessWhereAvailable is false. Conditional-requirement, not expressible in this schema subset (no if/then/dependentRequired) — enforced by the validator in lib/contracts/extraction-provider.mjs instead."
+    },
+    "richDocument": {
+      "type": "object",
+      "required": ["metadata", "sections"],
+      "additionalProperties": false,
+      "description": "RichDocument IR (ADR-0073, lib/rich-document.mjs). Structural shape only here; deep block/run validation is delegated to lib/rich-document.mjs's validateRichDocument rather than re-implemented in this schema.",
+      "properties": {
+        "metadata": { "type": "object" },
+        "sections": { "type": "array" }
+      }
+    },
+    "pageRefs": {
+      "type": "array",
+      "description": "Page-to-section mapping enabling page-aware navigation of the normalized output.",
+      "items": {
+        "type": "object",
+        "required": ["page", "sectionIds"],
+        "additionalProperties": false,
+        "properties": {
+          "page": { "type": "integer", "minimum": 1 },
+          "sectionIds": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "layoutRefs": {
+      "type": "array",
+      "description": "Layout regions the provider detected (headers, footers, columns, margins) beyond the linear section/block flow.",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "kind": { "type": "string", "enum": ["header", "footer", "column", "region", "margin"] },
+          "page": { "type": ["integer", "null"], "minimum": 1 },
+          "bbox": {
+            "type": ["array", "null"],
+            "items": { "type": "number" },
+            "minItems": 4,
+            "maxItems": 4,
+            "description": "[x, y, width, height] in provider-native units, or null when the provider does not report geometry."
+          }
+        }
+      }
+    },
+    "tables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "rowCount", "columnCount"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "page": { "type": ["integer", "null"], "minimum": 1 },
+          "sectionId": { "type": ["string", "null"] },
+          "rowCount": { "type": "integer", "minimum": 0 },
+          "columnCount": { "type": "integer", "minimum": 0 },
+          "caption": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "figures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "page": { "type": ["integer", "null"], "minimum": 1 },
+          "sectionId": { "type": ["string", "null"] },
+          "caption": { "type": ["string", "null"] },
+          "altText": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "assets": {
+      "type": "array",
+      "description": "Extracted binary assets (images, embedded media) with a durable id so blocks/figures can reference them.",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "kind": { "type": "string", "enum": ["image", "video", "audio", "other"] },
+          "mimeType": { "type": ["string", "null"] },
+          "path": { "type": ["string", "null"] },
+          "uri": { "type": ["string", "null"] },
+          "page": { "type": ["integer", "null"], "minimum": 1 }
+        }
+      }
+    },
+    "droppedInfo": {
+      "type": "array",
+      "description": "Reuses lib/extractors/shared/drop-info.mjs's { kind, count, reason, recoverable } shape verbatim — the same shape lib/rich-document.mjs already reuses. An empty array means nothing was silently dropped, not that nothing was structured.",
+      "items": {
+        "type": "object",
+        "required": ["kind", "count", "reason", "recoverable"],
+        "additionalProperties": false,
+        "properties": {
+          "kind": { "type": "string", "minLength": 1 },
+          "count": { "type": "integer", "minimum": 0 },
+          "reason": { "type": "string", "minLength": 1 },
+          "recoverable": { "type": "boolean" }
+        }
+      }
+    },
+    "qualityReport": {
+      "type": "object",
+      "required": ["textDensityPerPage", "lowTextYield", "ocrConfidence", "signals"],
+      "additionalProperties": false,
+      "description": "Generalizes the docling sidecar's low-text-yield density heuristic (lib/document-extract/docling-sidecar.py:120-131, chars/page < 50) into a provider-agnostic fidelity signal, plus room for OCR confidence.",
+      "properties": {
+        "textDensityPerPage": { "type": ["number", "null"], "minimum": 0 },
+        "lowTextYield": { "type": "boolean" },
+        "ocrConfidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "signals": {
+          "type": "object",
+          "description": "Free-form namespace for provider-specific quality signals not yet promoted to a named field."
+        }
+      }
+    },
+    "sourceGrounding": {
+      "type": "object",
+      "required": ["granularity", "refs"],
+      "additionalProperties": false,
+      "description": "Page/offset references enabling citation back to the source document.",
+      "properties": {
+        "granularity": { "type": "string", "enum": ["none", "page", "offset"] },
+        "refs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["sectionId"],
+            "additionalProperties": false,
+            "properties": {
+              "sectionId": { "type": "string", "minLength": 1 },
+              "page": { "type": ["integer", "null"], "minimum": 1 },
+              "offsetStart": { "type": ["integer", "null"], "minimum": 0 },
+              "offsetEnd": { "type": ["integer", "null"], "minimum": 0 }
+            }
+          }
+        }
+      }
+    }
+  }
+}
