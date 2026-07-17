@@ -1,28 +1,28 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-17T07:38:44.439Z",
+  "generatedAt": "2026-07-17T07:56:43.743Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 970,
+    "testFiles": 974,
     "topLevelTestFiles": 387,
-    "nestedTestFiles": 583,
+    "nestedTestFiles": 587,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 53,
+    "capabilityMarkedFiles": 54,
     "byLayer": {
-      "unit": 634,
-      "functional": 287,
+      "unit": 635,
+      "functional": 289,
       "visual": 12,
       "live-provider": 2,
-      "integration": 35
+      "integration": 36
     },
     "byCategory": {
-      "unit": 567,
-      "functional": 287,
+      "unit": 568,
+      "functional": 289,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 48,
       "live-provider": 2,
-      "integration": 26,
+      "integration": 27,
       "hook": 9
     }
   },
@@ -2269,6 +2269,14 @@
       "maintainerNotes": "tests/export-branding.test.mjs — distribution branding policy coverage."
     },
     {
+      "path": "tests/export/provider-contract.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/export/provider-contract.test.mjs — ExportProvider contract shape (construct-tsyfe.6.1)."
+    },
+    {
       "path": "tests/extensions/manifest-providers.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -2832,6 +2840,16 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/deck-export.functional.test.mjs — branded deck HTML + PPTX export contract."
+    },
+    {
+      "path": "tests/functional/demo-manifest.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "demo.terminal-fallback"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/demo-manifest.functional.test.mjs — canonical Demo Manifest schema + loader."
     },
     {
       "path": "tests/functional/demo-plugin.functional.test.mjs",
@@ -4708,6 +4726,14 @@
       "maintainerNotes": "tests/functional/w5-self-loop.functional.test.mjs —"
     },
     {
+      "path": "tests/functional/wave0-false-success-certification.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/wave0-false-success-certification.functional.test.mjs —"
+    },
+    {
       "path": "tests/functional/web-capability-gate-visibility.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -5434,6 +5460,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/knowledge-trends.test.mjs — Unit tests for lib/knowledge/trends.mjs."
+    },
+    {
+      "path": "tests/knowledge/knowledge-store-contract.test.mjs",
+      "layer": "integration",
+      "category": "integration",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/knowledge/knowledge-store-contract.test.mjs — KnowledgeStore provider"
     },
     {
       "path": "tests/knowledge/research-store.test.mjs",
