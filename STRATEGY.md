@@ -57,7 +57,7 @@ What is partial:
 - Team and enterprise modes have the scaffolding but few real users yet.
 - Provider coverage is uneven. GitHub, Slack, Jira, Confluence, Salesforce exist; depth varies.
 - Visual coverage in the docs site is thin (most concepts have no diagrams).
-- The 29-specialist roster consolidation to ~8–12 core roles is a drafted proposal (ADR-0065 roster-mapping appendix), not yet applied — the built-in roster is unchanged pending sign-off on specific groupings.
+- The 29-specialist roster consolidation is applied (ADR-0065): 12 core `cx-*` specialists ship in `specialists/org/specialists/` and `specialists/prompts/`.
 - Contract-chain dispatch is ported onto the flow engine additively (`lib/orchestration/delegation-flow.mjs`), not as a full replacement — the flow stays engine-internal with no MCP surface (the `orchestration_delegation_next` tool was removed under the tool-surface budget; ADR-0074 / construct-1in3v), and the older prompt-injected `dispatchPlan`/`dispatchSummary` path still runs alongside it because other contracts and callers still depend on it.
 - Bun-compiled binary distribution builds and runs in isolation (all 4 platform targets, LanceDB + MCP SDK verified under Bun) but `bin/construct` itself doesn't yet run standalone under the compiled binary (a data-root resolution gap); npm remains the only working distribution channel.
 
@@ -76,7 +76,7 @@ A full challenge of the standing architecture, recorded in `plan.md` (epic `cons
 - **D3 — Config-layer project footprint** ([ADR-0066](./docs/decisions/adr/0066-config-layer-project-footprint.md)). A project keeps only committed text (`construct.config.json`, `.cx/context.md`, custom specialists/teams); all heavy state (traces, vector index, runs, docling venv) moves to a machine-scoped root, shrinking a ~2.5–3 GB per-project footprint toward KB scale.
 - **D4 — Standalone-project comment hygiene.** Code comments may not name another software project by way of comparison; decision documents keep their citations (the no-fabrication rule requires them there).
 
-No backwards compatibility: these are clean breaks, not migration shims. Execution runs in six phases (decide → flow engine → roster → footprint → distribution → docs/verification); as of this writing 12 of the epic's 22 beads are closed. The flow engine, checkpoint/resume, machine-scoped state, shared docling venv, and lazy vector index are shipped; the core-roster consolidation and Bun-binary distribution are drafted/in-flight but not yet applied. See the current state notes above, [Flow engine](./docs/guides/concepts/architecture.md#flow-engine) in the architecture doc, and the ADR index for the full supersession record.
+No backwards compatibility: these are clean breaks, not migration shims. Execution runs in six phases (decide → flow engine → roster → footprint → distribution → docs/verification); as of this writing 12 of the epic's 22 beads are closed. The flow engine, checkpoint/resume, machine-scoped state, shared docling venv, lazy vector index, and the core-roster consolidation (12 specialists shipped) are landed; the Bun-binary distribution is drafted/in-flight but not yet applied. See the current state notes above, [Flow engine](./docs/guides/concepts/architecture.md#flow-engine) in the architecture doc, and the ADR index for the full supersession record.
 
 ## Bets
 
@@ -114,7 +114,7 @@ Why: dogfood is the only honest demo. A tool that does not run its own project i
 
 ### Bet 6: Orchestrator-worker over a fixed role-crew org
 
-A small orchestrator plus a thin core roster, with skills (`skills/**`) as the actual unit of specialization, replaces a large fixed cast of 29 named personas. Customizability goes up, not down: fewer built-ins, but users author their own specialists and teams declaratively instead of forking the org. This is ADR-0065's bet, and it is deliberately one-way — the no-backwards-compat mandate governing the 2026-07 refit means retired specialist prompts get deleted, not archived behind a flag, once the roster mapping is approved.
+A small orchestrator plus a thin core roster, with skills (`skills/**`) as the actual unit of specialization, replaces a large fixed cast of 29 named personas. Customizability goes up, not down: fewer built-ins, but users author their own specialists and teams declaratively instead of forking the org. This is ADR-0065's bet, and it is deliberately one-way — the no-backwards-compat mandate governing the 2026-07 refit meant retired specialist prompts were deleted, not archived behind a flag; the applied roster is the 12 that ship today.
 
 Why: the evidence (Anthropic's own multi-agent research, Cognition's "Don't Build Multi-Agents," the Berkeley MAST taxonomy) says role-play crews earn their cost only for read-only, parallelizable, breadth-first work — not most of what Construct's specialists do. Keeping 29 fixed personas past the point the evidence stopped supporting them would be inertia, not a bet.
 
