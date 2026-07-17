@@ -116,7 +116,7 @@ construct demo init my-prd --from=construct-cockpit
 npm run build && construct demo record marketing --format mp4
 ```
 
-Shared scroll helpers ship in `templates/demos/specs/_helpers/scroll-artifact.ts` (copied into `.construct/demos/specs/_helpers/` on init). Schema: `schemas/demo-recording.schema.json`.
+Shared scroll helpers ship in `templates/demos/specs/_helpers/scroll-artifact.ts` (copied into `.construct/demos/specs/_helpers/` on init). Schema: `schemas/demo-recording.schema.json`, nested under the `recording` field of the canonical `schemas/demo-manifest.schema.json` (`lib/demo-manifest.mjs`) for any demo authored against the reconciling Manifest schema.
 
 ## Render a diagram
 
