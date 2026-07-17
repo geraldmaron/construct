@@ -35,6 +35,8 @@
     "02-deadcode:module-test-only:lib/demo-manifest.mjs",
     "02-deadcode:module-test-only:lib/diagram-card.mjs",
     "02-deadcode:module-test-only:lib/engine/knowledge-store-contract.mjs",
-    "02-deadcode:module-test-only:lib/export-provider-contract.mjs"
+    "02-deadcode:module-test-only:lib/export-provider-contract.mjs",
+    "02-deadcode:module-test-only:lib/certification/corpus-contract.mjs",
+    "02-deadcode:module-test-only:lib/certification/host-adapter-certification.mjs"
   ]
 }
