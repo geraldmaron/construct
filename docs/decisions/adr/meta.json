@@ -86,6 +86,7 @@
     "0093-state-root-consolidation",
     "0094-approval-drain-lifecycle",
     "0095-jira-api-migration-plan",
-    "0096-approval-drain-lifecycle-resolution"
+    "0096-approval-drain-lifecycle-resolution",
+    "0097-capability-delegation-rubric"
   ]
 }
