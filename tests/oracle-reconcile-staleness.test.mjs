@@ -132,7 +132,12 @@ describe('planContractViolationSupersede SLA window (24h)', () => {
     const logFile = path.join(projectDir, '.construct', 'contract-violations.jsonl');
     fs.mkdirSync(path.dirname(logFile), { recursive: true });
 
-    const ts = new Date(Date.now() - boundaryMs + 1).toISOString();
+    // Pin one clock for both the fixture and the check: with only a 1ms
+    // margin, letting the code under test take its own Date.now() races
+    // wall-clock time elapsed between the two calls under full-suite load.
+
+    const now = Date.now();
+    const ts = new Date(now - boundaryMs + 1).toISOString();
     const record = {
       ts,
       sequence: 1,
@@ -144,7 +149,7 @@ describe('planContractViolationSupersede SLA window (24h)', () => {
       prev_line_hash: null,
     };
     fs.writeFileSync(logFile, JSON.stringify(record) + '\n');
-    const plan = planContractViolationSupersede(projectDir);
+    const plan = planContractViolationSupersede(projectDir, { now });
     assert.equal(plan.recentCount, 1, 'should include violations fresher than window');
   });
 
