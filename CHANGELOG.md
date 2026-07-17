@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Removed
+
+- **Unwired deterministic embed-capability presets (bead `construct-4uxq0.10.8`)**: `lib/embed/presets/{tpm,ops-triage,pm-feedback,pm-repos}.mjs` implemented deterministic (non-LLM) reasoning executors but were never imported by `lib/` or `bin/` — exercised only by their own 4 acceptance tests (`truth-matrix.md` row 3, graded `test-only`). Two accepted ADRs settle their fate: ADR-0088 (actuation default posture) explicitly names this bead and concludes "deterministic reasoning is not part of an expanded default posture right now, so that bead's question resolves to no, pending re-evaluation"; ADR-0086 (embed naming) retires "capability" as user-facing vocabulary under its recommended option. Deleted the four preset modules and their acceptance tests. `tests/writes/import-guard.test.mjs`'s now-meaningless `lib/embed/presets` exemption (the directory no longer exists) was removed along with its stale "declarative capability manifests, not executable code" comment — the presets were, in fact, executable code, which is exactly why they were dead per this bead's finding. `scripts/audit/baseline.json`'s ratchet is tightened accordingly (4 `module-test-only` ids removed). Reversible via `git revert` — nothing outside git-tracked files was touched.
+
 ### Fixed
 
 - **Audit-ratchet gate drift from this session's new contract modules and ADR-0097**: `docs/decisions/adr/meta.json` was missing the `0097-capability-delegation-rubric` entry, flagging it as an orphaned doc — added. Five new Wave-1 contract modules (`lib/contracts/extraction-provider.mjs`, `lib/demo-manifest.mjs`, `lib/diagram-card.mjs`, `lib/engine/knowledge-store-contract.mjs`, `lib/export-provider-contract.mjs`) are exercised only by their own tests today, by explicit design — each bead's scope is contract-definition only, with a separate downstream bead wiring in a production caller — so their `module-test-only` deadcode findings are added to `scripts/audit/baseline.json`'s ratchet, to be removed once each is wired in.
