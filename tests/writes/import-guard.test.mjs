@@ -12,6 +12,11 @@
  * A future direct import from a scanned path fails this test, which is the
  * guard the bead requires — not an eslint rule, since this repo has no
  * eslint config wired into the release gate.
+ *
+ * construct-p4cba.2 consolidated what were two separate, duplicated adapter-
+ * factory maps (in control-plane.mjs and provider-write.mjs) into one shared
+ * lib/providers/contract/adapter-factories.mjs — the sanctioned direct
+ * importer is now that one file, not its two callers.
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
@@ -101,16 +106,35 @@ describe('LMCP-J6 import guard — orchestration/embed must not import adapter w
     }
   });
 
-  it('does not flag the sanctioned lib/writes/* and lib/mcp/tools/provider-write.mjs import sites', () => {
+  it('the sanctioned lib/providers/contract/adapter-factories.mjs imports every governed-write adapter it resolves', () => {
+    // adapter-factories.mjs lives inside lib/providers/contract/ itself, so its
+    // relative imports ('./adapters/...') never contain the literal
+    // 'providers/contract/adapters' substring FORBIDDEN_IMPORT_PATTERN scans
+    // for from outside callers — check its own relative-import convention instead.
+    const abs = path.join(REPO_ROOT, 'lib/providers/contract/adapter-factories.mjs');
+    assert.ok(fs.existsSync(abs), 'expected adapter-factories.mjs to exist');
+    const source = fs.readFileSync(abs, 'utf8');
+    for (const provider of ['jira', 'confluence', 'github', 'slack']) {
+      assert.match(
+        source,
+        new RegExp(`\\./adapters/${provider}/(governed-write|transport|index)\\.mjs`),
+        `adapter-factories.mjs is expected to import a ${provider} adapter module directly`,
+      );
+    }
+  });
+
+  it('control-plane.mjs and provider-write.mjs resolve adapters through the shared factory, not a direct import', () => {
     const sanctioned = [
       'lib/writes/control-plane.mjs',
       'lib/mcp/tools/provider-write.mjs',
     ];
     for (const rel of sanctioned) {
       const abs = path.join(REPO_ROOT, rel);
-      assert.ok(fs.existsSync(abs), `expected sanctioned file to exist: ${rel}`);
       const source = fs.readFileSync(abs, 'utf8');
-      assert.match(source, FORBIDDEN_IMPORT_PATTERN, `${rel} is expected to import a governed adapter directly (it is the sanctioned executor)`);
+      const importLines = source.split('\n').filter((line) => /^\s*import\b/.test(line) || /=\s*require\(/.test(line));
+      const forbidden = importLines.filter((line) => FORBIDDEN_IMPORT_PATTERN.test(line));
+      assert.deepEqual(forbidden, [], `${rel} should resolve adapters via adapter-factories.mjs, not import one directly`);
+      assert.match(source, /providers\/contract\/adapter-factories\.mjs/, `${rel} should import from the shared adapter-factories module`);
     }
   });
 });
