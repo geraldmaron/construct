@@ -1,26 +1,26 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-17T07:56:43.743Z",
+  "generatedAt": "2026-07-17T13:34:27.789Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 974,
-    "topLevelTestFiles": 387,
-    "nestedTestFiles": 587,
+    "testFiles": 973,
+    "topLevelTestFiles": 388,
+    "nestedTestFiles": 585,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 54,
     "byLayer": {
-      "unit": 635,
-      "functional": 289,
+      "unit": 633,
+      "functional": 290,
       "visual": 12,
       "live-provider": 2,
       "integration": 36
     },
     "byCategory": {
-      "unit": 568,
-      "functional": 289,
+      "unit": 565,
+      "functional": 290,
       "visual": 12,
       "structural-guard": 19,
-      "contract-subsystem": 48,
+      "contract-subsystem": 49,
       "live-provider": 2,
       "integration": 27,
       "hook": 9
@@ -109,44 +109,12 @@
       "maintainerNotes": "tests/acceptance/modes/team.acceptance.test.mjs — LMCP-L6 team-mode acceptance leg."
     },
     {
-      "path": "tests/acceptance/ops-triage-preset.acceptance.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/acceptance/ops-triage-preset.acceptance.test.mjs — golden-fixture"
-    },
-    {
       "path": "tests/acceptance/packed-install.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/acceptance/packed-install.test.mjs"
-    },
-    {
-      "path": "tests/acceptance/pm-feedback-preset.acceptance.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/acceptance/pm-feedback-preset.acceptance.test.mjs — golden-fixture"
-    },
-    {
-      "path": "tests/acceptance/pm-repos-preset.acceptance.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/acceptance/pm-repos-preset.acceptance.test.mjs — golden-fixture"
-    },
-    {
-      "path": "tests/acceptance/tpm-preset.acceptance.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/acceptance/tpm-preset.acceptance.test.mjs — golden-fixture acceptance"
     },
     {
       "path": "tests/adr-stamp-integrity.test.mjs",
@@ -3723,6 +3691,14 @@
       "maintainerNotes": "tests/functional/mcp-tool-rate-audit.functional.test.mjs"
     },
     {
+      "path": "tests/functional/mcp-tool-schema-enforcement.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/mcp-tool-schema-enforcement.functional.test.mjs — dispatch-path"
+    },
+    {
       "path": "tests/functional/mode-degraded-fallback.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -4854,6 +4830,14 @@
       "maintainerNotes": "tests/graph/cli.test.mjs — `construct graph query --missing-tests` CLI wiring."
     },
     {
+      "path": "tests/graph/cytoscape-graph-viewer-prototype.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/graph/cytoscape-graph-viewer-prototype.test.mjs — smoke test +"
+    },
+    {
       "path": "tests/graph/embed-nodes.test.mjs",
       "layer": "unit",
       "category": "contract-subsystem",
@@ -5644,6 +5628,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/mcp-tool-output-schema-guard.test.mjs — LMCP-L10 tool output-schema guard."
+    },
+    {
+      "path": "tests/mcp-tool-schema-validate.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mcp-tool-schema-validate.test.mjs — unit coverage for"
     },
     {
       "path": "tests/mcp-tools-doc-parity.test.mjs",
