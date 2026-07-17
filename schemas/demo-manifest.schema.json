@@ -1,0 +1,125 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://construct.dev/schemas/demo-manifest.schema.json",
+  "title": "Construct canonical Demo Manifest",
+  "description": "Single, canonical definition of a demo: identity, backing script/tape content sources, optional Playwright recording configuration, and last-known lifecycle status. Reconciles schemas/project-demo.schema.json (demo identity + script/tape) and schemas/demo-recording.schema.json (Playwright recording engine config) into one shape rather than merging them -- the two prior schemas describe genuinely different concerns (declared identity vs. recording-engine configuration) and remain on disk, unmodified, as the shape of the `recording` sub-object below. New demo authoring should target this schema; schemas/project-demo.schema.json and schemas/demo-recording.schema.json are superseded but not deleted or migrated by this schema (construct-tsyfe.5.5 migrates existing definitions and retires the duplicate sources).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "name", "title"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Reference to the JSON Schema for this file."
+    },
+    "schema": {
+      "type": "string",
+      "description": "Manifest schema identifier and version.",
+      "const": "construct/demo-manifest/1"
+    },
+    "name": {
+      "type": "string",
+      "description": "Demo id; matches the manifest file's basename.",
+      "minLength": 1,
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "title": {
+      "type": "string",
+      "description": "Human-readable demo title.",
+      "minLength": 1
+    },
+    "summary": {
+      "type": "string",
+      "description": "One-line description of what the demo walks through."
+    },
+    "project": {
+      "type": "string",
+      "description": "Host project name this demo belongs to, when project-scoped. Absent for repo-canonical demos authored under templates/demos/."
+    },
+    "status": {
+      "type": "string",
+      "description": "Last known lifecycle status. Success ladder: declared (defined, never run) -> ready (recording tooling verified present) -> served (demo content generated/available) -> executed (run completed) -> recorded (an artifact was captured) -> verified (artifact checked against expected content) -> certified (passed the certification gate). Non-success terminal states: script-only (fallback printed steps, nothing recorded), degraded (partial capability, e.g. tape source written but not rendered), failed (attempted, did not complete), unavailable (tooling absent, nothing attempted). This is the single authoritative vocabulary for demo status -- construct-tsyfe.5.2's demo-state module consumes this enum rather than redefining it. Defaults to 'declared' when absent.",
+      "enum": [
+        "declared",
+        "ready",
+        "served",
+        "executed",
+        "recorded",
+        "verified",
+        "certified",
+        "script-only",
+        "degraded",
+        "failed",
+        "unavailable"
+      ],
+      "default": "declared"
+    },
+    "script": {
+      "type": "string",
+      "description": "Repo-relative path to the demo script JSON (welcome text, steps, prompts, commands) loaded by lib/demo-script.mjs.",
+      "pattern": "^.+\\.json$"
+    },
+    "tape": {
+      "type": "string",
+      "description": "Repo-relative path to the VHS terminal tape source."
+    },
+    "fallbackSurface": {
+      "type": "string",
+      "description": "Surface to fall back to when the requested demo runner is unavailable.",
+      "enum": ["tape", "playwright"],
+      "default": "tape"
+    },
+    "recording": {
+      "type": "object",
+      "description": "Playwright recording configuration for this demo. Mirrors schemas/demo-recording.schema.json's shape rather than $ref-ing it, since the repo's hand-rolled validators (ADR-0001, no Ajv) do not resolve cross-file $ref.",
+      "additionalProperties": false,
+      "required": ["spec"],
+      "properties": {
+        "engine": { "enum": ["playwright"] },
+        "workspace": { "type": "string", "default": "." },
+        "spec": { "type": "string" },
+        "playwrightConfig": { "type": "string" },
+        "baseUrl": { "type": "string", "format": "uri" },
+        "project": { "type": "string" },
+        "skipWebServer": { "type": "boolean" },
+        "timeout": { "type": "number" },
+        "webServer": {
+          "type": "object",
+          "properties": {
+            "command": { "type": "string" },
+            "url": { "type": "string" },
+            "cwd": { "type": "string" },
+            "timeout": { "type": "number" }
+          },
+          "required": ["command", "url"]
+        },
+        "artifactReveal": {
+          "type": "object",
+          "properties": {
+            "mode": { "enum": ["sameOrigin", "constructPreview"] },
+            "staticDir": { "type": "string" },
+            "file": { "type": "string" },
+            "path": { "type": "string" },
+            "scroll": { "type": "boolean" }
+          }
+        },
+        "output": {
+          "type": "object",
+          "properties": {
+            "format": { "enum": ["mp4", "webm"] },
+            "path": { "type": "string" }
+          }
+        }
+      }
+    },
+    "commands": {
+      "type": "array",
+      "description": "Every shell command this manifest may execute during recording or serving, enumerated explicitly so it can be statically reviewed before execution. No free-form eval'd strings -- security requirement shared with construct-tsyfe.5.3/5.4's recording providers.",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "createdAt": {
+      "type": "string",
+      "description": "ISO-8601 timestamp the manifest was authored or scaffolded.",
+      "format": "date-time"
+    }
+  }
+}
