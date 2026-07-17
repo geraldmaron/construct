@@ -137,7 +137,7 @@ Construct's writes are scoped and disclosed up front. The default `construct ins
 | Footprint | Trigger | Paths |
 |---|---|---|
 | Project | `construct init` | `.construct/` (config layer + nested `.construct/launcher/`), `.claude/` adapter tree, host adapters (`.codex/`, `.opencode/`, `.cursor/`, `.vscode/`), `construct.config.json`, marker block in `CLAUDE.md` / `AGENTS.md`, `.gitignore` append, `.beads/` |
-| Machine | `construct install --footprint=user` | `~/.construct/config.env`, `~/.construct/lib` (symlink), `~/.construct/services/`, `~/Library/LaunchAgents/` (macOS), MCP entries in `~/.config/opencode/opencode.json` and `~/.codex/config.toml`, marker block in `~/.claude/CLAUDE.md`, hook injection in `~/.claude/settings.json` (last two require interactive consent or `--yes`) |
+| Machine | `construct install --footprint=user` | `~/.config/construct/config.env`, `~/.config/construct/lib` (symlink), `~/.config/construct/services/` (e.g. `postgres/` compose files), `~/.local/state/construct/` (daemon state, workspace scaffold, vector-index fallback), `~/.cache/construct/embeddings`, `~/Library/LaunchAgents/` (macOS), MCP entries in `~/.config/opencode/opencode.json` and `~/.codex/config.toml`, marker block in `~/.claude/CLAUDE.md`, hook injection in `~/.claude/settings.json` (last two require interactive consent or `--yes`) |
 | Never touched | — | Shell rc files (`~/.bashrc`, `~/.zshrc`), npm global config, `git config --global` |
 
 Full table with file:line citations and the per-hook performance budget contract: [Architecture — Footprint contract](https://geraldmaron.github.io/construct/concepts/architecture#footprint-contract) and [ADR 0029](docs/decisions/adr/0029-install-scopes-and-hook-budgets.md).
@@ -364,7 +364,7 @@ Useful flags:
 construct uninstall --dry-run            # show the plan, change nothing
 construct uninstall --yes                # non-interactive, auto-risk only
 construct uninstall --yes --all          # non-interactive, everything
-construct uninstall --scope=project      # only this project, leave ~/.construct alone
+construct uninstall --scope=project      # only this project, leave machine state (~/.config/construct, ~/.local/state/construct, ~/.cache/construct) alone
 construct uninstall --keep-state         # remove only the launcher + .claude adapters; keep .construct/ (config + session state) and all machine state
 ```
 
