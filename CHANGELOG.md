@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Security
+
+- Hardened the docs-site Mermaid diagram renderer (`packages/cx-ui/components/mermaid.tsx`) against malicious or pathological diagram source. `mermaid.initialize` now sets `securityLevel: 'strict'` instead of `'loose'`. A new hand-rolled allowlist sanitizer (`packages/cx-ui/components/mermaid-sanitize.ts`) strips `<script>` tags, `on*` event-handler attributes, `javascript:`/`data:text/html` URLs, and `<foreignObject>` elements from the rendered SVG string before it is assigned to `innerHTML`, and hardens any surviving http(s) link with `target="_blank"` and `rel="noopener noreferrer"` rather than removing diagram click-through links outright. A chart string over 20,000 characters is now rejected before `mermaid.render` is ever called, and the render call itself is raced against an 8s timeout — both paths land the component in its existing error state instead of hanging or executing untrusted markup. No new dependency was added; the fix stays within the project's zero-npm-core stance by combining Mermaid's own strict mode with the hand-rolled sanitizer.
+
 ## [1.5.7] - 2026-07-14
 
 ### Changed
