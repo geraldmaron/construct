@@ -7,24 +7,19 @@
  * ApprovalQueue, and a specialist with no grant at all is denied outright.
  * Non-proposal checks (no `meta.proposal`) are unaffected — this is additive
  * enforcement layered in front of the existing authority-level/queue logic.
+ *
+ * Uses the real ApprovalQueue (in-memory, no persistPath) rather than a mock,
+ * so these tests exercise the actual enqueue/findByToolArgs contract.
  */
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { AuthorityGuard } from '../lib/embed/authority-guard.mjs';
+import { ApprovalQueue } from '../lib/embed/approval-queue.mjs';
 import { DEFAULT_OPERATING_PROFILE } from '../lib/embed/config.mjs';
 
-let queuedItems = [];
-function makeQueue({ autoApproveAll = false } = {}) {
-  queuedItems = [];
-  return {
-    approvalMode: () => (autoApproveAll ? 'auto' : 'human'),
-    enqueue: (item) => {
-      const id = `q-${queuedItems.length + 1}`;
-      queuedItems.push({ id, ...item });
-      return id;
-    },
-  };
+function makeQueue() {
+  return new ApprovalQueue();
 }
 
 const EMBED_BINDINGS = {
@@ -44,14 +39,15 @@ const EMBED_BINDINGS = {
 describe('AuthorityGuard embedBindings enforcement', () => {
   describe('proposal within grant', () => {
     it('proceeds to ordinary authority-level check (queued, not denied) for a granted proposal', async () => {
-      const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, makeQueue(), EMBED_BINDINGS);
+      const queue = makeQueue();
+      const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, queue, EMBED_BINDINGS);
       const result = await guard.check('externalPost', {
         description: 'Create Jira ticket for execution gap',
         proposal: { specialistId: 'cx-operations', providerId: 'atlassian-jira', writeKind: 'createIssue' },
       });
       assert.equal(result.allowed, false);
       assert.equal(result.mode, 'queued');
-      assert.equal(queuedItems.length, 1);
+      assert.equal(queue.getPending().length, 1);
     });
 
     it('a second granted provider/writeKind pair for the same specialist also proceeds', async () => {
@@ -65,39 +61,47 @@ describe('AuthorityGuard embedBindings enforcement', () => {
 
   describe('proposal outside grant', () => {
     it('denies a write kind the specialist never registered for that provider', async () => {
-      const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, makeQueue(), EMBED_BINDINGS);
+      const queue = makeQueue();
+      const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, queue, EMBED_BINDINGS);
       const result = await guard.check('externalPost', {
         proposal: { specialistId: 'cx-operations', providerId: 'atlassian-jira', writeKind: 'deleteIssue' },
       });
       assert.equal(result.allowed, false);
       assert.equal(result.mode, 'denied');
       assert.match(result.reason, /not granted to propose/);
-      assert.equal(queuedItems.length, 0, 'a denied proposal must never reach the ApprovalQueue');
+      assert.equal(queue.getPending().length, 0, 'a denied proposal must never reach the ApprovalQueue');
     });
 
     it('denies a proposal against a provider the specialist has no proposals[] entry for', async () => {
-      const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, makeQueue(), EMBED_BINDINGS);
+      const queue = makeQueue();
+      const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, queue, EMBED_BINDINGS);
       const result = await guard.check('externalPost', {
         proposal: { specialistId: 'cx-product-manager', providerId: 'slack', writeKind: 'postMessage' },
       });
       assert.equal(result.allowed, false);
       assert.equal(result.mode, 'denied');
-      assert.equal(queuedItems.length, 0);
+      assert.equal(queue.getPending().length, 0);
     });
 
     it('denies every proposal for a specialist with no embedBindings entry at all', async () => {
-      const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, makeQueue(), EMBED_BINDINGS);
+      const queue = makeQueue();
+      const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, queue, EMBED_BINDINGS);
       const result = await guard.check('externalPost', {
         proposal: { specialistId: 'cx-unbound-specialist', providerId: 'atlassian-jira', writeKind: 'createIssue' },
       });
       assert.equal(result.allowed, false);
       assert.equal(result.mode, 'denied');
       assert.match(result.reason, /no embedBindings grant/);
-      assert.equal(queuedItems.length, 0);
+      assert.equal(queue.getPending().length, 0);
     });
 
-    it('denial happens even when the ApprovalQueue would auto-approve', async () => {
-      const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, makeQueue({ autoApproveAll: true }), EMBED_BINDINGS);
+    it('denial happens even when an identical action was previously approved', async () => {
+      const queue = makeQueue();
+      const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, queue, EMBED_BINDINGS);
+      // Pre-approve the authority-level bucket this proposal would otherwise land in.
+      const primed = await guard.check('externalPost');
+      queue.approve(primed.queueId);
+
       const result = await guard.check('externalPost', {
         proposal: { specialistId: 'cx-operations', providerId: 'atlassian-jira', writeKind: 'deleteIssue' },
       });

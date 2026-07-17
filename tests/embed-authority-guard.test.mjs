@@ -1,25 +1,19 @@
 /**
  * tests/embed-authority-guard.test.mjs — AuthorityGuard unit tests.
+ *
+ * Uses the real ApprovalQueue (in-memory, no persistPath) rather than a
+ * hand-rolled mock — a mock that mirrors AuthorityGuard's own assumptions
+ * about the queue's shape can't catch a mismatch between the two.
  */
 
-import { describe, it, beforeEach } from 'node:test';
+import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { AuthorityGuard } from '../lib/embed/authority-guard.mjs';
+import { ApprovalQueue } from '../lib/embed/approval-queue.mjs';
 import { DEFAULT_OPERATING_PROFILE } from '../lib/embed/config.mjs';
 
-// ─── Minimal ApprovalQueue stub ──────────────────────────────────────────────
-
-let queuedItems = [];
-function makeQueue({ autoApproveAll = false } = {}) {
-  queuedItems = [];
-  return {
-    approvalMode: (actionType) => (autoApproveAll ? 'auto' : 'human'),
-    enqueue: (item) => {
-      const id = `q-${queuedItems.length + 1}`;
-      queuedItems.push({ id, ...item });
-      return id;
-    },
-  };
+function makeQueue() {
+  return new ApprovalQueue();
 }
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
@@ -27,11 +21,12 @@ function makeQueue({ autoApproveAll = false } = {}) {
 describe('AuthorityGuard', () => {
   describe('autonomous actions', () => {
     it('allows read without queuing', async () => {
-      const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, makeQueue());
+      const queue = makeQueue();
+      const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, queue);
       const result = await guard.check('read');
       assert.equal(result.allowed, true);
       assert.equal(result.mode, 'autonomous');
-      assert.equal(queuedItems.length, 0);
+      assert.equal(queue.getPending().length, 0);
     });
 
     it('allows summarize without queuing', async () => {
@@ -61,22 +56,25 @@ describe('AuthorityGuard', () => {
 
   describe('approval-queued actions', () => {
     it('queues externalPost and returns queueId', async () => {
-      const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, makeQueue());
-      const result = await guard.check('externalPost', { description: 'Post to #general' });
+      const queue = makeQueue();
+      const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, queue);
+      const result = await guard.check('externalPost', { payload: { channel: '#general' } });
       assert.equal(result.allowed, false);
       assert.equal(result.mode, 'queued');
       assert.ok(result.queueId, 'should have a queueId');
-      assert.equal(queuedItems.length, 1);
-      assert.equal(queuedItems[0].type, 'externalPost');
-      assert.equal(queuedItems[0].description, 'Post to #general');
+      const pending = queue.getPending();
+      assert.equal(pending.length, 1);
+      assert.equal(pending[0].toolCall.tool, 'externalPost');
+      assert.deepEqual(pending[0].toolCall.args, { channel: '#general' });
     });
 
     it('queues slack:post (maps to externalPost)', async () => {
-      const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, makeQueue());
+      const queue = makeQueue();
+      const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, queue);
       const result = await guard.check('slack:post');
       assert.equal(result.allowed, false);
       assert.equal(result.mode, 'queued');
-      assert.equal(queuedItems[0].authorityKey, 'externalPost');
+      assert.equal(queue.getPending()[0].toolCall.tool, 'externalPost');
     });
 
     it('queues createIssues', async () => {
@@ -87,10 +85,11 @@ describe('AuthorityGuard', () => {
     });
 
     it('queues issue:create (maps to createIssues)', async () => {
-      const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, makeQueue());
+      const queue = makeQueue();
+      const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, queue);
       const result = await guard.check('issue:create');
       assert.equal(result.allowed, false);
-      assert.equal(queuedItems[0].authorityKey, 'createIssues');
+      assert.equal(queue.getPending()[0].toolCall.tool, 'createIssues');
     });
 
     it('queues updateIssues', async () => {
@@ -112,20 +111,44 @@ describe('AuthorityGuard', () => {
     });
 
     it('queues git:commit (maps to repoWrites)', async () => {
-      const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, makeQueue());
+      const queue = makeQueue();
+      const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, queue);
       const result = await guard.check('git:commit');
       assert.equal(result.allowed, false);
-      assert.equal(queuedItems[0].authorityKey, 'repoWrites');
+      assert.equal(queue.getPending()[0].toolCall.tool, 'repoWrites');
+    });
+
+    it('a repeat of the same action reuses the pending record instead of duplicating it', async () => {
+      const queue = makeQueue();
+      const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, queue);
+      const first = await guard.check('externalPost', { payload: { channel: '#general' } });
+      const second = await guard.check('externalPost', { payload: { channel: '#general' } });
+      assert.equal(second.queueId, first.queueId);
+      assert.equal(queue.getPending().length, 1);
+    });
+
+    it('distinct payloads for the same action type queue as distinct records', async () => {
+      const queue = makeQueue();
+      const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, queue);
+      await guard.check('externalPost', { payload: { channel: '#general' } });
+      await guard.check('externalPost', { payload: { channel: '#eng' } });
+      assert.equal(queue.getPending().length, 2);
     });
   });
 
   describe('auto-approved via queue', () => {
-    it('allows queued action when queue says auto', async () => {
-      const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, makeQueue({ autoApproveAll: true }));
+    it('allows an action once an identical prior request has been approved', async () => {
+      const queue = makeQueue();
+      const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, queue);
+
+      const queued = await guard.check('externalPost');
+      queue.approve(queued.queueId);
+
       const result = await guard.check('externalPost');
       assert.equal(result.allowed, true);
       assert.equal(result.mode, 'auto-approved');
-      assert.equal(queuedItems.length, 0);
+      // The approved record is reused rather than a second one being queued.
+      assert.equal(queue.list().length, 1);
     });
   });
 
@@ -135,11 +158,12 @@ describe('AuthorityGuard', () => {
         ...DEFAULT_OPERATING_PROFILE,
         authority: { ...DEFAULT_OPERATING_PROFILE.authority, repoWrites: 'denied' },
       };
-      const guard = new AuthorityGuard(profile, makeQueue());
+      const queue = makeQueue();
+      const guard = new AuthorityGuard(profile, queue);
       const result = await guard.check('repoWrites');
       assert.equal(result.allowed, false);
       assert.equal(result.mode, 'denied');
-      assert.equal(queuedItems.length, 0);
+      assert.equal(queue.getPending().length, 0);
     });
   });
 

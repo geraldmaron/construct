@@ -1,26 +1,26 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-17T02:16:11.828Z",
+  "generatedAt": "2026-07-17T02:58:51.568Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 941,
-    "topLevelTestFiles": 383,
-    "nestedTestFiles": 558,
+    "testFiles": 944,
+    "topLevelTestFiles": 384,
+    "nestedTestFiles": 560,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 52,
     "byLayer": {
-      "unit": 615,
-      "functional": 277,
+      "unit": 617,
+      "functional": 278,
       "visual": 12,
       "live-provider": 2,
       "integration": 35
     },
     "byCategory": {
-      "unit": 550,
-      "functional": 277,
+      "unit": 551,
+      "functional": 278,
       "visual": 12,
       "structural-guard": 19,
-      "contract-subsystem": 46,
+      "contract-subsystem": 47,
       "live-provider": 2,
       "integration": 26,
       "hook": 9
@@ -1673,6 +1673,14 @@
       "maintainerNotes": "tests/doctor/provider-breaker-watcher.test.mjs — LMCP-B9 doctor watcher."
     },
     {
+      "path": "tests/doctor/write-pipeline-watcher.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/doctor/write-pipeline-watcher.test.mjs — governed-write pipeline watcher."
+    },
+    {
       "path": "tests/document-extract-rtf.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -1833,6 +1841,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/embed-notifications.test.mjs — notification bus tests."
+    },
+    {
+      "path": "tests/embed-output.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/embed-output.test.mjs — dispatchOutputs() slack target contract"
     },
     {
       "path": "tests/embed-roadmap.test.mjs",
@@ -2964,6 +2980,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/embed-daemon-inbox-loop.functional.test.mjs —"
+    },
+    {
+      "path": "tests/functional/embed-daemon-status-pending-approvals.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/embed-daemon-status-pending-approvals.functional.test.mjs —"
     },
     {
       "path": "tests/functional/embed-daemon-write-intent-drain.functional.test.mjs",
