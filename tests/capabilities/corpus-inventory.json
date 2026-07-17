@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-15T00:51:47.613Z",
+  "generatedAt": "2026-07-17T14:04:15.730Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 927,
+    "testFiles": 928,
     "topLevelTestFiles": 370,
-    "nestedTestFiles": 557,
+    "nestedTestFiles": 558,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 606,
+      "unit": 607,
       "functional": 273,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 541,
+      "unit": 542,
       "functional": 273,
       "visual": 12,
       "structural-guard": 19,
@@ -1101,6 +1101,14 @@
       ],
       "skipped": false,
       "maintainerNotes": "tests/certification/export-format-cert.test.mjs — deck/pptx/doc/pdf export certification."
+    },
+    {
+      "path": "tests/certification/host-adapter-certification.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/host-adapter-certification.test.mjs — two-axis host-adapter"
     },
     {
       "path": "tests/certification/p2-surface-harness.test.mjs",
