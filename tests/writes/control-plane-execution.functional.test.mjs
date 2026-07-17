@@ -335,7 +335,7 @@ describe('ADR-0089/ADR-0096 — drainApprovedWriteIntents lease guarding (constr
     assert.equal(final.leaseWorkerId, null, 'the lease must be released, not left held');
   });
 
-  it('skips a record whose lease is already held live by another worker — no execution, no adapter call', async () => {
+  it('never executes a record whose lease is already held live by another worker — no adapter call, lease not stolen', async () => {
     const transport = createFakeJiraTransport({ projects: { PROJ: { issueTypes: { Task: {} } } } });
     const persistPath = path.join(tmpRoot, 'conflict-queue.jsonl');
     const queue = new ApprovalQueue({ persistPath });
@@ -359,10 +359,14 @@ describe('ADR-0089/ADR-0096 — drainApprovedWriteIntents lease guarding (constr
       workerId: 'the-drain-job',
     });
 
-    assert.equal(drained.length, 1);
-    assert.equal(drained[0].skipped, 'lease-not-acquired');
-    assert.equal(drained[0].error, null);
-    assert.equal(drained[0].result, null);
+    // Since construct-4uxq0.9.9 the queue reloads on read, so the drain's
+    // list('approved') already observes the rival's persisted 'executing'
+    // state and filters the record out of its work set — no drain outcome is
+    // emitted for it. The 'lease-not-acquired' skip path remains for the
+    // narrower race where the rival acquires between list() and
+    // acquireLease(); either way the invariants below are what matter: the
+    // adapter is never called and the live lease is never stolen.
+    assert.equal(drained.length, 0, 'a record another worker is executing is not part of this drain\'s work set');
     assert.equal(transport.createIssueCallCount(), 0, 'a lease-conflicted record must never reach the adapter');
 
     const stillHeld = queue.getById(record.approvalId);
