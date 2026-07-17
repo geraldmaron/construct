@@ -1,7 +1,7 @@
 # ADR-0094: Approval/drain lifecycle — manual single-record approval stays canonical until ADR-D lands leases
 
 - **Date**: 2026-07-16
-- **Status**: superseded by `docs/decisions/adr/0096-approval-drain-lifecycle-resolution.md`
+- **Status**: superseded
 - **Deciders**: Gerald Dagher
 - **Supersedes**: none
 - **Resolves (decision only)**: `construct-4uxq0.4.14` (ADR-N) — whether the production drain path for approved write intents should stay manual single-record approval, or become an automated batch drain via `drainApprovedWriteIntents`. Does not resolve `construct-4uxq0.4.4` (ADR-D, delivery semantics/leases), which this decision is hard-gated on and which remains open.
