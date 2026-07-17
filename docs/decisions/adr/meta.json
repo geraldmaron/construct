@@ -87,6 +87,7 @@
     "0094-approval-drain-lifecycle",
     "0095-jira-api-migration-plan",
     "0096-approval-drain-lifecycle-resolution",
-    "0097-capability-delegation-rubric"
+    "0097-capability-delegation-rubric",
+    "0098-mailparser-email-extraction"
   ]
 }

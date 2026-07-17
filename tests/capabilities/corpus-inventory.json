@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-17T13:34:27.789Z",
+  "generatedAt": "2026-07-17T14:02:32.598Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 973,
+    "testFiles": 974,
     "topLevelTestFiles": 388,
-    "nestedTestFiles": 585,
+    "nestedTestFiles": 586,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 54,
     "byLayer": {
       "unit": 633,
-      "functional": 290,
+      "functional": 291,
       "visual": 12,
       "live-provider": 2,
       "integration": 36
     },
     "byCategory": {
       "unit": 565,
-      "functional": 290,
+      "functional": 291,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 49,
@@ -3024,6 +3024,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/edit-error-recovery.functional.test.mjs — end-to-end"
+    },
+    {
+      "path": "tests/functional/email-attachment-quarantine.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/email-attachment-quarantine.functional.test.mjs — email"
     },
     {
       "path": "tests/functional/embed-capability-lifecycle.functional.test.mjs",
