@@ -17,9 +17,9 @@ import path from 'node:path';
 import test from 'node:test';
 import { spawnSync } from 'node:child_process';
 
-import { locateRecorder, renderWithVhs } from '../../lib/demo.mjs';
+import { locateRecorder, renderWithVhs, runDemoRecord } from '../../lib/demo.mjs';
 import { loadDemoScript } from '../../lib/demo-script.mjs';
-import { buildDemoAttemptChain } from '../../lib/demo-surface.mjs';
+import { buildDemoAttemptChain, runDemoGuided } from '../../lib/demo-surface.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
@@ -172,6 +172,56 @@ test('construct demo --surface=tape --source-only writes direct tape output', ()
     const files = fs.readdirSync(path.join(dir, '.construct', 'demos'));
     assert.ok(files.some((f) => f.endsWith('.tape')), `expected .tape source; got: ${files.join(', ')}`);
     assert.ok(!files.some((f) => /\.(gif|mp4|webm|cast)$/.test(f)), `--source-only should not record; got: ${files.join(', ')}`);
+  } finally {
+    rmTmpDir(dir);
+  }
+});
+
+// runDemoRecord's no-recorder branch must never claim ok:true is equivalent
+// to a rendered artifact (construct-4uxq0.9.12). Forcing sourceOnly:true
+// pins the recorder to null regardless of what is actually installed on the
+// machine running this test, so the assertion holds in every environment.
+
+test('runDemoRecord: no-recorder fallback is tagged status "degraded", not a bare ok:true', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'demo-degraded-'));
+  try {
+    const result = runDemoRecord('quickstart', { cwd: dir, repoRoot: REPO, sourceOnly: true });
+    assert.equal(result.ok, true);
+    assert.equal(result.sourceOnly, true);
+    assert.equal(result.status, 'degraded');
+    assert.equal(result.artifactPath, undefined, 'a degraded result must never carry an artifactPath');
+    assert.ok(fs.existsSync(result.tapePath), 'the .tape source itself must still be written');
+  } finally {
+    rmTmpDir(dir);
+  }
+});
+
+// printScriptFallback (reached via runDemoGuided when every recording surface
+// is unavailable) must be distinguishable from a real recording too: it only
+// prints steps to the given output stream, so ok:true alone would read as a
+// false success to any caller that doesn't also check the discriminator.
+
+test('runDemoGuided: script-only fallback is tagged status "script-only", not a bare ok:true', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'demo-scriptonly-'));
+  try {
+    const scriptsDir = path.join(dir, '.construct', 'demos', 'scripts');
+    fs.mkdirSync(scriptsDir, { recursive: true });
+    fs.writeFileSync(path.join(scriptsDir, 'no-artifact-demo.json'), JSON.stringify({
+      title: 'No Artifact Demo',
+      tape: 'no-artifact-demo',
+      steps: [{ title: 'Step 1', command: 'echo hi' }],
+    }), 'utf8');
+
+    const written = [];
+    const output = { write: (chunk) => written.push(chunk), isTTY: false };
+
+    const result = await runDemoGuided('no-artifact-demo', { cwd: dir, repoRoot: REPO, output });
+
+    assert.equal(result.ok, true);
+    assert.equal(result.status, 'script-only');
+    assert.equal(result.surface, 'script');
+    assert.equal(result.artifactPath, undefined, 'a script-only result must never carry an artifactPath');
+    assert.ok(written.some((line) => line.includes('Step 1')), 'expected the script steps to be printed');
   } finally {
     rmTmpDir(dir);
   }

@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- `construct demo`'s degraded fallback paths no longer look identical to a real recording (`lib/demo-surface.mjs`, `lib/demo.mjs`, `lib/publish.mjs`): when every recording surface is unavailable, `printScriptFallback` prints the demo steps and returns `{ ok: true, status: 'script-only', surface: 'script', ... }`; when no VHS/asciinema binary is installed, the `.tape`-source-only fallback returns `{ ok: true, status: 'degraded', sourceOnly: true, ... }`. Both already returned `ok: true` (printing steps or writing a tape source did succeed at what it attempted), but nothing distinguished that from a rendered artifact, so a CI script, certification harness, or MCP tool checking only `result.ok` would treat a machine missing the recorder tooling as a fully successful demo recording. `ok` stays `true` for compatibility; callers that require an actual recording (`construct publish --strict --demo=...`) now also check the new `status` field.
+
 ## [1.5.7] - 2026-07-14
 
 ### Changed
