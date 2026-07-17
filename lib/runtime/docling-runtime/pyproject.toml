@@ -1,0 +1,29 @@
+# lib/runtime/docling-runtime/pyproject.toml — pinned dependency manifest for the
+# docling document-extraction sidecar (construct-tsyfe.10.3).
+#
+# Paired with the committed uv.lock in this directory, this closes the
+# "no pyproject.toml/uv.lock in tree" gap: previously lib/runtime/uv-bootstrap.mjs
+# ran a bare `uv pip install docling==2.45.0`, which pins docling itself but lets
+# every transitive dependency (torch, transformers, onnxruntime, ...) resolve to
+# whatever is newest on install day. `uv sync --frozen` against this lockfile
+# installs the exact, checksummed dependency graph captured here instead.
+#
+# This is a dependency manifest, not an installable package — there is no source
+# tree, so [tool.uv] declares it non-buildable and uv-bootstrap.mjs always syncs
+# with --no-install-project.
+#
+# The docling version pinned here (2.45.0) must match DOCLING_PIN in
+# lib/runtime/uv-bootstrap.mjs; a functional test asserts the two stay in sync.
+# Regenerate uv.lock after bumping either: cd lib/runtime/docling-runtime && uv lock.
+
+[project]
+name = "construct-docling-runtime"
+version = "1.0.0"
+description = "Pinned docling sidecar runtime for Construct's document-extraction ingestion provider."
+requires-python = "==3.11.*"
+dependencies = [
+    "docling==2.45.0",
+]
+
+[tool.uv]
+package = false

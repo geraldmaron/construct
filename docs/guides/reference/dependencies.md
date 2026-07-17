@@ -53,6 +53,28 @@ Remediation ladder:
 
 A repo-local `overrides` pin is acceptable as defense-in-depth for this repo's own tree, but it is never the line item that closes a consumer-facing advisory.
 
+## External binary, sidecar, and model provenance
+
+Construct shells out to a set of external binaries, a Python sidecar, and
+downloaded ML models that npm audit and `deps/intent.json` do not cover
+(neither is a package in `package-lock.json`). Each is recorded as a
+Provider Card in `registry/provider-cards.json`, validated against
+`schemas/provider-card.schema.json` (`node scripts/validate-provider-cards.mjs`),
+per construct-tsyfe.10.3:
+
+| Provider | Kind | Pin mechanism |
+|---|---|---|
+| `pandoc`, `typst`, `d2`, `dot`, `soffice`, `vhs`, `ffmpeg` | `binary` | User-installed (Homebrew/apt); `versionPolicy.expectedVersion` records a reference version and `lib/providers/binary-health.mjs`'s `checkBinaryVersion` warns (never hard-fails) on drift. |
+| `docling` | `sidecar` | Genuinely pinned: `lib/runtime/docling-runtime/pyproject.toml` + committed `uv.lock` (118 packages, checksummed); `lib/runtime/uv-bootstrap.mjs` provisions via `uv sync --frozen`, which fails rather than silently re-resolving if the two files drift apart. `DOCLING_PIN` in that module must match the lockfile's `docling==` pin — `tests/functional/docling-venv-pin.functional.test.mjs` asserts this. |
+| `whisper` (whisper.cpp CLI) | `sidecar` | Unmanaged — no upstream release channel to pin against; presence/health only. |
+| `docling-models` | `model` | Downloaded by the pinned `docling` package itself; Construct does not independently track the HF model revision docling requests (documented gap, not a fabricated pin). |
+| `local-embedding-model` (`Xenova/all-MiniLM-L6-v2`) | `model` | `lib/storage/embeddings-local.mjs` requests an explicit, overridable HF revision (`CONSTRUCT_EMBEDDING_MODEL_REVISION`, default `main`) instead of an implicit default; no commit SHA is pinned yet pending a live Hub lookup. |
+
+A version-identity mismatch on any of these is additive: it layers a warning
+on top of the existing presence/absence check and does not change any
+degradation behavior (D2→dot→source, docling→node-native→refuse, etc. are
+unchanged).
+
 ## Rationale
 
 See `docs/decisions/adr/0001-zero-npm-core.md` for the original decision record.
