@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- `construct graph build` no longer reports unconditional success when a seeder swallows a real error (`lib/graph/build-from-embed.mjs`'s malformed-manifest errors were computed but never read by `lib/graph/cli.mjs`'s `runBuild`; `lib/graph/build-from-registry.mjs`'s two deliberately-degraded catch blocks — pack loading, specialists/org loading — had no `errors`/`warnings` field to report through at all). `buildFromRegistry` now returns `errors`/`warnings`; `runBuild` collects `embed.errors` + `reg.errors` as hard errors (non-zero exit, `ok: false` in `--json`) and `reg.warnings` (plus the same newly-added field on `buildFromCorpus`'s ledger-parse failure and `buildCoChange`'s git-history-read failure) as non-fatal warnings (printed, exit stays 0) — reusing `graph validate`'s existing errors-vs-warnings exit convention. **Behavior change:** a repo with a pre-existing broken embed manifest now gets a non-zero exit from `construct graph build` where it previously exited 0 silently; a CI pipeline that treats this exit code as always-0 should address the newly-surfaced error rather than suppress it.
+
 ## [1.5.7] - 2026-07-14
 
 ### Changed
