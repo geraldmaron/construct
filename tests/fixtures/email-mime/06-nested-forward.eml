@@ -1,0 +1,22 @@
+From: Alice Adams <alice@example.com>
+To: Bob Boone <bob@example.com>
+Subject: Fwd: budget approval
+Date: Fri, 17 Jul 2026 09:25:00 -0400
+Content-Type: multipart/mixed; boundary="fwd-boundary-4b2d"
+
+--fwd-boundary-4b2d
+Content-Type: text/plain; charset=utf-8
+
+FYI, forwarding Carol’s approval below.
+--fwd-boundary-4b2d
+Content-Type: message/rfc822
+
+From: Carol Chen <carol@example.com>
+To: Alice Adams <alice@example.com>
+Subject: Original: budget approval
+Date: Thu, 16 Jul 2026 14:00:00 -0400
+Content-Type: text/plain; charset=utf-8
+
+Approved, go ahead with the Q3 budget.
+
+--fwd-boundary-4b2d--
