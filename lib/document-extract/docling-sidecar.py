@@ -16,6 +16,17 @@ Methods:
   - extract {path}  → {"markdown": "...", "metadata": {...}, "droppedInfo": [...]}
   - shutdown        → {"ok": true}; process exits after acknowledgement
 
+No cancel method (construct-4uxq0.9.13): this loop is synchronous and handles
+one request at a time — while `extract()` is blocked inside docling's
+`convert()`, nothing here reads stdin again until that call returns, so an
+incoming cancel message would sit unread until the conversion finished on its
+own, which is no cancellation at all. docling 2.45.0's `convert()` also takes
+no cancellation/deadline argument. The Node side (docling-client.mjs) kills
+this process on a per-request timeout instead of sending a message it could
+never act on; that also aborts any other request already queued behind the
+one that timed out, since there is exactly one of these processes per client
+session and it does not resume where it left off after a kill.
+
 Parent-PID watch (ADR-0068): spawned as a direct child of the Node process
 via child_process.spawn, so os.getppid() at start is that Node process's PID.
 A background thread polls it every PARENT_POLL_INTERVAL_S; a `kill -9` (or
