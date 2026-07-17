@@ -26,7 +26,7 @@ export const DEPENDENCY_EDGE_RELS = new Set(['imports', 'contains', 'co_changes'
 
 export const APPLICATION_NODE_TYPES = new Set([
   'capability', 'test', 'contract', 'surface', 'skill', 'rule', 'provider', 'tool', 'pack',
-  'doc', 'specialist', 'runtime-evidence', 'embed', 'source', 'workflow',
+  'doc', 'specialist', 'runtime-evidence', 'embed', 'source', 'tombstone', 'workflow',
 ]);
 export const APPLICATION_EDGE_RELS = new Set([
   'realizes', 'validates', 'covers', 'exposes', 'governed_by', 'uses', 'embeds', 'requires',
