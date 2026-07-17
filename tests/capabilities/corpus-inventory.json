@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-17T07:24:28.304Z",
+  "generatedAt": "2026-07-17T07:38:44.439Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 966,
-    "topLevelTestFiles": 385,
-    "nestedTestFiles": 581,
+    "testFiles": 970,
+    "topLevelTestFiles": 387,
+    "nestedTestFiles": 583,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 52,
+    "capabilityMarkedFiles": 53,
     "byLayer": {
-      "unit": 631,
-      "functional": 286,
+      "unit": 634,
+      "functional": 287,
       "visual": 12,
       "live-provider": 2,
       "integration": 35
     },
     "byCategory": {
-      "unit": 564,
-      "functional": 286,
+      "unit": 567,
+      "functional": 287,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 48,
@@ -1393,6 +1393,14 @@
       "maintainerNotes": "tests/contracts-worker-boundary.test.mjs — LMCP-F2: worker-boundary contract"
     },
     {
+      "path": "tests/contracts/extraction-provider.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/contracts/extraction-provider.test.mjs — schema-validation fixtures for"
+    },
+    {
       "path": "tests/core-dependency-policy.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -1535,6 +1543,16 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/deprecate.test.mjs — deprecation warning behaviour."
+    },
+    {
+      "path": "tests/diagram-card.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [
+        "test-system.diagram-card"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/diagram-card.test.mjs — Diagram Card schema validation, degraded-build"
     },
     {
       "path": "tests/directives/directive-config.test.mjs",
@@ -1833,6 +1851,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/embed-config.test.mjs — embed config loader and YAML parser tests."
+    },
+    {
+      "path": "tests/embed-daemon-roadmap-not-run.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/embed-daemon-roadmap-not-run.test.mjs — reportRoadmapNotRun()"
     },
     {
       "path": "tests/embed-degradation.test.mjs",
@@ -3036,6 +3062,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/embed-daemon-directive-runner.functional.test.mjs —"
+    },
+    {
+      "path": "tests/functional/embed-daemon-execution-gap-blocked.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/embed-daemon-execution-gap-blocked.functional.test.mjs —"
     },
     {
       "path": "tests/functional/embed-daemon-execution-gap.functional.test.mjs",
