@@ -1,0 +1,3676 @@
+[
+  {
+    "id": "capability:artifact.release-gate",
+    "type": "capability",
+    "name": "artifact.release-gate",
+    "attrs": {
+      "source": "ledger"
+    }
+  },
+  {
+    "id": "capability:demo.tape-fallback",
+    "type": "capability",
+    "name": "demo.tape-fallback",
+    "attrs": {
+      "source": "ledger"
+    }
+  },
+  {
+    "id": "capability:diagram.graceful-render",
+    "type": "capability",
+    "name": "diagram.graceful-render",
+    "attrs": {
+      "source": "ledger"
+    }
+  },
+  {
+    "id": "capability:document-type.adr",
+    "type": "capability",
+    "name": "Architecture Decision Record",
+    "attrs": {
+      "kind": "document-type",
+      "criticality": null,
+      "humanGate": "proposal-only",
+      "lastValidated": "2026-06-26T20:01:39.305Z",
+      "ownerSpecialists": [
+        "architect",
+        "rd-lead"
+      ],
+      "surfaces": {}
+    }
+  },
+  {
+    "id": "capability:document-type.evidence-brief",
+    "type": "capability",
+    "name": "Evidence Brief",
+    "attrs": {
+      "kind": "document-type",
+      "criticality": null,
+      "humanGate": "proposal-only",
+      "lastValidated": "2026-06-26T20:01:39.007Z",
+      "ownerSpecialists": [
+        "product-manager",
+        "researcher"
+      ],
+      "surfaces": {}
+    }
+  },
+  {
+    "id": "capability:document-type.ingested-markdown",
+    "type": "capability",
+    "name": "Ingested Markdown",
+    "attrs": {
+      "kind": "document-type",
+      "criticality": null,
+      "humanGate": "autonomous",
+      "lastValidated": "2026-06-26T20:01:39.495Z",
+      "ownerSpecialists": [
+        "data-engineer",
+        "researcher"
+      ],
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "ingest_document"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct ingest"
+        }
+      }
+    }
+  },
+  {
+    "id": "capability:document-type.prd",
+    "type": "capability",
+    "name": "Product Requirements Document",
+    "attrs": {
+      "kind": "document-type",
+      "criticality": null,
+      "humanGate": "proposal-only",
+      "lastValidated": "2026-06-26T20:01:39.154Z",
+      "ownerSpecialists": [
+        "product-manager"
+      ],
+      "surfaces": {}
+    }
+  },
+  {
+    "id": "capability:document-type.research-brief",
+    "type": "capability",
+    "name": "Research Brief",
+    "attrs": {
+      "kind": "document-type",
+      "criticality": null,
+      "humanGate": "proposal-only",
+      "lastValidated": "2026-06-26T20:01:38.464Z",
+      "ownerSpecialists": [
+        "researcher"
+      ],
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "tool": "get_template"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct knowledge add"
+        }
+      }
+    }
+  },
+  {
+    "id": "capability:document.auto-docs",
+    "type": "capability",
+    "name": "document.auto-docs",
+    "attrs": {
+      "source": "ledger"
+    }
+  },
+  {
+    "id": "capability:document.ingest.local",
+    "type": "capability",
+    "name": "document.ingest.local",
+    "attrs": {
+      "source": "ledger"
+    }
+  },
+  {
+    "id": "capability:ingest.adapter",
+    "type": "capability",
+    "name": "Adapter Ingest (default)",
+    "attrs": {
+      "kind": "ingest-strategy",
+      "criticality": "P0",
+      "humanGate": "autonomous",
+      "lastValidated": "2026-06-26T20:01:39.686Z",
+      "ownerSpecialists": [
+        "data-engineer"
+      ],
+      "surfaces": {
+        "cli": {
+          "supported": true,
+          "primary": true,
+          "command": "construct ingest"
+        },
+        "mcp": {
+          "supported": true,
+          "tool": "ingest_document"
+        }
+      }
+    }
+  },
+  {
+    "id": "capability:ingest.docling",
+    "type": "capability",
+    "name": "Docling Sidecar Ingest",
+    "attrs": {
+      "kind": "ingest-strategy",
+      "criticality": "P1",
+      "humanGate": "autonomous",
+      "lastValidated": "2026-06-26T20:01:40.642Z",
+      "ownerSpecialists": [],
+      "surfaces": {
+        "cli": {
+          "supported": true,
+          "command": "construct ingest --legacy-extractor=false"
+        }
+      }
+    }
+  },
+  {
+    "id": "capability:ingest.docling-remote",
+    "type": "capability",
+    "name": "Docling Remote Ingest",
+    "attrs": {
+      "kind": "ingest-strategy",
+      "criticality": "P2",
+      "humanGate": "requires-human-approval",
+      "lastValidated": "2026-06-26T20:01:40.816Z",
+      "ownerSpecialists": [],
+      "surfaces": {
+        "cli": {
+          "supported": true,
+          "command": "construct ingest"
+        }
+      }
+    }
+  },
+  {
+    "id": "capability:local.model.tier",
+    "type": "capability",
+    "name": "Local Model Tier Detection",
+    "attrs": {
+      "kind": "capability",
+      "criticality": "P1",
+      "humanGate": "proposal-only",
+      "lastValidated": "2026-06-26T20:01:41.876Z",
+      "ownerSpecialists": [
+        "orchestrator"
+      ],
+      "surfaces": {
+        "cli": {
+          "supported": true,
+          "command": "construct models resolve"
+        }
+      }
+    }
+  },
+  {
+    "id": "capability:mcp.broker.connection",
+    "type": "capability",
+    "name": "MCP Broker Connectivity",
+    "attrs": {
+      "kind": "capability",
+      "criticality": "P0",
+      "humanGate": "autonomous",
+      "lastValidated": "2026-06-26T20:01:32.913Z",
+      "ownerSpecialists": [
+        "orchestrator"
+      ],
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true
+        },
+        "opencode": {
+          "supported": true
+        },
+        "cursor": {
+          "supported": true
+        },
+        "vscode": {
+          "supported": true
+        },
+        "claude": {
+          "supported": true
+        }
+      }
+    }
+  },
+  {
+    "id": "capability:mcp.tool-budget.trim",
+    "type": "capability",
+    "name": "MCP Tool Surface Trim",
+    "attrs": {
+      "kind": "capability",
+      "criticality": "P2",
+      "humanGate": "proposal-only",
+      "lastValidated": null,
+      "ownerSpecialists": [
+        "orchestrator"
+      ],
+      "surfaces": {
+        "opencode": {
+          "supported": true
+        }
+      }
+    }
+  },
+  {
+    "id": "capability:oracle.meta-review",
+    "type": "capability",
+    "name": "Oracle Meta-Review",
+    "attrs": {
+      "kind": "capability",
+      "criticality": "P1",
+      "humanGate": "approve-only",
+      "lastValidated": "2026-06-26T20:01:22.031Z",
+      "ownerSpecialists": [
+        "oracle"
+      ],
+      "surfaces": {
+        "cli": {
+          "supported": true,
+          "command": "construct oracle review",
+          "jsonTwin": true
+        },
+        "mcp": {
+          "supported": false
+        }
+      }
+    }
+  },
+  {
+    "id": "capability:orchestration.routing",
+    "type": "capability",
+    "name": "Orchestration Intent Routing",
+    "attrs": {
+      "kind": "capability",
+      "criticality": "P0",
+      "humanGate": "proposal-only",
+      "lastValidated": "2026-06-26T20:01:14.659Z",
+      "ownerSpecialists": [
+        "orchestrator"
+      ],
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "orchestration_policy"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct orchestrate run",
+          "jsonTwin": true
+        },
+        "opencode": {
+          "supported": true
+        },
+        "claude": {
+          "supported": true
+        },
+        "cursor": {
+          "supported": true
+        }
+      }
+    }
+  },
+  {
+    "id": "capability:publish.distribution",
+    "type": "capability",
+    "name": "publish.distribution",
+    "attrs": {
+      "source": "ledger"
+    }
+  },
+  {
+    "id": "capability:research.project-search",
+    "type": "capability",
+    "name": "research.project-search",
+    "attrs": {
+      "source": "ledger"
+    }
+  },
+  {
+    "id": "capability:skill.roles-architect-ai-systems",
+    "type": "capability",
+    "name": "Role Skill: Architect AI Systems",
+    "attrs": {
+      "kind": "skill",
+      "criticality": null,
+      "humanGate": "proposal-only",
+      "lastValidated": "2026-06-26T20:01:41.754Z",
+      "ownerSpecialists": [
+        "architect"
+      ],
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "get_skill"
+        }
+      }
+    }
+  },
+  {
+    "id": "capability:skill.roles-engineer",
+    "type": "capability",
+    "name": "Role Skill: Engineer",
+    "attrs": {
+      "kind": "skill",
+      "criticality": null,
+      "humanGate": "proposal-only",
+      "lastValidated": "2026-06-26T20:01:41.286Z",
+      "ownerSpecialists": [
+        "engineer"
+      ],
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "get_skill"
+        }
+      }
+    }
+  },
+  {
+    "id": "capability:surfaces.opencode-primary",
+    "type": "capability",
+    "name": "OpenCode Primary Surface",
+    "attrs": {
+      "kind": "capability",
+      "criticality": "P1",
+      "humanGate": "proposal-only",
+      "lastValidated": null,
+      "ownerSpecialists": [
+        "orchestrator"
+      ],
+      "surfaces": {
+        "opencode": {
+          "supported": true,
+          "primary": true
+        },
+        "mcp": {
+          "supported": true,
+          "tool": "orchestration_policy"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct sync"
+        }
+      }
+    }
+  },
+  {
+    "id": "capability:test-system.certification-run",
+    "type": "capability",
+    "name": "test-system.certification-run",
+    "attrs": {
+      "source": "ledger"
+    }
+  },
+  {
+    "id": "capability:test-system.certification-runner",
+    "type": "capability",
+    "name": "test-system.certification-runner",
+    "attrs": {
+      "source": "ledger"
+    }
+  },
+  {
+    "id": "capability:test-system.corpus-inventory",
+    "type": "capability",
+    "name": "test-system.corpus-inventory",
+    "attrs": {
+      "source": "ledger"
+    }
+  },
+  {
+    "id": "capability:workflow.architecture-review",
+    "type": "capability",
+    "name": "Architecture Review Workflow",
+    "attrs": {
+      "kind": "workflow",
+      "criticality": "P1",
+      "humanGate": "requires-human-approval",
+      "lastValidated": "2026-06-26T20:01:35.084Z",
+      "ownerSpecialists": [
+        "architect",
+        "security",
+        "devil-advocate"
+      ],
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "workflow_invoke"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct workflow invoke",
+          "jsonTwin": true
+        }
+      }
+    }
+  },
+  {
+    "id": "capability:workflow.data-structure",
+    "type": "capability",
+    "name": "Data Structure Workflow",
+    "attrs": {
+      "kind": "workflow",
+      "criticality": "P2",
+      "humanGate": "proposal-only",
+      "lastValidated": "2026-06-26T20:01:37.775Z",
+      "ownerSpecialists": [
+        "data-analyst",
+        "data-engineer"
+      ],
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "workflow_invoke"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct workflow invoke",
+          "jsonTwin": true
+        }
+      }
+    }
+  },
+  {
+    "id": "capability:workflow.evidence-ingest",
+    "type": "capability",
+    "name": "Evidence Ingest Workflow",
+    "attrs": {
+      "kind": "workflow",
+      "criticality": "P1",
+      "humanGate": "proposal-only",
+      "lastValidated": "2026-06-26T20:01:33.468Z",
+      "ownerSpecialists": [
+        "researcher",
+        "data-analyst"
+      ],
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "workflow_invoke"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct workflow invoke",
+          "jsonTwin": true
+        }
+      }
+    }
+  },
+  {
+    "id": "capability:workflow.memo-draft",
+    "type": "capability",
+    "name": "Memo Draft Workflow",
+    "attrs": {
+      "kind": "workflow",
+      "criticality": "P2",
+      "humanGate": "proposal-only",
+      "lastValidated": "2026-06-26T20:01:38.314Z",
+      "ownerSpecialists": [
+        "docs-keeper",
+        "reviewer"
+      ],
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "workflow_invoke"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct workflow invoke",
+          "jsonTwin": true
+        }
+      }
+    }
+  },
+  {
+    "id": "capability:workflow.prd-draft",
+    "type": "capability",
+    "name": "PRD Draft Workflow",
+    "attrs": {
+      "kind": "workflow",
+      "criticality": "P1",
+      "humanGate": "proposal-only",
+      "lastValidated": "2026-06-26T20:01:34.544Z",
+      "ownerSpecialists": [
+        "product-manager",
+        "architect"
+      ],
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "workflow_invoke"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct workflow invoke",
+          "jsonTwin": true
+        }
+      }
+    }
+  },
+  {
+    "id": "capability:workflow.proposal-review",
+    "type": "capability",
+    "name": "Proposal Review Workflow",
+    "attrs": {
+      "kind": "workflow",
+      "criticality": "P1",
+      "humanGate": "requires-human-approval",
+      "lastValidated": "2026-06-26T20:01:35.624Z",
+      "ownerSpecialists": [
+        "reviewer",
+        "devil-advocate"
+      ],
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "workflow_invoke"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct workflow invoke",
+          "jsonTwin": true
+        }
+      }
+    }
+  },
+  {
+    "id": "capability:workflow.research-synthesis",
+    "type": "capability",
+    "name": "Research Synthesis Workflow",
+    "attrs": {
+      "kind": "workflow",
+      "criticality": "P1",
+      "humanGate": "proposal-only",
+      "lastValidated": "2026-06-26T20:01:34.007Z",
+      "ownerSpecialists": [
+        "researcher",
+        "data-analyst",
+        "evaluator"
+      ],
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "workflow_invoke"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct ask",
+          "jsonTwin": false
+        },
+        "claude": {
+          "supported": true,
+          "slashCommand": "understand:research"
+        }
+      }
+    }
+  },
+  {
+    "id": "capability:workflow.risk-review",
+    "type": "capability",
+    "name": "Risk Review Workflow",
+    "attrs": {
+      "kind": "workflow",
+      "criticality": "P1",
+      "humanGate": "requires-human-approval",
+      "lastValidated": "2026-06-26T20:01:36.161Z",
+      "ownerSpecialists": [
+        "devil-advocate",
+        "security",
+        "legal-compliance"
+      ],
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "workflow_invoke"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct workflow invoke",
+          "jsonTwin": true
+        }
+      }
+    }
+  },
+  {
+    "id": "capability:workflow.structure-notes",
+    "type": "capability",
+    "name": "Structure Notes Workflow",
+    "attrs": {
+      "kind": "workflow",
+      "criticality": "P2",
+      "humanGate": "proposal-only",
+      "lastValidated": "2026-06-26T20:01:36.696Z",
+      "ownerSpecialists": [
+        "orchestrator",
+        "researcher"
+      ],
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "workflow_invoke"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct intake classify",
+          "jsonTwin": true
+        }
+      }
+    }
+  },
+  {
+    "id": "capability:workflow.transcript-process",
+    "type": "capability",
+    "name": "Transcript Process Workflow",
+    "attrs": {
+      "kind": "workflow",
+      "criticality": "P2",
+      "humanGate": "proposal-only",
+      "lastValidated": "2026-06-26T20:01:37.237Z",
+      "ownerSpecialists": [
+        "researcher",
+        "data-analyst"
+      ],
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "workflow_invoke"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct workflow invoke",
+          "jsonTwin": true
+        }
+      }
+    }
+  },
+  {
+    "id": "capability:workflow.triage",
+    "type": "capability",
+    "name": "Triage Workflow",
+    "attrs": {
+      "kind": "workflow",
+      "criticality": "P2",
+      "humanGate": "proposal-only",
+      "lastValidated": null,
+      "ownerSpecialists": [
+        "orchestrator",
+        "researcher"
+      ],
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "workflow_invoke"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct workflow invoke",
+          "jsonTwin": true
+        }
+      }
+    }
+  },
+  {
+    "id": "contract:any-to-debugger",
+    "type": "contract",
+    "name": "any-to-debugger",
+    "attrs": {
+      "producer": "*",
+      "consumer": "cx-debugger"
+    }
+  },
+  {
+    "id": "contract:any-to-designer",
+    "type": "contract",
+    "name": "any-to-designer",
+    "attrs": {
+      "producer": "*",
+      "consumer": "cx-designer"
+    }
+  },
+  {
+    "id": "contract:any-to-operations-docs",
+    "type": "contract",
+    "name": "any-to-operations-docs",
+    "attrs": {
+      "producer": "*",
+      "consumer": "cx-operations"
+    }
+  },
+  {
+    "id": "contract:any-to-operations-incident",
+    "type": "contract",
+    "name": "any-to-operations-incident",
+    "attrs": {
+      "producer": "*",
+      "consumer": "cx-operations"
+    }
+  },
+  {
+    "id": "contract:any-to-product-manager",
+    "type": "contract",
+    "name": "any-to-product-manager",
+    "attrs": {
+      "producer": "*",
+      "consumer": "cx-product-manager"
+    }
+  },
+  {
+    "id": "contract:any-to-researcher",
+    "type": "contract",
+    "name": "any-to-researcher",
+    "attrs": {
+      "producer": "*",
+      "consumer": "cx-researcher"
+    }
+  },
+  {
+    "id": "contract:any-to-reviewer",
+    "type": "contract",
+    "name": "any-to-reviewer",
+    "attrs": {
+      "producer": "*",
+      "consumer": "cx-reviewer"
+    }
+  },
+  {
+    "id": "contract:architect-to-engineer",
+    "type": "contract",
+    "name": "architect-to-engineer",
+    "attrs": {
+      "producer": "cx-architect",
+      "consumer": "cx-engineer"
+    }
+  },
+  {
+    "id": "contract:architect-to-engineer-ai",
+    "type": "contract",
+    "name": "architect-to-engineer-ai",
+    "attrs": {
+      "producer": "cx-architect",
+      "consumer": "cx-engineer"
+    }
+  },
+  {
+    "id": "contract:architect-to-engineer-data",
+    "type": "contract",
+    "name": "architect-to-engineer-data",
+    "attrs": {
+      "producer": "cx-architect",
+      "consumer": "cx-engineer"
+    }
+  },
+  {
+    "id": "contract:architect-to-engineer-platform",
+    "type": "contract",
+    "name": "architect-to-engineer-platform",
+    "attrs": {
+      "producer": "cx-architect",
+      "consumer": "cx-engineer"
+    }
+  },
+  {
+    "id": "contract:architect-to-operations",
+    "type": "contract",
+    "name": "architect-to-operations",
+    "attrs": {
+      "producer": "cx-architect",
+      "consumer": "cx-operations"
+    }
+  },
+  {
+    "id": "contract:architect-to-reviewer-challenge",
+    "type": "contract",
+    "name": "architect-to-reviewer-challenge",
+    "attrs": {
+      "producer": "cx-architect",
+      "consumer": "cx-reviewer"
+    }
+  },
+  {
+    "id": "contract:architect-to-reviewer-eval",
+    "type": "contract",
+    "name": "architect-to-reviewer-eval",
+    "attrs": {
+      "producer": "cx-architect",
+      "consumer": "cx-reviewer"
+    }
+  },
+  {
+    "id": "contract:architect-to-security",
+    "type": "contract",
+    "name": "architect-to-security",
+    "attrs": {
+      "producer": "cx-architect",
+      "consumer": "cx-security"
+    }
+  },
+  {
+    "id": "contract:construct-to-orchestrator",
+    "type": "contract",
+    "name": "construct-to-orchestrator",
+    "attrs": {
+      "producer": "construct",
+      "consumer": "cx-orchestrator"
+    }
+  },
+  {
+    "id": "contract:data-analyst-to-product-manager",
+    "type": "contract",
+    "name": "data-analyst-to-product-manager",
+    "attrs": {
+      "producer": "cx-data-analyst",
+      "consumer": "cx-product-manager"
+    }
+  },
+  {
+    "id": "contract:designer-to-qa",
+    "type": "contract",
+    "name": "designer-to-qa",
+    "attrs": {
+      "producer": "cx-designer",
+      "consumer": "cx-qa"
+    }
+  },
+  {
+    "id": "contract:engineer-to-qa",
+    "type": "contract",
+    "name": "engineer-to-qa",
+    "attrs": {
+      "producer": "cx-engineer",
+      "consumer": "cx-qa"
+    }
+  },
+  {
+    "id": "contract:engineer-to-reviewer",
+    "type": "contract",
+    "name": "engineer-to-reviewer",
+    "attrs": {
+      "producer": "cx-engineer",
+      "consumer": "cx-reviewer"
+    }
+  },
+  {
+    "id": "contract:operations-tpm-briefing",
+    "type": "contract",
+    "name": "operations-tpm-briefing",
+    "attrs": {
+      "producer": "cx-operations",
+      "consumer": "user"
+    }
+  },
+  {
+    "id": "contract:operations-triage",
+    "type": "contract",
+    "name": "operations-triage",
+    "attrs": {
+      "producer": "cx-operations",
+      "consumer": "user"
+    }
+  },
+  {
+    "id": "contract:pm-engineering-signals",
+    "type": "contract",
+    "name": "pm-engineering-signals",
+    "attrs": {
+      "producer": "cx-product-manager",
+      "consumer": "user"
+    }
+  },
+  {
+    "id": "contract:pm-requirements-candidates",
+    "type": "contract",
+    "name": "pm-requirements-candidates",
+    "attrs": {
+      "producer": "cx-product-manager",
+      "consumer": "user"
+    }
+  },
+  {
+    "id": "contract:product-manager-to-architect",
+    "type": "contract",
+    "name": "product-manager-to-architect",
+    "attrs": {
+      "producer": "cx-product-manager",
+      "consumer": "cx-architect"
+    }
+  },
+  {
+    "id": "contract:product-manager-to-data-analyst",
+    "type": "contract",
+    "name": "product-manager-to-data-analyst",
+    "attrs": {
+      "producer": "cx-product-manager",
+      "consumer": "cx-data-analyst"
+    }
+  },
+  {
+    "id": "contract:product-manager-to-researcher",
+    "type": "contract",
+    "name": "product-manager-to-researcher",
+    "attrs": {
+      "producer": "cx-product-manager",
+      "consumer": "cx-researcher"
+    }
+  },
+  {
+    "id": "contract:qa-to-engineer",
+    "type": "contract",
+    "name": "qa-to-engineer",
+    "attrs": {
+      "producer": "cx-qa",
+      "consumer": "cx-engineer"
+    }
+  },
+  {
+    "id": "contract:qa-to-operations",
+    "type": "contract",
+    "name": "qa-to-operations",
+    "attrs": {
+      "producer": "cx-qa",
+      "consumer": "cx-operations"
+    }
+  },
+  {
+    "id": "contract:researcher-to-architect",
+    "type": "contract",
+    "name": "researcher-to-architect",
+    "attrs": {
+      "producer": "cx-researcher",
+      "consumer": "cx-architect"
+    }
+  },
+  {
+    "id": "contract:researcher-to-engineer",
+    "type": "contract",
+    "name": "researcher-to-engineer",
+    "attrs": {
+      "producer": "cx-researcher",
+      "consumer": "cx-engineer"
+    }
+  },
+  {
+    "id": "contract:researcher-to-product-manager",
+    "type": "contract",
+    "name": "researcher-to-product-manager",
+    "attrs": {
+      "producer": "cx-researcher",
+      "consumer": "cx-product-manager"
+    }
+  },
+  {
+    "id": "contract:reviewer-to-operations",
+    "type": "contract",
+    "name": "reviewer-to-operations",
+    "attrs": {
+      "producer": "cx-reviewer",
+      "consumer": "cx-operations"
+    }
+  },
+  {
+    "id": "contract:reviewer-to-security",
+    "type": "contract",
+    "name": "reviewer-to-security",
+    "attrs": {
+      "producer": "cx-reviewer",
+      "consumer": "cx-security"
+    }
+  },
+  {
+    "id": "contract:security-to-operations",
+    "type": "contract",
+    "name": "security-to-operations",
+    "attrs": {
+      "producer": "cx-security",
+      "consumer": "cx-operations"
+    }
+  },
+  {
+    "id": "contract:user-to-construct",
+    "type": "contract",
+    "name": "user-to-construct",
+    "attrs": {
+      "producer": "user",
+      "consumer": "construct"
+    }
+  },
+  {
+    "id": "doc:docs/README.md",
+    "type": "doc",
+    "name": "docs/README.md",
+    "attrs": {
+      "path": "docs/README.md"
+    }
+  },
+  {
+    "id": "doc:docs/STYLE.md",
+    "type": "doc",
+    "name": "docs/STYLE.md",
+    "attrs": {
+      "path": "docs/STYLE.md"
+    }
+  },
+  {
+    "id": "doc:docs/changelog.md",
+    "type": "doc",
+    "name": "docs/changelog.md",
+    "attrs": {
+      "path": "docs/changelog.md"
+    }
+  },
+  {
+    "id": "doc:docs/decisions/README.md",
+    "type": "doc",
+    "name": "docs/decisions/README.md",
+    "attrs": {
+      "path": "docs/decisions/README.md"
+    }
+  },
+  {
+    "id": "doc:docs/decisions/adr/0001-zero-npm-core.md",
+    "type": "doc",
+    "name": "docs/decisions/adr/0001-zero-npm-core.md",
+    "attrs": {
+      "path": "docs/decisions/adr/0001-zero-npm-core.md"
+    }
+  },
+  {
+    "id": "doc:docs/decisions/adr/0002-layered-architecture.md",
+    "type": "doc",
+    "name": "docs/decisions/adr/0002-layered-architecture.md",
+    "attrs": {
+      "path": "docs/decisions/adr/0002-layered-architecture.md"
+    }
+  },
+  {
+    "id": "doc:docs/decisions/adr/0003-provider-interface.md",
+    "type": "doc",
+    "name": "docs/decisions/adr/0003-provider-interface.md",
+    "attrs": {
+      "path": "docs/decisions/adr/0003-provider-interface.md"
+    }
+  },
+  {
+    "id": "doc:docs/decisions/adr/0013-skills-on-disk-layout.md",
+    "type": "doc",
+    "name": "docs/decisions/adr/0013-skills-on-disk-layout.md",
+    "attrs": {
+      "path": "docs/decisions/adr/0013-skills-on-disk-layout.md"
+    }
+  },
+  {
+    "id": "doc:docs/decisions/adr/0014-local-embeddings-optional.md",
+    "type": "doc",
+    "name": "docs/decisions/adr/0014-local-embeddings-optional.md",
+    "attrs": {
+      "path": "docs/decisions/adr/0014-local-embeddings-optional.md"
+    }
+  },
+  {
+    "id": "doc:docs/decisions/adr/0015-affirm-hybrid-architecture.md",
+    "type": "doc",
+    "name": "docs/decisions/adr/0015-affirm-hybrid-architecture.md",
+    "attrs": {
+      "path": "docs/decisions/adr/0015-affirm-hybrid-architecture.md"
+    }
+  },
+  {
+    "id": "doc:docs/decisions/adr/0016-capability-parity-contract.md",
+    "type": "doc",
+    "name": "docs/decisions/adr/0016-capability-parity-contract.md",
+    "attrs": {
+      "path": "docs/decisions/adr/0016-capability-parity-contract.md"
+    }
+  },
+  {
+    "id": "doc:docs/decisions/adr/0017-source-credibility-taxonomy.md",
+    "type": "doc",
+    "name": "docs/decisions/adr/0017-source-credibility-taxonomy.md",
+    "attrs": {
+      "path": "docs/decisions/adr/0017-source-credibility-taxonomy.md"
+    }
+  },
+  {
+    "id": "doc:docs/decisions/adr/0018-document-quality-standard.md",
+    "type": "doc",
+    "name": "docs/decisions/adr/0018-document-quality-standard.md",
+    "attrs": {
+      "path": "docs/decisions/adr/0018-document-quality-standard.md"
+    }
+  },
+  {
+    "id": "doc:docs/decisions/adr/0019-execution-capability-descriptive-contract.md",
+    "type": "doc",
+    "name": "docs/decisions/adr/0019-execution-capability-descriptive-contract.md",
+    "attrs": {
+      "path": "docs/decisions/adr/0019-execution-capability-descriptive-contract.md"
+    }
+  },
+  {
+    "id": "doc:docs/decisions/adr/0020-local-orchestration-runtime.md",
+    "type": "doc",
+    "name": "docs/decisions/adr/0020-local-orchestration-runtime.md",
+    "attrs": {
+      "path": "docs/decisions/adr/0020-local-orchestration-runtime.md"
+    }
+  },
+  {
+    "id": "doc:docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md",
+    "type": "doc",
+    "name": "docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md",
+    "attrs": {
+      "path": "docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md"
+    }
+  },
+  {
+    "id": "doc:docs/decisions/adr/0022-orchestration-daemon-api.md",
+    "type": "doc",
+    "name": "docs/decisions/adr/0022-orchestration-daemon-api.md",
+    "attrs": {
+      "path": "docs/decisions/adr/0022-orchestration-daemon-api.md"
+    }
+  },
+  {
+    "id": "doc:docs/decisions/adr/0023-acp-agent.md",
+    "type": "doc",
+    "name": "docs/decisions/adr/0023-acp-agent.md",
+    "attrs": {
+      "path": "docs/decisions/adr/0023-acp-agent.md"
+    }
+  },
+  {
+    "id": "doc:docs/decisions/adr/0024-document-io-optional-capability.md",
+    "type": "doc",
+    "name": "docs/decisions/adr/0024-document-io-optional-capability.md",
+    "attrs": {
+      "path": "docs/decisions/adr/0024-document-io-optional-capability.md"
+    }
+  },
+  {
+    "id": "doc:docs/decisions/adr/0025-explicit-activation-model.md",
+    "type": "doc",
+    "name": "docs/decisions/adr/0025-explicit-activation-model.md",
+    "attrs": {
+      "path": "docs/decisions/adr/0025-explicit-activation-model.md"
+    }
+  },
+  {
+    "id": "doc:docs/decisions/adr/0026-beads-git-native-sync.md",
+    "type": "doc",
+    "name": "docs/decisions/adr/0026-beads-git-native-sync.md",
+    "attrs": {
+      "path": "docs/decisions/adr/0026-beads-git-native-sync.md"
+    }
+  },
+  {
+    "id": "doc:docs/decisions/adr/0027-host-project-footprint-and-non-destructive-scaffolding.md",
+    "type": "doc",
+    "name": "docs/decisions/adr/0027-host-project-footprint-and-non-destructive-scaffolding.md",
+    "attrs": {
+      "path": "docs/decisions/adr/0027-host-project-footprint-and-non-destructive-scaffolding.md"
+    }
+  },
+  {
+    "id": "doc:docs/decisions/adr/0028-js-yaml-frontmatter-exception.md",
+    "type": "doc",
+    "name": "docs/decisions/adr/0028-js-yaml-frontmatter-exception.md",
+    "attrs": {
+      "path": "docs/decisions/adr/0028-js-yaml-frontmatter-exception.md"
+    }
+  },
+  {
+    "id": "doc:docs/decisions/adr/0029-install-scopes-and-hook-budgets.md",
+    "type": "doc",
+    "name": "docs/decisions/adr/0029-install-scopes-and-hook-budgets.md",
+    "attrs": {
+      "path": "docs/decisions/adr/0029-install-scopes-and-hook-budgets.md"
+    }
+  },
+  {
+    "id": "doc:docs/decisions/adr/0030-chain-of-thought-disclosure.md",
+    "type": "doc",
+    "name": "docs/decisions/adr/0030-chain-of-thought-disclosure.md",
+    "attrs": {
+      "path": "docs/decisions/adr/0030-chain-of-thought-disclosure.md"
+    }
+  },
+  {
+    "id": "doc:docs/decisions/adr/0031-browser-automation-is-opt-in.md",
+    "type": "doc",
+    "name": "docs/decisions/adr/0031-browser-automation-is-opt-in.md",
+    "attrs": {
+      "path": "docs/decisions/adr/0031-browser-automation-is-opt-in.md"
+    }
+  },
+  {
+    "id": "doc:docs/decisions/adr/0032-small-model-context-methodology.md",
+    "type": "doc",
+    "name": "docs/decisions/adr/0032-small-model-context-methodology.md",
+    "attrs": {
+      "path": "docs/decisions/adr/0032-small-model-context-methodology.md"
+    }
+  },
+  {
+    "id": "doc:docs/decisions/adr/0033-platform-capability-registry.md",
+    "type": "doc",
+    "name": "docs/decisions/adr/0033-platform-capability-registry.md",
+    "attrs": {
+      "path": "docs/decisions/adr/0033-platform-capability-registry.md"
+    }
+  },
+  {
+    "id": "doc:docs/decisions/adr/0034-local-vs-cloud-methodology-split.md",
+    "type": "doc",
+    "name": "docs/decisions/adr/0034-local-vs-cloud-methodology-split.md",
+    "attrs": {
+      "path": "docs/decisions/adr/0034-local-vs-cloud-methodology-split.md"
+    }
+  },
+  {
+    "id": "doc:docs/decisions/adr/0035-test-strategy-extend-not-rebuild.md",
+    "type": "doc",
+    "name": "docs/decisions/adr/0035-test-strategy-extend-not-rebuild.md",
+    "attrs": {
+      "path": "docs/decisions/adr/0035-test-strategy-extend-not-rebuild.md"
+    }
+  },
+  {
+    "id": "embed:operations",
+    "type": "embed",
+    "name": "operations",
+    "attrs": {
+      "specialist": "cx-operations",
+      "outputContract": "operations-tpm-briefing",
+      "providerBindings": [
+        "atlassian-jira",
+        "atlassian-confluence",
+        "slack"
+      ],
+      "runtime": "auto",
+      "proposalAuthority": "propose-only"
+    }
+  },
+  {
+    "id": "embed:operations-triage",
+    "type": "embed",
+    "name": "operations-triage",
+    "attrs": {
+      "specialist": "cx-operations",
+      "outputContract": "operations-triage",
+      "providerBindings": [
+        "atlassian-jira",
+        "atlassian-confluence",
+        "directory"
+      ],
+      "runtime": "auto",
+      "proposalAuthority": "propose-only"
+    }
+  },
+  {
+    "id": "embed:pm-feedback",
+    "type": "embed",
+    "name": "pm-feedback",
+    "attrs": {
+      "specialist": "cx-product-manager",
+      "outputContract": "pm-requirements-candidates",
+      "providerBindings": [
+        "feedback",
+        "atlassian-confluence"
+      ],
+      "runtime": "auto",
+      "proposalAuthority": "propose-only"
+    }
+  },
+  {
+    "id": "embed:pm-repos",
+    "type": "embed",
+    "name": "pm-repos",
+    "attrs": {
+      "specialist": "cx-product-manager",
+      "outputContract": "pm-engineering-signals",
+      "providerBindings": [
+        "github",
+        "atlassian-jira"
+      ],
+      "runtime": "auto",
+      "proposalAuthority": "propose-only"
+    }
+  },
+  {
+    "id": "file:bin/construct",
+    "type": "file",
+    "name": "bin/construct",
+    "attrs": {
+      "path": "bin/construct"
+    }
+  },
+  {
+    "id": "file:bin/construct-postinstall.mjs",
+    "type": "file",
+    "name": "bin/construct-postinstall.mjs",
+    "attrs": {
+      "path": "bin/construct-postinstall.mjs"
+    }
+  },
+  {
+    "id": "file:bin/construct-shim.mjs",
+    "type": "file",
+    "name": "bin/construct-shim.mjs",
+    "attrs": {
+      "path": "bin/construct-shim.mjs"
+    }
+  },
+  {
+    "id": "file:lib/a11y-audit.mjs",
+    "type": "file",
+    "name": "lib/a11y-audit.mjs",
+    "attrs": {
+      "path": "lib/a11y-audit.mjs"
+    }
+  },
+  {
+    "id": "file:lib/acp/server.mjs",
+    "type": "file",
+    "name": "lib/acp/server.mjs",
+    "attrs": {
+      "path": "lib/acp/server.mjs"
+    }
+  },
+  {
+    "id": "file:lib/adapters-sync.mjs",
+    "type": "file",
+    "name": "lib/adapters-sync.mjs",
+    "attrs": {
+      "path": "lib/adapters-sync.mjs"
+    }
+  },
+  {
+    "id": "file:lib/agent-instructions/inject.mjs",
+    "type": "file",
+    "name": "lib/agent-instructions/inject.mjs",
+    "attrs": {
+      "path": "lib/agent-instructions/inject.mjs"
+    }
+  },
+  {
+    "id": "file:lib/artifact-capture.mjs",
+    "type": "file",
+    "name": "lib/artifact-capture.mjs",
+    "attrs": {
+      "path": "lib/artifact-capture.mjs"
+    }
+  },
+  {
+    "id": "file:lib/artifact-completion-states.mjs",
+    "type": "file",
+    "name": "lib/artifact-completion-states.mjs",
+    "attrs": {
+      "path": "lib/artifact-completion-states.mjs"
+    }
+  },
+  {
+    "id": "file:lib/artifact-completion.mjs",
+    "type": "file",
+    "name": "lib/artifact-completion.mjs",
+    "attrs": {
+      "path": "lib/artifact-completion.mjs"
+    }
+  },
+  {
+    "id": "file:lib/artifact-gate-levels.mjs",
+    "type": "file",
+    "name": "lib/artifact-gate-levels.mjs",
+    "attrs": {
+      "path": "lib/artifact-gate-levels.mjs"
+    }
+  },
+  {
+    "id": "file:lib/artifact-gate-notice.mjs",
+    "type": "file",
+    "name": "lib/artifact-gate-notice.mjs",
+    "attrs": {
+      "path": "lib/artifact-gate-notice.mjs"
+    }
+  },
+  {
+    "id": "file:lib/artifact-loop-core.mjs",
+    "type": "file",
+    "name": "lib/artifact-loop-core.mjs",
+    "attrs": {
+      "path": "lib/artifact-loop-core.mjs"
+    }
+  },
+  {
+    "id": "file:lib/artifact-manifest-overlay.mjs",
+    "type": "file",
+    "name": "lib/artifact-manifest-overlay.mjs",
+    "attrs": {
+      "path": "lib/artifact-manifest-overlay.mjs"
+    }
+  },
+  {
+    "id": "file:lib/artifact-manifest.mjs",
+    "type": "file",
+    "name": "lib/artifact-manifest.mjs",
+    "attrs": {
+      "path": "lib/artifact-manifest.mjs",
+      "exists": true,
+      "source": "declaration"
+    }
+  },
+  {
+    "id": "file:lib/artifact-quality.mjs",
+    "type": "file",
+    "name": "lib/artifact-quality.mjs",
+    "attrs": {
+      "path": "lib/artifact-quality.mjs"
+    }
+  },
+  {
+    "id": "file:lib/artifact-release-gate.mjs",
+    "type": "file",
+    "name": "lib/artifact-release-gate.mjs",
+    "attrs": {
+      "path": "lib/artifact-release-gate.mjs",
+      "exists": true,
+      "source": "declaration"
+    }
+  },
+  {
+    "id": "file:lib/artifact-reviewers.mjs",
+    "type": "file",
+    "name": "lib/artifact-reviewers.mjs",
+    "attrs": {
+      "path": "lib/artifact-reviewers.mjs"
+    }
+  },
+  {
+    "id": "file:lib/artifact-type-from-path.mjs",
+    "type": "file",
+    "name": "lib/artifact-type-from-path.mjs",
+    "attrs": {
+      "path": "lib/artifact-type-from-path.mjs"
+    }
+  },
+  {
+    "id": "file:lib/artifact-workflow.mjs",
+    "type": "file",
+    "name": "lib/artifact-workflow.mjs",
+    "attrs": {
+      "path": "lib/artifact-workflow.mjs"
+    }
+  },
+  {
+    "id": "file:lib/audit-rules.mjs",
+    "type": "file",
+    "name": "lib/audit-rules.mjs",
+    "attrs": {
+      "path": "lib/audit-rules.mjs"
+    }
+  },
+  {
+    "id": "file:lib/audit-skills.mjs",
+    "type": "file",
+    "name": "lib/audit-skills.mjs",
+    "attrs": {
+      "path": "lib/audit-skills.mjs"
+    }
+  },
+  {
+    "id": "file:lib/audit-specialists.mjs",
+    "type": "file",
+    "name": "lib/audit-specialists.mjs",
+    "attrs": {
+      "path": "lib/audit-specialists.mjs"
+    }
+  },
+  {
+    "id": "file:lib/audit-trail.mjs",
+    "type": "file",
+    "name": "lib/audit-trail.mjs",
+    "attrs": {
+      "path": "lib/audit-trail.mjs"
+    }
+  },
+  {
+    "id": "file:lib/auto-docs.mjs",
+    "type": "file",
+    "name": "lib/auto-docs.mjs",
+    "attrs": {
+      "path": "lib/auto-docs.mjs"
+    }
+  },
+  {
+    "id": "file:lib/beads-automation.mjs",
+    "type": "file",
+    "name": "lib/beads-automation.mjs",
+    "attrs": {
+      "path": "lib/beads-automation.mjs"
+    }
+  },
+  {
+    "id": "file:lib/beads-client.mjs",
+    "type": "file",
+    "name": "lib/beads-client.mjs",
+    "attrs": {
+      "path": "lib/beads-client.mjs"
+    }
+  },
+  {
+    "id": "file:lib/beads-lock.mjs",
+    "type": "file",
+    "name": "lib/beads-lock.mjs",
+    "attrs": {
+      "path": "lib/beads-lock.mjs"
+    }
+  },
+  {
+    "id": "file:lib/beads-optimistic.mjs",
+    "type": "file",
+    "name": "lib/beads-optimistic.mjs",
+    "attrs": {
+      "path": "lib/beads-optimistic.mjs"
+    }
+  },
+  {
+    "id": "file:lib/beads/auto-close.mjs",
+    "type": "file",
+    "name": "lib/beads/auto-close.mjs",
+    "attrs": {
+      "path": "lib/beads/auto-close.mjs"
+    }
+  },
+  {
+    "id": "file:lib/beads/drift.mjs",
+    "type": "file",
+    "name": "lib/beads/drift.mjs",
+    "attrs": {
+      "path": "lib/beads/drift.mjs"
+    }
+  },
+  {
+    "id": "file:lib/bootstrap.mjs",
+    "type": "file",
+    "name": "lib/bootstrap.mjs",
+    "attrs": {
+      "path": "lib/bootstrap.mjs"
+    }
+  },
+  {
+    "id": "file:lib/bootstrap/built-ins.mjs",
+    "type": "file",
+    "name": "lib/bootstrap/built-ins.mjs",
+    "attrs": {
+      "path": "lib/bootstrap/built-ins.mjs"
+    }
+  },
+  {
+    "id": "file:lib/bootstrap/resources.mjs",
+    "type": "file",
+    "name": "lib/bootstrap/resources.mjs",
+    "attrs": {
+      "path": "lib/bootstrap/resources.mjs"
+    }
+  },
+  {
+    "id": "file:lib/brand-contrast.mjs",
+    "type": "file",
+    "name": "lib/brand-contrast.mjs",
+    "attrs": {
+      "path": "lib/brand-contrast.mjs"
+    }
+  },
+  {
+    "id": "file:lib/brand-fonts.mjs",
+    "type": "file",
+    "name": "lib/brand-fonts.mjs",
+    "attrs": {
+      "path": "lib/brand-fonts.mjs"
+    }
+  },
+  {
+    "id": "file:lib/brand-prose.mjs",
+    "type": "file",
+    "name": "lib/brand-prose.mjs",
+    "attrs": {
+      "path": "lib/brand-prose.mjs"
+    }
+  },
+  {
+    "id": "file:lib/brand-tokens.mjs",
+    "type": "file",
+    "name": "lib/brand-tokens.mjs",
+    "attrs": {
+      "path": "lib/brand-tokens.mjs"
+    }
+  },
+  {
+    "id": "file:lib/bridges/copilot-proxy.mjs",
+    "type": "file",
+    "name": "lib/bridges/copilot-proxy.mjs",
+    "attrs": {
+      "path": "lib/bridges/copilot-proxy.mjs"
+    }
+  },
+  {
+    "id": "file:lib/cache-governor.js",
+    "type": "file",
+    "name": "lib/cache-governor.js",
+    "attrs": {
+      "path": "lib/cache-governor.js"
+    }
+  },
+  {
+    "id": "file:lib/cache-strategy-anthropic.js",
+    "type": "file",
+    "name": "lib/cache-strategy-anthropic.js",
+    "attrs": {
+      "path": "lib/cache-strategy-anthropic.js"
+    }
+  },
+  {
+    "id": "file:lib/cache-strategy-google.js",
+    "type": "file",
+    "name": "lib/cache-strategy-google.js",
+    "attrs": {
+      "path": "lib/cache-strategy-google.js"
+    }
+  },
+  {
+    "id": "file:lib/cache-strategy-none.js",
+    "type": "file",
+    "name": "lib/cache-strategy-none.js",
+    "attrs": {
+      "path": "lib/cache-strategy-none.js"
+    }
+  },
+  {
+    "id": "file:lib/cache-strategy-openai.js",
+    "type": "file",
+    "name": "lib/cache-strategy-openai.js",
+    "attrs": {
+      "path": "lib/cache-strategy-openai.js"
+    }
+  },
+  {
+    "id": "file:lib/cache-strategy.js",
+    "type": "file",
+    "name": "lib/cache-strategy.js",
+    "attrs": {
+      "path": "lib/cache-strategy.js"
+    }
+  },
+  {
+    "id": "file:lib/capability-ledger.mjs",
+    "type": "file",
+    "name": "lib/capability-ledger.mjs",
+    "attrs": {
+      "path": "lib/capability-ledger.mjs"
+    }
+  },
+  {
+    "id": "file:lib/certification/artifact-fixtures.mjs",
+    "type": "file",
+    "name": "lib/certification/artifact-fixtures.mjs",
+    "attrs": {
+      "path": "lib/certification/artifact-fixtures.mjs"
+    }
+  },
+  {
+    "id": "file:lib/certification/artifact-gates.mjs",
+    "type": "file",
+    "name": "lib/certification/artifact-gates.mjs",
+    "attrs": {
+      "path": "lib/certification/artifact-gates.mjs"
+    }
+  },
+  {
+    "id": "file:lib/certification/artifact-provenance.mjs",
+    "type": "file",
+    "name": "lib/certification/artifact-provenance.mjs",
+    "attrs": {
+      "path": "lib/certification/artifact-provenance.mjs"
+    }
+  },
+  {
+    "id": "file:lib/certification/canonical-scenarios.mjs",
+    "type": "file",
+    "name": "lib/certification/canonical-scenarios.mjs",
+    "attrs": {
+      "path": "lib/certification/canonical-scenarios.mjs"
+    }
+  },
+  {
+    "id": "file:lib/certification/cli.mjs",
+    "type": "file",
+    "name": "lib/certification/cli.mjs",
+    "attrs": {
+      "path": "lib/certification/cli.mjs"
+    }
+  },
+  {
+    "id": "file:lib/certification/comparisons.mjs",
+    "type": "file",
+    "name": "lib/certification/comparisons.mjs",
+    "attrs": {
+      "path": "lib/certification/comparisons.mjs"
+    }
+  },
+  {
+    "id": "file:lib/certification/demo-parity.mjs",
+    "type": "file",
+    "name": "lib/certification/demo-parity.mjs",
+    "attrs": {
+      "path": "lib/certification/demo-parity.mjs"
+    }
+  },
+  {
+    "id": "file:lib/certification/document-io-fixtures.mjs",
+    "type": "file",
+    "name": "lib/certification/document-io-fixtures.mjs",
+    "attrs": {
+      "path": "lib/certification/document-io-fixtures.mjs"
+    }
+  },
+  {
+    "id": "file:lib/certification/document-io-matrix.mjs",
+    "type": "file",
+    "name": "lib/certification/document-io-matrix.mjs",
+    "attrs": {
+      "path": "lib/certification/document-io-matrix.mjs"
+    }
+  },
+  {
+    "id": "file:lib/certification/document-workflow.mjs",
+    "type": "file",
+    "name": "lib/certification/document-workflow.mjs",
+    "attrs": {
+      "path": "lib/certification/document-workflow.mjs"
+    }
+  },
+  {
+    "id": "file:lib/certification/eval-bridge.mjs",
+    "type": "file",
+    "name": "lib/certification/eval-bridge.mjs",
+    "attrs": {
+      "path": "lib/certification/eval-bridge.mjs"
+    }
+  },
+  {
+    "id": "file:lib/certification/evidence-tiers.mjs",
+    "type": "file",
+    "name": "lib/certification/evidence-tiers.mjs",
+    "attrs": {
+      "path": "lib/certification/evidence-tiers.mjs"
+    }
+  },
+  {
+    "id": "file:lib/certification/model-routing.mjs",
+    "type": "file",
+    "name": "lib/certification/model-routing.mjs",
+    "attrs": {
+      "path": "lib/certification/model-routing.mjs"
+    }
+  },
+  {
+    "id": "file:lib/certification/prompt-budget.mjs",
+    "type": "file",
+    "name": "lib/certification/prompt-budget.mjs",
+    "attrs": {
+      "path": "lib/certification/prompt-budget.mjs"
+    }
+  },
+  {
+    "id": "module:CHANGELOG.md",
+    "type": "module",
+    "name": "CHANGELOG.md",
+    "attrs": {}
+  },
+  {
+    "id": "module:bin/construct",
+    "type": "module",
+    "name": "bin/construct",
+    "attrs": {}
+  },
+  {
+    "id": "module:bin/construct-postinstall.mjs",
+    "type": "module",
+    "name": "bin/construct-postinstall.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:bin/construct-shim.mjs",
+    "type": "module",
+    "name": "bin/construct-shim.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:docs/guides",
+    "type": "module",
+    "name": "docs/guides",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/a11y-audit.mjs",
+    "type": "module",
+    "name": "lib/a11y-audit.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/acp",
+    "type": "module",
+    "name": "lib/acp",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/adapters-sync.mjs",
+    "type": "module",
+    "name": "lib/adapters-sync.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/agent-instructions",
+    "type": "module",
+    "name": "lib/agent-instructions",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/artifact-capture.mjs",
+    "type": "module",
+    "name": "lib/artifact-capture.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/artifact-completion-states.mjs",
+    "type": "module",
+    "name": "lib/artifact-completion-states.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/artifact-completion.mjs",
+    "type": "module",
+    "name": "lib/artifact-completion.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/artifact-gate-levels.mjs",
+    "type": "module",
+    "name": "lib/artifact-gate-levels.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/artifact-gate-notice.mjs",
+    "type": "module",
+    "name": "lib/artifact-gate-notice.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/artifact-loop-core.mjs",
+    "type": "module",
+    "name": "lib/artifact-loop-core.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/artifact-manifest-overlay.mjs",
+    "type": "module",
+    "name": "lib/artifact-manifest-overlay.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/artifact-manifest.mjs",
+    "type": "module",
+    "name": "lib/artifact-manifest.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/artifact-quality.mjs",
+    "type": "module",
+    "name": "lib/artifact-quality.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/artifact-release-gate.mjs",
+    "type": "module",
+    "name": "lib/artifact-release-gate.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/artifact-reviewers.mjs",
+    "type": "module",
+    "name": "lib/artifact-reviewers.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/artifact-type-from-path.mjs",
+    "type": "module",
+    "name": "lib/artifact-type-from-path.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/artifact-workflow.mjs",
+    "type": "module",
+    "name": "lib/artifact-workflow.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/audit-rules.mjs",
+    "type": "module",
+    "name": "lib/audit-rules.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/audit-skills.mjs",
+    "type": "module",
+    "name": "lib/audit-skills.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/audit-specialists.mjs",
+    "type": "module",
+    "name": "lib/audit-specialists.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/audit-trail.mjs",
+    "type": "module",
+    "name": "lib/audit-trail.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/auto-docs.mjs",
+    "type": "module",
+    "name": "lib/auto-docs.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/beads",
+    "type": "module",
+    "name": "lib/beads",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/beads-automation.mjs",
+    "type": "module",
+    "name": "lib/beads-automation.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/beads-client.mjs",
+    "type": "module",
+    "name": "lib/beads-client.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/beads-lock.mjs",
+    "type": "module",
+    "name": "lib/beads-lock.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/beads-optimistic.mjs",
+    "type": "module",
+    "name": "lib/beads-optimistic.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/bootstrap",
+    "type": "module",
+    "name": "lib/bootstrap",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/bootstrap.mjs",
+    "type": "module",
+    "name": "lib/bootstrap.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/brand-contrast.mjs",
+    "type": "module",
+    "name": "lib/brand-contrast.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/brand-fonts.mjs",
+    "type": "module",
+    "name": "lib/brand-fonts.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/brand-prose.mjs",
+    "type": "module",
+    "name": "lib/brand-prose.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/brand-tokens.mjs",
+    "type": "module",
+    "name": "lib/brand-tokens.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/bridges",
+    "type": "module",
+    "name": "lib/bridges",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/cache-governor.js",
+    "type": "module",
+    "name": "lib/cache-governor.js",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/cache-strategy-anthropic.js",
+    "type": "module",
+    "name": "lib/cache-strategy-anthropic.js",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/cache-strategy-google.js",
+    "type": "module",
+    "name": "lib/cache-strategy-google.js",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/cache-strategy-none.js",
+    "type": "module",
+    "name": "lib/cache-strategy-none.js",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/cache-strategy-openai.js",
+    "type": "module",
+    "name": "lib/cache-strategy-openai.js",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/cache-strategy.js",
+    "type": "module",
+    "name": "lib/cache-strategy.js",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/capability-ledger.mjs",
+    "type": "module",
+    "name": "lib/capability-ledger.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/certification",
+    "type": "module",
+    "name": "lib/certification",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/claude-allow.mjs",
+    "type": "module",
+    "name": "lib/claude-allow.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/cli",
+    "type": "module",
+    "name": "lib/cli",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/cli-commands.mjs",
+    "type": "module",
+    "name": "lib/cli-commands.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/cli-service-inventory.mjs",
+    "type": "module",
+    "name": "lib/cli-service-inventory.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/codex-config.mjs",
+    "type": "module",
+    "name": "lib/codex-config.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/comment-lint.mjs",
+    "type": "module",
+    "name": "lib/comment-lint.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/completions.mjs",
+    "type": "module",
+    "name": "lib/completions.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/config",
+    "type": "module",
+    "name": "lib/config",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/config-dir.mjs",
+    "type": "module",
+    "name": "lib/config-dir.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/context-router.mjs",
+    "type": "module",
+    "name": "lib/context-router.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/context-state.mjs",
+    "type": "module",
+    "name": "lib/context-state.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/contracts",
+    "type": "module",
+    "name": "lib/contracts",
+    "attrs": {}
+  },
+  {
+    "id": "module:lib/cost-ledger.mjs",
+    "type": "module",
+    "name": "lib/cost-ledger.mjs",
+    "attrs": {}
+  },
+  {
+    "id": "provider:anthropic",
+    "type": "provider",
+    "name": "anthropic",
+    "attrs": {
+      "kind": "model",
+      "version": "1.0.0",
+      "owner": "construct-core",
+      "capabilities": [
+        "chat"
+      ],
+      "operations": []
+    }
+  },
+  {
+    "id": "provider:atlassian-confluence",
+    "type": "provider",
+    "name": "atlassian-confluence",
+    "attrs": {
+      "kind": "data-source",
+      "version": "1.0.0",
+      "owner": "construct-core",
+      "capabilities": [
+        "read",
+        "search",
+        "write"
+      ],
+      "operations": [
+        "read",
+        "search"
+      ]
+    }
+  },
+  {
+    "id": "provider:atlassian-jira",
+    "type": "provider",
+    "name": "atlassian-jira",
+    "attrs": {
+      "kind": "data-source",
+      "version": "1.0.0",
+      "owner": "construct-core",
+      "capabilities": [
+        "read",
+        "search",
+        "write"
+      ],
+      "operations": [
+        "read",
+        "search"
+      ]
+    }
+  },
+  {
+    "id": "provider:directory",
+    "type": "provider",
+    "name": "directory",
+    "attrs": {
+      "kind": "data-source",
+      "version": "1.0.0",
+      "owner": "construct-core",
+      "capabilities": [
+        "read",
+        "search"
+      ],
+      "operations": [
+        "read",
+        "search"
+      ]
+    }
+  },
+  {
+    "id": "provider:docling",
+    "type": "provider",
+    "name": "docling",
+    "attrs": {
+      "kind": "ingestion-provider",
+      "version": "1.0.0",
+      "owner": "construct-core",
+      "capabilities": [
+        "document-extraction"
+      ],
+      "operations": []
+    }
+  },
+  {
+    "id": "provider:echo",
+    "type": "provider",
+    "name": "echo",
+    "attrs": {
+      "kind": "mcp-tool",
+      "version": "1.0.0",
+      "owner": "construct-core",
+      "capabilities": [],
+      "operations": []
+    }
+  },
+  {
+    "id": "provider:feedback",
+    "type": "provider",
+    "name": "feedback",
+    "attrs": {
+      "kind": "data-source",
+      "version": "1.0.0",
+      "owner": "construct-core",
+      "capabilities": [
+        "read",
+        "search"
+      ],
+      "operations": [
+        "read",
+        "search"
+      ]
+    }
+  },
+  {
+    "id": "provider:git",
+    "type": "provider",
+    "name": "git",
+    "attrs": {
+      "kind": "data-source",
+      "version": "1.0.0",
+      "owner": "construct-core",
+      "capabilities": [
+        "read"
+      ],
+      "operations": [
+        "read"
+      ]
+    }
+  },
+  {
+    "id": "provider:github",
+    "type": "provider",
+    "name": "github",
+    "attrs": {
+      "kind": "data-source",
+      "version": "1.0.0",
+      "owner": "construct-core",
+      "capabilities": [
+        "read",
+        "search",
+        "webhook",
+        "write"
+      ],
+      "operations": [
+        "read",
+        "search",
+        "webhook"
+      ]
+    }
+  },
+  {
+    "id": "provider:github-copilot",
+    "type": "provider",
+    "name": "github-copilot",
+    "attrs": {
+      "kind": "model",
+      "version": "1.0.0",
+      "owner": "construct-core",
+      "capabilities": [
+        "chat"
+      ],
+      "operations": []
+    }
+  },
+  {
+    "id": "provider:linear",
+    "type": "provider",
+    "name": "linear",
+    "attrs": {
+      "kind": "data-source",
+      "version": "1.0.0",
+      "owner": "construct-core",
+      "capabilities": [
+        "read"
+      ],
+      "operations": [
+        "read"
+      ]
+    }
+  },
+  {
+    "id": "provider:local",
+    "type": "provider",
+    "name": "local",
+    "attrs": {
+      "kind": "model",
+      "version": "1.0.0",
+      "owner": "construct-core",
+      "capabilities": [
+        "chat"
+      ],
+      "operations": []
+    }
+  },
+  {
+    "id": "provider:ollama",
+    "type": "provider",
+    "name": "ollama",
+    "attrs": {
+      "kind": "model",
+      "version": "1.0.0",
+      "owner": "construct-core",
+      "capabilities": [
+        "chat"
+      ],
+      "operations": []
+    }
+  },
+  {
+    "id": "provider:openai",
+    "type": "provider",
+    "name": "openai",
+    "attrs": {
+      "kind": "model",
+      "version": "1.0.0",
+      "owner": "construct-core",
+      "capabilities": [
+        "chat"
+      ],
+      "operations": []
+    }
+  },
+  {
+    "id": "provider:openrouter",
+    "type": "provider",
+    "name": "openrouter",
+    "attrs": {
+      "kind": "model",
+      "version": "1.0.0",
+      "owner": "construct-core",
+      "capabilities": [
+        "chat"
+      ],
+      "operations": []
+    }
+  },
+  {
+    "id": "provider:openrouter-anthropic",
+    "type": "provider",
+    "name": "openrouter-anthropic",
+    "attrs": {
+      "kind": "model",
+      "version": "1.0.0",
+      "owner": "construct-core",
+      "capabilities": [
+        "chat"
+      ],
+      "operations": []
+    }
+  },
+  {
+    "id": "provider:openrouter-deepseek",
+    "type": "provider",
+    "name": "openrouter-deepseek",
+    "attrs": {
+      "kind": "model",
+      "version": "1.0.0",
+      "owner": "construct-core",
+      "capabilities": [
+        "chat"
+      ],
+      "operations": []
+    }
+  },
+  {
+    "id": "provider:openrouter-google",
+    "type": "provider",
+    "name": "openrouter-google",
+    "attrs": {
+      "kind": "model",
+      "version": "1.0.0",
+      "owner": "construct-core",
+      "capabilities": [
+        "chat"
+      ],
+      "operations": []
+    }
+  },
+  {
+    "id": "provider:openrouter-llama",
+    "type": "provider",
+    "name": "openrouter-llama",
+    "attrs": {
+      "kind": "model",
+      "version": "1.0.0",
+      "owner": "construct-core",
+      "capabilities": [
+        "chat"
+      ],
+      "operations": []
+    }
+  },
+  {
+    "id": "provider:openrouter-qwen",
+    "type": "provider",
+    "name": "openrouter-qwen",
+    "attrs": {
+      "kind": "model",
+      "version": "1.0.0",
+      "owner": "construct-core",
+      "capabilities": [
+        "chat"
+      ],
+      "operations": []
+    }
+  },
+  {
+    "id": "provider:postgres",
+    "type": "provider",
+    "name": "postgres",
+    "attrs": {
+      "kind": "queue",
+      "version": "1.0.0",
+      "owner": "construct-core",
+      "capabilities": [
+        "enqueue",
+        "claim",
+        "lease",
+        "reclaim"
+      ],
+      "operations": [
+        "enqueue",
+        "claim",
+        "heartbeat",
+        "complete",
+        "skip",
+        "reopen"
+      ]
+    }
+  },
+  {
+    "id": "provider:salesforce",
+    "type": "provider",
+    "name": "salesforce",
+    "attrs": {
+      "kind": "data-source",
+      "version": "1.0.0",
+      "owner": "construct-core",
+      "capabilities": [
+        "read",
+        "search"
+      ],
+      "operations": [
+        "read",
+        "search"
+      ]
+    }
+  },
+  {
+    "id": "provider:slack",
+    "type": "provider",
+    "name": "slack",
+    "attrs": {
+      "kind": "data-source",
+      "version": "1.0.0",
+      "owner": "construct-core",
+      "capabilities": [
+        "read",
+        "search",
+        "write"
+      ],
+      "operations": [
+        "read",
+        "search"
+      ]
+    }
+  },
+  {
+    "id": "provider:whisper",
+    "type": "provider",
+    "name": "whisper",
+    "attrs": {
+      "kind": "ingestion-provider",
+      "version": "1.0.0",
+      "owner": "construct-core",
+      "capabilities": [
+        "audio-transcription"
+      ],
+      "operations": []
+    }
+  },
+  {
+    "id": "rule:rules/common/no-fabrication.md",
+    "type": "rule",
+    "name": "rules/common/no-fabrication.md",
+    "attrs": {
+      "exists": true
+    }
+  },
+  {
+    "id": "rule:rules/common/research.md",
+    "type": "rule",
+    "name": "rules/common/research.md",
+    "attrs": {
+      "exists": true
+    }
+  },
+  {
+    "id": "runtime-evidence:run-0ab099ad29b0",
+    "type": "runtime-evidence",
+    "name": "run-0ab099ad29b0",
+    "attrs": {
+      "runId": "run-0ab099ad29b0",
+      "workflowType": "research-synthesis",
+      "timestamp": "2026-07-08T05:20:41.330Z",
+      "outcome": "failed",
+      "status": "completed-with-failures",
+      "taskCount": 2
+    }
+  },
+  {
+    "id": "runtime-evidence:run-43d96c13f424",
+    "type": "runtime-evidence",
+    "name": "run-43d96c13f424",
+    "attrs": {
+      "runId": "run-43d96c13f424",
+      "workflowType": "research-synthesis",
+      "timestamp": "2026-07-08T05:07:00.326Z",
+      "outcome": "failed",
+      "status": "completed-with-failures",
+      "taskCount": 2
+    }
+  },
+  {
+    "id": "runtime-evidence:run-541ea7a7f6a0",
+    "type": "runtime-evidence",
+    "name": "run-541ea7a7f6a0",
+    "attrs": {
+      "runId": "run-541ea7a7f6a0",
+      "workflowType": "research-synthesis",
+      "timestamp": "2026-07-08T05:13:43.649Z",
+      "outcome": "executed",
+      "status": "completed",
+      "taskCount": 2
+    }
+  },
+  {
+    "id": "skill:ai/orchestration-workflow",
+    "type": "skill",
+    "name": "ai/orchestration-workflow",
+    "attrs": {
+      "exists": true
+    }
+  },
+  {
+    "id": "skill:docs/adr-workflow",
+    "type": "skill",
+    "name": "docs/adr-workflow",
+    "attrs": {
+      "exists": true
+    }
+  },
+  {
+    "id": "skill:docs/document-ingest-workflow",
+    "type": "skill",
+    "name": "docs/document-ingest-workflow",
+    "attrs": {
+      "exists": true
+    }
+  },
+  {
+    "id": "skill:docs/evidence-ingest-workflow",
+    "type": "skill",
+    "name": "docs/evidence-ingest-workflow",
+    "attrs": {
+      "exists": true
+    }
+  },
+  {
+    "id": "skill:docs/prd-workflow",
+    "type": "skill",
+    "name": "docs/prd-workflow",
+    "attrs": {
+      "exists": true
+    }
+  },
+  {
+    "id": "skill:docs/research-workflow",
+    "type": "skill",
+    "name": "docs/research-workflow",
+    "attrs": {
+      "exists": true
+    }
+  },
+  {
+    "id": "skill:exploration/dependency-graph-reading",
+    "type": "skill",
+    "name": "exploration/dependency-graph-reading",
+    "attrs": {
+      "exists": true
+    }
+  },
+  {
+    "id": "skill:operating/orchestration-reference",
+    "type": "skill",
+    "name": "operating/orchestration-reference",
+    "attrs": {
+      "exists": true
+    }
+  },
+  {
+    "id": "skill:operating/unstructured-triage",
+    "type": "skill",
+    "name": "operating/unstructured-triage",
+    "attrs": {
+      "exists": true
+    }
+  },
+  {
+    "id": "skill:roles/architect.ai-systems",
+    "type": "skill",
+    "name": "roles/architect.ai-systems",
+    "attrs": {
+      "exists": true
+    }
+  },
+  {
+    "id": "skill:roles/engineer",
+    "type": "skill",
+    "name": "roles/engineer",
+    "attrs": {
+      "exists": true
+    }
+  },
+  {
+    "id": "skill:roles/trace-reviewer",
+    "type": "skill",
+    "name": "roles/trace-reviewer",
+    "attrs": {
+      "exists": true
+    }
+  },
+  {
+    "id": "specialist:construct-core",
+    "type": "specialist",
+    "name": "construct-core",
+    "attrs": {
+      "autoCreated": true
+    }
+  },
+  {
+    "id": "specialist:cx-architect",
+    "type": "specialist",
+    "name": "architect",
+    "attrs": {
+      "role": "architect",
+      "modelTier": "reasoning",
+      "team": "engineering-team",
+      "teamId": "engineering-team",
+      "groupId": "engineering-group",
+      "skills": [
+        "architecture/api-design",
+        "architecture/caching",
+        "architecture/cloud-native",
+        "architecture/message-queue",
+        "architecture/security-arch",
+        "ai/agent-dev",
+        "ai/prompt-and-eval",
+        "docs/research-workflow",
+        "docs/adr-workflow",
+        "exploration/dependency-graph-reading"
+      ]
+    }
+  },
+  {
+    "id": "specialist:cx-data-analyst",
+    "type": "specialist",
+    "name": "data-analyst",
+    "attrs": {
+      "role": "data-analyst",
+      "modelTier": "standard",
+      "team": "strategy-team",
+      "teamId": "strategy-team",
+      "groupId": "strategy-group",
+      "skills": [
+        "devops/observability",
+        "devops/database",
+        "operating/raw-data-structuring",
+        "strategy/market-research-methods",
+        "devops/data-engineering",
+        "strategy/experimentation"
+      ]
+    }
+  },
+  {
+    "id": "specialist:cx-debugger",
+    "type": "specialist",
+    "name": "debugger",
+    "attrs": {
+      "role": "debugger",
+      "modelTier": "reasoning",
+      "team": "engineering-team",
+      "teamId": "engineering-team",
+      "groupId": "engineering-group",
+      "skills": [
+        "quality-gates/verify-change",
+        "devops/observability",
+        "devops/performance",
+        "exploration/unknown-codebase-onboarding",
+        "exploration/dependency-graph-reading",
+        "ai/trace-triage"
+      ]
+    }
+  },
+  {
+    "id": "specialist:cx-designer",
+    "type": "specialist",
+    "name": "designer",
+    "attrs": {
+      "role": "designer",
+      "modelTier": "standard",
+      "team": "design-team",
+      "teamId": "design-team",
+      "groupId": "product-group",
+      "skills": [
+        "frontend-design/ui-aesthetics",
+        "frontend-design/ux-principles",
+        "frontend-design/component-patterns",
+        "frontend-design/state-management",
+        "frontend-design/engineering",
+        "frontend-design/accessibility",
+        "frontend-design/screen-reader-testing",
+        "brand/output-vibe"
+      ]
+    }
+  },
+  {
+    "id": "specialist:cx-engineer",
+    "type": "specialist",
+    "name": "engineer",
+    "attrs": {
+      "autoCreated": true,
+      "role": "engineer",
+      "modelTier": "standard",
+      "team": "engineering-team",
+      "teamId": "engineering-team",
+      "groupId": "engineering-group",
+      "skills": [
+        "development/typescript",
+        "development/python",
+        "development/go",
+        "development/rust",
+        "development/java",
+        "development/cpp",
+        "development/shell",
+        "development/swift",
+        "development/kotlin",
+        "development/mobile-crossplatform",
+        "quality-gates/verify-change",
+        "utility/clean-code",
+        "frameworks/react",
+        "frameworks/nextjs",
+        "frameworks/django",
+        "frameworks/spring-boot",
+        "exploration/unknown-codebase-onboarding",
+        "exploration/tracer-bullet-method",
+        "exploration/dependency-graph-reading",
+        "ai/agent-dev",
+        "ai/rag-system",
+        "ai/llm-security",
+        "ai/prompt-and-eval",
+        "ai/prompt-optimizer",
+        "ai/ml-ops",
+        "devops/data-engineering",
+        "devops/database",
+        "devops/observability",
+        "operating/raw-data-structuring",
+        "devops/ci-cd",
+        "devops/monorepo",
+        "devops/containerization",
+        "devops/dependency-management",
+        "devops/devsecops",
+        "devops/cost-optimization",
+        "strategy/experimentation"
+      ]
+    }
+  },
+  {
+    "id": "specialist:cx-operations",
+    "type": "specialist",
+    "name": "operations",
+    "attrs": {
+      "autoCreated": true,
+      "role": "operations",
+      "modelTier": "standard",
+      "team": "operations-team",
+      "teamId": "operations-team",
+      "groupId": "operations-group",
+      "skills": [
+        "roles/operations",
+        "docs/init-project",
+        "operating/incident-response",
+        "operating/oncall-rotation",
+        "operating/change-management",
+        "devops/observability",
+        "devops/ci-cd",
+        "devops/performance",
+        "devops/incident-response",
+        "devops/git-workflow",
+        "quality-gates/verify-change",
+        "docs/memo-and-decision-capture",
+        "docs/adr-workflow",
+        "docs/runbook-workflow",
+        "docs/init-docs",
+        "docs/document-ingest-workflow",
+        "strategy/experimentation",
+        "strategy/prioritization-methods"
+      ]
+    }
+  },
+  {
+    "id": "specialist:cx-orchestrator",
+    "type": "specialist",
+    "name": "orchestrator",
+    "attrs": {
+      "role": "orchestrator",
+      "modelTier": "standard",
+      "team": "strategy-team",
+      "teamId": "strategy-team",
+      "groupId": "strategy-group",
+      "skills": [
+        "ai/orchestration-workflow",
+        "operating/orchestration-reference",
+        "operating/change-management",
+        "operating/unstructured-triage",
+        "exploration/dependency-graph-reading",
+        "roles/trace-reviewer",
+        "operating/fleet-health-routing",
+        "strategy/prioritization-methods"
+      ]
+    }
+  },
+  {
+    "id": "specialist:cx-product-manager",
+    "type": "specialist",
+    "name": "product-manager",
+    "attrs": {
+      "autoCreated": true,
+      "role": "product-manager",
+      "modelTier": "reasoning",
+      "team": "product-management-team",
+      "teamId": "product-management-team",
+      "groupId": "product-group",
+      "skills": [
+        "docs/product-intelligence-workflow",
+        "docs/evidence-ingest-workflow",
+        "docs/product-signal-workflow",
+        "docs/customer-profile-workflow",
+        "docs/prd-workflow",
+        "docs/prfaq-workflow",
+        "docs/backlog-proposal-workflow",
+        "docs/product-intelligence-review",
+        "docs/strategy-workflow",
+        "strategy/competitive-landscape",
+        "strategy/market-research-methods",
+        "strategy/pricing-positioning",
+        "strategy/narrative-arc",
+        "strategy/prioritization-methods",
+        "strategy/experimentation"
+      ]
+    }
+  },
+  {
+    "id": "specialist:cx-qa",
+    "type": "specialist",
+    "name": "qa",
+    "attrs": {
+      "role": "qa",
+      "modelTier": "standard",
+      "team": "quality-team",
+      "teamId": "quality-team",
+      "groupId": "quality-group",
+      "skills": [
+        "devops/testing",
+        "quality-gates/verify-change",
+        "quality-gates/verify-module",
+        "quality-gates/verify-quality",
+        "quality-gates/review-work",
+        "quality-gates/premortem"
+      ]
+    }
+  },
+  {
+    "id": "specialist:cx-researcher",
+    "type": "specialist",
+    "name": "researcher",
+    "attrs": {
+      "role": "researcher",
+      "modelTier": "standard",
+      "team": "research-team",
+      "teamId": "research-team",
+      "groupId": "product-group",
+      "skills": [
+        "docs/research-workflow",
+        "devops/dependency-management",
+        "docs/transcript-synthesis",
+        "docs/codebase-research-workflow",
+        "exploration/repo-map",
+        "exploration/unknown-codebase-onboarding",
+        "exploration/tracer-bullet-method",
+        "exploration/dependency-graph-reading",
+        "docs/user-research-workflow",
+        "docs/evidence-ingest-workflow",
+        "strategy/jobs-to-be-done",
+        "strategy/market-research-methods"
+      ]
+    }
+  },
+  {
+    "id": "specialist:cx-reviewer",
+    "type": "specialist",
+    "name": "reviewer",
+    "attrs": {
+      "role": "reviewer",
+      "modelTier": "reasoning",
+      "team": "quality-team",
+      "teamId": "quality-team",
+      "groupId": "quality-group",
+      "skills": [
+        "quality-gates/verify-quality",
+        "quality-gates/review-work",
+        "quality-gates/verify-module",
+        "quality-gates/premortem",
+        "ai/prompt-and-eval",
+        "ai/prompt-optimizer",
+        "ai/trace-triage"
+      ]
+    }
+  },
+  {
+    "id": "specialist:cx-security",
+    "type": "specialist",
+    "name": "security",
+    "attrs": {
+      "role": "security",
+      "modelTier": "reasoning",
+      "team": "governance-team",
+      "teamId": "governance-team",
+      "groupId": "governance-group",
+      "skills": [
+        "security/red-team",
+        "security/blue-team",
+        "security/pentest",
+        "security/code-audit",
+        "security/vuln-research",
+        "security/threat-intel",
+        "quality-gates/verify-security",
+        "architecture/security-arch",
+        "compliance/license-audit",
+        "compliance/data-privacy",
+        "compliance/ai-disclosure",
+        "compliance/regulatory-review"
+      ]
+    }
+  },
+  {
+    "id": "surface:claude",
+    "type": "surface",
+    "name": "claude",
+    "attrs": {}
+  },
+  {
+    "id": "surface:cli",
+    "type": "surface",
+    "name": "cli",
+    "attrs": {}
+  },
+  {
+    "id": "surface:cursor",
+    "type": "surface",
+    "name": "cursor",
+    "attrs": {}
+  },
+  {
+    "id": "surface:mcp",
+    "type": "surface",
+    "name": "mcp",
+    "attrs": {}
+  },
+  {
+    "id": "surface:opencode",
+    "type": "surface",
+    "name": "opencode",
+    "attrs": {}
+  },
+  {
+    "id": "surface:vscode",
+    "type": "surface",
+    "name": "vscode",
+    "attrs": {}
+  },
+  {
+    "id": "test:tests/acceptance/01-init-contract.test.mjs",
+    "type": "test",
+    "name": "tests/acceptance/01-init-contract.test.mjs",
+    "attrs": {
+      "path": "tests/acceptance/01-init-contract.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/acceptance/02-provider-health-contract.test.mjs",
+    "type": "test",
+    "name": "tests/acceptance/02-provider-health-contract.test.mjs",
+    "attrs": {
+      "path": "tests/acceptance/02-provider-health-contract.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/acceptance/03-status-contract.test.mjs",
+    "type": "test",
+    "name": "tests/acceptance/03-status-contract.test.mjs",
+    "attrs": {
+      "path": "tests/acceptance/03-status-contract.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/acceptance/04-doctor-contract.test.mjs",
+    "type": "test",
+    "name": "tests/acceptance/04-doctor-contract.test.mjs",
+    "attrs": {
+      "path": "tests/acceptance/04-doctor-contract.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/acceptance/05-optional-dep-degradation.test.mjs",
+    "type": "test",
+    "name": "tests/acceptance/05-optional-dep-degradation.test.mjs",
+    "attrs": {
+      "path": "tests/acceptance/05-optional-dep-degradation.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/acceptance/global-install.test.mjs",
+    "type": "test",
+    "name": "tests/acceptance/global-install.test.mjs",
+    "attrs": {
+      "path": "tests/acceptance/global-install.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/acceptance/k5-ink-react-degradation.functional.test.mjs",
+    "type": "test",
+    "name": "tests/acceptance/k5-ink-react-degradation.functional.test.mjs",
+    "attrs": {
+      "path": "tests/acceptance/k5-ink-react-degradation.functional.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/acceptance/modes/enterprise.acceptance.test.mjs",
+    "type": "test",
+    "name": "tests/acceptance/modes/enterprise.acceptance.test.mjs",
+    "attrs": {
+      "path": "tests/acceptance/modes/enterprise.acceptance.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/acceptance/modes/solo.acceptance.test.mjs",
+    "type": "test",
+    "name": "tests/acceptance/modes/solo.acceptance.test.mjs",
+    "attrs": {
+      "path": "tests/acceptance/modes/solo.acceptance.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/acceptance/modes/team.acceptance.test.mjs",
+    "type": "test",
+    "name": "tests/acceptance/modes/team.acceptance.test.mjs",
+    "attrs": {
+      "path": "tests/acceptance/modes/team.acceptance.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/acceptance/ops-triage-preset.acceptance.test.mjs",
+    "type": "test",
+    "name": "tests/acceptance/ops-triage-preset.acceptance.test.mjs",
+    "attrs": {
+      "path": "tests/acceptance/ops-triage-preset.acceptance.test.mjs",
+      "exists": true
+    }
+  },
+  {
+    "id": "test:tests/acceptance/packed-install.test.mjs",
+    "type": "test",
+    "name": "tests/acceptance/packed-install.test.mjs",
+    "attrs": {
+      "path": "tests/acceptance/packed-install.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/acceptance/pm-feedback-preset.acceptance.test.mjs",
+    "type": "test",
+    "name": "tests/acceptance/pm-feedback-preset.acceptance.test.mjs",
+    "attrs": {
+      "path": "tests/acceptance/pm-feedback-preset.acceptance.test.mjs",
+      "exists": true
+    }
+  },
+  {
+    "id": "test:tests/acceptance/pm-repos-preset.acceptance.test.mjs",
+    "type": "test",
+    "name": "tests/acceptance/pm-repos-preset.acceptance.test.mjs",
+    "attrs": {
+      "path": "tests/acceptance/pm-repos-preset.acceptance.test.mjs",
+      "exists": true
+    }
+  },
+  {
+    "id": "test:tests/acceptance/tpm-preset.acceptance.test.mjs",
+    "type": "test",
+    "name": "tests/acceptance/tpm-preset.acceptance.test.mjs",
+    "attrs": {
+      "path": "tests/acceptance/tpm-preset.acceptance.test.mjs",
+      "exists": true
+    }
+  },
+  {
+    "id": "test:tests/adr-stamp-integrity.test.mjs",
+    "type": "test",
+    "name": "tests/adr-stamp-integrity.test.mjs",
+    "attrs": {
+      "path": "tests/adr-stamp-integrity.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/agent-manifest.test.mjs",
+    "type": "test",
+    "name": "tests/agent-manifest.test.mjs",
+    "attrs": {
+      "path": "tests/agent-manifest.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/artifact-capture.test.mjs",
+    "type": "test",
+    "name": "tests/artifact-capture.test.mjs",
+    "attrs": {
+      "path": "tests/artifact-capture.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/artifact-manifest.test.mjs",
+    "type": "test",
+    "name": "tests/artifact-manifest.test.mjs",
+    "attrs": {
+      "path": "tests/artifact-manifest.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/artifact-release-gate.test.mjs",
+    "type": "test",
+    "name": "tests/artifact-release-gate.test.mjs",
+    "attrs": {
+      "path": "tests/artifact-release-gate.test.mjs",
+      "exists": true
+    }
+  },
+  {
+    "id": "test:tests/artifact-reviewers.test.mjs",
+    "type": "test",
+    "name": "tests/artifact-reviewers.test.mjs",
+    "attrs": {
+      "path": "tests/artifact-reviewers.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/artifact-workflow.test.mjs",
+    "type": "test",
+    "name": "tests/artifact-workflow.test.mjs",
+    "attrs": {
+      "path": "tests/artifact-workflow.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/artifacts/format-engines-manifest.test.mjs",
+    "type": "test",
+    "name": "tests/artifacts/format-engines-manifest.test.mjs",
+    "attrs": {
+      "path": "tests/artifacts/format-engines-manifest.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/asset-quality/a11y-audit.test.mjs",
+    "type": "test",
+    "name": "tests/asset-quality/a11y-audit.test.mjs",
+    "attrs": {
+      "path": "tests/asset-quality/a11y-audit.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/asset-quality/anti-fixtures.test.mjs",
+    "type": "test",
+    "name": "tests/asset-quality/anti-fixtures.test.mjs",
+    "attrs": {
+      "path": "tests/asset-quality/anti-fixtures.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/asset-quality/brand-contrast.test.mjs",
+    "type": "test",
+    "name": "tests/asset-quality/brand-contrast.test.mjs",
+    "attrs": {
+      "path": "tests/asset-quality/brand-contrast.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/asset-quality/completion-evidence.test.mjs",
+    "type": "test",
+    "name": "tests/asset-quality/completion-evidence.test.mjs",
+    "attrs": {
+      "path": "tests/asset-quality/completion-evidence.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/asset-quality/completion-states.test.mjs",
+    "type": "test",
+    "name": "tests/asset-quality/completion-states.test.mjs",
+    "attrs": {
+      "path": "tests/asset-quality/completion-states.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/asset-quality/completion-truth.test.mjs",
+    "type": "test",
+    "name": "tests/asset-quality/completion-truth.test.mjs",
+    "attrs": {
+      "path": "tests/asset-quality/completion-truth.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/asset-quality/diagram-quality.test.mjs",
+    "type": "test",
+    "name": "tests/asset-quality/diagram-quality.test.mjs",
+    "attrs": {
+      "path": "tests/asset-quality/diagram-quality.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/asset-quality/export-validate.test.mjs",
+    "type": "test",
+    "name": "tests/asset-quality/export-validate.test.mjs",
+    "attrs": {
+      "path": "tests/asset-quality/export-validate.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/asset-quality/gate-levels.test.mjs",
+    "type": "test",
+    "name": "tests/asset-quality/gate-levels.test.mjs",
+    "attrs": {
+      "path": "tests/asset-quality/gate-levels.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/asset-quality/output-quality.test.mjs",
+    "type": "test",
+    "name": "tests/asset-quality/output-quality.test.mjs",
+    "attrs": {
+      "path": "tests/asset-quality/output-quality.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/asset-quality/presentation-lint.test.mjs",
+    "type": "test",
+    "name": "tests/asset-quality/presentation-lint.test.mjs",
+    "attrs": {
+      "path": "tests/asset-quality/presentation-lint.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/asset-quality/quality-contract.test.mjs",
+    "type": "test",
+    "name": "tests/asset-quality/quality-contract.test.mjs",
+    "attrs": {
+      "path": "tests/asset-quality/quality-contract.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/asset-quality/render-degradation.test.mjs",
+    "type": "test",
+    "name": "tests/asset-quality/render-degradation.test.mjs",
+    "attrs": {
+      "path": "tests/asset-quality/render-degradation.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/asset-quality/render-evidence.test.mjs",
+    "type": "test",
+    "name": "tests/asset-quality/render-evidence.test.mjs",
+    "attrs": {
+      "path": "tests/asset-quality/render-evidence.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/asset-quality/render-pipeline.test.mjs",
+    "type": "test",
+    "name": "tests/asset-quality/render-pipeline.test.mjs",
+    "attrs": {
+      "path": "tests/asset-quality/render-pipeline.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/asset-quality/visual-review.test.mjs",
+    "type": "test",
+    "name": "tests/asset-quality/visual-review.test.mjs",
+    "attrs": {
+      "path": "tests/asset-quality/visual-review.test.mjs"
+    }
+  },
+  {
+    "id": "test:tests/audit-rules.test.mjs",
+    "type": "test",
+    "name": "tests/audit-rules.test.mjs",
+    "attrs": {
+      "path": "tests/audit-rules.test.mjs"
+    }
+  },
+  {
+    "id": "tool:audio-transcription",
+    "type": "tool",
+    "name": "audio-transcription",
+    "attrs": {}
+  },
+  {
+    "id": "tool:chat",
+    "type": "tool",
+    "name": "chat",
+    "attrs": {}
+  },
+  {
+    "id": "tool:claim",
+    "type": "tool",
+    "name": "claim",
+    "attrs": {}
+  },
+  {
+    "id": "tool:complete",
+    "type": "tool",
+    "name": "complete",
+    "attrs": {}
+  },
+  {
+    "id": "tool:document-extraction",
+    "type": "tool",
+    "name": "document-extraction",
+    "attrs": {}
+  },
+  {
+    "id": "tool:enqueue",
+    "type": "tool",
+    "name": "enqueue",
+    "attrs": {}
+  },
+  {
+    "id": "tool:heartbeat",
+    "type": "tool",
+    "name": "heartbeat",
+    "attrs": {}
+  },
+  {
+    "id": "tool:lease",
+    "type": "tool",
+    "name": "lease",
+    "attrs": {}
+  },
+  {
+    "id": "tool:read",
+    "type": "tool",
+    "name": "read",
+    "attrs": {}
+  },
+  {
+    "id": "tool:reclaim",
+    "type": "tool",
+    "name": "reclaim",
+    "attrs": {}
+  },
+  {
+    "id": "tool:reopen",
+    "type": "tool",
+    "name": "reopen",
+    "attrs": {}
+  },
+  {
+    "id": "tool:search",
+    "type": "tool",
+    "name": "search",
+    "attrs": {}
+  },
+  {
+    "id": "tool:skip",
+    "type": "tool",
+    "name": "skip",
+    "attrs": {}
+  },
+  {
+    "id": "tool:webhook",
+    "type": "tool",
+    "name": "webhook",
+    "attrs": {}
+  },
+  {
+    "id": "tool:write",
+    "type": "tool",
+    "name": "write",
+    "attrs": {}
+  },
+  {
+    "id": "workflow:architecture-review",
+    "type": "workflow",
+    "name": "architecture-review",
+    "attrs": {
+      "tier": "reasoning",
+      "defaultApprovalMode": "requires-human-approval",
+      "chain": [
+        "architect",
+        "security",
+        "reviewer"
+      ],
+      "description": "Review an architecture or design for trade-offs, failure modes, and security exposure."
+    }
+  },
+  {
+    "id": "workflow:data-structure",
+    "type": "workflow",
+    "name": "data-structure",
+    "attrs": {
+      "tier": "standard",
+      "defaultApprovalMode": "proposal-only",
+      "chain": [
+        "data-analyst",
+        "engineer"
+      ],
+      "description": "Parse, validate, and profile a raw dataset into a structured, described shape."
+    }
+  },
+  {
+    "id": "workflow:evidence-ingest",
+    "type": "workflow",
+    "name": "evidence-ingest",
+    "attrs": {
+      "tier": "fast",
+      "defaultApprovalMode": "proposal-only",
+      "chain": [
+        "researcher",
+        "data-analyst"
+      ],
+      "description": "Ingest and structure raw evidence (notes, documents, signals) into a normalized summary."
+    }
+  },
+  {
+    "id": "workflow:memo-draft",
+    "type": "workflow",
+    "name": "memo-draft",
+    "attrs": {
+      "tier": "fast",
+      "defaultApprovalMode": "proposal-only",
+      "chain": [
+        "operations",
+        "reviewer"
+      ],
+      "description": "Draft a decision or status memo from a problem statement and context."
+    }
+  },
+  {
+    "id": "workflow:prd-draft",
+    "type": "workflow",
+    "name": "prd-draft",
+    "attrs": {
+      "tier": "standard",
+      "defaultApprovalMode": "proposal-only",
+      "chain": [
+        "product-manager",
+        "architect"
+      ],
+      "description": "Draft a product requirements document from a problem statement and supporting evidence."
+    }
+  },
+  {
+    "id": "workflow:proposal-review",
+    "type": "workflow",
+    "name": "proposal-review",
+    "attrs": {
+      "tier": "standard",
+      "defaultApprovalMode": "requires-human-approval",
+      "chain": [
+        "reviewer"
+      ],
+      "description": "Review a proposal for correctness, risk, and hidden assumptions before acceptance."
+    }
+  },
+  {
+    "id": "workflow:research-synthesis",
+    "type": "workflow",
+    "name": "research-synthesis",
+    "attrs": {
+      "tier": "reasoning",
+      "defaultApprovalMode": "proposal-only",
+      "chain": [
+        "researcher",
+        "data-analyst",
+        "reviewer"
+      ],
+      "description": "Synthesize multiple sources into a cited, evidence-graded research summary."
+    }
+  },
+  {
+    "id": "workflow:risk-review",
+    "type": "workflow",
+    "name": "risk-review",
+    "attrs": {
+      "tier": "reasoning",
+      "defaultApprovalMode": "requires-human-approval",
+      "chain": [
+        "reviewer",
+        "security"
+      ],
+      "description": "Stress-test a plan for risk: failure modes, security, and compliance exposure."
+    }
+  },
+  {
+    "id": "workflow:structure-notes",
+    "type": "workflow",
+    "name": "structure-notes",
+    "attrs": {
+      "tier": "fast",
+      "defaultApprovalMode": "proposal-only",
+      "chain": [
+        "orchestrator",
+        "researcher"
+      ],
+      "description": "Structure an unclassified brain-dump or rough notes into a normalized summary with extracted intents."
+    }
+  },
+  {
+    "id": "workflow:transcript-process",
+    "type": "workflow",
+    "name": "transcript-process",
+    "attrs": {
+      "tier": "fast",
+      "defaultApprovalMode": "proposal-only",
+      "chain": [
+        "researcher",
+        "data-analyst"
+      ],
+      "description": "Process a meeting/call transcript into a summary, decisions, and action items."
+    }
+  },
+  {
+    "id": "workflow:triage",
+    "type": "workflow",
+    "name": "triage",
+    "attrs": {
+      "tier": "fast",
+      "defaultApprovalMode": "proposal-only",
+      "chain": [
+        "orchestrator",
+        "researcher"
+      ],
+      "description": "Classify and route unstructured input to the appropriate workflow."
+    }
+  }
+]
