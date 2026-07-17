@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "generatedAt": "2026-07-17T00:00:00.000Z",
+  "providers": [
+    {
+      "id": "@lancedb/lancedb",
+      "kind": "npm-dep",
+      "purpose": "Vector store for semantic search, embedding storage, and retrieval-augmented generation (RAG) pipelines",
+      "owningWorkflow": "knowledge-search, evidence-ingest, session-storage, embed-observations",
+      "modeRequirement": "all",
+      "securityConcerns": "Native binary bundled per-platform via optional deps; supply-chain risk on binary download at install time",
+      "versionPolicy": { "type": "npm-semver", "range": "^0.31.0" },
+      "healthCheck": {
+        "kind": "import-check",
+        "detail": "require('@lancedb/lancedb') — verified at import time; no CLI binary"
+      },
+      "fallback": { "behavior": "error" },
+      "owner": "construct-core",
+      "removalCriteria": "Replaced by a different vector store (e.g. sqlite-vec, hnswlib-node) and all RAG pipelines migrated"
+    },
+    {
+      "id": "docling",
+      "kind": "sidecar",
+      "purpose": "Layout-aware document ingestion via a Python sidecar provisioned through uv",
+      "owningWorkflow": "document-extraction",
+      "securityConcerns": "installSource='uv-venv', securityClassification='trusted' per lib/extensions/manifests/docling.manifest.json",
+      "versionPolicy": {
+        "type": "unmanaged",
+        "notes": "Provisioned via uv-venv; no enforced version pin, version (if any) is reported by the health-check subprocess only."
+      },
+      "healthCheck": {
+        "kind": "subprocess-version",
+        "detail": "Runs the venv-installed docling console script directly",
+        "command": "<runtimeDir>/.venv/bin/docling",
+        "args": ["--version"],
+        "timeoutMs": 15000
+      },
+      "fallback": {
+        "behavior": "degraded-chain",
+        "chain": [
+          { "id": "docling", "mode": "sidecar", "description": "Layout-aware extraction via the local Python sidecar." },
+          { "id": "node-native", "mode": "adapter", "description": "unpdf/mammoth — pure-JS, lower fidelity." },
+          { "id": "refuse", "mode": "error", "description": "No extractor available for this format." }
+        ],
+        "terminal": "refuse"
+      },
+      "owner": "construct-core",
+      "removalCriteria": "unknown (not recorded in lib/extensions/manifests/docling.manifest.json)"
+    }
+  ]
+}

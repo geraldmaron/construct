@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://construct.dev/schemas/provider-card.schema.json",
+  "title": "Construct Provider Card Registry",
+  "description": "A Provider Card is the single-artifact-per-provider record of identity, version policy, health check, and fallback behavior for anything Construct depends on to run (construct-4uxq0.13.7). It reconciles, without replacing, the four prior scattered sources: deps/intent.json (npm-dep/npm-optional entries become Provider Cards), registry/capabilities.json (a capability entry links to a Provider Card via the capability's optional providerCard field, not the reverse), lib/ingest/sidecar-providers.mjs's docling/whisper ingestion-provider manifests (kind: sidecar), and lib/providers/instance-config.mjs (per-project provider config, a distinct concern this schema does not cover). `kind` values 'binary', 'service', 'model', and 'host-capability' are reserved for follow-up Provider Cards (pandoc, typst, d2, vhs, soffice, local models) that sibling beads (construct-tsyfe.4.3, .5.3, .6.5, .6.7, .10.3) add — this schema declares the full vocabulary up front so those beads validate against the same shape instead of each inventing one.",
+  "type": "object",
+  "required": ["version", "providers"],
+  "properties": {
+    "version": { "type": "integer", "minimum": 1 },
+    "generatedAt": { "type": ["string", "null"] },
+    "providers": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/providerCard" }
+    }
+  },
+  "$defs": {
+    "versionPolicy": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "enum": ["npm-semver", "external-pinned", "unmanaged"] },
+        "range": { "type": "string" },
+        "expectedVersion": { "type": ["string", "null"] },
+        "notes": { "type": "string" }
+      }
+    },
+    "healthCheck": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": { "enum": ["import-check", "subprocess-version", "manual", "none"] },
+        "detail": { "type": "string" },
+        "command": { "type": "string" },
+        "args": { "type": "array", "items": { "type": "string" } },
+        "timeoutMs": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "fallbackChainStep": {
+      "type": "object",
+      "required": ["id", "mode"],
+      "properties": {
+        "id": { "type": "string" },
+        "mode": { "type": "string" },
+        "description": { "type": "string" }
+      }
+    },
+    "fallback": {
+      "type": "object",
+      "required": ["behavior"],
+      "properties": {
+        "behavior": { "enum": ["error", "graceful-skip", "degraded-chain", "silent-drop", "retry", "unknown"] },
+        "description": { "type": "string" },
+        "chain": { "type": "array", "items": { "$ref": "#/$defs/fallbackChainStep" } },
+        "terminal": { "type": "string" }
+      }
+    },
+    "providerCard": {
+      "type": "object",
+      "required": ["id", "kind", "versionPolicy", "healthCheck", "fallback", "owner", "removalCriteria"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": { "enum": ["npm-dep", "npm-optional", "binary", "sidecar", "service", "model", "host-capability"] },
+        "purpose": { "type": "string" },
+        "owningWorkflow": { "type": "string" },
+        "modeRequirement": { "type": "string" },
+        "securityConcerns": { "type": ["string", "null"] },
+        "linkedCapabilities": { "type": "array", "items": { "type": "string" } },
+        "versionPolicy": { "$ref": "#/$defs/versionPolicy" },
+        "healthCheck": { "$ref": "#/$defs/healthCheck" },
+        "fallback": { "$ref": "#/$defs/fallback" },
+        "owner": { "type": "string", "minLength": 1 },
+        "removalCriteria": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}
