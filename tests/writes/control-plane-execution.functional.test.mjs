@@ -233,7 +233,7 @@ describe('ADR-0082 — provider-ID namespace canonicalization round-trip (constr
 
     await assert.rejects(
       () => executeApprovedWriteIntent(record, { rootDir: tmpRoot }),
-      /Jira transport requires JIRA_URL/,
+      /Jira transport requires JIRA_BASE_URL/,
     );
   });
 
@@ -243,7 +243,7 @@ describe('ADR-0082 — provider-ID namespace canonicalization round-trip (constr
 
     await assert.rejects(
       () => executeApprovedWriteIntent(record, { rootDir: tmpRoot }),
-      /Confluence transport requires CONFLUENCE_URL/,
+      /Confluence transport requires CONFLUENCE_BASE_URL/,
     );
   });
 

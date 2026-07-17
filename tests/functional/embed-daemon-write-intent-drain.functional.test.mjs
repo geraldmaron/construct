@@ -113,12 +113,12 @@ test('the real EmbedDaemon write-intent-drain job drains an approved record on i
   // ApprovalQueue.releaseLease returns to 'approved' with the reason
   // recorded — none of that trail exists unless the real job ran.
   assert.equal(result.record.state, 'approved', 'a credential failure releases back to approved, not executed');
-  assert.match(result.record.lastLeaseFailureReason, /Jira transport requires JIRA_URL/);
+  assert.match(result.record.lastLeaseFailureReason, /Jira transport requires JIRA_BASE_URL/);
   assert.equal(result.record.leaseWorkerId, null, 'the lease must be released, not left held after the failed attempt');
 
   // Confirm on-disk state independently of the runner's own report.
   const verifyQueue = new ApprovalQueue({ persistPath });
   const onDisk = verifyQueue.getById(record.approvalId);
   assert.equal(onDisk.state, 'approved');
-  assert.match(onDisk.lastLeaseFailureReason, /Jira transport requires JIRA_URL/);
+  assert.match(onDisk.lastLeaseFailureReason, /Jira transport requires JIRA_BASE_URL/);
 });

@@ -7,6 +7,9 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtempSync, mkdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { ApprovalQueue } from '../lib/embed/approval-queue.mjs';
 
 describe('ApprovalQueue', () => {
@@ -89,5 +92,63 @@ describe('ApprovalQueue', () => {
     const rec = q.enqueue({ tool: 'test' });
     const found = q.getByResumeToken(rec.resumeToken);
     assert.equal(found.approvalId, rec.approvalId);
+  });
+
+  it('reloadFromDisk picks up a decision made by a separate instance at the same persistPath', (t) => {
+    const dir = mkdtempSync(join(tmpdir(), 'cx-approval-queue-reload-'));
+    t.after(() => { try { rmSync(dir, { recursive: true, force: true }); } catch {} });
+    const persistPath = join(dir, 'queue.jsonl');
+    const writer = new ApprovalQueue({ persistPath });
+    const rec = writer.enqueue({ tool: 'jira.comment', args: { issueKey: 'X-1' } });
+
+    const reader = new ApprovalQueue({ persistPath });
+    assert.equal(reader.getById(rec.approvalId).state, 'awaiting_approval');
+
+    writer.approve(rec.approvalId, { decidedBy: { userId: 'someone-else' } });
+
+    // Readers reload per call (construct-4uxq0.9.9), so the sibling's
+    // decision is visible immediately — no explicit reload required — and
+    // an explicit reloadFromDisk() stays valid and idempotent on top.
+    assert.equal(reader.getById(rec.approvalId).state, 'approved');
+
+    reader.reloadFromDisk();
+    const reloaded = reader.getById(rec.approvalId);
+    assert.equal(reloaded.state, 'approved');
+    assert.equal(reloaded.decidedBy.userId, 'someone-else');
+  });
+
+  it('reloadFromDisk is a no-op for an in-memory-only queue (no persistPath)', () => {
+    const q = new ApprovalQueue();
+    const rec = q.enqueue({ tool: 'test' });
+    q.reloadFromDisk();
+    assert.equal(q.getById(rec.approvalId).state, 'awaiting_approval', 'record survives — nothing was cleared');
+  });
+
+  it('reloadFromDisk on a path with nothing written yet leaves the queue empty', (t) => {
+    const dir = mkdtempSync(join(tmpdir(), 'cx-approval-queue-reload-empty-'));
+    t.after(() => { try { rmSync(dir, { recursive: true, force: true }); } catch {} });
+    const persistPath = join(dir, 'queue.jsonl');
+    const q = new ApprovalQueue({ persistPath });
+    q.reloadFromDisk();
+    assert.deepEqual(q.list(), []);
+  });
+
+  it('reloadFromDisk preserves the current in-memory state when the read fails, rather than clearing it', (t) => {
+    const dir = mkdtempSync(join(tmpdir(), 'cx-approval-queue-reload-fail-'));
+    t.after(() => { try { rmSync(dir, { recursive: true, force: true }); } catch {} });
+    const persistPath = join(dir, 'queue.jsonl');
+    const q = new ApprovalQueue({ persistPath });
+    const rec = q.enqueue({ tool: 'jira.comment', args: { issueKey: 'X-1' } });
+
+    // Force the next read to throw (EISDIR) rather than simulating a
+    // malformed-but-readable file — a directory at the persist path is a
+    // real, reproducible read failure, not a parse error the per-line
+    // catch in #readItemsFromDisk already tolerates.
+
+    rmSync(persistPath, { force: true });
+    mkdirSync(persistPath, { recursive: true });
+
+    q.reloadFromDisk();
+    assert.equal(q.getById(rec.approvalId)?.state, 'awaiting_approval', 'a failed reload must not clear known-good in-memory state');
   });
 });

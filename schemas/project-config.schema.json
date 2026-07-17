@@ -154,6 +154,46 @@
         }
       }
     },
+    "writes": {
+      "type": "object",
+      "description": "Governed external-write policy (lib/writes/). Fail-safe default is 'approval' for any write not listed here. Not enforced by this schema alone — lib/writes/write-policy.mjs validateWritePolicyConfig() is the authoritative check, run by writeProjectConfig().",
+      "properties": {
+        "policy": {
+          "type": "object",
+          "description": "Per governed write kind (\"<provider>.<writeKind>\", e.g. \"atlassian-jira.comment\"), which disposition the write-intent-drain daemon job applies to a pending approval before a human ever sees it: 'auto' grants it immediately, 'deny' rejects it immediately, 'approval' (the default for anything unlisted) leaves it queued for a human.",
+          "additionalProperties": { "type": "string", "enum": ["auto", "approval", "deny"] }
+        }
+      }
+    },
+    "directives": {
+      "type": "array",
+      "description": "Standing instructions attached to a provider (e.g. \"watch Jira, summarize what the team is working on\"). lib/directives/directive-config.mjs validateDirectives() is the authoritative check, run by writeProjectConfig(); a directive never executes on its own — lib/embed/daemon.mjs's write-intent-drain-adjacent \"directive-runner\" job only records that one is due.",
+      "items": {
+        "type": "object",
+        "required": ["id", "provider", "specialist", "instruction", "trigger", "action", "output"],
+        "properties": {
+          "id": { "type": "string" },
+          "provider": { "type": "string" },
+          "specialist": { "type": "string" },
+          "instruction": { "type": "string" },
+          "trigger": {
+            "type": "object",
+            "properties": {
+              "kind": { "type": "string", "enum": ["interval", "on-demand"] },
+              "intervalMinutes": { "type": "number" }
+            }
+          },
+          "action": { "type": "string", "enum": ["summarize", "draft-artifact", "file-beads", "dispatch-specialist"] },
+          "output": {
+            "type": "object",
+            "properties": {
+              "kind": { "type": "string", "enum": ["knowledge-note", "artifact-draft", "beads", "pr"] }
+            }
+          },
+          "autoRun": { "type": "boolean", "default": false }
+        }
+      }
+    },
     "intakePolicy": {
       "type": "object",
       "description": "Filesystem inbox watcher policy. The canonical drop zone is inbox/ at the project root (always watched, ADR-0045 §C); maxDepth and additionalDirs tune the scan.",
