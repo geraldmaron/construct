@@ -15,6 +15,24 @@ import path from 'node:path';
 import { runGraphCli } from '../../lib/graph/cli.mjs';
 import { writeGraph } from '../../lib/graph/store.mjs';
 
+// construct-b0nny.3: the relational graph store (lib/graph/relational/)
+// resolves graph.db under the machine-scoped state root (resolveStateDir,
+// ADR-0066) whenever writeGraph/loadGraph touch the host graph on Node
+// >=22.5. Pin CX_HOME_OVERRIDE so this suite never provisions state under
+// the real developer machine's ~/.construct/projects/ (the isolation
+// contract, tests/functional/README.md) — the same pattern
+// tests/orchestration-run-store-sqlite.test.mjs already established.
+
+const cxGraphTestHomeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-graph-test-home-'));
+const cxGraphTestPrevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = cxGraphTestHomeOverride;
+test.after(() => {
+  try { fs.rmSync(cxGraphTestHomeOverride, { recursive: true, force: true }); } catch {}
+  if (cxGraphTestPrevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = cxGraphTestPrevHomeOverride;
+});
+
+
 const tmpDirs = [];
 after(() => {
   for (const dir of tmpDirs) {

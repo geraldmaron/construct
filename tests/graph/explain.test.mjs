@@ -20,6 +20,26 @@ import { runGraphCli } from '../../lib/graph/cli.mjs';
 import { writeGraph, loadGraph, nodesByType, EDGE_RELS } from '../../lib/graph/store.mjs';
 import { validateGraph } from '../../lib/graph/validate.mjs';
 
+// construct-b0nny.3: the relational graph store (lib/graph/relational/)
+// resolves graph.db under the machine-scoped state root (resolveStateDir,
+// ADR-0066) whenever writeGraph/loadGraph touch the host graph on Node
+// >=22.5. Every test but the last one below writes a synthetic graph
+// (freshRoot()), so pin CX_HOME_OVERRIDE for those — the isolation contract,
+// tests/functional/README.md, and the same pattern
+// tests/orchestration-run-store-sqlite.test.mjs already established. The
+// last test reads REPO_ROOT's real graph (scripts/ci/build-test-fixtures.sh's
+// fixture) and restores the ambient HOME for its own duration instead.
+
+const cxGraphTestHomeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-graph-test-home-'));
+const cxGraphTestPrevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = cxGraphTestHomeOverride;
+test.after(() => {
+  try { fs.rmSync(cxGraphTestHomeOverride, { recursive: true, force: true }); } catch {}
+  if (cxGraphTestPrevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = cxGraphTestPrevHomeOverride;
+});
+
+
 const ROOT_DIR = path.resolve(import.meta.dirname, '..', '..');
 
 const tmpDirs = [];
@@ -138,31 +158,42 @@ test('explain with no graph exits 1', () => {
 // correctly reporting "no provider dependency" rather than a hidden gap.
 
 test('explain renders all sections for every catalog workflow, consistent with graph validate', () => {
-  const graph = loadGraph(ROOT_DIR);
-  assert.equal(graph.exists, true, 'expected a built graph — run `construct graph build` first');
+  // Reads REPO_ROOT's real graph, not a synthetic freshRoot() — restore the
+  // ambient HOME for this test's duration so it sees the fixture
+  // scripts/ci/build-test-fixtures.sh built, not the empty isolated one the
+  // rest of this file pins.
+  const savedOverride = process.env.CX_HOME_OVERRIDE;
+  if (cxGraphTestPrevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = cxGraphTestPrevHomeOverride;
+  try {
+    const graph = loadGraph(ROOT_DIR);
+    assert.equal(graph.exists, true, 'expected a built graph — run `construct graph build` first');
 
-  const workflows = nodesByType(graph, 'workflow');
-  assert.ok(workflows.length > 0, 'expected at least one catalog workflow node');
+    const workflows = nodesByType(graph, 'workflow');
+    assert.ok(workflows.length > 0, 'expected at least one catalog workflow node');
 
-  const validation = validateGraph(ROOT_DIR, { strict: false });
-  const validateText = [...validation.errors, ...validation.warnings].join('\n');
+    const validation = validateGraph(ROOT_DIR, { strict: false });
+    const validateText = [...validation.errors, ...validation.warnings].join('\n');
 
-  for (const wf of workflows) {
-    const workflowType = wf.id.slice('workflow:'.length);
-    const { result: code, output } = captureStdout(() =>
-      runGraphCli(['explain', workflowType, '--json'], { rootDir: ROOT_DIR, projectDir: ROOT_DIR }));
-    assert.equal(code, 0, `explain should succeed for ${wf.id}`);
-    const parsed = JSON.parse(output);
-    const rels = parsed.sections.map((s) => s.rel);
-    for (const rel of EDGE_RELS) assert.ok(rels.includes(rel), `${wf.id} missing section for rel ${rel}`);
+    for (const wf of workflows) {
+      const workflowType = wf.id.slice('workflow:'.length);
+      const { result: code, output } = captureStdout(() =>
+        runGraphCli(['explain', workflowType, '--json'], { rootDir: ROOT_DIR, projectDir: ROOT_DIR }));
+      assert.equal(code, 0, `explain should succeed for ${wf.id}`);
+      const parsed = JSON.parse(output);
+      const rels = parsed.sections.map((s) => s.rel);
+      for (const rel of EDGE_RELS) assert.ok(rels.includes(rel), `${wf.id} missing section for rel ${rel}`);
 
-    // A capability zero-tests gap is the one MISSING-equivalent condition
-    // validate always classifies (error in strict mode, warning otherwise);
-    // if this workflow's embedding capability is flagged there, the graph's
-    // own validates edges must show the same absence explain would report.
-    const capValidatesGap = validateText.includes(`workflow '${wf.name || wf.id}'`) || validateText.includes(`workflow '${workflowType}'`);
-    if (capValidatesGap) {
-      assert.ok(parsed.missing.length >= 0, `${wf.id} validate gap should not crash MISSING computation`);
+      // A capability zero-tests gap is the one MISSING-equivalent condition
+      // validate always classifies (error in strict mode, warning otherwise);
+      // if this workflow's embedding capability is flagged there, the graph's
+      // own validates edges must show the same absence explain would report.
+      const capValidatesGap = validateText.includes(`workflow '${wf.name || wf.id}'`) || validateText.includes(`workflow '${workflowType}'`);
+      if (capValidatesGap) {
+        assert.ok(parsed.missing.length >= 0, `${wf.id} validate gap should not crash MISSING computation`);
+      }
     }
+  } finally {
+    process.env.CX_HOME_OVERRIDE = savedOverride;
   }
 });
