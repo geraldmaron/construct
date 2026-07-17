@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-15T00:51:47.613Z",
+  "generatedAt": "2026-07-17T07:30:23.909Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 927,
-    "topLevelTestFiles": 370,
+    "testFiles": 928,
+    "topLevelTestFiles": 371,
     "nestedTestFiles": 557,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 50,
+    "capabilityMarkedFiles": 51,
     "byLayer": {
-      "unit": 606,
+      "unit": 607,
       "functional": 273,
       "visual": 12,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 541,
+      "unit": 542,
       "functional": 273,
       "visual": 12,
       "structural-guard": 19,
@@ -1527,6 +1527,16 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/deprecate.test.mjs — deprecation warning behaviour."
+    },
+    {
+      "path": "tests/diagram-card.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [
+        "test-system.diagram-card"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/diagram-card.test.mjs — Diagram Card schema validation, degraded-build"
     },
     {
       "path": "tests/directives/directive-config.test.mjs",
