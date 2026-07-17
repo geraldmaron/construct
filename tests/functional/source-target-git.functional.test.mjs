@@ -94,11 +94,15 @@ test('git target: a ~-prefixed local remote is expanded before cloning', () => {
   const bareUrl = makeBareRepo();
   const bareRealPath = bareUrl.replace(/^file:\/\//, '');
 
-  // Substitute the real home for `~` the same way a user's config would name
-  // a local bare repo relative to their own $HOME, then set HOME so the
-  // tilde in the selector value resolves to the same real path.
-  const homeDir = path.dirname(bareRealPath);
+  // Substitute a fixture home for `~` the same way a user's config would name
+  // a local bare repo relative to their own $HOME, then set HOME so the tilde
+  // in the selector value resolves to the same real path. The fixture home is
+  // a dedicated mkdtemp dir with the bare repo moved inside — deriving it as
+  // dirname(bareRealPath) would make HOME the shared OS tmpdir itself, and the
+  // child's state root would land at $TMPDIR/.construct (construct-4uxq0.14.6).
+  const homeDir = freshDir('cx-git-home-');
   const bareName = path.basename(bareRealPath);
+  fs.renameSync(bareRealPath, path.join(homeDir, bareName));
   const selector = { remote: `~/${bareName}`, content: { mode: 'corpus', ref: 'main' } };
 
   const add = spawnSync(process.execPath, [BIN, 'sources', 'add', 'git', 'local-repo', JSON.stringify(selector)], {
