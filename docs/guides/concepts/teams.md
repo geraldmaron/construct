@@ -478,9 +478,8 @@ Teams in each profile mirror the department structure but add explicit decision 
   - `recordForbiddenDecision(decisionId, teamId, reason, context)` — Block attempts
 
 **Deprecated (pre-Phase 1 layout):**
-- `specialists/teams-registry.json` — Deleted (content migrated to unified registry)
-- `specialists/org` — Deleted (content migrated to unified registry)
-- `specialists/contracts.json` — Deleted (content migrated to unified registry)
+- `specialists/teams-registry.json` — Deleted (content migrated into `specialists/org`)
+- `specialists/contracts.json` — Deleted (content migrated into `specialists/org/contracts/`)
 
 ## Backward Compatibility
 
