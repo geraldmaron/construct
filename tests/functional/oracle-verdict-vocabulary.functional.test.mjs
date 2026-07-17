@@ -15,6 +15,8 @@
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -24,7 +26,6 @@ import {
   CLEAN_VERDICTS,
   isCleanVerdict,
 } from '../../lib/oracle/synthesize.mjs';
-import { runOracleCli } from '../../lib/oracle/cli.mjs';
 import { collectOracleGaps } from '../../lib/oracle/gaps.mjs';
 import { writeVerdict } from '../../lib/oracle/verdicts.mjs';
 import { buildOraclePrelude, readOracleDockState } from '../../lib/intake/session-prelude.mjs';
@@ -357,24 +358,38 @@ test('session-prelude surfaces the Oracle dock for blocked/incomplete/not-run/st
 // directly by the CLEAN_VERDICTS/isCleanVerdict test above, which is the
 // exact boolean cli.mjs's annotation delegates to.
 
-test('cli review annotates a non-clean verdict and stays fast on a fresh project', async () => {
+// Spawned as a real subprocess rather than calling runOracleCli in-process
+// with a patched process.stdout.write: under `node --test`, stdout is also
+// the runner's result-protocol transport, so an in-process patch captures
+// (and swallows) the runner's own serialized events — observed on CI as the
+// verdict assertion failing against a buffer of runner IPC bytes.
+
+test('cli review annotates a non-clean verdict and stays fast on a fresh project', () => {
   const projectDir = mkdtempSync(join(tmpdir(), 'oracle-cli-verdict-'));
   const homeDir = mkdtempSync(join(tmpdir(), 'oracle-cli-verdict-home-'));
   mkdirSync(join(projectDir, '.cx'), { recursive: true });
   mkdirSync(join(homeDir, '.cx'), { recursive: true });
-  const chunks = [];
-  const originalWrite = process.stdout.write.bind(process.stdout);
-  process.stdout.write = (chunk) => { chunks.push(String(chunk)); return true; };
+  let out;
   try {
-    process.env.CONSTRUCT_ORACLE_AUTO_RAISE = 'off';
-    await runOracleCli(['review', '--dry-run'], { rootDir: process.cwd(), projectDir, homeDir });
+    const binPath = fileURLToPath(new URL('../../bin/construct', import.meta.url));
+    const r = spawnSync(process.execPath, [binPath, 'oracle', 'review', '--dry-run'], {
+      cwd: projectDir,
+      encoding: 'utf8',
+      timeout: 120_000,
+      env: {
+        ...process.env,
+        HOME: homeDir,
+        USERPROFILE: homeDir,
+        CX_HOME_OVERRIDE: homeDir,
+        CONSTRUCT_ORACLE_AUTO_RAISE: 'off',
+      },
+    });
+    assert.equal(r.error, undefined, `CLI failed to spawn: ${r.error}`);
+    out = r.stdout || '';
   } finally {
-    process.stdout.write = originalWrite;
-    delete process.env.CONSTRUCT_ORACLE_AUTO_RAISE;
     try { rmTmpDir(projectDir); } catch { /* ignore */ }
     try { rmTmpDir(homeDir); } catch { /* ignore */ }
   }
-  const out = chunks.join('');
   const verdictLine = out.split('\n').find((l) => l.startsWith('Oracle verdict:'));
   assert.ok(verdictLine, `expected a verdict line in: ${out}`);
   const verdict = verdictLine.replace('Oracle verdict: ', '').replace(' (needs attention)', '').trim();
