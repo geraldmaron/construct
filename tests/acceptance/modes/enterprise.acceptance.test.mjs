@@ -50,6 +50,21 @@ import { CAPABILITY_REGISTRY } from '../../../lib/mode-capabilities.mjs';
 import { tempDir } from '../../helpers.mjs';
 import { rmTmpDir } from '../../helpers/cleanup.mjs';
 
+// buildStatus's storage/run-store probes resolve through the machine-scoped
+// state root (ADR-0066, lib/state-root.mjs) via the real homeDir() function,
+// not the `homeDir` parameter passed into buildStatus() below — only
+// CX_HOME_OVERRIDE (a real process.env mutation) relocates that. Set for the
+// whole file so no probe here ever touches the real developer machine's $HOME.
+
+const homeOverride = tempDir('cx-l6-enterprise-home-override-');
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+test.after(() => {
+  try { rmTmpDir(homeOverride); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
+
 const PROJECT = `lmcp-l6-enterprise-acceptance-${process.pid}`;
 
 function hasDatabaseUrl() {
