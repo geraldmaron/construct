@@ -11,6 +11,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { resolveEmbedStatus, runEmbedCli } from '../lib/embed/cli.mjs';
 import { doctorRoot } from '../lib/config/xdg.mjs';
+import { rmTmpDir } from './helpers/cleanup.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CLI_PATH = path.resolve(__dirname, '../lib/embed/cli.mjs');
@@ -44,7 +45,7 @@ describe('resolveEmbedStatus', () => {
     const status = resolveEmbedStatus({ GITHUB_TOKEN: 'ghp_fake' }, tmpDir);
     assert.equal(status.level, 'stopped');
     assert.ok(status.label.includes('stopped'));
-    fs.rmSync(tmpDir, { recursive: true });
+    rmTmpDir(tmpDir);
   });
 
   it('returns level=stopped when Jira credentials present but no daemon state', () => {
@@ -55,7 +56,7 @@ describe('resolveEmbedStatus', () => {
       JIRA_BASE_URL: 'https://x.atlassian.net',
     }, tmpDir);
     assert.equal(status.level, 'stopped');
-    fs.rmSync(tmpDir, { recursive: true });
+    rmTmpDir(tmpDir);
   });
 
   it('returns level=running when state file has live pid (self)', () => {
@@ -69,7 +70,7 @@ describe('resolveEmbedStatus', () => {
     const status = resolveEmbedStatus({ GITHUB_TOKEN: 'ghp_fake' }, tmpDir);
     assert.equal(status.level, 'running');
     assert.ok(status.label.includes('running'));
-    fs.rmSync(tmpDir, { recursive: true });
+    rmTmpDir(tmpDir);
   });
 
   it('returns level=stopped when state file has dead pid', () => {
@@ -83,7 +84,7 @@ describe('resolveEmbedStatus', () => {
     );
     const status = resolveEmbedStatus({ GITHUB_TOKEN: 'ghp_fake' }, tmpDir);
     assert.equal(status.level, 'stopped');
-    fs.rmSync(tmpDir, { recursive: true });
+    rmTmpDir(tmpDir);
   });
 });
 
@@ -100,7 +101,7 @@ describe('runEmbedCli start', () => {
         /embed worker not found/,
       );
     } finally {
-      fs.rmSync(tmpDir, { recursive: true });
+      rmTmpDir(tmpDir);
     }
   });
 
@@ -123,7 +124,7 @@ describe('runEmbedCli start', () => {
       const stateFile = path.join(doctorRoot(tmpDir), 'runtime', 'embed-daemon.json');
       assert.equal(fs.existsSync(stateFile), false, 'state file should be cleared after crash');
     } finally {
-      fs.rmSync(tmpDir, { recursive: true });
+      rmTmpDir(tmpDir);
     }
   });
 
@@ -149,7 +150,7 @@ describe('runEmbedCli start', () => {
       if (pid) {
         try { process.kill(pid, 'SIGTERM'); } catch { /* already gone */ }
       }
-      fs.rmSync(tmpDir, { recursive: true });
+      rmTmpDir(tmpDir);
     }
   });
 });
