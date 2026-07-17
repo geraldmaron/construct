@@ -23,7 +23,7 @@
  * ever touches the real machine's ~/.construct state root.
  */
 
-import { describe, it } from 'node:test';
+import { describe, it, after } from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
@@ -35,12 +35,21 @@ import { create } from '../../lib/providers/github/index.mjs';
 
 const SECRET = '__construct_test_webhook_secret__';
 
+// Every tmpLogPath() call registers its dir here; the module-level after()
+// sweeps them all once, rather than a try/finally at each of this file's
+// call sites.
+const TMP_DIRS = [];
+after(() => {
+  for (const dir of TMP_DIRS) fs.rmSync(dir, { recursive: true, force: true });
+});
+
 function sign(secret, body) {
   return `sha256=${crypto.createHmac('sha256', secret).update(body).digest('hex')}`;
 }
 
 function tmpLogPath() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-webhook-dedup-'));
+  TMP_DIRS.push(dir);
   return path.join(dir, 'github-deliveries.jsonl');
 }
 

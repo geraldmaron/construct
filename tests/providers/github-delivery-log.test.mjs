@@ -25,66 +25,91 @@ function tmpLogPath() {
 describe('WebhookDeliveryLog', () => {
   it('a recorded delivery id is found by a second instance reading the same file', () => {
     const persistPath = tmpLogPath();
-    const first = new WebhookDeliveryLog({ persistPath });
-    first.record({ deliveryId: 'd-1', event: 'issues' });
+    try {
+      const first = new WebhookDeliveryLog({ persistPath });
+      first.record({ deliveryId: 'd-1', event: 'issues' });
 
-    const second = new WebhookDeliveryLog({ persistPath });
-    const found = second.find('d-1');
-    assert.equal(found.deliveryId, 'd-1');
-    assert.equal(found.event, 'issues');
-    assert.ok(!Number.isNaN(Date.parse(found.seenAt)));
+      const second = new WebhookDeliveryLog({ persistPath });
+      const found = second.find('d-1');
+      assert.equal(found.deliveryId, 'd-1');
+      assert.equal(found.event, 'issues');
+      assert.ok(!Number.isNaN(Date.parse(found.seenAt)));
+    } finally {
+      fs.rmSync(path.dirname(persistPath), { recursive: true, force: true });
+    }
   });
 
   it('find() returns null for an unseen id', () => {
-    const log = new WebhookDeliveryLog({ persistPath: tmpLogPath() });
-    assert.equal(log.find('never-seen'), null);
+    const persistPath = tmpLogPath();
+    try {
+      const log = new WebhookDeliveryLog({ persistPath });
+      assert.equal(log.find('never-seen'), null);
+    } finally {
+      fs.rmSync(path.dirname(persistPath), { recursive: true, force: true });
+    }
   });
 
   it('records older than retentionMs are pruned on the next record, on disk and in memory', () => {
     const persistPath = tmpLogPath();
-    let clock = 1_000_000;
-    const log = new WebhookDeliveryLog({ persistPath, retentionMs: 500, now: () => clock });
+    try {
+      let clock = 1_000_000;
+      const log = new WebhookDeliveryLog({ persistPath, retentionMs: 500, now: () => clock });
 
-    log.record({ deliveryId: 'old-1', event: 'push' });
-    clock += 501;
-    log.record({ deliveryId: 'new-1', event: 'push' });
+      log.record({ deliveryId: 'old-1', event: 'push' });
+      clock += 501;
+      log.record({ deliveryId: 'new-1', event: 'push' });
 
-    assert.equal(log.find('old-1'), null);
-    assert.equal(log.find('new-1').deliveryId, 'new-1');
-    const onDisk = fs.readFileSync(persistPath, 'utf8');
-    assert.ok(!onDisk.includes('old-1'));
-    assert.ok(onDisk.includes('new-1'));
+      assert.equal(log.find('old-1'), null);
+      assert.equal(log.find('new-1').deliveryId, 'new-1');
+      const onDisk = fs.readFileSync(persistPath, 'utf8');
+      assert.ok(!onDisk.includes('old-1'));
+      assert.ok(onDisk.includes('new-1'));
+    } finally {
+      fs.rmSync(path.dirname(persistPath), { recursive: true, force: true });
+    }
   });
 
   it('the entry cap evicts oldest-first when a flood of unique ids arrives inside the window', () => {
     const persistPath = tmpLogPath();
-    const log = new WebhookDeliveryLog({ persistPath, maxEntries: 3 });
-    for (const id of ['a', 'b', 'c', 'd']) log.record({ deliveryId: id, event: 'push' });
+    try {
+      const log = new WebhookDeliveryLog({ persistPath, maxEntries: 3 });
+      for (const id of ['a', 'b', 'c', 'd']) log.record({ deliveryId: id, event: 'push' });
 
-    assert.equal(log.size(), 3);
-    assert.equal(log.find('a'), null);
-    assert.equal(log.find('d').deliveryId, 'd');
+      assert.equal(log.size(), 3);
+      assert.equal(log.find('a'), null);
+      assert.equal(log.find('d').deliveryId, 'd');
+    } finally {
+      fs.rmSync(path.dirname(persistPath), { recursive: true, force: true });
+    }
   });
 
   it('a corrupt JSONL line is skipped on load without losing the surrounding records', () => {
     const persistPath = tmpLogPath();
-    const good1 = JSON.stringify({ deliveryId: 'g-1', event: null, seenAt: new Date().toISOString() });
-    const good2 = JSON.stringify({ deliveryId: 'g-2', event: null, seenAt: new Date().toISOString() });
-    fs.writeFileSync(persistPath, `${good1}\n{not json at all\n${good2}\n`, 'utf8');
+    try {
+      const good1 = JSON.stringify({ deliveryId: 'g-1', event: null, seenAt: new Date().toISOString() });
+      const good2 = JSON.stringify({ deliveryId: 'g-2', event: null, seenAt: new Date().toISOString() });
+      fs.writeFileSync(persistPath, `${good1}\n{not json at all\n${good2}\n`, 'utf8');
 
-    const log = new WebhookDeliveryLog({ persistPath });
-    assert.equal(log.size(), 2);
-    assert.equal(log.find('g-1').deliveryId, 'g-1');
-    assert.equal(log.find('g-2').deliveryId, 'g-2');
+      const log = new WebhookDeliveryLog({ persistPath });
+      assert.equal(log.size(), 2);
+      assert.equal(log.find('g-1').deliveryId, 'g-1');
+      assert.equal(log.find('g-2').deliveryId, 'g-2');
+    } finally {
+      fs.rmSync(path.dirname(persistPath), { recursive: true, force: true });
+    }
   });
 
   it('record() throws when the persist directory cannot be created, instead of silently dropping the dedup record', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-delivery-log-'));
-    const blockerFile = path.join(dir, 'blocker');
-    fs.writeFileSync(blockerFile, 'not a directory', 'utf8');
-    const log = new WebhookDeliveryLog({ persistPath: path.join(blockerFile, 'deliveries.jsonl') });
+    try {
+      const blockerFile = path.join(dir, 'blocker');
+      fs.writeFileSync(blockerFile, 'not a directory', 'utf8');
+      const log = new WebhookDeliveryLog({ persistPath: path.join(blockerFile, 'deliveries.jsonl') });
 
-    assert.throws(() => log.record({ deliveryId: 'lost-1', event: 'push' }));
+      assert.throws(() => log.record({ deliveryId: 'lost-1', event: 'push' }));
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it('resolvePersistPath lands under the ADR-0066 machine state root, relocated by CX_HOME_OVERRIDE', () => {
@@ -98,6 +123,7 @@ describe('WebhookDeliveryLog', () => {
     } finally {
       if (previous === undefined) delete process.env.CX_HOME_OVERRIDE;
       else process.env.CX_HOME_OVERRIDE = previous;
+      fs.rmSync(fakeHome, { recursive: true, force: true });
     }
   });
 
