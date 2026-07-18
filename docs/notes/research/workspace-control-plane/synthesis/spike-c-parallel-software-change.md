@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # Spike C — parallel software change validation (construct-b0nny.5.3)
 
 Status: complete. Disposable spike; nothing here was merged into any production

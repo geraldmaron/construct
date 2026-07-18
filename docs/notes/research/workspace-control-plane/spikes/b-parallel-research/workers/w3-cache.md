@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # W3-Cache: XDG Cache Root Implementation Audit (raw worker output, saved verbatim by lead)
 
 > Lead note: like W1, this worker is an `Explore` agent (Read/Glob/Grep only, no Bash) and

@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # W4-Legacy: Clean-Break / No-Migration Claim Audit (raw worker output, saved verbatim by lead)
 
 > Lead note: same tool grant as the others (Explore: Read/Glob/Grep, no Bash). This worker

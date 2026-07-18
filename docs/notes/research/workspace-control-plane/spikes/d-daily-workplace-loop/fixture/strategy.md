@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 <!--
   FIXTURE — not a real strategy document. Invented for construct-b0nny.5.4
   (Spike D). "Nimbus" is a fictional internal-tools product.

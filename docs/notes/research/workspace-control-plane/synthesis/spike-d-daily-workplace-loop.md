@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 <!--
   Spike D synthesis report (construct-b0nny.5.4, Wave 3 of construct-b0nny,
   directive §11 spike D). Disposable — not adopted into any production path

@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # W2-State: XDG State Root Implementation Audit (raw worker output, saved verbatim by lead)
 
 > Lead note: this worker (Explore agent, Read/Glob/Grep only, no Bash) correctly declined to

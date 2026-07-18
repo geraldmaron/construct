@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # Execution-ready work specs — spike C
 
 Three independent, real, low-risk sub-tasks: each adds one missing unit-test
