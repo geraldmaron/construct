@@ -57,9 +57,12 @@ test('[R11] destructive gate rejects storage_reset without out-of-band token', (
   assert.ok(result.reason.includes('approval token'), 'reason should mention approval token');
 });
 
-test('[R11] destructive gate accepts storage_reset with valid token', () => {
-  const token = issueApprovalToken('storage_reset');
-  const result = checkDestructiveGate('storage_reset', { confirm: true, approval_token: token });
+test('[R11] destructive gate accepts storage_reset with valid token', (t) => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-f01-ledger-'));
+  t.after(() => { try { fs.rmSync(rootDir, { recursive: true, force: true }); } catch {} });
+
+  const token = issueApprovalToken('storage_reset', { rootDir });
+  const result = checkDestructiveGate('storage_reset', { confirm: true, approval_token: token }, { rootDir });
   assert.ok(result.gated, 'gate should intercept destructive tool');
   assert.ok(result.allowed, 'gate should allow with valid token');
 });
