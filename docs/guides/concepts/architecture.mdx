@@ -402,6 +402,44 @@ Source, Objective, Directive, Work, and Policy stores (target-model.md concepts 
 exist yet; each is expected to carry a non-null `workspace` scope column referencing this table
 when its own epic (E3/E5/E6) builds it.
 
+## Work spec and graph-informed planning
+
+`lib/planning/` (construct-b0nny.23, the workspace-control-plane program's E3 outcome — target-
+model.md concepts 6/7/9, "Work Specification"/"Plan"/"Assignment") is a Work spec schema plus a
+graph-informed decomposition check, not a tracker: `bd`/beads remains the tracker (E8's job,
+`construct-b0nny.27`). A Work spec (`lib/planning/work-spec.mjs`) is one flat, `bd create`-shaped
+object combining the *what/why* (objective, desiredOutcome, requirements, acceptance criteria,
+...) and the *how* (`decomposition`: an array of Assignments, each with `touches` — the graph node
+ids it reads or mutates — `dependsOn`, and `ownership`), mirroring this program's own bead
+quality-field discipline since a Work spec IS a bead at execution time. `validateWorkSpec`/
+`validateAssignment` never throw, returning error-string arrays, matching
+`lib/directives/directive-config.mjs`'s `validateDirective` convention.
+
+`lib/planning/decomposition-check.mjs` generalizes spike C's proven independence pattern
+(`docs/notes/research/workspace-control-plane/synthesis/spike-c-parallel-software-change.md`)
+into a reusable library, reusing — not re-deriving — the relational graph store's existing
+`queryDown`/`queryPath` (`lib/graph/relational/queries.mjs`, construct-b0nny.12/.21): (1)
+`detectDependencyCycles` — pure DFS cycle detection over a decomposition's own declared
+`dependsOn` edges; (2) `checkDependencyResolution` — for every declared dependency, confirms a
+real graph path connects the dependent assignment's touched nodes to the depended-on assignment's
+touched nodes, flagging a dependency the graph cannot verify rather than trusting narrative intent
+(directive §16); (3) `checkIndependenceClaims` — for every pair of assignments with no declared
+dependency, checks spike C's exact signature (zero dependents-set overlap, `queryDown` default rel
+`imports`) plus a direct `queryPath` check in both directions, since a graph path between two
+assignments' touched nodes is itself the "hard dependency edge" an independence claim must not
+share. `checkDecomposition` composes all three into one report.
+
+`lib/planning/build-work-spec.mjs`'s `buildWorkSpec(rootDir, input)` produces a Work spec scoped
+to `rootDir`'s Workspace (`ensureWorkspace`, above) and stamped with advisory Sources/Directives
+context — read from the pre-E5-consolidation surfaces `lib/config/source-targets.mjs` and
+`lib/directives/directive-config.mjs` already expose (Source/Directive's own target-model.md
+domain stores are E5's job, not built yet) — before attaching `checkDecomposition`'s report as
+`graphValidation`. `construct work-spec build|check|validate --from=<path|-> [--json] [--strict]`
+(`lib/planning/cli.mjs`) is the CLI surface: `build` runs the full Workspace-scoped pipeline,
+`check` runs the graph-informed report alone against a caller-supplied spec, `validate` runs the
+schema check alone; `--strict` exits 1 when the report is not ok, mirroring `construct graph
+validate --strict`.
+
 ## Cross-project synthesis
 
 `construct synthesize --ask "<question>" [--projects=all|self|id,...]` (`lib/knowledge/synthesis.mjs`, construct-760c.4) is a map-reduce over the same multi-root corpus `knowledge_search --projects=` and `construct graph build-targets` read (`lib/sources/content-roots.mjs`'s `resolveContentRoots`/`expandProjectsFilter`). **Map**: for each selected project, `buildCorpus()` is filtered to that project's own chunks only and retrieved top-K (default 6) for the ask — retrieval-only, no model call, so this pass is deterministic and free. **Reduce**: the per-project sections (each citing `project:path`) plus a citation table are assembled into one prompt instructing the model to answer using only that context and to cite every cross-project claim by its `project:path` label — a structural no-fabrication constraint, not just an instruction. `--dry-run` stops after the map pass and returns the fully assembled context with zero model output, which is what makes the command deterministic and CI-testable; an unknown project id in `--projects=` is a hard error before any model call. The reduce call shells out to the `claude` CLI (`spawnSync('claude', ['--print', prompt])`); if the CLI is unavailable the command still returns the assembled context, flagged `cliMissing: true`, rather than failing silently.

@@ -211,6 +211,7 @@ The embed daemon writes its supervisor stdout log to the machine's XDG state dir
 | `construct team` | Team review, template listing, and custom team authoring (`team:add` / `team:remove` are internal registry editors) |
 | `construct tools` | Detect optional publish pipeline binaries (Pandoc, D2, VHS, Playwright) |
 | `construct wireframe` | Generate wireframes from description |
+| `construct work-spec` | Work spec schema + graph-informed decomposition check (construct-b0nny.23, target-model.md concepts 6/7/9) — cycle detection, declared-dependency graph resolution, and independence-claim verification over a Work spec's decomposition. |
 | `construct workflow` | Instantiate workflow templates (PRD-to-review chains, onboarding, handoffs) |
 | `construct workspace` | Manage PM workspaces for multi-PM signal routing |
 | `construct workspace-domain` | Workspace domain model (construct-b0nny.22, target-model.md concept 1) — owner, membership, settings, lifecycle. Distinct from `construct workspace` above, which is the unrelated multi-PM signal-routing command. |
