@@ -31,13 +31,14 @@ test('bindNamedParams rewrites :name placeholders to positional $n in first-appe
 test('bindNamedParams reuses one slot for a name repeated in the template', () => {
   const { text, values } = bindNamedParams(QUERY_UP, {
     ':node_id': 'file:a', ':workspace': 'ws1', ':max_depth': 10,
+    ':up_rel_1': 'embeds', ':up_rel_2': 'contains', ':up_rel_3': 'requires', ':up_rel_4': 'owned_by',
   });
   // :node_id appears twice in QUERY_UP (seed + final WHERE); both occurrences
   // must resolve to the same $n, not allocate a second positional slot.
   const nodeIdSlot = text.match(/\$(\d+)/)[1];
   const occurrences = [...text.matchAll(new RegExp(`\\$${nodeIdSlot}(?!\\d)`, 'g'))];
   assert.ok(occurrences.length >= 2, ':node_id should map to the same $n at every occurrence');
-  assert.equal(values.length, 3, 'exactly 3 distinct named params in QUERY_UP');
+  assert.equal(values.length, 7, 'exactly 7 distinct named params in QUERY_UP (node_id, workspace, max_depth, up_rel_1..4)');
 });
 
 test('bindNamedParams handles the 4-slot cycles template', () => {
