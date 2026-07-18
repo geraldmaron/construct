@@ -1,0 +1,38 @@
+{
+  "id": "cancellation-before_dispatch",
+  "description": "Cancellation observed before any stage runs",
+  "checks": [
+    {
+      "name": "status-cancelled",
+      "pass": true,
+      "detail": {
+        "status": "cancelled"
+      }
+    },
+    {
+      "name": "no-stage-ran",
+      "pass": true,
+      "detail": {
+        "stages": {
+          "dispatch": "pending",
+          "execution": "pending",
+          "artifact": "pending",
+          "approval": "pending",
+          "external_write": "pending",
+          "integration": "pending",
+          "graph_update": "pending"
+        }
+      }
+    },
+    {
+      "name": "no-orphaned-tmp-files",
+      "pass": true,
+      "detail": {
+        "orphans": []
+      }
+    }
+  ],
+  "evidence": {
+    "tmpOrphans": []
+  }
+}
