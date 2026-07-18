@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-18T06:14:52.901Z",
+  "generatedAt": "2026-07-18T06:49:46.434Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 966,
+    "testFiles": 967,
     "topLevelTestFiles": 381,
-    "nestedTestFiles": 585,
+    "nestedTestFiles": 586,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
       "unit": 631,
-      "functional": 283,
+      "functional": 284,
       "visual": 12,
       "live-provider": 2,
       "integration": 38
     },
     "byCategory": {
       "unit": 564,
-      "functional": 283,
+      "functional": 284,
       "visual": 12,
       "structural-guard": 20,
       "contract-subsystem": 48,
@@ -3890,6 +3890,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/oracle-read-model.functional.test.mjs —"
+    },
+    {
+      "path": "tests/functional/oracle-state-migration.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "oracle-state-migration.functional.test.mjs — construct-b0nny.17 requirement 6."
     },
     {
       "path": "tests/functional/oracle-synthesis.functional.test.mjs",
