@@ -467,6 +467,34 @@ diff-clean JSONL under `.construct/tracker-projections/` (atomic write reused fr
 tracker-projection import|reconcile|status [--json] [--strict]` (`lib/tracker-projection/cli.mjs`)
 is the CLI surface.
 
+### Cutover verification (E9)
+
+`scripts/verify-cutover.mjs` (construct-b0nny.28, the workspace-control-plane program's terminal
+E9 outcome) is the mechanical acceptance gate for the whole program: it re-derives every prior
+bead's deletion and completion criteria from the tree on disk and reports pass/fail *per bead*,
+rather than trusting the sign-off recorded on each closed bead. Directive §15 singles this bead
+out as the only one required to have mechanically verifiable acceptance, so the script — not a
+review document — is the deliverable. It covers M0–M5b (flow-engine deletion, identity and
+run-store convergence, the governed-write chokepoint, routing consolidation, Oracle-entity
+deletion, the org-metaphor migration, the model loop, and the LanceDB de-core) and E1–E9, and
+runs as `node scripts/verify-cutover.mjs [--json] [--bead=<id>] [--static-only]`.
+
+Two properties keep it honest. First, criteria are real assertions — file absence, source scans
+for live references, package metadata, and spawned CLI invocations — and the source scan is
+string-aware, because a glob literal such as `'**/*.test.mjs'` contains `/*` and a naive comment
+stripper would silently report zero hits for the rest of that file. Second, a criterion may be
+marked *deferred*, which records a documented decision not to delete something and asserts that
+its justification still holds: the teams/groups retirement deferral passes only while a live
+consumer remains, and fails once the last one disappears, so a deferral cannot decay into rot.
+`tests/functional/verify-cutover.functional.test.mjs` plants real violations in an isolated copy
+of the tree and asserts the specific bead flips to FAIL while its siblings stay PASS — a verifier
+that cannot fail would prove nothing.
+
+The same bead completed the CLI role audit directive §19 calls for: the deprecated `matrix` alias
+was removed (ADR-0053 gated removal on two release cycles; the alias shipped in v1.5.0 and six
+releases followed), resolving the `graph`/`matrix` name overload the disposition matrix flagged
+as A1. `construct graph` is the sole dependency-graph surface.
+
 ### Shared workspace server (team/enterprise deployment mode)
 
 `lib/server/` (construct-b0nny.26, E7 — ADR-0093, design doc `shared-server-design.md`) is a
