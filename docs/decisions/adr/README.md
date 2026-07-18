@@ -86,6 +86,7 @@ Architecture decision records for decisions that have already been made.
 | [0078](./0078-durable-handoff-checkpointer.md) | A checkpointer-style durable-handoff abstraction for the orchestration runtime | proposed | Resume-by-`runId` + pause-as-checkpoint over the existing run store; amends ADR-0065/0067; borrows the LangGraph-convergent pattern without a dependency (org-capability audit R1) |
 | [0079](./0079-terminal-status-vocabulary-alignment.md) | Align handoff / terminal-status vocabulary to the MCP-Tasks / A2A shared lifecycle | proposed | Canonical external lifecycle (`submitted→working→input_required→{completed,failed,cancelled}`) with Construct's richer states as qualifiers; expresses the H9 honest-status work in shared terms |
 | [0080](./0080-host-executes-the-prompt-canonical.md) | Host-executes-the-prompt is the canonical worker model; MCP sampling is not built upon | proposed | Ratifies the existing host-backend default now that MCP sampling is deprecated (SEP-2577); freezes the sampling path; resolves the sampling decision `construct-rf26.20` flagged (its v2 SDK migration remains) |
+| [0081](./0081-lancedb-optional-retrieval-adapter.md) | LanceDB is an optional retrieval adapter, not a required core dependency | accepted | Amends ADR-0001's LanceDB/apache-arrow exception; introduces `lib/storage/retrieval-adapter.mjs` contract + keyword/BM25 no-vector fallback (construct-b0nny.20) |
 
 ## Starter templates
 

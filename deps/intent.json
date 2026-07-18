@@ -1,27 +1,27 @@
 [
   {
     "id": "@lancedb/lancedb",
-    "kind": "npm-dep",
-    "purpose": "Vector store for semantic search, embedding storage, and retrieval-augmented generation (RAG) pipelines",
+    "kind": "npm-optional",
+    "purpose": "Vector store for semantic search, embedding storage, and retrieval-augmented generation (RAG) pipelines — the LanceDB adapter behind the retrieval-adapter contract (lib/storage/retrieval-adapter.mjs)",
     "owningWorkflow": "knowledge-search, evidence-ingest, session-storage, embed-observations",
     "modeRequirement": "all",
-    "healthCheck": "require('@lancedb/lancedb') — verified at import time; no CLI binary",
-    "degradationBehavior": "error",
+    "healthCheck": "require('@lancedb/lancedb') — verified at import time; absent or unhealthy means the keyword/BM25 retrieval adapter activates automatically",
+    "degradationBehavior": "graceful-skip",
     "securityConcerns": "Native binary bundled per-platform via optional deps; supply-chain risk on binary download at install time",
     "removalCriteria": "Replaced by a different vector store (e.g. sqlite-vec, hnswlib-node) and all RAG pipelines migrated",
-    "disposition": "core"
+    "disposition": "optional"
   },
   {
     "id": "apache-arrow",
-    "kind": "npm-dep",
+    "kind": "npm-optional",
     "purpose": "IPC and data serialization layer required by @lancedb/lancedb for query results and batch operations",
     "owningWorkflow": "knowledge-search, evidence-ingest, session-storage",
     "modeRequirement": "all",
     "healthCheck": "require('apache-arrow') — verified at import time alongside lancedb",
-    "degradationBehavior": "error",
+    "degradationBehavior": "graceful-skip",
     "securityConcerns": "null",
     "removalCriteria": "Removed when @lancedb/lancedb no longer depends on apache-arrow or is itself removed",
-    "disposition": "core"
+    "disposition": "optional"
   },
   {
     "id": "@modelcontextprotocol/sdk",
