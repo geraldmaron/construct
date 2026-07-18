@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-18T04:16:14.047Z",
+  "generatedAt": "2026-07-18T05:44:03.426Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
     "testFiles": 949,
@@ -9,18 +9,18 @@
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 619,
-      "functional": 279,
+      "unit": 618,
+      "functional": 280,
       "visual": 12,
       "live-provider": 2,
       "integration": 37
     },
     "byCategory": {
       "unit": 551,
-      "functional": 279,
+      "functional": 280,
       "visual": 12,
       "structural-guard": 20,
-      "contract-subsystem": 49,
+      "contract-subsystem": 48,
       "live-provider": 2,
       "integration": 27,
       "hook": 9
@@ -1703,14 +1703,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/doctor/graph-staleness-incremental.test.mjs — construct-b0nny.3"
-    },
-    {
-      "path": "tests/doctor/oracle-liveness-watcher.test.mjs",
-      "layer": "unit",
-      "category": "contract-subsystem",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/doctor/oracle-liveness-watcher.test.mjs — LMCP: construct-a81q."
     },
     {
       "path": "tests/doctor/provider-breaker-watcher.test.mjs",
@@ -3489,6 +3481,14 @@
       "maintainerNotes": "tests/functional/learning-loop-capture.functional.test.mjs"
     },
     {
+      "path": "tests/functional/legacy-daemon-cleanup.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "legacy-daemon-cleanup.functional.test.mjs — the sweeper kills leaked legacy"
+    },
+    {
       "path": "tests/functional/legacy-layout-migration.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3852,6 +3852,14 @@
       "maintainerNotes": "tests/functional/oracle-closed-loop.functional.test.mjs —"
     },
     {
+      "path": "tests/functional/oracle-daemon-retired.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "oracle-daemon-retired.functional.test.mjs — a dead oracle daemon is the designed state."
+    },
+    {
       "path": "tests/functional/oracle-heartbeat.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3866,14 +3874,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/oracle-hygiene-policy.functional.test.mjs —"
-    },
-    {
-      "path": "tests/functional/oracle-liveness.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "oracle-liveness.functional.test.mjs — surface a stalled oracle producer."
     },
     {
       "path": "tests/functional/oracle-noise-filter.functional.test.mjs",

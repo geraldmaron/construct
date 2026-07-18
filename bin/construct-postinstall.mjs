@@ -53,6 +53,18 @@ if (process.env.CONSTRUCT_SKIP_POSTINSTALL === '1') {
   process.exit(0);
 }
 
+// Legacy Oracle/Doctor daemon cleanup (construct-b0nny.29): upgrading installs
+// may still have retired background daemons running and their stale runtime
+// state on disk. Best-effort and quiet — a clean machine logs nothing, and a
+// sweep failure must never break `npm install`.
+
+try {
+  const { runLegacyCleanup } = await import('../lib/legacy-cleanup.mjs');
+  const { killed, purged } = runLegacyCleanup();
+  if (killed.length) log(`stopped ${killed.length} retired legacy daemon process(es)`);
+  if (purged.length) log(`purged ${purged.length} stale legacy daemon state path(s)`);
+} catch {}
+
 const initCwd = process.env.INIT_CWD || process.cwd();
 
 // Skip when installing inside the Construct repo itself, but still wire up
