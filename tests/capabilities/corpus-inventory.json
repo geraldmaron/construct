@@ -1,28 +1,28 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-18T06:14:52.901Z",
+  "generatedAt": "2026-07-18T06:56:09.739Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 966,
+    "testFiles": 970,
     "topLevelTestFiles": 381,
-    "nestedTestFiles": 585,
+    "nestedTestFiles": 589,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 631,
-      "functional": 283,
+      "unit": 633,
+      "functional": 284,
       "visual": 12,
       "live-provider": 2,
-      "integration": 38
+      "integration": 39
     },
     "byCategory": {
-      "unit": 564,
-      "functional": 283,
+      "unit": 566,
+      "functional": 284,
       "visual": 12,
       "structural-guard": 20,
       "contract-subsystem": 48,
       "live-provider": 2,
-      "integration": 28,
+      "integration": 29,
       "hook": 9
     }
   },
@@ -2543,6 +2543,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "beads-concurrent-write.functional.test.mjs — parallel bd writes via optimistic locking."
+    },
+    {
+      "path": "tests/functional/beads-projection.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/beads-projection.functional.test.mjs — day-one proof for the"
     },
     {
       "path": "tests/functional/binary-flow-state-smoke.functional.test.mjs",
@@ -7504,6 +7512,30 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/tool-invisibility.test.mjs — the tool-invisibility guardrail"
+    },
+    {
+      "path": "tests/tracker-projection/import-store.test.mjs",
+      "layer": "integration",
+      "category": "integration",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/tracker-projection/import-store.test.mjs — importer + durable store"
+    },
+    {
+      "path": "tests/tracker-projection/projection.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/tracker-projection/projection.test.mjs — field authority + Projection"
+    },
+    {
+      "path": "tests/tracker-projection/reconcile.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/tracker-projection/reconcile.test.mjs — detect-and-report"
     },
     {
       "path": "tests/tracking-surfaces.test.mjs",

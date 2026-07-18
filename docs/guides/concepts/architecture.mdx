@@ -439,6 +439,34 @@ domain stores are E5's job, not built yet) — before attaching `checkDecomposit
 `check` runs the graph-informed report alone against a caller-supplied spec, `validate` runs the
 schema check alone; `--strict` exits 1 when the report is not ok, mirroring `construct graph
 validate --strict`.
+
+### Beads projection and field authority (E8)
+
+`lib/tracker-projection/` (construct-b0nny.27, the program's E8 outcome — target-model.md concept
+16 "Projection", the *replace* verdict; ADR-0094) reframes `bd`/beads from tracker-of-record to a
+*projection* of the graph-informed Work model, without replacing bd or touching `.beads/`: bd
+stays the mandatory tracker CLI, the projection layer sits behind it and issues no bd write in
+normal operation. `field-authority.mjs` is the reviewed per-field `{domain | tracker}` map — bd
+owns its live operational fields (`status`, `assignee`, `owner`, `priority`, `labels`, and the
+audit timestamps) while the domain (E1 graph + E3 Work-spec) owns the *derived* edges
+(`dependencies`, `parent` — directive §16 "dependencies must derive from the graph, not narrative
+intuition") plus the Work-spec what/why (`title`, `description`, `issue_type`). The rule (concept
+16 Enforcement): a domain-owned field is never overwritten by the tracker and vice-versa.
+`projection.mjs`'s `buildProjection` records that authority per field and preserves the *entire*
+original bd issue verbatim in `raw_record` — every field, including model-unused ones
+(`dependency_count`, `comment_count`, `created_by`, …). `import-beads.mjs` is read-only relative
+to bd (it never calls `bd create`, so it structurally cannot repeat the program's known `bd create
+--graph` lossiness), and `verifyRawRecords` proves zero data loss against the source snapshot.
+`reconcile.mjs` is ongoing detect-and-report sync, not a one-time import: it diffs live bd against
+the durable projections, *absorbing* a tracker-owned change as a legitimate bd update and
+*reporting* a domain-owned change as a conflict (`drifted`) rather than clobbering it (concept 16
+`projected → reconciling → in_sync → drifted`); `planDependencyProjection` emits the safe per-edge
+`bd dep add` write-back plan, never the lossy `--graph` path. `store.mjs` persists projections as
+diff-clean JSONL under `.construct/tracker-projections/` (atomic write reused from
+`lib/graph/store.mjs`), readable with bd absent (tracker independence, directive §19). `construct
+tracker-projection import|reconcile|status [--json] [--strict]` (`lib/tracker-projection/cli.mjs`)
+is the CLI surface.
+
 ### Shared workspace server (team/enterprise deployment mode)
 
 `lib/server/` (construct-b0nny.26, E7 — ADR-0093, design doc `shared-server-design.md`) is a
