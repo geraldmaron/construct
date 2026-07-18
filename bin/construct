@@ -701,6 +701,25 @@ async function cmdDoctor() {
   // and would otherwise surface the warning indefinitely. The file itself
   // is harmless — next cleanup tick may sweep it.
 
+  // Legacy Oracle/Doctor daemon sweep (construct-b0nny.29). The retired
+  // background daemons must never run; any instance still alive is a leak
+  // from an older install. The sweep is the remediation, so it runs on
+  // every doctor invocation — idempotent, quiet no-op on a clean machine.
+
+  try {
+    const { runLegacyCleanup } = await import('../lib/legacy-cleanup.mjs');
+    const { killed, purged } = runLegacyCleanup({ homeDir: userHome });
+    if (killed.length || purged.length) {
+      const parts = [];
+      if (killed.length) parts.push(`stopped ${killed.length} leaked daemon process(es)`);
+      if (purged.length) parts.push(`purged ${purged.length} stale state path(s)`);
+      println(`  fix: legacy daemon sweep — ${parts.join(', ')}`);
+    }
+    add('No legacy daemon processes or stale daemon state', true, killed.length + purged.length > 0);
+  } catch (err) {
+    add(`Legacy daemon sweep failed: ${String(err?.message || err).substring(0, 120)}`, false, true);
+  }
+
   // Embed daemon log size. The daemon's own scheduler rotates every
   // minute at 50MB, but a freshly-upgraded install with a 34GB legacy
   // log shouldn't wait 60s. --fix-embed-log forces rotation now.
@@ -1706,7 +1725,7 @@ async function resolveServiceSelection(args, selectable) {
     try {
       const chosen = await multiSelect({
         title: 'Start which services?',
-        instructions: 'Pressure Guard and Doctor always run. Space toggles, Enter confirms.',
+        instructions: 'Pressure Guard always runs. Space toggles, Enter confirms.',
         options: selectable.map((s) => ({ label: s.label, value: s.key, description: s.description, checked: true })),
       });
       if (!chosen.length) {
@@ -7783,7 +7802,8 @@ const handlers = new Map([
    }],
    ['oracle', async (args) => {
      const { runOracleCli } = await import('../lib/oracle/cli.mjs');
-     return runOracleCli(args, { rootDir: ROOT_DIR, projectDir: process.cwd(), homeDir: HOME });
+     const code = await runOracleCli(args, { rootDir: ROOT_DIR, projectDir: process.cwd(), homeDir: HOME });
+     if (typeof code === 'number' && code !== 0) process.exit(code);
    }],
    ['certify', async (args) => {
      const { runCertificationCli } = await import('../lib/certification/cli.mjs');
