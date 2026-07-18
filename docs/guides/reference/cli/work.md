@@ -36,6 +36,7 @@ description: Work commands for Construct.
 | `construct wireframe` | Generate wireframes from description |
 | `construct workflow` | Instantiate workflow templates (PRD-to-review chains, onboarding, handoffs) |
 | `construct workspace` | Manage PM workspaces for multi-PM signal routing |
+| `construct workspace-domain` | Workspace domain model (construct-b0nny.22, target-model.md concept 1) — owner, membership, settings, lifecycle. Distinct from `construct workspace` above, which is the unrelated multi-PM signal-routing command. |
 
 ## construct artifact
 
@@ -443,3 +444,21 @@ construct workspace list|create|show|assign
 - `create --name=X --owner=Jane` — Create a new workspace
 - `show <id>` — Show workspace details
 - `assign --customer=X --workspace=Y` — Assign customer to workspace
+
+## construct workspace-domain
+
+Workspace domain model (construct-b0nny.22, target-model.md concept 1) — owner, membership, settings, lifecycle. Distinct from `construct workspace` above, which is the unrelated multi-PM signal-routing command.
+
+**Usage**
+
+```bash
+construct workspace-domain init|show|activate|archive|member|settings
+```
+
+**Subcommands**
+
+- `init [--name=] [--remote=] [--deployment=embedded|shared]` — Get-or-create the Workspace for this project (id = deriveProjectKey(rootDir))
+- `show [--json]` — Show the current Workspace record
+- `activate | archive` — Validated lifecycle transitions: provisioning -> active -> archived
+- `member add <ref> [--role=owner|member] | member remove <ref> | member list` — Workspace membership (seed for future multi-user authorization)
+- `settings get <key> | settings set <key> <value> | settings list` — Per-workspace settings (JSON-valued)
