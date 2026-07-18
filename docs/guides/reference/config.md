@@ -88,6 +88,14 @@ The `construct.config.json` file is scaffolded with a `"$schema"` property. In s
 |---|---|---|
 | `CONSTRUCT_DEPLOYMENT_MODE` | `solo` | `solo` \| `team` \| `enterprise`: selects backends for the intake queue, memory, workers, and MCP broker. Read at runtime by `lib/deployment-mode.mjs`. Set via `construct config mode <m>`. |
 
+### Project identity
+
+Every subsystem that keys state by "which project is this" (`~/.construct/projects/<key>/`, Postgres run/trace/memory rows) resolves the same id via `lib/state-root.mjs`'s `deriveProjectKey`: a hash of the git origin remote, or a hash of the canonical project path when there is no remote (ADR-0092).
+
+| Key | Default | Description |
+|---|---|---|
+| `deployment.projectKey` (`construct.config.json`) | `null` | Explicit override for the project identity key. Wins over the computed derivation everywhere state is keyed — use it for a monorepo's sub-projects sharing one git remote, a fork that should not inherit the origin's accumulated history, or a remote-URL migration where continuity with the old key matters. Distinct from `deployment.projectName`, which is a display name only and is never used to derive identity. |
+
 ## Orchestration
 
 Keys under `orchestration` in `construct.config.json`. Read at runtime by `lib/orchestration/runtime.mjs`.
