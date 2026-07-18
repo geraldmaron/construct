@@ -329,7 +329,7 @@
     "purpose": "Legacy Office format conversion (DOC, ODT) for document export workflows",
     "owningWorkflow": "document-export (doc, odt formats)",
     "modeRequirement": "all",
-    "healthCheck": "soffice --version",
+    "healthCheck": "soffice --headless --norestore --version",
     "degradationBehavior": "graceful-skip",
     "securityConcerns": "Full office suite executing as a subprocess; macro execution must be disabled (--headless --norestore); large attack surface",
     "removalCriteria": "DOC and ODT export formats are removed from Construct or handled by a lighter converter",
