@@ -7860,6 +7860,11 @@ const handlers = new Map([
      const code = runWorkSpecCli(args, { projectDir: process.cwd() });
      if (typeof code === 'number' && code !== 0) process.exit(code);
    }],
+   ['tracker-projection', async (args) => {
+     const { runTrackerProjectionCli } = await import('../lib/tracker-projection/cli.mjs');
+     const code = runTrackerProjectionCli(args, { projectDir: process.cwd() });
+     if (typeof code === 'number' && code !== 0) process.exit(code);
+   }],
    ['workplace-loop', async (args) => {
      const { runWorkplaceLoopCli } = await import('../lib/workplace-loop/cli.mjs');
      const code = await runWorkplaceLoopCli(args, { projectDir: process.cwd() });

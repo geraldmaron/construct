@@ -529,6 +529,10 @@
       "core": false
     },
     {
+      "name": "tracker-projection",
+      "core": false
+    },
+    {
       "name": "uninstall",
       "core": false
     },
