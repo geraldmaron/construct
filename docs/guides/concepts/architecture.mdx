@@ -439,6 +439,32 @@ domain stores are E5's job, not built yet) — before attaching `checkDecomposit
 `check` runs the graph-informed report alone against a caller-supplied spec, `validate` runs the
 schema check alone; `--strict` exits 1 when the report is not ok, mirroring `construct graph
 validate --strict`.
+### Shared workspace server (team/enterprise deployment mode)
+
+`lib/server/` (construct-b0nny.26, E7 — ADR-0093, design doc `shared-server-design.md`) is a
+*strictly additive* deployment mode that serves the Workspace domain over a network boundary so
+multiple users and worker processes can share one Workspace's state concurrently. It is reachable
+only via an explicit `construct server start` with a reachable Postgres `DATABASE_URL`; no
+solo-mode code path imports it, and a solo user who never runs it sees zero behavior change (the
+SQLite `store.mjs` above is untouched). `lib/server/http.mjs` is a `node:http` façade (no
+framework, ADR-0001; the same auth-pipeline shape `lib/mcp/transport/http.mjs` established)
+delegating workspace-scoped routes to a Postgres-backed store (`lib/workspace/postgres-store.mjs`,
+migration `lib/db/migrations/008_workspace_foundation.sql` — structurally identical tables and
+CHECK vocabularies to the SQLite schema, `TEXT → TIMESTAMPTZ` per the domain design's pre-declared
+substitution) and to the *unmodified* existing worker-claim primitives (`lib/queue/pg-queue.mjs`,
+`lib/orchestration/worker-runtime.mjs`) — the server adds no new concurrency or recovery logic, it
+exposes those over HTTP. Auth (`lib/server/auth.mjs`, migration `009_server_tokens.sql`) is
+membership-resolved bearer tokens, not a parallel system: only a token's sha256 hash is stored
+(raw value returned once at mint), each token resolves to exactly one `construct_workspace_members`
+row and grants no authority beyond that row's `owner|member` role, and verification re-joins the
+live membership table every request so `removeMember` takes effect on the very next call.
+Bootstrap splits an operator secret (`CONSTRUCT_SERVER_ADMIN_TOKEN`, env-only, authorizes only
+`POST /workspaces`; `501` when unset, never silently open) from per-member tokens; a token for one
+workspace can never reach another's data. Deployment ships `Dockerfile.server` + `docker-compose.yml`
+(Postgres + one-shot `migrate` service + server). The concurrent-user and recovery properties are
+proven at the server boundary in `tests/functional/workspace-server.functional.test.mjs` (real
+binary, real HTTP, real Postgres, a real `SIGKILL`), skipping with a named reason when no Postgres
+is reachable.
 
 ## Cross-project synthesis
 
