@@ -4,6 +4,7 @@ coverage/
 .nyc_output/
 .env
 .env.local
+.env.op
 construct.config.local.json
 *.log
 .DS_Store
