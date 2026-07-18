@@ -90,3 +90,58 @@ test('query --missing-tests on a project with no graph exits 1', () => {
   const { result: code } = captureStdout(() => runGraphCli(['query', '--missing-tests', '--json'], { rootDir: root, projectDir: root }));
   assert.equal(code, 1);
 });
+
+// construct-b0nny.12: `graph path` had zero prior test coverage anywhere in
+// the suite even though it is a real CLI caller of queryPath, and queryPath's
+// default rel filter now excludes 'imports' (see lib/graph/relational/
+// queries.mjs's header). These pin that the CLI command still finds a
+// default-rel (embeds) path, still finds an imports-only path once opted in
+// via --rel, and reports "no path found" rather than hanging when a path
+// only exists along a relation the default excludes.
+
+test('graph path finds a default-rel (embeds) path without --rel', () => {
+  const root = freshRoot();
+  writeGraph(root, {
+    nodes: [
+      { id: 'capability:a', type: 'capability' },
+      { id: 'workflow:b', type: 'workflow' },
+    ],
+    edges: [{ from: 'capability:a', to: 'workflow:b', rel: 'embeds', source: 'registry' }],
+  });
+  const { result: code, output } = captureStdout(() => runGraphCli(['path', 'capability:a', 'workflow:b', '--json'], { rootDir: root, projectDir: root }));
+  assert.equal(code, 0);
+  const parsed = JSON.parse(output);
+  assert.equal(parsed.found, true);
+  assert.equal(parsed.depth, 1);
+});
+
+test('graph path reports no path found for an imports-only chain without --rel', () => {
+  const root = freshRoot();
+  writeGraph(root, {
+    nodes: [
+      { id: 'file:a', type: 'file' },
+      { id: 'file:b', type: 'file' },
+    ],
+    edges: [{ from: 'file:a', to: 'file:b', rel: 'imports', source: 'import-graph' }],
+  });
+  const { result: code, output } = captureStdout(() => runGraphCli(['path', 'file:a', 'file:b', '--json'], { rootDir: root, projectDir: root }));
+  assert.equal(code, 1);
+  const parsed = JSON.parse(output);
+  assert.equal(parsed.found, false);
+});
+
+test('graph path --rel imports finds an imports-only chain when explicitly opted into', () => {
+  const root = freshRoot();
+  writeGraph(root, {
+    nodes: [
+      { id: 'file:a', type: 'file' },
+      { id: 'file:b', type: 'file' },
+    ],
+    edges: [{ from: 'file:a', to: 'file:b', rel: 'imports', source: 'import-graph' }],
+  });
+  const { result: code, output } = captureStdout(() => runGraphCli(['path', 'file:a', 'file:b', '--rel', 'imports', '--json'], { rootDir: root, projectDir: root }));
+  assert.equal(code, 0);
+  const parsed = JSON.parse(output);
+  assert.equal(parsed.found, true);
+  assert.equal(parsed.depth, 1);
+});
