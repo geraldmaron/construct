@@ -109,6 +109,10 @@ The graph is rebuilt automatically in three situations:
 - The graph becomes a live artifact: it is rebuilt on commit and validated in CI, not only built on demand.
 - `construct doctor` gains a graph-health signal; operators see staleness and validity at a glance.
 - `construct matrix` is deprecated with a warning; `construct graph` is the documented primary surface going forward.
+
+## Removal (2026-07-18)
+
+The deprecation window this ADR set has closed. `construct matrix` shipped as a warning-emitting alias in v1.5.0 and was removed in `construct-b0nny.28` (workspace-control-plane E9), six releases later — past the two release cycles decided above. `construct graph` is the sole dependency-graph surface, and the stale `construct matrix build` hints in error messages, hook advisories, and doctor watchers were repointed to `construct graph build`. References to the command below are the historical record of the decision, not live guidance.
 - The staleness model covers all source files that contribute to the graph, eliminating false "current" verdicts.
 - Missing provider dependencies in workflows are surfaced as errors in team/enterprise CI before they cause runtime failures.
 - LMCP-C1..C9 (graph schema extension, rebuild triggers, validate contract, CI gate, doctor integration) and LMCP-K1 (graph-backed capability resolution) are unblocked by this decision.

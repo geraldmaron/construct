@@ -53,13 +53,13 @@ function runConstruct(args, cwd) {
   });
 }
 
-test('construct matrix build writes a durable graph with capability nodes', () => {
+test('construct graph build writes a durable graph with capability nodes', () => {
   const project = tmpProject();
-  const res = runConstruct(['matrix', 'build', '--no-co-change'], project);
+  const res = runConstruct(['graph', 'build', '--no-co-change'], project);
   assert.equal(res.status, 0, res.stderr);
 
   const nodesFile = path.join(project, '.construct', 'graph', 'nodes.jsonl');
-  assert.ok(fs.existsSync(nodesFile), 'nodes.jsonl persisted under the project .cx/graph');
+  assert.ok(fs.existsSync(nodesFile), 'nodes.jsonl persisted under the project .construct/graph');
   const ids = new Set(fs.readFileSync(nodesFile, 'utf8').trim().split('\n').map((l) => JSON.parse(l).id));
   assert.ok(ids.has('capability:oracle.meta-review'), 'capability nodes are present');
   assert.ok([...ids].some((id) => id.startsWith('file:lib/')), 'file nodes from import derivation are present');
@@ -67,7 +67,7 @@ test('construct matrix build writes a durable graph with capability nodes', () =
 
 test('construct impact reverse-traces a changed file to its capability tests', () => {
   const project = tmpProject();
-  assert.equal(runConstruct(['matrix', 'build', '--no-co-change'], project).status, 0);
+  assert.equal(runConstruct(['graph', 'build', '--no-co-change'], project).status, 0);
 
   const res = runConstruct(['impact', 'lib/oracle/synthesize.mjs', '--json'], project);
   assert.equal(res.status, 0, res.stderr);
