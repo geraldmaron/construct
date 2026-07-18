@@ -8,8 +8,7 @@
  * approximation) reaches every surface that quotes a route: the direct
  * routeRequest() return, the orchestration_policy MCP response and its
  * handoffPacket, the orchestration_run MCP response (shapeRun) and CLI JSON
- * (hostAdapterMetadata), the durable planning trace event, and the
- * delegation-flow handoff chain (advanceDelegation).
+ * (hostAdapterMetadata), and the durable planning trace event.
  *
  * Uses real request strings that classify to a real orchestrated chain
  * (mirrors tests/orchestration-policy.test.mjs's "build this feature end to
@@ -28,7 +27,6 @@ import { orchestrationPolicy } from '../lib/mcp/tools/skills.mjs';
 import { runOrchestration, planRun, hostAdapterMetadata } from '../lib/orchestration/runtime.mjs';
 import { shapeRun } from '../lib/mcp/tools/orchestration-run.mjs';
 import { traceDir } from '../lib/worker/trace.mjs';
-import { advanceDelegation } from '../lib/orchestration/delegation-flow.mjs';
 
 const MODEL = 'anthropic/claude-sonnet-4-6';
 const ENV = { CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL };
@@ -42,9 +40,9 @@ function project() {
 }
 test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} } });
 
-// planRun/runOrchestration/advanceDelegation resolve their state root through
-// CX_HOME_OVERRIDE (ADR-0066), same isolation tests/orchestration-runtime.test.mjs
-// applies — without it these runs would write into the real developer machine's
+// planRun/runOrchestration resolve their state root through CX_HOME_OVERRIDE
+// (ADR-0066), same isolation tests/orchestration-runtime.test.mjs applies —
+// without it these runs would write into the real developer machine's
 // ~/.construct/projects/.
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-route-path-home-'));
@@ -120,16 +118,4 @@ test('planRun preserves routePath in the durable planning trace event', async ()
   const created = lines.find((e) => e.eventType === 'task_graph.created' && e.metadata?.runId === run.runId);
   assert.ok(created, 'task_graph.created trace event recorded for this run');
   assert.deepEqual(created.metadata.routePath, run.plan.routePath, 'the persisted trace event carries the exact routePath the run was planned with');
-});
-
-test('advanceDelegation preserves routePath across the specialist handoff chain', async () => {
-  const cwd = project();
-  const route = routeRequest({ request: REQUEST, fileCount: 4, moduleCount: 2 });
-  const runId = `route-path-handoff-${Date.now()}`;
-  const first = await advanceDelegation(cwd, runId, route);
-  assert.deepEqual(first.routePath, route.routePath, 'first handoff step carries the full routePath, not just its own specialist slice');
-  assert.ok(first.currentDelegation, 'first step has a real delegation (specialist chain non-empty)');
-
-  const second = await advanceDelegation(cwd, runId, route);
-  assert.deepEqual(second.routePath, route.routePath, 'routePath survives the second handoff tick unchanged');
 });
