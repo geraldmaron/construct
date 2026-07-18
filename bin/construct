@@ -817,7 +817,7 @@ async function cmdDoctor() {
   // model tiers are user/machine-specific config, so doctor warns and never
   // fails the gate on them.
   try {
-    const { resolveModelTiers } = await import('../lib/model-registry.mjs');
+    const { resolveModelTiers } = await import('../lib/model-router.mjs');
     const resolved = resolveModelTiers({ env: process.env });
     if (resolved.complete) {
       add('Models — all tiers configured', true);
