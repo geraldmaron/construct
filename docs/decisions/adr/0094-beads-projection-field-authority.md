@@ -67,8 +67,8 @@ surface; `construct tracker-projection import|reconcile|status` sits behind it.
   drift-detection test.
 - **Tracker independence** (directive §19): the projection store loads with bd absent.
 - **Validated on real data.** The importer and reconciler are proven against this program's own 38-bead
-  history (`construct-b0nny` … `.31`), snapshotted (not read live) to stay robust to concurrent bd
-  writers.
+  history (`construct-b0nny` … `.31`), snapshotted rather than read live so a concurrent bd writer
+  cannot change the corpus mid-run.
 - **Deferred.** A second adapter (Jira/GitHub/Linear) and a materialized domain `work` store are out of
   scope; until a `work` store exists, the imported projection's captured values serve as the domain
   baseline for reconciliation.
