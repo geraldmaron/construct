@@ -25,10 +25,10 @@
       "docs/reviews/**",
       "docs/critiques/**",
       "docs/evals/**",
-      ".cx/evals/**",
+      ".construct/evals/**",
       "tests/evals/**",
       "docs/traces/**",
-      ".cx/traces/**"
+      ".construct/traces/**"
     ],
     "allowedBdLabels": [
       "review",

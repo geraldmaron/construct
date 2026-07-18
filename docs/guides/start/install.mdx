@@ -69,8 +69,7 @@ Service consent is cached in `~/.config/construct/config.env` as `BOOTSTRAP_<NAM
 
 | Flag | Description |
 |---|---|
-| `--footprint=project\|user\|both` | Define the installation footprint — where Construct writes on this machine. Required — a bare `construct install` with no `--footprint` hard-errors naming the flag rather than writing nothing silently. Unrelated to the `construct scope` org-profile command; [ADR-0071](../../decisions/adr/0071-install-footprint-vs-org-scope-naming.md) renamed this flag from `--scope`. |
-| `--scope=project\|user\|both` | Deprecated alias for `--footprint` (same values). Prints a one-line deprecation notice; kept working for existing scripts. See [ADR-0071](../../decisions/adr/0071-install-footprint-vs-org-scope-naming.md). |
+| `--footprint=project\|user\|both` | Define where Construct writes on this machine. Required — a bare `construct install` with no `--footprint` hard-errors naming the flag rather than writing nothing silently. |
 | `--yes` | Accept all defaults without prompting. |
 | `--dry-run` | Preview the install plan (footprints, files, services) without writing anything. |
 | `--no-launch-agent` | Skip background macOS LaunchAgent registration. |

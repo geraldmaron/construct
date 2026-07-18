@@ -31,7 +31,7 @@ function fixture() {
     roles: ['engineer'],
     charter: 'Owns implementation quality for this focused audit-skills fixture.',
   }));
-  w('specialists/org/scopes/operations.json', JSON.stringify({
+  w('specialists/org/worker-profiles/operations.json', JSON.stringify({
     id: 'operations',
     roles: ['operator', 'product-lead'],
     departments: [{ id: 'intake', roles: ['operator', 'product-lead'] }],

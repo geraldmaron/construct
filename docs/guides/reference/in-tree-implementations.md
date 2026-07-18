@@ -60,7 +60,7 @@ See `docs/dependencies.md` for the policy governing these implementations and th
 **Location:** `lib/observation-store.mjs`  
 **LOC:** 278  
 **Test coverage:** `tests/observation-store.test.mjs` (comprehensive: add, search, filter, persist, role/project scoping)  
-**What it does:** Persists structured observations to JSON files under `~/.cx/observations/`, maintains an in-memory vector index and BM25 corpus, and provides hybrid BM25+cosine search with category/role/project filters.
+**What it does:** Persists structured observations to JSON files under `~/.construct/observations/`, maintains an in-memory vector index and BM25 corpus, and provides hybrid BM25+cosine search with category/role/project filters.
 
 **Known limitations:**
 - Full corpus loaded into memory on every process start. For >10K observations, startup latency and RSS will be noticeable.
@@ -76,7 +76,7 @@ See `docs/dependencies.md` for the policy governing these implementations and th
 **Location:** `lib/entity-store.mjs`  
 **LOC:** 195  
 **Test coverage:** `tests/entity-store.test.mjs` (comprehensive: create, update, link observations, persist)  
-**What it does:** Tracks named entities (components, services, APIs, concepts) with linked observation IDs. Persisted to `~/.cx/entities/`. Enables "what do we know about X?" queries by entity name.
+**What it does:** Tracks named entities (components, services, APIs, concepts) with linked observation IDs. Persisted to `~/.construct/entities/`. Enables "what do we know about X?" queries by entity name.
 
 **Known limitations:**
 - Linear scan for entity lookup by name: no index. Degrades at >1K entities.
@@ -90,7 +90,7 @@ See `docs/dependencies.md` for the policy governing these implementations and th
 
 **Location:** `lib/storage/` (session-related files)  
 **Test coverage:** `tests/session-store.test.mjs`  
-**What it does:** Persists session records (summary, decisions, files changed, open questions, task snapshot) as JSON under `~/.cx/sessions/`.
+**What it does:** Persists session records (summary, decisions, files changed, open questions, task snapshot) as JSON under `~/.construct/sessions/`.
 
 **Known limitations:**
 - No query capability beyond list + load-by-id. Search is linear scan.

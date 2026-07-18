@@ -24,7 +24,7 @@
     ]
   },
   "preconditions": [
-    "Strategy documents in `.cx/knowledge/decisions/strategy/` reviewed for declared Bets and Non-bets"
+    "Strategy documents in `.construct/knowledge/decisions/strategy/` reviewed for declared Bets and Non-bets"
   ],
   "postconditions": [
     {

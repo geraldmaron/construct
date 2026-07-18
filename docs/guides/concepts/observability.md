@@ -9,7 +9,7 @@ Construct emits OpenTelemetry spans for every LLM call, embedding operation, and
 
 ## Local-only mode (default)
 
-No setup required. Skill load events land in `~/.cx/skill-calls.jsonl`. Query them:
+No setup required. Skill load events land in `~/.construct/skill-calls.jsonl`. Query them:
 
 ```bash
 construct skills usage --since=30d

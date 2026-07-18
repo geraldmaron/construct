@@ -34,7 +34,7 @@
       "docs/notes/research/**",
       "docs/research/**",
       "docs/experiments/**",
-      ".cx/experiments/**"
+      ".construct/experiments/**"
     ],
     "allowedBdLabels": [
       "architecture",

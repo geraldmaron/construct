@@ -116,11 +116,12 @@ test('subcommands removed from help error instead of silently listing', () => {
   }
 });
 
-test('legacy flag form still mutates but warns it is deprecated', () => {
-  const sb = freshSandbox();
-  const res = runModels(sb, ['--tier=fast', '--set=baz/qux']);
-  assert.equal(res.status, 0, res.stderr);
-  assert.match(res.stdout, /Set fast -> baz\/qux/);
-  assert.match(res.stderr, /deprecated/i);
-  assert.match(fs.readFileSync(sb.configPath, 'utf8'), /CX_MODEL_FAST=baz\/qux/);
+test('retired models flags fail without mutating configuration', () => {
+  for (const args of [['--reset'], ['--tier=fast', '--set=baz/qux'], ['--poll']]) {
+    const sb = freshSandbox();
+    const res = runModels(sb, args);
+    assert.equal(res.status, 1, `${args.join(' ')} should exit 1`);
+    assert.match(res.stderr, /Unknown models option/);
+    assert.equal(fs.existsSync(sb.configPath), false, 'retired flags must not write configuration');
+  }
 });

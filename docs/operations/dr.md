@@ -108,4 +108,4 @@ If the tool returns results from before the backup date, the memory store restor
 
 - The backup does not include telemetry trace data. Historical performance reviews are not recoverable unless you have a separate telemetry backup.
 - SSH keys, GitHub tokens, and other secrets in `config.env` should be stored in a separate secrets manager. Losing them means rotating them, not recovering them from backup.
-- If the original machine is still accessible, compare `~/.cx/audit-trail.jsonl` checksums to confirm no data was lost between the last backup and the failure.
+- If the original machine is still accessible, compare `~/.construct/audit-trail.jsonl` checksums to confirm no data was lost between the last backup and the failure.

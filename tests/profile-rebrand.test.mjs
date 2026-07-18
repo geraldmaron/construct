@@ -48,7 +48,7 @@ describe('getRebrand', () => {
   it('honors operations profile rebrand labels', () => {
     const root = mkTmp();
     // Selecting the curated operations scope via construct.config.json
-    // means resolveActiveScope reads specialists/org/scopes/operations.json from the repo.
+    // means resolveActiveScope reads specialists/org/worker-profiles/operations.json from the repo.
     fs.writeFileSync(
       path.join(root, 'construct.config.json'),
       JSON.stringify({ scope: 'operations' }, null, 2),
@@ -68,8 +68,8 @@ describe('getRebrand', () => {
 
   it('falls back to defaults when scope.json is malformed', () => {
     const root = mkTmp();
-    fs.mkdirSync(path.join(root, '.cx'), { recursive: true });
-    fs.writeFileSync(path.join(root, '.cx', 'scope.json'), '{ this is not json');
+    fs.mkdirSync(path.join(root, '.construct'), { recursive: true });
+    fs.writeFileSync(path.join(root, '.construct', 'scope.json'), '{ this is not json');
     const rb = getRebrand(root);
     // Malformed custom scope is ignored; we land on the rnd fallback,
     // which still produces non-empty strings.

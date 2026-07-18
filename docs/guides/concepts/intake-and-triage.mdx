@@ -23,7 +23,7 @@ The daemon path (watcher through classification) never calls an LLM. The agent i
 ## The pipeline (profile-agnostic)
 
 1. The embed daemon's reactive watcher (`lib/embed/inbox-live-watcher.mjs`) picks the file up within a second or two.
-2. The inbox ingester normalizes it into markdown under `~/.cx/knowledge/` and indexes it for retrieval.
+2. The inbox ingester normalizes it into markdown under `~/.construct/knowledge/` and indexes it for retrieval.
 3. `prepareIntakeForIngestedFile` runs four deterministic preparation steps:
    - **lane suggestion** via `lib/docs-routing.mjs`
    - **related-doc retrieval** via the hybrid corpus query

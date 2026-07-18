@@ -18,7 +18,7 @@ import { spawnSync } from 'node:child_process';
 import { CLI_COMMANDS, CATEGORY_ORDER, formatCommandHelp } from '../lib/cli-commands.mjs';
 import { CONFIG_DIR_NAME, PROJECT_MARKERS, configPath } from '../lib/config-dir.mjs';
 import { buildStatus, formatStatusReport } from '../lib/status.mjs';
-import { validateRegistry } from '../lib/validator.mjs';
+import { validateRegistry as validateLegacyRegistry } from '../lib/validator.mjs';
 import { readCurrentModels, readOpenRouterApiKeyFromOpenCodeConfig, applyToEnv, resetEnv, setModelWithTierInference, listAvailableModels } from '../lib/model-router.mjs';
 import { MODEL_TIERS } from '../lib/model-tiers.mjs';
 import { pollFreeModels, topForTier, selectForTier } from '../lib/model-free-selector.mjs';
@@ -593,16 +593,9 @@ async function cmdDoctor() {
     return;
   }
 
-  // --fix-* flags drive auto-remediation for legacy state left behind by
-  // pre-2.0 installs. Layer-2 update triggers (npm i -g postinstall, brew
-  // upgrade) normally handle this; --fix-* is the manual recovery path.
-  // --fix-all runs every available fix.
-
   const wantsFixAll = args.includes('--fix-all') || args.includes('--fix');
   const wantsFixGitignore = wantsFixAll || args.includes('--fix-gitignore');
-  const wantsFixLegacyAgents = wantsFixAll || args.includes('--fix-legacy-agents');
   const wantsFixEmbedLog = wantsFixAll || args.includes('--fix-embed-log');
-  const wantsFixMigrateState = wantsFixAll || args.includes('--fix-migrate-state');
 
   const checks = [];
   // Set inside the worker-backend/web-capability readiness check below;
@@ -648,52 +641,7 @@ async function cmdDoctor() {
     }
   }
 
-  // Legacy cx-* files at user scope. Layer-2 (npm postinstall, brew
-  // upgrade) sweeps these via `construct sync --global`; this check is
-  // the manual safety net. Counts files matching a registered specialist
-  // name across Claude / Codex / Copilot user-scope dirs.
-
   const userHome = HOME;
-  const registry = loadRegistry({ rootDir: ROOT_DIR });
-  const specialistSet = new Set(Object.values(registry.specialists ?? {}).map((s) => `cx-${s.name}`));
-  const legacyTargets = [
-    { dir: path.join(userHome, '.claude', 'agents'), ext: '.md' },
-    { dir: path.join(userHome, '.codex', 'agents'), ext: '.toml' },
-    { dir: path.join(userHome, '.github', 'prompts'), ext: '.prompt.md' },
-  ];
-  let legacyCount = 0;
-  for (const t of legacyTargets) {
-    if (!fs.existsSync(t.dir)) continue;
-    for (const f of fs.readdirSync(t.dir)) {
-      if (!f.endsWith(t.ext)) continue;
-      const base = f.slice(0, -t.ext.length);
-      if (specialistSet.has(base)) legacyCount++;
-    }
-  }
-  if (legacyCount > 0 && wantsFixLegacyAgents) {
-    const syncScript = path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs');
-    const result = spawnSync(process.execPath, [syncScript, '--global'], { stdio: 'pipe', encoding: 'utf8' });
-    if (result.status === 0) {
-      println(`  fix: swept ${legacyCount} legacy cx-* file(s) from user scope via construct sync --global`);
-      add('No legacy cx-* files at user scope', true);
-    } else {
-      add(`Legacy cx-* sweep failed: ${result.stderr?.substring(0, 200)}`, false);
-    }
-  } else {
-    // Soft-warn instead of hard-fail: legacy v1.0.10 cx-* files are an
-    // expected upgrade-state, not real drift. The hint is what matters;
-    // the fix is one --fix-legacy-agents run away and CI never sees this.
-    // Mirrors the parity check's legacy-install reclassification.
-
-    add(
-      legacyCount === 0
-        ? 'No legacy cx-* files at user scope'
-        : `Legacy cx-* files at user scope: ${legacyCount} (run \`construct doctor --fix-legacy-agents\` to sweep)`,
-      true,
-      legacyCount !== 0,
-    );
-  }
-
   // (Pre-push bypass doctor check removed in v1.0.16.) v1.0.15 deleted the
   // entire skip-var infrastructure (CONSTRUCT_SKIP_PREPUSH, _COMMENT_LINT,
   // _PR_LINT, _DOCS, CONSTRUCT_ALLOW_CLAUDE_PUSH). Nothing writes to
@@ -744,46 +692,6 @@ async function cmdDoctor() {
     }
   }
 
-  // Legacy ~/.cx/<project-scoped>.jsonl files left over from before the
-  // cross-project state isolation refactor. Four files moved from user
-  // scope to <project>/.cx/: contract-violations, audit-reads, agent-log,
-  // intent-verifications. Pre-refactor data still sits at ~/.cx/ where it
-  // mixed every project together. --fix-migrate-state archives them to
-  // ~/.cx/legacy/<name>.<ts>.jsonl so the new writers start fresh; the
-  // legacy data stays readable for forensics.
-
-  const projectScopedNames = [
-    'contract-violations.jsonl',
-    'audit-reads.jsonl',
-    'agent-log.jsonl',
-    'intent-verifications.jsonl',
-  ];
-  const legacyState = projectScopedNames
-    .map((name) => ({ name, path: path.join(doctorRoot(userHome), name) }))
-    .filter((p) => fs.existsSync(p.path) && fs.statSync(p.path).size > 0);
-
-  if (legacyState.length > 0 && wantsFixMigrateState) {
-    const archiveDir = path.join(doctorRoot(userHome), 'legacy');
-    fs.mkdirSync(archiveDir, { recursive: true });
-    const ts = new Date().toISOString().replace(/[:.]/g, '-');
-    const moved = [];
-    for (const { name, path: src } of legacyState) {
-      const dest = path.join(archiveDir, `${name.replace('.jsonl', '')}.${ts}.jsonl`);
-      fs.renameSync(src, dest);
-      moved.push(path.basename(dest));
-    }
-    println(`  fix: archived ${moved.length} legacy user-scope file(s) to ~/.cx/legacy/`);
-    for (const m of moved) println(`         → ${m}`);
-    add('No legacy user-scope project-state files', true);
-  } else {
-    add(
-      legacyState.length === 0
-        ? 'No legacy user-scope project-state files'
-        : `Legacy user-scope project-state files: ${legacyState.length} (run \`construct doctor --fix-migrate-state\` to archive)`,
-      legacyState.length === 0,
-    );
-  }
-
   // Legacy in-project heavy state (ADR-0066): runtime/traces/lancedb now
   // resolve through the machine-scoped state root, so a project that still
   // carries these directories is holding pre-refit state at the old
@@ -807,26 +715,6 @@ async function cmdDoctor() {
       true,
       legacyHeavyDirs.length !== 0,
     );
-  }
-
-  // Mirror model tier overrides stranded in the pre-XDG legacy config forward
-  // before resolving tiers, so an install upgraded across the XDG move reports
-  // configured without a manual copy. Applied to process.env too so the check
-  // below sees the just-migrated values in the same run.
-  try {
-    const { migrateLegacyModelConfig, migrateLegacyCredentialConfig } = await import('../lib/config/legacy-config-migration.mjs');
-    const migration = migrateLegacyModelConfig({ homeDir: HOME });
-    if (migration.performed) {
-      Object.assign(process.env, migration.migrated);
-      println(`  fix: migrated ${Object.keys(migration.migrated).join(', ')} from ${migration.legacyPath} → ${migration.xdgPath}`);
-    }
-    const credentialMigration = migrateLegacyCredentialConfig({ homeDir: HOME });
-    if (credentialMigration.performed) {
-      Object.assign(process.env, credentialMigration.migrated);
-      println(`  fix: migrated credentials ${Object.keys(credentialMigration.migrated).join(', ')} from ${credentialMigration.legacyPath} → ${credentialMigration.xdgPath}`);
-    }
-  } catch (err) {
-    add(`Models — legacy config migration failed: ${err.message}`, false, true);
   }
 
   // Tier model selection. Construct ships with no default — at least
@@ -1163,6 +1051,15 @@ async function cmdDoctor() {
   // Validate promptFile references and skill bindings
   try {
     const registry = loadRegistry({ rootDir: ROOT_DIR });
+    const { validate: validateUnifiedRegistry } = await import('../lib/registry/validator.mjs');
+    const registryValidation = validateUnifiedRegistry(registry);
+    add(
+      registryValidation.ok
+        ? `Registry integrity check${registryValidation.warnings.length ? ` (${registryValidation.warnings.length} advisory warnings)` : ''}`
+        : `Registry integrity check (${registryValidation.errors.length} errors)`,
+      registryValidation.ok,
+      registryValidation.warnings.length > 0,
+    );
     const brokenPromptFiles = Object.values(registry.specialists ?? {}).filter((s) => {
       if (!s.promptFile) return false;
       return !fs.existsSync(path.join(ROOT_DIR, s.promptFile));
@@ -1311,11 +1208,7 @@ async function cmdDoctor() {
     try {
       const { checkParity } = await import('../lib/parity.mjs');
       const parity = checkParity({ rootDir: ROOT_DIR, homeDir: HOME });
-      // Legacy-install rolls up to ok (so the gate doesn't hard-fail during
-      // a v1.0.10 → v1.0.13+ upgrade) but renders as a warning so the
-      // --fix-legacy-agents hint stays visible.
-      const hasLegacy = parity.surfaces.some((s) => s.status === 'legacy-install');
-      add(`Cross-surface adapter parity (${parity.summary.join(' · ')})`, parity.ok, hasLegacy);
+      add(`Cross-surface adapter parity (${parity.summary.join(' · ')})`, parity.ok);
     } catch {
       add('Cross-surface adapter parity', false);
     }
@@ -1378,8 +1271,8 @@ async function cmdDoctor() {
       const { recentViolations, violationLogPath } = await import('../lib/contracts/violation-log.mjs');
       const violations = recentViolations({ windowMs: 24 * 60 * 60 * 1000 });
       // Path is project-scoped (.construct/contract-violations.jsonl in cwd when
-      // inside a project, ~/.cx/ otherwise). Print the resolved one so
-      // users find the real file, not a stale ~/.cx/ reference.
+      // inside a project, ~/.construct/ otherwise). Print the resolved one so
+      // users find the real file.
       const violationPath = violationLogPath();
       const label = violations.length === 0
         ? 'Contract violations (none in last 24h)'
@@ -1500,8 +1393,8 @@ async function cmdDoctor() {
         add('Skills profile matches current project stack', false, true);
       }
     }
-  } catch {
-    add('Registry integrity check', false);
+  } catch (err) {
+    add(`Registry or storage integrity check failed: ${err.message}`, false);
   }
 
   // Deployment-mode capability check: surfaces stub/not-implemented capabilities
@@ -1833,7 +1726,7 @@ async function cmdDev(args = []) {
       await runEmbedCli(['start'], { rootDir: PROJECT_ROOT });
       opLog.event('embed', { status: 'started' });
     } catch (err) {
-      warn(`embed start failed: ${err.message} — check ~/.cx/runtime/embed-daemon.log`);
+      warn(`embed start failed: ${err.message} — check ~/.construct/runtime/embed-daemon.log`);
       opLog.warn('embed', { status: 'failed', error: err.message });
     }
   }
@@ -2596,7 +2489,7 @@ async function printIntakeHelp() {
   println('  construct intake config set --depth=N [--add-dir=PATH] [--remove-dir=PATH]');
   println('                                       Update intake config. --depth caps at the hard limit.');
   println('  construct intake extraction-warnings [--since=7d] [--kind=table] [--limit=50]');
-  println('                                       Summarize ~/.cx/intake/extraction-warnings.jsonl (dropped content log).');
+  println('                                       Summarize ~/.construct/intake/extraction-warnings.jsonl (dropped content log).');
   println('  construct intake needs-asr list       List audio/video files awaiting ASR transcription.');
   println('  construct intake needs-asr show <id>  Show a specific ASR-pending packet.');
 }
@@ -4306,7 +4199,7 @@ async function cmdUpgrade(args) {
 }
 async function cmdValidate() {
   const reg = loadRegistry({ rootDir: ROOT_DIR });
-  const result = validateRegistry(reg, { rootDir: ROOT_DIR });
+  const result = validateLegacyRegistry(reg, { rootDir: ROOT_DIR });
   if (result.valid) {
     println(`✓ Registry valid (${result.summary})`);
     return;
@@ -4711,6 +4604,11 @@ async function cmdModels(args) {
   const envPath = getUserEnvPath(HOME);
   const sub = args[0] && !args[0].startsWith('-') ? args[0] : null;
   const KNOWN_SUBCOMMANDS = new Set(['list', 'set', 'free', 'reset', 'resolve', 'policy', 'explain']);
+  const retiredFlag = args.find((arg) => arg === '--reset' || arg === '--poll' || arg.startsWith('--set='));
+  if (retiredFlag) {
+    errorln(`Unknown models option: ${retiredFlag}. Use \`construct models --help\` for the supported commands.`);
+    process.exit(1);
+  }
   if (sub && !KNOWN_SUBCOMMANDS.has(sub)) {
     errorln(`Unknown models subcommand: ${sub}. Run \`construct models --help\` for the supported set.`);
     process.exit(1);
@@ -4743,31 +4641,20 @@ async function cmdModels(args) {
     println(JSON.stringify(envelope, null, 2));
     return;
   }
-  // Legacy flag forms stay as compatibility aliases for the documented
-  // subcommands. Each emits a one-line deprecation notice on stderr so stdout
-  // stays clean while operators migrate to `models set|reset|free`.
   const tier = args.find((arg) => arg.startsWith('--tier='))?.split('=')[1] ?? '';
   const modelFlag = args.find((arg) => arg.startsWith('--model='))?.split('=')[1];
-  const legacySetFlag = args.find((arg) => arg.startsWith('--set='))?.split('=')[1];
-  const setModel = modelFlag ?? legacySetFlag ?? '';
+  const setModel = modelFlag ?? '';
 
-  if (sub === 'reset' || args.includes('--reset')) {
-    if (sub !== 'reset') errorln('Note: `construct models --reset` is a deprecated alias for `construct models reset`.');
+  if (sub === 'reset') {
     resetEnv(envPath);
     println(`Removed CX_MODEL_* overrides from ${envPath}.`);
     await cmdSync([]);
     return;
   }
-  if (sub === 'set' || (sub === null && tier && setModel)) {
+  if (sub === 'set') {
     if (!tier || !setModel) {
       errorln('Usage: construct models set --tier=<reasoning|standard|fast> --model=<provider/model-id>');
       process.exit(1);
-    }
-    if (modelFlag === undefined && legacySetFlag !== undefined) {
-      errorln('Note: `--set=<model>` is a deprecated alias for `--model=<model>`.');
-    }
-    if (sub === null) {
-      errorln('Note: `construct models --tier=… --set=…` is a deprecated alias for `construct models set --tier=… --model=…`.');
     }
     const preferFree = args.includes('--prefer-free');
     const preferFreeSameFamily = args.includes('--prefer-free-same-family');
@@ -4782,8 +4669,7 @@ async function cmdModels(args) {
     await cmdSync([]);
     return;
   }
-  if (sub === 'free' || args.includes('--poll')) {
-    if (sub !== 'free') errorln('Note: `construct models --poll` is a deprecated alias for `construct models free`.');
+  if (sub === 'free') {
     const apiKey = process.env.OPENROUTER_API_KEY || readOpenRouterApiKeyFromOpenCodeConfig();
     if (!apiKey) {
       errorln('Error: no OpenRouter API key found in OPENROUTER_API_KEY or OpenCode config.');
@@ -6856,7 +6742,7 @@ async function cmdTelemetryQuery(args) {
 
   if (sub === 'errors') {
     println('Error trace query requires an OTLP backend (OTEL_EXPORTER_OTLP_ENDPOINT).');
-    println('In local-only mode, check ~/.cx/mcp-audit.json for recent tool call errors.');
+    println('In local-only mode, check ~/.construct/mcp-audit.json for recent tool call errors.');
     return;
   }
 

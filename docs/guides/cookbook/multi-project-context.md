@@ -42,7 +42,7 @@ An unknown project id is a hard error listing the known projects — never a sil
 
 ## 3. Query each repo's code map
 
-`construct graph build-targets` derives a static import graph per registered target — one graph per repo, persisted under `.cx/graph/targets/<targetId>/` so it survives session restarts — and `construct graph query` scopes to it with the same `--projects` semantics as knowledge search.
+`construct graph build-targets` derives a static import graph per registered target — one graph per repo, persisted under `.construct/graph/targets/<targetId>/` so it survives session restarts — and `construct graph query` scopes to it with the same `--projects` semantics as knowledge search.
 
 ```sh
 construct graph build-targets                                    # one import graph per registered target
@@ -103,4 +103,4 @@ Cross-project synthesis and tracker analysis run their map passes on the fast/st
 
 - Registered targets: `sources.targets[]` in your project config.
 - Corpus caches: `~/.construct/projects/<key>/context-repos/<targetId>/` (state root, never your repo). See [Knowledge layout](/concepts/knowledge-layout) and [Project scopes](/concepts/project-scopes).
-- Proposal artifacts: `.cx/tracker/proposals/<id>.{json,md}` (local runtime state).
+- Proposal artifacts: `.construct/tracker/proposals/<id>.{json,md}` (local runtime state).

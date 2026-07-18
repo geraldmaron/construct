@@ -27,13 +27,13 @@
     "allowedPaths": [
       "docs/notes/research/**",
       "docs/research/**",
-      ".cx/research/**",
+      ".construct/research/**",
       "docs/evidence-briefs/**",
       "docs/signal-briefs/**",
       "docs/explorations/**",
-      ".cx/explorations/**",
+      ".construct/explorations/**",
       "docs/ux-research/**",
-      ".cx/ux-research/**"
+      ".construct/ux-research/**"
     ],
     "allowedBdLabels": [
       "research",

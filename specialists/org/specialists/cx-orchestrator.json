@@ -22,7 +22,7 @@
     "allowedPaths": [
       "docs/**",
       "plan.md",
-      ".cx/context.md"
+      ".construct/context.md"
     ],
     "allowedBdLabels": [
       "orchestration",

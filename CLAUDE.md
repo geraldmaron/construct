@@ -12,7 +12,7 @@ This repo IS Construct. Changes here affect every session, every platform, every
 - **Never commit directly to main.** Branch, test, then merge.
 - **Run `construct doctor` after any structural change** to verify the system is healthy.
 - **Multi-component features require a functional test.** If a change touches more than one of: hook + observation, profile + classifier, CLI + durable state, then a test must live in `tests/functional/` that spawns the real binary or imports the real module in an isolated tmpdir and asserts on durable artifacts. CI is a backstop, not a primary gate. See `tests/functional/README.md`.
-- **Profiles are research artifacts, not JSON exercises.** Any new profile that lands in `specialists/org/scopes/` must go through the lifecycle in `docs/guides/concepts/profile-lifecycle.md`: discover → frame → emphasize skills → validate → promote. The cx-researcher, cx-product-manager, cx-architect, and cx-reviewer specialists each own a phase (construct-rf26.11 roster: cx-researcher absorbed ux-researcher, cx-reviewer absorbed evaluator/trace-reviewer). A profile selects flows + skill emphasis over the fixed 12-role roster — it does not invent new roles or departments. `construct scope create <id>` scaffolds the draft and the requirements brief; drop-in JSON is allowed for experiments but not for the curated catalog.
+- **Worker profiles are research artifacts, not JSON exercises.** Any new profile that lands in `specialists/org/worker-profiles/` must go through the lifecycle in `docs/guides/concepts/profile-lifecycle.md`: discover → frame → emphasize skills → validate → promote. A profile selects flows and skill emphasis over the fixed roster; it does not invent new roles or departments. `construct scope create <id>` scaffolds the draft and the requirements brief; drop-in JSON is allowed for experiments but not for the curated catalog.
 - **File export is not artifact completion.** An artifact advances the completion ladder only with re-verifiable evidence — use `construct publish --preview` to render and inspect before claiming done. See `docs/guides/reference/artifact-completion-states.md`.
 
 ## Protected files — edit with extra care
@@ -28,7 +28,7 @@ This repo IS Construct. Changes here affect every session, every platform, every
 
 - `personas/*.md` — persona prompts (run `construct sync` after)
 - `skills/**` — domain knowledge files (includes `skills/roles/` — role anti-patterns, inlined at sync time)
-- `templates/docs/**` — shipped doc templates; users override via `.cx/templates/docs/` (see [templates/docs/README.md](templates/docs/README.md))
+- `templates/docs/**` — shipped doc templates; users override via `.construct/templates/docs/` (see [templates/docs/README.md](templates/docs/README.md))
 - `rules/**` — coding standards
 
 ## Documentation is mandatory
@@ -39,7 +39,7 @@ Before any commit, ensure the following are current:
 - `CHANGELOG.md` — new entry describing what changed and why
 - `docs/guides/concepts/architecture.md` — if runtime shape, contracts, or boundaries changed
 - `docs/README.md` — if core docs set or maintenance expectations changed
-- `.cx/context.md` / `.cx/context.json` — if active work, decisions, or architecture assumptions changed
+- `.construct/context.md` / `.construct/context.json` — if active work, decisions, or architecture assumptions changed
 
 Skipping documentation requires an explicit user instruction to skip. "Just commit" or "push it" does NOT waive this requirement — docs still get updated.
 

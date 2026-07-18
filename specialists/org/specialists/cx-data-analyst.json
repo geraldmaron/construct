@@ -17,7 +17,7 @@
   "fence": {
     "allowedPaths": [
       "docs/analytics/**",
-      ".cx/analytics/**"
+      ".construct/analytics/**"
     ],
     "allowedBdLabels": [
       "analytics",

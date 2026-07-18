@@ -2,9 +2,9 @@
 
 Profiles describe how Construct shapes itself for a given org. The default is `rnd`. The other curated profiles are `operations`, `creative`, `research`. Anything else is a custom profile.
 
-A profile record — a curated `specialists/org/scopes/<id>.json` file, loaded and enriched by `lib/scopes/loader.mjs`/`enrich.mjs` — is the Worker Profile of `docs/notes/research/workspace-control-plane/synthesis/target-model.md` concept 10: "the configuration of a worker that can be assigned: its runtime, model capability tier, skill emphasis, and the flows/procedures it is oriented toward." A Profile selects flows and skill emphasis over the fixed 12-role roster; it is not a separate organizational identity. The lifecycle stages below (draft → validated → promoted → deprecated, per concept 10) are this page's discover → frame → emphasize skills → validate → promote → monitor → archive stages under their curated names.
+A worker profile record — a curated `specialists/org/worker-profiles/<id>.json` file, loaded and enriched by `lib/scopes/loader.mjs`/`enrich.mjs` — configures a worker's runtime, model capability tier, skill emphasis, and the flows or procedures it is oriented toward. A worker profile selects flows and skill emphasis over the fixed roster; it is not a separate organizational identity.
 
-Curated scopes live in `specialists/org/scopes/`. They declare intake taxonomy, doc templates, tone, and skill emphasis — not teams or roles. The shared org in `specialists/org/specialists/` (12 core roles, construct-rf26.11) is the only org chart; every scope routes through it as-is. `construct.config.json`'s `scope` field selects which one is active (default `rnd`). Headhunt and orchestration use enriched scopes via `lib/scopes/teams.mjs`; `specialists/org/teams/` and `specialists/org/groups/` remain load-bearing for that routing and for the registry's no-code org authoring API (`lib/registry/org-api.mjs`, ADR-0072) until Plans express parallelism directly (directive §10) — see "Teams and groups" below.
+Curated worker profiles live in `specialists/org/worker-profiles/`. They declare intake taxonomy, doc templates, tone, and skill emphasis. `construct.config.json`'s `scope` field selects the active profile (default `rnd`).
 
 A role genuinely absent from the 12-role roster (rare) is discovered as a **skill-emphasis worksheet** (`skill-emphasis/<role>.md` under a scope draft, stage 1), not a standalone persona identity file — see `docs/guides/concepts/persona-research.md`. The worksheet feeds stage 3 and the eventual `construct specialist create <id> --custom --skills=...` call (`docs/guides/cookbook/custom-specialists-and-teams.md`); it is never a first-class identity record on its own.
 
@@ -22,7 +22,7 @@ draft → active (curated or custom) → archived
             health monitoring
 ```
 
-A scope that never had a draft phase, or that skipped validation, is not legitimate. Drop-in JSON is allowed for experimentation, but a scope that lands in `specialists/org/scopes/` should have followed the discipline below.
+A worker profile that never had a draft phase, or that skipped validation, is not legitimate. Drop-in JSON is allowed for experimentation, but a profile that lands in `specialists/org/worker-profiles/` should have followed the discipline below.
 
 ## Stage 1: discovery (cx-researcher)
 
@@ -77,13 +77,13 @@ Move the draft into the active catalog, or leave it as a durable custom profile.
 
 Curated path:
 
-1. Hand-edit `specialists/org/scopes/<id>.json` from the draft.
+1. Hand-edit `specialists/org/worker-profiles/<id>.json` from the draft.
 2. Open a PR. Run `npm run lint:scopes`.
 3. Validation acceptance must already be met. The PR description cites it.
 
 Custom path (named, reusable) — reuses the construct-rf26.13 config layer instead of a scope-specific mechanism:
 
-1. Copy the draft `scope.json` to `<project>/.construct/org/scopes/<id>.json` (project tier, git-tracked, highest precedence) or `~/.construct/org/scopes/<id>.json` (user tier, shared across every project on the machine) — the same builtin -> user -> project precedence `lib/registry/assemble.mjs` gives custom specialists and teams.
+1. Copy the draft `scope.json` to `<project>/.construct/org/worker-profiles/<id>.json` (project tier, git-tracked, highest precedence) or `~/.construct/org/worker-profiles/<id>.json` (user tier, shared across every project on the machine).
 2. `construct scope set <id>` switches to it exactly like a curated scope; a project-tier file with the same id as a curated one overrides it field-by-field.
 
 Custom path (anonymous, one-off) — the pre-rf26.13 escape hatch, still supported:
@@ -108,7 +108,7 @@ Retire a profile cleanly without losing the learning. `cx-operations` absorbed `
 construct scope archive <id> --reason="..."
 ```
 
-Moves `specialists/org/scopes/<id>.json` and its intake table into `archive/scopes/<id>/`, alongside an `archive-note.md` that records why. Observations and outcomes recorded under the archived profile remain in `.construct/observations/` and `.construct/outcomes/`. They are durable evidence.
+Moves `specialists/org/worker-profiles/<id>.json` and its intake table into `archive/scopes/<id>/`, alongside an `archive-note.md` that records why. Observations and outcomes recorded under the archived profile remain in `.construct/observations/` and `.construct/outcomes/`. They are durable evidence.
 
 Restore: move the files back to their original paths and run `npm run lint:scopes`.
 
@@ -126,9 +126,9 @@ construct scope archive <id> --reason="..." # retire a curated profile
 
 ## Files involved
 
-- `specialists/org/scopes/<id>.json` — curated scope, source of truth (builtin tier)
-- `~/.construct/org/scopes/<id>.json` — named custom scope, user tier (construct-rf26.13 config layer)
-- `<project>/.construct/org/scopes/<id>.json` — named custom scope, project tier, highest precedence (construct-rf26.13 config layer)
+- `specialists/org/worker-profiles/<id>.json` — curated worker profile, source of truth (builtin tier)
+- `~/.construct/org/worker-profiles/<id>.json` — named custom worker profile, user tier
+- `<project>/.construct/org/worker-profiles/<id>.json` — named custom worker profile, project tier, highest precedence
 - `<project>/.construct/scope.json` — anonymous custom scope (pre-rf26.13 escape hatch, still supported)
 - `schemas/scope.schema.json` — shape validator
 - `lib/intake/tables/<id>.mjs` — per-profile classification table

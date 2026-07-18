@@ -71,7 +71,7 @@ test('resolveActiveScope reads construct.config.json scope field', () => {
   assert.equal(p.id, 'creative', 'construct.config.json scope field must be honored');
 });
 
-test('resolveActiveScope precedence: custom .cx/scope.json beats construct.config.json', () => {
+test('resolveActiveScope precedence: custom .construct/scope.json beats construct.config.json', () => {
   const cwd = track(fs.mkdtempSync(path.join(os.tmpdir(), 'profile-precedence-')));
   fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
   fs.writeFileSync(path.join(cwd, 'construct.config.json'), JSON.stringify({
@@ -105,7 +105,7 @@ test('resolveActiveScope honors construct.config scope id', () => {
   assert.equal(p.id, 'creative');
 });
 
-test('resolveActiveScope picks up custom scope from .cx/scope.json', () => {
+test('resolveActiveScope picks up custom scope from .construct/scope.json', () => {
   const cwd = track(fs.mkdtempSync(path.join(os.tmpdir(), 'profile-custom-')));
   fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
   fs.writeFileSync(
@@ -123,7 +123,7 @@ test('resolveActiveScope picks up custom scope from .cx/scope.json', () => {
   assert.equal(p.custom, true);
 });
 
-test('resolveActiveScope ignores .cx/scope.json without custom: true', () => {
+test('resolveActiveScope ignores .construct/scope.json without custom: true', () => {
   const cwd = track(fs.mkdtempSync(path.join(os.tmpdir(), 'profile-not-custom-')));
   fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
   fs.writeFileSync(
@@ -146,9 +146,9 @@ test('loadCustomScope returns null for missing / malformed file', () => {
 // builtin -> user -> project config-layer precedence (lib/registry/assemble.mjs)
 // instead of a scope-specific mechanism.
 
-test('loadScope resolves a named custom scope from the project tier (.cx/org/scopes/)', () => {
+test('loadScope resolves a named custom scope from the project tier (.construct/org/worker-profiles/)', () => {
   const cwd = track(fs.mkdtempSync(path.join(os.tmpdir(), 'profile-project-tier-')));
-  const dir = path.join(cwd, '.construct', 'org', 'scopes');
+  const dir = path.join(cwd, '.construct', 'org', 'worker-profiles');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'media-agency.json'), JSON.stringify({
     id: 'media-agency',
@@ -160,33 +160,33 @@ test('loadScope resolves a named custom scope from the project tier (.cx/org/sco
   assert.equal(p.displayName, 'Media Agency');
 });
 
-test('loadScope resolves a named custom scope from the user tier (~/.construct/org/scopes/)', () => {
+test('loadScope resolves a named custom scope from the user tier (~/.construct/org/worker-profiles/)', () => {
   const home = track(fs.mkdtempSync(path.join(os.tmpdir(), 'profile-user-tier-home-')));
   const cwd = track(fs.mkdtempSync(path.join(os.tmpdir(), 'profile-user-tier-cwd-')));
-  const dir = path.join(home, '.construct', 'org', 'scopes');
+  const dir = path.join(home, '.construct', 'org', 'worker-profiles');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'studio-x.json'), JSON.stringify({
     id: 'studio-x',
     displayName: 'Studio X',
     intake: { types: ['ticket'], stages: ['triage'] },
   }));
-  const priorOverride = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = home;
+  const priorOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = home;
   try {
     const p = loadScope('studio-x', { cwd });
     assert.ok(p, 'user-tier custom scope must resolve by id');
     assert.equal(p.displayName, 'Studio X');
   } finally {
-    if (priorOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = priorOverride;
+    if (priorOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = priorOverride;
   }
 });
 
 test('loadScope precedence: project tier overrides user tier, which overrides builtin, on id collision', () => {
   const home = track(fs.mkdtempSync(path.join(os.tmpdir(), 'profile-precedence-home-')));
   const cwd = track(fs.mkdtempSync(path.join(os.tmpdir(), 'profile-precedence-cwd-')));
-  const userDir = path.join(home, '.construct', 'org', 'scopes');
-  const projectDir = path.join(cwd, '.construct', 'org', 'scopes');
+  const userDir = path.join(home, '.construct', 'org', 'worker-profiles');
+  const projectDir = path.join(cwd, '.construct', 'org', 'worker-profiles');
   fs.mkdirSync(userDir, { recursive: true });
   fs.mkdirSync(projectDir, { recursive: true });
   // Same id at every tier; only displayName differs, so a resolved value
@@ -194,8 +194,8 @@ test('loadScope precedence: project tier overrides user tier, which overrides bu
   fs.writeFileSync(path.join(userDir, 'rnd.json'), JSON.stringify({
     id: 'rnd', displayName: 'RND (user tier)',
   }));
-  const priorOverride = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = home;
+  const priorOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = home;
   try {
     let p = loadScope('rnd', { cwd });
     assert.equal(p.displayName, 'RND (user tier)', 'user tier must override builtin');
@@ -208,14 +208,14 @@ test('loadScope precedence: project tier overrides user tier, which overrides bu
     // Fields the overlay didn't set still come from the builtin curated scope.
     assert.ok(Array.isArray(p.intake?.types) && p.intake.types.length > 0, 'unset fields fall back to the builtin tier');
   } finally {
-    if (priorOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = priorOverride;
+    if (priorOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = priorOverride;
   }
 });
 
 test('resolveActiveScope honors a project-tier named custom scope by explicit id', () => {
   const cwd = track(fs.mkdtempSync(path.join(os.tmpdir(), 'profile-active-project-tier-')));
-  const dir = path.join(cwd, '.construct', 'org', 'scopes');
+  const dir = path.join(cwd, '.construct', 'org', 'worker-profiles');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'game-studio.json'), JSON.stringify({
     id: 'game-studio',

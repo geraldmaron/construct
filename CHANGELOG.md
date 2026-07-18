@@ -10,6 +10,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Removed
 
+- Retired CLI compatibility forms: `construct install --scope`, `construct models --reset`, `construct models --tier=… --set=…`, and `construct models --poll` now fail rather than silently selecting another behavior. Canonical forms are `construct install --footprint=…` and `construct models reset|set|free`; the OpenCode fallback and generated Homebrew instructions now use those forms.
+
+- Removed the old user-state configuration import and global cleanup switch. `construct install` and `construct doctor` now operate only on their current paths and never read, copy, archive, or delete a prior user-state layout.
+
 - Workspace-control-plane cleanup (`construct-b0nny.30`): deleted `lib/roles/router.mjs`, the compatibility delegator construct-b0nny.16 left in place for `lib/roles/gateway.mjs`'s Oracle-daemon callers — construct-b0nny.17 deleted the Oracle daemon entity, removing the file's last stated reason to exist, and `gateway.mjs` already imports `resolveEventOwner` from `lib/orchestration/routing-tables.mjs` directly. Deleted its two tests (`tests/roles/router.test.mjs`, `tests/roles/routing-equivalence.test.mjs`) along with it. Removed the now-obsolete `02-deadcode:module-test-only:lib/roles/router.mjs` baseline entry.
 
 ### Fixed

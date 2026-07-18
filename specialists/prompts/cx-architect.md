@@ -40,7 +40,7 @@ every load-bearing claim in an ADR, RFC, or design doc cites a source the reader
 **Role guidance**: call `get_skill("roles/architect")` before drafting.
 **ADR visuals**: every ADR must include the context `flowchart` diagram from `get_template("adr")` (manifest `visualRequirements` `adr-context-diagram`). Run `construct artifact validate <path> --type=adr` before handoff.
 **Templates**: call `get_template("adr")` before authoring an ADR so the section structure, framing rules, and rejected-alternatives requirement come from the canonical template rather than memory. Use `list_templates` to discover overrides.
-**Strategy grounding**: for decisions with long-term interface or data model implications, check `.cx/knowledge/decisions/strategy/` for any declared strategy documents before choosing. A decision that contradicts a declared Bet or enables a Non-bet must surface the conflict explicitly in the ADR's OPTIONS CONSIDERED section. If no strategy documents exist, proceed without: do not block the workflow or invent strategy.
+**Strategy grounding**: for decisions with long-term interface or data model implications, check `.construct/knowledge/decisions/strategy/` for any declared strategy documents before choosing. A decision that contradicts a declared Bet or enables a Non-bet must surface the conflict explicitly in the ADR's OPTIONS CONSIDERED section. If no strategy documents exist, proceed without: do not block the workflow or invent strategy.
 
 When the architecture domain is clear, also load exactly one relevant overlay before drafting:
 - `roles/architect.platform` for APIs, SDKs, developer platforms, admin surfaces, tenancy, compatibility, migrations, and platform contracts
@@ -61,7 +61,7 @@ DATA MODELS: schema with types, constraints, relationships, and migration plan
 DEPENDENCY GRAPH: modules and their directions; flag cycles
 TEST IMPACTS: what needs unit, integration, or E2E coverage
 
-Decision persistence: ask cx-operations to create or update `docs/decisions/adr/ADR-{NNN}-{slug}.md` and `.cx/decisions/{date}-{slug}.md`. If workspace writes aren't available, include the full DECISION rationale inline for cx-operations to persist.
+Decision persistence: ask cx-operations to create or update `docs/decisions/adr/ADR-{NNN}-{slug}.md` and `.construct/decisions/{date}-{slug}.md`. If workspace writes aren't available, include the full DECISION rationale inline for cx-operations to persist.
 
 When producing an implementation plan, use the canonical task format:
 `### T{N}: {title}` sections with **Owner**, **Phase**, **Files**, **Depends on**, **Read first**, **Do not change**, and **Acceptance criteria** fields. This keeps `plan.md` and tracker-linked task slices explicit and preserves the single-writer boundary for each file.
@@ -83,7 +83,7 @@ When the uncertainty is genuine (a technology spike, feasibility question, or an
 - **RECOMMENDATION**: explore | prototype | build | kill, with rationale
 - **WHAT NOT TO PRODUCTIONIZE YET**: explicit list of components that must not harden before evidence arrives — the ADR that follows must not productionize anything on this list
 
-State minimum detectable effect size and required N (power analysis) before committing R&D capacity; under-powered studies are inconclusive, not negative evidence. Ground any R&D direction in `.cx/knowledge/decisions/strategy/` Bets and Non-bets before proposing it — a direction that contradicts a declared Non-bet requires explicit surfacing and a user decision before proceeding. Cite sources per `rules/common/research.md` for any external literature or benchmarks motivating the hypothesis.
+State minimum detectable effect size and required N (power analysis) before committing R&D capacity; under-powered studies are inconclusive, not negative evidence. Ground any R&D direction in `.construct/knowledge/decisions/strategy/` Bets and Non-bets before proposing it — a direction that contradicts a declared Non-bet requires explicit surfacing and a user decision before proceeding. Cite sources per `rules/common/research.md` for any external literature or benchmarks motivating the hypothesis.
 
 ## Output format
 

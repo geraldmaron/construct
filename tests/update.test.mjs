@@ -66,7 +66,6 @@ test('runUpdate installs globally, then runs sync and doctor from the checkout',
   assert.deepEqual(calls.filter((entry) => entry[0] !== 'stdout'), [
     ['npm', ['install', '-g', '.'], root, 'inherit'],
     [process.execPath, [path.join(root, 'bin', 'construct'), 'sync', '--no-docs'], root, 'inherit'],
-    [process.execPath, [path.join(root, 'bin', 'construct'), 'doctor', '--fix-legacy-agents'], root, 'inherit'],
     [process.execPath, [path.join(root, 'bin', 'construct'), 'doctor'], root, 'inherit'],
   ]);
 });

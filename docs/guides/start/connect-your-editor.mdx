@@ -8,7 +8,7 @@ description: Construct syncs host adapters to Claude Code, OpenCode, Codex, Copi
 - **Global (`construct sync --global`, or the `npm i -g` postinstall)** installs the session-level hooks and a `construct` front door for Codex and Copilot. It does **not** write a global Claude agent: Claude Code *and* VS Code both read `~/.claude/agents/`, so a global agent there would show up twice (once from the project, once from home) in the VS Code picker — the orchestrator is project-scoped instead. Specialists never land at global scope either; they would pollute every editor picker on your machine regardless of the workspace.
 - **Project (`construct sync` inside a Construct project, `construct init`, or `npm run adapters` in the tool repo)** writes the **`construct` front door only** in agent pickers, plus slash commands, skills (`.claude/skills/`), MCP configs, and Cursor rules. The 28 `cx-*` specialists are **internal** — reached via `orchestration_policy` / `orchestration_run`, not editor pickers. Adapter files are gitignored (ADR-0027); run sync after clone.
 
-`construct sync` auto-detects a Construct project (presence of `.cx/` or `.construct/`) and runs project mode when inside one; global mode otherwise. Pass `--global` or `--project` to force a tier.
+`construct sync` auto-detects a Construct project by the presence of `.construct/` and runs project mode when inside one; global mode otherwise. Pass `--global` or `--project` to force a tier.
 
 <SyncGrid targets={[
   { name: 'Claude Code (global)', path: 'hooks in ~/.claude/settings.json + MCP servers in ~/.claude.json + ~/.claude/CLAUDE.md (no agent — project-scoped)', type: 'mcp' },
