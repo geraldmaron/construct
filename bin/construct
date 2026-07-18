@@ -7824,6 +7824,17 @@ const handlers = new Map([
      return cmdGraph(args);
    }],
    ['flow', async (args) => cmdFlow(args)],
+   // `workspace-domain` (construct-b0nny.22, target-model.md concept 1), not
+   // `workspace` — that verb is already the multi-PM product-intelligence
+   // command (cmdWorkspace, lib/embed/workspaces.mjs, line ~7051 above), a
+   // distinct pre-existing concept. `handlers` is a Map keyed by this string,
+   // so reusing `workspace` here would silently shadow that command instead
+   // of erroring.
+   ['workspace-domain', async (args) => {
+     const { runWorkspaceCli } = await import('../lib/workspace/cli.mjs');
+     const code = runWorkspaceCli(args, { projectDir: process.cwd() });
+     if (typeof code === 'number' && code !== 0) process.exit(code);
+   }],
    ['impact', async (args) => {
      const { runImpactCli } = await import('../lib/graph/impact-cli.mjs');
      const code = await runImpactCli(args, { rootDir: ROOT_DIR, projectDir: process.cwd() });

@@ -379,6 +379,29 @@ Population is hybrid (`construct graph build`): (1) **registry ingest** (`build-
 
 `construct impact [files] [--stdin] [--run] [--json]` (`lib/graph/impact.mjs`) is Test Impact Analysis: a changed file selects the tests that transitively import it plus the tests validating any capability it realizes, rolls up impacted capabilities and workflows, and flags changed files that realize no capability. **Oracle is the overseer** — `collectDependencyGraph` (`lib/oracle/read-model.mjs`) feeds `synthesizeVerdict` three gaps with deterministic routes (`lib/oracle/routing.mjs`): `matrix-coverage-gap` (no impl/test edge → `cx-architect`/`cx-qa`), `impact-untested` (realizing files changed after `lastValidated` → `cx-qa`/`cx-engineer`), and `dependency-graph-stale` (seeds changed since last build → `cx-engineer`). Document-type capabilities rely on `tests/certification/artifact-gates.test.mjs` plus workflow-level functional tests for validation stamps. Advisory-first: gaps and the `impact` command surface signals; nothing blocks.
 
+## Workspace domain model
+
+`lib/workspace/` (construct-b0nny.22, part of the workspace-control-plane program's E2 outcome —
+see `docs/notes/research/workspace-control-plane/synthesis/target-model.md` concept 1 and
+`workspace-domain-design.md`) is the first-class, durable, queryable Workspace record: owner,
+membership, settings, and lifecycle, distinct from the identity-*derivation* mechanics below. A
+Workspace's id is always `deriveProjectKey(rootDir)` (`lib/state-root.mjs`, ADR-0092's canonical
+"which project is this" derivation) — never a second, independently-minted id — so this store
+adds a durable record *at* the identity M1 already converged, rather than a competing one.
+Storage mirrors `lib/graph/relational/`'s proven shape: SQLite via `node:sqlite`
+(`lib/workspace/sqlite-db.mjs`, one `workspace.db` per project under the machine-scoped state
+root, ADR-0066), versioned migrations (`lib/workspace/migrate-sqlite.mjs` +
+`lib/workspace/migrations/001_workspace_foundation.sql`), and `lib/workspace/store.mjs`'s
+`rootDir`-keyed CRUD/lifecycle API (`ensureWorkspace`, `activateWorkspace`/`archiveWorkspace`
+validated against `provisioning → active → archived`, member add/remove/list, settings
+get/set). `construct workspace-domain init|show|activate|archive|member|settings` is the CLI
+surface (`lib/workspace/cli.mjs`) — named `workspace-domain`, not `workspace`, because `construct
+workspace` already names the pre-existing multi-PM product-intelligence command described above
+under "Product intelligence: customer profiles and multi-PM workspaces," an unrelated concept.
+Source, Objective, Directive, Work, and Policy stores (target-model.md concepts 2–7, 13) do not
+exist yet; each is expected to carry a non-null `workspace` scope column referencing this table
+when its own epic (E3/E5/E6) builds it.
+
 ## Cross-project synthesis
 
 `construct synthesize --ask "<question>" [--projects=all|self|id,...]` (`lib/knowledge/synthesis.mjs`, construct-760c.4) is a map-reduce over the same multi-root corpus `knowledge_search --projects=` and `construct graph build-targets` read (`lib/sources/content-roots.mjs`'s `resolveContentRoots`/`expandProjectsFilter`). **Map**: for each selected project, `buildCorpus()` is filtered to that project's own chunks only and retrieved top-K (default 6) for the ask — retrieval-only, no model call, so this pass is deterministic and free. **Reduce**: the per-project sections (each citing `project:path`) plus a citation table are assembled into one prompt instructing the model to answer using only that context and to cite every cross-project claim by its `project:path` label — a structural no-fabrication constraint, not just an instruction. `--dry-run` stops after the map pass and returns the fully assembled context with zero model output, which is what makes the command deterministic and CI-testable; an unknown project id in `--projects=` is a hard error before any model call. The reduce call shells out to the `claude` CLI (`spawnSync('claude', ['--print', prompt])`); if the CLI is unavailable the command still returns the assembled context, flagged `cliMissing: true`, rather than failing silently.
