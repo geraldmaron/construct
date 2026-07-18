@@ -441,6 +441,10 @@
       "core": false
     },
     {
+      "name": "server",
+      "core": false
+    },
+    {
       "name": "skills",
       "core": false
     },

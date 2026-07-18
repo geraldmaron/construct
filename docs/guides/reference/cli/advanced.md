@@ -28,6 +28,7 @@ description: Advanced commands for Construct.
 | `construct roles:list` | List installed role contracts |
 | `construct roles:set` | Activate a role contract |
 | `construct scheduler` | Manage scheduled background jobs (tag-mining, doc-hygiene, skill-rollup) |
+| `construct server` | Shared workspace server (construct-b0nny.26, E7) — additive team/enterprise deployment mode: auth, Postgres-backed Workspace store, worker-claim queue. Solo/embedded mode is unaffected and needs none of this. |
 | `construct skills` | Skill relevance detection |
 | `construct sources` | Manage typed integration source targets in construct.config.json |
 | `construct templates` | List doc templates and register custom document classes (project-tier overlay; builtin manifest untouched) |
@@ -312,6 +313,21 @@ Manage scheduled background jobs (tag-mining, doc-hygiene, skill-rollup)
 ```bash
 construct scheduler <list|run|runner>
 ```
+
+## construct server
+
+Shared workspace server (construct-b0nny.26, E7) — additive team/enterprise deployment mode: auth, Postgres-backed Workspace store, worker-claim queue. Solo/embedded mode is unaffected and needs none of this.
+
+**Usage**
+
+```bash
+construct server start|migrate
+```
+
+**Subcommands**
+
+- `start [--host=] [--port=]` — Start the HTTP server (requires a reachable DATABASE_URL/CONSTRUCT_DATABASE_URL Postgres)
+- `migrate` — Apply pending Postgres migrations and exit (deployment init step)
 
 ## construct skills
 
