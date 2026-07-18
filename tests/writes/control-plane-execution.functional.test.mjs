@@ -67,6 +67,7 @@ describe('LMCP-J6 — a specialist-produced writeIntent executes only after plan
     const preApprovalDrain = await drainApprovedWriteIntents(queue, {
       adapterFactories: jiraFactories(transport),
       sentLog,
+      rootDir: tmpRoot,
     });
     assert.deepEqual(preApprovalDrain, []);
     assert.equal(transport.createIssueCallCount(), 0, 'no adapter call before approval');
@@ -74,7 +75,7 @@ describe('LMCP-J6 — a specialist-produced writeIntent executes only after plan
     // Calling the executor directly on an unapproved record must throw:
     // a structural gate, not merely an unreached code path.
     await assert.rejects(
-      () => executeApprovedWriteIntent(record, { adapterFactories: jiraFactories(transport), sentLog }),
+      () => executeApprovedWriteIntent(record, { adapterFactories: jiraFactories(transport), sentLog, rootDir: tmpRoot }),
       /only 'approved' records may reach the envelope/,
     );
     assert.equal(transport.createIssueCallCount(), 0);
@@ -86,6 +87,7 @@ describe('LMCP-J6 — a specialist-produced writeIntent executes only after plan
     const drained = await drainApprovedWriteIntents(queue, {
       adapterFactories: jiraFactories(transport),
       sentLog,
+      rootDir: tmpRoot,
     });
     assert.equal(drained.length, 1);
     assert.equal(drained[0].error, null);
@@ -96,6 +98,7 @@ describe('LMCP-J6 — a specialist-produced writeIntent executes only after plan
     const secondDrain = await drainApprovedWriteIntents(queue, {
       adapterFactories: jiraFactories(transport),
       sentLog,
+      rootDir: tmpRoot,
       executedApprovalIds: new Set([record.approvalId]),
     });
     assert.deepEqual(secondDrain, []);
@@ -119,12 +122,12 @@ describe('LMCP-J6 — a specialist-produced writeIntent executes only after plan
     queue.deny(record.approvalId, { reason: 'out of scope' });
     assert.equal(queue.getById(record.approvalId).state, 'denied');
 
-    const drained = await drainApprovedWriteIntents(queue, { adapterFactories: jiraFactories(transport), sentLog });
+    const drained = await drainApprovedWriteIntents(queue, { adapterFactories: jiraFactories(transport), sentLog, rootDir: tmpRoot });
     assert.deepEqual(drained, []);
     assert.equal(transport.createIssueCallCount(), 0);
 
     await assert.rejects(
-      () => executeApprovedWriteIntent(queue.getById(record.approvalId), { adapterFactories: jiraFactories(transport), sentLog }),
+      () => executeApprovedWriteIntent(queue.getById(record.approvalId), { adapterFactories: jiraFactories(transport), sentLog, rootDir: tmpRoot }),
       /only 'approved' records may reach the envelope/,
     );
   });
@@ -173,14 +176,14 @@ describe('LMCP-J6 — embed-daemon-originated writeIntent executes only post-app
     assert.equal(records[0].state, 'awaiting_approval');
 
     // Step 4: no adapter call until approve.
-    const beforeApproval = await drainApprovedWriteIntents(queue, { adapterFactories: jiraFactories(transport), sentLog });
+    const beforeApproval = await drainApprovedWriteIntents(queue, { adapterFactories: jiraFactories(transport), sentLog, rootDir: tmpRoot });
     assert.deepEqual(beforeApproval, []);
     assert.equal(transport.createIssueCallCount(), 0);
     assert.equal(sentLog.list().length, 0, 'no audit record before approval');
 
     // Step 5: approve, then drain — exactly one adapter call.
     queue.approve(records[0].approvalId, { decidedBy: { userId: 'ops-lead' } });
-    const afterApproval = await drainApprovedWriteIntents(queue, { adapterFactories: jiraFactories(transport), sentLog });
+    const afterApproval = await drainApprovedWriteIntents(queue, { adapterFactories: jiraFactories(transport), sentLog, rootDir: tmpRoot });
 
     assert.equal(afterApproval.length, 1);
     assert.equal(afterApproval[0].error, null);

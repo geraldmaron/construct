@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-18T03:25:42.578Z",
+  "generatedAt": "2026-07-18T03:25:59.813Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 934,
+    "testFiles": 935,
     "topLevelTestFiles": 372,
-    "nestedTestFiles": 562,
+    "nestedTestFiles": 563,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
       "unit": 609,
-      "functional": 275,
+      "functional": 276,
       "visual": 12,
       "live-provider": 2,
       "integration": 36
     },
     "byCategory": {
       "unit": 542,
-      "functional": 275,
+      "functional": 276,
       "visual": 12,
       "structural-guard": 20,
       "contract-subsystem": 48,
@@ -3172,6 +3172,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/gate-worker-backend-visibility.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/governance-chokepoint-authority-ledger.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/governance-chokepoint-authority-ledger.functional.test.mjs"
     },
     {
       "path": "tests/functional/graph-relational-store.functional.test.mjs",

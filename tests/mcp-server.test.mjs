@@ -278,6 +278,10 @@ test('storage MCP helpers require confirmation for destructive actions; token en
   assert.equal(gateRejected.allowed, false);
   assert.match(gateRejected.reason, /approval token/);
 
-  const gateAccepted = checkDestructiveGate('storage_reset', { confirm: true, approval_token: issueApprovalToken('storage_reset') });
+  const gateAccepted = checkDestructiveGate(
+    'storage_reset',
+    { confirm: true, approval_token: issueApprovalToken('storage_reset', { rootDir }) },
+    { rootDir },
+  );
   assert.equal(gateAccepted.allowed, true);
 });
