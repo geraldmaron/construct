@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-17T23:53:10.768Z",
+  "generatedAt": "2026-07-18T03:03:24.445Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 930,
-    "topLevelTestFiles": 370,
+    "testFiles": 929,
+    "topLevelTestFiles": 369,
     "nestedTestFiles": 560,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 607,
+      "unit": 606,
       "functional": 274,
       "visual": 12,
       "live-provider": 2,
       "integration": 35
     },
     "byCategory": {
-      "unit": 541,
+      "unit": 540,
       "functional": 274,
       "visual": 12,
       "structural-guard": 19,
@@ -5782,14 +5782,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/orchestration-context-bindings.test.mjs — unit coverage for the"
-    },
-    {
-      "path": "tests/orchestration-delegation-flow.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/orchestration-delegation-flow.test.mjs — flow-engine delegation chain"
     },
     {
       "path": "tests/orchestration-doc-authoring-patterns.test.mjs",
