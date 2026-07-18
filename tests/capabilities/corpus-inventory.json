@@ -1,15 +1,15 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-18T15:11:29.771Z",
+  "generatedAt": "2026-07-18T15:37:54.263Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 972,
+    "testFiles": 970,
     "topLevelTestFiles": 381,
-    "nestedTestFiles": 591,
+    "nestedTestFiles": 589,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 633,
+      "unit": 631,
       "functional": 286,
       "visual": 12,
       "live-provider": 2,
@@ -20,7 +20,7 @@
       "functional": 286,
       "visual": 12,
       "structural-guard": 20,
-      "contract-subsystem": 48,
+      "contract-subsystem": 46,
       "live-provider": 2,
       "integration": 29,
       "hook": 9
@@ -6806,22 +6806,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/roles/manifest.test.mjs — manifest loader and onboarded-persona logic."
-    },
-    {
-      "path": "tests/roles/router.test.mjs",
-      "layer": "unit",
-      "category": "contract-subsystem",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/roles/router.test.mjs — event → persona resolver."
-    },
-    {
-      "path": "tests/roles/routing-equivalence.test.mjs",
-      "layer": "unit",
-      "category": "contract-subsystem",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/roles/routing-equivalence.test.mjs — proves the consolidated"
     },
     {
       "path": "tests/roots.test.mjs",

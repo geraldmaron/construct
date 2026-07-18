@@ -28,7 +28,6 @@
     "02-deadcode:module-test-only:lib/render-visual-check.mjs",
     "02-deadcode:module-test-only:lib/init-unified.mjs",
     "02-deadcode:module-test-only:lib/graph/relational/postgres-store.mjs",
-    "02-deadcode:module-test-only:lib/roles/router.mjs",
     "02-deadcode:module-test-only:lib/oracle/directive-executor.mjs",
     "03-docs:unnavigated-doc-dir:docs/notes/research/workspace-control-plane",
     "03-docs:unnavigated-doc-dir:docs/notes/research/workspace-control-plane/spikes/b-parallel-research",
@@ -37,10 +36,10 @@
     "03-docs:unnavigated-doc-dir:docs/notes/research/workspace-control-plane/spikes/d-daily-workplace-loop/fixtur",
     "03-docs:unnavigated-doc-dir:docs/notes/research/workspace-control-plane/subagents",
     "03-docs:unnavigated-doc-dir:docs/notes/research/workspace-control-plane/synthesis",
-    "03c-root-layout:import-legacy-path:lib/workplace-loop/sources/github-source.mjs_21",
     "03-docs:review-doc-reference:matrix"
   ],
   "justifications": {
-    "03-docs:review-doc-reference:matrix": "ADR-0053 is the historical record of the `construct matrix` deprecation decision and names the command in its Decision, Alternatives, and Consequences sections. The removal it planned landed in construct-b0nny.28 (workspace-control-plane E9); the ADR carries a Removal note recording that. Rewriting a decision record to erase the command it decided to deprecate would falsify the record, so the reference is intentional."
+    "03-docs:review-doc-reference:matrix": "ADR-0053 is the historical record of the `construct matrix` deprecation decision and names the command in its Decision, Alternatives, and Consequences sections. The removal it planned landed in construct-b0nny.28 (workspace-control-plane E9); the ADR carries a Removal note recording that. Rewriting a decision record to erase the command it decided to deprecate would falsify the record, so the reference is intentional.",
+    "02-deadcode:module-test-only:lib/graph/relational/postgres-store.mjs": "Postgres backing for the graph store is an opt-in adapter (construct-b0nny.21) behind DATABASE_URL; deployments that don't set it never import this module in a production code path, so it is legitimately exercised only by tests that set up a live Postgres connection. Not dead code — an opt-in adapter with no default caller."
   }
 }

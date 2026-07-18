@@ -4,7 +4,13 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
-### Added
+### Removed
+
+- Workspace-control-plane cleanup (`construct-b0nny.30`): deleted `lib/roles/router.mjs`, the compatibility delegator construct-b0nny.16 left in place for `lib/roles/gateway.mjs`'s Oracle-daemon callers — construct-b0nny.17 deleted the Oracle daemon entity, removing the file's last stated reason to exist, and `gateway.mjs` already imports `resolveEventOwner` from `lib/orchestration/routing-tables.mjs` directly. Deleted its two tests (`tests/roles/router.test.mjs`, `tests/roles/routing-equivalence.test.mjs`) along with it. Removed the now-obsolete `02-deadcode:module-test-only:lib/roles/router.mjs` baseline entry.
+
+### Fixed
+
+- Workspace-control-plane cleanup (`construct-b0nny.30`): `scripts/audit/03c-root-layout.mjs`'s legacy-import finder matched any import path containing `/providers/(lib|github|jira|slack|confluence|git)/` as a substring, so it flagged `lib/workplace-loop/sources/github-source.mjs`'s import of the current, retained `lib/providers/github/index.mjs` as if it were the retired root-level `providers/` tree. The finder now resolves each matched specifier against the importing file's own path and only flags it when the resolution lands outside `lib/providers/`. Removed the now-obsolete `03c-root-layout:import-legacy-path:lib/workplace-loop/sources/github-source.mjs_21` baseline entry, and added a justification (rather than a silent baseline hold) for `lib/graph/relational/postgres-store.mjs`'s remaining test-only status: Postgres graph backing is an opt-in adapter behind `DATABASE_URL`, so the module has no default-path caller by design.
 
 - Workspace-control-plane E9 (`construct-b0nny.28`), the program's terminal bead: `scripts/verify-cutover.mjs`, a mechanical re-verification of every prior bead's deletion and completion criteria with pass/fail *per bead* rather than a narrative sign-off (directive §15 requires mechanically verifiable acceptance for this bead specifically). 17 beads / 58 criteria covering M0 flow-engine deletion, M1 identity + versioned run-store, M2 governed-write chokepoint, M3a routing consolidation, M3b Oracle-entity deletion, M4 org-metaphor migration, M5a model loop, M5b LanceDB de-core, and E1–E9. Criteria are real assertions — file absence, live-reference source scans, package metadata, and spawned CLI runs — and the scanner is string-aware so a glob literal such as `'**/*.test.mjs'` cannot blind it to references later in the same file. A criterion may be marked *deferred*, recording a documented non-deletion and asserting its justification still holds: the teams/groups deferral passes only while a live consumer remains and fails once the last one disappears. `tests/functional/verify-cutover.functional.test.mjs` plants real violations in an isolated tree copy and asserts the targeted bead fails while its siblings pass.
 
