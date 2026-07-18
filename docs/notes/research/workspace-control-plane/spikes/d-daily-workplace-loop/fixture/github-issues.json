@@ -1,0 +1,59 @@
+{
+  "_fixture": true,
+  "_note": "Local stand-in for GitHub Issues. Not a real integration; no GitHub API is called anywhere in this spike.",
+  "as_of": "2026-07-17",
+  "issues": [
+    {
+      "id": "GH-101",
+      "title": "SAML login fails for Okta IdP when a user has >50 group claims",
+      "labels": ["bug", "sso", "enterprise-blocker"],
+      "severity": "high",
+      "status": "open",
+      "opened_at": "2026-05-10",
+      "last_activity": "2026-06-05",
+      "assignee": null,
+      "linked_objectives": ["OBJ-2"],
+      "linked_backlog": ["PROJ-88"],
+      "body": "One of the pipeline accounts (fictional) has 63 Okta group claims. SAML assertion exceeds size limit and login fails silently. No comments or commits since 2026-06-05."
+    },
+    {
+      "id": "GH-102",
+      "title": "Typo in onboarding welcome email footer (\"recieve\" -> \"receive\")",
+      "labels": ["docs", "trivial"],
+      "severity": "low",
+      "status": "open",
+      "opened_at": "2026-07-14",
+      "last_activity": "2026-07-14",
+      "assignee": null,
+      "linked_objectives": [],
+      "linked_backlog": [],
+      "body": "Cosmetic copy fix, no user impact beyond appearance."
+    },
+    {
+      "id": "GH-103",
+      "title": "Feature request: dark mode toggle in account settings",
+      "labels": ["enhancement"],
+      "severity": "low",
+      "status": "open",
+      "opened_at": "2026-06-20",
+      "last_activity": "2026-06-22",
+      "assignee": null,
+      "linked_objectives": [],
+      "linked_backlog": ["PROJ-90"],
+      "body": "Requested by a handful of users on the community forum (fictional). Not tied to any active pillar."
+    },
+    {
+      "id": "GH-104",
+      "title": "2026-07-09 incident: elevated 5xx rate during database failover",
+      "labels": ["reliability", "incident"],
+      "severity": "high",
+      "status": "closed",
+      "opened_at": "2026-07-09",
+      "last_activity": "2026-07-15",
+      "assignee": "fictional-owner:sam",
+      "linked_objectives": ["OBJ-3"],
+      "linked_backlog": [],
+      "body": "Root-caused and mitigated. 2 of 4 post-incident action items still open, tracked separately (not itself a stale signal)."
+    }
+  ]
+}
