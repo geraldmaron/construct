@@ -197,7 +197,7 @@ Oracle meta-controller — fleet health review and bounded-auto maintenance
 **Usage**
 
 ```bash
-construct oracle start|status|review|pending|approve|gaps|reconcile
+construct oracle status|review|pending|approve|gaps|reconcile
 ```
 
 ## construct participation
