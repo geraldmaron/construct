@@ -26,6 +26,16 @@
     "02-deadcode:module-test-only:lib/embed/presets/pm-repos.mjs",
     "02-deadcode:module-test-only:lib/orchestration/build-audit-record.mjs",
     "02-deadcode:module-test-only:lib/render-visual-check.mjs",
-    "02-deadcode:module-test-only:lib/init-unified.mjs"
+    "02-deadcode:module-test-only:lib/init-unified.mjs",
+    "02-deadcode:module-test-only:lib/graph/relational/postgres-store.mjs",
+    "02-deadcode:module-test-only:lib/roles/router.mjs",
+    "03-docs:unnavigated-doc-dir:docs/notes/research/workspace-control-plane",
+    "03-docs:unnavigated-doc-dir:docs/notes/research/workspace-control-plane/spikes/b-parallel-research",
+    "03-docs:unnavigated-doc-dir:docs/notes/research/workspace-control-plane/spikes/b-parallel-research/workers",
+    "03-docs:unnavigated-doc-dir:docs/notes/research/workspace-control-plane/spikes/c-parallel-software-change",
+    "03-docs:unnavigated-doc-dir:docs/notes/research/workspace-control-plane/spikes/d-daily-workplace-loop/fixtur",
+    "03-docs:unnavigated-doc-dir:docs/notes/research/workspace-control-plane/subagents",
+    "03-docs:unnavigated-doc-dir:docs/notes/research/workspace-control-plane/synthesis",
+    "03c-root-layout:import-legacy-path:lib/workplace-loop/sources/github-source.mjs_21"
   ]
 }
