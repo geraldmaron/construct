@@ -45,7 +45,7 @@ evidence: [subagents/](subagents/) · Synthesis: [synthesis/](synthesis/).
 | 2 | `construct-b0nny.2` → `.3` | Graph foundation design → build (port lib/graph onto relational store, incremental update, day-one milestone) | **Done 2026-07-17** — [graph-store-design.md](synthesis/graph-store-design.md), `lib/graph/relational/`, all 12 day-one milestones pinned as functional tests |
 | 2∥ | `construct-b0nny.4` | Retain/rebuild/replace/remove matrix + migration/cleanup strategy | **Done 2026-07-17** — [disposition-matrix.md](synthesis/disposition-matrix.md) |
 | 3 | `construct-b0nny.5` | Validation spikes A–F (disposable) | **Done 2026-07-18** — [synthesis/spike-{a..f}-*.md](synthesis/); mixed verdicts, see below |
-| 4 | `construct-b0nny.6` | Executable bead program + neutral JSON export | Ready — needs opt-in (Wave 3 done) |
+| 4 | `construct-b0nny.6` | Executable bead program + neutral JSON export | **Done 2026-07-18** — 16 execution beads filed (`.13`–`.28`), DAG wired, [bead-program-export.json](synthesis/bead-program-export.json) |
 | — | `construct-b0nny.7`–`.11` | Independent cleanup/doc-debt beads (README `.cx/` rewrite, embeddings-legacy rename, scheduler + legacy-provider verification/removal, undocumented-systems docs) | **Done 2026-07-17** — `.9` and `.10` reached keep-verdicts (see synthesis/), only `dispatch-batch.js` and `scripts/patch-registry-readers-v2.mjs` were actually removed |
 
 ## Wave 0 deliverables (this branch)
@@ -83,4 +83,52 @@ superiority unless workload results prove it").
 | E — recovery | Go, with one documented idempotency gap at `during_graph_update` (edge weight double-counted on crash-forced redo) | [spike-e-recovery.md](synthesis/spike-e-recovery.md) |
 | F — runtime replacement | Go, cheaply, for well-isolated adapters — GitHub provider `gh`-CLI→REST swap, 6 files changed, clean rollback proven | [spike-f-runtime-replacement.md](synthesis/spike-f-runtime-replacement.md) |
 
-Wave 4 (`construct-b0nny.6`) is now unblocked and ready for opt-in.
+## Wave 4 deliverables (executable bead program, directive §15/§17)
+
+Single strong lead, no fan-out (per [subagents/routing-plan.md](subagents/routing-plan.md) WS7:
+"`construct` → cx-operations... last"). 16 beads filed as children of `construct-b0nny` via
+scripted per-issue `bd create --body-file` + `bd dep add` (not `bd create --graph`, which is
+lossy — a standing lesson from this program). Each carries the full directive §15 field set
+(objective, desired outcome, locked decision, requirements, AC, context, source evidence, graph
+impact, dependency rationale, non-goals, risks, security, authority, implementation guidance,
+ownership, validation, migration, rollback, deletion, completion evidence).
+
+Two decomposition axes reconciled into one DAG:
+- **M0–M5** (`.13`–`.20`): the disposition matrix's own evidence-grounded cleanup milestones —
+  concrete, file-level, already-verified-safe work.
+- **E1-completion, E2, E3, E4, E5, E7, E8, E9** (`.21`–`.28`): the directive's remaining §17
+  outcomes not yet covered by M0–M5 evidence — necessarily less detailed (each opens with its
+  own design pass, single-lead/no-fan-out, before further decomposition), grounded in the
+  relevant spike's findings where one exists (E1↔spike A, E3↔spike C, E4↔spike F, E5↔spike D,
+  E7↔spike E).
+
+| Bead | Scope | Depends on |
+|---|---|---|
+| `.13` M0 | Delete dead flow engine + `cx_trace_telemetry` alias + `.cx` residue | — (ready now) |
+| `.14` M1 | Converge project identity + version the SQLite run-store | — (ready now) |
+| `.15` M2 | Formalize the governed-write pipeline as sole chokepoint | — (ready now) |
+| `.16` M3a | Consolidate roles routing into orchestration/routing-tables | `.15` |
+| `.17` M3b | Consolidate Oracle into embed daemon, delete the entity (**point of no return**) | `.15`, `.16`, `.25` |
+| `.18` M4 | Migrate org metaphor into Worker Profiles | `.16` |
+| `.19` M5a | Migrate model invocation onto runtime adapters | `.24` |
+| `.20` M5b | De-core LanceDB behind an optional adapter | — (ready now) |
+| `.21` E1-completion | Expose queryUp/queryDown via CLI + real Postgres parity | `.3`, `.12` |
+| `.22` E2 | Workspace domain model + durable storage | `.14` |
+| `.23` E3 | Graph-informed work specification + planning | `.22` |
+| `.24` E4 | Runtime-adapter contract + conformance suite | — (ready now) |
+| `.25` E5 | Production sources/directives/workplace loop | `.22`, `.15` |
+| `.26` E7 | Shared workspace server (auth, Postgres, concurrency, deployment) | `.22`, `.14`, `.21` |
+| `.27` E8 | Beads tracker projection + reconciliation | `.23` |
+| `.28` E9 | Final cutover: verify all deletions, freeze, package, release, rollback proof | all 15 above |
+
+Ready to start now (no unmet dependencies): `.13`, `.14`, `.15`, `.20`, `.24`. Everything else
+gates on those five landing first. `.17` (M3b, Oracle deletion) is the program's named point of
+no return — see disposition-matrix.md's own rollback plan before starting it.
+
+Neutral export: [synthesis/bead-program-export.json](synthesis/bead-program-export.json) (17
+nodes: the epic + 16 beads; 31 dependency edges) — so the program is not trapped in the tracker,
+per directive requirement.
+
+Wave 4 is now complete. The epic (`construct-b0nny`) itself remains open — its 16 new children
+are the actual multi-month implementation program this whole epic was designed to produce, not
+work this epic executes directly.
