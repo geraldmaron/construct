@@ -1,6 +1,8 @@
 # Persona and skill research
 
-A persona in Construct is the prompt that runs when a specialist is dispatched. A skill is a reusable competency that one or more personas draw on. Both have to be built from research, not invented, or the system routes work to the wrong shape and the operator pays for it in bad outputs.
+A persona in Construct is the prompt that runs when a specialist is dispatched (`specialists/org/specialists/*.json` + its prompt file) — the fixed 12-role roster, retained as-is. A skill is a reusable competency that one or more personas draw on. Both have to be built from research, not invented, or the system routes work to the wrong shape and the operator pays for it in bad outputs.
+
+The discovery-stage research artifact this page describes for a role genuinely absent from the 12-role roster (rare) is a **skill-emphasis worksheet** (`skill-emphasis/<role>.md` under a scope draft), not a standalone persona identity file — it is an input to `construct specialist create <id> --custom --skills=...`, per target-model.md concept 10 ("a Worker Profile is a flow + skill emphasis, not an organizational identity").
 
 This page is the methodology. It draws from the standard literature on user-research personas (Cooper, Goodwin), organizational design (Galbraith STAR, Lawrence and Lorsch differentiation), and competency modeling (Bloom-style observable outcomes). It also reflects what Construct has observed in its own operation.
 
@@ -27,7 +29,7 @@ For each new persona, gather:
 - **Frustrations.** What slows them down, what they get blamed for that is not their fault.
 - **Evidence sources.** Cite the interviews, the docs, the public job postings, the postmortems.
 
-The output is a persona artifact with the following sections, exactly:
+The output is a skill-emphasis worksheet with the following sections, exactly:
 
 ```
 # <Role display name>
@@ -51,6 +53,9 @@ The output is a persona artifact with the following sections, exactly:
 - Depth: ...
 - Citations: required | encouraged | none
 
+## Skill emphasis
+- <bundle/skill id under skills/> — becomes --skills=... on construct specialist create
+
 ## Failure modes
 - ...
 
@@ -59,7 +64,7 @@ The output is a persona artifact with the following sections, exactly:
 - Source 2: ...
 ```
 
-Without evidence, the persona is opinion. Reject it at review.
+Without evidence, the worksheet is opinion. Reject it at review.
 
 ## Departmental structure (Galbraith / Lawrence-Lorsch)
 
