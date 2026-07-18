@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-18T15:37:54.263Z",
+  "generatedAt": "2026-07-18T15:47:53.915Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 970,
+    "testFiles": 971,
     "topLevelTestFiles": 381,
-    "nestedTestFiles": 589,
+    "nestedTestFiles": 590,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
       "unit": 631,
-      "functional": 286,
+      "functional": 287,
       "visual": 12,
       "live-provider": 2,
       "integration": 39
     },
     "byCategory": {
       "unit": 566,
-      "functional": 286,
+      "functional": 287,
       "visual": 12,
       "structural-guard": 20,
       "contract-subsystem": 46,
@@ -4660,6 +4660,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/workflow-done-gate-evidence.functional.test.mjs — the"
+    },
+    {
+      "path": "tests/functional/workplace-loop-signal-quality.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/workplace-loop-signal-quality.functional.test.mjs —"
     },
     {
       "path": "tests/functional/workplace-loop.functional.test.mjs",
