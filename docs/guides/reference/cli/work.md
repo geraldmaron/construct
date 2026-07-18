@@ -190,7 +190,7 @@ construct graph <list|show|from-intake|recommend|build|stat|query|validate|expla
 **Subcommands**
 
 - `recommend --json [--text|--file|<stdin>]` — Return a role-aware plan for an artifact without enqueuing (embedded contract; alias of intake classify)
-- `build|stat|query|validate|explain` — Living dependency graph — build/inspect/validate the typed file↔capability↔workflow↔test↔embed graph (replaces `construct matrix`)
+- `build|stat|query|validate|explain` — Living dependency graph — build/inspect/validate the typed file↔capability↔workflow↔test↔embed graph
 - `owasp | missing-tests --security` — OWASP GenAI Top-10 coverage matrix and the workflow/preset security-coverage gap list (LMCP-N8)
 - `update | reconcile` — Relational graph store (construct-b0nny.3): drain the incremental outbox, or diff a fresh rebuild against live state and apply drift
 - `queryUp <id> [--rel <r>...] | queryDown <id> [--rel <r>...]` — Directive §4.8 up/downstream traversal (construct-b0nny.21), rel-filtered and depth-capped (construct-b0nny.12)
