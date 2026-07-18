@@ -7845,6 +7845,15 @@ const handlers = new Map([
      const code = await runWorkplaceLoopCli(args, { projectDir: process.cwd() });
      if (typeof code === 'number' && code !== 0) process.exit(code);
    }],
+   // Shared workspace server (construct-b0nny.26, E7) — additive team/
+   // enterprise deployment mode over the local-first solo product. Not
+   // reachable from any solo-mode command path; requires an explicit
+   // `construct server start` invocation and a reachable Postgres.
+   ['server', async (args) => {
+     const { runServerCli } = await import('../lib/server/cli.mjs');
+     const code = await runServerCli(args, { env: process.env });
+     if (typeof code === 'number' && code !== 0) process.exit(code);
+   }],
    ['impact', async (args) => {
      const { runImpactCli } = await import('../lib/graph/impact-cli.mjs');
      const code = await runImpactCli(args, { rootDir: ROOT_DIR, projectDir: process.cwd() });
