@@ -434,6 +434,28 @@ Hybrid: autonomous for low-risk, human-gated for high-risk.
 | Low | Reading, analysis, draft generation, search | Autonomous |
 | High | Work item creation, merge, doc publish, config changes | Queued for approval (messaging provider or `construct oracle`) |
 
+### Governed-write chokepoint
+
+`lib/writes/control-plane.mjs` is the sole path from a queued writeIntent to an executed
+external write. A specialist only ever *recommends* a write (`lib/writes/write-intent.mjs`);
+the durable `ApprovalQueue` (`lib/embed/approval-queue.mjs`) holds it in state
+`awaiting_approval`; a human or policy actor decides out of band; and only
+`control-plane.mjs`'s `executeApprovedWriteIntent`/`drainApprovedWriteIntents` resolve a
+governed adapter and call `lib/writes/envelope.mjs`'s `writeWithEnvelope()` for a record
+already `approved` — idempotency key, sent-log dedup, retry, and audit all live in that one
+envelope call.
+
+Every authority decision behind this chokepoint — a provider-write approval reaching
+execution, an MCP destructive-tool approval-token issuance/consumption
+(`lib/mcp/destructive-gate.mjs` + `destructive-approval.mjs`), or a role-fence action that
+needed human visibility (`lib/hooks/edit-guard.mjs`, `guard-bash.mjs`,
+`lib/embedded-contract/workflow-invoke.mjs`) — is appended to one shared JSONL ledger,
+`lib/writes/authority-ledger.mjs`. This formalizes what was previously three separate
+recorders (the ApprovalQueue itself, `mcp/destructive-approval.mjs`'s own token store, and
+`lib/roles/approval-surface.mjs`'s pending-approval log) into a single auditable authority
+store; `roles/approval-surface.mjs` is deleted, its three consumers now call
+`recordApprovalNotice` from the ledger module directly.
+
 ## Policy enforcement. three layers
 
 Policy rules (comment convention, doc-update requirement, CI green before walk-away, branch hygiene) are enforced at three layers so violations cannot fall through the cracks. Quality gates fire unconditionally — no skip env vars on blocking checks. If a gate fires wrong, repair the policy at its source.
