@@ -21,14 +21,24 @@
  * every relational capability genuinely requires that runtime, so a skip
  * here is an honest structural gap, not a suppressed failure.
  *
- * Milestone 11 (SQLite/Postgres parity) is NOT a live cross-backend
- * byte-equality proof — no Postgres instance is reachable in this build
- * environment (see the b0nny.3 closing report). It is a structural
- * portability lint: every exported query template is free of backend-
- * specific functions and every named parameter round-trips through
- * bindNamedParams. The live round-trip is tests/graph/relational-postgres-
- * store.test.mjs, gated on DATABASE_URL, and is construct-b0nny.5's job to
- * run for real against both backends.
+ * Milestone 11 (SQLite/Postgres parity) here stays a structural portability
+ * lint, not a live cross-backend proof: every exported query template is
+ * free of backend-specific functions and every named parameter round-trips
+ * through bindNamedParams. The spawned `construct` binary's graph storage
+ * layer (queries.mjs's `run` helper, outbox.mjs, reconcile.mjs) is
+ * synchronous and wired to node:sqlite only, with no backend-switching on
+ * DATABASE_URL — a CLI-driven walkthrough against a live Postgres-backed
+ * store needs that switch, a larger change than either b0nny.3's or
+ * b0nny.21's scope (both explicitly exclude a store redesign).
+ *
+ * The live round-trip lives in tests/graph/relational-postgres-store.test.mjs,
+ * gated on DATABASE_URL, proven for real against a Docker Postgres instance
+ * (construct-b0nny.21). Its "query-template parity" suite runs the exact
+ * recursive-CTE SQL text behind milestones 4-8 below (queryUp/queryDown/
+ * cycles/orphans/orphaned-capabilities/owners/requirements/impact) against
+ * live Postgres via bindNamedParams + sql.unsafe, on the same fixture also
+ * loaded into SQLite, and asserts equal row sets — real evidence for the
+ * query engine, not for a CLI-driven walkthrough on a Postgres-backed store.
  */
 
 import test from 'node:test';

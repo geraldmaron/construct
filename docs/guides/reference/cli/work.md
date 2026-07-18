@@ -180,7 +180,7 @@ Task graph management
 **Usage**
 
 ```bash
-construct graph <list|show|from-intake|recommend|build|stat|query|validate|explain|owasp|update|reconcile|path|orphans|cycles|owners|requirements|export>
+construct graph <list|show|from-intake|recommend|build|stat|query|validate|explain|owasp|update|reconcile|queryUp|queryDown|path|orphans|cycles|owners|requirements|export>
 ```
 
 **Subcommands**
@@ -189,6 +189,7 @@ construct graph <list|show|from-intake|recommend|build|stat|query|validate|expla
 - `build|stat|query|validate|explain` — Living dependency graph — build/inspect/validate the typed file↔capability↔workflow↔test↔embed graph (replaces `construct matrix`)
 - `owasp | missing-tests --security` — OWASP GenAI Top-10 coverage matrix and the workflow/preset security-coverage gap list (LMCP-N8)
 - `update | reconcile` — Relational graph store (construct-b0nny.3): drain the incremental outbox, or diff a fresh rebuild against live state and apply drift
+- `queryUp <id> [--rel <r>...] | queryDown <id> [--rel <r>...]` — Directive §4.8 up/downstream traversal (construct-b0nny.21), rel-filtered and depth-capped (construct-b0nny.12)
 - `path <from> <to> | orphans [--capabilities] | cycles [--rel <r>...] | owners <id> | requirements <id> | export [--format]` — Recursive-CTE query surface backed by the relational store (node:sqlite, Node >=22.5)
 
 ## construct handoffs
