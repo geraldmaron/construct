@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-18T04:16:14.047Z",
+  "generatedAt": "2026-07-18T05:40:37.203Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 949,
+    "testFiles": 959,
     "topLevelTestFiles": 381,
-    "nestedTestFiles": 568,
+    "nestedTestFiles": 578,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 619,
-      "functional": 279,
+      "unit": 628,
+      "functional": 280,
       "visual": 12,
       "live-provider": 2,
       "integration": 37
     },
     "byCategory": {
-      "unit": 551,
-      "functional": 279,
+      "unit": 560,
+      "functional": 280,
       "visual": 12,
       "structural-guard": 20,
       "contract-subsystem": 49,
@@ -4630,6 +4630,14 @@
       "maintainerNotes": "tests/functional/workflow-done-gate-evidence.functional.test.mjs — the"
     },
     {
+      "path": "tests/functional/workplace-loop.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/workplace-loop.functional.test.mjs — day-one proof for"
+    },
+    {
       "path": "tests/functional/workspace-domain.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -7640,6 +7648,78 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/workflows/workflow-manifests.test.mjs — integration tests for all built-in workflow manifests."
+    },
+    {
+      "path": "tests/workplace-loop/align.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/workplace-loop/align.test.mjs — unit coverage for"
+    },
+    {
+      "path": "tests/workplace-loop/detect.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/workplace-loop/detect.test.mjs — unit coverage for"
+    },
+    {
+      "path": "tests/workplace-loop/directive-executor-equivalence.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/workplace-loop/directive-executor-equivalence.test.mjs —"
+    },
+    {
+      "path": "tests/workplace-loop/fingerprint.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/workplace-loop/fingerprint.test.mjs — unit coverage for"
+    },
+    {
+      "path": "tests/workplace-loop/gate.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/workplace-loop/gate.test.mjs — unit coverage for"
+    },
+    {
+      "path": "tests/workplace-loop/github-source.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/workplace-loop/github-source.test.mjs — unit coverage for"
+    },
+    {
+      "path": "tests/workplace-loop/propose.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/workplace-loop/propose.test.mjs — unit coverage for"
+    },
+    {
+      "path": "tests/workplace-loop/signals.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/workplace-loop/signals.test.mjs — unit coverage for"
+    },
+    {
+      "path": "tests/workplace-loop/verify.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/workplace-loop/verify.test.mjs — unit coverage for"
     },
     {
       "path": "tests/workspace/store.test.mjs",

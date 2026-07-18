@@ -7835,6 +7835,11 @@ const handlers = new Map([
      const code = runWorkspaceCli(args, { projectDir: process.cwd() });
      if (typeof code === 'number' && code !== 0) process.exit(code);
    }],
+   ['workplace-loop', async (args) => {
+     const { runWorkplaceLoopCli } = await import('../lib/workplace-loop/cli.mjs');
+     const code = await runWorkplaceLoopCli(args, { projectDir: process.cwd() });
+     if (typeof code === 'number' && code !== 0) process.exit(code);
+   }],
    ['impact', async (args) => {
      const { runImpactCli } = await import('../lib/graph/impact-cli.mjs');
      const code = await runImpactCli(args, { rootDir: ROOT_DIR, projectDir: process.cwd() });
