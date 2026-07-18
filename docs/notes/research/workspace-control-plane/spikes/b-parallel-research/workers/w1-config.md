@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # W1-Config: XDG Config Root Implementation Audit (raw worker output, saved verbatim by lead)
 
 > Lead note: this worker is an `Explore` agent, whose tool grant is Read/Glob/Grep only (no

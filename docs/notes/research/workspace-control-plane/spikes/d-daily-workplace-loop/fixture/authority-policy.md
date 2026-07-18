@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 <!--
   FIXTURE — authority policy for the fictional Nimbus daily loop. Invented
   for construct-b0nny.5.4 (Spike D). This governs the SIMULATED loop only;

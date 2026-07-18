@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 <!--
   FIXTURE — the standing directive for the fictional "Nimbus daily TPM/PM
   loop", not the Construct repo's own directive.md. Invented for
