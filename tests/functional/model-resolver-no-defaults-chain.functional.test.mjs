@@ -15,8 +15,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 
-import { readCurrentModels, resolveExecutionContractModelMetadata, resolveFallbackAction } from '../../lib/model-router.mjs';
-import { resolveModelTiers } from '../../lib/model-registry.mjs';
+import { readCurrentModels, resolveExecutionContractModelMetadata, resolveFallbackAction, resolveModelTiers } from '../../lib/model-router.mjs';
 import { estimateUsageCost } from '../../lib/telemetry/model-pricing-catalog.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
@@ -42,7 +41,7 @@ test('readCurrentModels still returns null tiers when nothing is configured', ()
   }
 });
 
-test('resolveModelTiers (model-registry) returns null tiers with not-configured source — no BUILTIN_DEFAULTS substitution', () => {
+test('resolveModelTiers returns null tiers with not-configured source — no BUILTIN_DEFAULTS substitution', () => {
   const resolved = resolveModelTiers({ env: {} });
   for (const tier of ['reasoning', 'standard', 'fast']) {
     assert.equal(resolved.models[tier], null, `${tier} should not be silently defaulted`);

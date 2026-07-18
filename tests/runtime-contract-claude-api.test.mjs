@@ -89,4 +89,50 @@ describe('claude-api runtime — unit behavior', () => {
     await runtime.invoke({ input: { prompt: 'x' } }, {});
     assert.equal(seenKey, '__TEST_API_KEY_OVERRIDE__');
   });
+
+  it('sends request.input.system as the Messages API top-level system parameter', async () => {
+    let seenBody;
+    const fetchFn = async (_url, opts) => {
+      seenBody = JSON.parse(opts.body);
+      return { ok: true, status: 200, json: async () => ({ content: [{ text: 'ok' }] }) };
+    };
+    const runtime = createClaudeApiRuntime({ name: 'system-check', apiKey: '__TEST_API_KEY__', fetchFn });
+    await runtime.init();
+    await runtime.invoke({ input: { prompt: 'user turn', system: 'system turn' } }, {});
+    assert.equal(seenBody.system, 'system turn');
+    assert.equal(seenBody.messages.length, 1);
+    assert.equal(seenBody.messages[0].content, 'user turn');
+  });
+
+  it('omits the system field entirely when request.input.system is not supplied', async () => {
+    let seenBody;
+    const fetchFn = async (_url, opts) => {
+      seenBody = JSON.parse(opts.body);
+      return { ok: true, status: 200, json: async () => ({ content: [] }) };
+    };
+    const runtime = createClaudeApiRuntime({ name: 'no-system', apiKey: '__TEST_API_KEY__', fetchFn });
+    await runtime.init();
+    await runtime.invoke({ input: { prompt: 'user turn' } }, {});
+    assert.equal('system' in seenBody, false);
+  });
+
+  it('surfaces input/output token usage on a completed result when the response includes it', async () => {
+    const fetchFn = async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ content: [{ text: 'ok' }], usage: { input_tokens: 12, output_tokens: 34 } }),
+    });
+    const runtime = createClaudeApiRuntime({ name: 'usage-check', apiKey: '__TEST_API_KEY__', fetchFn });
+    await runtime.init();
+    const result = await runtime.invoke({ input: { prompt: 'x' } }, {});
+    assert.deepEqual(result.usage, { inputTokens: 12, outputTokens: 34 });
+  });
+
+  it('omits usage entirely when the response carries none', async () => {
+    const fetchFn = async () => ({ ok: true, status: 200, json: async () => ({ content: [{ text: 'ok' }] }) });
+    const runtime = createClaudeApiRuntime({ name: 'no-usage', apiKey: '__TEST_API_KEY__', fetchFn });
+    await runtime.init();
+    const result = await runtime.invoke({ input: { prompt: 'x' } }, {});
+    assert.equal('usage' in result, false);
+  });
 });
