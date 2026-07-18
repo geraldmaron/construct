@@ -1251,10 +1251,18 @@ async function cmdDoctor() {
     if (fs.existsSync(beadsPreCommit) && !inCI) {
       const hp = spawnSync('git', ['config', '--get', 'core.hooksPath'], { cwd: ROOT_DIR, encoding: 'utf8' });
       const value = hp.status === 0 ? (hp.stdout || '').trim() : '';
+      // Worktrees share one .git/config, so core.hooksPath must be absolute to
+      // resolve from every checkout — it then names the main checkout's hooks
+      // dir, not this one's. git still runs those hooks here, so the gate is
+      // active whenever the configured directory actually holds the hook.
+
       const absEquiv = path.join(ROOT_DIR, '.beads', 'hooks');
-      const wired = value === '.beads/hooks' || value === absEquiv;
+      const resolved = value && (path.isAbsolute(value) ? value : path.join(ROOT_DIR, value));
+      const wired = value === '.beads/hooks'
+        || value === absEquiv
+        || Boolean(resolved && fs.existsSync(path.join(resolved, 'pre-commit')));
       const label = wired
-        ? 'Git hooks wired (core.hooksPath = .beads/hooks)'
+        ? `Git hooks wired (core.hooksPath = ${value})`
         : value
           ? `Git hooks unwired (core.hooksPath = '${value}', expected '.beads/hooks') — pre-commit policy gates inactive`
           : 'Git hooks unwired (core.hooksPath unset) — pre-commit policy gates inactive. Fix: git config core.hooksPath .beads/hooks';
@@ -7813,15 +7821,6 @@ const handlers = new Map([
    ['improvement', async (args) => {
      const { runImprovementCli } = await import('../lib/improvement/cli.mjs');
      const code = await runImprovementCli(args, { projectDir: process.cwd() });
-     if (typeof code === 'number' && code !== 0) process.exit(code);
-   }],
-   ['matrix', async (args) => {
-     if (!globalThis._matrixDeprecated) {
-       process.stderr.write('[deprecation] `construct matrix` is deprecated; use `construct graph` instead\n');
-       globalThis._matrixDeprecated = true;
-     }
-     const { runGraphCli } = await import('../lib/graph/cli.mjs');
-     const code = runGraphCli(args, { rootDir: ROOT_DIR, projectDir: process.cwd() });
      if (typeof code === 'number' && code !== 0) process.exit(code);
    }],
    // `graph` carries two disjoint subcommand families: the living dependency

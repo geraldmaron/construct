@@ -293,10 +293,6 @@
       "core": false
     },
     {
-      "name": "matrix",
-      "core": false
-    },
-    {
       "name": "mcp",
       "core": false
     },
