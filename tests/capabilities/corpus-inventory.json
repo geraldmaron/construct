@@ -1,26 +1,26 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-18T03:03:24.445Z",
+  "generatedAt": "2026-07-18T03:25:42.578Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 929,
-    "topLevelTestFiles": 369,
-    "nestedTestFiles": 560,
+    "testFiles": 934,
+    "topLevelTestFiles": 372,
+    "nestedTestFiles": 562,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 606,
-      "functional": 274,
+      "unit": 609,
+      "functional": 275,
       "visual": 12,
       "live-provider": 2,
-      "integration": 35
+      "integration": 36
     },
     "byCategory": {
-      "unit": 540,
-      "functional": 274,
+      "unit": 542,
+      "functional": 275,
       "visual": 12,
-      "structural-guard": 19,
-      "contract-subsystem": 47,
+      "structural-guard": 20,
+      "contract-subsystem": 48,
       "live-provider": 2,
       "integration": 26,
       "hook": 9
@@ -341,6 +341,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/asset-quality/visual-review.test.mjs — Guards the visually-reviewed contract."
+    },
+    {
+      "path": "tests/audit-project-identity.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit-project-identity.test.mjs — scripts/audit-project-identity.mjs."
     },
     {
       "path": "tests/audit-rules.test.mjs",
@@ -1423,6 +1431,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/credential-precedence-parity.test.mjs"
+    },
+    {
+      "path": "tests/cross-process-state-has-one-authoritative-location.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/cross-process-state-has-one-authoritative-location.test.mjs — ADR-0092"
     },
     {
       "path": "tests/db-migrations.test.mjs",
@@ -4244,6 +4260,14 @@
       "maintainerNotes": "tests/functional/run-events-semantics.functional.test.mjs — prepared-vs-executed"
     },
     {
+      "path": "tests/functional/run-store-identity-convergence.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/run-store-identity-convergence.functional.test.mjs —"
+    },
+    {
       "path": "tests/functional/secret-audit-daemon-wiring.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -4716,6 +4740,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/graph/relational-postgres-store.test.mjs — Postgres graph store"
+    },
+    {
+      "path": "tests/graph/relational-query-latency.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/graph/relational-query-latency.test.mjs — hub-scale latency"
     },
     {
       "path": "tests/graph/staleness.test.mjs",
@@ -5886,6 +5918,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/orchestration-route-path.test.mjs — routePath payload end-to-end (construct-d1r7.15)."
+    },
+    {
+      "path": "tests/orchestration-run-store-backend-parity.test.mjs",
+      "layer": "integration",
+      "category": "structural-guard",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration-run-store-backend-parity.test.mjs — SQLite/Postgres"
     },
     {
       "path": "tests/orchestration-run-store-postgres.test.mjs",

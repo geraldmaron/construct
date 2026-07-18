@@ -48,6 +48,10 @@
           "type": ["string", "null"],
           "description": "The unique name of the project. Used for multi-project telemetry and storage."
         },
+        "projectKey": {
+          "type": ["string", "null"],
+          "description": "Explicit override for the project's identity key, otherwise derived from the git origin remote (or the project path when there is no remote). Wins over the computed derivation everywhere state is keyed."
+        },
         "tenantId": {
           "type": ["string", "null"],
           "description": "The tenant ID for enterprise deployments."
