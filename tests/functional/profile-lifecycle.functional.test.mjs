@@ -115,7 +115,7 @@ test('lifecycle: archiveScope refuses an empty or trivial reason', async () => {
   assert.throws(() => archiveScope({ id: 'rnd', reason: 'idk' }), /substantive reason/);
 });
 
-test('lifecycle: createDraftScope seeds persona + department artifacts when supplied', () => {
+test('lifecycle: createDraftScope seeds skill-emphasis + department artifacts when supplied', () => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'profile-seeded-'));
   const result = createDraftScope({
     cwd,
@@ -128,19 +128,21 @@ test('lifecycle: createDraftScope seeds persona + department artifacts when supp
     ],
   });
 
-  assert.equal(result.personaPaths.length, 3);
+  assert.equal(result.skillEmphasisPaths.length, 3);
   assert.equal(result.departmentPaths.length, 2);
 
-  // Each persona artifact has the canonical section headings; templates that
-  // ship empty are rejected at promote-time, but the scaffolding must at least
-  // produce the right structure.
-  for (const p of result.personaPaths) {
+  // Each skill-emphasis worksheet has the canonical section headings; templates
+  // that ship empty are rejected at promote-time, but the scaffolding must at
+  // least produce the right structure, including the skill-emphasis section
+  // that feeds `construct specialist create <id> --custom --skills=...`.
+  for (const p of result.skillEmphasisPaths) {
     const content = fs.readFileSync(p, 'utf8');
     assert.match(content, /## Goals/);
     assert.match(content, /## Frustrations/);
     assert.match(content, /## Decision rights/);
     assert.match(content, /## Handoffs/);
     assert.match(content, /## Output contract/);
+    assert.match(content, /## Skill emphasis/);
     assert.match(content, /## Failure modes/);
     assert.match(content, /## Evidence/);
   }

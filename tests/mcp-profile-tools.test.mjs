@@ -184,7 +184,7 @@ test('scope_create scaffolds a draft when confirmed', () => {
   assert.ok(res.ok, `expected ok, got ${JSON.stringify(res)}`);
   assert.ok(existsSync(join(cwd, '.construct', 'scopes', 'draft-mcp-smoke-draft', 'scope.json')));
   assert.ok(existsSync(join(cwd, '.construct', 'scopes', 'draft-mcp-smoke-draft', 'requirements.md')));
-  assert.equal(res.personaPaths.length, 2);
+  assert.equal(res.skillEmphasisPaths.length, 2);
   assert.equal(res.departmentPaths.length, 1);
 });
 

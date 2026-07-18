@@ -8209,7 +8209,7 @@ const handlers = new Map([
       println(`Files that will be written under ${pathMod.relative(process.cwd(), draftRoot)}/:`);
       println(`  scope.json                         structural manifest`);
       println(`  requirements.md                    research brief naming each cx-* specialist`);
-      for (const r of seedRoles) println(`  personas/${r}.md`.padEnd(40) + `  persona artifact (filled during discover)`);
+      for (const r of seedRoles) println(`  skill-emphasis/${r}.md`.padEnd(40) + `  skill-emphasis worksheet (filled during discover)`);
       for (const d of seedDepartments) println(`  departments/${d.id}.md`.padEnd(40) + `  department charter (filled during frame)`);
       println('');
       println(`Nothing else is touched. No config is changed, no active scope is switched.`);
@@ -8238,7 +8238,7 @@ const handlers = new Map([
         println(`✓ draft created at ${pathMod.relative(process.cwd(), result.dir)}`);
         println('');
         println(`Next steps (in order, per docs/guides/concepts/profile-lifecycle.md):`);
-        println(`  1. Discover  (cx-researcher): fill personas/<role>.md from interviews + primary sources.`);
+        println(`  1. Discover  (cx-researcher): fill skill-emphasis/<role>.md from interviews + primary sources.`);
         println(`  2. Frame     (cx-product-manager): fill departments/<dept>.md charters and intake taxonomy.`);
         println(`  3. Architect (cx-architect): reconcile role reuse vs new; populate departments[] in scope.json.`);
         println(`  4. Validate  (cx-reviewer): run persona-eval and classifier-eval against representative signals.`);
