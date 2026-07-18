@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-18T03:42:56.131Z",
+  "generatedAt": "2026-07-18T04:15:14.761Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 945,
-    "topLevelTestFiles": 379,
+    "testFiles": 947,
+    "topLevelTestFiles": 381,
     "nestedTestFiles": 566,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 617,
+      "unit": 619,
       "functional": 278,
       "visual": 12,
       "live-provider": 2,
       "integration": 36
     },
     "byCategory": {
-      "unit": 549,
+      "unit": 551,
       "functional": 278,
       "visual": 12,
       "structural-guard": 20,
@@ -5278,6 +5278,14 @@
       "maintainerNotes": "tests/integrations/status-no-materialization.test.mjs — construct-192h.7:"
     },
     {
+      "path": "tests/intent-classifier-claude-api-migration.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/intent-classifier-claude-api-migration.test.mjs — equivalence coverage"
+    },
+    {
       "path": "tests/intent-classifier.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -6814,6 +6822,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/scheduler-optimize-job.test.mjs — scheduled optimize loop is gated."
+    },
+    {
+      "path": "tests/schema-infer-claude-api-migration.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/schema-infer-claude-api-migration.test.mjs — equivalence coverage for"
     },
     {
       "path": "tests/schema-validation.test.mjs",
