@@ -33,6 +33,7 @@ description: Work commands for Construct.
 | `construct tags` | Manage the controlled tag vocabulary (propose, add, deprecate, audit) |
 | `construct team` | Team review, template listing, and custom team authoring (`team:add` / `team:remove` are internal registry editors) |
 | `construct tools` | Detect optional publish pipeline binaries (Pandoc, D2, VHS, Playwright) |
+| `construct tracker-projection` | Beads projection, field authority, and reconciliation (construct-b0nny.27, target-model.md concept 16) — treats bd as a projection of the graph-informed Work model with explicit per-field authority, detect-and-report drift, and read-only raw-record-preserving import. Sits behind bd; issues no bd write. |
 | `construct wireframe` | Generate wireframes from description |
 | `construct work-spec` | Work spec schema + graph-informed decomposition check (construct-b0nny.23, target-model.md concepts 6/7/9) — cycle detection, declared-dependency graph resolution, and independence-claim verification over a Work spec's decomposition. |
 | `construct workflow` | Instantiate workflow templates (PRD-to-review chains, onboarding, handoffs) |
@@ -406,6 +407,22 @@ construct tools detect [--json] [--figures] [--demo=NAME]
 | `--figures` | Include figure tooling (default on) |
 | `--no-figures` | Skip figure binaries |
 | `--demo=<name>` | Include terminal demo recorder check |
+
+## construct tracker-projection
+
+Beads projection, field authority, and reconciliation (construct-b0nny.27, target-model.md concept 16) — treats bd as a projection of the graph-informed Work model with explicit per-field authority, detect-and-report drift, and read-only raw-record-preserving import. Sits behind bd; issues no bd write.
+
+**Usage**
+
+```bash
+construct tracker-projection import|reconcile|status [--json] [--strict]
+```
+
+**Subcommands**
+
+- `import [--json]` — Snapshot live bd, build raw-record-preserving projections, persist them, and report zero-data-loss verification
+- `reconcile [--json] [--strict]` — Diff persisted projections against live bd and report drift (domain-owned conflicts vs absorbed tracker updates); --strict exits 1 on drift
+- `status [--json]` — Print the persisted projection summary (counts by lifecycle state)
 
 ## construct wireframe
 
