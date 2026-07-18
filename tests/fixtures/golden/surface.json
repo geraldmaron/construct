@@ -561,6 +561,10 @@
       "core": false
     },
     {
+      "name": "workplace-loop",
+      "core": false
+    },
+    {
       "name": "workspace",
       "core": false
     },

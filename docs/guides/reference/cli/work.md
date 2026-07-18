@@ -36,6 +36,7 @@ description: Work commands for Construct.
 | `construct wireframe` | Generate wireframes from description |
 | `construct work-spec` | Work spec schema + graph-informed decomposition check (construct-b0nny.23, target-model.md concepts 6/7/9) — cycle detection, declared-dependency graph resolution, and independence-claim verification over a Work spec's decomposition. |
 | `construct workflow` | Instantiate workflow templates (PRD-to-review chains, onboarding, handoffs) |
+| `construct workplace-loop` | Production sources/directives/workplace loop (construct-b0nny.25) — detects real signals from a connected source, checks them against Workspace strategy, and routes any proposed external effect through the governed-write chokepoint. |
 | `construct workspace` | Manage PM workspaces for multi-PM signal routing |
 | `construct workspace-domain` | Workspace domain model (construct-b0nny.22, target-model.md concept 1) — owner, membership, settings, lifecycle. Distinct from `construct workspace` above, which is the unrelated multi-PM signal-routing command. |
 
@@ -445,6 +446,24 @@ construct workflow <list|show|new|invoke>
 **Subcommands**
 
 - `invoke --json --workflow-type <t> [--text|--file|<stdin>]` — Invoke a workflow (roles/skills) non-interactively with approval gating and provenance (embedded contract)
+
+## construct workplace-loop
+
+Production sources/directives/workplace loop (construct-b0nny.25) — detects real signals from a connected source, checks them against Workspace strategy, and routes any proposed external effect through the governed-write chokepoint.
+
+**Usage**
+
+```bash
+construct workplace-loop detect|request-approval|approve|apply|verify
+```
+
+**Subcommands**
+
+- `detect [--repo=owner/name] [--json]` — Fetch the source, detect/align/filter signals, and produce a gated proposal (or NOTHING_NEW on an unchanged source)
+- `request-approval --proposal <id>` — Enqueue the proposal's external effects on the real ApprovalQueue
+- `approve --proposal <id> --by <name>` — Approve the proposal's enqueued effects
+- `apply --proposal <id>` — Drain approved effects through the real M2 governed-write chokepoint; refuses if any effect is unapproved
+- `verify --proposal <id>` — Confirm executed effects match the proposal that was approved
 
 ## construct workspace
 
