@@ -110,8 +110,8 @@ describe('provider_write — with a valid token, exactly one adapter call + enve
     // Mirrors server.mjs's dispatch order: the gate must pass on an
     // out-of-band token before providerWrite() ever runs in execute mode.
 
-    const token = issueApprovalToken('provider_write');
-    const gate = checkDestructiveGate('provider_write', { approval_token: token });
+    const token = issueApprovalToken('provider_write', { rootDir });
+    const gate = checkDestructiveGate('provider_write', { approval_token: token }, { rootDir });
     assert.equal(gate.allowed, true, 'valid token must pass the gate');
 
     const sentLog = new WriteSentLog({ persistPath: path.join(rootDir, '.cx', 'writes', 'sent-log.jsonl') });
