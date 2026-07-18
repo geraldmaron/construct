@@ -59,3 +59,7 @@ they are buildable surfaces, not the installed runtime spine:
 ## Exception path
 
 To add a new core dependency, write a new ADR in this directory answering the three questions in `docs/dependencies.md`. Do not add the dep without a merged ADR.
+
+## Status update (amended, ADR-0081)
+
+The `@lancedb/lancedb` and `apache-arrow` exceptions declared above no longer hold: [ADR-0081](0081-lancedb-optional-retrieval-adapter.md) moves both packages to `optionalDependencies`, behind a retrieval-adapter contract (`lib/storage/retrieval-adapter.mjs`) with a dependency-free keyword/BM25 fallback (`lib/storage/adapters/keyword-adapter.mjs`). The sanctioned exception set for runtime `dependencies` is now `@modelcontextprotocol/sdk` and `js-yaml` only (`tests/core-dependency-policy.test.mjs`).

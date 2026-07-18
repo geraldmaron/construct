@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-18T03:25:59.813Z",
+  "generatedAt": "2026-07-18T03:27:01.453Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 935,
-    "topLevelTestFiles": 372,
-    "nestedTestFiles": 563,
+    "testFiles": 938,
+    "topLevelTestFiles": 374,
+    "nestedTestFiles": 564,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 609,
-      "functional": 276,
+      "unit": 611,
+      "functional": 277,
       "visual": 12,
       "live-provider": 2,
       "integration": 36
     },
     "byCategory": {
-      "unit": 542,
-      "functional": 276,
+      "unit": 544,
+      "functional": 277,
       "visual": 12,
       "structural-guard": 20,
       "contract-subsystem": 48,
@@ -3717,6 +3717,14 @@
       "maintainerNotes": "tests/functional/monitor-role-composed.functional.test.mjs — composed"
     },
     {
+      "path": "tests/functional/no-vector-fallback.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/no-vector-fallback.functional.test.mjs — proves the"
+    },
+    {
       "path": "tests/functional/node-native-extraction.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -7158,6 +7166,22 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/storage-health-probe.test.mjs — unit tests for probeStorageHealth()."
+    },
+    {
+      "path": "tests/storage-keyword-adapter.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/storage-keyword-adapter.test.mjs — unit tests for the no-vector"
+    },
+    {
+      "path": "tests/storage-retrieval-adapter.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/storage-retrieval-adapter.test.mjs — unit tests for the"
     },
     {
       "path": "tests/storage-rrf.test.mjs",
