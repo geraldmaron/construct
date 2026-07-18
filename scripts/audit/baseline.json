@@ -26,7 +26,6 @@
     "02-deadcode:module-test-only:lib/embed/presets/pm-repos.mjs",
     "02-deadcode:module-test-only:lib/orchestration/build-audit-record.mjs",
     "02-deadcode:module-test-only:lib/render-visual-check.mjs",
-    "02-deadcode:module-test-only:lib/init-unified.mjs",
-    "02-deadcode:module-test-only:lib/orchestration/delegation-flow.mjs"
+    "02-deadcode:module-test-only:lib/init-unified.mjs"
   ]
 }
