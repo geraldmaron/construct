@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-17T23:53:10.768Z",
+  "generatedAt": "2026-07-18T01:59:19.209Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 930,
-    "topLevelTestFiles": 370,
-    "nestedTestFiles": 560,
+    "testFiles": 936,
+    "topLevelTestFiles": 375,
+    "nestedTestFiles": 561,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 607,
-      "functional": 274,
+      "unit": 612,
+      "functional": 275,
       "visual": 12,
       "live-provider": 2,
       "integration": 35
     },
     "byCategory": {
-      "unit": 541,
-      "functional": 274,
+      "unit": 546,
+      "functional": 275,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 47,
@@ -4244,6 +4244,14 @@
       "maintainerNotes": "tests/functional/run-events-semantics.functional.test.mjs — prepared-vs-executed"
     },
     {
+      "path": "tests/functional/runtime-adapter-swap.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/runtime-adapter-swap.functional.test.mjs — construct-b0nny.24"
+    },
+    {
       "path": "tests/functional/secret-audit-daemon-wiring.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -6686,6 +6694,46 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/roots.test.mjs — Bun-compiled-binary path resolution (construct-qvou)."
+    },
+    {
+      "path": "tests/runtime-contract-acp-stdio.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/runtime-contract-acp-stdio.test.mjs — conformance + unit tests for"
+    },
+    {
+      "path": "tests/runtime-contract-claude-api.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/runtime-contract-claude-api.test.mjs — conformance + unit tests for"
+    },
+    {
+      "path": "tests/runtime-contract-claude-cli.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/runtime-contract-claude-cli.test.mjs — conformance + unit tests for"
+    },
+    {
+      "path": "tests/runtime-contract-inprocess.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/runtime-contract-inprocess.test.mjs — conformance + unit tests for"
+    },
+    {
+      "path": "tests/runtime-contract-registry.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/runtime-contract-registry.test.mjs — unit tests for the runtime"
     },
     {
       "path": "tests/runtime-pressure.test.mjs",
