@@ -113,9 +113,8 @@ test('buildRuntimeRecoverySummary with rootDir=packageRoot does NOT pick up tmpD
 
 test('telemetry url from startServices uses the machine-scoped state root, not packageRoot', async () => {
   // Calls the real startServices with an isolated rootDir/homeDir and injected
-  // probes/spawners (its designed test seams) so no real process is spawned.
-  // startDoctor/startOracle have no injection seam, so CONSTRUCT_DOCTOR and
-  // CONSTRUCT_ORACLE are forced 'off' for the call to keep it hermetic.
+  // probes/spawners (its designed test seams) so no real process is spawned;
+  // startServices spawns no background daemons (construct-b0nny.29).
   // Telemetry's url resolves through resolveStateDir (ADR-0066), which reads
   // CX_HOME_OVERRIDE off process.env directly rather than from the homeDir
   // option threaded through startServices — that override is pinned here to
@@ -123,11 +122,7 @@ test('telemetry url from startServices uses the machine-scoped state root, not p
   // real developer machine's state root.
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-root-isolation-'));
   const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-root-isolation-home-'));
-  const prevDoctor = process.env.CONSTRUCT_DOCTOR;
-  const prevOracle = process.env.CONSTRUCT_ORACLE;
   const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-  process.env.CONSTRUCT_DOCTOR = 'off';
-  process.env.CONSTRUCT_ORACLE = 'off';
   process.env.CX_HOME_OVERRIDE = homeOverride;
   try {
     const { results } = await startServices({
@@ -152,10 +147,6 @@ test('telemetry url from startServices uses the machine-scoped state root, not p
       `telemetry url (${telemetry.url}) must not point into packageRoot (${packageRoot})`,
     );
   } finally {
-    if (prevDoctor === undefined) delete process.env.CONSTRUCT_DOCTOR;
-    else process.env.CONSTRUCT_DOCTOR = prevDoctor;
-    if (prevOracle === undefined) delete process.env.CONSTRUCT_ORACLE;
-    else process.env.CONSTRUCT_ORACLE = prevOracle;
     if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
     else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
     rmTmpDir(tmpDir);
