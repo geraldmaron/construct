@@ -22,7 +22,7 @@ const RETIRED_DIR_DESCRIPTION_KEYS = new Set(['agents', 'site', 'claude', 'codex
 const RUNTIME_SCAN_DIRS = ['bin', 'lib', 'scripts', 'apps'];
 const RUNTIME_EXTS = ['.mjs', '.js'];
 const RUNTIME_EXCLUDE = /(node_modules|\.git|audit-artifacts|lib\/providers\/contract\/adapters)/;
-const LEGACY_IMPORT_RE = /from\s+['"][^'"]*\/providers\/(lib|github|jira|slack|confluence|git)\//;
+const LEGACY_IMPORT_RE = /from\s+['"](\.[^'"]*\/providers\/(?:lib|github|jira|slack|confluence|git)\/[^'"]*)['"]/;
 
 function trackedRootEntries(rootDir) {
   try {
@@ -84,7 +84,13 @@ function walk(dir, out = []) {
   return out;
 }
 
+// A relative specifier matching /providers/(lib|github|...)/ is only a legacy-root import
+// when it actually resolves outside lib/providers/ (the current, retained provider tree) —
+// the same substring appears in in-tree specifiers like '../../providers/github/index.mjs'
+// written from lib/workplace-loop/sources/, which resolves to lib/providers/github/.
+
 function legacyProviderImports(rootDir) {
+  const currentProvidersDir = path.join(rootDir, 'lib', 'providers');
   const hits = [];
   for (const base of RUNTIME_SCAN_DIRS) {
     for (const file of walk(path.join(rootDir, base))) {
@@ -92,9 +98,11 @@ function legacyProviderImports(rootDir) {
       if (rel.startsWith('tests/')) continue;
       const lines = fs.readFileSync(file, 'utf8').split('\n');
       lines.forEach((line, i) => {
-        if (LEGACY_IMPORT_RE.test(line)) {
-          hits.push({ file: rel, line: i + 1, text: line.trim().slice(0, 120) });
-        }
+        const match = line.match(LEGACY_IMPORT_RE);
+        if (!match) return;
+        const resolved = path.resolve(path.dirname(file), match[1]);
+        if (resolved.startsWith(currentProvidersDir + path.sep)) return;
+        hits.push({ file: rel, line: i + 1, text: line.trim().slice(0, 120) });
       });
     }
   }
