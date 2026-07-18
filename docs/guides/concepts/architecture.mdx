@@ -524,6 +524,47 @@ recorders (the ApprovalQueue itself, `mcp/destructive-approval.mjs`'s own token 
 store; `roles/approval-surface.mjs` is deleted, its three consumers now call
 `recordApprovalNotice` from the ledger module directly.
 
+### Sources / directives / workplace loop
+
+`lib/workplace-loop/` (construct-b0nny.25, the workspace-control-plane program's E5 outcome —
+`docs/notes/research/workspace-control-plane/synthesis/target-model.md` concept 4 and spike D,
+`spike-d-daily-workplace-loop.md`) is the production generalization of spike D's proven
+`detect → normalize → align → filter → gate → verify` pipeline from a fixture-driven proof into a
+loop over a real connected source. `runDetect` (`detect.mjs`) fetches open issues from a real
+GitHub source (`sources/github-source.mjs`, reusing `lib/providers/github/index.mjs`'s read-only
+`search()` — the repo defaults to the checkout's own `git remote get-url origin`, never a
+fabricated stand-in), fingerprints the normalized record set (`fingerprint.mjs`), and
+short-circuits to `NOTHING_NEW` when the fingerprint is unchanged since the last run — the
+no-fabrication guarantee spike D proved, now against live data: an unchanged source advances no
+run counter and mints no proposal. On genuinely new content, rule-based detectors (`signals.mjs`:
+stale issues by date math, unowned risk-labeled issues by label pattern, noise by absence of
+substantive signal) run over *structural* properties of a real issue record rather than
+ground-truth flags baked into a fixture — the part of the pipeline this bead exists to stress,
+per spike D's own caveat that rule-based detection over a legible fixture does not prove judgment
+over messy real data. Signals are aligned against the Workspace's real strategy pillars
+(`align.mjs`, read from E2's `workplaceLoop.strategyPillars` setting key on `lib/workspace/store.mjs`;
+absent pillars yield `no_strategy_configured`, never a fabricated conflict), and actionable
+signals become a durable proposal (`propose.mjs`/`state-store.mjs`) whose external effects are
+writeIntent-shaped.
+
+Every external effect routes through the M2 chokepoint above, with no bypass: `gate.mjs`'s
+`requestApproval` enqueues each proposed effect onto the same durable `ApprovalQueue`, `approveAll`
+refuses without a named approver, and `applyProposal` refuses any partially- or un-approved
+proposal before draining approved effects through `control-plane.mjs`'s `drainApprovedWriteIntents`
+— the loop owns no second approval or execution mechanism. `construct workplace-loop
+detect|request-approval|approve|apply|verify` (`cli.mjs`) is the CLI surface.
+
+`lib/workplace-loop/directive-executor.mjs` re-homes directive execution off the Oracle daemon:
+it reproduces `lib/oracle/directive-executor.mjs`'s behavior contract exactly — same
+budget-gating discipline (`lib/policy/unattended-budget.mjs`), same `runTaskViaProvider` execution
+path, same enqueue-only-never-execute boundary, same `CONSTRUCT_ORACLE_EXECUTE_DIRECTIVES` /
+`oracle.executeDirectives` opt-in surface — differing only in the `surface` provenance tag on an
+enqueued record (`workplace-loop-directive` vs `oracle-directive`). The Oracle copy is
+intentionally left live and untouched; `tests/workplace-loop/directive-executor-equivalence.test.mjs`
+proves identical behavior on identical inputs so construct-b0nny.17 can cut `lib/oracle/execute.mjs`'s
+`directive-due` case over to this module and delete the Oracle copy. This bead only proves the
+Oracle daemon can be replaced — replacing it is construct-b0nny.17's job.
+
 ## Policy enforcement. three layers
 
 Policy rules (comment convention, doc-update requirement, CI green before walk-away, branch hygiene) are enforced at three layers so violations cannot fall through the cracks. Quality gates fire unconditionally — no skip env vars on blocking checks. If a gate fires wrong, repair the policy at its source.
