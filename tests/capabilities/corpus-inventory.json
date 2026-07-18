@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-18T15:47:53.915Z",
+  "generatedAt": "2026-07-18T20:56:25.646Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 971,
-    "topLevelTestFiles": 381,
-    "nestedTestFiles": 590,
+    "testFiles": 964,
+    "topLevelTestFiles": 379,
+    "nestedTestFiles": 585,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 631,
-      "functional": 287,
+      "unit": 629,
+      "functional": 282,
       "visual": 12,
       "live-provider": 2,
       "integration": 39
     },
     "byCategory": {
-      "unit": 566,
-      "functional": 287,
+      "unit": 564,
+      "functional": 282,
       "visual": 12,
       "structural-guard": 20,
       "contract-subsystem": 46,
@@ -2888,14 +2888,6 @@
       "maintainerNotes": "tests/functional/docs-site-check.functional.test.mjs — Generated reference drift gate."
     },
     {
-      "path": "tests/functional/doctor-fixes-legacy-state.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/doctor-fixes-legacy-state.functional.test.mjs"
-    },
-    {
       "path": "tests/functional/doctor-no-repo-mutation.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3413,14 +3405,6 @@
       "maintainerNotes": "tests/functional/init-watch-inbox-prompt.functional.test.mjs"
     },
     {
-      "path": "tests/functional/install-legacy-global-cleanup.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/install-legacy-global-cleanup.functional.test.mjs"
-    },
-    {
       "path": "tests/functional/install-parity.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3495,14 +3479,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "legacy-daemon-cleanup.functional.test.mjs — the sweeper kills leaked legacy"
-    },
-    {
-      "path": "tests/functional/legacy-layout-migration.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/legacy-layout-migration.functional.test.mjs — the ADR-0074"
     },
     {
       "path": "tests/functional/lifecycle-event-emission.test.mjs",
@@ -3699,14 +3675,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/models-cli-contract.functional.test.mjs"
-    },
-    {
-      "path": "tests/functional/models-legacy-config-migration.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/models-legacy-config-migration.functional.test.mjs"
     },
     {
       "path": "tests/functional/monitor-cli.functional.test.mjs",
@@ -4210,14 +4178,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/real-llm-scenarios.functional.test.mjs — opt-in S3 (PRD) + S8 (orchestration_run) scenarios."
-    },
-    {
-      "path": "tests/functional/reconcile-legacy-footprint.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/reconcile-legacy-footprint.functional.test.mjs"
     },
     {
       "path": "tests/functional/reconcile-legacy-skills.functional.test.mjs",
@@ -5158,14 +5118,6 @@
       "maintainerNotes": "tests/init-intake-defaults.test.mjs — non-interactive `construct init`"
     },
     {
-      "path": "tests/init-update-guide.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/init-update-guide.test.mjs — construct_guide migration helpers."
-    },
-    {
       "path": "tests/init-update.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -5404,14 +5356,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/knowledge/research-store.test.mjs — A2 research persistence contract."
-    },
-    {
-      "path": "tests/legacy-config-migration.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/legacy-config-migration.test.mjs"
     },
     {
       "path": "tests/libreoffice-export.test.mjs",

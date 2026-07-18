@@ -34,9 +34,9 @@
       "docs/meta-prd/**",
       "docs/prfaq/**",
       "docs/one-pager/**",
-      ".cx/knowledge/**",
+      ".construct/knowledge/**",
       "docs/strategy/**",
-      ".cx/knowledge/decisions/strategy/**"
+      ".construct/knowledge/decisions/strategy/**"
     ],
     "allowedBdLabels": [
       "product",

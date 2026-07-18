@@ -20,7 +20,7 @@ User-scope files follow the [XDG Base Directory specification](https://specifica
 | **state** | `$XDG_STATE_HOME` | `~/.local/state/construct` | `vector/lancedb`, `doctor.json`, `dashboard.json`, `workspace/`, `runtime/`, `bin/`, `intake-daemon.heartbeat`, `.cleanup-stamp` |
 | **cache** | `$XDG_CACHE_HOME` | `~/.cache/construct` | `cache/embeddings`, `.runtime`, regenerable transients |
 
-> **Upgrade — clean break.** There is no read or migration of a legacy `~/.construct/*` tree. After upgrading, run `construct install --scope=user` once to repopulate the user-scope files at the XDG paths. `construct doctor` flags a missing user config until you do.
+Construct stores user configuration at the XDG paths below. Run `construct install --footprint=user` to create them.
 
 ## Config tiers and precedence
 
@@ -79,8 +79,8 @@ The `construct.config.json` file is scaffolded with a `"$schema"` property. In s
 | `PORT` | `4242` | Dashboard HTTP port |
 | `BIND_HOST` | `127.0.0.1` | Dashboard bind address |
 | `NODE_ENV` | `development` | `production` disables stack traces in responses |
-| `HOME` | system | Base for the XDG user dirs (`~/.config/construct`, `~/.local/state/construct`, `~/.cache/construct`) and `~/.cx/` |
-| `CX_DATA_DIR` | `$HOME` | Override root for `.cx/` data directories |
+| `HOME` | system | Base for the XDG user dirs (`~/.config/construct`, `~/.local/state/construct`, `~/.cache/construct`) and `~/.construct/` |
+| `CONSTRUCT_DATA_DIR` | `$HOME` | Override root for Construct data directories |
 
 ## Deployment mode
 
@@ -117,7 +117,7 @@ Keys under `models` in `construct.config.json`. Consumed by `lib/models/catalog.
 | `models.visibility.include` | `[]` | Model ids shown when `mode` is `explicit`. |
 | `models.visibility.exclude` | `[]` | Hidden from pickers; pinned model outside visibility shows a warning. |
 | `models.visibility.providers` | `{}` | Per provider-family toggles (`openrouter`, `github-copilot`, …); `false` hides the family. |
-| `models.catalog.liveOpenRouter` | `true` | Merge cached live OpenRouter free models into the catalog (`~/.cx/model-catalog-cache.json`, 10 min TTL). |
+| `models.catalog.liveOpenRouter` | `true` | Merge cached live OpenRouter free models into the catalog (`~/.construct/model-catalog-cache.json`, 10 min TTL). |
 | `models.catalog.maxLiveFree` | `24` | Cap on live free models merged from cache. |
 
 CLI:
@@ -170,7 +170,7 @@ CLI: `construct sources list`, `construct sources add <provider> <id> '<selector
 
 ## Intake policy (`construct.config.json`)
 
-Filesystem inbox watcher depth and extra directories under `intakePolicy`. A legacy `.cx/intake-config.json` is read as a warned fallback for `maxDepth` and `additionalDirs` only.
+Filesystem inbox watcher depth and extra directories under `intakePolicy`.
 
 The single canonical drop zone is `inbox/` at the project root (ADR-0045 §C) — always watched. There are no other zones: `.construct/inbox/` and `docs/intake/` are not watched and not scaffolded. Machine/runtime intake state (pending, processed, skipped, quarantine, dead-letter) stays under the gitignored `.construct/intake/`.
 
@@ -312,7 +312,7 @@ When `op run` injects materialized keys into `process.env`, Construct keeps thos
 | Variable | Default | Description |
 |---|---|---|
 | `CONSTRUCT_DROP_DIRS` | `~/Downloads:~/Desktop:~/Documents` | Colon-separated dirs watched by `construct drop` |
-| `CONSTRUCT_HOOK_OUTPUT_MODE` | `auto` | SessionStart context routing: `auto` \| `silent` \| `stderr` \| `stdout`. `auto` keeps the rich payload on stdout for interactive sessions and suppresses it (to `~/.cx/session-start-last.log`) for non-interactive ones. Mirrors `hooks.outputMode` in `construct.config.json` (env wins). Set to `silent`/`stderr` from SDK / `claude -p` / automation callers so a one-shot command's stdout stays reserved for its own output. |
+| `CONSTRUCT_HOOK_OUTPUT_MODE` | `auto` | SessionStart context routing: `auto` \| `silent` \| `stderr` \| `stdout`. `auto` keeps the rich payload on stdout for interactive sessions and suppresses it (to `~/.construct/session-start-last.log`) for non-interactive ones. Mirrors `hooks.outputMode` in `construct.config.json` (env wins). Set to `silent`/`stderr` from SDK / `claude -p` / automation callers so a one-shot command's stdout stays reserved for its own output. |
 | `CONSTRUCT_NONINTERACTIVE` | : | Set truthy (`1`) by an SDK / automation caller to mark the invocation non-interactive, so `CONSTRUCT_HOOK_OUTPUT_MODE=auto` resolves to suppressed. Claude Code exposes no reliable in-hook interactive/print signal, so this flag (or `CI=true` / `NODE_ENV=test`) is how `auto` detects non-interactive mode. |
 
 ## Model router

@@ -302,7 +302,7 @@ const BEADS = [
             .map((f) => read(`lib/graph/${f}`) || '')
             .join('\n');
           return /\.cx\/graph/.test(text)
-            ? fail('`.cx/graph` residue still present in lib/graph')
+            ? fail('`.construct/graph` residue still present in lib/graph')
             : pass('lib/graph uses the .construct convention');
         },
       },
@@ -508,7 +508,7 @@ const BEADS = [
         name: 'scopes select skill emphasis rather than declaring persona identity',
         kind: 'static',
         run: () => {
-          const scopes = listDir('specialists/org/scopes').filter((f) => f.endsWith('.json'));
+          const scopes = listDir('specialists/org/worker-profiles').filter((f) => f.endsWith('.json'));
           if (scopes.length === 0) return fail('no scope files found');
           const identityKeys = ['persona', 'personas', 'role', 'roles', 'team', 'teams'];
           const withoutEmphasis = [];
@@ -516,7 +516,7 @@ const BEADS = [
           for (const file of scopes) {
             let parsed;
             try {
-              parsed = JSON.parse(read(`specialists/org/scopes/${file}`) || '{}');
+              parsed = JSON.parse(read(`specialists/org/worker-profiles/${file}`) || '{}');
             } catch {
               return fail(`${file} is not valid JSON`);
             }

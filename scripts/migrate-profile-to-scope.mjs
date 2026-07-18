@@ -33,7 +33,7 @@ const REPLACEMENTS = [
   [/schemas\/profile\.schema\.json/g, 'schemas/scope.schema.json'],
   [/lint:profiles/g, 'lint:scopes'],
   [/lint-profiles\.mjs/g, 'lint-scopes.mjs'],
-  [/\.cx\/profile\.json/g, '.cx/scope.json'],
+  [/\.cx\/profile\.json/g, '.construct/scope.json'],
   [/profile_show/g, 'scope_show'],
   [/profile_list/g, 'scope_list'],
   [/profile_drafts/g, 'scope_drafts'],

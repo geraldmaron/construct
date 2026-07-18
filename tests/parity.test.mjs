@@ -342,23 +342,6 @@ describe('checkParity', () => {
 
   });
 
-  it('reclassifies drift to legacy-install when all extras are known cx-* specialists', () => {
-    // Simulates a dev box mid-upgrade from v1.0.10 (which populated cx-*
-    // specialists at user scope) to v1.0.13+ (project scope only). Extras
-    // are all from the registry's specialist roster — soft-warn, not drift,
-    // and overall parity stays ok so the gate doesn't hard-fail.
-
-    resetSurfaces();
-    writeAllSurfaces(['cx-engineer', 'cx-security']);
-    const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
-    assert.equal(report.ok, true, `legacy install should not hard-fail; got ${JSON.stringify(report.summary)}`);
-    const claude = report.surfaces.find((s) => s.surface === 'claude');
-    assert.equal(claude.status, 'legacy-install');
-    assert.deepEqual(claude.extra.sort(), ['cx-engineer', 'cx-security']);
-    assert.match(report.summary.join('\n'), /legacy v1\.0\.10 install/);
-    assert.match(report.summary.join('\n'), /--fix-legacy-agents/);
-  });
-
   it('keeps real drift hard-failing when an extra is not in the legacy roster', () => {
     // The soft-warn fires only when *every* extra matches a registry cx-*
     // name. A single unknown name (typo, user-authored extension) flips

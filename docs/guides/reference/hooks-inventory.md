@@ -24,7 +24,7 @@ Hook count target: ≤ 30 (see projection below).
 | Hook | Event | p95ms | What it does |
 |---|---|---|---|
 | `audit-trail.mjs` | PostToolUse | 15 | Append-only JSONL audit log for every mutation (project-scoped) |
-| `bash-output-logger.mjs` | PostToolUse | 20 | Saves long Bash stdout to `~/.cx/bash-logs/` |
+| `bash-output-logger.mjs` | PostToolUse | 20 | Saves long Bash stdout to `~/.construct/bash-logs/` |
 | `mcp-audit.mjs` | PostToolUse | 10 | Logs every `mcp__*` call to `.construct/mcp-audit.json` |
 | `audit-reads.mjs` | PostToolUse | 8 | Always-on: file-hash store for edit-guard staleness detection + read-tracker delta. Opt-in (`CONSTRUCT_AUDIT_READS=1`): tamper-evident audit chain to `.construct/audit-reads.jsonl`. |
 | `agent-tracker.mjs` | PostToolUse | 10 | Records last dispatched subagent + emits `handoff.received` events on `next:cx-<role>` results |
@@ -91,4 +91,3 @@ Ceiling: 30. Adding a hook requires retiring one or explicit approval.
 | Stop hooks | 2000ms total | User is waiting |
 | UserPromptSubmit | 50ms each | Blocks user input |
 | PreCompact | 500ms | One-time pause |
-

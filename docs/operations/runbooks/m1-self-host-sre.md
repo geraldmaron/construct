@@ -78,7 +78,7 @@ The test passes if **all** of these hold:
 
 - **Doctor died unexpectedly**: read `~/.local/state/construct/runtime/doctor.log`. If memory pressure, raise `CONSTRUCT_PRESSURE_GUARD_SWAP_GB`. If exception, file a bd bug + restart with `node bin/construct dev`.
 - **Watcher errors in audit log** (`kind: error`): inspect the watcher source; reproduce with `node bin/construct doctor tick`.
-- **cx-operations dispatch failed**: check `~/.cx/role-pending.jsonl`: entry should have a `bdIssueId`. If null, bd was unreachable when the gateway tried to create the issue; the audit log will say `bd-create-failed`.
+- **Operations dispatch failed**: check `~/.construct/role-pending.jsonl`: entry should have a `bdIssueId`. If null, bd was unreachable when the gateway tried to create the issue; the audit log will say `bd-create-failed`.
 - **Budget exhausted**: increase the relevant `CONSTRUCT_BUDGET_*` env var or wait for the day to roll over. Gateway returns `budget-exhausted` reason but events still record to the bus.
 
 ## Stopping the test

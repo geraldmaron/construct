@@ -58,7 +58,7 @@ A SessionStart hook's stdout is injected into the model's context. In a non-inte
 |---|---|
 | `stdout` | Inject as context (interactive default) |
 | `stderr` | Write to stderr (visible, not injected) |
-| `silent` | Write only to `~/.cx/session-start-last.log` — stdout/stderr stay clean |
+| `silent` | Write only to `~/.construct/session-start-last.log` — stdout/stderr stay clean |
 | `auto` | `stdout` when interactive, `silent` when non-interactive |
 
 Precedence is env (`CONSTRUCT_HOOK_OUTPUT_MODE`) > config (`hooks.outputMode` in `construct.config.json`) > default `auto`. Because Claude Code exposes no reliable in-hook signal for interactive vs print/SDK mode (`CLAUDECODE=1` is set in both; a hook's `isTTY` is `false` even interactively), `auto` detects non-interactive only from signals that ARE reliable — `CI=true`, `NODE_ENV=test`, and an explicit `CONSTRUCT_NONINTERACTIVE=1`. SDK and host-adapter callers set `CONSTRUCT_HOOK_OUTPUT_MODE=silent` (or `CONSTRUCT_NONINTERACTIVE=1`) when they invoke Construct non-interactively; `auto` never suppresses on an ambiguous signal, so interactive sessions keep their rich startup context. Resolver + router live in `lib/hooks/_lib/output-mode.mjs`.
@@ -67,7 +67,7 @@ Precedence is env (`CONSTRUCT_HOOK_OUTPUT_MODE`) > config (`hooks.outputMode` in
 
 Every hook that appends to a long-lived JSONL or log file routes through `appendBounded(channel, path, line)`. Channels are registered in `lib/logging/rotate.mjs` `LIMITS` with `maxBytes`, `maxSegments`, `gzip`, and an env-var override for the cap.
 
-Hooks that own audit-shaped data (audit-trail, audit-reads, mcp-audit) write via their registered channel and carry the `@p95ms` budget that reflects the write cost. Direct `appendFileSync` to a path under `~/.cx/` or `~/.construct/` is rejected by review.
+Hooks that own audit-shaped data (audit-trail, audit-reads, mcp-audit) write via their registered channel and carry the `@p95ms` budget that reflects the write cost. Direct `appendFileSync` to a path under `~/.construct/` is rejected by review.
 
 ## Surviving hooks
 
@@ -89,7 +89,7 @@ Hooks that own audit-shaped data (audit-trail, audit-reads, mcp-audit) write via
 | `policy-engine.mjs` | PreToolUse, Stop, UserPromptSubmit | * | Bootstrap gate; session-end red-CI / open-beads / drive-criteria blocks |
 | `mcp-audit.mjs` | PostToolUse | mcp__.* | Logs every MCP tool call; emits OTel span when configured |
 | `mcp-health-check.mjs` | PreToolUse | mcp__.* | Skips recently-failed MCP servers |
-| `bash-output-logger.mjs` | PostToolUse | Bash | Saves long Bash stdout to `~/.cx/bash-logs/` |
+| `bash-output-logger.mjs` | PostToolUse | Bash | Saves long Bash stdout to `~/.construct/bash-logs/` |
 | `dep-audit.mjs` | PostToolUse | Write\|Edit | Runs vulnerability audit after dependency manifest edits |
 | `test-watch.mjs` | PostToolUse | Bash | Emits `test.fail` / `test.flake` events on non-zero test exits |
 | `adaptive-lint.mjs` | PostToolUse | Write\|Edit | Auto-runs linter/formatter on edited file; flags debug logging |

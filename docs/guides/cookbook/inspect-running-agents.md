@@ -47,7 +47,7 @@ construct reflect \
 
 1. A timestamped markdown file in the target subdirectory:
    ```
-   ~/.cx/knowledge/internal/reflect-2026-04-29T14-32-00.md
+   ~/.construct/knowledge/internal/reflect-2026-04-29T14-32-00.md
    ```
 
 2. An observation in the observation store with:

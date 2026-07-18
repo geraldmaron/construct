@@ -13,7 +13,7 @@ See [ADR-0070](../../decisions/adr/0070-participation-pipeline-and-rules-schema.
 
 ### 1. Declare the dimension
 
-A dimension is a `{ key, keywords }` entry in `lib/orchestration/signal-dimensions.mjs` (`CANONICAL_DIMENSIONS`), matched as lowercased substrings over text. Projects extend or override the set by dropping a JSON array into `.cx/orchestration/signal-dimensions.json` — no core edit required.
+A dimension is a `{ key, keywords }` entry in `lib/orchestration/signal-dimensions.mjs` (`CANONICAL_DIMENSIONS`), matched as lowercased substrings over text. Projects extend or override the set by dropping a JSON array into `.construct/orchestration/signal-dimensions.json` — no core edit required.
 
 The `cost` dimension is declared as:
 
@@ -30,7 +30,7 @@ Two signal sources evaluate the same dimension vocabulary:
 
 Two mechanisms in `lib/orchestration/recruiter.mjs` map a truthy dimension to participants; a vertical typically uses both:
 
-- **Skill affinity** (`CANONICAL_AFFINITIES`) — the dimension names skill patterns, and the recruiter queries the assembled registry for specialists whose declared skills match; the specialist with the *fewest* declared skills wins (a narrow skill set that matches is a stronger specialization claim). For `cost` the patterns are `cost-optimization`, `pricing-positioning`, `raw-data-structuring`, which resolves to **cx-data-analyst** (3 declared skills) over cx-product-manager (13, matching `strategy/pricing-positioning`). Projects overlay affinities via `.cx/orchestration/recruitment-affinities.json`.
+- **Skill affinity** (`CANONICAL_AFFINITIES`) — the dimension names skill patterns, and the recruiter queries the assembled registry for specialists whose declared skills match; the specialist with the *fewest* declared skills wins (a narrow skill set that matches is a stronger specialization claim). For `cost` the patterns are `cost-optimization`, `pricing-positioning`, `raw-data-structuring`, which resolves to **cx-data-analyst** (3 declared skills) over cx-product-manager (13, matching `strategy/pricing-positioning`). Projects overlay affinities via `.construct/orchestration/recruitment-affinities.json`.
 - **Participation rules** — a `participationRules` block on any registry entry (specialist or team JSON under `specialists/org/`), validated against `schemas/participation-rules.schema.json`. Each rule is `when(signalExpr | watchCondition) → recruit(specialists | teams)` plus `role` (author/reviewer/advisor), `gate` (advisory by default; `enforced` requires an `enforcementScope` naming a team decisionRight), and a `reason` string surfaced verbatim in trace output.
 
 The cost vertical declares two rules:

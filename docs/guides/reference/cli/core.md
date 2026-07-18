@@ -98,7 +98,7 @@ Check installation health
 **Usage**
 
 ```bash
-construct doctor [<status|logs|tick|report|consistency|watch|stop|credentials>] [--fix-legacy-agents]
+construct doctor [<status|logs|tick|report|consistency|watch|stop|credentials>]
 ```
 
 **Subcommands**
@@ -111,12 +111,6 @@ construct doctor [<status|logs|tick|report|consistency|watch|stop|credentials>] 
 - `watch` — Start the doctor daemon (continuous checks)
 - `stop` — Stop the doctor daemon
 - `credentials` — Diagnose provider credential resolution
-
-**Options**
-
-| Flag | Description |
-|---|---|
-| `--fix-legacy-agents` | Sweep legacy cx-*.md agents at user scope and re-sync |
 
 ## construct init
 
@@ -163,7 +157,6 @@ construct install [--footprint=project|user|both] [--yes] [--dry-run] [--no-laun
 | Flag | Description |
 |---|---|
 | `--footprint=<f>` | project (default, no-op + guidance) | user (writes ~/.config/construct/, MCP, ~/.claude/* via consent) | both |
-| `--scope=<s>` | deprecated alias for --footprint (same values); prints a deprecation notice — see ADR-0071 |
 | `--yes` | Apply defaults without prompts (only meaningful with --footprint=user|both) |
 | `--dry-run` | Preview the install plan (footprints, files, services) without writing anything |
 | `--no-launch-agent` | Skip background macOS LaunchAgent registration |
@@ -242,7 +235,7 @@ construct sandbox create|list|delete|prune [--profile=<id>]
 
 **Subcommands**
 
-- `create [--profile=<id>]` — Create a new sandbox under ~/.cx/sandboxes/
+- `create [--profile=<id>]` — Create a new sandbox under ~/.construct/sandboxes/
 - `list` — List existing sandboxes, newest first
 - `delete <id>` — Remove one sandbox by id
 - `prune [--days=N]` — Remove sandboxes older than N days (default 7)

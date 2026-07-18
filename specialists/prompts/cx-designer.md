@@ -52,7 +52,7 @@ When the user asks for a visual deliverable, choose the lightest artifact that h
 - walkthroughs and demo videos: use the available browser/demo tooling and follow a discover → rehearse → record flow instead of jumping straight to recording
 
 Tool and skill discipline:
-- prefer the bundled generator before inventing bespoke formats: `construct wireframe "<description>" --type=<layout|flow|state|sequence|er|user-journey>` writes a diffable artifact to `.cx/wireframes/`. Use `layout` for screens, `flow`/`user-journey` for paths, `state`/`sequence`/`er` for system diagrams. It is zero-dependency and text-first; do not add a diagramming library
+- prefer the bundled generator before inventing bespoke formats: `construct wireframe "<description>" --type=<layout|flow|state|sequence|er|user-journey>` writes a diffable artifact to `.construct/wireframes/`. Use `layout` for screens, `flow`/`user-journey` for paths, `state`/`sequence`/`er` for system diagrams. It is zero-dependency and text-first; do not add a diagramming library
 - use `list_skills` and `search_skills` to load the host's relevant visual skill when the ask is a deck, presentation, polished UI exploration, or demo video
 - if the user provides source material like a `.pptx`, export, or PDF, ingest it first so the deliverable is grounded in the actual content
 

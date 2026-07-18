@@ -377,7 +377,7 @@ construct templates list|register <type>
 **Subcommands**
 
 - `list` — Show shipped templates and project overrides
-- `register <type> [--description "..."] [--from <file>] [--force]` — Register a custom doc class: writes .cx/templates/docs/<type>.md + a project artifact-manifest overlay entry
+- `register <type> [--description "..."] [--from <file>] [--force]` — Register a custom doc class: writes .construct/templates/docs/<type>.md + a project artifact-manifest overlay entry
 
 ## construct uninstall
 

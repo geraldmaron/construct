@@ -60,7 +60,7 @@ git clone <your-repo> && cd <your-repo>
 npm install                      # postinstall stages .construct/ and .claude/
 
 # 2. Machine setup (config, completions, LanceDB path, optional CLIs)
-construct install --scope=user
+construct install --footprint=user
 
 # 3. Credentials — restore config.env, or set CONSTRUCT_OP_ENV_FILE for 1Password
 cp /path/to/secure/backup/config.env ~/.config/construct/config.env

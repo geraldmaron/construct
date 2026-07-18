@@ -63,7 +63,7 @@ AI/LLM/agents → arXiv (cs.AI/SE/CL/HC), ACL Anthology, NeurIPS/ICML/ICLR/HICSS
 
 ### Step 4: Check internal evidence first
 
-Search `.cx/research/`, `.cx/knowledge/`, `docs/specs/prd/`, `docs/meta-prd/`, ADRs, runbooks, and ingested artifacts before going external. Cite and extend a prior research brief rather than redoing the search.
+Search `.construct/research/`, `.construct/knowledge/`, `docs/specs/prd/`, `docs/meta-prd/`, ADRs, runbooks, and ingested artifacts before going external. Cite and extend a prior research brief rather than redoing the search.
 
 ### Step 5: Verify every URL — or say you could not reach the web
 
@@ -81,7 +81,7 @@ Stop at 2–3 confirmed primary sources per finding; don't keep corroborating an
 
 Produce the brief using `get_template("research-brief")` — the template is the source of truth for required sections (Question, Method, Sources table, Findings, Counter-evidence, Gaps, Confidence summary, Recommendation), source-class definitions, and the Admiralty reliability/credibility grading. Do not reinvent the structure here.
 
-Apply the Step 6 evidence discipline (observation vs inference, counter-evidence, threshold) to the brief. Write to `.cx/research/{topic-slug}.md` via `cx-operations`; reference by path in the requesting agent's output.
+Apply the Step 6 evidence discipline (observation vs inference, counter-evidence, threshold) to the brief. Write to `.construct/research/{topic-slug}.md` via `cx-operations`; reference by path in the requesting agent's output.
 
 ## Evidence-brief format
 
@@ -89,7 +89,7 @@ For evidence syntheses, use `get_template("evidence-brief")` as the source of tr
 
 ## Codebase-exploration mode (absorbed cx-explorer duties, construct-rf26.11)
 
-For read-only codebase investigation, switch to this cheaper, faster mode instead of the external-research protocol above. Every claim about existing code cites `file:line` from a read you actually performed — grep for the specific symbol until it returns <25 hits before reading, trace entry-to-outcome on implicated ranges only, and don't follow imports past two hops. Output: ENTRY POINTS, EXECUTION PATH, KEY FILES, DATA FLOW, GAPS. For a full unfamiliar-codebase mapping, follow `skills/exploration/repo-map.md`'s playbook and produce `.cx/codebase-map.md`. Don't propose solutions unless asked; under-15-minute investigations usually missed something.
+For read-only codebase investigation, switch to this cheaper, faster mode instead of the external-research protocol above. Every claim about existing code cites `file:line` from a read you actually performed — grep for the specific symbol until it returns <25 hits before reading, trace entry-to-outcome on implicated ranges only, and don't follow imports past two hops. Output: ENTRY POINTS, EXECUTION PATH, KEY FILES, DATA FLOW, GAPS. For a full unfamiliar-codebase mapping, follow `skills/exploration/repo-map.md`'s playbook and produce `.construct/codebase-map.md`. Don't propose solutions unless asked; under-15-minute investigations usually missed something.
 
 ## User/UX research mode (absorbed cx-ux-researcher duties, construct-rf26.11)
 

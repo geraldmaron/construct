@@ -15,7 +15,7 @@ description: How .construct/, beads, the vector index, and SQL fit together to m
 | **R&D loop** | `inbox/` (drop zone), `.construct/intake/{pending,processed,skipped}/`, `.construct/task-graphs/`, `.construct/traces/` | Per-signal drop zone + triage queue, per-signal execution plans, append-only trace event log |
 | **Runtime** | `.construct/observations/`, `.construct/sessions/`, `.construct/runtime/` | Machine-written, high-churn, agent working memory |
 
-Runtime dirs are **never** hand-edited. Knowledge dirs **are** hand-editable — but like the rest of `.construct/` they are local-only: `construct init` gitignores `.construct/` in full, so knowledge persists on the machine across sessions and is never committed to the repo (see the [README](../../README.md) section "`.cx/` is local-only runtime state"). R&D-loop dirs are written by the daemon and the CLI; agents update them via `construct intake` / `construct graph`, not by editing files.
+Runtime dirs are **never** hand-edited. Knowledge dirs **are** hand-editable — but like the rest of `.construct/` they are local-only: `construct init` gitignores `.construct/` in full, so knowledge persists on the machine across sessions and is never committed to the repo. R&D-loop dirs are written by the daemon and the CLI; agents update them via `construct intake` / `construct graph`, not by editing files.
 
 ---
 
@@ -168,7 +168,7 @@ Corpus source targets keep their cloned content out of the project tree entirely
 
 The knowledge corpus is multi-root, and cross-repo federation covers code as well as docs. `lib/sources/content-roots.mjs` resolves the content-capable subset of `sources.targets[]` — directory targets to their path, corpus targets to their synced cache — and both `buildCorpus` (`lib/knowledge/rag.mjs`, backing `construct ask`) and `buildSourceList` (`lib/knowledge/search.mjs`, backing `construct knowledge search` and MCP `knowledge_search`) fold those roots into a single searchable index: every markdown file, plus every code/text file whose extension is in `UTF8_TEXT_EXTS` (`lib/document-extract.mjs` — `.js`/`.mjs`/`.ts`/`.tsx`/`.jsx`/`.py`/`.go`/`.rs`/`.sh` plus config, data, and markup text formats), skipping vendored/build directories (`.git`, `node_modules`, `dist`, `build`, `vendor`, `.venv`, `__pycache__`). Binary and non-text files never join the corpus. Every chunk carries a structured `origin` — `{targetId, provider, projectKey, relPath, ref, kind}`, with code chunks tagged `kind: 'code'` — so a hit is always attributable to its source project; the host project is the reserved origin (`targetId: null`, `projectKey: "self"`). Retrieval narrows by project with `--projects=<id,...>` (or `all` / `self`); an unknown id is a hard error, never a silent empty result. `construct ingest <dir> --as=<targetId>` stamps `origin_target_id`/`origin_provider` into the ingested file's frontmatter so imported knowledge stays re-verifiable back to its registered source.
 
-Alongside the searchable corpus, `construct graph build-targets` builds a per-repo import/symbol code map for the same registered targets, persisted at `.cx/graph/targets/<targetId>/` and queried with `construct graph query <node-id> --projects=<id,...>|all|self` (same id semantics and unknown-id hard error as knowledge search). The code map covers JavaScript-family sources only (`.js`/`.mjs`/`.cjs`, resolved from relative import/export/require specifiers — `lib/graph/build-import-graph.mjs`); files in other languages are searchable in the knowledge corpus but do not appear in the import graph.
+Alongside the searchable corpus, `construct graph build-targets` builds a per-repo import/symbol code map for the same registered targets, persisted at `.construct/graph/targets/<targetId>/` and queried with `construct graph query <node-id> --projects=<id,...>|all|self` (same id semantics and unknown-id hard error as knowledge search). The code map covers JavaScript-family sources only (`.js`/`.mjs`/`.cjs`, resolved from relative import/export/require specifiers — `lib/graph/build-import-graph.mjs`); files in other languages are searchable in the knowledge corpus but do not appear in the import graph.
 
 ### Entity graph (GraphRAG)
 
@@ -213,7 +213,7 @@ SLACK_CHANNELS=#eng-general,#incidents:risk,#decisions:decision,#customer-feedba
 
 `product-intel` is retired. New ingests and cleanup tools use `.construct/knowledge/` only.
 
-If an older project still has `.cx/product-intel/sources/ingested/`, move those markdown files into the closest matching `.cx/knowledge/<subdir>/` directory.
+Store product-intelligence source material under the closest matching `.construct/knowledge/<subdir>/` directory.
 
 Structured Product Intelligence stores now live under `.construct/knowledge/internal/` as well:
 

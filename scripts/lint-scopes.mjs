@@ -2,7 +2,7 @@
 /**
  * scripts/lint-scopes.mjs — Work-scope + flavor lint gate.
  *
- * Curated scopes live in specialists/org/scopes/. Teams and roles are org-
+ * Curated worker profiles live in specialists/org/worker-profiles/. Teams and roles are org-
  * derived at runtime; lint checks scope shape and flavor caps only.
  */
 import fs from 'node:fs';
@@ -16,7 +16,7 @@ import { validateSkillEffectiveness } from '../lib/validators/skill-effectivenes
 import { auditSkillComposition } from '../lib/skills/composition-graph.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const SCOPES_DIR = path.join(REPO_ROOT, 'specialists', 'org', 'scopes');
+const SCOPES_DIR = path.join(REPO_ROOT, 'specialists', 'org', 'worker-profiles');
 const FLAVORS_DIR = path.join(REPO_ROOT, 'skills', 'roles');
 const quiet = process.argv.includes('--quiet');
 

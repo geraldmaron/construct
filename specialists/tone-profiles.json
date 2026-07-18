@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "Shipped tone profiles for Construct document and agent output. Projects override via .cx/brand-voice.json.",
+  "description": "Shipped tone profiles for Construct document and agent output. Projects override via .construct/brand-voice.json.",
   "profiles": {
     "direct": {
       "formality": 3,

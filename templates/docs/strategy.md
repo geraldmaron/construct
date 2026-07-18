@@ -7,7 +7,7 @@ horizon: "6–12 months"
 <!--
 templates/docs/strategy.md: Template for product strategy documents.
 Use for both user-product strategy and Construct's own strategy (.construct/strategy.md).
-Canonical store: ~/.cx/strategy.md (user-global) or .construct/strategy.md (project-local, committed).
+Canonical store: ~/.construct/strategy.md (user-global) or .construct/strategy.md (project-local, committed).
 Owning workflow: skills/docs/strategy-workflow.md.
 -->
 

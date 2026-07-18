@@ -486,7 +486,7 @@ Teams in each profile mirror the department structure but add explicit decision 
 
 ## Profile team resolution
 
-Curated **scopes** live in `specialists/org/scopes/`: intake taxonomy, doc templates, tone, hooks. The `construct.config.json` `profile` field selects the active scope (`rnd`, `operations`, `creative`, `research`).
+Curated **worker profiles** live in `specialists/org/worker-profiles/`: intake taxonomy, doc templates, tone, hooks. The `construct.config.json` `scope` field selects the active profile (`rnd`, `operations`, `creative`, `research`).
 
 **One org for all scopes.** Teams and roles always load from `specialists/org` at runtime via `lib/scopes/enrich.mjs`. Scopes change how work is classified and labeled — not who exists on the org chart.
 
