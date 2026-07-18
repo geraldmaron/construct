@@ -71,6 +71,7 @@
     "0078-durable-handoff-checkpointer",
     "0079-terminal-status-vocabulary-alignment",
     "0080-host-executes-the-prompt-canonical",
+    "0081-lancedb-optional-retrieval-adapter",
     "0092-single-project-identity-derivation"
   ]
 }
