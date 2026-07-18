@@ -29,6 +29,7 @@
     "02-deadcode:module-test-only:lib/init-unified.mjs",
     "02-deadcode:module-test-only:lib/graph/relational/postgres-store.mjs",
     "02-deadcode:module-test-only:lib/roles/router.mjs",
+    "02-deadcode:module-test-only:lib/oracle/directive-executor.mjs",
     "03-docs:unnavigated-doc-dir:docs/notes/research/workspace-control-plane",
     "03-docs:unnavigated-doc-dir:docs/notes/research/workspace-control-plane/spikes/b-parallel-research",
     "03-docs:unnavigated-doc-dir:docs/notes/research/workspace-control-plane/spikes/b-parallel-research/workers",
