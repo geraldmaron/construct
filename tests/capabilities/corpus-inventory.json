@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-18T04:16:14.047Z",
+  "generatedAt": "2026-07-18T04:40:31.617Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 949,
+    "testFiles": 952,
     "topLevelTestFiles": 381,
-    "nestedTestFiles": 568,
+    "nestedTestFiles": 571,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 619,
-      "functional": 279,
+      "unit": 621,
+      "functional": 280,
       "visual": 12,
       "live-provider": 2,
       "integration": 37
     },
     "byCategory": {
-      "unit": 551,
-      "functional": 279,
+      "unit": 553,
+      "functional": 280,
       "visual": 12,
       "structural-guard": 20,
       "contract-subsystem": 49,
@@ -4614,6 +4614,14 @@
       "maintainerNotes": "tests/functional/web-search.functional.test.mjs"
     },
     {
+      "path": "tests/functional/work-spec-planning.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/work-spec-planning.functional.test.mjs — day-one proof"
+    },
+    {
       "path": "tests/functional/workflow-contribution.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -6198,6 +6206,22 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/pg-queue.test.mjs — Postgres queue provider contract checks."
+    },
+    {
+      "path": "tests/planning/decomposition-check.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/planning/decomposition-check.test.mjs — graph-informed decomposition"
+    },
+    {
+      "path": "tests/planning/work-spec.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/planning/work-spec.test.mjs — Work spec schema (construct-b0nny.23)."
     },
     {
       "path": "tests/platforms-claude-md-parity.test.mjs",

@@ -549,6 +549,10 @@
       "core": false
     },
     {
+      "name": "work-spec",
+      "core": false
+    },
+    {
       "name": "workers",
       "core": true
     },
