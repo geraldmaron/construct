@@ -16,12 +16,10 @@ description: Core commands for Construct.
 | `construct install` | Machine setup (footprint per ADR-0029/ADR-0071): --footprint=project\|user\|both, default project |
 | `construct intake` | View and process the active profile's intake queue (queue label varies by profile) |
 | `construct oracle` | Oracle meta-controller — fleet health review and bounded-auto maintenance |
-| `construct participation` | Author and inspect ADR-0070 participation rules (condition → recruit with role/gate) over org-api — same writer and validation as Org Studio and the participation_rules MCP tool |
 | `construct recommendations` | View and manage artifact recommendations |
 | `construct sandbox` | Isolated tmpdir-based environment for QA and worker dry-runs |
 | `construct status` | Show system health and credentials |
 | `construct stop` | Stop all running services |
-| `construct studio` | Workspace Studio — local authoring for worker profiles, assignments, fences, and participation rules (loopback-only) |
 | `construct sync` | Sync agent adapters to AI tools |
 | `construct workers` | List registered workers and heartbeat freshness |
 | `construct workspace-preset` | Inspect reusable workspace-wide defaults |
@@ -193,26 +191,6 @@ Oracle meta-controller — fleet health review and bounded-auto maintenance
 construct oracle status|review|pending|approve|gaps|reconcile
 ```
 
-## construct participation
-
-Author and inspect ADR-0070 participation rules (condition → recruit with role/gate) over org-api — same writer and validation as Org Studio and the participation_rules MCP tool
-
-**Usage**
-
-```bash
-construct participation list|show|add|validate|remove|preview|meta
-```
-
-**Subcommands**
-
-- `list [--json]` — Every declared rule across tiers, with owner/scope/path
-- `show <owner> <ruleId>` — One rule with its owner metadata
-- `add <owner> --rule='{...}' [--scope=project|user]` — Validate + upsert a rule onto its owning entry (JSON via --rule or stdin)
-- `validate <owner> --rule='{...}'` — Dry-run the same checks add enforces
-- `remove <owner> <ruleId> [--scope=project|user]` — Delete a rule (project-tier removal shadows a builtin rule)
-- `preview --request="..."` — Recruited set via the live requestSignals + recruiter path
-- `meta` — Editor vocabulary: watchers, signal keys, enums, and worker profiles
-
 ## construct recommendations
 
 View and manage artifact recommendations
@@ -264,16 +242,6 @@ Stop all running services
 
 ```bash
 construct stop
-```
-
-## construct studio
-
-Workspace Studio — local authoring for worker profiles, assignments, fences, and participation rules (loopback-only)
-
-**Usage**
-
-```bash
-construct studio [--port=4321] [--no-open]
 ```
 
 ## construct sync
