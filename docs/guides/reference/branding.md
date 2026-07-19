@@ -47,7 +47,7 @@ Prose rules: [STYLE.md](../STYLE.md). No marketing voice (`robust`, `enterprise-
 
 Typed artifacts resolve tone from:
 
-1. [`specialists/artifact-manifest.json`](../../specialists/artifact-manifest.json) `toneDefault` / `toneAllowed`
+1. [`registry/artifact-manifest.json`](../../registry/artifact-manifest.json) `toneDefault` / `toneAllowed`
 2. [`specialists/tone-profiles.json`](../../specialists/tone-profiles.json)
 3. Optional project override [`.construct/brand-voice.json`](../../schemas/brand-voice.schema.json)
 
@@ -55,7 +55,7 @@ Validate before ship: `construct artifact validate <path> --type=<doc-type>`.
 
 ## Artifact workflow branding
 
-`specialists/artifact-manifest.json` also defines the registered document-class
+`registry/artifact-manifest.json` also defines the registered document-class
 workflow. A class resolves its author chain, reviewer chain, validation policy,
 output formats, and branding policy from that manifest. Any registered class is
 eligible; Construct does not silently substitute a PRD for an unknown class.

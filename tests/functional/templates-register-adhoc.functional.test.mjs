@@ -3,7 +3,7 @@
  *
  * Template-optional generation (bead construct-760c.5). Two ways to author a
  * document class the builtin manifest never registered, with the builtin
- * (specialists/artifact-manifest.json) held byte-identical throughout:
+ * (registry/artifact-manifest.json) held byte-identical throughout:
  *
  *   1. `construct templates register <type>` (real spawned binary) writes a
  *      project template under .construct/templates/docs/<type>.md and a project-tier
@@ -31,7 +31,7 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const BIN = path.join(REPO_ROOT, 'bin', 'construct');
-const BUILTIN_MANIFEST = path.join(REPO_ROOT, 'specialists', 'artifact-manifest.json');
+const BUILTIN_MANIFEST = path.join(REPO_ROOT, 'registry', 'artifact-manifest.json');
 
 const dirs = [];
 function freshProject() {

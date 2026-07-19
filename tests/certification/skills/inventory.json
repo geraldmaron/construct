@@ -1,15 +1,12 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-14T03:06:34.245Z",
+  "generatedAt": "2026-07-19T00:48:01.291Z",
   "generator": "lib/certification/skill-inventory.mjs",
   "skillCount": 155,
   "skills": [
     {
       "id": "ai/agent-dev",
-      "owners": [
-        "architect",
-        "engineer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when building AI agents, tool-use systems, or multi-agent workflows."
       ],
@@ -25,9 +22,7 @@
     },
     {
       "id": "ai/llm-security",
-      "owners": [
-        "engineer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when securing LLM-powered applications against prompt injection, data leakage, and misuse."
       ],
@@ -43,9 +38,7 @@
     },
     {
       "id": "ai/ml-ops",
-      "owners": [
-        "engineer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Patterns, anti-patterns, and reference guidance for ML Operations (MLOps). Use when the task involves ml operations (mlops)."
       ],
@@ -61,9 +54,7 @@
     },
     {
       "id": "ai/orchestration-workflow",
-      "owners": [
-        "orchestrator"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when the request involves agent orchestration, phase transitions, task keys, handoff quality, workflow state, or project alignment."
       ],
@@ -79,11 +70,7 @@
     },
     {
       "id": "ai/prompt-and-eval",
-      "owners": [
-        "architect",
-        "engineer",
-        "reviewer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when designing prompts, evaluating model performance, or optimizing LLM behavior."
       ],
@@ -99,10 +86,7 @@
     },
     {
       "id": "ai/prompt-optimizer",
-      "owners": [
-        "engineer",
-        "reviewer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Closed-loop prompt optimization guide. Use when the task matches the trigger conditions described in the body."
       ],
@@ -118,9 +102,7 @@
     },
     {
       "id": "ai/rag-system",
-      "owners": [
-        "engineer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when building retrieval-augmented generation pipelines, vector search, or knowledge-grounded AI systems."
       ],
@@ -136,10 +118,7 @@
     },
     {
       "id": "ai/trace-triage",
-      "owners": [
-        "debugger",
-        "reviewer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when: agent telemetry traces need triage to find where a run went wrong — the failing step, the cause category, and whether it is a regression or a one-off."
       ],
@@ -155,9 +134,7 @@
     },
     {
       "id": "architecture/api-design",
-      "owners": [
-        "architect"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when designing REST, GraphQL, or gRPC APIs."
       ],
@@ -173,9 +150,7 @@
     },
     {
       "id": "architecture/caching",
-      "owners": [
-        "architect"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when designing caching strategies for applications, APIs, or infrastructure."
       ],
@@ -191,9 +166,7 @@
     },
     {
       "id": "architecture/cloud-native",
-      "owners": [
-        "architect"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when designing containerized, orchestrated, or microservice-based systems."
       ],
@@ -209,9 +182,7 @@
     },
     {
       "id": "architecture/message-queue",
-      "owners": [
-        "architect"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when designing asynchronous communication, event-driven systems, or message-based integrations."
       ],
@@ -227,10 +198,7 @@
     },
     {
       "id": "architecture/security-arch",
-      "owners": [
-        "architect",
-        "security"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when designing authentication, authorization, network security, or zero-trust architectures."
       ],
@@ -264,9 +232,7 @@
     },
     {
       "id": "compliance/ai-disclosure",
-      "owners": [
-        "security"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when reviewing AI features for disclosure requirements, transparency obligations, or emerging AI regulation compliance."
       ],
@@ -282,9 +248,7 @@
     },
     {
       "id": "compliance/data-privacy",
-      "owners": [
-        "security"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when reviewing data collection, storage, processing, or retention for privacy regulation compliance."
       ],
@@ -300,9 +264,7 @@
     },
     {
       "id": "compliance/license-audit",
-      "owners": [
-        "security"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when auditing dependency licenses, evaluating OSS compliance risk, or preparing license inventories for legal review."
       ],
@@ -318,9 +280,7 @@
     },
     {
       "id": "compliance/regulatory-review",
-      "owners": [
-        "security"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when conducting a compliance review before shipping features that handle user data, financial transactions, AI decisions, or regulated content."
       ],
@@ -336,9 +296,7 @@
     },
     {
       "id": "development/cpp",
-      "owners": [
-        "engineer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when writing, reviewing, or debugging C or C++ code."
       ],
@@ -354,9 +312,7 @@
     },
     {
       "id": "development/go",
-      "owners": [
-        "engineer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when writing, reviewing, or debugging Go code."
       ],
@@ -372,9 +328,7 @@
     },
     {
       "id": "development/java",
-      "owners": [
-        "engineer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when writing, reviewing, or debugging Java or Kotlin code on the JVM."
       ],
@@ -390,9 +344,7 @@
     },
     {
       "id": "development/kotlin",
-      "owners": [
-        "engineer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Patterns, anti-patterns, and reference guidance for Kotlin / Android Development. Use when the task involves kotlin / android development."
       ],
@@ -408,9 +360,7 @@
     },
     {
       "id": "development/mobile-crossplatform",
-      "owners": [
-        "engineer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Before choosing a framework, answer:. Use when the task matches the trigger conditions described in the body."
       ],
@@ -426,9 +376,7 @@
     },
     {
       "id": "development/python",
-      "owners": [
-        "engineer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when writing, reviewing, or debugging Python code."
       ],
@@ -444,9 +392,7 @@
     },
     {
       "id": "development/rust",
-      "owners": [
-        "engineer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when writing, reviewing, or debugging Rust code."
       ],
@@ -462,9 +408,7 @@
     },
     {
       "id": "development/shell",
-      "owners": [
-        "engineer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when writing, reviewing, or debugging Bash, Zsh, or POSIX shell scripts."
       ],
@@ -480,9 +424,7 @@
     },
     {
       "id": "development/swift",
-      "owners": [
-        "engineer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Swift 6 enforces data-race safety at compile time. Annotate isolation boundary explicitly:. Use when the task matches the trigger conditions described in the body."
       ],
@@ -498,9 +440,7 @@
     },
     {
       "id": "development/typescript",
-      "owners": [
-        "engineer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when writing, reviewing, or debugging TypeScript or JavaScript code."
       ],
@@ -516,10 +456,7 @@
     },
     {
       "id": "devops/ci-cd",
-      "owners": [
-        "engineer",
-        "operations"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when designing, debugging, or optimizing CI/CD pipelines."
       ],
@@ -535,9 +472,7 @@
     },
     {
       "id": "devops/containerization",
-      "owners": [
-        "engineer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when writing Dockerfiles, optimizing image size, or securing container builds."
       ],
@@ -553,9 +488,7 @@
     },
     {
       "id": "devops/cost-optimization",
-      "owners": [
-        "engineer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when reducing cloud spend, right-sizing resources, or implementing FinOps practices."
       ],
@@ -571,10 +504,7 @@
     },
     {
       "id": "devops/data-engineering",
-      "owners": [
-        "data-analyst",
-        "engineer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "1. **Idempotency**: pipelines can run multiple times without duplicating data 2. **Observability**: every pipeline run logs row counts, latency, and anomalies 3. **Data contracts**: producers and consumers agree on schema and SLAs 4. **Lineage**: know where every column came from and what it feeds. Use when the task matches the trigger conditions described in the body."
       ],
@@ -590,10 +520,7 @@
     },
     {
       "id": "devops/database",
-      "owners": [
-        "data-analyst",
-        "engineer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when designing schemas, writing migrations, optimizing queries, or selecting databases."
       ],
@@ -609,10 +536,7 @@
     },
     {
       "id": "devops/dependency-management",
-      "owners": [
-        "engineer",
-        "researcher"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when managing package upgrades, resolving CVEs, or establishing lock file and versioning policy."
       ],
@@ -628,9 +552,7 @@
     },
     {
       "id": "devops/devsecops",
-      "owners": [
-        "engineer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when integrating security into CI/CD pipelines, managing supply chain risk, or automating security scanning."
       ],
@@ -646,9 +568,7 @@
     },
     {
       "id": "devops/git-workflow",
-      "owners": [
-        "operations"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when establishing branching strategies, commit conventions, or code integration practices."
       ],
@@ -664,9 +584,7 @@
     },
     {
       "id": "devops/incident-response",
-      "owners": [
-        "operations"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Define severity in your runbook and assign it early: it determines escalation and comms cadence. Use when the task matches the trigger conditions described in the body."
       ],
@@ -682,9 +600,7 @@
     },
     {
       "id": "devops/monorepo",
-      "owners": [
-        "engineer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when selecting monorepo tooling, structuring packages, or optimizing affected-only builds."
       ],
@@ -700,12 +616,7 @@
     },
     {
       "id": "devops/observability",
-      "owners": [
-        "data-analyst",
-        "debugger",
-        "engineer",
-        "operations"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when designing logging, tracing, metrics, or alerting systems."
       ],
@@ -721,10 +632,7 @@
     },
     {
       "id": "devops/performance",
-      "owners": [
-        "debugger",
-        "operations"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when profiling, load testing, or optimizing application and infrastructure performance."
       ],
@@ -740,9 +648,7 @@
     },
     {
       "id": "devops/testing",
-      "owners": [
-        "qa"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when planning test coverage, selecting test types, or establishing testing practices."
       ],
@@ -758,10 +664,7 @@
     },
     {
       "id": "docs/adr-workflow",
-      "owners": [
-        "architect",
-        "operations"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when: an architectural decision is made that affects the system structure, data model, API contracts, or technology choices.",
         "an architectural decision is made that affects the system structure, data model, API contracts, or technology choices."
@@ -791,9 +694,7 @@
     },
     {
       "id": "docs/backlog-proposal-workflow",
-      "owners": [
-        "product-manager"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when: product evidence should create or update Jira, Linear, GitHub Issues, or another tracker.",
         "product evidence should create or update Jira, Linear, GitHub Issues, or another tracker."
@@ -823,12 +724,10 @@
     },
     {
       "id": "docs/codebase-research-workflow",
-      "owners": [
-        "researcher"
-      ],
+      "owners": [],
       "activationTriggers": [
-        "Use when: researcher maps the repo — entry points, dependencies, hot paths, or unfamiliar subsystems.",
-        "researcher investigates **this repository** — structure, dependencies, behavior. Not for external vendor research or user interviews."
+        "Use when: cx-researcher maps the repo — entry points, dependencies, hot paths, or unfamiliar subsystems.",
+        "cx-researcher investigates **this repository** — structure, dependencies, behavior. Not for external vendor research or user interviews."
       ],
       "inputs": [
         "[repository-path]"
@@ -855,9 +754,7 @@
     },
     {
       "id": "docs/customer-profile-workflow",
-      "owners": [
-        "product-manager"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when: customer evidence should update durable product memory.",
         "customer evidence should update durable product memory."
@@ -887,9 +784,7 @@
     },
     {
       "id": "docs/document-ingest-workflow",
-      "owners": [
-        "operations"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when: the user points at a PDF, Word doc, spreadsheet, slide deck, export, or mixed document folder and wants a markdown version that Construct can search efficiently later.",
         "the user points at a PDF, Word doc, spreadsheet, slide deck, export, or mixed document folder and wants a markdown version that Construct can search efficiently later."
@@ -915,10 +810,7 @@
     },
     {
       "id": "docs/evidence-ingest-workflow",
-      "owners": [
-        "product-manager",
-        "researcher"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when: the user pastes customer notes, Slack threads, support tickets, sales notes, research snippets, RFCs, analytics summaries, or competitor signals.",
         "the user pastes customer notes, Slack threads, support tickets, sales notes, research snippets, RFCs, analytics summaries, or competitor signals."
@@ -948,9 +840,7 @@
     },
     {
       "id": "docs/init-docs",
-      "owners": [
-        "operations"
-      ],
+      "owners": [],
       "activationTriggers": [
         "`init docs`, `create docs structure`, `set up documentation`, `docs scaffold`, `documentation init`. Use when the task matches the trigger conditions described in the body."
       ],
@@ -966,9 +856,7 @@
     },
     {
       "id": "docs/init-project",
-      "owners": [
-        "operations"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when: starting work on a new project or joining an existing one without doc structure.",
         "starting work on a new project or joining an existing one without doc structure."
@@ -985,9 +873,7 @@
     },
     {
       "id": "docs/memo-and-decision-capture",
-      "owners": [
-        "operations"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when: a decision, status update, or announcement needs to be captured as a short, durable memo that states the decision, its rationale, and what changes."
       ],
@@ -1003,9 +889,7 @@
     },
     {
       "id": "docs/prd-workflow",
-      "owners": [
-        "product-manager"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when: the user asks to create a PRD, platform spec, business case, RFC, or requirements document.",
         "the user asks to create a PRD, platform spec, business case, RFC, or requirements document."
@@ -1035,9 +919,7 @@
     },
     {
       "id": "docs/prfaq-workflow",
-      "owners": [
-        "product-manager"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when: the user asks for a PRFAQ, working-backwards doc, launch narrative, or FAQ grounded in product evidence.",
         "the user asks for a PRFAQ, working-backwards doc, launch narrative, or FAQ grounded in product evidence."
@@ -1067,9 +949,7 @@
     },
     {
       "id": "docs/product-intelligence-review",
-      "owners": [
-        "product-manager"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when: reviewing PRDs, Meta PRDs, PRFAQs, evidence briefs, signal briefs, customer profiles, or backlog proposals.",
         "reviewing PRDs, Meta PRDs, PRFAQs, evidence briefs, signal briefs, customer profiles, or backlog proposals."
@@ -1086,9 +966,7 @@
     },
     {
       "id": "docs/product-intelligence-workflow",
-      "owners": [
-        "product-manager"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when: the request involves customer evidence, PM synthesis, product requirements, PRDs, PRFAQs, customer profiles, product signals, or backlog proposals.",
         "the request involves customer evidence, PM synthesis, product requirements, PRDs, PRFAQs, customer profiles, product signals, or backlog proposals."
@@ -1114,9 +992,7 @@
     },
     {
       "id": "docs/product-signal-workflow",
-      "owners": [
-        "product-manager"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when: the user asks what customers are asking for, what themes are emerging, whether evidence is strong enough, or what should become a PRD.",
         "the user asks what customers are asking for, what themes are emerging, whether evidence is strong enough, or what should become a PRD."
@@ -1142,13 +1018,10 @@
     },
     {
       "id": "docs/research-workflow",
-      "owners": [
-        "architect",
-        "researcher"
-      ],
+      "owners": [],
       "activationTriggers": [
-        "Use when: researcher must investigate external facts — CVEs, APIs, market data, regulations, or vendor behavior.",
-        "researcher investigates **external** facts — not user interviews or codebase exploration. For user evidence use `docs/user-research-workflow`; for repo exploration use `docs/codebase-research-workflow`."
+        "Use when: cx-researcher must investigate external facts — CVEs, APIs, market data, regulations, or vendor behavior.",
+        "cx-researcher investigates **external** facts — not user interviews or codebase exploration. For user evidence use `docs/user-research-workflow`; for repo exploration use `docs/codebase-research-workflow`."
       ],
       "inputs": [
         "[research-question]"
@@ -1175,9 +1048,7 @@
     },
     {
       "id": "docs/runbook-workflow",
-      "owners": [
-        "operations"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when: creating operational procedures for services, alerts, or recurring operations.",
         "creating operational procedures for services, alerts, or recurring operations."
@@ -1207,9 +1078,7 @@
     },
     {
       "id": "docs/strategy-workflow",
-      "owners": [
-        "product-manager"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when: the user asks about product direction, strategic bets, what to prioritize, whether a signal aligns with strategy, or wants to update the strategy.",
         "the user asks about product direction, strategic bets, what to prioritize, whether a signal aligns with strategy, or wants to update the strategy."
@@ -1235,9 +1104,7 @@
     },
     {
       "id": "docs/transcript-synthesis",
-      "owners": [
-        "researcher"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when: a meeting, call, or interview transcript needs to be turned into a summary, the decisions made, and concrete action items with owners."
       ],
@@ -1253,12 +1120,10 @@
     },
     {
       "id": "docs/user-research-workflow",
-      "owners": [
-        "researcher"
-      ],
+      "owners": [],
       "activationTriggers": [
-        "Use when: researcher synthesizes user evidence — interviews, support tickets, session replay, surveys, or field notes.",
-        "researcher gathers or synthesizes **user** evidence. Do not use for CVE lookups, API version facts, or repo structure — use `docs/research-workflow` or `docs/codebase-research-workflow` (both also researcher, under a different skill overlay) instead."
+        "Use when: cx-researcher synthesizes user evidence — interviews, support tickets, session replay, surveys, or field notes.",
+        "cx-researcher gathers or synthesizes **user** evidence. Do not use for CVE lookups, API version facts, or repo structure — use `docs/research-workflow` or `docs/codebase-research-workflow` (both also cx-researcher, under a different skill overlay) instead."
       ],
       "inputs": [
         "[user-research, interview-data]"
@@ -1285,13 +1150,7 @@
     },
     {
       "id": "exploration/dependency-graph-reading",
-      "owners": [
-        "architect",
-        "debugger",
-        "engineer",
-        "orchestrator",
-        "researcher"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when assessing the risk surface of a project's dependencies, planning upgrades, or evaluating a new codebase's supply chain posture."
       ],
@@ -1307,9 +1166,7 @@
     },
     {
       "id": "exploration/repo-map",
-      "owners": [
-        "researcher"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when entering an unfamiliar codebase, doing deep investigation work, or producing a `.construct/codebase-map.md` artifact for future sessions."
       ],
@@ -1325,10 +1182,7 @@
     },
     {
       "id": "exploration/tracer-bullet-method",
-      "owners": [
-        "engineer",
-        "researcher"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when beginning implementation in a new system, new integration, or new architectural layer. A tracer bullet is not a prototype; it is the thinnest possible complete path through the real system."
       ],
@@ -1344,11 +1198,7 @@
     },
     {
       "id": "exploration/unknown-codebase-onboarding",
-      "owners": [
-        "debugger",
-        "engineer",
-        "researcher"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when entering an unfamiliar codebase for the first time, or when the task requires understanding a system you haven't touched before."
       ],
@@ -1364,9 +1214,7 @@
     },
     {
       "id": "frameworks/django",
-      "owners": [
-        "engineer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Patterns, anti-patterns, and reference guidance for Django. Use when the task involves django."
       ],
@@ -1382,9 +1230,7 @@
     },
     {
       "id": "frameworks/nextjs",
-      "owners": [
-        "engineer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Patterns, anti-patterns, and reference guidance for Next.js (App Router). Use when the task involves next.js (app router)."
       ],
@@ -1400,9 +1246,7 @@
     },
     {
       "id": "frameworks/react",
-      "owners": [
-        "engineer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "By default, components are **Server Components**: they run on the server, have no state, and can fetch data directly. Add `'use client'` only when you need interactivity, browser APIs, or hooks. Use when the task matches the trigger conditions described in the body."
       ],
@@ -1418,9 +1262,7 @@
     },
     {
       "id": "frameworks/spring-boot",
-      "owners": [
-        "engineer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Patterns, anti-patterns, and reference guidance for Spring Boot. Use when the task involves spring boot."
       ],
@@ -1436,9 +1278,7 @@
     },
     {
       "id": "frontend-design/accessibility",
-      "owners": [
-        "designer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Target **WCAG 2.1 AA** as the minimum for any public-facing product. WCAG 2.2 AA is the current standard (published October 2023) and required by many regulatory frameworks (EU Web Accessibility Directive, ADA, Section 508). Use when the task matches the trigger conditions described in the body."
       ],
@@ -1454,9 +1294,7 @@
     },
     {
       "id": "frontend-design/component-patterns",
-      "owners": [
-        "designer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when designing component architecture, building design systems, or structuring reusable UI."
       ],
@@ -1472,9 +1310,7 @@
     },
     {
       "id": "frontend-design/engineering",
-      "owners": [
-        "designer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when working on build tooling, bundling, rendering strategies, or frontend infrastructure."
       ],
@@ -1490,9 +1326,7 @@
     },
     {
       "id": "frontend-design/screen-reader-testing",
-      "owners": [
-        "designer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when: a UI needs to be tested with a screen reader and keyboard to verify it is actually operable non-visually, not just compliant on paper."
       ],
@@ -1508,9 +1342,7 @@
     },
     {
       "id": "frontend-design/state-management",
-      "owners": [
-        "designer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when choosing state management tools, structuring application state, or debugging state issues."
       ],
@@ -1526,9 +1358,7 @@
     },
     {
       "id": "frontend-design/ui-aesthetics",
-      "owners": [
-        "designer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when making visual design decisions: color, typography, layout, spacing, and visual hierarchy."
       ],
@@ -1544,9 +1374,7 @@
     },
     {
       "id": "frontend-design/ux-principles",
-      "owners": [
-        "designer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when designing user flows, evaluating usability, or planning information architecture."
       ],
@@ -1562,10 +1390,7 @@
     },
     {
       "id": "operating/change-management",
-      "owners": [
-        "operations",
-        "orchestrator"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when a change needs to be categorized by reversibility, when designing rollout gates, or when the team is uncertain how much approval process a change warrants."
       ],
@@ -1581,11 +1406,9 @@
     },
     {
       "id": "operating/fleet-health-routing",
-      "owners": [
-        "orchestrator"
-      ],
+      "owners": [],
       "activationTriggers": [
-        "fleet-level gap routing and bounded-auto policy for orchestrator's absorbed fleet-health synthesis duty (formerly cx-oracle). Use when handling an Oracle synthesis packet or any systemic-gap remediation routing."
+        "fleet-level gap routing and bounded-auto policy for cx-orchestrator's absorbed fleet-health synthesis duty (formerly cx-oracle). Use when handling an Oracle synthesis packet or any systemic-gap remediation routing."
       ],
       "inputs": [
         "[oracle-synthesis-packet]"
@@ -1599,9 +1422,7 @@
     },
     {
       "id": "operating/incident-response",
-      "owners": [
-        "operations"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when an issue is active in production, when building incident process from scratch, or when reviewing postmortems for quality."
       ],
@@ -1617,9 +1438,7 @@
     },
     {
       "id": "operating/oncall-rotation",
-      "owners": [
-        "operations"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when setting up on-call, reviewing its health, or handling an escalation during a rotation."
       ],
@@ -1635,9 +1454,7 @@
     },
     {
       "id": "operating/orchestration-reference",
-      "owners": [
-        "orchestrator"
-      ],
+      "owners": [],
       "activationTriggers": [
         "detailed orchestration reference loaded on demand. Use when the task matches the trigger conditions described in the body."
       ],
@@ -1653,10 +1470,7 @@
     },
     {
       "id": "operating/raw-data-structuring",
-      "owners": [
-        "data-analyst",
-        "engineer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when: a raw dataset (CSV, TSV, JSON export, log dump) needs to be parsed, validated, and profiled into a described, trustworthy shape before analysis."
       ],
@@ -1672,9 +1486,7 @@
     },
     {
       "id": "operating/unstructured-triage",
-      "owners": [
-        "orchestrator"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when: a brain-dump, rough notes, or free-form input has no clear type and needs to be structured into intents, candidate work items, and open questions before routing."
       ],
@@ -1689,11 +1501,861 @@
       "workflowSkill": false
     },
     {
-      "id": "quality-gates/premortem",
-      "owners": [
-        "qa",
-        "reviewer"
+      "id": "perspectives/ai-engineer",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
       ],
+      "inputs": [
+        "[code-diff, prompt]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-engineer-ai"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/architect",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[architecture-design, requirements]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-architect"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/architect.ai-systems",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[architecture-design, adr]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-architect-ai-systems"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/architect.data",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[data-model, architecture-design]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-architect-data"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/architect.enterprise",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[architecture-design, compliance-requirements]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-architect-enterprise"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/architect.integration",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[integration-design, sequence-diagram]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-architect-integration"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/architect.platform",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[platform-design, adr]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-architect-platform"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/business-strategist",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[strategy-doc, competitive-analysis]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "perspectives-product-manager-business-strategy"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/data-analyst",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[dataset, metrics-analysis]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-data-analyst"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/data-analyst.experiment",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[experiment-plan, metrics]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-data-analyst-experiment"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/data-analyst.product",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[product-metrics, funnel-data]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-data-analyst-product"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/data-analyst.product-intelligence",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[customer-signals, telemetry]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-data-analyst-product-intelligence"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/data-analyst.telemetry",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[telemetry, metrics]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-data-analyst-telemetry"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/data-engineer",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[code-diff, data-pipeline]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-engineer-data"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/data-engineer.pipeline",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[pipeline-design, data-contract]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-data-engineer-pipeline"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/data-engineer.vector-retrieval",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[retrieval-design, embeddings]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-data-engineer-vector-retrieval"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/data-engineer.warehouse",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[warehouse-model, metrics]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-data-engineer-warehouse"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/debugger",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[bug-report, failure-signal]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-debugger"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/designer",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[ui-design]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-designer"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/designer.accessibility",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[ui-design, component]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-designer-accessibility"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/devil-advocate",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[plan, proposal]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "perspectives-reviewer-devil-advocate"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/docs-keeper",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[docs, runbook]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-operator-docs"
+      },
+      "verificationHooks": [
+        {
+          "kind": "cli",
+          "value": "construct artifact validate"
+        }
+      ],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/engineer",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[code-diff, task-context]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-engineer"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/evaluator",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[model-output, eval-set]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "perspectives-reviewer-evaluator"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/explorer",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[repo, task-context]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "perspectives-researcher-explorer"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/operations",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[runbook, deployment-plan]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-operator"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/orchestrator",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[task-context, request]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-orchestrator"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/platform-engineer",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[code-diff, internal-tooling]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-engineer-platform"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/product-manager",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[prd, user-evidence]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "perspectives-product-manager"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/product-manager.ai-product",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[prd, eval-criteria]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-product-manager-ai-product"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/product-manager.enterprise",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[prd, task-context]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "perspectives-product-manager-enterprise"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/product-manager.growth",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[prd, growth-metrics]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "perspectives-product-manager-growth"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/product-manager.platform",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[prd, api-spec]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "perspectives-product-manager-platform"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/product-manager.product",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[prd, task-context]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "perspectives-product-manager-product"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/qa",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[test-suite, code-diff]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "perspectives-qa"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/qa.ai-eval",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[eval-set, model-output]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "perspectives-qa-ai-eval"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/qa.api-contract",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[api-spec, test-suite]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "perspectives-qa-api-contract"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/qa.data-pipeline",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[pipeline, test-suite]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "perspectives-qa-data-pipeline"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/qa.web-ui",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[test-suite, ui]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "perspectives-qa-web-ui"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/release-manager",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[release-plan, changelog]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-operator-release"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/researcher",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[research-question, sources]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "perspectives-researcher"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/reviewer",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[code-diff, pull-request]"
+      ],
+      "outputs": {
+        "artifactType": "review-report",
+        "name": "perspectives-reviewer"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/security",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[code-diff, threat-model]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "perspectives-security"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/security.ai",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[ai-system, task-context]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "perspectives-security-ai"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/security.appsec",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[code-diff, task-context]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "perspectives-security-appsec"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/security.cloud",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[cloud-config, iam-policy]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "perspectives-security-cloud"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/security.legal-compliance",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[policy, task-context]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "perspectives-security-legal-compliance"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/security.privacy",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[data-flow, task-context]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "perspectives-security-privacy"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/security.supply-chain",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[dependencies, ci-config]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "perspectives-security-supply-chain"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/sre",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[alert-config, slo]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-operator-sre"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/test-automation",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[test-suite, task-context]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "perspectives-qa-test-automation"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/trace-reviewer",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[trace, task-context]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "perspectives-reviewer-trace"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "perspectives/ux-researcher",
+      "owners": [],
+      "activationTriggers": [
+        "Provides perspective-specific anti-patterns, failure modes, and counter-moves for Worker Profile execution."
+      ],
+      "inputs": [
+        "[user-research, interview-data]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "perspectives-researcher-ux"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "quality-gates/premortem",
+      "owners": [],
       "activationTriggers": [
         "Use when: a plan or design needs a premortem — imagining it has already failed and working backward to the failure modes — before committing to it."
       ],
@@ -1709,10 +2371,7 @@
     },
     {
       "id": "quality-gates/review-work",
-      "owners": [
-        "qa",
-        "reviewer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this methodology when a change needs rigorous pre-merge validation. Five independent review roles run concurrently. All must pass."
       ],
@@ -1728,12 +2387,7 @@
     },
     {
       "id": "quality-gates/verify-change",
-      "owners": [
-        "debugger",
-        "engineer",
-        "operations",
-        "qa"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill to analyze the impact of code changes and verify documentation and tests are in sync."
       ],
@@ -1749,10 +2403,7 @@
     },
     {
       "id": "quality-gates/verify-module",
-      "owners": [
-        "qa",
-        "reviewer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill to check that a module or package is structurally complete and ready for use."
       ],
@@ -1768,10 +2419,7 @@
     },
     {
       "id": "quality-gates/verify-quality",
-      "owners": [
-        "qa",
-        "reviewer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill to check code quality, complexity, and maintainability after changes."
       ],
@@ -1787,9 +2435,7 @@
     },
     {
       "id": "quality-gates/verify-security",
-      "owners": [
-        "security"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill to scan code for security vulnerabilities before commits or releases."
       ],
@@ -1804,969 +2450,8 @@
       "workflowSkill": true
     },
     {
-      "id": "perspectives/ai-engineer",
-      "owners": [
-        "engineer"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer — AI role. Use when reviewing or generating work by cx-ai-engineer, or when an agent is acting in the Engineer — AI role."
-      ],
-      "inputs": [
-        "[code-diff, prompt]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-engineer-ai"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/architect",
-      "owners": [
-        "architect"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect role. Use when reviewing or generating work by architect, cx-rd-lead, or when an agent is acting in the Architect role."
-      ],
-      "inputs": [
-        "[architecture-design, requirements]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-architect"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/architect.ai-systems",
-      "owners": [
-        "architect"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — AI Systems role. Use when reviewing or generating work by architect, or when an agent is acting in the Architect — AI Systems role."
-      ],
-      "inputs": [
-        "[architecture-design, adr]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-architect-ai-systems"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/architect.data",
-      "owners": [
-        "architect"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — Data role. Use when reviewing or generating work by architect, or when an agent is acting in the Architect — Data role."
-      ],
-      "inputs": [
-        "[data-model, architecture-design]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-architect-data"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/architect.enterprise",
-      "owners": [
-        "architect"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — Enterprise role. Use when reviewing or generating work by architect, or when an agent is acting in the Architect — Enterprise role."
-      ],
-      "inputs": [
-        "[architecture-design, compliance-requirements]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-architect-enterprise"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/architect.integration",
-      "owners": [
-        "architect"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — Integration role. Use when reviewing or generating work by architect, or when an agent is acting in the Architect — Integration role."
-      ],
-      "inputs": [
-        "[integration-design, sequence-diagram]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-architect-integration"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/architect.platform",
-      "owners": [
-        "architect"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — Platform role. Use when reviewing or generating work by architect, or when an agent is acting in the Architect — Platform role."
-      ],
-      "inputs": [
-        "[platform-design, adr]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-architect-platform"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/business-strategist",
-      "owners": [
-        "product-manager"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Business Strategy role. Use when reviewing or generating work by cx-business-strategist, or when an agent is acting in the Product Manager — Business Strategy role."
-      ],
-      "inputs": [
-        "[strategy-doc, competitive-analysis]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-product-manager-business-strategy"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/data-analyst",
-      "owners": [
-        "data-analyst"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst role. Use when reviewing or generating work by data-analyst, or when an agent is acting in the Data Analyst role."
-      ],
-      "inputs": [
-        "[dataset, metrics-analysis]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-data-analyst"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/data-analyst.experiment",
-      "owners": [
-        "data-analyst"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst — Experiment role. Use when reviewing or generating work by data-analyst, or when an agent is acting in the Data Analyst — Experiment role."
-      ],
-      "inputs": [
-        "[experiment-plan, metrics]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-data-analyst-experiment"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/data-analyst.product",
-      "owners": [
-        "data-analyst"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst — Product role. Use when reviewing or generating work by data-analyst, or when an agent is acting in the Data Analyst — Product role."
-      ],
-      "inputs": [
-        "[product-metrics, funnel-data]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-data-analyst-product"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/data-analyst.product-intelligence",
-      "owners": [
-        "data-analyst"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst — Product Intelligence role. Use when reviewing or generating work by data-analyst, product-manager, or when an agent is acting in the Data Analyst — Product Intelligence role."
-      ],
-      "inputs": [
-        "[customer-signals, telemetry]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-data-analyst-product-intelligence"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/data-analyst.telemetry",
-      "owners": [
-        "data-analyst"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst — Telemetry role. Use when reviewing or generating work by data-analyst, cx-sre, or when an agent is acting in the Data Analyst — Telemetry role."
-      ],
-      "inputs": [
-        "[telemetry, metrics]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-data-analyst-telemetry"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/data-engineer",
-      "owners": [
-        "engineer"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer — Data role. Use when reviewing or generating work by cx-data-engineer, or when an agent is acting in the Engineer — Data role."
-      ],
-      "inputs": [
-        "[code-diff, data-pipeline]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-engineer-data"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/data-engineer.pipeline",
-      "owners": [
-        "engineer"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Engineer — Pipeline role. Use when reviewing or generating work by cx-data-engineer, or when an agent is acting in the Data Engineer — Pipeline role."
-      ],
-      "inputs": [
-        "[pipeline-design, data-contract]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-data-engineer-pipeline"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/data-engineer.vector-retrieval",
-      "owners": [
-        "engineer"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Engineer — Vector Retrieval role. Use when reviewing or generating work by cx-data-engineer, cx-ai-engineer, or when an agent is acting in the Data Engineer — Vector Retrieval role."
-      ],
-      "inputs": [
-        "[retrieval-design, embeddings]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-data-engineer-vector-retrieval"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/data-engineer.warehouse",
-      "owners": [
-        "engineer"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Engineer — Warehouse role. Use when reviewing or generating work by cx-data-engineer, or when an agent is acting in the Data Engineer — Warehouse role."
-      ],
-      "inputs": [
-        "[warehouse-model, metrics]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-data-engineer-warehouse"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/debugger",
-      "owners": [
-        "debugger"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Debugger role. Use when reviewing or generating work by debugger, or when an agent is acting in the Debugger role."
-      ],
-      "inputs": [
-        "[bug-report, failure-signal]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-debugger"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/designer",
-      "owners": [
-        "designer"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Designer role. Use when reviewing or generating work by designer, cx-accessibility, or when an agent is acting in the Designer role."
-      ],
-      "inputs": [
-        "[ui-design]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-designer"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/designer.accessibility",
-      "owners": [
-        "designer"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Designer — Accessibility role. Use when reviewing or generating work by cx-accessibility, or when an agent is acting in the Designer — Accessibility role."
-      ],
-      "inputs": [
-        "[ui-design, component]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-designer-accessibility"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/devil-advocate",
-      "owners": [
-        "reviewer"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer — Devil Advocate role. Use when reviewing or generating work by cx-devil-advocate, or when an agent is acting in the Reviewer — Devil Advocate role."
-      ],
-      "inputs": [
-        "[plan, proposal]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-reviewer-devil-advocate"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/docs-keeper",
-      "owners": [
-        "operations"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator — Docs role. Use when reviewing or generating work by cx-docs-keeper, or when an agent is acting in the Operator — Docs role."
-      ],
-      "inputs": [
-        "[docs, runbook]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-operator-docs"
-      },
-      "verificationHooks": [
-        {
-          "kind": "cli",
-          "value": "construct artifact validate"
-        }
-      ],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/engineer",
-      "owners": [
-        "engineer"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer role. Use when reviewing or generating work by engineer, or when an agent is acting in the Engineer role."
-      ],
-      "inputs": [
-        "[code-diff, task-context]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-engineer"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/evaluator",
-      "owners": [
-        "reviewer"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer — Evaluator role. Use when reviewing or generating work by cx-evaluator, or when an agent is acting in the Reviewer — Evaluator role."
-      ],
-      "inputs": [
-        "[model-output, eval-set]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-reviewer-evaluator"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/explorer",
-      "owners": [
-        "researcher"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Researcher — Explorer role. Use when reviewing or generating work by cx-explorer, or when an agent is acting in the Researcher — Explorer role."
-      ],
-      "inputs": [
-        "[repo, task-context]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-researcher-explorer"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/operations",
-      "owners": [
-        "operations"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator role. Use when reviewing or generating work by cx-sre, operations, cx-release-manager, cx-docs-keeper, or when an agent is acting in the Operator role."
-      ],
-      "inputs": [
-        "[runbook, deployment-plan]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-operator"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/orchestrator",
-      "owners": [
-        "orchestrator"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Orchestrator role. Use when reviewing or generating work by orchestrator, or when an agent is acting in the Orchestrator role."
-      ],
-      "inputs": [
-        "[task-context, request]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-orchestrator"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/platform-engineer",
-      "owners": [
-        "engineer"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer — Platform role. Use when reviewing or generating work by cx-platform-engineer, or when an agent is acting in the Engineer — Platform role."
-      ],
-      "inputs": [
-        "[code-diff, internal-tooling]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-engineer-platform"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/product-manager",
-      "owners": [
-        "product-manager"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager role. Use when reviewing or generating work by product-manager, cx-business-strategist, or when an agent is acting in the Product Manager role."
-      ],
-      "inputs": [
-        "[prd, user-evidence]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-product-manager"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/product-manager.ai-product",
-      "owners": [
-        "product-manager"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — AI Product role. Use when reviewing or generating work by product-manager, or when an agent is acting in the Product Manager — AI Product role."
-      ],
-      "inputs": [
-        "[prd, eval-criteria]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-product-manager-ai-product"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/product-manager.enterprise",
-      "owners": [
-        "product-manager"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Enterprise role. Use when reviewing or generating work by product-manager, or when an agent is acting in the Product Manager — Enterprise role."
-      ],
-      "inputs": [
-        "[prd, task-context]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-product-manager-enterprise"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/product-manager.growth",
-      "owners": [
-        "product-manager"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Growth role. Use when reviewing or generating work by product-manager, cx-business-strategist, or when an agent is acting in the Product Manager — Growth role."
-      ],
-      "inputs": [
-        "[prd, growth-metrics]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-product-manager-growth"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/product-manager.platform",
-      "owners": [
-        "product-manager"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Platform role. Use when reviewing or generating work by product-manager, or when an agent is acting in the Product Manager — Platform role."
-      ],
-      "inputs": [
-        "[prd, api-spec]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-product-manager-platform"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/product-manager.product",
-      "owners": [
-        "product-manager"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Product role. Use when reviewing or generating work by product-manager, or when an agent is acting in the Product Manager — Product role."
-      ],
-      "inputs": [
-        "[prd, task-context]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-product-manager-product"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/qa",
-      "owners": [
-        "qa"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA role. Use when reviewing or generating work by qa, cx-test-automation, or when an agent is acting in the QA role."
-      ],
-      "inputs": [
-        "[test-suite, code-diff]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-qa"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/qa.ai-eval",
-      "owners": [
-        "qa"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — AI Eval role. Use when reviewing or generating work by qa, cx-test-automation, cx-evaluator, or when an agent is acting in the QA — AI Eval role."
-      ],
-      "inputs": [
-        "[eval-set, model-output]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-qa-ai-eval"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/qa.api-contract",
-      "owners": [
-        "qa"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — API Contract role. Use when reviewing or generating work by qa, cx-test-automation, or when an agent is acting in the QA — API Contract role."
-      ],
-      "inputs": [
-        "[api-spec, test-suite]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-qa-api-contract"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/qa.data-pipeline",
-      "owners": [
-        "qa"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — Data Pipeline role. Use when reviewing or generating work by qa, cx-test-automation, or when an agent is acting in the QA — Data Pipeline role."
-      ],
-      "inputs": [
-        "[pipeline, test-suite]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-qa-data-pipeline"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/qa.web-ui",
-      "owners": [
-        "qa"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — Web UI role. Use when reviewing or generating work by qa, cx-test-automation, or when an agent is acting in the QA — Web UI role."
-      ],
-      "inputs": [
-        "[test-suite, ui]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-qa-web-ui"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/release-manager",
-      "owners": [
-        "operations"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator — Release role. Use when reviewing or generating work by cx-release-manager, or when an agent is acting in the Operator — Release role."
-      ],
-      "inputs": [
-        "[release-plan, changelog]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-operator-release"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/researcher",
-      "owners": [
-        "researcher"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Researcher role. Use when reviewing or generating work by researcher, cx-ux-researcher, cx-explorer, or when an agent is acting in the Researcher role."
-      ],
-      "inputs": [
-        "[research-question, sources]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-researcher"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/reviewer",
-      "owners": [
-        "reviewer"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer role. Use when reviewing or generating work by reviewer, cx-devil-advocate, cx-evaluator, cx-trace-reviewer, or when an agent is acting in the Reviewer role."
-      ],
-      "inputs": [
-        "[code-diff, pull-request]"
-      ],
-      "outputs": {
-        "artifactType": "review-report",
-        "name": "roles-reviewer"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/security",
-      "owners": [
-        "security"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security role. Use when reviewing or generating work by security, cx-legal-compliance, or when an agent is acting in the Security role."
-      ],
-      "inputs": [
-        "[code-diff, threat-model]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-security"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/security.ai",
-      "owners": [
-        "security"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — AI role. Use when reviewing or generating work by security, cx-ai-engineer, or when an agent is acting in the Security — AI role."
-      ],
-      "inputs": [
-        "[ai-system, task-context]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-security-ai"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/security.appsec",
-      "owners": [
-        "security"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Appsec role. Use when reviewing or generating work by security, or when an agent is acting in the Security — Appsec role."
-      ],
-      "inputs": [
-        "[code-diff, task-context]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-security-appsec"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/security.cloud",
-      "owners": [
-        "security"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Cloud role. Use when reviewing or generating work by security, or when an agent is acting in the Security — Cloud role."
-      ],
-      "inputs": [
-        "[cloud-config, iam-policy]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-security-cloud"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/security.legal-compliance",
-      "owners": [
-        "security"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Legal Compliance role. Use when reviewing or generating work by cx-legal-compliance, or when an agent is acting in the Security — Legal Compliance role."
-      ],
-      "inputs": [
-        "[policy, task-context]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-security-legal-compliance"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/security.privacy",
-      "owners": [
-        "security"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Privacy role. Use when reviewing or generating work by security, cx-legal-compliance, or when an agent is acting in the Security — Privacy role."
-      ],
-      "inputs": [
-        "[data-flow, task-context]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-security-privacy"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/security.supply-chain",
-      "owners": [
-        "security"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Supply Chain role. Use when reviewing or generating work by security, cx-platform-engineer, or when an agent is acting in the Security — Supply Chain role."
-      ],
-      "inputs": [
-        "[dependencies, ci-config]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-security-supply-chain"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/sre",
-      "owners": [
-        "operations"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator — SRE role. Use when reviewing or generating work by cx-sre, or when an agent is acting in the Operator — SRE role."
-      ],
-      "inputs": [
-        "[alert-config, slo]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-operator-sre"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/test-automation",
-      "owners": [
-        "qa"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — Test Automation role. Use when reviewing or generating work by cx-test-automation, or when an agent is acting in the QA — Test Automation role."
-      ],
-      "inputs": [
-        "[test-suite, task-context]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-qa-test-automation"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/trace-reviewer",
-      "owners": [
-        "orchestrator"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer — Trace role. Use when reviewing or generating work by cx-trace-reviewer, or when an agent is acting in the Reviewer — Trace role."
-      ],
-      "inputs": [
-        "[trace, task-context]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-reviewer-trace"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "perspectives/ux-researcher",
-      "owners": [
-        "researcher"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Researcher — UX role. Use when reviewing or generating work by cx-ux-researcher, or when an agent is acting in the Researcher — UX role."
-      ],
-      "inputs": [
-        "[user-research, interview-data]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-researcher-ux"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
       "id": "security/blue-team",
-      "owners": [
-        "security"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when defending systems, responding to incidents, or building detection and monitoring capabilities."
       ],
@@ -2782,9 +2467,7 @@
     },
     {
       "id": "security/code-audit",
-      "owners": [
-        "security"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when reviewing source code for security vulnerabilities through static analysis."
       ],
@@ -2800,9 +2483,7 @@
     },
     {
       "id": "security/pentest",
-      "owners": [
-        "security"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when testing web applications or APIs for security vulnerabilities."
       ],
@@ -2818,9 +2499,7 @@
     },
     {
       "id": "security/red-team",
-      "owners": [
-        "security"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when planning or executing offensive security assessments, adversary emulation, or attack simulations."
       ],
@@ -2836,9 +2515,7 @@
     },
     {
       "id": "security/threat-intel",
-      "owners": [
-        "security"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when performing OSINT, threat modeling, or building threat intelligence programs."
       ],
@@ -2854,9 +2531,7 @@
     },
     {
       "id": "security/vuln-research",
-      "owners": [
-        "security"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use this skill when analyzing binaries, fuzzing software, or developing exploits for security research."
       ],
@@ -2872,9 +2547,7 @@
     },
     {
       "id": "strategy/competitive-landscape",
-      "owners": [
-        "product-manager"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when the team needs a structured read on market positioning before committing direction."
       ],
@@ -2890,12 +2563,7 @@
     },
     {
       "id": "strategy/experimentation",
-      "owners": [
-        "data-analyst",
-        "engineer",
-        "operations",
-        "product-manager"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when: a change's effect must be measured causally rather than asserted — designing or reading an A/B test, a feature-flag rollout, a canary, or a holdout — so the decision to ship rests on evidence, not the shape of a chart."
       ],
@@ -2911,9 +2579,7 @@
     },
     {
       "id": "strategy/jobs-to-be-done",
-      "owners": [
-        "researcher"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when: user research needs to uncover the job a user is hiring a product to do — the underlying progress they seek — rather than feature requests or stated preferences."
       ],
@@ -2929,11 +2595,7 @@
     },
     {
       "id": "strategy/market-research-methods",
-      "owners": [
-        "data-analyst",
-        "product-manager",
-        "researcher"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when the team needs to validate assumptions before committing resources, or when a decision is being made on vibes rather than signal."
       ],
@@ -2949,9 +2611,7 @@
     },
     {
       "id": "strategy/narrative-arc",
-      "owners": [
-        "product-manager"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when the argument must move people, not just inform them. Strategic narrative is the difference between a document that gets read and one that changes what people do."
       ],
@@ -2967,9 +2627,7 @@
     },
     {
       "id": "strategy/pricing-positioning",
-      "owners": [
-        "product-manager"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when the team needs to set price, adjust positioning, or defend either to stakeholders."
       ],
@@ -2985,11 +2643,7 @@
     },
     {
       "id": "strategy/prioritization-methods",
-      "owners": [
-        "operations",
-        "orchestrator",
-        "product-manager"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Use when: a backlog, roadmap, or set of bets must be ordered by value and the call is being made on gut feel rather than a defensible method — selecting and applying RICE, WSJF/cost-of-delay, value-effort, Kano, risk-reduction, or mandatory-vs-discretionary, with the uncertainty and the counterargument made explicit."
       ],
@@ -3005,9 +2659,7 @@
     },
     {
       "id": "utility/clean-code",
-      "owners": [
-        "engineer"
-      ],
+      "owners": [],
       "activationTriggers": [
         "Patterns and heuristics for identifying and removing AI-generated code smells. Use when cleaning up output from AI coding tools."
       ],
@@ -3022,7 +2674,778 @@
       "workflowSkill": false
     }
   ],
-  "blockingFindings": [],
+  "blockingFindings": [
+    {
+      "kind": "no-owner",
+      "skillId": "ai/agent-dev",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "ai/llm-security",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "ai/ml-ops",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "ai/orchestration-workflow",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "ai/prompt-and-eval",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "ai/prompt-optimizer",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "ai/rag-system",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "ai/trace-triage",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "architecture/api-design",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "architecture/caching",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "architecture/cloud-native",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "architecture/message-queue",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "architecture/security-arch",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "compliance/ai-disclosure",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "compliance/data-privacy",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "compliance/license-audit",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "compliance/regulatory-review",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "development/cpp",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "development/go",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "development/java",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "development/kotlin",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "development/mobile-crossplatform",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "development/python",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "development/rust",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "development/shell",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "development/swift",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "development/typescript",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "devops/ci-cd",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "devops/containerization",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "devops/cost-optimization",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "devops/data-engineering",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "devops/database",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "devops/dependency-management",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "devops/devsecops",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "devops/git-workflow",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "devops/incident-response",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "devops/monorepo",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "devops/observability",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "devops/performance",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "devops/testing",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "docs/adr-workflow",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "docs/backlog-proposal-workflow",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "docs/codebase-research-workflow",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "docs/customer-profile-workflow",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "docs/document-ingest-workflow",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "docs/evidence-ingest-workflow",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "docs/init-docs",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "docs/init-project",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "docs/memo-and-decision-capture",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "docs/prd-workflow",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "docs/prfaq-workflow",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "docs/product-intelligence-review",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "docs/product-intelligence-workflow",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "docs/product-signal-workflow",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "docs/research-workflow",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "docs/runbook-workflow",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "docs/strategy-workflow",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "docs/transcript-synthesis",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "docs/user-research-workflow",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "exploration/dependency-graph-reading",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "exploration/repo-map",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "exploration/tracer-bullet-method",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "exploration/unknown-codebase-onboarding",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "frameworks/django",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "frameworks/nextjs",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "frameworks/react",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "frameworks/spring-boot",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "frontend-design/accessibility",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "frontend-design/component-patterns",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "frontend-design/engineering",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "frontend-design/screen-reader-testing",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "frontend-design/state-management",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "frontend-design/ui-aesthetics",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "frontend-design/ux-principles",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "operating/change-management",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "operating/fleet-health-routing",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "operating/incident-response",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "operating/oncall-rotation",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "operating/orchestration-reference",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "operating/raw-data-structuring",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "operating/unstructured-triage",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/ai-engineer",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/architect",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/architect.ai-systems",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/architect.data",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/architect.enterprise",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/architect.integration",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/architect.platform",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/business-strategist",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/data-analyst",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/data-analyst.experiment",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/data-analyst.product",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/data-analyst.product-intelligence",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/data-analyst.telemetry",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/data-engineer",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/data-engineer.pipeline",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/data-engineer.vector-retrieval",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/data-engineer.warehouse",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/debugger",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/designer",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/designer.accessibility",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/devil-advocate",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/docs-keeper",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/engineer",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/evaluator",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/explorer",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/operations",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/orchestrator",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/platform-engineer",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/product-manager",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/product-manager.ai-product",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/product-manager.enterprise",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/product-manager.growth",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/product-manager.platform",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/product-manager.product",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/qa",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/qa.ai-eval",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/qa.api-contract",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/qa.data-pipeline",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/qa.web-ui",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/release-manager",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/researcher",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/reviewer",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/security",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/security.ai",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/security.appsec",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/security.cloud",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/security.legal-compliance",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/security.privacy",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/security.supply-chain",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/sre",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/test-automation",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/trace-reviewer",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "perspectives/ux-researcher",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "quality-gates/premortem",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "quality-gates/review-work",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "quality-gates/verify-change",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "quality-gates/verify-module",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "quality-gates/verify-quality",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "quality-gates/verify-security",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "security/blue-team",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "security/code-audit",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "security/pentest",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "security/red-team",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "security/threat-intel",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "security/vuln-research",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "strategy/competitive-landscape",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "strategy/experimentation",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "strategy/jobs-to-be-done",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "strategy/market-research-methods",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "strategy/narrative-arc",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "strategy/pricing-positioning",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "strategy/prioritization-methods",
+      "severity": "blocking"
+    },
+    {
+      "kind": "no-owner",
+      "skillId": "utility/clean-code",
+      "severity": "blocking"
+    }
+  ],
   "effectivenessFindings": [],
-  "digest": "af2a811cf9a1a24cd3a30bc2fc1d97886c217c1d779c0cab0a7e65fe959206d9"
+  "digest": "6b3415e61a6054329fe5da6fc12ba609e0cad78d6e29cb4071cd3aeb6379c3f6"
 }

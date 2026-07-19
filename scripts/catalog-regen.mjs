@@ -8,5 +8,5 @@ const result = regenerateCapabilityCatalog();
 process.stdout.write(
   `catalog:regen → ${result.path} (${result.capabilityCount} capabilities, `
   + `${result.npmScriptCount} npm scripts, ${result.cliCommandCount} CLI commands, `
-  + `${result.workflowCount} workflows)\n`,
+  + `${result.procedureCount} Procedures)\n`,
 );

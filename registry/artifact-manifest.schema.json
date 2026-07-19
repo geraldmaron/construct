@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://geraldmaron.github.io/construct/specialists/artifact-manifest.schema.json",
+  "$id": "https://geraldmaron.github.io/construct/registry/artifact-manifest.schema.json",
   "title": "Construct artifact capability manifest",
   "type": "object",
   "required": ["version", "artifacts"],
