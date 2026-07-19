@@ -7,7 +7,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { validatePromptFiles } from '../lib/specialists/prompt-schema.mjs';
+import { validatePromptFiles } from '../lib/worker-profiles/prompt-schema.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PROMPTS_DIR = path.join(ROOT, 'specialists', 'prompts');

@@ -14,7 +14,7 @@ import {
   POSTCONDITIONS,
   validateBinaryPostconditions,
   describePostconditions,
-} from '../lib/specialists/postconditions.mjs';
+} from '../lib/capabilities/postconditions.mjs';
 
 describe('validateBinaryPostconditions', () => {
   it('returns ok for producers without registered rules', () => {

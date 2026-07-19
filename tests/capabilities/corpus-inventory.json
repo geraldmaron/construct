@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-19T00:51:53.031Z",
+  "generatedAt": "2026-07-19T02:23:35.699Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 962,
+    "testFiles": 961,
     "topLevelTestFiles": 379,
-    "nestedTestFiles": 583,
+    "nestedTestFiles": 582,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 49,
     "byLayer": {
       "unit": 629,
-      "functional": 280,
+      "functional": 279,
       "visual": 12,
       "live-provider": 2,
       "integration": 39
     },
     "byCategory": {
       "unit": 565,
-      "functional": 280,
+      "functional": 279,
       "visual": 12,
       "structural-guard": 20,
       "contract-subsystem": 45,
@@ -2607,14 +2607,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/certification-runner.functional.test.mjs — end-to-end construct certify run."
-    },
-    {
-      "path": "tests/functional/certification-specialist-behavior.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/certification-specialist-behavior.functional.test.mjs — construct-72gqn.14 (H2.2)."
     },
     {
       "path": "tests/functional/claude-orchestration-prompt.functional.test.mjs",
@@ -7214,14 +7206,6 @@
       "maintainerNotes": "tests/specialist-loop.test.mjs — unit coverage for opt-in, attribution-first"
     },
     {
-      "path": "tests/specialist-roster.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/specialist-roster.test.mjs — lazy specialist catalog (construct-ymp5)."
-    },
-    {
       "path": "tests/status-degradation-details.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -7622,6 +7606,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "worker-profile-prompts.test.mjs — Worker Profile prompt corpus contracts."
+    },
+    {
+      "path": "tests/worker-profile-roster.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/worker-profile-roster.test.mjs — lazy Worker Profile catalog (construct-ymp5)."
     },
     {
       "path": "tests/worker-run-mcp.test.mjs",
