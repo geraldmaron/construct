@@ -5,7 +5,7 @@
  * pre-action queries. Solo mode short-circuits to `brokerActive: false`
  * (no manifest read, no policy enforcement) so agents don't waste
  * tokens consulting an inactive gate. Team / enterprise mode reads
- * specialists/org. Every call emits a `tool.called` trace
+ * registry. Every call emits a `tool.called` trace
  * event for audit-trail parity.
  *
  * Trace writes resolve through the machine-scoped state root (ADR-0066), so

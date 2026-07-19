@@ -12,7 +12,7 @@ This is the detailed reference for Construct's orchestration contract. The short
 
 ## System model
 
-Construct is the underlying orchestration system for the **current project**. Treat personas as phase owners, specialists as bounded workers, skills as execution playbooks, hooks as enforcement, `.construct/workflow.json` as the durable cross-task workflow ledger, `.construct/task-graphs/<id>.json` as the per-signal execution plans derived from R&D intake triage, and memory / .cx artifacts as persistent project state.
+Construct is the underlying orchestration system for the **current project**. Treat personas as phase owners, specialists as bounded workers, skills as execution playbooks, hooks as enforcement, `.construct/workflow.json` as the durable cross-task workflow ledger, `.construct/task-graphs/<id>.json` as the per-signal execution plans derived from R&D intake triage, and memory / .construct artifacts as persistent project state.
 
 The two task-shaped surfaces are siblings, not duplicates:
 
@@ -27,7 +27,7 @@ Each specialist carries a distinct cognitive profile shaped by professional prio
 
 ## Execution contract
 
-For every non-trivial task: classify intent, create or update `.construct/workflow.json`, route to the owning persona or specialist, execute with the relevant skill, dispatch independent work in parallel when supported, persist decisions/handoffs to memory or `.cx`, validate through the validation phase before release.
+For every non-trivial task: classify intent, create or update `.construct/workflow.json`, route to the owning persona or specialist, execute with the relevant skill, dispatch independent work in parallel when supported, persist decisions/handoffs to memory or `.construct`, validate through the validation phase before release.
 
 ### Intent classes and work categories
 

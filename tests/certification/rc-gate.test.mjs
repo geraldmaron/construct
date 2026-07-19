@@ -22,7 +22,7 @@ test('runReleaseCandidateGate passes on clean repo', async () => {
 
 test('runReleaseCandidateGate fails when a release capability is stale', async () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cert-rc-stale-'));
-  fs.mkdirSync(path.join(root, '.cx', 'certification'), { recursive: true });
+  fs.mkdirSync(path.join(root, '.construct', 'certification'), { recursive: true });
   fs.mkdirSync(path.join(root, 'tests', 'capabilities'), { recursive: true });
   fs.mkdirSync(path.join(root, 'tests', 'certification', 'scenarios'), { recursive: true });
   fs.mkdirSync(path.join(root, 'specialists'), { recursive: true });

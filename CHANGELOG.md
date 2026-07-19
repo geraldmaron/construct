@@ -962,3 +962,9 @@ This release makes OpenCode the primary conversation surface, retires the web/da
 - **Breaking:** the legacy `contracts.json` contract files have been deleted. Readers now resolve contracts from the unified registry; any consumer reading `specialists/contracts.json` directly must migrate to the unified-registry shape.
 - Retired the dashboard web app and HTTP server, the native desktop chat window, and the dead Ink TUI — Construct is terminal-first (ADR-0039/0041 amended).
 - Removed Construct's local conversation UI implementation, related package surface, docs page, and surface-specific tests.
+## Unreleased
+
+- Completed the Construct 2.0.0 clean break: legacy specialist/persona roots,
+  `.cx`-era artifacts, migration/authoring shims, and obsolete fixtures were
+  removed; historical retention is limited to explicitly marked ADR, PRD, and
+  RFC records.

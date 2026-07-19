@@ -255,7 +255,7 @@ const BEADS = [
   {
     id: 'construct-b0nny.13',
     milestone: 'M0',
-    title: 'Delete dead flow engine + cx_trace_telemetry alias + .cx residue',
+    title: 'Delete dead flow engine + cx_trace_telemetry alias + .construct residue',
     criteria: [
       {
         name: 'dead flow-engine port deleted',
@@ -483,9 +483,9 @@ const BEADS = [
       {
         name: 'handoff contracts retained',
         kind: 'static',
-        run: () => listDir('specialists/org/contracts').length > 0
-          ? pass(`${listDir('specialists/org/contracts').length} contract file(s) retained`)
-          : fail('specialists/org/contracts is empty or missing'),
+        run: () => listDir('registry/contracts').length > 0
+          ? pass(`${listDir('registry/contracts').length} contract file(s) retained`)
+          : fail('registry/contracts is empty or missing'),
       },
       {
         name: 'capability registry retained',
@@ -496,7 +496,7 @@ const BEADS = [
         name: 'scopes select skill emphasis rather than declaring persona identity',
         kind: 'static',
         run: () => {
-          const scopes = listDir('specialists/org/worker-profiles').filter((f) => f.endsWith('.json'));
+          const scopes = listDir('registry/worker-profiles').filter((f) => f.endsWith('.json'));
           if (scopes.length === 0) return fail('no scope files found');
           const identityKeys = ['persona', 'personas', 'role', 'roles', 'team', 'teams'];
           const withoutEmphasis = [];
@@ -504,7 +504,7 @@ const BEADS = [
           for (const file of scopes) {
             let parsed;
             try {
-              parsed = JSON.parse(read(`specialists/org/worker-profiles/${file}`) || '{}');
+              parsed = JSON.parse(read(`registry/worker-profiles/${file}`) || '{}');
             } catch {
               return fail(`${file} is not valid JSON`);
             }
@@ -522,7 +522,7 @@ const BEADS = [
         kind: 'static',
         deferred: true,
         run: () => {
-          if (!exists('specialists/org/teams') && !exists('specialists/org/groups')) {
+          if (!exists('registry/teams') && !exists('registry/groups')) {
             return pass('teams/groups deleted');
           }
           const consumers = codeHits(/registry\.teams|teamForSpecialist|specialistsInTeam/, ['lib', 'bin']);

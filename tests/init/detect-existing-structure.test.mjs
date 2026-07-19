@@ -103,7 +103,7 @@ test('multiple matches for same lane are accumulated in order', () => {
   } finally { p.cleanup(); }
 });
 
-test('skip dirs (.git, node_modules, .cx, .construct, .claude) are ignored', () => {
+test('skip dirs (.git, node_modules, .construct, .construct, .claude) are ignored', () => {
   const p = makeProject();
   try {
     p.file('node_modules/some-pkg/notes/random.md', '# Random\n');

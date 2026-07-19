@@ -4,7 +4,7 @@
  *
  * Ground truth (scripts/optimize.mjs) is that `construct optimize` is dry-run
  * by default, `--apply` patches the role skill file under skills/perspectives/ (never
- * specialists/org manifests), backups + history live under the user home, and
+ * registry manifests), backups + history live under the user home, and
  * the post-apply gate is the integrity check + `construct sync` composition —
  * there is no persona-validator hook, no DSPy dependency, no staging/promotion
  * workflow, and no promptHistory[] registry field. Also pins the launcher-class
@@ -50,7 +50,7 @@ test('scripts/optimize.mjs patch target stays skills/perspectives/', () => {
   );
 });
 
-test('optimizer docs name skills/perspectives/ as the patch target, not specialists/org manifests', () => {
+test('optimizer docs name skills/perspectives/ as the patch target, not registry manifests', () => {
   for (const rel of OPTIMIZER_DOCS) {
     const text = read(rel);
     assert.ok(
@@ -59,7 +59,7 @@ test('optimizer docs name skills/perspectives/ as the patch target, not speciali
     );
     assert.ok(
       !/specialists\/org\/specialists\/<agent>\.json/.test(text),
-      `${rel} must not present specialists/org/specialists/<agent>.json as the patch target`
+      `${rel} must not present registry/specialists/<agent>.json as the patch target`
     );
   }
 });

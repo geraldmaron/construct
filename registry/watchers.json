@@ -1,0 +1,13 @@
+{
+  "$comment": "Canonical Construct watch-condition predicates. Conditions are evaluated against request signals; Worker Profile ownership is declared by the corresponding registry entry.",
+  "schemaVersion": 1,
+  "watchers": [
+    { "name": "high-ambiguity-deep-work", "condition": { "all": [ { "field": "ambiguityScore", "gt": 0.5 }, { "field": "workCategory", "equals": "deep" } ] } },
+    { "name": "visual-or-ui-risk", "condition": { "any": [ { "field": "visualDeliverable", "truthy": true }, { "field": "riskFlags.ui", "truthy": true } ] } },
+    { "name": "auth-payments-non-narrow", "condition": { "all": [ { "field": "authOrPayments", "truthy": true }, { "field": "blastRadius", "notEquals": "narrow" } ] } },
+    { "name": "architecture-without-metric", "condition": { "all": [ { "field": "riskFlags.architecture", "truthy": true }, { "field": "hasSuccessMetric", "truthy": false } ] } },
+    { "name": "wide-blast-radius", "condition": { "field": "blastRadius", "equals": "wide" } },
+    { "name": "named-cost-constraint", "condition": { "all": [ { "field": "hasNamedConstraints", "truthy": true }, { "field": "cost", "truthy": true } ] } },
+    { "name": "architecture-risk", "condition": { "field": "riskFlags.architecture", "truthy": true } }
+  ]
+}

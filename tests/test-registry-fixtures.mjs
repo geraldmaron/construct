@@ -1,7 +1,7 @@
 /**
  * tests/test-registry-fixtures.mjs — Test fixtures extracted from unified registry.
  *
- * Provides test-friendly exports from specialists/org
+ * Provides test-friendly exports from registry
  * so test files don't need to directly reference deleted legacy files.
  *
  * Usage:

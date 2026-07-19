@@ -49,7 +49,7 @@ function makeRepoCopy(t) {
       // happens to find a live PID on the runner. sync regenerates .construct/ in the copy, so
       // excluding it (plus the legacy .construct/) loses nothing. (construct-edkj moved the lock to .construct/.)
       if (hasPathSegment(rel, ".construct")) return false;
-      if (hasPathSegment(rel, ".cx")) return false;
+      if (hasPathSegment(rel, ".construct")) return false;
 
       // `.claude/` is host-local Claude Code state that post-commit hooks mutate
       // (sync-worker-profiles writes ~/.claude/CLAUDE.md and the project .claude/agents

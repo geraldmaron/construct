@@ -159,7 +159,7 @@ describe('runUninstall --dry-run', () => {
 });
 
 describe('runUninstall --yes (auto-risk only)', () => {
-  it('removes .construct/launcher, manifest entries, hooks block, workspace, ~/.cx; preserves .construct state', async () => {
+  it('removes .construct/launcher, manifest entries, hooks block, workspace, ~/.construct; preserves .construct state', async () => {
     const { result } = await silently(() =>
       runUninstall(['--yes', `--cwd=${projectDir}`, `--home=${homeDir}`])
     );

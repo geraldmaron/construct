@@ -2,7 +2,7 @@
  * tests/functional/model-registry-wiring.functional.test.mjs
  *
  * Drives the real `construct models resolve --json` binary and proves the model
- * registry (specialists/org/models.json under CONSTRUCT_TOOLKIT_DIR) is reachable on
+ * registry (registry/models.json under CONSTRUCT_TOOLKIT_DIR) is reachable on
  * the embedded resolution path — the embedded resolver defaults registryPath to
  * the toolkit registry so a dropped-in models.json binds tier defaults. Asserts:
  * a registry tier resolves with no env pin; an env pin overrides the registry;
@@ -37,7 +37,7 @@ after(() => {
 });
 
 // A minimal toolkit whose org tree mirrors the repo (assembleRegistry requires
-// specialists/org to exist) plus the registry file under test.
+// registry to exist) plus the registry file under test.
 function toolkitWith(models) {
   const dir = freshDir('cx-registry-toolkit-');
   const org = path.join(dir, 'specialists', 'org');

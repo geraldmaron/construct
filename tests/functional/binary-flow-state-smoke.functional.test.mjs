@@ -108,7 +108,7 @@ function assertFlowStateSmoke(command) {
     assert.equal(checkpoint.run.status, 'completed');
     assert.deepEqual(checkpoint.run.completed, ['a', 'b']);
 
-    assert.equal(existsSync(join(env.project, '.cx')), false, 'the flow engine writes nothing into the project tree');
+    assert.equal(existsSync(join(env.project, '.construct')), false, 'the flow engine writes nothing into the project tree');
 
     const status = spawnSync(command[0], [...command.slice(1), 'flow', 'status', 'smoke-run-1'], {
       cwd: env.project,

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "catalog": {
-    "generatedAt": "2026-07-19T00:43:08.756Z",
+    "generatedAt": "2026-07-19T03:34:11.274Z",
     "npmScripts": [
       "adapters",
       "audit:published",
@@ -494,12 +494,6 @@
         "internal": false
       },
       {
-        "name": "migrate",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
         "name": "models",
         "category": "Models & Integrations",
         "core": false,
@@ -544,12 +538,6 @@
       {
         "name": "pack",
         "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "participation",
-        "category": "Core",
         "core": false,
         "internal": false
       },
@@ -718,12 +706,6 @@
       {
         "name": "storage",
         "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "studio",
-        "category": "Core",
         "core": false,
         "internal": false
       },

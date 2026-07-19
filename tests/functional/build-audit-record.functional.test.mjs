@@ -52,7 +52,7 @@ test('buildAuditRecord joins run-store tasks, trace events, and violation-log en
       role: 'engineer',
       status: 'completed',
       executor: 'provider',
-      // engineer-to-reviewer (specialists/org/contracts/engineer-to-reviewer.json)
+      // engineer-to-reviewer (registry/contracts/engineer-to-reviewer.json)
       // requires 'verdict' plus one of 'findings'/'noIssuesFoundAt' — this
       // packet has neither, so validateOutputPacket logs a real
       // CONTRACT_VIOLATION tagged with this run's runId, which the record

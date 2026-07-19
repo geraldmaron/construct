@@ -19,7 +19,7 @@ function confirmRequired(result) {
 
 function makeProjectWithArtifacts() {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-f01-destroy-'));
-  const internalDir = path.join(cwd, '.cx', 'knowledge', 'internal');
+  const internalDir = path.join(cwd, '.construct', 'knowledge', 'internal');
   fs.mkdirSync(internalDir, { recursive: true });
   fs.writeFileSync(path.join(internalDir, 'doc-a.md'), '# A\n');
   fs.writeFileSync(path.join(internalDir, 'doc-b.md'), '# B\n');

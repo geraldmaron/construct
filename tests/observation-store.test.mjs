@@ -21,7 +21,7 @@ let tmpDir;
 
 beforeEach(() => {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'obs-store-test-'));
-  process.env.CONSTRUCT_LANCEDB_PATH = path.join(tmpDir, '.cx', 'lancedb');
+  process.env.CONSTRUCT_LANCEDB_PATH = path.join(tmpDir, '.construct', 'lancedb');
   process.env.CONSTRUCT_EMBEDDING_MODEL = 'hashing';
 });
 

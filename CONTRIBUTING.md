@@ -81,7 +81,7 @@ The few exceptions below are substrate-required and stay as `node ./bin/construc
 
 | Command | Where it runs | Why it has no npm wrapper |
 |---|---|---|
-| `registry:validate --unified` | `release:check` | Validates `specialists/org` invariants; called only in the release chain. |
+| `registry:validate --unified` | `release:check` | Validates `registry` invariants; called only in the release chain. |
 | `registry:generate-docs --check` | `release:check` | Regenerates `docs/guides/reference/capabilities.md` from the registry; release-chain-only drift check. |
 | `catalog:validate --check` | `release:check` | Validates living capability catalog edges on `registry/capabilities.json`; release-chain-only drift check. |
 | `docs:sync --check` | `release:check` | Regenerates `docs/README.md` `AUTO:catalog-sync` from the capability catalog; release-chain-only drift check. |
@@ -111,8 +111,8 @@ Do not edit these without reading the constraints in CLAUDE.md first:
 
 | File | Why |
 |---|---|
-| `specialists/org` | Source of truth for all agents on all platforms |
-| `scripts/sync-specialists.mjs` | Regenerates every platform config |
+| `registry` | Source of truth for all agents on all platforms |
+| `scripts/sync-worker-profiles.mjs` | Regenerates every platform config |
 | `lib/hooks/*.mjs` | Run in every Claude Code session |
 | `platforms/claude/settings.template.json` | Controls all Claude Code hook config |
 
@@ -150,7 +150,7 @@ node ./bin/construct doctor
 node ./bin/construct sync
 ```
 
-`doctor` verifies the system is healthy. `sync` regenerates all platform adapters from `specialists/org`.
+`doctor` verifies the system is healthy. `sync` regenerates all platform adapters from `registry`.
 
 ## Tone
 

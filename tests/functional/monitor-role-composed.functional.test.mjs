@@ -156,7 +156,7 @@ const grantedBindings = {
 };
 
 // Output packet conforming to the operations-tpm-briefing contract
-// (specialists/org/contracts/operations-to-user.json mustContain fields);
+// (registry/contracts/operations-to-user.json mustContain fields);
 // validatePacket counts empty arrays as missing, so every field carries a
 // finding traceable to the fake snapshot evidence.
 

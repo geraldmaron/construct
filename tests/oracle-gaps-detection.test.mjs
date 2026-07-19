@@ -236,8 +236,8 @@ describe('collectOracleGaps impact-untested edge cases', () => {
 
   it('treats null/undefined gaps as empty', () => {
     const projectDir = freshProjectDir();
-    fs.mkdirSync(path.join(projectDir, '.cx', 'oracle', 'verdicts'), { recursive: true });
-    const file = path.join(projectDir, '.cx', 'oracle', 'verdicts', '2026-01-01.json');
+    fs.mkdirSync(path.join(projectDir, '.construct', 'oracle', 'verdicts'), { recursive: true });
+    const file = path.join(projectDir, '.construct', 'oracle', 'verdicts', '2026-01-01.json');
     const verdict = { date: '2026-01-01', latest: { at: '2026-01-01T00:00:00Z', verdict: 'healthy', gaps: null } };
     fs.writeFileSync(file, JSON.stringify(verdict));
     const result = collectOracleGaps(projectDir);

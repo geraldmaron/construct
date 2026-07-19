@@ -138,7 +138,7 @@
         "reviewer",
         "security"
       ],
-      "description": "Fixed 12-role roster (specialists/org/specialists/*.json). A rule can only recruit an existing role — this schema has no mechanism for declaring a 13th, per this repo's CLAUDE.md invariant that a profile selects flows + skill emphasis over the fixed roster and does not invent new roles or departments."
+      "description": "Fixed 12-role roster (registry/specialists/*.json). A rule can only recruit an existing role — this schema has no mechanism for declaring a 13th, per this repo's CLAUDE.md invariant that a profile selects flows + skill emphasis over the fixed roster and does not invent new roles or departments."
     }
   }
 }

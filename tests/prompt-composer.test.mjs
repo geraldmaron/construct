@@ -25,7 +25,7 @@ test('composePrompt assembles prompt from core prompt, task packet, and context 
       owner: 'engineer',
       acceptanceCriteria: ['tests pass', 'policy is code-backed'],
       readFirst: ['lib/orchestration-policy.mjs'],
-      doNotChange: ['specialists/org'],
+      doNotChange: ['registry'],
     },
     contextState: {
       source: 'test',
@@ -149,7 +149,7 @@ test('resolveRuntimePromptMetadata includes explicit task packet and routing sum
       status: 'in-progress',
       acceptanceCriteria: ['Critical orchestration rules exist in code'],
       readFirst: ['lib/orchestration-policy.mjs'],
-      doNotChange: ['specialists/org'],
+      doNotChange: ['registry'],
     },
     contextState: {
       source: 'test',

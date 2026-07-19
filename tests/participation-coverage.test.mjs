@@ -7,7 +7,7 @@
  * explicit manualOnly:true — the gap this bead closes was 7 of 12 specialists
  * carrying watchConditions:[] and being unreachable by condition-driven
  * recruitment. Also pins that the watch-condition predicates are
- * registry-declared (specialists/org/watchers.json drives knownWatchers, the
+ * registry-declared (registry/watchers.json drives knownWatchers, the
  * hardcoded WATCHERS map is gone) with unchanged semantics, and that a
  */
 
@@ -46,7 +46,7 @@ test('all 12 Worker Profiles declare a participation condition or explicit manua
 });
 
 test('watchers are registry-declared: watchers.json drives the known set', () => {
-  const file = JSON.parse(fs.readFileSync(path.join(REPO, 'specialists', 'org', 'watchers.json'), 'utf8'));
+  const file = JSON.parse(fs.readFileSync(path.join(REPO, 'registry', 'watchers.json'), 'utf8'));
   const declared = file.watchers.map((w) => w.name).sort();
   assert.deepEqual(knownWatchers().slice().sort(), declared, 'knownWatchers comes from watchers.json');
   assert.ok(declared.length >= 7, 'the six ported predicates plus architecture-risk');

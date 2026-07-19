@@ -36,8 +36,8 @@ function sandbox() {
   const root = mkdtempSync(join(tmpdir(), 'host-role-clientinfo-'));
   const HOME = join(root, 'HOME');
   const project = join(root, 'project');
-  mkdirSync(join(HOME, '.cx'), { recursive: true });
-  mkdirSync(join(project, '.cx'), { recursive: true });
+  mkdirSync(join(HOME, '.construct'), { recursive: true });
+  mkdirSync(join(project, '.construct'), { recursive: true });
   return { root, HOME, project, cleanup() { rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } };
 }
 

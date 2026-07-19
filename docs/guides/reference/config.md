@@ -109,7 +109,7 @@ Keys under `orchestration` in `construct.config.json`. Read at runtime by `lib/o
 
 ## Models (catalog visibility)
 
-Keys under `models` in `construct.config.json`. Consumed by `lib/models/catalog.mjs` and `getProviderModelCatalog()` in `lib/model-router.mjs`. Tier **assignments** (reasoning/standard/fast primaries) remain in `specialists/org` and emergency overrides in `CX_MODEL_*` env vars — highest precedence unchanged.
+Keys under `models` in `construct.config.json`. Consumed by `lib/models/catalog.mjs` and `getProviderModelCatalog()` in `lib/model-router.mjs`. Tier **assignments** (reasoning/standard/fast primaries) remain in `registry` and emergency overrides in `CONSTRUCT_MODEL_*` env vars — highest precedence unchanged.
 
 | Key | Default | Description |
 |---|---|---|
@@ -129,20 +129,20 @@ construct models list
 construct models list --json
 ```
 
-### Tier-default registry (`specialists/org/models.json`)
+### Tier-default registry (`registry/models.json`)
 
-Operators may bind tier defaults in an optional `specialists/org/models.json` under the toolkit dir (`CX_TOOLKIT_DIR`, else the installed package root). Each of `reasoning`/`standard`/`fast` is a bare model-id string or `{ "primary": id, "fallback": [ids] }` (resolution uses the primary). The embedded resolver (`resolveEmbeddedModel`) reads it automatically — no config flag.
+Operators may bind tier defaults in an optional `registry/models.json` under the toolkit dir (`CONSTRUCT_TOOLKIT_DIR`, else the installed package root). Each of `reasoning`/`standard`/`fast` is a bare model-id string or `{ "primary": id, "fallback": [ids] }` (resolution uses the primary). The embedded resolver (`resolveEmbeddedModel`) reads it automatically — no config flag.
 
 Resolution precedence for a tier, most-specific first:
 
-1. `CX_MODEL_<TIER>` / `CONSTRUCT_MODEL_<TIER>` env pin — **always wins**.
-2. `specialists/org/models.json` registry tier — fills only tiers no env pin sets (`resolutionSource: tier-default`, `tierSource: registry`).
+1. `CONSTRUCT_MODEL_<TIER>` / `CONSTRUCT_MODEL_<TIER>` env pin — **always wins**.
+2. `registry/models.json` registry tier — fills only tiers no env pin sets (`resolutionSource: tier-default`, `tierSource: registry`).
 3. Credential-derived provider-family default — see AP3 credential fallback.
 4. `config-error` — no implicit defaults (ADR-0027): an unconfigured machine degrades honestly rather than resolving a model whose credentials may be absent.
 
-Construct ships **no active** `models.json`; copy the shipped `specialists/org/models.json.example` to activate it.
+Construct ships **no active** `models.json`; copy the shipped `registry/models.json.example` to activate it.
 
-Deprecated: `CONSTRUCT_MODEL_*` env vars — use `CX_MODEL_*` (alias still honored for one release cycle).
+Deprecated: `CONSTRUCT_MODEL_*` env vars — use `CONSTRUCT_MODEL_*` (alias still honored for one release cycle).
 
 Typed integration selectors under `sources.targets`. Consumed by embed auto-discovery (when `embed.yaml` is absent), `provider_fetch`, and session-start source hints. Legacy env lists merge additively; an explicit `embed.yaml` in the XDG config dir remains a complete override.
 
@@ -181,7 +181,7 @@ The single canonical drop zone is `inbox/` at the project root (ADR-0045 §C) �
 
 **Drop convention (atomic handoff).** Writers assemble a file under `inbox/.staging/` (gitignored) and then atomically `rename` it into `inbox/`. The watcher enqueues only complete top-level files: it ignores dotfiles and `inbox/.staging/`, and skips any file whose size is still changing between two stats, so a partially-written drop is never consumed. Processed items move to `.construct/intake/processed/`.
 
-Env overrides: `CX_INBOX_DIRS` (colon-separated paths), `CX_INTAKE_MAX_DEPTH`.
+Env overrides: `CONSTRUCT_INBOX_DIRS` (colon-separated paths), `CONSTRUCT_INTAKE_MAX_DEPTH`.
 
 ## Intake queue
 
@@ -324,9 +324,9 @@ When `op run` injects materialized keys into `process.env`, Construct keeps thos
 | `OPENAI_API_KEY` | OpenAI key: used for OpenAI model tier or openai embedding model |
 | `GITHUB_TOKEN` | GitHub PAT for integrations; may be a plain value or `op://` reference |
 | `CONSTRUCT_OP_ENV_FILE` | Override path for the 1Password env file used by a local `op run` wrapper (default on this machine: `~/.config/claude/.env.op`) |
-| `CX_MODEL_REASONING` | Override the reasoning-tier model id |
-| `CX_MODEL_STANDARD` | Override the standard-tier model id |
-| `CX_MODEL_FAST` | Override the fast-tier model id |
+| `CONSTRUCT_MODEL_REASONING` | Override the reasoning-tier model id |
+| `CONSTRUCT_MODEL_STANDARD` | Override the standard-tier model id |
+| `CONSTRUCT_MODEL_FAST` | Override the fast-tier model id |
 | `CONSTRUCT_MODEL_PROFILE` | Optional runtime profile. `small` enables tighter prompt budgets, compressed overlays, and retrieval-first prompt shaping for smaller local or cost-constrained models; `balanced` keeps the default posture. |
 | `OLLAMA_BASE_URL` | Base URL for the Ollama HTTP API. `OLLAMA_HOST` remains accepted as a legacy alias. |
 
@@ -336,9 +336,9 @@ When `op run` injects materialized keys into `process.env`, Construct keeps thos
 |---|---|
 | `CONSTRUCT_DEPRECATIONS` | `error` to throw instead of warn on deprecated API usage (useful in CI) |
 | `CONSTRUCT_DEV_PATH` | Absolute path to a Construct checkout; `.construct/launcher/run.mjs` resolves this first |
-| `CX_AUTO_EMBED` | `1` to auto-start the embed daemon when provider credentials are present. `construct.config.json` `autoEmbed: true` is an equivalent project-committed fallback (env wins); read at runtime by `autoStartEmbedIfNeeded()` in `lib/embed/cli.mjs`. |
-| `CX_WORKSPACE` | Override working directory for embed mode |
-| `CX_TOOLKIT_DIR` | Override the path where Construct looks for its own toolkit (skills, agents, templates) |
+| `CONSTRUCT_AUTO_EMBED` | `1` to auto-start the embed daemon when provider credentials are present. `construct.config.json` `autoEmbed: true` is an equivalent project-committed fallback (env wins); read at runtime by `autoStartEmbedIfNeeded()` in `lib/embed/cli.mjs`. |
+| `CONSTRUCT_WORKSPACE` | Override working directory for embed mode |
+| `CONSTRUCT_TOOLKIT_DIR` | Override the path where Construct looks for its own toolkit (skills, agents, templates) |
 
 ## Bootstrap resource consent
 

@@ -40,7 +40,7 @@ test('setModelWithTierInference writes sibling tiers for same provider family', 
 
 test('readCurrentModels still respects explicit env overrides first', (t) => {
   const envPath = tempFile('construct-model-router-read-', t);
-  fs.writeFileSync(envPath, 'CONSTRUCT_MODEL_REASONING=custom/reasoning\nCX_MODEL_STANDARD=custom/standard\n');
+  fs.writeFileSync(envPath, 'CONSTRUCT_MODEL_REASONING=custom/reasoning\nCONSTRUCT_MODEL_STANDARD=custom/standard\n');
 
   const models = readCurrentModels(envPath, {
     reasoning: { primary: 'registry/reasoning' },

@@ -22,8 +22,8 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 function freshProject() {
   const projectDir = mkdtempSync(join(tmpdir(), 'construct-oracle-tick-'));
   const homeDir = mkdtempSync(join(tmpdir(), 'construct-oracle-tick-home-'));
-  mkdirSync(join(projectDir, '.cx'), { recursive: true });
-  mkdirSync(join(homeDir, '.cx'), { recursive: true });
+  mkdirSync(join(projectDir, '.construct'), { recursive: true });
+  mkdirSync(join(homeDir, '.construct'), { recursive: true });
   return {
     projectDir,
     homeDir,
@@ -71,7 +71,7 @@ test('runOracleTick dry-run executes auto actions without writing pending queue'
     assert.ok(['healthy', 'attention', 'degraded'].includes(result.verdict));
     const hasRegistryAuto = result.tick.executed.some((e) => e.kind === 'registry-validate');
     assert.equal(hasRegistryAuto, result.recommendedActions.some((a) => a.kind === 'registry-validate'));
-    const pendingFile = join(env.projectDir, '.cx', 'oracle', 'pending.jsonl');
+    const pendingFile = join(env.projectDir, '.construct', 'oracle', 'pending.jsonl');
     assert.equal(existsSync(pendingFile), false);
   } finally {
     delete process.env.CONSTRUCT_ORACLE_AUTO_RAISE;
@@ -82,7 +82,7 @@ test('runOracleTick dry-run executes auto actions without writing pending queue'
 test('runOracleTick queues approve actions to pending.jsonl', async () => {
   const env = freshProject();
   try {
-    writeFileSync(join(env.projectDir, '.cx', 'contract-violations.jsonl'), JSON.stringify({
+    writeFileSync(join(env.projectDir, '.construct', 'contract-violations.jsonl'), JSON.stringify({
       ts: new Date().toISOString(),
       contractId: 'test-contract',
       agent: 'engineer',

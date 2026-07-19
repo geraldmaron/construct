@@ -62,7 +62,7 @@ test('hooks-drift fires when a hook command points at a missing .mjs file', asyn
         SessionStart: [{ hooks: [{ type: 'command', command: 'node "/abs/path/to/lib/hooks/nonexistent-hook.mjs"' }] }],
       },
     });
-    slice.writeJson('specialists/org', { specialists: [], orchestrator: null });
+    slice.writeJson('registry', { specialists: [], orchestrator: null });
     slice.writeJson('specialists/contracts.json', {
       version: 1,
       terminalStates: ['DONE'],
@@ -83,7 +83,7 @@ test('roles-drift fires when normalized persona ids collide', async () => {
   const slice = freshRepoSlice();
   try {
     slice.writeJson('platforms/claude/settings.template.json', { hooks: {} });
-    slice.writeJson('specialists/org', {
+    slice.writeJson('registry', {
       orchestrator: { name: 'imaginary' },
       specialists: {
         'cx-imaginary': { name: 'imaginary', promptFile: 'specialists/prompts/imaginary.md' },
@@ -106,7 +106,7 @@ test('prompt-files fires when a persona promptFile is missing on disk', async ()
   const slice = freshRepoSlice();
   try {
     slice.writeJson('platforms/claude/settings.template.json', { hooks: {} });
-    slice.writeJson('specialists/org', {
+    slice.writeJson('registry', {
       orchestrator: { name: 'fake', promptFile: 'specialists/prompts/never-existed.md' },
       specialists: [],
     });
@@ -131,7 +131,7 @@ test('contracts-drift fires when contracts reference an unresolvable producer', 
   const slice = freshRepoSlice();
   try {
     slice.writeJson('platforms/claude/settings.template.json', { hooks: {} });
-    slice.writeJson('specialists/org', {
+    slice.writeJson('registry', {
       orchestrator: { name: 'construct' },
       specialists: [{ name: 'architect' }],
     });
@@ -171,7 +171,7 @@ test('roles-drift does not fire when a specialist id and its own name normalize 
   const slice = freshRepoSlice();
   try {
     slice.writeJson('platforms/claude/settings.template.json', { hooks: {} });
-    slice.writeJson('specialists/org', {
+    slice.writeJson('registry', {
       orchestrator: { id: 'cx-construct', name: 'construct' },
       specialists: {
         'architect': { name: 'architect' },
@@ -194,7 +194,7 @@ test('roles-drift does not fire when a specialist id and its own name normalize 
 
 function writeMcpSlice(slice, { serverBody, tools }) {
   slice.writeJson('platforms/claude/settings.template.json', { hooks: {} });
-  slice.writeJson('specialists/org', { specialists: [], orchestrator: null });
+  slice.writeJson('registry', { specialists: [], orchestrator: null });
   slice.writeJson('specialists/contracts.json', {
     version: 1, terminalStates: ['DONE'],
     severities: { blocking: [], warning: [], info: [] }, contracts: [],

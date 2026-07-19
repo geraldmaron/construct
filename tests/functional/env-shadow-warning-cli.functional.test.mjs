@@ -32,7 +32,7 @@ function sandbox() {
   const home = join(root, 'home');
   const project = join(root, 'project');
   mkdirSync(join(home, '.config', 'construct'), { recursive: true });
-  mkdirSync(join(project, '.cx'), { recursive: true });
+  mkdirSync(join(project, '.construct'), { recursive: true });
   writeFileSync(join(home, '.config', 'construct', 'config.env'), 'CONSTRUCT_INSTANCE_ID=from-config\n', 'utf8');
   return {
     home,

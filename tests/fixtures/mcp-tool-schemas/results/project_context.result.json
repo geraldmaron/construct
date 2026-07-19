@@ -49,7 +49,7 @@
         "docs/guides/reference/mcp-tools.md"
       ],
       "decisions": [
-        "specialists/org remains the SSOT; retired specialists/registry.json and specialists/unified-registry.json references are treated as scanner failures outside migration history.",
+        "registry remains the SSOT; retired specialists/registry.json and specialists/unified-registry.json references are treated as scanner failures outside migration history.",
         "construct creds test uses a live lightweight connection probe for hosted LLM providers while keeping credential values redacted.",
         "prepareIntake owns adding scope researchProfile to triage packets after deterministic classification.",
         "Duplicate eslint security incident beads can close when current diff and doctor show no active eslint.config.mjs violation.",

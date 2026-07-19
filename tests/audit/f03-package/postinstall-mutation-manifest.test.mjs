@@ -71,7 +71,7 @@ function findInstallReceipt(projectRoot) {
     path.join(projectRoot, '.construct', 'install-manifest.json'),
     path.join(projectRoot, '.construct', 'install-receipt.json'),
     path.join(projectRoot, '.construct', 'postinstall-manifest.json'),
-    path.join(projectRoot, '.cx', 'install-manifest.json'),
+    path.join(projectRoot, '.construct', 'install-manifest.json'),
   ];
   const file = candidates.find((p) => fs.existsSync(p));
   return { file, candidates };

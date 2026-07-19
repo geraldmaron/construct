@@ -58,7 +58,7 @@
       "description": "cass-memory persistent cross-session and cross-agent memory, fronted by the Construct stdio MCP bridge so editors get a full MCP handshake.",
       "command": "node",
       "args": [
-        "__CX_TOOLKIT_DIR__/lib/mcp/memory-bridge.mjs"
+        "__CONSTRUCT_TOOLKIT_DIR__/lib/mcp/memory-bridge.mjs"
       ],
       "env": {
         "CONSTRUCT_MEMORY_BRIDGE_URL": "http://127.0.0.1:__MEMORY_PORT__/"

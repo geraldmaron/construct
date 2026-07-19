@@ -45,9 +45,9 @@ construct models list --json
 For a temporary swap (single session), set the env var instead — edit `~/.config/construct/config.env` (preferred env keys — `CONSTRUCT_MODEL_*` is deprecated but still honored):
 
 ```bash
-CX_MODEL_REASONING=openrouter/anthropic/claude-opus-4
-CX_MODEL_STANDARD=openrouter/anthropic/claude-sonnet-4-5
-CX_MODEL_FAST=openrouter/google/gemini-flash-2-0
+CONSTRUCT_MODEL_REASONING=openrouter/anthropic/claude-opus-4
+CONSTRUCT_MODEL_STANDARD=openrouter/anthropic/claude-sonnet-4-5
+CONSTRUCT_MODEL_FAST=openrouter/google/gemini-flash-2-0
 ```
 
 ## Subscription Bridges (Host-Native Models)

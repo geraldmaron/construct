@@ -60,7 +60,7 @@ function preparedEnv() {
 
 test('orchestration-runs watcher records a finding when a recent run is degraded', async (t) => {
   const projectRoot = tempDir('cx-doctor-runs-project-', t);
-  fs.mkdirSync(path.join(projectRoot, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(projectRoot, '.construct'), { recursive: true });
   const doctorRoot = tempDir('cx-doctor-runs-audit-', t);
 
   const degradedRun = await runOrchestration(
@@ -95,7 +95,7 @@ test('orchestration-runs watcher records a finding when a recent run is degraded
 
 test('orchestration-runs watcher stays silent when every recent run is clean', async (t) => {
   const projectRoot = tempDir('cx-doctor-runs-clean-project-', t);
-  fs.mkdirSync(path.join(projectRoot, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(projectRoot, '.construct'), { recursive: true });
   const doctorRoot = tempDir('cx-doctor-runs-clean-audit-', t);
 
   const cleanRun = await runOrchestration(

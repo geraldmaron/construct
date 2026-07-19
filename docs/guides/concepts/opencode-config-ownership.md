@@ -52,7 +52,7 @@ auth headers and non-managed agents are explicitly preserved on merge.
 
 | Config surface | Owner | Rule |
 |---|---|---|
-| `agent.construct`, `agent.cx-*` (and their prompts) | Construct | Regenerated from the registry + personas; swept by name prefix |
+| `agent.construct`, `agent.construct-*` (and their prompts) | Construct | Regenerated from the registry + personas; swept by name prefix |
 | `agent.construct.permission.bash` | Construct | Scoped map emitted by `opencodePermissions` (deny `rm -rf *`; ask on `git push`/force/`reset --hard`) |
 | `agent.<your-name>` | user | Preserved — non-`construct`/`cx-*` agents survive the sweep |
 | `mcp.*` (context7, memory, github, …) | Construct | Regenerated from the registry; rewritten only on placeholder/transport mismatch. Opt-in MCPs like `playwright` (added via `construct mcp add`) are not in the registry, so they are left untouched. |

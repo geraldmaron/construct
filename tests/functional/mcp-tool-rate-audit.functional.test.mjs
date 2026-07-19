@@ -31,8 +31,8 @@ function sandbox() {
   const HOME = join(root, 'HOME');
   const project = join(root, 'project');
   const doctorRoot = join(root, 'doctor');
-  mkdirSync(join(HOME, '.cx'), { recursive: true });
-  mkdirSync(join(project, '.cx'), { recursive: true });
+  mkdirSync(join(HOME, '.construct'), { recursive: true });
+  mkdirSync(join(project, '.construct'), { recursive: true });
   mkdirSync(doctorRoot, { recursive: true });
   return {
     root, HOME, project, doctorRoot,

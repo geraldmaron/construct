@@ -37,9 +37,9 @@ function makeSandbox() {
   const projectB = join(root, 'proj-b');
   const home = join(root, 'HOME');
   mkdirSync(projectA, { recursive: true });
-  mkdirSync(join(projectA, '.cx'), { recursive: true });
+  mkdirSync(join(projectA, '.construct'), { recursive: true });
   mkdirSync(projectB, { recursive: true });
-  mkdirSync(join(projectB, '.cx'), { recursive: true });
+  mkdirSync(join(projectB, '.construct'), { recursive: true });
   mkdirSync(home, { recursive: true });
   return {
     root, projectA, projectB, home,
@@ -62,7 +62,7 @@ function withCwd(dir, fn) {
   }
 }
 
-test('project-scoped path helper returns <project>/.cx in project, ~/.cx outside', () => {
+test('project-scoped path helper returns <project>/.construct in project, ~/.construct outside', () => {
   const env = makeSandbox();
   try {
     withCwd(env.projectA, () => {
@@ -78,8 +78,8 @@ test('project-scoped path helper returns <project>/.cx in project, ~/.cx outside
 
 test('skill-calls writer tags entries with the projectId from cwd', () => {
   const env = makeSandbox();
-  const logPath = join(env.home, '.cx', 'skill-calls.jsonl');
-  mkdirSync(join(env.home, '.cx'), { recursive: true });
+  const logPath = join(env.home, '.construct', 'skill-calls.jsonl');
+  mkdirSync(join(env.home, '.construct'), { recursive: true });
   try {
     withCwd(env.projectA, () => {
       logSkillCall({ skillId: 'perspectives/engineer', source: 'mcp' }, { logPath });
@@ -98,7 +98,7 @@ test('skill-calls writer tags entries with the projectId from cwd', () => {
   } finally { env.cleanup(); }
 });
 
-test('intent-verifications writer routes to <project>/.cx in a project', () => {
+test('intent-verifications writer routes to <project>/.construct in a project', () => {
   const env = makeSandbox();
   try {
     withCwd(env.projectA, () => {
@@ -119,7 +119,7 @@ test('intent-verifications writer routes to <project>/.cx in a project', () => {
 
     // Project-scoped writes must NOT leak into the user-scope file.
 
-    const userPath = join(env.home, '.cx', 'intent-verifications.jsonl');
+    const userPath = join(env.home, '.construct', 'intent-verifications.jsonl');
     assert.equal(existsSync(userPath), false, 'user-scope intent-verifications must be empty when inside a project');
   } finally { env.cleanup(); }
 });

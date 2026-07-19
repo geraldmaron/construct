@@ -57,7 +57,7 @@ function freshRoot() {
 
 test('GRAPH_SEED_FILES lists registry contracts and workflow defs', () => {
   assert.ok(GRAPH_SEED_FILES.includes('registry/capabilities.json'));
-  assert.ok(GRAPH_SEED_FILES.includes('specialists/org'));
+  assert.ok(GRAPH_SEED_FILES.includes('registry'));
 });
 
 test('checkGraphStaleness reports absent graph without throwing', () => {
@@ -120,7 +120,7 @@ test('touching .construct/providers.json flips stale=true naming providerManifes
   assert.deepEqual(rebuilt.staleSources, []);
 });
 
-test('touching a file inside specialists/org flips stale=true naming specialistsOrg', () => {
+test('touching a file inside registry flips stale=true naming specialistsOrg', () => {
   const root = freshRoot();
   const orgDir = path.join(root, 'specialists', 'org', 'scopes');
   fs.mkdirSync(orgDir, { recursive: true });

@@ -21,7 +21,7 @@ function fixture() {
   w('rules/common/referenced.md', '---\ndescription: x\n---\nbody');
   w('rules/golang/glob.md', '---\ndescription: x\npaths:\n  - "**/*.go"\n---\nbody');
   w('rules/web/orphan.md', '---\ndescription: x\n---\nbody');
-  w('personas/construct.md', 'Follow rules/common/referenced.md when working.');
+  w('registry/worker-profiles/prompts/construct.md', 'Follow rules/common/referenced.md when working.');
   return { root, cleanup: () => rmSync(root, { recursive: true, force: true }) };
 }
 

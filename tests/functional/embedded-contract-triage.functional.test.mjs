@@ -49,7 +49,7 @@ test('intake classify returns a plan and writes nothing to the queue', () => {
   assert.equal(env.data.canExecute, true);
   assert.equal(env.data.confidenceKind, 'classification');
 
-  assert.equal(fs.existsSync(path.join(cwd, '.cx', 'intake', 'pending')), false, 'no pending queue entry may be written');
+  assert.equal(fs.existsSync(path.join(cwd, '.construct', 'intake', 'pending')), false, 'no pending queue entry may be written');
 });
 
 test('graph recommend is an alias for the same planning contract', () => {

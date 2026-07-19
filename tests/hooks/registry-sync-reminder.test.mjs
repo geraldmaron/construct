@@ -1,7 +1,7 @@
 /**
  * tests/hooks/registry-sync-reminder.test.mjs — reminder-only behavior.
  *
- * The hook emits a one-line reminder on stderr when specialists/org
+ * The hook emits a one-line reminder on stderr when registry
  * is written and exits 0. Auto-executing `construct sync` from a hook is
  * unsafe: tests legitimately mutate registry.json and would race test
  * cleanup. Non-interactive contexts (CI / NODE_ENV=test / no TTY on stderr)
@@ -37,8 +37,8 @@ function runHook({ filePath = '', env = {} } = {}) {
 }
 
 describe('registry-sync hook', () => {
-  it('exits clean and emits reminder for specialists/org edits', () => {
-    const r = runHook({ filePath: '/repo/specialists/org' });
+  it('exits clean and emits reminder for registry edits', () => {
+    const r = runHook({ filePath: '/repo/registry' });
     assert.equal(r.status, 0);
     assert.match(r.stderr, /registry\.json changed/);
     assert.match(r.stderr, /construct sync/);
@@ -57,13 +57,13 @@ describe('registry-sync hook', () => {
   });
 
   it('auto-suppresses the reminder when CI=true (no skip env var needed)', () => {
-    const r = runHook({ filePath: '/repo/specialists/org', env: { CI: 'true' } });
+    const r = runHook({ filePath: '/repo/registry', env: { CI: 'true' } });
     assert.equal(r.status, 0);
     assert.equal(r.stderr.trim(), '');
   });
 
   it('auto-suppresses the reminder when NODE_ENV=test', () => {
-    const r = runHook({ filePath: '/repo/specialists/org', env: { NODE_ENV: 'test' } });
+    const r = runHook({ filePath: '/repo/registry', env: { NODE_ENV: 'test' } });
     assert.equal(r.status, 0);
     assert.equal(r.stderr.trim(), '');
   });

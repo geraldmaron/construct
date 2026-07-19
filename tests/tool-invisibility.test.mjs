@@ -116,7 +116,7 @@ describe('tool-invisibility prevention is wired so it cannot be silently dropped
   });
 
   it('the persona references the rule', () => {
-    const persona = fs.readFileSync(path.join(ROOT, 'personas/construct.md'), 'utf8');
+    const persona = fs.readFileSync(path.join(ROOT, 'registry/worker-profiles/prompts/construct.md'), 'utf8');
     assert.match(persona, /tool-invisibility\.md/);
   });
 
@@ -126,7 +126,7 @@ describe('tool-invisibility prevention is wired so it cannot be silently dropped
     assert.ok(policies.some((p) => p.id === 'tool-invisibility' && p.source === 'rules/common/tool-invisibility.md'));
   });
 
-  it('KNOWN_WORKER_PROFILE_IDS matches specialists/org (drift guard for the anchored regex)', () => {
+  it('KNOWN_WORKER_PROFILE_IDS matches registry (drift guard for the anchored regex)', () => {
     const registry = getRegistry();
     const expected = Object.values(registry.specialists || {}).map((s) => s.name).sort();
     assert.deepEqual([...KNOWN_WORKER_PROFILE_IDS].sort(), expected);

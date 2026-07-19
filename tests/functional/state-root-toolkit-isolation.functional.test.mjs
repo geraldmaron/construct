@@ -33,7 +33,7 @@ function makeFixture() {
   const project = mkdtempSync(join(tmpdir(), 'cx-state-iso-project-'));
   const toolkit = mkdtempSync(join(tmpdir(), 'cx-state-iso-toolkit-'));
   const home = mkdtempSync(join(tmpdir(), 'cx-state-iso-home-'));
-  mkdirSync(join(project, '.cx'), { recursive: true });
+  mkdirSync(join(project, '.construct'), { recursive: true });
   spawnSync('git', ['init', '--quiet', '--initial-branch=main'], { cwd: project });
   spawnSync('git', ['remote', 'add', 'origin', 'https://example.com/cx/state-iso.git'], { cwd: project });
   return {

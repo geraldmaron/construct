@@ -4,7 +4,7 @@
  * Pins the value signals the proliferation audit found missing: a hook's fire
  * count, how often it blocked (exit 2) vs errored (other non-zero), and which
  * registered hooks never fire (idle). Uses an explicit logPath tmpdir so no real
- * ~/.cx log is touched.
+ * ~/.construct log is touched.
  */
 import test from 'node:test';
 import assert from 'node:assert';

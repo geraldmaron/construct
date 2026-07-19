@@ -16,7 +16,7 @@ function freshProject() {
   const projectDir = mkdtempSync(join(tmpdir(), 'construct-oracle-queue-'));
   const homeDir = mkdtempSync(join(tmpdir(), 'construct-oracle-queue-home-'));
   mkdirSync(join(projectDir, '.construct'), { recursive: true });
-  mkdirSync(join(homeDir, '.cx'), { recursive: true });
+  mkdirSync(join(homeDir, '.construct'), { recursive: true });
   return {
     projectDir,
     homeDir,

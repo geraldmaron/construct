@@ -86,6 +86,6 @@ export function captureDisposition({ projectDir, seeded }) {
     fooPreserved: foo.includes('SENTINEL-FOO'),
     cursorPreserved: cursor.includes('SENTINEL-CURSOR'),
     gitignoreExistingPreserved: gitignore.includes('SENTINEL-GITIGNORE') && gitignore.includes('custom-build-dir/'),
-    gitignoreConstructAppended: /\.cx\//.test(gitignore),
+    gitignoreConstructAppended: /\.construct\//.test(gitignore),
   };
 }

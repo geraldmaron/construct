@@ -29,7 +29,7 @@ after(() => {
 function projectRoot() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'stale-impact-'));
   tmpDirs.push(root);
-  fs.mkdirSync(path.join(root, '.cx', 'certification'), { recursive: true });
+  fs.mkdirSync(path.join(root, '.construct', 'certification'), { recursive: true });
   fs.mkdirSync(path.join(root, 'tests', 'capabilities'), { recursive: true });
   fs.copyFileSync(
     path.join(REPO, 'tests', 'capabilities', 'ledger.json'),

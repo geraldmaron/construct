@@ -1,7 +1,7 @@
 /**
  * tests/functional/workflow-contribution.functional.test.mjs — LMCP-D3.
  *
- * Drives the real `construct` binary against an isolated project (.cx) that
+ * Drives the real `construct` binary against an isolated project (.construct) that
  * contributes its own workflow manifest, proving the contribution is live
  * end-to-end: `construct workflow invoke`, `construct intake classify`
  * (triage), and `construct graph build`/`explain` all see it without any

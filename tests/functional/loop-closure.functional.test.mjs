@@ -117,7 +117,7 @@ test('loop stage 2 — outcomes are recorded and read back', async (t) => {
 
 test('loop stage 3 — role queue rejects fixtures and clears only on explicit resolve', async (t) => {
   const root = tmp('loop-role-', t);
-  process.env.CONSTRUCT_ROLES_ROOT = join(root, '.cx');
+  process.env.CONSTRUCT_ROLES_ROOT = join(root, '.construct');
   t.after(() => { delete process.env.CONSTRUCT_ROLES_ROOT; });
 
   const { isTestFixturePath, shouldEscalate, listPending, markResolved } =
@@ -132,8 +132,8 @@ test('loop stage 3 — role queue rejects fixtures and clears only on explicit r
   assert.equal(verdict.escalate, false, 'fixture-path events do not escalate');
   assert.equal(verdict.reason, 'test-fixture-path', 'and the reason is the fixture guard');
 
-  const pendingFile = join(root, '.cx', 'role-pending.jsonl');
-  mkdirSync(join(root, '.cx'), { recursive: true });
+  const pendingFile = join(root, '.construct', 'role-pending.jsonl');
+  mkdirSync(join(root, '.construct'), { recursive: true });
   appendFileSync(pendingFile, JSON.stringify({
     ts: Date.now(), personaId: 'engineer', workerProfileId: 'engineer',
     fingerprint: 'fp-real', eventType: 'handoff.received', summary: 'loop test', source: 'manual',

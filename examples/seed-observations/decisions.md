@@ -33,4 +33,4 @@ Hook guards for workflow, drive, bootstrap, and task behavior are expressed as Y
 
 ## Registry as Single Source of Truth
 
-`specialists/org` is the canonical definition for all agents on all platforms (Claude Code, OpenCode, Codex, Copilot). `construct sync` regenerates all platform-specific files from the registry. Never edit generated files directly: edits are overwritten on the next sync.
+`registry` is the canonical definition for all agents on all platforms (Claude Code, OpenCode, Codex, Copilot). `construct sync` regenerates all platform-specific files from the registry. Never edit generated files directly: edits are overwritten on the next sync.

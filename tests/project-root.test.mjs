@@ -33,7 +33,7 @@ test('findProjectRoot returns the dir containing a .construct/ marker', () => {
   _resetCache();
   const { dir, cleanup } = makeTmp();
   try {
-    mkdirSync(join(dir, '.cx'), { recursive: true });
+    mkdirSync(join(dir, '.construct'), { recursive: true });
     assert.equal(findProjectRoot(dir), dir);
   } finally { cleanup(); }
 });
@@ -53,13 +53,13 @@ test('findProjectRoot walks upward and stops at the first matching ancestor', ()
   try {
     const nested = join(dir, 'a', 'b', 'c');
     mkdirSync(nested, { recursive: true });
-    mkdirSync(join(dir, '.cx'), { recursive: true });
+    mkdirSync(join(dir, '.construct'), { recursive: true });
     assert.equal(findProjectRoot(nested), dir);
   } finally { cleanup(); }
 });
 
 test('findProjectRoot stops at $HOME — does not look at filesystem root', () => {
-  // $HOME has its own .cx for the user, which would otherwise make every
+  // $HOME has its own .construct for the user, which would otherwise make every
   // cwd resolve to "HOME as the project root" and break the contract.
 
   _resetCache();
@@ -91,7 +91,7 @@ test('resolveProjectScope returns null outside a project, scope object inside', 
   const outside = mkdtempSync(join(tmpdir(), 'cx-outside-'));
   const inside = mkdtempSync(join(tmpdir(), 'cx-inside-'));
   try {
-    mkdirSync(join(inside, '.cx'), { recursive: true });
+    mkdirSync(join(inside, '.construct'), { recursive: true });
 
     assert.equal(resolveProjectScope(outside), null);
     const scope = resolveProjectScope(inside);
@@ -110,7 +110,7 @@ test('resolveProjectScopedPath returns project path inside a project, doctor-roo
   const outside = mkdtempSync(join(tmpdir(), 'cx-outside-'));
   const inside = mkdtempSync(join(tmpdir(), 'cx-inside-'));
   try {
-    mkdirSync(join(inside, '.cx'), { recursive: true });
+    mkdirSync(join(inside, '.construct'), { recursive: true });
 
     const insideP = resolveProjectScopedPath('audit-reads.jsonl', { cwd: inside, ensureDir: false });
     assert.equal(insideP, join(inside, '.construct', 'audit-reads.jsonl'));

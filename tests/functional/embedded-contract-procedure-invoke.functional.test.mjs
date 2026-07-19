@@ -5,7 +5,7 @@
  * isolated tmpdir with a redirected HOME. Asserts the approval-mode write gate
  * end-to-end: proposal-only writes nothing, allow-durable-write lands an
  * observation, and requires-human-approval records an approval marker under
- * HOME/.cx without any durable project write.
+ * HOME/.construct without any durable project write.
  *
  * @capability workflow.evidence-ingest
  * @capability workflow.research-synthesis

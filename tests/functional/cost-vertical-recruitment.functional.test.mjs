@@ -6,9 +6,9 @@
  * isolated tmpdir with a redirected HOME and CONSTRUCT_ROLES=off (zero
  * network). A cost-heavy PRD request must recruit the full cost vertical:
  * data-analyst for quant rigor (skill affinity + cost-quant-review rule on
- * specialists/org/specialists/data-analyst.json) AND product-manager as
+ * registry/specialists/data-analyst.json) AND product-manager as
  * value-tradeoff reviewer (cost-value-tradeoff-review rule on
- * specialists/org/specialists/product-manager.json), each surfaced with a
+ * registry/specialists/product-manager.json), each surfaced with a
  * reason in recruitment.rationale. On prd-draft the product-manager is
  * already the chain's primary owner, so the cx-pm-value-tradeoff framework
  * (ADR-0062 appliesToRole binding) equips the plan directly; on a chain

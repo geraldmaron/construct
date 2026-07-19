@@ -58,7 +58,7 @@ function tierEnv(overrides = {}) {
 function project() {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-smoke-'));
   fs.mkdirSync(path.join(cwd, '.git'), { recursive: true });
-  fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
   return cwd;
 }
 

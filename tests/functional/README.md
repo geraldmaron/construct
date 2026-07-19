@@ -34,7 +34,7 @@ Every functional test:
 ### Isolation contract
 
 Durable writes must stay under the fixture root — never the developer's real `HOME`,
-`~/.cx`, or repo `profiles/`. When a test redirects `process.env.HOME`, it must
+`~/.construct`, or repo `profiles/`. When a test redirects `process.env.HOME`, it must
 restore the prior value in `finally`, `after`, or `t.after` (parallel `node --test`
 shares one process environment).
 

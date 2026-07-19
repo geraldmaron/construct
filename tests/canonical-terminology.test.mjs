@@ -79,8 +79,10 @@ test('canonical terminology map has distinct concepts and owned roots', () => {
   assert.equal(map.termClassifications.scope.replacement, 'workspace-preset');
   assert.equal(map.termClassifications.specialist.replacement, 'worker-profile');
   assert.deepEqual(map.cutoverOrder, Object.keys(map.consumerInventory));
-  assert.equal(map.currentToCanonical['specialists/org/worker-profiles/'], 'registry/workspace-presets/');
-  assert.equal(map.currentToCanonical['specialists/org/specialists/'], 'registry/worker-profiles/');
+  assert.deepEqual(map.consumerInventory['catalog-and-loaders'], [
+    'registry/', 'lib/workspace-presets/', 'lib/worker-profiles/', 'lib/skills/',
+  ]);
+  assert.deepEqual(map.obsoleteSurfaces.roots, ['specialists/', 'personas/', '.cx/']);
 });
 
 test('canonical concept docs do not restore the fixed-cast organization model', () => {

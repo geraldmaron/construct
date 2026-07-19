@@ -25,7 +25,7 @@ function baseRun(overrides = {}) {
     capabilityId: 'specialist.prompt',
     evidenceVersion: '1',
     model: { provider: 'hermetic', requestedId: 'fixture/specialist', resolvedId: 'fixture/specialist', tier: 'hermetic', paidOptIn: false, operatorAckAt: null },
-    fixture: { path: 'tests/certification/scenarios/specialists/architect/happy-path-representative.json', sha256: 'a'.repeat(64) },
+    fixture: { path: 'tests/certification/scenarios/worker-profiles/architect/happy-path-representative.json', sha256: 'a'.repeat(64) },
     verdict: { status: 'pass', source: 'deterministic', reason: null },
     gates: [{ id: 'specialist-representative-architect', type: 'specialist-scenario-audit', pass: true }],
     timing: { latencyMs: 12 },

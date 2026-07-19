@@ -1038,15 +1038,6 @@ async function cmdDoctor() {
     const skillAudit = auditSkills({ rootDir: ROOT_DIR, silent: true });
     add('No declared skills missing on disk', skillAudit.pass, false);
     if (isSourceCheckout) {
-      const { scanRetiredRegistryPathReferences } = await import('../lib/registry/retired-paths.mjs');
-      const staleRegistryPaths = scanRetiredRegistryPathReferences(ROOT_DIR);
-      add(
-        staleRegistryPaths.length === 0
-          ? 'No retired registry path references'
-          : `Retired registry path references (${staleRegistryPaths.length}: ${staleRegistryPaths.slice(0, 3).map((h) => h.file).join(', ')}${staleRegistryPaths.length > 3 ? ', …' : ''})`,
-        staleRegistryPaths.length === 0,
-        false,
-      );
       const workerProfileAudit = auditWorkerProfiles({ rootDir: ROOT_DIR, silent: true });
       add('Worker Profile/Skill audit cross-checks', workerProfileAudit.pass, false);
 
@@ -1766,57 +1757,6 @@ async function cmdStop() {
 async function cmdVersion() {
   const pkg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf8'));
   println(`construct v${pkg.version}`);
-}
-
-async function cmdMigrate(args) {
-  const dryRun = args.includes('--dry-run');
-  const pathArg = args.find((a) => a.startsWith('--path='))?.split('=')[1];
-  const fromArg = args.find((a) => a.startsWith('--from='))?.split('=')[1];
-  const { runMigrations, planMigrations, CURRENT_SCHEMA_VERSION } = await import('../lib/migrations/index.mjs');
-
-  const candidates = pathArg
-    ? [pathArg]
-    : [
-        path.join(ROOT_DIR, 'specialists', 'unified-registry.json'),
-        configPath(process.cwd(), 'config.json'),
-      ];
-
-  let anyFailed = false;
-  for (const artifactPath of candidates) {
-    if (!fs.existsSync(artifactPath)) continue;
-    let from;
-    try {
-      const data = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
-      from = typeof data?.version === 'number' ? data.version : Number(fromArg) || 0;
-    } catch {
-      println(`  ⚠  ${artifactPath}: parse error, skipping`);
-      continue;
-    }
-
-    const plan = planMigrations(from, CURRENT_SCHEMA_VERSION);
-    if (plan === null) {
-      println(`  ✗  ${artifactPath}: no migration path from v${from} to v${CURRENT_SCHEMA_VERSION}`);
-      anyFailed = true;
-      continue;
-    }
-    if (plan.length === 0) {
-      println(`  ✓  ${artifactPath}: already at v${CURRENT_SCHEMA_VERSION}`);
-      continue;
-    }
-
-    println(`  ${dryRun ? '·' : '→'}  ${artifactPath}: ${plan.length} step(s) (v${from} → v${CURRENT_SCHEMA_VERSION})`);
-    const result = await runMigrations({ artifactPath, fromVersion: from, dryRun });
-    for (const step of result.applied) {
-      println(`     v${step.from}→v${step.to}: ${step.summary}`);
-    }
-    if (!result.ok) {
-      println(`  ✗  ${result.error}`);
-      anyFailed = true;
-    }
-  }
-
-  if (dryRun) println(`\n(dry-run — no files were written)`);
-  if (anyFailed) process.exit(1);
 }
 
 async function cmdReview(args) {
@@ -6518,129 +6458,9 @@ async function readStdin() {
   return raw;
 }
 
-async function cmdStudio(args = []) {
-  const { startOrgStudio } = await import('../lib/org-studio/server.mjs');
-  const portArg = args.find((a) => a.startsWith('--port='));
-  const port = portArg ? Number(portArg.split('=')[1]) : 4321;
-  const { url } = await startOrgStudio({ rootDir: PROJECT_ROOT, port });
-  ok(`Org Studio → ${url}`);
-  info('Authoring specialists, teams, relationships, and fences. Writes go through org-api (same schema as the CLI). Ctrl-C to stop.');
-  if (!args.includes('--no-open')) {
-    const { platform } = await import('node:os');
-    const { spawn } = await import('node:child_process');
-    const opener = platform() === 'darwin' ? 'open' : platform() === 'win32' ? 'start' : 'xdg-open';
-    try { spawn(opener, [url], { stdio: 'ignore', detached: true }).unref(); } catch { /* headless: url already printed */ }
-  }
-  await new Promise(() => {});
-}
-
-// CLI/MCP/UI parity for participation rules (construct-pteo2.16): every
-// subcommand is a thin envelope over the same lib/registry/org-api.mjs
-// functions Org Studio's /api/participation endpoints call, so all three
-// surfaces produce identical config writes and identical validation errors.
-
-async function cmdParticipation(args = []) {
-  const api = await import('../lib/registry/org-api.mjs');
-  const sub = args.find((a) => !a.startsWith('--')) || 'list';
-  const positionals = args.filter((a) => !a.startsWith('--')).slice(1);
-  const wantsJson = args.includes('--json');
-  const scopeArg = args.find((a) => a.startsWith('--scope='));
-  const scope = scopeArg ? scopeArg.split('=')[1] : 'project';
-  const rootDir = PROJECT_ROOT;
-
-  const readRuleJson = async () => {
-    const ruleArg = args.find((a) => a.startsWith('--rule='));
-    const raw = ruleArg ? ruleArg.slice('--rule='.length) : await readStdin();
-    if (!raw.trim()) { errorln('Provide the rule JSON via --rule=\'{...}\' or stdin.'); process.exit(1); }
-    try { return JSON.parse(raw); } catch { errorln('Rule is not valid JSON.'); process.exit(1); }
-  };
-  const emitErrors = (result) => {
-    for (const e of result.errors || []) errorln(`  ${e.id}: ${e.message}`);
-    for (const w of result.warnings || []) warn(`  ${w.id}: ${w.message}`);
-  };
-
-  if (sub === 'list') {
-    const result = api.listParticipationRules({ rootDir });
-    if (wantsJson) { println(JSON.stringify(result, null, 2)); return; }
-    if (!result.count) { info('No participation rules declared.'); return; }
-    for (const it of result.items) {
-      const cond = it.rule.when?.watchCondition || it.rule.when?.signalExpr || '?';
-      const who = [...(it.rule.recruit?.specialists || []), ...(it.rule.recruit?.teams || []).map((t) => `team:${t}`)].join(',');
-      println(`${it.rule.id}  [${it.scope}]  ${cond} → ${who}  ${it.rule.role}/${it.rule.gate}  on ${it.owner}`);
-    }
-    return;
-  }
-
-  if (sub === 'show') {
-    const [owner, ruleId] = positionals;
-    if (!owner || !ruleId) { errorln('Usage: construct participation show <owner> <ruleId> [--json]'); process.exit(1); }
-    const row = api.listParticipationRules({ rootDir }).items.find((it) => it.owner === owner && it.rule.id === ruleId);
-    if (!row) { errorln(`No rule "${ruleId}" on "${owner}".`); process.exit(1); }
-    println(JSON.stringify(row, null, 2));
-    return;
-  }
-
-  if (sub === 'add') {
-    const [owner] = positionals;
-    if (!owner) { errorln('Usage: construct participation add <owner> --rule=\'{...}\' [--scope=project|user] [--json]'); process.exit(1); }
-    const rule = await readRuleJson();
-    const result = api.upsertParticipationRule(owner, rule, { rootDir, scope });
-    if (wantsJson) { println(JSON.stringify(result, null, 2)); }
-    else if (result.ok) { ok(`Rule ${rule.id} written to ${result.path}`); emitErrors(result); }
-    else { errorln(`Rule ${rule.id ?? ''} refused:`); emitErrors(result); }
-    if (!result.ok) process.exit(1);
-    return;
-  }
-
-  if (sub === 'validate') {
-    const [owner] = positionals;
-    if (!owner) { errorln('Usage: construct participation validate <owner> --rule=\'{...}\' [--json]'); process.exit(1); }
-    const rule = await readRuleJson();
-    const result = api.validateParticipationRule(owner, rule, { rootDir });
-    if (wantsJson) { println(JSON.stringify(result, null, 2)); }
-    else if (result.ok) { ok(`Rule ${rule.id ?? ''} is valid.`); emitErrors(result); }
-    else { errorln(`Rule ${rule.id ?? ''} is invalid:`); emitErrors(result); }
-    if (!result.ok) process.exit(1);
-    return;
-  }
-
-  if (sub === 'remove') {
-    const [owner, ruleId] = positionals;
-    if (!owner || !ruleId) { errorln('Usage: construct participation remove <owner> <ruleId> [--scope=project|user] [--json]'); process.exit(1); }
-    const result = api.removeParticipationRule(owner, ruleId, { rootDir, scope });
-    if (wantsJson) { println(JSON.stringify(result, null, 2)); }
-    else if (result.ok) { ok(`Rule ${ruleId} removed (${result.path}).`); }
-    else { errorln(`Remove refused:`); emitErrors(result); }
-    if (!result.ok) process.exit(1);
-    return;
-  }
-
-  if (sub === 'preview') {
-    const requestArg = args.find((a) => a.startsWith('--request='));
-    if (!requestArg) { errorln('Usage: construct participation preview --request="..." [--json]'); process.exit(1); }
-    const result = api.previewParticipation({ rootDir, request: requestArg.slice('--request='.length) });
-    if (wantsJson) { println(JSON.stringify(result, null, 2)); return; }
-    if (!result.recruited.length) { info('No condition-driven recruits for this request.'); return; }
-    for (const p of result.recruited) {
-      println(`${p.specialist || `team:${p.team}`}  ${p.role}/${p.gate}  via ${p.via}${p.rule ? ` (${p.rule})` : ''} — ${p.reason}`);
-    }
-    return;
-  }
-
-  if (sub === 'meta') {
-    println(JSON.stringify(api.participationEditorMeta({ rootDir }), null, 2));
-    return;
-  }
-
-  errorln(`Unknown subcommand "${sub}". Usage: construct participation list|show|add|validate|remove|preview|meta`);
-  process.exit(1);
-}
-
 const handlers = new Map([
   // Core
   ['dev', cmdDev],
-  ['studio', cmdStudio],
-  ['participation', cmdParticipation],
   ['stop', cmdStop],
   ['status', cmdStatus],
   ['workers', cmdWorkers],
@@ -6796,7 +6616,6 @@ const handlers = new Map([
   ['evals', cmdEvals],
   ['cleanup', cmdCleanup],
   ['version', cmdVersion],
-  ['migrate', cmdMigrate],
   ['docs:update', cmdDocsUpdate],
   ['docs:check', cmdDocsCheck],
   ['docs:site', cmdDocsSite],
