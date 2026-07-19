@@ -45,7 +45,7 @@ function keysNoTiersEnv(overrides = {}) {
 
 function tmpProject() {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-keys-no-tiers-'));
-  fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
   return cwd;
 }
 
@@ -92,8 +92,8 @@ test('keys-no-tiers: orchestration_run (in-process) executes real tasks, never p
 test('keys-no-tiers: the real spawned MCP server drives orchestration_run end to end without silent degradation', async (t) => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-keys-no-tiers-mcp-'));
   const project = path.join(home, 'project');
-  fs.mkdirSync(path.join(home, '.cx'), { recursive: true });
-  fs.mkdirSync(path.join(project, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(home, '.construct'), { recursive: true });
+  fs.mkdirSync(path.join(project, '.construct'), { recursive: true });
   t.after(() => rmTmpDir(home));
 
   const transport = new StdioClientTransport({

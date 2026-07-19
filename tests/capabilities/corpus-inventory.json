@@ -1,28 +1,28 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-19T02:23:35.699Z",
+  "generatedAt": "2026-07-19T03:45:22.690Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 961,
-    "topLevelTestFiles": 379,
-    "nestedTestFiles": 582,
+    "testFiles": 938,
+    "topLevelTestFiles": 372,
+    "nestedTestFiles": 566,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 49,
+    "capabilityMarkedFiles": 48,
     "byLayer": {
-      "unit": 629,
-      "functional": 279,
+      "unit": 618,
+      "functional": 268,
       "visual": 12,
       "live-provider": 2,
-      "integration": 39
+      "integration": 38
     },
     "byCategory": {
-      "unit": 565,
-      "functional": 279,
+      "unit": 555,
+      "functional": 268,
       "visual": 12,
-      "structural-guard": 20,
+      "structural-guard": 19,
       "contract-subsystem": 45,
       "live-provider": 2,
-      "integration": 29,
+      "integration": 28,
       "hook": 9
     }
   },
@@ -1199,14 +1199,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/certification/skills/inventory.test.mjs — skill inventory audit and freshness."
-    },
-    {
-      "path": "tests/certification/specialist-status-aggregation.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/certification/specialist-status-aggregation.test.mjs — construct-72gqn.14 (H2.2)."
     },
     {
       "path": "tests/certification/stale-impact.test.mjs",
@@ -2758,22 +2750,6 @@
       "maintainerNotes": "cursor-rules-delivery.functional.test.mjs — project-evidence rule delivery (construct-bwis)."
     },
     {
-      "path": "tests/functional/custom-specialist-authoring.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/custom-specialist-authoring.functional.test.mjs"
-    },
-    {
-      "path": "tests/functional/custom-specialist-round-trip.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/custom-specialist-round-trip.functional.test.mjs —"
-    },
-    {
       "path": "tests/functional/deck-export.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3034,14 +3010,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/embed-reasoning-executor.functional.test.mjs"
-    },
-    {
-      "path": "tests/functional/embed-specialist-invocation.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/embed-specialist-invocation.functional.test.mjs"
     },
     {
       "path": "tests/functional/embedded-contract-capability.functional.test.mjs",
@@ -3487,22 +3455,6 @@
       "maintainerNotes": "Live LLM test for the three-tier model router (reasoning / standard /"
     },
     {
-      "path": "tests/functional/llm/specialist-reviewer-plan-challenge.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "Live LLM test for reviewer's plan-challenge mode (the devil-advocate"
-    },
-    {
-      "path": "tests/functional/llm/specialist-roster.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "Live LLM smoke for every cx-specialist that ships with Construct."
-    },
-    {
       "path": "tests/functional/local-model-doctor.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3858,14 +3810,6 @@
       "maintainerNotes": "tests/functional/oracle-read-model.functional.test.mjs —"
     },
     {
-      "path": "tests/functional/oracle-state-migration.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "oracle-state-migration.functional.test.mjs — construct-b0nny.17 requirement 6."
-    },
-    {
       "path": "tests/functional/oracle-synthesis.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3982,14 +3926,6 @@
       "maintainerNotes": "tests/functional/orchestrator-dispatch-grant.functional.test.mjs"
     },
     {
-      "path": "tests/functional/org-studio.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/org-studio.functional.test.mjs — the Org Studio web surface (construct-d1r7.14)."
-    },
-    {
       "path": "tests/functional/outcome-routing.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3998,30 +3934,12 @@
       "maintainerNotes": "tests/functional/outcome-routing.functional.test.mjs — ADR-0076 end-to-end."
     },
     {
-      "path": "tests/functional/participation-cross-surface.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [
-        "workflow.prd-draft"
-      ],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/participation-cross-surface.functional.test.mjs — one"
-    },
-    {
       "path": "tests/functional/participation-join-leave.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/participation-join-leave.functional.test.mjs —"
-    },
-    {
-      "path": "tests/functional/participation-parity.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/participation-parity.functional.test.mjs — CLI/MCP/UI"
     },
     {
       "path": "tests/functional/perspective-differentiation.functional.test.mjs",
@@ -4346,14 +4264,6 @@
       "maintainerNotes": "tests/functional/spawn-env-hermeticity.functional.test.mjs"
     },
     {
-      "path": "tests/functional/specialist-loop.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/specialist-loop.functional.test.mjs — the governed specialist"
-    },
-    {
       "path": "tests/functional/sql-client.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -4538,14 +4448,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/w3-consistency-watcher.functional.test.mjs —"
-    },
-    {
-      "path": "tests/functional/w4-lifecycle-migrations.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/w4-lifecycle-migrations.functional.test.mjs —"
     },
     {
       "path": "tests/functional/w5-self-loop.functional.test.mjs",
@@ -5004,14 +4906,6 @@
       "maintainerNotes": "tests/hooks/session-reflect.test.mjs — Stop hook + extractor integration tests."
     },
     {
-      "path": "tests/hooks/specialist-agent.test.mjs",
-      "layer": "integration",
-      "category": "integration",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/hooks/specialist-agent.test.mjs — Verify the agent-active detector"
-    },
-    {
       "path": "tests/host-capabilities.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -5282,14 +5176,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/integrations/status-no-materialization.test.mjs — construct-192h.7:"
-    },
-    {
-      "path": "tests/intent-classifier-claude-api-migration.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/intent-classifier-claude-api-migration.test.mjs — equivalence coverage"
     },
     {
       "path": "tests/intent-classifier.test.mjs",
@@ -5594,14 +5480,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/memory-stats.test.mjs — tests for lib/memory-stats.mjs."
-    },
-    {
-      "path": "tests/migration-round-trip.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/migration-round-trip.test.mjs — Verify unified registry migration preserves all data."
     },
     {
       "path": "tests/mode-health-single-source.test.mjs",
@@ -6046,14 +5924,6 @@
       "maintainerNotes": "tests/orchestration/execution-state.test.mjs — run-level executionState"
     },
     {
-      "path": "tests/orchestration/persona-degraded.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/orchestration/persona-degraded.test.mjs — persona resolution boundary (LMCP-E2)."
-    },
-    {
       "path": "tests/orchestration/provenance.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -6150,28 +6020,12 @@
       "maintainerNotes": "tests/packs/validate.test.mjs — pack manifest validator unit tests."
     },
     {
-      "path": "tests/parity.test.mjs",
-      "layer": "unit",
-      "category": "structural-guard",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/parity.test.mjs — cross-surface parity verifier tests."
-    },
-    {
       "path": "tests/participation-coverage.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/participation-coverage.test.mjs — every Worker Profile is recruitable"
-    },
-    {
-      "path": "tests/participation-matrix.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/participation-matrix.test.mjs — orphan-sweep matrix across"
     },
     {
       "path": "tests/perf/hook-budgets.test.mjs",
@@ -6427,7 +6281,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/prompt-surface.test.mjs — prompt surface policy enforcement tests"
+      "maintainerNotes": "Canonical Worker Profile prompt surface checks."
     },
     {
       "path": "tests/provider-behavior-matrix.test.mjs",
@@ -6630,14 +6484,6 @@
       "maintainerNotes": "tests/registry-loader.test.mjs — Canonical registry loader contract."
     },
     {
-      "path": "tests/registry-phase-1-4.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/registry-phase-1-4.test.mjs — RFC-0004 Phase 1.4 honest-completion acceptance."
-    },
-    {
       "path": "tests/registry-validation.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -6668,22 +6514,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/registry/docs-sync.test.mjs — Catalog-driven docs AUTO region sync."
-    },
-    {
-      "path": "tests/registry/group-squad-consistency.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/registry/group-squad-consistency.test.mjs — construct-72gqn.29 (D9)."
-    },
-    {
-      "path": "tests/registry/org-api.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/registry/org-api.test.mjs — ADR-0072 no-code org authoring API CRUD gate."
     },
     {
       "path": "tests/registry/skill-consolidation.test.mjs",
@@ -6876,14 +6706,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/scheduler-optimize-job.test.mjs — scheduled optimize loop is gated."
-    },
-    {
-      "path": "tests/schema-infer-claude-api-migration.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/schema-infer-claude-api-migration.test.mjs — equivalence coverage for"
     },
     {
       "path": "tests/schema-validation.test.mjs",
@@ -7196,14 +7018,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/source-taxonomy.test.mjs — source credibility taxonomy is wired in."
-    },
-    {
-      "path": "tests/specialist-loop.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/specialist-loop.test.mjs — unit coverage for opt-in, attribution-first"
     },
     {
       "path": "tests/status-degradation-details.test.mjs",

@@ -2,7 +2,7 @@
  * tests/helpers/isolation-contract.mjs — shared assertions for functional test isolation.
  *
  * Functional tests must keep durable writes under the fixture root (tmpdir), never
- * the developer's real HOME, ~/.cx, or repo profiles/. Use assertPathUnderRoot
+ * the developer's real HOME, ~/.construct, or repo profiles/. Use assertPathUnderRoot
  * after any API that resolves project-scoped or user-scoped storage paths.
  */
 

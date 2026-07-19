@@ -19,8 +19,8 @@ describe('recommendation store', () => {
   before(async () => {
     tmpHome = mkdtempSync(join(tmpdir(), 'cx-recommendations-home-'));
     process.env.CONSTRUCT_HOME_OVERRIDE = tmpHome;
-    indexFile = join(tmpHome, '.cx', 'intake', 'recommendations-index.json');
-    logFile = join(tmpHome, '.cx', 'intake', 'recommendations.jsonl');
+    indexFile = join(tmpHome, '.construct', 'intake', 'recommendations-index.json');
+    logFile = join(tmpHome, '.construct', 'intake', 'recommendations.jsonl');
     // Clean state before tests
     try { unlinkSync(indexFile); } catch {}
     try { unlinkSync(logFile); } catch {}

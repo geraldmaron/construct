@@ -21,7 +21,7 @@ function freshProject() {
   const projectDir = mkdtempSync(join(tmpdir(), 'construct-oracle-loop-'));
   const homeDir = mkdtempSync(join(tmpdir(), 'construct-oracle-loop-home-'));
   mkdirSync(join(projectDir, '.construct'), { recursive: true });
-  mkdirSync(join(homeDir, '.cx'), { recursive: true });
+  mkdirSync(join(homeDir, '.construct'), { recursive: true });
   return {
     projectDir,
     homeDir,
@@ -99,7 +99,7 @@ test('raiseIssuesForGaps persistent dedup skips when raised-issues record exists
 test('approve executes outcomes-aggregate and creates outcomes summary', async () => {
   const env = freshProject();
   const prevRolesRoot = process.env.CONSTRUCT_ROLES_ROOT;
-  process.env.CONSTRUCT_ROLES_ROOT = join(env.homeDir, '.cx');
+  process.env.CONSTRUCT_ROLES_ROOT = join(env.homeDir, '.construct');
   try {
     process.env.CONSTRUCT_ORACLE_AUTO_RAISE = 'off';
     mkdirSync(join(env.projectDir, '.construct', 'oracle'), { recursive: true });

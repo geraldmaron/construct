@@ -101,7 +101,7 @@ resource "aws_ecs_task_definition" "this" {
 
     environment = [
       { name = "HOME",        value = "/data" },
-      { name = "CX_DATA_DIR", value = "/data" },
+      { name = "CONSTRUCT_DATA_DIR", value = "/data" },
       { name = "PORT",        value = tostring(var.port) },
       { name = "NODE_ENV",    value = "production" },
       { name = "DB_HOST",     value = var.db_host },

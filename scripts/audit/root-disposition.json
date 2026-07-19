@@ -48,6 +48,25 @@
       ]
     },
     {
+      "path": ".cx",
+      "owner": "legacy-construct",
+      "class": "governance",
+      "consumers": [],
+      "published": false,
+      "action": "delete",
+      "replacement": "canonical Construct 2.0.0 state under .construct",
+      "evidence": [
+        "legacy Construct metadata removed by construct-tsyfe.8.17",
+        "no active runtime or package references"
+      ],
+      "candidateEvidence": {
+        "staticImports": "no active imports",
+        "dynamicLookups": "no runtime lookup",
+        "npmPack": "excluded from package files",
+        "tests": "canonical namespace checks reject .cx"
+      }
+    },
+    {
       "path": ".dockerignore",
       "owner": "release-engineering",
       "class": "governance",
@@ -519,27 +538,6 @@
       ]
     },
     {
-      "path": "personas",
-      "owner": "worker-runtime",
-      "class": "product",
-      "consumers": [
-        "public Construct prompt loader and host parity"
-      ],
-      "published": true,
-      "action": "relocate",
-      "replacement": "the canonical Worker Profile catalog established by construct-tsyfe.8.12",
-      "evidence": [
-        "lib/parity.mjs loads personas/construct.md",
-        "tests/parity.test.mjs"
-      ],
-      "candidateEvidence": {
-        "staticImports": "rg 'personas/construct' lib bin scripts tests finds live parity and prompt consumers",
-        "dynamicLookups": "lib/parity.mjs joins package root with personas/construct.md",
-        "npmPack": "package.json files includes personas/** and npm pack contains personas/construct.md",
-        "tests": "tests/parity.test.mjs and tests/overrides-resolver.test.mjs pin the current path"
-      }
-    },
-    {
       "path": "platforms",
       "owner": "host-integrations",
       "class": "product",
@@ -625,27 +623,6 @@
       ]
     },
     {
-      "path": "specialists",
-      "owner": "worker-runtime",
-      "class": "product",
-      "consumers": [
-        "current worker catalog pending schema cutover"
-      ],
-      "published": true,
-      "action": "relocate",
-      "replacement": "the canonical Worker Profile and capability roots established by construct-tsyfe.8.12",
-      "evidence": [
-        "lib/registry/loader.mjs",
-        "package.json files specialists/**"
-      ],
-      "candidateEvidence": {
-        "staticImports": "rg 'specialists/' lib bin scripts tests returns live registry, prompt, and policy consumers",
-        "dynamicLookups": "registry loader and sync-specialists resolve files below specialists/",
-        "npmPack": "package.json files includes specialists/**",
-        "tests": "registry, specialist prompt, routing, and sync tests pin the current paths"
-      }
-    },
-    {
       "path": "templates",
       "owner": "developer-experience",
       "class": "product",
@@ -686,27 +663,6 @@
       "evidence": [
         "package.json files vendor/**"
       ]
-    },
-    {
-      "path": ".cx",
-      "owner": "release-engineering",
-      "class": "governance",
-      "consumers": [
-        "legacy context pointer retained for migration audit"
-      ],
-      "published": false,
-      "action": "relocate",
-      "replacement": ".construct",
-      "evidence": [
-        "git ls-tree HEAD shows .cx/context.md",
-        "active state root is .construct/"
-      ],
-      "candidateEvidence": {
-        "staticImports": "no active runtime imports of .cx",
-        "dynamicLookups": "state-root and config resolvers use .construct",
-        "npmPack": "excluded from package files",
-        "tests": "tests/root-layout and namespace ratchets verify no runtime dependency"
-      }
     }
   ],
   "packageFiles": [
@@ -753,26 +709,6 @@
       ]
     },
     {
-      "path": "specialists/**",
-      "owner": "worker-runtime",
-      "class": "product",
-      "consumers": [
-        "current worker catalog"
-      ],
-      "published": true,
-      "action": "relocate",
-      "replacement": "new Worker Profile catalog allowlist entry",
-      "evidence": [
-        "registry loader"
-      ],
-      "candidateEvidence": {
-        "staticImports": "live registry and policy references exist",
-        "dynamicLookups": "registry loader walks specialists/org",
-        "npmPack": "npm pack includes the tree",
-        "tests": "registry and specialist prompt tests pin it"
-      }
-    },
-    {
       "path": "examples/**",
       "owner": "developer-experience",
       "class": "product",
@@ -785,26 +721,6 @@
       "evidence": [
         "example consumers"
       ]
-    },
-    {
-      "path": "personas/**",
-      "owner": "worker-runtime",
-      "class": "product",
-      "consumers": [
-        "public prompt"
-      ],
-      "published": true,
-      "action": "relocate",
-      "replacement": "new Worker Profile catalog allowlist entry",
-      "evidence": [
-        "lib/parity.mjs"
-      ],
-      "candidateEvidence": {
-        "staticImports": "live parity references exist",
-        "dynamicLookups": "lib/parity.mjs resolves personas/construct.md",
-        "npmPack": "npm pack includes personas/construct.md",
-        "tests": "parity and override tests pin it"
-      }
     },
     {
       "path": "commands/**",
@@ -1123,7 +1039,7 @@
       }
     },
     {
-      "pattern": ".cx",
+      "pattern": ".construct",
       "owner": "unknown-local-owner",
       "class": "local",
       "consumers": [
@@ -1139,7 +1055,7 @@
         "the current context.md hash differs from the last tracked copy and may be user/session state"
       ],
       "candidateEvidence": {
-        "staticImports": "shipped surfaces no longer reference .cx",
+        "staticImports": "shipped surfaces no longer reference .construct",
         "dynamicLookups": "current config resolver uses .construct",
         "npmPack": "excluded",
         "tests": "root audit prevents unowned-state removal"

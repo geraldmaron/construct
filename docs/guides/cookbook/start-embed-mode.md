@@ -114,7 +114,7 @@ Or open the dashboard at `http://localhost:4242` and go to the **Snapshot** tab.
 By default all data is stored under `~/.construct/`. To use a different location:
 
 ```sh
-export CX_DATA_DIR=/mnt/construct-data
+export CONSTRUCT_DATA_DIR=/mnt/construct-data
 construct embed start
 ```
 

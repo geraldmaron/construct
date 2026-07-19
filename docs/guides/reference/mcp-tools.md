@@ -25,7 +25,7 @@ Invoke any non-core Construct tool by name. Pass the tool name in `tool` (constr
 
 ## Host wiring policy
 
-The Construct MCP server (`construct-mcp`) is defined once in `specialists/org` (`mcpServers`) and wired into every selected host by `scripts/sync-specialists.mjs` — Claude Code (project scope: `.mcp.json` → `mcpServers`; global scope: `~/.claude.json` → top-level `mcpServers` — settings.json carries hooks/permissions only, never MCP server definitions), OpenCode (`.opencode/opencode.json`), VS Code (`.vscode/mcp.json` → `servers`), Cursor (`.cursor/mcp.json` → `mcpServers`), and Codex (`.codex/config.toml` → `mcp_servers`). The `host-config-parity` functional test fails if any selected host drops it.
+The Construct MCP server (`construct-mcp`) is defined once in `registry` (`mcpServers`) and wired into every selected host by `scripts/sync-specialists.mjs` — Claude Code (project scope: `.mcp.json` → `mcpServers`; global scope: `~/.claude.json` → top-level `mcpServers` — settings.json carries hooks/permissions only, never MCP server definitions), OpenCode (`.opencode/opencode.json`), VS Code (`.vscode/mcp.json` → `servers`), Cursor (`.cursor/mcp.json` → `mcpServers`), and Codex (`.codex/config.toml` → `mcp_servers`). The `host-config-parity` functional test fails if any selected host drops it.
 
 Credential handling diverges because hosts resolve env references at different times:
 
@@ -227,15 +227,6 @@ Reads a doc template by name. Resolves `.construct/templates/docs/{name}.md` fir
 ### `list_templates`
 Lists shipped and project-override doc templates.
 
-### `agent_contract`
-Looks up agent-to-agent service contracts from `specialists/contracts.json`.
-
-| Parameter | Type | Description |
-|---|---|---|
-| `id` | string (optional) | Exact contract id (e.g. `architect-to-engineer`) |
-| `producer` | string (optional) | Producer agent name: returns outgoing contracts |
-| `consumer` | string (optional) | Consumer agent name: returns incoming contracts |
-
 ### `worker_run`
 Runs a bounded shell command via the worker plane and optionally records evidence on a named task graph node. Wraps `lib/worker/run.mjs:runJob`.
 
@@ -300,9 +291,6 @@ The intake, task-graph, and worker plane are surfaced through the `construct int
 | `lib/worker/evidence.mjs` | `evidenceFromJobResult`, `recordEvidence`, `blockedPacket`, `needsInputPacket`: typed verification packets gating node transitions. |
 | `lib/worker/trace.mjs` | `emitTraceEvent({rootDir, eventType, traceId, …})`: writes `.construct/traces/<date>.jsonl` and exports remotely when configured. |
 
-### `list_teams`
-Lists all available team templates with members, focus, and promotion gates.
-
 ### `suggest_skills`
 Ranks skills from the central catalog for a natural-language intent.
 
@@ -316,21 +304,21 @@ Ranks skills from the central catalog for a natural-language intent.
 
 ## Telemetry tools
 
-### `cx_trace`
-Records an agent trace through the shared telemetry adapter. Local JSONL capture is always available; remote export is optional.
+### `construct_trace`
+Records a Construct execution trace through the shared telemetry adapter.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `name` | string | Yes | Agent name (e.g. `cx-engineer`) |
+| `name` | string | Yes | Worker Profile or workflow name |
 | `id` | string | No | Trace UUID (auto-generated if omitted) |
 | `session_id` | string | No | Session ID to group related spans |
 | `metadata` | object | No | Extra metadata |
 | `input` | string or object | No | Agent goal or user request |
 | `output` | string or object | No | Agent deliverable or response |
 
-Returns: `{ trace_id }`: pass to `cx_score` and `cx_trace_update`.
+Returns: `{ trace_id }`: pass to `construct_score` and `construct_trace_update`.
 
-### `cx_trace_update`
+### `construct_trace_update`
 Updates an existing telemetry trace with output and metadata.
 
 | Parameter | Type | Required | Description |
@@ -339,7 +327,7 @@ Updates an existing telemetry trace with output and metadata.
 | `output` | string or object | No | Final output |
 | `metadata` | object | No | Additional metadata to merge |
 
-### `cx_score`
+### `construct_score`
 Attaches a quality score to a trace through the shared telemetry adapter.
 
 | Parameter | Type | Required | Description |
@@ -885,3 +873,46 @@ Request cancellation of an in-progress orchestration run by `run_id`. A soft, co
 | Parameter | Type | Description |
 |---|---|---|
 | `run_id` | string | **required** — Run id to cancel. |
+### `list_worker_profiles`
+
+Lists canonical Worker Profiles available from the registry.
+
+### `get_worker_profile`
+
+Reads one canonical Worker Profile by id.
+
+### `list_procedures`
+
+Lists canonical Procedures available from the registry.
+
+### `get_procedure`
+
+Reads one canonical Procedure by id.
+
+### `list_capabilities`
+
+Lists canonical capabilities available from the registry.
+
+### `get_capability`
+
+Reads one canonical capability by id.
+
+### `list_policies`
+
+Lists canonical policies available from the registry.
+
+### `get_policy`
+
+Reads one canonical policy by id.
+
+### `construct_trace`
+
+Reads Construct execution trace records.
+
+### `construct_score`
+
+Reads Construct outcome scores.
+
+### `construct_trace_update`
+
+Appends an update to a Construct trace record.

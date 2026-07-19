@@ -62,10 +62,10 @@ describe('resolveInboxDirs', () => {
   it('never watches .construct/inbox/ even when it holds entries (zone removed)', () => {
     const root = makeTmpDir();
     try {
-      mkdirSync(join(root, '.cx', 'inbox'), { recursive: true });
-      writeFileSync(join(root, '.cx', 'inbox', 'stranded.md'), '# stranded drop');
+      mkdirSync(join(root, '.construct', 'inbox'), { recursive: true });
+      writeFileSync(join(root, '.construct', 'inbox', 'stranded.md'), '# stranded drop');
       const dirs = resolveInboxDirs(root, {});
-      assert.ok(!dirs.some((d) => d.endsWith(join('.cx', 'inbox'))), '.construct/inbox/ is not a zone');
+      assert.ok(!dirs.some((d) => d.endsWith(join('.construct', 'inbox'))), '.construct/inbox/ is not a zone');
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

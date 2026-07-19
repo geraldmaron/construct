@@ -17,10 +17,10 @@ test('construct search uses the current working directory as project scope', () 
   const projectDir = tempDir('construct-cli-project-');
 
   fs.mkdirSync(path.join(projectDir, 'docs'), { recursive: true });
-  fs.mkdirSync(path.join(projectDir, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(projectDir, '.construct'), { recursive: true });
   fs.writeFileSync(path.join(projectDir, 'docs', 'architecture.md'), '# Architecture\nProject-local authoritative search target.\n');
   fs.writeFileSync(path.join(projectDir, 'docs', 'README.md'), '# Docs\n');
-  fs.writeFileSync(path.join(projectDir, '.cx', 'context.json'), JSON.stringify({
+  fs.writeFileSync(path.join(projectDir, '.construct', 'context.json'), JSON.stringify({
     contextSummary: 'Project-local context',
     savedAt: '2026-04-19T00:00:00Z',
   }));

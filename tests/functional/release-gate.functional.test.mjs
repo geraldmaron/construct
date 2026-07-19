@@ -41,7 +41,7 @@ test('release gate: construct --version exits 0 and reports the package version'
 });
 
 test('release gate: construct doctor exits 0 (warnings allowed, no failures)', () => {
-  // Doctor reads real user-scope state (~/.claude, ~/.codex, ~/.github, ~/.cx).
+  // Doctor reads real user-scope state (~/.claude, ~/.codex, ~/.github, ~/.construct).
   // Without HOME isolation the test inherits whatever the dev box happens to
   // have — including legacy v1.0.10 cx-* files left by an older installed
   // Construct that the test suite itself regenerates via mid-run sync. Same
@@ -131,14 +131,6 @@ test('release gate (W3): construct doctor consistency is clean', (t) => {
   const result = run(['doctor', 'consistency']);
   assert.equal(result.status, 0, `doctor consistency exited ${result.status}; stdout: ${result.stdout}`);
   assert.match(result.stdout, /clean/i);
-});
-
-test('release gate (W4): construct migrate --dry-run reports no migrations needed at HEAD', (t) => {
-  if (!existsSync(join(REPO_ROOT, 'lib', 'migrations', 'index.mjs'))) {
-    return t.skip('W4 not merged: lib/migrations/index.mjs missing');
-  }
-  const result = run(['migrate', '--dry-run']);
-  assert.equal(result.status, 0, `migrate --dry-run exited ${result.status}; stdout: ${result.stdout}`);
 });
 
 test('release gate (W5): daemon safeguard contract exposes createDaemon + classifyPacket', async (t) => {

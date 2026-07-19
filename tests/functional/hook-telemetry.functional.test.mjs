@@ -27,7 +27,7 @@ test('construct hook <name> records a fire row in the isolated home', () => {
     });
     assert.equal(r.status, 0, `hook should pass on empty input: ${r.stderr}`);
 
-    const logPath = join(home, '.cx', 'hook-calls.jsonl');
+    const logPath = join(home, '.construct', 'hook-calls.jsonl');
     assert.ok(existsSync(logPath), 'hook-calls.jsonl is written under the isolated home');
     const rows = readFileSync(logPath, 'utf8').trim().split('\n').map((l) => JSON.parse(l));
     const row = rows.find((x) => x.hookId === 'block-no-verify');

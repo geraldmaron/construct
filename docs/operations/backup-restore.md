@@ -15,7 +15,7 @@ Construct no longer runs a database you have to dump. The old `construct backup 
 
 | State | Location | How it is protected |
 |---|---|---|
-| Source, docs, `specialists/org`, `construct.config.json`, `AGENTS.md`, `.beads/` config + hooks | Your project git repo | `git commit` + `git push` |
+| Source, docs, `registry`, `construct.config.json`, `AGENTS.md`, `.beads/` config + hooks | Your project git repo | `git commit` + `git push` |
 | Beads issues (task graph, history) | Dolt (versioned), working copy at `.beads/construct.db` (gitignored) | `bd dolt push` to your Dolt remote |
 | Machine credentials | `~/.config/construct/config.env` (mode `0600`) | Copy it somewhere safe, or resolve from 1Password (see below) |
 | Observations, sessions, traces, intake, task-graph cache, the LanceDB vector index | `.construct/` (gitignored in full); vector index at `.construct/lancedb` or `~/.local/state/construct/vector/lancedb` | Machine-local and **rebuildable** — not backed up |

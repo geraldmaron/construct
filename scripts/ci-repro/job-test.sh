@@ -5,7 +5,7 @@
 # the workflow's run: steps.
 #
 # The repo is CLONED from the read-only /src mount, not copied: a clone of
-# HEAD sheds gitignored state (node_modules, .cx derived stores, dist) that a
+# HEAD sheds gitignored state (node_modules, .construct derived stores, dist) that a
 # cp would drag in, which is the whole point of a fresh-checkout replica. The
 # clone lands in /opt — NOT /tmp — because the suite's own cleanup sweeps /tmp.
 # SHARD (i/n), when set by run.sh, forwards to the runner's --shard flag.

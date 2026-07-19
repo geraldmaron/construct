@@ -52,7 +52,7 @@ test('delete, relocate, and merge candidates carry all four kinds of proof', () 
 
 test('unproven local state is explicitly protected from deletion', () => {
   const { manifest } = rootDispositionReport(ROOT);
-  const protectedPaths = ['.DS_Store', '.cx', '2026-07-06-183146-check-the-pending-beads-and-the-last-branch-cont.txt', 'projects'];
+  const protectedPaths = ['.DS_Store', '.construct', '2026-07-06-183146-check-the-pending-beads-and-the-last-branch-cont.txt', 'projects'];
 
   for (const pattern of protectedPaths) {
     const row = manifest.localRootRules.find((candidate) => candidate.pattern === pattern);

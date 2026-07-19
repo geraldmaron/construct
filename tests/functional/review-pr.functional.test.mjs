@@ -66,7 +66,7 @@ test('a planted secret in the PR diff surfaces as a high-severity finding', () =
   const res = runReviewPr(cwd, ['--base=main', '--output=.construct/pr-review.json']);
   assert.equal(res.status, 0, `review pr failed: ${res.stderr}`);
 
-  const report = JSON.parse(fs.readFileSync(path.join(cwd, '.cx', 'pr-review.json'), 'utf8'));
+  const report = JSON.parse(fs.readFileSync(path.join(cwd, '.construct', 'pr-review.json'), 'utf8'));
   assert.equal(report.generated_by, 'construct review pr');
   assert.equal(report.base_ref, 'main');
   assert.ok(report.summary.length > 0, 'summary must be non-empty');

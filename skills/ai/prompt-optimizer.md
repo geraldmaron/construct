@@ -84,7 +84,7 @@ construct optimize <agent> --apply
 What `--apply` does, in order:
 
 1. **Rate limit**: refuses if the agent was applied within the last 7 days.
-2. **Patch target**: writes to the agent's role skill file `skills/perspectives/<role>.md` (e.g. `cx-engineer` → `skills/perspectives/engineer.md`). It never touches `specialists/org/**` manifests or `personas/construct.md`.
+2. **Patch target**: writes to the agent's role skill file `skills/perspectives/<role>.md` (e.g. `cx-engineer` → `skills/perspectives/engineer.md`). It never touches `registry/**` manifests or `registry/worker-profiles/prompts/construct.md`.
 3. **Backup**: saves a `.bak` of the previous file (most recent 5 kept) — `--rollback` restores it.
 4. **History**: appends the patch record to `~/.construct/prompt-history/<agent>.jsonl`.
 5. **Integrity check**: verifies the patched file is structurally sane (non-empty, still a markdown document).

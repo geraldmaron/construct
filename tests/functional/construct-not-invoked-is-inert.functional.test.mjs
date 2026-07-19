@@ -8,7 +8,7 @@
  * hooks active by default DO record, confirming the switch is what gates them.
  *
  * Sterile: isolated HOME (os.homedir() honors $HOME, verified) so role-pending
- * writes land in the tmp sandbox, never the real ~/.cx.
+ * writes land in the tmp sandbox, never the real ~/.construct.
  */
 
 import assert from 'node:assert/strict';
@@ -29,8 +29,8 @@ function sandbox() {
   const root = mkdtempSync(join(tmpdir(), 'inert-'));
   const HOME = join(root, 'HOME');
   const project = join(root, 'project');
-  mkdirSync(join(HOME, '.cx'), { recursive: true });
-  mkdirSync(join(project, '.cx'), { recursive: true });
+  mkdirSync(join(HOME, '.construct'), { recursive: true });
+  mkdirSync(join(project, '.construct'), { recursive: true });
   return { root, HOME, project, cleanup() { rmTmpDir(root); } };
 }
 

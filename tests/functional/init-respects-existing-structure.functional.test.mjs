@@ -114,7 +114,7 @@ test('issue #97: init defers to existing internal/meetings/, internal/memos/, cu
       'inbox/ must NOT be scaffolded — ./ingest custom script detected',
     );
     assert.equal(
-      existsSync(join(f.dir, '.cx', 'inbox')),
+      existsSync(join(f.dir, '.construct', 'inbox')),
       false,
       '.construct/inbox/ is never scaffolded under the single-zone model',
     );

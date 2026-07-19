@@ -68,13 +68,13 @@ function before() {
   sandboxDir = tmpdir();
   originalCwd = process.cwd();
   process.chdir(sandboxDir);
-  // Create .cx scaffolding so construct commands see a valid project
-  mkdirp(path.join(sandboxDir, '.cx', 'intake', 'pending'));
-  mkdirp(path.join(sandboxDir, '.cx', 'intake', 'processed'));
-  mkdirp(path.join(sandboxDir, '.cx', 'inbox'));
-  mkdirp(path.join(sandboxDir, '.cx', 'task-graphs'));
+  // Create .construct scaffolding so construct commands see a valid project
+  mkdirp(path.join(sandboxDir, '.construct', 'intake', 'pending'));
+  mkdirp(path.join(sandboxDir, '.construct', 'intake', 'processed'));
+  mkdirp(path.join(sandboxDir, '.construct', 'inbox'));
+  mkdirp(path.join(sandboxDir, '.construct', 'task-graphs'));
   // Minimal context.md to make docs:verify happy
-  fs.writeFileSync(path.join(sandboxDir, '.cx', 'context.md'),
+  fs.writeFileSync(path.join(sandboxDir, '.construct', 'context.md'),
     `# ${sandboxDir}\n\n## What was in progress\nQA sandbox testing.\n`, 'utf8');
   // README.md for docs:verify
   fs.writeFileSync(path.join(sandboxDir, 'README.md'), `# QA Sandbox\n`, 'utf8');

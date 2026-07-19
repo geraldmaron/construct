@@ -96,7 +96,7 @@ test('failure capture records and aggregates tool failures into a learnable anti
 
 // construct-bh8h4: the Oracle read model / synthesize / policy pipeline, not just
 // learning-status, must surface a tool-discoverability signal. collectReadModel needs a real
-// specialists/org tree to assemble the registry (collectTeamGovernance), so rootDir is a fresh
+// registry tree to assemble the registry (collectTeamGovernance), so rootDir is a fresh
 // copy of it rather than a bare tmpdir — the same fixture shape as
 // tests/functional/oracle-read-model.functional.test.mjs.
 

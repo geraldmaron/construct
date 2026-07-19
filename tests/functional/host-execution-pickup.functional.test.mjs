@@ -47,8 +47,8 @@ function sandbox() {
   const root = mkdtempSync(join(tmpdir(), 'host-pickup-'));
   const HOME = join(root, 'HOME');
   const project = join(root, 'project');
-  mkdirSync(join(HOME, '.cx'), { recursive: true });
-  mkdirSync(join(project, '.cx'), { recursive: true });
+  mkdirSync(join(HOME, '.construct'), { recursive: true });
+  mkdirSync(join(project, '.construct'), { recursive: true });
   return { root, HOME, project, cleanup() { rmTmpDir(root); } };
 }
 

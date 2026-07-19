@@ -43,7 +43,7 @@ test.after(() => {
 
 function tmpProject() {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-run-events-'));
-  fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
   return cwd;
 }
 

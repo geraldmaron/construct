@@ -2,7 +2,7 @@
  * tests/hooks/model-fallback-registry.test.mjs
  *
  * Locks in that lib/hooks/model-fallback.mjs loads
- * specialists/org/models.json under CONSTRUCT_TOOLKIT_DIR and passes it to
+ * registry/models.json under CONSTRUCT_TOOLKIT_DIR and passes it to
  * selectFallbackModel as registryModels, so a registry-declared fallback
  * chain can actually be selected on a retryable provider failure, and that
  * no provider cooldown file is written on any no-op path (only after a

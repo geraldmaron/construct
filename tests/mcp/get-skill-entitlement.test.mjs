@@ -15,7 +15,7 @@ import { TOOL_DEFS_SKILLS } from '../../lib/mcp/tool-definitions-skills.mjs';
 
 const ROOT_DIR = new URL('../..', import.meta.url).pathname;
 
-// reviewer's real, non-empty entitlement list (specialists/org/specialists/reviewer.json)
+// reviewer's real, non-empty entitlement list (registry/specialists/reviewer.json)
 // does not include docs/prd-workflow — a genuine negative fixture, not a synthetic one.
 const ENTITLED_PATH = 'quality-gates/verify-quality';
 const NOT_ENTITLED_PATH = 'docs/prd-workflow';

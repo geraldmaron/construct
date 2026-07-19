@@ -48,7 +48,7 @@ What is there:
 - A docs site is published at `geraldmaron.github.io/construct/`.
 - A deterministic flow engine (`lib/flows/`, ADR-0067) sequences work as typed state instead of prose an agent is trusted to follow — checkpoint/resume, effort budgets, and fan-out restricted to read-only work all land. See [Flow engine](./docs/guides/concepts/architecture.md#flow-engine).
 - Heavy per-project state (traces, runs, vector index, docling venv) moved to a machine-scoped root at `~/.construct/projects/<key>/` (ADR-0066); the docling venv is now one shared machine-wide install instead of one per project (ADR-0068).
-- Users can author their own specialists and teams (`construct specialist create` / `construct team create`) without editing `specialists/org/`, merging builtin → user → project tiers at load time (`construct-rf26.13`).
+- Users can author their own specialists and teams (`construct specialist create` / `construct team create`) without editing `registry/`, merging builtin → user → project tiers at load time (`construct-rf26.13`).
 
 What is partial:
 
@@ -57,7 +57,7 @@ What is partial:
 - Team and enterprise modes have the scaffolding but few real users yet.
 - Provider coverage is uneven. GitHub, Slack, Jira, Confluence, Salesforce exist; depth varies.
 - Visual coverage in the docs site is thin (most concepts have no diagrams).
-- The 29-specialist roster consolidation is applied (ADR-0065): 12 core `cx-*` specialists ship in `specialists/org/specialists/` and `specialists/prompts/`.
+- The 29-specialist roster consolidation is applied (ADR-0065): 12 core `cx-*` specialists ship in `registry/specialists/` and `specialists/prompts/`.
 - The ADR-0067 flow engine (`lib/flows/`) stays live, driven directly by `construct flow resume`/`construct flow status` for hand-authored flow definitions. Its additive delegation port (`lib/orchestration/delegation-flow.mjs`) was deleted as dead code (`construct-b0nny.13`, workspace-control-plane M0) — the `orchestration_delegation_next` tool that would have called it was already removed under the tool-surface budget, leaving zero production consumers. Contract-chain dispatch runs on the original prompt-injected `dispatchPlan`/`dispatchSummary` path (`lib/orchestration-policy.mjs`) plus `routeRequest`'s `specialists`/`dispatchReasons`; no flow-step abstraction sequences it.
 - Bun-compiled binary distribution builds and runs in isolation (all 4 platform targets, LanceDB + MCP SDK verified under Bun) but `bin/construct` itself doesn't yet run standalone under the compiled binary (a data-root resolution gap); npm remains the only working distribution channel.
 

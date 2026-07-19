@@ -76,7 +76,7 @@ test('live web access engages external research and routes off the immediate tra
     assert.equal(gate.required, true, `gate fires: ${request}`);
     assert.equal(gate.reason, 'web-access', `reason is web-access: ${request}`);
     assert.notEqual(determineExecutionTrack({ request }), 'immediate', `must dispatch, not answer directly: ${request}`);
-    assert.ok(routeRequest({ request }).specialists.includes('researcher'), `researcher is dispatched: ${request}`);
+    assert.ok(routeRequest({ request }).assignments.some((a) => a.workerProfileId === 'researcher'), `researcher is dispatched: ${request}`);
   }
 });
 

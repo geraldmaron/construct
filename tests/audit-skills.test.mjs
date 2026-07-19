@@ -18,20 +18,20 @@ function fixture() {
   const w = (rel, body) => { mkdirSync(join(root, rel, '..'), { recursive: true }); writeFileSync(join(root, rel), body); };
   // One specialist (engineer) declares its own base skill; operator is a profile
   // role only (no specialist). ghost is neither.
-  w('specialists/org/specialists/engineer.json', JSON.stringify({
+  w('registry/specialists/engineer.json', JSON.stringify({
     name: 'engineer',
     team: 'engineering-team',
     role: 'owner',
     skills: ['perspectives/engineer'],
   }));
-  w('specialists/org/teams/engineering-team.json', JSON.stringify({
+  w('registry/teams/engineering-team.json', JSON.stringify({
     id: 'engineering-team',
     name: 'Engineering',
     owner: 'engineer',
     roles: ['engineer'],
     charter: 'Owns implementation quality for this focused audit-skills fixture.',
   }));
-  w('specialists/org/worker-profiles/operations.json', JSON.stringify({
+  w('registry/worker-profiles/operations.json', JSON.stringify({
     id: 'operations',
     roles: ['operator', 'product-lead'],
     departments: [{ id: 'intake', roles: ['operator', 'product-lead'] }],

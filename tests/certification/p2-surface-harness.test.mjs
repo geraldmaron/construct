@@ -70,7 +70,7 @@ test('catalog includes P2 hermetic scenario ids', () => {
 test('hermetic P2 scenarios pass via certification runner', async (t) => {
   const rootDir = path.join(REPO, '.tmp', `cert-p2-${Date.now()}`);
   const fs = await import('node:fs');
-  fs.mkdirSync(path.join(rootDir, '.cx', 'certification', 'runs'), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, '.construct', 'certification', 'runs'), { recursive: true });
   t.after(() => fs.rmSync(rootDir, { recursive: true, force: true }));
 
   for (const scenarioId of [

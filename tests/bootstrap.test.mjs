@@ -3,7 +3,7 @@
  *
  * Verifies seed corpus import is idempotent, parses all three files,
  * correctly maps categories, and skips already-present observations.
- * Isolated in a temp dir so real ~/.cx state is untouched.
+ * Isolated in a temp dir so real ~/.construct state is untouched.
  *
  * observation-store resolves project state through the machine-scoped state
  * root (ADR-0066), keyed by a hash of tmpDir — so CONSTRUCT_HOME_OVERRIDE is pinned

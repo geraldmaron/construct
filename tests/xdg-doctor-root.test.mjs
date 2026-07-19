@@ -1,8 +1,8 @@
 /**
  * tests/xdg-doctor-root.test.mjs — global doctor/telemetry/runtime root contract.
  *
- * Pins the clean break for the formerly ~/.cx-rooted axis: doctorRoot() defaults
- * to the XDG state dir, never a legacy ~/.cx path. CONSTRUCT_DOCTOR_ROOT wins
+ * Pins the clean break for the formerly ~/.construct-rooted axis: doctorRoot() defaults
+ * to the XDG state dir, never a legacy ~/.construct path. CONSTRUCT_DOCTOR_ROOT wins
  * only when set to a non-empty value; an empty or whitespace override is ignored.
  * XDG_STATE_HOME flows through stateDir() so the override and the spec layout
  * stay in agreement.
@@ -20,8 +20,8 @@ test('doctorRoot defaults to the XDG state dir with no override', () => {
   assert.equal(doctorRoot(HOME, {}), path.join(HOME, '.local', 'state', 'construct'));
 });
 
-test('doctorRoot never returns a legacy ~/.cx path', () => {
-  assert.ok(!doctorRoot(HOME, {}).includes(path.join(HOME, '.cx')), 'must not resolve under ~/.cx');
+test('doctorRoot never returns a legacy ~/.construct path', () => {
+  assert.ok(!doctorRoot(HOME, {}).includes(path.join(HOME, '.construct')), 'must not resolve under ~/.construct');
 });
 
 test('an absolute CONSTRUCT_DOCTOR_ROOT override is honored verbatim', () => {

@@ -4,7 +4,7 @@
 
 The roster is **12 specialists** organized into **8 squads** that roll up into **6 macro groups**. Groups own decision rights; squads own day-to-day collaboration (see [teams.md](teams.md)). This roster is the consolidated result of ADR-0065 (a prior 29-role roster folded down to 12); the full 29→12 mapping is recorded in [appendix-0065-roster-mapping.md](../../decisions/adr/appendix-0065-roster-mapping.md).
 
-The source of truth is `specialists/org/specialists/*.json` (each specialist's `teamId`/`groupId`), not this page — regenerate your mental model from `construct team list` / `construct list` if they diverge.
+The source of truth is `registry/specialists/*.json` (each specialist's `teamId`/`groupId`), not this page — regenerate your mental model from `construct team list` / `construct list` if they diverge.
 
 ## Reporting structure
 

@@ -3,14 +3,14 @@
  * scenario.
  *
  * Each scenario runs against a dedicated tmpdir tree with its own HOME and
- * CONSTRUCT_HOME_OVERRIDE, so neither the host machine's ~/.construct / ~/.cx state nor
+ * CONSTRUCT_HOME_OVERRIDE, so neither the host machine's ~/.construct / ~/.construct state nor
  * its global installs leak into the observation, and nothing the scenario writes
  * escapes the sandbox. CONSTRUCT_DEV_PATH points the project launcher at the
  * repo under test, so the sweep exercises the local build rather than a
  * published package or a stale global.
  *
  * Layout under the scenario root:
- *   <root>/home/         isolated HOME (and CONSTRUCT_HOME_OVERRIDE) — ~/.construct, ~/.cx land here
+ *   <root>/home/         isolated HOME (and CONSTRUCT_HOME_OVERRIDE) — ~/.construct, ~/.construct land here
  *   <root>/project/      the scenario's project dir (fixture target, git repo)
  *
  * On failure the caller preserves the root and prints its path; on success the

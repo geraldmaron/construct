@@ -20,8 +20,8 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 function freshProject() {
   const projectDir = mkdtempSync(join(tmpdir(), 'construct-oracle-hygiene-'));
   const homeDir = mkdtempSync(join(tmpdir(), 'construct-oracle-hygiene-home-'));
-  mkdirSync(join(projectDir, '.cx'), { recursive: true });
-  mkdirSync(join(homeDir, '.cx'), { recursive: true });
+  mkdirSync(join(projectDir, '.construct'), { recursive: true });
+  mkdirSync(join(homeDir, '.construct'), { recursive: true });
   return {
     projectDir,
     homeDir,
@@ -72,7 +72,7 @@ test('runOracleTick does not write raised-issues for hygiene-only synthesis', as
     const { gaps } = synthesizeVerdict(readModel);
     const raised = await raiseIssuesForGaps({ projectDir: env.projectDir, gaps, dryRun: false });
     assert.ok(raised.every((r) => r.skipped && r.reason === 'verdict-only'));
-    assert.equal(existsSync(join(env.projectDir, '.cx', 'oracle', 'raised-issues.jsonl')), false);
+    assert.equal(existsSync(join(env.projectDir, '.construct', 'oracle', 'raised-issues.jsonl')), false);
   } finally {
     env.cleanup();
   }

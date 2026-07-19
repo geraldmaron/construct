@@ -52,7 +52,7 @@ function sandbox() {
   const home = join(root, 'home');
   const project = join(root, 'project');
   mkdirSync(join(home, '.config', 'construct'), { recursive: true });
-  mkdirSync(join(project, '.cx'), { recursive: true });
+  mkdirSync(join(project, '.construct'), { recursive: true });
   return {
     root,
     home,

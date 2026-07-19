@@ -17,7 +17,7 @@ const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..',
 const BIN = path.join(REPO, 'bin', 'construct');
 
 // Each spawn gets a private HOME so construct's startup side effects (embed
-// daemon, telemetry, session state under ~/.cx and ~/.claude) can never race
+// daemon, telemetry, session state under ~/.construct and ~/.claude) can never race
 // or bleed across the test files the runner executes in parallel. CONSTRUCT_TOOLKIT_DIR
 // is dropped so an operator's non-default install layout can't leak in either.
 // BOOTSTRAP_CHECKED + CONSTRUCT_DISABLE_AUTO_CLEANUP keep the fresh HOME from

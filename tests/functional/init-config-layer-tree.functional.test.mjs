@@ -107,10 +107,10 @@ test('construct init writes each footprint layer exactly: pinned .construct/ tre
 
   // Machine layer: strictly lazy. Not "no heavy subdirectory" (the existing
   // pin) but no <home>/.construct at all — init performs zero machine-scoped
-  // writes, and no legacy <home>/.cx root reappears either.
+  // writes, and no legacy <home>/.construct root reappears either.
 
   assert.equal(existsSync(join(home, '.construct')), false, 'init must not create <home>/.construct — the machine layer materializes on first durable write, not at init');
-  assert.equal(existsSync(join(home, '.cx')), false, 'init must not create a legacy <home>/.cx root');
+  assert.equal(existsSync(join(home, '.construct')), false, 'init must not create a legacy <home>/.construct root');
 
   // Project config files: parseable and declarative.
 

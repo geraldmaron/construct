@@ -14,7 +14,7 @@
  * (lib/orchestration/runtime.mjs) decomposes it via routeRequest into an
  * architect → engineer → reviewer/qa/security sequence and resolves the
  * governing contract chain — `engineer-to-reviewer` (the real
- * specialists/org/contracts/ entry this suite exercises) resolves into
+ * registry/contracts/ entry this suite exercises) resolves into
  * `run.plan.contractChain` from the request text alone, verified live below.
  * executeRun then runs every task with the `provider` worker backend and an
  * injected deterministic `fetchImpl` — the same no-network executor-injection

@@ -144,7 +144,7 @@ construct models <list|set|free|reset|resolve|policy|explain>
 - `reset` — Reset all tier assignments
 - `resolve --json` — Resolve the model for an embedded procedure given host context
 - `policy show` — Show the effective policy: winning source per tier + work-category map
-- `policy set <budget|free|frontier|local>` — Compute a preset and persist it to specialists/org/models.json
+- `policy set <budget|free|frontier|local>` — Compute a preset and persist it to registry/models.json
 - `explain --worker-profile <id>` — Per-worker-profile model resolution trace
 
 ## construct orchestrate

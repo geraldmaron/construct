@@ -59,44 +59,44 @@ test('backend constants expose inline, provider, and host', () => {
 
 test.beforeEach(() => _resetPackRegistryCache());
 
-test('materializeTaskPrompt resolves persona content and provenance for a role every pack declares', () => {
-  const task = { role: 'engineer', reason: 'implement the change', handoffContract: null };
+test('materializeTaskPrompt resolves Worker Profile content and provenance for a profile every pack declares', () => {
+  const task = { workerProfileId: 'engineer', reason: 'implement the change', handoffContract: null };
   const run = { request: { summary: 'refactor the auth module' }, execution: { deploymentMode: 'solo' } };
   const prompt = materializeTaskPrompt({ task, run });
   assert.match(prompt.system, /engineer/i);
   assert.match(prompt.user, /refactor the auth module/);
   assert.match(prompt.user, /implement the change/);
-  assert.equal(prompt.specialistId, 'engineer');
-  assert.equal(prompt.personaAvailable, true);
-  assert.equal('degraded' in prompt, false, 'no degraded flag on a healthy persona resolution');
+  assert.equal(prompt.workerProfileId, 'engineer');
+  assert.equal(prompt.workerProfileAvailable, true);
+  assert.equal('degraded' in prompt, false, 'no degraded flag on a healthy Worker Profile resolution');
   assert.equal(typeof prompt.promptVersion, 'string');
   assert.ok(Array.isArray(prompt.toolGrants));
 });
 
-test('materializeTaskPrompt degrades visibly in solo mode for an unknown role (personaAvailable:false)', () => {
-  const task = { role: 'cx-totally-unknown-specialist' };
+test('materializeTaskPrompt degrades visibly in solo mode for an unknown Worker Profile', () => {
+  const task = { workerProfileId: 'totally-unknown-worker-profile' };
   const run = { request: { summary: 'x' }, execution: { deploymentMode: 'solo' } };
   const prompt = materializeTaskPrompt({ task, run });
-  assert.equal(prompt.personaAvailable, false);
-  assert.equal(prompt.degraded, 'persona-fallback');
+  assert.equal(prompt.workerProfileAvailable, false);
+  assert.equal(prompt.degraded, 'worker-profile-fallback');
   assert.equal(prompt.packId, null);
-  assert.match(prompt.system, /totally-unknown-specialist/);
+  assert.match(prompt.system, /totally-unknown-worker-profile/);
 });
 
-test('materializeTaskPrompt refuses outright (PERSONA_UNAVAILABLE) for an unknown role in team/enterprise mode', () => {
-  const task = { role: 'cx-totally-unknown-specialist' };
+test('materializeTaskPrompt refuses outright for an unknown Worker Profile in team/enterprise mode', () => {
+  const task = { workerProfileId: 'totally-unknown-worker-profile' };
   for (const deploymentMode of ['team', 'enterprise']) {
     const run = { request: { summary: 'x' }, execution: { deploymentMode } };
     assert.throws(
       () => materializeTaskPrompt({ task, run }),
-      (err) => err.code === 'PERSONA_UNAVAILABLE',
-      `expected PERSONA_UNAVAILABLE under ${deploymentMode} mode`,
+      (err) => err.code === 'WORKER_PROFILE_UNAVAILABLE',
+      `expected WORKER_PROFILE_UNAVAILABLE under ${deploymentMode} mode`,
     );
   }
 });
 
 test('materializeTaskPrompt and the provider executor resolve byte-identical system/user prompts for the same task', async () => {
-  const task = { role: 'engineer', reason: 'implement the change', handoffContract: null };
+  const task = { workerProfileId: 'engineer', reason: 'implement the change', handoffContract: null };
   const run = { request: { summary: 'refactor the auth module' } };
   const prompt = materializeTaskPrompt({ task, run, env: { ANTHROPIC_API_KEY: 'sk-test' } });
 
@@ -112,7 +112,7 @@ test('materializeTaskPrompt and the provider executor resolve byte-identical sys
 });
 
 test('provider worker returns specialist output via a mock fetch', async () => {
-  const task = { role: 'engineer', reason: 'implement the change', handoffContract: null };
+  const task = { workerProfileId: 'engineer', reason: 'implement the change', handoffContract: null };
   const run = { request: { summary: 'refactor the auth module' } };
   const fetchImpl = async (url, opts) => {
     assert.match(url, /anthropic\.com\/v1\/messages/);
@@ -129,7 +129,7 @@ test('provider worker returns specialist output via a mock fetch', async () => {
 });
 
 test('claude-family model routes to Anthropic, others to OpenRouter', async () => {
-  const task = { role: 'engineer' };
+  const task = { workerProfileId: 'engineer' };
   const run = { request: { summary: 'do it' } };
   let anthropicUrl = null;
   let openrouterUrl = null;
@@ -140,7 +140,7 @@ test('claude-family model routes to Anthropic, others to OpenRouter', async () =
 });
 
 test('an openrouter/-prefixed claude slug routes to OpenRouter, not the direct Anthropic API (construct-olpf)', async () => {
-  const task = { role: 'researcher' };
+  const task = { workerProfileId: 'researcher' };
   const run = { request: { summary: 'research it' } };
   let calledUrl = null;
   await runTaskViaProvider({
@@ -156,7 +156,7 @@ test('an openrouter/-prefixed claude slug routes to OpenRouter, not the direct A
 });
 
 test('missing key under explicit env raises PROVIDER_KEY_MISSING', async () => {
-  const task = { role: 'engineer' };
+  const task = { workerProfileId: 'engineer' };
   const run = { request: { summary: 'x' } };
   await assert.rejects(
     () => runTaskViaProvider({ task, run, model: MODEL, provider: 'anthropic', env: {}, fetchImpl: async () => ({ ok: true, json: async () => ({}) }) }),
@@ -166,7 +166,7 @@ test('missing key under explicit env raises PROVIDER_KEY_MISSING', async () => {
 
 test('unresolved model raises PROVIDER_MODEL_UNRESOLVED', async () => {
   await assert.rejects(
-    () => runTaskViaProvider({ task: { role: 'engineer' }, run: {}, model: null, env: { ANTHROPIC_API_KEY: 'k' }, fetchImpl: async () => ({}) }),
+    () => runTaskViaProvider({ task: { workerProfileId: 'engineer' }, run: {}, model: null, env: { ANTHROPIC_API_KEY: 'k' }, fetchImpl: async () => ({}) }),
     (err) => err.code === 'PROVIDER_MODEL_UNRESOLVED',
   );
 });
@@ -174,7 +174,7 @@ test('unresolved model raises PROVIDER_MODEL_UNRESOLVED', async () => {
 test('a credential canary never leaks into the worker result', async () => {
   const canary = 'sk-worker-CANARY-9999';
   const result = await runTaskViaProvider({
-    task: { role: 'engineer' }, run: { request: { summary: 'x' } }, model: MODEL, provider: 'anthropic',
+    task: { workerProfileId: 'engineer' }, run: { request: { summary: 'x' } }, model: MODEL, provider: 'anthropic',
     env: { ANTHROPIC_API_KEY: canary }, fetchImpl: async () => ({ ok: true, json: async () => ({ content: [{ type: 'text', text: 'clean' }] }) }),
   });
   assert.ok(!JSON.stringify(result).includes(canary));
@@ -202,7 +202,7 @@ test('a research task whose output cites nothing is flagged by the evidence gate
     { request: 'Research agentic platforms and cite primary sources', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 0, moduleCount: 0 },
     { env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test' }, cwd, workerBackend: 'provider', fetchImpl },
   );
-  const researcher = run.tasks.find((t) => t.role === 'researcher');
+  const researcher = run.tasks.find((t) => t.workerProfileId === 'researcher');
   assert.ok(researcher, 'a research request dispatches a researcher task');
   assert.equal(researcher.status, 'done');
   assert.ok(researcher.evidenceGate, 'the researcher task carries an evidence-gate verdict');
@@ -218,7 +218,7 @@ test('a research task that cites a real source passes the evidence gate', async 
     { request: 'Research the latest Node.js LTS and cite primary sources', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 0, moduleCount: 0 },
     { env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test' }, cwd, workerBackend: 'provider', fetchImpl },
   );
-  const researcher = run.tasks.find((t) => t.role === 'researcher');
+  const researcher = run.tasks.find((t) => t.workerProfileId === 'researcher');
   assert.ok(researcher?.evidenceGate, 'the researcher task carries an evidence-gate verdict');
   assert.equal(researcher.evidenceGate.ok, true, 'a sourced research answer passes');
 });
@@ -247,7 +247,7 @@ test('executeRun with provider backend records a failing task without crashing',
 // with that code rather than 'done' with hollow output (AC#2).
 
 test('empty content on a 2xx response raises PROVIDER_EMPTY_CONTENT, task never marked done', async () => {
-  const task = { role: 'engineer' };
+  const task = { workerProfileId: 'engineer' };
   const run = { request: { summary: 'x' } };
   await assert.rejects(
     () => runTaskViaProvider({
@@ -259,7 +259,7 @@ test('empty content on a 2xx response raises PROVIDER_EMPTY_CONTENT, task never 
 });
 
 test('a content_filter finish reason raises PROVIDER_CONTENT_FILTERED (non-retryable)', async () => {
-  const task = { role: 'engineer' };
+  const task = { workerProfileId: 'engineer' };
   const run = { request: { summary: 'x' } };
   const calls = { n: 0 };
   await assert.rejects(
@@ -273,7 +273,7 @@ test('a content_filter finish reason raises PROVIDER_CONTENT_FILTERED (non-retry
 });
 
 test('a reasoning-only response (empty visible content, non-empty reasoning) raises PROVIDER_REASONING_ONLY', async () => {
-  const task = { role: 'engineer' };
+  const task = { workerProfileId: 'engineer' };
   const run = { request: { summary: 'x' } };
   await assert.rejects(
     () => runTaskViaProvider({
@@ -285,7 +285,7 @@ test('a reasoning-only response (empty visible content, non-empty reasoning) rai
 });
 
 test('OpenRouter reasoning mode reserves extra output budget so a real answer still fits (construct-5wkl AC#6)', async () => {
-  const task = { role: 'engineer' };
+  const task = { workerProfileId: 'engineer' };
   const run = { request: { summary: 'x' } };
   let sentMaxTokens = null;
   const result = await runTaskViaProvider({
@@ -300,7 +300,7 @@ test('OpenRouter reasoning mode reserves extra output budget so a real answer st
 });
 
 test('a malformed OpenRouter response (no choices) raises PROVIDER_MALFORMED_RESPONSE', async () => {
-  const task = { role: 'engineer' };
+  const task = { workerProfileId: 'engineer' };
   const run = { request: { summary: 'x' } };
   await assert.rejects(
     () => runTaskViaProvider({
@@ -312,7 +312,7 @@ test('a malformed OpenRouter response (no choices) raises PROVIDER_MALFORMED_RES
 });
 
 test('a timeout raises PROVIDER_TIMEOUT (retryable) and retries until it succeeds', async () => {
-  const task = { role: 'engineer' };
+  const task = { workerProfileId: 'engineer' };
   const run = { request: { summary: 'x' } };
   let calls = 0;
   const result = await runTaskViaProvider({
@@ -354,7 +354,7 @@ test('a 500 recovers on the second attempt (successful retry) and the run comple
 });
 
 test('provider metadata (provider/model/finishReason/usage/elapsedMs) rides a successful task', async () => {
-  const task = { role: 'engineer' };
+  const task = { workerProfileId: 'engineer' };
   const run = { request: { summary: 'x' } };
   const result = await runTaskViaProvider({
     task, run, model: 'openai/gpt-4o-mini', provider: 'openrouter', env: { OPENROUTER_API_KEY: 'k' },

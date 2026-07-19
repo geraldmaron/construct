@@ -51,8 +51,8 @@ test.after(() => {
 
 function makeRootDir(t, label) {
   const rootDir = mkdtempSync(join(tmpdir(), `pfe-${label}-`));
-  mkdirSync(join(rootDir, '.cx'), { recursive: true });
-  writeFileSync(join(rootDir, '.cx', 'context.md'), '# ctx\n');
+  mkdirSync(join(rootDir, '.construct'), { recursive: true });
+  writeFileSync(join(rootDir, '.construct', 'context.md'), '# ctx\n');
   t.after(() => { try { rmTmpDir(rootDir); } catch {} });
   return rootDir;
 }

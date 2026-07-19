@@ -31,20 +31,20 @@ Two signal sources evaluate the same dimension vocabulary:
 Two mechanisms in `lib/orchestration/recruiter.mjs` map a truthy dimension to participants; a vertical typically uses both:
 
 - **Skill affinity** (`CANONICAL_AFFINITIES`) — the dimension names skill patterns, and the recruiter queries the assembled registry for specialists whose declared skills match; the specialist with the *fewest* declared skills wins (a narrow skill set that matches is a stronger specialization claim). For `cost` the patterns are `cost-optimization`, `pricing-positioning`, `raw-data-structuring`, which resolves to **cx-data-analyst** (3 declared skills) over cx-product-manager (13, matching `strategy/pricing-positioning`). Projects overlay affinities via `.construct/orchestration/recruitment-affinities.json`.
-- **Participation rules** — a `participationRules` block on any registry entry (specialist or team JSON under `specialists/org/`), validated against `schemas/participation-rules.schema.json`. Each rule is `when(signalExpr | watchCondition) → recruit(specialists | teams)` plus `role` (author/reviewer/advisor), `gate` (advisory by default; `enforced` requires an `enforcementScope` naming a team decisionRight), and a `reason` string surfaced verbatim in trace output.
+- **Participation rules** — a `participationRules` block on any registry entry (specialist or team JSON under `registry/`), validated against `schemas/participation-rules.schema.json`. Each rule is `when(signalExpr | watchCondition) → recruit(specialists | teams)` plus `role` (author/reviewer/advisor), `gate` (advisory by default; `enforced` requires an `enforcementScope` naming a team decisionRight), and a `reason` string surfaced verbatim in trace output.
 
 The cost vertical declares two rules:
 
-- `cost-quant-review` on [`specialists/org/specialists/cx-data-analyst.json`](../../../specialists/org/specialists/cx-data-analyst.json): `signalExpr: "cost"` recruits **cx-data-analyst** as advisory reviewer, reason `cost/quant`.
-- `cost-value-tradeoff-review` on [`specialists/org/specialists/cx-product-manager.json`](../../../specialists/org/specialists/cx-product-manager.json): `signalExpr: "cost"` recruits **cx-product-manager** as advisory reviewer, reason `cost signal — value-tradeoff framework review (cx-pm-value-tradeoff)`.
+- `cost-quant-review` on [`registry/specialists/cx-data-analyst.json`](../../../registry/specialists/cx-data-analyst.json): `signalExpr: "cost"` recruits **cx-data-analyst** as advisory reviewer, reason `cost/quant`.
+- `cost-value-tradeoff-review` on [`registry/specialists/cx-product-manager.json`](../../../registry/specialists/cx-product-manager.json): `signalExpr: "cost"` recruits **cx-product-manager** as advisory reviewer, reason `cost signal — value-tradeoff framework review (cx-pm-value-tradeoff)`.
 
 Rules recruit only roster specialists — the schema's `rosterSpecialist` enum is the fixed 12-role roster, so a vertical never invents a new role.
 
 ### 3. Attach the reasoning framework
 
-A recruited reviewer reasons with the framework bound to its role, not generic judgment. Frameworks live in `specialists/org/frameworks/` and bind via frontmatter `appliesToRole` (ADR-0062); `resolveRoleFramework()` in `lib/embedded-contract/workflow-invoke.mjs` resolves the plan's primary role through pack tier precedence and puts the framework's ordered steps and `emits` tokens on the output contract.
+A recruited reviewer reasons with the framework bound to its role, not generic judgment. Frameworks live in `registry/frameworks/` and bind via frontmatter `appliesToRole` (ADR-0062); `resolveRoleFramework()` in `lib/embedded-contract/workflow-invoke.mjs` resolves the plan's primary role through pack tier precedence and puts the framework's ordered steps and `emits` tokens on the output contract.
 
-For cost, the PM joins with [`specialists/org/frameworks/cx-pm-value-tradeoff.md`](../../../specialists/org/frameworks/cx-pm-value-tradeoff.md) (`appliesToRole: product-manager`): user-value → tradeoffs → prioritization → acceptance-criteria, emitting `value-statement`, `tradeoff-table`, `prioritization-call`, `acceptance-criteria`. On `prd-draft` the PM is already the chain's primary owner, so the framework equips the plan directly (`framework.frameworkId: cx-pm-value-tradeoff` in the result); on chains without the PM (e.g. `architecture-review`), the `cost-value-tradeoff-review` rule pulls the PM on as reviewer and its `reason` names the framework the review applies.
+For cost, the PM joins with [`registry/frameworks/cx-pm-value-tradeoff.md`](../../../registry/frameworks/cx-pm-value-tradeoff.md) (`appliesToRole: product-manager`): user-value → tradeoffs → prioritization → acceptance-criteria, emitting `value-statement`, `tradeoff-table`, `prioritization-call`, `acceptance-criteria`. On `prd-draft` the PM is already the chain's primary owner, so the framework equips the plan directly (`framework.frameworkId: cx-pm-value-tradeoff` in the result); on chains without the PM (e.g. `architecture-review`), the `cost-value-tradeoff-review` rule pulls the PM on as reviewer and its `reason` names the framework the review applies.
 
 ### 4. Surface the recruitment with reasons
 
@@ -73,11 +73,11 @@ Each vertical fills the same four slots. Current state of the substrate:
 | **Cost/financial** (reference) | `cost` | cx-data-analyst via affinity | `cost-quant-review` (cx-data-analyst), `cost-value-tradeoff-review` (cx-product-manager) | `cx-pm-value-tradeoff` |
 | **Legal/compliance** | `compliance` | cx-security via affinity (`compliance/`, `regulatory-review`, `license-audit`) | `legal-compliance-participation` (governance-team, squad-expanding) | none bound to `security` yet; the schema's `legal-compliance` dimension structurally requires recruiting cx-security (no 13th role) |
 | **Accessibility** | `accessibility` | cx-designer via affinity (`accessibility`, `screen-reader`) | no participation rule yet — affinity only | none bound to `designer` yet |
-| **Reliability** | `reliability` | cx-operations via affinity (`incident-response`, `oncall-rotation`) | `reliability-root-cause` (cx-debugger, advisor) | `cx-ops-dependency-sequencing` exists in `specialists/org/frameworks/` for the operations role |
+| **Reliability** | `reliability` | cx-operations via affinity (`incident-response`, `oncall-rotation`) | `reliability-root-cause` (cx-debugger, advisor) | `cx-ops-dependency-sequencing` exists in `registry/frameworks/` for the operations role |
 
 To complete a vertical, copy the cost template:
 
 1. Confirm (or overlay) the dimension keywords in `lib/orchestration/signal-dimensions.mjs`.
 2. Add a `participationRules` rule on the recruited specialist's registry JSON with `signalExpr` naming the dimension, `role: reviewer`, `gate: advisory`, and a `reason` that names the framework the reviewer applies. Rules can also be authored without editing JSON: `construct studio` (construct-pteo2.15) has a Participation canvas whose editor writes through `lib/registry/org-api.mjs`'s `upsertParticipationRule` — the same validation the coverage gate enforces — and a sample-request preview that shows the recruited set live via the real `requestSignals` + recruiter path.
-3. If the role lacks a reasoning framework, author one in `specialists/org/frameworks/` following ADR-0062 (`appliesToRole` frontmatter) — derived from the role's existing skills and prompt, never invented.
+3. If the role lacks a reasoning framework, author one in `registry/frameworks/` following ADR-0062 (`appliesToRole` frontmatter) — derived from the role's existing skills and prompt, never invented.
 4. Run `node bin/construct registry:validate --unified` and `node --test tests/participation-coverage.test.mjs`, then add a functional test modeled on `tests/functional/cost-vertical-recruitment.functional.test.mjs` asserting the recruited set and rationale end-to-end.

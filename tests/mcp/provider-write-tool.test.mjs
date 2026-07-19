@@ -114,7 +114,7 @@ describe('provider_write — with a valid token, exactly one adapter call + enve
     const gate = checkDestructiveGate('provider_write', { approval_token: token }, { rootDir });
     assert.equal(gate.allowed, true, 'valid token must pass the gate');
 
-    const sentLog = new WriteSentLog({ persistPath: path.join(rootDir, '.cx', 'writes', 'sent-log.jsonl') });
+    const sentLog = new WriteSentLog({ persistPath: path.join(rootDir, '.construct', 'writes', 'sent-log.jsonl') });
     const result = await providerWrite(
       { provider: 'jira', item: ISSUE_ITEM, dry_run: false, approval_token: token },
       { ...makeAdapterDeps(transport), sentLog, rootDir },
@@ -140,7 +140,7 @@ describe('provider_write — with a valid token, exactly one adapter call + enve
     const transport = createFakeJiraTransport({
       projects: { PROJ: { issueTypes: { Task: { requiredFields: ['summary'] } } } },
     });
-    const sentLog = new WriteSentLog({ persistPath: path.join(rootDir, '.cx', 'writes', 'sent-log.jsonl') });
+    const sentLog = new WriteSentLog({ persistPath: path.join(rootDir, '.construct', 'writes', 'sent-log.jsonl') });
     const deps = { ...makeAdapterDeps(transport), sentLog, rootDir };
 
     const first = await providerWrite({ provider: 'jira', item: ISSUE_ITEM, dry_run: false }, deps);

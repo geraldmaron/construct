@@ -105,7 +105,7 @@ test('example categories align with fixture path and target real repo surfaces',
     const parts = rel.split('/');
 
     if (data.surface === 'persona') {
-      assert.equal(parts[1], 'personas', `${rel}: persona fixtures must live under examples/personas`);
+      assert.equal(parts[1], 'personas', `${rel}: persona fixtures must live under examples/worker-profile-examples`);
       assert.equal(parts[2], data.name, `${rel}: persona directory should match fixture name`);
       assert.equal(parts[3], data.category, `${rel}: persona category directory should match category`);
     }

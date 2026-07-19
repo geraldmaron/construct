@@ -1,6 +1,6 @@
 # Construct
 
-**One AI interface. A team of specialists behind it. Hard gates. Runs locally, or deploys for teams.**
+**One governed AI interface. Canonical Worker Profiles, Procedures, Capabilities, and hard gates.**
 
 📖 **[Read the docs →](https://geraldmaron.github.io/construct/)** · 🚀 **[5-minute quickstart →](https://geraldmaron.github.io/construct/start)** · 📦 `npm install -g @geraldmaron/construct`
 
@@ -8,7 +8,7 @@
 
 > Heads up. I'm not a developer. Construct is a side project I'm vibe-coding to learn in public. There will be bugs, rough edges, and things that change without warning. The code is open source, the issues queue is real, and contributions are welcome. If you need production-grade tooling today, this isn't it yet.
 
-Construct sits on top of Claude Code, OpenCode, Codex, Cursor, and Copilot. You talk to one persona called `construct`. Behind it is a team of specialists shaped by your **org profile**: software R&D by default, with curated profiles for operations, creative, and research orgs, plus a schema-validated escape hatch for custom profiles. Each profile organizes its specialists by department (Product, Engineering, Operations, etc.) and carries its own intake taxonomy, doc templates, and role set. Sessions survive boundary changes via durable state in `.construct/`, beads, and a local vector index. Solo by default. Can deploy centrally for teams that want shared memory, telemetry, queues, and policy.
+Construct sits on top of Claude Code, OpenCode, Codex, Cursor, and Copilot. The current product surface is defined by the canonical registry: Workspace Presets select configuration, Worker Profiles provide bounded execution identity, Procedures describe reusable sequences, and Assignments connect work to Capabilities and Policies. Sessions persist in `.construct/`, Beads, and optional local retrieval state.
 
 `construct scope show|list|set <id>` switches the active profile. See [Profile lifecycle](https://geraldmaron.github.io/construct/concepts/scope-lifecycle) for how new profiles are built.
 
@@ -148,7 +148,7 @@ Construct gets smarter on its own. Every session ends with an automatic capture:
 
 ## `.construct/` is local-only runtime state
 
-`construct init` writes a runtime-marker tree at `.construct/` inside the project root: context, observations, sessions, intake packets, and task graphs, alongside the config layer (`context.md`/`context.json`, `workflow.json`, custom `org/`). **It's local-only and must never be committed** (except `.construct/org/`, carved back out of `.gitignore` so committed custom specialists/teams travel with the repo). `construct init` adds `.construct/` to your project's `.gitignore` automatically (idempotent: it won't double-add if you already have it). See [Project scopes](docs/guides/concepts/project-scopes.md) for the full directory breakdown.
+`construct init` writes a runtime-marker tree at `.construct/` inside the project root: context, observations, sessions, intake packets, and task graphs, alongside the config layer. **It is local-only and must never be committed.** See [Project scopes](docs/guides/concepts/project-scopes.md) for the full directory breakdown.
 
 Heavier, regenerable state — traces and the LanceDB vector index — lives outside the project entirely, at the machine-scoped `~/.construct/projects/<key>/` (keyed by git remote so every clone/worktree of the same repo shares it; ADR-0066), not under the project's own `.construct/`. Trace shards (`~/.construct/projects/<key>/traces/<date>.jsonl`) cap at 100 MB and rotate to `<date>.<n>.jsonl` so a stray commit never crosses GitHub's single-file limit. Override the cap with `CONSTRUCT_TRACE_MAX_MB`.
 
@@ -170,12 +170,10 @@ The embed daemon writes its supervisor stdout log to the machine's XDG state dir
 | `construct install` | Machine setup (footprint per ADR-0029/ADR-0071): --footprint=project\|user\|both, default project |
 | `construct intake` | View and process the active profile's intake queue (queue label varies by profile) |
 | `construct oracle` | Oracle meta-controller — fleet health review and bounded-auto maintenance |
-| `construct participation` | Author and inspect ADR-0070 participation rules (condition → recruit with role/gate) over org-api — same writer and validation as Org Studio and the participation_rules MCP tool |
 | `construct recommendations` | View and manage artifact recommendations |
 | `construct sandbox` | Isolated tmpdir-based environment for QA and worker dry-runs |
 | `construct status` | Show system health and credentials |
 | `construct stop` | Stop all running services |
-| `construct studio` | Workspace Studio — local authoring for worker profiles, assignments, fences, and participation rules (loopback-only) |
 | `construct sync` | Sync agent adapters to AI tools |
 | `construct workers` | List registered workers and heartbeat freshness |
 | `construct workspace-preset` | Inspect reusable workspace-wide defaults |
@@ -335,14 +333,12 @@ construct/
 ├── examples         Example projects and persona fixtures
 ├── lib              Core runtime: CLI, hooks, MCP, providers, oracle, sync
 ├── packages         Shared workspace packages
-├── personas
 ├── platforms        Host adapter capability configs
 ├── registry         Product capability registry
 ├── rules            Coding and quality standards
 ├── schemas          Registry and config JSON Schema
 ├── scripts          Audit, alignment, release, and sync scripts
 ├── skills           Reusable domain knowledge files
-├── specialists
 ├── templates        Doc and workflow templates
 ├── tests            Test suite
 ├── vendor

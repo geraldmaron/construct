@@ -470,7 +470,7 @@ function constructMcpDefinition() {
     category: "core",
     description: "Construct stdio MCP server for orchestration, skills, templates, and project context.",
     command: "node",
-    args: ["__CX_TOOLKIT_DIR__/lib/mcp/server.mjs"],
+    args: ["__CONSTRUCT_TOOLKIT_DIR__/lib/mcp/server.mjs"],
     env: {
       CONSTRUCT_TRACE_BACKEND: "__CONSTRUCT_TRACE_BACKEND__",
       CONSTRUCT_TELEMETRY_URL: "__CONSTRUCT_TELEMETRY_URL__",
@@ -1911,7 +1911,7 @@ function syncOpencode(entries, targetDir = null, wants = true) {
 
   const memoryBridgeEntry = buildOpenCodeMcpEntry("memory", {
     command: "node",
-    args: ["__CX_TOOLKIT_DIR__/lib/mcp/memory-bridge.mjs"],
+    args: ["__CONSTRUCT_TOOLKIT_DIR__/lib/mcp/memory-bridge.mjs"],
     env: { CONSTRUCT_MEMORY_BRIDGE_URL: "http://127.0.0.1:__MEMORY_PORT__/" },
   }, {
     ...process.env,
@@ -2182,7 +2182,7 @@ function syncOpencode(entries, targetDir = null, wants = true) {
       if (!file.endsWith(".js") && !file.endsWith(".ts")) continue;
       const source = path.join(sourcePluginsDir, file);
       const target = path.join(pluginsDir, file);
-      const content = fs.readFileSync(source, "utf8").replaceAll("__CX_TOOLKIT_DIR__", root);
+      const content = fs.readFileSync(source, "utf8").replaceAll("__CONSTRUCT_TOOLKIT_DIR__", root);
       fs.writeFileSync(target, content);
     }
   }

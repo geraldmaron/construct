@@ -24,7 +24,7 @@ test('inferEvidenceKind maps request phrasing to the expected evidence kind', ()
 });
 
 test('a substantial external-research answer with zero verifiable sources is flagged', () => {
-  const v = gateResearchEvidence({ output: LONG, role: 'researcher', request: 'Research agentic platforms' });
+  const v = gateResearchEvidence({ output: LONG, workerProfileId: 'researcher', request: 'Research agentic platforms' });
   assert.equal(v.applicable, true);
   assert.equal(v.ok, false);
   assert.equal(v.kind, 'external');
@@ -32,24 +32,24 @@ test('a substantial external-research answer with zero verifiable sources is fla
 });
 
 test('an external-research answer that cites a URL, DOI, or arXiv id passes', () => {
-  assert.equal(gateResearchEvidence({ output: `${LONG} https://nodejs.org/en/blog`, role: 'researcher', request: 'Research node' }).ok, true);
-  assert.equal(gateResearchEvidence({ output: `${LONG} doi: 10.1145/1234567`, role: 'researcher', request: 'Research X' }).ok, true);
-  assert.equal(gateResearchEvidence({ output: `${LONG} arxiv: 2401.01234`, role: 'researcher', request: 'Research X' }).ok, true);
+  assert.equal(gateResearchEvidence({ output: `${LONG} https://nodejs.org/en/blog`, workerProfileId: 'researcher', request: 'Research node' }).ok, true);
+  assert.equal(gateResearchEvidence({ output: `${LONG} doi: 10.1145/1234567`, workerProfileId: 'researcher', request: 'Research X' }).ok, true);
+  assert.equal(gateResearchEvidence({ output: `${LONG} arxiv: 2401.01234`, workerProfileId: 'researcher', request: 'Research X' }).ok, true);
 });
 
 test('an honest short or self-declared insufficient-evidence answer is never penalized', () => {
-  assert.equal(gateResearchEvidence({ output: 'No verifiable sources found.', role: 'researcher', request: 'Research X' }).ok, true);
-  assert.equal(gateResearchEvidence({ output: `${LONG} I could not reach the web to verify any of this.`, role: 'researcher', request: 'Research X' }).ok, true);
+  assert.equal(gateResearchEvidence({ output: 'No verifiable sources found.', workerProfileId: 'researcher', request: 'Research X' }).ok, true);
+  assert.equal(gateResearchEvidence({ output: `${LONG} I could not reach the web to verify any of this.`, workerProfileId: 'researcher', request: 'Research X' }).ok, true);
 });
 
 test('codebase-mode requires file:line, not a URL', () => {
   const req = 'trace the execution path in the source code';
-  assert.equal(gateResearchEvidence({ output: LONG, role: 'researcher', request: req }).ok, false);
-  assert.equal(gateResearchEvidence({ output: `${LONG} see lib/foo.mjs:42`, role: 'researcher', request: req }).ok, true);
-  assert.equal(gateResearchEvidence({ output: `${LONG} https://example.com`, role: 'researcher', request: req }).ok, false);
+  assert.equal(gateResearchEvidence({ output: LONG, workerProfileId: 'researcher', request: req }).ok, false);
+  assert.equal(gateResearchEvidence({ output: `${LONG} see lib/foo.mjs:42`, workerProfileId: 'researcher', request: req }).ok, true);
+  assert.equal(gateResearchEvidence({ output: `${LONG} https://example.com`, workerProfileId: 'researcher', request: req }).ok, false);
 });
 
 test('the gate only applies to the research role', () => {
-  assert.equal(gateResearchEvidence({ output: LONG, role: 'engineer', request: 'x' }).applicable, false);
-  assert.equal(gateResearchEvidence({ output: LONG, role: 'engineer', request: 'x' }).ok, true);
+  assert.equal(gateResearchEvidence({ output: LONG, workerProfileId: 'engineer', request: 'x' }).applicable, false);
+  assert.equal(gateResearchEvidence({ output: LONG, workerProfileId: 'engineer', request: 'x' }).ok, true);
 });

@@ -18,7 +18,7 @@ test('buildCertificationStatus lists capabilities with never-run by default', ()
   const report = buildCertificationStatus({ rootDir: REPO });
   assert.ok(report.capabilities.length > 0);
   // construct-rf26.11 consolidated the 29-specialist roster to 12 (orchestrator + 11 workers).
-  assert.ok(report.specialists.length >= 12);
+  assert.ok(report.workerProfiles.length >= 12);
   assert.ok(report.skills.length > 0);
   assert.ok(report.artifactTypes.length > 0);
   assert.ok(report.documentCategories.length > 0);

@@ -41,7 +41,7 @@ describe('no-fabrication coverage', () => {
     assert.match(
       text,
       /Anti-fabrication contract/,
-      'personas/construct.md must contain an "Anti-fabrication contract" paragraph',
+      'registry/worker-profiles/prompts/construct.md must contain an "Anti-fabrication contract" paragraph',
     );
     assert.match(
       text,

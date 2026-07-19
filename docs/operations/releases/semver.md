@@ -6,7 +6,7 @@ are tagged `vMAJOR.MINOR.PATCH` and published to npm under
 
 ## What counts as a breaking change (MAJOR bump)
 
-- A change to the schema of `specialists/org`. Adding optional fields
+- A change to the schema of `registry`. Adding optional fields
   is non-breaking; removing fields, renaming fields, or changing the
   meaning of existing fields is.
 - Removing or renaming any CLI subcommand or flag (`construct foo`,

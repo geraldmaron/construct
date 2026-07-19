@@ -4,7 +4,7 @@ This repo IS Construct. Changes here affect every session, every platform, every
 
 ## Critical rules
 
-- **Never fabricate.** Every load-bearing claim in any artifact (PRD, ADR, RFC, brief, knowledge note, handoff, review, summary, classification rationale) must trace to a source the reader can re-verify. Don't invent quotes, ticket IDs, customer names, percentages, dates, or file paths. When a fact isn't in the source, write `unknown` or `[unverified]`. See `rules/common/no-fabrication.md`. Enforced by `lib/comment-lint.mjs` on artifact paths and by `specialists/org/contracts/` postconditions on specialist handoffs.
+- **Never fabricate.** Every load-bearing claim in any artifact (PRD, ADR, RFC, brief, knowledge note, handoff, review, summary, classification rationale) must trace to a source the reader can re-verify. Don't invent quotes, ticket IDs, customer names, percentages, dates, or file paths. When a fact isn't in the source, write `unknown` or `[unverified]`. See `rules/common/no-fabrication.md`. Enforced by `lib/comment-lint.mjs` on artifact paths and by `registry/contracts/` postconditions on specialist handoffs.
 - **Confirm the working branch every session.** Session-start surfaces `## Working branch: <name>` at the top of the injected context. Restate it before any mutating operation.
 - **Never commit, push, or merge without asking first.** Before `git commit`, `git push`, or `gh pr merge`: state the branch, state what's about to happen, ask for confirmation, wait for yes. A yes in chat is the approval — no separate command or marker. See `rules/common/commit-approval.md`.
 - **Never edit running hook files** (`lib/hooks/*.mjs`) without testing them in isolation first. A broken hook blocks all tool use.
@@ -19,14 +19,14 @@ This repo IS Construct. Changes here affect every session, every platform, every
 
 | File | Why |
 |---|---|
-| `specialists/org` | Source of truth for all agents on all platforms |
+| `registry` | Source of truth for all agents on all platforms |
 | `lib/setup.mjs` / `bin/construct-postinstall.mjs` | Install/setup path — runs on user machines, a bug affects all installs |
 | `lib/hooks/*.mjs` | Run in every Claude Code session |
 | `claude/settings.template.json` | Controls all Claude Code hook config |
 
 ## Safe to edit freely
 
-- `personas/*.md` — persona prompts (run `construct sync` after)
+- `registry/worker-profiles/prompts/*.md` — Worker Profile prompts (run `construct sync` after)
 - `skills/**` — domain knowledge files (includes `skills/perspectives/` — perspective anti-patterns, inlined at sync time)
 - `templates/docs/**` — shipped doc templates; users override via `.construct/templates/docs/` (see [templates/docs/README.md](templates/docs/README.md))
 - `rules/**` — coding standards

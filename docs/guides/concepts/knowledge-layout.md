@@ -96,10 +96,10 @@ Full list in `lib/document-extract.mjs`.
 
 ### Extra inbox dirs
 
-Set `CX_INBOX_DIRS` to a colon-separated list of additional directories to watch:
+Set `CONSTRUCT_INBOX_DIRS` to a colon-separated list of additional directories to watch:
 
 ```
-CX_INBOX_DIRS=/Users/me/Downloads/docs:/Volumes/shared/specs
+CONSTRUCT_INBOX_DIRS=/Users/me/Downloads/docs:/Volumes/shared/specs
 ```
 
 ---

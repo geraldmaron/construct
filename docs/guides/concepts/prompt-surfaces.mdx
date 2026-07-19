@@ -9,7 +9,7 @@ Understanding the split tells you where to look when something behaves unexpecte
 
 <FlowPipeline steps={[
   { label: 'You', sub: 'chat in OpenCode (Primary),\nClaude Code, or Editor' },
-  { label: 'construct', badge: 'persona', sub: 'personas/construct.md\nthe only public surface', highlight: true },
+  { label: 'construct', badge: 'persona', sub: 'registry/worker-profiles/prompts/construct.md\nthe only public surface', highlight: true },
   { label: 'Orchestration', sub: 'classifies intent\ndispatches internally' },
   { label: 'cx-specialist', badge: 'internal', sub: 'specialists/prompts/cx-*.md\nnever addressed directly' },
 ]} />
@@ -18,7 +18,7 @@ Understanding the split tells you where to look when something behaves unexpecte
 
 Public prompt surface:
 
-- `personas/construct.md` is the sole public persona and the only user-facing entry surface.
+- `registry/worker-profiles/prompts/construct.md` is the sole public persona and the only user-facing entry surface.
 
 Internal execution surfaces:
 
@@ -44,7 +44,7 @@ The routing contract lives in code and prompt policy, not in the examples corpus
 
 ## File responsibilities
 
-- `personas/construct.md`
+- `registry/worker-profiles/prompts/construct.md`
   - public behavior contract
   - approval boundaries
   - routing discipline
@@ -59,7 +59,7 @@ The routing contract lives in code and prompt policy, not in the examples corpus
   - reusable role anti-patterns and self-checks
   - shared behavioral guardrails reused across multiple specialists
 
-- `examples/personas/construct/**`
+- `examples/worker-profile-examples/construct/**`
   - public persona fixtures for Construct behavior
 
 - `examples/internal/perspectives/**`
@@ -68,7 +68,7 @@ The routing contract lives in code and prompt policy, not in the examples corpus
 ## Capability-tiered composition (local models)
 
 The persona is authored once but rendered at a size matched to the model that will run it.
-Each `## ` section in `personas/construct.md` carries an inline `<!-- cx:prio=N -->` marker
+Each `## ` section in `registry/worker-profiles/prompts/construct.md` carries an inline `<!-- cx:prio=N -->` marker
 (the preamble is implicit prio 1); `lib/persona-sections.mjs` emits only the sections at or
 below a capability tier — **floor** (prio 1, must-keep: identity, anti-fabrication, commit
 approval, escalation, loop guard), **mid** (prio ≤ 2), **full** (all). Markers are metadata,

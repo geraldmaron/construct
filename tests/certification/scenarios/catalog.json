@@ -68,7 +68,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "specialists/org"
+        "path": "registry"
       },
       "gates": [
         {
@@ -88,7 +88,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "specialists/org"
+        "path": "registry"
       },
       "gates": [
         {

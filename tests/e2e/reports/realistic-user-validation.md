@@ -57,4 +57,4 @@ Construct was validated as a realistic user in the target demographic would expe
 
 ## Where Construct was tested
 
-MCP server (`lib/mcp/server.mjs`) over real stdio; per-host config writers (`scripts/sync-specialists.mjs`); install/init footprint (`lib/setup.mjs` + disposition); the real specialist chain (host subagent dispatch); the template + quality gate (`lib/templates/visual-requirements.mjs`, `tests/e2e/lib/artifact-quality.mjs`); durable audit artifacts under `~/.cx` and the project `.cx`.
+MCP server (`lib/mcp/server.mjs`) over real stdio; per-host config writers (`scripts/sync-specialists.mjs`); install/init footprint (`lib/setup.mjs` + disposition); the real specialist chain (host subagent dispatch); the template + quality gate (`lib/templates/visual-requirements.mjs`, `tests/e2e/lib/artifact-quality.mjs`); durable audit artifacts under `~/.construct` and the project `.construct`.

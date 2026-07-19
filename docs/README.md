@@ -69,7 +69,7 @@ Step-by-step operator guides for common tasks:
 - [Configure Slack](./guides/cookbook/configure-slack.md)
 - [Configure GitHub](./guides/cookbook/configure-github.md)
 - [Configure Jira and Confluence](./guides/cookbook/configure-jira-confluence.md)
-- [Override the storage root (`CX_DATA_DIR`)](./guides/cookbook/override-storage-root.md)
+- [Override the storage root (`CONSTRUCT_DATA_DIR`)](./guides/cookbook/override-storage-root.md)
 - [Manage providers](./guides/cookbook/manage-providers.md)
 - [Plug in your own LLM](./guides/cookbook/plug-in-your-own-llm.mdx)
 - [Generate artifacts](./guides/cookbook/generate-artifacts.mdx)
@@ -106,7 +106,7 @@ Shipped prompt example fixtures live under `examples/`.
 
 They are the canonical place for:
 
-- Construct public persona fixtures under `examples/personas/construct/**`
+- Construct public persona fixtures under `examples/worker-profile-examples/construct/**`
 - internal role fixtures under `examples/internal/roles/**`
 - labeled bad, boundary, and adversarial cases without bloating runtime prompts
 

@@ -103,7 +103,7 @@ test('sourceHash differs from old 3-seed hash', () => {
   assert.equal(built.sourceHash.length, 16, 'sourceHash should be 16 hex chars');
   const oldHash = hashFiles(REPO_ROOT, [
     'registry/capabilities.json',
-    'specialists/org',
+    'registry',
     'lib/embedded-contract/workflow-defs.mjs',
   ]);
   assert.notEqual(built.sourceHash, oldHash, 'sourceHash must differ when new seed files are included');

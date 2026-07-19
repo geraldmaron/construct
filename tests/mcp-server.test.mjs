@@ -21,7 +21,7 @@ test('constructTrace includes execution-contract model metadata parity', async (
   });
 
   fs.cpSync(path.join(process.cwd(), 'registry'), path.join(rootDir, 'registry'), { recursive: true });
-  fs.writeFileSync(path.join(rootDir, '.env'), 'CONSTRUCT_MODEL_REASONING=env/reasoning\nCX_MODEL_STANDARD=env/standard\nCX_MODEL_FAST=env/fast\n');
+  fs.writeFileSync(path.join(rootDir, '.env'), 'CONSTRUCT_MODEL_REASONING=env/reasoning\nCONSTRUCT_MODEL_STANDARD=env/standard\nCONSTRUCT_MODEL_FAST=env/fast\n');
 
   const originalToolkit = process.env.CONSTRUCT_TOOLKIT_DIR;
   const originalHome = process.env.HOME;

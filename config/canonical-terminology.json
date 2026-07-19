@@ -336,19 +336,12 @@
   },
   "consumerInventory": {
     "registry-and-schema": ["registry/", "schemas/", "lib/registry/"],
-    "catalog-and-loaders": ["specialists/org/", "personas/", "lib/scopes/", "lib/skills/"],
+    "catalog-and-loaders": ["registry/", "lib/workspace-presets/", "lib/worker-profiles/", "lib/skills/"],
     "executable-surfaces": ["bin/construct", "lib/cli/", "lib/mcp/", "lib/orchestration/"],
     "documentation-and-assets": ["README.md", "docs/guides/", "examples/", "templates/", "commands/"],
     "verification-and-generation": ["tests/", "scripts/", "platforms/", ".github/"]
   },
   "currentToCanonical": {
-    "specialists/org/worker-profiles/": "registry/workspace-presets/",
-    "specialists/org/specialists/": "registry/worker-profiles/",
-    "specialists/prompts/": "registry/worker-profiles/ prompt content",
-    "personas/": "generated host adapters or Worker Profile Skill emphasis",
-    "specialists/org/teams/": "delete; express execution through Plan Assignment graphs",
-    "specialists/org/groups/": "delete; express execution through Plan Assignment graphs",
-    "specialists/org/contracts/": "registry/capabilities/ contracts",
     "lib/scopes/": "lib/workspace-presets/",
     "lib/roles/": "lib/worker-profiles/ or lib/policy/ according to responsibility",
     "lib/workflows/": "lib/procedures/",
@@ -363,6 +356,11 @@
     "MCP specialist/team/scope nouns": "MCP worker_profile/assignment/workspace_preset nouns",
     "graph:specialist": "graph:worker-profile",
     "graph:workflow": "graph:procedure"
+  },
+  "obsoleteSurfaces": {
+    "roots": ["specialists/", "personas/", ".cx/"],
+    "identifiers": ["cx-*", "CX_*"],
+    "retirementPolicy": "These names may appear only in docs/obsolete/ historical evidence and never in active code, package payloads, generated adapters, or fixtures."
   },
   "cutoverOrder": [
     "registry-and-schema",

@@ -32,7 +32,7 @@ import { loadRegistry } from "../lib/registry/loader.mjs";
 
 function tmpRoot() {
   const dir = mkdtempSync(join(tmpdir(), "cx-routing-"));
-  mkdirSync(join(dir, ".cx"), { recursive: true });
+  mkdirSync(join(dir, ".construct"), { recursive: true });
   return dir;
 }
 

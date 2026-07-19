@@ -20,7 +20,7 @@ import { deleteIngestedArtifacts } from '../../../lib/storage/admin.mjs';
 
 test('[R11] deleteIngestedArtifacts must not delete files outside the ingested root via ../ in files[]', async (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-f01-deltrav-'));
-  const internalDir = path.join(root, '.cx', 'knowledge', 'internal');
+  const internalDir = path.join(root, '.construct', 'knowledge', 'internal');
   fs.mkdirSync(internalDir, { recursive: true });
 
   const outside = path.join(root, 'OUTSIDE_DO_NOT_DELETE.txt');
