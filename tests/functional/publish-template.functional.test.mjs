@@ -22,6 +22,7 @@ import {
   injectMermaidBrandTheme,
   preprocessMarkdownDiagrams,
   buildDistributionDiagramEnv,
+  puppeteerExecutableUsable,
   resolvePuppeteerExecutable,
 } from '../../lib/diagram-export.mjs';
 import { pdfEngineFontOpts } from '../../lib/document-export.mjs';
@@ -226,10 +227,12 @@ test('pdfEngineFontOpts passes typst font-path and ignore-system-fonts', () => {
 });
 
 test('buildDistributionDiagramEnv sets Chrome path when available', () => {
-  const chrome = resolvePuppeteerExecutable(process.env);
+  const chrome = puppeteerExecutableUsable(process.env)
+    ? resolvePuppeteerExecutable(process.env)
+    : null;
   const env = buildDistributionDiagramEnv({});
   assert.equal(env.CONSTRUCT_D2_SKETCH, '1');
-  if (chrome) assert.equal(env.PUPPETEER_EXECUTABLE_PATH, chrome);
+  assert.equal(env.PUPPETEER_EXECUTABLE_PATH, chrome ?? undefined);
 });
 
 test('all PDF layout wrappers share the brand page-geometry tokens', () => {
