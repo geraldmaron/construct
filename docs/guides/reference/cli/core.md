@@ -14,17 +14,17 @@ description: Core commands for Construct.
 | `construct doctor` | Check installation health |
 | `construct init` | Project setup (once per repo): scaffold .construct/, AGENTS.md, plan.md, adapters |
 | `construct install` | Machine setup (footprint per ADR-0029/ADR-0071): --footprint=project\|user\|both, default project |
-| `construct intake` | View and process the active Workspace Preset's intake queue |
+| `construct intake` | View and process the active profile's intake queue (queue label varies by profile) |
 | `construct oracle` | Oracle meta-controller — fleet health review and bounded-auto maintenance |
 | `construct participation` | Author and inspect ADR-0070 participation rules (condition → recruit with role/gate) over org-api — same writer and validation as Org Studio and the participation_rules MCP tool |
 | `construct recommendations` | View and manage artifact recommendations |
-| `construct sandbox` | Isolated tmpdir-based environment for QA / specialist dry-runs |
-| `construct workspace-preset` | Inspect the canonical Workspace Preset catalog |
+| `construct sandbox` | Isolated tmpdir-based environment for QA and worker dry-runs |
 | `construct status` | Show system health and credentials |
 | `construct stop` | Stop all running services |
-| `construct studio` | Org Studio — local, zero-dependency web app for authoring specialists, teams, relationships, fences, and participation rules over org-api (loopback-only) |
+| `construct studio` | Workspace Studio — local authoring for worker profiles, assignments, fences, and participation rules (loopback-only) |
 | `construct sync` | Sync agent adapters to AI tools |
-| `construct workers` | List registered team workers and heartbeat freshness |
+| `construct workers` | List registered workers and heartbeat freshness |
+| `construct workspace-preset` | Inspect reusable workspace-wide defaults |
 
 ## construct approvals
 
@@ -211,7 +211,7 @@ construct participation list|show|add|validate|remove|preview|meta
 - `validate <owner> --rule='{...}'` — Dry-run the same checks add enforces
 - `remove <owner> <ruleId> [--scope=project|user]` — Delete a rule (project-tier removal shadows a builtin rule)
 - `preview --request="..."` — Recruited set via the live requestSignals + recruiter path
-- `meta` — Editor vocabulary: watchers, signal keys, enums, roster, teams
+- `meta` — Editor vocabulary: watchers, signal keys, enums, and worker profiles
 
 ## construct recommendations
 
@@ -225,7 +225,7 @@ construct recommendations list|show|dismiss|stats
 
 ## construct sandbox
 
-Isolated tmpdir-based environment for QA / specialist dry-runs
+Isolated tmpdir-based environment for QA and worker dry-runs
 
 **Usage**
 
@@ -239,22 +239,6 @@ construct sandbox create|list|delete|prune [--profile=<id>]
 - `list` — List existing sandboxes, newest first
 - `delete <id>` — Remove one sandbox by id
 - `prune [--days=N]` — Remove sandboxes older than N days (default 7)
-
-## construct workspace-preset
-
-Inspect the canonical Workspace Preset catalog.
-
-**Usage**
-
-```bash
-construct workspace-preset list
-construct workspace-preset show <id>
-```
-
-**Subcommands**
-
-- `list` — List canonical Workspace Presets
-- `show <id>` — Show one Workspace Preset
 
 ## construct status
 
@@ -284,7 +268,7 @@ construct stop
 
 ## construct studio
 
-Org Studio — local, zero-dependency web app for authoring specialists, teams, relationships, fences, and participation rules over org-api (loopback-only)
+Workspace Studio — local authoring for worker profiles, assignments, fences, and participation rules (loopback-only)
 
 **Usage**
 
@@ -299,7 +283,7 @@ Sync agent adapters to AI tools
 **Usage**
 
 ```bash
-construct sync [--project] [--dry-run] [--no-docs] [--compress-personas]
+construct sync [--project] [--dry-run] [--no-docs]
 ```
 
 **Options**
@@ -309,11 +293,10 @@ construct sync [--project] [--dry-run] [--no-docs] [--compress-personas]
 | `--project` | Write project-local Claude adapters into the current repo only |
 | `--dry-run` | Preview adapter changes without writing files |
 | `--no-docs` | Skip AUTO docs regeneration after syncing adapters |
-| `--compress-personas` | Write compressed runtime persona prompts without changing the source prompts |
 
 ## construct workers
 
-List registered team workers and heartbeat freshness
+List registered workers and heartbeat freshness
 
 **Usage**
 
@@ -326,3 +309,18 @@ construct workers <list> [--json]
 | Flag | Description |
 |---|---|
 | `--json` | Output worker list as JSON |
+
+## construct workspace-preset
+
+Inspect reusable workspace-wide defaults
+
+**Usage**
+
+```bash
+construct workspace-preset list|show
+```
+
+**Subcommands**
+
+- `list` — List workspace presets
+- `show <id>` — Show one workspace preset

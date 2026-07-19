@@ -7,7 +7,7 @@ description: Work commands for Construct.
 
 | Command | What it does |
 |---|---|
-| `construct artifact` | Plan or locally execute manifest-backed artifact workflows with execution provenance |
+| `construct artifact` | Plan or locally execute manifest-backed artifact procedures with execution provenance |
 | `construct ask` | One-shot ask against the active knowledge index |
 | `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
 | `construct customer` | Manage customer profiles for product intelligence |
@@ -24,37 +24,37 @@ description: Work commands for Construct.
 | `construct integrations` | Check and manage external system connections |
 | `construct knowledge` | Query, index, or add to the project knowledge base |
 | `construct memory` | Inspect memory layer |
-| `construct pack` | Specialist/team/profile pack enable/disable lifecycle (LMCP-E3) |
+| `construct pack` | Worker profile and workspace preset pack lifecycle |
+| `construct procedure` | Inspect reusable deterministic procedures |
 | `construct publish` | Publish typed artifacts: release gate + export PDF with figures + optional demos |
 | `construct reflect` | Capture improvement feedback and update Construct core |
 | `construct search` | Hybrid search across project state |
 | `construct storage` | Manage storage backend |
 | `construct synthesize` | Cross-project synthesis: map each registered project, reduce to an origin-cited answer |
 | `construct tags` | Manage the controlled tag vocabulary (propose, add, deprecate, audit) |
-| `construct team` | Team review, template listing, and custom team authoring (`team:add` / `team:remove` are internal registry editors) |
 | `construct tools` | Detect optional publish pipeline binaries (Pandoc, D2, VHS, Playwright) |
 | `construct tracker-projection` | Beads projection, field authority, and reconciliation (construct-b0nny.27, target-model.md concept 16) — treats bd as a projection of the graph-informed Work model with explicit per-field authority, detect-and-report drift, and read-only raw-record-preserving import. Sits behind bd; issues no bd write. |
 | `construct wireframe` | Generate wireframes from description |
 | `construct work-spec` | Work spec schema + graph-informed decomposition check (construct-b0nny.23, target-model.md concepts 6/7/9) — cycle detection, declared-dependency graph resolution, and independence-claim verification over a Work spec's decomposition. |
-| `construct workflow` | Instantiate workflow templates (PRD-to-review chains, onboarding, handoffs) |
+| `construct worker-profile` | Inspect assignable worker configurations |
 | `construct workplace-loop` | Production sources/directives/workplace loop (construct-b0nny.25) — detects real signals from a connected source, checks them against Workspace strategy, and routes any proposed external effect through the governed-write chokepoint. |
 | `construct workspace` | Manage PM workspaces for multi-PM signal routing |
 | `construct workspace-domain` | Workspace domain model (construct-b0nny.22, target-model.md concept 1) — owner, membership, settings, lifecycle. Distinct from `construct workspace` above, which is the unrelated multi-PM signal-routing command. |
 
 ## construct artifact
 
-Plan or locally execute manifest-backed artifact workflows with execution provenance
+Plan or locally execute manifest-backed artifact procedures with execution provenance
 
 **Usage**
 
 ```bash
-construct artifact <validate|workflow> ...
+construct artifact <validate|run> ...
 ```
 
 **Subcommands**
 
 - `validate` — Run manifest structure, citation, and reviewer checks
-- `workflow` — Return a truthful plan/run report; --apply only runs local validation/export after approval
+- `run` — Return a truthful plan/run report; --apply only runs local validation/export after approval
 
 ## construct ask
 
@@ -190,8 +190,8 @@ construct graph <list|show|from-intake|recommend|build|stat|query|validate|expla
 **Subcommands**
 
 - `recommend --json [--text|--file|<stdin>]` — Return a role-aware plan for an artifact without enqueuing (embedded contract; alias of intake classify)
-- `build|stat|query|validate|explain` — Living dependency graph — build/inspect/validate the typed file↔capability↔workflow↔test↔embed graph
-- `owasp | missing-tests --security` — OWASP GenAI Top-10 coverage matrix and the workflow/preset security-coverage gap list (LMCP-N8)
+- `build|stat|query|validate|explain` — Living dependency graph — build/inspect/validate the typed file↔capability↔procedure↔test↔embed graph
+- `owasp | missing-tests --security` — OWASP GenAI Top-10 coverage matrix and the procedure/preset security-coverage gap list (LMCP-N8)
 - `update | reconcile` — Relational graph store (construct-b0nny.3): drain the incremental outbox, or diff a fresh rebuild against live state and apply drift
 - `queryUp <id> [--rel <r>...] | queryDown <id> [--rel <r>...]` — Directive §4.8 up/downstream traversal (construct-b0nny.21), rel-filtered and depth-capped (construct-b0nny.12)
 - `path <from> <to> | orphans [--capabilities] | cycles [--rel <r>...] | owners <id> | requirements <id> | export [--format]` — Recursive-CTE query surface backed by the relational store (node:sqlite, Node >=22.5)
@@ -278,7 +278,7 @@ construct memory <status|search>
 
 ## construct pack
 
-Specialist/team/profile pack enable/disable lifecycle (LMCP-E3)
+Worker profile and workspace preset pack lifecycle
 
 **Usage**
 
@@ -292,6 +292,21 @@ construct pack <list|enable|disable|info> [--json]
 - `enable <pack-id>[@version]` — Validate the pack manifest and record it enabled in .construct/packs.json; refuses on an incompatible compatVersion or other validation failure
 - `disable <pack-id>` — Remove the pack's enabled entry (idempotent; the core pack cannot be disabled)
 - `info <pack-id>` — Full manifest plus enabled state for one pack
+
+## construct procedure
+
+Inspect reusable deterministic procedures
+
+**Usage**
+
+```bash
+construct procedure <list|show>
+```
+
+**Subcommands**
+
+- `list` — List procedures
+- `show <id>` — Show one procedure
 
 ## construct publish
 
@@ -371,24 +386,6 @@ Manage the controlled tag vocabulary (propose, add, deprecate, audit)
 construct tags <audit|propose|add|deprecate|archive|list|proposed>
 ```
 
-## construct team
-
-Team review, template listing, and custom team authoring (`team:add` / `team:remove` are internal registry editors)
-
-**Usage**
-
-```bash
-construct team <list|show|create|review|templates>
-```
-
-**Subcommands**
-
-- `list` — List macro groups and squads (--kind group|squad)
-- `show` — Show one group or squad by id
-- `create` — Scaffold a custom team into .construct/org/ (or ~/.construct/org/ with --user) — see docs/guides/cookbook/custom-specialists-and-teams.md
-- `review` — Team review workflow
-- `templates` — List team doc templates
-
 ## construct tools
 
 Detect optional publish pipeline binaries (Pandoc, D2, VHS, Playwright)
@@ -450,19 +447,20 @@ construct work-spec build|check|validate --from=<path|-> [--json] [--strict]
 - `check --from=<path|-> [--json] [--strict]` — Run the graph-informed decomposition check (cycles, dependency resolution, independence claims) against a caller-supplied spec
 - `validate --from=<path|-> [--json]` — Schema-validate a Work spec without touching the graph or the Workspace store
 
-## construct workflow
+## construct worker-profile
 
-Instantiate workflow templates (PRD-to-review chains, onboarding, handoffs)
+Inspect assignable worker configurations
 
 **Usage**
 
 ```bash
-construct workflow <list|show|new|invoke>
+construct worker-profile <list|show>
 ```
 
 **Subcommands**
 
-- `invoke --json --workflow-type <t> [--text|--file|<stdin>]` — Invoke a workflow (perspectives/skills) non-interactively with approval gating and provenance (embedded contract)
+- `list` — List worker profiles
+- `show <id>` — Show one worker profile
 
 ## construct workplace-loop
 

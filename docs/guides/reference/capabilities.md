@@ -47,15 +47,15 @@ description: Generated from registry/capabilities.json. Do not edit by hand.
 
 | ID | Name | Criticality | Surfaces | Human gate | Last validated |
 |---|---|---|---|---|---|
-| `workflow.architecture-review` | Architecture Review Workflow | P1 | mcp:primary:workflow_invoke, cli:construct workflow invoke | requires-human-approval | 2026-06-26 |
-| `workflow.data-structure` | Data Structure Workflow | P2 | mcp:primary:workflow_invoke, cli:construct workflow invoke | proposal-only | 2026-06-26 |
-| `workflow.evidence-ingest` | Evidence Ingest Workflow | P1 | mcp:primary:workflow_invoke, cli:construct workflow invoke | proposal-only | 2026-06-26 |
-| `workflow.memo-draft` | Memo Draft Workflow | P2 | mcp:primary:workflow_invoke, cli:construct workflow invoke | proposal-only | 2026-06-26 |
-| `workflow.prd-draft` | PRD Draft Workflow | P1 | mcp:primary:workflow_invoke, cli:construct workflow invoke | proposal-only | 2026-06-26 |
-| `workflow.proposal-review` | Proposal Review Workflow | P1 | mcp:primary:workflow_invoke, cli:construct workflow invoke | requires-human-approval | 2026-06-26 |
-| `workflow.research-synthesis` | Research Synthesis Workflow | P1 | mcp:primary:workflow_invoke, cli:construct ask, claude | proposal-only | 2026-06-26 |
-| `workflow.risk-review` | Risk Review Workflow | P1 | mcp:primary:workflow_invoke, cli:construct workflow invoke | requires-human-approval | 2026-06-26 |
-| `workflow.structure-notes` | Structure Notes Workflow | P2 | mcp:primary:workflow_invoke, cli:construct intake classify | proposal-only | 2026-06-26 |
-| `workflow.transcript-process` | Transcript Process Workflow | P2 | mcp:primary:workflow_invoke, cli:construct workflow invoke | proposal-only | 2026-06-26 |
-| `workflow.triage` | Triage Workflow | P2 | mcp:primary:workflow_invoke, cli:construct workflow invoke | proposal-only | never |
+| `workflow.architecture-review` | Architecture Review Procedure | P1 | mcp:primary:procedure_invoke, cli:construct procedure invoke | requires-human-approval | 2026-06-26 |
+| `workflow.data-structure` | Data Structure Procedure | P2 | mcp:primary:procedure_invoke, cli:construct procedure invoke | proposal-only | 2026-06-26 |
+| `workflow.evidence-ingest` | Evidence Ingest Procedure | P1 | mcp:primary:procedure_invoke, cli:construct procedure invoke | proposal-only | 2026-06-26 |
+| `workflow.memo-draft` | Memo Draft Procedure | P2 | mcp:primary:procedure_invoke, cli:construct procedure invoke | proposal-only | 2026-06-26 |
+| `workflow.prd-draft` | PRD Draft Procedure | P1 | mcp:primary:procedure_invoke, cli:construct procedure invoke | proposal-only | 2026-06-26 |
+| `workflow.proposal-review` | Proposal Review Procedure | P1 | mcp:primary:procedure_invoke, cli:construct procedure invoke | requires-human-approval | 2026-06-26 |
+| `workflow.research-synthesis` | Research Synthesis Procedure | P1 | mcp:primary:procedure_invoke, cli:construct ask, claude | proposal-only | 2026-06-26 |
+| `workflow.risk-review` | Risk Review Procedure | P1 | mcp:primary:procedure_invoke, cli:construct procedure invoke | requires-human-approval | 2026-06-26 |
+| `workflow.structure-notes` | Structure Notes Procedure | P2 | mcp:primary:procedure_invoke, cli:construct intake classify | proposal-only | 2026-06-26 |
+| `workflow.transcript-process` | Transcript Process Procedure | P2 | mcp:primary:procedure_invoke, cli:construct procedure invoke | proposal-only | 2026-06-26 |
+| `workflow.triage` | Triage Procedure | P2 | mcp:primary:procedure_invoke, cli:construct procedure invoke | proposal-only | never |
 

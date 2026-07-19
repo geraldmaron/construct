@@ -22,13 +22,13 @@ description: Advanced commands for Construct.
 | `construct hooks:health` | Check hook health |
 | `construct list` | List all agents |
 | `construct monitor` | One-command setup for continuous monitoring-as-a-role: sources.targets + embed.yaml roles + capability enable + daemon start |
-| `construct policy` | Show active policy gates with enforcement details |
+| `construct policy` | Inspect rules governing authority, approval, and external effects |
 | `construct provider` | Provider management |
 | `construct role` | Role framework management |
 | `construct roles:list` | List installed role contracts |
 | `construct roles:set` | Activate a role contract |
 | `construct scheduler` | Manage scheduled background jobs (tag-mining, doc-hygiene, skill-rollup) |
-| `construct server` | Shared workspace server (construct-b0nny.26, E7) — additive team/enterprise deployment mode: auth, Postgres-backed Workspace store, worker-claim queue. Solo/embedded mode is unaffected and needs none of this. |
+| `construct server` | Shared workspace server with authentication, a Postgres-backed Workspace store, and a worker-claim queue for multi-user deployments. |
 | `construct skills` | Skill relevance detection |
 | `construct sources` | Manage typed integration source targets in construct.config.json |
 | `construct templates` | List doc templates and register custom document classes (project-tier overlay; builtin manifest untouched) |
@@ -151,7 +151,7 @@ construct deployment parity
 
 | Flag | Description |
 |---|---|
-| `parity` | Show and validate capability parity across solo/team/enterprise |
+| `parity` | Show and validate capability parity across solo, multi-user, and enterprise deployments |
 | `--json` | Emit the parity contract as JSON |
 
 ## construct diff
@@ -182,7 +182,7 @@ construct embed start|stop|status|list|enable|disable|dry-run
 - `list [--json]` — Available embed capabilities and per-project enabled state (ADR-0061)
 - `enable <id>` — Enable an embed capability: validate and write .construct/embed/<id>.manifest.json
 - `disable <id>` — Disable an embed capability (idempotent)
-- `dry-run <id> [--json]` — Resolve the specialist→providers→filter→framework→authority→runtime chain; no side effects
+- `dry-run <id> [--json]` — Resolve the worker-profile→providers→filter→framework→authority→runtime chain; no side effects
 
 ## construct gates:audit
 
@@ -228,7 +228,7 @@ construct monitor --as <capability-id> --targets <provider:value>[,...] [--secon
 
 | Flag | Description |
 |---|---|
-| `--as <capability-id>` | Embed capability to enable (see `construct embed list`); its specialist becomes embed.yaml roles.primary |
+| `--as <capability-id>` | Embed capability to enable (see `construct embed list`); its worker profile becomes embed.yaml roles.primary |
 | `--targets <spec>[,<spec>...]` | Comma-separated provider:value targets (e.g. github:org/repo, jira:PROJ, slack:channel:intent); repeatable |
 | `--secondary <role>` | Set embed.yaml roles.secondary |
 | `--config <path>` | embed.yaml path (default: ./embed.yaml) |
@@ -237,19 +237,18 @@ construct monitor --as <capability-id> --targets <provider:value>[,...] [--secon
 
 ## construct policy
 
-Show active policy gates with enforcement details
+Inspect rules governing authority, approval, and external effects
 
 **Usage**
 
 ```bash
-construct policy show
+construct policy list|show
 ```
 
-**Options**
+**Subcommands**
 
-| Flag | Description |
-|---|---|
-| `--json` | Output as JSON |
+- `list` — List policies
+- `show <id>` — Show one policy
 
 ## construct provider
 
@@ -316,7 +315,7 @@ construct scheduler <list|run|runner>
 
 ## construct server
 
-Shared workspace server (construct-b0nny.26, E7) — additive team/enterprise deployment mode: auth, Postgres-backed Workspace store, worker-claim queue. Solo/embedded mode is unaffected and needs none of this.
+Shared workspace server with authentication, a Postgres-backed Workspace store, and a worker-claim queue for multi-user deployments.
 
 **Usage**
 
@@ -336,12 +335,12 @@ Skill relevance detection
 **Usage**
 
 ```bash
-construct skills <scope|apply|suggest|routing>
+construct skills <coverage|apply|suggest|routing>
 ```
 
 **Subcommands**
 
-- `scope` — Show skill scope for the active profile
+- `coverage` — Show skill coverage for the active workspace preset
 - `apply` — Apply skill profile to host config
 - `suggest` — Rank skills for an intent string
 - `routing` — Dump machine-readable routing table

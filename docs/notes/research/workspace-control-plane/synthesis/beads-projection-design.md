@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # Beads projection, field authority, and reconciliation (E8) — design
 
 - **Bead**: construct-b0nny.27 (directive §17 E8)
