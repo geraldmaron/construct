@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Implementation",
-  "description": "Output from cx-engineer: summary of changes made",
+  "description": "Output from engineer: summary of changes made",
   "type": "object",
   "required": ["type", "status", "filesChanged", "verificationChecklist"],
   "properties": {

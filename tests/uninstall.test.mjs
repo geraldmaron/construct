@@ -49,11 +49,11 @@ function seedProject(dir) {
 
   fs.mkdirSync(path.join(dir, '.claude', 'agents'), { recursive: true });
   fs.writeFileSync(path.join(dir, '.claude', 'agents', 'construct.md'), '# construct persona\n');
-  fs.writeFileSync(path.join(dir, '.claude', 'agents', 'cx-engineer.md'), '# engineer\n');
+  fs.writeFileSync(path.join(dir, '.claude', 'agents', 'engineer.md'), '# engineer\n');
   fs.writeFileSync(path.join(dir, '.claude', 'agents', 'user-custom.md'), '# user-owned\n');
   fs.writeFileSync(
     path.join(dir, '.claude', 'agents', '.construct-manifest'),
-    'construct.md\ncx-engineer.md\n'
+    'construct.md\nengineer.md\n'
   );
 
   fs.mkdirSync(path.join(dir, '.claude', 'commands', 'core'), { recursive: true });
@@ -175,7 +175,7 @@ describe('runUninstall --yes (auto-risk only)', () => {
       'manifested agent removed'
     );
     assert.equal(
-      fs.existsSync(path.join(projectDir, '.claude', 'agents', 'cx-engineer.md')),
+      fs.existsSync(path.join(projectDir, '.claude', 'agents', 'engineer.md')),
       false,
       'manifested cx- agent removed'
     );
@@ -273,7 +273,7 @@ describe('runUninstall --keep-state', () => {
       runUninstall(['--yes', '--all', '--keep-state', `--cwd=${projectDir}`, `--home=${homeDir}`])
     );
     assert.equal(fs.existsSync(path.join(projectDir, '.construct', 'launcher')), false, '.construct/launcher removed');
-    assert.equal(fs.existsSync(path.join(projectDir, '.claude', 'agents', 'cx-engineer.md')), false);
+    assert.equal(fs.existsSync(path.join(projectDir, '.claude', 'agents', 'engineer.md')), false);
     assert.ok(fs.existsSync(path.join(projectDir, '.construct')), '.construct state preserved');
     assert.ok(fs.existsSync(path.join(projectDir, 'AGENTS.md')), 'AGENTS.md preserved');
     assert.ok(fs.existsSync(path.join(stateDir(homeDir), 'workspace')), 'machine workspace preserved');

@@ -56,7 +56,7 @@ function opsManifest(overrides = {}) {
   return {
     id: 'operations',
     embed: {
-      specialist: 'cx-operations',
+      specialist: 'operations',
       providerBindings: ['jira'],
       framework: 'cx-ops-dependency-sequencing',
       outputContract: 'architect-to-operations',
@@ -85,7 +85,7 @@ function fakeSnapshot() {
 const conformingOutputPacket = {
   sequencedTasks: ['migrate-queue'],
   dependencyGraph: { 'migrate-queue': [] },
-  ownershipMatrix: { 'migrate-queue': 'cx-operations' },
+  ownershipMatrix: { 'migrate-queue': 'operations' },
   verificationGates: { 'migrate-queue': 'queue drained, zero errors' },
   slippageRisk: 'low',
 };
@@ -188,7 +188,7 @@ test('snapshot slice -> plan -> specialist plan -> writeIntent lands in the dura
   assert.deepEqual(queued[0].toolCall.args, { project: 'PLATFORM', summary: 'Migrate queue' });
   assert.equal(queued[0].state, 'awaiting_approval');
   assert.equal(queued[0].requestedBy.serviceId, 'operations');
-  assert.equal(queued[0].requestedBy.role, 'cx-operations');
+  assert.equal(queued[0].requestedBy.role, 'operations');
 
   // Durable across a fresh process: re-open the queue from the same file.
   const reopened = new ApprovalQueue({ persistPath: path.join(rootDir, '.cx', 'approvals', 'queue.jsonl') });

@@ -53,7 +53,7 @@ function baseSpawnEnv(env) {
   return sterileSpawnEnv({
     HOME: env.HOME,
     USERPROFILE: env.HOME,
-    CX_HOME_OVERRIDE: env.HOME,
+    CONSTRUCT_HOME_OVERRIDE: env.HOME,
     XDG_CONFIG_HOME: join(env.HOME, '.config'),
     XDG_DATA_HOME: join(env.HOME, '.local', 'share'),
     XDG_RUNTIME_DIR: join(env.HOME, 'run'),
@@ -61,9 +61,9 @@ function baseSpawnEnv(env) {
     CONSTRUCT_ORCHESTRATION_URL: '',
     OPENROUTER_API_KEY: '',
     ANTHROPIC_API_KEY: '',
-    CX_MODEL_REASONING: MODEL,
-    CX_MODEL_STANDARD: MODEL,
-    CX_MODEL_FAST: MODEL,
+    CONSTRUCT_MODEL_REASONING: MODEL,
+    CONSTRUCT_MODEL_STANDARD: MODEL,
+    CONSTRUCT_MODEL_FAST: MODEL,
   });
 }
 
@@ -73,20 +73,20 @@ function payload(result) {
   try { return JSON.parse(text); } catch { return text; }
 }
 
-// getRun resolves the machine-scoped state root (ADR-0066) via CX_HOME_OVERRIDE
+// getRun resolves the machine-scoped state root (ADR-0066) via CONSTRUCT_HOME_OVERRIDE
 // on process.env directly — the { env } option threaded through getRun's own
 // signature is not consulted by that resolution. The subprocess sees the
 // sandboxed HOME via sterileSpawnEnv; this process must pin the same override
 // around the call, or it reads the real developer machine's state root instead.
 
 async function getRunInSandbox(env, runId) {
-  const prev = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = env.HOME;
+  const prev = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = env.HOME;
   try {
     return await getRun(env.project, runId, { env: {} });
   } finally {
-    if (prev === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prev;
+    if (prev === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prev;
   }
 }
 

@@ -3,14 +3,14 @@
  * scenario.
  *
  * Each scenario runs against a dedicated tmpdir tree with its own HOME and
- * CX_HOME_OVERRIDE, so neither the host machine's ~/.construct / ~/.cx state nor
+ * CONSTRUCT_HOME_OVERRIDE, so neither the host machine's ~/.construct / ~/.cx state nor
  * its global installs leak into the observation, and nothing the scenario writes
  * escapes the sandbox. CONSTRUCT_DEV_PATH points the project launcher at the
  * repo under test, so the sweep exercises the local build rather than a
  * published package or a stale global.
  *
  * Layout under the scenario root:
- *   <root>/home/         isolated HOME (and CX_HOME_OVERRIDE) — ~/.construct, ~/.cx land here
+ *   <root>/home/         isolated HOME (and CONSTRUCT_HOME_OVERRIDE) — ~/.construct, ~/.cx land here
  *   <root>/project/      the scenario's project dir (fixture target, git repo)
  *
  * On failure the caller preserves the root and prints its path; on success the
@@ -31,12 +31,12 @@ export function makeSterileEnv({ repoRoot, prefix }) {
   mkdirSync(project, { recursive: true });
 
   // The sandbox keeps PATH (node, git, npm must resolve) but rebinds HOME and
-  // CX_HOME_OVERRIDE so every ~ write lands inside the sandbox, and points the
+  // CONSTRUCT_HOME_OVERRIDE so every ~ write lands inside the sandbox, and points the
   // launcher at the repo so the local build answers.
   const env = {
     ...process.env,
     HOME: home,
-    CX_HOME_OVERRIDE: home,
+    CONSTRUCT_HOME_OVERRIDE: home,
     CONSTRUCT_DEV_PATH: repoRoot,
     CONSTRUCT_DISABLE_DOCKER: '1',
   };

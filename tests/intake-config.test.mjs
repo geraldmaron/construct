@@ -51,21 +51,21 @@ describe('loadIntakeConfig', () => {
     assert.deepEqual(cfg.parentDirs, ['/tmp/a']);
   });
 
-  it('merges CX_INBOX_DIRS env into parentDirs without dupes', () => {
+  it('merges CONSTRUCT_INBOX_DIRS env into parentDirs without dupes', () => {
     writeProjectConfig(path.join(projectRoot, PROJECT_CONFIG_FILENAME), {
       version: 1,
       intakePolicy: { additionalDirs: ['/tmp/a'] },
     });
-    const cfg = loadIntakeConfig(projectRoot, { CX_INBOX_DIRS: '/tmp/a:/tmp/b' });
+    const cfg = loadIntakeConfig(projectRoot, { CONSTRUCT_INBOX_DIRS: '/tmp/a:/tmp/b' });
     assert.deepEqual(cfg.parentDirs, ['/tmp/a', '/tmp/b']);
   });
 
-  it('CX_INTAKE_MAX_DEPTH env wins over project config', () => {
+  it('CONSTRUCT_INTAKE_MAX_DEPTH env wins over project config', () => {
     writeProjectConfig(path.join(projectRoot, PROJECT_CONFIG_FILENAME), {
       version: 1,
       intakePolicy: { maxDepth: 1 },
     });
-    const cfg = loadIntakeConfig(projectRoot, { CX_INTAKE_MAX_DEPTH: '5' });
+    const cfg = loadIntakeConfig(projectRoot, { CONSTRUCT_INTAKE_MAX_DEPTH: '5' });
     assert.equal(cfg.maxDepth, 5);
   });
 

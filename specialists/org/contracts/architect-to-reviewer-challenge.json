@@ -1,7 +1,7 @@
 {
   "id": "architect-to-reviewer-challenge",
-  "producer": "cx-architect",
-  "consumer": "cx-reviewer",
+  "producer": "architect",
+  "consumer": "reviewer",
   "trigger": {
     "framingChallenge.required": true
   },

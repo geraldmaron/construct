@@ -8,7 +8,7 @@
  * the team with a typed OUT_OF_SCOPE error rather than a silent wrong-source fetch.
  *
  * demandFetch writes observations through the machine-scoped state root
- * (ADR-0066), keyed by a hash of the tmp rootDir — so CX_HOME_OVERRIDE is
+ * (ADR-0066), keyed by a hash of the tmp rootDir — so CONSTRUCT_HOME_OVERRIDE is
  * pinned for the whole file to keep that write off the real developer
  * machine's $HOME.
  */
@@ -34,14 +34,14 @@ let prevHomeOverride;
 
 before(() => {
   homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-team-sources-home-'));
-  prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = homeOverride;
+  prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 });
 
 after(() => {
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch { /* best-effort cleanup */ }
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 const REGISTRY = {
@@ -98,10 +98,10 @@ test('provider_fetch rejects a target outside the team with a typed OUT_OF_SCOPE
 test('demandFetch drives reads from the team\'s sources and tags observations team:/target:', async () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'team-fetch-'));
   // listObservations/getObservation below resolve the machine-scoped state
-  // root (ADR-0066) via CX_HOME_OVERRIDE read in-process, not via the rootDir
+  // root (ADR-0066) via CONSTRUCT_HOME_OVERRIDE read in-process, not via the rootDir
   // argument — pin it or they write into the real developer machine's home.
-  const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = tmp;
+  const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = tmp;
   try {
     // Injected mock provider returns one item per requested ref; injected
     // registry supplies the team — fully hermetic, no real credentials/CLI.
@@ -126,8 +126,8 @@ test('demandFetch drives reads from the team\'s sources and tags observations te
     assert.ok(tagged, 'an observation is tagged team:engineering-group');
     assert.ok((tagged.tags || []).includes('target:main-repo'), 'and tagged target:main-repo');
   } finally {
-    if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+    if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
     rmTmpDir(tmp);
   }
 });

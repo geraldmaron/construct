@@ -9,7 +9,7 @@
  * after N drained items.
  *
  * runWorkerLoop writes trace events through the machine-scoped state root
- * (ADR-0066), keyed by a hash of projectRoot — so CX_HOME_OVERRIDE is pinned
+ * (ADR-0066), keyed by a hash of projectRoot — so CONSTRUCT_HOME_OVERRIDE is pinned
  * per test to keep that write off the real developer machine's $HOME.
  */
 import { describe, it, beforeEach, afterEach } from 'node:test';
@@ -29,20 +29,20 @@ beforeEach(() => {
   projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-worker-loop-'));
   homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-worker-loop-home-'));
   originalCwd = process.cwd();
-  prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = homeOverride;
+  prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
   process.chdir(projectRoot);
   // artifactsDir() resolves the machine-scoped state root (ADR-0066) via
-  // CX_HOME_OVERRIDE read in-process, not via rootDir — unpinned, writes
+  // CONSTRUCT_HOME_OVERRIDE read in-process, not via rootDir — unpinned, writes
   // land in the real developer machine's ~/.construct/projects.
-  prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = projectRoot;
+  prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = projectRoot;
 });
 
 afterEach(() => {
   process.chdir(originalCwd);
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
   fs.rmSync(projectRoot, { recursive: true, force: true });
   fs.rmSync(homeOverride, { recursive: true, force: true });
 });

@@ -1,0 +1,116 @@
+{
+  "id": "researcher",
+  "displayName": "Never trusts recall alone — sources every claim with a primary reference and a date.",
+  "description": "Never trusts recall alone — sources every claim with a primary reference and a date.",
+  "runtime": "host-agent",
+  "modelTier": "standard",
+  "reasoningEffort": "medium",
+  "skillEmphasis": [
+    "docs/research-workflow",
+    "devops/dependency-management",
+    "docs/transcript-synthesis",
+    "docs/codebase-research-workflow",
+    "exploration/repo-map",
+    "exploration/unknown-codebase-onboarding",
+    "exploration/tracer-bullet-method",
+    "exploration/dependency-graph-reading",
+    "docs/user-research-workflow",
+    "docs/evidence-ingest-workflow",
+    "strategy/jobs-to-be-done",
+    "strategy/market-research-methods"
+  ],
+  "procedureAffinity": [
+    "evidence-ingest",
+    "research-synthesis",
+    "structure-notes",
+    "transcript-process",
+    "triage"
+  ],
+  "capabilities": [
+    "workflow.evidence-ingest",
+    "workflow.research-synthesis",
+    "workflow.structure-notes",
+    "workflow.transcript-process",
+    "workflow.triage",
+    "document-type.research-brief",
+    "document-type.evidence-brief",
+    "document-type.ingested-markdown"
+  ],
+  "policyFence": {
+    "allowedPaths": [
+      "docs/notes/research/**",
+      "docs/research/**",
+      ".construct/research/**",
+      "docs/evidence-briefs/**",
+      "docs/signal-briefs/**",
+      "docs/explorations/**",
+      ".construct/explorations/**",
+      "docs/ux-research/**",
+      ".construct/ux-research/**"
+    ],
+    "allowedBdLabels": [
+      "research",
+      "evidence",
+      "investigation",
+      "exploration",
+      "spike",
+      "ux-research",
+      "user-research"
+    ],
+    "allowedCommands": [
+      "bd create",
+      "bd note",
+      "bd update",
+      "bd label"
+    ],
+    "approvalRequired": [
+      "commit",
+      "push",
+      "edit:lib/**",
+      "edit:bin/**"
+    ]
+  },
+  "events": [
+    "research.requested",
+    "evidence.requested"
+  ],
+  "artifactClasses": [
+    "research-brief",
+    "evidence-brief",
+    "signal-brief",
+    "product-intelligence-report"
+  ],
+  "watchConditions": [],
+  "permissions": {},
+  "webAccess": true,
+  "participationRules": [
+    {
+      "id": "high-ambiguity-research",
+      "when": {
+        "watchCondition": "high-ambiguity-deep-work"
+      },
+      "workerProfiles": [
+        "researcher"
+      ],
+      "assignmentRole": "advisor",
+      "gate": "advisory",
+      "reason": "high-ambiguity deep work — evidence gathering advisory"
+    }
+  ],
+  "toolGrants": [
+    "Read",
+    "Grep",
+    "Glob",
+    "LS",
+    "Bash",
+    "WebSearch",
+    "WebFetch",
+    "list_skills",
+    "get_skill",
+    "search_skills",
+    "get_template",
+    "list_templates",
+    "memory_search",
+    "memory_add_observations"
+  ]
+}

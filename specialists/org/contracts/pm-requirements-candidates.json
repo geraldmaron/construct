@@ -1,6 +1,6 @@
 {
   "id": "pm-requirements-candidates",
-  "producer": "cx-product-manager",
+  "producer": "product-manager",
   "consumer": "user",
   "trigger": {
     "intent": ["implementation"],

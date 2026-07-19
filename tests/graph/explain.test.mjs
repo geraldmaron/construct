@@ -24,19 +24,19 @@ import { validateGraph } from '../../lib/graph/validate.mjs';
 // resolves graph.db under the machine-scoped state root (resolveStateDir,
 // ADR-0066) whenever writeGraph/loadGraph touch the host graph on Node
 // >=22.5. Every test but the last one below writes a synthetic graph
-// (freshRoot()), so pin CX_HOME_OVERRIDE for those — the isolation contract,
+// (freshRoot()), so pin CONSTRUCT_HOME_OVERRIDE for those — the isolation contract,
 // tests/functional/README.md, and the same pattern
 // tests/orchestration-run-store-sqlite.test.mjs already established. The
 // last test reads REPO_ROOT's real graph (scripts/ci/build-test-fixtures.sh's
 // fixture) and restores the ambient HOME for its own duration instead.
 
-const cxGraphTestHomeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-graph-test-home-'));
-const cxGraphTestPrevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = cxGraphTestHomeOverride;
+const constructGraphTestHomeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-graph-test-home-'));
+const constructGraphTestPrevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = constructGraphTestHomeOverride;
 test.after(() => {
-  try { fs.rmSync(cxGraphTestHomeOverride, { recursive: true, force: true }); } catch {}
-  if (cxGraphTestPrevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = cxGraphTestPrevHomeOverride;
+  try { fs.rmSync(constructGraphTestHomeOverride, { recursive: true, force: true }); } catch {}
+  if (constructGraphTestPrevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = constructGraphTestPrevHomeOverride;
 });
 
 
@@ -162,9 +162,9 @@ test('explain renders all sections for every catalog workflow, consistent with g
   // ambient HOME for this test's duration so it sees the fixture
   // scripts/ci/build-test-fixtures.sh built, not the empty isolated one the
   // rest of this file pins.
-  const savedOverride = process.env.CX_HOME_OVERRIDE;
-  if (cxGraphTestPrevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = cxGraphTestPrevHomeOverride;
+  const savedOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  if (constructGraphTestPrevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = constructGraphTestPrevHomeOverride;
   try {
     const graph = loadGraph(ROOT_DIR);
     assert.equal(graph.exists, true, 'expected a built graph — run `construct graph build` first');
@@ -194,6 +194,6 @@ test('explain renders all sections for every catalog workflow, consistent with g
       }
     }
   } finally {
-    process.env.CX_HOME_OVERRIDE = savedOverride;
+    process.env.CONSTRUCT_HOME_OVERRIDE = savedOverride;
   }
 });

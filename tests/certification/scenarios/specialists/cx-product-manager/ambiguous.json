@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "specialistId": "cx-product-manager",
+  "specialistId": "product-manager",
   "capabilityId": "specialist.prompt",
   "mode": "normal",
   "scenarioKind": "ambiguous",

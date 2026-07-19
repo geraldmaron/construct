@@ -51,7 +51,7 @@ describe('LMCP-J6 — a specialist-produced writeIntent executes only after plan
       providerId: 'jira',
       writeKind: 'issue',
       payload: { project: 'PROJ', issueType: 'Task', summary: 'Flaky test in CI' },
-      requestedBy: { specialistId: 'qa-analyst', role: 'cx-qa-analyst' },
+      requestedBy: { specialistId: 'qa-analyst', role: 'qa-analyst' },
       surface: 'specialist-recommendation',
     });
 

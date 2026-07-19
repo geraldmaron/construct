@@ -1,6 +1,6 @@
 # Construct Strategy
 
-> This is the strategy doc for the Construct project itself. The org-in-a-box, dogfooding on its own repo. Other projects that use Construct have their own strategy at `.cx/strategy.md` (see [`templates/docs/strategy.md`](./templates/docs/strategy.md)).
+> This is the strategy doc for the Construct project itself. The org-in-a-box, dogfooding on its own repo. Other projects that use Construct have their own strategy at `.construct/strategy.md` (see [`templates/docs/strategy.md`](./templates/docs/strategy.md)).
 
 Last updated: 2026-07-06
 Horizon: 6 to 12 months
@@ -73,7 +73,7 @@ A full challenge of the standing architecture, recorded in `plan.md` (epic `cons
 
 - **D1 — Node core stays; Python narrows to one sidecar; distribution moves to a compiled binary** ([ADR-0064](./docs/decisions/adr/0064-language-runtime-strategy.md)). Every peer product in this category (Claude Code, OpenCode, Codex CLI) ships a Bun- or Rust-compiled binary, not Python; `npm install -g` friction is the real first-hour gap, not the language. `uv` stays the formal, pinned contract for the docling sidecar.
 - **D2 — Orchestrator-worker with a small core roster supersedes the 29-specialist role-crew org** ([ADR-0065](./docs/decisions/adr/0065-orchestrator-worker-consolidation.md)). The evidence base (Anthropic's multi-agent research writeup, Cognition's "Don't Build Multi-Agents," the Berkeley MAST failure taxonomy) argues against fixed persona crews for most work; a deterministic flow engine replaces prompt-injected sequencing, and parallel fan-out is restricted to read-only, breadth-first work.
-- **D3 — Config-layer project footprint** ([ADR-0066](./docs/decisions/adr/0066-config-layer-project-footprint.md)). A project keeps only committed text (`construct.config.json`, `.cx/context.md`, custom specialists/teams); all heavy state (traces, vector index, runs, docling venv) moves to a machine-scoped root, shrinking a ~2.5–3 GB per-project footprint toward KB scale.
+- **D3 — Config-layer project footprint** ([ADR-0066](./docs/decisions/adr/0066-config-layer-project-footprint.md)). A project keeps only committed text (`construct.config.json`, `.construct/context.md`, custom specialists/teams); all heavy state (traces, vector index, runs, docling venv) moves to a machine-scoped root, shrinking a ~2.5–3 GB per-project footprint toward KB scale.
 - **D4 — Standalone-project comment hygiene.** Code comments may not name another software project by way of comparison; decision documents keep their citations (the no-fabrication rule requires them there).
 
 No backwards compatibility: these are clean breaks, not migration shims. Execution runs in six phases (decide → flow engine → roster → footprint → distribution → docs/verification); as of this writing 12 of the epic's 22 beads are closed. The flow engine, checkpoint/resume, machine-scoped state, shared docling venv, lazy vector index, and the core-roster consolidation (12 specialists shipped) are landed; the Bun-binary distribution is drafted/in-flight but not yet applied. See the current state notes above, [Flow engine](./docs/guides/concepts/architecture.md#flow-engine) in the architecture doc, and the ADR index for the full supersession record.
@@ -155,7 +155,7 @@ Work: tighten `construct doctor`, finish the install wizard for missing dependen
 
 ### Phase 3. Profile depth (months 4 to 8)
 
-Exit condition: one non-rnd profile is used by a real user for a real task. Evidence shows up in `.cx/observations/` and in the intake queue.
+Exit condition: one non-rnd profile is used by a real user for a real task. Evidence shows up in `.construct/observations/` and in the intake queue.
 
 Work: instrument profile usage, finish the profile lifecycle gates, recruit a single user outside my own setup.
 

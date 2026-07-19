@@ -48,13 +48,13 @@ function project() {
 function withHashingEmbeddings(t, cwd) {
   const prevModel = process.env.CONSTRUCT_EMBEDDING_MODEL;
   process.env.CONSTRUCT_EMBEDDING_MODEL = 'hashing';
-  const prevHome = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = cwd;
+  const prevHome = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = cwd;
   t.after(() => {
     if (prevModel === undefined) delete process.env.CONSTRUCT_EMBEDDING_MODEL;
     else process.env.CONSTRUCT_EMBEDDING_MODEL = prevModel;
-    if (prevHome === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prevHome;
+    if (prevHome === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prevHome;
   });
 }
 

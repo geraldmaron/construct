@@ -1,0 +1,21 @@
+{
+  "id": "scope-change",
+  "ownerWorkerProfile": "product-manager",
+  "description": "Product group authorizes scope changes. Conflicts escalate to strategy.",
+  "enforcement": "hard",
+  "mode": "approval",
+  "approvalWorkerProfiles": [],
+  "requiredPolicies": [],
+  "vetoWorkerProfiles": [
+    "architect",
+    "operations"
+  ],
+  "escalationWorkerProfiles": [
+    "orchestrator"
+  ],
+  "governs": [
+    "scope-change"
+  ],
+  "conditions": [],
+  "evidence": []
+}

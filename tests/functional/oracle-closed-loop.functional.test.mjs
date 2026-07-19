@@ -34,7 +34,7 @@ function freshProject() {
   };
 }
 
-test('runOracleTick writes verdict history under .cx/oracle/verdicts/', async () => {
+test('runOracleTick writes verdict history under .construct/oracle/verdicts/', async () => {
   const env = freshProject();
   try {
     process.env.CONSTRUCT_ORACLE_AUTO_RAISE = 'off';
@@ -63,7 +63,7 @@ test('raiseIssuesForGaps skips verdict-only hygiene gaps without bd create', asy
     const { raiseIssuesForGaps } = await import('../../lib/oracle/issues.mjs');
     const gaps = [
       { id: 'beads-hygiene', severity: 'high', detail: '2 stuck in_progress, 50 stale-open' },
-      { id: 'workflow-misaligned', severity: 'high', detail: 'No .cx/workflow.json found' },
+      { id: 'workflow-misaligned', severity: 'high', detail: 'No .construct/workflow.json found' },
     ];
     const raised = await raiseIssuesForGaps({ projectDir: env.projectDir, gaps, dryRun: false });
     assert.equal(raised.length, 2);
@@ -130,7 +130,7 @@ test('high-severity tick writes routing artifact when gaps present', async () =>
     writeFileSync(join(env.projectDir, '.construct', 'contract-violations.jsonl'), JSON.stringify({
       ts: new Date().toISOString(),
       contractId: 'test',
-      agent: 'cx-engineer',
+      agent: 'engineer',
     }) + '\n');
     await runOracleTick({ ...env, dryRun: false });
     const dir = routingDir(env.projectDir);

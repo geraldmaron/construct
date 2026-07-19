@@ -1,7 +1,7 @@
 /**
  * tests/flavors/schema.test.mjs — Every flavor overlay conforms to the schema.
  *
- * Every file in skills/roles/ must:
+ * Every file in skills/perspectives/ must:
  *   - Have parseable frontmatter
  *   - Declare scopes: [...] (non-empty)
  *   - Declare cap: 1
@@ -20,7 +20,7 @@ import { FLAVOR_CAP_PER_ROLE_PER_PROFILE, listAllFlavors, perRoleFlavorCount, va
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const FLAVORS_DIR = path.join(REPO_ROOT, 'skills', 'roles');
 
-test('every overlay in skills/roles/ passes validateFlavor', () => {
+test('every overlay in skills/perspectives/ passes validateFlavor', () => {
   const files = fs.readdirSync(FLAVORS_DIR)
     .filter((f) => f.endsWith('.md') && f !== 'README.md');
   assert.ok(files.length > 0);

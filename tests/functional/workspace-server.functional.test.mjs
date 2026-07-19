@@ -68,7 +68,7 @@ function waitFor(predicate, { timeoutMs = 10000, intervalMs = 100 } = {}) {
 async function startServerProcess({ home, databaseUrl, adminToken = ADMIN_TOKEN }) {
   const env = sterileSpawnEnv({
     HOME: home,
-    CX_HOME_OVERRIDE: home,
+    CONSTRUCT_HOME_OVERRIDE: home,
     DATABASE_URL: databaseUrl || '',
     CONSTRUCT_SERVER_ADMIN_TOKEN: adminToken || '',
     CONSTRUCT_SERVER_PORT: '0',
@@ -123,7 +123,7 @@ async function api(baseUrl, method, pathSuffix, { token, body } = {}) {
 test('construct server start refuses to run with no reachable Postgres client', () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-server-nopostgres-'));
   try {
-    const env = sterileSpawnEnv({ HOME: home, CX_HOME_OVERRIDE: home, DATABASE_URL: '' });
+    const env = sterileSpawnEnv({ HOME: home, CONSTRUCT_HOME_OVERRIDE: home, DATABASE_URL: '' });
     const result = spawnSync(process.execPath, [BIN, 'server', 'start'], { cwd: home, env, encoding: 'utf8' });
     assert.equal(result.status, 1);
     assert.match(result.stderr, /reachable Postgres client/);
@@ -135,7 +135,7 @@ test('construct server start refuses to run with no reachable Postgres client', 
 test('construct server: unknown subcommand exits non-zero with a usage message', () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-server-badsub-'));
   try {
-    const env = sterileSpawnEnv({ HOME: home, CX_HOME_OVERRIDE: home });
+    const env = sterileSpawnEnv({ HOME: home, CONSTRUCT_HOME_OVERRIDE: home });
     const result = spawnSync(process.execPath, [BIN, 'server', 'bogus'], { cwd: home, env, encoding: 'utf8' });
     assert.equal(result.status, 1);
     assert.match(result.stderr, /Unknown server subcommand/);

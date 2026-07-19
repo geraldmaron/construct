@@ -1,9 +1,9 @@
 /**
  * tests/orchestration-route-path.test.mjs — routePath payload end-to-end (construct-d1r7.15).
  *
- * routeRequest already computed teamRouting, contractChain, dispatchReasons,
+ * routeRequest already computed policyRouting, contractChain, dispatchReasons,
  * and proactive triggers separately; routePath packages them into one shared
- * shape — teamPath, specialistSequence, contractChain, sourcePolicy,
+ * shape — assignmentSequence, contractChain, sourcePolicy,
  * rationale — and this file pins that the SAME payload (not a re-derived
  * approximation) reaches every surface that quotes a route: the direct
  * routeRequest() return, the orchestration_policy MCP response and its
@@ -29,7 +29,7 @@ import { shapeRun } from '../lib/mcp/tools/orchestration-run.mjs';
 import { traceDir } from '../lib/worker/trace.mjs';
 
 const MODEL = 'anthropic/claude-sonnet-4-6';
-const ENV = { CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL };
+const ENV = { CONSTRUCT_MODEL_REASONING: MODEL, CONSTRUCT_MODEL_STANDARD: MODEL, CONSTRUCT_MODEL_FAST: MODEL };
 const REQUEST = 'build this feature end to end and ship it';
 
 const dirs = [];
@@ -40,24 +40,24 @@ function project() {
 }
 test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} } });
 
-// planRun/runOrchestration resolve their state root through CX_HOME_OVERRIDE
+// planRun/runOrchestration resolve their state root through CONSTRUCT_HOME_OVERRIDE
 // (ADR-0066), same isolation tests/orchestration-runtime.test.mjs applies —
 // without it these runs would write into the real developer machine's
 // ~/.construct/projects/.
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-route-path-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 test.after(() => {
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 function assertRoutePathShape(routePath, route) {
   assert.ok(routePath, 'routePath present');
-  assert.ok(Array.isArray(routePath.teamPath) && routePath.teamPath.length > 0, 'teamPath is a non-empty array');
-  assert.deepEqual(routePath.specialistSequence, route.displaySpecialists, 'specialistSequence mirrors displaySpecialists');
+  assert.ok(Array.isArray(routePath.assignmentSequence), 'assignmentSequence is an array');
+  assert.deepEqual(routePath.assignmentSequence, route.assignments.map((assignment) => assignment.id));
   assert.equal(routePath.contractChain, route.contractChain, 'contractChain is the same array resolveContractChain produced, not a copy');
   assert.equal(routePath.sourcePolicy.intentClassification, route.intent);
   assert.ok(Array.isArray(routePath.sourcePolicy.watchConditionTriggers));
@@ -68,7 +68,7 @@ function assertRoutePathShape(routePath, route) {
 test('routeRequest returns a real, non-empty routePath for an orchestrated request', () => {
   const route = routeRequest({ request: REQUEST, fileCount: 4, moduleCount: 2 });
   assertRoutePathShape(route.routePath, route);
-  assert.ok(route.routePath.teamPath.includes('engineering-team'), 'implementation intent routes through engineering-team');
+  assert.ok(route.policyRouting.policies.length > 0, 'implementation assignments resolve governing policies');
 });
 
 test('buildConstructToOrchestratorPacket (the construct→orchestrator handoff) carries routePath', () => {
@@ -78,11 +78,10 @@ test('buildConstructToOrchestratorPacket (the construct→orchestrator handoff) 
   assert.equal(packet.routePath, route.routePath, 'handoff packet reuses the same routePath object routeRequest computed');
 });
 
-test('orchestrationPolicy MCP response surfaces routePath directly and on its handoffPacket', async () => {
+test('orchestrationPolicy MCP response surfaces routePath without a retired handoff packet', async () => {
   const result = await orchestrationPolicy({ request: REQUEST, fileCount: 4, moduleCount: 2 });
   assertRoutePathShape(result.routePath, result);
-  assert.ok(result.handoffPacket?.routePath, 'handoffPacket also carries routePath');
-  assert.equal(result.handoffPacket.routePath.rationale, result.routePath.rationale);
+  assert.equal('handoffPacket' in result, false, 'retired agent-contract packet is not emitted');
 });
 
 test('orchestration_run: shapeRun and CLI hostAdapterMetadata both surface routePath from the same plan', async () => {
@@ -93,8 +92,7 @@ test('orchestration_run: shapeRun and CLI hostAdapterMetadata both surface route
   );
   const shaped = shapeRun(run);
   assert.ok(shaped.routePath, 'shapeRun (MCP orchestration_run / orchestration_status response) carries routePath');
-  assert.ok(shaped.routePath.teamPath.length > 0);
-  assert.ok(shaped.routePath.specialistSequence.length > 0);
+  assert.ok(shaped.routePath.assignmentSequence.length > 0);
   assert.equal(typeof shaped.routePath.rationale, 'string');
   assert.match(shaped.routePath.rationale, /intent=/);
 

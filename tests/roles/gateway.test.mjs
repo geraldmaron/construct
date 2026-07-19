@@ -173,8 +173,8 @@ function writePending(entries) {
 
 test('listPending filters out unresolved entries older than the TTL', () => {
   const now = Date.now();
-  const fresh = { ts: now - 1000, personaId: 'operations', cxId: 'cx-operations', fingerprint: 'fresh', eventType: 'service.down', summary: 'recent' };
-  const stale = { ts: now - 15 * 24 * 60 * 60 * 1000, personaId: 'security', cxId: 'cx-security', fingerprint: 'stale', eventType: 'secrets.detected', summary: 'old fixture' };
+  const fresh = { ts: now - 1000, personaId: 'operations', workerProfileId: 'operations', fingerprint: 'fresh', eventType: 'service.down', summary: 'recent' };
+  const stale = { ts: now - 15 * 24 * 60 * 60 * 1000, personaId: 'security', workerProfileId: 'security', fingerprint: 'stale', eventType: 'secrets.detected', summary: 'old fixture' };
   writePending([fresh, stale]);
 
   const pending = gw.listPending({ unresolved: true });

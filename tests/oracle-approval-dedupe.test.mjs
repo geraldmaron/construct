@@ -47,7 +47,7 @@ test('runOracleTick dedupes identical approve actions and refreshes occurrence m
     writeFileSync(join(env.projectDir, '.construct', 'contract-violations.jsonl'), JSON.stringify({
       ts: new Date().toISOString(),
       contractId: 'test-contract',
-      agent: 'cx-engineer',
+      agent: 'engineer',
     }) + '\n');
 
     const first = await runOracleTick({ ...env, dryRun: false });
@@ -78,7 +78,7 @@ test('listPending expires stale rows and enforces the queue cap', () => {
       rows.push({
         id: `oracle-${i}`,
         dedupKey: `oracle:key-${i}`,
-        kind: 'specialist-review',
+        kind: 'worker-profile-review',
         summary: `Review item ${i}`,
         status: 'pending',
         queuedAt: new Date(now - i * 1000).toISOString(),
@@ -90,7 +90,7 @@ test('listPending expires stale rows and enforces the queue cap', () => {
     rows.push({
       id: 'oracle-stale',
       dedupKey: 'oracle:stale',
-      kind: 'specialist-review',
+      kind: 'worker-profile-review',
       summary: 'Expired item',
       status: 'pending',
       queuedAt: new Date(now - 9 * 24 * 60 * 60 * 1000).toISOString(),

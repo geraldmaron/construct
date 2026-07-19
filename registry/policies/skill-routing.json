@@ -1,0 +1,14 @@
+{
+  "id": "skill-routing",
+  "ownerWorkerProfile": "orchestrator",
+  "description": "Specialists load skills explicitly via get_skill rather than relying on ambient knowledge.",
+  "enforcement": "(persona prompt + lib/mcp/tools/skills.mjs)",
+  "mode": "honor-system",
+  "approvalWorkerProfiles": [],
+  "requiredPolicies": [],
+  "vetoWorkerProfiles": [],
+  "escalationWorkerProfiles": [],
+  "governs": [],
+  "conditions": [],
+  "evidence": []
+}

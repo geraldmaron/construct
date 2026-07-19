@@ -2,7 +2,7 @@
  * tests/functional/sync-no-double-frontmatter.functional.test.mjs
  *
  * End-to-end coverage for the sync-frontmatter regression class. Spawns the
- * real `scripts/sync-specialists.mjs` ONCE in --global mode against an
+ * real `scripts/sync-worker-profiles.mjs` ONCE in --global mode against an
  * isolated HOME and ONCE in --project mode against a tmp project root, then
  * runs every assertion against the resulting trees. Asserts:
  *   - Every emitted SKILL.md (under <project>/.claude/skills/) starts with
@@ -29,14 +29,14 @@ import test, { before, after } from 'node:test';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const SYNC_SCRIPT = join(REPO_ROOT, 'scripts', 'sync-specialists.mjs');
+const SYNC_SCRIPT = join(REPO_ROOT, 'scripts', 'sync-worker-profiles.mjs');
 
 // `construct sync` now defaults to detected hosts (ADR-0027 §1); a sterile HOME
 // detects none, so pin the full set to exercise every adapter writer.
 
 const ALL_HOSTS = 'claude,codex,copilot,opencode,vscode,cursor';
 
-const DOC_STAMP_KEYS = ['cx_doc_id', 'body_hash', 'generator: construct/sync-specialists'];
+const DOC_STAMP_KEYS = ['cx_doc_id', 'body_hash', 'generator: construct/sync-worker-profiles'];
 
 let SHARED_HOME;
 let SHARED_PROJECT;

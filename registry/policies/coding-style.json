@@ -1,0 +1,14 @@
+{
+  "id": "coding-style",
+  "ownerWorkerProfile": "orchestrator",
+  "description": "Style standards applied at authoring time; not mechanically enforced beyond lint:comments.",
+  "enforcement": "(persona prompt)",
+  "mode": "honor-system",
+  "approvalWorkerProfiles": [],
+  "requiredPolicies": [],
+  "vetoWorkerProfiles": [],
+  "escalationWorkerProfiles": [],
+  "governs": [],
+  "conditions": [],
+  "evidence": []
+}

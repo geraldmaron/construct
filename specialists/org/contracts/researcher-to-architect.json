@@ -1,7 +1,7 @@
 {
   "id": "researcher-to-architect",
-  "producer": "cx-researcher",
-  "consumer": "cx-architect",
+  "producer": "researcher",
+  "consumer": "architect",
   "trigger": {
     "externalResearch.required": true,
     "riskFlags": [

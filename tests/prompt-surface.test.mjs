@@ -18,6 +18,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { getRegistry, getContracts } from './test-registry-fixtures.mjs';
+import { loadRegistry } from '../lib/registry/loader.mjs';
 
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 
@@ -58,14 +59,14 @@ test('prompt surface architecture states Construct is the sole public persona', 
 });
 
 test('designer prompt covers visual deliverables beyond implemented UI', () => {
-  const text = fs.readFileSync(path.join(root, 'specialists/prompts/cx-designer.md'), 'utf8');
+  const text = fs.readFileSync(path.join(root, 'registry/worker-profiles/prompts/designer.md'), 'utf8');
   assert.match(text, /slide decks and presentations/);
   assert.match(text, /walkthroughs and demo videos/);
   assert.match(text, /construct wireframe/);
 });
 
 test('orchestrator prompt no longer embeds a dispatch map', () => {
-  const text = fs.readFileSync(path.join(root, 'specialists/prompts/cx-orchestrator.md'), 'utf8');
+  const text = fs.readFileSync(path.join(root, 'registry/worker-profiles/prompts/orchestrator.md'), 'utf8');
   assert.match(text, /code-backed orchestration policy/);
   assert.doesNotMatch(text, /Dispatch map/);
 });
@@ -98,7 +99,7 @@ const POLICY_SOURCE_PATH = path.join(root, 'lib/orchestration/policy-constants.m
 const ANTIRESTATEMENT_ALLOWLIST = new Set([
   // Routing IS the orchestrator's job and the policy file IS the authority —
   // both legitimately enumerate the keys.
-  'specialists/prompts/cx-orchestrator.md',
+  'registry/worker-profiles/prompts/orchestrator.md',
   'lib/orchestration-policy.mjs',
 ]);
 
@@ -121,7 +122,7 @@ test('no prompt enumerates ≥4 intent classes inline (authority: lib/orchestrat
   assert.ok(keys.length >= 4, `INTENT_CLASSES must have at least 4 keys; got ${keys.length}`);
 
   const candidates = [
-    ...walkMarkdown(path.join(root, 'specialists/prompts')),
+    ...walkMarkdown(path.join(root, 'registry/worker-profiles/prompts')),
     ...walkMarkdown(path.join(root, 'skills')),
     ...walkMarkdown(path.join(root, 'personas')),
   ];
@@ -140,7 +141,7 @@ test('no prompt enumerates ≥4 intent classes inline (authority: lib/orchestrat
 test('no prompt outside the persona enumerates ≥3 detectRiskFlags keys inline (authority: lib/orchestration-policy.mjs:detectRiskFlags)', () => {
   const keys = ['architecture', 'security', 'dataIntegrity', 'ui', 'docs', 'ai'];
   const candidates = [
-    ...walkMarkdown(path.join(root, 'specialists/prompts')),
+    ...walkMarkdown(path.join(root, 'registry/worker-profiles/prompts')),
     ...walkMarkdown(path.join(root, 'skills')),
   ];
   for (const file of candidates) {
@@ -156,12 +157,12 @@ test('no prompt outside the persona enumerates ≥3 detectRiskFlags keys inline 
 });
 
 test('every MCP-tool name in sharedGuidance is registered in lib/mcp/server.mjs', () => {
-  const registry = getRegistry();
+  const registry = loadRegistry({ rootDir: root });
   const guidance = (registry.sharedGuidance || []).join('\n');
   const server = fs.readFileSync(path.join(root, 'lib/mcp/server.mjs'), 'utf8');
 
   // MCP tool names follow snake_case with at least one underscore (e.g.
-  // cx_trace, agent_contract, memory_search). Restrict to that shape so a
+  // construct_trace, agent_contract, memory_search). Restrict to that shape so a
   // bare backticked word like `specialists` (a field name) is not flagged as
   // a missing tool. Backtick contexts with `/` or spaces are filtered by the
   // character class.
@@ -179,11 +180,11 @@ test('every MCP-tool name in sharedGuidance is registered in lib/mcp/server.mjs'
 
 test('no specialist source prompt restates fence JSON (manifest is the source of truth)', () => {
   // Phase C extracted the Fence + Handoff section into a renderer in
-  // scripts/sync-specialists.mjs that reads specialists/org.
+  // scripts/sync-worker-profiles.mjs that reads specialists/org.
   // The source prompts must not regrow the inline restatement; the renderer
   // produces the synced output. Allowed: discussion of the fence concept in
   // prose; banned: the literal structural markers below.
-  const candidates = walkMarkdown(path.join(root, 'specialists/prompts'));
+  const candidates = walkMarkdown(path.join(root, 'registry/worker-profiles/prompts'));
   const bannedLines = [
     /^\s*-\s*Allowed paths:/m,
     /^\s*-\s*Allowed bd labels:/m,
@@ -197,38 +198,36 @@ test('no specialist source prompt restates fence JSON (manifest is the source of
     for (const re of bannedLines) {
       assert.ok(
         !re.test(text),
-        `${rel} restates fence JSON (matched ${re}). The renderer in scripts/sync-specialists.mjs reads specialists/org — do not duplicate the JSON in the prompt`,
+        `${rel} restates fence JSON (matched ${re}). The renderer in scripts/sync-worker-profiles.mjs reads specialists/org — do not duplicate the JSON in the prompt`,
       );
     }
   }
 });
 
-test('renderRoleFrameworkSection produces a manifest-backed block for onboarded personas', async () => {
-  const { renderRoleFrameworkSection } = await import('../scripts/sync-specialists.mjs');
-  const rendered = renderRoleFrameworkSection({ name: 'cx-engineer' });
-  assert.match(rendered, /## When invoked via the role framework/);
-  assert.match(rendered, /\*\*Fence\*\*.*specialists\/org.*engineer/);
-  // The engineer manifest carries these literals — drift catches any rename.
-  assert.match(rendered, /`lib\/\*\*`/, 'engineer fence must include lib/** from the manifest');
-  assert.match(rendered, /`next:cx-qa`/, 'engineer handoff candidates must include cx-qa');
-  assert.match(rendered, /commit-approval\.md/);
+test('renderWorkerProfilePolicySection renders the canonical policy fence', async () => {
+  const { renderWorkerProfilePolicySection } = await import('../scripts/sync-worker-profiles.mjs');
+  const registry = getRegistry();
+  const rendered = renderWorkerProfilePolicySection(registry.workerProfiles.engineer);
+  assert.match(rendered, /## Worker Profile policy/);
+  assert.match(rendered, /registry\/worker-profiles\/engineer\.json/);
+  assert.match(rendered, /`commit`/);
+  assert.match(rendered, /`push`/);
 });
 
-test('renderRoleFrameworkSection returns the empty string for an unonboarded persona', async () => {
-  const { renderRoleFrameworkSection } = await import('../scripts/sync-specialists.mjs');
-  assert.equal(renderRoleFrameworkSection({ name: 'cx-nonexistent-role' }), '');
-  assert.equal(renderRoleFrameworkSection({ name: '' }), '');
-  assert.equal(renderRoleFrameworkSection({}), '');
+test('renderWorkerProfilePolicySection returns empty for an invalid profile', async () => {
+  const { renderWorkerProfilePolicySection } = await import('../scripts/sync-worker-profiles.mjs');
+  assert.equal(renderWorkerProfilePolicySection({ id: '' }), '');
+  assert.equal(renderWorkerProfilePolicySection({}), '');
 });
 
 test('every specialist prompt sits at or below 90% of the 1200-word cap (headroom rule)', () => {
   const registry = getRegistry();
   const cap = 1200;
   const headroom = Math.floor(cap * 0.9);
-  // Named exceptions: each must have a written reason. cx-orchestrator's job
+  // Named exceptions: each must have a written reason. orchestrator's job
   // IS routing, so the routing surface legitimately consumes more words.
   const exceptions = new Map([
-    ['specialists/prompts/cx-orchestrator.md', 'routing/handoff rules are the orchestrator\'s responsibility'],
+    ['registry/worker-profiles/prompts/orchestrator.md', 'routing/handoff rules are the orchestrator\'s responsibility'],
   ]);
   for (const agent of Object.values(registry.specialists || {})) {
     if (!agent.promptFile) continue;

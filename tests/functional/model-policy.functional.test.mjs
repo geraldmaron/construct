@@ -87,7 +87,7 @@ globalThis.fetch = async (url, opts) => {
 
 // Spawn the real binary with a stripped PATH so no ambient provider (a running
 // ollama daemon, an authenticated gh CLI) is detected, plus the fetch-spy
-// preload so pricing is deterministic. HOME and CX_TOOLKIT_DIR are separated so
+// preload so pricing is deterministic. HOME and CONSTRUCT_TOOLKIT_DIR are separated so
 // the toolkit dir holds only what the command writes there.
 
 function runHermetic(args, { home, toolkit, preload, env = {} }) {
@@ -99,7 +99,7 @@ function runHermetic(args, { home, toolkit, preload, env = {} }) {
       HOME: home,
       USERPROFILE: home,
       PATH: '',
-      CX_TOOLKIT_DIR: toolkit,
+      CONSTRUCT_TOOLKIT_DIR: toolkit,
       NODE_OPTIONS: `--import ${preload}`,
       OPENROUTER_API_KEY: 'sk-test-openrouter-budget',
       ANTHROPIC_API_KEY: '',
@@ -172,7 +172,7 @@ test('budget invariant: OpenRouter-only + budget policy resolves no frontier mod
   // entered the chain).
   const pinned = runHermetic(['models', 'resolve', '--json', '--tier', 'reasoning'], {
     home, toolkit, preload,
-    env: { CX_MODEL_REASONING: 'openrouter/qwen/qwen3-coder:free' },
+    env: { CONSTRUCT_MODEL_REASONING: 'openrouter/qwen/qwen3-coder:free' },
   });
   const pinnedEnvelope = JSON.parse(pinned.stdout);
   assert.equal(pinnedEnvelope.data.selectedModel, 'openrouter/qwen/qwen3-coder:free', 'env pin must override the budget registry');
@@ -196,7 +196,7 @@ test('policy show attributes an env-pin override and reports a clean install as 
 
   const pinned = runHermetic(['models', 'policy', 'show', '--json'], {
     home, toolkit, preload,
-    env: { CX_MODEL_REASONING: 'openrouter/anthropic/claude-opus-4-6' },
+    env: { CONSTRUCT_MODEL_REASONING: 'openrouter/anthropic/claude-opus-4-6' },
   });
   const pinnedView = JSON.parse(pinned.stdout);
   const reasoning = pinnedView.tiers.find((t) => t.tier === 'reasoning');
@@ -209,11 +209,11 @@ test('explain --role reports the specialist tier and matches models resolve (AC4
   const toolkit = freshDir('explain-toolkit');
   const preload = writePreload(home);
 
-  const res = runHermetic(['models', 'explain', '--role', 'cx-reviewer', '--json'], { home, toolkit, preload });
+  const res = runHermetic(['models', 'explain', '--role', 'reviewer', '--json'], { home, toolkit, preload });
   assert.equal(res.status, 0, `explain exit 0 — stderr: ${res.stderr}`);
   const trace = JSON.parse(res.stdout);
-  assert.equal(trace.role, 'cx-reviewer');
-  assert.equal(trace.tier, 'reasoning', 'cx-reviewer resolves at the reasoning tier');
+  assert.equal(trace.role, 'reviewer');
+  assert.equal(trace.tier, 'reasoning', 'reviewer resolves at the reasoning tier');
   assert.ok(trace.source, 'a winning source is named');
 });
 

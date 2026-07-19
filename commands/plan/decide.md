@@ -11,4 +11,4 @@ ADR format:
 - FILES AFFECTED: paths future contributors should inspect
 - FOLLOW-UP: docs, tests, migrations, or risks to track
 
-Save to `docs/decisions/adr/ADR-{NNN}-{slug}.md` and `.cx/decisions/` if those directories exist.
+Save to `docs/decisions/adr/ADR-{NNN}-{slug}.md` and `.construct/decisions/` if those directories exist.

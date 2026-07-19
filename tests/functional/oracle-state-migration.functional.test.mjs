@@ -36,7 +36,7 @@ function seedOracleState(projectDir) {
   fs.mkdirSync(path.join(oracleDir, 'routing'), { recursive: true });
 
   fs.writeFileSync(path.join(oracleDir, 'pending.jsonl'), [
-    JSON.stringify({ id: 'oracle-aaa', kind: 'specialist-review', status: 'pending', summary: 'review recent contract violations' }),
+    JSON.stringify({ id: 'oracle-aaa', kind: 'worker-profile-review', status: 'pending', summary: 'review recent contract violations' }),
     JSON.stringify({ id: 'oracle-bbb', kind: 'doctor-followup', status: 'approved', summary: 'already handled' }),
   ].join('\n') + '\n');
 
@@ -55,12 +55,12 @@ function seedOracleState(projectDir) {
 }
 
 function withIsolation(t, homeDir) {
-  const prevHome = process.env.CX_HOME_OVERRIDE;
+  const prevHome = process.env.CONSTRUCT_HOME_OVERRIDE;
   const prevModel = process.env.CONSTRUCT_EMBEDDING_MODEL;
-  process.env.CX_HOME_OVERRIDE = homeDir;
+  process.env.CONSTRUCT_HOME_OVERRIDE = homeDir;
   process.env.CONSTRUCT_EMBEDDING_MODEL = 'hashing';
   t.after(() => {
-    if (prevHome === undefined) delete process.env.CX_HOME_OVERRIDE; else process.env.CX_HOME_OVERRIDE = prevHome;
+    if (prevHome === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE; else process.env.CONSTRUCT_HOME_OVERRIDE = prevHome;
     if (prevModel === undefined) delete process.env.CONSTRUCT_EMBEDDING_MODEL; else process.env.CONSTRUCT_EMBEDDING_MODEL = prevModel;
   });
 }

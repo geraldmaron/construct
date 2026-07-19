@@ -6,7 +6,7 @@
  *   - Each default plugin satisfies its contract.
  *   - The Embedder default reports dimensions consistent with the configured
  *     embedding model (defaults to local 384d ONNX).
- *   - Override plugins from .cx/plugins.json are loaded and contract-checked.
+ *   - Override plugins from .construct/plugins.json are loaded and contract-checked.
  *   - Failed overrides fall back to the default and surface in `errors`.
  */
 import assert from 'node:assert/strict';
@@ -93,10 +93,10 @@ describe('engine contracts', () => {
 });
 
 describe('engine plugin overrides', () => {
-  it('loads a project-local plugin override from .cx/plugins.json', async () => {
-    const cxDir = path.join(tmpDir, '.construct');
+  it('loads a project-local plugin override from .construct/plugins.json', async () => {
+    const constructDir = path.join(tmpDir, '.construct');
     const pluginPath = path.join(tmpDir, 'fake-fuser.mjs');
-    fs.mkdirSync(cxDir, { recursive: true });
+    fs.mkdirSync(constructDir, { recursive: true });
     fs.writeFileSync(pluginPath, `
       export function create() {
         return {
@@ -106,7 +106,7 @@ describe('engine plugin overrides', () => {
       }
     `);
     fs.writeFileSync(
-      path.join(cxDir, 'plugins.json'),
+      path.join(constructDir, 'plugins.json'),
       JSON.stringify({ plugins: [{ layer: 'fuser', package: pluginPath }] })
     );
     const { layers, sources, errors } = await resolveEngine({ rootDir: tmpDir });
@@ -116,16 +116,16 @@ describe('engine plugin overrides', () => {
   });
 
   it('falls back to default and records error when override fails contract', async () => {
-    const cxDir = path.join(tmpDir, '.construct');
+    const constructDir = path.join(tmpDir, '.construct');
     const pluginPath = path.join(tmpDir, 'broken-embedder.mjs');
-    fs.mkdirSync(cxDir, { recursive: true });
+    fs.mkdirSync(constructDir, { recursive: true });
     fs.writeFileSync(pluginPath, `
       export function create() {
         return { meta: { id: 'broken' } };
       }
     `);
     fs.writeFileSync(
-      path.join(cxDir, 'plugins.json'),
+      path.join(constructDir, 'plugins.json'),
       JSON.stringify({ plugins: [{ layer: 'embedder', package: pluginPath }] })
     );
     const { layers, sources, errors } = await resolveEngine({ rootDir: tmpDir });
@@ -136,10 +136,10 @@ describe('engine plugin overrides', () => {
   });
 
   it('rejects github: spec with a clear error', async () => {
-    const cxDir = path.join(tmpDir, '.construct');
-    fs.mkdirSync(cxDir, { recursive: true });
+    const constructDir = path.join(tmpDir, '.construct');
+    fs.mkdirSync(constructDir, { recursive: true });
     fs.writeFileSync(
-      path.join(cxDir, 'plugins.json'),
+      path.join(constructDir, 'plugins.json'),
       JSON.stringify({ plugins: [{ layer: 'compressor', package: 'github:foo/bar#abc' }] })
     );
     const { errors } = await resolveEngine({ rootDir: tmpDir });

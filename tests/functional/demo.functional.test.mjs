@@ -44,7 +44,7 @@ function run(args, cwd) {
       BOOTSTRAP_CHECKED: '1',
       CONSTRUCT_DISABLE_AUTO_CLEANUP: '1',
       HOME: SANDBOX_HOME,
-      CX_HOME_OVERRIDE: SANDBOX_HOME,
+      CONSTRUCT_HOME_OVERRIDE: SANDBOX_HOME,
     },
   });
 }

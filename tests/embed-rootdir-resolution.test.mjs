@@ -1,6 +1,6 @@
 /**
  * tests/embed-rootdir-resolution.test.mjs — coverage for the precedence in
- * `resolveRootDir`: CX_DATA_DIR override beats walked-up project root beats
+ * `resolveRootDir`: CONSTRUCT_DATA_DIR override beats walked-up project root beats
  * homedir fallback, and the walk is capped to avoid runaway stat() calls on
  * deeply nested filesystems.
  */
@@ -31,16 +31,16 @@ after(() => {
 });
 
 describe('resolveRootDir', () => {
-  it('CX_DATA_DIR wins even when cwd is inside a project', () => {
+  it('CONSTRUCT_DATA_DIR wins even when cwd is inside a project', () => {
     const project = mkTmp();
     fs.mkdirSync(path.join(project, '.construct'), { recursive: true });
     fs.writeFileSync(path.join(project, '.construct', 'context.md'), '# context');
     const override = mkTmp();
-    const result = resolveRootDir({ CX_DATA_DIR: override }, project);
+    const result = resolveRootDir({ CONSTRUCT_DATA_DIR: override }, project);
     assert.equal(result, override);
   });
 
-  it('walks up from cwd to find .cx/context.md', () => {
+  it('walks up from cwd to find .construct/context.md', () => {
     const project = mkTmp();
     fs.mkdirSync(path.join(project, '.construct'), { recursive: true });
     fs.writeFileSync(path.join(project, '.construct', 'context.md'), '# context');
@@ -58,7 +58,7 @@ describe('resolveRootDir', () => {
 
   it('honors the 10-level walk-up cap', () => {
     const root = mkTmp();
-    // Build 12 nested directories with no .cx anywhere on the chain; the cap
+    // Build 12 nested directories with no .construct anywhere on the chain; the cap
     // means we never find a project root even though one might exist far above.
     let current = root;
     for (let i = 0; i < 12; i++) {

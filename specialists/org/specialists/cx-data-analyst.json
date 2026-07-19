@@ -38,7 +38,7 @@
   "docArtifacts": [],
   "watchConditions": [],
   "permissions": {},
-  "promptFile": "specialists/prompts/cx-data-analyst.md",
+  "promptFile": "specialists/prompts/data-analyst.md",
   "embedOrientation": {
     "focusAreas": [
       "metric validity",
@@ -84,7 +84,7 @@
         },
         "recruit": {
           "specialists": [
-            "cx-data-analyst"
+            "data-analyst"
           ]
         },
         "role": "reviewer",
@@ -98,7 +98,7 @@
         },
         "recruit": {
           "specialists": [
-            "cx-data-analyst"
+            "data-analyst"
           ]
         },
         "role": "reviewer",

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "specialistId": "cx-data-analyst",
+  "specialistId": "data-analyst",
   "capabilityId": "specialist.prompt",
   "mode": "normal",
   "scenarioKind": "ambiguous",

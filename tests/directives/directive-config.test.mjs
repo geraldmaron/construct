@@ -16,7 +16,7 @@ function validDirective(overrides = {}) {
   return {
     id: 'jira-weekly-summary',
     provider: 'jira',
-    specialist: 'cx-operations',
+    specialist: 'operations',
     instruction: 'Summarize what the team is working on',
     trigger: { kind: 'interval', intervalMinutes: 10_080 },
     action: 'summarize',
@@ -66,14 +66,14 @@ describe('validateDirective', () => {
 
   it('rejects an unresolvable specialist when knownSpecialists is supplied', () => {
     const errors = validateDirective(validDirective({ specialist: 'cx-nonexistent' }), 0, {
-      knownSpecialists: ['cx-operations', 'cx-product-manager'],
+      knownSpecialists: ['operations', 'product-manager'],
     });
     assert.ok(errors.some((e) => e.includes('.specialist:')));
   });
 
   it('accepts a bare specialist id matched against a cx-prefixed known list', () => {
     const errors = validateDirective(validDirective({ specialist: 'operations' }), 0, {
-      knownSpecialists: ['cx-operations'],
+      knownSpecialists: ['operations'],
     });
     assert.deepEqual(errors, []);
   });

@@ -18,9 +18,9 @@ the opt-in real-LLM artifact run is driven separately and scored by lib/artifact
 
 ## Auditable evidence each layer reads
 
-- Skill loads → `~/.cx/skill-calls.jsonl`; specialist dispatch/handoff → `<project>/.cx/agent-log.jsonl`, `~/.cx/role-pending.jsonl`.
+- Skill loads → `~/.construct/skill-calls.jsonl`; specialist dispatch/handoff → `<project>/.construct/agent-log.jsonl`, `~/.construct/role-pending.jsonl`.
 - Config disposition → adapter dirs + `.construct/` gitignored; shareable artifacts tracked.
-- Contract enforcement → `~/.cx/contract-violations.jsonl` (empty on a clean run).
+- Contract enforcement → `~/.construct/contract-violations.jsonl` (empty on a clean run).
 - Artifact quality → `lintDocStructure` (template sections) + prose/citation heuristics in `lib/artifact-quality.mjs`.
 
 ## Opt-in real-LLM layer

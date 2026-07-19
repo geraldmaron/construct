@@ -46,7 +46,7 @@ function freshProject() {
       {
         id: 'jira-weekly-summary',
         provider: 'jira',
-        specialist: 'cx-operations',
+        specialist: 'operations',
         instruction: "Summarize what the team is working on",
         trigger: { kind: 'interval', intervalMinutes: 10_080 },
         action: 'summarize',
@@ -72,11 +72,11 @@ test('directive-runner surfaces a due directive as an observation and records an
   const env = sterileSpawnEnv({
     HOME: root,
     USERPROFILE: root,
-    CX_HOME_OVERRIDE: root,
-    CX_ROOT_DIR: root,
+    CONSTRUCT_HOME_OVERRIDE: root,
+    CONSTRUCT_ROOT_DIR: root,
     TICK_TIMEOUT_MS: String(timeoutMs),
     CONSTRUCT_EMBEDDING_MODEL: 'hashing',
-    CX_INBOX_LIVE_WATCH: 'off',
+    CONSTRUCT_INBOX_LIVE_WATCH: 'off',
     CONSTRUCT_EMBED_ROADMAP_ENABLED: '0',
   });
   const res = spawnSync(process.execPath, [RUNNER], {

@@ -1,0 +1,19 @@
+{
+  "id": "operations-triage",
+  "version": "1.0.0",
+  "type": "embed",
+  "workerProfiles": [],
+  "approvalMode": "proposal-only",
+  "modelTier": "standard",
+  "state": "active",
+  "description": "Review new or changed Jira tickets, detect duplicates and under-specified issues, and propose governed triage actions.",
+  "embed": {
+    "workerProfileId": "operations",
+    "providerBindings": ["atlassian-jira", "atlassian-confluence", "directory"],
+    "framework": "operations-dependency-sequencing",
+    "outputContract": "operations-triage",
+    "proposalAuthority": "propose-only",
+    "runtime": "auto",
+    "cadence": { "every": "PT2H" }
+  }
+}

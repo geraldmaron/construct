@@ -184,7 +184,7 @@ describe('runFullCleanup', () => {
     // Pass a homeDir we can't write to. Best effort: use a path that doesn't
     // exist as a directory but expects to.
     const home = mkHome();
-    // Replace the .cx/runtime dir with a file so primitives fail
+    // Replace the Construct runtime dir with a file so primitives fail.
     fs.rmSync(path.join(doctorRoot(home),'runtime'), { recursive: true });
     fs.writeFileSync(path.join(doctorRoot(home),'runtime'), 'i am a file');
     const summary = runFullCleanup({ homeDir: home, env: {} });

@@ -11,7 +11,7 @@ Use when: customer evidence should update durable product memory.
 
 ## Steps
 
-1. Load the existing customer profile from `.cx/knowledge/internal/customer-profiles/` if present.
+1. Load the existing customer profile from `.construct/knowledge/internal/customer-profiles/` if present.
 2. Read the new source evidence.
 3. Add new facts, asks, pain points, contacts, product areas, and evidence links.
 4. Preserve historical entries. Do not delete or rewrite prior history without explicit approval.

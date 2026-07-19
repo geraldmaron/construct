@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "specialistId": "cx-security",
+  "specialistId": "security",
   "capabilityId": "specialist.prompt",
   "mode": "normal",
   "scenarioKind": "cross-specialist",

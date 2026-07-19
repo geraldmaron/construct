@@ -1,7 +1,7 @@
 {
   "id": "reviewer-to-security",
-  "producer": "cx-reviewer",
-  "consumer": "cx-security",
+  "producer": "reviewer",
+  "consumer": "security",
   "trigger": {
     "riskFlags": [
       "security"

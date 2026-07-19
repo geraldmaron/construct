@@ -73,7 +73,7 @@
     }
   ],
   "permissions": {},
-  "promptFile": "specialists/prompts/cx-architect.md",
+  "promptFile": "specialists/prompts/architect.md",
   "embedOrientation": {
     "focusAreas": [
       "coupling and cohesion",

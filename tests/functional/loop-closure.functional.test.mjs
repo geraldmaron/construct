@@ -17,7 +17,7 @@
  *   4. intake classification is deterministic (intake/classify)
  *
  * Stage 1 resolves observation-store state through the machine-scoped state
- * root (ADR-0066), keyed by a hash of the tmp rootDir — so CX_HOME_OVERRIDE
+ * root (ADR-0066), keyed by a hash of the tmp rootDir — so CONSTRUCT_HOME_OVERRIDE
  * is pinned for the whole file to keep that write off the real developer
  * machine's $HOME.
  */
@@ -38,14 +38,14 @@ let prevHomeOverride;
 
 before(() => {
   homeOverride = mkdtempSync(join(tmpdir(), 'cx-loop-closure-home-'));
-  prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = homeOverride;
+  prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 });
 
 after(() => {
   try { rmSync(homeOverride, { recursive: true, force: true }); } catch { /* best-effort cleanup */ }
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 function tmp(prefix, t) {
@@ -64,13 +64,13 @@ test('loop stage 1 — observation capture, search, and consume close offline', 
   t.after(() => { delete process.env.CONSTRUCT_EMBEDDING_MODEL; });
 
   // The observation store resolves the machine-scoped state root (ADR-0066)
-  // via CX_HOME_OVERRIDE read in-process, not via the `root` argument above —
+  // via CONSTRUCT_HOME_OVERRIDE read in-process, not via the `root` argument above —
   // pin it or these calls write into the real developer machine's home.
-  const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = root;
+  const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = root;
   t.after(() => {
-    if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+    if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
   });
 
   const seeds = [
@@ -80,7 +80,7 @@ test('loop stage 1 — observation capture, search, and consume close offline', 
   ];
   for (const summary of seeds) {
     await addObservation(root, {
-      role: 'cx-engineer', category: 'pattern', summary,
+      role: 'engineer', category: 'pattern', summary,
       content: `${summary} — detail body for embedding.`, tags: ['loop-test'],
       project: 'looptest', confidence: 0.8, source: 'manual',
     });
@@ -135,7 +135,7 @@ test('loop stage 3 — role queue rejects fixtures and clears only on explicit r
   const pendingFile = join(root, '.cx', 'role-pending.jsonl');
   mkdirSync(join(root, '.cx'), { recursive: true });
   appendFileSync(pendingFile, JSON.stringify({
-    ts: Date.now(), personaId: 'engineer', cxId: 'cx-engineer',
+    ts: Date.now(), personaId: 'engineer', workerProfileId: 'engineer',
     fingerprint: 'fp-real', eventType: 'handoff.received', summary: 'loop test', source: 'manual',
   }) + '\n');
 

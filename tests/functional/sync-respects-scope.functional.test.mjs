@@ -12,7 +12,7 @@
  *                    `.cursor/`, `.vscode/`). User-scope is untouched.
  *
  * Three cases, each isolated in a tmp HOME + tmp project, asserting on the
- * filesystem aftermath of spawning the real sync-specialists.mjs.
+ * filesystem aftermath of spawning the real sync-worker-profiles.mjs.
  */
 
 import { spawnSync } from 'node:child_process';
@@ -25,7 +25,7 @@ import test from 'node:test';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const SYNC_SCRIPT = join(REPO_ROOT, 'scripts', 'sync-specialists.mjs');
+const SYNC_SCRIPT = join(REPO_ROOT, 'scripts', 'sync-worker-profiles.mjs');
 
 // `construct sync` now defaults to detected hosts (ADR-0027 §1); a sterile HOME
 // detects none, so pin the full set to audit the cross-host scope model.
@@ -138,7 +138,7 @@ test('user-authored cx-* files with names outside the registry are NOT swept', (
     mkdirSync(join(env.HOME, '.github/prompts'), { recursive: true });
     mkdirSync(join(env.HOME, '.codex/agents'), { recursive: true });
 
-    writeFileSync(join(env.HOME, '.claude/agents/cx-architect.md'), 'managed legacy\n');
+    writeFileSync(join(env.HOME, '.claude/agents/architect.md'), 'managed legacy\n');
     writeFileSync(join(env.HOME, '.claude/agents/cx-mytool.md'), 'USER FILE — keep me\n');
     writeFileSync(join(env.HOME, '.github/prompts/cx-mytool.prompt.md'), 'USER FILE — keep me\n');
     writeFileSync(join(env.HOME, '.codex/agents/cx-mytool.toml'), '# USER FILE\nname = "cx-mytool"\n');
@@ -146,7 +146,7 @@ test('user-authored cx-* files with names outside the registry are NOT swept', (
     const r = runSync(env, ['--global']);
     assert.equal(r.status, 0, `--global failed: ${r.stderr}`);
 
-    assert.ok(!existsSync(join(env.HOME, '.claude/agents/cx-architect.md')), 'managed cx-architect.md should be swept');
+    assert.ok(!existsSync(join(env.HOME, '.claude/agents/architect.md')), 'managed architect.md should be swept');
     assert.ok(existsSync(join(env.HOME, '.claude/agents/cx-mytool.md')), 'user cx-mytool.md must NOT be swept');
     assert.ok(existsSync(join(env.HOME, '.github/prompts/cx-mytool.prompt.md')), 'user cx-mytool.prompt.md must NOT be swept');
     assert.ok(existsSync(join(env.HOME, '.codex/agents/cx-mytool.toml')), 'user cx-mytool.toml must NOT be swept');
@@ -186,7 +186,7 @@ test('legacy cx-* files at HOME are swept by --global sync (idempotent)', () => 
     for (const sub of ['.claude/agents', '.codex/agents', '.github/prompts']) {
       mkdirSync(join(env.HOME, sub), { recursive: true });
     }
-    for (const name of ['cx-architect', 'cx-engineer', 'cx-reviewer']) {
+    for (const name of ['architect', 'engineer', 'reviewer']) {
       writeFileSync(join(env.HOME, '.claude/agents', `${name}.md`), 'legacy\n');
       writeFileSync(join(env.HOME, '.codex/agents', `${name}.toml`), 'legacy\n');
       writeFileSync(join(env.HOME, '.github/prompts', `${name}.prompt.md`), 'legacy\n');

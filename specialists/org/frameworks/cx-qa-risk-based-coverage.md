@@ -1,5 +1,5 @@
 ---
-id: cx-qa-risk-based-coverage
+id: qa-risk-based-coverage
 version: 1
 appliesToRole: qa
 summary: >-

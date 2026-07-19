@@ -79,7 +79,7 @@ function assertFlowStateSmoke(command) {
   try {
     const markerPath = join(env.project, 'steps.log');
     const flowPath = writeFlowModule(env.project, markerPath);
-    const spawnEnv = sterileSpawnEnv({ HOME: env.HOME, CX_HOME_OVERRIDE: env.HOME });
+    const spawnEnv = sterileSpawnEnv({ HOME: env.HOME, CONSTRUCT_HOME_OVERRIDE: env.HOME });
 
     const resume = spawnSync(command[0], [...command.slice(1), 'flow', 'resume', 'smoke-run-1', `--flow=${flowPath}`, '--state={"count":0}'], {
       cwd: env.project,

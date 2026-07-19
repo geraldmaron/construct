@@ -5,7 +5,7 @@
  * Pins three guarantees for lib/orchestration/worker.mjs runTaskViaProvider:
  *   1. An invalid input packet (task.packet) throws CONTRACT_VIOLATION_INPUT
  *      before any provider call — hard fail, blocks execution — and is logged
- *      to .cx/contract-violations.jsonl.
+ *      to .construct/contract-violations.jsonl.
  *   2. An invalid output packet (task.outputPacket) never throws; the result
  *      carries contractStatus:'contract-failed' plus contractViolations, and
  *      the violation is logged, while the real model output still rides the
@@ -42,8 +42,8 @@ test('invalid input packet blocks execution with CONTRACT_VIOLATION_INPUT and ne
   const cwd = tempDir('cx-worker-boundary-input-', test);
   let providerCalled = false;
   const task = {
-    role: 'cx-reviewer',
-    // cx-reviewer has multiple incoming contracts since construct-rf26.11
+    role: 'reviewer',
+    // reviewer has multiple incoming contracts since construct-rf26.11
     // folded devil-advocate/evaluator/trace-reviewer into it, so an explicit
     // inputContractId is required to disambiguate (see the ambiguous-role
     // test below). engineer-to-reviewer input requires filesChanged,
@@ -75,8 +75,8 @@ test('invalid input packet blocks execution with CONTRACT_VIOLATION_INPUT and ne
 test('a conforming input packet passes validation and reaches the provider', async () => {
   const cwd = tempDir('cx-worker-boundary-input-ok-', test);
   const task = {
-    role: 'cx-reviewer',
-    // See the note in the invalid-packet test above: cx-reviewer now has
+    role: 'reviewer',
+    // See the note in the invalid-packet test above: reviewer now has
     // multiple incoming contracts post-construct-rf26.11, so this must be explicit.
     inputContractId: 'engineer-to-reviewer',
     packet: {
@@ -95,15 +95,15 @@ test('a conforming input packet passes validation and reaches the provider', asy
 });
 
 test('validateInputPacket skips validation when the task carries no packet (pre-F2 shape)', () => {
-  const result = validateInputPacket({ role: 'cx-reviewer' }, { cwd: tempDir('cx-worker-boundary-skip-', test) });
+  const result = validateInputPacket({ role: 'reviewer' }, { cwd: tempDir('cx-worker-boundary-skip-', test) });
   assert.equal(result.checked, false);
 });
 
 test('validateInputPacket skips validation when no contract resolves unambiguously (ambiguous role)', () => {
-  // cx-engineer has 4 incoming contracts; resolving one automatically without
+  // engineer has 4 incoming contracts; resolving one automatically without
   // an explicit inputContractId would require guessing among them, so the
   // packet stays unchecked instead of being validated against a guessed contract.
-  const result = validateInputPacket({ role: 'cx-engineer', packet: { anything: true } }, { cwd: tempDir('cx-worker-boundary-ambiguous-', test) });
+  const result = validateInputPacket({ role: 'engineer', packet: { anything: true } }, { cwd: tempDir('cx-worker-boundary-ambiguous-', test) });
   assert.equal(result.checked, false);
 });
 
@@ -117,32 +117,32 @@ test('validateInputPacket skips validation when no contract resolves unambiguous
 // leaves more than one candidate.
 
 test('resolveOutputContractId disambiguates by the next dispatched task\'s role when the bare role is ambiguous', () => {
-  // cx-architect alone has 15 outgoing contracts (ambiguous), but exactly one
-  // has consumer cx-security: architect-to-security.
+  // architect alone has 15 outgoing contracts (ambiguous), but exactly one
+  // has consumer security: architect-to-security.
   const run = { tasks: [
-    { id: 't1', seq: 0, role: 'cx-architect', status: 'done' },
-    { id: 't2', seq: 1, role: 'cx-security', status: 'awaiting-host' },
+    { id: 't1', seq: 0, role: 'architect', status: 'done' },
+    { id: 't2', seq: 1, role: 'security', status: 'awaiting-host' },
   ] };
   assert.equal(resolveOutputContractId(run.tasks[0], run), 'architect-to-security');
 });
 
 test('resolveInputContractId disambiguates by the previous dispatched task\'s role when the bare role is ambiguous', () => {
   const run = { tasks: [
-    { id: 't1', seq: 0, role: 'cx-architect', status: 'done' },
-    { id: 't2', seq: 1, role: 'cx-security', status: 'awaiting-host' },
+    { id: 't1', seq: 0, role: 'architect', status: 'done' },
+    { id: 't2', seq: 1, role: 'security', status: 'awaiting-host' },
   ] };
   assert.equal(resolveInputContractId(run.tasks[1], run), 'architect-to-security');
 });
 
 test('adjacent-task disambiguation still returns null (never guesses) when several candidates share the same consumer', () => {
-  // cx-architect -> cx-engineer is still ambiguous even narrowed by consumer
+  // architect -> engineer is still ambiguous even narrowed by consumer
   // role: architect-to-engineer-ai, architect-to-engineer-data,
   // architect-to-engineer, and architect-to-engineer-platform (a real,
   // pre-existing 29-role-era contract-corpus gap — construct-72gqn epic D1
   // reconciles it; this bead's job is correct plumbing, not guessing).
   const run = { tasks: [
-    { id: 't1', seq: 0, role: 'cx-architect', status: 'done' },
-    { id: 't2', seq: 1, role: 'cx-engineer', status: 'awaiting-host' },
+    { id: 't1', seq: 0, role: 'architect', status: 'done' },
+    { id: 't2', seq: 1, role: 'engineer', status: 'awaiting-host' },
   ] };
   assert.equal(resolveOutputContractId(run.tasks[0], run), null);
 });
@@ -150,15 +150,15 @@ test('adjacent-task disambiguation still returns null (never guesses) when sever
 test('resolveOutputContractId without a run argument behaves exactly as before disambiguation existed', () => {
   // lib/orchestration/build-audit-record.mjs calls resolveOutputContractId(task)
   // with no run — must keep working unchanged.
-  assert.equal(resolveOutputContractId({ role: 'cx-architect' }), null);
-  assert.equal(resolveOutputContractId({ role: 'cx-architect', handoffContract: 'architect-to-engineer' }), 'architect-to-engineer');
+  assert.equal(resolveOutputContractId({ role: 'architect' }), null);
+  assert.equal(resolveOutputContractId({ role: 'architect', handoffContract: 'architect-to-engineer' }), 'architect-to-engineer');
 });
 
 test('validateInputPacket honors an explicit inputContractId override', () => {
   const cwd = tempDir('cx-worker-boundary-explicit-', test);
   assert.throws(
     () => validateInputPacket({
-      role: 'cx-engineer',
+      role: 'engineer',
       inputContractId: 'architect-to-engineer',
       packet: { goal: 'g' },
     }, { cwd }),
@@ -178,7 +178,7 @@ test('invalid output packet marks the result blocked-contract, logs, and preserv
     // not match the contract's declared producer for this unit-level check.
     // engineer-to-reviewer output requires verdict (enum-constrained) plus
     // findings|noIssuesFoundAt.
-    role: 'cx-reviewer',
+    role: 'reviewer',
     handoffContract: 'engineer-to-reviewer',
     outputPacket: { verdict: 'LGTM' },
   };
@@ -200,7 +200,7 @@ test('invalid output packet marks the result blocked-contract, logs, and preserv
 test('a conforming output packet marks the result contractStatus ok and logs nothing', async () => {
   const cwd = tempDir('cx-worker-boundary-output-ok-', test);
   const task = {
-    role: 'cx-reviewer',
+    role: 'reviewer',
     handoffContract: 'engineer-to-reviewer',
     // The in-run check is the full both-ends validateHandoff pass
     // (construct-pteo2.14), so a conforming packet carries the consumer-side
@@ -226,14 +226,14 @@ test('a conforming output packet marks the result contractStatus ok and logs not
 });
 
 test('validateOutputPacket skips validation when the task carries no outputPacket (pre-F2 shape)', () => {
-  const result = validateOutputPacket({ role: 'cx-reviewer', handoffContract: 'engineer-to-reviewer' }, { cwd: tempDir('cx-worker-boundary-output-skip-', test) });
+  const result = validateOutputPacket({ role: 'reviewer', handoffContract: 'engineer-to-reviewer' }, { cwd: tempDir('cx-worker-boundary-output-skip-', test) });
   assert.equal(result.checked, false);
   assert.equal(result.contractStatus, 'unchecked');
 });
 
 test('runTaskViaProvider result always carries contractStatus, defaulting to unchecked on an unopted-in task', async () => {
   const cwd = tempDir('cx-worker-boundary-default-', test);
-  const task = { role: 'cx-engineer', reason: 'implement the change' };
+  const task = { role: 'engineer', reason: 'implement the change' };
   const run = { request: { summary: 'refactor the auth module' } };
   const result = await runTaskViaProvider({ task, run, model: MODEL, provider: 'anthropic', env: ENV, cwd, fetchImpl: fetchOk() });
   assert.equal(result.contractStatus, 'unchecked');
@@ -244,7 +244,7 @@ test('runTaskViaProvider result always carries contractStatus, defaulting to unc
 
 test('a bare task with no packet fields behaves exactly as pre-F2 (no throw, no log, real output)', async () => {
   const cwd = tempDir('cx-worker-boundary-parity-', test);
-  const task = { role: 'cx-engineer', reason: 'implement the change', handoffContract: null };
+  const task = { role: 'engineer', reason: 'implement the change', handoffContract: null };
   const run = { request: { summary: 'refactor the auth module' } };
   const result = await runTaskViaProvider({ task, run, model: MODEL, provider: 'anthropic', env: ENV, cwd, fetchImpl: fetchOk('engineer result') });
   assert.equal(result.output, 'engineer result');
@@ -257,8 +257,8 @@ test('a bare task with no packet fields behaves exactly as pre-F2 (no throw, no 
 test('a real two-task run auto-populates packets, disambiguates the contract, and records real observability without degrading', async () => {
   const cwd = tempDir('cx-worker-boundary-e2e-', test);
   const run = { runId: 'run-e2e-1', request: { summary: 'implement and verify a rate limiter' }, tasks: [] };
-  const engineerTask = { id: 't1', seq: 0, role: 'cx-engineer', reason: 'implement the change', handoffContract: null };
-  const qaTask = { id: 't2', seq: 1, role: 'cx-qa', reason: 'verify the change', handoffContract: null };
+  const engineerTask = { id: 't1', seq: 0, role: 'engineer', reason: 'implement the change', handoffContract: null };
+  const qaTask = { id: 't2', seq: 1, role: 'qa', reason: 'verify the change', handoffContract: null };
   run.tasks.push(engineerTask, qaTask);
 
   const engineerResult = await runTaskViaProvider({
@@ -269,8 +269,8 @@ test('a real two-task run auto-populates packets, disambiguates the contract, an
   engineerTask.status = 'done';
 
   // engineer's output packet auto-populated from real free-text output —
-  // engineer-to-qa is the one contract with cx-qa as consumer, so the
-  // adjacent-task disambiguation resolves it even though cx-engineer alone
+  // engineer-to-qa is the one contract with qa as consumer, so the
+  // adjacent-task disambiguation resolves it even though engineer alone
   // has 9 ambiguous outgoing contracts.
   assert.deepEqual(engineerTask.outputPacket, { content: engineerResult.output });
   assert.equal(engineerResult.contractId, 'engineer-to-qa');
@@ -295,7 +295,7 @@ test('a real two-task run auto-populates packets, disambiguates the contract, an
   // qa's INPUT packet auto-populated from engineer's real output (LMCP-B) —
   // the downstream task's handoff carries the real upstream artifact H6a/H6b
   // exist to prove, not a fabricated one.
-  assert.deepEqual(qaTask.packet, { fromRole: 'cx-engineer', content: engineerResult.output });
+  assert.deepEqual(qaTask.packet, { fromRole: 'engineer', content: engineerResult.output });
   assert.equal(qaResult.output, 'Ran the new rate-limiter tests; all passed.', 'real, already-paid-for output is never discarded by a contract violation');
 
   const allViolations = readViolations(cwd);

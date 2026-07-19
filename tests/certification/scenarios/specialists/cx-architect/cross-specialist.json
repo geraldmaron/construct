@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "specialistId": "cx-architect",
+  "specialistId": "architect",
   "capabilityId": "specialist.prompt",
   "mode": "normal",
   "scenarioKind": "cross-specialist",

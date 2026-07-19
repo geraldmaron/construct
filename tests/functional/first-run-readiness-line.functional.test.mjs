@@ -43,7 +43,7 @@ test.after(() => { for (const d of dirs) { try { rmTmpDir(d); } catch {} } });
 function baseEnv(dir, overrides = {}) {
   return sterileSpawnEnv({
     HOME: dir,
-    CX_HOME_OVERRIDE: dir,
+    CONSTRUCT_HOME_OVERRIDE: dir,
     CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
     BOOTSTRAP_CHECKED: '1',
     ...overrides,

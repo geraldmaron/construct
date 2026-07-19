@@ -43,7 +43,7 @@ Add that to `~/.zshrc` if the variable persists across Cursor sessions. Construc
 
 ### Brand prose (marketing voice and naming)
 
-`lib/hooks/brand-prose-lint.mjs` blocks edits to governed docs/templates that introduce marketing voice, retired fonts, or miscapitalized CLI references. Run `node scripts/audit/03d-brand.mjs` for a full-repo sweep. Refresh a stale `.cx/construct_guide.md` with `construct init:update` (proposal) or `construct init:update --apply-guide` (template replace with backup).
+`lib/hooks/brand-prose-lint.mjs` blocks edits to governed docs/templates that introduce marketing voice, retired fonts, or miscapitalized CLI references. Run `node scripts/audit/03d-brand.mjs` for a full-repo sweep. Refresh a stale `.construct/construct_guide.md` with `construct init:update` (proposal) or `construct init:update --apply-guide` (template replace with backup).
 
 ## Commit messages
 

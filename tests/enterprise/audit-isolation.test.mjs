@@ -20,7 +20,7 @@
  *
  * The observation/entity store cases resolve project state through the
  * machine-scoped state root (ADR-0066), keyed by a hash of each tmp rootDir —
- * so CX_HOME_OVERRIDE is pinned for the whole file to keep those writes off
+ * so CONSTRUCT_HOME_OVERRIDE is pinned for the whole file to keep those writes off
  * the real developer machine's $HOME.
  */
 import { describe, it, before, after } from 'node:test';
@@ -48,8 +48,8 @@ let prevHomeOverride;
 
 before(() => {
   homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-audit-isolation-home-'));
-  prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = homeOverride;
+  prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 });
 
 const tmpDirs = [];
@@ -58,8 +58,8 @@ after(() => {
     try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* best-effort cleanup */ }
   }
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch { /* best-effort cleanup */ }
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 function tmp(prefix) {
@@ -99,7 +99,7 @@ describe('mandatory audit — fail closed when the sink is down', () => {
 
   it('policyDecision refuses an enterprise action end-to-end when the audit sink is down', () => {
     const decision = policyDecision(
-      { role: 'cx-engineer', tool: 'Edit', action: 'files:write', deploymentMode: 'enterprise' },
+      { role: 'engineer', tool: 'Edit', action: 'files:write', deploymentMode: 'enterprise' },
       { checkSink: downSink('read-only file system') },
     );
     assert.equal(decision.allowed, false, 'enterprise action must be refused when the audit sink is down');
@@ -113,14 +113,14 @@ describe('mandatory audit — fail closed when the sink is down', () => {
     // must be the reason recorded, proving it runs (and wins) ahead of the
     // manifest/deny-by-default path rather than coincidentally agreeing with it.
     const withHealthySink = policyDecision(
-      { role: 'cx-engineer', tool: 'Read', action: 'files:read', deploymentMode: 'enterprise' },
+      { role: 'engineer', tool: 'Read', action: 'files:read', deploymentMode: 'enterprise' },
       { checkSink: healthySink() },
     );
     assert.equal(withHealthySink.allowed, false, 'sanity: no manifest for this role means enterprise still denies');
     assert.notEqual(withHealthySink.source, AUDIT_GATE_SOURCE, 'sanity: this denial is from manifest lookup, not the audit gate');
 
     const withDownSinkEnterprise = policyDecision(
-      { role: 'cx-engineer', tool: 'Read', action: 'files:read', deploymentMode: 'enterprise' },
+      { role: 'engineer', tool: 'Read', action: 'files:read', deploymentMode: 'enterprise' },
       { checkSink: downSink() },
     );
     assert.equal(withDownSinkEnterprise.allowed, false);
@@ -132,7 +132,7 @@ describe('mandatory audit — fail closed when the sink is down', () => {
     // for this identity-less enterprise call) — the point under test is that the gate
     // itself yields control back rather than permanently refusing.
     const decision = policyDecision(
-      { role: 'cx-engineer', tool: 'Edit', action: 'files:write', deploymentMode: 'enterprise' },
+      { role: 'engineer', tool: 'Edit', action: 'files:write', deploymentMode: 'enterprise' },
       { checkSink: healthySink() },
     );
     assert.notEqual(decision.source, AUDIT_GATE_SOURCE);
@@ -282,8 +282,8 @@ describe('cross-tenant isolation — intake queue', () => {
     // is the bead that lands physical per-tenant queue storage) — entries
     // are stamped with tenantId so a reader can filter, which is exactly
     // what scopeToTenant/readTenantScoped enforce below.
-    queueA.enqueue({ tenantId: queueA.tenantId, intake: { sourcePath: '/repo/a.md', outputPath: '/out/a.md', characters: 10, knowledgeSubdir: 'a' }, triage: { intakeType: 'note', rdStage: 'discover', primaryOwner: 'cx-engineer', recommendedChain: [], recommendedAction: 'file', risk: 'low', requiresApproval: false, confidence: 0.9, rationale: 'test' }, suggestion: { lane: 'default', source: 'test' }, related: [], excerpt: '', query: '' });
-    queueB.enqueue({ tenantId: queueB.tenantId, intake: { sourcePath: '/repo/b.md', outputPath: '/out/b.md', characters: 10, knowledgeSubdir: 'b' }, triage: { intakeType: 'note', rdStage: 'discover', primaryOwner: 'cx-engineer', recommendedChain: [], recommendedAction: 'file', risk: 'low', requiresApproval: false, confidence: 0.9, rationale: 'test' }, suggestion: { lane: 'default', source: 'test' }, related: [], excerpt: '', query: '' });
+    queueA.enqueue({ tenantId: queueA.tenantId, intake: { sourcePath: '/repo/a.md', outputPath: '/out/a.md', characters: 10, knowledgeSubdir: 'a' }, triage: { intakeType: 'note', rdStage: 'discover', primaryOwner: 'engineer', recommendedChain: [], recommendedAction: 'file', risk: 'low', requiresApproval: false, confidence: 0.9, rationale: 'test' }, suggestion: { lane: 'default', source: 'test' }, related: [], excerpt: '', query: '' });
+    queueB.enqueue({ tenantId: queueB.tenantId, intake: { sourcePath: '/repo/b.md', outputPath: '/out/b.md', characters: 10, knowledgeSubdir: 'b' }, triage: { intakeType: 'note', rdStage: 'discover', primaryOwner: 'engineer', recommendedChain: [], recommendedAction: 'file', risk: 'low', requiresApproval: false, confidence: 0.9, rationale: 'test' }, suggestion: { lane: 'default', source: 'test' }, related: [], excerpt: '', query: '' });
 
     const allPending = queueA.listPending();
     assert.equal(allPending.length, 2, 'sanity: both entries land in the shared rootDir-scoped queue');
@@ -317,13 +317,13 @@ describe('cross-tenant isolation — memory (observation store)', () => {
     const rootB = tmp('cx-mem-tenant-b-');
 
     // addObservation/listObservations resolve the machine-scoped state root
-    // (ADR-0066) via CX_HOME_OVERRIDE read in-process, not via rootA/rootB —
+    // (ADR-0066) via CONSTRUCT_HOME_OVERRIDE read in-process, not via rootA/rootB —
     // pin it or they write into the real developer machine's home.
-    const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-    process.env.CX_HOME_OVERRIDE = rootA;
+    const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+    process.env.CONSTRUCT_HOME_OVERRIDE = rootA;
     try {
-      await addObservation(rootA, { role: 'cx-engineer', category: 'insight', summary: 'tenant-a-secret-summary', content: 'tenant-a-secret-content', project: 'tenant-a' });
-      await addObservation(rootB, { role: 'cx-engineer', category: 'insight', summary: 'tenant-b-secret-summary', content: 'tenant-b-secret-content', project: 'tenant-b' });
+      await addObservation(rootA, { role: 'engineer', category: 'insight', summary: 'tenant-a-secret-summary', content: 'tenant-a-secret-content', project: 'tenant-a' });
+      await addObservation(rootB, { role: 'engineer', category: 'insight', summary: 'tenant-b-secret-summary', content: 'tenant-b-secret-content', project: 'tenant-b' });
 
       const viewFromB = listObservations(rootB, { limit: 100 });
       assert.ok(!viewFromB.some((o) => o.summary === 'tenant-a-secret-summary'), 'tenant A observation must never be visible from tenant B rootDir');
@@ -333,8 +333,8 @@ describe('cross-tenant isolation — memory (observation store)', () => {
       assert.ok(!viewFromA.some((o) => o.summary === 'tenant-b-secret-summary'), 'tenant B observation must never be visible from tenant A rootDir');
       assert.ok(viewFromA.some((o) => o.summary === 'tenant-a-secret-summary'));
     } finally {
-      if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-      else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+      if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+      else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
     }
   });
 });

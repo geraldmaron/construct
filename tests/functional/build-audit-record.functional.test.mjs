@@ -49,7 +49,7 @@ test('buildAuditRecord joins run-store tasks, trace events, and violation-log en
     const traceId = newTraceId();
     const task = {
       id: 'task-1',
-      role: 'cx-engineer',
+      role: 'engineer',
       status: 'completed',
       executor: 'provider',
       // engineer-to-reviewer (specialists/org/contracts/engineer-to-reviewer.json)

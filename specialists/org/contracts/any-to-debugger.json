@@ -1,7 +1,7 @@
 {
   "id": "any-to-debugger",
   "producer": "*",
-  "consumer": "cx-debugger",
+  "consumer": "debugger",
   "trigger": {
     "intent": "investigation",
     "category": "bug"

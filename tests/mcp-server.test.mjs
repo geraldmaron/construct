@@ -1,7 +1,7 @@
 /**
  * tests/mcp-server.test.mjs — MCP server tool contract and trace metadata tests
  *
- * Tests the MCP server tool implementations: cxTrace, project_context,
+ * Tests the MCP server tool implementations: constructTrace, project_context,
  * and related tools. Verifies execution-contract model metadata, tool schema parity,
  * and that project-context tools return the expected public health contract shape.
  * Run via npm test.
@@ -12,7 +12,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-test('cxTrace includes execution-contract model metadata parity', async (t) => {
+test('constructTrace includes execution-contract model metadata parity', async (t) => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-mcp-root-'));
   const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-mcp-home-'));
   t.after(() => {
@@ -20,40 +20,29 @@ test('cxTrace includes execution-contract model metadata parity', async (t) => {
     try { fs.rmSync(homeDir, { recursive: true, force: true }); } catch {}
   });
 
-  fs.cpSync(path.join(process.cwd(), 'specialists', 'org'), path.join(rootDir, 'specialists', 'org'), { recursive: true });
-  fs.mkdirSync(path.join(rootDir, 'agents', 'prompts'), { recursive: true });
-  fs.writeFileSync(path.join(rootDir, 'agents', 'registry.json'), JSON.stringify({
-    models: {
-      reasoning: { primary: 'claude-opus-4-1-20250805' },
-      standard: { primary: 'claude-3-5-sonnet-20241022' },
-      fast: { primary: 'claude-3-5-haiku-20241022' },
-    },
-    personas: [],
-    agents: [{ name: 'engineer', promptFile: 'specialists/prompts/cx-engineer.md' }],
-  }, null, 2));
-  fs.writeFileSync(path.join(rootDir, 'agents', 'prompts', 'cx-engineer.md'), '# Engineer\n');
-  fs.writeFileSync(path.join(rootDir, '.env'), 'CX_MODEL_REASONING=env/reasoning\nCX_MODEL_STANDARD=env/standard\nCX_MODEL_FAST=env/fast\n');
+  fs.cpSync(path.join(process.cwd(), 'registry'), path.join(rootDir, 'registry'), { recursive: true });
+  fs.writeFileSync(path.join(rootDir, '.env'), 'CONSTRUCT_MODEL_REASONING=env/reasoning\nCX_MODEL_STANDARD=env/standard\nCX_MODEL_FAST=env/fast\n');
 
-  const originalToolkit = process.env.CX_TOOLKIT_DIR;
+  const originalToolkit = process.env.CONSTRUCT_TOOLKIT_DIR;
   const originalHome = process.env.HOME;
   const originalPublic = process.env.CONSTRUCT_TELEMETRY_PUBLIC_KEY;
   const originalSecret = process.env.CONSTRUCT_TELEMETRY_SECRET_KEY;
   const originalUrl = process.env.CONSTRUCT_TELEMETRY_URL;
   const originalBackend = process.env.CONSTRUCT_TRACE_BACKEND;
-  const originalReasoning = process.env.CX_MODEL_REASONING;
-  const originalStandard = process.env.CX_MODEL_STANDARD;
-  const originalFast = process.env.CX_MODEL_FAST;
+  const originalReasoning = process.env.CONSTRUCT_MODEL_REASONING;
+  const originalStandard = process.env.CONSTRUCT_MODEL_STANDARD;
+  const originalFast = process.env.CONSTRUCT_MODEL_FAST;
   const originalFetch = global.fetch;
 
-  process.env.CX_TOOLKIT_DIR = rootDir;
+  process.env.CONSTRUCT_TOOLKIT_DIR = rootDir;
   process.env.HOME = homeDir;
   process.env.CONSTRUCT_TELEMETRY_PUBLIC_KEY = 'pk-test';
   process.env.CONSTRUCT_TELEMETRY_SECRET_KEY = 'sk-test';
   process.env.CONSTRUCT_TELEMETRY_URL = 'https://telemetry.example.com';
   process.env.CONSTRUCT_TRACE_BACKEND = 'langfuse';
-  process.env.CX_MODEL_REASONING = 'env/reasoning';
-  process.env.CX_MODEL_STANDARD = 'env/standard';
-  process.env.CX_MODEL_FAST = 'env/fast';
+  process.env.CONSTRUCT_MODEL_REASONING = 'env/reasoning';
+  process.env.CONSTRUCT_MODEL_STANDARD = 'env/standard';
+  process.env.CONSTRUCT_MODEL_FAST = 'env/fast';
 
   let postedBody = null;
   global.fetch = async (_url, options = {}) => {
@@ -63,15 +52,15 @@ test('cxTrace includes execution-contract model metadata parity', async (t) => {
   };
 
   try {
-    const { cxTrace } = await import(`../lib/mcp/server.mjs?test=${Date.now()}`);
-    const result = await cxTrace({
-      name: 'cx-engineer',
+    const { constructTrace } = await import(`../lib/mcp/server.mjs?test=${Date.now()}`);
+    const result = await constructTrace({
+      name: 'engineer',
       input: 'fix routing issue in auth flow',
-      metadata: { teamId: 'team-1' },
+      metadata: { workspacePresetId: 'rnd' },
     }, { ROOT_DIR: rootDir });
-    console.log('DEBUG result:', JSON.stringify({ ok: result.ok, error: result.error, id: result.id }));
     assert.equal(result.ok, true);
-    assert.equal(postedBody.metadata.version, 'v1');
+    assert.equal(postedBody.metadata.workspacePresetId, 'rnd');
+    assert.equal('version' in postedBody.metadata, false);
     assert.equal(postedBody.metadata.workCategory, 'quick');
     assert.equal(postedBody.metadata.selectedTier, 'fast');
     assert.equal(postedBody.metadata.selectedModel, 'env/fast');
@@ -83,15 +72,15 @@ test('cxTrace includes execution-contract model metadata parity', async (t) => {
     });
   } finally {
     global.fetch = originalFetch;
-    if (originalToolkit === undefined) delete process.env.CX_TOOLKIT_DIR; else process.env.CX_TOOLKIT_DIR = originalToolkit;
+    if (originalToolkit === undefined) delete process.env.CONSTRUCT_TOOLKIT_DIR; else process.env.CONSTRUCT_TOOLKIT_DIR = originalToolkit;
     if (originalHome === undefined) delete process.env.HOME; else process.env.HOME = originalHome;
     if (originalPublic === undefined) delete process.env.CONSTRUCT_TELEMETRY_PUBLIC_KEY; else process.env.CONSTRUCT_TELEMETRY_PUBLIC_KEY = originalPublic;
     if (originalSecret === undefined) delete process.env.CONSTRUCT_TELEMETRY_SECRET_KEY; else process.env.CONSTRUCT_TELEMETRY_SECRET_KEY = originalSecret;
     if (originalUrl === undefined) delete process.env.CONSTRUCT_TELEMETRY_URL; else process.env.CONSTRUCT_TELEMETRY_URL = originalUrl;
     if (originalBackend === undefined) delete process.env.CONSTRUCT_TRACE_BACKEND; else process.env.CONSTRUCT_TRACE_BACKEND = originalBackend;
-    if (originalReasoning === undefined) delete process.env.CX_MODEL_REASONING; else process.env.CX_MODEL_REASONING = originalReasoning;
-    if (originalStandard === undefined) delete process.env.CX_MODEL_STANDARD; else process.env.CX_MODEL_STANDARD = originalStandard;
-    if (originalFast === undefined) delete process.env.CX_MODEL_FAST; else process.env.CX_MODEL_FAST = originalFast;
+    if (originalReasoning === undefined) delete process.env.CONSTRUCT_MODEL_REASONING; else process.env.CONSTRUCT_MODEL_REASONING = originalReasoning;
+    if (originalStandard === undefined) delete process.env.CONSTRUCT_MODEL_STANDARD; else process.env.CONSTRUCT_MODEL_STANDARD = originalStandard;
+    if (originalFast === undefined) delete process.env.CONSTRUCT_MODEL_FAST; else process.env.CONSTRUCT_MODEL_FAST = originalFast;
   }
 });
 
@@ -103,18 +92,8 @@ test('projectContext exposes tracker-plus-plan public-health fields', async (t) 
     try { fs.rmSync(homeDir, { recursive: true, force: true }); } catch {}
   });
 
-  fs.cpSync(path.join(process.cwd(), 'specialists', 'org'), path.join(rootDir, 'specialists', 'org'), { recursive: true });
+  fs.cpSync(path.join(process.cwd(), 'registry'), path.join(rootDir, 'registry'), { recursive: true });
   fs.mkdirSync(path.join(rootDir, '.construct'), { recursive: true });
-  fs.mkdirSync(path.join(rootDir, 'agents', 'prompts'), { recursive: true });
-  fs.writeFileSync(path.join(rootDir, 'agents', 'registry.json'), JSON.stringify({
-    models: {
-      reasoning: { primary: 'claude-opus-4-1-20250805' },
-      standard: { primary: 'claude-3-5-sonnet-20241022' },
-      fast: { primary: 'claude-3-5-haiku-20241022' },
-    },
-    personas: [],
-    agents: [],
-  }, null, 2));
   fs.writeFileSync(path.join(rootDir, '.construct', 'context.json'), JSON.stringify({
     format: 'json',
     savedAt: '2026-04-19T05:15:00.000Z',
@@ -123,10 +102,10 @@ test('projectContext exposes tracker-plus-plan public-health fields', async (t) 
   }, null, 2));
   fs.writeFileSync(path.join(rootDir, 'plan.md'), '# Plan\n\n- Keep public health tracker-backed.\n- One writer per file.\n');
 
-  const originalToolkit = process.env.CX_TOOLKIT_DIR;
+  const originalToolkit = process.env.CONSTRUCT_TOOLKIT_DIR;
   const originalHome = process.env.HOME;
 
-  process.env.CX_TOOLKIT_DIR = rootDir;
+  process.env.CONSTRUCT_TOOLKIT_DIR = rootDir;
   process.env.HOME = homeDir;
 
   try {
@@ -140,7 +119,7 @@ test('projectContext exposes tracker-plus-plan public-health fields', async (t) 
     assert.equal(project.publicHealth.metadataPresence.executionContractModel, true);
     assert.equal(project.publicHealth.metadataPresence.contextState, true);
   } finally {
-    if (originalToolkit === undefined) delete process.env.CX_TOOLKIT_DIR; else process.env.CX_TOOLKIT_DIR = originalToolkit;
+    if (originalToolkit === undefined) delete process.env.CONSTRUCT_TOOLKIT_DIR; else process.env.CONSTRUCT_TOOLKIT_DIR = originalToolkit;
     if (originalHome === undefined) delete process.env.HOME; else process.env.HOME = originalHome;
   }
 });
@@ -153,24 +132,14 @@ test('status and MCP surfaces agree on public-health metadata presence semantics
     try { fs.rmSync(homeDir, { recursive: true, force: true }); } catch {}
   });
 
-  fs.cpSync(path.join(process.cwd(), 'specialists', 'org'), path.join(rootDir, 'specialists', 'org'), { recursive: true });
+  fs.cpSync(path.join(process.cwd(), 'registry'), path.join(rootDir, 'registry'), { recursive: true });
   fs.mkdirSync(path.join(rootDir, '.construct'), { recursive: true });
-  fs.mkdirSync(path.join(rootDir, 'agents'), { recursive: true });
   fs.writeFileSync(path.join(rootDir, 'package.json'), JSON.stringify({ name: 'construct', version: '1.0.0' }, null, 2));
-  fs.writeFileSync(path.join(rootDir, 'agents', 'registry.json'), JSON.stringify({
-    models: {
-      reasoning: { primary: 'claude-opus-4-1-20250805' },
-      standard: { primary: 'claude-3-5-sonnet-20241022' },
-      fast: { primary: 'claude-3-5-haiku-20241022' },
-    },
-    personas: [],
-    agents: [],
-  }, null, 2));
   fs.writeFileSync(path.join(rootDir, 'plan.md'), '# Plan\n\n- Keep metadata parity between status and MCP.\n');
 
-  const originalToolkit = process.env.CX_TOOLKIT_DIR;
+  const originalToolkit = process.env.CONSTRUCT_TOOLKIT_DIR;
   const originalHome = process.env.HOME;
-  process.env.CX_TOOLKIT_DIR = rootDir;
+  process.env.CONSTRUCT_TOOLKIT_DIR = rootDir;
   process.env.HOME = homeDir;
 
   try {
@@ -191,7 +160,7 @@ test('status and MCP surfaces agree on public-health metadata presence semantics
     assert.equal(project.publicHealth.context.source, 'missing');
     assert.equal(project.publicHealth.metadataPresence.contextState, false);
   } finally {
-    if (originalToolkit === undefined) delete process.env.CX_TOOLKIT_DIR; else process.env.CX_TOOLKIT_DIR = originalToolkit;
+    if (originalToolkit === undefined) delete process.env.CONSTRUCT_TOOLKIT_DIR; else process.env.CONSTRUCT_TOOLKIT_DIR = originalToolkit;
     if (originalHome === undefined) delete process.env.HOME; else process.env.HOME = originalHome;
   }
 });

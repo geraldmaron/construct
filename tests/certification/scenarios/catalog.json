@@ -73,7 +73,7 @@
       "gates": [
         {
           "id": "role-cards-complete",
-          "type": "role-cards-audit"
+          "type": "worker-profile-cards-audit"
         }
       ],
       "model": {
@@ -92,8 +92,8 @@
       },
       "gates": [
         {
-          "id": "specialist-contracts-pass",
-          "type": "specialist-contracts-audit"
+          "id": "worker-profile-contracts-pass",
+          "type": "worker-profile-contracts-audit"
         }
       ],
       "model": {
@@ -526,7 +526,7 @@
       }
     },
     {
-      "id": "specialist.role-overlays",
+      "id": "worker-profile.perspectives",
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
@@ -534,8 +534,8 @@
       },
       "gates": [
         {
-          "id": "role-overlays-complete",
-          "type": "role-overlays-audit"
+          "id": "perspectives-complete",
+          "type": "perspectives-audit"
         }
       ],
       "model": {
@@ -696,7 +696,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-architect/adversarial-role-tailored.json"
+        "path": "tests/certification/scenarios/specialists/architect/adversarial-role-tailored.json"
       },
       "gates": [
         {
@@ -716,7 +716,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-data-analyst/adversarial-role-tailored.json"
+        "path": "tests/certification/scenarios/specialists/data-analyst/adversarial-role-tailored.json"
       },
       "gates": [
         {
@@ -736,7 +736,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-debugger/adversarial-role-tailored.json"
+        "path": "tests/certification/scenarios/specialists/debugger/adversarial-role-tailored.json"
       },
       "gates": [
         {
@@ -756,7 +756,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-designer/adversarial-role-tailored.json"
+        "path": "tests/certification/scenarios/specialists/designer/adversarial-role-tailored.json"
       },
       "gates": [
         {
@@ -776,7 +776,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-engineer/adversarial-role-tailored.json"
+        "path": "tests/certification/scenarios/specialists/engineer/adversarial-role-tailored.json"
       },
       "gates": [
         {
@@ -796,7 +796,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-operations/adversarial-role-tailored.json"
+        "path": "tests/certification/scenarios/specialists/operations/adversarial-role-tailored.json"
       },
       "gates": [
         {
@@ -816,7 +816,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-orchestrator/adversarial-role-tailored.json"
+        "path": "tests/certification/scenarios/specialists/orchestrator/adversarial-role-tailored.json"
       },
       "gates": [
         {
@@ -836,7 +836,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-product-manager/adversarial-role-tailored.json"
+        "path": "tests/certification/scenarios/specialists/product-manager/adversarial-role-tailored.json"
       },
       "gates": [
         {
@@ -856,7 +856,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-qa/adversarial-role-tailored.json"
+        "path": "tests/certification/scenarios/specialists/qa/adversarial-role-tailored.json"
       },
       "gates": [
         {
@@ -876,7 +876,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-researcher/adversarial-role-tailored.json"
+        "path": "tests/certification/scenarios/specialists/researcher/adversarial-role-tailored.json"
       },
       "gates": [
         {
@@ -896,7 +896,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-reviewer/adversarial-role-tailored.json"
+        "path": "tests/certification/scenarios/specialists/reviewer/adversarial-role-tailored.json"
       },
       "gates": [
         {
@@ -916,7 +916,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-security/adversarial-role-tailored.json"
+        "path": "tests/certification/scenarios/specialists/security/adversarial-role-tailored.json"
       },
       "gates": [
         {
@@ -936,7 +936,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-architect/ambiguous.json"
+        "path": "tests/certification/scenarios/specialists/architect/ambiguous.json"
       },
       "gates": [
         {
@@ -956,7 +956,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-data-analyst/ambiguous.json"
+        "path": "tests/certification/scenarios/specialists/data-analyst/ambiguous.json"
       },
       "gates": [
         {
@@ -976,7 +976,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-debugger/ambiguous.json"
+        "path": "tests/certification/scenarios/specialists/debugger/ambiguous.json"
       },
       "gates": [
         {
@@ -996,7 +996,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-designer/ambiguous.json"
+        "path": "tests/certification/scenarios/specialists/designer/ambiguous.json"
       },
       "gates": [
         {
@@ -1016,7 +1016,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-engineer/ambiguous.json"
+        "path": "tests/certification/scenarios/specialists/engineer/ambiguous.json"
       },
       "gates": [
         {
@@ -1036,7 +1036,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-operations/ambiguous.json"
+        "path": "tests/certification/scenarios/specialists/operations/ambiguous.json"
       },
       "gates": [
         {
@@ -1056,7 +1056,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-orchestrator/ambiguous.json"
+        "path": "tests/certification/scenarios/specialists/orchestrator/ambiguous.json"
       },
       "gates": [
         {
@@ -1076,7 +1076,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-product-manager/ambiguous.json"
+        "path": "tests/certification/scenarios/specialists/product-manager/ambiguous.json"
       },
       "gates": [
         {
@@ -1096,7 +1096,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-qa/ambiguous.json"
+        "path": "tests/certification/scenarios/specialists/qa/ambiguous.json"
       },
       "gates": [
         {
@@ -1116,7 +1116,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-researcher/ambiguous.json"
+        "path": "tests/certification/scenarios/specialists/researcher/ambiguous.json"
       },
       "gates": [
         {
@@ -1136,7 +1136,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-reviewer/ambiguous.json"
+        "path": "tests/certification/scenarios/specialists/reviewer/ambiguous.json"
       },
       "gates": [
         {
@@ -1156,7 +1156,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-security/ambiguous.json"
+        "path": "tests/certification/scenarios/specialists/security/ambiguous.json"
       },
       "gates": [
         {
@@ -1176,7 +1176,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-architect/boundary-violation.json"
+        "path": "tests/certification/scenarios/specialists/architect/boundary-violation.json"
       },
       "gates": [
         {
@@ -1196,7 +1196,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-data-analyst/boundary-violation.json"
+        "path": "tests/certification/scenarios/specialists/data-analyst/boundary-violation.json"
       },
       "gates": [
         {
@@ -1216,7 +1216,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-debugger/boundary-violation.json"
+        "path": "tests/certification/scenarios/specialists/debugger/boundary-violation.json"
       },
       "gates": [
         {
@@ -1236,7 +1236,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-designer/boundary-violation.json"
+        "path": "tests/certification/scenarios/specialists/designer/boundary-violation.json"
       },
       "gates": [
         {
@@ -1256,7 +1256,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-engineer/boundary-violation.json"
+        "path": "tests/certification/scenarios/specialists/engineer/boundary-violation.json"
       },
       "gates": [
         {
@@ -1276,7 +1276,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-operations/boundary-violation.json"
+        "path": "tests/certification/scenarios/specialists/operations/boundary-violation.json"
       },
       "gates": [
         {
@@ -1296,7 +1296,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-orchestrator/boundary-violation.json"
+        "path": "tests/certification/scenarios/specialists/orchestrator/boundary-violation.json"
       },
       "gates": [
         {
@@ -1316,7 +1316,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-product-manager/boundary-violation.json"
+        "path": "tests/certification/scenarios/specialists/product-manager/boundary-violation.json"
       },
       "gates": [
         {
@@ -1336,7 +1336,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-qa/boundary-violation.json"
+        "path": "tests/certification/scenarios/specialists/qa/boundary-violation.json"
       },
       "gates": [
         {
@@ -1356,7 +1356,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-researcher/boundary-violation.json"
+        "path": "tests/certification/scenarios/specialists/researcher/boundary-violation.json"
       },
       "gates": [
         {
@@ -1376,7 +1376,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-reviewer/boundary-violation.json"
+        "path": "tests/certification/scenarios/specialists/reviewer/boundary-violation.json"
       },
       "gates": [
         {
@@ -1396,7 +1396,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-security/boundary-violation.json"
+        "path": "tests/certification/scenarios/specialists/security/boundary-violation.json"
       },
       "gates": [
         {
@@ -1416,7 +1416,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-architect/cross-specialist.json"
+        "path": "tests/certification/scenarios/specialists/architect/cross-specialist.json"
       },
       "gates": [
         {
@@ -1436,7 +1436,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-data-analyst/cross-specialist.json"
+        "path": "tests/certification/scenarios/specialists/data-analyst/cross-specialist.json"
       },
       "gates": [
         {
@@ -1456,7 +1456,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-debugger/cross-specialist.json"
+        "path": "tests/certification/scenarios/specialists/debugger/cross-specialist.json"
       },
       "gates": [
         {
@@ -1476,7 +1476,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-designer/cross-specialist.json"
+        "path": "tests/certification/scenarios/specialists/designer/cross-specialist.json"
       },
       "gates": [
         {
@@ -1496,7 +1496,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-engineer/cross-specialist.json"
+        "path": "tests/certification/scenarios/specialists/engineer/cross-specialist.json"
       },
       "gates": [
         {
@@ -1516,7 +1516,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-operations/cross-specialist.json"
+        "path": "tests/certification/scenarios/specialists/operations/cross-specialist.json"
       },
       "gates": [
         {
@@ -1536,7 +1536,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-orchestrator/cross-specialist.json"
+        "path": "tests/certification/scenarios/specialists/orchestrator/cross-specialist.json"
       },
       "gates": [
         {
@@ -1556,7 +1556,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-product-manager/cross-specialist.json"
+        "path": "tests/certification/scenarios/specialists/product-manager/cross-specialist.json"
       },
       "gates": [
         {
@@ -1576,7 +1576,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-qa/cross-specialist.json"
+        "path": "tests/certification/scenarios/specialists/qa/cross-specialist.json"
       },
       "gates": [
         {
@@ -1596,7 +1596,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-researcher/cross-specialist.json"
+        "path": "tests/certification/scenarios/specialists/researcher/cross-specialist.json"
       },
       "gates": [
         {
@@ -1616,7 +1616,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-reviewer/cross-specialist.json"
+        "path": "tests/certification/scenarios/specialists/reviewer/cross-specialist.json"
       },
       "gates": [
         {
@@ -1636,7 +1636,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-security/cross-specialist.json"
+        "path": "tests/certification/scenarios/specialists/security/cross-specialist.json"
       },
       "gates": [
         {
@@ -1656,7 +1656,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-architect/adversarial-role-tailored.json"
+        "path": "tests/certification/scenarios/specialists/architect/adversarial-role-tailored.json"
       },
       "gates": [
         {
@@ -1677,7 +1677,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-architect/ambiguous.json"
+        "path": "tests/certification/scenarios/specialists/architect/ambiguous.json"
       },
       "gates": [
         {
@@ -1698,7 +1698,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-architect/boundary-violation.json"
+        "path": "tests/certification/scenarios/specialists/architect/boundary-violation.json"
       },
       "gates": [
         {
@@ -1719,7 +1719,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-architect/cross-specialist.json"
+        "path": "tests/certification/scenarios/specialists/architect/cross-specialist.json"
       },
       "gates": [
         {
@@ -1740,7 +1740,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-architect/happy-path-representative.json"
+        "path": "tests/certification/scenarios/specialists/architect/happy-path-representative.json"
       },
       "gates": [
         {
@@ -1761,7 +1761,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-data-analyst/adversarial-role-tailored.json"
+        "path": "tests/certification/scenarios/specialists/data-analyst/adversarial-role-tailored.json"
       },
       "gates": [
         {
@@ -1782,7 +1782,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-data-analyst/ambiguous.json"
+        "path": "tests/certification/scenarios/specialists/data-analyst/ambiguous.json"
       },
       "gates": [
         {
@@ -1803,7 +1803,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-data-analyst/boundary-violation.json"
+        "path": "tests/certification/scenarios/specialists/data-analyst/boundary-violation.json"
       },
       "gates": [
         {
@@ -1824,7 +1824,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-data-analyst/cross-specialist.json"
+        "path": "tests/certification/scenarios/specialists/data-analyst/cross-specialist.json"
       },
       "gates": [
         {
@@ -1845,7 +1845,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-data-analyst/happy-path-representative.json"
+        "path": "tests/certification/scenarios/specialists/data-analyst/happy-path-representative.json"
       },
       "gates": [
         {
@@ -1866,7 +1866,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-debugger/adversarial-role-tailored.json"
+        "path": "tests/certification/scenarios/specialists/debugger/adversarial-role-tailored.json"
       },
       "gates": [
         {
@@ -1887,7 +1887,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-debugger/ambiguous.json"
+        "path": "tests/certification/scenarios/specialists/debugger/ambiguous.json"
       },
       "gates": [
         {
@@ -1908,7 +1908,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-debugger/boundary-violation.json"
+        "path": "tests/certification/scenarios/specialists/debugger/boundary-violation.json"
       },
       "gates": [
         {
@@ -1929,7 +1929,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-debugger/cross-specialist.json"
+        "path": "tests/certification/scenarios/specialists/debugger/cross-specialist.json"
       },
       "gates": [
         {
@@ -1950,7 +1950,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-debugger/happy-path-representative.json"
+        "path": "tests/certification/scenarios/specialists/debugger/happy-path-representative.json"
       },
       "gates": [
         {
@@ -1971,7 +1971,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-designer/adversarial-role-tailored.json"
+        "path": "tests/certification/scenarios/specialists/designer/adversarial-role-tailored.json"
       },
       "gates": [
         {
@@ -1992,7 +1992,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-designer/ambiguous.json"
+        "path": "tests/certification/scenarios/specialists/designer/ambiguous.json"
       },
       "gates": [
         {
@@ -2013,7 +2013,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-designer/boundary-violation.json"
+        "path": "tests/certification/scenarios/specialists/designer/boundary-violation.json"
       },
       "gates": [
         {
@@ -2034,7 +2034,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-designer/cross-specialist.json"
+        "path": "tests/certification/scenarios/specialists/designer/cross-specialist.json"
       },
       "gates": [
         {
@@ -2055,7 +2055,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-designer/happy-path-representative.json"
+        "path": "tests/certification/scenarios/specialists/designer/happy-path-representative.json"
       },
       "gates": [
         {
@@ -2076,7 +2076,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-engineer/adversarial-role-tailored.json"
+        "path": "tests/certification/scenarios/specialists/engineer/adversarial-role-tailored.json"
       },
       "gates": [
         {
@@ -2097,7 +2097,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-engineer/ambiguous.json"
+        "path": "tests/certification/scenarios/specialists/engineer/ambiguous.json"
       },
       "gates": [
         {
@@ -2118,7 +2118,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-engineer/boundary-violation.json"
+        "path": "tests/certification/scenarios/specialists/engineer/boundary-violation.json"
       },
       "gates": [
         {
@@ -2139,7 +2139,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-engineer/cross-specialist.json"
+        "path": "tests/certification/scenarios/specialists/engineer/cross-specialist.json"
       },
       "gates": [
         {
@@ -2160,7 +2160,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-engineer/happy-path-representative.json"
+        "path": "tests/certification/scenarios/specialists/engineer/happy-path-representative.json"
       },
       "gates": [
         {
@@ -2181,7 +2181,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-operations/adversarial-role-tailored.json"
+        "path": "tests/certification/scenarios/specialists/operations/adversarial-role-tailored.json"
       },
       "gates": [
         {
@@ -2202,7 +2202,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-operations/ambiguous.json"
+        "path": "tests/certification/scenarios/specialists/operations/ambiguous.json"
       },
       "gates": [
         {
@@ -2223,7 +2223,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-operations/boundary-violation.json"
+        "path": "tests/certification/scenarios/specialists/operations/boundary-violation.json"
       },
       "gates": [
         {
@@ -2244,7 +2244,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-operations/cross-specialist.json"
+        "path": "tests/certification/scenarios/specialists/operations/cross-specialist.json"
       },
       "gates": [
         {
@@ -2265,7 +2265,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-operations/happy-path-representative.json"
+        "path": "tests/certification/scenarios/specialists/operations/happy-path-representative.json"
       },
       "gates": [
         {
@@ -2286,7 +2286,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-orchestrator/adversarial-role-tailored.json"
+        "path": "tests/certification/scenarios/specialists/orchestrator/adversarial-role-tailored.json"
       },
       "gates": [
         {
@@ -2307,7 +2307,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-orchestrator/ambiguous.json"
+        "path": "tests/certification/scenarios/specialists/orchestrator/ambiguous.json"
       },
       "gates": [
         {
@@ -2328,7 +2328,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-orchestrator/boundary-violation.json"
+        "path": "tests/certification/scenarios/specialists/orchestrator/boundary-violation.json"
       },
       "gates": [
         {
@@ -2349,7 +2349,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-orchestrator/cross-specialist.json"
+        "path": "tests/certification/scenarios/specialists/orchestrator/cross-specialist.json"
       },
       "gates": [
         {
@@ -2370,7 +2370,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-orchestrator/happy-path-representative.json"
+        "path": "tests/certification/scenarios/specialists/orchestrator/happy-path-representative.json"
       },
       "gates": [
         {
@@ -2391,7 +2391,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-product-manager/adversarial-role-tailored.json"
+        "path": "tests/certification/scenarios/specialists/product-manager/adversarial-role-tailored.json"
       },
       "gates": [
         {
@@ -2412,7 +2412,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-product-manager/ambiguous.json"
+        "path": "tests/certification/scenarios/specialists/product-manager/ambiguous.json"
       },
       "gates": [
         {
@@ -2433,7 +2433,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-product-manager/boundary-violation.json"
+        "path": "tests/certification/scenarios/specialists/product-manager/boundary-violation.json"
       },
       "gates": [
         {
@@ -2454,7 +2454,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-product-manager/cross-specialist.json"
+        "path": "tests/certification/scenarios/specialists/product-manager/cross-specialist.json"
       },
       "gates": [
         {
@@ -2475,7 +2475,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-product-manager/happy-path-representative.json"
+        "path": "tests/certification/scenarios/specialists/product-manager/happy-path-representative.json"
       },
       "gates": [
         {
@@ -2496,7 +2496,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-qa/adversarial-role-tailored.json"
+        "path": "tests/certification/scenarios/specialists/qa/adversarial-role-tailored.json"
       },
       "gates": [
         {
@@ -2517,7 +2517,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-qa/ambiguous.json"
+        "path": "tests/certification/scenarios/specialists/qa/ambiguous.json"
       },
       "gates": [
         {
@@ -2538,7 +2538,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-qa/boundary-violation.json"
+        "path": "tests/certification/scenarios/specialists/qa/boundary-violation.json"
       },
       "gates": [
         {
@@ -2559,7 +2559,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-qa/cross-specialist.json"
+        "path": "tests/certification/scenarios/specialists/qa/cross-specialist.json"
       },
       "gates": [
         {
@@ -2580,7 +2580,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-qa/happy-path-representative.json"
+        "path": "tests/certification/scenarios/specialists/qa/happy-path-representative.json"
       },
       "gates": [
         {
@@ -2601,7 +2601,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-researcher/adversarial-role-tailored.json"
+        "path": "tests/certification/scenarios/specialists/researcher/adversarial-role-tailored.json"
       },
       "gates": [
         {
@@ -2622,7 +2622,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-researcher/ambiguous.json"
+        "path": "tests/certification/scenarios/specialists/researcher/ambiguous.json"
       },
       "gates": [
         {
@@ -2643,7 +2643,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-researcher/boundary-violation.json"
+        "path": "tests/certification/scenarios/specialists/researcher/boundary-violation.json"
       },
       "gates": [
         {
@@ -2664,7 +2664,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-researcher/cross-specialist.json"
+        "path": "tests/certification/scenarios/specialists/researcher/cross-specialist.json"
       },
       "gates": [
         {
@@ -2685,7 +2685,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-researcher/happy-path-representative.json"
+        "path": "tests/certification/scenarios/specialists/researcher/happy-path-representative.json"
       },
       "gates": [
         {
@@ -2706,7 +2706,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-reviewer/adversarial-role-tailored.json"
+        "path": "tests/certification/scenarios/specialists/reviewer/adversarial-role-tailored.json"
       },
       "gates": [
         {
@@ -2727,7 +2727,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-reviewer/ambiguous.json"
+        "path": "tests/certification/scenarios/specialists/reviewer/ambiguous.json"
       },
       "gates": [
         {
@@ -2748,7 +2748,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-reviewer/boundary-violation.json"
+        "path": "tests/certification/scenarios/specialists/reviewer/boundary-violation.json"
       },
       "gates": [
         {
@@ -2769,7 +2769,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-reviewer/cross-specialist.json"
+        "path": "tests/certification/scenarios/specialists/reviewer/cross-specialist.json"
       },
       "gates": [
         {
@@ -2790,7 +2790,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-reviewer/happy-path-representative.json"
+        "path": "tests/certification/scenarios/specialists/reviewer/happy-path-representative.json"
       },
       "gates": [
         {
@@ -2811,7 +2811,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-security/adversarial-role-tailored.json"
+        "path": "tests/certification/scenarios/specialists/security/adversarial-role-tailored.json"
       },
       "gates": [
         {
@@ -2832,7 +2832,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-security/ambiguous.json"
+        "path": "tests/certification/scenarios/specialists/security/ambiguous.json"
       },
       "gates": [
         {
@@ -2853,7 +2853,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-security/boundary-violation.json"
+        "path": "tests/certification/scenarios/specialists/security/boundary-violation.json"
       },
       "gates": [
         {
@@ -2874,7 +2874,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-security/cross-specialist.json"
+        "path": "tests/certification/scenarios/specialists/security/cross-specialist.json"
       },
       "gates": [
         {
@@ -2895,7 +2895,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-security/happy-path-representative.json"
+        "path": "tests/certification/scenarios/specialists/security/happy-path-representative.json"
       },
       "gates": [
         {
@@ -2916,7 +2916,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-architect/happy-path-representative.json"
+        "path": "tests/certification/scenarios/specialists/architect/happy-path-representative.json"
       },
       "gates": [
         {
@@ -2936,7 +2936,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-data-analyst/happy-path-representative.json"
+        "path": "tests/certification/scenarios/specialists/data-analyst/happy-path-representative.json"
       },
       "gates": [
         {
@@ -2956,7 +2956,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-debugger/happy-path-representative.json"
+        "path": "tests/certification/scenarios/specialists/debugger/happy-path-representative.json"
       },
       "gates": [
         {
@@ -2976,7 +2976,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-designer/happy-path-representative.json"
+        "path": "tests/certification/scenarios/specialists/designer/happy-path-representative.json"
       },
       "gates": [
         {
@@ -2996,7 +2996,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-engineer/happy-path-representative.json"
+        "path": "tests/certification/scenarios/specialists/engineer/happy-path-representative.json"
       },
       "gates": [
         {
@@ -3016,7 +3016,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-operations/happy-path-representative.json"
+        "path": "tests/certification/scenarios/specialists/operations/happy-path-representative.json"
       },
       "gates": [
         {
@@ -3036,7 +3036,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-orchestrator/happy-path-representative.json"
+        "path": "tests/certification/scenarios/specialists/orchestrator/happy-path-representative.json"
       },
       "gates": [
         {
@@ -3056,7 +3056,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-product-manager/happy-path-representative.json"
+        "path": "tests/certification/scenarios/specialists/product-manager/happy-path-representative.json"
       },
       "gates": [
         {
@@ -3076,7 +3076,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-qa/happy-path-representative.json"
+        "path": "tests/certification/scenarios/specialists/qa/happy-path-representative.json"
       },
       "gates": [
         {
@@ -3096,7 +3096,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-researcher/happy-path-representative.json"
+        "path": "tests/certification/scenarios/specialists/researcher/happy-path-representative.json"
       },
       "gates": [
         {
@@ -3116,7 +3116,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-reviewer/happy-path-representative.json"
+        "path": "tests/certification/scenarios/specialists/reviewer/happy-path-representative.json"
       },
       "gates": [
         {
@@ -3136,7 +3136,7 @@
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
       "fixture": {
-        "path": "tests/certification/scenarios/specialists/cx-security/happy-path-representative.json"
+        "path": "tests/certification/scenarios/specialists/security/happy-path-representative.json"
       },
       "gates": [
         {

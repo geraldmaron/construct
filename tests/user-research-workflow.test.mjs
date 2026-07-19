@@ -16,15 +16,15 @@ test('user-research-workflow documents validity threats and inter-rater reliabil
   assert.match(body, /internal\/external\/construct\/conclusion/);
   assert.match(body, /Inter-rater reliability/i);
   assert.match(body, /roles\/ux-researcher/);
-  assert.match(body, /cx-researcher/);
+  assert.match(body, /researcher/);
 });
 
 test('user-research-workflow routes external and codebase research elsewhere', () => {
   const body = readFileSync(WORKFLOW, 'utf8');
   assert.match(body, /docs\/research-workflow/);
   assert.match(body, /docs\/codebase-research-workflow/);
-  assert.match(body, /cx-researcher/);
-  // construct-rf26.11 folded cx-explorer into cx-researcher (a skill overlay,
+  assert.match(body, /researcher/);
+  // construct-rf26.11 folded cx-explorer into researcher (a skill overlay,
   // not a separate specialist), so both sibling workflows now name the same agent.
   assert.match(body, /skill overlay/);
 });

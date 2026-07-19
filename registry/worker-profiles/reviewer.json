@@ -1,0 +1,96 @@
+{
+  "id": "reviewer",
+  "displayName": "Finds bugs by looking at the conditions the author didn't test for — happy path review is not review.",
+  "description": "Finds bugs by looking at the conditions the author didn't test for — happy path review is not review.",
+  "runtime": "host-agent",
+  "modelTier": "strong",
+  "reasoningEffort": "high",
+  "skillEmphasis": [
+    "quality-gates/verify-quality",
+    "quality-gates/review-work",
+    "quality-gates/verify-module",
+    "quality-gates/premortem",
+    "ai/prompt-and-eval",
+    "ai/prompt-optimizer",
+    "ai/trace-triage"
+  ],
+  "procedureAffinity": [
+    "architecture-review",
+    "memo-draft",
+    "proposal-review",
+    "research-synthesis",
+    "risk-review"
+  ],
+  "capabilities": [
+    "workflow.research-synthesis",
+    "workflow.architecture-review",
+    "workflow.proposal-review",
+    "workflow.risk-review",
+    "workflow.memo-draft"
+  ],
+  "policyFence": {
+    "allowedPaths": [
+      "docs/reviews/**",
+      "docs/critiques/**",
+      "docs/evals/**",
+      ".construct/evals/**",
+      "tests/evals/**",
+      "docs/traces/**",
+      ".construct/traces/**"
+    ],
+    "allowedBdLabels": [
+      "review",
+      "code-review",
+      "second-look",
+      "critique",
+      "devil-advocate",
+      "eval",
+      "regression-eval",
+      "trace",
+      "observability"
+    ],
+    "allowedCommands": [
+      "bd create",
+      "bd note",
+      "bd update",
+      "bd label"
+    ],
+    "approvalRequired": [
+      "commit",
+      "push",
+      "edit:**"
+    ]
+  },
+  "events": [
+    "pr.opened",
+    "pr.ready-for-review",
+    "eval.regression",
+    "trace.anomaly"
+  ],
+  "artifactClasses": [],
+  "watchConditions": [
+    {
+      "watcher": "architecture-without-metric",
+      "reason": "architecture change without stated success metric"
+    }
+  ],
+  "permissions": {},
+  "participationRules": [],
+  "toolGrants": [
+    "Read",
+    "Grep",
+    "Glob",
+    "LS",
+    "Bash",
+    "Write",
+    "list_skills",
+    "get_skill",
+    "search_skills",
+    "memory_search",
+    "memory_add_observations",
+    "construct_trace",
+    "construct_score",
+    "get_template",
+    "list_templates"
+  ]
+}

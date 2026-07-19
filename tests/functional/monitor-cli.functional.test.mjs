@@ -48,7 +48,7 @@ function runMonitor(args, { home, project }) {
     cwd: project,
     encoding: 'utf8',
     timeout: 30_000,
-    env: sterileSpawnEnv({ HOME: home, USERPROFILE: home, CX_HOME_OVERRIDE: home }),
+    env: sterileSpawnEnv({ HOME: home, USERPROFILE: home, CONSTRUCT_HOME_OVERRIDE: home }),
   });
 }
 
@@ -105,7 +105,7 @@ test('construct monitor --as operations --targets ... assembles all three durabl
   assert.ok(existsSync(manifestPath), 'capability manifest exists');
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
   assert.equal(manifest.embed.enabled, true);
-  assert.equal(manifest.embed.specialist, 'cx-operations');
+  assert.equal(manifest.embed.specialist, 'operations');
 
   // Prints a summary naming the durable artifacts it wrote.
   assert.match(res.stdout, /construct monitor: assembled/);
@@ -137,6 +137,6 @@ test('construct monitor --as pm-feedback sets embed.yaml roles.primary from that
 
   const manifestPath = join(project, '.construct', 'embed', 'pm-feedback.manifest.json');
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
-  assert.equal(manifest.embed.specialist, 'cx-product-manager');
+  assert.equal(manifest.embed.specialist, 'product-manager');
   assert.equal(manifest.embed.enabled, true);
 });

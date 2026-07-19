@@ -13,18 +13,18 @@ import { InboxWatcher } from '../lib/embed/inbox.mjs';
 import { saveIntakeConfig } from '../lib/intake/intake-config.mjs';
 
 // InboxWatcher.poll() resolves its state file through the machine-scoped
-// state root (ADR-0066), which reads CX_HOME_OVERRIDE from real process.env
+// state root (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE from real process.env
 // directly — the `env` constructor option below is a plain options bag, not
 // process.env, so it never isolates that write. Pin it for the whole file so
 // polling never writes into the real developer machine's ~/.construct/projects/.
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-inbox-depth-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 after(() => {
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 let projectRoot;

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://construct.dev/schemas/participation-rules.schema.json",
   "title": "Construct Participation Rules",
-  "description": "Registry-declared condition -> recruitment rules for condition-driven specialist/team participation (construct-pteo2, ADR-0070). A participationRules array lives alongside a registry entry (specialist, team, or a project .cx/specialists/ overlay per lib/orchestration/routing-tables.mjs's existing overlay precedent) and is resolved by the recruit stage of the pipeline ADR-0070 defines. Superset of construct-ca4's WATCHERS/evaluateWatchConditions mechanism (lib/orchestration/routing-tables.mjs): a watchCondition names a boolean predicate over requestSignals and is one valid form of `when`; this schema additionally carries role, gate, and enforcement scope, which ca4's mechanism has no field for. Enforcement (gate: enforced) is never implied by this schema alone — it is only realized when the recruiting team's own registry entry (schemas/scope.schema.json's team.decisionRights) names the same decisionRight in enforcementScope.decisionRight, per ADR-0070's opt-in-per-team decision.",
+  "description": "Registry-declared condition -> recruitment rules for condition-driven specialist/team participation (construct-pteo2, ADR-0070). A participationRules array lives alongside a registry entry (specialist, team, or a project .construct/specialists/ overlay per lib/orchestration/routing-tables.mjs's existing overlay precedent) and is resolved by the recruit stage of the pipeline ADR-0070 defines. Superset of construct-ca4's WATCHERS/evaluateWatchConditions mechanism (lib/orchestration/routing-tables.mjs): a watchCondition names a boolean predicate over requestSignals and is one valid form of `when`; this schema additionally carries role, gate, and enforcement scope, which ca4's mechanism has no field for. Enforcement (gate: enforced) is never implied by this schema alone — it is only realized when the recruiting team's own registry entry (schemas/scope.schema.json's team.decisionRights) names the same decisionRight in enforcementScope.decisionRight, per ADR-0070's opt-in-per-team decision.",
   "type": "object",
   "required": ["schemaVersion", "rules"],
   "additionalProperties": false,
@@ -27,7 +27,7 @@
         },
         "dimension": {
           "$ref": "#/$defs/dimension",
-          "description": "Optional classification of what concern this rule recruits for. `legal-compliance` is a first-class dimension (ADR-0070) bound structurally to cx-security via the legalComplianceBinding conditional below — it is not a 13th role."
+          "description": "Optional classification of what concern this rule recruits for. `legal-compliance` is a first-class dimension (ADR-0070) bound structurally to security via the legalComplianceBinding conditional below — it is not a 13th role."
         },
         "when": { "$ref": "#/$defs/whenCondition" },
         "recruit": { "$ref": "#/$defs/recruitTarget" },
@@ -62,7 +62,7 @@
           "then": { "required": ["enforcementScope"] }
         },
         {
-          "$comment": "Structural enforcement of the no-13th-role decision (ADR-0070): a rule whose dimension is legal-compliance must recruit cx-security as one of its specialists. This is checked here, not left to prose, so a rule that invents a standalone legal/compliance recruit target fails schema validation.",
+          "$comment": "Structural enforcement of the no-13th-role decision (ADR-0070): a rule whose dimension is legal-compliance must recruit security as one of its specialists. This is checked here, not left to prose, so a rule that invents a standalone legal/compliance recruit target fails schema validation.",
           "if": { "properties": { "dimension": { "const": "legal-compliance" } }, "required": ["dimension"] },
           "then": {
             "properties": {
@@ -70,7 +70,7 @@
                 "properties": {
                   "specialists": {
                     "type": "array",
-                    "contains": { "const": "cx-security" }
+                    "contains": { "const": "security" }
                   }
                 }
               }
@@ -81,7 +81,7 @@
     },
     "dimension": {
       "enum": ["legal-compliance", "security", "quality", "product", "operations", "architecture"],
-      "description": "Concern the rule recruits for. Not a role — a dimension is bound to an existing roster role (e.g. legal-compliance -> cx-security); it never introduces a new specialist type."
+      "description": "Concern the rule recruits for. Not a role — a dimension is bound to an existing roster role (e.g. legal-compliance -> security); it never introduces a new specialist type."
     },
     "whenCondition": {
       "type": "object",
@@ -125,18 +125,18 @@
     },
     "rosterSpecialist": {
       "enum": [
-        "cx-architect",
-        "cx-data-analyst",
-        "cx-debugger",
-        "cx-designer",
-        "cx-engineer",
-        "cx-operations",
-        "cx-orchestrator",
-        "cx-product-manager",
-        "cx-qa",
-        "cx-researcher",
-        "cx-reviewer",
-        "cx-security"
+        "architect",
+        "data-analyst",
+        "debugger",
+        "designer",
+        "engineer",
+        "operations",
+        "orchestrator",
+        "product-manager",
+        "qa",
+        "researcher",
+        "reviewer",
+        "security"
       ],
       "description": "Fixed 12-role roster (specialists/org/specialists/*.json). A rule can only recruit an existing role — this schema has no mechanism for declaring a 13th, per this repo's CLAUDE.md invariant that a profile selects flows + skill emphasis over the fixed roster and does not invent new roles or departments."
     }

@@ -1,0 +1,19 @@
+{
+  "id": "pm-repos",
+  "version": "1.0.0",
+  "type": "embed",
+  "workerProfiles": [],
+  "approvalMode": "proposal-only",
+  "modelTier": "standard",
+  "state": "active",
+  "description": "Review governed repository and issue signals and emit an engineering-signals digest.",
+  "embed": {
+    "workerProfileId": "product-manager",
+    "providerBindings": ["github", "atlassian-jira"],
+    "framework": "product-value-tradeoff",
+    "outputContract": "pm-engineering-signals",
+    "proposalAuthority": "propose-only",
+    "runtime": "auto",
+    "cadence": { "every": "PT24H" }
+  }
+}

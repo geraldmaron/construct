@@ -6,7 +6,7 @@
  * table. extractContentSignals must fire cost:true from the draft alone, and
  * runConstructArtifactLoop must re-evaluate recruitment after buildDraftBody:
  * the result carries the content signals and the late-recruited reviewer
- * (cx-data-analyst via the cost skill affinity), folded into the overlay
+ * (data-analyst via the cost skill affinity), folded into the overlay
  * specialists without displacing the workflow plan's own roles. Advisory per
  * ADR-0070 — recruitment never changes the release-gate verdict.
  */
@@ -37,13 +37,13 @@ function project() {
 function withHashingEmbeddings(t, cwd) {
   const prevModel = process.env.CONSTRUCT_EMBEDDING_MODEL;
   process.env.CONSTRUCT_EMBEDDING_MODEL = 'hashing';
-  const prevHome = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = cwd;
+  const prevHome = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = cwd;
   t.after(() => {
     if (prevModel === undefined) delete process.env.CONSTRUCT_EMBEDDING_MODEL;
     else process.env.CONSTRUCT_EMBEDDING_MODEL = prevModel;
-    if (prevHome === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prevHome;
+    if (prevHome === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prevHome;
   });
 }
 
@@ -108,13 +108,13 @@ test('runConstructArtifactLoop re-evaluates recruitment after buildDraftBody', a
   assert.ok(fs.existsSync(res.path), 'draft written to disk');
   assert.equal(res.contentSignals.cost, true, 'content signals surfaced on the result');
 
-  const recruited = res.recruited.find((p) => p.specialist === 'cx-data-analyst');
-  assert.ok(recruited, 'cost content signal recruits cx-data-analyst');
+  const recruited = res.recruited.find((p) => p.specialist === 'data-analyst');
+  assert.ok(recruited, 'cost content signal recruits data-analyst');
   assert.equal(recruited.role, 'reviewer');
   assert.equal(recruited.via, 'skill-affinity');
 
   assert.ok(
-    res.overlay.specialists.includes('cx-data-analyst'),
+    res.overlay.specialists.includes('data-analyst'),
     'late recruit folded into overlay specialists',
   );
   assert.ok(

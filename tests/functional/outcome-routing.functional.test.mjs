@@ -34,7 +34,7 @@ const DEBOUNCE_SETTLE_MS = 2_200; // just past agent-tracker's 2s summary-refres
 
 const TIED_REGISTRY = {
   specialists: {
-    'cx-data-analyst': { skills: ['cost-optimization'], team: null },
+    'data-analyst': { skills: ['cost-optimization'], team: null },
     'cx-finance-ops': { skills: ['pricing-positioning'], team: null },
   },
 };
@@ -67,13 +67,13 @@ test('real agent-tracker dispatches demote a losing specialist through the recru
   const baseline = recruit({ signals: { cost: true }, kind: 'review', registry: TIED_REGISTRY, cwd });
   assert.deepEqual(
     baseline.map((p) => p.specialist),
-    ['cx-data-analyst'],
-    'with no outcome history yet, the alphabetical tie-break picks cx-data-analyst',
+    ['data-analyst'],
+    'with no outcome history yet, the alphabetical tie-break picks data-analyst',
   );
 
-  // Phase 1 — demotion: cx-data-analyst fails every dispatch, cx-finance-ops succeeds every one.
+  // Phase 1 — demotion: data-analyst fails every dispatch, cx-finance-ops succeeds every one.
   for (let i = 0; i < 4; i++) {
-    dispatchTask(cwd, fakeHome, { agent: 'cx-data-analyst', description: `analyze cost report attempt ${i}`, ...FAIL });
+    dispatchTask(cwd, fakeHome, { agent: 'data-analyst', description: `analyze cost report attempt ${i}`, ...FAIL });
     dispatchTask(cwd, fakeHome, { agent: 'cx-finance-ops', description: `reconcile pricing model attempt ${i}`, ...SUCCESS });
   }
   await sleep(DEBOUNCE_SETTLE_MS);
@@ -89,27 +89,27 @@ test('real agent-tracker dispatches demote a losing specialist through the recru
   assert.deepEqual(
     afterDemotion.map((p) => p.specialist),
     ['cx-finance-ops'],
-    'recruit() must pick cx-finance-ops once real dispatches demote cx-data-analyst',
+    'recruit() must pick cx-finance-ops once real dispatches demote data-analyst',
   );
 
   // Phase 2 — recovery: outcomeBoost reads the cumulative last-30-day window, not a fixed-size
-  // recent buffer, so cx-data-analyst succeeding from here on can approach but never overtake a
+  // recent buffer, so data-analyst succeeding from here on can approach but never overtake a
   // rival still sitting at a perfect record. Demonstrate the ranking is freshly recomputed every
-  // call (never sticky) by having cx-data-analyst trend upward while cx-finance-ops trends down —
+  // call (never sticky) by having data-analyst trend upward while cx-finance-ops trends down —
   // the same dynamic a real specialist's fortunes reversing over time would produce. After this
   // burst, data-analyst sits at 7/11 success and finance-ops at 5/11 — a clear, unambiguous flip.
   for (let i = 0; i < 6; i++) {
-    dispatchTask(cwd, fakeHome, { agent: 'cx-data-analyst', description: `analyze cost report recovery ${i}`, ...SUCCESS });
+    dispatchTask(cwd, fakeHome, { agent: 'data-analyst', description: `analyze cost report recovery ${i}`, ...SUCCESS });
     dispatchTask(cwd, fakeHome, { agent: 'cx-finance-ops', description: `reconcile pricing model regression ${i}`, ...FAIL });
   }
   await sleep(DEBOUNCE_SETTLE_MS);
-  dispatchTask(cwd, fakeHome, { agent: 'cx-data-analyst', description: 'analyze cost report settle', ...SUCCESS });
+  dispatchTask(cwd, fakeHome, { agent: 'data-analyst', description: 'analyze cost report settle', ...SUCCESS });
 
   const afterRecovery = recruit({ signals: { cost: true }, kind: 'review', registry: TIED_REGISTRY, cwd });
   assert.deepEqual(
     afterRecovery.map((p) => p.specialist),
-    ['cx-data-analyst'],
-    'recruit() must flip back to cx-data-analyst once fresh outcomes reverse the relative success rates',
+    ['data-analyst'],
+    'recruit() must flip back to data-analyst once fresh outcomes reverse the relative success rates',
   );
 
   rmTmpDir(cwd);

@@ -4,7 +4,7 @@
  *
  * Drives the real `construct` binary in an isolated project dir (graph build →
  * impact) and exercises the real Oracle synthesis module, asserting on durable
- * artifacts (.cx/graph/*) and the gap/route signals the overseer emits. Per
+ * artifacts (.construct/graph/*) and the gap/route signals the overseer emits. Per
  * CLAUDE.md, multi-component features (graph builder + CLI + Oracle collector +
  * synthesis) require a functional test that spawns the binary / imports the
  * real module in a tmpdir.
@@ -49,7 +49,7 @@ function runConstruct(args, cwd) {
   return spawnSync(process.execPath, [BIN, ...args], {
     cwd,
     encoding: 'utf8',
-    env: { ...process.env, HOME: SANDBOX_HOME, CX_HOME_OVERRIDE: SANDBOX_HOME },
+    env: { ...process.env, HOME: SANDBOX_HOME, CONSTRUCT_HOME_OVERRIDE: SANDBOX_HOME },
   });
 }
 
@@ -102,9 +102,9 @@ test('Oracle synthesis emits and routes the dependency-matrix gaps', () => {
   assert.ok(ids.has('matrix-coverage-gap'), 'coverage gap emitted');
   assert.ok(ids.has('impact-untested'), 'freshness gap emitted');
 
-  assert.equal(routeGap({ id: 'matrix-coverage-gap' }).primary, 'cx-architect');
-  assert.equal(routeGap({ id: 'impact-untested' }).primary, 'cx-qa');
-  assert.equal(routeGap({ id: 'dependency-graph-stale' }).primary, 'cx-engineer');
+  assert.equal(routeGap({ id: 'matrix-coverage-gap' }).primary, 'architect');
+  assert.equal(routeGap({ id: 'impact-untested' }).primary, 'qa');
+  assert.equal(routeGap({ id: 'dependency-graph-stale' }).primary, 'engineer');
 
   for (const g of gaps) assert.ok(g.remediationRoute, `gap ${g.id} carries a remediation route`);
 });

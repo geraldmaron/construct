@@ -31,8 +31,8 @@ const MODEL = 'anthropic/claude-sonnet-4-6';
 const REQUEST = 'refactor the auth module and review for security';
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-prepare-only-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 
 const dirs = [];
 function project() {
@@ -44,12 +44,12 @@ function project() {
 test.after(() => {
   for (const d of dirs) { try { rmTmpDir(d); } catch {} }
   try { rmTmpDir(homeOverride); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 test('MCP tool result states PREPARE-ONLY plus the exact next step, not just prepareOnly:true', async () => {
-  const env = { CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL };
+  const env = { CONSTRUCT_MODEL_REASONING: MODEL, CONSTRUCT_MODEL_STANDARD: MODEL, CONSTRUCT_MODEL_FAST: MODEL };
   const res = await orchestrationRun(
     { request: REQUEST, requested_strategy: 'orchestrated', host_model: MODEL, file_count: 4, module_count: 2, worker_backend: 'inline' },
     { env, cwd: project() },
@@ -68,7 +68,7 @@ test('MCP tool result states PREPARE-ONLY plus the exact next step, not just pre
 });
 
 test('a real provider-executed run carries no PREPARE-ONLY message (no false positive)', async () => {
-  const env = { CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL, ANTHROPIC_API_KEY: 'sk-test' };
+  const env = { CONSTRUCT_MODEL_REASONING: MODEL, CONSTRUCT_MODEL_STANDARD: MODEL, CONSTRUCT_MODEL_FAST: MODEL, ANTHROPIC_API_KEY: 'sk-test' };
   const fetchImpl = async () => ({
     ok: true,
     json: async () => ({ content: [{ type: 'text', text: 'real specialist output' }] }),
@@ -95,10 +95,10 @@ test('CLI `orchestrate run` stdout states PREPARE-ONLY plus the exact next step'
       env: {
         ...process.env,
         HOME: home,
-        CX_HOME_OVERRIDE: home,
-        CX_MODEL_REASONING: MODEL,
-        CX_MODEL_STANDARD: MODEL,
-        CX_MODEL_FAST: MODEL,
+        CONSTRUCT_HOME_OVERRIDE: home,
+        CONSTRUCT_MODEL_REASONING: MODEL,
+        CONSTRUCT_MODEL_STANDARD: MODEL,
+        CONSTRUCT_MODEL_FAST: MODEL,
         CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
         BOOTSTRAP_CHECKED: '1',
         CONSTRUCT_DISABLE_AUTO_CLEANUP: '1',

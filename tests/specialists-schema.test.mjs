@@ -27,7 +27,7 @@ function valid(overrides = {}) {
   return {
     name: 'cx-test',
     description: 'A test agent used in the registry validation suite — long enough.',
-    promptFile: 'specialists/prompts/cx-engineer.md',
+    promptFile: 'specialists/prompts/engineer.md',
     claudeTools: 'Read,Write,Edit',
     modelTier: 'standard',
     ...overrides,
@@ -118,7 +118,7 @@ describe('validateRegistryFile against the live registry', () => {
 
 describe('ALLOWED_TOOLS coverage', () => {
   it('includes the construct-mcp built-ins agents rely on', () => {
-    for (const tool of ['get_skill', 'list_skills', 'orchestration_policy', 'cx_trace']) {
+    for (const tool of ['get_skill', 'list_skills', 'orchestration_policy', 'construct_trace']) {
       assert.ok(ALLOWED_TOOLS.has(tool), `${tool} should be in the allowlist`);
     }
   });

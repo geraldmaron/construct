@@ -578,51 +578,49 @@ Bulk-add tasks from a markdown plan to the current workflow. Parses headings and
 | `title` | string | Workflow title to set if the workflow is newly created. |
 | `spec_ref` | string | Spec reference to associate with the workflow. |
 
-## Profile, outcomes & learning tools
+## Workspace Preset, outcomes, and learning tools
 
-### `scope_show`
-Return the active Construct org profile (id, displayName, roles, departments, intake taxonomy, doc templates). Use when a specialist needs to know which role set, classification taxonomy, or doc templates apply before drafting work.
+### `workspace_preset_show`
+Return a Workspace Preset with its skills, procedures, artifact classes, intake taxonomy, hooks, and display settings.
 
 | Parameter | Type | Description |
 |---|---|---|
 | `cwd` | string | Project root (default: server cwd). |
-| `id` | string | Force a specific profile id instead of resolving from config. |
+| `id` | string | Resolve a specific Workspace Preset instead of the configured preset. |
 
-### `scope_list`
-List the curated org profile catalog (rnd, operations, creative, research) with role/department counts. Use to discover which profiles are available before suggesting `construct scope set`.
+### `workspace_preset_list`
+List the canonical Workspace Preset catalog with Skill and Procedure counts.
 
 _No parameters._
 
-### `scope_drafts`
-List in-progress draft profiles under `.construct/profiles/draft-*` and any user-defined custom profile at `.construct/scope.json`. Use to see what profile work is pending before scaffolding another draft.
+### `workspace_preset_drafts`
+List draft Workspace Presets under `.construct/workspace-presets/draft-*`.
 
 | Parameter | Type | Description |
 |---|---|---|
 | `cwd` | string | Project root (default: server cwd). |
 
-### `scope_health`
-Per-profile health rollup over a window: observation count, per-role outcome runs and success rates. Use to check whether a profile is producing data before recommending changes or archive.
+### `workspace_preset_health`
+Return outcome runs and success rates for a Workspace Preset over a time window.
 
 | Parameter | Type | Description |
 |---|---|---|
 | `cwd` | string | Project root (default: server cwd). |
-| `id` | string | Profile id (default: active profile). |
+| `id` | string | Workspace Preset id (default: active preset). |
 | `window_days` | number | Window in days (default 30). |
 
-### `scope_create`
-Scaffold a draft org profile under `.construct/profiles/draft-<id>/` (requirements.md + profile.json + persona stubs + department charters). Writes durable state — requires `confirm=true`. For curated catalog work, follow `docs/guides/concepts/profile-lifecycle.md` after creation.
+### `workspace_preset_create`
+Scaffold a draft Workspace Preset under `.construct/workspace-presets/draft-<id>/`. Requires `confirm=true`.
 
 | Parameter | Type | Description |
 |---|---|---|
 | `confirm` | boolean | **required** — Must be true. |
 | `cwd` | string |  |
-| `id` | string | **required** — Profile id (^[a-z][a-z0-9-]{1,30}$). |
+| `id` | string | **required** — Workspace Preset id (^[a-z][a-z0-9-]{1,30}$). |
 | `display_name` | string |  |
-| `seed_roles` | array | Role ids to scaffold persona files for (cap 80). |
-| `seed_departments` | array | Departments to scaffold charters for (cap 12). |
 
-### `scope_archive`
-Archive a curated profile: moves `profiles/<id>.json` and its intake table into `archive/profiles/<id>/` with an archive note. Destructive — requires `confirm=true` and a substantive `reason` (>=8 chars). Observations and outcomes are preserved.
+### `workspace_preset_archive`
+Archive a canonical Workspace Preset under `archive/workspace-presets/<id>/`. Destructive; requires `confirm=true` and a substantive reason.
 
 | Parameter | Type | Description |
 |---|---|---|
@@ -756,7 +754,7 @@ Classify an artifact and return a role-aware plan (primary owner, role chain wit
 | `available_roles` | array | Restrict the plan to these role ids; dropped roles are reported as warnings. |
 
 ### `workflow_invoke`
-Invoke a named Construct workflow (roles/skills) non-interactively and return a provenanced execution plan: selected roles, rationale, applied skills, resolved model, evidence requirements, output contract, risks, and a traceId. Construct returns the orchestration plan; the host runtime performs specialist reasoning. Durable writes occur ONLY when approval_mode is allow-durable-write; proposal-only and requires-human-approval perform no durable writes.
+Invoke a named Construct workflow (perspectives/skills) non-interactively and return a provenanced execution plan: selected roles, rationale, applied skills, resolved model, evidence requirements, output contract, risks, and a traceId. Construct returns the orchestration plan; the host runtime performs specialist reasoning. Durable writes occur ONLY when approval_mode is allow-durable-write; proposal-only and requires-human-approval perform no durable writes.
 
 | Parameter | Type | Description |
 |---|---|---|

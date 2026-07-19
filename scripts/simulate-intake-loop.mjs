@@ -152,7 +152,7 @@ console.log('After specialists complete their work, observations are stored:\n')
 const observations = [
   {
     id: 'obs-1',
-    role: 'cx-product-manager',
+    role: 'product-manager',
     category: 'pattern',
     summary: 'Login friction increases support volume by 40% when session timeout < 20 min',
     tags: ['authentication', 'support', 'session-management'],
@@ -160,7 +160,7 @@ const observations = [
   },
   {
     id: 'obs-2',
-    role: 'cx-engineer',
+    role: 'engineer',
     category: 'decision',
     summary: 'Implement sliding session with 5-min warning + auto-save hook',
     tags: ['session', 'implementation', 'user-experience'],
@@ -168,7 +168,7 @@ const observations = [
   },
   {
     id: 'obs-3',
-    role: 'cx-qa',
+    role: 'qa',
     category: 'anti-pattern',
     summary: 'Fixed TTL sessions without warning cause data loss',
     tags: ['testing', 'session', 'data-loss'],

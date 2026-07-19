@@ -19,7 +19,7 @@ test('lintMarketingVoiceLine flags marketing tokens in prose', () => {
 
 test('lintMarketingVoiceLine skips WCAG Robust principle mentions', () => {
   const hit = lintMarketingVoiceLine(
-    'skills/roles/designer.accessibility.md',
+    'skills/perspectives/designer.accessibility.md',
     1,
     '- Cover POUR (Perceivable, Operable, Understandable, Robust)',
   );

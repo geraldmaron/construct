@@ -147,7 +147,7 @@ test('the durable projection store round-trips the whole program corpus and relo
 
 test('construct tracker-projection import|status runs against live bd without breaking the tracker', () => {
   const home = freshRoot();
-  const env = { ...process.env, HOME: home, CX_HOME_OVERRIDE: home };
+  const env = { ...process.env, HOME: home, CONSTRUCT_HOME_OVERRIDE: home };
   const storeDir = path.join(REPO_ROOT, '.construct', 'tracker-projections');
   const storePreexisted = fs.existsSync(storeDir);
 

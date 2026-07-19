@@ -26,7 +26,7 @@ import { resolveRunStore } from '../lib/orchestration/store.mjs';
 import { violationLogPath } from '../lib/contracts/violation-log.mjs';
 
 const MODEL = 'anthropic/claude-sonnet-4-6';
-const ENV = { CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL };
+const ENV = { CONSTRUCT_MODEL_REASONING: MODEL, CONSTRUCT_MODEL_STANDARD: MODEL, CONSTRUCT_MODEL_FAST: MODEL };
 
 const dirs = [];
 function project() {
@@ -37,12 +37,12 @@ function project() {
 test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} } });
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-host-contract-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 test.after(() => {
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 function readViolations(cwd) {
@@ -52,8 +52,8 @@ function readViolations(cwd) {
 }
 
 // engineer-to-qa is the one contract lib/orchestration/worker.mjs's
-// adjacent-task disambiguation resolves unambiguously for cx-engineer ->
-// cx-qa (proven in tests/contracts-worker-boundary.test.mjs's own
+// adjacent-task disambiguation resolves unambiguously for engineer ->
+// qa (proven in tests/contracts-worker-boundary.test.mjs's own
 // end-to-end case for the provider path) — reused here so both boundaries
 // are proven against the identical, real, unambiguous pair.
 
@@ -62,7 +62,7 @@ async function twoTaskHostRun(cwd) {
     { request: 'implement and verify a rate limiter', requestedStrategy: 'orchestrated', hostModel: MODEL, host: 'OpenCode', fileCount: 4, moduleCount: 2 },
     { env: ENV, cwd },
   );
-  planned.tasks = ['cx-engineer', 'cx-qa'].map((role, seq) => ({
+  planned.tasks = ['engineer', 'qa'].map((role, seq) => ({
     id: `t${seq + 1}`, seq, role, reason: null, handoffContract: null,
     status: 'queued', executor: null, output: null, reasoning: null, error: null, startedAt: null, finishedAt: null,
   }));
@@ -78,7 +78,7 @@ test('a host-reported result with contract-failing free text is recorded ok+warn
   const { run: afterFirst } = await submitHostTaskResult(cwd, run.runId, 't1', { output: 'Implemented a token-bucket rate limiter.' }, { env: ENV });
   const engineerTask = afterFirst.tasks.find((t) => t.id === 't1');
 
-  assert.equal(engineerTask.contractId, 'engineer-to-qa', 'the adjacent dispatched task (cx-qa) disambiguates the ambiguous cx-engineer outgoing set');
+  assert.equal(engineerTask.contractId, 'engineer-to-qa', 'the adjacent dispatched task (qa) disambiguates the ambiguous engineer outgoing set');
   assert.equal(engineerTask.contractStatus, 'ok', 'warn mode never reports blocked-contract for an auto-populated packet');
   assert.ok(Array.isArray(engineerTask.contractViolations) && engineerTask.contractViolations.length > 0, 'the real violation still rides the task, not silently dropped');
   assert.notEqual(afterFirst.status, 'degraded', 'a warn-mode contract violation must never degrade the run');

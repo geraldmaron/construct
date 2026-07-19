@@ -17,17 +17,17 @@ import path from 'node:path';
 
 import { pinDoctorRoot } from '../helpers/doctor-root.mjs';
 
-const cxGraphTestHomeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-graph-staleness-home-'));
-const cxGraphTestPrevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = cxGraphTestHomeOverride;
+const constructGraphTestHomeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-graph-staleness-home-'));
+const constructGraphTestPrevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = constructGraphTestHomeOverride;
 
 const { root: doctorRoot, restore: restoreDoctorRoot } = pinDoctorRoot('cx-graph-staleness-doctor-');
 
 test.after(() => {
   restoreDoctorRoot();
-  try { fs.rmSync(cxGraphTestHomeOverride, { recursive: true, force: true }); } catch {}
-  if (cxGraphTestPrevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = cxGraphTestPrevHomeOverride;
+  try { fs.rmSync(constructGraphTestHomeOverride, { recursive: true, force: true }); } catch {}
+  if (constructGraphTestPrevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = constructGraphTestPrevHomeOverride;
 });
 
 const { writeGraph } = await import('../../lib/graph/store.mjs');

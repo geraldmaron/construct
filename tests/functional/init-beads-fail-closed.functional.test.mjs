@@ -67,7 +67,7 @@ test('construct init fails with non-zero exit when beads initialization throws',
         CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
         BOOTSTRAP_CHECKED: '1',
         HOME: SANDBOX_HOME,
-        CX_HOME_OVERRIDE: SANDBOX_HOME,
+        CONSTRUCT_HOME_OVERRIDE: SANDBOX_HOME,
       },
     },
   );
@@ -91,7 +91,7 @@ test('construct init --no-beads skips beads and exits successfully', (t) => {
         CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
         BOOTSTRAP_CHECKED: '1',
         HOME: SANDBOX_HOME,
-        CX_HOME_OVERRIDE: SANDBOX_HOME,
+        CONSTRUCT_HOME_OVERRIDE: SANDBOX_HOME,
       },
     },
   );

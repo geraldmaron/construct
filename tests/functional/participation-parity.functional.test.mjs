@@ -8,7 +8,7 @@
  * identical validation errors — because all three are thin envelopes over
  * lib/registry/org-api.mjs. Each surface gets its own tmpdir fixture seeded
  * with the real builtin org so the three writes can be compared byte-for-byte
- * without cross-contamination; CX_HOME_OVERRIDE isolates the user tier and
+ * without cross-contamination; CONSTRUCT_HOME_OVERRIDE isolates the user tier and
  * the spawned CLI runs with the fixture as cwd so no state leaks into the
  * repo (config-write cwd leak lesson).
  */
@@ -29,8 +29,8 @@ const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const BIN = path.join(REPO, 'bin', 'construct');
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'part-parity-home-'));
-const originalHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const originalHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 
 function makeFixture(tag) {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), `part-parity-${tag}-`));
@@ -47,8 +47,8 @@ before(async () => {
 });
 after(async () => {
   await studio?.close();
-  if (originalHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = originalHomeOverride;
+  if (originalHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = originalHomeOverride;
   for (const dir of [...Object.values(fixtures), homeOverride]) fs.rmSync(dir, { recursive: true, force: true });
 });
 
@@ -57,7 +57,7 @@ function cli(fixture, args, { expectFailure = false } = {}) {
     return execFileSync(process.execPath, [BIN, 'participation', ...args], {
       cwd: fixture,
       encoding: 'utf8',
-      env: { ...process.env, CX_HOME_OVERRIDE: homeOverride, HOME: homeOverride, NODE_ENV: 'test' },
+      env: { ...process.env, CONSTRUCT_HOME_OVERRIDE: homeOverride, HOME: homeOverride, NODE_ENV: 'test' },
     });
   } catch (err) {
     if (!expectFailure) throw err;
@@ -74,7 +74,7 @@ const ui = (method, url, body) => fetch(studio.url + url, {
 const VALID_RULE = {
   id: 'parity-visual-review',
   when: { signalExpr: 'visualDeliverable' },
-  recruit: { specialists: ['cx-designer'] },
+  recruit: { specialists: ['designer'] },
   role: 'reviewer',
   gate: 'advisory',
   reason: 'visual deliverable — design review',
@@ -84,16 +84,16 @@ const INVALID_RULE = { id: 'Bad Id', when: {}, recruit: {}, role: 'boss', gate: 
 
 const DROP_IN_REL = path.join(
   path.relative(fixtures.cli, customOrgDir('project', { rootDir: fixtures.cli })),
-  'specialists', 'cx-designer.json',
+  'specialists', 'designer.json',
 );
 
 test('the same rule created via CLI, MCP, and UI produces byte-identical project config', async () => {
-  cli(fixtures.cli, ['add', 'cx-designer', `--rule=${JSON.stringify(VALID_RULE)}`, '--json']);
+  cli(fixtures.cli, ['add', 'designer', `--rule=${JSON.stringify(VALID_RULE)}`, '--json']);
 
-  const mcpResult = await participationRules({ action: 'add', owner: 'cx-designer', rule: VALID_RULE }, { cwd: fixtures.mcp });
+  const mcpResult = await participationRules({ action: 'add', owner: 'designer', rule: VALID_RULE }, { cwd: fixtures.mcp });
   assert.equal(mcpResult.ok, true, JSON.stringify(mcpResult.errors));
 
-  const uiResult = await ui('POST', '/api/participation/cx-designer?scope=project', VALID_RULE);
+  const uiResult = await ui('POST', '/api/participation/designer?scope=project', VALID_RULE);
   assert.equal(uiResult.ok, true, JSON.stringify(uiResult.errors));
 
   const written = Object.entries(fixtures).map(([surface, dir]) => {
@@ -117,21 +117,21 @@ test('the three surfaces list and show the created rule identically', async () =
   assert.deepEqual(pick(mcpList), pick(uiList), 'MCP and UI list rows match');
   assert.equal(pick(cliList).length, 1);
 
-  const cliShow = JSON.parse(cli(fixtures.cli, ['show', 'cx-designer', 'parity-visual-review']));
-  const mcpShow = await participationRules({ action: 'show', owner: 'cx-designer', rule_id: 'parity-visual-review' }, { cwd: fixtures.mcp });
+  const cliShow = JSON.parse(cli(fixtures.cli, ['show', 'designer', 'parity-visual-review']));
+  const mcpShow = await participationRules({ action: 'show', owner: 'designer', rule_id: 'parity-visual-review' }, { cwd: fixtures.mcp });
   assert.deepEqual(cliShow.rule, mcpShow.rule);
 });
 
 test('an invalid rule is refused with identical validation errors on all three surfaces', async () => {
-  const cliResult = JSON.parse(cli(fixtures.cli, ['validate', 'cx-designer', `--rule=${JSON.stringify(INVALID_RULE)}`, '--json'], { expectFailure: true }));
-  const mcpResult = await participationRules({ action: 'validate', owner: 'cx-designer', rule: INVALID_RULE }, { cwd: fixtures.mcp });
-  const uiResult = await ui('POST', '/api/validate/participation', { ownerId: 'cx-designer', rule: INVALID_RULE });
+  const cliResult = JSON.parse(cli(fixtures.cli, ['validate', 'designer', `--rule=${JSON.stringify(INVALID_RULE)}`, '--json'], { expectFailure: true }));
+  const mcpResult = await participationRules({ action: 'validate', owner: 'designer', rule: INVALID_RULE }, { cwd: fixtures.mcp });
+  const uiResult = await ui('POST', '/api/validate/participation', { ownerId: 'designer', rule: INVALID_RULE });
 
   assert.equal(cliResult.ok, false);
   assert.deepEqual(cliResult.errors, mcpResult.errors, 'CLI and MCP errors are identical');
   assert.deepEqual(mcpResult.errors, uiResult.errors, 'MCP and UI errors are identical');
 
-  const cliAdd = JSON.parse(cli(fixtures.cli, ['add', 'cx-designer', `--rule=${JSON.stringify(INVALID_RULE)}`, '--json'], { expectFailure: true }));
+  const cliAdd = JSON.parse(cli(fixtures.cli, ['add', 'designer', `--rule=${JSON.stringify(INVALID_RULE)}`, '--json'], { expectFailure: true }));
   assert.equal(cliAdd.ok, false);
   assert.deepEqual(cliAdd.errors, mcpResult.errors, 'the add path refuses with the same errors validate reports');
 });
@@ -148,8 +148,8 @@ test('preview parity: the same sample request recruits the same set on all three
 });
 
 test('remove parity: CLI and MCP delete the rule the same way', async () => {
-  const cliGone = JSON.parse(cli(fixtures.cli, ['remove', 'cx-designer', 'parity-visual-review', '--json']));
-  const mcpGone = await participationRules({ action: 'remove', owner: 'cx-designer', rule_id: 'parity-visual-review' }, { cwd: fixtures.mcp });
+  const cliGone = JSON.parse(cli(fixtures.cli, ['remove', 'designer', 'parity-visual-review', '--json']));
+  const mcpGone = await participationRules({ action: 'remove', owner: 'designer', rule_id: 'parity-visual-review' }, { cwd: fixtures.mcp });
   assert.equal(cliGone.ok, true);
   assert.equal(mcpGone.ok, true);
   assert.deepEqual(cliGone.rules, mcpGone.rules);

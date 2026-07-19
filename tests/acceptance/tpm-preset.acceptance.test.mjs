@@ -35,7 +35,7 @@ import { ApprovalQueue } from '../../lib/embed/approval-queue.mjs';
 import { runCapabilityTick } from '../../lib/embed/capability-jobs.mjs';
 import { createTpmReasoningExecutor, analyzeTpm } from '../../lib/embed/presets/tpm.mjs';
 import { writeWithEnvelope } from '../../lib/writes/envelope.mjs';
-import { validatePacket } from '../../lib/specialist-contracts.mjs';
+import { validatePacket } from '../../lib/capability-contracts.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const realFetch = globalThis.fetch;
@@ -69,7 +69,7 @@ const OPERATIONS_MANIFEST = {
   type: 'embed',
   defaultApprovalMode: 'proposal-only',
   embed: {
-    specialist: 'cx-operations',
+    specialist: 'operations',
     providerBindings: ['atlassian-jira', 'atlassian-confluence', 'slack'],
     framework: 'cx-ops-dependency-sequencing',
     outputContract: 'operations-tpm-briefing',

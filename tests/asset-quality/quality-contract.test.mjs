@@ -62,7 +62,7 @@ test('the validator rejects an out-of-enum gate level', () => {
     artifacts: {
       broken: {
         template: 'x.md',
-        primaryOwners: ['cx-product-manager'],
+        primaryOwners: ['product-manager'],
         qualityContract: { gateLevel: 'turbo' },
       },
     },

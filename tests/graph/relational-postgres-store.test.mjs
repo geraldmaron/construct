@@ -120,8 +120,8 @@ if (!sql) {
   // machine's ~/.construct/projects/.
 
   const parityHomeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-graph-pg-parity-home-'));
-  const prevParityHomeOverride = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = parityHomeOverride;
+  const prevParityHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = parityHomeOverride;
 
   const parityRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'graph-pg-parity-'));
   const PARITY_WORKSPACE = `cx-test-graph-parity-${Date.now()}`;
@@ -176,8 +176,8 @@ if (!sql) {
   const parityStore = new PostgresGraphStore({ sql, workspace: PARITY_WORKSPACE });
 
   test.after(async () => {
-    if (prevParityHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prevParityHomeOverride;
+    if (prevParityHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prevParityHomeOverride;
     try { fs.rmSync(parityHomeOverride, { recursive: true, force: true }); } catch {}
     try { fs.rmSync(parityRoot, { recursive: true, force: true }); } catch {}
     await sql`DELETE FROM construct_graph_nodes WHERE workspace = ${PARITY_WORKSPACE}`;

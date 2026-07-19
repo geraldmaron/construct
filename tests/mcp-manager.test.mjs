@@ -47,12 +47,12 @@ function makeRepoCopy(t) {
       // Carrying the config dir into the copy is a flake source: a stale sync.lock from any earlier
       // sync (local or CI step) gets cloned, and acquireLock() then aborts when process.kill(N, 0)
       // happens to find a live PID on the runner. sync regenerates .construct/ in the copy, so
-      // excluding it (plus the legacy .cx/) loses nothing. (construct-edkj moved the lock to .construct/.)
+      // excluding it (plus the legacy .construct/) loses nothing. (construct-edkj moved the lock to .construct/.)
       if (hasPathSegment(rel, ".construct")) return false;
       if (hasPathSegment(rel, ".cx")) return false;
 
       // `.claude/` is host-local Claude Code state that post-commit hooks mutate
-      // (sync-specialists writes ~/.claude/CLAUDE.md and the project .claude/agents
+      // (sync-worker-profiles writes ~/.claude/CLAUDE.md and the project .claude/agents
       // catalog on every commit). cpSync's readdir → lstat is not atomic, so a
       // racing write between those calls produces ENOENT mid-walk. The test sets
       // HOME to a tmpdir and lets the harness rebuild .claude/ there.
@@ -143,21 +143,21 @@ function runMcpList({ home, cwd, env = {} }) {
 function runSync({ home, cwd, env = {}, t }) {
   const repoRoot = makeRepoCopy(t);
   // Tests in this file assert on user-scope OpenCode/Claude config, so opt
-  // into global mode explicitly. The repo copy carries a `.cx/` marker which
+  // into global mode explicitly. The repo copy carries a `.construct/` marker which
   // would otherwise trigger auto-detected project mode.
 
   // repoRoot here is makeRepoCopy()'s disposable tmp copy, not the real repo —
-  // CX_TOOLKIT_DIR pins sync-specialists.mjs's self-derived root to that exact
+  // CONSTRUCT_TOOLKIT_DIR pins sync-worker-profiles.mjs's self-derived root to that exact
   // (symlink-unresolved) path string, matching this test's literal expected
   // path rather than the macOS /tmp-to-/private/tmp symlink-resolved form
   // import.meta.dirname would otherwise produce.
 
-  execFileSync(process.execPath, ["scripts/sync-specialists.mjs", "--global"], {
+  execFileSync(process.execPath, ["scripts/sync-worker-profiles.mjs", "--global"], {
     cwd: repoRoot,
     env: {
       ...process.env,
       HOME: home,
-      CX_TOOLKIT_DIR: repoRoot,
+      CONSTRUCT_TOOLKIT_DIR: repoRoot,
       ...env,
     },
     stdio: "pipe",

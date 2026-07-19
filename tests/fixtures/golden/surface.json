@@ -577,7 +577,7 @@
       "core": false
     }
   ],
-  "agents": [
+  "workerProfiles": [
     "architect",
     "data-analyst",
     "debugger",

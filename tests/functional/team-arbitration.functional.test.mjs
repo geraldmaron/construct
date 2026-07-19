@@ -25,7 +25,7 @@ import { runCertificationScenario } from '../../lib/certification/runner.mjs';
 import { reviewerReferencesEngineer } from '../../lib/certification/team-arbitration.mjs';
 
 const MODEL = 'anthropic/claude-sonnet-4-6';
-const ENV = { CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL };
+const ENV = { CONSTRUCT_MODEL_REASONING: MODEL, CONSTRUCT_MODEL_STANDARD: MODEL, CONSTRUCT_MODEL_FAST: MODEL };
 
 const dirs = [];
 function project() {
@@ -36,20 +36,20 @@ function project() {
 test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} } });
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-team-arb-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 test.after(() => {
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 const REQUEST = 'implement and verify a pagination feature for the results list';
 const OUTPUTS = {
-  'cx-architect': 'ARCHITECT-DECISION: results must stay per-page revocable; stable ordering under concurrent writes is the invariant.',
-  'cx-engineer': 'ENGINEER-IMPL: shipped offset pagination with a 24-hour cache for convenience.',
-  'cx-reviewer': 'REVIEWER-CHALLENGE: DISAGREE — offset pagination + a 24-hour cache breaks stable ordering under concurrent writes; flag HIGH, recommend keyset pagination.',
-  'cx-qa': 'QA-RECONCILE: added a test asserting ordering stability; the offset-vs-keyset disagreement is unresolved and must be reconciled before merge.',
+  'architect': 'ARCHITECT-DECISION: results must stay per-page revocable; stable ordering under concurrent writes is the invariant.',
+  'engineer': 'ENGINEER-IMPL: shipped offset pagination with a 24-hour cache for convenience.',
+  'reviewer': 'REVIEWER-CHALLENGE: DISAGREE — offset pagination + a 24-hour cache breaks stable ordering under concurrent writes; flag HIGH, recommend keyset pagination.',
+  'qa': 'QA-RECONCILE: added a test asserting ordering stability; the offset-vs-keyset disagreement is unresolved and must be reconciled before merge.',
 };
 
 test('the base chain collaborates: a reviewer disagreement propagates from engineer through to qa', async () => {
@@ -58,7 +58,7 @@ test('the base chain collaborates: a reviewer disagreement propagates from engin
   // The base chain dispatches architect->engineer->reviewer->qa in a fixed order before any
   // runtime-recruited join fires (joins happen after a task completes), so call index maps
   // deterministically to the base role; later calls (a recruited designer) get generic output.
-  const ORDER = ['cx-architect', 'cx-engineer', 'cx-reviewer', 'cx-qa'];
+  const ORDER = ['architect', 'engineer', 'reviewer', 'qa'];
   const fetchImpl = async (_url, opts) => {
     const idx = bodies.length;
     bodies.push(JSON.parse(opts.body));
@@ -77,7 +77,7 @@ test('the base chain collaborates: a reviewer disagreement propagates from engin
   const roles = run.tasks.map((t) => t.role);
   // The base chain must be present in order; runtime recruitment (H8) may append extra
   // joins from output signals (e.g. a designer), which is expected, not a failure.
-  const baseIdx = ['cx-architect', 'cx-engineer', 'cx-reviewer', 'cx-qa'].map((r) => roles.indexOf(r));
+  const baseIdx = ['architect', 'engineer', 'reviewer', 'qa'].map((r) => roles.indexOf(r));
   assert.ok(baseIdx.every((i) => i >= 0), `base chain present in ${roles.join(',')}`);
   assert.deepEqual([...baseIdx].sort((a, b) => a - b), baseIdx, 'base chain dispatched in architect->engineer->reviewer->qa order');
   for (const t of run.tasks) {
@@ -87,20 +87,20 @@ test('the base chain collaborates: a reviewer disagreement propagates from engin
 
   // bodies are captured in dispatch order, so bodies[i] is the prompt for run.tasks[i].
   const promptFor = (role) => JSON.stringify(bodies[roles.indexOf(role)]);
-  const reviewerPrompt = promptFor('cx-reviewer');
-  const qaPrompt = promptFor('cx-qa');
+  const reviewerPrompt = promptFor('reviewer');
+  const qaPrompt = promptFor('qa');
 
   // Collaboration: the reviewer actually saw the engineer's real, trust-wrapped output.
   assert.match(reviewerPrompt, /## Prior specialist results/, "the reviewer's prompt carries prior specialist results");
-  assert.ok(reviewerPrompt.includes(OUTPUTS['cx-engineer']), "the reviewer's prompt contains the engineer's real output");
-  assert.match(reviewerPrompt, /UNTRUSTED:team-authored:specialist:cx-engineer:/, "the engineer's output is trust-wrapped in the reviewer's prompt");
+  assert.ok(reviewerPrompt.includes(OUTPUTS['engineer']), "the reviewer's prompt contains the engineer's real output");
+  assert.match(reviewerPrompt, /UNTRUSTED:team-authored:specialist:engineer:/, "the engineer's output is trust-wrapped in the reviewer's prompt");
 
   // Propagation: qa saw the reviewer's disagreement, so the arbitration carries forward.
-  assert.ok(qaPrompt.includes(OUTPUTS['cx-reviewer']), "qa's prompt contains the reviewer's disagreement");
+  assert.ok(qaPrompt.includes(OUTPUTS['reviewer']), "qa's prompt contains the reviewer's disagreement");
   assert.match(qaPrompt, /DISAGREE/, "the reviewer's challenge language reaches qa");
 
   // And qa's own recorded output reconciles rather than silently dropping the conflict.
-  const qaOutput = run.tasks.find((t) => t.role === 'cx-qa').output;
+  const qaOutput = run.tasks.find((t) => t.role === 'qa').output;
   assert.match(qaOutput, /reconcile|unresolved/i, 'qa surfaces the unresolved disagreement rather than rubber-stamping');
 });
 

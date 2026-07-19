@@ -1,7 +1,7 @@
 {
   "id": "construct-to-orchestrator",
   "producer": "construct",
-  "consumer": "cx-orchestrator",
+  "consumer": "orchestrator",
   "trigger": {
     "track": "orchestrated"
   },

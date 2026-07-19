@@ -37,7 +37,7 @@ import { create as createFeedbackProvider } from '../../lib/providers/feedback/i
 import { ApprovalQueue } from '../../lib/embed/approval-queue.mjs';
 import { runCapabilityTick } from '../../lib/embed/capability-jobs.mjs';
 import { createPmFeedbackReasoningExecutor, analyzePmFeedback } from '../../lib/embed/presets/pm-feedback.mjs';
-import { validatePacket } from '../../lib/specialist-contracts.mjs';
+import { validatePacket } from '../../lib/capability-contracts.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const realFetch = globalThis.fetch;
@@ -70,7 +70,7 @@ const PM_FEEDBACK_MANIFEST = {
   type: 'embed',
   defaultApprovalMode: 'proposal-only',
   embed: {
-    specialist: 'cx-product-manager',
+    specialist: 'product-manager',
     providerBindings: ['feedback', 'atlassian-confluence'],
     framework: 'cx-pm-value-tradeoff',
     outputContract: 'pm-requirements-candidates',

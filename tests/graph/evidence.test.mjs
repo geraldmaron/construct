@@ -13,7 +13,7 @@
  * evidence is flagged `neverExecuted: true` distinctly from a workflow whose
  * evidence has merely aged past its staleness threshold (`stale: true`).
  *
- * CX_HOME_OVERRIDE is pinned for the whole file since runtime-evidence reads
+ * CONSTRUCT_HOME_OVERRIDE is pinned for the whole file since runtime-evidence reads
  * resolve through the machine-scoped state root, keeping them off the real
  * developer machine's $HOME.
  */
@@ -37,12 +37,12 @@ import { listWorkflowDefs } from '../../lib/embedded-contract/workflow-defs.mjs'
 import { runtimeDir } from '../../lib/orchestration/run-store.mjs';
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-graph-evidence-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 after(() => {
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 const tmpDirs = [];
@@ -75,7 +75,7 @@ function writeFixtureRun(root, overrides = {}) {
     updatedAt: '2026-06-01T00:05:00.000Z',
     request: { summary: 'fixture run', workflowType: REAL_WORKFLOW_TYPE },
     plan: { suggestedWorkflowType: null },
-    tasks: [{ id: 't1', role: 'cx-architect', status: 'done', executionState: 'executed' }],
+    tasks: [{ id: 't1', role: 'architect', status: 'done', executionState: 'executed' }],
     status: 'completed',
     executionState: 'executed',
     ...overrides,

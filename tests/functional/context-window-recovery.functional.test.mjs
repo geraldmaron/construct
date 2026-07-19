@@ -3,7 +3,7 @@
  * coverage for the PostToolUseFailure context-window recovery hook.
  *
  * Spawns lib/hooks/context-window-recovery.mjs with hook-input JSON on
- * stdin inside a sterile env (HOME/CX_HOME_OVERRIDE pinned to a fresh
+ * stdin inside a sterile env (HOME/CONSTRUCT_HOME_OVERRIDE pinned to a fresh
  * tmpdir root), so doctorRoot() resolves under the fixture, never the
  * developer's real state dir. The expected doctor root is computed with
  * the same lib/config/xdg.mjs module the hook imports.
@@ -59,7 +59,7 @@ function seed() {
 function runHook({ home, cwd }, payload) {
   return spawnSync(process.execPath, [HOOK], {
     cwd,
-    env: sterileSpawnEnv({ HOME: home, USERPROFILE: home, CX_HOME_OVERRIDE: home }),
+    env: sterileSpawnEnv({ HOME: home, USERPROFILE: home, CONSTRUCT_HOME_OVERRIDE: home }),
     input: JSON.stringify(payload),
     encoding: 'utf8',
     timeout: 15_000,

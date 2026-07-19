@@ -3,7 +3,7 @@
  *
  * Regression guard for CX-AUDIT-MCP-SAFETY-003. deleteIngestedArtifacts resolves each
  * model-supplied `files` entry against the ingested-artifact root via resolveWithinRoot,
- * so an entry like `../../../OUTSIDE.txt` that escapes `.cx/knowledge/internal` is refused
+ * so an entry like `../../../OUTSIDE.txt` that escapes `.construct/knowledge/internal` is refused
  * before any deletion rather than removing an arbitrary file on disk — the destructive
  * twin of the scanFile read-traversal, alongside the confirm=true self-authorization.
  *
@@ -27,7 +27,7 @@ test('[R11] deleteIngestedArtifacts must not delete files outside the ingested r
   fs.writeFileSync(outside, 'important external file\n');
   t.after(() => { try { fs.rmSync(root, { recursive: true, force: true }); } catch {} });
 
-  // Relative escape from .cx/knowledge/internal back up to <root>/OUTSIDE...
+  // Relative escape from .construct/knowledge/internal back up to <root>/OUTSIDE...
   const escape = path.join('..', '..', '..', 'OUTSIDE_DO_NOT_DELETE.txt');
 
   let threw = false;

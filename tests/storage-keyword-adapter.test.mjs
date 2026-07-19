@@ -65,10 +65,10 @@ describe('KeywordRetrievalAdapter', () => {
 
   it('filters searchObservations by role, category, and project', async () => {
     const adapter = new KeywordRetrievalAdapter({ env, rootDir: tmpDir });
-    await adapter.storeObservation({ id: 'a', project: 'p1', role: 'cx-engineer', category: 'pattern', summary: 'shared token here' });
-    await adapter.storeObservation({ id: 'b', project: 'p2', role: 'cx-architect', category: 'decision', summary: 'shared token here' });
+    await adapter.storeObservation({ id: 'a', project: 'p1', role: 'engineer', category: 'pattern', summary: 'shared token here' });
+    await adapter.storeObservation({ id: 'b', project: 'p2', role: 'architect', category: 'decision', summary: 'shared token here' });
 
-    const byRole = await adapter.searchObservations({ query: 'shared token', role: 'cx-engineer' });
+    const byRole = await adapter.searchObservations({ query: 'shared token', role: 'engineer' });
     assert.deepEqual(byRole.map((r) => r.id), ['a']);
 
     const byProject = await adapter.searchObservations({ query: 'shared token', project: 'p2' });

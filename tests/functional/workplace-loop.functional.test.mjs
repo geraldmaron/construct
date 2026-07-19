@@ -4,7 +4,7 @@
  *
  * Imports the real lib/workplace-loop/cli.mjs dispatch (`runWorkplaceLoopCli`,
  * the exact function bin/construct's `workplace-loop` handler calls) in one
- * isolated sandbox (CX_HOME_OVERRIDE redirected to a tmpdir, a real git
+ * isolated sandbox (CONSTRUCT_HOME_OVERRIDE redirected to a tmpdir, a real git
  * fixture repo, rmTmpDir teardown) — CLAUDE.md's multi-component-feature
  * rule ("CLI + durable state") applies since this bead touches directive
  * execution, the Workspace domain store, and the governed-write chokepoint
@@ -49,14 +49,14 @@ const REPO = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'workplace-lo
 execFileSync('git', ['init', '-q'], { cwd: REPO });
 execFileSync('git', ['remote', 'add', 'origin', 'https://github.com/example/workplace-loop-demo.git'], { cwd: REPO });
 
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = SANDBOX_HOME;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = SANDBOX_HOME;
 
 test.after(() => {
   rmTmpDir(SANDBOX_HOME);
   rmTmpDir(REPO);
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 const RISK_ISSUE = {

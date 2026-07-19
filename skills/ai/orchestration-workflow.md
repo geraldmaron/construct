@@ -19,12 +19,12 @@ Construct is an executive-aligned, control-plane workflow:
 - **Skills**: Reusable execution playbooks (searched via `search_skills`).
 - **Hooks**: Enforce continuity and system integrity (e.g. `pre-push-gate`, `dep-audit`).
 - **Resumption Protocol**: Every new session MUST begin with `workflow_status` and `project_context` to prevent "state amnesia."
-- **.cx/workflow.json**: The authoritative local task graph (Beads pattern).
+- **.construct/workflow.json**: The authoritative local task graph (Beads pattern).
 - **Cass (Memory MCP)**: Preserves durable project context across sessions and platforms.
 
 ## Required State
 
-For non-trivial work, create or update `.cx/workflow.json` with:
+For non-trivial work, create or update `.construct/workflow.json` with:
 
 - `phase`: current phase (research, plan, implement, validate, operate)
 - `currentTaskKey`: active task

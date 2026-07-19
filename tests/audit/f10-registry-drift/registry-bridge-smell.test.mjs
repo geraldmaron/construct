@@ -1,13 +1,13 @@
 /**
  * tests/audit/f10-registry-drift/registry-bridge-smell.red.mjs — F10 [R34] unified→legacy bridge.
  *
- * RED fixture (OBSERVATION + assertion). scripts/sync-specialists.mjs carries a manual
+ * RED fixture (OBSERVATION + assertion). scripts/sync-worker-profiles.mjs carries a manual
  * unified→legacy registry bridge whose accretion shows in a duplicate cache flush:
- *   - sync-specialists.mjs:120-121  calls clearCache() twice in a row before loadRegistry().
+ *   - sync-worker-profiles.mjs:120-121  calls clearCache() twice in a row before loadRegistry().
  *   - lib/registry/loader.mjs:128-132 clearCache() nulls three module-level vars
  *     (_registry, _orgMtime, _legacyOverlayMtime); it is idempotent, so the second call is a
  *     provable no-op.
- *   - sync-specialists.mjs:80-118  unifiedToLegacyRegistry() hand-maps the unified registry
+ *   - sync-worker-profiles.mjs:80-118  unifiedToLegacyRegistry() hand-maps the unified registry
  *     (registry/loader.mjs) into a legacy shape with its own re-validation
  *     (validateRegistry, L125-185), parallel to lib/registry/validate.mjs.
  * The duplicate clearCache() is harmless on its own but is evidence of a hand-maintained bridge
@@ -34,7 +34,7 @@ import test from 'node:test';
 import { clearCache, loadRegistry } from '../../../lib/registry/loader.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
-const SYNC_SCRIPT = path.join(REPO_ROOT, 'scripts', 'sync-specialists.mjs');
+const SYNC_SCRIPT = path.join(REPO_ROOT, 'scripts', 'sync-worker-profiles.mjs');
 
 // clearCache() only nulls module-level cache vars, so calling it N times is equivalent to
 // calling it once: the next loadRegistry() reassembles regardless. A second consecutive call
@@ -60,12 +60,12 @@ test('[R34] clearCache is idempotent — a second consecutive flush is a no-op',
 // the duplicate remains and turns GREEN when the bridge cleanup removes the second call. It is
 // the executable record that CX-AUDIT-REGISTRY-003 has unfinished work.
 
-test('[R34] sync-specialists.mjs no longer calls clearCache twice in a row', () => {
+test('[R34] sync-worker-profiles.mjs no longer calls clearCache twice in a row', () => {
   const source = fs.readFileSync(SYNC_SCRIPT, 'utf8');
   const consecutive = /clearCache\(\);\s*\n\s*clearCache\(\);/m.test(source);
   assert.equal(
     consecutive,
     false,
-    'scripts/sync-specialists.mjs:120-121 calls clearCache() twice consecutively — a bridge-accretion smell to remove',
+    'scripts/sync-worker-profiles.mjs:120-121 calls clearCache() twice consecutively — a bridge-accretion smell to remove',
   );
 });

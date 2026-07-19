@@ -39,12 +39,11 @@ describe('getDefaultDecision', () => {
 /** Build a manifests object with one role whose fence is empty (no rules). */
 function minimalManifests(roleId = 'engineer') {
   return {
-    personas: {
+    workerProfiles: {
       [roleId]: {
         events: [],
         fence: {},
-        outputs: { docTypes: [] },
-        teamId: null,
+        outputs: { artifactClasses: [] },
       },
     },
     registry: null,
@@ -54,12 +53,11 @@ function minimalManifests(roleId = 'engineer') {
 /** Build manifests with an explicit allow rule for a given action pattern. */
 function manifestsWithApprovalRequired(roleId, actionPattern) {
   return {
-    personas: {
+    workerProfiles: {
       [roleId]: {
         events: [],
         fence: { approvalRequired: [actionPattern] },
-        outputs: { docTypes: [] },
-        teamId: null,
+        outputs: { artifactClasses: [] },
       },
     },
     registry: null,
@@ -102,7 +100,7 @@ describe('policyDecision — deny-by-default', () => {
     clearManifestCache();
     const result = policyDecision(
       { ...baseInput, deploymentMode: 'enterprise' },
-      { manifests: minimalManifests('engineer') },
+      { manifests: minimalManifests('engineer'), checkSink: () => ({ available: true }) },
     );
     assert.equal(result.allowed, false, 'expected deny');
     assert.equal(result.reason, 'deny-by-default');
@@ -123,7 +121,7 @@ describe('policyDecision — deny-by-default', () => {
   it('explicit deny rule in team mode → deny (explicit deny, not deny-by-default)', () => {
     clearManifestCache();
     const manifests = {
-      personas: {
+      workerProfiles: {
         engineer: {
           events: [],
           fence: { deniedActions: ['bash:run'] },

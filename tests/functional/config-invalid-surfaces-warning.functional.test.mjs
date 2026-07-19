@@ -35,7 +35,7 @@ function project(configObj) {
 test.after(() => { for (const d of dirs) { try { rmTmpDir(d); } catch {} } });
 
 // planRun (called in-process below) resolves the run store through the
-// machine-scoped state root (ADR-0066), which reads CX_HOME_OVERRIDE from
+// machine-scoped state root (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE from
 // real process.env directly — the ENV bag below only feeds model-tier
 // lookups. Pin it for the whole file so these runs never write into the
 // real developer machine's ~/.construct/projects/. (The spawned `construct
@@ -43,15 +43,15 @@ test.after(() => { for (const d of dirs) { try { rmTmpDir(d); } catch {} } });
 // in the child's env.)
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-config-invalid-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 test.after(() => {
   try { rmTmpDir(homeOverride); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
-const ENV = { CX_MODEL_REASONING: 'anthropic/claude-sonnet-4-6', CX_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6', CX_MODEL_FAST: 'anthropic/claude-sonnet-4-6' };
+const ENV = { CONSTRUCT_MODEL_REASONING: 'anthropic/claude-sonnet-4-6', CONSTRUCT_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6', CONSTRUCT_MODEL_FAST: 'anthropic/claude-sonnet-4-6' };
 
 test('an invalid config surfaces a planRun warning naming the bad key and stating defaults were applied', async () => {
   const cwd = project({ version: 1, orchestration: { workerBackend: 'provider', store: 'sqllite' } });

@@ -17,9 +17,10 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { doctorRoot } from '../lib/config/xdg.mjs';
+import { homeDir } from '../lib/paths.mjs';
 
 // ─── Config ─────────────────────────────────────────────────────────────────
 
@@ -48,9 +49,9 @@ const APPLY_RATE_LIMIT_DAYS = 7;
 const HISTORY_CAP = 5;
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const HOME = os.homedir();
-const REVIEW_DIR = path.join(HOME, '.cx', 'performance-reviews');
-const HISTORY_DIR = path.join(HOME, '.cx', 'prompt-history');
+const MACHINE_STATE_DIR = doctorRoot(homeDir());
+const REVIEW_DIR = path.join(MACHINE_STATE_DIR, 'performance-reviews');
+const HISTORY_DIR = path.join(MACHINE_STATE_DIR, 'prompt-history');
 const SKILLS_DIR = path.join(ROOT_DIR, 'skills', 'roles');
 
 const TELEMETRY_BASEURL = (process.env.CONSTRUCT_TELEMETRY_BASEURL ?? '').replace(/\/$/, '');
@@ -84,7 +85,7 @@ function warn(s) { process.stderr.write(s + '\n'); }
 
 async function fetchAgentTraces(agentName, { days = 7, limit = 50 } = {}) {
   const from = new Date(Date.now() - days * 86400_000).toISOString();
-  // Query by name (how cx_trace sets it) — tags are a secondary fallback
+  // Query by name (how construct_trace sets it) — tags are a secondary fallback
   const params = new URLSearchParams({ page: 1, limit, name: agentName, fromTimestamp: from });
   const data = await telemetryFetch(`/api/public/traces?${params}`);
   return data.data ?? [];
@@ -308,7 +309,7 @@ async function runOptimize(agentName) {
 
   if (!traces.length) {
     println(`No traces found for "${agentName}" in the last ${DAYS} days.`);
-    println('Tip: cx_trace calls must include the agent name as a tag for retrieval to work.');
+    println('Tip: construct_trace calls must include the agent name as a tag for retrieval to work.');
     return;
   }
 
@@ -336,7 +337,7 @@ async function runOptimize(agentName) {
   // Find skill file
   const skillFile = findSkillFile(agentName);
   if (!skillFile) {
-    warn(`No skill file found for "${agentName}". Searched: skills/roles/${agentName.replace(/^cx-/, '')}.md`);
+    warn(`No skill file found for "${agentName}". Searched: skills/perspectives/${agentName.replace(/^cx-/, '')}.md`);
     warn('Cannot apply patch without a skill file.');
     return;
   }
@@ -396,7 +397,7 @@ async function runOptimize(agentName) {
   }
 
   // Auto-trigger sync to propagate updated skill to all hosts
-  const syncScript = path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs');
+  const syncScript = path.join(ROOT_DIR, 'scripts', 'sync-worker-profiles.mjs');
   if (fs.existsSync(syncScript)) {
     println('Running `construct sync` to propagate updated skill…');
     const result = spawnSync(process.execPath, [syncScript], {
@@ -405,7 +406,7 @@ async function runOptimize(agentName) {
       stdio: 'inherit',
     });
     if (result.status !== 0) {
-      warn(`sync-specialists exited with code ${result.status} — run 'construct sync' manually if needed.`);
+      warn(`sync-worker-profiles exited with code ${result.status} — run 'construct sync' manually if needed.`);
     }
   } else {
     println('Run `construct sync` to propagate the updated skill to all hosts.');

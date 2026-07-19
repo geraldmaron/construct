@@ -38,7 +38,7 @@ function freshRoot() {
 }
 
 // The spawned `construct pack` binary resolves the machine-scoped state root
-// (ADR-0066) from process.env.CX_HOME_OVERRIDE / HOME in its own process, so
+// (ADR-0066) from process.env.CONSTRUCT_HOME_OVERRIDE / HOME in its own process, so
 // every spawn below must be pinned to a throwaway home or it leaks a project-key
 // directory into the real developer machine's ~/.construct/projects/.
 const HOME_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-pack-lifecycle-home-'));
@@ -149,7 +149,7 @@ function run(args, { cwd }) {
     cwd,
     encoding: 'utf8',
     timeout: 30_000,
-    env: { ...process.env, HOME: HOME_DIR, CX_HOME_OVERRIDE: HOME_DIR },
+    env: { ...process.env, HOME: HOME_DIR, CONSTRUCT_HOME_OVERRIDE: HOME_DIR },
   });
 }
 

@@ -193,18 +193,18 @@ describe('agentic-hq: skill telemetry extended payload', () => {
     const tmpLog = join(TMP_ROOT, 'skill-calls-test.jsonl');
     assert.doesNotThrow(() => {
       logSkillCall({
-        skillId: 'roles/researcher',
+        skillId: 'perspectives/researcher',
         source: 'mcp',
         latencyMs: 42,
-        agentId: 'cx-researcher',
+        agentId: 'researcher',
         sessionId: 'test-session-001',
         tokensReturned: 500,
       }, { logPath: tmpLog });
     });
     const line = JSON.parse(readFileSync(tmpLog, 'utf8').trim());
-    assert.equal(line.skillId, 'roles/researcher');
+    assert.equal(line.skillId, 'perspectives/researcher');
     assert.equal(line.latencyMs, 42);
-    assert.equal(line.agentId, 'cx-researcher');
+    assert.equal(line.agentId, 'researcher');
     assert.equal(line.sessionId, 'test-session-001');
     assert.equal(line.tokensReturned, 500);
   });

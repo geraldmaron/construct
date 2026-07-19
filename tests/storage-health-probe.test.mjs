@@ -14,7 +14,7 @@ import { resolveStateDir } from '../lib/state-root.mjs';
 const CWD = '/fake/project';
 
 // Matches the machine-scoped state root (ADR-0066) probeStorageHealth actually
-// resolves the lancedb store against, not a hardcoded `${CWD}/.cx/lancedb`.
+// resolves the lancedb store against, not a hardcoded `${CWD}/.construct/lancedb`.
 const LANCEDB_STATE_PATH = resolveStateDir(CWD, 'lancedb', { ensureDir: false });
 
 function makeExistsStub({ cx, lancedb }) {
@@ -29,7 +29,7 @@ const openableStore = async () => ({ tableNames: async () => ['observations'] })
 const brokenStore = async () => { throw new Error('corrupt manifest'); };
 
 describe('probeStorageHealth', () => {
-  it('returns healthy when .cx/lancedb exists and the store opens', async () => {
+  it('returns healthy when .construct/lancedb exists and the store opens', async () => {
     const { sqlHealth, vectorStore } = await probeStorageHealth(CWD, {
       fsExistsSync: makeExistsStub({ cx: true, lancedb: true }),
       lancedbOpener: openableStore,
@@ -51,7 +51,7 @@ describe('probeStorageHealth', () => {
     assert.equal(vectorStore.enabled, false);
   });
 
-  it('returns degraded when .cx/ exists but .cx/lancedb is absent', async () => {
+  it('returns degraded when .construct/ exists but .construct/lancedb is absent', async () => {
     const { sqlHealth, vectorStore } = await probeStorageHealth(CWD, {
       fsExistsSync: makeExistsStub({ cx: true, lancedb: false }),
     });
@@ -60,7 +60,7 @@ describe('probeStorageHealth', () => {
     assert.equal(vectorStore.enabled, false);
   });
 
-  it('returns unavailable when .cx/ is absent', async () => {
+  it('returns unavailable when .construct/ is absent', async () => {
     const { sqlHealth, vectorStore } = await probeStorageHealth(CWD, {
       fsExistsSync: makeExistsStub({ cx: false, lancedb: false }),
     });

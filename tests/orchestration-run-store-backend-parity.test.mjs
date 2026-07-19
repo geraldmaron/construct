@@ -32,7 +32,7 @@ function sampleRun(id, overrides = {}) {
     status: 'completed',
     execution: { executionMode: 'construct-orchestrated' },
     request: { summary: `summary for ${id}` },
-    tasks: [{ id: 't1', role: 'cx-engineer', status: 'done' }],
+    tasks: [{ id: 't1', role: 'engineer', status: 'done' }],
     ...overrides,
   };
 }
@@ -71,14 +71,14 @@ if (!sqliteOk || !sql) {
 } else {
   const dirs = [];
   const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-parity-home-'));
-  const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = homeOverride;
+  const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 
   test.after(async () => {
     for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} }
     try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
-    if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+    if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
     await closeSqlClient(sql);
   });
 

@@ -11,7 +11,7 @@
  * project-keyed path — `doclingVenvPath()` takes no root/cwd argument at all.
  * Because of that, a fixture "venv" is not scoped by fixture root the way
  * unpdf/mammoth markers are: every test that exercises docling presence gets
- * its own isolated CX_HOME_OVERRIDE rather than sharing one across the file,
+ * its own isolated CONSTRUCT_HOME_OVERRIDE rather than sharing one across the file,
  * so provisioning the venv in one test cannot leak into another test's
  * "not provisioned" assertion.
  */
@@ -27,13 +27,13 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 function withFreshHome(fn) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-ingest-tooling-home-'));
-  const prev = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = home;
+  const prev = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = home;
   try {
     return fn(home);
   } finally {
-    if (prev === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prev;
+    if (prev === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prev;
     rmTmpDir(home);
   }
 }

@@ -58,7 +58,7 @@
     }
   ],
   "permissions": {},
-  "promptFile": "specialists/prompts/cx-designer.md",
+  "promptFile": "specialists/prompts/designer.md",
   "embedOrientation": {
     "focusAreas": [
       "interaction completeness",

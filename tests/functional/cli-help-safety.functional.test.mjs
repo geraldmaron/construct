@@ -92,7 +92,7 @@ test('destructive commands with --help do NOT touch the filesystem', () => {
   const { fakeHome, env } = isolatedEnv();
   try {
     // Snapshot the fake HOME before each --help. If the command actually
-    // ran, .construct/ or .cx/ would appear.
+    // ran, .construct/ or .construct/ would appear.
     for (const name of DESTRUCTIVE) {
       const before = fs.readdirSync(fakeHome).sort().join(',');
       const result = spawnSync(BIN, [name, '--help'], { env, encoding: 'utf8', timeout: 5000 });

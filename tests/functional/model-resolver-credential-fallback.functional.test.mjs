@@ -29,9 +29,9 @@ const PROVIDER_KEYS = [
   'OLLAMA_BASE_URL',
   'OLLAMA_HOST',
   'LOCAL_LLM_BASE_URL',
-  'CX_MODEL_STANDARD',
-  'CX_MODEL_REASONING',
-  'CX_MODEL_FAST',
+  'CONSTRUCT_MODEL_STANDARD',
+  'CONSTRUCT_MODEL_REASONING',
+  'CONSTRUCT_MODEL_FAST',
   'CONSTRUCT_MODEL_STANDARD',
   'CONSTRUCT_MODEL_REASONING',
   'CONSTRUCT_MODEL_FAST',
@@ -54,7 +54,7 @@ test('[uccl.2] credential-only resolves to the family default, warned, with a di
 });
 
 test('[uccl.2] an explicit pin suppresses the credential fallback entirely', () => {
-  const env = scrubbedEnv({ ANTHROPIC_API_KEY: 'sk-test-canary', CX_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6' });
+  const env = scrubbedEnv({ ANTHROPIC_API_KEY: 'sk-test-canary', CONSTRUCT_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6' });
   const r = resolveEmbeddedModel({ requestedTier: 'standard' }, { env });
   assert.equal(r.selectedModel, 'anthropic/claude-sonnet-4-6');
   assert.equal(r.resolutionSource, 'tier-default');
@@ -66,7 +66,7 @@ test('[uccl.2] neither pin nor credential leaves a followable remediation with n
   const r = resolveEmbeddedModel({ requestedTier: 'standard' }, { env });
   assert.equal(r.selectedModel, null);
   assert.equal(r.resolutionSource, 'config-error');
-  assert.match(r.error.remediation, /CX_MODEL_STANDARD|ANTHROPIC_API_KEY/);
+  assert.match(r.error.remediation, /CONSTRUCT_MODEL_STANDARD|ANTHROPIC_API_KEY/);
   assert.ok(!r.error.remediation.includes('..'), 'remediation must not contain a double period');
 });
 

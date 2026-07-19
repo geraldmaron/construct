@@ -1,6 +1,6 @@
 /**
  * tests/project-root.test.mjs — covers lib/project-root.mjs:
- *   - findProjectRoot walks upward for `.cx/` or `.construct/` markers
+ *   - findProjectRoot walks upward for `.construct/` or `.construct/` markers
  *   - stops at $HOME (so ~ doesn't look like a project)
  *   - projectIdFor is deterministic + stable per absolute path
  *   - resolveProjectScopedPath returns project path when in a project,
@@ -29,7 +29,7 @@ test('findProjectRoot returns null when no marker is found', () => {
   } finally { cleanup(); }
 });
 
-test('findProjectRoot returns the dir containing a .cx/ marker', () => {
+test('findProjectRoot returns the dir containing a .construct/ marker', () => {
   _resetCache();
   const { dir, cleanup } = makeTmp();
   try {
@@ -97,7 +97,7 @@ test('resolveProjectScope returns null outside a project, scope object inside', 
     const scope = resolveProjectScope(inside);
     assert.ok(scope, 'inside a project must return a scope object');
     assert.equal(scope.projectRoot, inside);
-    assert.equal(scope.cxDir, join(inside, '.construct'));
+    assert.equal(scope.constructDir, join(inside, '.construct'));
     assert.match(scope.projectId, /^[0-9a-f]{12}$/);
   } finally {
     rmSync(outside, { recursive: true, force: true });

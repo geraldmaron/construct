@@ -51,32 +51,32 @@ function readLog() {
 
 const CASES = [
   {
-    producer: 'cx-reviewer',
-    consumer: 'cx-engineer',
+    producer: 'reviewer',
+    consumer: 'engineer',
     invalidPacket: { findings: [] },
     expectFailureId: 'reviewer.findings-or-explicit-clear',
   },
   {
-    producer: 'cx-security',
-    consumer: 'cx-engineer',
+    producer: 'security',
+    consumer: 'engineer',
     invalidPacket: { threatModelUpdatedAt: '2020-01-01T00:00:00.000Z', contractStart: '2026-01-01T00:00:00.000Z' },
     expectFailureId: 'security.threat-model-not-post-hoc',
   },
   {
-    producer: 'cx-debugger',
-    consumer: 'cx-engineer',
+    producer: 'debugger',
+    consumer: 'engineer',
     invalidPacket: { rootCauseConfirmedVia: 'guess' },
     expectFailureId: 'debugger.root-cause-confirmed-via',
   },
   {
-    producer: 'cx-operations',
-    consumer: 'cx-engineer',
+    producer: 'operations',
+    consumer: 'engineer',
     invalidPacket: { crossDocCoherenceCheckRan: false },
     expectFailureId: 'docs-keeper.cross-doc-coherence-check-ran',
   },
   {
-    producer: 'cx-designer',
-    consumer: 'cx-engineer',
+    producer: 'designer',
+    consumer: 'engineer',
     invalidPacket: { accessibilityCheckRan: false },
     expectFailureId: 'designer.accessibility-check-ran',
   },
@@ -120,25 +120,25 @@ describe('binary postcondition enforcement', () => {
 // In-run enforcement (construct-pteo2.14): the run path itself calls the full
 // validateHandoff pass on a task's output handoff — a PRD handoff whose packet
 // misses required fields produces BLOCKED_CONTRACT on the task, degrades the
-// run, and lands a runId-tagged record in .cx/contract-violations.jsonl.
+// run, and lands a runId-tagged record in .construct/contract-violations.jsonl.
 
 describe('in-run enforcement through the provider execution path', () => {
   test('a deliberately incomplete PRD handoff packet blocks in-run with a durable verdict', async () => {
     const { planRun, executeRun } = await import(`../../lib/orchestration/runtime.mjs?cache=${Date.now()}`);
     const { loadRun, saveRun } = await import(`../../lib/orchestration/run-store.mjs?cache=${Date.now()}`);
 
-    const prevOverride = process.env.CX_HOME_OVERRIDE;
-    process.env.CX_HOME_OVERRIDE = tmpRoot;
+    const prevOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+    process.env.CONSTRUCT_HOME_OVERRIDE = tmpRoot;
     try {
       const MODEL = 'anthropic/claude-sonnet-4-6';
-      const env = { CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL, ANTHROPIC_API_KEY: 'sk-test' };
+      const env = { CONSTRUCT_MODEL_REASONING: MODEL, CONSTRUCT_MODEL_STANDARD: MODEL, CONSTRUCT_MODEL_FAST: MODEL, ANTHROPIC_API_KEY: 'sk-test' };
       const planned = await planRun(
         { request: 'research user needs and write a PRD for the search feature', requestedStrategy: 'orchestrated', hostModel: MODEL },
         { env, cwd: tmpRoot },
       );
 
       const run = loadRun(tmpRoot, planned.runId);
-      const researcher = run.tasks.find((t) => t.role === 'cx-researcher') ?? run.tasks[0];
+      const researcher = run.tasks.find((t) => t.role === 'researcher') ?? run.tasks[0];
       researcher.outputContractId = 'researcher-to-product-manager';
       researcher.outputPacket = { problem: 'observed problem statement' };
       saveRun(tmpRoot, run);
@@ -157,11 +157,11 @@ describe('in-run enforcement through the provider execution path', () => {
 
       const log = readLog();
       const verdict = log.find((r) => r.contractId === 'researcher-to-product-manager' && r.verdict === 'BLOCKED_CONTRACT');
-      assert.ok(verdict, 'BLOCKED_CONTRACT recorded in .cx/contract-violations.jsonl');
+      assert.ok(verdict, 'BLOCKED_CONTRACT recorded in .construct/contract-violations.jsonl');
       assert.equal(verdict.runId, planned.runId, 'the record is runId-tagged');
     } finally {
-      if (prevOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-      else process.env.CX_HOME_OVERRIDE = prevOverride;
+      if (prevOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+      else process.env.CONSTRUCT_HOME_OVERRIDE = prevOverride;
     }
   });
 
@@ -169,18 +169,18 @@ describe('in-run enforcement through the provider execution path', () => {
     const { planRun, executeRun } = await import(`../../lib/orchestration/runtime.mjs?cache=${Date.now()}`);
     const { loadRun, saveRun } = await import(`../../lib/orchestration/run-store.mjs?cache=${Date.now()}`);
 
-    const prevOverride = process.env.CX_HOME_OVERRIDE;
-    process.env.CX_HOME_OVERRIDE = tmpRoot;
+    const prevOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+    process.env.CONSTRUCT_HOME_OVERRIDE = tmpRoot;
     try {
       const MODEL = 'anthropic/claude-sonnet-4-6';
-      const env = { CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL, ANTHROPIC_API_KEY: 'sk-test' };
+      const env = { CONSTRUCT_MODEL_REASONING: MODEL, CONSTRUCT_MODEL_STANDARD: MODEL, CONSTRUCT_MODEL_FAST: MODEL, ANTHROPIC_API_KEY: 'sk-test' };
       const planned = await planRun(
         { request: 'research user needs and write a PRD for the search feature', requestedStrategy: 'orchestrated', hostModel: MODEL },
         { env, cwd: tmpRoot },
       );
 
       const run = loadRun(tmpRoot, planned.runId);
-      const researcher = run.tasks.find((t) => t.role === 'cx-researcher') ?? run.tasks[0];
+      const researcher = run.tasks.find((t) => t.role === 'researcher') ?? run.tasks[0];
       researcher.outputContractId = 'researcher-to-product-manager';
       researcher.outputPacket = {
         question: 'what slows enterprise admins during weekly audits',
@@ -203,8 +203,8 @@ describe('in-run enforcement through the provider execution path', () => {
       assert.equal(checkedTask.contractStatus, 'ok', `conforming packet passes: ${JSON.stringify(checkedTask.contractViolations ?? null)}`);
       assert.notEqual(executed.degradationReason, 'blocked-contract');
     } finally {
-      if (prevOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-      else process.env.CX_HOME_OVERRIDE = prevOverride;
+      if (prevOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+      else process.env.CONSTRUCT_HOME_OVERRIDE = prevOverride;
     }
   });
 });

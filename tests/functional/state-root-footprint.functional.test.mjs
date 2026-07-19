@@ -11,7 +11,7 @@
  * project-relative path independently of it) and `construct doctor` flagging
  * legacy in-project heavy state left over from a pre-refit install.
  *
- * HOME and CX_HOME_OVERRIDE are both pinned to a disposable tmp dir for every
+ * HOME and CONSTRUCT_HOME_OVERRIDE are both pinned to a disposable tmp dir for every
  * spawn so the state root resolves inside the fixture, never the real
  * developer machine's home (tests/functional/README.md's isolation contract).
  */
@@ -74,10 +74,10 @@ test('construct init produces only text under .construct/ — no heavy state dir
   });
   assert.equal(result.status, 0, `init exited ${result.status}: ${result.stderr}`);
 
-  const cxDir = join(project, '.construct');
-  assert.ok(existsSync(cxDir), '.construct/ must exist after init');
+  const constructDir = join(project, '.construct');
+  assert.ok(existsSync(constructDir), '.construct/ must exist after init');
 
-  const entries = walkEntries(cxDir);
+  const entries = walkEntries(constructDir);
   const heavyDirs = entries.filter((e) => e.isDirectory && HEAVY_STATE_DIRNAMES.has(e.rel));
   assert.deepEqual(
     heavyDirs.map((e) => e.rel),
@@ -91,7 +91,7 @@ test('construct init produces only text under .construct/ — no heavy state dir
 
   for (const entry of entries) {
     if (entry.isDirectory) continue;
-    const size = statSync(join(cxDir, entry.rel)).size;
+    const size = statSync(join(constructDir, entry.rel)).size;
     assert.ok(size < 100_000, `.construct/${entry.rel} is ${size} bytes — expected committed-text-sized, not heavy state`);
   }
 });

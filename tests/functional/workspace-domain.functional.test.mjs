@@ -3,7 +3,7 @@
  * the Workspace domain store (construct-b0nny.22, design doc §12).
  *
  * Drives the real `construct workspace-domain` CLI against one isolated sandbox
- * (CX_HOME_OVERRIDE redirected to a tmpdir, a real git fixture repo,
+ * (CONSTRUCT_HOME_OVERRIDE redirected to a tmpdir, a real git fixture repo,
  * rmTmpDir teardown), mirroring tests/functional/graph-relational-store.
  * functional.test.mjs's and tests/functional/run-store-identity-convergence.
  * functional.test.mjs's isolation pattern. Spans CLI + durable-state at once
@@ -57,7 +57,7 @@ if (!sqliteAvailable()) {
       cwd: REPO,
       encoding: 'utf8',
       maxBuffer: 64 * 1024 * 1024,
-      env: { ...process.env, HOME: SANDBOX_HOME, CX_HOME_OVERRIDE: SANDBOX_HOME },
+      env: { ...process.env, HOME: SANDBOX_HOME, CONSTRUCT_HOME_OVERRIDE: SANDBOX_HOME },
     });
   }
 

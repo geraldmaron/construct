@@ -161,7 +161,7 @@ test('enforced gate with an authorized team blocks a missing sign-off', () => {
     assert.equal(r.ok, false, 'gate fails');
     assert.ok(r.errors.some((e) => e.includes('requiredReviewers not seen') && e.includes('quality-team')));
 
-    const seen = new Set(['cx-reviewer', 'cx-architect', 'cx-product-manager', 'cx-security']);
+    const seen = new Set(['reviewer', 'architect', 'product-manager', 'security']);
     const pass = validateArtifactRelease({ filePath: f, type: 'prd', rootDir: REPO, cwd: dir, reviewersSeen: seen });
     assert.equal(pass.reviewerGate.blocked, false, 'sign-offs present clears the enforced gate');
   } finally {
@@ -195,15 +195,15 @@ test('recruited reviewers join the required set and the CLI exits 2 on an enforc
     const f = join(dir, 'prd.md');
     writeFileSync(f, PASSING_PRD_BODY);
 
-    const seen = new Set(['cx-reviewer', 'cx-architect', 'cx-product-manager', 'cx-security']);
+    const seen = new Set(['reviewer', 'architect', 'product-manager', 'security']);
     const r = validateArtifactRelease({
       filePath: f, type: 'prd', rootDir: REPO, cwd: dir,
-      reviewersSeen: seen, recruitedReviewers: ['cx-data-analyst'],
+      reviewersSeen: seen, recruitedReviewers: ['data-analyst'],
     });
-    assert.deepEqual(r.reviewerGate.missing, ['cx-data-analyst'], 'recruited reviewer counted as required');
+    assert.deepEqual(r.reviewerGate.missing, ['data-analyst'], 'recruited reviewer counted as required');
     assert.equal(r.reviewerGate.blocked, true);
 
-    const cli = spawnSync(process.execPath, [join(REPO, 'bin', 'construct'), 'artifact', 'validate', f, '--type=prd', '--recruited=cx-data-analyst', '--json'], {
+    const cli = spawnSync(process.execPath, [join(REPO, 'bin', 'construct'), 'artifact', 'validate', f, '--type=prd', '--recruited=data-analyst', '--json'], {
       cwd: dir, encoding: 'utf8', timeout: 60_000,
     });
     assert.equal(cli.status, 2, `enforced reviewer block exits 2; stdout: ${cli.stdout.slice(0, 400)}`);

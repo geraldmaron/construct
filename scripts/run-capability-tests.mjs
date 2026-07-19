@@ -87,7 +87,7 @@ for (const task of unique) {
   console.log(`\n[${task.capId}] ${task.testFile}`);
   const result = spawnSync(process.execPath, ['--test', task.testFile], {
     stdio: 'inherit',
-    env: { ...process.env, CX_TEST_SURFACE: task.surface, CX_TEST_CAPABILITY: task.capId },
+    env: { ...process.env, CONSTRUCT_TEST_SURFACE: task.surface, CONSTRUCT_TEST_CAPABILITY: task.capId },
   });
   if (result.status === 0) {
     passedCount += 1;

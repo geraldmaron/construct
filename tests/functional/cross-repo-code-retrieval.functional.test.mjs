@@ -204,7 +204,7 @@ test('AC3: code-map query — build-targets over two repos, separate-process que
   assert.deepEqual(build.calls, [], 'build-targets makes no network calls');
 
   // A separate spawned process never ran the builder, so a correct answer
-  // proves the per-target graphs persisted under .cx/graph/targets/<id>/.
+  // proves the per-target graphs persisted under .construct/graph/targets/<id>/.
   const scoped = runCx(cwd, ['graph', 'query', 'file:app.mjs', '--projects=repo-py', '--json']);
   assert.equal(scoped.status, 0, `scoped graph query failed: ${scoped.stderr}`);
   const scopedResult = JSON.parse(scoped.stdout);

@@ -11,7 +11,7 @@
  *   1. The canonical key (`deriveProjectKey`) for the given project root, and
  *      whether its state directory already exists.
  *   2. The `homedir()`-fallback bucket a project with no `.construct/context.md`
- *      marker, no enclosing git repo, and no `CX_DATA_DIR` override still
+ *      marker, no enclosing git repo, and no `CONSTRUCT_DATA_DIR` override still
  *      resolves to (ADR-0092's "second, independent divergence trigger") —
  *      flagged, never merged automatically, since it may mix state from
  *      multiple unrelated local-only projects and cannot be safely
@@ -57,7 +57,7 @@ export function auditProjectIdentity(projectRoot = process.cwd()) {
 
   const flagged = findings
     .filter((f) => f.exists && f.key === homedirKey)
-    .map((f) => `${f.dir} — ${f.sizeNote}: may mix state from multiple unrelated local-only projects that hit the pre-ADR-0092 homedir() fallback (no .construct/context.md, no git remote nearby, no CX_DATA_DIR override). Review manually; do not merge or delete automatically (ADR-0092, Consequences §5).`);
+    .map((f) => `${f.dir} — ${f.sizeNote}: may mix state from multiple unrelated local-only projects that hit the pre-ADR-0092 homedir() fallback (no .construct/context.md, no git remote nearby, no CONSTRUCT_DATA_DIR override). Review manually; do not merge or delete automatically (ADR-0092, Consequences §5).`);
 
   return { projectRoot, canonicalKey, homedirKey, findings, flagged };
 }

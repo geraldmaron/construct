@@ -1,7 +1,7 @@
 # Code Review Report: {pr-title-or-bd-id}
 
 - **Date**: {YYYY-MM-DD}
-- **Reviewer**: cx-reviewer (or named human)
+- **Reviewer**: reviewer (or named human)
 - **Scope**: {files / commits / PR / bd-id}
 - **Verdict**: APPROVED | CHANGES_REQUESTED | BLOCKED
 - **Status**: draft | final
@@ -40,7 +40,7 @@ Severity contract:
 
 ## Handoff
 <!-- Where this report goes next. Bare bd-label form so it works across hosts:
-  - findings to address → `next:cx-engineer`
-  - security concern → `next:cx-security`
-  - design / contract concern → `next:cx-architect`
+  - findings to address → `next:engineer`
+  - security concern → `next:security`
+  - design / contract concern → `next:architect`
 -->

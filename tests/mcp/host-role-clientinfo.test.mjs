@@ -49,7 +49,7 @@ async function connect(env, clientInfo) {
     env: sterileSpawnEnv({
       HOME: env.HOME,
       USERPROFILE: env.HOME,
-      CX_HOME_OVERRIDE: env.HOME,
+      CONSTRUCT_HOME_OVERRIDE: env.HOME,
       XDG_CONFIG_HOME: join(env.HOME, '.config'),
       XDG_DATA_HOME: join(env.HOME, '.local', 'share'),
       XDG_RUNTIME_DIR: join(env.HOME, 'run'),
@@ -57,9 +57,9 @@ async function connect(env, clientInfo) {
       CONSTRUCT_ORCHESTRATION_URL: '',
       OPENROUTER_API_KEY: '',
       ANTHROPIC_API_KEY: '',
-      CX_MODEL_REASONING: MODEL,
-      CX_MODEL_STANDARD: MODEL,
-      CX_MODEL_FAST: MODEL,
+      CONSTRUCT_MODEL_REASONING: MODEL,
+      CONSTRUCT_MODEL_STANDARD: MODEL,
+      CONSTRUCT_MODEL_FAST: MODEL,
     }),
   });
   const client = new Client(clientInfo, { capabilities: {} });
@@ -74,7 +74,7 @@ function payload(result) {
 }
 
 // Any in-process call that resolves the machine-scoped state root (ADR-0066)
-// needs CX_HOME_OVERRIDE pinned around it — process.env is the only thing
+// needs CONSTRUCT_HOME_OVERRIDE pinned around it — process.env is the only thing
 // homeDir()/constructDir() consult, not the { env } option threaded through a
 // function's own signature. The spawned server sees the sandboxed HOME via
 // sterileSpawnEnv's env; this process must pin the same override around any
@@ -82,13 +82,13 @@ function payload(result) {
 // reads/writes the real developer machine's state root instead.
 
 async function withHomeOverride(env, fn) {
-  const prev = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = env.HOME;
+  const prev = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = env.HOME;
   try {
     return await fn();
   } finally {
-    if (prev === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prev;
+    if (prev === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prev;
   }
 }
 

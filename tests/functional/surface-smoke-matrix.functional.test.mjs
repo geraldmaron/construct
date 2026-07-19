@@ -48,9 +48,9 @@ const REQUEST = 'research and summarize current best practices for API rate limi
 
 function tierEnv(overrides = {}) {
   return sterileSpawnEnv({
-    CX_MODEL_REASONING: MODEL,
-    CX_MODEL_STANDARD: MODEL,
-    CX_MODEL_FAST: MODEL,
+    CONSTRUCT_MODEL_REASONING: MODEL,
+    CONSTRUCT_MODEL_STANDARD: MODEL,
+    CONSTRUCT_MODEL_FAST: MODEL,
     ...overrides,
   });
 }
@@ -63,22 +63,22 @@ function project() {
 }
 
 // The run store resolves the machine-scoped state root (ADR-0066) via
-// CX_HOME_OVERRIDE on process.env directly, not through any { env } option
+// CONSTRUCT_HOME_OVERRIDE on process.env directly, not through any { env } option
 // threaded through resolveStatePath itself. Each surface's sterile spawn env
-// carries its own mkdtemp HOME/CX_HOME_OVERRIDE; pinning the identical value
+// carries its own mkdtemp HOME/CONSTRUCT_HOME_OVERRIDE; pinning the identical value
 // around the read resolves the same sandboxed state root the subprocess
 // wrote to, rather than an unrelated ambient value (e.g. the real developer
 // machine's home) left over on the process from a prior test.
 
 function readRunRecord(cwd, runId, env) {
-  const prev = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = env.CX_HOME_OVERRIDE;
+  const prev = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = env.CONSTRUCT_HOME_OVERRIDE;
   let file;
   try {
     file = resolveStatePath(cwd, 'runtime', 'orchestration', 'runs', `${runId}.json`, { ensureDir: false });
   } finally {
-    if (prev === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prev;
+    if (prev === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prev;
   }
   assert.ok(fs.existsSync(file), `run record must be persisted to disk at ${file}`);
   return JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -163,13 +163,13 @@ test('[smoke-matrix] a poisoned parent env cannot mask a degraded cell (neq9.4 a
   t.after(() => { try { rmTmpDir(cwd); } catch {} });
 
   const savedTiers = {
-    CX_MODEL_REASONING: process.env.CX_MODEL_REASONING,
-    CX_MODEL_STANDARD: process.env.CX_MODEL_STANDARD,
-    CX_MODEL_FAST: process.env.CX_MODEL_FAST,
+    CONSTRUCT_MODEL_REASONING: process.env.CONSTRUCT_MODEL_REASONING,
+    CONSTRUCT_MODEL_STANDARD: process.env.CONSTRUCT_MODEL_STANDARD,
+    CONSTRUCT_MODEL_FAST: process.env.CONSTRUCT_MODEL_FAST,
   };
-  process.env.CX_MODEL_REASONING = 'poison';
-  process.env.CX_MODEL_STANDARD = 'poison';
-  process.env.CX_MODEL_FAST = 'poison';
+  process.env.CONSTRUCT_MODEL_REASONING = 'poison';
+  process.env.CONSTRUCT_MODEL_STANDARD = 'poison';
+  process.env.CONSTRUCT_MODEL_FAST = 'poison';
   t.after(() => {
     for (const [key, value] of Object.entries(savedTiers)) {
       if (value === undefined) delete process.env[key];

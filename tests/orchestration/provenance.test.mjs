@@ -5,7 +5,7 @@
  * specialistId, packId, promptVersion (a content fingerprint of the resolved
  * persona body), model, provider, toolGrants, and executionState, alongside
  * the personaAvailable flag LMCP-E2 already added. The same fields ride the
- * `.cx/traces` worker.completed event unconditionally, independent of
+ * `.construct/traces` worker.completed event unconditionally, independent of
  * chainOfThought mode, so a reader never has to reconstruct provenance from a
  * separate source. Every reader (hostAdapterMetadata here; status/oracle/graph
  * are out of scope for this bead) tolerates a pre-F1 run record that carries
@@ -28,20 +28,20 @@ import { traceDir as resolveTraceDir } from '../../lib/worker/trace.mjs';
 import { tempDir } from '../helpers.mjs';
 
 // Trace reads resolve through the machine-scoped state root (ADR-0066), so
-// CX_HOME_OVERRIDE is pinned for the whole file to keep them off the real
+// CONSTRUCT_HOME_OVERRIDE is pinned for the whole file to keep them off the real
 // developer machine's $HOME.
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-provenance-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 test.after(() => {
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 const MODEL = 'anthropic/claude-sonnet-4-6';
-const ENV = { CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL, ANTHROPIC_API_KEY: 'sk-test' };
+const ENV = { CONSTRUCT_MODEL_REASONING: MODEL, CONSTRUCT_MODEL_STANDARD: MODEL, CONSTRUCT_MODEL_FAST: MODEL, ANTHROPIC_API_KEY: 'sk-test' };
 
 test.beforeEach(() => _resetPackRegistryCache());
 
@@ -50,24 +50,24 @@ const fetchOk = async () => ({ ok: true, json: async () => ({ content: [{ type: 
 // ── runTaskViaProvider: every new field present on a healthy persona ────────
 
 test('runTaskViaProvider result carries specialistId, packId, promptVersion, model, provider, toolGrants, executionState', async () => {
-  const task = { role: 'cx-engineer', reason: 'implement the change' };
+  const task = { role: 'engineer', reason: 'implement the change' };
   const run = { request: { summary: 'refactor the auth module' }, execution: { deploymentMode: 'solo' } };
   const result = await runTaskViaProvider({ task, run, model: MODEL, provider: 'anthropic', env: ENV, fetchImpl: fetchOk });
 
-  assert.equal(result.specialistId, 'cx-engineer');
-  assert.equal(typeof result.packId, 'string', 'a pack in the registry declares cx-engineer');
+  assert.equal(result.specialistId, 'engineer');
+  assert.equal(typeof result.packId, 'string', 'a pack in the registry declares engineer');
   assert.equal(typeof result.promptVersion, 'string');
   assert.match(result.promptVersion, /^[0-9a-f]{12}$/, 'promptVersion is a 12-char hex content fingerprint');
   assert.equal(result.model, MODEL);
   assert.equal(result.provider, 'anthropic');
   assert.ok(Array.isArray(result.toolGrants), 'toolGrants is an array');
-  assert.ok(result.toolGrants.length > 0, 'cx-engineer declares claudeTools in the org registry');
+  assert.ok(result.toolGrants.length > 0, 'engineer declares claudeTools in the org registry');
   assert.equal(result.executionState, 'executed');
   assert.equal(result.personaAvailable, true);
 });
 
 test('promptVersion is a deterministic hash of the resolved persona body, not a random id', async () => {
-  const task = { role: 'cx-engineer' };
+  const task = { role: 'engineer' };
   const run = { request: { summary: 'x' }, execution: { deploymentMode: 'solo' } };
   const r1 = await runTaskViaProvider({ task, run, model: MODEL, provider: 'anthropic', env: ENV, fetchImpl: fetchOk });
   const r2 = await runTaskViaProvider({ task, run, model: MODEL, provider: 'anthropic', env: ENV, fetchImpl: fetchOk });
@@ -80,14 +80,14 @@ test('promptVersion changes when the resolved persona body changes (project-tier
   fs.mkdirSync(path.join(packsDir, 'prompts'), { recursive: true });
   fs.writeFileSync(path.join(packsDir, 'pack.manifest.json'), JSON.stringify({
     id: '@project/override', version: '1.0.0', compatVersion: 1,
-    prompts: { 'cx-engineer': 'prompts/cx-engineer.md' },
+    prompts: { 'engineer': 'prompts/engineer.md' },
   }));
   fs.writeFileSync(
-    path.join(packsDir, 'prompts', 'cx-engineer.md'),
-    '---\nname: cx-engineer\nrole: engineer\n---\n\nPROJECT-OVERRIDE-MARKER persona body.\n',
+    path.join(packsDir, 'prompts', 'engineer.md'),
+    '---\nname: engineer\nrole: engineer\n---\n\nPROJECT-OVERRIDE-MARKER persona body.\n',
   );
 
-  const task = { role: 'cx-engineer' };
+  const task = { role: 'engineer' };
   const run = { request: { summary: 'x' }, execution: { deploymentMode: 'solo' } };
   const builtin = await runTaskViaProvider({ task, run, model: MODEL, provider: 'anthropic', env: ENV, fetchImpl: fetchOk });
 
@@ -98,7 +98,7 @@ test('promptVersion changes when the resolved persona body changes (project-tier
   assert.equal(overridden.packId, '@project/override');
 
   const expected = crypto.createHash('sha256')
-    .update(fs.readFileSync(path.join(packsDir, 'prompts', 'cx-engineer.md'), 'utf8'))
+    .update(fs.readFileSync(path.join(packsDir, 'prompts', 'engineer.md'), 'utf8'))
     .digest('hex')
     .slice(0, 12);
   assert.equal(overridden.promptVersion, expected, 'promptVersion is the sha256(persona body) 12-char prefix');
@@ -180,7 +180,7 @@ test('executeRun (inline backend) records executionState:prepared, no specialist
   }
 });
 
-test('the .cx/traces worker.completed event carries every new provenance field', async () => {
+test('the .construct/traces worker.completed event carries every new provenance field', async () => {
   const cwd = tempDir('cx-provenance-trace-', test);
   const planned = await planRun(
     { request: 'refactor the auth module and review for security', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 4, moduleCount: 2 },
@@ -216,7 +216,7 @@ test('hostAdapterMetadata tolerates a pre-F1 task record (no specialistId/packId
     semantics: 'legacy',
     executionSemantics: 'legacy',
     tasks: [
-      { id: 't1', role: 'cx-engineer', status: 'done', executor: 'provider:anthropic:claude', output: 'old output' },
+      { id: 't1', role: 'engineer', status: 'done', executor: 'provider:anthropic:claude', output: 'old output' },
     ],
   };
 

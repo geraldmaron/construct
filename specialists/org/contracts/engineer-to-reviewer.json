@@ -1,7 +1,7 @@
 {
   "id": "engineer-to-reviewer",
-  "producer": "cx-engineer",
-  "consumer": "cx-reviewer",
+  "producer": "engineer",
+  "consumer": "reviewer",
   "trigger": {
     "always": true
   },

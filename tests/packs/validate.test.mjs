@@ -107,7 +107,7 @@ test('validatePackManifest embedBindings (LMCP-E4)', async (t) => {
     const result = validatePackManifest({
       ...validManifest,
       embedBindings: {
-        'cx-operations': {
+        'operations': {
           providers: [{ id: 'atlassian-jira', capabilities: ['read'] }],
           proposals: ['atlassian-jira.createIssue'],
         },
@@ -120,34 +120,34 @@ test('validatePackManifest embedBindings (LMCP-E4)', async (t) => {
     const result = validatePackManifest({
       ...validManifest,
       embedBindings: {
-        'cx-operations': {
+        'operations': {
           providers: [{ id: 'nonexistent-provider', capabilities: ['read'] }],
         },
       },
     }, { knownProviders: KNOWN_PROVIDERS });
     assert.equal(result.valid, false);
-    assert.ok(result.errors.some(e => e.includes('embedBindings.cx-operations.providers[0].id') && e.includes('nonexistent-provider')));
+    assert.ok(result.errors.some(e => e.includes('embedBindings.operations.providers[0].id') && e.includes('nonexistent-provider')));
   });
 
   await t.test('undeclared capability fails with a path', () => {
     const result = validatePackManifest({
       ...validManifest,
       embedBindings: {
-        'cx-operations': {
+        'operations': {
           // slack manifest only declares read/search — "write" is not declared.
           providers: [{ id: 'slack', capabilities: ['write'] }],
         },
       },
     }, { knownProviders: KNOWN_PROVIDERS });
     assert.equal(result.valid, false);
-    assert.ok(result.errors.some(e => e.includes('embedBindings.cx-operations.providers[0].capabilities[0]')));
+    assert.ok(result.errors.some(e => e.includes('embedBindings.operations.providers[0].capabilities[0]')));
   });
 
   await t.test('capability not in EMBED_BINDING_CAPABILITIES is rejected', () => {
     const result = validatePackManifest({
       ...validManifest,
       embedBindings: {
-        'cx-operations': {
+        'operations': {
           providers: [{ id: 'slack', capabilities: ['admin'] }],
         },
       },
@@ -160,30 +160,30 @@ test('validatePackManifest embedBindings (LMCP-E4)', async (t) => {
     const result = validatePackManifest({
       ...validManifest,
       embedBindings: {
-        'cx-operations': {
+        'operations': {
           providers: [{ id: 'slack', capabilities: ['read'] }],
           proposals: ['nonexistent-provider.createIssue'],
         },
       },
     }, { knownProviders: KNOWN_PROVIDERS });
     assert.equal(result.valid, false);
-    assert.ok(result.errors.some(e => e.includes('embedBindings.cx-operations.proposals[0]') && e.includes('unknown provider')));
+    assert.ok(result.errors.some(e => e.includes('embedBindings.operations.proposals[0]') && e.includes('unknown provider')));
   });
 
   await t.test('proposal token malformed (no dot) fails', () => {
     const result = validatePackManifest({
       ...validManifest,
-      embedBindings: { 'cx-operations': { proposals: ['createIssue'] } },
+      embedBindings: { 'operations': { proposals: ['createIssue'] } },
     }, { knownProviders: KNOWN_PROVIDERS });
     assert.equal(result.valid, false);
-    assert.ok(result.errors.some(e => e.includes('embedBindings.cx-operations.proposals[0]')));
+    assert.ok(result.errors.some(e => e.includes('embedBindings.operations.proposals[0]')));
   });
 
   await t.test('proposal referencing a provider outside providers[] grant fails', () => {
     const result = validatePackManifest({
       ...validManifest,
       embedBindings: {
-        'cx-operations': {
+        'operations': {
           providers: [{ id: 'slack', capabilities: ['read'] }],
           proposals: ['atlassian-jira.createIssue'],
         },
@@ -196,10 +196,10 @@ test('validatePackManifest embedBindings (LMCP-E4)', async (t) => {
   await t.test('unrecognized embedBindings field name fails with a path', () => {
     const result = validatePackManifest({
       ...validManifest,
-      embedBindings: { 'cx-operations': { unknownField: true } },
+      embedBindings: { 'operations': { unknownField: true } },
     }, { knownProviders: KNOWN_PROVIDERS });
     assert.equal(result.valid, false);
-    assert.ok(result.errors.some(e => e.includes('embedBindings.cx-operations.unknownField')));
+    assert.ok(result.errors.some(e => e.includes('embedBindings.operations.unknownField')));
   });
 
   await t.test('embedBindings must be an object', () => {

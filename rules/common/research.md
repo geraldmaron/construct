@@ -45,10 +45,10 @@ Classify by the claim. For sentiment, demand, adoption-experience, and friction 
 Start with the narrowest authoritative source that can answer the question:
 
 1. **Local project evidence first**
-   - `.cx/research/`
-   - `.cx/knowledge/`
+   - `.construct/research/`
+   - `.construct/knowledge/`
    - `docs/specs/prd/`, `docs/meta-prd/`, `docs/decisions/adr/`, `docs/operations/runbooks/`
-   - ingested markdown artifacts under `.cx/knowledge/`
+   - ingested markdown artifacts under `.construct/knowledge/`
    - repo code, tests, configs, and existing decisions
 2. **Primary external sources second**
    - official docs for the exact version in use

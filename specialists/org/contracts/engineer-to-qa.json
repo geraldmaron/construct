@@ -1,7 +1,7 @@
 {
   "id": "engineer-to-qa",
-  "producer": "cx-engineer",
-  "consumer": "cx-qa",
+  "producer": "engineer",
+  "consumer": "qa",
   "trigger": {
     "always": true
   },

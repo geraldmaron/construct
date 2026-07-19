@@ -65,7 +65,7 @@
     }
   ],
   "permissions": {},
-  "promptFile": "specialists/prompts/cx-security.md",
+  "promptFile": "specialists/prompts/security.md",
   "embedOrientation": {
     "focusAreas": [
       "attack surface changes",
@@ -93,7 +93,7 @@
     ]
   },
   "canEdit": false,
-  "claudeTools": "Read,Grep,Glob,LS,Bash,WebSearch,WebFetch,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates",
+  "claudeTools": "Read,Grep,Glob,LS,Bash,WebSearch,WebFetch,list_skills,get_skill,search_skills,memory_search,memory_add_observations,construct_trace,construct_score,get_template,list_templates",
   "internal": true,
   "severityImmediate": [
     "dep.cve",

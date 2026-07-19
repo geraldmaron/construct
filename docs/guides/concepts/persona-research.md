@@ -117,7 +117,7 @@ Default to reuse. Twenty-eight specialists is enough for most software-R&D loops
 - The new pattern survives differentiation: it is not just a flavor of an existing role.
 - The role has a stable charter that does not bleed into adjacent ones.
 
-For "kind-of-like-engineer-but-for-games" cases, use a flavor overlay in `skills/roles/engineer.games.md`. The cap of six flavors per role per profile keeps that mechanism from sprawling.
+For "kind-of-like-engineer-but-for-games" cases, use a flavor overlay in `skills/perspectives/engineer.games.md`. The cap of six flavors per role per profile keeps that mechanism from sprawling.
 
 ## Caps and why they exist
 
@@ -131,7 +131,7 @@ Caps are bounds, not targets. Most well-shaped profiles use a fraction.
 
 ## Where the methodology lives in the lifecycle
 
-The phases in `docs/guides/concepts/profile-lifecycle.md` map to this methodology:
+The phases in `docs/guides/concepts/workspace-preset-lifecycle.md` map to this methodology:
 
 - **Discover** runs the persona research method, owned by `cx-researcher` (via its ux-researcher overlay).
 - **Frame** runs Galbraith STAR for departmental structure, owned by `cx-product-manager`.

@@ -96,7 +96,7 @@ test('release gate: construct docs:site --check reports no drift', () => {
     cwd: REPO_ROOT,
     encoding: 'utf8',
     timeout: 120_000,
-    env: { ...process.env, HOME: SANDBOX_HOME, CX_HOME_OVERRIDE: SANDBOX_HOME },
+    env: { ...process.env, HOME: SANDBOX_HOME, CONSTRUCT_HOME_OVERRIDE: SANDBOX_HOME },
   });
   assert.equal(result.status, 0, `docs:site --check exited ${result.status}; stdout: ${result.stdout}`);
 });

@@ -23,7 +23,7 @@ export function isolationEnv(homeRoot, extra = {}) {
   return {
     ...process.env,
     HOME: homeRoot,
-    CX_HOME_OVERRIDE: homeRoot,
+    CONSTRUCT_HOME_OVERRIDE: homeRoot,
     ...extra,
   };
 }

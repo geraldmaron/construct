@@ -21,39 +21,17 @@ function getVsCodeUserDir(homeDir) {
   return path.join(appData, 'Code', 'User');
 }
 
-const FIXTURE_REGISTRY = {
-  version: 1,
-  system: 'cx',
-  prefix: 'cx',
-  models: {
-    reasoning: { primary: 'anthropic/claude-opus-4-7', fallback: [] },
-    standard: { primary: 'anthropic/claude-sonnet-4-6', fallback: [] },
-    fast: { primary: 'anthropic/claude-haiku-4-5', fallback: [] },
-  },
-  specialists: [
-    { name: 'engineer', description: 'engineer', prompt: 'p', model: 'anthropic/claude-sonnet-4-6' },
-    { name: 'security', description: 'sec', prompt: 'p', model: 'anthropic/claude-sonnet-4-6' },
-  ],
-  orchestrator: {
-    name: 'construct',
-    displayName: 'Construct',
-    description: 'd',
-    role: 'r',
-    promptFile: 'personas/construct.md',
-    model: 'anthropic/claude-opus-4-7',
-  },
-  mcpServers: {
-    github: { type: 'url', url: 'https://example.test/github' },
-    context7: { command: 'npx', args: ['-y', '@upstash/context7-mcp@latest'] },
-  },
-};
-
 before(async () => {
   tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-parity-root-'));
   tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-parity-home-'));
   fs.cpSync(path.join(process.cwd(), 'specialists', 'org'), path.join(tmpRoot, 'specialists', 'org'), { recursive: true });
-  fs.mkdirSync(path.join(tmpRoot, 'personas'), { recursive: true });
-  fs.writeFileSync(path.join(tmpRoot, 'personas', 'construct.md'), '# stub\n');
+  fs.mkdirSync(path.join(tmpRoot, 'registry'), { recursive: true });
+  fs.copyFileSync(path.join(process.cwd(), 'registry', 'capabilities.json'), path.join(tmpRoot, 'registry', 'capabilities.json'));
+  fs.cpSync(
+    path.join(process.cwd(), 'lib', 'embedded-contract', 'workflows'),
+    path.join(tmpRoot, 'lib', 'embedded-contract', 'workflows'),
+    { recursive: true },
+  );
   ({ checkParity } = await import('../lib/parity.mjs'));
 });
 
@@ -100,16 +78,15 @@ function writeAllSurfaces(extraAgents = []) {
     fs.writeFileSync(path.join(copilotDir, `${name}.prompt.md`), 'stub');
     agentObj[name] = {};
   }
-  // User-scope `.claude/agents` ships no front-door agent (project-scoped); only
-  // legacy extras (cx-*) may linger there during an upgrade.
+  // User-scope `.claude/agents` ships no front-door agent (project-scoped).
   for (const name of extraAgents) {
     fs.writeFileSync(path.join(claudeDir, `${name}.md`), 'stub');
   }
   fs.writeFileSync(path.join(opencodeDir, 'opencode.json'), JSON.stringify({ agent: agentObj }));
-  fs.writeFileSync(path.join(cursorDir, 'mcp.json'), JSON.stringify({ mcpServers: { github: {}, context7: {} } }));
+  fs.writeFileSync(path.join(cursorDir, 'mcp.json'), JSON.stringify({ mcpServers: { 'construct-mcp': {} } }));
   fs.writeFileSync(
     path.join(vscodeDir, 'mcp.json'),
-    JSON.stringify({ servers: { github: {}, context7: {} } }),
+    JSON.stringify({ servers: { 'construct-mcp': {} } }),
   );
 }
 
@@ -193,7 +170,7 @@ describe('checkParity', () => {
     assert.deepEqual(opencode.extra, ['cx-orphan']);
   });
 
-  it('treats a lone legacy orchestrator OpenCode agent as construct (pre-rename install)', () => {
+  it('reports a renamed orchestrator OpenCode agent as drift', () => {
     resetSurfaces();
     const opencodeDir = path.join(tmpHome, '.config', 'opencode');
     fs.mkdirSync(opencodeDir, { recursive: true });
@@ -203,8 +180,9 @@ describe('checkParity', () => {
     );
     const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
     const opencode = report.surfaces.find((s) => s.surface === 'opencode');
-    assert.equal(opencode.status, 'ok', JSON.stringify(opencode));
-    assert.deepEqual(opencode.extra, []);
+    assert.equal(opencode.status, 'drift', JSON.stringify(opencode));
+    assert.deepEqual(opencode.missing, ['construct']);
+    assert.deepEqual(opencode.extra, ['orchestrator']);
   });
 
   it('reports drift when copilot user-scope prompts are missing the construct front-door', () => {
@@ -221,22 +199,17 @@ describe('checkParity', () => {
 
   it('reports drift when vscode mcp settings are missing a managed server', () => {
     resetSurfaces();
-    fs.mkdirSync(path.join(tmpRoot, '.construct'), { recursive: true });
-    fs.writeFileSync(
-      path.join(tmpRoot, '.construct', 'unified-registry.json'),
-      JSON.stringify({ mcpServers: { github: {}, context7: {} } }, null, 2),
-    );
     const vscodeDir = getVsCodeUserDir(tmpHome);
     fs.mkdirSync(vscodeDir, { recursive: true });
     fs.writeFileSync(
       path.join(vscodeDir, 'mcp.json'),
-      JSON.stringify({ servers: { github: {} } }),
+      JSON.stringify({ servers: {} }),
     );
 
     const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
     const vscode = report.surfaces.find((s) => s.surface === 'vscode');
     assert.equal(vscode.status, 'drift');
-    assert.deepEqual(vscode.missing, ['context7']);
+    assert.deepEqual(vscode.missing, ['construct-mcp']);
   });
 
   it('parses JSONC vscode settings (comments + trailing comma) without a false unreadable failure', () => {
@@ -252,8 +225,7 @@ describe('checkParity', () => {
         '  // managed by construct',
         '  /* VS Code user MCP config */',
         '  "servers": {',
-        '    "github": { "url": "https://example.test/github" },',
-        '    "context7": {},',
+        '    "construct-mcp": { "url": "https://example.test/mcp" },',
         '  },',
         '}',
       ].join('\n'),
@@ -266,11 +238,6 @@ describe('checkParity', () => {
 
   it('tolerates a user-added non-registry MCP server (extra is not drift)', () => {
     resetSurfaces();
-    fs.mkdirSync(path.join(tmpRoot, '.construct'), { recursive: true });
-    fs.writeFileSync(
-      path.join(tmpRoot, '.construct', 'unified-registry.json'),
-      JSON.stringify({ mcpServers: { github: {}, context7: {} } }, null, 2),
-    );
     const cursorDir = path.join(tmpHome, '.cursor');
     fs.mkdirSync(cursorDir, { recursive: true });
     // 'orphan' is the user's own server. Construct ensures its registry servers
@@ -280,7 +247,7 @@ describe('checkParity', () => {
 
     fs.writeFileSync(
       path.join(cursorDir, 'mcp.json'),
-      JSON.stringify({ mcpServers: { github: {}, context7: {}, orphan: {} } }),
+      JSON.stringify({ mcpServers: { 'construct-mcp': {}, orphan: {} } }),
     );
 
     const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
@@ -348,7 +315,7 @@ describe('checkParity', () => {
     // back to hard fail.
 
     resetSurfaces();
-    writeAllSurfaces(['cx-engineer', 'cx-unknown-thing']);
+    writeAllSurfaces(['engineer', 'cx-unknown-thing']);
     const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
     assert.equal(report.ok, false, `mixed legacy + unknown should still hard-fail; got ${JSON.stringify(report.summary)}`);
     const claude = report.surfaces.find((s) => s.surface === 'claude');

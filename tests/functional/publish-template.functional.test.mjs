@@ -65,7 +65,7 @@ test('parseArtifactMetadata reads golden fixture fields', () => {
   const meta = parseArtifactMetadata(GOLDEN);
   assert.match(meta.title, /Enterprise Agentic Platform/);
   assert.equal(meta.status, 'draft');
-  assert.equal(meta.owner, 'cx-product-manager');
+  assert.equal(meta.owner, 'product-manager');
   assert.equal(meta.artifactType, 'prd-platform');
   assert.equal(meta.date, '2026-06-19');
   assert.match(meta.subtitle, /Governed agentic platform/);

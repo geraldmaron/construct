@@ -28,20 +28,20 @@ import { traceDir as resolveTraceDir } from '../../lib/worker/trace.mjs';
 import { tempDir } from '../helpers.mjs';
 
 // Trace reads resolve through the machine-scoped state root (ADR-0066), so
-// CX_HOME_OVERRIDE is pinned for the whole file to keep them off the real
+// CONSTRUCT_HOME_OVERRIDE is pinned for the whole file to keep them off the real
 // developer machine's $HOME.
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-persona-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 test.after(() => {
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 const MODEL = 'anthropic/claude-sonnet-4-6';
-const ENV = { CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL, ANTHROPIC_API_KEY: 'sk-test' };
+const ENV = { CONSTRUCT_MODEL_REASONING: MODEL, CONSTRUCT_MODEL_STANDARD: MODEL, CONSTRUCT_MODEL_FAST: MODEL, ANTHROPIC_API_KEY: 'sk-test' };
 
 const dirs = [];
 function project() {
@@ -55,7 +55,7 @@ test.beforeEach(() => _resetPackRegistryCache());
 const fetchOk = async () => ({ ok: true, json: async () => ({ content: [{ type: 'text', text: 'specialist output' }] }) });
 
 test('a role every pack declares runs with personaAvailable:true, no degraded flag', async () => {
-  const task = { role: 'cx-engineer', reason: 'implement the change' };
+  const task = { role: 'engineer', reason: 'implement the change' };
   const run = { request: { summary: 'refactor the auth module' }, execution: { deploymentMode: 'solo' } };
   const result = await runTaskViaProvider({ task, run, model: MODEL, provider: 'anthropic', env: { ANTHROPIC_API_KEY: 'sk-test' }, fetchImpl: fetchOk });
   assert.equal(result.personaAvailable, true);
@@ -77,12 +77,12 @@ test('a project-tier pack prompt takes precedence over the builtin core pack for
   fs.mkdirSync(packsDir, { recursive: true });
   fs.writeFileSync(path.join(packsDir, 'pack.manifest.json'), JSON.stringify({
     id: '@project/override', version: '1.0.0', compatVersion: 1,
-    prompts: { 'cx-engineer': 'prompts/cx-engineer.md' },
+    prompts: { 'engineer': 'prompts/engineer.md' },
   }));
   fs.mkdirSync(path.join(packsDir, 'prompts'), { recursive: true });
   fs.writeFileSync(
-    path.join(packsDir, 'prompts', 'cx-engineer.md'),
-    '---\nname: cx-engineer\nrole: engineer\n---\n\nPROJECT-OVERRIDE-MARKER persona body.\n',
+    path.join(packsDir, 'prompts', 'engineer.md'),
+    '---\nname: engineer\nrole: engineer\n---\n\nPROJECT-OVERRIDE-MARKER persona body.\n',
   );
 
   let capturedSystem = null;
@@ -91,7 +91,7 @@ test('a project-tier pack prompt takes precedence over the builtin core pack for
     return { ok: true, json: async () => ({ content: [{ type: 'text', text: 'ok' }] }) };
   };
 
-  const task = { role: 'cx-engineer' };
+  const task = { role: 'engineer' };
   const run = { request: { summary: 'x' }, execution: { deploymentMode: 'solo' } };
   const result = await runTaskViaProvider({ task, run, model: MODEL, provider: 'anthropic', env: { ANTHROPIC_API_KEY: 'sk-test' }, fetchImpl: captureFetch, cwd });
 

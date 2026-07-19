@@ -19,10 +19,10 @@ Use when: an architectural decision is made that affects the system structure, d
 ## Steps
 
 1. **cx-architect** or **cx-engineer** identifies the decision
-2. **Write to `docs/decisions/adr/ADR-{NNN}-{slug}.md`** using the template from `get_template("adr")`: resolves `.cx/templates/docs/adr.md` (override) then `templates/docs/adr.md` (shipped)
+2. **Write to `docs/decisions/adr/ADR-{NNN}-{slug}.md`** using the template from `get_template("adr")`: resolves `.construct/templates/docs/adr.md` (override) then `templates/docs/adr.md` (shipped)
    - NNN = next sequential number (check existing files)
-3. **Also write a shorter entry to `.cx/decisions/`** for session context
-4. **cx-operations** updates `.cx/context.md` Architecture Notes with a one-line summary and link
+3. **Also write a shorter entry to `.construct/decisions/`** for session context
+4. **cx-operations** updates `.construct/context.md` Architecture Notes with a one-line summary and link
 
 The steps above are the baseline, not the final roster. Authoring through `author_artifact` (type `adr`) recruits additional participants from the request's content signals (ADR-0070) and returns them as `recruited: [{specialist, reason, role, gate, source}]`. Honor that set — run recruited participants at their stated role and gate; do not substitute a memorized roster. Pass `recruitment: "off"` or an explicit cx- id list to override.
 

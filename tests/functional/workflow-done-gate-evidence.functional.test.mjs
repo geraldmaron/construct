@@ -10,7 +10,7 @@
  *     implement, validate, and operate phase tasks;
  *   - evidence containing a runnable command, a file path, a URL, or a test
  *     reference passes;
- *   - the existing cx-reviewer/cx-qa attestation shape
+ *   - the existing reviewer/qa attestation shape
  *     (tests/concierge-routing.test.mjs) still passes;
  *   - alignmentFindings demotes the same non-reverifiable-evidence condition
  *     to a HIGH finding for state loaded from disk (bypassing the live gate).
@@ -34,7 +34,7 @@ function addImplementTask(root, phase = 'implement') {
   const workflow = addTask(root, {
     title: 'Ship the thing',
     phase,
-    owner: 'cx-engineer',
+    owner: 'engineer',
     readFirst: ['src/index.ts'],
     doNotChange: ['package-lock.json'],
     acceptanceCriteria: ['it works'],
@@ -79,14 +79,14 @@ test('accepts evidence containing a URL', (t) => {
   );
 });
 
-test('accepts the existing cx-reviewer/cx-qa attestation shape', (t) => {
+test('accepts the existing reviewer/qa attestation shape', (t) => {
   const root = tmpProject();
   t.after(() => rmTmpDir(root));
   const key = addImplementTask(root);
   assert.doesNotThrow(() =>
     updateTask(root, key, {
       status: 'done',
-      verification: ['cx-reviewer: APPROVED — no CRITICAL or HIGH findings', 'cx-qa: 42 tests passing'],
+      verification: ['reviewer: APPROVED — no CRITICAL or HIGH findings', 'qa: 42 tests passing'],
     }),
   );
 });

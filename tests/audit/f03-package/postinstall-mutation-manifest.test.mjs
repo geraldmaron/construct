@@ -49,7 +49,7 @@ function runPostinstallInConsumer({ packageJson = '{"name":"demo-consumer","vers
       npm_config_global: 'false',
       CONSTRUCT_SKIP_POSTINSTALL: '',
       HOME: home,
-      CX_HOME_OVERRIDE: home,
+      CONSTRUCT_HOME_OVERRIDE: home,
     },
   });
   return { projectRoot, home, result };

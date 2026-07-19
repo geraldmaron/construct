@@ -33,7 +33,7 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
 
 // Both the spawned CLI and the in-process InboxWatcher below resolve through
-// the machine-scoped state root (ADR-0066), which reads CX_HOME_OVERRIDE
+// the machine-scoped state root (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE
 // from process.env — the child's own env for a spawn, or this test process's
 // env for an in-process call. cwdHomes maps each project's cwd to its own
 // sandboxed HOME so a spawned `construct` invocation and the in-process
@@ -71,7 +71,7 @@ function runConstruct(cwd, args, extraEnv = {}) {
       CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
       BOOTSTRAP_CHECKED: '1',
       CONSTRUCT_AGENT_ID: 'test-agent',
-      ...(home ? { HOME: home, CX_HOME_OVERRIDE: home } : {}),
+      ...(home ? { HOME: home, CONSTRUCT_HOME_OVERRIDE: home } : {}),
       ...extraEnv,
     },
   });
@@ -104,7 +104,7 @@ function pendingPackets(projectRoot) {
 test('intake process --dry-run lists candidate inboxes without ingesting', () => {
   const p = makeProject();
   try {
-    const init = runConstruct(p.dir, ['init', '--yes', '--scope=rnd']);
+    const init = runConstruct(p.dir, ['init', '--yes', '--workspace-preset=rnd']);
     assert.equal(init.status, 0, `init failed: ${init.stderr}`);
 
     writeFileSync(join(p.dir, 'inbox', 'sample.md'), '# Sample\n\nbody\n', 'utf8');
@@ -214,8 +214,8 @@ test('intake process --dry-run is unaffected by the poll lock', () => {
 
 async function withArchetypeProject(fn) {
   const p = makeProject();
-  const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = p.home;
+  const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = p.home;
   try {
     mkdirSync(join(p.dir, 'inbox'), { recursive: true });
     writeFileSync(join(p.dir, 'inbox', '.gitignore'), '*\n!.gitignore\n', 'utf8');
@@ -230,8 +230,8 @@ async function withArchetypeProject(fn) {
   } finally {
     p.cleanup();
     delete process.env.CONSTRUCT_AGENT_ID;
-    if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+    if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
   }
 }
 

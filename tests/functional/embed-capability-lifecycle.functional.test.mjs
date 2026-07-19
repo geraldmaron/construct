@@ -5,7 +5,7 @@
  * real binary in an isolated tmpdir cwd, proving the ADR-0061 (LMCP-P2)
  * lifecycle end to end: an invalid manifest fails enable with a JSON-schema
  * path and writes nothing; enable/disable round-trips through the durable
- * `.cx/embed/<id>.manifest.json` project-tier file; status and dry-run
+ * `.construct/embed/<id>.manifest.json` project-tier file; status and dry-run
  * surface the resolved binding chain; the EmbedDaemon registers exactly the
  * enabled set of capabilities as scheduled jobs.
  */
@@ -43,7 +43,7 @@ function validManifest(id = 'operations') {
     version: '1.0.0',
     defaultApprovalMode: 'proposal-only',
     embed: {
-      specialist: 'cx-operations',
+      specialist: 'operations',
       providerBindings: ['github', 'jira'],
       framework: 'cx-ops-triage',
       outputContract: 'proposal.v1',
@@ -96,7 +96,7 @@ test('embed enable fails closed on an invalid manifest with a JSON-schema path, 
   assert.equal(onDisk.embed.enabled, undefined, 'invalid manifest must not be stamped enabled');
 });
 
-test('enable/disable round-trips through .cx/embed/<id>.manifest.json', () => {
+test('enable/disable round-trips through .construct/embed/<id>.manifest.json', () => {
   const cwd = freshCwd();
   writeProjectManifest(cwd, 'operations', validManifest('operations'));
 
@@ -157,7 +157,7 @@ test('embed dry-run <id> --json resolves the full chain without writing a last-t
   assert.equal(res.status, 0, `exit 0 — stderr: ${res.stderr}`);
   const result = JSON.parse(res.stdout);
   assert.equal(result.ok, true);
-  assert.equal(result.chain.specialist, 'cx-operations');
+  assert.equal(result.chain.specialist, 'operations');
   assert.deepEqual(result.chain.providerBindings, ['github', 'jira']);
   assert.equal(result.chain.framework, 'cx-ops-triage');
   assert.equal(result.chain.outputContract, 'proposal.v1');

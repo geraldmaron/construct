@@ -57,7 +57,7 @@ Construct will classify the request, route to the right specialists (architect f
 You can also invoke a specialist directly if you know what you want:
 
 ```
-@cx-security audit the auth middleware for OWASP top 10
+@security audit the auth middleware for OWASP top 10
 ```
 
 The full list of personas lives in `.claude/agents/`. Run `construct list` to see them with descriptions.

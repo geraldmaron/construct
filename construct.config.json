@@ -8,7 +8,7 @@
     "tenantId": null
   },
   "providers": {},
-  "scope": "rnd",
+  "workspacePreset": "rnd",
   "autoEmbed": true,
   "telemetry": {
     "enabled": true

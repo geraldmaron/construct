@@ -18,7 +18,7 @@ Follow [rules/common/research.md](../../rules/common/research.md) as the default
 
 1. **Clarify the question**: one specific, falsifiable question the research must answer.
 2. **Apply recency discipline**: search from the most recent year backward. For fast-moving domains, treat sources older than 12 months as presumptively stale unless confirmed.
-3. **Check internal evidence first**: `.cx/research/`, `.cx/knowledge/`, PRDs, ADRs, runbooks before going external.
+3. **Check internal evidence first**: `.construct/research/`, `.construct/knowledge/`, PRDs, ADRs, runbooks before going external.
 4. **Choose the tool path by intent, not habit**:
 
    - Construct itself → `knowledge_search`
@@ -39,7 +39,7 @@ Follow [rules/common/research.md](../../rules/common/research.md) as the default
 6. **Source hierarchy**: primary → secondary → tertiary (tertiary never alone for load-bearing claims).
 7. **Verify every URL** before citing. Mark unconfirmed as `[unverified]`.
 8. **Tone**: resolve from artifact manifest (`direct`). See `specialists/tone-profiles.json`.
-9. **Structure** with `get_template("research-brief")`; write to `.cx/research/{topic-slug}.md`.
+9. **Structure** with `get_template("research-brief")`; write to `.construct/research/{topic-slug}.md`.
 10. **Reference** the research doc in the requesting agent's output.
 
 ## Distribution (publish pipeline)
@@ -47,9 +47,9 @@ Follow [rules/common/research.md](../../rules/common/research.md) as the default
 After the brief is written, **validate then publish** — the release gate is enforced by default:
 
 ```bash
-node bin/construct artifact validate .cx/research/{topic-slug}.md --type=research-brief
+node bin/construct artifact validate .construct/research/{topic-slug}.md --type=research-brief
 node bin/construct tools detect --json
-node bin/construct publish .cx/research/{topic-slug}.md --strict \
+node bin/construct publish .construct/research/{topic-slug}.md --strict \
   --demo=resource-guard-rails \
   --dashboard-demo=cockpit-tour
 ```
@@ -67,7 +67,7 @@ publish:
 **Community patterns (do not hand-roll):**
 
 - **Figures in PDF**: fenced ` ```d2` / ` ```mermaid` blocks rendered at export time via vendored [pandoc-ext/diagram](https://github.com/pandoc-ext/diagram) (`construct export --figures` or `construct publish`).
-- **Terminal demos**: shipped `.tape` files under `templates/demos/tapes/`; project overrides in `.cx/demos/tapes/`; regenerate with `construct demo record <name>` or CI `charmbracelet/vhs-action`.
+- **Terminal demos**: shipped `.tape` files under `templates/demos/tapes/`; project overrides in `.construct/demos/tapes/`; regenerate with `construct demo record <name>` or CI `charmbracelet/vhs-action`.
 - **Dashboard demos**: Playwright `e2e/demo/*.spec.ts` with `video: on` in `apps/dashboard`; run via `construct demo dashboard:<name>`.
 
 Install toolchain once: `brew install d2 graphviz pandoc typst vhs` and `npm install -g @mermaid-js/mermaid-cli`. Playwright: `cd apps/dashboard && npm install && npx playwright install chromium`.

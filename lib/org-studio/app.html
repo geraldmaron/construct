@@ -517,7 +517,7 @@ function participationFields() {
   const fields = [
     selectField('Owner', 'owner', [...meta.specialists, ...meta.teams], 'the registry entry this rule attaches to'),
     textField('Rule id', 'id', 'lowercase kebab, unique registry-wide'),
-    selectField('Dimension', 'dimension', meta.dimensions, 'optional concern; legal-compliance must recruit cx-security'),
+    selectField('Dimension', 'dimension', meta.dimensions, 'optional concern; legal-compliance must recruit security'),
   ];
 
   const whenWrap = el('div', { className: 'field', 'data-field': 'when' });

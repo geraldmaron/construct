@@ -56,7 +56,7 @@ import { runDistillCli } from '../lib/distill.mjs';
 import { runIngestCli } from '../lib/document-ingest.mjs';
 import { runInferCli } from '../lib/schema-infer.mjs';
 import { generateCompletions, getCompletionScript } from '../lib/completions.mjs';
-import { runHeadhunt, listTeamTemplates } from '../lib/headhunt.mjs';
+import { runHeadhunt } from '../lib/headhunt.mjs';
 import {
   getLockStatus,
   cleanupStaleLock,
@@ -65,11 +65,10 @@ import {
 } from '../lib/beads-lock.mjs';
 import { runBd, getHumanStatus, acquireMergeSlot, releaseMergeSlot } from '../lib/beads-client.mjs';
 import { auditSkills, runAuditSkillsCli } from '../lib/audit-skills.mjs';
-import { auditSpecialists, runAuditSpecialistsCli } from '../lib/audit-specialists.mjs';
+import { auditWorkerProfiles, runAuditWorkerProfilesCli } from '../lib/audit-worker-profiles.mjs';
 import { runCapabilityLedgerAuditCli } from '../lib/capability-ledger.mjs';
 import { runCorpusInventoryAuditCli } from '../lib/test-corpus-inventory.mjs';
 import { runArtifactValidateCli } from '../lib/artifact-release-gate.mjs';
-import { runTeamReviewCli } from '../lib/telemetry/team-rollup.mjs';
 import { startServices } from '../lib/service-manager.mjs';
 import { readCostLog, summarizeCostData, formatCostReport, clearCostLog } from '../lib/cost.mjs';
 import { readEfficiencyLog, summarizeEfficiencyData, formatEfficiencyReport } from '../lib/efficiency.mjs';
@@ -83,7 +82,7 @@ import { createSqlClient, closeSqlClient } from '../lib/storage/backend.mjs';
 import { syncFileStateToSql } from '../lib/storage/sync.mjs';
 import { deleteIngestedArtifacts, getStorageStatus, inferProjectName, resetStorage } from '../lib/storage/admin.mjs';
 import { runPressureRelease } from '../lib/runtime-pressure.mjs';
-import { loadRegistry, listSpecialists } from '../lib/registry/loader.mjs';
+import { loadRegistry } from '../lib/registry/loader.mjs';
 import { resolveProjectRoot, resolveInstallRoot } from '../lib/roots.mjs';
 
 // See lib/roots.mjs's resolveInstallRoot for why: under a Bun-compiled
@@ -112,7 +111,7 @@ for (const [key, value] of Object.entries(ENV)) {
 }
 
 const COLORS = resolveUiColors();
-const GLYPHS = process.env.CX_ASCII === '1' ? ASCII_GLYPHS : UNICODE_GLYPHS;
+const GLYPHS = process.env.CONSTRUCT_ASCII === '1' ? ASCII_GLYPHS : UNICODE_GLYPHS;
 const LINKS_ON = terminalLinksEnabled(process.env, { stream: process.stdout });
 
 function println(message = '') { process.stdout.write(`${message}\n`); }
@@ -203,39 +202,9 @@ async function cmdRegistryGenerateDocs(args = []) {
   if (code) process.exit(code);
 }
 
-async function cmdRegistryDiff(args = []) {
-  const { runRegistryDiff } = await import('../lib/registry/cli.mjs');
-  const code = await runRegistryDiff(args, { rootDir: ROOT_DIR, println, errorln });
-  if (code) process.exit(code);
-}
-
-async function cmdRegistryPrune(args = []) {
-  const { runRegistryPrune } = await import('../lib/registry/cli.mjs');
-  const code = await runRegistryPrune(args, { rootDir: ROOT_DIR, println, errorln });
-  if (code) process.exit(code);
-}
-
-async function cmdTeamAdd(args = []) {
-  const { runTeamAdd } = await import('../lib/registry/cli.mjs');
-  const code = await runTeamAdd(args, { rootDir: ROOT_DIR, println, errorln });
-  if (code) process.exit(code);
-}
-
-async function cmdTeamRemove(args = []) {
-  const { runTeamRemove } = await import('../lib/registry/cli.mjs');
-  const code = await runTeamRemove(args, { rootDir: ROOT_DIR, println, errorln });
-  if (code) process.exit(code);
-}
-
-async function cmdSpecialistAdd(args = []) {
-  const { runSpecialistAdd } = await import('../lib/registry/cli.mjs');
-  const code = await runSpecialistAdd(args, { rootDir: ROOT_DIR, println, errorln });
-  if (code) process.exit(code);
-}
-
-async function cmdSpecialistRemove(args = []) {
-  const { runSpecialistRemove } = await import('../lib/registry/cli.mjs');
-  const code = await runSpecialistRemove(args, { rootDir: ROOT_DIR, println, errorln });
+async function cmdRegistryCatalog(noun, args = []) {
+  const { runCatalogCommand } = await import('../lib/registry/cli.mjs');
+  const code = await runCatalogCommand(noun, args, { rootDir: ROOT_DIR, println, errorln });
   if (code) process.exit(code);
 }
 
@@ -296,11 +265,11 @@ async function cmdStatus() {
   // to "is this thing actually learning?" without remembering a second
   // command. Cheap: just reads .construct/observations + .construct/outcomes summaries.
   try {
-    const { resolveActiveScope } = await import('../lib/scopes/loader.mjs');
+    const { resolveActiveWorkspacePreset } = await import('../lib/workspace-presets/loader.mjs');
     const { readSummary } = await import('../lib/outcomes/aggregate.mjs');
     const fs = await import('node:fs');
     const cwd = process.cwd();
-    const active = resolveActiveScope(cwd);
+    const active = resolveActiveWorkspacePreset(cwd);
     const obsIdxPath = configPath(cwd, 'observations', 'index.json');
     let obsTotal = 0;
     let obs24h = 0;
@@ -373,9 +342,9 @@ async function cmdSync(args) {
   opLog.event('args', { args });
 
   generateCompletions();
-  const syncStatus = runNodeScript(path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs'), args, {}, { exitOnError: false });
+  const syncStatus = runNodeScript(path.join(ROOT_DIR, 'scripts', 'sync-worker-profiles.mjs'), args, {}, { exitOnError: false });
   if (syncStatus !== 0) {
-    opLog.close('failed', { stage: 'sync-specialists', status: syncStatus });
+    opLog.close('failed', { stage: 'sync-worker-profiles', status: syncStatus });
     process.exit(syncStatus);
   }
 
@@ -417,23 +386,23 @@ async function cmdSync(args) {
     }
   }
 
-  // Advisory only: workflow-defs.mjs (LMCP-D2) can only drift from the
+  // Advisory only: embedded Procedure definitions must remain catalog-derived.
   // manifests via a source regression, which release:check's --check run
   // treats as a hard failure. Sync surfaces it early without blocking.
 
   try {
-    const driftStatus = runNodeScript(path.join(ROOT_DIR, 'scripts', 'check-workflow-defs-drift.mjs'), ['--check'], {}, { exitOnError: false });
+    const driftStatus = runNodeScript(path.join(ROOT_DIR, 'scripts', 'check-procedure-definitions-drift.mjs'), ['--check'], {}, { exitOnError: false });
     // Exit 1 is the script's own signal for a real drift finding; any other
     // nonzero status means the check itself failed to run (see the script's
     // main().catch — exit 2 for a crash) and must not be reported as drift.
     if (driftStatus === 1) {
-      errorln('workflow-defs.mjs drift detected — run: npm run workflow-defs:check');
+      errorln('Procedure definition drift detected — run: npm run procedure-definitions:check');
     } else if (driftStatus !== 0) {
-      errorln(`workflow-defs.mjs drift check did not run (exit ${driftStatus}) — see output above`);
+      errorln(`Procedure definition drift check did not run (exit ${driftStatus}) — see output above`);
     }
-    opLog.event('workflow-defs-check', { status: driftStatus });
+    opLog.event('procedure-definitions-check', { status: driftStatus });
   } catch (err) {
-    opLog.event('workflow-defs-check-error', { message: err.message });
+    opLog.event('procedure-definitions-check-error', { message: err.message });
   }
 
   if (args.includes('--no-docs')) {
@@ -468,12 +437,9 @@ async function cmdCompletions(args) {
 
 async function cmdList() {
   const registry = loadRegistry({ rootDir: ROOT_DIR });
-  println('Construct Agents\n');
-  println('Specialists:');
-  const specialists = Object.values(registry.specialists ?? {});
-  for (const specialist of specialists) {
-    const id = specialist.name.startsWith('cx-') ? specialist.name : `cx-${specialist.name}`;
-    println(`  ${id} ${specialist.displayName || ''}`);
+  println('Construct Worker Profiles\n');
+  for (const profile of Object.values(registry.workerProfiles)) {
+    println(`  ${profile.id} ${profile.displayName || ''}`);
   }
 }
 
@@ -607,7 +573,7 @@ async function cmdDoctor() {
   const { isConstructSourceCheckout } = await import('../lib/doctor/source-checkout.mjs');
   const isSourceCheckout = isConstructSourceCheckout(ROOT_DIR);
   add('specialists/org exists', fs.existsSync(path.join(ROOT_DIR, 'specialists', 'org')));
-  add('sync-specialists.mjs exists', fs.existsSync(path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs')));
+  add('sync-worker-profiles.mjs exists', fs.existsSync(path.join(ROOT_DIR, 'scripts', 'sync-worker-profiles.mjs')));
 
   // Extension manifests check
   try {
@@ -630,14 +596,14 @@ async function cmdDoctor() {
     const giPath = path.join(cwd, '.gitignore');
     const giContent = fs.existsSync(giPath) ? fs.readFileSync(giPath, 'utf8') : '';
     const lines = giContent.split('\n').map((l) => l.trim());
-    const cxIgnored = lines.some((l) => l === CONFIG_DIR_NAME || l === `${CONFIG_DIR_NAME}/` || l === `${CONFIG_DIR_NAME}/**` || l === '*' || l === '**');
-    if (!cxIgnored && wantsFixGitignore) {
+    const constructIgnored = lines.some((l) => l === CONFIG_DIR_NAME || l === `${CONFIG_DIR_NAME}/` || l === `${CONFIG_DIR_NAME}/**` || l === '*' || l === '**');
+    if (!constructIgnored && wantsFixGitignore) {
       const prefix = giContent.length === 0 || giContent.endsWith('\n') ? '' : '\n';
       fs.writeFileSync(giPath, giContent + `${prefix}\n# Construct runtime state — local-only, never source\n${CONFIG_DIR_NAME}/\n`, 'utf8');
       println(`  fix: appended ${CONFIG_DIR_NAME}/ to ${path.relative(cwd, giPath)}`);
       add(`Project .gitignore covers ${CONFIG_DIR_NAME}/`, true);
     } else {
-      add(`Project .gitignore covers ${CONFIG_DIR_NAME}/` + (cxIgnored ? '' : ' (run `construct doctor --fix-gitignore` to add)'), cxIgnored);
+      add(`Project .gitignore covers ${CONFIG_DIR_NAME}/` + (constructIgnored ? '' : ' (run `construct doctor --fix-gitignore` to add)'), constructIgnored);
     }
   }
 
@@ -718,7 +684,7 @@ async function cmdDoctor() {
   }
 
   // Tier model selection. Construct ships with no default — at least
-  // one tier must be configured (registry.json primary OR CX_MODEL_*
+  // one tier must be configured (registry.json primary OR CONSTRUCT_MODEL_*
   // env override) before any LLM-backed workflow can run.
   // A missing, partial, or unresolvable tier is advisory, not a repo defect:
   // model tiers are user/machine-specific config, so doctor warns and never
@@ -1003,12 +969,12 @@ async function cmdDoctor() {
   try {
     const { measureUsage } = await import('../lib/resources/budget.mjs');
     const u = measureUsage(process.cwd(), process.env);
-    const usedMb = u.totalCxBytes / 1024 / 1024;
-    const capMb = u.totalCxCap / 1024 / 1024;
-    const pct = (u.totalCxUsageRatio * 100).toFixed(0);
-    if (u.totalCxUsageRatio > 1) {
+    const usedMb = u.totalConstructBytes / 1024 / 1024;
+    const capMb = u.totalConstructCap / 1024 / 1024;
+    const pct = (u.totalConstructUsageRatio * 100).toFixed(0);
+    if (u.totalConstructUsageRatio > 1) {
       add(`.construct/ ${usedMb.toFixed(0)}MB / ${capMb.toFixed(0)}MB cap (${pct}% — over) — run \`construct prune\``, false, false);
-    } else if (u.totalCxUsageRatio > 0.8) {
+    } else if (u.totalConstructUsageRatio > 0.8) {
       add(`.construct/ ${usedMb.toFixed(1)}MB / ${capMb.toFixed(0)}MB cap (${pct}% — warning) — \`construct prune\` recommended`, false, true);
     } else {
       add(`.construct/ ${usedMb.toFixed(1)}MB / ${capMb.toFixed(0)}MB cap (${pct}%)`, true, true);
@@ -1060,15 +1026,15 @@ async function cmdDoctor() {
       registryValidation.ok,
       registryValidation.warnings.length > 0,
     );
-    const brokenPromptFiles = Object.values(registry.specialists ?? {}).filter((s) => {
-      if (!s.promptFile) return false;
-      return !fs.existsSync(path.join(ROOT_DIR, s.promptFile));
+    const brokenPromptFiles = Object.values(registry.workerProfiles).filter((profile) => {
+      if (!profile.promptFile) return false;
+      return !fs.existsSync(path.join(ROOT_DIR, profile.promptFile));
     });
-    add('All specialist promptFiles resolve', brokenPromptFiles.length === 0);
-    const headhuntClassifierAgents = ['cx-operations', 'cx-researcher', 'cx-architect', 'cx-security', 'cx-engineer'];
-    const registryNames = new Set(Object.values(registry.specialists ?? {}).map((s) => `cx-${s.name}`));
+    add('All worker profile prompt files resolve', brokenPromptFiles.length === 0);
+    const headhuntClassifierAgents = ['operations', 'researcher', 'architect', 'security', 'engineer'];
+    const registryNames = new Set(Object.values(registry.workerProfiles).map((profile) => profile.id));
     const classifierOrphans = headhuntClassifierAgents.filter((n) => !registryNames.has(n));
-    add('Headhunt classifier agents exist in registry', classifierOrphans.length === 0);
+    add('Headhunt worker profiles exist in registry', classifierOrphans.length === 0);
     const skillAudit = auditSkills({ rootDir: ROOT_DIR, silent: true });
     add('No declared skills missing on disk', skillAudit.pass, false);
     if (isSourceCheckout) {
@@ -1081,8 +1047,8 @@ async function cmdDoctor() {
         staleRegistryPaths.length === 0,
         false,
       );
-      const specialistAudit = auditSpecialists({ rootDir: ROOT_DIR, silent: true });
-      add('Specialist/skill audit cross-checks', specialistAudit.pass, false);
+      const workerProfileAudit = auditWorkerProfiles({ rootDir: ROOT_DIR, silent: true });
+      add('Worker Profile/Skill audit cross-checks', workerProfileAudit.pass, false);
 
       // The catalog is the public-service source of truth; doctor joins it to runtime dispatch
       // and the generated reference so a command that is unroutable or undocumented surfaces here.
@@ -1092,7 +1058,7 @@ async function cmdDoctor() {
         .filter((entry) => !entry.runnable || !entry.documented);
       add('Public CLI dispatch/reference parity', cliDrift.length === 0, false);
     } else {
-      add('Specialist/skill audit cross-checks (skipped — published package)', true, true);
+      add('Worker Profile/Skill audit cross-checks (skipped — published package)', true, true);
       add('Public CLI dispatch/reference parity (skipped — published package)', true, true);
     }
     const { lintResearchRepo } = await import('../lib/research-lint.mjs');
@@ -1365,7 +1331,7 @@ async function cmdDoctor() {
     // Agent contracts integrity. A contract is broken if it lacks id,
     // producer, or consumer, or declares neither postconditions nor output —
     // mirrors the predicate in tests/doctor/contract-validation.test.mjs.
-    const { getAllContracts } = await import('../lib/specialist-contracts.mjs');
+    const { getAllContracts } = await import('../lib/capability-contracts.mjs');
     const contracts = getAllContracts();
     add('Agent contracts loaded', contracts.length > 0);
     if (contracts.length > 0) {
@@ -2125,7 +2091,7 @@ async function cmdPrune(args) {
   if (!pruned) { info('Nothing to prune. .construct/ is within all configured budgets.'); return; }
   if (dryRun) { info('--dry-run: no files removed.'); return; }
   const after = measureUsage(process.cwd(), process.env);
-  println(`.construct/ now at ${Math.round(after.totalCxBytes / 1024 / 1024)}MB / ${Math.round(after.totalCxCap / 1024 / 1024)}MB cap (${Math.round(after.totalCxUsageRatio * 100)}%).`);
+  println(`.construct/ now at ${Math.round(after.totalConstructBytes / 1024 / 1024)}MB / ${Math.round(after.totalConstructCap / 1024 / 1024)}MB cap (${Math.round(after.totalConstructUsageRatio * 100)}%).`);
 }
 
 async function _cmdCosts(args) {
@@ -2270,9 +2236,9 @@ async function cmdResources(args) {
   const { measureUsage } = await import('../lib/resources/budget.mjs');
   if (sub === 'status') {
     const u = measureUsage(process.cwd(), process.env);
-    const totalMb = u.totalCxBytes / 1024 / 1024;
-    const capMb = u.totalCxCap / 1024 / 1024;
-    println(`.construct/ total: ${totalMb.toFixed(1)}MB / ${capMb.toFixed(0)}MB (${(u.totalCxUsageRatio * 100).toFixed(0)}%)`);
+    const totalMb = u.totalConstructBytes / 1024 / 1024;
+    const capMb = u.totalConstructCap / 1024 / 1024;
+    println(`.construct/ total: ${totalMb.toFixed(1)}MB / ${capMb.toFixed(0)}MB (${(u.totalConstructUsageRatio * 100).toFixed(0)}%)`);
     println('');
     println('Category                  Files     Size  Enforcement');
     for (const [name, c] of Object.entries(u.categories)) {
@@ -2355,7 +2321,7 @@ async function _cmdPricing(args) {
   if (sub === 'status') {
     const f = describePricingCatalogFreshness();
     println(JSON.stringify(f, null, 2));
-    const tiers = ['CX_MODEL_REASONING', 'CX_MODEL_STANDARD', 'CX_MODEL_FAST'];
+    const tiers = ['CONSTRUCT_MODEL_REASONING', 'CONSTRUCT_MODEL_STANDARD', 'CONSTRUCT_MODEL_FAST'];
     println('');
     println('Resolved pricing per tier:');
     for (const env of tiers) {
@@ -2440,7 +2406,7 @@ function printConfigModeHelp() {
   println('');
   println('Notes:');
   println('  • Single setter: `construct config set` is the only way to persist mode changes.');
-  println('  • Env var CX_DEPLOYMENT_MODE still wins at runtime for one-off overrides (export it for the session).');
+  println('  • Env var CONSTRUCT_DEPLOYMENT_MODE still wins at runtime for one-off overrides (export it for the session).');
   println('');
   println('Modes:');
   for (const mode of DEPLOYMENT_MODES) {
@@ -2463,7 +2429,7 @@ function printActiveConfig() {
 }
 
 async function printIntakeHelp() {
-  const { getRebrand } = await import('../lib/scopes/rebrand.mjs');
+  const { getRebrand } = await import('../lib/workspace-presets/rebrand.mjs');
   const { intakeQueueLabel, signalNoun } = getRebrand(process.cwd());
   println(`Construct intake — inspect and process the ${intakeQueueLabel}.`);
   println('');
@@ -2581,7 +2547,7 @@ async function cmdIntake(args) {
   }
 
   const { createIntakeQueue } = await import('../lib/intake/queue.mjs');
-  const { getRebrand } = await import('../lib/scopes/rebrand.mjs');
+  const { getRebrand } = await import('../lib/workspace-presets/rebrand.mjs');
   const cwd = process.cwd();
   const rebrand = getRebrand(cwd);
   const queue = createIntakeQueue(cwd, process.env);
@@ -3178,15 +3144,15 @@ async function cmdSkillsUsage(sub, args) {
   }
 
   if (sub === 'correlate-quality') {
-    // Queries the construct_skill_quality_correlation view (db/schema/010_cx_scores.sql)
-    // which aggregates cx_score values by session_id × skill_id over the past 90 days.
+    // Queries the construct_skill_quality_correlation telemetry view.
+    // which aggregates construct_score values by session_id × skill_id over the past 90 days.
     // Falls back to a clear "no data" message when the DB is unreachable or the
     // view is empty rather than printing an empty table.
 
     const sqlClient = createSqlClient(process.env);
     if (!sqlClient) {
       println('Quality correlation requires Postgres (DATABASE_URL or CONSTRUCT_DB_URL).');
-      println('Local JSONL does not carry cx_score data.');
+      println('Local JSONL does not carry construct_score data.');
       println('Run with Postgres configured for full correlation output.');
       return;
     }
@@ -3198,8 +3164,8 @@ async function cmdSkillsUsage(sub, args) {
         limit 50
       `;
       if (!rows || rows.length === 0) {
-        println('No correlation data yet. The view aggregates cx_score values from the past 90 days against');
-        println('skill invocations from the same sessions. Once cxScore() runs in a session that also invoked');
+        println('No correlation data yet. The view aggregates construct_score values from the past 90 days against');
+        println('skill invocations from the same sessions. Once constructScore() runs in a session that also invoked');
         println('a skill, rows appear here. Verify scoring with: construct telemetry query latency --limit=5');
         return;
       }
@@ -3216,7 +3182,7 @@ async function cmdSkillsUsage(sub, args) {
       }
     } catch (err) {
       errorln(`Quality correlation query failed: ${err.message}`);
-      errorln('If the construct_skill_quality_correlation view is missing, apply db/schema/010_cx_scores.sql.');
+      errorln('If the construct_skill_quality_correlation view is missing, apply the current telemetry schema.');
       process.exit(1);
     } finally {
       await closeSqlClient(sqlClient);
@@ -4086,7 +4052,7 @@ async function cmdConfig(args) {
     errorln(`\`construct config mode <value>\` is no longer a setter. Use the single canonical path:`);
     errorln(`  construct config set deployment.mode ${value}`);
     errorln('');
-    errorln('For ephemeral runtime overrides (CI, scripts), export CX_DEPLOYMENT_MODE instead.');
+    errorln('For ephemeral runtime overrides (CI, scripts), export CONSTRUCT_DEPLOYMENT_MODE instead.');
     process.exit(1);
   }
 
@@ -4266,7 +4232,7 @@ async function cmdOrchestrate(args) {
     if (!rest.includes('--no-probe') && !observedTools && !reachableTools) {
       try {
         const tools = await probeStdioMcpTools(process.execPath, [path.join(ROOT_DIR, 'lib', 'mcp', 'server.mjs')], {
-          env: { CX_TOOLKIT_DIR: ROOT_DIR },
+          env: { CONSTRUCT_TOOLKIT_DIR: ROOT_DIR },
           timeoutMs: Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 8000,
         });
         observedTools = tools.map((tool) => tool.name);
@@ -4647,7 +4613,7 @@ async function cmdModels(args) {
 
   if (sub === 'reset') {
     resetEnv(envPath);
-    println(`Removed CX_MODEL_* overrides from ${envPath}.`);
+    println(`Removed CONSTRUCT_MODEL_* overrides from ${envPath}.`);
     await cmdSync([]);
     return;
   }
@@ -4797,7 +4763,7 @@ async function cmdModelsPolicy(args) {
     }
     println('');
     println(`Registry: ${registryPath}`);
-    println('Precedence: CX_MODEL_<TIER> env pins always win over registry defaults.');
+    println('Precedence: CONSTRUCT_MODEL_<TIER> env pins always win over registry defaults.');
     return;
   }
 
@@ -4828,7 +4794,7 @@ async function cmdModelsPolicy(args) {
     }
     for (const w of result.warnings ?? []) errorln(`Note: ${w}`);
     println('');
-    println('Env pins (CX_MODEL_<TIER>) still override these. Run `construct sync` to propagate.');
+    println('Env pins (CONSTRUCT_MODEL_<TIER>) still override these. Run `construct sync` to propagate.');
     if (!args.includes('--no-sync')) await cmdSync([]);
     return;
   }
@@ -5194,7 +5160,7 @@ async function cmdEvals(args) {
 
   const jsonOutput = args.includes('--json');
   const catalog = {
-    description: 'Evaluators are managed via telemetry quality scores. Use cx_score MCP tool or POST /api/public/scores to record quality scores. Run `construct evals retrieval` for the local IR-metric harness against a fixture corpus.',
+    description: 'Evaluators are managed via telemetry quality scores. Use construct_score MCP tool or POST /api/public/scores to record quality scores. Run `construct evals retrieval` for the local IR-metric harness against a fixture corpus.',
     backendUrl: process.env.CONSTRUCT_TELEMETRY_BASEURL ?? 'http://localhost:3000',
     configured: Boolean(process.env.CONSTRUCT_TELEMETRY_PUBLIC_KEY && process.env.CONSTRUCT_TELEMETRY_SECRET_KEY),
   };
@@ -5208,7 +5174,7 @@ async function cmdEvals(args) {
   println(`Backend:     Telemetry (${catalog.backendUrl})`);
   println(`Configured:  ${catalog.configured ? 'yes' : 'no — set CONSTRUCT_TELEMETRY_PUBLIC_KEY and CONSTRUCT_TELEMETRY_SECRET_KEY'}`);
   println('');
-  println('Quality scores are recorded by agents via the cx_score MCP tool.');
+  println('Quality scores are recorded by agents via the construct_score MCP tool.');
   println('View and manage scores at your telemetry dashboard.');
   println('');
   println('Local retrieval evaluation:');
@@ -5723,174 +5689,18 @@ async function cmdLintResearch() {
   if (exitCode !== 0) process.exit(exitCode);
 }
 
-async function cmdLintAgents() {
-  const { validateRegistry } = await import('../lib/specialists/schema.mjs');
-  const { loadRegistry } = await import('../lib/registry/loader.mjs');
+async function cmdLintWorkerProfiles() {
+  const { validate } = await import('../lib/registry/validator.mjs');
   const registry = loadRegistry({ rootDir: ROOT_DIR, skipValidation: true });
-  const { errors, agentCount } = validateRegistry(registry, { rootDir: ROOT_DIR });
-  if (errors.length === 0) {
-    console.log(`specialists/org: 0 errors`);
-    return;
-  }
-  console.error(`specialists/org: ${errors.length} error(s)`);
-  for (const err of errors) console.error(`  ${err}`);
-  process.exit(1);
-}
-
-async function cmdLintContracts() {
-  const { validateContractsFile } = await import('../lib/contracts/validate.mjs');
-  const result = validateContractsFile({ repoRoot: ROOT_DIR });
+  const result = validate(registry);
   if (result.ok) {
-    console.log('specialists/unified-registry.json contracts: 0 errors');
+    println(`registry/worker-profiles: ${Object.keys(registry.workerProfiles).length} records, 0 errors`);
     return;
   }
-  console.error(`specialists/unified-registry.json contracts: ${result.errors.length} error(s)`);
-  for (const err of result.errors) console.error(`  ${err}`);
+  errorln(`registry/worker-profiles: ${result.errors.length} registry error(s)`);
+  for (const entry of result.errors) errorln(`  ${entry.id}: ${entry.message}`);
   process.exit(1);
 }
-
-async function cmdLintPrompts() {
-  const { validatePromptFiles } = await import('../lib/specialists/prompt-schema.mjs');
-  const { errors, warnings, total, converted } = validatePromptFiles({ rootDir: ROOT_DIR });
-  for (const w of warnings) console.warn(`  warn  ${w}`);
-  if (errors.length === 0) {
-    console.log(`specialist prompts: ${total} files (${converted} converted), 0 errors, ${warnings.length} warning(s)`);
-    return;
-  }
-  console.error(`specialist prompts: ${errors.length} error(s) across ${total} files`);
-  for (const err of errors) console.error(`  ${err}`);
-  process.exit(1);
-}
-
-async function cmdSpecialist(args) {
-  const sub = args[0];
-  if (sub === 'lint') return cmdLintPrompts();
-
-  if (sub === 'create' && args.includes('--custom')) {
-    return cmdSpecialistCreateCustom(args.slice(1));
-  }
-
-  if (sub === 'create') {
-    const role = args[1];
-    if (!role) { errorln('Usage: construct specialist create <role>'); process.exit(1); }
-    const { createSpecialistDraft } = await import('../lib/specialists/scaffold.mjs');
-    try {
-      const { relPath } = createSpecialistDraft({ rootDir: ROOT_DIR, role });
-      println(`Created ${relPath} — fill in the stubbed sections, add it to specialists/unified-registry.json, then run \`construct specialist lint\`.`);
-    } catch (e) { errorln(e.message); process.exit(1); }
-    return;
-  }
-
-  if (sub === 'edit') {
-    const role = args[1];
-    if (!role) { errorln('Usage: construct specialist edit <role> [--set-bias=… --set-tension=… --add-overlay=… --bump-version]'); process.exit(1); }
-    const { editSpecialistFrontmatter } = await import('../lib/specialists/scaffold.mjs');
-    const setPerspective = {};
-    for (const f of ['bias', 'tension', 'openingQuestion', 'failureMode']) {
-      const a = args.find((x) => x.startsWith(`--set-${f}=`));
-      if (a) setPerspective[f] = a.slice(`--set-${f}=`.length);
-    }
-    const overlayArg = args.find((x) => x.startsWith('--add-overlay='));
-    try {
-      const { relPath } = editSpecialistFrontmatter({
-        rootDir: ROOT_DIR, role, setPerspective,
-        addOverlay: overlayArg ? overlayArg.slice('--add-overlay='.length) : undefined,
-        bumpVersion: args.includes('--bump-version'),
-      });
-      println(`Updated ${relPath || `specialists/prompts/cx-${role}.md`} — run \`construct specialist lint\` to confirm.`);
-    } catch (e) { errorln(e.message); process.exit(1); }
-    return;
-  }
-
-  errorln(`Unknown specialist subcommand: ${sub || '(none)'}. Available: create, edit, lint`);
-  process.exit(1);
-}
-
-// `construct specialist create <id> --custom` scaffolds a user-authored specialist
-// (construct-rf26.13) — distinct from the maintainer-facing `specialist create <role>`
-// above, which only stubs a prompt file for the built-in roster. `--custom` writes a
-// full registry-shaped JSON record (role, skills, fence, modelTier, delegation) into
-// the project's `.construct/org/` layer by default, or `~/.construct/org/` with `--user`.
-
-async function cmdSpecialistCreateCustom(args) {
-  const id = args.find((a) => !a.startsWith('--'));
-  const flag = (name) => args.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3);
-  const list = (name) => (flag(name) || '').split(',').map((s) => s.trim()).filter(Boolean);
-  const usage = 'Usage: construct specialist create <id> --custom --role=<role> --team=<team-id> --description="…" --skills=<bundle/skill,…> --fence-paths=<glob,…> [--model-tier=fast|standard|reasoning] [--handoff=role,…] [--tools=Read,Grep,…] [--user] [--force] [--root=<dir>]';
-
-  const role = flag('role');
-  const team = flag('team');
-  const description = flag('description');
-  const skills = list('skills');
-  const fencePaths = list('fence-paths');
-  const missing = [
-    !id && 'id (positional)', !role && '--role', !team && '--team',
-    !description && '--description', !skills.length && '--skills', !fencePaths.length && '--fence-paths',
-  ].filter(Boolean);
-  if (missing.length) {
-    errorln(usage);
-    errorln(`Missing required: ${missing.join(', ')}`);
-    process.exit(1);
-  }
-
-  const rootDir = flag('root') ? path.resolve(flag('root')) : ROOT_DIR;
-  const scope = args.includes('--user') ? 'user' : 'project';
-  const { createCustomSpecialist } = await import('../lib/registry/custom-scaffold.mjs');
-  try {
-    const { relPath, promptPath, scope: writtenScope } = createCustomSpecialist({
-      rootDir, scope, id, role, description,
-      modelTier: flag('model-tier') || 'standard',
-      skills, fence: { allowedPaths: fencePaths },
-      team, handoffCandidates: list('handoff'),
-      claudeTools: flag('tools') || undefined,
-      force: args.includes('--force'),
-    });
-    ok(`Created ${relPath} (${writtenScope} scope) and ${path.relative(rootDir, promptPath)}.`);
-    println('Run `construct sync` to pick it up — it then resolves through orchestration the same way a built-in specialist does.');
-  } catch (e) {
-    errorln(e.message);
-    process.exit(1);
-  }
-}
-
-async function cmdTeamCreateCustom(args) {
-  const id = args.find((a) => !a.startsWith('--'));
-  const flag = (name) => args.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3);
-  const list = (name) => (flag(name) || '').split(',').map((s) => s.trim()).filter(Boolean);
-  const usage = 'Usage: construct team create <id> --owner=<role> --charter="…" [--roles=role,…] [--specialists=cx-a,…] [--decision-rights=a,…] [--forbidden=a,…] [--escalation=role,orchestrator] [--group=<group-id>] [--user] [--force] [--root=<dir>]';
-
-  const owner = flag('owner');
-  const charter = flag('charter');
-  const missing = [!id && 'id (positional)', !owner && '--owner', !charter && '--charter'].filter(Boolean);
-  if (missing.length) {
-    errorln(usage);
-    errorln(`Missing required: ${missing.join(', ')}`);
-    process.exit(1);
-  }
-
-  const rootDir = flag('root') ? path.resolve(flag('root')) : ROOT_DIR;
-  const scope = args.includes('--user') ? 'user' : 'project';
-  const { createCustomTeam } = await import('../lib/registry/custom-scaffold.mjs');
-  try {
-    const { relPath, scope: writtenScope } = createCustomTeam({
-      rootDir, scope, id, owner, charter,
-      name: flag('name'),
-      roles: list('roles'),
-      specialists: list('specialists'),
-      decisionRights: list('decision-rights'),
-      forbiddenDecisions: list('forbidden'),
-      escalationPath: list('escalation'),
-      groupId: flag('group'),
-      force: args.includes('--force'),
-    });
-    ok(`Created ${relPath} (${writtenScope} scope).`);
-    println(`Run \`construct specialist create <id> --custom --role=${owner} --team=${id} …\` to give it an owner specialist, then \`construct sync\`.`);
-  } catch (e) {
-    errorln(e.message);
-    process.exit(1);
-  }
-}
-
 async function cmdBackup(args) {
   // Postgres-era backups were removed with the SQL backend (lib/storage/backup.mjs).
   // State is now Git-backed (.construct/) plus the local LanceDB index under .construct/lancedb.
@@ -6583,118 +6393,6 @@ async function cmdProviders(args) {
 // Capability discovery surface — a read-only, secret-free description of the
 // installed Construct's capabilities, for embedding applications.
 
-async function cmdCapability(args) {
-  const sub = args[0];
-  if (sub && sub !== 'describe' && !sub.startsWith('--')) {
-    errorln(`Unknown capability subcommand: ${sub}. Available: describe`);
-    process.exit(1);
-  }
-  const { buildCapabilityContract } = await import('../lib/embedded-contract/capability.mjs');
-  const { wrapContractResult } = await import('../lib/embedded-contract/envelope.mjs');
-  const envelope = wrapContractResult(buildCapabilityContract({ rootDir: ROOT_DIR }), { surface: 'cli' });
-  println(JSON.stringify(envelope, null, 2));
-}
-
-async function cmdWorkflow(args) {
-  const sub = args[0] || 'list';
-
-  if (sub === 'invoke') {
-    const rest = args.slice(1);
-    const flag = (name) => { const i = rest.indexOf(name); return i !== -1 ? rest[i + 1] : undefined; };
-    let input = flag('--text') || '';
-    const fileArg = flag('--file');
-    let ingestion = null;
-    if (!input && fileArg) {
-      const { resolveInput } = await import('../lib/embedded-contract/ingest.mjs');
-      const resolved = await resolveInput({ filePath: fileArg });
-      input = resolved.text;
-      ingestion = resolved.error ? { ...(resolved.ingestion || {}), error: resolved.error } : resolved.ingestion;
-    }
-    if (!input && !process.stdin.isTTY) input = fs.readFileSync(0, 'utf8');
-    const request = {
-      workflowType: flag('--workflow-type'),
-      input,
-      ingestion,
-      roleStrategy: flag('--role-strategy'),
-      requestedRoles: flag('--roles')?.split(',').map((s) => s.trim()).filter(Boolean),
-      approvalMode: flag('--approval-mode'),
-      trace: !rest.includes('--no-trace'),
-      host: flag('--host'),
-      hostModel: flag('--host-model'),
-      hostProvider: flag('--host-provider'),
-      recruitment: flag('--recruitment'),
-    };
-    const { invokeWorkflow } = await import('../lib/embedded-contract/workflow-invoke.mjs');
-    const { wrapContractResult } = await import('../lib/embedded-contract/envelope.mjs');
-    const envelope = wrapContractResult(await invokeWorkflow(request), { surface: 'cli' });
-    println(JSON.stringify(envelope, null, 2));
-    return;
-  }
-
-  if (sub === 'list') {
-    const { existsSync, readdirSync } = await import('node:fs');
-    const { join } = await import('node:path');
-    const dir = join(ROOT_DIR, 'templates', 'workflows');
-    if (!existsSync(dir)) { println('No workflow templates found.'); return; }
-    const files = readdirSync(dir).filter((f) => f.endsWith('.yml') || f.endsWith('.yaml'));
-    if (files.length === 0) { println('No workflow templates found.'); return; }
-    println('Available workflow templates:\n');
-    for (const f of files) {
-      try {
-        const { readFileSync } = await import('node:fs');
-        const raw = readFileSync(join(dir, f), 'utf8');
-        const titleMatch = raw.match(/^title:\s*(.+)$/m);
-        const descMatch = raw.match(/^description:\s*(.+)$/m);
-        const id = f.replace(/\.(yml|yaml)$/, '');
-        println(`  ${id.padEnd(30)} ${titleMatch?.[1] || ''}`);
-        if (descMatch?.[1]) println(`  ${''.padEnd(30)} ${descMatch[1]}`);
-      } catch { println(`  ${f}`); }
-    }
-    return;
-  }
-
-  if (sub === 'show') {
-    const id = args[1];
-    if (!id) { errorln('Usage: construct workflow show <id>'); process.exit(1); }
-    const { existsSync, readFileSync } = await import('node:fs');
-    const { join } = await import('node:path');
-    const candidates = [
-      join(ROOT_DIR, 'templates', 'workflows', `${id}.yml`),
-      join(ROOT_DIR, 'templates', 'workflows', `${id}.yaml`),
-    ];
-    const p = candidates.find(existsSync);
-    if (!p) { errorln(`Workflow template not found: ${id}`); process.exit(1); }
-    println(readFileSync(p, 'utf8'));
-    return;
-  }
-
-  if (sub === 'new') {
-    const id = args[1];
-    if (!id) { errorln('Usage: construct workflow new <template-id> [--name=<name>] [--non-interactive]'); process.exit(1); }
-    const { instantiateWorkflow } = await import('../lib/workflows/instantiate.mjs');
-    const nameFlag = args.find((a) => a.startsWith('--name='))?.replace('--name=', '');
-    const nonInteractive = args.includes('--non-interactive');
-    const inputs = {};
-    if (nameFlag) inputs.feature_name = nameFlag;
-    try {
-      const { artifacts, beadsItems } = await instantiateWorkflow(id, inputs, { cwd: process.cwd(), nonInteractive });
-      println(`\nWorkflow '${id}' instantiated:`);
-      for (const a of artifacts) println(`  + ${a.path}`);
-      if (beadsItems?.length) {
-        println(`\n${beadsItems.length} beads item(s) ready to create via: bd create`);
-        for (const item of beadsItems) println(`  - ${item.title}`);
-      }
-    } catch (err) {
-      errorln(`Workflow instantiation failed: ${err.message}`);
-      process.exit(1);
-    }
-    return;
-  }
-
-  errorln(`Unknown workflow subcommand: ${sub}. Available: list, show, new`);
-  process.exit(1);
-}
-
 async function cmdTelemetryQuery(args) {
   const sub = args[0];
   const rest = args.slice(1);
@@ -6982,12 +6680,9 @@ const handlers = new Map([
   ['registry:status', cmdRegistryStatus],
   ['registry:validate', cmdRegistryValidate],
   ['registry:generate-docs', cmdRegistryGenerateDocs],
-  ['registry:diff', cmdRegistryDiff],
-  ['registry:prune', cmdRegistryPrune],
-  ['team:add', cmdTeamAdd],
-  ['team:remove', cmdTeamRemove],
-  ['specialist:add', cmdSpecialistAdd],
-  ['specialist:remove', cmdSpecialistRemove],
+  ['workspace-preset', (args) => cmdRegistryCatalog('workspace-preset', args)],
+  ['worker-profile', (args) => cmdRegistryCatalog('worker-profile', args)],
+  ['procedure', (args) => cmdRegistryCatalog('procedure', args)],
   ['rules', cmdRulesUsage],
   // Pricing / cost readouts are stubbed out: the ledger writes, model-pricing
   // catalog, and per-turn accounting still run, but no CLI surface exposes
@@ -7069,48 +6764,7 @@ const handlers = new Map([
       process.exit(1);
     }
   }],
-  ['policy', async (args) => {
-    const sub = args[0];
-    if (!sub || sub === '--help' || sub === '-h') {
-      println('Usage: construct policy <show>');
-      println('  show [--json]   List all active policies with enforcement details');
-      return;
-    }
-    if (sub === 'show') {
-      const registry = loadRegistry({ rootDir: ROOT_DIR });
-      const policies = Object.values(registry.policies ?? {});
-      if (args.includes('--json')) {
-        println(JSON.stringify(policies, null, 2));
-        return;
-      }
-      // Table output
-      const ID_W = 25;
-      const SRC_W = 40;
-      const ENF_W = 45;
-      const MODE_W = 18;
-      println(
-        'ID'.padEnd(ID_W) + 'SOURCE'.padEnd(SRC_W) + 'ENFORCEMENT'.padEnd(ENF_W) + 'MODE',
-      );
-      println('-'.repeat(ID_W + SRC_W + ENF_W + MODE_W));
-      for (const p of policies) {
-        const id = (p.id || '').slice(0, ID_W - 1).padEnd(ID_W);
-        const src = (p.source || '').slice(0, SRC_W - 1).padEnd(SRC_W);
-        const enf = (p.enforcement || '').slice(0, ENF_W - 1).padEnd(ENF_W);
-        const mode = (p.mode || '').slice(0, MODE_W - 1);
-        println(`${id}${src}${enf}${mode}`);
-        if (p.description) println(`  ${p.description}`);
-      }
-      println('');
-      const counts = {};
-      for (const p of policies) { counts[p.mode] = (counts[p.mode] || 0) + 1; }
-      for (const [mode, count] of Object.entries(counts)) {
-        println(`  ${mode}: ${count}`);
-      }
-      return;
-    }
-    errorln(`Unknown policy subcommand: ${sub}. Available: show`);
-    process.exit(1);
-  }],
+  ['policy', (args) => cmdRegistryCatalog('policy', args)],
   ['auth:status', async (args) => {
     const { getTokenStatus } = await import('../lib/providers/auth-manager.mjs');
     const providers = ['github', 'slack', 'jira', 'salesforce', 'linear'];
@@ -7158,15 +6812,11 @@ const handlers = new Map([
   ['provider', cmdProvider],
   ['creds', cmdCreds],
   ['providers', cmdProviders],
-  ['workflow', cmdWorkflow],
-  ['capability', cmdCapability],
+  ['capability', (args) => cmdRegistryCatalog('capability', args)],
   ['tags', cmdTags],
   ['scheduler', cmdScheduler],
   ['lint:research', cmdLintResearch],
-  ['lint:agents', cmdLintAgents],
-  ['lint:contracts', cmdLintContracts],
-  ['lint:prompts', cmdLintPrompts],
-  ['specialist', cmdSpecialist],
+  ['lint:worker-profiles', cmdLintWorkerProfiles],
   ['decisions', async (args) => {
     const { runDecisionsCli } = await import('../lib/decisions/registry.mjs');
     return runDecisionsCli(args);
@@ -7183,7 +6833,7 @@ const handlers = new Map([
   ['audit', async (args) => {
     const sub = args[0];
     if (sub === 'skills') return runAuditSkillsCli(args.slice(1));
-    if (sub === 'specialists') return runAuditSpecialistsCli(args.slice(1));
+    if (sub === 'worker-profiles') return runAuditWorkerProfilesCli(args.slice(1));
     if (sub === 'tests') {
       const rest = args.slice(1);
       if (rest.includes('--corpus')) return runCorpusInventoryAuditCli(rest.filter((arg) => arg !== '--corpus'), { rootDir: ROOT_DIR });
@@ -7193,13 +6843,13 @@ const handlers = new Map([
       const { runAuditTrailCli } = await import('../lib/audit-trail.mjs');
       return runAuditTrailCli(args.slice(sub === 'trail' ? 1 : 0));
     }
-    errorln(`Unknown audit subcommand: ${sub}. Available: skills, specialists, tests, trail`);
+    errorln(`Unknown audit subcommand: ${sub}. Available: skills, worker-profiles, tests, trail`);
     process.exit(1);
   }],
   ['artifact', async (args) => {
     const sub = args[0];
     if (sub === 'validate') return runArtifactValidateCli(args.slice(1));
-    if (sub === 'workflow') {
+    if (sub === 'run') {
       const rest = args.slice(1);
       const request = rest.filter((arg) => !arg.startsWith('--')).join(' ');
       const read = (name) => rest.find((arg) => arg.startsWith(`${name}=`))?.slice(name.length + 1);
@@ -7216,7 +6866,7 @@ const handlers = new Map([
       println(JSON.stringify(result, null, 2));
       return;
     }
-    errorln(`Unknown artifact subcommand: ${sub || '(none)'}. Available: validate, workflow`);
+    errorln(`Unknown artifact subcommand: ${sub || '(none)'}. Available: validate, run`);
     process.exit(1);
   }],
   ['doc', async (args) => {
@@ -7230,19 +6880,6 @@ const handlers = new Map([
       return runDocInstallHooksCli(args.slice(1));
     }
     errorln(`Unknown doc subcommand: ${sub}. Available: verify, install-hooks`);
-    process.exit(1);
-  }],
-  ['team', async (args) => {
-    const sub = args[0];
-    if (sub === 'review') return runTeamReviewCli(args.slice(1));
-    if (sub === 'templates') { listTeamTemplates(); return; }
-    if (sub === 'create') return cmdTeamCreateCustom(args.slice(1));
-    if (sub === 'list' || sub === 'show') {
-      const { runTeamList, runTeamShow } = await import('../lib/registry/cli.mjs');
-      if (sub === 'list') return runTeamList(args.slice(1), { rootDir: ROOT_DIR, println, errorln });
-      return runTeamShow(args.slice(1), { rootDir: ROOT_DIR, println, errorln });
-    }
-    errorln(`Unknown team subcommand: ${sub}. Available: list, show, create, review, templates`);
     process.exit(1);
   }],
   ['role', async (args) => {
@@ -7647,9 +7284,9 @@ const handlers = new Map([
       println(fs.readFileSync(p, 'utf8'));
       return;
     }
-    if (sub === 'scope' || !sub) {
+    if (sub === 'coverage' || !sub) {
       const { runSkillsScopeCli } = await import('../lib/skills-scope.mjs');
-      return runSkillsScopeCli(args.slice(sub === 'scope' ? 1 : 0));
+      return runSkillsScopeCli(args.slice(sub === 'coverage' ? 1 : 0));
     }
     if (sub === 'apply') {
       const { runSkillsApplyCli } = await import('../lib/skills-apply.mjs');
@@ -7658,7 +7295,7 @@ const handlers = new Map([
     if (sub === 'usage' || sub === 'orphans' || sub === 'hot' || sub === 'quality' || sub === 'correlate-quality' || sub === 'backfill-postgres') {
       return cmdSkillsUsage(sub, args.slice(1));
     }
-    errorln(`Unknown skills subcommand: ${sub}. Available: scope, apply, suggest, routing, usage, orphans, hot, quality, correlate-quality, backfill-postgres`);
+    errorln(`Unknown skills subcommand: ${sub}. Available: coverage, apply, suggest, routing, usage, orphans, hot, quality, correlate-quality, backfill-postgres`);
     process.exit(1);
   }],
   ['ask', async (args) => {
@@ -7956,337 +7593,6 @@ const handlers = new Map([
       return;
     }
     errorln(`Unknown sandbox subcommand: ${sub}. Available: create, list, delete, prune`);
-    process.exit(1);
-  }],
-  ['scope', async (args) => {
-    const sub = args[0] || 'show';
-    const { listScopes, loadScope, resolveActiveScope } = await import('../lib/scopes/loader.mjs');
-    if (sub === 'list') {
-      for (const id of listScopes()) {
-        const p = loadScope(id);
-        process.stdout.write(`  ${id.padEnd(14)} ${p?.displayName || ''}\n`);
-      }
-      return;
-    }
-    if (sub === 'show') {
-      const active = resolveActiveScope(process.cwd());
-      process.stdout.write(JSON.stringify({
-        id: active.id,
-        displayName: active.displayName,
-        tagline: active.tagline,
-        roles: active.roles?.length || 0,
-        intakeTypes: active.intake?.types?.length || 0,
-      }, null, 2) + '\n');
-      return;
-    }
-    if (sub === 'set') {
-      const id = args[1];
-      if (!id) {
-        errorln('Usage: construct scope set <id> [--yes] [--dry-run]');
-        process.exit(1);
-      }
-      const target = loadScope(id);
-      if (!target) {
-        errorln(`Unknown scope: ${id}. Available: ${listScopes().join(', ')}`);
-        process.exit(1);
-      }
-      const skipConfirm = args.includes('--yes') || args.includes('-y') || args.includes('--non-interactive');
-      const dryRun = args.includes('--dry-run');
-      const isTTY = process.stdin.isTTY && process.stdout.isTTY;
-
-      const { findProjectConfigPath, loadProjectConfig, writeProjectConfig, PROJECT_CONFIG_FILENAME } = await import('../lib/config/project-config.mjs');
-      const pathMod = await import('node:path');
-      const found = findProjectConfigPath(process.cwd());
-      const cfgPath = found || pathMod.join(process.cwd(), PROJECT_CONFIG_FILENAME);
-      // loadProjectConfig returns a wrapper { path, raw, config, source, errors };
-      // operate on the raw user-authored object so the write call sees the
-      // version field that validateProjectConfig requires.
-      const loaded = found ? loadProjectConfig(process.cwd()) : null;
-      const cfg = loaded?.raw ? structuredClone(loaded.raw) : { version: 1 };
-      if (!cfg.version) cfg.version = 1;
-
-      const currentId = cfg.scope || 'rnd';
-      if (currentId === id) {
-        println(`Scope already set to ${id} (${target.displayName}). Nothing to do.`);
-        return;
-      }
-      const current = loadScope(currentId) || { id: currentId, displayName: currentId, roles: [], intake: { types: [], stages: [] }, departments: [] };
-
-      // Render a structural diff so the operator sees what loop they are switching into.
-      const setDiff = (label, before, after) => {
-        const b = new Set(before || []);
-        const a = new Set(after || []);
-        const added = [...a].filter((x) => !b.has(x));
-        const removed = [...b].filter((x) => !a.has(x));
-        const unchanged = [...a].filter((x) => b.has(x));
-        println(`  ${label}:`);
-        if (added.length) println(`    + ${added.join(', ')}`);
-        if (removed.length) println(`    - ${removed.join(', ')}`);
-        if (!added.length && !removed.length) println(`    (no change, ${unchanged.length} entr${unchanged.length === 1 ? 'y' : 'ies'})`);
-      };
-
-      println('');
-      println(`About to switch active scope:`);
-      println(`  from:  ${currentId} (${current.displayName})`);
-      println(`  to:    ${id} (${target.displayName})`);
-      println('');
-      println(`Structural diff:`);
-      setDiff('roles', current.roles, target.roles);
-      setDiff('intake.types', current.intake?.types, target.intake?.types);
-      setDiff('intake.stages', current.intake?.stages, target.intake?.stages);
-      const cDept = (current.departments || []).map((d) => d.id);
-      const tDept = (target.departments || []).map((d) => d.id);
-      setDiff('departments', cDept, tDept);
-      println('');
-      println(`Files that will change:`);
-      println(`  ${pathMod.relative(process.cwd(), cfgPath)}  (scope field: ${currentId} -> ${id})`);
-      println('');
-      println(`The change only writes the scope field. No specialists are added or removed.`);
-      println(`Sync runs against the new scope on next \`construct sync\`.`);
-      println('');
-
-      if (dryRun) {
-        println(`[dry-run] No files were written.`);
-        return;
-      }
-      if (!skipConfirm && isTTY) {
-        const readline = await import('node:readline');
-        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-        const answer = await new Promise((res) => rl.question(`Switch scope to ${id}? (Y/n) `, (a) => res(a.trim().toLowerCase())));
-        rl.close();
-        if (answer && answer !== 'y' && answer !== 'yes') {
-          println('Aborted. No config was changed.');
-          return;
-        }
-      }
-
-      cfg.scope = id;
-      writeProjectConfig(cfgPath, cfg, { validate: true });
-      process.stdout.write(`✓ scope set to ${id} (${target.displayName})\n`);
-      return;
-    }
-    if (sub === 'create') {
-      const id = args[1];
-      if (!id) {
-        errorln('Usage: construct scope create <id> [--display="..."] [--role=<id>...] [--department=<id>:<displayName>...] [--yes]');
-        errorln('  Run with no flags for interactive mode; pass --yes to skip the confirmation prompt.');
-        process.exit(1);
-      }
-      if (!/^[a-z][a-z0-9-]{1,30}$/.test(id)) {
-        errorln(`Invalid id "${id}". Must match ^[a-z][a-z0-9-]{1,30}$.`);
-        process.exit(1);
-      }
-
-      const displayArg = args.find((a) => a.startsWith('--display='));
-      const skipConfirm = args.includes('--yes') || args.includes('-y') || args.includes('--non-interactive');
-      const dryRun = args.includes('--dry-run');
-      const isTTY = process.stdin.isTTY && process.stdout.isTTY;
-
-      let displayName = displayArg ? displayArg.split('=')[1] : null;
-      let seedRoles = args
-        .filter((a) => a.startsWith('--role='))
-        .map((a) => a.slice('--role='.length))
-        .filter(Boolean);
-      let seedDepartments = args
-        .filter((a) => a.startsWith('--department='))
-        .map((a) => a.slice('--department='.length))
-        .map((spec) => {
-          const [deptId, deptDisplay] = spec.split(':');
-          return { id: deptId, displayName: deptDisplay || deptId };
-        });
-
-      // Interactive gather. Only prompt when stdin is a real terminal and the
-      // operator did not pass enough flags to scaffold without input. A
-      // non-TTY invocation with no flags falls through to an empty scaffold
-      // so scripts and CI can still create drafts non-interactively.
-      const needsInteractive = isTTY && !skipConfirm && (!displayName || (seedRoles.length === 0 && seedDepartments.length === 0));
-      if (needsInteractive) {
-        const readline = await import('node:readline');
-        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-        const ask = (q, def = '') => new Promise((res) => rl.question(`${q}${def ? ` [${def}]` : ''} `, (a) => res(a.trim() || def)));
-
-        println('');
-        println(`Scaffolding a new scope draft. Three questions, then a preview.`);
-        println(`Background: docs/guides/concepts/persona-research.md and docs/guides/concepts/profile-lifecycle.md`);
-        println('');
-        if (!displayName) displayName = await ask('Display name?', id);
-        if (seedDepartments.length === 0) {
-          const dInput = await ask('Departments (id:Name, id:Name, ...)?', '');
-          if (dInput) seedDepartments = dInput.split(',').map((s) => s.trim()).filter(Boolean).map((spec) => {
-            const [dId, dName] = spec.split(':').map((x) => x.trim());
-            return { id: dId, displayName: dName || dId };
-          });
-        }
-        if (seedRoles.length === 0) {
-          const rInput = await ask('Roles (role-id, role-id, ...)?', '');
-          if (rInput) seedRoles = rInput.split(',').map((s) => s.trim()).filter(Boolean);
-        }
-        rl.close();
-      }
-      if (!displayName) displayName = id;
-
-      const pathMod = await import('node:path');
-      const draftRoot = configPath(process.cwd(), 'scopes', `draft-${id}`);
-
-      println('');
-      println(`About to scaffold a draft scope:`);
-      println(`  id:           ${id}`);
-      println(`  displayName:  ${displayName}`);
-      println(`  departments:  ${seedDepartments.length}${seedDepartments.length ? ` (${seedDepartments.map((d) => d.id).join(', ')})` : ''}`);
-      println(`  roles:        ${seedRoles.length}${seedRoles.length ? ` (${seedRoles.join(', ')})` : ''}`);
-      println('');
-      println(`Files that will be written under ${pathMod.relative(process.cwd(), draftRoot)}/:`);
-      println(`  scope.json                         structural manifest`);
-      println(`  requirements.md                    research brief naming each cx-* specialist`);
-      for (const r of seedRoles) println(`  skill-emphasis/${r}.md`.padEnd(40) + `  skill-emphasis worksheet (filled during discover)`);
-      for (const d of seedDepartments) println(`  departments/${d.id}.md`.padEnd(40) + `  department charter (filled during frame)`);
-      println('');
-      println(`Nothing else is touched. No config is changed, no active scope is switched.`);
-      println(`To activate this scope after promotion: construct scope set ${id}`);
-      println('');
-
-      if (dryRun) {
-        println(`[dry-run] No files were written.`);
-        return;
-      }
-      if (!skipConfirm && isTTY) {
-        const readline = await import('node:readline');
-        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-        const answer = await new Promise((res) => rl.question('Create draft? (Y/n) ', (a) => res(a.trim().toLowerCase())));
-        rl.close();
-        if (answer && answer !== 'y' && answer !== 'yes') {
-          println('Aborted. Nothing was written.');
-          return;
-        }
-      }
-
-      const { createDraftScope } = await import('../lib/scopes/lifecycle.mjs');
-      try {
-        const result = createDraftScope({ cwd: process.cwd(), id, displayName, seedRoles, seedDepartments });
-        println('');
-        println(`✓ draft created at ${pathMod.relative(process.cwd(), result.dir)}`);
-        println('');
-        println(`Next steps (in order, per docs/guides/concepts/profile-lifecycle.md):`);
-        println(`  1. Discover  (cx-researcher): fill skill-emphasis/<role>.md from interviews + primary sources.`);
-        println(`  2. Frame     (cx-product-manager): fill departments/<dept>.md charters and intake taxonomy.`);
-        println(`  3. Architect (cx-architect): reconcile role reuse vs new; populate departments[] in scope.json.`);
-        println(`  4. Validate  (cx-reviewer): run persona-eval and classifier-eval against representative signals.`);
-        println('');
-        println(`Inspect the brief:  open ${pathMod.relative(process.cwd(), result.briefPath)}`);
-        return;
-      } catch (err) {
-        errorln(err.message);
-        process.exit(1);
-      }
-    }
-    if (sub === 'drafts') {
-      const { listDrafts } = await import('../lib/scopes/lifecycle.mjs');
-      const drafts = listDrafts(process.cwd());
-      if (drafts.length === 0) { process.stdout.write('  (no drafts)\n'); return; }
-      for (const d of drafts) {
-        const flags = [d.hasBrief ? 'brief' : null, d.hasScope ? 'scope' : null].filter(Boolean).join(', ');
-        process.stdout.write(`  ${d.id.padEnd(20)} ${flags}\n`);
-      }
-      return;
-    }
-    if (sub === 'archive') {
-      const id = args[1];
-      const reasonArg = args.find((a) => a.startsWith('--reason='));
-      let reason = reasonArg ? reasonArg.split('=')[1] : '';
-      if (!id) {
-        errorln('Usage: construct scope archive <id> --reason="..." [--yes] [--dry-run]');
-        process.exit(1);
-      }
-      const skipConfirm = args.includes('--yes') || args.includes('-y') || args.includes('--non-interactive');
-      const dryRun = args.includes('--dry-run');
-      const isTTY = process.stdin.isTTY && process.stdout.isTTY;
-
-      const pathMod = await import('node:path');
-      const fsMod = await import('node:fs');
-      const target = loadScope(id);
-      if (!target) {
-        errorln(`Unknown scope: ${id}. Curated catalog: ${listScopes().join(', ')}`);
-        process.exit(1);
-      }
-      const fileURL = await import('node:url');
-      const moduleDir = pathMod.dirname(fileURL.fileURLToPath(import.meta.url));
-      const repoRoot = pathMod.resolve(moduleDir, '..');
-      const srcScope = pathMod.join(repoRoot, 'specialists', 'org', 'scopes', `${id}.json`);
-      const tableRel = typeof target?.intake?.classificationTable === 'string' ? target.intake.classificationTable : null;
-      const srcTable = tableRel ? pathMod.join(repoRoot, tableRel) : null;
-      const dstDir = pathMod.join(repoRoot, 'archive', 'scopes', id);
-
-      // Gather reason interactively if missing. The lifecycle module already
-      // enforces a >= 8 char reason, but the operator should see why before
-      // the call fails.
-      if (!reason && isTTY && !skipConfirm) {
-        const readline = await import('node:readline');
-        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-        reason = await new Promise((res) => rl.question('Archive reason (>= 8 chars): ', (a) => res(a.trim())));
-        rl.close();
-      }
-      if (!reason || reason.trim().length < 8) {
-        errorln('A substantive --reason (>= 8 chars) is required. Archiving is permanent in repo history; the reason becomes the archive note.');
-        process.exit(1);
-      }
-
-      println('');
-      println(`About to archive curated scope:`);
-      println(`  id:           ${id}`);
-      println(`  displayName:  ${target.displayName || id}`);
-      println(`  reason:       ${reason}`);
-      println('');
-      println(`Files that will move:`);
-      println(`  ${pathMod.relative(process.cwd(), srcScope)}`);
-      println(`    -> ${pathMod.relative(process.cwd(), pathMod.join(dstDir, `${id}.json`))}`);
-      if (srcTable && fsMod.existsSync(srcTable)) {
-        println(`  ${pathMod.relative(process.cwd(), srcTable)}`);
-        println(`    -> ${pathMod.relative(process.cwd(), pathMod.join(dstDir, pathMod.basename(srcTable)))}`);
-      }
-      println(`  ${pathMod.relative(process.cwd(), pathMod.join(dstDir, 'archive-note.md'))}  (new)`);
-      println('');
-      println(`What stays:`);
-      println(`  Observations under .construct/observations/ are not touched.`);
-      println(`  Outcomes under .construct/outcomes/ are not touched.`);
-      println(`  Any project still configured with scope=${id} will fall back to rnd on next load.`);
-      println('');
-
-      if (dryRun) {
-        println(`[dry-run] No files were moved.`);
-        return;
-      }
-      if (!skipConfirm && isTTY) {
-        const readline = await import('node:readline');
-        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-        const answer = await new Promise((res) => rl.question(`Archive ${id}? (y/N) `, (a) => res(a.trim().toLowerCase())));
-        rl.close();
-        if (answer !== 'y' && answer !== 'yes') {
-          println('Aborted. Nothing was archived.');
-          return;
-        }
-      }
-
-      const { archiveScope } = await import('../lib/scopes/lifecycle.mjs');
-      try {
-        const { archived } = archiveScope({ id, reason });
-        process.stdout.write(`✓ archived ${id} to ${pathMod.relative(process.cwd(), archived)}\n`);
-        return;
-      } catch (err) {
-        errorln(err.message);
-        process.exit(1);
-      }
-    }
-    if (sub === 'health') {
-      const id = args[1];
-      if (!id) { errorln('Usage: construct scope health <id> [--days=N]'); process.exit(1); }
-      const daysArg = args.find((a) => a.startsWith('--days='));
-      const windowDays = daysArg ? Number(daysArg.split('=')[1]) || 30 : 30;
-      const { scopeHealth } = await import('../lib/scopes/lifecycle.mjs');
-      const report = scopeHealth(process.cwd(), id, { windowDays });
-      process.stdout.write(JSON.stringify(report, null, 2) + '\n');
-      return;
-    }
-    errorln(`Unknown scope subcommand: ${sub}. Available: list, show, set, create, drafts, archive, health`);
     process.exit(1);
   }],
 ]);

@@ -63,8 +63,8 @@ test('non-canonical cached_tokens fields are ignored', () => {
 
 test('per-agent aggregation uses normalized token values', () => {
   const byAgent = aggregateCostByAgent([
-    { agent: 'cx-engineer', inputTokens: 100, outputTokens: 20, reasoningTokens: 8, cacheReadInputTokens: 300, cacheCreationInputTokens: 50, costUsd: 0.02 },
-    { agent: 'cx-engineer', input_tokens: 10, output_tokens: 5, reasoning_tokens: 1, cache_read_input_tokens: 40, cost_usd: 0.01 },
+    { agent: 'engineer', inputTokens: 100, outputTokens: 20, reasoningTokens: 8, cacheReadInputTokens: 300, cacheCreationInputTokens: 50, costUsd: 0.02 },
+    { agent: 'engineer', input_tokens: 10, output_tokens: 5, reasoning_tokens: 1, cache_read_input_tokens: 40, cost_usd: 0.01 },
   ]);
 
   assert.equal(byAgent.length, 1);

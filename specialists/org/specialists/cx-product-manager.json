@@ -82,7 +82,7 @@
     }
   ],
   "permissions": {},
-  "promptFile": "specialists/prompts/cx-product-manager.md",
+  "promptFile": "specialists/prompts/product-manager.md",
   "embedOrientation": {
     "focusAreas": [
       "requirements coverage",
@@ -135,7 +135,7 @@
         },
         "recruit": {
           "specialists": [
-            "cx-product-manager"
+            "product-manager"
           ]
         },
         "role": "reviewer",

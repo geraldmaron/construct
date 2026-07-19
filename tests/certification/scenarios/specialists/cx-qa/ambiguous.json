@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "specialistId": "cx-qa",
+  "specialistId": "qa",
   "capabilityId": "specialist.prompt",
   "mode": "normal",
   "scenarioKind": "ambiguous",

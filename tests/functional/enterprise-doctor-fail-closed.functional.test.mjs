@@ -34,7 +34,7 @@ function env(extra = {}) {
     env: {
       ...process.env,
       HOME: home,
-      CX_HOME_OVERRIDE: home,
+      CONSTRUCT_HOME_OVERRIDE: home,
       CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
       BOOTSTRAP_CHECKED: '1',
       CONSTRUCT_DISABLE_AUTO_CLEANUP: '1',

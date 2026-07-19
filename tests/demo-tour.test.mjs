@@ -106,7 +106,7 @@ test('construct demo tour --accessible runs end-to-end and is WCAG-plain', () =>
     cwd: REPO,
     encoding: 'utf8',
     timeout: 60_000,
-    env: { ...process.env, HOME, CX_HOME_OVERRIDE: HOME },
+    env: { ...process.env, HOME, CONSTRUCT_HOME_OVERRIDE: HOME },
   });
   assert.equal(proc.status, 0, `exit 0 expected, got ${proc.status}: ${proc.stderr}`);
   assert.ok(proc.stdout.includes('Demo tour:'), 'tour header missing');
@@ -121,7 +121,7 @@ test('construct demo tour accepts an explicit demo name', () => {
     cwd: REPO,
     encoding: 'utf8',
     timeout: 60_000,
-    env: { ...process.env, HOME, CX_HOME_OVERRIDE: HOME },
+    env: { ...process.env, HOME, CONSTRUCT_HOME_OVERRIDE: HOME },
   });
   assert.equal(proc.status, 0, `exit 0 expected, got ${proc.status}: ${proc.stderr}`);
   const script = loadDemoScript(names[0], { cwd: REPO, repoRoot: REPO });
@@ -133,7 +133,7 @@ test('construct demo tour rejects an unknown name', () => {
     cwd: REPO,
     encoding: 'utf8',
     timeout: 60_000,
-    env: { ...process.env, HOME, CX_HOME_OVERRIDE: HOME },
+    env: { ...process.env, HOME, CONSTRUCT_HOME_OVERRIDE: HOME },
   });
   assert.notEqual(proc.status, 0, 'unknown demo should exit non-zero');
   assert.ok(/Unknown demo/.test(proc.stderr), 'expected an unknown-demo message on stderr');

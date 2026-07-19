@@ -18,11 +18,11 @@ function fixture() {
   const w = (rel, body) => { mkdirSync(join(root, rel, '..'), { recursive: true }); writeFileSync(join(root, rel), body); };
   // One specialist (engineer) declares its own base skill; operator is a profile
   // role only (no specialist). ghost is neither.
-  w('specialists/org/specialists/cx-engineer.json', JSON.stringify({
+  w('specialists/org/specialists/engineer.json', JSON.stringify({
     name: 'engineer',
     team: 'engineering-team',
     role: 'owner',
-    skills: ['roles/engineer'],
+    skills: ['perspectives/engineer'],
   }));
   w('specialists/org/teams/engineering-team.json', JSON.stringify({
     id: 'engineering-team',
@@ -36,7 +36,7 @@ function fixture() {
     roles: ['operator', 'product-lead'],
     departments: [{ id: 'intake', roles: ['operator', 'product-lead'] }],
   }));
-  for (const s of ['roles/engineer', 'roles/engineer.ai', 'roles/operator', 'roles/operator.sre', 'roles/ghost.x', 'docs/loose']) {
+  for (const s of ['perspectives/engineer', 'perspectives/engineer.ai', 'perspectives/operator', 'perspectives/operator.sre', 'perspectives/ghost.x', 'docs/loose']) {
     w(`skills/${s}.md`, '---\nname: x\n---\nbody');
   }
   return { root, cleanup: () => rmSync(root, { recursive: true, force: true }) };
@@ -48,17 +48,17 @@ test('role skills are owned via specialist base or profile role, not only regist
     const r = auditSkills({ rootDir: root, silent: true });
     // engineer.* owned by the engineer specialist; operator.* owned by the profile
     // role; only the unowned-base role skill and the loose docs skill are orphans.
-    assert.deepEqual(r.orphanSkills.sort(), ['docs/loose', 'roles/ghost.x']);
+    assert.deepEqual(r.orphanSkills.sort(), ['docs/loose', 'perspectives/ghost.x']);
     assert.equal(r.pass, true);
     assert.equal(r.missingSkillFiles.length, 0);
   } finally { cleanup(); }
 });
 
 test('the real corpus no longer false-flags profile roles or conditional flavors', () => {
-  // Regression guard for construct-ksfa: roles/operator (operations profile) and
-  // roles/<specialist>.<flavor> must not appear as orphans.
+  // Regression guard for construct-ksfa: perspectives/operator (operations profile) and
+  // perspectives/<specialist>.<flavor> must not appear as orphans.
   const r = auditSkills({ silent: true });
-  for (const owned of ['roles/operator', 'roles/operator.sre', 'roles/qa.web-ui', 'roles/security.appsec']) {
+  for (const owned of ['perspectives/operator', 'perspectives/operator.sre', 'perspectives/qa.web-ui', 'perspectives/security.appsec']) {
     assert.ok(!r.orphanSkills.includes(owned), `${owned} must be owned, not an orphan`);
   }
 });

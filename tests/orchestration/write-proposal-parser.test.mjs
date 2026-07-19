@@ -27,14 +27,14 @@ test('extracts a single valid proposal block', () => {
     'Let me know if that looks right.',
   ].join('\n');
 
-  const proposals = parseWriteProposals(text, { requestedBy: { specialistId: 'cx-operations' } });
+  const proposals = parseWriteProposals(text, { requestedBy: { specialistId: 'operations' } });
 
   assert.equal(proposals.length, 1);
   assert.equal(proposals[0].providerId, 'jira');
   assert.equal(proposals[0].writeKind, 'comment');
   assert.deepEqual(proposals[0].payload, { issueKey: 'OPS-1', body: 'status update' });
   assert.equal(proposals[0].tool, 'jira.comment');
-  assert.equal(proposals[0].requestedBy.specialistId, 'cx-operations');
+  assert.equal(proposals[0].requestedBy.specialistId, 'operations');
 });
 
 test('extracts multiple proposal blocks in one answer', () => {

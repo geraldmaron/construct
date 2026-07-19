@@ -40,17 +40,17 @@ function runHook(name, payload, env) {
     input: JSON.stringify(payload),
     encoding: 'utf8',
     timeout: 15_000,
-    env: { ...process.env, HOME: env.HOME, CX_HOME_OVERRIDE: env.HOME, ...env.extra },
+    env: { ...process.env, HOME: env.HOME, CONSTRUCT_HOME_OVERRIDE: env.HOME, ...env.extra },
   });
 }
 
-// A cx-* dispatch whose result names a downstream handoff (next:cx-engineer) is
+// A cx-* dispatch whose result names a downstream handoff (next:engineer) is
 // exactly what the agent-tracker role-pending queue captures — when Construct's
 // role machinery is on.
 const TASK = {
   tool_name: 'Task',
-  tool_input: { subagent_type: 'cx-architect', description: 'design the billing service' },
-  tool_result: { result: 'Design complete. next:cx-engineer to implement.' },
+  tool_input: { subagent_type: 'architect', description: 'design the billing service' },
+  tool_result: { result: 'Design complete. next:engineer to implement.' },
 };
 
 test('default: a cx dispatch enqueues the role-pending handoff', (t) => {
@@ -60,7 +60,7 @@ test('default: a cx dispatch enqueues the role-pending handoff', (t) => {
   assert.equal(r.status, 0, `hook must exit 0; stderr: ${r.stderr}`);
   const pending = join(doctorRoot(env.HOME), 'role-pending.jsonl');
   assert.ok(existsSync(pending), 'role-pending.jsonl is written when roles are active');
-  assert.match(readFileSync(pending, 'utf8'), /cx-engineer/, 'the handoff target is recorded');
+  assert.match(readFileSync(pending, 'utf8'), /engineer/, 'the handoff target is recorded');
 });
 
 test('CONSTRUCT_ROLES=off: the same dispatch enqueues nothing (kill switch inert)', (t) => {
@@ -82,7 +82,7 @@ test('a plain (non-cx) subagent is untouched — Construct only engages its own 
   const r = runHook('agent-tracker', {
     tool_name: 'Task',
     tool_input: { subagent_type: 'general-purpose', description: 'summarize the repo' },
-    tool_result: { result: 'Summary done. next:cx-engineer (should be ignored for a non-cx dispatch).' },
+    tool_result: { result: 'Summary done. next:engineer (should be ignored for a non-cx dispatch).' },
   }, env);
   assert.equal(r.status, 0, `hook must exit 0; stderr: ${r.stderr}`);
   const pending = join(doctorRoot(env.HOME), 'role-pending.jsonl');

@@ -2,7 +2,7 @@
  * tests/functional/opencode-config-ownership.functional.test.mjs
  *
  * Asserts the ownership boundary between Construct-managed and user-personal
- * keys in the GLOBAL opencode config. Spawns the real sync-specialists.mjs into
+ * keys in the GLOBAL opencode config. Spawns the real sync-worker-profiles.mjs into
  * an isolated tmp HOME seeded with a user-personal global config, runs
  * `--global`, and verifies that Construct-managed keys are emitted correctly
  * (scoped bash permission and real attribution headers with no `__placeholder__`)
@@ -22,7 +22,7 @@ import test from "node:test";
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const SYNC_SCRIPT = join(REPO_ROOT, "scripts", "sync-specialists.mjs");
+const SYNC_SCRIPT = join(REPO_ROOT, "scripts", "sync-worker-profiles.mjs");
 
 const SEED = {
   $schema: "https://opencode.ai/config.json",

@@ -8,7 +8,7 @@
  *   A1 reflect hook      .construct/observations/index.json + vectors.json
  *   A2 research          .construct/knowledge/external/research/*.md
  *   A3 outcomes          .construct/outcomes/_summary.json (after aggregateOutcomes)
- *   B1 scope             construct.config.json / .construct/scope.json
+ *   B1 Workspace Preset  construct.config.json
  *
  * Output is a tab-aligned table. No LLM, no network. Cheap to run on every
  * `construct status` invocation.
@@ -17,6 +17,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { summarizeToolNameMisses, summarizeToolFailures } from '../lib/mcp/tool-recovery.mjs';
+import { configPath } from '../lib/config-dir.mjs';
 
 const cwd = process.cwd();
 
@@ -25,7 +26,7 @@ function safeRead(p) {
 }
 
 function countObservations() {
-  const idx = safeRead(path.join(cwd, '.cx', 'observations', 'index.json'));
+  const idx = safeRead(configPath(cwd, 'observations', 'index.json'));
   if (!Array.isArray(idx)) return { total: 0, last24h: 0 };
   const since = Date.now() - 24 * 60 * 60 * 1000;
   const last24h = idx.filter((e) => Date.parse(e.createdAt) >= since).length;
@@ -33,33 +34,31 @@ function countObservations() {
 }
 
 function countResearchFindings() {
-  const dir = path.join(cwd, '.cx', 'knowledge', 'external', 'research');
+  const dir = configPath(cwd, 'knowledge', 'external', 'research');
   if (!fs.existsSync(dir)) return 0;
   return fs.readdirSync(dir).filter((f) => f.endsWith('.md')).length;
 }
 
 function readOutcomesSummary() {
-  return safeRead(path.join(cwd, '.cx', 'outcomes', '_summary.json'));
+  return safeRead(configPath(cwd, 'outcomes', '_summary.json'));
 }
 
-function readActiveScope() {
+function readActiveWorkspacePreset() {
   const config = safeRead(path.join(cwd, 'construct.config.json'));
-  if (config?.scope) return { id: config.scope, source: 'construct.config.json' };
-  const custom = safeRead(path.join(cwd, '.cx', 'scope.json'));
-  if (custom?.custom === true && custom.id) return { id: custom.id, source: '.construct/scope.json (custom)' };
+  if (config?.workspacePreset) return { id: config.workspacePreset, source: 'construct.config.json' };
   return { id: 'rnd (default)', source: 'fallback' };
 }
 
 const obs = countObservations();
 const research = countResearchFindings();
 const outcomes = readOutcomesSummary();
-const scope = readActiveScope();
+const workspacePreset = readActiveWorkspacePreset();
 
 const misses = summarizeToolNameMisses(cwd);
 const failures = summarizeToolFailures(cwd);
 
 const rows = [
-  ['Active scope', `${scope.id}`, scope.source],
+  ['Workspace Preset', `${workspacePreset.id}`, workspacePreset.source],
   ['Observations (A1)', `${obs.total} total, ${obs.last24h} in last 24h`, '.construct/observations/'],
   ['Research findings (A2)', `${research}`, '.construct/knowledge/external/research/'],
   ['Tool-name misses', misses.total === 0 ? 'none' : `${misses.total} (top: ${misses.top.map((m) => `${m.name}×${m.count}`).join(', ')})`, '.construct/observations/tool-name-misses.jsonl'],

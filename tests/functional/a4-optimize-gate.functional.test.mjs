@@ -19,13 +19,14 @@ import path from 'node:path';
 import test from 'node:test';
 import { spawnSync } from 'node:child_process';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
+import { doctorRoot } from '../../lib/config/xdg.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const OPT = path.join(REPO, 'scripts', 'optimize.mjs');
 
 function setupSkillFile() {
   // No fake repo is staged. The script writes backups next to the real
-  // skills/roles/<agent>.md. To stay isolated, the test pre-stages a backup
+  // skills/perspectives/<agent>.md. To stay isolated, the test pre-stages a backup
   // by hand and exercises --rollback against it.
   const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'a4-home-'));
   const skillsDir = path.join(REPO, 'skills', 'roles');
@@ -84,7 +85,7 @@ test('A4: default invocation without --apply is preview-only (no write, no histo
   assert.equal(fs.readFileSync(agentSkill, 'utf8'), original, 'preview run must not modify skill file');
 
   // history file should not have an 'apply' entry from this invocation
-  const historyPath = path.join(fakeHome, '.cx', 'prompt-history', 'engineer.jsonl');
+  const historyPath = path.join(doctorRoot(fakeHome), 'prompt-history', 'engineer.jsonl');
   if (fs.existsSync(historyPath)) {
     const lines = fs.readFileSync(historyPath, 'utf8').split('\n').filter(Boolean);
     for (const line of lines) {

@@ -1,7 +1,7 @@
 {
   "id": "data-analyst-to-product-manager",
-  "producer": "cx-data-analyst",
-  "consumer": "cx-product-manager",
+  "producer": "data-analyst",
+  "consumer": "product-manager",
   "trigger": {
     "docAuthoring.docType": [
       "prd",

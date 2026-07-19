@@ -14,12 +14,12 @@ description: Core commands for Construct.
 | `construct doctor` | Check installation health |
 | `construct init` | Project setup (once per repo): scaffold .construct/, AGENTS.md, plan.md, adapters |
 | `construct install` | Machine setup (footprint per ADR-0029/ADR-0071): --footprint=project\|user\|both, default project |
-| `construct intake` | View and process the active profile's intake queue (queue label varies by profile) |
+| `construct intake` | View and process the active Workspace Preset's intake queue |
 | `construct oracle` | Oracle meta-controller — fleet health review and bounded-auto maintenance |
 | `construct participation` | Author and inspect ADR-0070 participation rules (condition → recruit with role/gate) over org-api — same writer and validation as Org Studio and the participation_rules MCP tool |
 | `construct recommendations` | View and manage artifact recommendations |
 | `construct sandbox` | Isolated tmpdir-based environment for QA / specialist dry-runs |
-| `construct scope` | Manage the active org scope and its lifecycle (draft, promote, archive, health) |
+| `construct workspace-preset` | Inspect the canonical Workspace Preset catalog |
 | `construct status` | Show system health and credentials |
 | `construct stop` | Stop all running services |
 | `construct studio` | Org Studio — local, zero-dependency web app for authoring specialists, teams, relationships, fences, and participation rules over org-api (loopback-only) |
@@ -240,25 +240,21 @@ construct sandbox create|list|delete|prune [--profile=<id>]
 - `delete <id>` — Remove one sandbox by id
 - `prune [--days=N]` — Remove sandboxes older than N days (default 7)
 
-## construct scope
+## construct workspace-preset
 
-Manage the active org scope and its lifecycle (draft, promote, archive, health)
+Inspect the canonical Workspace Preset catalog.
 
 **Usage**
 
 ```bash
-construct scope show|list|set|create|drafts|archive|health
+construct workspace-preset list
+construct workspace-preset show <id>
 ```
 
 **Subcommands**
 
-- `show` — Show the active scope
-- `list` — List curated scopes
-- `set <id>` — Switch the active scope (writes construct.config.json)
-- `create <id> [--display=…] [--role=…] [--department=…] [--yes|--dry-run]` — Scaffold a draft scope; previews and confirms by default, prompts interactively when no flags
-- `drafts` — List in-progress draft scopes
-- `archive <id> --reason="..."` — Move a curated scope into archive/scopes/<id>/
-- `health <id> [--days=N]` — Per-scope observation + outcome rollup
+- `list` — List canonical Workspace Presets
+- `show <id>` — Show one Workspace Preset
 
 ## construct status
 

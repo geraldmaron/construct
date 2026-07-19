@@ -1,7 +1,7 @@
 {
   "id": "any-to-product-manager",
   "producer": "*",
-  "consumer": "cx-product-manager",
+  "consumer": "product-manager",
   "trigger": {
     "strategy.required": true
   },

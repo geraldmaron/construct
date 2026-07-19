@@ -81,7 +81,7 @@ test('plan carries suggestedWorkflowType bridging triage to workflow invocation'
 });
 
 test('execution preview is gated on host context', () => {
-  const env = { CX_MODEL_REASONING: 'anthropic/claude-sonnet-4-6', CX_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6', CX_MODEL_FAST: 'anthropic/claude-sonnet-4-6' };
+  const env = { CONSTRUCT_MODEL_REASONING: 'anthropic/claude-sonnet-4-6', CONSTRUCT_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6', CONSTRUCT_MODEL_FAST: 'anthropic/claude-sonnet-4-6' };
   // No host context → never a forced model resolution / preview.
   assert.equal(recommendPlan({ input: BUG }, { env }).execution, null);
   // Host context + a suggested workflow (unknown → structure-notes) → preview present.

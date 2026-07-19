@@ -24,7 +24,7 @@ import { writeJson, readJson } from '../audit/lib/artifacts.mjs';
 import { REPO_ROOT } from '../audit/lib/handlers.mjs';
 import { auditSkills } from '../../lib/audit-skills.mjs';
 import { triageBoundOrphans } from '../../lib/registry/consolidation.mjs';
-import { getWorkflowDef, listWorkflowDefs, WORKFLOW_TYPES } from '../../lib/embedded-contract/workflow-defs.mjs';
+import { getProcedureDefinition, listProcedureDefinitions, PROCEDURE_IDS } from '../../lib/embedded-contract/procedure-definitions.mjs';
 import { checkParity } from '../../lib/parity.mjs';
 import { loadCapabilities } from '../../lib/platforms/capabilities.mjs';
 import { loadRegistry } from '../../lib/registry/loader.mjs';
@@ -78,17 +78,17 @@ function yamlWorkflowTemplates(root) {
 }
 
 function workflowCrossMap(root) {
-  return WORKFLOW_TYPES.map((type) => {
-    const def = getWorkflowDef(type);
+  return PROCEDURE_IDS.map((type) => {
+    const def = getProcedureDefinition(type);
     const skill = WORKFLOW_SKILL_MAP[type] ?? null;
     const skillExists = skill ? fs.existsSync(path.join(root, 'skills', `${skill}.md`)) : null;
     return {
       type,
-      chain: def?.chain ?? [],
+      chain: def?.workerProfiles ?? [],
       skill,
       skillExists,
       outputSchema: def?.outputSchema ?? null,
-      defaultApprovalMode: def?.defaultApprovalMode ?? null,
+      defaultApprovalMode: def?.approvalMode ?? null,
     };
   });
 }
@@ -187,10 +187,10 @@ export function runAlignmentCensus({ rootDir = REPO_ROOT, homeDir = process.env.
       auditOrphans: skills.orphanSkills,
     },
     workflows: {
-      embeddedCount: WORKFLOW_TYPES.length,
+      embeddedCount: PROCEDURE_IDS.length,
       yamlTemplates: yamlWorkflowTemplates(rootDir),
       crossMap: workflowCrossMap(rootDir),
-      embeddedList: listWorkflowDefs(),
+      embeddedList: listProcedureDefinitions(),
     },
     contracts: { count: contractsCount },
     parity,

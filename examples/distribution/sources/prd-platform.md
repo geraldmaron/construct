@@ -125,7 +125,7 @@ host_ide -> invoke -> author -> artifact -> validate -> publish -> pdf
 |---|---|
 | FR-1 | `construct publish` runs `validateArtifactRelease` before export when type is known. |
 | FR-2 | Gate failure exits 2 with remediation hints pointing to `prd-workflow`. |
-| FR-3 | PDF export uses bundled Construct Typst template unless `.cx/publish-theme.typ` overrides. |
+| FR-3 | PDF export uses bundled Construct Typst template unless `.construct/publish-theme.typ` overrides. |
 | FR-4 | `--figures` renders fenced `d2` and `mermaid` via vendored `pandoc-ext/diagram` with hand-drawn distribution styling (D2 `--sketch`, Mermaid `handDrawn`). |
 | FR-5 | Masthead metadata (`doc_id`, `version`, `classification`) flows from YAML frontmatter — not repeated in body. |
 

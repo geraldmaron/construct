@@ -23,7 +23,7 @@ Public prompt surface:
 Internal execution surfaces:
 
 - `specialists/prompts/cx-*.md` are internal specialist prompts used only through Construct's routing.
-- `skills/roles/*.md` are internal role overlays that encode anti-patterns, counter-moves, and self-checks.
+- `skills/perspectives/*.md` are internal role overlays that encode anti-patterns, counter-moves, and self-checks.
 - `commands/**/*.md` are command prompt assets that support specific workflows but do not replace the public persona.
 
 offline-only regression surfaces:
@@ -55,14 +55,14 @@ The routing contract lives in code and prompt policy, not in the examples corpus
   - local constraints for that specialist
   - references to the relevant role overlay and domain skills
 
-- `skills/roles/*.md`
+- `skills/perspectives/*.md`
   - reusable role anti-patterns and self-checks
   - shared behavioral guardrails reused across multiple specialists
 
 - `examples/personas/construct/**`
   - public persona fixtures for Construct behavior
 
-- `examples/internal/roles/**`
+- `examples/internal/perspectives/**`
   - internal role fixtures for high-leverage routed behavior
 
 ## Capability-tiered composition (local models)
@@ -113,7 +113,7 @@ Use these terms consistently:
 
 - `persona`: public prompt surface
 - `specialist prompt`: internal `specialists/prompts/cx-*.md` surface
-- `role overlay`: internal `skills/roles/*.md` guidance layer
+- `role overlay`: internal `skills/perspectives/*.md` guidance layer
 - `example fixture`: offline regression/eval case under `examples/**`
 
 Avoid calling internal specialist prompts and role overlays "core public surfaces".

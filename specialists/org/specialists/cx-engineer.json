@@ -112,7 +112,7 @@
   "docArtifacts": [],
   "watchConditions": [],
   "permissions": {},
-  "promptFile": "specialists/prompts/cx-engineer.md",
+  "promptFile": "specialists/prompts/engineer.md",
   "embedOrientation": {
     "focusAreas": [
       "implementation progress",
@@ -154,7 +154,7 @@
     ]
   },
   "canEdit": true,
-  "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,WebSearch,WebFetch,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score",
+  "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,WebSearch,WebFetch,list_skills,get_skill,search_skills,memory_search,memory_add_observations,construct_trace,construct_score",
   "internal": true,
   "killSwitchEnv": "CONSTRUCT_ROLE_ENGINEER",
   "handoffCandidates": [

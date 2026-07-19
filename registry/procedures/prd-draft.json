@@ -1,0 +1,25 @@
+{
+  "id": "prd-draft",
+  "version": "1.0.0",
+  "type": "linear",
+  "workerProfiles": [
+    "product-manager",
+    "architect"
+  ],
+  "approvalMode": "proposal-only",
+  "modelTier": "standard",
+  "state": "active",
+  "modes": [
+    "solo",
+    "team"
+  ],
+  "surfaces": [
+    "mcp",
+    "cli"
+  ],
+  "description": "Draft a product requirements document from a problem statement and supporting evidence.",
+  "outputSchema": {
+    "artifact": "decision"
+  },
+  "durableStateModel": "none"
+}

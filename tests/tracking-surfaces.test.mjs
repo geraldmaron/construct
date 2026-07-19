@@ -5,7 +5,7 @@
  * granularity:
  *
  *   - `refreshContextMd` rewrites only the managed sections, preserves
- *     non-managed content, stamps `.cx/context.json` with counts.
+ *     non-managed content, stamps `.construct/context.json` with counts.
  *   - `syncPlanFile` is a thin wrapper around the existing beads-automation
  *     `syncPlanWithBeads` and reports {ok, changed}.
  *   - `archivePlanIfLanded` no-ops when beads remain open, when the plan is
@@ -142,7 +142,7 @@ test('refreshContextMd stamps lastRefreshAt and counts in context.json', async (
   assert.ok(Array.isArray(json.architectureNotes));
 });
 
-test('refreshContextMd no-ops cleanly when .cx/context.md is missing', async () => {
+test('refreshContextMd no-ops cleanly when .construct/context.md is missing', async () => {
   const result = await refreshContextMd({ rootDir });
   assert.equal(result.ok, false);
   assert.equal(result.reason, 'no-context-md');

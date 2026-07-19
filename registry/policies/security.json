@@ -1,0 +1,14 @@
+{
+  "id": "security",
+  "ownerWorkerProfile": "orchestrator",
+  "description": "Security review checklist applied by security and reviewer on any change touching auth, credentials, or external I/O.",
+  "enforcement": "(persona prompt)",
+  "mode": "honor-system",
+  "approvalWorkerProfiles": [],
+  "requiredPolicies": [],
+  "vetoWorkerProfiles": [],
+  "escalationWorkerProfiles": [],
+  "governs": [],
+  "conditions": [],
+  "evidence": []
+}

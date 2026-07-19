@@ -26,7 +26,7 @@ test('listRoles descriptors carry the prefixed name and required fields', () => 
   const roles = listRoles();
   const engineer = roles.find((r) => r.id === 'engineer');
   assert.ok(engineer, 'engineer role present');
-  assert.equal(engineer.name, 'cx-engineer');
+  assert.equal(engineer.name, 'engineer');
   assert.equal(typeof engineer.description, 'string');
   assert.ok(engineer.description.length > 0);
   assert.equal(typeof engineer.modelTier, 'string');

@@ -1,7 +1,7 @@
 {
   "id": "architect-to-operations",
-  "producer": "cx-architect",
-  "consumer": "cx-operations",
+  "producer": "architect",
+  "consumer": "operations",
   "trigger": {
     "intent": [
       "implementation"

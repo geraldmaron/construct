@@ -15,7 +15,7 @@ Follow [rules/common/research.md](../../rules/common/research.md) for source ord
 
 Product Intelligence is a Construct-native loop:
 
-1. Capture evidence into `.cx/knowledge/internal/sources/` or link existing sources.
+1. Capture evidence into `.construct/knowledge/internal/sources/` or link existing sources.
 2. Normalize evidence into field notes, customer profiles, and evidence briefs.
 3. Synthesize themes, asks, pain points, product areas, and confidence.
 4. Select the PM flavor: product, platform, enterprise, ai-product, or growth.
@@ -54,9 +54,9 @@ Load the core product-manager role guidance and the selected overlay before draf
 
 ## Storage
 
-Write working artifacts under `.cx/knowledge/` unless they are docs of record. Approved PRDs live in `docs/specs/prd/`; approved Meta PRDs live in `docs/meta-prd/`.
+Write working artifacts under `.construct/knowledge/` unless they are docs of record. Approved PRDs live in `docs/specs/prd/`; approved Meta PRDs live in `docs/meta-prd/`.
 
-The hybrid storage layer indexes `.cx/knowledge/`, `docs/specs/prd/`, and `docs/meta-prd/`. When Postgres is configured, `construct storage sync` can persist these artifacts into shared SQL rows. The vector layer scores the same documents for local, remote, or file-backed semantic retrieval.
+The hybrid storage layer indexes `.construct/knowledge/`, `docs/specs/prd/`, and `docs/meta-prd/`. When Postgres is configured, `construct storage sync` can persist these artifacts into shared SQL rows. The vector layer scores the same documents for local, remote, or file-backed semantic retrieval.
 
 ## Approval boundaries
 

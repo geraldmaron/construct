@@ -17,7 +17,7 @@ Structural validation (`lib/validators/skills.mjs`) is the floor. Effectiveness 
 
 ## Category expectations
 
-### Role overlays (`skills/roles/**`)
+### Role overlays (`skills/perspectives/**`)
 
 - ≥3 numbered failure modes with Symptom and Counter-move (or Counter)
 - Base roles include Self-check, Methodology, or Ship Check

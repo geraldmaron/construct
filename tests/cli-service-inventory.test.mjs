@@ -38,7 +38,7 @@ test('artifact workflow is both documented and available at runtime', (t) => {
   const result = spawnSync(process.execPath, [resolve(REPO, 'bin/construct'), 'artifact', 'workflow', 'Create a runbook HTML.'], {
     cwd: REPO,
     encoding: 'utf8',
-    env: { ...process.env, CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1', BOOTSTRAP_CHECKED: '1', HOME: home, CX_HOME_OVERRIDE: home },
+    env: { ...process.env, CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1', BOOTSTRAP_CHECKED: '1', HOME: home, CONSTRUCT_HOME_OVERRIDE: home },
   });
   assert.equal(result.status, 0, result.stderr);
   const report = JSON.parse(result.stdout);

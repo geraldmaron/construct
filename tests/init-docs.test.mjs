@@ -105,7 +105,7 @@ test('init-docs treats "all of them" as defaults and "nope" as no custom lanes',
 
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'prds', 'README.md')), true);
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'adr', 'README.md')), true);
-  assert.ok(fs.statSync(path.join(cwd, 'inbox', '.staging')).isDirectory(), 'init-docs scaffolds the canonical inbox/ with a staging dir, not .cx/inbox/');
+  assert.ok(fs.statSync(path.join(cwd, 'inbox', '.staging')).isDirectory(), 'init-docs scaffolds the canonical inbox/ with a staging dir, not .construct/inbox/');
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'meetings', 'README.md')), true);
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'memos', 'README.md')), true);
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'notes', 'README.md')), true);

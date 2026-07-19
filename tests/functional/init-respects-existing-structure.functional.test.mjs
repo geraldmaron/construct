@@ -70,7 +70,7 @@ function runInit(cwd, home, extraArgs = []) {
         CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
         BOOTSTRAP_CHECKED: '1',
         HOME: home,
-        CX_HOME_OVERRIDE: home,
+        CONSTRUCT_HOME_OVERRIDE: home,
       },
     },
   );
@@ -116,7 +116,7 @@ test('issue #97: init defers to existing internal/meetings/, internal/memos/, cu
     assert.equal(
       existsSync(join(f.dir, '.cx', 'inbox')),
       false,
-      '.cx/inbox/ is never scaffolded under the single-zone model',
+      '.construct/inbox/ is never scaffolded under the single-zone model',
     );
 
     const projectConfigPath = join(f.dir, 'construct.config.json');

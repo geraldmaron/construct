@@ -51,7 +51,7 @@ const LEGACY_EXEMPT_SHAS = new Set([
   "142bc943466a6d2cc8b2cb9d1690fadcb5b839c6", // "Expose routePath across CLI, MCP, traces, and handoffs" (2026-07-07)
   "2999a7b18afb28c45fbebc39982248ff83847911", // "Implement lib/registry/org-api.mjs core module per ADR-0072" (2026-07-07)
   "e02a880b523ffb66c917a12f238ef38c01287a1b", // "ADR-0071 + ADR-0072: RichDocument IR and no-code org authoring API" (2026-07-07)
-  "7c2c1c6b247ce4c3a0ec73928687f37694dd56a0", // "Sterilize host-config leaks in 10 test files via per-test CX_HOME_OVERRIDE" (2026-07-07)
+  "7c2c1c6b247ce4c3a0ec73928687f37694dd56a0", // Historical commit predating the current machine-state override contract.
   "69ea7853568b7c6c9a66a32f3a646b64b15cfa85", // "Expose routePath across CLI, MCP, traces, and handoffs" (2026-07-07)
   "a29cde850f422878b92462d07819d1b602b16651", // "Implement lib/registry/org-api.mjs core module per ADR-0072" (2026-07-07)
   "c79336e774029d9bc3533f6d873a5072073286b3", // "Implement RichDocument core module (schema, markdown reader, HTML serializer) per ADR-0071" (2026-07-07)

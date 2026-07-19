@@ -1,5 +1,5 @@
 /**
- * scripts/catalog-regen.mjs — Regenerate registry/capabilities.json catalog edges.
+ * scripts/catalog-regen.mjs — Regenerate the derived registry/catalog.json projection.
  */
 
 import { regenerateCapabilityCatalog } from '../lib/registry/catalog.mjs';

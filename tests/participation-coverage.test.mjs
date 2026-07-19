@@ -1,15 +1,14 @@
 /**
- * tests/participation-coverage.test.mjs — every specialist and team is
- * recruitable, or says explicitly that it is not (construct-pteo2.6).
+ * tests/participation-coverage.test.mjs — every Worker Profile is recruitable
+ * or explicitly manual-only.
  *
- * Fails when any of the 12 roster specialists or 8 teams lacks a declared
+ * Fails when any of the 12 Worker Profiles lacks a declared
  * participation condition (watchConditions or participationRules) or an
  * explicit manualOnly:true — the gap this bead closes was 7 of 12 specialists
  * carrying watchConditions:[] and being unreachable by condition-driven
  * recruitment. Also pins that the watch-condition predicates are
  * registry-declared (specialists/org/watchers.json drives knownWatchers, the
  * hardcoded WATCHERS map is gone) with unchanged semantics, and that a
- * team-recruiting rule pulls its squad members (hierarchy-aware).
  */
 
 import assert from 'node:assert/strict';
@@ -24,7 +23,6 @@ import { recruit } from '../lib/orchestration/recruiter.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ROSTER_SIZE = 12;
-const TEAM_COUNT = 8;
 
 function declaredRules(entry) {
   const declared = entry?.participationRules;
@@ -39,20 +37,12 @@ function isCovered(entry) {
   return declaredRules(entry).length > 0;
 }
 
-test('all 12 specialists declare a participation condition or explicit manualOnly', () => {
+test('all 12 Worker Profiles declare a participation condition or explicit manualOnly', () => {
   const registry = loadRegistry();
-  const ids = Object.keys(registry.specialists);
+  const ids = Object.keys(registry.workerProfiles);
   assert.equal(ids.length, ROSTER_SIZE, `roster is fixed at ${ROSTER_SIZE}`);
-  const uncovered = ids.filter((id) => !isCovered(registry.specialists[id]));
-  assert.deepEqual(uncovered, [], `unreachable specialists (no condition, no manualOnly): ${uncovered.join(', ')}`);
-});
-
-test('all 8 squads declare a participation condition or explicit manualOnly', () => {
-  const registry = loadRegistry();
-  const squads = Object.entries(registry.teams ?? {}).filter(([, t]) => t.kind === 'squad');
-  assert.equal(squads.length, TEAM_COUNT, `squad set is ${TEAM_COUNT} (groups hold decision rights, not recruitment)`);
-  const uncovered = squads.filter(([, t]) => !isCovered(t)).map(([id]) => id);
-  assert.deepEqual(uncovered, [], `unreachable teams: ${uncovered.join(', ')}`);
+  const uncovered = ids.filter((id) => !isCovered(registry.workerProfiles[id]));
+  assert.deepEqual(uncovered, [], `unreachable Worker Profiles: ${uncovered.join(', ')}`);
 });
 
 test('watchers are registry-declared: watchers.json drives the known set', () => {
@@ -82,16 +72,16 @@ test('ported watcher semantics are unchanged and unknown operators fail closed',
   assert.equal(watcherFires('architecture-risk', { riskFlags: {} }), false);
 });
 
-test('the new architecture-risk watcher is bound to cx-architect', () => {
+test('the new architecture-risk watcher is bound to architect', () => {
   const triggers = evaluateWatchConditions({ riskFlags: { architecture: true }, hasSuccessMetric: true });
   const arch = triggers.find((t) => t.watcher === 'architecture-risk');
   assert.ok(arch, 'architecture-risk fires');
-  assert.equal(arch.specialist, 'cx-architect');
+  assert.equal(arch.workerProfile, 'architect');
 });
 
 test('every declared participation rule is structurally sound', () => {
   const registry = loadRegistry();
-  const entries = [...Object.values(registry.specialists), ...Object.values(registry.teams ?? {})];
+  const entries = Object.values(registry.workerProfiles);
   const seenIds = new Set();
   for (const entry of entries) {
     for (const rule of declaredRules(entry)) {
@@ -102,14 +92,11 @@ test('every declared participation rule is structurally sound', () => {
       if (rule.when?.watchCondition) {
         assert.ok(knownWatchers().includes(rule.when.watchCondition), `rule ${rule.id} references a declared watcher`);
       }
-      assert.ok((rule.recruit?.specialists?.length ?? 0) + (rule.recruit?.teams?.length ?? 0) > 0, `rule ${rule.id} recruits someone`);
-      assert.ok(['author', 'reviewer', 'advisor'].includes(rule.role), `rule ${rule.id} role enum`);
+      assert.ok((rule.workerProfiles?.length ?? 0) > 0, `rule ${rule.id} assigns a Worker Profile`);
+      assert.ok(['author', 'reviewer', 'advisor'].includes(rule.assignmentRole), `rule ${rule.id} assignment role enum`);
       assert.ok(['advisory', 'enforced'].includes(rule.gate), `rule ${rule.id} gate enum`);
       if (rule.gate === 'enforced') {
-        assert.ok(rule.enforcementScope?.team && rule.enforcementScope?.decisionRight, `enforced rule ${rule.id} names its enforcementScope`);
-      }
-      if (rule.dimension === 'legal-compliance') {
-        assert.ok(rule.recruit?.specialists?.includes('cx-security'), `legal-compliance rule ${rule.id} recruits cx-security (no 13th role)`);
+        assert.ok(rule.workerProfiles.length > 0, `enforced rule ${rule.id} names its governed Worker Profiles`);
       }
     }
   }
@@ -118,22 +105,12 @@ test('every declared participation rule is structurally sound', () => {
 
 test('registry-declared rules recruit through the live recruiter', () => {
   const costRecruits = recruit({ signals: { cost: true } });
-  const analyst = costRecruits.find((p) => p.specialist === 'cx-data-analyst');
-  assert.ok(analyst, 'cost recruits cx-data-analyst');
+  const analyst = costRecruits.find((p) => p.workerProfile === 'data-analyst');
+  assert.ok(analyst, 'cost recruits data-analyst');
 
   const reliability = recruit({ signals: { reliability: true } });
-  const roles = new Set(reliability.map((p) => p.specialist));
-  assert.ok(roles.has('cx-debugger'), 'reliability rule recruits cx-debugger as advisor');
-  const debuggerEntry = reliability.find((p) => p.specialist === 'cx-debugger');
-  assert.equal(debuggerEntry.role, 'advisor');
-});
-
-test('a team-recruiting rule pulls its squad members (hierarchy-aware)', () => {
-  const participants = recruit({ signals: { compliance: true } });
-  const governance = participants.find((p) => p.team === 'governance-team' && !p.specialist);
-  assert.ok(governance, 'compliance recruits the governance team');
-  assert.ok(Array.isArray(governance.members), 'team entry lists squad members');
-  assert.ok(governance.members.includes('cx-security'), `squad expansion includes cx-security; got ${governance.members.join(', ')}`);
-  const security = participants.find((p) => p.specialist === 'cx-security');
-  assert.ok(security, 'the legal-compliance binding also recruits cx-security directly');
+  const roles = new Set(reliability.map((p) => p.workerProfile));
+  assert.ok(roles.has('debugger'), 'reliability rule recruits debugger as advisor');
+  const debuggerEntry = reliability.find((p) => p.workerProfile === 'debugger');
+  assert.equal(debuggerEntry.assignmentRole, 'advisor');
 });

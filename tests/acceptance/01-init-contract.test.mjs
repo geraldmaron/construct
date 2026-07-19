@@ -4,7 +4,7 @@
  * LMCP-L1 acceptance contract: construct init workflow.
  *
  * Verifies that `construct init` runs against a fresh tmpdir, creates the
- * expected .cx/ directory structure, and that `construct status --json`
+ * expected .construct/ directory structure, and that `construct status --json`
  * subsequently returns valid JSON with a deploymentMode field.
  *
  * Run standalone:
@@ -22,7 +22,7 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 const CONSTRUCT_BIN = new URL('../../bin/construct', import.meta.url).pathname;
 
 // lib/paths.mjs resolves the ADR-0066 state root from process.env.HOME /
-// CX_HOME_OVERRIDE in the CHILD's own env, not the test process's env — so
+// CONSTRUCT_HOME_OVERRIDE in the CHILD's own env, not the test process's env — so
 // every spawned `construct` call must be pinned to a throwaway sandbox home
 // or it leaks project-key directories into the real developer machine's
 // ~/.construct/projects/.
@@ -39,7 +39,7 @@ function runConstruct(args, cwd) {
       ...process.env,
       CONSTRUCT_DEPLOYMENT_MODE: 'solo',
       HOME: SANDBOX_HOME,
-      CX_HOME_OVERRIDE: SANDBOX_HOME,
+      CONSTRUCT_HOME_OVERRIDE: SANDBOX_HOME,
     },
   });
 }
@@ -68,7 +68,7 @@ function assertNoUncaughtCrash(result, label) {
   );
 }
 
-test('01-init-contract: construct init creates .cx/ structure', { timeout: 60_000 }, async (t) => {
+test('01-init-contract: construct init creates .construct/ structure', { timeout: 60_000 }, async (t) => {
   let tmpDir = null;
 
   await t.test('create temp directory', () => {
@@ -94,16 +94,16 @@ test('01-init-contract: construct init creates .cx/ structure', { timeout: 60_00
     );
   });
 
-  await t.test('.cx/ directory created after init', () => {
+  await t.test('.construct/ directory created after init', () => {
     assert.ok(tmpDir, 'Temp dir must be created first');
-    const cxDir = join(tmpDir, '.construct');
-    assert.ok(existsSync(cxDir), `.cx/ directory should exist at ${cxDir}`);
+    const constructDir = join(tmpDir, '.construct');
+    assert.ok(existsSync(constructDir), `.construct/ directory should exist at ${constructDir}`);
   });
 
-  await t.test('.cx/context.md created after init', () => {
+  await t.test('.construct/context.md created after init', () => {
     assert.ok(tmpDir, 'Temp dir must be created first');
     const contextMd = join(tmpDir, '.construct', 'context.md');
-    assert.ok(existsSync(contextMd), `.cx/context.md should exist at ${contextMd}`);
+    assert.ok(existsSync(contextMd), `.construct/context.md should exist at ${contextMd}`);
   });
 
   await t.test('construct status --json returns valid JSON with deployment field', () => {
