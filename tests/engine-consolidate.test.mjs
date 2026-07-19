@@ -5,7 +5,7 @@
  *   - Near-duplicate observations (cosine > threshold) merge into a single
  *     consolidated insight whose hitCount reflects the cluster size.
  *   - Distinct observations stay as separate clusters.
- *   - Old, low-confidence observations are archived to .cx/observations/archive/.
+ *   - Old, low-confidence observations are archived to .construct/observations/archive/.
  *   - The index.json is updated to drop archived entries.
  *   - A Compressor-shaped summariser is invoked when present and falls back
  *     to the representative's summary when absent.
@@ -44,7 +44,7 @@ function writeObservation(id, summary, embedding, extras = {}) {
     summary,
     content: summary,
     tags: [],
-    role: 'cx-engineer',
+    role: 'engineer',
     category: 'pattern',
     confidence: extras.confidence ?? 0.8,
     createdAt: extras.createdAt ?? new Date().toISOString(),
@@ -55,7 +55,7 @@ function writeObservation(id, summary, embedding, extras = {}) {
 
 function writeIndexAndVectors(records) {
   const obsDir = path.join(tmpRoot, '.construct', 'observations');
-  const index = records.map((r) => ({ id: r.id, role: 'cx-engineer', category: 'pattern' }));
+  const index = records.map((r) => ({ id: r.id, role: 'engineer', category: 'pattern' }));
   fs.writeFileSync(path.join(obsDir, 'index.json'), JSON.stringify(index, null, 2));
   fs.writeFileSync(path.join(obsDir, 'vectors.json'), JSON.stringify(records, null, 2));
 }

@@ -8,7 +8,7 @@
  * The existing tests assert properties (no heavy dirs, text-sized files, guide
  * placement); none pins the tree itself, so a new init-time write landing in
  * the wrong layer passes them all. One real init against an isolated
- * HOME/CX_HOME_OVERRIDE, then three layer assertions on durable artifacts:
+ * HOME/CONSTRUCT_HOME_OVERRIDE, then three layer assertions on durable artifacts:
  *   - config layer (.construct/): the exact entry set, nothing more — a new entry
  *     here must be a deliberate, reviewed footprint change;
  *   - machine layer (<home>/.construct): does not exist at all after init —

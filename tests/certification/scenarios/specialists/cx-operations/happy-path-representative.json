@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "specialistId": "cx-operations",
+  "specialistId": "operations",
   "capabilityId": "specialist.prompt",
   "mode": "normal",
   "scenarioKind": "happy-path-representative",

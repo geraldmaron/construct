@@ -176,7 +176,7 @@ test('construct doctor surfaces cumulative spend from the real ledgers', () => {
       env: {
         ...process.env,
         HOME: rootDir,
-        CX_HOME_OVERRIDE: rootDir,
+        CONSTRUCT_HOME_OVERRIDE: rootDir,
         CONSTRUCT_DOCTOR_ROOT: rootDir,
         CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
         BOOTSTRAP_CHECKED: '1',

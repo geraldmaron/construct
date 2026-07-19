@@ -18,16 +18,16 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 // readDirectiveState (via collectReadModel's directives section) resolves
 // through the machine-scoped state root (ADR-0066, lib/state-root.mjs) —
-// CX_HOME_OVERRIDE keeps that off the real developer machine's $HOME for
+// CONSTRUCT_HOME_OVERRIDE keeps that off the real developer machine's $HOME for
 // the whole file (same isolation as tests/orchestration/provenance.test.mjs).
 
 const homeOverride = mkdtempSync(join(tmpdir(), 'cx-read-model-directives-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 test.after(() => {
   try { rmSync(homeOverride, { recursive: true, force: true }); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 function freshEnv() {
@@ -38,8 +38,7 @@ function freshEnv() {
   mkdirSync(join(projectDir, '.construct', 'outcomes'), { recursive: true });
   mkdirSync(join(rootDir, 'audit-artifacts'), { recursive: true });
   mkdirSync(doctorRoot(homeDir), { recursive: true });
-  mkdirSync(join(rootDir, 'specialists'), { recursive: true });
-  cpSync(join(process.cwd(), 'specialists', 'org'), join(rootDir, 'specialists', 'org'), { recursive: true });
+  cpSync(join(process.cwd(), 'registry'), join(rootDir, 'registry'), { recursive: true });
   return {
     projectDir,
     homeDir,
@@ -71,7 +70,7 @@ test('a directive with no prior run state is due', () => {
   const env = freshEnv();
   try {
     writeDirectivesConfig(env.projectDir, [{
-      id: 'jira-weekly-summary', provider: 'team-jira', specialist: 'cx-operations',
+      id: 'jira-weekly-summary', provider: 'team-jira', specialist: 'operations',
       instruction: 'Summarize open Jira work', trigger: { kind: 'interval', intervalMinutes: 60 },
       action: 'summarize', output: { kind: 'beads' },
     }]);
@@ -80,6 +79,8 @@ test('a directive with no prior run state is due', () => {
     assert.equal(model.directives.present, true);
     assert.equal(model.directives.due.length, 1);
     assert.equal(model.directives.due[0].id, 'jira-weekly-summary');
+    assert.equal(model.directives.due[0].workerProfileId, 'operations');
+    assert.equal('specialist' in model.directives.due[0], false);
   } finally {
     env.cleanup();
   }
@@ -89,7 +90,7 @@ test('a directive run within its interval is not due', () => {
   const env = freshEnv();
   try {
     writeDirectivesConfig(env.projectDir, [{
-      id: 'jira-weekly-summary', provider: 'team-jira', specialist: 'cx-operations',
+      id: 'jira-weekly-summary', provider: 'team-jira', specialist: 'operations',
       instruction: 'Summarize open Jira work', trigger: { kind: 'interval', intervalMinutes: 60 },
       action: 'summarize', output: { kind: 'beads' },
     }]);
@@ -102,7 +103,7 @@ test('a directive run within its interval is not due', () => {
   }
 });
 
-test('a directive naming an unknown specialist is excluded, not surfaced as a false due signal', () => {
+test('a directive naming an unknown Worker Profile is excluded, not surfaced as a false due signal', () => {
   const env = freshEnv();
   try {
     writeDirectivesConfig(env.projectDir, [{

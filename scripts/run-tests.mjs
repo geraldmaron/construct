@@ -33,8 +33,8 @@
  * must isolate via tests/helpers/sterile-host-env.mjs.
  *
  * Read-hermeticity: beyond XDG, clearHermeticEnvVars() blanks the provider-key
- * and model-tier families (CX_MODEL_ and CONSTRUCT_MODEL_ tiers, ANTHROPIC/OPENAI/
- * OPENROUTER_API_KEY, WEB_SEARCH_URL, CX_USER_ENV_PATH,
+ * and model-tier families (CONSTRUCT_MODEL_ and CONSTRUCT_MODEL_ tiers, ANTHROPIC/OPENAI/
+ * OPENROUTER_API_KEY, WEB_SEARCH_URL, CONSTRUCT_USER_ENV_PATH,
  * CONSTRUCT_PROVIDER_TIMEOUT_MS, CONSTRUCT_TELEMETRY_URL) before spawning
  * `node --test`, so a developer's ambient shell can't leak into a suite that
  * spreads `...process.env`. Opt-in live-LLM suites (tests/certification,
@@ -47,7 +47,7 @@
  * exhausted memory and the process was SIGKILLed (construct-ox25y) — the run
  * never finished and every release:check step after it never ran. The selected
  * files run in bounded sequential batches of fresh child processes instead
- * (CX_TEST_BATCH_SIZE, default 120); memory is released between batches and the
+ * (CONSTRUCT_TEST_BATCH_SIZE, default 120); memory is released between batches and the
  * aggregate status is non-zero if any batch fails. --shard composes (its subset
  * is simply batched within), and --coverage stays single-process because
  * per-batch coverage reports do not merge.
@@ -69,15 +69,15 @@ const HERMETIC_ENV_VARS = [
   "ANTHROPIC_API_KEY",
   "OPENAI_API_KEY",
   "OPENROUTER_API_KEY",
-  "CX_MODEL_REASONING",
-  "CX_MODEL_STANDARD",
-  "CX_MODEL_FAST",
+  "CONSTRUCT_MODEL_REASONING",
+  "CONSTRUCT_MODEL_STANDARD",
+  "CONSTRUCT_MODEL_FAST",
   "CONSTRUCT_MODEL_REASONING",
   "CONSTRUCT_MODEL_STANDARD",
   "CONSTRUCT_MODEL_FAST",
   "CONSTRUCT_PROVIDER_TIMEOUT_MS",
   "WEB_SEARCH_URL",
-  "CX_USER_ENV_PATH",
+  "CONSTRUCT_USER_ENV_PATH",
   "CONSTRUCT_TELEMETRY_URL",
 ];
 
@@ -211,7 +211,7 @@ const sterileBefore = snapshotRealConfigs();
 // aggregate status is the first non-zero child status. Coverage keeps its single
 // process so its one report is complete.
 
-const BATCH_SIZE = Number(process.env.CX_TEST_BATCH_SIZE) || 120;
+const BATCH_SIZE = Number(process.env.CONSTRUCT_TEST_BATCH_SIZE) || 120;
 
 function runFiles(batchFiles) {
   return spawnSync(process.execPath, [...nodeArgs, ...batchFiles, ...args], { stdio: "inherit" }).status ?? 1;

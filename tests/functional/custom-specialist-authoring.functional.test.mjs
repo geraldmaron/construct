@@ -7,7 +7,7 @@
  * an isolated tmpdir project + tmpdir HOME, then proves the scaffolded
  * records are resolvable through the same loader path orchestration uses
  * (lib/registry/loader.mjs) — builtin -> user (~/.construct/org) -> project
- * (.cx/org) precedence, matching ADR-0052's model.
+ * (.construct/org) precedence, matching ADR-0052's model.
  */
 
 import assert from 'node:assert/strict';
@@ -52,7 +52,7 @@ test('custom specialist/team authoring: scaffold, validate, resolve (project sco
     rmTmpDir(projectDir);
     rmTmpDir(homeDir);
   });
-  const env = { HOME: homeDir, CX_HOME_OVERRIDE: homeDir };
+  const env = { HOME: homeDir, CONSTRUCT_HOME_OVERRIDE: homeDir };
 
   const teamResult = run([
     'team', 'create', 'widget-team',
@@ -132,7 +132,7 @@ test('custom specialist/team authoring: user (home) scope, isolated from real HO
     rmTmpDir(homeDir);
   });
 
-  const env = { HOME: homeDir, CX_HOME_OVERRIDE: homeDir };
+  const env = { HOME: homeDir, CONSTRUCT_HOME_OVERRIDE: homeDir };
 
   const teamResult = run([
     'team', 'create', 'gadget-team',
@@ -162,8 +162,8 @@ test('custom specialist/team authoring: user (home) scope, isolated from real HO
   assertPathUnderRoot(homeTeamFile, homeDir, 'user-scope team file');
   assertPathUnderRoot(homeSpecFile, homeDir, 'user-scope specialist file');
 
-  const priorOverride = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = homeDir;
+  const priorOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = homeDir;
   try {
     const { loadRegistry, getSpecialist, getTeam, clearCache } = await import('../../lib/registry/loader.mjs');
     clearCache();
@@ -171,8 +171,8 @@ test('custom specialist/team authoring: user (home) scope, isolated from real HO
     assert.ok(getTeam('gadget-team', { rootDir: projectDir }), 'home-scope custom team must resolve without a daemon restart, the same clearCache+loadRegistry path `construct sync` already uses');
     assert.ok(getSpecialist('gadget-specialist', { rootDir: projectDir }), 'home-scope custom specialist must resolve the same way');
   } finally {
-    if (priorOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = priorOverride;
+    if (priorOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = priorOverride;
     const { clearCache } = await import('../../lib/registry/loader.mjs');
     clearCache();
   }
@@ -188,7 +188,7 @@ test('custom specialist authoring rejects missing required fields with actionabl
   const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-custom-org-reject-'));
   const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-custom-org-reject-home-'));
   try {
-    const result = run(['specialist', 'create', 'incomplete-one', '--custom', `--root=${projectDir}`], { HOME: homeDir, CX_HOME_OVERRIDE: homeDir });
+    const result = run(['specialist', 'create', 'incomplete-one', '--custom', `--root=${projectDir}`], { HOME: homeDir, CONSTRUCT_HOME_OVERRIDE: homeDir });
     assert.equal(result.status, 1);
     assert.match(result.stderr, /Missing required/);
     assert.match(result.stderr, /--role/);
@@ -211,7 +211,7 @@ test('custom specialist authoring rejects an unknown team with an actionable, li
       '--skills=frontend-design/accessibility',
       '--fence-paths=docs/orphan/**',
       `--root=${projectDir}`,
-    ], { HOME: homeDir, CX_HOME_OVERRIDE: homeDir });
+    ], { HOME: homeDir, CONSTRUCT_HOME_OVERRIDE: homeDir });
     assert.equal(result.status, 1);
     assert.match(result.stderr, /does-not-exist-team/);
     assert.match(result.stderr, /construct team create/);

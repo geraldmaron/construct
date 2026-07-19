@@ -4,11 +4,11 @@
  * Verifies four contracts of A1:
  *   1. Extractor produces a session-summary observation from a synthetic transcript
  *   2. Hook exits 0 within the 500ms budget on a real-shaped Stop payload
- *   3. Hook writes one observation file under .cx/observations/ when given valid input
+ *   3. Hook writes one observation file under .construct/observations/ when given valid input
  *   4. Hook is a no-op when CONSTRUCT_REFLECT_AUTO=off
  *
  * The hook writes observations through the machine-scoped state root
- * (ADR-0066), keyed by a hash of cwd — so CX_HOME_OVERRIDE is pinned for the
+ * (ADR-0066), keyed by a hash of cwd — so CONSTRUCT_HOME_OVERRIDE is pinned for the
  * whole file (inherited by every spawnSync call below via process.env) to
  * keep that write off the real developer machine's $HOME.
  */
@@ -30,14 +30,14 @@ let prevHomeOverride;
 
 before(() => {
   homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-session-reflect-home-'));
-  prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = homeOverride;
+  prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 });
 
 after(() => {
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch { /* best-effort cleanup */ }
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 // Synthetic transcript matching Claude Code's JSONL shape: { type, message: { content: [...] } }
@@ -128,7 +128,7 @@ test('hook exits 0 within budget on valid Stop payload and writes an observation
     }),
     encoding: 'utf8',
     timeout: 10_000,
-    env: { ...process.env, HOME: cwd, CX_HOME_OVERRIDE: cwd },
+    env: { ...process.env, HOME: cwd, CONSTRUCT_HOME_OVERRIDE: cwd },
   });
   const elapsed = Date.now() - t0;
 
@@ -170,7 +170,7 @@ test('hook skips trivial sessions with no tool calls and short final text', (t) 
     input: JSON.stringify({ cwd, transcript_path: transcriptPath }),
     encoding: 'utf8',
     timeout: 5_000,
-    env: { ...process.env, HOME: cwd, CX_HOME_OVERRIDE: cwd },
+    env: { ...process.env, HOME: cwd, CONSTRUCT_HOME_OVERRIDE: cwd },
   });
 
   assert.equal(result.status, 0);
@@ -188,7 +188,7 @@ test('hook is a no-op when CONSTRUCT_REFLECT_AUTO=off', (t) => {
   const result = spawnSync('node', [HOOK_PATH], {
     cwd,
     input: JSON.stringify({ cwd, transcript_path: transcriptPath }),
-    env: { ...process.env, CONSTRUCT_REFLECT_AUTO: 'off', HOME: cwd, CX_HOME_OVERRIDE: cwd },
+    env: { ...process.env, CONSTRUCT_REFLECT_AUTO: 'off', HOME: cwd, CONSTRUCT_HOME_OVERRIDE: cwd },
     encoding: 'utf8',
     timeout: 5_000,
   });
@@ -209,7 +209,7 @@ test('hook skips when cwd is not a Construct project', (t) => {
     input: JSON.stringify({ cwd, transcript_path: transcriptPath }),
     encoding: 'utf8',
     timeout: 5_000,
-    env: { ...process.env, HOME: cwd, CX_HOME_OVERRIDE: cwd },
+    env: { ...process.env, HOME: cwd, CONSTRUCT_HOME_OVERRIDE: cwd },
   });
 
   assert.equal(result.status, 0);

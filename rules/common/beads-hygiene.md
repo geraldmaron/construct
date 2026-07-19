@@ -49,7 +49,7 @@ After the code changes land in main:
 
 ## What does **not** belong in a bead
 
-- Internal-tracker references inside committed artifacts (CHANGELOG, commit messages, code comments, user-facing docs). Bead ids live in the bead, in `bd close --reason`, and in `.cx/context.md`. They do not leak into the public surface.
+- Internal-tracker references inside committed artifacts (CHANGELOG, commit messages, code comments, user-facing docs). Bead ids live in the bead, in `bd close --reason`, and in `.construct/context.md`. They do not leak into the public surface.
 - Vague placeholders like "investigate X". Either there is a question to answer (`bd note` it on a parent), or there is concrete work to do (file the concrete work).
 - Multi-phase epics with no children. Either decompose into the actual issues at filing time or mark the parent `[epic]` and file children before claiming.
 
@@ -108,7 +108,7 @@ Failure mode this prevents (observed 2026-06-25): a bead was closed with a reaso
 
 When the suite is not green (pre-existing unrelated failures), "all tests pass" is unsatisfiable and invites premature closes. Use a baseline-diff instead:
 
-1. Capture the failing-test set once at the start (e.g. `.cx/artifacts/baseline-fails.json`).
+1. Capture the failing-test set once at the start (e.g. `.construct/artifacts/baseline-fails.json`).
 2. A bead may close only if its scoped tests pass **and** the full suite introduces **zero new failures** vs the baseline. Newly-passing tests are a bonus, not a requirement.
 3. A test that fails on genuinely out-of-scope incomplete logic is marked `node:test` `todo` with a tracking bead id — flagged, not hidden — never silently skipped.
 

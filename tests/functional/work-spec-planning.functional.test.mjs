@@ -3,7 +3,7 @@
  * for the graph-informed Work spec/planning surface (construct-b0nny.23).
  *
  * Drives the real `construct work-spec` CLI against one isolated sandbox
- * (CX_HOME_OVERRIDE redirected to a tmpdir, a real git fixture repo,
+ * (CONSTRUCT_HOME_OVERRIDE redirected to a tmpdir, a real git fixture repo,
  * rmTmpDir teardown), mirroring tests/functional/workspace-domain.
  * functional.test.mjs's and tests/functional/graph-relational-store.
  * functional.test.mjs's isolation pattern. Spans CLI + two durable stores at
@@ -48,12 +48,12 @@ if (!sqliteAvailable()) {
 
   const CANONICAL_ID = deriveProjectKey(REPO);
 
-  const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = SANDBOX_HOME;
+  const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = SANDBOX_HOME;
 
   test.after(() => {
-    if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+    if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
     rmTmpDir(SANDBOX_HOME);
     rmTmpDir(REPO);
   });
@@ -82,7 +82,7 @@ if (!sqliteAvailable()) {
       cwd: REPO,
       encoding: 'utf8',
       maxBuffer: 64 * 1024 * 1024,
-      env: { ...process.env, HOME: SANDBOX_HOME, CX_HOME_OVERRIDE: SANDBOX_HOME },
+      env: { ...process.env, HOME: SANDBOX_HOME, CONSTRUCT_HOME_OVERRIDE: SANDBOX_HOME },
     });
   }
 

@@ -6,7 +6,7 @@ artifactType: prompt
 ---
 # Prompt Optimization Loop
 
-Construct's prompt improvement system uses telemetry traces and quality scores as the feedback signal, an LLM as the optimizer, and the role skill files (`skills/roles/<role>.md`, inlined into specialist prompts at sync time) as the deployment layer. This is a closed loop with a human gate: production data → failure analysis → proposed patch → **manual apply** → sync → monitoring → rollback if needed.
+Construct's prompt improvement system uses telemetry traces and quality scores as the feedback signal, an LLM as the optimizer, and the role skill files (`skills/perspectives/<role>.md`, inlined into specialist prompts at sync time) as the deployment layer. This is a closed loop with a human gate: production data → failure analysis → proposed patch → **manual apply** → sync → monitoring → rollback if needed.
 
 `construct optimize` (implemented by `scripts/optimize.mjs`) runs the whole loop. It never mutates anything without an explicit `--apply`.
 
@@ -47,7 +47,7 @@ GET {CONSTRUCT_TELEMETRY_BASEURL}/api/public/scores?traceId={id}&name=quality
 # Auth: Basic base64(CONSTRUCT_TELEMETRY_PUBLIC_KEY:CONSTRUCT_TELEMETRY_SECRET_KEY)
 ```
 
-It filters to scores below the threshold (default 0.7) and extracts, per low-scoring trace: the prompt used, the user input, the model output, the quality score, and any human comments. It also reads the latest `~/.cx/performance-reviews/*-raw.json` for per-agent context.
+It filters to scores below the threshold (default 0.7) and extracts, per low-scoring trace: the prompt used, the user input, the model output, the quality score, and any human comments. It also reads the latest `~/.construct/performance-reviews/*-raw.json` for per-agent context.
 
 ## Step 2: Diagnose failure patterns
 
@@ -84,9 +84,9 @@ construct optimize <agent> --apply
 What `--apply` does, in order:
 
 1. **Rate limit**: refuses if the agent was applied within the last 7 days.
-2. **Patch target**: writes to the agent's role skill file `skills/roles/<role>.md` (e.g. `cx-engineer` → `skills/roles/engineer.md`). It never touches `specialists/org/**` manifests or `personas/construct.md`.
+2. **Patch target**: writes to the agent's role skill file `skills/perspectives/<role>.md` (e.g. `cx-engineer` → `skills/perspectives/engineer.md`). It never touches `specialists/org/**` manifests or `personas/construct.md`.
 3. **Backup**: saves a `.bak` of the previous file (most recent 5 kept) — `--rollback` restores it.
-4. **History**: appends the patch record to `~/.cx/prompt-history/<agent>.jsonl`.
+4. **History**: appends the patch record to `~/.construct/prompt-history/<agent>.jsonl`.
 5. **Integrity check**: verifies the patched file is structurally sane (non-empty, still a markdown document).
 6. **Sync**: runs `construct sync` so the updated skill propagates to all host adapters — sync's prompt composition is the contract gate and fails loudly on a skill that does not compose.
 
@@ -94,7 +94,7 @@ What `--apply` does, in order:
 
 After applying, watch the agent's next scored invocations:
 
-- `construct review` regenerates per-agent quality aggregates (`~/.cx/performance-reviews/`).
+- `construct review` regenerates per-agent quality aggregates (`~/.construct/performance-reviews/`).
 - If the agent's average score drops after the patch, restore the previous prompt:
 
 ```bash

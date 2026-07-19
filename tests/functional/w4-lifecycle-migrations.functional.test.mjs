@@ -114,7 +114,7 @@ test('construct --version matches package.json', () => {
     const result = spawnSync(process.execPath, [join(REPO_ROOT, 'bin', 'construct'), '--version'], {
       cwd: REPO_ROOT,
       encoding: 'utf8',
-      env: { ...process.env, HOME: tmpHome, CX_HOME_OVERRIDE: tmpHome },
+      env: { ...process.env, HOME: tmpHome, CONSTRUCT_HOME_OVERRIDE: tmpHome },
     });
     assert.equal(result.status, 0);
     const { version } = getInstalledVersion();
@@ -127,9 +127,9 @@ test('construct --version matches package.json', () => {
 test('construct migrate --dry-run runs end-to-end against a fixture cwd', () => {
   const { root, cleanup } = freshTmp();
   try {
-    const cxDir = join(root, '.construct');
-    mkdirSync(cxDir, { recursive: true });
-    writeFileSync(join(cxDir, 'config.json'), JSON.stringify({ alias: 'demo' }));
+    const constructDir = join(root, '.construct');
+    mkdirSync(constructDir, { recursive: true });
+    writeFileSync(join(constructDir, 'config.json'), JSON.stringify({ alias: 'demo' }));
 
     const result = spawnSync(process.execPath, [join(REPO_ROOT, 'bin', 'construct'), 'migrate', '--dry-run'], {
       cwd: root,
@@ -140,7 +140,7 @@ test('construct migrate --dry-run runs end-to-end against a fixture cwd', () => 
     assert.equal(result.status, 0, `expected exit 0; stderr: ${result.stderr}`);
     assert.match(result.stdout, /step\(s\)|already at/, `expected migrate report; stdout: ${result.stdout}`);
     // dry-run must not write
-    const onDisk = JSON.parse(readFileSync(join(cxDir, 'config.json'), 'utf8'));
+    const onDisk = JSON.parse(readFileSync(join(constructDir, 'config.json'), 'utf8'));
     assert.equal(onDisk.version, undefined);
   } finally { cleanup(); }
 });

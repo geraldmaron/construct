@@ -85,7 +85,7 @@ test('runOracleTick queues approve actions to pending.jsonl', async () => {
     writeFileSync(join(env.projectDir, '.cx', 'contract-violations.jsonl'), JSON.stringify({
       ts: new Date().toISOString(),
       contractId: 'test-contract',
-      agent: 'cx-engineer',
+      agent: 'engineer',
     }) + '\n');
 
     const result = await runOracleTick({ ...env, dryRun: false });

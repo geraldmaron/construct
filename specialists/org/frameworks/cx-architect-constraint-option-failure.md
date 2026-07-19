@@ -1,5 +1,5 @@
 ---
-id: cx-architect-constraint-option-failure
+id: architect-constraint-option-failure
 version: 1
 appliesToRole: architect
 summary: >-

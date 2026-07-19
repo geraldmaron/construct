@@ -5,10 +5,10 @@
  * Drives `construct workflow invoke --json` against the real binary in an
  * isolated tmpdir with a redirected HOME and CONSTRUCT_ROLES=off (zero
  * network). A cost-heavy PRD request must recruit the full cost vertical:
- * cx-data-analyst for quant rigor (skill affinity + cost-quant-review rule on
- * specialists/org/specialists/cx-data-analyst.json) AND cx-product-manager as
+ * data-analyst for quant rigor (skill affinity + cost-quant-review rule on
+ * specialists/org/specialists/data-analyst.json) AND product-manager as
  * value-tradeoff reviewer (cost-value-tradeoff-review rule on
- * specialists/org/specialists/cx-product-manager.json), each surfaced with a
+ * specialists/org/specialists/product-manager.json), each surfaced with a
  * reason in recruitment.rationale. On prd-draft the product-manager is
  * already the chain's primary owner, so the cx-pm-value-tradeoff framework
  * (ADR-0062 appliesToRole binding) equips the plan directly; on a chain
@@ -60,7 +60,7 @@ function invoke(args) {
   return JSON.parse(res.stdout);
 }
 
-test('cost-heavy PRD draft recruits cx-data-analyst and binds the PM value-tradeoff framework', () => {
+test('cost-heavy PRD draft recruits data-analyst and binds the PM value-tradeoff framework', () => {
   const env = invoke([
     '--workflow-type', 'prd-draft', '--approval-mode', 'proposal-only',
     '--text', COST_HEAVY_PRD_REQUEST,
@@ -69,11 +69,11 @@ test('cost-heavy PRD draft recruits cx-data-analyst and binds the PM value-trade
   assert.equal(env.data.selectedRoles[0], 'product-manager', 'PM authors the PRD (manifest chain floor)');
   assert.ok(env.data.selectedRoles.includes('data-analyst'), `cost signal recruits data-analyst; got ${env.data.selectedRoles.join(',')}`);
 
-  const analyst = env.data.recruitment.recruited.find((p) => p.specialist === 'cx-data-analyst');
-  assert.ok(analyst, 'cx-data-analyst appears in the recruited set');
+  const analyst = env.data.recruitment.recruited.find((p) => p.specialist === 'data-analyst');
+  assert.ok(analyst, 'data-analyst appears in the recruited set');
   assert.equal(analyst.role, 'reviewer');
   assert.ok(analyst.dimensions.includes('cost'), 'recruit is attributed to the cost dimension');
-  assert.ok(env.data.recruitment.rationale.some((r) => r.includes('cx-data-analyst') && r.includes('cost')), 'rationale names the recruit and the reason');
+  assert.ok(env.data.recruitment.rationale.some((r) => r.includes('data-analyst') && r.includes('cost')), 'rationale names the recruit and the reason');
 
   assert.equal(env.data.framework.available, true, 'primary role carries a bound framework');
   assert.equal(env.data.framework.frameworkId, 'cx-pm-value-tradeoff', 'PM value-tradeoff framework equips the plan');
@@ -81,7 +81,7 @@ test('cost-heavy PRD draft recruits cx-data-analyst and binds the PM value-trade
   assert.equal(env.data.trace.frameworkId, 'cx-pm-value-tradeoff', 'trace provenance records the governing framework');
 });
 
-test('cost signal on a chain without the PM recruits cx-product-manager as value-tradeoff reviewer', () => {
+test('cost signal on a chain without the PM recruits product-manager as value-tradeoff reviewer', () => {
   const env = invoke([
     '--workflow-type', 'architecture-review', '--approval-mode', 'proposal-only',
     '--text', COST_HEAVY_PRD_REQUEST,
@@ -93,8 +93,8 @@ test('cost signal on a chain without the PM recruits cx-product-manager as value
     'the cost vertical recruits exactly the quant reviewer and the value-tradeoff reviewer',
   );
 
-  const pm = env.data.recruitment.recruited.find((p) => p.specialist === 'cx-product-manager');
-  assert.ok(pm, 'cx-product-manager appears in the recruited set');
+  const pm = env.data.recruitment.recruited.find((p) => p.specialist === 'product-manager');
+  assert.ok(pm, 'product-manager appears in the recruited set');
   assert.equal(pm.role, 'reviewer');
   assert.equal(pm.gate, 'advisory');
   assert.equal(pm.via, 'participation-rule');
@@ -102,11 +102,11 @@ test('cost signal on a chain without the PM recruits cx-product-manager as value
   assert.ok(pm.reason.includes('value-tradeoff'), 'reason names the framework the PM reviews with');
 
   assert.ok(
-    env.data.recruitment.rationale.some((r) => r.includes('cx-product-manager') && r.includes('value-tradeoff')),
+    env.data.recruitment.rationale.some((r) => r.includes('product-manager') && r.includes('value-tradeoff')),
     'rationale surfaces the PM recruit with its framework reason',
   );
   assert.ok(
-    env.data.recruitment.rationale.some((r) => r.includes('cx-data-analyst')),
+    env.data.recruitment.rationale.some((r) => r.includes('data-analyst')),
     'rationale surfaces the quant recruit alongside',
   );
 });
@@ -118,6 +118,6 @@ test('a request with no cost language recruits neither cost reviewer', () => {
   ]);
 
   const specialists = env.data.recruitment.recruited.map((p) => p.specialist).filter(Boolean);
-  assert.equal(specialists.includes('cx-data-analyst'), false, 'no cost signal, no quant recruit');
-  assert.equal(specialists.includes('cx-product-manager'), false, 'no cost signal, no value-tradeoff recruit');
+  assert.equal(specialists.includes('data-analyst'), false, 'no cost signal, no quant recruit');
+  assert.equal(specialists.includes('product-manager'), false, 'no cost signal, no value-tradeoff recruit');
 });

@@ -21,19 +21,19 @@ import { runOrchestration } from '../../lib/orchestration/runtime.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 // runOrchestration resolves its run store through the machine-scoped state
-// root (ADR-0066), which reads CX_HOME_OVERRIDE/CX_TOOLKIT_DIR from real
-// process.env directly — the HOME/CX_TOOLKIT_DIR keys below only reach the
+// root (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE/CONSTRUCT_TOOLKIT_DIR from real
+// process.env directly — the HOME/CONSTRUCT_TOOLKIT_DIR keys below only reach the
 // `env` option bag runOrchestration threads to model resolution, never
 // process.env, so they never isolated state-root writes. Pin the real vars
 // for the whole file instead.
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-doctor-runstore-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 test.after(() => {
   try { rmTmpDir(homeOverride); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 function degradedEnv() {
@@ -41,9 +41,9 @@ function degradedEnv() {
     ...process.env,
     OPENROUTER_API_KEY: '',
     ANTHROPIC_API_KEY: '',
-    CX_MODEL_REASONING: '',
-    CX_MODEL_STANDARD: '',
-    CX_MODEL_FAST: '',
+    CONSTRUCT_MODEL_REASONING: '',
+    CONSTRUCT_MODEL_STANDARD: '',
+    CONSTRUCT_MODEL_FAST: '',
   };
 }
 
@@ -52,9 +52,9 @@ function preparedEnv() {
     ...process.env,
     OPENROUTER_API_KEY: '',
     ANTHROPIC_API_KEY: '',
-    CX_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
-    CX_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6',
-    CX_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
+    CONSTRUCT_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
+    CONSTRUCT_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6',
+    CONSTRUCT_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
   };
 }
 

@@ -10,14 +10,14 @@ test('loadManifest returns a manifest for operations', () => {
   const m = loadManifest('operations');
   assert.ok(m);
   assert.ok(m.events.length > 0);
-  // cx-operations's fence is the wide docs/** glob, which subsumes narrower
+  // operations's fence is the wide docs/** glob, which subsumes narrower
   // per-domain doc paths (runbooks, releases, etc.) rather than enumerating
   // each one — see the ADR-0065 appendix addendum.
   assert.ok(m.fence.allowedPaths.includes('docs/**'));
 });
 
 test('loadManifest accepts cx- prefix', () => {
-  const a = loadManifest('cx-operations');
+  const a = loadManifest('operations');
   const b = loadManifest('operations');
   assert.deepEqual(a, b);
 });

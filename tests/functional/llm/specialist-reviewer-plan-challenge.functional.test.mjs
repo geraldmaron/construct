@@ -1,8 +1,8 @@
 /**
- * Live LLM test for cx-reviewer's plan-challenge mode (the devil-advocate
- * overlay folded into cx-reviewer at construct-rf26.11).
+ * Live LLM test for reviewer's plan-challenge mode (the devil-advocate
+ * overlay folded into reviewer at construct-rf26.11).
  *
- * Loads the actual specialist prompt from `specialists/prompts/cx-reviewer.md`,
+ * Loads the actual specialist prompt from `specialists/prompts/reviewer.md`,
  * runs it against a deliberately-flawed proposal via OpenRouter, and asserts:
  *   1. Response is non-empty + bounded length.
  *   2. Response challenges at least one specific element of the proposal
@@ -23,7 +23,7 @@ import { createLlmHarness } from '../_lib/openrouter-llm.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..', '..', '..');
-const PROMPT = readFileSync(resolve(REPO_ROOT, 'specialists', 'prompts', 'cx-reviewer.md'), 'utf8');
+const PROMPT = readFileSync(resolve(REPO_ROOT, 'specialists', 'prompts', 'reviewer.md'), 'utf8');
 
 const FLAWED_PROPOSAL = `
 Proposal: rewrite the auth layer to use JWT tokens stored in localStorage.
@@ -41,7 +41,7 @@ Acceptance:
 - Tests pass.
 `.trim();
 
-test('cx-reviewer produces critical pushback against an obviously-flawed proposal (plan-challenge mode)', { timeout: 120_000 }, async (t) => {
+test('reviewer produces critical pushback against an obviously-flawed proposal (plan-challenge mode)', { timeout: 120_000 }, async (t) => {
   const llm = createLlmHarness({ capUsdCents: 20 });
   if (!llm.available) { t.skip(llm.skipReason); return; }
 

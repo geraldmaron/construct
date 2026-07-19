@@ -14,7 +14,7 @@ Each file in this directory is a JSON record written by `construct intake rerout
 ```json
 {
   "content_hash": "sha256:<16-hex>",
-  "source_path": ".cx/inbox/...",
+  "source_path": ".construct/inbox/...",
   "text_snippet": "first 500 chars",
   "expected": { "intakeType": "<correct-type>" },
   "origin": "user-reroute",

@@ -27,14 +27,13 @@
  *   2. HTML comment description text, cleaned of markdown bleed (| # etc.).
  *   3. First clean body paragraph after the H1, capped to one sentence.
  *
- * Role files (skills/roles/*.md) get a programmatically-generated description
- * from role name + applies_to, replacing the generic "Anti-pattern guidance
- * for the <role> role" stub that every role file currently shares.
+ * Perspective files get a generated description from their perspective id and
+ * applies_to Worker Profile ids.
  *
  * Usage:
  *   node scripts/migrate-skill-frontmatter.mjs           # dry-run (default, safe)
  *   node scripts/migrate-skill-frontmatter.mjs --apply   # write changes
- *   node scripts/migrate-skill-frontmatter.mjs --only=roles  # limit by path substring
+ *   node scripts/migrate-skill-frontmatter.mjs --only=perspectives  # limit by path substring
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -74,7 +73,7 @@ function relSkillPath(absPath) {
 
 // Map a skill path to a spec-compliant kebab-case name.
 // Examples:
-//   roles/architect.ai-systems → roles-architect-ai-systems
+//   perspectives/architect.ai-systems → perspectives-architect-ai-systems
 //   devops/git-workflow        → devops-git-workflow
 
 function nameFromPath(relPath) {
@@ -239,21 +238,21 @@ function titleCase(s) {
   }).join(' ');
 }
 
-function generateRoleDescription(role, appliesTo) {
-  const parts = role.split('.').map((p) => titleCase(p.replace(/-/g, ' ')));
-  const roleLabel = parts.join(' — ');
-  const specialists = Array.isArray(appliesTo) && appliesTo.length
+function generatePerspectiveDescription(perspective, appliesTo) {
+  const parts = perspective.split('.').map((part) => titleCase(part.replace(/-/g, ' ')));
+  const perspectiveLabel = parts.join(' — ');
+  const workerProfiles = Array.isArray(appliesTo) && appliesTo.length
     ? appliesTo.join(', ')
     : null;
-  const useWhen = specialists
-    ? `Use when reviewing or generating work by ${specialists}, or when an agent is acting in the ${roleLabel} role.`
-    : `Use when an agent is acting in the ${roleLabel} role.`;
-  return `Surfaces anti-patterns, failure modes, and counter-moves specific to the ${roleLabel} role. ${useWhen}`;
+  const useWhen = workerProfiles
+    ? `Use when one of these Worker Profiles needs the ${perspectiveLabel} perspective: ${workerProfiles}.`
+    : `Use when a Worker Profile needs the ${perspectiveLabel} perspective.`;
+  return `Provides anti-patterns, failure modes, and counter-moves for the ${perspectiveLabel} perspective. ${useWhen}`;
 }
 
 function buildDescription({ relPath, htmlComment, existingYaml, body }) {
-  if (relPath.startsWith('roles/') && existingYaml?.role) {
-    return generateRoleDescription(existingYaml.role, existingYaml.applies_to);
+  if (relPath.startsWith('perspectives/') && existingYaml?.perspective) {
+    return generatePerspectiveDescription(existingYaml.perspective, existingYaml.applies_to);
   }
   const fallback = 'Use when the task matches the trigger conditions described in the body.';
   const fromBody = extractUseWhenFromBody(body);

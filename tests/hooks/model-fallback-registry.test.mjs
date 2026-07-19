@@ -2,7 +2,7 @@
  * tests/hooks/model-fallback-registry.test.mjs
  *
  * Locks in that lib/hooks/model-fallback.mjs loads
- * specialists/org/models.json under CX_TOOLKIT_DIR and passes it to
+ * specialists/org/models.json under CONSTRUCT_TOOLKIT_DIR and passes it to
  * selectFallbackModel as registryModels, so a registry-declared fallback
  * chain can actually be selected on a retryable provider failure, and that
  * no provider cooldown file is written on any no-op path (only after a
@@ -49,7 +49,7 @@ function runHook({ toolkitDir, homeDir, cwd, hookInput }) {
       ...process.env,
       HOME: homeDir,
       USERPROFILE: homeDir,
-      CX_TOOLKIT_DIR: toolkitDir,
+      CONSTRUCT_TOOLKIT_DIR: toolkitDir,
     },
   });
   return res;
@@ -77,7 +77,7 @@ test('a registry-declared cross-provider fallback is selected once registryModel
   assert.equal(res.status, 0, `hook should exit 0 — stderr: ${res.stderr}`);
   assert.match(res.stderr, /Switching standard → openrouter\/qwen\/qwen3-coder:free/);
   const envContent = fs.readFileSync(path.join(cwd, '.env'), 'utf8');
-  assert.match(envContent, /CX_MODEL_STANDARD=openrouter\/qwen\/qwen3-coder:free/);
+  assert.match(envContent, /CONSTRUCT_MODEL_STANDARD=openrouter\/qwen\/qwen3-coder:free/);
   assert.ok(fs.existsSync(cooldownPath(homeDir)), 'a cooldown file is written after a fallback is actually applied');
 });
 

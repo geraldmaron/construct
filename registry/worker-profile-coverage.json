@@ -1,0 +1,540 @@
+{
+  "version": 1,
+  "floor": {
+    "minSkills": 5
+  },
+  "generatedFrom": "registry/worker-profiles/** + skills/**",
+  "workerProfileCount": 12,
+  "allPass": true,
+  "workerProfiles": [
+    {
+      "workerProfileId": "architect",
+      "skills": {
+        "count": 10,
+        "entitled": [
+          "architecture/api-design",
+          "architecture/caching",
+          "architecture/cloud-native",
+          "architecture/message-queue",
+          "architecture/security-arch",
+          "ai/agent-dev",
+          "ai/prompt-and-eval",
+          "docs/research-workflow",
+          "docs/adr-workflow",
+          "exploration/dependency-graph-reading"
+        ],
+        "unresolved": []
+      },
+      "perspective": {
+        "base": "perspectives/architect",
+        "present": true,
+        "variants": [
+          "perspectives/architect",
+          "perspectives/architect.ai-systems",
+          "perspectives/architect.data",
+          "perspectives/architect.enterprise",
+          "perspectives/architect.integration",
+          "perspectives/architect.platform"
+        ]
+      },
+      "guardrails": {
+        "refusalBoundaries": true,
+        "antiFabrication": true,
+        "fenceGatesCommitPush": true
+      },
+      "guidance": {
+        "promptPresent": true,
+        "watchConditions": 1,
+        "participationRules": 0,
+        "capabilities": 4,
+        "artifactClasses": 5
+      },
+      "pass": true,
+      "fails": []
+    },
+    {
+      "workerProfileId": "data-analyst",
+      "skills": {
+        "count": 6,
+        "entitled": [
+          "devops/observability",
+          "devops/database",
+          "operating/raw-data-structuring",
+          "strategy/market-research-methods",
+          "devops/data-engineering",
+          "strategy/experimentation"
+        ],
+        "unresolved": []
+      },
+      "perspective": {
+        "base": "perspectives/data-analyst",
+        "present": true,
+        "variants": [
+          "perspectives/data-analyst",
+          "perspectives/data-analyst.experiment",
+          "perspectives/data-analyst.product",
+          "perspectives/data-analyst.product-intelligence",
+          "perspectives/data-analyst.telemetry"
+        ]
+      },
+      "guardrails": {
+        "refusalBoundaries": true,
+        "antiFabrication": true,
+        "fenceGatesCommitPush": true
+      },
+      "guidance": {
+        "promptPresent": true,
+        "watchConditions": 0,
+        "participationRules": 2,
+        "capabilities": 4,
+        "artifactClasses": 0
+      },
+      "pass": true,
+      "fails": []
+    },
+    {
+      "workerProfileId": "debugger",
+      "skills": {
+        "count": 6,
+        "entitled": [
+          "quality-gates/verify-change",
+          "devops/observability",
+          "devops/performance",
+          "exploration/unknown-codebase-onboarding",
+          "exploration/dependency-graph-reading",
+          "ai/trace-triage"
+        ],
+        "unresolved": []
+      },
+      "perspective": {
+        "base": "perspectives/debugger",
+        "present": true,
+        "variants": [
+          "perspectives/debugger"
+        ]
+      },
+      "guardrails": {
+        "refusalBoundaries": true,
+        "antiFabrication": true,
+        "fenceGatesCommitPush": true
+      },
+      "guidance": {
+        "promptPresent": true,
+        "watchConditions": 0,
+        "participationRules": 1,
+        "capabilities": 0,
+        "artifactClasses": 0
+      },
+      "pass": true,
+      "fails": []
+    },
+    {
+      "workerProfileId": "designer",
+      "skills": {
+        "count": 8,
+        "entitled": [
+          "frontend-design/ui-aesthetics",
+          "frontend-design/ux-principles",
+          "frontend-design/component-patterns",
+          "frontend-design/state-management",
+          "frontend-design/engineering",
+          "frontend-design/accessibility",
+          "frontend-design/screen-reader-testing",
+          "brand/output-vibe"
+        ],
+        "unresolved": []
+      },
+      "perspective": {
+        "base": "perspectives/designer",
+        "present": true,
+        "variants": [
+          "perspectives/designer",
+          "perspectives/designer.accessibility"
+        ]
+      },
+      "guardrails": {
+        "refusalBoundaries": true,
+        "antiFabrication": true,
+        "fenceGatesCommitPush": true
+      },
+      "guidance": {
+        "promptPresent": true,
+        "watchConditions": 1,
+        "participationRules": 0,
+        "capabilities": 0,
+        "artifactClasses": 0
+      },
+      "pass": true,
+      "fails": []
+    },
+    {
+      "workerProfileId": "engineer",
+      "skills": {
+        "count": 36,
+        "entitled": [
+          "development/typescript",
+          "development/python",
+          "development/go",
+          "development/rust",
+          "development/java",
+          "development/cpp",
+          "development/shell",
+          "development/swift",
+          "development/kotlin",
+          "development/mobile-crossplatform",
+          "quality-gates/verify-change",
+          "utility/clean-code",
+          "frameworks/react",
+          "frameworks/nextjs",
+          "frameworks/django",
+          "frameworks/spring-boot",
+          "exploration/unknown-codebase-onboarding",
+          "exploration/tracer-bullet-method",
+          "exploration/dependency-graph-reading",
+          "ai/agent-dev",
+          "ai/rag-system",
+          "ai/llm-security",
+          "ai/prompt-and-eval",
+          "ai/prompt-optimizer",
+          "ai/ml-ops",
+          "devops/data-engineering",
+          "devops/database",
+          "devops/observability",
+          "operating/raw-data-structuring",
+          "devops/ci-cd",
+          "devops/monorepo",
+          "devops/containerization",
+          "devops/dependency-management",
+          "devops/devsecops",
+          "devops/cost-optimization",
+          "strategy/experimentation"
+        ],
+        "unresolved": []
+      },
+      "perspective": {
+        "base": "perspectives/engineer",
+        "present": true,
+        "variants": [
+          "perspectives/engineer"
+        ]
+      },
+      "guardrails": {
+        "refusalBoundaries": true,
+        "antiFabrication": true,
+        "fenceGatesCommitPush": true
+      },
+      "guidance": {
+        "promptPresent": true,
+        "watchConditions": 0,
+        "participationRules": 0,
+        "capabilities": 4,
+        "artifactClasses": 0
+      },
+      "pass": true,
+      "fails": []
+    },
+    {
+      "workerProfileId": "operations",
+      "skills": {
+        "count": 18,
+        "entitled": [
+          "perspectives/operations",
+          "docs/init-project",
+          "operating/incident-response",
+          "operating/oncall-rotation",
+          "operating/change-management",
+          "devops/observability",
+          "devops/ci-cd",
+          "devops/performance",
+          "devops/incident-response",
+          "devops/git-workflow",
+          "quality-gates/verify-change",
+          "docs/memo-and-decision-capture",
+          "docs/adr-workflow",
+          "docs/runbook-workflow",
+          "docs/init-docs",
+          "docs/document-ingest-workflow",
+          "strategy/experimentation",
+          "strategy/prioritization-methods"
+        ],
+        "unresolved": []
+      },
+      "perspective": {
+        "base": "perspectives/operations",
+        "present": true,
+        "variants": [
+          "perspectives/operations"
+        ]
+      },
+      "guardrails": {
+        "refusalBoundaries": true,
+        "antiFabrication": true,
+        "fenceGatesCommitPush": true
+      },
+      "guidance": {
+        "promptPresent": true,
+        "watchConditions": 1,
+        "participationRules": 0,
+        "capabilities": 1,
+        "artifactClasses": 5
+      },
+      "pass": true,
+      "fails": []
+    },
+    {
+      "workerProfileId": "orchestrator",
+      "skills": {
+        "count": 8,
+        "entitled": [
+          "ai/orchestration-workflow",
+          "operating/orchestration-reference",
+          "operating/change-management",
+          "operating/unstructured-triage",
+          "exploration/dependency-graph-reading",
+          "perspectives/trace-reviewer",
+          "operating/fleet-health-routing",
+          "strategy/prioritization-methods"
+        ],
+        "unresolved": []
+      },
+      "perspective": {
+        "base": "perspectives/orchestrator",
+        "present": true,
+        "variants": [
+          "perspectives/orchestrator"
+        ]
+      },
+      "guardrails": {
+        "refusalBoundaries": true,
+        "antiFabrication": true,
+        "fenceGatesCommitPush": true
+      },
+      "guidance": {
+        "promptPresent": true,
+        "watchConditions": 0,
+        "participationRules": 0,
+        "capabilities": 8,
+        "artifactClasses": 0
+      },
+      "pass": true,
+      "fails": []
+    },
+    {
+      "workerProfileId": "product-manager",
+      "skills": {
+        "count": 15,
+        "entitled": [
+          "docs/product-intelligence-workflow",
+          "docs/evidence-ingest-workflow",
+          "docs/product-signal-workflow",
+          "docs/customer-profile-workflow",
+          "docs/prd-workflow",
+          "docs/prfaq-workflow",
+          "docs/backlog-proposal-workflow",
+          "docs/product-intelligence-review",
+          "docs/strategy-workflow",
+          "strategy/competitive-landscape",
+          "strategy/market-research-methods",
+          "strategy/pricing-positioning",
+          "strategy/narrative-arc",
+          "strategy/prioritization-methods",
+          "strategy/experimentation"
+        ],
+        "unresolved": []
+      },
+      "perspective": {
+        "base": "perspectives/product-manager",
+        "present": true,
+        "variants": [
+          "perspectives/product-manager",
+          "perspectives/product-manager.ai-product",
+          "perspectives/product-manager.enterprise",
+          "perspectives/product-manager.growth",
+          "perspectives/product-manager.platform",
+          "perspectives/product-manager.product"
+        ]
+      },
+      "guardrails": {
+        "refusalBoundaries": true,
+        "antiFabrication": true,
+        "fenceGatesCommitPush": true
+      },
+      "guidance": {
+        "promptPresent": true,
+        "watchConditions": 2,
+        "participationRules": 1,
+        "capabilities": 3,
+        "artifactClasses": 9
+      },
+      "pass": true,
+      "fails": []
+    },
+    {
+      "workerProfileId": "qa",
+      "skills": {
+        "count": 6,
+        "entitled": [
+          "devops/testing",
+          "quality-gates/verify-change",
+          "quality-gates/verify-module",
+          "quality-gates/verify-quality",
+          "quality-gates/review-work",
+          "quality-gates/premortem"
+        ],
+        "unresolved": []
+      },
+      "perspective": {
+        "base": "perspectives/qa",
+        "present": true,
+        "variants": [
+          "perspectives/qa",
+          "perspectives/qa.ai-eval",
+          "perspectives/qa.api-contract",
+          "perspectives/qa.data-pipeline",
+          "perspectives/qa.web-ui"
+        ]
+      },
+      "guardrails": {
+        "refusalBoundaries": true,
+        "antiFabrication": true,
+        "fenceGatesCommitPush": true
+      },
+      "guidance": {
+        "promptPresent": true,
+        "watchConditions": 0,
+        "participationRules": 1,
+        "capabilities": 0,
+        "artifactClasses": 2
+      },
+      "pass": true,
+      "fails": []
+    },
+    {
+      "workerProfileId": "researcher",
+      "skills": {
+        "count": 12,
+        "entitled": [
+          "docs/research-workflow",
+          "devops/dependency-management",
+          "docs/transcript-synthesis",
+          "docs/codebase-research-workflow",
+          "exploration/repo-map",
+          "exploration/unknown-codebase-onboarding",
+          "exploration/tracer-bullet-method",
+          "exploration/dependency-graph-reading",
+          "docs/user-research-workflow",
+          "docs/evidence-ingest-workflow",
+          "strategy/jobs-to-be-done",
+          "strategy/market-research-methods"
+        ],
+        "unresolved": []
+      },
+      "perspective": {
+        "base": "perspectives/researcher",
+        "present": true,
+        "variants": [
+          "perspectives/researcher"
+        ]
+      },
+      "guardrails": {
+        "refusalBoundaries": true,
+        "antiFabrication": true,
+        "fenceGatesCommitPush": true
+      },
+      "guidance": {
+        "promptPresent": true,
+        "watchConditions": 0,
+        "participationRules": 1,
+        "capabilities": 8,
+        "artifactClasses": 4
+      },
+      "pass": true,
+      "fails": []
+    },
+    {
+      "workerProfileId": "reviewer",
+      "skills": {
+        "count": 7,
+        "entitled": [
+          "quality-gates/verify-quality",
+          "quality-gates/review-work",
+          "quality-gates/verify-module",
+          "quality-gates/premortem",
+          "ai/prompt-and-eval",
+          "ai/prompt-optimizer",
+          "ai/trace-triage"
+        ],
+        "unresolved": []
+      },
+      "perspective": {
+        "base": "perspectives/reviewer",
+        "present": true,
+        "variants": [
+          "perspectives/reviewer"
+        ]
+      },
+      "guardrails": {
+        "refusalBoundaries": true,
+        "antiFabrication": true,
+        "fenceGatesCommitPush": true
+      },
+      "guidance": {
+        "promptPresent": true,
+        "watchConditions": 1,
+        "participationRules": 0,
+        "capabilities": 5,
+        "artifactClasses": 0
+      },
+      "pass": true,
+      "fails": []
+    },
+    {
+      "workerProfileId": "security",
+      "skills": {
+        "count": 12,
+        "entitled": [
+          "security/red-team",
+          "security/blue-team",
+          "security/pentest",
+          "security/code-audit",
+          "security/vuln-research",
+          "security/threat-intel",
+          "quality-gates/verify-security",
+          "architecture/security-arch",
+          "compliance/license-audit",
+          "compliance/data-privacy",
+          "compliance/ai-disclosure",
+          "compliance/regulatory-review"
+        ],
+        "unresolved": []
+      },
+      "perspective": {
+        "base": "perspectives/security",
+        "present": true,
+        "variants": [
+          "perspectives/security",
+          "perspectives/security.ai",
+          "perspectives/security.appsec",
+          "perspectives/security.cloud",
+          "perspectives/security.legal-compliance",
+          "perspectives/security.privacy",
+          "perspectives/security.supply-chain"
+        ]
+      },
+      "guardrails": {
+        "refusalBoundaries": true,
+        "antiFabrication": true,
+        "fenceGatesCommitPush": true
+      },
+      "guidance": {
+        "promptPresent": true,
+        "watchConditions": 1,
+        "participationRules": 0,
+        "capabilities": 2,
+        "artifactClasses": 2
+      },
+      "pass": true,
+      "fails": []
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "specialistId": "cx-engineer",
+  "specialistId": "engineer",
   "capabilityId": "specialist.prompt",
   "mode": "normal",
   "scenarioKind": "cross-specialist",

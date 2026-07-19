@@ -29,9 +29,9 @@ const PACKAGE_ROOT = path.resolve(__dirname, '..');
 const CORE_FRAMEWORK_IDS = [
   'cx-pm-value-tradeoff',
   'cx-ops-dependency-sequencing',
-  'cx-engineer-feasibility-blast-radius',
-  'cx-qa-risk-based-coverage',
-  'cx-architect-constraint-option-failure',
+  'engineer-feasibility-blast-radius',
+  'qa-risk-based-coverage',
+  'architect-constraint-option-failure',
 ];
 
 const KNOWN_ROLES = new Set([

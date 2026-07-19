@@ -12,7 +12,7 @@ Use when: the user asks about product direction, strategic bets, what to priorit
 
 ## Reading Strategy
 
-1. Read `~/.cx/strategy.md` (or project-local `.cx/strategy.md`).
+1. Read `~/.construct/strategy.md` (or project-local `.construct/strategy.md`).
 2. If the file does not exist, inform the user and offer to create it using `templates/docs/strategy.md`.
 3. Parse sections: Vision, Bets, Non-bets, Time Horizon, North Star Metric, Competitive Positioning.
 
@@ -35,8 +35,8 @@ Given a product signal or PRD, check:
 
 | Scope | Path | Committed? |
 |---|---|---|
-| User-global | `~/.cx/strategy.md` | No: local only |
-| Project-local | `.cx/strategy.md` | Yes: source of truth for this repo |
+| User-global | `~/.construct/strategy.md` | No: local only |
+| Project-local | `.construct/strategy.md` | Yes: source of truth for this repo |
 ## Release gate
 
 Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.

@@ -1,7 +1,7 @@
 {
   "id": "researcher-to-engineer",
-  "producer": "cx-researcher",
-  "consumer": "cx-engineer",
+  "producer": "researcher",
+  "consumer": "engineer",
   "trigger": {
     "intent": [
       "implementation",

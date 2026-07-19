@@ -30,10 +30,10 @@
         "citationLint": true,
         "proseMinimum": 3,
         "requiredReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ],
         "optionalReviewers": [
-          "cx-researcher"
+          "researcher"
         ]
       }
     },
@@ -54,8 +54,8 @@
         "citationLint": true,
         "proseMinimum": 3,
         "requiredReviewers": [
-          "cx-reviewer",
-          "cx-architect"
+          "reviewer",
+          "architect"
         ],
         "optionalReviewers": []
       }
@@ -75,10 +75,10 @@
         "citationLint": true,
         "proseMinimum": 3,
         "requiredReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ],
         "optionalReviewers": [
-          "cx-product-manager"
+          "product-manager"
         ]
       }
     },
@@ -97,7 +97,7 @@
         "citationLint": true,
         "proseMinimum": 3,
         "requiredReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ],
         "optionalReviewers": []
       }
@@ -119,10 +119,10 @@
         "citationLint": true,
         "proseMinimum": 2,
         "requiredReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ],
         "optionalReviewers": [
-          "cx-architect"
+          "architect"
         ]
       }
     },
@@ -143,7 +143,7 @@
         "citationLint": true,
         "proseMinimum": 3,
         "requiredReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ],
         "optionalReviewers": []
       }
@@ -165,7 +165,7 @@
         "citationLint": true,
         "proseMinimum": 3,
         "requiredReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ],
         "optionalReviewers": []
       }
@@ -185,7 +185,7 @@
         "proseMinimum": 2,
         "requiredReviewers": [],
         "optionalReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ]
       }
     },
@@ -204,7 +204,7 @@
         "proseMinimum": 2,
         "requiredReviewers": [],
         "optionalReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ]
       }
     },
@@ -246,7 +246,7 @@
         "proseMinimum": 2,
         "requiredReviewers": [],
         "optionalReviewers": [
-          "cx-operations"
+          "operations"
         ]
       }
     },
@@ -271,7 +271,7 @@
         "proseMinimum": 2,
         "requiredReviewers": [],
         "optionalReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ]
       }
     },
@@ -317,10 +317,10 @@
         "citationLint": true,
         "proseMinimum": 2,
         "requiredReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ],
         "optionalReviewers": [
-          "cx-product-manager"
+          "product-manager"
         ]
       }
     },
@@ -360,10 +360,10 @@
         "citationLint": true,
         "proseMinimum": 3,
         "requiredReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ],
         "optionalReviewers": [
-          "cx-researcher"
+          "researcher"
         ]
       }
     },
@@ -385,7 +385,7 @@
         "citationLint": true,
         "proseMinimum": 2,
         "requiredReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ],
         "optionalReviewers": []
       }
@@ -444,7 +444,7 @@
         "proseMinimum": 2,
         "requiredReviewers": [],
         "optionalReviewers": [
-          "cx-qa"
+          "qa"
         ]
       }
     },
@@ -491,7 +491,7 @@
         "citationLint": true,
         "proseMinimum": 2,
         "requiredReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ],
         "optionalReviewers": []
       }
@@ -509,7 +509,7 @@
         "citationLint": true,
         "proseMinimum": 2,
         "requiredReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ],
         "optionalReviewers": []
       }
@@ -527,7 +527,7 @@
         "citationLint": true,
         "proseMinimum": 2,
         "requiredReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ],
         "optionalReviewers": []
       }
@@ -545,7 +545,7 @@
         "citationLint": true,
         "proseMinimum": 2,
         "requiredReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ],
         "optionalReviewers": []
       }
@@ -568,7 +568,7 @@
         "proseMinimum": 3,
         "requiredReviewers": [],
         "optionalReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ]
       }
     }

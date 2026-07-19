@@ -1,6 +1,6 @@
 {
   "id": "pm-engineering-signals",
-  "producer": "cx-product-manager",
+  "producer": "product-manager",
   "consumer": "user",
   "trigger": {
     "intent": ["implementation"],

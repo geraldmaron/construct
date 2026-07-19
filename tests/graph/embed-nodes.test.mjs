@@ -25,9 +25,9 @@ import { validateGraph } from '../../lib/graph/validate.mjs';
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 const SHIPPED = [
-  { id: 'operations', specialist: 'specialist:cx-operations', contract: 'contract:operations-tpm-briefing', test: 'test:tests/acceptance/tpm-preset.acceptance.test.mjs' },
-  { id: 'operations-triage', specialist: 'specialist:cx-operations', contract: 'contract:operations-triage', test: 'test:tests/acceptance/ops-triage-preset.acceptance.test.mjs' },
-  { id: 'pm-feedback', specialist: 'specialist:cx-product-manager', contract: 'contract:pm-requirements-candidates', test: 'test:tests/acceptance/pm-feedback-preset.acceptance.test.mjs' },
+  { id: 'operations', specialist: 'specialist:operations', contract: 'contract:operations-tpm-briefing', test: 'test:tests/acceptance/tpm-preset.acceptance.test.mjs' },
+  { id: 'operations-triage', specialist: 'specialist:operations', contract: 'contract:operations-triage', test: 'test:tests/acceptance/ops-triage-preset.acceptance.test.mjs' },
+  { id: 'pm-feedback', specialist: 'specialist:product-manager', contract: 'contract:pm-requirements-candidates', test: 'test:tests/acceptance/pm-feedback-preset.acceptance.test.mjs' },
 ];
 
 test('buildFromEmbed seeds an embed node + binding edges per manifest', () => {
@@ -62,12 +62,12 @@ test('a broken binding target fails graph validate --strict', () => {
   // Unlike every other test in this file, this one writes a synthetic graph
   // (not REPO_ROOT's real one) — the relational store resolves that write's
   // graph.db under the machine-scoped state root (ADR-0066), so it needs its
-  // own isolated CX_HOME_OVERRIDE for the duration of the write/validate,
+  // own isolated CONSTRUCT_HOME_OVERRIDE for the duration of the write/validate,
   // restored immediately after so the file's other REPO_ROOT-reading tests
   // keep seeing the real fixture `scripts/ci/build-test-fixtures.sh` built.
   const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-embed-home-'));
-  const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = homeOverride;
+  const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-embed-'));
   try {
     // An embed that binds a provider with no node of its own, and no test.
@@ -87,8 +87,8 @@ test('a broken binding target fails graph validate --strict', () => {
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
     fs.rmSync(homeOverride, { recursive: true, force: true });
-    if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+    if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
   }
 });
 

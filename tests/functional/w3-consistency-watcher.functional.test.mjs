@@ -140,7 +140,7 @@ test('contracts-drift fires when contracts reference an unresolvable producer', 
       version: 1, terminalStates: ['DONE'],
       severities: { blocking: [], warning: [], info: [] },
       contracts: [{
-        id: 'bad', producer: 'cx-unresolvable', consumer: 'cx-architect',
+        id: 'bad', producer: 'cx-unresolvable', consumer: 'architect',
         input: { shape: 'x' },
       }],
     });
@@ -174,8 +174,8 @@ test('roles-drift does not fire when a specialist id and its own name normalize 
     slice.writeJson('specialists/org', {
       orchestrator: { id: 'cx-construct', name: 'construct' },
       specialists: {
-        'cx-architect': { name: 'architect' },
-        'cx-engineer': { name: 'engineer' },
+        'architect': { name: 'architect' },
+        'engineer': { name: 'engineer' },
       },
     });
     slice.writeJson('specialists/contracts.json', {
@@ -249,7 +249,7 @@ test('construct doctor consistency CLI exits 0 and is clean by default', () => {
   const result = spawnSync(process.execPath, [join(REPO_ROOT, 'bin', 'construct'), 'doctor', 'consistency'], {
     cwd: REPO_ROOT,
     encoding: 'utf8',
-    env: { ...process.env, CONSTRUCT_SKIP_PROMPT_LOOKUP: '1', HOME: CLI_SANDBOX_HOME, CX_HOME_OVERRIDE: CLI_SANDBOX_HOME },
+    env: { ...process.env, CONSTRUCT_SKIP_PROMPT_LOOKUP: '1', HOME: CLI_SANDBOX_HOME, CONSTRUCT_HOME_OVERRIDE: CLI_SANDBOX_HOME },
   });
   assert.equal(result.status, 0, `expected exit 0, got ${result.status}\nstderr: ${result.stderr}\nstdout: ${result.stdout}`);
   assert.match(result.stdout, /clean/);
@@ -260,7 +260,7 @@ test('construct doctor consistency --strict surfaces the internal tier', () => {
   const result = spawnSync(process.execPath, [join(REPO_ROOT, 'bin', 'construct'), 'doctor', 'consistency', '--strict'], {
     cwd: REPO_ROOT,
     encoding: 'utf8',
-    env: { ...process.env, CONSTRUCT_SKIP_PROMPT_LOOKUP: '1', HOME: CLI_SANDBOX_HOME, CX_HOME_OVERRIDE: CLI_SANDBOX_HOME },
+    env: { ...process.env, CONSTRUCT_SKIP_PROMPT_LOOKUP: '1', HOME: CLI_SANDBOX_HOME, CONSTRUCT_HOME_OVERRIDE: CLI_SANDBOX_HOME },
   });
   assert.equal(result.status, 0, `expected exit 0, got ${result.status}\nstderr: ${result.stderr}\nstdout: ${result.stdout}`);
   assert.match(result.stdout, /mcp-drift/);

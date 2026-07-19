@@ -54,7 +54,7 @@
   ],
   "watchConditions": [],
   "permissions": {},
-  "promptFile": "specialists/prompts/cx-qa.md",
+  "promptFile": "specialists/prompts/qa.md",
   "embedOrientation": {
     "focusAreas": [
       "test effectiveness",
@@ -79,7 +79,7 @@
     ]
   },
   "canEdit": true,
-  "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates",
+  "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,construct_trace,construct_score,get_template,list_templates",
   "internal": true,
   "killSwitchEnv": "CONSTRUCT_ROLE_QA",
   "handoffCandidates": [
@@ -99,7 +99,7 @@
         },
         "recruit": {
           "specialists": [
-            "cx-qa"
+            "qa"
           ]
         },
         "role": "reviewer",

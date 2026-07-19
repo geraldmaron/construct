@@ -12,7 +12,7 @@ This repo IS Construct. Changes here affect every session, every platform, every
 - **Never commit directly to main.** Branch, test, then merge.
 - **Run `construct doctor` after any structural change** to verify the system is healthy.
 - **Multi-component features require a functional test.** If a change touches more than one of: hook + observation, profile + classifier, CLI + durable state, then a test must live in `tests/functional/` that spawns the real binary or imports the real module in an isolated tmpdir and asserts on durable artifacts. CI is a backstop, not a primary gate. See `tests/functional/README.md`.
-- **Worker profiles are research artifacts, not JSON exercises.** Any new profile that lands in `specialists/org/worker-profiles/` must go through the lifecycle in `docs/guides/concepts/profile-lifecycle.md`: discover → frame → emphasize skills → validate → promote. A profile selects flows and skill emphasis over the fixed roster; it does not invent new roles or departments. `construct scope create <id>` scaffolds the draft and the requirements brief; drop-in JSON is allowed for experiments but not for the curated catalog.
+- **Workspace Presets are research artifacts, not JSON exercises.** New records in `registry/workspace-presets/` follow `docs/guides/concepts/workspace-preset-lifecycle.md`: discover → frame → emphasize Skills and Procedures → validate → promote. Presets configure workspace-wide defaults; they do not identify workers or invent permanent teams.
 - **File export is not artifact completion.** An artifact advances the completion ladder only with re-verifiable evidence — use `construct publish --preview` to render and inspect before claiming done. See `docs/guides/reference/artifact-completion-states.md`.
 
 ## Protected files — edit with extra care
@@ -27,7 +27,7 @@ This repo IS Construct. Changes here affect every session, every platform, every
 ## Safe to edit freely
 
 - `personas/*.md` — persona prompts (run `construct sync` after)
-- `skills/**` — domain knowledge files (includes `skills/roles/` — role anti-patterns, inlined at sync time)
+- `skills/**` — domain knowledge files (includes `skills/perspectives/` — perspective anti-patterns, inlined at sync time)
 - `templates/docs/**` — shipped doc templates; users override via `.construct/templates/docs/` (see [templates/docs/README.md](templates/docs/README.md))
 - `rules/**` — coding standards
 

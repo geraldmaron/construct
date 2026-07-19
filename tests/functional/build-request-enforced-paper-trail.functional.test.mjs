@@ -68,13 +68,13 @@ function freshProject() {
 test.after(() => { for (const d of dirs) { try { rmTmpDir(d); } catch {} } });
 
 function pinEnv(t, home) {
-  const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+  const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
   const prevEmbedModel = process.env.CONSTRUCT_EMBEDDING_MODEL;
-  process.env.CX_HOME_OVERRIDE = home;
+  process.env.CONSTRUCT_HOME_OVERRIDE = home;
   process.env.CONSTRUCT_EMBEDDING_MODEL = 'hashing';
   t.after(() => {
-    if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+    if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
     if (prevEmbedModel === undefined) delete process.env.CONSTRUCT_EMBEDDING_MODEL;
     else process.env.CONSTRUCT_EMBEDDING_MODEL = prevEmbedModel;
   });
@@ -100,9 +100,9 @@ function makeFetchImpl() {
 }
 
 const ENV = {
-  CX_MODEL_REASONING: MODEL,
-  CX_MODEL_STANDARD: MODEL,
-  CX_MODEL_FAST: MODEL,
+  CONSTRUCT_MODEL_REASONING: MODEL,
+  CONSTRUCT_MODEL_STANDARD: MODEL,
+  CONSTRUCT_MODEL_FAST: MODEL,
   ANTHROPIC_API_KEY: 'sk-test-build-chain',
 };
 
@@ -141,8 +141,8 @@ test('a build request drives a multi-specialist chain with in-run BLOCKED_CONTRA
 
   const distinctRoles = new Set(planned.tasks.map((task) => task.role));
   assert.ok(distinctRoles.size >= 2, `a build request decomposes into a multi-specialist chain; got ${[...distinctRoles].join(', ')}`);
-  assert.ok(distinctRoles.has('cx-engineer'), 'the build chain includes the engineer role that produces engineer-to-reviewer');
-  assert.ok(distinctRoles.has('cx-reviewer'), 'the build chain includes the reviewer role that consumes engineer-to-reviewer');
+  assert.ok(distinctRoles.has('engineer'), 'the build chain includes the engineer role that produces engineer-to-reviewer');
+  assert.ok(distinctRoles.has('reviewer'), 'the build chain includes the reviewer role that consumes engineer-to-reviewer');
   const contractChainEntry = planned.plan.contractChain.find((c) => c.id === CONTRACT_ID);
   assert.ok(contractChainEntry, 'routeRequest resolved engineer-to-reviewer into this real build run, not an arbitrary choice');
 
@@ -151,7 +151,7 @@ test('a build request drives a multi-specialist chain with in-run BLOCKED_CONTRA
   // output-side fields, so the in-run both-ends check fails on exactly one
   // named field.
   const run = loadRun(cwd, planned.runId);
-  const engineerTask = run.tasks.find((task) => task.role === 'cx-engineer');
+  const engineerTask = run.tasks.find((task) => task.role === 'engineer');
   assert.ok(engineerTask, 'the planned chain carries an engineer task to seed');
   engineerTask.outputContractId = CONTRACT_ID;
   const incomplete = conformingPacket();
@@ -166,7 +166,7 @@ test('a build request drives a multi-specialist chain with in-run BLOCKED_CONTRA
 
   const blockedTask = executed.tasks.find((task) => task.contractStatus === 'blocked-contract');
   assert.ok(blockedTask, `the seeded task carries blocked-contract; got ${JSON.stringify(executed.tasks.map((task) => ({ role: task.role, contractStatus: task.contractStatus ?? null })))}`);
-  assert.equal(blockedTask.role, 'cx-engineer');
+  assert.equal(blockedTask.role, 'engineer');
   assert.equal(blockedTask.contractId, CONTRACT_ID);
   assert.ok(blockedTask.contractViolations.some((v) => v.includes('verificationChecklist')), `the missing field is named, not silently dropped: ${JSON.stringify(blockedTask.contractViolations)}`);
 
@@ -183,10 +183,10 @@ test('a build request drives a multi-specialist chain with in-run BLOCKED_CONTRA
   assert.equal(record.runId, planned.runId);
   assert.equal(record.status, 'degraded', 'the audit record carries the honest degraded terminal status');
   assert.equal(record.taskChain.length, executed.tasks.length, 'the paper trail links the full task chain, not a subset');
-  assert.ok(record.taskChain.some((task) => task.role === 'cx-engineer'));
-  assert.ok(record.taskChain.some((task) => task.role === 'cx-reviewer'));
+  assert.ok(record.taskChain.some((task) => task.role === 'engineer'));
+  assert.ok(record.taskChain.some((task) => task.role === 'reviewer'));
   assert.ok(
-    record.traceEvents.some((e) => e.eventType === 'worker.completed' && e.role === 'cx-engineer'),
+    record.traceEvents.some((e) => e.eventType === 'worker.completed' && e.role === 'engineer'),
     'the paper trail links real worker lifecycle trace events emitted during execution',
   );
   const gateVerdict = record.gateVerdicts.find((v) => v.contractId === CONTRACT_ID && v.verdict === 'BLOCKED_CONTRACT');
@@ -213,7 +213,7 @@ test('the same build request with a conforming both-ends packet completes withou
   );
 
   const run = loadRun(cwd, planned.runId);
-  const engineerTask = run.tasks.find((task) => task.role === 'cx-engineer');
+  const engineerTask = run.tasks.find((task) => task.role === 'engineer');
   assert.ok(engineerTask, 'the planned chain carries an engineer task to seed');
   engineerTask.outputContractId = CONTRACT_ID;
   engineerTask.outputPacket = conformingPacket();

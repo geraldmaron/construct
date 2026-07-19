@@ -18,7 +18,7 @@ function sampleEntry(id) {
     triage: {
       intakeType: 'note',
       rdStage: 'discover',
-      primaryOwner: 'cx-engineer',
+      primaryOwner: 'engineer',
       recommendedChain: [],
       recommendedAction: 'file',
       risk: 'low',

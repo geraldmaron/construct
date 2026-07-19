@@ -59,14 +59,14 @@ test('an approval filed from a separate process after the daemon starts is drain
   const env = sterileSpawnEnv({
     HOME: root,
     USERPROFILE: root,
-    CX_HOME_OVERRIDE: root,
-    CX_ROOT_DIR: root,
+    CONSTRUCT_HOME_OVERRIDE: root,
+    CONSTRUCT_ROOT_DIR: root,
     TICK_TIMEOUT_MS: String(timeoutMs),
     // Short interval so a second tick fires soon after the cross-process
     // approve() call, without the test waiting out the 2-minute default.
     CONSTRUCT_WRITE_DRAIN_INTERVAL_MS: '300',
     CONSTRUCT_EMBEDDING_MODEL: 'hashing',
-    CX_INBOX_LIVE_WATCH: 'off',
+    CONSTRUCT_INBOX_LIVE_WATCH: 'off',
     CONSTRUCT_EMBED_ROADMAP_ENABLED: '0',
   });
 

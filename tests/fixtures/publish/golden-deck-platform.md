@@ -6,7 +6,7 @@ version: "0.1"
 doc_id: DECK-PLATFORM-001
 classification: internal
 status: draft
-owner: cx-product-manager
+owner: product-manager
 last_verified_at: 2026-06-20
 ---
 

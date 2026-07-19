@@ -2,7 +2,7 @@
  * tests/functional/model-registry-wiring.functional.test.mjs
  *
  * Drives the real `construct models resolve --json` binary and proves the model
- * registry (specialists/org/models.json under CX_TOOLKIT_DIR) is reachable on
+ * registry (specialists/org/models.json under CONSTRUCT_TOOLKIT_DIR) is reachable on
  * the embedded resolution path — the embedded resolver defaults registryPath to
  * the toolkit registry so a dropped-in models.json binds tier defaults. Asserts:
  * a registry tier resolves with no env pin; an env pin overrides the registry;
@@ -53,7 +53,7 @@ function toolkitWith(models) {
 // resolver consults, so the no-registry/no-pin case would otherwise resolve
 // the uccl.2 credential-family-fallback instead of config-error. Every case
 // runs against a scrubbed baseline (empty PATH via process.execPath, all
-// provider + CX_MODEL_* keys blanked) so the assertions isolate the registry.
+// provider + CONSTRUCT_MODEL_* keys blanked) so the assertions isolate the registry.
 function resolveModel(args, env = {}) {
   const cwd = freshDir('cx-registry-cwd-');
   const res = spawnSync(process.execPath, [BIN, 'models', 'resolve', '--json', ...args], {
@@ -74,9 +74,9 @@ function resolveModel(args, env = {}) {
       OLLAMA_BASE_URL: '',
       OLLAMA_HOST: '',
       LOCAL_LLM_BASE_URL: '',
-      CX_MODEL_REASONING: '',
-      CX_MODEL_STANDARD: '',
-      CX_MODEL_FAST: '',
+      CONSTRUCT_MODEL_REASONING: '',
+      CONSTRUCT_MODEL_STANDARD: '',
+      CONSTRUCT_MODEL_FAST: '',
       CONSTRUCT_MODEL_REASONING: '',
       CONSTRUCT_MODEL_STANDARD: '',
       CONSTRUCT_MODEL_FAST: '',
@@ -87,11 +87,11 @@ function resolveModel(args, env = {}) {
   return JSON.parse(res.stdout);
 }
 
-test('a registry models.json under CX_TOOLKIT_DIR resolves the tier model with no env pin', () => {
+test('a registry models.json under CONSTRUCT_TOOLKIT_DIR resolves the tier model with no env pin', () => {
   const toolkit = toolkitWith({
     standard: { primary: 'anthropic/claude-sonnet-4-6', fallback: [] },
   });
-  const out = resolveModel(['--tier', 'standard'], { CX_TOOLKIT_DIR: toolkit });
+  const out = resolveModel(['--tier', 'standard'], { CONSTRUCT_TOOLKIT_DIR: toolkit });
   assert.equal(out.data.resolutionSource, 'tier-default');
   assert.equal(out.data.selectedModel, 'anthropic/claude-sonnet-4-6');
   assert.equal(out.data.tierSource, 'registry');
@@ -102,8 +102,8 @@ test('an env pin overrides the registry tier default', () => {
     standard: 'anthropic/claude-sonnet-4-6',
   });
   const out = resolveModel(['--tier', 'standard'], {
-    CX_TOOLKIT_DIR: toolkit,
-    CX_MODEL_STANDARD: 'anthropic/claude-opus-4-6',
+    CONSTRUCT_TOOLKIT_DIR: toolkit,
+    CONSTRUCT_MODEL_STANDARD: 'anthropic/claude-opus-4-6',
   });
   assert.equal(out.data.resolutionSource, 'tier-default');
   assert.equal(out.data.selectedModel, 'anthropic/claude-opus-4-6');
@@ -112,6 +112,6 @@ test('an env pin overrides the registry tier default', () => {
 
 test('no registry file and no env pin still degrades to config-error (no implicit defaults)', () => {
   const toolkit = toolkitWith(null);
-  const out = resolveModel(['--tier', 'fast'], { CX_TOOLKIT_DIR: toolkit });
+  const out = resolveModel(['--tier', 'fast'], { CONSTRUCT_TOOLKIT_DIR: toolkit });
   assert.equal(out.data.resolutionSource, 'config-error');
 });

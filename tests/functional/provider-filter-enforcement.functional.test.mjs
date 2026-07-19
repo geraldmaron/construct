@@ -36,17 +36,17 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 // resolveDaemonStatePath(env) -> resolveRootDir(env) (lib/embed/daemon.mjs),
 // which walks up from real process.cwd() rather than honoring the
 // constructor's own `rootDir` — and either way, resolveStatePath's
-// machine-scoped state root (ADR-0066) reads CX_HOME_OVERRIDE from real
+// machine-scoped state root (ADR-0066) reads CONSTRUCT_HOME_OVERRIDE from real
 // process.env directly. Pin it for the whole file so building an EmbedDaemon
 // never writes into the real developer machine's ~/.construct/projects/.
 
 const homeOverride = mkdtempSync(join(tmpdir(), 'pfe-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 test.after(() => {
   try { rmTmpDir(homeOverride); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 function makeRootDir(t, label) {

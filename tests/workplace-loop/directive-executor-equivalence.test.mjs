@@ -58,7 +58,7 @@ test('workplaceLoopExecuteDirectivesEnabled agrees with oracleExecuteDirectivesE
 for (const mod of MODULES) {
   test(`${mod.name}: executeDirective is denied by default (unattended budget not configured)`, async () => {
     const projectDir = tempDir(`cx-equiv-budget-${mod.name}-`, test);
-    const directive = { id: 'demo', specialist: 'cx-operations', instruction: 'summarize the sprint' };
+    const directive = { id: 'demo', specialist: 'operations', instruction: 'summarize the sprint' };
     const result = await mod.executeFn(directive, { projectDir, env: {} });
     assert.equal(result.ok, false);
     assert.equal(result.reason, 'unattended-budget-not-configured');
@@ -66,7 +66,7 @@ for (const mod of MODULES) {
 }
 
 test('both modules deny in lockstep for an identical unconfigured-budget input', async () => {
-  const directive = { id: 'demo', specialist: 'cx-operations', instruction: 'summarize the sprint' };
+  const directive = { id: 'demo', specialist: 'operations', instruction: 'summarize the sprint' };
   const oracleResult = await oracleExecutor.executeDirective(directive, { projectDir: tempDir('cx-equiv-lockstep-a-', test), env: {} });
   const loopResult = await loopExecutor.executeDirective(directive, { projectDir: tempDir('cx-equiv-lockstep-b-', test), env: {} });
   assert.deepEqual(oracleResult, loopResult);
@@ -75,7 +75,7 @@ test('both modules deny in lockstep for an identical unconfigured-budget input',
 for (const mod of MODULES) {
   test(`${mod.name}: executeDirective runs the specialist and enqueues a recommended write when budget is configured`, async () => {
     const projectDir = tempDir(`cx-equiv-run-${mod.name}-`, test);
-    const directive = { id: 'demo', specialist: 'cx-operations', instruction: 'post a status update' };
+    const directive = { id: 'demo', specialist: 'operations', instruction: 'post a status update' };
     const env = { CONSTRUCT_UNATTENDED_BUDGET_ORACLE_DIRECTIVE_DEMO: '100000' };
 
     let capturedTask = null;
@@ -85,7 +85,7 @@ for (const mod of MODULES) {
         output: 'done',
         writeProposals: [{
           providerId: 'jira', writeKind: 'comment', payload: { issueKey: 'OPS-1', body: 'status' },
-          requestedBy: { specialistId: 'cx-operations' }, surface: 'orchestration-worker', tool: 'jira.comment',
+          requestedBy: { specialistId: 'operations' }, surface: 'orchestration-worker', tool: 'jira.comment',
         }],
       };
     };
@@ -98,7 +98,7 @@ for (const mod of MODULES) {
     assert.equal(result.ok, true);
     assert.equal(result.output, 'done');
     assert.equal(result.writeProposalsQueued, 1);
-    assert.equal(capturedTask.role, 'cx-operations');
+    assert.equal(capturedTask.role, 'operations');
     assert.equal(capturedTask.reason, 'post a status update');
 
     const pending = queue.getPending();
@@ -110,7 +110,7 @@ for (const mod of MODULES) {
 
   test(`${mod.name}: executeDirective records spend so a second call against a small budget is denied`, async () => {
     const projectDir = tempDir(`cx-equiv-spend-${mod.name}-`, test);
-    const directive = { id: 'demo', specialist: 'cx-operations', instruction: 'summarize' };
+    const directive = { id: 'demo', specialist: 'operations', instruction: 'summarize' };
     const env = { CONSTRUCT_UNATTENDED_BUDGET_ORACLE_DIRECTIVE_DEMO: '2000' };
     const fakeRunTask = async () => ({ output: 'ok', providerMeta: { usage: { total_tokens: 900 } } });
 
@@ -124,7 +124,7 @@ for (const mod of MODULES) {
 
   test(`${mod.name}: executeDirective returns ok:false with the error message when runTask throws`, async () => {
     const projectDir = tempDir(`cx-equiv-error-${mod.name}-`, test);
-    const directive = { id: 'demo', specialist: 'cx-operations', instruction: 'summarize' };
+    const directive = { id: 'demo', specialist: 'operations', instruction: 'summarize' };
     const env = { CONSTRUCT_UNATTENDED_BUDGET_ORACLE_DIRECTIVE_DEMO: '100000' };
     const failingRunTask = async () => { throw new Error('provider unavailable'); };
 
@@ -135,7 +135,7 @@ for (const mod of MODULES) {
 
   test(`${mod.name}: executeDirective does not touch the queue when the specialist recommends no writes`, async () => {
     const projectDir = tempDir(`cx-equiv-nowrite-${mod.name}-`, test);
-    const directive = { id: 'demo', specialist: 'cx-product-manager', instruction: 'summarize the roadmap' };
+    const directive = { id: 'demo', specialist: 'product-manager', instruction: 'summarize the roadmap' };
     const env = { CONSTRUCT_UNATTENDED_BUDGET_ORACLE_DIRECTIVE_DEMO: '100000' };
     const fakeRunTask = async () => ({ output: 'just a summary, no writes' });
 
@@ -150,13 +150,13 @@ for (const mod of MODULES) {
 }
 
 test('a directive run through both modules with identical injected inputs produces byte-identical results modulo the surface tag', async () => {
-  const directive = { id: 'demo', specialist: 'cx-operations', instruction: 'post a status update' };
+  const directive = { id: 'demo', specialist: 'operations', instruction: 'post a status update' };
   const env = { CONSTRUCT_UNATTENDED_BUDGET_ORACLE_DIRECTIVE_DEMO: '100000' };
   const fakeRunTask = async () => ({
     output: 'done',
     writeProposals: [{
       providerId: 'jira', writeKind: 'comment', payload: { issueKey: 'OPS-1', body: 'status' },
-      requestedBy: { specialistId: 'cx-operations' }, surface: 'orchestration-worker', tool: 'jira.comment',
+      requestedBy: { specialistId: 'operations' }, surface: 'orchestration-worker', tool: 'jira.comment',
     }],
   });
 

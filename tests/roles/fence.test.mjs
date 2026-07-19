@@ -57,7 +57,7 @@ test('bash fence uses prefix match against allowedCommands', () => {
 
 test('bd-label inside allowed list is permitted; outside is denied', () => {
   assert.equal(checkAction({ personaId: 'operations', action: 'bd-label', target: 'incident,sre' }).allowed, true);
-  assert.equal(checkAction({ personaId: 'operations', action: 'bd-label', target: 'incident,next:cx-engineer' }).allowed, true);
+  assert.equal(checkAction({ personaId: 'operations', action: 'bd-label', target: 'incident,next:engineer' }).allowed, true);
   assert.equal(checkAction({ personaId: 'operations', action: 'bd-label', target: 'random' }).allowed, false);
 });
 

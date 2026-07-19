@@ -26,7 +26,7 @@ test('construct certify run executes a hermetic scenario in an isolated project'
   const result = spawnSync(BIN, ['certify', 'run', 'artifact.release-gate.prd'], {
     cwd: rootDir,
     encoding: 'utf8',
-    env: { ...process.env, HOME: home, CX_HOME_OVERRIDE: home },
+    env: { ...process.env, HOME: home, CONSTRUCT_HOME_OVERRIDE: home },
   });
 
   assert.equal(result.status, 0, result.stderr || result.stdout);

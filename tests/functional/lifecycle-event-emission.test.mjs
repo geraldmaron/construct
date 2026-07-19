@@ -25,12 +25,12 @@ let homeRoot;
 beforeEach(() => {
   savedEnv = {
     CONSTRUCT_ROLES_ROOT: process.env.CONSTRUCT_ROLES_ROOT,
-    CX_HOME_OVERRIDE: process.env.CX_HOME_OVERRIDE,
+    CONSTRUCT_HOME_OVERRIDE: process.env.CONSTRUCT_HOME_OVERRIDE,
   };
   busRoot = mkdtempSync(join(tmpdir(), 'cx-bus-'));
   homeRoot = mkdtempSync(join(tmpdir(), 'cx-home-'));
   process.env.CONSTRUCT_ROLES_ROOT = busRoot;
-  process.env.CX_HOME_OVERRIDE = homeRoot;
+  process.env.CONSTRUCT_HOME_OVERRIDE = homeRoot;
 });
 
 afterEach(() => {
@@ -90,14 +90,14 @@ test('new recommendation record carries the enrichment state machine fields', as
   assert.equal(created.enrichedBy, null);
 });
 
-test('scope lifecycle emits scope.updated on draft creation', async () => {
+test('Workspace Preset lifecycle emits workspace-preset.updated on draft creation', async () => {
   const cwd = mkdtempSync(join(tmpdir(), 'cx-profile-'));
   try {
-    const { createDraftScope } = await import('../../lib/scopes/lifecycle.mjs');
-    createDraftScope({ cwd, id: 'acme-research', displayName: 'Acme Research' });
+    const { createDraftWorkspacePreset } = await import('../../lib/workspace-presets/lifecycle.mjs');
+    createDraftWorkspacePreset({ cwd, id: 'acme-research', displayName: 'Acme Research' });
     const events = readEvents();
-    const evt = events.find((e) => e.type === 'scope.updated');
-    assert.ok(evt, 'expected scope.updated on draft creation');
+    const evt = events.find((e) => e.type === 'workspace-preset.updated');
+    assert.ok(evt, 'expected workspace-preset.updated on draft creation');
     assert.equal(evt.context.id, 'acme-research');
     assert.equal(evt.context.stage, 'draft');
   } finally {

@@ -20,7 +20,7 @@ function sampleRun(id) {
     status: 'completed',
     execution: { executionMode: 'construct-orchestrated' },
     request: { summary: `summary for ${id}` },
-    tasks: [{ id: 't1', role: 'cx-engineer', status: 'done' }],
+    tasks: [{ id: 't1', role: 'engineer', status: 'done' }],
   };
 }
 

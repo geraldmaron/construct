@@ -6,7 +6,7 @@ category: golden
 verdict: pass
 summary: Leads with correctness, risk, and test gaps instead of style nits.
 references:
-  - skills/roles/reviewer.md
+  - skills/perspectives/reviewer.md
 tags:
   - structural-review
   - severity

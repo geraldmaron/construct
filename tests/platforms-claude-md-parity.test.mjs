@@ -44,7 +44,7 @@ const CRITICAL_RULES = [
 
 const REQUIRED_HEADINGS = [
   /^##\s+critical rules/im,
-  /^##\s+workflow roles/im,
+  /^##\s+workflow perspectives/im,
   /^##\s+beads issue tracker/im,
   /^##\s+session completion/im,
 ];

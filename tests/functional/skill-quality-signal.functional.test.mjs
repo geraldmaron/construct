@@ -5,7 +5,7 @@
  * Drives the real agent-tracker hook with a Task outcome that carries a
  * session_id, in an isolated CONSTRUCT_DOCTOR_ROOT seeded with
  * skill-calls.jsonl load events. Asserts the durable artifacts: the role
- * outcome in .cx/outcomes/, the attributed lines in skill-outcomes.jsonl
+ * outcome in .construct/outcomes/, the attributed lines in skill-outcomes.jsonl
  * (deduped per skill, joined on sessionId), the `construct skills quality`
  * CLI rendering, and the summary JSON it writes. Also proves the two
  * guard rails: CONSTRUCT_SKILL_TELEMETRY=off suppresses attribution without
@@ -48,7 +48,7 @@ function runHook({ stateRoot, projectDir, sessionId, envExtra = {} }) {
     tool_name: 'Task',
     session_id: sessionId,
     cwd: projectDir,
-    tool_input: { subagent_type: 'cx-engineer', description: 'implement the widget' },
+    tool_input: { subagent_type: 'engineer', description: 'implement the widget' },
     tool_result: { result: 'completed successfully' },
   };
   return spawnSync(process.execPath, [HOOK], {

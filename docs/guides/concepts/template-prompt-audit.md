@@ -29,7 +29,7 @@ This is the assessment that drives remediation — re-verify a row when you touc
 
 ## Specialist prompts
 
-Depth is split between the prompt and the `skills/roles/*.md` overlay; the gap is usually a named methodology framework missing from the overlay, not a shallow prompt.
+Depth is split between the prompt and the `skills/perspectives/*.md` overlay; the gap is usually a named methodology framework missing from the overlay, not a shallow prompt.
 
 | Specialist | Grade | Methodology gap | Status |
 |------------|-------|-----------------|--------|

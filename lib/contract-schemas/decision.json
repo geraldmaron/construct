@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Decision",
-  "description": "Output from cx-architect: a documented architectural or design decision",
+  "description": "Output from architect: a documented architectural or design decision",
   "type": "object",
   "required": ["type", "goal", "approach", "tasks", "risks", "acceptanceCriteria"],
   "properties": {

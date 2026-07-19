@@ -20,7 +20,7 @@ function baseRun(overrides = {}) {
   return {
     runId: 'run-recruit-honesty',
     status: 'completed',
-    plan: { intent: 'build', track: 'focused', specialists: ['cx-engineer', 'cx-operations'] },
+    plan: { intent: 'build', track: 'focused', specialists: ['engineer', 'operations'] },
     tasks: [],
     ...overrides,
   };

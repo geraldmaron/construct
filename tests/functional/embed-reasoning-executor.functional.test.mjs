@@ -47,7 +47,7 @@ function opsManifest(overrides = {}) {
   return {
     id: 'operations',
     embed: {
-      specialist: 'cx-operations',
+      specialist: 'operations',
       providerBindings: ['jira'],
       framework: 'cx-ops-dependency-sequencing',
       outputContract: 'architect-to-operations',
@@ -75,7 +75,7 @@ function fakeSnapshot() {
 const conformingOutputPacket = {
   sequencedTasks: ['migrate-queue'],
   dependencyGraph: { 'migrate-queue': [] },
-  ownershipMatrix: { 'migrate-queue': 'cx-operations' },
+  ownershipMatrix: { 'migrate-queue': 'operations' },
   verificationGates: { 'migrate-queue': 'queue drained, zero errors' },
   slippageRisk: 'low',
 };

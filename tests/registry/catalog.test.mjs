@@ -15,17 +15,16 @@ import {
   validateCapabilityCatalog,
 } from '../../lib/registry/catalog.mjs';
 
-test('buildCatalogSnapshot stamps catalog census and per-capability edges', () => {
+test('buildCatalogSnapshot stamps catalog census and derived capability edges', () => {
   const snapshot = buildCatalogSnapshot();
   assert.ok(snapshot.catalog);
   assert.ok(snapshot.catalog.npmScripts.length > 0);
   assert.ok(snapshot.catalog.cliCommands.length > 0);
   assert.equal(snapshot.catalog.workflowTypes.length, snapshot.catalog.workflows.length);
-  for (const cap of snapshot.capabilities) {
-    assert.ok(cap.edges, `${cap.id} must have edges`);
-    assert.ok(Array.isArray(cap.edges.cliCommands));
-    assert.ok(Array.isArray(cap.edges.npmScripts));
-    assert.ok(Array.isArray(cap.edges.workflows));
+  for (const [capabilityId, edges] of Object.entries(snapshot.capabilityEdges)) {
+    assert.ok(Array.isArray(edges.cliCommands), `${capabilityId} CLI edges`);
+    assert.ok(Array.isArray(edges.npmScripts));
+    assert.ok(Array.isArray(edges.workflows));
   }
 });
 

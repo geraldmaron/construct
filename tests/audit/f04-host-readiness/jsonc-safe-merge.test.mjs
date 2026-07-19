@@ -3,7 +3,7 @@
  *
  * RED fixture (must FAIL against current code). pinVscodeChatSettings reads an
  * existing .vscode/settings.json with `JSON.parse` inside a `try { } catch { return; }`
- * (scripts/sync-specialists.mjs L1526-1529). VS Code's settings.json is JSONC — line
+ * (scripts/sync-worker-profiles.mjs L1526-1529). VS Code's settings.json is JSONC — line
  * comments and trailing commas are legal and common — so a real user's commented
  * settings.json throws in JSON.parse and the helper silently returns without ever
  * writing `chat.mcp.autostart` / `chat.agentFilesLocations`. construct-mcp then never
@@ -21,7 +21,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { pinVscodeChatSettings } from '../../../scripts/sync-specialists.mjs';
+import { pinVscodeChatSettings } from '../../../scripts/sync-worker-profiles.mjs';
 
 // A settings.json that is valid JSONC but not strict JSON: a line comment plus a
 // trailing comma after the last property. VS Code accepts this; JSON.parse rejects it.

@@ -27,12 +27,12 @@ import { sqliteAvailable } from '../../lib/orchestration/run-store-sqlite.mjs';
 import { SQLITE_MIGRATIONS_TABLE } from '../../lib/db/migrate-sqlite.mjs';
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-identity-runstore-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 test.after(() => {
   rmTmpDir(homeOverride);
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 function initFixtureRepo(t) {

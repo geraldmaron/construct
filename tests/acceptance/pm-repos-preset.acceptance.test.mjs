@@ -31,7 +31,7 @@ import { FakeGitHub, FakeJira } from '../fakes/index.mjs';
 import { ApprovalQueue } from '../../lib/embed/approval-queue.mjs';
 import { runCapabilityTick } from '../../lib/embed/capability-jobs.mjs';
 import { createPmReposReasoningExecutor, analyzePmRepos } from '../../lib/embed/presets/pm-repos.mjs';
-import { validatePacket } from '../../lib/specialist-contracts.mjs';
+import { validatePacket } from '../../lib/capability-contracts.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const realFetch = globalThis.fetch;
@@ -98,7 +98,7 @@ const PM_REPOS_MANIFEST = {
   type: 'embed',
   defaultApprovalMode: 'proposal-only',
   embed: {
-    specialist: 'cx-product-manager',
+    specialist: 'product-manager',
     providerBindings: ['github', 'atlassian-jira'],
     framework: 'cx-pm-value-tradeoff',
     outputContract: 'pm-engineering-signals',

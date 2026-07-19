@@ -4,10 +4,10 @@
  * loop end to end when LanceDB is forced off (construct-b0nny.20 / M5b),
  * and that switching adapters loses no durable data.
  *
- * Isolation: CX_HOME_OVERRIDE redirects the machine-scoped state root
+ * Isolation: CONSTRUCT_HOME_OVERRIDE redirects the machine-scoped state root
  * (ADR-0066) so the keyword index and LanceDB directory both land under the
  * tmpdir sandbox, never the developer's real ~/.construct. Global env vars
- * (CX_HOME_OVERRIDE, CONSTRUCT_RETRIEVAL_ADAPTER, CONSTRUCT_EMBEDDING_MODEL)
+ * (CONSTRUCT_HOME_OVERRIDE, CONSTRUCT_RETRIEVAL_ADAPTER, CONSTRUCT_EMBEDDING_MODEL)
  * are restored in t.after() per the functional-test isolation contract.
  */
 import test from 'node:test';
@@ -42,14 +42,14 @@ test('no-vector fallback: addObservation + searchObservations work end to end wi
   fs.mkdirSync(project, { recursive: true });
 
   const env = withEnv({
-    CX_HOME_OVERRIDE: homeOverride,
+    CONSTRUCT_HOME_OVERRIDE: homeOverride,
     CONSTRUCT_RETRIEVAL_ADAPTER: 'keyword',
     CONSTRUCT_EMBEDDING_MODEL: 'hashing',
   });
   t.after(() => { env.restore(); rmTmpDir(sandboxRoot); });
 
   const record = await addObservation(project, {
-    role: 'cx-engineer',
+    role: 'engineer',
     category: 'pattern',
     summary: 'Authentication uses JWT tokens with refresh flow',
     content: 'The auth module uses JWT. Refresh tokens stored in httpOnly cookies.',
@@ -76,7 +76,7 @@ test('no-vector fallback: addObservation + searchObservations work end to end wi
   assert.ok(results.length >= 1, 'BM25 finds the seeded observation with no vector database present');
   assert.match(results[0].summary, /JWT/);
 
-  const filtered = await searchObservations(project, 'authentication', { project: 'myapp', role: 'cx-architect' });
+  const filtered = await searchObservations(project, 'authentication', { project: 'myapp', role: 'architect' });
   assert.equal(filtered.length, 0, 'role filter still applies under the keyword adapter');
 });
 
@@ -88,7 +88,7 @@ test('no-vector fallback: getStorageStatus/purgeExpiredData/resetStorage operate
   fs.mkdirSync(project, { recursive: true });
   fs.mkdirSync(path.join(project, '.construct'), { recursive: true });
 
-  const env = { CX_HOME_OVERRIDE: homeOverride, CONSTRUCT_RETRIEVAL_ADAPTER: 'keyword', CONSTRUCT_EMBEDDING_MODEL: 'hashing' };
+  const env = { CONSTRUCT_HOME_OVERRIDE: homeOverride, CONSTRUCT_RETRIEVAL_ADAPTER: 'keyword', CONSTRUCT_EMBEDDING_MODEL: 'hashing' };
   const envRestore = withEnv(env);
   t.after(() => { envRestore.restore(); rmTmpDir(sandboxRoot); });
 
@@ -131,15 +131,15 @@ test('reindex-retrieval-adapter: rebuilds the keyword index from durable observa
   fs.mkdirSync(homeOverride, { recursive: true });
   fs.mkdirSync(project, { recursive: true });
 
-  const env = withEnv({ CX_HOME_OVERRIDE: homeOverride, CONSTRUCT_EMBEDDING_MODEL: 'hashing' });
+  const env = withEnv({ CONSTRUCT_HOME_OVERRIDE: homeOverride, CONSTRUCT_EMBEDDING_MODEL: 'hashing' });
   t.after(() => { env.restore(); rmTmpDir(sandboxRoot); });
 
   // Seed two observations while the default/auto adapter (LanceDB, reachable
   // in this dev environment) is active — the keyword index knows nothing
   // about them yet.
   delete process.env.CONSTRUCT_RETRIEVAL_ADAPTER;
-  await addObservation(project, { role: 'cx-engineer', summary: 'first observation about retries', content: 'retry backoff details', project: 'p' });
-  await addObservation(project, { role: 'cx-engineer', summary: 'second observation about caching', content: 'cache invalidation details', project: 'p' });
+  await addObservation(project, { role: 'engineer', summary: 'first observation about retries', content: 'retry backoff details', project: 'p' });
+  await addObservation(project, { role: 'engineer', summary: 'second observation about caching', content: 'cache invalidation details', project: 'p' });
   const domainRecords = listObservations(project, { limit: 100 });
   assert.equal(domainRecords.length, 2, 'both observations land in the durable domain-model index regardless of adapter');
 

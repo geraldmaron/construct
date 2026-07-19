@@ -1,7 +1,7 @@
 # Security Audit Report: {scope-title}
 
 - **Date**: {YYYY-MM-DD}
-- **Auditor**: cx-security (or named human)
+- **Auditor**: security (or named human)
 - **Scope**: {repo / module / PR / threat-model version}
 - **Threat model**: {path or "n/a"}
 - **Verdict**: SAFE | ISSUES_FOUND | BLOCKED
@@ -43,6 +43,6 @@ suspected risk you can't pinpoint is a question, not a finding.
 
 ## Handoff
 
-- code fix → `next:cx-engineer`
+- code fix → `next:engineer`
 - platform / infrastructure fix → `next:cx-platform-engineer`
-- review of remediation → `next:cx-reviewer`
+- review of remediation → `next:reviewer`

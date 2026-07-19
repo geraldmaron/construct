@@ -78,13 +78,13 @@ test.after(() => { for (const d of dirs) { try { rmTmpDir(d); } catch {} } });
 test('write-me-a-PRD drives the full specialist chain to a durable PRD file with a linked run/task/gate paper trail', async (t) => {
   const { cwd, home } = freshProject();
 
-  const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+  const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
   const prevEmbedModel = process.env.CONSTRUCT_EMBEDDING_MODEL;
-  process.env.CX_HOME_OVERRIDE = home;
+  process.env.CONSTRUCT_HOME_OVERRIDE = home;
   process.env.CONSTRUCT_EMBEDDING_MODEL = 'hashing';
   t.after(() => {
-    if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+    if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
     if (prevEmbedModel === undefined) delete process.env.CONSTRUCT_EMBEDDING_MODEL;
     else process.env.CONSTRUCT_EMBEDDING_MODEL = prevEmbedModel;
   });
@@ -92,7 +92,7 @@ test('write-me-a-PRD drives the full specialist chain to a durable PRD file with
   // Deterministic, no-network provider executor: one fixed Anthropic-shaped
   // response body per call, distinguishable by an incrementing counter. The
   // same shape satisfies both the plain callAnthropic path and the
-  // provider-native web-search loop a web-capable role (cx-researcher) takes
+  // provider-native web-search loop a web-capable role (researcher) takes
   // (lib/orchestration/worker.mjs's runNativeAnthropic reads the same
   // `content: [{type:'text', ...}]` blocks and stops immediately absent a
   // `pause_turn` stop_reason) — this mirrors the injection pattern in
@@ -110,9 +110,9 @@ test('write-me-a-PRD drives the full specialist chain to a durable PRD file with
   };
 
   const env = {
-    CX_MODEL_REASONING: MODEL,
-    CX_MODEL_STANDARD: MODEL,
-    CX_MODEL_FAST: MODEL,
+    CONSTRUCT_MODEL_REASONING: MODEL,
+    CONSTRUCT_MODEL_STANDARD: MODEL,
+    CONSTRUCT_MODEL_FAST: MODEL,
     ANTHROPIC_API_KEY: 'sk-test-prd-chain',
   };
 
@@ -127,12 +127,12 @@ test('write-me-a-PRD drives the full specialist chain to a durable PRD file with
   assert.ok(run.tasks.every((t) => /^provider:anthropic:/.test(t.executor)), 'every task executed via the injected deterministic provider, not a live call');
   assert.ok(run.tasks.every((t) => /^specialist-output-/.test(t.output)), 'every task carries real (deterministic) specialist output, not a prepared stub');
 
-  const researcherTask = run.tasks.find((t) => t.role === 'cx-researcher');
+  const researcherTask = run.tasks.find((t) => t.role === 'researcher');
   assert.ok(researcherTask, 'the PRD chain includes the researcher role that owns researcher-to-product-manager');
   const contractChainEntry = run.plan.contractChain.find((c) => c.id === 'researcher-to-product-manager');
   assert.ok(contractChainEntry, 'routeRequest resolved the researcher-to-product-manager contract into this real PRD run, not an arbitrary choice');
 
-  const productManagerTask = run.tasks.find((t) => t.role === 'cx-product-manager');
+  const productManagerTask = run.tasks.find((t) => t.role === 'product-manager');
   assert.ok(productManagerTask, 'the PRD chain includes the product-manager role');
 
   // Draft content grounded in the run's own real (deterministic) specialist
@@ -179,7 +179,7 @@ test('write-me-a-PRD drives the full specialist chain to a durable PRD file with
   // tests/functional/build-audit-record.functional.test.mjs's own fixture) so
   // validateOutputPacket logs a real, runId-tagged gate verdict.
   const reloadedRun = loadRun(cwd, run.runId);
-  const reloadedResearcherTask = reloadedRun.tasks.find((t) => t.role === 'cx-researcher');
+  const reloadedResearcherTask = reloadedRun.tasks.find((t) => t.role === 'researcher');
   reloadedResearcherTask.outputContractId = 'researcher-to-product-manager';
   reloadedResearcherTask.outputPacket = {
     problem: researcherTask.output,
@@ -195,10 +195,10 @@ test('write-me-a-PRD drives the full specialist chain to a durable PRD file with
   assert.ok(record, 'buildAuditRecord resolves a record for this real run');
   assert.equal(record.runId, run.runId);
   assert.equal(record.taskChain.length, run.tasks.length, 'the paper trail links the full task chain, not a subset');
-  assert.ok(record.taskChain.some((t) => t.role === 'cx-researcher' && t.status === 'done'));
-  assert.ok(record.taskChain.some((t) => t.role === 'cx-product-manager' && t.status === 'done'));
+  assert.ok(record.taskChain.some((t) => t.role === 'researcher' && t.status === 'done'));
+  assert.ok(record.taskChain.some((t) => t.role === 'product-manager' && t.status === 'done'));
   assert.ok(
-    record.traceEvents.some((e) => e.eventType === 'worker.completed' && e.role === 'cx-product-manager'),
+    record.traceEvents.some((e) => e.eventType === 'worker.completed' && e.role === 'product-manager'),
     'the paper trail links real lifecycle trace events emitted during execution',
   );
   assert.ok(record.gateVerdicts.length >= 1, 'the paper trail links a real gate verdict tied to this run');

@@ -47,7 +47,7 @@ test('specialist nodes are created from role registry', () => {
   const specialists = idx.byType('specialist');
   assert.ok(specialists.length >= 1, `expected >=1 specialist nodes, got ${specialists.length}`);
   const specIds = new Set(specialists.map((n) => n.id));
-  assert.ok(specIds.has('specialist:cx-engineer'), 'missing specialist:cx-engineer');
+  assert.ok(specIds.has('specialist:engineer'), 'missing specialist:engineer');
 });
 
 test('doc nodes are created from docs directory scanning', () => {
@@ -82,12 +82,12 @@ test('reads edges are created from core pack embedBindings (LMCP-E4)', () => {
     assert.equal(e.source, 'pack-embed-binding');
   }
   const froms = new Set(reads.map((e) => e.from));
-  assert.ok(froms.has('specialist:cx-product-manager'), 'expected cx-product-manager --reads--> provider edge');
-  assert.ok(froms.has('specialist:cx-operations'), 'expected cx-operations --reads--> provider edge');
-  assert.ok(froms.has('specialist:cx-engineer'), 'expected cx-engineer --reads--> provider edge');
+  assert.ok(froms.has('specialist:product-manager'), 'expected product-manager --reads--> provider edge');
+  assert.ok(froms.has('specialist:operations'), 'expected operations --reads--> provider edge');
+  assert.ok(froms.has('specialist:engineer'), 'expected engineer --reads--> provider edge');
 
   const jiraReaders = reads.filter((e) => e.to === 'provider:atlassian-jira').map((e) => e.from);
-  assert.ok(jiraReaders.includes('specialist:cx-product-manager'));
+  assert.ok(jiraReaders.includes('specialist:product-manager'));
 });
 
 test('documents edges are created from heuristic doc linking', () => {

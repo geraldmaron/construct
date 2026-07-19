@@ -61,7 +61,7 @@
     }
   ],
   "permissions": {},
-  "promptFile": "specialists/prompts/cx-reviewer.md",
+  "promptFile": "specialists/prompts/reviewer.md",
   "embedOrientation": {
     "focusAreas": [
       "edge case coverage",
@@ -105,7 +105,7 @@
     ]
   },
   "canEdit": false,
-  "claudeTools": "Read,Grep,Glob,LS,Bash,Write,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates",
+  "claudeTools": "Read,Grep,Glob,LS,Bash,Write,list_skills,get_skill,search_skills,memory_search,memory_add_observations,construct_trace,construct_score,get_template,list_templates",
   "internal": true,
   "killSwitchEnv": "CONSTRUCT_ROLE_REVIEWER",
   "handoffCandidates": [

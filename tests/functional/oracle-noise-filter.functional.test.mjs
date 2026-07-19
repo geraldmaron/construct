@@ -115,7 +115,7 @@ test('oracle read model filters dev-session noise out of the degraded verdict pa
     const genuineRows = Array.from({ length: 5 }, (_, index) => ({
       ts: new Date(Date.now() + index).toISOString(),
       contractId: 'engineer-to-reviewer',
-      agent: 'cx-engineer',
+      agent: 'engineer',
       verdict: 'CONTRACT_VIOLATION',
       direction: 'output',
       missing: ['artifact missing required field: findings'],
@@ -138,7 +138,7 @@ test('explicit repoRoot keeps contract validation failures out of the live proje
     const before = countLines(liveLog);
     const verdict = validateHandoff({
       producer: 'construct',
-      consumer: 'cx-orchestrator',
+      consumer: 'orchestrator',
       artifact: { goal: 'missing required fields' },
       enforcement: 'block',
       repoRoot: env.projectDir,

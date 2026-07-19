@@ -8,7 +8,7 @@
  * and must migrate a stale `.opencode/config.json` from a prior install onto the
  * canonical name without dropping content.
  *
- * Spawns the real sync-specialists.mjs into an isolated HOME + project; OpenCode is
+ * Spawns the real sync-worker-profiles.mjs into an isolated HOME + project; OpenCode is
  * never executed.
  */
 
@@ -22,7 +22,7 @@ import test from 'node:test';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const SYNC_SCRIPT = join(REPO_ROOT, 'scripts', 'sync-specialists.mjs');
+const SYNC_SCRIPT = join(REPO_ROOT, 'scripts', 'sync-worker-profiles.mjs');
 
 // The canonical per-project paths OpenCode's resolver actually reads (opencode.ai
 // config docs + the v1.15.4 binary's embedded resolver). `.opencode/config.json`

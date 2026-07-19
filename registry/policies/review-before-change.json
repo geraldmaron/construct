@@ -1,0 +1,14 @@
+{
+  "id": "review-before-change",
+  "ownerWorkerProfile": "orchestrator",
+  "description": "Requires an existing-artifact audit before authoring or rewriting any durable doc, rule, template, or PRD/ADR/RFC. Extend or supersede; do not duplicate.",
+  "enforcement": "(persona prompt)",
+  "mode": "honor-system",
+  "approvalWorkerProfiles": [],
+  "requiredPolicies": [],
+  "vetoWorkerProfiles": [],
+  "escalationWorkerProfiles": [],
+  "governs": [],
+  "conditions": [],
+  "evidence": []
+}

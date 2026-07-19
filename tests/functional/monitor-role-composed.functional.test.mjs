@@ -12,7 +12,7 @@
  * Composition covered here, all inside one isolated tmpdir:
  *   1. Role setup via the real entry path — the real `construct monitor`
  *      binary (spawned with tests/helpers/sterile-env.mjs's allowlist env,
- *      HOME/CX_HOME_OVERRIDE pinned to the sandbox) writes
+ *      HOME/CONSTRUCT_HOME_OVERRIDE pinned to the sandbox) writes
  *      construct.config.json sources.targets[], embed.yaml roles{}, and the
  *      enabled .construct/embed/operations.manifest.json.
  *   2. Schedule — the real Scheduler (lib/embed/scheduler.mjs) plus the real
@@ -24,7 +24,7 @@
  *      (lib/embed/reasoning-executor.mjs) with an injected `callProvider`
  *      that returns an operations-tpm-briefing-conforming packet plus one
  *      write proposal. Zero network, zero ANTHROPIC_API_KEY: the tick env is
- *      an explicit allowlist object, `CX_MODEL_STANDARD` only steers
+ *      an explicit allowlist object, `CONSTRUCT_MODEL_STANDARD` only steers
  *      resolveRuntime('auto') → in-process, and the provider seam never
  *      touches fetch.
  *   4. Durable finding — asserts the tick record at
@@ -90,7 +90,7 @@ after(() => {
 });
 
 // Step 1 of the composition: the real binary, sterile allowlist env, HOME and
-// CX_HOME_OVERRIDE pinned inside the sandbox. `--no-start` keeps daemon boot
+// CONSTRUCT_HOME_OVERRIDE pinned inside the sandbox. `--no-start` keeps daemon boot
 // out of the child; the schedule is driven in-process by the real Scheduler
 // so the fake provider can be injected through the real registration seam.
 
@@ -102,7 +102,7 @@ function runMonitorSetup({ home, project }) {
       cwd: project,
       encoding: 'utf8',
       timeout: 30_000,
-      env: sterileSpawnEnv({ HOME: home, USERPROFILE: home, CX_HOME_OVERRIDE: home }),
+      env: sterileSpawnEnv({ HOME: home, USERPROFILE: home, CONSTRUCT_HOME_OVERRIDE: home }),
     },
   );
   assert.equal(res.status, 0, `construct monitor exit 0 — stderr: ${res.stderr}`);
@@ -111,14 +111,14 @@ function runMonitorSetup({ home, project }) {
   assert.ok(existsSync(manifestPath), 'monitor CLI wrote the enabled capability manifest');
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
   assert.equal(manifest.embed.enabled, true);
-  assert.equal(manifest.embed.specialist, 'cx-operations');
+  assert.equal(manifest.embed.specialist, 'operations');
   assert.ok(existsSync(join(project, 'construct.config.json')), 'monitor CLI wrote sources.targets[]');
   assert.match(readFileSync(join(project, 'embed.yaml'), 'utf8'), /primary: operations/);
   return manifest;
 }
 
 // The tick env is an explicit object, never process.env: no ambient provider
-// key or model pin can leak in, and CX_MODEL_STANDARD exists only so the
+// key or model pin can leak in, and CONSTRUCT_MODEL_STANDARD exists only so the
 // manifest's `runtime: auto` resolves to in-process instead of an early
 // no-runtime skip. The fake provider seam replaces the network entirely.
 
@@ -126,7 +126,7 @@ function tickEnv(overrides = {}) {
   return {
     CONSTRUCT_EMBED_REASONING_EXECUTOR: '1',
     CONSTRUCT_UNATTENDED_BUDGET_EMBED_REASONING_OPERATIONS: '5000',
-    CX_MODEL_STANDARD: 'claude-sonnet-4-5',
+    CONSTRUCT_MODEL_STANDARD: 'claude-sonnet-4-5',
     ...overrides,
   };
 }
@@ -249,7 +249,7 @@ test('composed: monitor CLI role setup + real scheduler + fake provider lands a 
   assert.equal(intents[0].toolCall.tool, 'atlassian-jira.createIssue');
   assert.equal(intents[0].toolCall.surface, 'embed-capability');
   assert.equal(intents[0].requestedBy.serviceId, CAPABILITY);
-  assert.equal(intents[0].requestedBy.role, 'cx-operations');
+  assert.equal(intents[0].requestedBy.role, 'operations');
   assert.equal(intents[0].state, 'awaiting_approval');
 
   // Real spend from the fake provider's reported usage must land in the

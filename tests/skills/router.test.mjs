@@ -91,8 +91,8 @@ test('unknown intent returns no suggestions rather than a low-confidence guess',
   assert.deepEqual(suggestions, []);
 });
 
-test('entitlement is annotated per specialist, not enforced', () => {
-  const { suggestions } = suggestSkills({ intent: 'write a prd', specialistId: 'cx-product-manager', rootDir: REPO, limit: 5 });
+test('entitlement is annotated per worker profile, not enforced', () => {
+  const { suggestions } = suggestSkills({ intent: 'write a prd', workerProfileId: 'product-manager', rootDir: REPO, limit: 5 });
   const prd = suggestions.find((s) => s.path === 'docs/prd-workflow');
   assert.ok(prd, JSON.stringify(suggestions));
   assert.equal(typeof prd.entitled, 'boolean');

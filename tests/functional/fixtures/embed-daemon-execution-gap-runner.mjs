@@ -19,7 +19,7 @@
  * writeIntent (an 'awaiting_approval' record for tool "jira.issue") plus
  * the execution-gap observation.
  *
- * Reads CX_ROOT_DIR and TICK_TIMEOUT_MS from env.
+ * Reads CONSTRUCT_ROOT_DIR and TICK_TIMEOUT_MS from env.
  */
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
@@ -30,7 +30,7 @@ import { EMPTY_CONFIG } from '../../../lib/embed/config.mjs';
 import { ApprovalQueue } from '../../../lib/embed/approval-queue.mjs';
 import { addObservation } from '../../../lib/observation-store.mjs';
 
-const rootDir = process.env.CX_ROOT_DIR;
+const rootDir = process.env.CONSTRUCT_ROOT_DIR;
 const timeoutMs = Number(process.env.TICK_TIMEOUT_MS || 15_000);
 const pollIntervalMs = 150;
 

@@ -39,7 +39,7 @@ Use **`.md`** for every prose page (CommonMark + YAML frontmatter). Reserve **`.
 - [Style](./STYLE.md). Voice, punctuation, structure rules (canonical reference for prose lint)
 - [Branding](./guides/reference/branding.md). Visual identity, naming, voice, tone, and profile terminology
 - [Learning loops](./guides/concepts/learning-loops.mdx). What is wired vs aspirational across A1-A4
-- [Profile lifecycle](./guides/concepts/profile-lifecycle.md). Draft → promote → archive flow for org-type profiles
+- [Workspace Preset lifecycle](./guides/concepts/workspace-preset-lifecycle.md). Draft → validate → promote → monitor → retire
 - [Persona and skill research](./guides/concepts/persona-research.md). Methodology grounded in Goodwin, Cooper, Galbraith STAR, Bloom
 - [Release policy](./operations/maintenance/release-policy.md). When to tag
 - [Release and deploy automation](./operations/maintenance/release-and-deploy.md). What fires when you tag, plus the failure-mode lookup

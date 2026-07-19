@@ -57,10 +57,10 @@ test('KNOWN_REQUESTABLE_TOOL_GRANTS', async (t) => {
 
 test('BUILTIN_SPECIALIST_IDS', async (t) => {
   await t.test('includes all core specialists', () => {
-    assert.ok(BUILTIN_SPECIALIST_IDS.includes('cx-researcher'));
-    assert.ok(BUILTIN_SPECIALIST_IDS.includes('cx-engineer'));
-    assert.ok(BUILTIN_SPECIALIST_IDS.includes('cx-architect'));
-    assert.ok(BUILTIN_SPECIALIST_IDS.includes('cx-orchestrator'));
+    assert.ok(BUILTIN_SPECIALIST_IDS.includes('researcher'));
+    assert.ok(BUILTIN_SPECIALIST_IDS.includes('engineer'));
+    assert.ok(BUILTIN_SPECIALIST_IDS.includes('architect'));
+    assert.ok(BUILTIN_SPECIALIST_IDS.includes('orchestrator'));
   });
 });
 
@@ -137,17 +137,17 @@ test('validateManifest strict mode', async (t) => {
 
   await t.test('7. builtin prompt shadowing rejected without override', () => {
     const result = validateManifest(
-      { id: 'test-pack', version: '1.0.0', kind: 'specialist-pack', prompts: [{ specialist: 'cx-researcher' }] },
+      { id: 'test-pack', version: '1.0.0', kind: 'specialist-pack', prompts: [{ specialist: 'researcher' }] },
       { strict: true }
     );
     assert.equal(result.valid, false);
-    assert.ok(result.errors.some((e) => e.includes('cx-researcher')));
+    assert.ok(result.errors.some((e) => e.includes('researcher')));
     assert.ok(result.errors.some((e) => e.includes('override')));
   });
 
   await t.test('7b. builtin prompt shadowing allowed with override', () => {
     const result = validateManifest(
-      { id: 'test-pack', version: '1.0.0', kind: 'specialist-pack', prompts: [{ specialist: 'cx-researcher', override: true }] },
+      { id: 'test-pack', version: '1.0.0', kind: 'specialist-pack', prompts: [{ specialist: 'researcher', override: true }] },
       { strict: true }
     );
     assert.equal(result.valid, true);

@@ -54,12 +54,12 @@ describe('loadIntakePolicy', () => {
     assert.deepEqual(policy.additionalDirs, ['/tmp/extra']);
   });
 
-  it('merges CX_INBOX_DIRS env dirs with config additionalDirs (deduped)', () => {
+  it('merges CONSTRUCT_INBOX_DIRS env dirs with config additionalDirs (deduped)', () => {
     writeProjectConfig(path.join(projectRoot, PROJECT_CONFIG_FILENAME), {
       ...DEFAULT_PROJECT_CONFIG,
       intakePolicy: { maxDepth: 4, additionalDirs: ['/tmp/a'] },
     });
-    const policy = loadIntakePolicy(projectRoot, { CX_INBOX_DIRS: '/tmp/a:/tmp/b' });
+    const policy = loadIntakePolicy(projectRoot, { CONSTRUCT_INBOX_DIRS: '/tmp/a:/tmp/b' });
     assert.deepEqual(policy.additionalDirs, ['/tmp/a', '/tmp/b']);
   });
 

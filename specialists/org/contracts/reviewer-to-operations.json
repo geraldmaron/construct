@@ -1,7 +1,7 @@
 {
   "id": "reviewer-to-operations",
-  "producer": "cx-reviewer",
-  "consumer": "cx-operations",
+  "producer": "reviewer",
+  "consumer": "operations",
   "trigger": {
     "trace.anomaly": true,
     "riskFlags": [

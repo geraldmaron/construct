@@ -4,7 +4,7 @@
  *
  * @owasp LLM06
  *
- * RED fixture (must FAIL against current code). scripts/sync-specialists.mjs
+ * RED fixture (must FAIL against current code). scripts/sync-worker-profiles.mjs
  * generates the VS Code custom agent (.github/agents/construct.agent.md) with a
  * fixed COPILOT_AGENT_TOOLS grant of `construct-mcp/*` (a wildcard over every MCP
  * tool) plus `web/fetch`, `web/githubRepo`, `search/*`, and `edit/editFiles`. That
@@ -27,7 +27,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 
-import { COPILOT_AGENT_TOOLS } from '../../../scripts/sync-specialists.mjs';
+import { COPILOT_AGENT_TOOLS } from '../../../scripts/sync-worker-profiles.mjs';
 
 const AGENT_FILE = path.resolve(import.meta.dirname, '../../../.github/agents/construct.agent.md');
 

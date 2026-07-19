@@ -1,5 +1,5 @@
 ---
-id: cx-engineer-feasibility-blast-radius
+id: engineer-feasibility-blast-radius
 version: 1
 appliesToRole: engineer
 summary: >-

@@ -36,18 +36,18 @@ import { writeGraph } from '../../lib/graph/relational/sqlite-store.mjs';
 import { queryDown, queryUp, queryPath, queryImpact } from '../../lib/graph/relational/queries.mjs';
 
 // construct-b0nny.3: the relational graph store resolves graph.db under the
-// machine-scoped state root (resolveStateDir, ADR-0066). Pin CX_HOME_OVERRIDE
+// machine-scoped state root (resolveStateDir, ADR-0066). Pin CONSTRUCT_HOME_OVERRIDE
 // so this suite never provisions state under the real developer machine's
 // ~/.construct/projects/ — the same pattern tests/graph/store.test.mjs and
 // tests/graph/cli.test.mjs already established.
 
-const cxHomeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-graph-latency-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = cxHomeOverride;
+const constructHomeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-graph-latency-home-'));
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = constructHomeOverride;
 test.after(() => {
-  try { fs.rmSync(cxHomeOverride, { recursive: true, force: true }); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  try { fs.rmSync(constructHomeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'graph-latency-'));

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "specialistId": "cx-reviewer",
+  "specialistId": "reviewer",
   "capabilityId": "specialist.prompt",
   "mode": "adversarial",
   "scenarioKind": "boundary-violation",

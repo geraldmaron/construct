@@ -60,8 +60,8 @@ test('unknown tool name falls through safely', () => {
   assert.deepStrictEqual(result, { gated: false, allowed: true });
 });
 
-test('scope_archive now requires token via gate', () => {
-  const result = checkDestructiveGate('scope_archive', { id: 'test', reason: 'test archival' }, { rootDir: testRoot });
+test('workspace_preset_archive requires token via gate', () => {
+  const result = checkDestructiveGate('workspace_preset_archive', { id: 'test', reason: 'test archival' }, { rootDir: testRoot });
   assert.deepStrictEqual(result.gated, true);
   assert.deepStrictEqual(result.allowed, false);
   assert.ok(result.reason.includes('approval token'));

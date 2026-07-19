@@ -15,7 +15,7 @@ function minimalReadModel(overrides = {}) {
     parity: { ok: true, skipped: false },
     contractViolations: { recentCount: 0 },
     doctorLog: { recent: [] },
-    outcomes: { present: true, roles: {} },
+    outcomes: { present: true, workerProfiles: {} },
     alignmentCensus: { present: false },
     registryValidate: { needsRun: false, warningCount: 0 },
     observations: { present: true, count: 1 },
@@ -32,11 +32,11 @@ test('no directive gap/action when nothing is due', () => {
   assert.equal(recommendedActions.some((a) => a.kind === 'directive-due'), false);
 });
 
-test('a due directive produces both a gap and a recommendedAction carrying its own specialist', () => {
+test('a due directive produces both a gap and a recommendedAction carrying its Worker Profile', () => {
   const readModel = minimalReadModel({
     directives: {
       present: true,
-      due: [{ id: 'jira-weekly-summary', specialist: 'cx-operations', action: 'summarize', instruction: 'Summarize the team\'s open Jira work', output: { kind: 'beads' } }],
+      due: [{ id: 'jira-weekly-summary', workerProfileId: 'operations', action: 'summarize', instruction: 'Summarize the open Jira work', output: { kind: 'beads' } }],
     },
   });
 
@@ -45,14 +45,14 @@ test('a due directive produces both a gap and a recommendedAction carrying its o
   const gapEntry = gaps.find((g) => g.id === 'directive-due');
   assert.ok(gapEntry, 'expected a directive-due gap');
   assert.equal(gapEntry.severity, 'low');
-  assert.equal(gapEntry.detail, "Directive due: jira-weekly-summary (summarize via cx-operations)");
+  assert.equal(gapEntry.detail, "Directive due: jira-weekly-summary (summarize via operations)");
   assert.equal(gapEntry.directiveId, 'jira-weekly-summary');
 
   const actionEntry = recommendedActions.find((a) => a.kind === 'directive-due');
   assert.ok(actionEntry, 'expected a directive-due recommendedAction');
   assert.equal(actionEntry.directiveId, 'jira-weekly-summary');
-  assert.equal(actionEntry.directiveSpecialist, 'cx-operations');
-  assert.equal(actionEntry.directiveInstruction, "Summarize the team's open Jira work");
+  assert.equal(actionEntry.directiveWorkerProfileId, 'operations');
+  assert.equal(actionEntry.directiveInstruction, 'Summarize the open Jira work');
   assert.deepEqual(actionEntry.directiveOutput, { kind: 'beads' });
   assert.ok(actionEntry.remediationRoute, 'the generic enrichment loop still ran over this action');
 
@@ -64,8 +64,8 @@ test('multiple due directives each produce their own gap and action', () => {
     directives: {
       present: true,
       due: [
-        { id: 'a', specialist: 'cx-operations', action: 'summarize', instruction: 'summarize a' },
-        { id: 'b', specialist: 'cx-product-manager', action: 'draft-artifact', instruction: 'draft b' },
+        { id: 'a', workerProfileId: 'operations', action: 'summarize', instruction: 'summarize a' },
+        { id: 'b', workerProfileId: 'product-manager', action: 'draft-artifact', instruction: 'draft b' },
       ],
     },
   });
@@ -81,6 +81,8 @@ test('classifyAction requires human approval for a due directive', () => {
 });
 
 test('routing has a directive-due entry for both gaps and actions', () => {
-  assert.equal(routeAction('directive-due').primary, 'cx-orchestrator');
-  assert.equal(routeGap({ id: 'directive-due' }).primary, 'cx-orchestrator');
+  assert.equal(routeAction('directive-due').workerProfileId, 'orchestrator');
+  assert.equal(routeAction('directive-due').policyId, 'action-approval');
+  assert.equal(routeGap({ id: 'directive-due' }).workerProfileId, 'orchestrator');
+  assert.equal(routeGap({ id: 'directive-due' }).policyId, 'agents-routing');
 });

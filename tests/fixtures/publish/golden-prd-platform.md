@@ -8,7 +8,7 @@ classification: internal
 intake: none
 intake_rationale: Golden fixture for publish release-gate and demo tapes; not production product docs.
 status: draft
-owner: cx-product-manager
+owner: product-manager
 last_verified_at: 2026-06-19
 publish:
   demo: agentic-platforms-prd
@@ -17,7 +17,7 @@ publish:
 # Platform PRD: Enterprise Agentic Platform
 
 - **Date**: 2026-06-19
-- **Owner**: cx-product-manager
+- **Owner**: product-manager
 - **Status**: draft
 
 > Platform teams need a governed layer between IDE hosts and specialist-authored artifacts — not another chat wrapper. Construct routes work through provenanced invoke plans, blocks distribution until validate passes, and exports briefs that read like finished editorial documents with embedded diagrams rather than markdown dumps. This PRD defines that contract for enterprise agentic platforms.
@@ -89,7 +89,7 @@ The end-to-end path from IDE host to distributable PDF is linear and fail-closed
 ```mermaid
 flowchart TD
   A[Host IDE] --> B[construct workflow invoke]
-  B --> C[cx-product-manager]
+  B --> C[product-manager]
   C --> D[Typed artifact on disk]
   D --> E[construct artifact validate]
   E --> F[construct publish --figures]
@@ -125,7 +125,7 @@ host_ide -> invoke -> author -> artifact -> validate -> publish -> pdf
 |---|---|
 | FR-1 | `construct publish` runs `validateArtifactRelease` before export when type is known. |
 | FR-2 | Gate failure exits 2 with remediation hints pointing to `prd-workflow`. |
-| FR-3 | PDF export uses bundled Construct Typst template unless `.cx/publish-theme.typ` overrides. |
+| FR-3 | PDF export uses bundled Construct Typst template unless `.construct/publish-theme.typ` overrides. |
 | FR-4 | `--figures` renders fenced `d2` and `mermaid` via vendored `pandoc-ext/diagram` with hand-drawn distribution styling (D2 `--sketch`, Mermaid `handDrawn`). |
 | FR-5 | Masthead metadata (`doc_id`, `version`, `classification`) flows from YAML frontmatter — not repeated in body. |
 

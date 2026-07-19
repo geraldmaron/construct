@@ -1,7 +1,7 @@
 {
   "id": "any-to-operations-docs",
   "producer": "*",
-  "consumer": "cx-operations",
+  "consumer": "operations",
   "trigger": {
     "postConsumer": true,
     "changedCoreDocs": true

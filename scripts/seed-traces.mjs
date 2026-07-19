@@ -7,7 +7,7 @@
  * immediately, without waiting for real host sessions.
  *
  * Usage:
- *   node scripts/seed-traces.mjs [--agents=cx-engineer,cx-architect] [--count=5] [--dry-run]
+ *   node scripts/seed-traces.mjs [--agents=engineer,architect] [--count=5] [--dry-run]
  *
  * Requires env: CONSTRUCT_TELEMETRY_PUBLIC_KEY, CONSTRUCT_TELEMETRY_SECRET_KEY, CONSTRUCT_TELEMETRY_BASEURL
  */
@@ -30,7 +30,7 @@ const DRY_RUN = Boolean(flags['dry-run']);
 const COUNT = parseInt(flags.count ?? '5', 10);
 const AGENT_LIST = flags.agents
   ? flags.agents.split(',')
-  : ['cx-engineer', 'cx-architect', 'cx-reviewer', 'cx-qa', 'cx-debugger'];
+  : ['engineer', 'architect', 'reviewer', 'qa', 'debugger'];
 
 // ─── Telemetry config ────────────────────────────────────────────────────────
 const BASE = (process.env.CONSTRUCT_TELEMETRY_BASEURL ?? '').replace(/\/$/, '');

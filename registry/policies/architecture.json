@@ -1,0 +1,21 @@
+{
+  "id": "architecture",
+  "ownerWorkerProfile": "architect",
+  "description": "Engineering group owns architecture decisions. Security group can veto on compliance grounds.",
+  "enforcement": "hard",
+  "mode": "approval",
+  "approvalWorkerProfiles": [],
+  "requiredPolicies": [],
+  "vetoWorkerProfiles": [
+    "security",
+    "reviewer"
+  ],
+  "escalationWorkerProfiles": [
+    "orchestrator"
+  ],
+  "governs": [
+    "architecture"
+  ],
+  "conditions": [],
+  "evidence": []
+}

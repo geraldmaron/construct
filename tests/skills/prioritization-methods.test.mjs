@@ -3,7 +3,7 @@
  *
  * Pins the full wiring of the prioritization-methods skill that closed the one
  * cross-role authoring gap the coverage audit found: the skill passes the
- * effectiveness lint, is entitled to cx-product-manager, actually routes to the
+ * effectiveness lint, is entitled to product-manager, actually routes to the
  * top for prioritization intents (not just exists on disk), and both the
  * backlog-proposal and PRD templates point at it. The live behavioral proof —
  * a PM scenario asserting method + counterargument + uncertainty language —
@@ -31,9 +31,9 @@ test('the skill exists and passes the effectiveness lint', () => {
   assert.deepEqual(mine, [], 'no effectiveness-lint errors for the new skill');
 });
 
-test('cx-product-manager entitles the skill', () => {
+test('product-manager entitles the skill', () => {
   const reg = loadRegistry({ rootDir: ROOT });
-  const pm = reg.specialists['cx-product-manager'] ?? Object.values(reg.specialists).find((s) => s.name === 'product-manager');
+  const pm = reg.specialists['product-manager'] ?? Object.values(reg.specialists).find((s) => s.name === 'product-manager');
   assert.ok((pm.skills ?? []).includes(SKILL), 'PM skills[] entitles strategy/prioritization-methods');
 });
 

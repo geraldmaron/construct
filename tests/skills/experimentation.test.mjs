@@ -2,7 +2,7 @@
  * tests/skills/experimentation.test.mjs — construct-72gqn.32 (H5-deep).
  *
  * Pins the experimentation skill and the cross-role entitlement broadening: the
- * one overlay-trapped cross-role methodology (roles/data-analyst.experiment was
+ * one overlay-trapped cross-role methodology (perspectives/data-analyst.experiment was
  * a 3-item anti-pattern lens with no domain how-to) is now a first-class domain
  * skill, entitled to every role that actually runs experiments (analyst,
  * engineer, PM, operations) and routable — not reachable only through one
@@ -36,7 +36,7 @@ test('the experimentation skill exists and passes the effectiveness lint', () =>
 
 test('experimentation is entitled to every role that runs experiments', () => {
   const reg = loadRegistry({ rootDir: ROOT });
-  for (const id of ['cx-data-analyst', 'cx-engineer', 'cx-product-manager', 'cx-operations']) {
+  for (const id of ['data-analyst', 'engineer', 'product-manager', 'operations']) {
     assert.ok(entitled(reg, id).has(SKILL), `${id} entitles ${SKILL}`);
   }
 });
@@ -63,10 +63,10 @@ test('an unrelated intent does not misfire the skill', () => {
 
 test('the cross-role broadening reaches its full set', () => {
   const reg = loadRegistry({ rootDir: ROOT });
-  for (const id of ['cx-product-manager', 'cx-orchestrator', 'cx-operations']) {
+  for (const id of ['product-manager', 'orchestrator', 'operations']) {
     assert.ok(entitled(reg, id).has('strategy/prioritization-methods'), `${id} entitles prioritization-methods`);
   }
-  for (const id of ['cx-data-analyst', 'cx-product-manager', 'cx-researcher']) {
+  for (const id of ['data-analyst', 'product-manager', 'researcher']) {
     assert.ok(entitled(reg, id).has('strategy/market-research-methods'), `${id} entitles market-research-methods`);
   }
 });

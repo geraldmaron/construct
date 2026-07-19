@@ -40,7 +40,7 @@ const TARGET_WORKFLOWS = [
 const CREDENTIAL_CANARY = 'cred-canary-n8-output-handling-0001';
 
 // A phrase that opens the body prose of the two real reasoning frameworks
-// (cx-pm-value-tradeoff.md, cx-architect-constraint-option-failure.md) bound
+// (cx-pm-value-tradeoff.md, architect-constraint-option-failure.md) bound
 // to product-manager/architect — never part of the frontmatter steps a
 // workflow's plan actually returns (id/move/question/emits/cites only).
 const FRAMEWORK_BODY_MARKER = 'Run these four moves';

@@ -10,7 +10,7 @@
  *   (b) no live legacy-registry readers remain in lib/bin/scripts (tests and
  *       by-design migration tooling excluded);
  *   (c) the validator rejects a deliberately-invalid registry (negative test);
- *   (d) a .cx/unified-registry.json overlay merges, overlay winning.
+ *   (d) a .construct/unified-registry.json overlay merges, overlay winning.
  *
  * Hermetic: (a)/(c)/(d) drive lib/registry/cli.mjs against in-repo or tmpdir
  * fixtures; (b) scans tracked source directly with the same exclusion rules.
@@ -148,7 +148,7 @@ describe('RFC-0004 Phase 1.4 — unified registry honest completion', () => {
 
     const dir = writeFixture({
       mutate: (fixtureDir) => {
-        const file = path.join(fixtureDir, 'specialists', 'org', 'specialists', 'cx-engineer.json');
+        const file = path.join(fixtureDir, 'specialists', 'org', 'specialists', 'engineer.json');
         const specialist = JSON.parse(fs.readFileSync(file, 'utf8'));
         specialist.team = 'missing-team';
         specialist.teamId = 'missing-team';
@@ -164,8 +164,8 @@ describe('RFC-0004 Phase 1.4 — unified registry honest completion', () => {
     }
   });
 
-  it('(d) a .cx/unified-registry.json overlay merges, overlay winning', async () => {
-    const overlay = { specialists: { 'cx-engineer': { modelTier: 'reasoning' } } };
+  it('(d) a .construct/unified-registry.json overlay merges, overlay winning', async () => {
+    const overlay = { specialists: { 'engineer': { modelTier: 'reasoning' } } };
     const dir = writeFixture({ overlay });
     try {
       const { code, out } = await runValidate(['--unified', '--json'], dir);

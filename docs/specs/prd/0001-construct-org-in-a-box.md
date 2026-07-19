@@ -47,7 +47,7 @@ Individual developers and small teams working with AI coding agents (Claude, Cod
 | ID | Requirement |
 |---|---|
 | FR-1 | **Point-at-things mode**: Accept a target URI (repo, project tracker, messaging channel, document, API endpoint) and produce a structured analysis or artifact (PRD, RFC, ADR, research brief). Target type is resolved by the provider abstraction, not hardcoded. |
-| FR-2 | **Init mode**: `construct init` detects existing agent configs, sets up shared memory, cross-agent config files, and project structure (.cx/). Checks for required dependencies and installs or prompts for missing ones. |
+| FR-2 | **Init mode**: `construct init` detects existing agent configs, sets up shared memory, cross-agent config files, and project structure (.construct/). Checks for required dependencies and installs or prompts for missing ones. |
 | FR-3 | **Embed mode**: Long-running or scheduled process that monitors configured sources through providers, produces periodic snapshots (health, risks, gaps, recommendations), manages work items, proposes doc changes, and posts to configured output channels. |
 | FR-4 | **Provider abstraction**: A typed interface that any external system implements. Providers expose a capability matrix (read, write, search, watch, webhook) and Construct dispatches through the interface. The transport is the provider's choice: MCP server, REST API, GraphQL, SDK, CLI, webhook, or any combination. Initial implementations include project trackers (Jira, Linear), messaging (Slack, Discord), code hosts (GitHub, GitLab), knowledge bases (Confluence, Notion), and git repos, but the system accepts any provider that satisfies the interface. Third-party providers are added without modifying core. |
 | FR-5 | **Docker service management**: `construct dev` spins up required local services Construct needs (database, observability, memory). Checks for Docker availability and installs/prompts if missing. |
@@ -75,7 +75,7 @@ Individual developers and small teams working with AI coding agents (Claude, Cod
 
 ## Acceptance criteria
 
-- AC-1: `construct init` in a fresh repo produces a working .cx/ structure and agent configs that Claude Code, Codex, and Copilot can use in their next session.
+- AC-1: `construct init` in a fresh repo produces a working .construct/ structure and agent configs that Claude Code, Codex, and Copilot can use in their next session.
 - AC-2: `construct embed --config embed.yaml` runs a monitoring loop that produces at least one snapshot within the configured interval.
 - AC-3: Construct's own PRD (this document) is managed by Construct's artifact system and appears in the dashboard.
 - AC-4: `docker build` produces a runnable image; `docker run` starts dashboard + API with auth.

@@ -26,7 +26,7 @@ import {
 const ANTHROPIC_MODEL = 'anthropic/claude-sonnet-4-6';
 
 function baseEnv(extra = {}) {
-  return { CX_MODEL_REASONING: ANTHROPIC_MODEL, CX_MODEL_STANDARD: ANTHROPIC_MODEL, CX_MODEL_FAST: ANTHROPIC_MODEL, ...extra };
+  return { CONSTRUCT_MODEL_REASONING: ANTHROPIC_MODEL, CONSTRUCT_MODEL_STANDARD: ANTHROPIC_MODEL, CONSTRUCT_MODEL_FAST: ANTHROPIC_MODEL, ...extra };
 }
 
 function assertCommonShape(r) {
@@ -105,29 +105,29 @@ test('useConstruct=false → host-direct with no Construct capabilities', () => 
   assert.equal(r.degraded, false);
 });
 
-test('auto on a resolvable known workflow orchestrates', () => {
+test('auto on a resolvable known Procedure orchestrates', () => {
   const r = resolveExecution(
-    { workflowType: 'prd-draft', requestedStrategy: 'auto', hostModel: ANTHROPIC_MODEL },
+    { procedureId: 'prd-draft', requestedStrategy: 'auto', hostModel: ANTHROPIC_MODEL },
     { env: baseEnv() },
   );
   assert.equal(r.executionMode, 'construct-orchestrated');
   assert.equal(r.effectiveStrategy, 'orchestrated');
 });
 
-test('unknown workflowType warns and reports no orchestration plan', () => {
+test('unknown Procedure warns and reports no orchestration plan', () => {
   const r = resolveExecution(
-    { workflowType: 'not-a-real-workflow', requestedStrategy: 'orchestrated', hostModel: ANTHROPIC_MODEL },
+    { procedureId: 'not-a-real-procedure', requestedStrategy: 'orchestrated', hostModel: ANTHROPIC_MODEL },
     { env: baseEnv() },
   );
   assert.equal(r.orchestrationPlanned, false);
   assert.equal(r.executionMode, 'construct-prompt-only');
   assert.equal(r.degraded, true);
-  assert.ok(r.warnings.some((w) => /not-a-real-workflow/.test(w)));
+  assert.ok(r.warnings.some((w) => /not-a-real-procedure/.test(w)));
 });
 
 test('invalid requestedStrategy defaults to auto with a warning', () => {
   const r = resolveExecution(
-    { workflowType: 'evidence-ingest', requestedStrategy: 'bogus', hostModel: ANTHROPIC_MODEL },
+    { procedureId: 'evidence-ingest', requestedStrategy: 'bogus', hostModel: ANTHROPIC_MODEL },
     { env: baseEnv() },
   );
   assert.equal(r.requestedStrategy, 'auto');
@@ -137,7 +137,7 @@ test('invalid requestedStrategy defaults to auto with a warning', () => {
 test('a credential value in env never appears in the response', () => {
   const canary = 'sk-secret-CANARY-do-not-leak-9876';
   const r = resolveExecution(
-    { workflowType: 'evidence-ingest', requestedStrategy: 'orchestrated', hostModel: ANTHROPIC_MODEL },
+    { procedureId: 'evidence-ingest', requestedStrategy: 'orchestrated', hostModel: ANTHROPIC_MODEL },
     { env: baseEnv({ ANTHROPIC_API_KEY: canary, OPENROUTER_API_KEY: canary }) },
   );
   assert.ok(!JSON.stringify(r).includes(canary), 'no credential value leaks into the contract');

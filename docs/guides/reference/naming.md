@@ -30,8 +30,8 @@ Never call MCP with frontmatter hyphen names — always use slash paths.
 | Context | Format | Example |
 |---|---|---|
 | Registry id | dot-separated lowercase | `orchestration.routing` |
-| Skill dependency ref | slash path | `roles/engineer` |
-| Capability skill row id | `skill.<hyphenated-path>` | `skill.roles-engineer` |
+| Skill dependency ref | slash path | `perspectives/engineer` |
+| Capability skill row id | `skill.<hyphenated-path>` | `skill.perspectives-engineer` |
 
 ## Host adapters
 
@@ -45,7 +45,7 @@ Regenerate adapters with `npm run adapters` or `construct sync --project`.
 
 ## Role-flavor skills (B-composer)
 
-Skills under `skills/roles/<name>[.<flavor>].md` are **bound-orphans** in the registry sense — not listed in each specialist's `skills[]` array — but they are reachable at runtime via the **prompt composer** when a specialist's role flavor matches. Examples: `roles/platform-engineer` loads for `cx-engineer` when platform/infra keywords match (the `platform-engineer` role folded into `cx-engineer` as a flavor); `roles/architect.platform` loads for platform-product architecture work on `cx-architect`. See ADR-0047.
+Skills under `skills/perspectives/<name>[.<flavor>].md` are **bound-orphans** in the registry sense — not listed in each specialist's `skills[]` array — but they are reachable at runtime via the **prompt composer** when a specialist's role flavor matches. Examples: `perspectives/platform-engineer` loads for `cx-engineer` when platform/infra keywords match (the `platform-engineer` role folded into `cx-engineer` as a flavor); `perspectives/architect.platform` loads for platform-product architecture work on `cx-architect`. See ADR-0047.
 
 Maintainers triage bound-orphans with `node -e "import('./lib/registry/consolidation.mjs').then(m => console.log(JSON.stringify(m.triageBoundOrphans(),null,2)))"`. The alignment census reports **composer-reachable** (B-composer) separately from **true orphans** (C-merge + D-review). Categories:
 

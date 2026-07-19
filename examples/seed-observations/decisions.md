@@ -13,7 +13,7 @@ Each entry becomes one observation in the store with category "decision". Import
 
 ## Two-Phase Sync with Lockfile
 
-`construct sync` writes to `.cx/sync-staging/` first, then atomically renames into place. A lockfile at `.cx/sync.lock` prevents concurrent runs from corrupting the output. This makes partial syncs impossible: either the full sync lands or nothing does.
+`construct sync` writes to `.construct/sync-staging/` first, then atomically renames into place. A lockfile at `.construct/sync.lock` prevents concurrent runs from corrupting the output. This makes partial syncs impossible: either the full sync lands or nothing does.
 
 ## Hook Ceiling: 30
 

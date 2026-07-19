@@ -2,15 +2,15 @@
  * tests/functional/cross-project-state-isolation.functional.test.mjs
  *
  * End-to-end coverage for bead construct-vytb. Verifies the four
- * PROJECT-SCOPED writers land in <project>/.cx/ (not ~/.cx/) when invoked
+ * PROJECT-SCOPED writers land in <project>/.construct/ (not ~/.construct/) when invoked
  * from inside a Construct project, and that the three CROSS-PROJECT
  * writers tag each entry with the right projectId so a reader can
  * attribute usage per-project.
  *
  * Test shape: create two isolated projects A and B inside a shared tmp
  * HOME, exercise each writer twice (once per project cwd), assert:
- *   - Project-scoped writers wrote to <A>/.cx/<file> and <B>/.cx/<file>
- *     and the user-scope ~/.cx/<file> stays untouched / empty.
+ *   - Project-scoped writers wrote to <A>/.construct/<file> and <B>/.construct/<file>
+ *     and the user-scope ~/.construct/<file> stays untouched / empty.
  *   - Cross-project writers (skill-calls, session-cost, role-pending)
  *     wrote a single user-scope file but every entry carries the right
  *     projectId tag.
@@ -82,17 +82,17 @@ test('skill-calls writer tags entries with the projectId from cwd', () => {
   mkdirSync(join(env.home, '.cx'), { recursive: true });
   try {
     withCwd(env.projectA, () => {
-      logSkillCall({ skillId: 'roles/engineer', source: 'mcp' }, { logPath });
+      logSkillCall({ skillId: 'perspectives/engineer', source: 'mcp' }, { logPath });
     });
     withCwd(env.projectB, () => {
-      logSkillCall({ skillId: 'roles/security', source: 'prompt-composer' }, { logPath });
+      logSkillCall({ skillId: 'perspectives/security', source: 'prompt-composer' }, { logPath });
     });
 
     const lines = readFileSync(logPath, 'utf8').trim().split('\n').map((l) => JSON.parse(l));
     assert.equal(lines.length, 2);
-    assert.equal(lines[0].skillId, 'roles/engineer');
+    assert.equal(lines[0].skillId, 'perspectives/engineer');
     assert.equal(lines[0].projectId, projectIdFor(env.projectA), 'entry 0 must carry projectA id');
-    assert.equal(lines[1].skillId, 'roles/security');
+    assert.equal(lines[1].skillId, 'perspectives/security');
     assert.equal(lines[1].projectId, projectIdFor(env.projectB), 'entry 1 must carry projectB id');
     assert.notEqual(lines[0].projectId, lines[1].projectId, 'distinct projects get distinct ids');
   } finally { env.cleanup(); }
@@ -104,7 +104,7 @@ test('intent-verifications writer routes to <project>/.cx in a project', () => {
     withCwd(env.projectA, () => {
       logIntentVerification({
         request: 'review the auth flow',
-        specialist: 'cx-reviewer',
+        specialist: 'reviewer',
         flavor: 'review',
         keywordVerdict: true,
         llmVerdict: true,
@@ -115,7 +115,7 @@ test('intent-verifications writer routes to <project>/.cx in a project', () => {
     assert.ok(existsSync(aPath), `expected entry in <projectA>/.construct; got files: ${readdirSync(join(env.projectA, '.construct')).join(', ')}`);
     const entries = readFileSync(aPath, 'utf8').trim().split('\n').map((l) => JSON.parse(l));
     assert.equal(entries.length, 1);
-    assert.equal(entries[0].specialist, 'cx-reviewer');
+    assert.equal(entries[0].specialist, 'reviewer');
 
     // Project-scoped writes must NOT leak into the user-scope file.
 
@@ -127,7 +127,7 @@ test('intent-verifications writer routes to <project>/.cx in a project', () => {
 test('project A and project B writers do not bleed into each other', () => {
   const env = makeSandbox();
   try {
-    // Each project writes to its own .cx/contract-violations.jsonl via the
+    // Each project writes to its own .construct/contract-violations.jsonl via the
     // resolved-path helper. After both write, neither file should contain
     // the other's data — concrete test of isolation.
 

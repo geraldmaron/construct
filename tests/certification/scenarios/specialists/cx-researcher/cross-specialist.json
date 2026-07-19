@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "specialistId": "cx-researcher",
+  "specialistId": "researcher",
   "capabilityId": "specialist.prompt",
   "mode": "normal",
   "scenarioKind": "cross-specialist",

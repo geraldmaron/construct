@@ -1,6 +1,6 @@
 {
   "id": "operations-triage",
-  "producer": "cx-operations",
+  "producer": "operations",
   "consumer": "user",
   "trigger": {
     "intent": ["implementation"],

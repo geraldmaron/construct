@@ -11,15 +11,15 @@ verificationBar: "Every load-bearing claim cites a verifiable primary source; la
 
 Use when: cx-researcher investigates **this repository** — structure, dependencies, behavior. Not for external vendor research or user interviews.
 
-Call `get_skill("roles/researcher")` and `get_skill("exploration/repo-map")` before deep dives.
+Call `get_skill("perspectives/researcher")` and `get_skill("exploration/repo-map")` before deep dives.
 
 ## Steps
 
 1. **Clarify the map question**: what subsystem, entry point, or data flow must be understood?
 2. **Read before concluding**: grep, glob, read implicated files. No claims from memory.
 3. **Produce artifacts**:
-   - `.cx/codebase-map.md` for broad orientation (repo-map skill)
-   - `.cx/research/{slug}.md` for focused investigations using `get_template("research-brief")`
+   - `.construct/codebase-map.md` for broad orientation (repo-map skill)
+   - `.construct/research/{slug}.md` for focused investigations using `get_template("research-brief")`
 4. **Source classes** (codebase-primary):
 
    | Source | Class |

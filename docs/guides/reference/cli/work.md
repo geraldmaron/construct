@@ -462,7 +462,7 @@ construct workflow <list|show|new|invoke>
 
 **Subcommands**
 
-- `invoke --json --workflow-type <t> [--text|--file|<stdin>]` — Invoke a workflow (roles/skills) non-interactively with approval gating and provenance (embedded contract)
+- `invoke --json --workflow-type <t> [--text|--file|<stdin>]` — Invoke a workflow (perspectives/skills) non-interactively with approval gating and provenance (embedded contract)
 
 ## construct workplace-loop
 

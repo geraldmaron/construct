@@ -4,7 +4,7 @@
  * Every test runs against an isolated tmpdir project seeded with a copy of
  * the repo's real specialists/org/** fixture (12 specialists, 36 contracts,
  * 8 teams + 6 groups, re-verified on staging 2026-07-10) — never against
- * the real repo's specialists/org/ or project overlay org dir (customOrgDir). CX_HOME_OVERRIDE
+ * the real repo's specialists/org/ or project overlay org dir (customOrgDir). CONSTRUCT_HOME_OVERRIDE
  * (lib/paths.mjs#homeDir) redirects the 'user' tier to a tmpdir, same reason.
  */
 
@@ -37,11 +37,11 @@ import { customOrgDir } from '../../lib/registry/custom-scaffold.mjs';
 const REPO_ROOT = process.cwd();
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'org-api-home-'));
-const originalHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const originalHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 after(() => {
-  if (originalHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = originalHomeOverride;
+  if (originalHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = originalHomeOverride;
   fs.rmSync(homeOverride, { recursive: true, force: true });
 });
 
@@ -73,7 +73,7 @@ test('listEntities/getEntity: fence resolves to the owning specialist sub-object
   const fences = listEntities('fence', { rootDir: readOnlyProject });
   assert.equal(fences.count, 12);
 
-  const fence = getEntity('fence', 'cx-architect', { rootDir: readOnlyProject });
+  const fence = getEntity('fence', 'architect', { rootDir: readOnlyProject });
   assert.ok(fence);
   assert.ok(Array.isArray(fence.record.allowedPaths));
   assert.ok(fence.record.allowedPaths.includes('docs/decisions/adr/**'));
@@ -88,7 +88,7 @@ test('listEntities/getEntity: skill walks skills/** read-only', () => {
 });
 
 test('getEntity: specialist and team resolve by id through the builtin tier', () => {
-  const architect = getEntity('specialist', 'cx-architect', { rootDir: readOnlyProject });
+  const architect = getEntity('specialist', 'architect', { rootDir: readOnlyProject });
   assert.ok(architect);
   assert.equal(architect.scope, 'builtin');
   assert.equal(architect.record.role, 'architect');
@@ -334,10 +334,10 @@ test('previewEffectiveFence: intersects a draft specialist fence with its team',
 });
 
 test('previewRoute: scores the existing catalog against a description', () => {
-  const architect = getEntity('specialist', 'cx-architect', { rootDir: readOnlyProject });
+  const architect = getEntity('specialist', 'architect', { rootDir: readOnlyProject });
   const { candidates } = previewRoute({ rootDir: readOnlyProject, description: architect.record.description });
   assert.ok(candidates.length > 0);
-  assert.equal(candidates[0].id, 'cx-architect');
+  assert.equal(candidates[0].id, 'architect');
 });
 
 // === Participation rules (construct-pteo2.15) ===
@@ -346,8 +346,8 @@ test('listParticipationRules: flattens the builtin declared rules with owner met
   const { items, count } = listParticipationRules({ rootDir: readOnlyProject });
   assert.ok(count >= 6, `the pteo2.6 coverage rules are declared, got ${count}`);
   const pmRule = items.find((it) => it.rule.id === 'cost-value-tradeoff-review');
-  assert.ok(pmRule, 'cx-product-manager cost rule is listed');
-  assert.equal(pmRule.owner, 'cx-product-manager');
+  assert.ok(pmRule, 'product-manager cost rule is listed');
+  assert.equal(pmRule.owner, 'product-manager');
   assert.equal(pmRule.ownerKind, 'specialist');
   assert.equal(pmRule.scope, 'builtin');
   const teamRule = items.find((it) => it.ownerKind === 'team');
@@ -355,7 +355,7 @@ test('listParticipationRules: flattens the builtin declared rules with owner met
 });
 
 test('validateParticipationRule: mirrors the coverage-gate structural contract', () => {
-  const bad = validateParticipationRule('cx-architect', {
+  const bad = validateParticipationRule('architect', {
     id: 'Bad Id', when: {}, recruit: {}, role: 'boss', gate: 'maybe', dimension: 'astrology', reason: 'x'.repeat(201),
   }, { rootDir: readOnlyProject });
   assert.equal(bad.ok, false);
@@ -364,26 +364,26 @@ test('validateParticipationRule: mirrors the coverage-gate structural contract',
     assert.ok(ids.includes(expected), `expected ${expected} in ${JSON.stringify(ids)}`);
   }
 
-  const unknownOwner = validateParticipationRule('cx-nobody', { id: 'r-one', when: { signalExpr: 'cost' }, recruit: { specialists: ['cx-qa'] }, role: 'reviewer', gate: 'advisory' }, { rootDir: readOnlyProject });
+  const unknownOwner = validateParticipationRule('cx-nobody', { id: 'r-one', when: { signalExpr: 'cost' }, recruit: { specialists: ['qa'] }, role: 'reviewer', gate: 'advisory' }, { rootDir: readOnlyProject });
   assert.ok(unknownOwner.errors.some((e) => e.id === 'participation-owner-unknown'));
 
-  const dupe = validateParticipationRule('cx-architect', { id: 'cost-value-tradeoff-review', when: { signalExpr: 'cost' }, recruit: { specialists: ['cx-qa'] }, role: 'reviewer', gate: 'advisory' }, { rootDir: readOnlyProject });
+  const dupe = validateParticipationRule('architect', { id: 'cost-value-tradeoff-review', when: { signalExpr: 'cost' }, recruit: { specialists: ['qa'] }, role: 'reviewer', gate: 'advisory' }, { rootDir: readOnlyProject });
   assert.ok(dupe.errors.some((e) => e.id === 'participation-rule-id-duplicate'), 'rule ids are unique registry-wide');
 
-  const badExpr = validateParticipationRule('cx-architect', { id: 'r-two', when: { signalExpr: 'cost || privacy' }, recruit: { specialists: ['cx-qa'] }, role: 'reviewer', gate: 'advisory' }, { rootDir: readOnlyProject });
+  const badExpr = validateParticipationRule('architect', { id: 'r-two', when: { signalExpr: 'cost || privacy' }, recruit: { specialists: ['qa'] }, role: 'reviewer', gate: 'advisory' }, { rootDir: readOnlyProject });
   assert.ok(badExpr.errors.some((e) => e.id === 'participation-signal-expr-grammar'), '|| is outside the closed grammar');
 
-  const unknownKey = validateParticipationRule('cx-architect', { id: 'r-three', when: { signalExpr: 'made-up-signal' }, recruit: { specialists: ['cx-qa'] }, role: 'reviewer', gate: 'advisory' }, { rootDir: readOnlyProject });
+  const unknownKey = validateParticipationRule('architect', { id: 'r-three', when: { signalExpr: 'made-up-signal' }, recruit: { specialists: ['qa'] }, role: 'reviewer', gate: 'advisory' }, { rootDir: readOnlyProject });
   assert.equal(unknownKey.ok, true, 'unknown signal key is a warning, not an error');
   assert.ok(unknownKey.warnings.some((w) => w.id === 'participation-signal-key-unknown'));
 
-  const legal = validateParticipationRule('cx-architect', { id: 'r-four', dimension: 'legal-compliance', when: { signalExpr: 'compliance' }, recruit: { specialists: ['cx-qa'] }, role: 'reviewer', gate: 'advisory' }, { rootDir: readOnlyProject });
-  assert.ok(legal.errors.some((e) => e.id === 'participation-legal-compliance-binding'), 'legal-compliance must recruit cx-security');
+  const legal = validateParticipationRule('architect', { id: 'r-four', dimension: 'legal-compliance', when: { signalExpr: 'compliance' }, recruit: { specialists: ['qa'] }, role: 'reviewer', gate: 'advisory' }, { rootDir: readOnlyProject });
+  assert.ok(legal.errors.some((e) => e.id === 'participation-legal-compliance-binding'), 'legal-compliance must recruit security');
 
-  const enforcedBare = validateParticipationRule('cx-architect', { id: 'r-five', when: { signalExpr: 'cost' }, recruit: { specialists: ['cx-qa'] }, role: 'reviewer', gate: 'enforced' }, { rootDir: readOnlyProject });
+  const enforcedBare = validateParticipationRule('architect', { id: 'r-five', when: { signalExpr: 'cost' }, recruit: { specialists: ['qa'] }, role: 'reviewer', gate: 'enforced' }, { rootDir: readOnlyProject });
   assert.ok(enforcedBare.errors.some((e) => e.id === 'participation-enforcement-scope-missing'));
 
-  const notOptedIn = validateParticipationRule('cx-architect', { id: 'r-six', when: { signalExpr: 'cost' }, recruit: { specialists: ['cx-qa'] }, role: 'reviewer', gate: 'enforced', enforcementScope: { team: 'engineering-team', decisionRight: 'right-nobody-declared' } }, { rootDir: readOnlyProject });
+  const notOptedIn = validateParticipationRule('architect', { id: 'r-six', when: { signalExpr: 'cost' }, recruit: { specialists: ['qa'] }, role: 'reviewer', gate: 'enforced', enforcementScope: { team: 'engineering-team', decisionRight: 'right-nobody-declared' } }, { rootDir: readOnlyProject });
   assert.equal(notOptedIn.ok, true, 'not-yet-opted-in team is a warning (advisory-in-effect), not an error');
   assert.ok(notOptedIn.warnings.some((w) => w.id === 'participation-enforcement-not-opted-in'));
 });
@@ -392,28 +392,28 @@ test('upsertParticipationRule: writes a partial project drop-in that preserves i
   const tmp = makeFixtureProject();
   after(() => fs.rmSync(tmp, { recursive: true, force: true }));
 
-  const before = listParticipationRules({ rootDir: tmp }).items.filter((it) => it.owner === 'cx-product-manager');
+  const before = listParticipationRules({ rootDir: tmp }).items.filter((it) => it.owner === 'product-manager');
   assert.equal(before.length, 1, 'the builtin cost rule is the baseline');
 
-  const rule = { id: 'privacy-product-review', when: { signalExpr: 'privacy' }, recruit: { specialists: ['cx-product-manager'] }, role: 'advisor', gate: 'advisory', reason: 'privacy signal — product perspective' };
-  const result = upsertParticipationRule('cx-product-manager', rule, { rootDir: tmp, scope: 'project' });
+  const rule = { id: 'privacy-product-review', when: { signalExpr: 'privacy' }, recruit: { specialists: ['product-manager'] }, role: 'advisor', gate: 'advisory', reason: 'privacy signal — product perspective' };
+  const result = upsertParticipationRule('product-manager', rule, { rootDir: tmp, scope: 'project' });
   assert.equal(result.ok, true, JSON.stringify(result.errors));
   assert.ok(result.path.startsWith(customOrgDir('project', { rootDir: tmp })), 'the write lands in the project tier');
 
   const dropIn = JSON.parse(fs.readFileSync(result.path, 'utf8'));
-  assert.equal(dropIn.id, 'cx-product-manager');
+  assert.equal(dropIn.id, 'product-manager');
   assert.equal(dropIn.participationRules.rules.length, 2, 'the inherited builtin rule is preserved in the drop-in');
   assert.equal(dropIn.description, undefined, 'the drop-in is partial — no builtin fields copied');
 
-  const after_ = listParticipationRules({ rootDir: tmp }).items.filter((it) => it.owner === 'cx-product-manager');
+  const after_ = listParticipationRules({ rootDir: tmp }).items.filter((it) => it.owner === 'product-manager');
   assert.equal(after_.length, 2);
   assert.equal(after_.every((it) => it.scope === 'project'), true, 'the project tier now sources the effective rules');
 
-  const replaced = upsertParticipationRule('cx-product-manager', { ...rule, role: 'reviewer' }, { rootDir: tmp, scope: 'project' });
+  const replaced = upsertParticipationRule('product-manager', { ...rule, role: 'reviewer' }, { rootDir: tmp, scope: 'project' });
   assert.equal(replaced.ok, true);
   assert.equal(replaced.rules.filter((r) => r.id === 'privacy-product-review').length, 1, 'same-id upsert replaces, never duplicates');
 
-  const refused = upsertParticipationRule('cx-product-manager', rule, { rootDir: tmp, scope: 'builtin' });
+  const refused = upsertParticipationRule('product-manager', rule, { rootDir: tmp, scope: 'builtin' });
   assert.equal(refused.ok, false);
   assert.equal(refused.errors[0].id, 'builtin-scope-readonly');
 });
@@ -424,14 +424,14 @@ test('upsertParticipationRule: the recruiter sees a written rule identically to 
 
   // visualDeliverable has no canonical skill affinity, so the written rule is
   // the only path that can recruit here — proving the recruiter reads it.
-  const rule = { id: 'visual-deliverable-design-review', when: { signalExpr: 'visualDeliverable' }, recruit: { specialists: ['cx-designer'] }, role: 'reviewer', gate: 'advisory', reason: 'visual deliverable — design review' };
-  const written = upsertParticipationRule('cx-designer', rule, { rootDir: tmp, scope: 'project' });
+  const rule = { id: 'visual-deliverable-design-review', when: { signalExpr: 'visualDeliverable' }, recruit: { specialists: ['designer'] }, role: 'reviewer', gate: 'advisory', reason: 'visual deliverable — design review' };
+  const written = upsertParticipationRule('designer', rule, { rootDir: tmp, scope: 'project' });
   assert.equal(written.ok, true, JSON.stringify(written.errors));
 
   const { recruit } = await import('../../lib/orchestration/recruiter.mjs');
   const { assembleRegistry } = await import('../../lib/registry/assemble.mjs');
   const recruited = recruit({ signals: { visualDeliverable: true }, registry: assembleRegistry(tmp) });
-  const designer = recruited.find((p) => p.specialist === 'cx-designer' && p.rule === 'visual-deliverable-design-review');
+  const designer = recruited.find((p) => p.specialist === 'designer' && p.rule === 'visual-deliverable-design-review');
   assert.ok(designer, `the live recruiter picks up the written rule: ${JSON.stringify(recruited)}`);
   assert.equal(designer.role, 'reviewer');
   assert.equal(designer.via, 'participation-rule');
@@ -441,12 +441,12 @@ test('removeParticipationRule: project-tier removal shadows a builtin rule', () 
   const tmp = makeFixtureProject();
   after(() => fs.rmSync(tmp, { recursive: true, force: true }));
 
-  const gone = removeParticipationRule('cx-product-manager', 'cost-value-tradeoff-review', { rootDir: tmp, scope: 'project' });
+  const gone = removeParticipationRule('product-manager', 'cost-value-tradeoff-review', { rootDir: tmp, scope: 'project' });
   assert.equal(gone.ok, true, JSON.stringify(gone.errors));
   assert.equal(gone.rules.length, 0);
-  assert.equal(listParticipationRules({ rootDir: tmp }).items.filter((it) => it.owner === 'cx-product-manager').length, 0);
+  assert.equal(listParticipationRules({ rootDir: tmp }).items.filter((it) => it.owner === 'product-manager').length, 0);
 
-  const missing = removeParticipationRule('cx-product-manager', 'no-such-rule', { rootDir: tmp, scope: 'project' });
+  const missing = removeParticipationRule('product-manager', 'no-such-rule', { rootDir: tmp, scope: 'project' });
   assert.equal(missing.ok, false);
   assert.equal(missing.errors[0].id, 'participation-rule-not-found');
 });
@@ -454,7 +454,7 @@ test('removeParticipationRule: project-tier removal shadows a builtin rule', () 
 test('previewParticipation: a sample request surfaces its recruited set with rationale', () => {
   const preview = previewParticipation({ rootDir: readOnlyProject, request: 'estimate the cost impact of the new pricing model, roughly $2M budget' });
   assert.equal(preview.signals.cost, true, 'the cost dimension fires from the sample text');
-  const pm = preview.recruited.find((p) => p.specialist === 'cx-product-manager');
+  const pm = preview.recruited.find((p) => p.specialist === 'product-manager');
   assert.ok(pm, 'the cost rule recruits the PM');
   assert.equal(pm.via, 'participation-rule');
   assert.ok(pm.reason, 'rationale travels with the recruit');

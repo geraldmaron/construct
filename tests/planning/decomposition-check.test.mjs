@@ -74,12 +74,12 @@ if (!sqliteAvailable()) {
 
   const HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'planning-decomp-home-'));
   const PROJECT = fs.mkdtempSync(path.join(os.tmpdir(), 'planning-decomp-project-'));
-  const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = HOME;
+  const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = HOME;
 
   test.after(() => {
-    if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+    if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
     fs.rmSync(HOME, { recursive: true, force: true });
     fs.rmSync(PROJECT, { recursive: true, force: true });
   });

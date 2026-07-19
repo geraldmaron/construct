@@ -4,7 +4,7 @@
  * Drives `construct intake classify --json` and `construct graph recommend --json`
  * against the real binary in an isolated tmpdir. The load-bearing assertion is
  * that classification performs NO durable write — nothing lands under
- * .cx/intake/pending — so the planning surface is safe to call on any input.
+ * .construct/intake/pending — so the planning surface is safe to call on any input.
  *
  * @capability workflow.triage
  */

@@ -1,7 +1,7 @@
 {
   "id": "any-to-designer",
   "producer": "*",
-  "consumer": "cx-designer",
+  "consumer": "designer",
   "trigger": {
     "riskFlags": [
       "ui",

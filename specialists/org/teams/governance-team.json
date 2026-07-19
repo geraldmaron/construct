@@ -8,7 +8,7 @@
     "security"
   ],
   "specialists": [
-    "cx-security"
+    "security"
   ],
   "collaborators": [],
   "decisionRights": [
@@ -47,7 +47,7 @@
         },
         "recruit": {
           "specialists": [
-            "cx-security"
+            "security"
           ],
           "teams": [
             "governance-team"

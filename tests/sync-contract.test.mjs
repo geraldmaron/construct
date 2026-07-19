@@ -1,5 +1,5 @@
 /**
- * tests/sync-contract.test.mjs — contract tests for sync-specialists.mjs platform output shapes.
+ * tests/sync-contract.test.mjs — contract tests for sync-worker-profiles.mjs platform output shapes.
  *
  * Verifies that each platform generator produces correctly shaped output files
  * from a fixture registry. Catches platform format drift on CI before it reaches
@@ -76,7 +76,7 @@ after(() => {
   rmTmpDir(tmpProject);
 });
 
-/** Run sync-specialists.mjs with the given extra args and env, return result.
+/** Run sync-worker-profiles.mjs with the given extra args and env, return result.
  *  Defaults to --global because every assertion in this suite checks user-scope
  *  output (`tmpHome/.claude/`, `tmpHome/.github/`, etc.). Callers wanting
  *  project-scope output (--project mode) pass that flag explicitly.
@@ -87,13 +87,13 @@ function runSync(args = [], env = {}) {
     : [...args, '--global'];
   return spawnSync(
     process.execPath,
-    [path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs'), ...finalArgs],
+    [path.join(ROOT_DIR, 'scripts', 'sync-worker-profiles.mjs'), ...finalArgs],
     {
       encoding: 'utf8',
       env: {
         ...process.env,
         HOME: tmpHome,
-        CX_TOOLKIT_DIR: ROOT_DIR,
+        CONSTRUCT_TOOLKIT_DIR: ROOT_DIR,
         CONSTRUCT_SYNC_FORCE: '1',
         CONSTRUCT_SYNC_HOSTS: ALL_HOSTS,
         // tmpHome has an empty embedding-model cache, so prompt composition
@@ -109,7 +109,7 @@ function runSync(args = [], env = {}) {
   );
 }
 
-describe('sync-specialists contract tests', () => {
+describe('sync-worker-profiles contract tests', () => {
   describe('--dry-run flag', () => {
     it('exits 0 and prints diff summary without writing any files', () => {
       const before = countFiles(path.join(tmpHome, '.claude'));
@@ -136,7 +136,7 @@ describe('sync-specialists contract tests', () => {
       const result = runSync([], { HOME: tmpHome });
       assert.equal(result.status, 0, `sync failed:\n${result.stderr}`);
       assert.ok(!fs.existsSync(lockPath), 'lock file must be removed after successful sync');
-      assert.ok(!fs.existsSync(path.join(tmpHome, '.cx')), 'sync must not leave a stray .cx/ directory after ADR-0074 consolidation');
+      assert.ok(!fs.existsSync(path.join(tmpHome, '.cx')), 'sync must not leave a stray .construct/ directory after ADR-0074 consolidation');
     });
 
     it('aborts with exit 1 when lock is already held by a live process', () => {
@@ -285,7 +285,7 @@ describe('sync-specialists contract tests', () => {
     it('writes a self-contained .claude/settings.json with portable hook commands', () => {
       const result = spawnSync(
         process.execPath,
-        [path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs'), '--project'],
+        [path.join(ROOT_DIR, 'scripts', 'sync-worker-profiles.mjs'), '--project'],
         {
           encoding: 'utf8',
           cwd: projectDir,
@@ -365,7 +365,7 @@ describe('sync-specialists contract tests', () => {
       );
       const result = spawnSync(
         process.execPath,
-        [path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs'), '--project'],
+        [path.join(ROOT_DIR, 'scripts', 'sync-worker-profiles.mjs'), '--project'],
         {
           encoding: 'utf8',
           cwd: projectDir,
@@ -404,7 +404,7 @@ describe('sync-specialists contract tests', () => {
       const before = fs.readFileSync(path.join(projectDir, '.mcp.json'), 'utf8');
       const result = spawnSync(
         process.execPath,
-        [path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs'), '--project'],
+        [path.join(ROOT_DIR, 'scripts', 'sync-worker-profiles.mjs'), '--project'],
         {
           encoding: 'utf8',
           cwd: projectDir,

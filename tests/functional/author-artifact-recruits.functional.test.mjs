@@ -5,7 +5,7 @@
  * Before this bead the artifact-loop path never consulted request signals:
  * invokeWorkflow always received the bare def.chain. This suite drives the
  * real MCP `author_artifact` entrypoint in a mkdtemp project and asserts:
- * a cost-flagged request folds cx-data-analyst into the workflow plan and
+ * a cost-flagged request folds data-analyst into the workflow plan and
  * reports it under `recruited` with a reason; `recruitment:'off'` disables
  * the pass; an explicit cx- id list replaces the signal-derived set; and a
  * neutral request leaves the default chain byte-identical (gate behavior
@@ -37,13 +37,13 @@ function project() {
 function withHashingEmbeddings(t, cwd) {
   const prevModel = process.env.CONSTRUCT_EMBEDDING_MODEL;
   process.env.CONSTRUCT_EMBEDDING_MODEL = 'hashing';
-  const prevHome = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = cwd;
+  const prevHome = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = cwd;
   t.after(() => {
     if (prevModel === undefined) delete process.env.CONSTRUCT_EMBEDDING_MODEL;
     else process.env.CONSTRUCT_EMBEDDING_MODEL = prevModel;
-    if (prevHome === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prevHome;
+    if (prevHome === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prevHome;
   });
 }
 
@@ -52,7 +52,7 @@ const NEUTRAL_DRAFT = '# Search PRD\n\n## Summary\n\nRelevance improvements for 
 const COST_REQUEST = 'write a PRD about billing cost optimization under the infra budget';
 const NEUTRAL_REQUEST = 'write a PRD about search relevance ranking';
 
-test('a cost-flagged request recruits cx-data-analyst into the workflow plan with a reason', async (t) => {
+test('a cost-flagged request recruits data-analyst into the workflow plan with a reason', async (t) => {
   const cwd = project();
   withHashingEmbeddings(t, cwd);
 
@@ -63,19 +63,19 @@ test('a cost-flagged request recruits cx-data-analyst into the workflow plan wit
     cwd,
   }, { ROOT_DIR: REPO });
 
-  const recruited = res.recruited.find((p) => p.specialist === 'cx-data-analyst');
-  assert.ok(recruited, `cost request recruits cx-data-analyst; got ${JSON.stringify(res.recruited)}`);
+  const recruited = res.recruited.find((p) => p.specialist === 'data-analyst');
+  assert.ok(recruited, `cost request recruits data-analyst; got ${JSON.stringify(res.recruited)}`);
   assert.equal(recruited.role, 'reviewer');
   assert.equal(recruited.gate, 'advisory');
   assert.equal(recruited.source, 'request-signals');
   assert.ok(recruited.reason, 'recruit carries a reason');
 
   assert.ok(
-    res.workflow_plan.includes('cx-data-analyst'),
+    res.workflow_plan.includes('data-analyst'),
     `recruit folded into invokePlan.selectedRoles; plan: ${res.workflow_plan.join(',')}`,
   );
-  assert.ok(res.workflow_plan.includes('cx-product-manager'), 'def.chain stays the floor');
-  assert.ok(res.workflow_plan.includes('cx-architect'), 'def.chain stays the floor');
+  assert.ok(res.workflow_plan.includes('product-manager'), 'def.chain stays the floor');
+  assert.ok(res.workflow_plan.includes('architect'), 'def.chain stays the floor');
   assert.ok(res.summary.includes('Recruited'), 'summary names the recruitment');
   assert.ok(res.summary.includes('override'), 'summary names the override affordance');
 });
@@ -93,7 +93,7 @@ test("recruitment:'off' disables the pass for an otherwise cost-flagged request"
   }, { ROOT_DIR: REPO });
 
   assert.deepEqual(res.recruited, [], 'no recruitment when overridden off');
-  assert.deepEqual(res.workflow_plan, ['cx-product-manager', 'cx-architect'], 'default chain untouched');
+  assert.deepEqual(res.workflow_plan, ['product-manager', 'architect'], 'default chain untouched');
 });
 
 test('an explicit cx- id list replaces the signal-derived set verbatim', async (t) => {
@@ -104,15 +104,15 @@ test('an explicit cx- id list replaces the signal-derived set verbatim', async (
     artifact_type: 'prd',
     subject: COST_REQUEST,
     draft_markdown: NEUTRAL_DRAFT,
-    recruitment: ['cx-security'],
+    recruitment: ['security'],
     cwd,
   }, { ROOT_DIR: REPO });
 
   const ids = res.recruited.map((p) => p.specialist);
-  assert.deepEqual(ids, ['cx-security'], 'override list is the recruited set');
+  assert.deepEqual(ids, ['security'], 'override list is the recruited set');
   assert.equal(res.recruited[0].source, 'override');
-  assert.ok(res.workflow_plan.includes('cx-security'), 'override folded into the plan');
-  assert.ok(!res.workflow_plan.includes('cx-data-analyst'), 'signal-derived recruit replaced');
+  assert.ok(res.workflow_plan.includes('security'), 'override folded into the plan');
+  assert.ok(!res.workflow_plan.includes('data-analyst'), 'signal-derived recruit replaced');
 });
 
 test('a neutral request recruits nobody and leaves the default chain identical', async (t) => {
@@ -127,6 +127,6 @@ test('a neutral request recruits nobody and leaves the default chain identical',
   }, { ROOT_DIR: REPO });
 
   assert.deepEqual(res.recruited, [], 'no signals, no recruits');
-  assert.deepEqual(res.workflow_plan, ['cx-product-manager', 'cx-architect'], 'plan is the untouched def.chain');
+  assert.deepEqual(res.workflow_plan, ['product-manager', 'architect'], 'plan is the untouched def.chain');
   assert.equal(res.summary.includes('Recruited'), false);
 });

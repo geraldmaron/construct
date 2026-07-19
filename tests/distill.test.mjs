@@ -77,7 +77,7 @@ test('distill includes active domain overlays in structured output', async () =>
     domain: 'terraform',
     objective: 'design infra patterns',
     scope: 'aws',
-    attachTo: ['cx-architect'],
+    attachTo: ['architect'],
     focus: 'architecture',
     status: 'active',
   }, null, 2)}\n`);

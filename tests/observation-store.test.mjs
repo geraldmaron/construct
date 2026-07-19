@@ -38,7 +38,7 @@ describe('observation-store', () => {
   describe('addObservation', () => {
     it('saves a full record and updates index', async () => {
       const record = await addObservation(tmpDir, {
-        role: 'cx-qa',
+        role: 'qa',
         category: 'pattern',
         summary: 'Test summary',
         content: 'Test content',
@@ -47,7 +47,7 @@ describe('observation-store', () => {
       });
 
       assert.ok(record.id.startsWith('obs-'));
-      assert.equal(record.role, 'cx-qa');
+      assert.equal(record.role, 'qa');
       assert.equal(record.summary, 'Test summary');
 
       const full = JSON.parse(
@@ -57,7 +57,7 @@ describe('observation-store', () => {
 
       const index = readIndex(tmpDir);
       assert.equal(index.length, 1);
-      assert.equal(index[0].role, 'cx-qa');
+      assert.equal(index[0].role, 'qa');
     });
 
     it('creates vector entry', async () => {
@@ -69,7 +69,7 @@ describe('observation-store', () => {
   describe('searchObservations', () => {
     it('returns semantically matching observations', async () => {
       await addObservation(tmpDir, {
-        role: 'cx-engineer',
+        role: 'engineer',
         summary: 'Authentication uses JWT tokens with refresh flow',
         content: 'The auth module at lib/auth uses JWT. Refresh tokens stored in httpOnly cookies.',
         tags: ['auth', 'jwt'],
@@ -82,11 +82,11 @@ describe('observation-store', () => {
     });
 
     it('filters by role', async () => {
-      await addObservation(tmpDir, { role: 'cx-engineer', summary: 'eng obs', project: 'p' });
-      await addObservation(tmpDir, { role: 'cx-architect', summary: 'arch obs', project: 'p' });
+      await addObservation(tmpDir, { role: 'engineer', summary: 'eng obs', project: 'p' });
+      await addObservation(tmpDir, { role: 'architect', summary: 'arch obs', project: 'p' });
 
-      const results = await searchObservations(tmpDir, 'obs', { role: 'cx-engineer', project: 'p' });
-      assert.ok(results.every((r) => r.role === 'cx-engineer'));
+      const results = await searchObservations(tmpDir, 'obs', { role: 'engineer', project: 'p' });
+      assert.ok(results.every((r) => r.role === 'engineer'));
     });
 
     it('filters by category', async () => {

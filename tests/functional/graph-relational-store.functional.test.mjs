@@ -68,12 +68,12 @@ if (!sqliteAvailable()) {
   // through the spawned CLI) — pin the parent process's own HOME so both
   // paths resolve the identical graph.db under SANDBOX_HOME, restoring on
   // teardown per the isolation contract.
-  const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = SANDBOX_HOME;
+  const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = SANDBOX_HOME;
 
   test.after(() => {
-    if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+    if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
     rmTmpDir(SANDBOX_HOME);
     rmTmpDir(PROJECT);
   });
@@ -83,7 +83,7 @@ if (!sqliteAvailable()) {
       cwd: PROJECT,
       encoding: 'utf8',
       maxBuffer: 64 * 1024 * 1024,
-      env: { ...process.env, HOME: SANDBOX_HOME, CX_HOME_OVERRIDE: SANDBOX_HOME },
+      env: { ...process.env, HOME: SANDBOX_HOME, CONSTRUCT_HOME_OVERRIDE: SANDBOX_HOME },
     });
   }
 

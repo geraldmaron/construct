@@ -8,7 +8,7 @@ artifactType: guidance
 
 Loaded on demand via `get_skill("operating/fleet-health-routing")`.
 
-`cx-oracle` retired as a standalone specialist at construct-rf26.11 (the roster-consolidation pass): it had no footprint of its own in `skills/roles/` and its declared skills were already just `ai/orchestration-workflow` (the Orchestrator's own) plus a borrowed reference to what is now the Reviewer role's trace overlay. Its meta-controller function — synthesizing fleet-health gaps from the Oracle read model and routing remediation to the specialists who own it — is folded into `cx-orchestrator`. This skill is the verbatim reference for that duty; do not paraphrase the routing table or bounded-auto policy from memory.
+`cx-oracle` retired as a standalone specialist at construct-rf26.11 (the roster-consolidation pass): it had no footprint of its own in `skills/perspectives/` and its declared skills were already just `ai/orchestration-workflow` (the Orchestrator's own) plus a borrowed reference to what is now the Reviewer role's trace overlay. Its meta-controller function — synthesizing fleet-health gaps from the Oracle read model and routing remediation to the specialists who own it — is folded into `cx-orchestrator`. This skill is the verbatim reference for that duty; do not paraphrase the routing table or bounded-auto policy from memory.
 
 ## Scope boundary
 
@@ -48,7 +48,7 @@ Note on the last four rows: the pre-consolidation routing table sent team-govern
 ## Bounded-auto policy (do not override)
 
 - **Auto** (may execute without approval): `census-run`, `registry-validate`, `adapters-sync` (tool repo only)
-- **Approve** (queue to `.cx/oracle/pending.jsonl`): specialist dispatch, doctor follow-up, trace review, outcomes aggregate
+- **Approve** (queue to `.construct/oracle/pending.jsonl`): specialist dispatch, doctor follow-up, trace review, outcomes aggregate
 - **Deny**: git push/commit, destructive deletes, force sync
 
 ## Output format

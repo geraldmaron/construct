@@ -1,5 +1,5 @@
 {
-  "$comment": "Registry-declared watch-condition predicates (construct-pteo2.6, closing ADR-0070 gap #1: adding a watcher no longer requires a code change). Each condition is a structured predicate over the requestSignals shape (lib/orchestration/flow-selection.mjs), evaluated by lib/orchestration/routing-tables.mjs. Operators: equals, notEquals, gt, truthy; combinators: all, any; field paths use dot access. Unknown operators fail closed. The first six entries port the previously hardcoded WATCHERS map byte-for-byte in semantics; architecture-risk is new (cx-architect coverage).",
+  "$comment": "Registry-declared watch-condition predicates (construct-pteo2.6, closing ADR-0070 gap #1: adding a watcher no longer requires a code change). Each condition is a structured predicate over the requestSignals shape (lib/orchestration/flow-selection.mjs), evaluated by lib/orchestration/routing-tables.mjs. Operators: equals, notEquals, gt, truthy; combinators: all, any; field paths use dot access. Unknown operators fail closed. The first six entries port the previously hardcoded WATCHERS map byte-for-byte in semantics; architecture-risk is new (architect coverage).",
   "schemaVersion": 1,
   "watchers": [
     {

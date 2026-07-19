@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "specialistId": "cx-orchestrator",
+  "specialistId": "orchestrator",
   "capabilityId": "specialist.prompt",
   "mode": "normal",
   "scenarioKind": "cross-specialist",

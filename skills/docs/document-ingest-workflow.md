@@ -17,11 +17,11 @@ Use when: the user points at a PDF, Word doc, spreadsheet, slide deck, export, o
 
 ## Default destination
 
-Write outputs to `.cx/knowledge/internal/` unless the user explicitly wants a typed `knowledge/<subdir>`, sibling markdown file, or another output path.
+Write outputs to `.construct/knowledge/internal/` unless the user explicitly wants a typed `knowledge/<subdir>`, sibling markdown file, or another output path.
 
 Why:
 
-- files under `.cx/knowledge/` are part of Construct's file-state retrieval path
+- files under `.construct/knowledge/` are part of Construct's file-state retrieval path
 - they can be picked up by hybrid search immediately
 - `construct ingest --sync` can then push them into shared SQL/vector storage when configured
 

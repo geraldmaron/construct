@@ -107,7 +107,7 @@ describe('orchestration-dispatch-guard degraded dispatch handling', () => {
   it('clears the guard on a non-degraded dispatch response with prepared tasks', () => {
     withCx();
     classify('orchestrated');
-    const d = dispatch({ degraded: false, tasks: [{ id: 't1', role: 'cx-architect', status: 'prepared' }], status: 'completed-prepare-only' });
+    const d = dispatch({ degraded: false, tasks: [{ id: 't1', role: 'architect', status: 'prepared' }], status: 'completed-prepare-only' });
     assert.equal(d.status, 0);
     const r = writeDoc('docs/terraform-agent-strategy.md', bigDoc());
     assert.equal(r.status, 0, `expected pass after real dispatch; got ${r.status}. stderr:\n${r.stderr}`);
@@ -136,7 +136,7 @@ describe('orchestration-dispatch-guard degraded dispatch handling', () => {
     classify('orchestrated');
     const d = dispatch({
       status: 'awaiting-host',
-      tasks: [{ id: 't1', role: 'cx-architect', status: 'awaiting-host', system: 'persona', user: 'do your part' }],
+      tasks: [{ id: 't1', role: 'architect', status: 'awaiting-host', system: 'persona', user: 'do your part' }],
     });
     assert.equal(d.status, 0);
     const r = writeDoc('docs/terraform-agent-strategy.md', bigDoc());
@@ -147,7 +147,7 @@ describe('orchestration-dispatch-guard degraded dispatch handling', () => {
   it('does not clear the guard on a rejected orchestration_task_result submission', () => {
     withCx();
     classify('orchestrated');
-    dispatch({ status: 'awaiting-host', tasks: [{ id: 't1', role: 'cx-architect', status: 'awaiting-host' }] });
+    dispatch({ status: 'awaiting-host', tasks: [{ id: 't1', role: 'architect', status: 'awaiting-host' }] });
     const t = taskResult({ accepted: false, error: 'unknown task_id', code: 'HOST_RESULT_REJECTED' });
     assert.equal(t.status, 0);
     const r = writeDoc('docs/terraform-agent-strategy.md', bigDoc());
@@ -157,10 +157,10 @@ describe('orchestration-dispatch-guard degraded dispatch handling', () => {
   it('clears the guard once an orchestration_task_result submission is accepted', () => {
     withCx();
     classify('orchestrated');
-    dispatch({ status: 'awaiting-host', tasks: [{ id: 't1', role: 'cx-architect', status: 'awaiting-host' }] });
+    dispatch({ status: 'awaiting-host', tasks: [{ id: 't1', role: 'architect', status: 'awaiting-host' }] });
     const blocked = writeDoc('docs/terraform-agent-strategy.md', bigDoc());
     assert.equal(blocked.status, 2, 'sanity: still armed before the result is submitted');
-    const t = taskResult({ accepted: true, run_status: 'awaiting-host', next_task: { task_id: 't2', role: 'cx-engineer' } });
+    const t = taskResult({ accepted: true, run_status: 'awaiting-host', next_task: { task_id: 't2', role: 'engineer' } });
     assert.equal(t.status, 0);
     const r = writeDoc('docs/terraform-agent-strategy.md', bigDoc());
     assert.equal(r.status, 0, `expected pass after accepted task result; got ${r.status}. stderr:\n${r.stderr}`);

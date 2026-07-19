@@ -1,7 +1,7 @@
 {
   "id": "any-to-operations-incident",
   "producer": "*",
-  "consumer": "cx-operations",
+  "consumer": "operations",
   "trigger": {
     "intent": "investigation",
     "category": "incident"

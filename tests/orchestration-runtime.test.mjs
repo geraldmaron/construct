@@ -32,7 +32,7 @@ import {
 } from '../lib/orchestration/runtime.mjs';
 
 const MODEL = 'anthropic/claude-sonnet-4-6';
-const ENV = { CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL };
+const ENV = { CONSTRUCT_MODEL_REASONING: MODEL, CONSTRUCT_MODEL_STANDARD: MODEL, CONSTRUCT_MODEL_FAST: MODEL };
 
 const dirs = [];
 function project() {
@@ -44,18 +44,18 @@ test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true,
 
 // planRun/executeRun/runOrchestration/startRun/getRun/getRuns/
 // submitHostTaskResult all resolve the run store through the machine-scoped
-// state root (ADR-0066), which reads CX_HOME_OVERRIDE from real process.env
+// state root (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE from real process.env
 // directly — the ENV bag above only feeds model-tier lookups. Pin it for the
 // whole file so these runs never write into the real developer machine's
 // ~/.construct/projects/.
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-orch-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 test.after(() => {
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 test('orchestrated request plans a specialist chain and prepares every task', async () => {

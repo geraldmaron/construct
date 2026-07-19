@@ -68,7 +68,7 @@ nature; a request or project configuration can explicitly opt out of branding.
 
 ## Profile terminology (rebrand)
 
-Each curated profile may define `rebrand.intakeQueueLabel` and `rebrand.signalNoun` in `profiles/*.json`. [`lib/scopes/rebrand.mjs`](../../lib/scopes/rebrand.mjs) centralizes lookup; defaults are `Intake queue` / `signal`.
+Each Workspace Preset may define `rebrand.intakeQueueLabel` and `rebrand.signalNoun` in `registry/workspace-presets/*.json`. [`lib/workspace-presets/rebrand.mjs`](../../../lib/workspace-presets/rebrand.mjs) centralizes lookup; defaults are `Intake queue` / `signal`.
 
 User-facing surfaces that must honor rebrand:
 

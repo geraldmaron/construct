@@ -7,7 +7,7 @@
  * daemons are retired and must never run).
  *
  * Layer 1 spawns the real `construct init` in a NODE_ENV=test child with an
- * isolated HOME/CX_HOME_OVERRIDE (sterileSpawnEnv) and asserts no
+ * isolated HOME/CONSTRUCT_HOME_OVERRIDE (sterileSpawnEnv) and asserts no
  * doctor/oracle state file appears under that sandbox AND that no process in
  * the live process table references the sandbox root — a real-process proof
  * scoped to this test's own HOME, so concurrently leaked daemons from other
@@ -64,7 +64,7 @@ function runInit(env, extraArgs = []) {
       env: sterileSpawnEnv({
         HOME: env.HOME,
         USERPROFILE: env.HOME,
-        CX_HOME_OVERRIDE: env.HOME,
+        CONSTRUCT_HOME_OVERRIDE: env.HOME,
         XDG_CONFIG_HOME: join(env.HOME, '.config'),
         XDG_DATA_HOME: join(env.HOME, '.local', 'share'),
         XDG_CACHE_HOME: join(env.HOME, '.cache'),

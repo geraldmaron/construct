@@ -1,8 +1,8 @@
 /**
  * tests/functional/event-bus-per-project.test.mjs — per-project event isolation.
  *
- * Asserts events.jsonl resolves to <project>/.cx/ when cwd sits inside a
- * Construct project, and falls back to ~/.cx/ only outside one. Without
+ * Asserts events.jsonl resolves to <project>/.construct/ when cwd sits inside a
+ * Construct project, and falls back to ~/.construct/ only outside one. Without
  * project-scoping, fingerprints from project A suppress real events in
  * project B because the bus dedups by sha1(type|project|summary).
  *
@@ -33,7 +33,7 @@ afterEach(() => {
   else delete process.env.CONSTRUCT_ROLES_ROOT;
 });
 
-test('event bus writes to <project>/.cx/events.jsonl when cwd is inside a Construct project', async () => {
+test('event bus writes to <project>/.construct/events.jsonl when cwd is inside a Construct project', async () => {
   const projectRoot = mkdtempSync(join(tmpdir(), 'cx-project-'));
   mkdirSync(join(projectRoot, '.construct'), { recursive: true });
   try {
@@ -43,7 +43,7 @@ test('event bus writes to <project>/.cx/events.jsonl when cwd is inside a Constr
 
     const entry = bus.emit('test.event', { summary: 'isolated to project' });
     const projectEvents = join(projectRoot, '.construct', 'events.jsonl');
-    assert.ok(existsSync(projectEvents), 'expected events.jsonl inside project .cx/');
+    assert.ok(existsSync(projectEvents), 'expected events.jsonl inside project .construct/');
     const written = readFileSync(projectEvents, 'utf8').trim().split('\n');
     const parsed = JSON.parse(written[written.length - 1]);
     assert.equal(parsed.type, 'test.event');

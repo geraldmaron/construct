@@ -23,7 +23,7 @@ import { readTraceEventsForRun } from '../../lib/worker/trace.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const MODEL = 'anthropic/claude-sonnet-4-6';
-const ENV = { CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL, ANTHROPIC_API_KEY: 'sk-test' };
+const ENV = { CONSTRUCT_MODEL_REASONING: MODEL, CONSTRUCT_MODEL_STANDARD: MODEL, CONSTRUCT_MODEL_FAST: MODEL, ANTHROPIC_API_KEY: 'sk-test' };
 
 const COST_OUTPUT = [
   'Design review of the gateway rate limiter.',
@@ -41,13 +41,13 @@ function project() {
 }
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-join-leave-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 test.after(() => {
   for (const d of dirs) { try { rmTmpDir(d); } catch {} }
   try { rmTmpDir(homeOverride); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 function costFirstFetch() {
@@ -72,27 +72,27 @@ test('a cost table in mid-run output joins the cost reviewer, who then executes'
   off?.();
 
   const joined = (run.participation ?? []).filter((p) => p.event === 'joined');
-  const analystJoin = joined.find((p) => p.role === 'cx-data-analyst');
-  assert.ok(analystJoin, `cost output joins cx-data-analyst; participation: ${JSON.stringify(run.participation)}`);
+  const analystJoin = joined.find((p) => p.role === 'data-analyst');
+  assert.ok(analystJoin, `cost output joins data-analyst; participation: ${JSON.stringify(run.participation)}`);
   assert.ok(analystJoin.reason, 'the join carries a reason');
   assert.equal(analystJoin.afterTask, run.tasks[0].id, 'joined after the task whose output fired the signal');
 
-  const analystTask = run.tasks.find((t) => t.role === 'cx-data-analyst');
+  const analystTask = run.tasks.find((t) => t.role === 'data-analyst');
   assert.ok(analystTask, 'a task exists for the joined participant');
   assert.equal(analystTask.joinedVia, 'evolving-signals');
   assert.equal(analystTask.status, 'done', 'the joined participant executed in the same run');
   assert.equal(analystTask.executionState, 'executed');
 
-  assert.ok(events.some((e) => e.event === 'joined' && e.role === 'cx-data-analyst'), 'join emitted as a run event');
+  assert.ok(events.some((e) => e.event === 'joined' && e.role === 'data-analyst'), 'join emitted as a run event');
 
   const traceEvents = readTraceEventsForRun(cwd, planned.runId);
   assert.ok(
-    traceEvents.some((e) => e.eventType === 'participant.joined' && e.role === 'cx-data-analyst'),
+    traceEvents.some((e) => e.eventType === 'participant.joined' && e.role === 'data-analyst'),
     `join recorded in the trace; events: ${traceEvents.map((e) => e.eventType).join(',')}`,
   );
 
   const persisted = loadRun(cwd, planned.runId);
-  assert.ok(persisted.participation.some((p) => p.event === 'joined' && p.role === 'cx-data-analyst'), 'join durable in the run record');
+  assert.ok(persisted.participation.some((p) => p.event === 'joined' && p.role === 'data-analyst'), 'join durable in the run record');
 });
 
 test('a joined participant the run cancels before reaching leaves with a recorded reason', async () => {
@@ -113,18 +113,18 @@ test('a joined participant the run cancels before reaching leaves with a recorde
   const run = await executeRun(cwd, planned.runId, { env: ENV, workerBackend: 'provider', fetchImpl });
 
   assert.equal(run.status, 'cancelled');
-  const joined = run.participation.find((p) => p.event === 'joined' && p.role === 'cx-data-analyst');
+  const joined = run.participation.find((p) => p.event === 'joined' && p.role === 'data-analyst');
   assert.ok(joined, 'the cost reviewer joined before the cancel');
 
-  const left = run.participation.find((p) => p.event === 'left' && p.role === 'cx-data-analyst');
+  const left = run.participation.find((p) => p.event === 'left' && p.role === 'data-analyst');
   assert.ok(left, `the never-executed join leaves; participation: ${JSON.stringify(run.participation)}`);
   assert.match(left.reason, /cancelled/);
 
-  const analystTask = run.tasks.find((t) => t.role === 'cx-data-analyst');
+  const analystTask = run.tasks.find((t) => t.role === 'data-analyst');
   assert.equal(analystTask.status, 'withdrawn', 'the joined task is withdrawn, not silently dropped');
 
   const traceEvents = readTraceEventsForRun(cwd, planned.runId);
-  assert.ok(traceEvents.some((e) => e.eventType === 'participant.left' && e.role === 'cx-data-analyst'), 'leave recorded in the trace');
+  assert.ok(traceEvents.some((e) => e.eventType === 'participant.left' && e.role === 'data-analyst'), 'leave recorded in the trace');
 });
 
 test('a run with no emergent signals records no participation churn', async () => {

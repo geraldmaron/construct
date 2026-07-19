@@ -16,7 +16,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 
-import { lintFile, KNOWN_CX_ROLE_IDS } from '../lib/comment-lint.mjs';
+import { lintFile, KNOWN_WORKER_PROFILE_IDS } from '../lib/comment-lint.mjs';
 import { getRegistry } from './test-registry-fixtures.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -41,17 +41,17 @@ const artifactWarnings = (res) => res.warnings.filter((w) => w.kind === 'artifac
 
 describe('comment-lint flags tool-identity leaks in consuming-project deliverables', () => {
   it('flags an internal cx-* role id in deliverable prose', () => {
-    const { dir, fp } = fixture('my-app', 'docs/strategy.md', '# S\n\nOwner: cx-product-manager runs this.\n');
+    const { dir, fp } = fixture('my-app', 'docs/strategy.md', '# S\n\nOwner: product-manager runs this.\n');
     assert.ok(artifactWarnings(lintFile(fp, { rootDir: dir })).length >= 1);
   });
 
   it('flags a cx-* role id inside a markdown table cell (where the real leak occurred)', () => {
-    const { dir, fp } = fixture('my-app', 'docs/x.md', '# S\n\n| Metric | Owner |\n|---|---|\n| North star | cx-data-analyst |\n');
+    const { dir, fp } = fixture('my-app', 'docs/x.md', '# S\n\n| Metric | Owner |\n|---|---|\n| North star | data-analyst |\n');
     assert.ok(artifactWarnings(lintFile(fp, { rootDir: dir })).length >= 1);
   });
 
   it('does NOT flag the Construct repo itself (package @geraldmaron/construct)', () => {
-    const { dir, fp } = fixture('@geraldmaron/construct', 'docs/strategy.md', '# S\n\nOwner: cx-product-manager.\n');
+    const { dir, fp } = fixture('@geraldmaron/construct', 'docs/strategy.md', '# S\n\nOwner: product-manager.\n');
     assert.equal(artifactWarnings(lintFile(fp, { rootDir: dir })).length, 0);
   });
 
@@ -66,7 +66,7 @@ describe('comment-lint flags tool-identity leaks in consuming-project deliverabl
   });
 
   it('does not scan non-deliverable paths (e.g. README)', () => {
-    const { dir, fp } = fixture('my-app', 'README.md', 'Owner cx-researcher.\n');
+    const { dir, fp } = fixture('my-app', 'README.md', 'Owner researcher.\n');
     assert.equal(artifactWarnings(lintFile(fp, { rootDir: dir })).length, 0);
   });
 
@@ -76,17 +76,17 @@ describe('comment-lint flags tool-identity leaks in consuming-project deliverabl
   });
 
   it('still flags a real role id when a lookalike package is on the same line', () => {
-    const { dir, fp } = fixture('my-app', 'docs/strategy.md', '# S\n\nUses cx-ray. Owner: cx-product-manager.\n');
+    const { dir, fp } = fixture('my-app', 'docs/strategy.md', '# S\n\nUses cx-ray. Owner: product-manager.\n');
     assert.ok(artifactWarnings(lintFile(fp, { rootDir: dir })).length >= 1);
   });
 
   it('does NOT flag a role id inside a ~~~ tilde fence', () => {
-    const { dir, fp } = fixture('my-app', 'docs/strategy.md', '# S\n\n~~~\nrun cx-researcher here\n~~~\nClean prose.\n');
+    const { dir, fp } = fixture('my-app', 'docs/strategy.md', '# S\n\n~~~\nrun researcher here\n~~~\nClean prose.\n');
     assert.equal(artifactWarnings(lintFile(fp, { rootDir: dir })).length, 0);
   });
 
   it('fails closed: a role id after an UNCLOSED fence is still flagged', () => {
-    const { dir, fp } = fixture('my-app', 'docs/strategy.md', '# S\n\n```\nopen fence never closed\n\nOwner: cx-product-manager runs this.\n');
+    const { dir, fp } = fixture('my-app', 'docs/strategy.md', '# S\n\n```\nopen fence never closed\n\nOwner: product-manager runs this.\n');
     assert.ok(artifactWarnings(lintFile(fp, { rootDir: dir })).length >= 1);
   });
 
@@ -94,7 +94,7 @@ describe('comment-lint flags tool-identity leaks in consuming-project deliverabl
     const prev = process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
     process.env.CONSTRUCT_ARTIFACT_LINT_MODE = 'block';
     try {
-      const { dir, fp } = fixture('my-app', 'docs/strategy.md', '# S\n\nDispatched cx-researcher to gather evidence.\n');
+      const { dir, fp } = fixture('my-app', 'docs/strategy.md', '# S\n\nDispatched researcher to gather evidence.\n');
       assert.ok(lintFile(fp, { rootDir: dir }).errors.filter((w) => w.kind === 'artifact').length >= 1);
     } finally {
       if (prev === undefined) delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
@@ -126,9 +126,9 @@ describe('tool-invisibility prevention is wired so it cannot be silently dropped
     assert.ok(policies.some((p) => p.id === 'tool-invisibility' && p.source === 'rules/common/tool-invisibility.md'));
   });
 
-  it('KNOWN_CX_ROLE_IDS matches specialists/org (drift guard for the anchored regex)', () => {
+  it('KNOWN_WORKER_PROFILE_IDS matches specialists/org (drift guard for the anchored regex)', () => {
     const registry = getRegistry();
     const expected = Object.values(registry.specialists || {}).map((s) => s.name).sort();
-    assert.deepEqual([...KNOWN_CX_ROLE_IDS].sort(), expected);
+    assert.deepEqual([...KNOWN_WORKER_PROFILE_IDS].sort(), expected);
   });
 });

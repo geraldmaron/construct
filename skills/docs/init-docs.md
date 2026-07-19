@@ -38,7 +38,7 @@ docs/
 ├── README.md                  # Required docs contract and navigation index
 └── architecture.md            # Canonical architecture and invariants
 
-.cx/
+.construct/
 ├── context.md                 # Human-readable resumable context
 ├── context.json               # Machine-readable resumable context
 └── workflow.json              # Canonical workflow/task state
@@ -95,9 +95,9 @@ When run non-interactively (`--yes` or piped stdin), the lean default set is use
 
 The required core documents are the operational state surface for the repo. All LLMs working here should read and maintain them:
 
-- `.cx/context.md`
-- `.cx/context.json`
-- `.cx/workflow.json`
+- `.construct/context.md`
+- `.construct/context.json`
+- `.construct/workflow.json`
 - `docs/README.md`
 - `docs/architecture.md`
 
@@ -161,9 +161,9 @@ Link to `docs/decisions/adr/` or the canonical project decision log used in this
 
 After creating the files, instruct the user:
 
-> After init, all LLMs working in this repo should read `.cx/context.md`, `.cx/context.json`, `.cx/workflow.json`, `docs/README.md`, and `docs/architecture.md` as project state. When work changes project reality, update the affected file before calling the work done.
+> After init, all LLMs working in this repo should read `.construct/context.md`, `.construct/context.json`, `.construct/workflow.json`, `docs/README.md`, and `docs/architecture.md` as project state. When work changes project reality, update the affected file before calling the work done.
 
-Also create or update `.cx/context.md` with a summary of what was just set up:
+Also create or update `.construct/context.md` with a summary of what was just set up:
 
 ```markdown
 # Project Context
@@ -173,7 +173,7 @@ Updated: [date]
 ## Documentation structure initialized
 
 Created docs/ with: [list created dirs]
-Core docs: .cx/context.md, .cx/context.json, .cx/workflow.json, docs/README.md, docs/architecture.md
+Core docs: .construct/context.md, .construct/context.json, .construct/workflow.json, docs/README.md, docs/architecture.md
 Project type: [type]
 Stack: [stack]
 

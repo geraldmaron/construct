@@ -28,8 +28,8 @@ test('ECS module injects named runtime secrets instead of anonymous SECRET_n var
   assert.doesNotMatch(source, /SECRET_\$\{index|SECRET_0|SECRET_1/);
 });
 
-test('ECS module sets CX_DATA_DIR for the container runtime contract', () => {
+test('ECS module sets CONSTRUCT_DATA_DIR for the container runtime contract', () => {
   const source = read('deploy/terraform/modules/ecs/main.tf');
-  assert.match(source, /name\s*=\s*"CX_DATA_DIR"/);
+  assert.match(source, /name\s*=\s*"CONSTRUCT_DATA_DIR"/);
   assert.match(source, /value\s*=\s*"\/data"/);
 });

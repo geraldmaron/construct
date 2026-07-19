@@ -40,8 +40,8 @@ description: Generated from registry/capabilities.json. Do not edit by hand.
 
 | ID | Name | Criticality | Surfaces | Human gate | Last validated |
 |---|---|---|---|---|---|
-| `skill.roles-architect-ai-systems` | Role Skill: Architect AI Systems | — | mcp:primary:get_skill | proposal-only | 2026-06-26 |
-| `skill.roles-engineer` | Role Skill: Engineer | — | mcp:primary:get_skill | proposal-only | 2026-06-26 |
+| `skill.perspectives-architect-ai-systems` | Role Skill: Architect AI Systems | — | mcp:primary:get_skill | proposal-only | 2026-06-26 |
+| `skill.perspectives-engineer` | Role Skill: Engineer | — | mcp:primary:get_skill | proposal-only | 2026-06-26 |
 
 ## workflow
 

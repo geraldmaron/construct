@@ -1,7 +1,7 @@
 {
   "id": "architect-to-engineer",
-  "producer": "cx-architect",
-  "consumer": "cx-engineer",
+  "producer": "architect",
+  "consumer": "engineer",
   "trigger": {
     "intent": [
       "implementation",

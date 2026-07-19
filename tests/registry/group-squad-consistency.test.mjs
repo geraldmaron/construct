@@ -2,7 +2,7 @@
  * tests/registry/group-squad-consistency.test.mjs — construct-72gqn.29 (D9).
  *
  * The groups layer (specialists/org/groups/*.json) is a fourth registry layer that carries
- * its own owner/roles/escalationPath alongside the teams (squads) layer — and because groups
+ * its own owner/perspectives/escalationPath alongside the teams (squads) layer — and because groups
  * are NOT part of the assembled unified registry, the validator never checked them, so the
  * two layers drifted (ADR-0065 §8 records the live team-decision-violation / escalation-path
  * gaps that caused). This pins the dedup as an enforced invariant: a group's roles must be

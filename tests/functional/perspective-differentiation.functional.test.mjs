@@ -14,7 +14,7 @@
  * different prompts" into a plain string/hash comparison.
  *
  * Two assertions matter more than the rest of the suite:
- *   1. cx-security and cx-product-manager, given the identical request, must
+ *   1. security and product-manager, given the identical request, must
  *      receive DIFFERENT system prompts (different fingerprint, different
  *      role-specific vocabulary) and produce distinguishable role framing.
  *   2. If persona resolution silently fell back for either role (E2's
@@ -74,7 +74,7 @@ test('security and product-manager specialists receive different system prompts 
 
   const security = stubProvider();
   const securityResult = await runTaskViaProvider({
-    task: { role: 'cx-security', reason: 'review the new endpoint' },
+    task: { role: 'security', reason: 'review the new endpoint' },
     run,
     model: MODEL,
     provider: 'anthropic',
@@ -84,7 +84,7 @@ test('security and product-manager specialists receive different system prompts 
 
   const productManager = stubProvider();
   const pmResult = await runTaskViaProvider({
-    task: { role: 'cx-product-manager', reason: 'scope the new endpoint' },
+    task: { role: 'product-manager', reason: 'scope the new endpoint' },
     run,
     model: MODEL,
     provider: 'anthropic',
@@ -98,10 +98,10 @@ test('security and product-manager specialists receive different system prompts 
   // for the wrong reason — two fallback prompts differing only by role name
   // interpolation would look "different" without the pipeline having done
   // anything real.
-  assert.equal(securityResult.personaAvailable, true, 'cx-security must resolve a real persona, not the fallback');
-  assert.equal('degraded' in securityResult, false, 'cx-security must not be running in persona-fallback mode');
-  assert.equal(pmResult.personaAvailable, true, 'cx-product-manager must resolve a real persona, not the fallback');
-  assert.equal('degraded' in pmResult, false, 'cx-product-manager must not be running in persona-fallback mode');
+  assert.equal(securityResult.personaAvailable, true, 'security must resolve a real persona, not the fallback');
+  assert.equal('degraded' in securityResult, false, 'security must not be running in persona-fallback mode');
+  assert.equal(pmResult.personaAvailable, true, 'product-manager must resolve a real persona, not the fallback');
+  assert.equal('degraded' in pmResult, false, 'product-manager must not be running in persona-fallback mode');
 
   const securitySystem = security.captured[0];
   const pmSystem = productManager.captured[0];
@@ -111,8 +111,8 @@ test('security and product-manager specialists receive different system prompts 
   assert.notEqual(securityResult.promptVersion, pmResult.promptVersion, 'promptVersion fingerprints (LMCP-F1) must differ across roles');
 
   // Role framing: each persona's prompt carries vocabulary unique to how that
-  // role actually reasons (specialists/prompts/cx-security.md vs
-  // cx-product-manager.md), not just a role-name substitution into one
+  // role actually reasons (specialists/prompts/security.md vs
+  // product-manager.md), not just a role-name substitution into one
   // shared template.
   assert.match(securitySystem, /attacker/i, 'security persona frames the task from an attacker viewpoint');
   assert.match(securitySystem, /SECRETS/, 'security persona carries its ordered vulnerability-category checklist');

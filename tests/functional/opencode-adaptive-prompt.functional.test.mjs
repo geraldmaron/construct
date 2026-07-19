@@ -2,7 +2,7 @@
  * tests/functional/opencode-adaptive-prompt.functional.test.mjs
  *
  * Asserts that the OpenCode `construct` agent prompt is sized to the configured default
- * model's capability tier. Spawns the real sync-specialists.mjs into an isolated tmp HOME
+ * model's capability tier. Spawns the real sync-worker-profiles.mjs into an isolated tmp HOME
  * seeded with (a) a small local default (7B → floor), (b) a mid local default (30B → mid),
  * and (c) a cloud default (→ full, unchanged). Verifies the must-keep sections survive at
  * every tier, prio-3 sections drop for local models, prio-2 sections drop only at floor,
@@ -19,7 +19,7 @@ import test from "node:test";
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const SYNC_SCRIPT = join(REPO_ROOT, "scripts", "sync-specialists.mjs");
+const SYNC_SCRIPT = join(REPO_ROOT, "scripts", "sync-worker-profiles.mjs");
 
 const OLLAMA_PROVIDER = {
   npm: "@ai-sdk/openai-compatible",
@@ -76,7 +76,7 @@ test("small local default (7B) renders the floor tier", () => {
   assert.match(prompt, new RegExp(EXECUTION_PROMPT.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), "execution handoff present");
   assert.doesNotMatch(prompt, /Drive mode/, "floor drops prio-3 Drive mode");
   assert.doesNotMatch(prompt, /## Quality gates/, "floor drops prio-2 Quality gates");
-  assert.doesNotMatch(prompt, /cx:prio/, "section markers must not leak into the emitted prompt");
+  assert.doesNotMatch(prompt, /construct:prio/, "section markers must not leak into the emitted prompt");
 });
 
 test("mid local default (30B) keeps prio-2 but drops prio-3", () => {
@@ -89,7 +89,7 @@ test("cloud default renders the full persona, unchanged", () => {
   const prompt = syncAndReadPrompt(seedConfig("anthropic/claude-opus-4-6", false));
   assert.match(prompt, new RegExp(PRIO3), "full keeps prio-3 Drive mode");
   assert.match(prompt, new RegExp(`## ${PRIO2}`), "full keeps prio-2 Quality gates");
-  assert.doesNotMatch(prompt, /cx:prio/, "section markers must not leak into the full prompt");
+  assert.doesNotMatch(prompt, /construct:prio/, "section markers must not leak into the full prompt");
 });
 
 test("floor prompt is materially smaller than the full cloud prompt", () => {

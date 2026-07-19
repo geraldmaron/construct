@@ -15,9 +15,9 @@ Follow [rules/common/research.md](../../rules/common/research.md) for source met
 
 1. Identify the source type and date.
 2. Extract source metadata: customer, actor, product area, channel, linked issue, and confidence.
-3. Save raw or lightly normalized source material under `.cx/knowledge/internal/sources/`.
-4. If customer-specific, update or create `.cx/knowledge/internal/customer-profiles/{customer}.md` using `get_template("customer-profile")`.
-5. Create `.cx/knowledge/internal/evidence-briefs/{date}-{slug}.md` using `get_template("evidence-brief")` when the evidence supports a product decision.
+3. Save raw or lightly normalized source material under `.construct/knowledge/internal/sources/`.
+4. If customer-specific, update or create `.construct/knowledge/internal/customer-profiles/{customer}.md` using `get_template("customer-profile")`.
+5. Create `.construct/knowledge/internal/evidence-briefs/{date}-{slug}.md` using `get_template("evidence-brief")` when the evidence supports a product decision.
 6. If evidence is weak but worth preserving, create a signal brief with `get_template("signal-brief")`.
 
 ## Rules
@@ -33,7 +33,7 @@ Always preserve:
 
 ## Storage
 
-Files in `.cx/knowledge/` are indexed by Construct's hybrid retrieval path. The vector layer makes them semantically retrievable for future PRDs and Meta PRDs.
+Files in `.construct/knowledge/` are indexed by Construct's hybrid retrieval path. The vector layer makes them semantically retrievable for future PRDs and Meta PRDs.
 ## Release gate
 
 Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.

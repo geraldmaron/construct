@@ -20,16 +20,16 @@ import { saveRun } from '../lib/orchestration/run-store.mjs';
 import { tempDir } from './helpers.mjs';
 
 // Orchestration-run reads resolve through the machine-scoped state root
-// (ADR-0066), so CX_HOME_OVERRIDE is pinned for the whole file to keep them
+// (ADR-0066), so CONSTRUCT_HOME_OVERRIDE is pinned for the whole file to keep them
 // off the real developer machine's $HOME.
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-status-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 test.after(() => {
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 function writeJson(filePath, value) {
@@ -97,7 +97,7 @@ async function createFixture() {
     type: 'domain-overlay',
     domain: 'terraform',
     objective: 'design infra patterns',
-    attachTo: ['cx-architect'],
+    attachTo: ['architect'],
     focus: 'architecture',
     status: 'active',
   });
@@ -106,8 +106,8 @@ async function createFixture() {
     type: 'promotion-request',
     domain: 'terraform',
     status: 'pending_review',
-    attachTo: ['cx-architect'],
-    reviewFlow: ['cx-architect', 'cx-devil-advocate', 'cx-docs-keeper'],
+    attachTo: ['architect'],
+    reviewFlow: ['architect', 'cx-devil-advocate', 'cx-docs-keeper'],
     challenge: { required: true, owner: 'cx-devil-advocate', status: 'pending' },
   });
 
@@ -407,9 +407,9 @@ test('buildStatus reflects env overrides in execution-contract model metadata', 
     cwd: rootDir,
     probeService: async () => ({ status: 'healthy', message: 'ok' }),
     env: {
-      CX_MODEL_REASONING: 'env/reasoning',
-      CX_MODEL_STANDARD: 'env/standard',
-      CX_MODEL_FAST: 'env/fast',
+      CONSTRUCT_MODEL_REASONING: 'env/reasoning',
+      CONSTRUCT_MODEL_STANDARD: 'env/standard',
+      CONSTRUCT_MODEL_FAST: 'env/fast',
     },
   });
 
@@ -690,21 +690,21 @@ test('construct status distinguishes prepared vs executed recent runs', async ()
     status: 'completed-prepare-only',
     executionState: 'prepared',
     createdAt: '2026-07-01T00:00:00.000Z',
-    tasks: [{ id: 't1', role: 'cx-engineer', status: 'prepared', executionState: 'prepared' }],
+    tasks: [{ id: 't1', role: 'engineer', status: 'prepared', executionState: 'prepared' }],
   });
   writeOrchestrationRun(rootDir, {
     runId: 'run-executed-1',
     status: 'completed',
     executionState: 'executed',
     createdAt: '2026-07-02T00:00:00.000Z',
-    tasks: [{ id: 't1', role: 'cx-engineer', status: 'done', executionState: 'executed' }],
+    tasks: [{ id: 't1', role: 'engineer', status: 'done', executionState: 'executed' }],
   });
   writeOrchestrationRun(rootDir, {
     runId: 'run-failed-1',
     status: 'completed-with-failures',
     executionState: 'failed',
     createdAt: '2026-07-03T00:00:00.000Z',
-    tasks: [{ id: 't1', role: 'cx-engineer', status: 'failed', executionState: 'failed' }],
+    tasks: [{ id: 't1', role: 'engineer', status: 'failed', executionState: 'failed' }],
   });
 
   const status = await buildStatus({
@@ -747,7 +747,7 @@ test('recentRunExecutionStates buckets a pre-F4 legacy run (no executionState fi
     runId: 'run-legacy-1',
     status: 'completed',
     createdAt: '2026-07-01T00:00:00.000Z',
-    tasks: [{ id: 't1', role: 'cx-engineer', status: 'done' }],
+    tasks: [{ id: 't1', role: 'engineer', status: 'done' }],
   });
 
   const status = await buildStatus({

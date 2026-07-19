@@ -22,7 +22,7 @@ import path from 'node:path';
 import { runOrchestration, submitHostTaskResult } from '../../lib/orchestration/runtime.mjs';
 
 const MODEL = 'anthropic/claude-sonnet-4-6';
-const ENV = { CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL };
+const ENV = { CONSTRUCT_MODEL_REASONING: MODEL, CONSTRUCT_MODEL_STANDARD: MODEL, CONSTRUCT_MODEL_FAST: MODEL };
 
 const dirs = [];
 function project() {
@@ -33,16 +33,16 @@ function project() {
 test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} } });
 
 // runOrchestration/submitHostTaskResult resolve the run store through the
-// machine-scoped state root (ADR-0066), which reads CX_HOME_OVERRIDE from
+// machine-scoped state root (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE from
 // real process.env directly (same posture as tests/orchestration-runtime.test.mjs).
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-handoff-context-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 test.after(() => {
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 const REQUEST = 'refactor the auth module and review for security';
@@ -77,7 +77,7 @@ test('provider backend: a downstream task\'s prompt contains the upstream task\'
   for (let i = 1; i < capturedBodies.length; i++) {
     const userText = capturedBodies[i].messages[0].content[0].text;
     assert.match(userText, /## Prior specialist results/, `task ${i + 1}'s prompt must include the prior-results section`);
-    assert.match(userText, /\[UNTRUSTED:team-authored:specialist:cx-architect:/, `task ${i + 1}'s prompt must trust-wrap the architect's output`);
+    assert.match(userText, /\[UNTRUSTED:team-authored:specialist:architect:/, `task ${i + 1}'s prompt must trust-wrap the architect's output`);
     assert.ok(userText.includes(ARCHITECT_OUTPUT), `task ${i + 1}'s prompt must contain the architect's real output text`);
   }
 });
@@ -104,7 +104,7 @@ test('host backend: submitHostTaskResult refreshes the next awaiting task\'s mat
   // test above, whose upstream output is real model output Construct itself
   // called for), so the re-materialized prompt wraps it at the lower
   // external-authenticated trust level.
-  assert.match(nextTask.hostPrompt.user, /\[UNTRUSTED:external-authenticated:specialist:cx-architect:/);
+  assert.match(nextTask.hostPrompt.user, /\[UNTRUSTED:external-authenticated:specialist:architect:/);
   assert.ok(nextTask.hostPrompt.user.includes(ARCHITECT_OUTPUT), 'the re-materialized prompt must contain the real submitted output text');
 });
 
@@ -123,7 +123,7 @@ test('host backend: a host-reported upstream output is trust-wrapped at the lowe
   // Both prior tasks were host-reported (this test never used the provider
   // backend), so both must carry the lower external-authenticated trust
   // level, never the higher team-authored level a provider-verified task gets.
-  assert.match(nextTask.hostPrompt.user, /\[UNTRUSTED:external-authenticated:specialist:cx-architect:/);
+  assert.match(nextTask.hostPrompt.user, /\[UNTRUSTED:external-authenticated:specialist:architect:/);
   assert.match(nextTask.hostPrompt.user, /\[UNTRUSTED:external-authenticated:specialist:.+:.+\]\nENGINEER-DONE/);
   assert.doesNotMatch(nextTask.hostPrompt.user, /team-authored/, 'no host-reported upstream task may be wrapped at the higher team-authored level');
 });

@@ -67,8 +67,8 @@ test('[R11] destructive gate accepts storage_reset with valid token', (t) => {
   assert.ok(result.allowed, 'gate should allow with valid token');
 });
 
-test('[R11] destructive gate rejects scope_archive without out-of-band token', () => {
-  const result = checkDestructiveGate('scope_archive', { id: 'test', reason: 'test archival' });
+test('[R11] destructive gate rejects workspace_preset_archive without out-of-band token', () => {
+  const result = checkDestructiveGate('workspace_preset_archive', { id: 'test', reason: 'test archival' });
   assert.ok(result.gated, 'gate should block destructive tool without token');
   assert.ok(!result.allowed, 'gate should not allow without token');
   assert.ok(result.reason.includes('approval token'), 'reason should mention approval token');

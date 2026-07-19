@@ -5,7 +5,7 @@
  * clustering, escalation detection, and hot topic extraction.
  *
  * addObservation resolves project state through the machine-scoped state root
- * (ADR-0066), keyed by a hash of the tmp rootDir — so CX_HOME_OVERRIDE is
+ * (ADR-0066), keyed by a hash of the tmp rootDir — so CONSTRUCT_HOME_OVERRIDE is
  * pinned for the whole file to keep that write off the real developer
  * machine's $HOME.
  */
@@ -25,15 +25,15 @@ import {
 } from '../lib/knowledge/trends.mjs';
 
 // addObservation and the trend detectors resolve the machine-scoped state
-// root (ADR-0066) via CX_HOME_OVERRIDE read in-process, not via the rootDir
+// root (ADR-0066) via CONSTRUCT_HOME_OVERRIDE read in-process, not via the rootDir
 // argument each test passes — pin it file-wide or every test below writes
 // into the real developer machine's ~/.construct/projects.
 const HOME_SANDBOX = mkdtempSync(join(tmpdir(), 'construct-trends-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = HOME_SANDBOX;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = HOME_SANDBOX;
 after(() => {
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
   rmTmpDir(HOME_SANDBOX);
 });
 
@@ -66,9 +66,9 @@ test('detectRecurringPatterns clusters semantically similar observations', () =>
   const dir = makeDir();
   try {
     seedObservations(dir, [
-      { summary: SIMILAR_PATTERN, content: SIMILAR_PATTERN, category: 'pattern', role: 'cx-engineer' },
-      { summary: SIMILAR_PATTERN_2, content: SIMILAR_PATTERN_2, category: 'pattern', role: 'cx-architect' },
-      { summary: 'Completely unrelated topic about Docker networking and multi-stage builds', content: '', category: 'insight', role: 'cx-engineer' },
+      { summary: SIMILAR_PATTERN, content: SIMILAR_PATTERN, category: 'pattern', role: 'engineer' },
+      { summary: SIMILAR_PATTERN_2, content: SIMILAR_PATTERN_2, category: 'pattern', role: 'architect' },
+      { summary: 'Completely unrelated topic about Docker networking and multi-stage builds', content: '', category: 'insight', role: 'engineer' },
     ]);
     const result = detectRecurringPatterns(dir);
     // Should find at least one cluster with count >= 2
@@ -80,8 +80,8 @@ test('detectRecurringPatterns includes roles in cluster', () => {
   const dir = makeDir();
   try {
     seedObservations(dir, [
-      { summary: SIMILAR_PATTERN, content: SIMILAR_PATTERN, category: 'pattern', role: 'cx-engineer' },
-      { summary: SIMILAR_PATTERN_2, content: SIMILAR_PATTERN_2, category: 'pattern', role: 'cx-architect' },
+      { summary: SIMILAR_PATTERN, content: SIMILAR_PATTERN, category: 'pattern', role: 'engineer' },
+      { summary: SIMILAR_PATTERN_2, content: SIMILAR_PATTERN_2, category: 'pattern', role: 'architect' },
     ]);
     const result = detectRecurringPatterns(dir);
     const cluster = result.find((r) => r.count >= 2);
@@ -97,7 +97,7 @@ test('detectEscalatingRisks returns empty when no anti-patterns', () => {
   const dir = makeDir();
   try {
     seedObservations(dir, [
-      { summary: 'A good pattern', content: 'something positive', category: 'pattern', role: 'cx-engineer' },
+      { summary: 'A good pattern', content: 'something positive', category: 'pattern', role: 'engineer' },
     ]);
     const result = detectEscalatingRisks(dir);
     assert.deepEqual(result, []);
@@ -109,8 +109,8 @@ test('detectEscalatingRisks finds escalation when recent > older rate', () => {
   try {
     // Simulate recent observations by using current timestamps (default)
     seedObservations(dir, [
-      { summary: ANTI_PATTERN, content: ANTI_PATTERN, category: 'anti-pattern', role: 'cx-security' },
-      { summary: ANTI_PATTERN_2, content: ANTI_PATTERN_2, category: 'anti-pattern', role: 'cx-security' },
+      { summary: ANTI_PATTERN, content: ANTI_PATTERN, category: 'anti-pattern', role: 'security' },
+      { summary: ANTI_PATTERN_2, content: ANTI_PATTERN_2, category: 'anti-pattern', role: 'security' },
     ]);
     const result = detectEscalatingRisks(dir);
     // Recent-only cluster → escalationScore should be high (no older baseline)
@@ -138,9 +138,9 @@ test('detectHotTopics returns terms sorted by weightedFrequency descending', () 
   const dir = makeDir();
   try {
     seedObservations(dir, [
-      { summary: 'authentication JWT token session', content: 'authentication JWT token session auth', category: 'pattern', role: 'cx-engineer' },
-      { summary: 'authentication token validation', content: 'authentication token check', category: 'pattern', role: 'cx-architect' },
-      { summary: 'Docker build optimisation', content: 'Docker multi-stage build', category: 'insight', role: 'cx-engineer' },
+      { summary: 'authentication JWT token session', content: 'authentication JWT token session auth', category: 'pattern', role: 'engineer' },
+      { summary: 'authentication token validation', content: 'authentication token check', category: 'pattern', role: 'architect' },
+      { summary: 'Docker build optimisation', content: 'Docker multi-stage build', category: 'insight', role: 'engineer' },
     ]);
     const result = detectHotTopics(dir);
     assert.ok(result.length > 0);
@@ -158,7 +158,7 @@ test('detectHotTopics result has required fields', () => {
   const dir = makeDir();
   try {
     seedObservations(dir, [
-      { summary: 'webhook endpoint security rate limiting', content: 'rate limiting webhook', category: 'anti-pattern', role: 'cx-security' },
+      { summary: 'webhook endpoint security rate limiting', content: 'rate limiting webhook', category: 'anti-pattern', role: 'security' },
     ]);
     const result = detectHotTopics(dir);
     for (const t of result) {
@@ -176,7 +176,7 @@ test('detectDecisionDrift returns empty when no decisions', () => {
   const dir = makeDir();
   try {
     seedObservations(dir, [
-      { summary: ANTI_PATTERN, content: ANTI_PATTERN, category: 'anti-pattern', role: 'cx-security' },
+      { summary: ANTI_PATTERN, content: ANTI_PATTERN, category: 'anti-pattern', role: 'security' },
     ]);
     const result = detectDecisionDrift(dir);
     assert.deepEqual(result, []);
@@ -187,8 +187,8 @@ test('detectDecisionDrift result has required fields when drift found', () => {
   const dir = makeDir();
   try {
     seedObservations(dir, [
-      { summary: 'We decided to skip rate limiting on webhooks for simplicity', content: 'webhook rate limiting skipped', category: 'decision', role: 'cx-architect' },
-      { summary: 'Webhook rate limiting absence is a security anti-pattern', content: 'webhook rate limiting anti-pattern security risk', category: 'anti-pattern', role: 'cx-security' },
+      { summary: 'We decided to skip rate limiting on webhooks for simplicity', content: 'webhook rate limiting skipped', category: 'decision', role: 'architect' },
+      { summary: 'Webhook rate limiting absence is a security anti-pattern', content: 'webhook rate limiting anti-pattern security risk', category: 'anti-pattern', role: 'security' },
     ]);
     const result = detectDecisionDrift(dir);
     for (const d of result) {

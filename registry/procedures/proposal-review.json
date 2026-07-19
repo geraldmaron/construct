@@ -1,0 +1,24 @@
+{
+  "id": "proposal-review",
+  "version": "1.0.0",
+  "type": "linear",
+  "workerProfiles": [
+    "reviewer"
+  ],
+  "approvalMode": "requires-human-approval",
+  "modelTier": "standard",
+  "state": "active",
+  "modes": [
+    "solo",
+    "team"
+  ],
+  "surfaces": [
+    "mcp",
+    "cli"
+  ],
+  "description": "Review a proposal for correctness, risk, and hidden assumptions before acceptance.",
+  "outputSchema": {
+    "artifact": "review-report"
+  },
+  "durableStateModel": "none"
+}

@@ -41,7 +41,7 @@ test('the manifest validator rejects a qualityContract requiredState outside the
     artifacts: {
       broken: {
         template: 'x.md',
-        primaryOwners: ['cx-product-manager'],
+        primaryOwners: ['product-manager'],
         qualityContract: { requiredStates: ['exported', 'shipped'] },
       },
     },

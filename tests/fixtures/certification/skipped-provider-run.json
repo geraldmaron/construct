@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "cert-skipped-provider-001",
-  "scenarioId": "specialist.cx-engineer.normal",
-  "capabilityId": "specialist.cx-engineer",
+  "scenarioId": "specialist.engineer.normal",
+  "capabilityId": "specialist.engineer",
   "model": {
     "provider": "openrouter",
     "requestedId": "openrouter/free-model",

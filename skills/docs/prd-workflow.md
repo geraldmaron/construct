@@ -12,7 +12,7 @@ Use when: the user asks to create a PRD, platform spec, business case, RFC, or r
 
 Choose the document type before drafting:
 
-Resolve tone from `specialists/tone-profiles.json` and optional `.cx/brand-voice.json` override for the selected template.
+Resolve tone from `specialists/tone-profiles.json` and optional `.construct/brand-voice.json` override for the selected template.
 
 | Template | Use when |
 |---|---|
@@ -31,7 +31,7 @@ The numbered chain below is the manifest baseline, not the final roster. `constr
 
 1. **cx-product-manager** produces the requirements package
 2. **cx-researcher** grounds requirements in user behavior and fills evidence gaps (invoke in parallel for new features)
-3. **Write to the appropriate `docs/` subdirectory** using the selected template. Each `get_template()` call resolves `.cx/templates/docs/` first, then the Construct default.
+3. **Write to the appropriate `docs/` subdirectory** using the selected template. Each `get_template()` call resolves `.construct/templates/docs/` first, then the Construct default.
 
    | Template | Output path |
    |---|---|
@@ -41,8 +41,8 @@ The numbered chain below is the manifest baseline, not the final roster. `constr
    | `meta-prd` | `docs/meta-prd/{YYYY-MM-DD}-{slug}.md` |
    | `rfc` | `docs/decisions/rfc/{YYYY-MM-DD}-{slug}.md` |
    | `rfc-platform` | `docs/decisions/rfc/{YYYY-MM-DD}-{slug}.md` |
-4. **cx-reviewer** runs the FMEA challenge pass (`roles/devil-advocate`) on the draft; highest-RPN failure modes need a mitigation or explicit accept-with-rationale before ship. Their specialist id must appear in `.cx/agent-log.jsonl` (manifest `releaseGate.requiredReviewers` for PRD-family types).
-5. **cx-operations** updates `.cx/context.md` with a link to the PRD
+4. **cx-reviewer** runs the FMEA challenge pass (`perspectives/devil-advocate`) on the draft; highest-RPN failure modes need a mitigation or explicit accept-with-rationale before ship. Their specialist id must appear in `.construct/agent-log.jsonl` (manifest `releaseGate.requiredReviewers` for PRD-family types).
+5. **cx-operations** updates `.construct/context.md` with a link to the PRD
 
 Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.
 
@@ -61,7 +61,7 @@ Run `construct artifact validate <path> --type=<type>` before marking the artifa
 
 ## After approval → beads
 
-Once the PRD is approved, run `/plan feature {feature-slug}` to produce a structured implementation plan and import it as workflow task packets (beads) into `.cx/workflow.json`. Link the resulting `.cx/plans/` file back in the PRD as the implementation reference.
+Once the PRD is approved, run `/plan feature {feature-slug}` to produce a structured implementation plan and import it as workflow task packets (beads) into `.construct/workflow.json`. Link the resulting `.construct/plans/` file back in the PRD as the implementation reference.
 
 ## Distribution (publish pipeline)
 

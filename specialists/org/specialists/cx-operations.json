@@ -85,7 +85,7 @@
     }
   ],
   "permissions": {},
-  "promptFile": "specialists/prompts/cx-operations.md",
+  "promptFile": "specialists/prompts/operations.md",
   "embedOrientation": {
     "focusAreas": [
       "dependency sequencing",

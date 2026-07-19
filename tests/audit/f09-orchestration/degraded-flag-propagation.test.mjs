@@ -26,8 +26,8 @@ function topLevelDegradedRun() {
     workerBackend: 'provider',
     hostRole: 'host',
     execution: { executionMode: 'orchestrated', degraded: false, degradationReason: null },
-    tasks: [{ id: 't1', role: 'cx-researcher', status: 'done', executor: 'provider' }],
-    plan: { intent: 'research', track: 'orchestrated', specialists: ['cx-researcher'] },
+    tasks: [{ id: 't1', role: 'researcher', status: 'done', executor: 'provider' }],
+    plan: { intent: 'research', track: 'orchestrated', specialists: ['researcher'] },
   };
 }
 
@@ -49,8 +49,8 @@ test('[construct-fbxv.5] a clean run is not falsely marked degraded by either re
     status: 'completed',
     degraded: false,
     execution: { executionMode: 'orchestrated', degraded: false },
-    tasks: [{ id: 't1', role: 'cx-architect', status: 'done', executor: 'provider' }],
-    plan: { specialists: ['cx-architect'] },
+    tasks: [{ id: 't1', role: 'architect', status: 'done', executor: 'provider' }],
+    plan: { specialists: ['architect'] },
     workerBackend: 'provider',
     hostRole: 'host',
   };

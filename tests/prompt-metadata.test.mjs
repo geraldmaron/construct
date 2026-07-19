@@ -9,34 +9,45 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
-import { enrichMetadataWithPrompt, resolvePromptEntry, resolvePromptMetadata } from '../lib/prompt-metadata.mjs';
+import {
+  enrichMetadataWithPrompt,
+  resolvePromptEntry,
+  resolvePromptMetadata,
+  resolveWorkerProfilePromptPath,
+} from '../lib/prompt-metadata.mjs';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-test('resolvePromptMetadata maps cx-prefixed agent names to prompt file fingerprints', () => {
-  const metadata = resolvePromptMetadata('cx-engineer', { rootDir: root });
+test('resolvePromptMetadata fingerprints the canonical worker profile', () => {
+  const metadata = resolvePromptMetadata('engineer', { rootDir: root });
 
-  assert.equal(metadata.promptName, 'engineer');
-  assert.equal(metadata.promptFile, 'specialists/prompts/cx-engineer.md');
-  assert.equal(metadata.promptSource, 'git');
-  assert.equal(metadata.promptHash.length, 64);
-  assert.equal(metadata.promptVersion, metadata.promptHash.slice(0, 12));
+  assert.equal(metadata.workerProfileId, 'engineer');
+  assert.equal(metadata.workerProfileSource, 'registry');
+  assert.equal(metadata.workerProfilePromptPath, 'registry/worker-profiles/prompts/engineer.md');
+  assert.equal(metadata.workerProfileHash.length, 64);
+  assert.equal(metadata.workerProfileVersion, metadata.workerProfileHash.slice(0, 12));
 });
 
 test('enrichMetadataWithPrompt preserves caller metadata over derived prompt identity', () => {
-  const metadata = enrichMetadataWithPrompt('cx-engineer', {
+  const metadata = enrichMetadataWithPrompt('engineer', {
     promptVersion: 'staging-123',
     teamId: 'delivery',
   }, { rootDir: root });
 
-  assert.equal(metadata.promptName, 'engineer');
+  assert.equal(metadata.workerProfileId, 'engineer');
   assert.equal(metadata.promptVersion, 'staging-123');
   assert.equal(metadata.teamId, 'delivery');
   assert.equal('promptText' in metadata, false);
 });
 
-test('resolvePromptEntry returns registry entry for persona or agent', () => {
-  const entry = resolvePromptEntry('cx-engineer', { rootDir: root });
-  assert.equal(entry.name, 'engineer');
-  assert.equal(entry.promptFile, 'specialists/prompts/cx-engineer.md');
+test('resolvePromptEntry returns the canonical worker-profile entry', () => {
+  const entry = resolvePromptEntry('engineer', { rootDir: root });
+  assert.equal(entry.id, 'engineer');
+  assert.equal(entry.runtime, 'host-agent');
+});
+
+test('Worker Profile prompt lookup is strict and does not normalize retired ids', () => {
+  assert.equal(resolvePromptEntry('cx-engineer', { rootDir: root }), null);
+  assert.equal(resolvePromptEntry('opencode.engineer', { rootDir: root }), null);
+  assert.equal(resolveWorkerProfilePromptPath('engineer', { rootDir: root }), 'registry/worker-profiles/prompts/engineer.md');
 });

@@ -2,7 +2,7 @@
  * tests/registry/surface-map-manifest.test.mjs — LMCP-B7: COMMAND_SURFACE/
  * SURFACE_TIERS moved from a hardcoded dict to
  * lib/registry/manifests/surface-map.default.json, with
- * `.cx/registry/surface-map.json` project-override support. Asserts the
+ * `.construct/registry/surface-map.json` project-override support. Asserts the
  * default surface is byte-identical to the prior hardcoded dict, that an
  * override adds a surface entry in a fixture project, and that
  * validateSurfaceMap() fails for a command with no entry anywhere.
@@ -62,7 +62,7 @@ test('resolveSurfaceMap with no project override is byte-identical to the prior 
   });
 });
 
-test('a .cx/registry/surface-map.json override adds a surface entry in a fixture project', () => {
+test('a .construct/registry/surface-map.json override adds a surface entry in a fixture project', () => {
   withFixtureProject({ commands: { 'my-plugin-cmd': 'tui' } }, (root) => {
     assert.equal(surfaceForCommand('my-plugin-cmd', { cwd: root }), 'tui');
     assert.equal(surfaceForCommand('status', { cwd: root }), 'thin-cli', 'unrelated default entries survive an additive override');

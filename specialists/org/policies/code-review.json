@@ -1,7 +1,7 @@
 {
   "id": "code-review",
   "owner": "orchestrator",
-  "description": "Review standards applied by cx-reviewer and cx-qa before any change is marked done.",
+  "description": "Review standards applied by reviewer and qa before any change is marked done.",
   "enforcement": "(persona prompt)",
   "mode": "honor-system",
   "requiresApprovalFrom": [],

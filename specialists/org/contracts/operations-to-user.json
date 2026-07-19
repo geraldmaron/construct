@@ -1,6 +1,6 @@
 {
   "id": "operations-tpm-briefing",
-  "producer": "cx-operations",
+  "producer": "operations",
   "consumer": "user",
   "trigger": {
     "intent": ["implementation"],

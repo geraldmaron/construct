@@ -40,7 +40,7 @@ const ENV = {
   CONSTRUCT_PROVIDER_TIMEOUT_MS: '100',
   CONSTRUCT_PROVIDER_MAX_ATTEMPTS: '1',
 };
-const TASK = { role: 'cx-architect', reason: null, handoffContract: null };
+const TASK = { role: 'architect', reason: null, handoffContract: null };
 const RUN = { request: { summary: 'bound the provider call' } };
 
 // A fetch that records the options it was called with and never settles — the exact

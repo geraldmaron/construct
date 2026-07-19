@@ -45,7 +45,7 @@ function seed() {
 function runHook({ home, cwd }, payload) {
   return spawnSync(process.execPath, [HOOK], {
     cwd,
-    env: sterileSpawnEnv({ HOME: home, USERPROFILE: home, CX_HOME_OVERRIDE: home }),
+    env: sterileSpawnEnv({ HOME: home, USERPROFILE: home, CONSTRUCT_HOME_OVERRIDE: home }),
     input: typeof payload === 'string' ? payload : JSON.stringify(payload),
     encoding: 'utf8',
     timeout: 15_000,

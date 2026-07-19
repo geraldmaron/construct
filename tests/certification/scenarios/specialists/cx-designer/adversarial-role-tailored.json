@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "specialistId": "cx-designer",
+  "specialistId": "designer",
   "capabilityId": "specialist.prompt",
   "mode": "adversarial",
   "scenarioKind": "adversarial-role-tailored",

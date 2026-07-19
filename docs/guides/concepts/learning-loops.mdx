@@ -72,7 +72,7 @@ The skill-level twin of A3, phase 1 of the skill effectiveness pipeline. When an
 
 ### Prompt improvement (A4)
 
-`construct optimize <agent>` (`scripts/optimize.mjs`) fetches the agent's low-scoring telemetry traces, diagnoses the top failure patterns with an LLM, and proposes a patch to the agent's role skill file (`skills/roles/<role>.md`, inlined into specialist prompts at sync time). The default run is a dry-run that only prints the diagnosis and patch. Nothing auto-applies: the weekly `optimize-loop` scheduled job and the session-end hook run dry-run only. `--apply` is the human gate — rate-limited to one apply per agent per 7 days, it writes a `.bak` backup (most recent 5 kept), appends the patch record to `~/.construct/prompt-history/<agent>.jsonl`, integrity-checks the patched file, and runs `construct sync` so the change propagates; `--rollback` restores the latest backup and records the reversal in the same history. Apply/rollback are CLI-only by design. Registry mutations stay on the operator path.
+`construct optimize <agent>` (`scripts/optimize.mjs`) fetches the agent's low-scoring telemetry traces, diagnoses the top failure patterns with an LLM, and proposes a patch to the agent's role skill file (`skills/perspectives/<role>.md`, inlined into specialist prompts at sync time). The default run is a dry-run that only prints the diagnosis and patch. Nothing auto-applies: the weekly `optimize-loop` scheduled job and the session-end hook run dry-run only. `--apply` is the human gate — rate-limited to one apply per agent per 7 days, it writes a `.bak` backup (most recent 5 kept), appends the patch record to `~/.construct/prompt-history/<agent>.jsonl`, integrity-checks the patched file, and runs `construct sync` so the change propagates; `--rollback` restores the latest backup and records the reversal in the same history. Apply/rollback are CLI-only by design. Registry mutations stay on the operator path.
 
 ### Tool discoverability (Oracle)
 
@@ -82,13 +82,13 @@ Hosts and models routinely mis-name Construct's MCP tools — the `call` gateway
 
 When a host run requires repository evidence, a tool request is not itself proof. Construct records a versioned immutable source only after the matching `read`, `grep`, or `glob` result completed successfully with a concrete target; a search/glob pattern alone is not a source. At turn close it stores a deterministic verdict: `verified`, `partially_verified`, `uncited_evidence`, `insufficient_evidence`, or `not_applicable`, with reason codes. A required-evidence answer is verified only when an exact recorded target or its structured `repo:<target>` identifier is cited in the answer; denied, failed, pending, unrelated, and hidden-layer tools never count.
 
-## Profile-aware learning
+## Workspace Preset-aware learning
 
-The PR #67 surfaces (profile lifecycle, intake taxonomies, departments) feed the same loops. Each observation, outcome, and research finding carries the active profile id, so `construct scope health` and `learning_status` filter cleanly. Profiles themselves are research artifacts: `docs/guides/concepts/profile-lifecycle.md` walks the discover → frame → architect → validate → promote chain.
+Workspace Preset lifecycle and intake taxonomies feed the same loops. Outcomes and research findings carry the active Workspace Preset id, so `workspace_preset_health` and `learning_status` filter cleanly. Presets are research artifacts; [Workspace Preset lifecycle](/guides/concepts/workspace-preset-lifecycle) describes the validation discipline.
 
 ## Telemetry dashboard
 
-`npm run learning:status` prints a one-screen table: active profile, observations (last 24h plus total), research findings indexed, per-role outcome rollup. Pass `--aggregate` to rebuild `_summary.json` first. Source: `scripts/learning-status.mjs`. MCP: `learning_status` returns the same dashboard as a structured object.
+`npm run learning:status` prints a one-screen table: active Workspace Preset, observations (last 24h plus total), research findings indexed, and outcome rollup. Pass `--aggregate` to rebuild `_summary.json` first. MCP `learning_status` returns the same dashboard as structured data.
 
 ## MCP exposure
 
@@ -96,14 +96,14 @@ Subagents talk to Construct through the `construct-mcp` stdio server, not the CL
 
 | Tool | Surface | Mutating |
 |---|---|---|
-| `scope_show`, `scope_list`, `scope_drafts`, `scope_health` | Profile state | no |
+| `workspace_preset_show`, `workspace_preset_list`, `workspace_preset_drafts`, `workspace_preset_health` | Workspace Preset state | no |
 | `outcomes_summary` | Outcome rollups | no |
 | `outcomes_record` | Outcome capture | yes (`confirm=true`) |
 | `knowledge_add` | Research persistence | yes (`confirm=true`) |
 | `learning_status` | Dashboard mirror | no |
 | `sandbox_list` | Isolated environments | no |
-| `scope_create` | Draft scaffold | yes (`confirm=true`) |
-| `scope_archive` | Curated archive | yes (`confirm=true`, destructive) |
+| `workspace_preset_create` | Draft scaffold | yes (`confirm=true`) |
+| `workspace_preset_archive` | Canonical archive | yes (`confirm=true`, destructive) |
 
 `optimize_apply` and `optimize_rollback` stay CLI-only on purpose: prompt-version mutations belong to the operator, not to subagents.
 

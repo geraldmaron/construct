@@ -35,7 +35,7 @@ test('CONSTRUCT_AGENT_ID set => active', () => {
   const h = makeHome();
   try {
     assert.equal(
-      isSpecialistAgentActive({ env: { CONSTRUCT_AGENT_ID: 'cx-engineer' }, home: h.home, now: () => FRESH_MS }),
+      isSpecialistAgentActive({ env: { CONSTRUCT_AGENT_ID: 'engineer' }, home: h.home, now: () => FRESH_MS }),
       true,
     );
   } finally { h.cleanup(); }
@@ -51,7 +51,7 @@ test('no env, no tracker files => inactive', () => {
 test('fresh shared last-agent.json => active', () => {
   const h = makeHome();
   try {
-    h.writeLastAgent('last-agent.json', { agent: 'cx-engineer', ts: FRESH });
+    h.writeLastAgent('last-agent.json', { agent: 'engineer', ts: FRESH });
     assert.equal(isSpecialistAgentActive({ env: {}, home: h.home, now: () => FRESH_MS + 60_000 }), true);
   } finally { h.cleanup(); }
 });
@@ -59,7 +59,7 @@ test('fresh shared last-agent.json => active', () => {
 test('stale shared last-agent.json (>10min) => inactive', () => {
   const h = makeHome();
   try {
-    h.writeLastAgent('last-agent.json', { agent: 'cx-engineer', ts: FRESH });
+    h.writeLastAgent('last-agent.json', { agent: 'engineer', ts: FRESH });
     assert.equal(isSpecialistAgentActive({ env: {}, home: h.home, now: () => FRESH_MS + TEN_MIN + 1_000 }), false);
   } finally { h.cleanup(); }
 });
@@ -68,11 +68,11 @@ test('per-agent file takes precedence over shared file', () => {
   const h = makeHome();
   try {
     // Shared is stale, per-agent is fresh -> active
-    h.writeLastAgent('last-agent.json', { agent: 'cx-architect', ts: '2020-01-01T00:00:00.000Z' });
-    h.writeLastAgent('last-agent-engineer.json', { agent: 'cx-engineer', ts: FRESH });
+    h.writeLastAgent('last-agent.json', { agent: 'architect', ts: '2020-01-01T00:00:00.000Z' });
+    h.writeLastAgent('last-agent-engineer.json', { agent: 'engineer', ts: FRESH });
     assert.equal(
       isSpecialistAgentActive({
-        env: { CONSTRUCT_AGENT_ID: 'cx-engineer' },
+        env: { CONSTRUCT_AGENT_ID: 'engineer' },
         home: h.home,
         now: () => FRESH_MS + 60_000,
       }),
@@ -92,7 +92,7 @@ test('malformed tracker JSON => inactive, does not throw', () => {
 test('tracker entry without ts => inactive', () => {
   const h = makeHome();
   try {
-    h.writeLastAgent('last-agent.json', { agent: 'cx-engineer' });
+    h.writeLastAgent('last-agent.json', { agent: 'engineer' });
     assert.equal(isSpecialistAgentActive({ env: {}, home: h.home, now: () => FRESH_MS }), false);
   } finally { h.cleanup(); }
 });

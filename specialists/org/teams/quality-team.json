@@ -9,8 +9,8 @@
     "qa"
   ],
   "specialists": [
-    "cx-reviewer",
-    "cx-qa"
+    "reviewer",
+    "qa"
   ],
   "collaborators": [],
   "decisionRights": [
@@ -29,7 +29,7 @@
     "architect",
     "orchestrator"
   ],
-  "charter": "Verify the system does what it claims and surface what is broken. Owns code review, plan-challenge framing, AI/eval rigor, and fleet-level trace analysis (devil-advocate, evaluator, trace-reviewer folded into cx-reviewer; test-automation folded into cx-qa; construct-rf26.11), plus test strategy and automation. Does not own implementation or product decisions. Escalates quality vs. schedule conflicts to architecture.",
+  "charter": "Verify the system does what it claims and surface what is broken. Owns code review, plan-challenge framing, AI/eval rigor, and fleet-level trace analysis (devil-advocate, evaluator, trace-reviewer folded into reviewer; test-automation folded into qa; construct-rf26.11), plus test strategy and automation. Does not own implementation or product decisions. Escalates quality vs. schedule conflicts to architecture.",
   "contact": {
     "slack": "#quality",
     "email": "quality@example.com",

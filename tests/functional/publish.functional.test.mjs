@@ -33,7 +33,7 @@ function run(args, cwd, env = {}) {
       BOOTSTRAP_CHECKED: '1',
       CONSTRUCT_DISABLE_AUTO_CLEANUP: '1',
       HOME: SANDBOX_HOME,
-      CX_HOME_OVERRIDE: SANDBOX_HOME,
+      CONSTRUCT_HOME_OVERRIDE: SANDBOX_HOME,
       ...env,
     },
   });
@@ -235,7 +235,7 @@ test('published PDFs preserve ordered-list numbering and render figures', (t) =>
 title: Ordered list regression
 artifactType: prd-platform
 status: draft
-owner: cx-product-manager
+owner: product-manager
 last_verified_at: 2026-06-28
 ---
 

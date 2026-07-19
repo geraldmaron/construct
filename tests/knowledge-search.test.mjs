@@ -105,7 +105,7 @@ configured GitHub repos and Jira projects on a schedule.
   } finally { cleanTmp(root); }
 });
 
-test('finds content in .cx/knowledge/internal', () => {
+test('finds content in .construct/knowledge/internal', () => {
   const root = makeTmpRepo({
     '.construct/knowledge/internal/team-setup.md': `# Team setup notes
 
@@ -162,7 +162,7 @@ test('sources list contains only unique file paths', () => {
 });
 
 test('returns message when no hits found', () => {
-  // Use a non-priority source (.cx/knowledge/internal) with content that has
+  // Use a non-priority source (.construct/knowledge/internal) with content that has
   // no overlap with the query tokens so it scores below minScore.
   const root = makeTmpRepo({
     '.construct/knowledge/internal/notes.md': `# Notes\n\nsome unrelated content here with no overlap.\n`,

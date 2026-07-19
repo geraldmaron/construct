@@ -47,11 +47,11 @@ test('Job 12 proposes a Jira issue for an unticketed strategy doc within one tic
   const env = sterileSpawnEnv({
     HOME: root,
     USERPROFILE: root,
-    CX_HOME_OVERRIDE: root,
-    CX_ROOT_DIR: root,
+    CONSTRUCT_HOME_OVERRIDE: root,
+    CONSTRUCT_ROOT_DIR: root,
     TICK_TIMEOUT_MS: String(timeoutMs),
     CONSTRUCT_EMBEDDING_MODEL: 'hashing',
-    CX_INBOX_LIVE_WATCH: 'off',
+    CONSTRUCT_INBOX_LIVE_WATCH: 'off',
     CONSTRUCT_EMBED_ROADMAP_ENABLED: '0',
   });
   const res = spawnSync(process.execPath, [RUNNER], {

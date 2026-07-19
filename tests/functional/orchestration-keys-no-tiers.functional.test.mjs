@@ -2,7 +2,7 @@
  * tests/functional/orchestration-keys-no-tiers.functional.test.mjs
  *
  * Guards construct-neq9.2: the incident machine state — a provider API key
- * present, no CX_MODEL_ or CONSTRUCT_MODEL_ tier vars — was exercised by zero
+ * present, no CONSTRUCT_MODEL_ or CONSTRUCT_MODEL_ tier vars — was exercised by zero
  * tests before this file (every existing suite either injects all three tiers
  * or blanks the keys, i.e. the exact inverse of the machine that produced
  * incident run-02158a157d53). Verifies the runtime resolves a model from the
@@ -33,7 +33,7 @@ const REQUEST = 'design and implement a new authentication architecture';
 
 function keysNoTiersEnv(overrides = {}) {
   // The exact incident machine state: a real (here fake-but-present) provider
-  // key, and deliberately NO CX_MODEL_REASONING/STANDARD/FAST or
+  // key, and deliberately NO CONSTRUCT_MODEL_REASONING/STANDARD/FAST or
   // CONSTRUCT_MODEL_* — sterileSpawnEnv's allowlist already omits them by
   // construction, so simply not naming them here is the fixture.
   return sterileSpawnEnv({
@@ -66,10 +66,10 @@ test('keys-no-tiers: resolveExecution resolves a model from the credential famil
 test('keys-no-tiers: orchestration_run (in-process) executes real tasks, never persists degraded:true with an empty task list as completed', async () => {
   const cwd = tmpProject();
   // orchestrationRun's trace emission resolves the machine-scoped state root
-  // (ADR-0066) via CX_HOME_OVERRIDE read in-process, not via the `env` option
+  // (ADR-0066) via CONSTRUCT_HOME_OVERRIDE read in-process, not via the `env` option
   // above — pin it or the run writes into the real developer machine's home.
-  const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = cwd;
+  const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = cwd;
   try {
     const result = await orchestrationRun(
       { request: REQUEST, file_count: 20, module_count: 6, wait: true, worker_backend: 'inline' },
@@ -83,8 +83,8 @@ test('keys-no-tiers: orchestration_run (in-process) executes real tasks, never p
     assert.ok(Array.isArray(result.tasks) && result.tasks.length > 0, 'a keys-present run must resolve real tasks, not degrade to an empty plan');
     assert.equal(result.degraded, false);
   } finally {
-    if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+    if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
     rmTmpDir(cwd);
   }
 });
@@ -103,7 +103,7 @@ test('keys-no-tiers: the real spawned MCP server drives orchestration_run end to
     env: sterileSpawnEnv({
       HOME: home,
       USERPROFILE: home,
-      CX_HOME_OVERRIDE: home,
+      CONSTRUCT_HOME_OVERRIDE: home,
       CONSTRUCT_DEV_PATH: REPO_ROOT,
       ANTHROPIC_API_KEY: 'sk-ant-fake-but-present',
       OPENROUTER_API_KEY: '',

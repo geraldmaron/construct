@@ -38,25 +38,25 @@ When two signals conflict:
 
 ## Strategy Check
 
-After grouping evidence, check `.cx/knowledge/decisions/strategy/` for any declared strategy documents:
+After grouping evidence, check `.construct/knowledge/decisions/strategy/` for any declared strategy documents:
 - Signal aligns with a declared Bet → raise priority, note alignment explicitly.
 - Signal conflicts with a declared Non-bet → flag the conflict; the user must make an explicit override decision before proceeding.
 - No strategy documents exist → continue without blocking; note that strategy grounding is not available.
 
 ## Steps
 
-1. **Gather**: collect evidence briefs, customer profiles, field notes, tickets, and research from `.cx/knowledge/` and linked sources.
+1. **Gather**: collect evidence briefs, customer profiles, field notes, tickets, and research from `.construct/knowledge/` and linked sources.
 2. **Group**: cluster by theme, ask, pain point, affected persona, product area, and counter-signal.
 3. **Assign confidence**: apply the rubric above; separate observation from inference.
-4. **Check strategy**: check `.cx/knowledge/decisions/strategy/`; flag alignment or conflict with Bets and Non-bets if documents exist.
+4. **Check strategy**: check `.construct/knowledge/decisions/strategy/`; flag alignment or conflict with Bets and Non-bets if documents exist.
 5. **Select artifact**: apply the decision tree; write the artifact; store to the path below.
 
 ## Storage
 
 | Artifact | Path |
 |---|---|
-| Signal brief | `.cx/knowledge/internal/signals/` |
-| Evidence brief | `.cx/knowledge/internal/evidence-briefs/` |
+| Signal brief | `.construct/knowledge/internal/signals/` |
+| Evidence brief | `.construct/knowledge/internal/evidence-briefs/` |
 | PRD | `docs/specs/prd/` |
 | PRFAQ | `docs/prfaq/` |
 | Meta PRD | `docs/meta-prd/` |

@@ -51,7 +51,7 @@ test('CLI: the shadow warning names the shell value as the winner, matching the 
       env: sterileSpawnEnv({
         HOME: env.home,
         USERPROFILE: env.home,
-        CX_HOME_OVERRIDE: env.home,
+        CONSTRUCT_HOME_OVERRIDE: env.home,
         XDG_CONFIG_HOME: join(env.home, '.config'),
         CI: 'true',
         CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',

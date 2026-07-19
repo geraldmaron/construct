@@ -65,7 +65,7 @@
   ],
   "watchConditions": [],
   "permissions": {},
-  "promptFile": "specialists/prompts/cx-researcher.md",
+  "promptFile": "specialists/prompts/researcher.md",
   "embedOrientation": {
     "focusAreas": [
       "source freshness",
@@ -124,7 +124,7 @@
         },
         "recruit": {
           "specialists": [
-            "cx-researcher"
+            "researcher"
           ]
         },
         "role": "advisor",

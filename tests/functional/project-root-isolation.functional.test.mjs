@@ -116,14 +116,14 @@ test('telemetry url from startServices uses the machine-scoped state root, not p
   // probes/spawners (its designed test seams) so no real process is spawned;
   // startServices spawns no background daemons (construct-b0nny.29).
   // Telemetry's url resolves through resolveStateDir (ADR-0066), which reads
-  // CX_HOME_OVERRIDE off process.env directly rather than from the homeDir
+  // CONSTRUCT_HOME_OVERRIDE off process.env directly rather than from the homeDir
   // option threaded through startServices — that override is pinned here to
   // an isolated home so the assertion neither depends on nor writes into the
   // real developer machine's state root.
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-root-isolation-'));
   const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-root-isolation-home-'));
-  const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = homeOverride;
+  const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
   try {
     const { results } = await startServices({
       rootDir: tmpDir,
@@ -147,8 +147,8 @@ test('telemetry url from startServices uses the machine-scoped state root, not p
       `telemetry url (${telemetry.url}) must not point into packageRoot (${packageRoot})`,
     );
   } finally {
-    if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+    if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
     rmTmpDir(tmpDir);
     rmTmpDir(homeOverride);
   }

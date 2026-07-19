@@ -71,7 +71,7 @@ test('inline validation is the same schema the CLI enforces', async () => {
   assert.equal(bad.ok, false);
   assert.ok(bad.errors.some((e) => /description/.test(e.message)), 'short description is rejected');
 
-  const existing = await j('GET', '/api/entities/specialist/cx-architect');
+  const existing = await j('GET', '/api/entities/specialist/architect');
   const good = await j('POST', '/api/validate/specialist', existing.record);
   assert.equal(good.ok, true, JSON.stringify(good.errors));
 });
@@ -151,11 +151,11 @@ test('a participation rule created through the API lands in project org config t
   const rule = {
     id: 'studio-visual-review',
     when: { signalExpr: 'visualDeliverable' },
-    recruit: { specialists: ['cx-designer'] },
+    recruit: { specialists: ['designer'] },
     role: 'reviewer', gate: 'advisory',
     reason: 'visual deliverable — design review',
   };
-  const created = await j('POST', '/api/participation/cx-designer?scope=project', rule);
+  const created = await j('POST', '/api/participation/designer?scope=project', rule);
   assert.equal(created.ok, true, JSON.stringify(created.errors));
   assert.ok(created.path.includes(path.join('org', 'specialists')), 'the write patches the owning specialist entry');
 
@@ -165,13 +165,13 @@ test('a participation rule created through the API lands in project org config t
   const list = await j('GET', '/api/participation');
   const row = list.items.find((it) => it.rule.id === 'studio-visual-review');
   assert.ok(row, 'the rule reads back through the list API');
-  assert.equal(row.owner, 'cx-designer');
+  assert.equal(row.owner, 'designer');
   assert.equal(row.scope, 'project');
 });
 
 test('inline participation validation is the same org-api schema, errors and all', async () => {
   const bad = await j('POST', '/api/validate/participation', {
-    ownerId: 'cx-designer',
+    ownerId: 'designer',
     rule: { id: 'Bad Id', when: {}, recruit: {}, role: 'boss', gate: 'maybe' },
   });
   assert.equal(bad.ok, false);
@@ -179,26 +179,26 @@ test('inline participation validation is the same org-api schema, errors and all
   assert.ok(ids.includes('participation-rule-id-shape'));
   assert.ok(ids.includes('participation-role-enum'));
 
-  const refused = await j('POST', '/api/participation/cx-designer?scope=project', { id: 'Bad Id', when: {}, recruit: {}, role: 'boss', gate: 'maybe' });
+  const refused = await j('POST', '/api/participation/designer?scope=project', { id: 'Bad Id', when: {}, recruit: {}, role: 'boss', gate: 'maybe' });
   assert.equal(refused.ok, false, 'the write path refuses what validation refuses — one schema');
 });
 
 test('participation preview shows the recruited set for a sample request', async () => {
   const preview = await j('POST', '/api/preview/participation', { request: 'design the new dashboard mockups and wireframes' });
   assert.equal(preview.signals.visualDeliverable, true);
-  const designer = preview.recruited.find((p) => p.specialist === 'cx-designer' && p.rule === 'studio-visual-review');
+  const designer = preview.recruited.find((p) => p.specialist === 'designer' && p.rule === 'studio-visual-review');
   assert.ok(designer, `the rule created above recruits in the preview: ${JSON.stringify(preview.recruited)}`);
 });
 
 test('a participation rule can be deleted through the API', async () => {
-  const gone = await j('DELETE', '/api/participation/cx-designer/studio-visual-review?scope=project');
+  const gone = await j('DELETE', '/api/participation/designer/studio-visual-review?scope=project');
   assert.equal(gone.ok, true, JSON.stringify(gone.errors));
   const list = await j('GET', '/api/participation');
   assert.equal(list.items.some((it) => it.rule.id === 'studio-visual-review'), false);
 });
 
 test('a cross-origin participation write is refused', async () => {
-  const blocked = await fetch(studio.url + '/api/participation/cx-designer?scope=project', {
+  const blocked = await fetch(studio.url + '/api/participation/designer?scope=project', {
     method: 'POST', headers: { 'content-type': 'application/json', origin: 'http://evil.example' }, body: '{}',
   });
   assert.equal(blocked.status, 403);

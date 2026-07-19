@@ -2,7 +2,7 @@
  * tests/audit/f04-host-readiness/windows-path-stale.red.mjs — F04 [R8] POSIX-only stale-path proof.
  *
  * RED fixture (must FAIL against current code). mcpEntryPointsOutsideToolkit
- * (scripts/sync-specialists.mjs L1496-1503) detects a stale construct toolkit path
+ * (scripts/sync-worker-profiles.mjs L1496-1503) detects a stale construct toolkit path
  * with a POSIX-slash regex (`/\/lib\/mcp\/[a-z0-9-]+\.mjs$/`) and a POSIX-separator
  * root prefix check (`!arg.startsWith(`${root}/`)`). On Windows, VS Code writes
  * backslash-separated argv (e.g. `C:\\Users\\dev\\construct\\lib\\mcp\\server.mjs`)
@@ -19,7 +19,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { mcpEntryPointsOutsideToolkit } from '../../../scripts/sync-specialists.mjs';
+import { mcpEntryPointsOutsideToolkit } from '../../../scripts/sync-worker-profiles.mjs';
 
 // Backslash drive-letter paths as VS Code on Windows records them in mcp.json argv.
 // CURRENT_ROOT is the toolkit the running sync resolves to; FOREIGN points at a

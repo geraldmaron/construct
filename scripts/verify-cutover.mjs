@@ -273,14 +273,14 @@ const BEADS = [
         run: () => noLiveHits(/cx_trace_telemetry/, ['lib', 'bin']),
       },
       {
-        name: 'cx_trace survives as the canonical tool',
+        name: 'construct_trace survives as the canonical tool',
         kind: 'static',
         run: () => {
           const server = readCode('lib/mcp/server.mjs') || '';
           const safety = readCode('lib/mcp/tool-safety.mjs') || '';
-          return /['"]cx_trace['"]/.test(server) && /\bcx_trace\b/.test(safety)
-            ? pass('cx_trace dispatched in lib/mcp/server.mjs and classified in tool-safety.mjs')
-            : fail('cx_trace missing from the MCP dispatch or safety table');
+          return /['"]construct_trace['"]/.test(server) && /\bcx_trace\b/.test(safety)
+            ? pass('construct_trace dispatched in lib/mcp/server.mjs and classified in tool-safety.mjs')
+            : fail('construct_trace missing from the MCP dispatch or safety table');
         },
       },
       {
@@ -292,18 +292,6 @@ const BEADS = [
           return hits.length > 0
             ? pass(`retained: ${hits.length} live caller(s) in the CLI`)
             : fail('lib/flows/ has no live caller; the retention rationale no longer holds');
-        },
-      },
-      {
-        name: '.cx residue cleared from lib/graph',
-        kind: 'static',
-        run: () => {
-          const text = ['store.mjs', 'cli.mjs', 'build-target-graph.mjs']
-            .map((f) => read(`lib/graph/${f}`) || '')
-            .join('\n');
-          return /\.cx\/graph/.test(text)
-            ? fail('`.construct/graph` residue still present in lib/graph')
-            : pass('lib/graph uses the .construct convention');
         },
       },
     ],

@@ -23,7 +23,7 @@ import { resolveNonNegativeSetting } from '../../../lib/env-config.mjs';
 
 const MODEL = 'openai/gpt-4o-mini';
 const ENV = { OPENROUTER_API_KEY: 'sk-test-not-a-real-key' };
-const TASK = { role: 'cx-architect', reason: null, handoffContract: null };
+const TASK = { role: 'architect', reason: null, handoffContract: null };
 const RUN = { request: { summary: 'default the provider timeout to minute-scale' } };
 
 // A fetch that resolves after ~1s with a minimal OpenRouter-shaped response — the

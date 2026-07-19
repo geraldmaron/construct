@@ -56,17 +56,17 @@ function run(args, env) {
 }
 
 // The in-process loader resolves the user tier via homeDir(), which reads
-// CX_HOME_OVERRIDE from process.env directly — every in-process registry call
+// CONSTRUCT_HOME_OVERRIDE from process.env directly — every in-process registry call
 // runs under the same override the spawned CLI sees.
 
 async function withHomeOverride(homeDir, fn) {
-  const prev = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = homeDir;
+  const prev = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = homeDir;
   try {
     return await fn();
   } finally {
-    if (prev === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prev;
+    if (prev === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prev;
   }
 }
 
@@ -90,7 +90,7 @@ test('a CLI-scaffolded specialist resolves through an already-warm loader cache 
     rmTmpDir(projectDir);
     rmTmpDir(homeDir);
   });
-  const env = { HOME: homeDir, CX_HOME_OVERRIDE: homeDir };
+  const env = { HOME: homeDir, CONSTRUCT_HOME_OVERRIDE: homeDir };
 
   const { loadRegistry, getSpecialist, getTeam, clearCache } = await import('../../lib/registry/loader.mjs');
 
@@ -130,7 +130,7 @@ test('edit round trip: re-scaffold refuses without --force, succeeds with it, an
     rmTmpDir(projectDir);
     rmTmpDir(homeDir);
   });
-  const env = { HOME: homeDir, CX_HOME_OVERRIDE: homeDir };
+  const env = { HOME: homeDir, CONSTRUCT_HOME_OVERRIDE: homeDir };
 
   const teamResult = run([
     'team', 'create', 'hotload-team',
@@ -188,8 +188,8 @@ test('a project-tier drop-in overriding one field of a built-in specialist wins 
   const overlayDir = path.join(projectDir, '.construct', 'org', 'specialists');
   fs.mkdirSync(overlayDir, { recursive: true });
   fs.writeFileSync(
-    path.join(overlayDir, 'cx-engineer.json'),
-    `${JSON.stringify({ id: 'cx-engineer', modelTier: 'reasoning' }, null, 2)}\n`,
+    path.join(overlayDir, 'engineer.json'),
+    `${JSON.stringify({ id: 'engineer', modelTier: 'reasoning' }, null, 2)}\n`,
   );
 
   await withHomeOverride(homeDir, async () => {

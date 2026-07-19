@@ -2,7 +2,7 @@
  * tests/status-degradation-details.test.mjs — Unit tests for degradationDetails in buildStatus.
  *
  * Covers:
- *   1. buildStatus with a mock .cx/degradation.jsonl → degradationDetails includes all records.
+ *   1. buildStatus with a mock .construct/degradation.jsonl → degradationDetails includes all records.
  *   2. buildStatus with no degradation.jsonl → degradationDetails is an empty array.
  *   3. formatStatusReport with degradation details → emits the "Degradation details:" section.
  *
@@ -60,7 +60,7 @@ async function createMinimalFixture({ degradationLines = null } = {}) {
   // settings.json — read for hooks / mcpServers
   writeJson(path.join(homeDir, '.claude', 'settings.json'), { mcpServers: {}, hooks: {} });
 
-  // .cx/context.json — read by inspectContextState
+  // .construct/context.json — read by inspectContextState
   writeJson(path.join(cwd, '.construct', 'context.json'), {
     format: 'json',
     savedAt: new Date().toISOString(),
@@ -71,10 +71,10 @@ async function createMinimalFixture({ degradationLines = null } = {}) {
 
   // Optionally write the degradation.jsonl file
   if (degradationLines !== null) {
-    const cxDir = path.join(cwd, '.construct');
-    fs.mkdirSync(cxDir, { recursive: true });
+    const constructDir = path.join(cwd, '.construct');
+    fs.mkdirSync(constructDir, { recursive: true });
     fs.writeFileSync(
-      path.join(cxDir, 'degradation.jsonl'),
+      path.join(constructDir, 'degradation.jsonl'),
       degradationLines.map((r) => JSON.stringify(r)).join('\n') + '\n',
     );
   }
@@ -106,7 +106,7 @@ test('buildStatus: degradationDetails is empty when no degradation.jsonl exists'
   assert.equal(status.degradationDetails.length, 0, 'degradationDetails should be empty when no file');
 });
 
-test('buildStatus: degradationDetails includes records from .cx/degradation.jsonl', async () => {
+test('buildStatus: degradationDetails includes records from .construct/degradation.jsonl', async () => {
   const degradationLines = [
     {
       ts: '2026-07-03T10:00:00.000Z',
@@ -191,10 +191,10 @@ test('buildStatus: degradation record with explicit declared/actual/reason field
 
 test('buildStatus: malformed lines in degradation.jsonl are skipped', async () => {
   const { rootDir, homeDir, cwd } = await createMinimalFixture();
-  const cxDir = path.join(cwd, '.construct');
-  fs.mkdirSync(cxDir, { recursive: true });
+  const constructDir = path.join(cwd, '.construct');
+  fs.mkdirSync(constructDir, { recursive: true });
   fs.writeFileSync(
-    path.join(cxDir, 'degradation.jsonl'),
+    path.join(constructDir, 'degradation.jsonl'),
     [
       'not-json{{{',
       JSON.stringify({ ts: '2026-07-03T10:00:00.000Z', mode: 'team', subsystem: 'postgres-queue', degradedOk: true }),

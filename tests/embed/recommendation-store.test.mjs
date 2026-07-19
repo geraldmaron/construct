@@ -18,7 +18,7 @@ describe('recommendation store', () => {
 
   before(async () => {
     tmpHome = mkdtempSync(join(tmpdir(), 'cx-recommendations-home-'));
-    process.env.CX_HOME_OVERRIDE = tmpHome;
+    process.env.CONSTRUCT_HOME_OVERRIDE = tmpHome;
     indexFile = join(tmpHome, '.cx', 'intake', 'recommendations-index.json');
     logFile = join(tmpHome, '.cx', 'intake', 'recommendations.jsonl');
     // Clean state before tests
@@ -34,7 +34,7 @@ describe('recommendation store', () => {
   });
 
   after(() => {
-    delete process.env.CX_HOME_OVERRIDE;
+    delete process.env.CONSTRUCT_HOME_OVERRIDE;
     rmSync(tmpHome, { recursive: true, force: true });
   });
 

@@ -3,7 +3,7 @@
  *
  * RED fixture (must FAIL against current code). The generated Copilot/VS Code custom
  * agent grants COPILOT_AGENT_TOOLS = a `construct-mcp/*` wildcard plus broad
- * web/search/read/edit tools (scripts/sync-specialists.mjs L1371-1380), applied
+ * web/search/read/edit tools (scripts/sync-worker-profiles.mjs L1371-1380), applied
  * identically to every front-door agent regardless of task. A wildcard over the whole
  * construct-mcp surface plus `edit/editFiles` + outbound `web/fetch` is not
  * least-privilege: a routing front door needs the orchestration tools
@@ -25,7 +25,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const SYNC_SRC = path.join(HERE, '..', '..', '..', 'scripts', 'sync-specialists.mjs');
+const SYNC_SRC = path.join(HERE, '..', '..', '..', 'scripts', 'sync-worker-profiles.mjs');
 
 // Parse the COPILOT_AGENT_TOOLS array literal out of the source. The grant set is a
 // list of double-quoted string entries between the declaration and its closing `];`.
@@ -33,7 +33,7 @@ const SYNC_SRC = path.join(HERE, '..', '..', '..', 'scripts', 'sync-specialists.
 function readCopilotAgentTools() {
   const src = fs.readFileSync(SYNC_SRC, 'utf8');
   const m = src.match(/const COPILOT_AGENT_TOOLS\s*=\s*\[([\s\S]*?)\]\s*;/);
-  assert.ok(m, 'COPILOT_AGENT_TOOLS array literal not found in sync-specialists.mjs');
+  assert.ok(m, 'COPILOT_AGENT_TOOLS array literal not found in sync-worker-profiles.mjs');
   return [...m[1].matchAll(/"([^"]+)"/g)].map((x) => x[1]);
 }
 

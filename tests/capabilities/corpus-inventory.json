@@ -367,12 +367,12 @@
       "maintainerNotes": "audit-skills.test.mjs — agent/profile ↔ skill ownership (bead construct-ksfa)."
     },
     {
-      "path": "tests/audit-specialists.test.mjs",
+      "path": "tests/audit-worker-profiles.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/audit-specialists.test.mjs — specialist corpus audit matrix."
+      "maintainerNotes": "tests/audit-worker-profiles.test.mjs — Worker Profile and skill audit matrix."
     },
     {
       "path": "tests/audit/f01-mcp-safety/delete-traversal.test.mjs",
@@ -1161,12 +1161,12 @@
       "maintainerNotes": "tests/certification/role-cards.test.mjs — specialist role card fixtures."
     },
     {
-      "path": "tests/certification/role-overlays.test.mjs",
+      "path": "tests/certification/perspectives.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/certification/role-overlays.test.mjs — role overlay parity certification."
+      "maintainerNotes": "tests/certification/perspectives.test.mjs — Worker Profile perspective parity certification."
     },
     {
       "path": "tests/certification/skills/inventory.test.mjs",
@@ -3278,8 +3278,8 @@
       "capabilities": [
         "orchestration.routing",
         "mcp.broker.connection",
-        "skill.roles-engineer",
-        "skill.roles-architect-ai-systems"
+        "skill.perspectives-engineer",
+        "skill.perspectives-architect-ai-systems"
       ],
       "skipped": false,
       "maintainerNotes": "tests/functional/host-mcp-emulation.functional.test.mjs"
@@ -3502,7 +3502,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "Live LLM test for cx-reviewer's plan-challenge mode (the devil-advocate"
+      "maintainerNotes": "Live LLM test for reviewer's plan-challenge mode (the devil-advocate"
     },
     {
       "path": "tests/functional/llm/specialist-roster.functional.test.mjs",
@@ -5235,7 +5235,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/intake-queue.test.mjs — `.cx/intake/` storage contract via FilesystemIntakeQueue."
+      "maintainerNotes": "tests/intake-queue.test.mjs — `.construct/intake/` storage contract via FilesystemIntakeQueue."
     },
     {
       "path": "tests/intake-session-prelude-staleness.test.mjs",

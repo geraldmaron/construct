@@ -53,14 +53,14 @@ const SANDBOX_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'workplace-loop-b0nny
 const REPO = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'workplace-loop-b0nny31-repo-')));
 execFileSync('git', ['init', '-q'], { cwd: REPO });
 
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = SANDBOX_HOME;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = SANDBOX_HOME;
 
 test.after(() => {
   rmTmpDir(SANDBOX_HOME);
   rmTmpDir(REPO);
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 function daysAgo(n) {

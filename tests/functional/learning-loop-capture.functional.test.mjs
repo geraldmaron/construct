@@ -3,7 +3,7 @@
  *
  * Characterization tests for the learning-loop tool-miss capture (self-audit construct-rr63.9.1,
  * under the tool-contract-gate). Agent I found the capture is write-only: recordToolNameMiss
- * (lib/mcp/tool-recovery.mjs:35) appends to .cx/observations/tool-name-misses.jsonl, but a
+ * (lib/mcp/tool-recovery.mjs:35) appends to .construct/observations/tool-name-misses.jsonl, but a
  * repo-wide search finds no reader/aggregator that surfaces those misses. These tests pin both
  * halves: the producer writes a well-formed, appendable JSONL entry, and the module exposes no
  * consumer API. The Wave-4 follow-on (a doctor watcher / oracle action that reads the file and

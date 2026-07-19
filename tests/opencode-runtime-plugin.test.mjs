@@ -26,16 +26,16 @@ import { doctorRoot } from "../lib/config/xdg.mjs";
 import { summarizeToolFailures } from "../lib/mcp/tool-recovery.mjs";
 
 // createConstructOpenCodePlugin's trace emission resolves the machine-scoped
-// state root (ADR-0066) via CX_HOME_OVERRIDE read in-process, not via the
+// state root (ADR-0066) via CONSTRUCT_HOME_OVERRIDE read in-process, not via the
 // `env` option passed to the factory — pin it around a test or the plugin
 // writes into the real developer machine's home. Callers register the
 // returned unpin function with t.after().
 function pinHomeOverride(home) {
-  const prev = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = home;
+  const prev = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = home;
   return () => {
-    if (prev === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prev;
+    if (prev === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prev;
   };
 }
 
@@ -185,7 +185,7 @@ test("buildRuntimeTracePayload includes runtime-composed prompt and route metada
       "engineer": {
         name: "engineer",
         displayName: "Engineer",
-        promptFile: "specialists/prompts/cx-engineer.md",
+        promptFile: "specialists/prompts/engineer.md",
         description: "engineer",
         team: "engineering"
       }
@@ -198,7 +198,7 @@ test("buildRuntimeTracePayload includes runtime-composed prompt and route metada
     contracts: {},
     policies: {}
   }, null, 2));
-  fs.writeFileSync(path.join(rootDir, "specialists", "prompts", "cx-engineer.md"), "# Engineer\n\nExecute implementation work.\n");
+  fs.writeFileSync(path.join(rootDir, "specialists", "prompts", "engineer.md"), "# Engineer\n\nExecute implementation work.\n");
   fs.writeFileSync(path.join(rootDir, "specialists", "prompts", "construct.md"), "# Construct\n\nExecute implementation work.\n");
   fs.writeFileSync(path.join(rootDir, ".construct", "context.json"), JSON.stringify({
     format: "json",
@@ -217,7 +217,7 @@ test("buildRuntimeTracePayload includes runtime-composed prompt and route metada
           id: "msg-2",
           sessionID: "sess-route",
           role: "assistant",
-          agent: "cx-engineer",
+          agent: "engineer",
           modelID: "gpt-5.4",
           providerID: "github-copilot",
           time: { completed: Date.now() },
@@ -229,7 +229,7 @@ test("buildRuntimeTracePayload includes runtime-composed prompt and route metada
         },
       },
     },
-    { env: { USER: "gerald", HOME: home, CX_TOOLKIT_DIR: rootDir } },
+    { env: { USER: "gerald", HOME: home, CONSTRUCT_TOOLKIT_DIR: rootDir } },
   );
 
   assert.equal(payload.metadata.taskPacketKey, undefined);
@@ -275,7 +275,7 @@ test("buildRuntimeTracePayload honors process env model overrides in execution-c
       "engineer": {
         name: "engineer",
         displayName: "Engineer",
-        promptFile: "specialists/prompts/cx-engineer.md",
+        promptFile: "specialists/prompts/engineer.md",
         description: "engineer",
         team: "engineering"
       }
@@ -283,7 +283,7 @@ test("buildRuntimeTracePayload honors process env model overrides in execution-c
     contracts: {},
     policies: {}
   }, null, 2));
-  fs.writeFileSync(path.join(rootDir, "specialists", "prompts", "cx-engineer.md"), "# Engineer\n");
+  fs.writeFileSync(path.join(rootDir, "specialists", "prompts", "engineer.md"), "# Engineer\n");
   fs.writeFileSync(path.join(rootDir, ".env"), "");
 
   const payload = buildRuntimeTracePayload(
@@ -295,7 +295,7 @@ test("buildRuntimeTracePayload honors process env model overrides in execution-c
           id: "msg-override",
           sessionID: "sess-override",
           role: "assistant",
-          agent: "cx-engineer",
+          agent: "engineer",
           time: { completed: Date.now() },
           tokens: { input: 20, output: 10 },
           parts: [
@@ -308,10 +308,10 @@ test("buildRuntimeTracePayload honors process env model overrides in execution-c
       env: {
         USER: "gerald",
         HOME: home,
-        CX_TOOLKIT_DIR: rootDir,
-        CX_MODEL_REASONING: "env/reasoning",
-        CX_MODEL_STANDARD: "env/standard",
-        CX_MODEL_FAST: "env/fast",
+        CONSTRUCT_TOOLKIT_DIR: rootDir,
+        CONSTRUCT_MODEL_REASONING: "env/reasoning",
+        CONSTRUCT_MODEL_STANDARD: "env/standard",
+        CONSTRUCT_MODEL_FAST: "env/fast",
       },
     },
   );
@@ -375,11 +375,11 @@ test("plugin applies model fallback and logs warning when rate limit error hits"
   fs.mkdirSync(path.join(toolkitDir, "specialists"), { recursive: true });
   fs.mkdirSync(path.join(toolkitDir, "specialists", "prompts"), { recursive: true });
   fs.cpSync(path.join(process.cwd(), "specialists", "org"), path.join(toolkitDir, "specialists", "org"), { recursive: true });
-  fs.writeFileSync(path.join(toolkitDir, ".env"), "CX_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n");
+  fs.writeFileSync(path.join(toolkitDir, ".env"), "CONSTRUCT_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n");
   fs.writeFileSync(path.join(toolkitDir, ".construct", "unified-registry.json"), JSON.stringify({
     version: 2,
     teams: { "test": { id: "test", name: "Test", owner: "engineer", roles: ["engineer"], charter: "Test.", decisionRights: [], forbiddenDecisions: [], escalationPath: ["engineer"] } },
-    specialists: { "engineer": { name: "engineer", displayName: "Engineer", team: "test", promptFile: "specialists/prompts/cx-engineer.md" } },
+    specialists: { "engineer": { name: "engineer", displayName: "Engineer", team: "test", promptFile: "specialists/prompts/engineer.md" } },
     models: {
       reasoning: { primary: "anthropic/claude-opus-4-6", fallback: ["openrouter/deepseek/deepseek-r1"] },
       standard: { primary: "openrouter/qwen/qwen3-coder:free", fallback: ["anthropic/claude-sonnet-4-6"] },
@@ -388,7 +388,7 @@ test("plugin applies model fallback and logs warning when rate limit error hits"
     contracts: {},
     policies: {}
   }, null, 2));
-  fs.writeFileSync(path.join(toolkitDir, "specialists", "prompts", "cx-engineer.md"), "# Engineer\n");
+  fs.writeFileSync(path.join(toolkitDir, "specialists", "prompts", "engineer.md"), "# Engineer\n");
 
   const configPath = path.join(os.tmpdir(), "opencode-empty.json");
   fs.writeFileSync(configPath, JSON.stringify({
@@ -444,11 +444,11 @@ test("plugin falls back to a new target model when the current provider is unava
   fs.mkdirSync(path.join(toolkitDir, "specialists"), { recursive: true });
   fs.mkdirSync(path.join(toolkitDir, "specialists", "prompts"), { recursive: true });
   fs.cpSync(path.join(process.cwd(), "specialists", "org"), path.join(toolkitDir, "specialists", "org"), { recursive: true });
-  fs.writeFileSync(path.join(toolkitDir, ".env"), "CX_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n");
+  fs.writeFileSync(path.join(toolkitDir, ".env"), "CONSTRUCT_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n");
   fs.writeFileSync(path.join(toolkitDir, ".construct", "unified-registry.json"), JSON.stringify({
     version: 2,
     teams: { "test": { id: "test", name: "Test", owner: "engineer", roles: ["engineer"], charter: "Test.", decisionRights: [], forbiddenDecisions: [], escalationPath: ["engineer"] } },
-    specialists: { "engineer": { name: "engineer", displayName: "Engineer", team: "test", promptFile: "specialists/prompts/cx-engineer.md" } },
+    specialists: { "engineer": { name: "engineer", displayName: "Engineer", team: "test", promptFile: "specialists/prompts/engineer.md" } },
     models: {
       reasoning: { primary: "anthropic/claude-opus-4-6", fallback: ["openrouter/deepseek/deepseek-r1"] },
       standard: { primary: "openrouter/qwen/qwen3-coder:free", fallback: ["anthropic/claude-sonnet-4-6"] },
@@ -457,7 +457,7 @@ test("plugin falls back to a new target model when the current provider is unava
     contracts: {},
     policies: {}
   }, null, 2));
-  fs.writeFileSync(path.join(toolkitDir, "specialists", "prompts", "cx-engineer.md"), "# Engineer\n");
+  fs.writeFileSync(path.join(toolkitDir, "specialists", "prompts", "engineer.md"), "# Engineer\n");
 
   const configPath = path.join(os.tmpdir(), "opencode-empty-fallback.json");
   fs.writeFileSync(configPath, JSON.stringify({
@@ -471,7 +471,7 @@ test("plugin falls back to a new target model when the current provider is unava
     env: {
       HOME: home,
       OPENROUTER_API_KEY: "or-test-key",
-      CX_TOOLKIT_DIR: toolkitDir,
+      CONSTRUCT_TOOLKIT_DIR: toolkitDir,
     },
   });
 
@@ -515,15 +515,15 @@ test("plugin no-ops when no safe fallback target exists", async (t) => {
   fs.mkdirSync(path.join(toolkitDir, "specialists"), { recursive: true });
   fs.mkdirSync(path.join(toolkitDir, "specialists", "prompts"), { recursive: true });
   fs.cpSync(path.join(process.cwd(), "specialists", "org"), path.join(toolkitDir, "specialists", "org"), { recursive: true });
-  fs.writeFileSync(path.join(toolkitDir, ".env"), "CX_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n");
+  fs.writeFileSync(path.join(toolkitDir, ".env"), "CONSTRUCT_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n");
   fs.writeFileSync(path.join(toolkitDir, ".construct", "unified-registry.json"), JSON.stringify({
     version: 2,
     teams: { "test": { id: "test", name: "Test", owner: "engineer", roles: ["engineer"], charter: "Test.", decisionRights: [], forbiddenDecisions: [], escalationPath: ["engineer"] } },
-    specialists: { "engineer": { name: "engineer", displayName: "Engineer", team: "test", promptFile: "specialists/prompts/cx-engineer.md" } },
+    specialists: { "engineer": { name: "engineer", displayName: "Engineer", team: "test", promptFile: "specialists/prompts/engineer.md" } },
     contracts: {},
     policies: {}
   }, null, 2));
-  fs.writeFileSync(path.join(toolkitDir, "specialists", "prompts", "cx-engineer.md"), "# Engineer\n");
+  fs.writeFileSync(path.join(toolkitDir, "specialists", "prompts", "engineer.md"), "# Engineer\n");
 
   const logs = [];
   const pluginFactory = createConstructOpenCodePlugin({
@@ -532,7 +532,7 @@ test("plugin no-ops when no safe fallback target exists", async (t) => {
     env: {
       HOME: home,
       OPENROUTER_API_KEY: "or-test-key",
-      CX_TOOLKIT_DIR: toolkitDir,
+      CONSTRUCT_TOOLKIT_DIR: toolkitDir,
     },
   });
 
@@ -574,11 +574,11 @@ test("plugin continues fallback even when telemetry logging fails", async (t) =>
   fs.mkdirSync(path.join(toolkitDir, "specialists"), { recursive: true });
   fs.mkdirSync(path.join(toolkitDir, "specialists", "prompts"), { recursive: true });
   fs.cpSync(path.join(process.cwd(), "specialists", "org"), path.join(toolkitDir, "specialists", "org"), { recursive: true });
-  fs.writeFileSync(path.join(toolkitDir, ".env"), "CX_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n");
+  fs.writeFileSync(path.join(toolkitDir, ".env"), "CONSTRUCT_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n");
   fs.writeFileSync(path.join(toolkitDir, ".construct", "unified-registry.json"), JSON.stringify({
     version: 2,
     teams: { "test": { id: "test", name: "Test", owner: "engineer", roles: ["engineer"], charter: "Test.", decisionRights: [], forbiddenDecisions: [], escalationPath: ["engineer"] } },
-    specialists: { "engineer": { name: "engineer", displayName: "Engineer", team: "test", promptFile: "specialists/prompts/cx-engineer.md" } },
+    specialists: { "engineer": { name: "engineer", displayName: "Engineer", team: "test", promptFile: "specialists/prompts/engineer.md" } },
     models: {
       reasoning: { primary: "anthropic/claude-opus-4-6", fallback: ["openrouter/deepseek/deepseek-r1"] },
       standard: { primary: "openrouter/qwen/qwen3-coder:free", fallback: ["anthropic/claude-sonnet-4-6"] },
@@ -587,7 +587,7 @@ test("plugin continues fallback even when telemetry logging fails", async (t) =>
     contracts: {},
     policies: {}
   }, null, 2));
-  fs.writeFileSync(path.join(toolkitDir, "specialists", "prompts", "cx-engineer.md"), "# Engineer\n");
+  fs.writeFileSync(path.join(toolkitDir, "specialists", "prompts", "engineer.md"), "# Engineer\n");
 
   const pluginFactory = createConstructOpenCodePlugin({
     toolkitDir,
@@ -595,7 +595,7 @@ test("plugin continues fallback even when telemetry logging fails", async (t) =>
     env: {
       HOME: home,
       OPENROUTER_API_KEY: "or-test-key",
-      CX_TOOLKIT_DIR: toolkitDir,
+      CONSTRUCT_TOOLKIT_DIR: toolkitDir,
     },
   });
 

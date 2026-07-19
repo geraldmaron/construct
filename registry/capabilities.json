@@ -1,981 +1,103 @@
 {
-  "version": 1,
-  "catalog": {
-    "generatedAt": "2026-07-14T01:58:48.067Z",
-    "npmScripts": [
-      "adapters",
-      "audit:published",
-      "build:binary",
-      "build:binary:fallback",
-      "build:sea",
-      "catalog:regen",
-      "catalog:validate",
-      "certify:demos",
-      "certify:document-io",
-      "ci:local",
-      "clean:artifacts",
-      "coverage",
-      "deps:check",
-      "docs:build",
-      "docs:dev",
-      "docs:init",
-      "docs:site",
-      "docs:sync",
-      "docs:update",
-      "docs:verify",
-      "doctor",
-      "eval:routing",
-      "eval:skill-routing",
-      "evals",
-      "examples:deck",
-      "examples:distribution",
-      "gates:audit",
-      "graph:gate",
-      "learning:status",
-      "lint:agents",
-      "lint:comments",
-      "lint:contracts",
-      "lint:js",
-      "lint:scopes",
-      "lint:templates",
-      "mcp",
-      "npm:publish",
-      "postinstall",
-      "release:check",
-      "release:gate",
-      "release:preflight",
-      "release:preflight:no-auth",
-      "skills:routes",
-      "specialists:coverage",
-      "test",
-      "test:functional",
-      "test:unit",
-      "test:visual",
-      "version",
-      "workflow-defs:check"
-    ],
-    "cliCommands": [
-      {
-        "name": "acp",
-        "category": "Models & Integrations",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "activation:status",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "approvals",
-        "category": "Core",
-        "core": true,
-        "internal": false
-      },
-      {
-        "name": "artifact",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "ask",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "audit",
-        "category": "Diagnostics",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "auth:status",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "backup",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "beads",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "beads:stats",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "bootstrap",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "capability",
-        "category": "Models & Integrations",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "certify",
-        "category": "Diagnostics",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "ci",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "claude:allow",
-        "category": "Models & Integrations",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "cleanup",
-        "category": "Diagnostics",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "completions",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "config",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "creds",
-        "category": "Integrations",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "customer",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "db",
-        "category": "Models & Integrations",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "decisions",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "demo",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "deployment",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "dev",
-        "category": "Core",
-        "core": true,
-        "internal": false
-      },
-      {
-        "name": "diagram",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "diff",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "distill",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "doc",
-        "category": "Diagnostics",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "docs",
-        "category": "Core",
-        "core": true,
-        "internal": false
-      },
-      {
-        "name": "docs:check",
-        "category": "Diagnostics",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "docs:reconcile",
-        "category": "Diagnostics",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "docs:site",
-        "category": "Diagnostics",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "docs:update",
-        "category": "Diagnostics",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "docs:verify",
-        "category": "Diagnostics",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "doctor",
-        "category": "Core",
-        "core": true,
-        "internal": false
-      },
-      {
-        "name": "drop",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "efficiency",
-        "category": "Observability",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "embed",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "eval-datasets",
-        "category": "Observability",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "evals",
-        "category": "Observability",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "evaluator:rubrics",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "execution",
-        "category": "Models & Integrations",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "export",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "feedback:history",
-        "category": "Observability",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "feedback:record",
-        "category": "Observability",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "flow",
-        "category": "Models & Integrations",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "gates:audit",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "graph",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "handoffs",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "headhunt",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "hook",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "hooks:health",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "hosts",
-        "category": "Models & Integrations",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "impact",
-        "category": "Diagnostics",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "improvement",
-        "category": "Observability",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "infer",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "ingest",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "init",
-        "category": "Core",
-        "core": true,
-        "internal": false
-      },
-      {
-        "name": "init:update",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "install",
-        "category": "Core",
-        "core": true,
-        "internal": false
-      },
-      {
-        "name": "intake",
-        "category": "Core",
-        "core": true,
-        "internal": false
-      },
-      {
-        "name": "integrations",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "knowledge",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "lint:agents",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "lint:comments",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "lint:contracts",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "lint:prompts",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "lint:research",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "lint:templates",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "list",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "llm-judge",
-        "category": "Observability",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "matrix",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "mcp",
-        "category": "Models & Integrations",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "memory",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "migrate",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "models",
-        "category": "Models & Integrations",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "monitor",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "ollama",
-        "category": "Integrations",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "optimize",
-        "category": "Observability",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "oracle",
-        "category": "Core",
-        "core": true,
-        "internal": false
-      },
-      {
-        "name": "orchestrate",
-        "category": "Models & Integrations",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "overrides",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "pack",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "participation",
-        "category": "Core",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "plugin",
-        "category": "Models & Integrations",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "policy",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "provider",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "providers",
-        "category": "Integrations",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "prune",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "publish",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "recommendations",
-        "category": "Core",
-        "core": true,
-        "internal": false
-      },
-      {
-        "name": "reflect",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "registry:diff",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "registry:generate-docs",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "registry:prune",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "registry:status",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "registry:validate",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "resources",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "review",
-        "category": "Observability",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "role",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "roles:list",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "roles:set",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "rules",
-        "category": "Diagnostics",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "sandbox",
-        "category": "Core",
-        "core": true,
-        "internal": false
-      },
-      {
-        "name": "scheduler",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "scope",
-        "category": "Core",
-        "core": true,
-        "internal": false
-      },
-      {
-        "name": "search",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "seed-traces",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "skills",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "sources",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "specialist",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "specialist:add",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "specialist:remove",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "status",
-        "category": "Core",
-        "core": true,
-        "internal": false
-      },
-      {
-        "name": "stop",
-        "category": "Core",
-        "core": true,
-        "internal": false
-      },
-      {
-        "name": "storage",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "studio",
-        "category": "Core",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "sync",
-        "category": "Core",
-        "core": true,
-        "internal": false
-      },
-      {
-        "name": "synthesize",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "tags",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "team",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "team:add",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "team:remove",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "telemetry",
-        "category": "Observability",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "telemetry-backfill",
-        "category": "Observability",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "telemetry-setup",
-        "category": "Observability",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "templates",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "tools",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "tracker",
-        "category": "Models & Integrations",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "uninstall",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "update",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "upgrade",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "validate",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "version",
-        "category": "Advanced",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "wireframe",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "workers",
-        "category": "Core",
-        "core": true,
-        "internal": false
-      },
-      {
-        "name": "workflow",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "workspace",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      }
-    ],
-    "workflows": [
-      {
-        "type": "architecture-review",
-        "description": "Review an architecture or design for trade-offs, failure modes, and security exposure.",
-        "tier": "reasoning"
-      },
-      {
-        "type": "data-structure",
-        "description": "Parse, validate, and profile a raw dataset into a structured, described shape.",
-        "tier": "standard"
-      },
-      {
-        "type": "evidence-ingest",
-        "description": "Ingest and structure raw evidence (notes, documents, signals) into a normalized summary.",
-        "tier": "fast"
-      },
-      {
-        "type": "memo-draft",
-        "description": "Draft a decision or status memo from a problem statement and context.",
-        "tier": "fast"
-      },
-      {
-        "type": "prd-draft",
-        "description": "Draft a product requirements document from a problem statement and supporting evidence.",
-        "tier": "standard"
-      },
-      {
-        "type": "proposal-review",
-        "description": "Review a proposal for correctness, risk, and hidden assumptions before acceptance.",
-        "tier": "standard"
-      },
-      {
-        "type": "research-synthesis",
-        "description": "Synthesize multiple sources into a cited, evidence-graded research summary.",
-        "tier": "reasoning"
-      },
-      {
-        "type": "risk-review",
-        "description": "Stress-test a plan for risk: failure modes, security, and compliance exposure.",
-        "tier": "reasoning"
-      },
-      {
-        "type": "structure-notes",
-        "description": "Structure an unclassified brain-dump or rough notes into a normalized summary with extracted intents.",
-        "tier": "fast"
-      },
-      {
-        "type": "transcript-process",
-        "description": "Process a meeting/call transcript into a summary, decisions, and action items.",
-        "tier": "fast"
-      },
-      {
-        "type": "triage",
-        "description": "Classify and route unstructured input to the appropriate workflow.",
-        "tier": "fast"
-      }
-    ],
-    "workflowTypes": [
-      "architecture-review",
-      "data-structure",
-      "evidence-ingest",
-      "memo-draft",
-      "prd-draft",
-      "proposal-review",
-      "research-synthesis",
-      "risk-review",
-      "structure-notes",
-      "transcript-process",
-      "triage"
-    ]
-  },
+  "schemaVersion": 1,
   "capabilities": [
     {
       "id": "orchestration.routing",
-      "kind": "capability",
       "name": "Orchestration Intent Routing",
       "description": "Classifies user intent and dispatches to the correct specialist chain.",
       "criticality": "P0",
-      "ownerSpecialists": [
+      "ownerWorkerProfiles": [
         "orchestrator"
       ],
-      "skill": "ai/orchestration-workflow",
-      "contracts": [
-        "user-to-construct",
-        "construct-to-orchestrator"
+      "requiredSkills": [
+        "ai/orchestration-workflow",
+        "operating/orchestration-reference"
       ],
+      "requiredProcedures": [],
+      "contracts": {
+        "user-to-construct": {
+          "id": "user-to-construct",
+          "producer": "user",
+          "consumer": "construct",
+          "trigger": {
+            "always": true
+          },
+          "input": {
+            "shape": "natural-language-request",
+            "mustContain": [
+              "goal"
+            ]
+          },
+          "output": {
+            "shape": "routed-plan",
+            "mustContain": [
+              "track",
+              "specialists"
+            ]
+          },
+          "preconditions": [
+            "Session bootstrap completed: project_context and memory_search called, plus relevant repo docs read as needed"
+          ],
+          "postconditions": [
+            {
+              "id": "user-to-construct-pc-0-intent-classified-work-category-tagged",
+              "description": "Intent classified; work category tagged",
+              "postconditionType": "advisory"
+            },
+            {
+              "id": "user-to-construct-pc-1-route-decision-surfaced-as-a-single",
+              "description": "Route decision surfaced as a single-sentence plan",
+              "postconditionType": "advisory"
+            }
+          ],
+          "description": ""
+        },
+        "construct-to-orchestrator": {
+          "id": "construct-to-orchestrator",
+          "producer": "construct",
+          "consumer": "orchestrator",
+          "trigger": {
+            "track": "orchestrated"
+          },
+          "input": {
+            "shape": "task-packet",
+            "mustContain": [
+              "goal",
+              "intent",
+              "workCategory",
+              "riskFlags",
+              "acceptanceCriteria"
+            ]
+          },
+          "output": {
+            "schema": "lib/contract-schemas/decision.json",
+            "type": "decision"
+          },
+          "preconditions": [
+            "framingChallenge gate honored if required",
+            "externalResearch gate honored if required",
+            "docAuthoring.owner present if authoring a typed document"
+          ],
+          "postconditions": [
+            {
+              "id": "construct-to-orchestrator-pc-0-dispatch-plan-emitted-with-specialists-in",
+              "description": "Dispatch plan emitted with specialists in sequence",
+              "postconditionType": "advisory"
+            },
+            {
+              "id": "construct-to-orchestrator-pc-1-parallel-work-marked-with-parallel-tags",
+              "description": "Parallel work marked with [parallel: ...] tags",
+              "postconditionType": "advisory"
+            }
+          ],
+          "description": "",
+          "skillHints": [
+            "ai/orchestration-workflow",
+            "operating/orchestration-reference"
+          ]
+        }
+      },
+      "state": "active",
       "surfaces": {
         "mcp": {
           "supported": true,
@@ -997,41 +119,29 @@
           "supported": true
         }
       },
-      "dependencies": {
-        "skills": [
-          "ai/orchestration-workflow",
-          "operating/orchestration-reference"
-        ],
-        "rules": [
-          "rules/common/no-fabrication.md"
-        ]
-      },
       "verification": {
         "functional": "tests/functional/orchestration-mcp.functional.test.mjs",
         "hostEmulation": "tests/functional/host-mcp-emulation.functional.test.mjs"
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-26T20:01:14.659Z",
-      "edges": {
-        "cliCommands": [
-          "orchestrate",
-          "orchestrate run"
-        ],
-        "npmScripts": [],
-        "workflows": []
-      },
-      "_semanticDigest": "{\"description\":\"Classifies user intent and dispatches to the correct specialist chain.\",\"criticality\":\"P0\",\"verification\":{\"functional\":\"tests/functional/orchestration-mcp.functional.test.mjs\",\"hostEmulation\":\"tests/functional/host-mcp-emulation.functional.test.mjs\"}}"
+      "lastValidated": "2026-06-26T20:01:14.659Z"
     },
     {
       "id": "oracle.meta-review",
-      "kind": "capability",
       "name": "Oracle Meta-Review",
       "description": "Deterministic read-model synthesis and bounded-auto maintenance for fleet health gaps.",
       "criticality": "P1",
-      "ownerSpecialists": [
-        "oracle"
+      "ownerWorkerProfiles": [
+        "orchestrator"
       ],
-      "skill": "ai/orchestration-workflow",
+      "requiredSkills": [
+        "ai/orchestration-workflow",
+        "exploration/dependency-graph-reading",
+        "perspectives/trace-reviewer"
+      ],
+      "requiredProcedures": [],
+      "contracts": {},
+      "state": "active",
       "surfaces": {
         "cli": {
           "supported": true,
@@ -1042,40 +152,24 @@
           "supported": false
         }
       },
-      "dependencies": {
-        "skills": [
-          "ai/orchestration-workflow",
-          "exploration/dependency-graph-reading",
-          "roles/trace-reviewer"
-        ],
-        "rules": [
-          "rules/common/no-fabrication.md"
-        ]
-      },
       "verification": {
         "functional": "tests/functional/oracle-bounded-auto.functional.test.mjs"
       },
       "humanGate": "approve-only",
-      "lastValidated": "2026-06-26T20:01:22.031Z",
-      "edges": {
-        "cliCommands": [
-          "oracle",
-          "oracle review"
-        ],
-        "npmScripts": [],
-        "workflows": []
-      },
-      "_semanticDigest": "{\"description\":\"Deterministic read-model synthesis and bounded-auto maintenance for fleet health gaps.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/oracle-bounded-auto.functional.test.mjs\"}}"
+      "lastValidated": "2026-06-26T20:01:22.031Z"
     },
     {
       "id": "mcp.broker.connection",
-      "kind": "capability",
       "name": "MCP Broker Connectivity",
       "description": "Reliable MCP tool discovery and dispatch across hosts.",
       "criticality": "P0",
-      "ownerSpecialists": [
+      "ownerWorkerProfiles": [
         "orchestrator"
       ],
+      "requiredSkills": [],
+      "requiredProcedures": [],
+      "contracts": {},
+      "state": "active",
       "surfaces": {
         "mcp": {
           "supported": true,
@@ -1099,26 +193,25 @@
         "hostEmulation": "tests/functional/host-mcp-emulation.functional.test.mjs"
       },
       "humanGate": "autonomous",
-      "lastValidated": "2026-06-26T20:01:32.913Z",
-      "edges": {
-        "cliCommands": [],
-        "npmScripts": [],
-        "workflows": []
-      },
-      "_semanticDigest": "{\"description\":\"Reliable MCP tool discovery and dispatch across hosts.\",\"criticality\":\"P0\",\"verification\":{\"functional\":\"tests/functional/mcp-parity.functional.test.mjs\",\"hostEmulation\":\"tests/functional/host-mcp-emulation.functional.test.mjs\"}}"
+      "lastValidated": "2026-06-26T20:01:32.913Z"
     },
     {
       "id": "workflow.evidence-ingest",
-      "kind": "workflow",
       "name": "Evidence Ingest Workflow",
       "description": "Ingest and structure raw evidence into a normalized summary.",
       "criticality": "P1",
-      "ownerSpecialists": [
+      "ownerWorkerProfiles": [
         "researcher",
         "data-analyst"
       ],
-      "skill": "docs/evidence-ingest-workflow",
-      "embeddedWorkflow": "evidence-ingest",
+      "requiredSkills": [
+        "docs/evidence-ingest-workflow"
+      ],
+      "requiredProcedures": [
+        "evidence-ingest"
+      ],
+      "contracts": {},
+      "state": "active",
       "surfaces": {
         "mcp": {
           "supported": true,
@@ -1131,56 +224,74 @@
           "jsonTwin": true
         }
       },
-      "dependencies": {
-        "skills": [
-          "docs/evidence-ingest-workflow"
-        ],
-        "templates": [
-          "evidence-brief",
-          "signal-brief"
-        ],
-        "rules": [
-          "rules/common/research.md",
-          "rules/common/no-fabrication.md"
-        ]
-      },
       "verification": {
         "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs",
         "verificationBar": "Source metadata preserved; no invented quotes; confidence labeled"
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-26T20:01:33.468Z",
-      "edges": {
-        "cliCommands": [
-          "workflow",
-          "workflow invoke"
-        ],
-        "npmScripts": [
-          "release:check",
-          "workflow-defs:check"
-        ],
-        "workflows": [
-          "evidence-ingest"
-        ]
-      },
-      "_semanticDigest": "{\"description\":\"Ingest and structure raw evidence into a normalized summary.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\",\"verificationBar\":\"Source metadata preserved; no invented quotes; confidence labeled\"}}"
+      "lastValidated": "2026-06-26T20:01:33.468Z"
     },
     {
       "id": "workflow.research-synthesis",
-      "kind": "workflow",
       "name": "Research Synthesis Workflow",
       "description": "Synthesize multiple sources into a cited, evidence-graded research summary.",
       "criticality": "P1",
-      "ownerSpecialists": [
+      "ownerWorkerProfiles": [
         "researcher",
         "data-analyst",
-        "evaluator"
+        "reviewer"
       ],
-      "skill": "docs/research-workflow",
-      "embeddedWorkflow": "research-synthesis",
-      "contracts": [
-        "researcher-to-architect"
+      "requiredSkills": [
+        "docs/research-workflow"
       ],
+      "requiredProcedures": [
+        "research-synthesis"
+      ],
+      "contracts": {
+        "researcher-to-architect": {
+          "id": "researcher-to-architect",
+          "producer": "researcher",
+          "consumer": "architect",
+          "trigger": {
+            "externalResearch.required": true,
+            "riskFlags": [
+              "architecture"
+            ]
+          },
+          "input": {
+            "shape": "research-brief",
+            "mustContain": [
+              "question",
+              "method",
+              "sources",
+              "findings",
+              "confidence"
+            ]
+          },
+          "output": {
+            "schema": "lib/contract-schemas/decision.json",
+            "type": "decision"
+          },
+          "preconditions": [
+            "≥2 independent primary sources cited per load-bearing claim",
+            "Source classes tagged (internal/primary/secondary/tertiary)"
+          ],
+          "postconditions": [
+            {
+              "id": "researcher-to-architect-pc-0-architect-s-adr-cites-the-primary",
+              "description": "Architect's ADR cites the primary sources provided",
+              "postconditionType": "advisory"
+            },
+            {
+              "id": "researcher-to-architect-pc-1-any-conflicting-evidence-surfaced-not-suppressed",
+              "description": "Any conflicting evidence surfaced, not suppressed",
+              "postconditionType": "advisory"
+            }
+          ],
+          "description": ""
+        }
+      },
+      "state": "active",
       "surfaces": {
         "mcp": {
           "supported": true,
@@ -1197,50 +308,117 @@
           "slashCommand": "understand:research"
         }
       },
-      "dependencies": {
-        "skills": [
-          "docs/research-workflow"
-        ],
-        "templates": [
-          "research-brief"
-        ],
-        "rules": [
-          "rules/common/research.md"
-        ]
-      },
       "verification": {
         "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs",
         "structureRequirements": "research-brief",
         "verificationBar": "≥2 primary sources; URLs fetched; confidence labeled"
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-26T20:01:34.007Z",
-      "edges": {
-        "cliCommands": [
-          "ask"
-        ],
-        "npmScripts": [],
-        "workflows": [
-          "research-synthesis"
-        ]
-      },
-      "_semanticDigest": "{\"description\":\"Synthesize multiple sources into a cited, evidence-graded research summary.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\",\"structureRequirements\":\"research-brief\",\"verificationBar\":\"≥2 primary sources; URLs fetched; confidence labeled\"}}"
+      "lastValidated": "2026-06-26T20:01:34.007Z"
     },
     {
       "id": "workflow.prd-draft",
-      "kind": "workflow",
       "name": "PRD Draft Workflow",
       "description": "Draft a product requirements document from a problem statement and evidence.",
       "criticality": "P1",
-      "ownerSpecialists": [
+      "ownerWorkerProfiles": [
         "product-manager",
         "architect"
       ],
-      "skill": "docs/prd-workflow",
-      "embeddedWorkflow": "prd-draft",
-      "contracts": [
-        "product-manager-to-architect"
+      "requiredSkills": [
+        "docs/prd-workflow"
       ],
+      "requiredProcedures": [
+        "prd-draft"
+      ],
+      "contracts": {
+        "product-manager-to-architect": {
+          "id": "product-manager-to-architect",
+          "producer": "product-manager",
+          "consumer": "architect",
+          "trigger": {
+            "docAuthoring.docType": [
+              "prd",
+              "meta-prd",
+              "adr",
+              "rfc"
+            ]
+          },
+          "input": {
+            "shape": "prd-handoff",
+            "mustContain": [
+              "problem",
+              "functionalRequirements",
+              "nonFunctionalRequirements",
+              "acceptanceCriteria",
+              "constraints",
+              "valueStatement",
+              "tradeoffTable",
+              "prioritizationCall"
+            ]
+          },
+          "output": {
+            "schema": "lib/contract-schemas/decision.json",
+            "type": "decision"
+          },
+          "preconditions": [
+            "reviewer framing challenge logged if riskFlags.architecture"
+          ],
+          "postconditions": [
+            {
+              "id": "product-manager-to-architect-pc-0-adr-problem-section-traces-to-prd",
+              "description": "ADR Problem section traces to PRD Problem, not to tickets",
+              "postconditionType": "advisory"
+            },
+            {
+              "id": "product-manager-to-architect-pc-1-adr-rejected-alternatives-section-present-with",
+              "description": "ADR Rejected alternatives section present with ≥2 alternatives and specific rejection reasons",
+              "postconditionType": "advisory"
+            },
+            {
+              "id": "product-manager-to-architect-pc-2-reversibility-section-states-whether-one-way",
+              "description": "Reversibility section states whether one-way or two-way door",
+              "postconditionType": "advisory"
+            },
+            {
+              "id": "adr-has-rejected-alternatives",
+              "description": "ADR must contain a Rejected Alternatives section",
+              "check": "artifact-has-section",
+              "section": "Rejected Alternatives",
+              "postconditionType": "executable"
+            },
+            {
+              "id": "adr-reversibility-stated",
+              "description": "ADR Reversibility section is present and non-empty",
+              "check": "artifact-section-nonempty",
+              "section": "Reversibility",
+              "postconditionType": "executable"
+            },
+            {
+              "id": "adr-consequences-stated",
+              "description": "ADR Consequences section is present and non-empty",
+              "check": "artifact-section-nonempty",
+              "section": "Consequences",
+              "postconditionType": "executable"
+            },
+            {
+              "id": "adr-numeric-claims-cited",
+              "description": "Every numeric claim in the ADR body cites a source",
+              "check": "artifact-claims-cited",
+              "postconditionType": "executable"
+            },
+            {
+              "id": "adr-manifest-reviewers",
+              "description": "Manifest required reviewers must appear in agent log before handoff",
+              "check": "artifact-reviewers-seen",
+              "fromManifest": true,
+              "postconditionType": "executable"
+            }
+          ],
+          "description": ""
+        }
+      },
+      "state": "active",
       "surfaces": {
         "mcp": {
           "supported": true,
@@ -1252,19 +430,6 @@
           "command": "construct workflow invoke",
           "jsonTwin": true
         }
-      },
-      "dependencies": {
-        "skills": [
-          "docs/prd-workflow"
-        ],
-        "templates": [
-          "prd",
-          "meta-prd",
-          "rfc"
-        ],
-        "rules": [
-          "rules/common/no-fabrication.md"
-        ]
       },
       "verification": {
         "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs",
@@ -1272,34 +437,24 @@
         "verificationBar": "Template chosen before draft; rejected alternatives recorded for ADR/RFC paths"
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-26T20:01:34.544Z",
-      "edges": {
-        "cliCommands": [
-          "workflow",
-          "workflow invoke"
-        ],
-        "npmScripts": [
-          "release:check",
-          "workflow-defs:check"
-        ],
-        "workflows": [
-          "prd-draft"
-        ]
-      },
-      "_semanticDigest": "{\"description\":\"Draft a product requirements document from a problem statement and evidence.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\",\"structureRequirements\":\"prd\",\"verificationBar\":\"Template chosen before draft; rejected alternatives recorded for ADR/RFC paths\"}}"
+      "lastValidated": "2026-06-26T20:01:34.544Z"
     },
     {
       "id": "workflow.architecture-review",
-      "kind": "workflow",
       "name": "Architecture Review Workflow",
       "description": "Review an architecture for trade-offs, failure modes, and security exposure.",
       "criticality": "P1",
-      "ownerSpecialists": [
+      "ownerWorkerProfiles": [
         "architect",
         "security",
-        "devil-advocate"
+        "reviewer"
       ],
-      "embeddedWorkflow": "architecture-review",
+      "requiredSkills": [],
+      "requiredProcedures": [
+        "architecture-review"
+      ],
+      "contracts": {},
+      "state": "active",
       "surfaces": {
         "mcp": {
           "supported": true,
@@ -1316,33 +471,22 @@
         "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs"
       },
       "humanGate": "requires-human-approval",
-      "lastValidated": "2026-06-26T20:01:35.084Z",
-      "edges": {
-        "cliCommands": [
-          "workflow",
-          "workflow invoke"
-        ],
-        "npmScripts": [
-          "release:check",
-          "workflow-defs:check"
-        ],
-        "workflows": [
-          "architecture-review"
-        ]
-      },
-      "_semanticDigest": "{\"description\":\"Review an architecture for trade-offs, failure modes, and security exposure.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}"
+      "lastValidated": "2026-06-26T20:01:35.084Z"
     },
     {
       "id": "workflow.proposal-review",
-      "kind": "workflow",
       "name": "Proposal Review Workflow",
       "description": "Review a proposal for correctness, risk, and hidden assumptions before acceptance.",
       "criticality": "P1",
-      "ownerSpecialists": [
-        "reviewer",
-        "devil-advocate"
+      "ownerWorkerProfiles": [
+        "reviewer"
       ],
-      "embeddedWorkflow": "proposal-review",
+      "requiredSkills": [],
+      "requiredProcedures": [
+        "proposal-review"
+      ],
+      "contracts": {},
+      "state": "active",
       "surfaces": {
         "mcp": {
           "supported": true,
@@ -1359,34 +503,23 @@
         "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs"
       },
       "humanGate": "requires-human-approval",
-      "lastValidated": "2026-06-26T20:01:35.624Z",
-      "edges": {
-        "cliCommands": [
-          "workflow",
-          "workflow invoke"
-        ],
-        "npmScripts": [
-          "release:check",
-          "workflow-defs:check"
-        ],
-        "workflows": [
-          "proposal-review"
-        ]
-      },
-      "_semanticDigest": "{\"description\":\"Review a proposal for correctness, risk, and hidden assumptions before acceptance.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}"
+      "lastValidated": "2026-06-26T20:01:35.624Z"
     },
     {
       "id": "workflow.risk-review",
-      "kind": "workflow",
       "name": "Risk Review Workflow",
       "description": "Stress-test a plan for failure modes, security, and compliance exposure.",
       "criticality": "P1",
-      "ownerSpecialists": [
-        "devil-advocate",
-        "security",
-        "legal-compliance"
+      "ownerWorkerProfiles": [
+        "reviewer",
+        "security"
       ],
-      "embeddedWorkflow": "risk-review",
+      "requiredSkills": [],
+      "requiredProcedures": [
+        "risk-review"
+      ],
+      "contracts": {},
+      "state": "active",
       "surfaces": {
         "mcp": {
           "supported": true,
@@ -1403,34 +536,25 @@
         "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs"
       },
       "humanGate": "requires-human-approval",
-      "lastValidated": "2026-06-26T20:01:36.161Z",
-      "edges": {
-        "cliCommands": [
-          "workflow",
-          "workflow invoke"
-        ],
-        "npmScripts": [
-          "release:check",
-          "workflow-defs:check"
-        ],
-        "workflows": [
-          "risk-review"
-        ]
-      },
-      "_semanticDigest": "{\"description\":\"Stress-test a plan for failure modes, security, and compliance exposure.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}"
+      "lastValidated": "2026-06-26T20:01:36.161Z"
     },
     {
       "id": "workflow.structure-notes",
-      "kind": "workflow",
       "name": "Structure Notes Workflow",
       "description": "Structure unclassified notes into a normalized summary with extracted intents.",
       "criticality": "P2",
-      "ownerSpecialists": [
+      "ownerWorkerProfiles": [
         "orchestrator",
         "researcher"
       ],
-      "skill": "operating/unstructured-triage",
-      "embeddedWorkflow": "structure-notes",
+      "requiredSkills": [
+        "operating/unstructured-triage"
+      ],
+      "requiredProcedures": [
+        "structure-notes"
+      ],
+      "contracts": {},
+      "state": "active",
       "surfaces": {
         "mcp": {
           "supported": true,
@@ -1447,30 +571,23 @@
         "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs"
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-26T20:01:36.696Z",
-      "edges": {
-        "cliCommands": [
-          "intake",
-          "intake classify"
-        ],
-        "npmScripts": [],
-        "workflows": [
-          "structure-notes"
-        ]
-      },
-      "_semanticDigest": "{\"description\":\"Structure unclassified notes into a normalized summary with extracted intents.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}"
+      "lastValidated": "2026-06-26T20:01:36.696Z"
     },
     {
       "id": "workflow.transcript-process",
-      "kind": "workflow",
       "name": "Transcript Process Workflow",
       "description": "Process a meeting or call transcript into summary, decisions, and action items.",
       "criticality": "P2",
-      "ownerSpecialists": [
+      "ownerWorkerProfiles": [
         "researcher",
         "data-analyst"
       ],
-      "embeddedWorkflow": "transcript-process",
+      "requiredSkills": [],
+      "requiredProcedures": [
+        "transcript-process"
+      ],
+      "contracts": {},
+      "state": "active",
       "surfaces": {
         "mcp": {
           "supported": true,
@@ -1487,33 +604,23 @@
         "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs"
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-26T20:01:37.237Z",
-      "edges": {
-        "cliCommands": [
-          "workflow",
-          "workflow invoke"
-        ],
-        "npmScripts": [
-          "release:check",
-          "workflow-defs:check"
-        ],
-        "workflows": [
-          "transcript-process"
-        ]
-      },
-      "_semanticDigest": "{\"description\":\"Process a meeting or call transcript into summary, decisions, and action items.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}"
+      "lastValidated": "2026-06-26T20:01:37.237Z"
     },
     {
       "id": "workflow.data-structure",
-      "kind": "workflow",
       "name": "Data Structure Workflow",
       "description": "Parse, validate, and profile a raw dataset into a structured, described shape.",
       "criticality": "P2",
-      "ownerSpecialists": [
+      "ownerWorkerProfiles": [
         "data-analyst",
-        "data-engineer"
+        "engineer"
       ],
-      "embeddedWorkflow": "data-structure",
+      "requiredSkills": [],
+      "requiredProcedures": [
+        "data-structure"
+      ],
+      "contracts": {},
+      "state": "active",
       "surfaces": {
         "mcp": {
           "supported": true,
@@ -1530,33 +637,23 @@
         "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs"
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-26T20:01:37.775Z",
-      "edges": {
-        "cliCommands": [
-          "workflow",
-          "workflow invoke"
-        ],
-        "npmScripts": [
-          "release:check",
-          "workflow-defs:check"
-        ],
-        "workflows": [
-          "data-structure"
-        ]
-      },
-      "_semanticDigest": "{\"description\":\"Parse, validate, and profile a raw dataset into a structured, described shape.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}"
+      "lastValidated": "2026-06-26T20:01:37.775Z"
     },
     {
       "id": "workflow.memo-draft",
-      "kind": "workflow",
       "name": "Memo Draft Workflow",
       "description": "Draft a decision or status memo from a problem statement and context.",
       "criticality": "P2",
-      "ownerSpecialists": [
-        "docs-keeper",
+      "ownerWorkerProfiles": [
+        "operations",
         "reviewer"
       ],
-      "embeddedWorkflow": "memo-draft",
+      "requiredSkills": [],
+      "requiredProcedures": [
+        "memo-draft"
+      ],
+      "contracts": {},
+      "state": "active",
       "surfaces": {
         "mcp": {
           "supported": true,
@@ -1573,33 +670,23 @@
         "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs"
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-26T20:01:38.314Z",
-      "edges": {
-        "cliCommands": [
-          "workflow",
-          "workflow invoke"
-        ],
-        "npmScripts": [
-          "release:check",
-          "workflow-defs:check"
-        ],
-        "workflows": [
-          "memo-draft"
-        ]
-      },
-      "_semanticDigest": "{\"description\":\"Draft a decision or status memo from a problem statement and context.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}"
+      "lastValidated": "2026-06-26T20:01:38.314Z"
     },
     {
       "id": "workflow.triage",
-      "kind": "workflow",
       "name": "Triage Workflow",
       "description": "Classify and route unstructured input to the appropriate workflow.",
       "criticality": "P2",
-      "ownerSpecialists": [
+      "ownerWorkerProfiles": [
         "orchestrator",
         "researcher"
       ],
-      "embeddedWorkflow": "triage",
+      "requiredSkills": [],
+      "requiredProcedures": [
+        "triage"
+      ],
+      "contracts": {},
+      "state": "active",
       "surfaces": {
         "mcp": {
           "supported": true,
@@ -1615,32 +702,22 @@
       "verification": {
         "functional": "tests/functional/embedded-contract-triage.functional.test.mjs"
       },
-      "humanGate": "proposal-only",
-      "edges": {
-        "cliCommands": [
-          "workflow",
-          "workflow invoke"
-        ],
-        "npmScripts": [
-          "release:check",
-          "workflow-defs:check"
-        ],
-        "workflows": [
-          "triage"
-        ]
-      },
-      "_semanticDigest": "{\"description\":\"Classify and route unstructured input to the appropriate workflow.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-triage.functional.test.mjs\"}}"
+      "humanGate": "proposal-only"
     },
     {
       "id": "document-type.research-brief",
-      "kind": "document-type",
       "name": "Research Brief",
       "description": "Cited research findings with confidence summary and recommendation.",
-      "ownerSpecialists": [
+      "criticality": "P2",
+      "ownerWorkerProfiles": [
         "researcher"
       ],
-      "skill": "docs/research-workflow",
-      "template": "research-brief",
+      "requiredSkills": [
+        "docs/research-workflow"
+      ],
+      "requiredProcedures": [],
+      "contracts": {},
+      "state": "active",
       "surfaces": {
         "mcp": {
           "supported": true,
@@ -1657,100 +734,89 @@
         "verificationBar": "Sources section with dates; confidence summary; recommendation"
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-26T20:01:38.464Z",
-      "edges": {
-        "cliCommands": [
-          "knowledge",
-          "knowledge add"
-        ],
-        "npmScripts": [],
-        "workflows": []
-      },
-      "_semanticDigest": "{\"description\":\"Cited research findings with confidence summary and recommendation.\",\"criticality\":\"\",\"verification\":{\"functional\":\"tests/certification/artifact-gates.test.mjs\",\"structureRequirements\":\"research-brief\",\"verificationBar\":\"Sources section with dates; confidence summary; recommendation\"}}"
+      "lastValidated": "2026-06-26T20:01:38.464Z"
     },
     {
       "id": "document-type.evidence-brief",
-      "kind": "document-type",
       "name": "Evidence Brief",
       "description": "Product evidence synthesis before decisions.",
-      "ownerSpecialists": [
+      "criticality": "P2",
+      "ownerWorkerProfiles": [
         "product-manager",
         "researcher"
       ],
-      "skill": "docs/evidence-ingest-workflow",
-      "template": "evidence-brief",
+      "requiredSkills": [
+        "docs/evidence-ingest-workflow"
+      ],
+      "requiredProcedures": [],
+      "contracts": {},
+      "state": "active",
       "verification": {
         "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs",
         "verificationBar": "Signal, evidence, counter-signal; no invented customer quotes"
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-26T20:01:39.007Z",
-      "edges": {
-        "cliCommands": [],
-        "npmScripts": [],
-        "workflows": []
-      },
-      "_semanticDigest": "{\"description\":\"Product evidence synthesis before decisions.\",\"criticality\":\"\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\",\"verificationBar\":\"Signal, evidence, counter-signal; no invented customer quotes\"}}"
+      "lastValidated": "2026-06-26T20:01:39.007Z"
     },
     {
       "id": "document-type.prd",
-      "kind": "document-type",
       "name": "Product Requirements Document",
       "description": "Customer-facing product capabilities and requirements.",
-      "ownerSpecialists": [
+      "criticality": "P2",
+      "ownerWorkerProfiles": [
         "product-manager"
       ],
-      "skill": "docs/prd-workflow",
-      "template": "prd",
+      "requiredSkills": [
+        "docs/prd-workflow"
+      ],
+      "requiredProcedures": [],
+      "contracts": {},
+      "state": "active",
       "verification": {
         "functional": "tests/certification/artifact-gates.test.mjs",
         "structureRequirements": "prd",
         "verificationBar": "Problem, goals, success metrics, risks and mitigations"
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-26T20:01:39.154Z",
-      "edges": {
-        "cliCommands": [],
-        "npmScripts": [],
-        "workflows": []
-      },
-      "_semanticDigest": "{\"description\":\"Customer-facing product capabilities and requirements.\",\"criticality\":\"\",\"verification\":{\"functional\":\"tests/certification/artifact-gates.test.mjs\",\"structureRequirements\":\"prd\",\"verificationBar\":\"Problem, goals, success metrics, risks and mitigations\"}}"
+      "lastValidated": "2026-06-26T20:01:39.154Z"
     },
     {
       "id": "document-type.adr",
-      "kind": "document-type",
       "name": "Architecture Decision Record",
       "description": "Record of an architecture decision with rejected alternatives.",
-      "ownerSpecialists": [
-        "architect",
-        "rd-lead"
+      "criticality": "P2",
+      "ownerWorkerProfiles": [
+        "architect"
       ],
-      "skill": "docs/adr-workflow",
-      "template": "adr",
+      "requiredSkills": [
+        "docs/adr-workflow"
+      ],
+      "requiredProcedures": [],
+      "contracts": {},
+      "state": "active",
       "verification": {
         "functional": "tests/certification/artifact-gates.test.mjs",
         "structureRequirements": "adr",
         "verificationBar": "Problem, decision, rejected alternatives, consequences, reversibility"
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-26T20:01:39.305Z",
-      "edges": {
-        "cliCommands": [],
-        "npmScripts": [],
-        "workflows": []
-      },
-      "_semanticDigest": "{\"description\":\"Record of an architecture decision with rejected alternatives.\",\"criticality\":\"\",\"verification\":{\"functional\":\"tests/certification/artifact-gates.test.mjs\",\"structureRequirements\":\"adr\",\"verificationBar\":\"Problem, decision, rejected alternatives, consequences, reversibility\"}}"
+      "lastValidated": "2026-06-26T20:01:39.305Z"
     },
     {
       "id": "document-type.ingested-markdown",
-      "kind": "document-type",
       "name": "Ingested Markdown",
       "description": "Normalized markdown from external documents with extraction metadata.",
-      "ownerSpecialists": [
-        "data-engineer",
+      "criticality": "P2",
+      "ownerWorkerProfiles": [
+        "engineer",
         "researcher"
       ],
-      "skill": "docs/document-ingest-workflow",
+      "requiredSkills": [
+        "docs/document-ingest-workflow"
+      ],
+      "requiredProcedures": [],
+      "contracts": {},
+      "state": "active",
       "surfaces": {
         "mcp": {
           "supported": true,
@@ -1767,26 +833,20 @@
         "verificationBar": "Source metadata preserved; droppedInfo surfaced; no invented structure"
       },
       "humanGate": "autonomous",
-      "lastValidated": "2026-06-26T20:01:39.495Z",
-      "edges": {
-        "cliCommands": [
-          "ingest"
-        ],
-        "npmScripts": [],
-        "workflows": []
-      },
-      "_semanticDigest": "{\"description\":\"Normalized markdown from external documents with extraction metadata.\",\"criticality\":\"\",\"verification\":{\"functional\":\"tests/functional/node-native-extraction.functional.test.mjs\",\"verificationBar\":\"Source metadata preserved; droppedInfo surfaced; no invented structure\"}}"
+      "lastValidated": "2026-06-26T20:01:39.495Z"
     },
     {
       "id": "ingest.adapter",
-      "kind": "ingest-strategy",
       "name": "Adapter Ingest (default)",
       "description": "Local extraction via unpdf/mammoth with docling/whisper for fidelity paths.",
       "criticality": "P0",
-      "ownerSpecialists": [
-        "data-engineer"
+      "ownerWorkerProfiles": [
+        "engineer"
       ],
-      "ingestStrategy": "adapter",
+      "requiredSkills": [],
+      "requiredProcedures": [],
+      "contracts": {},
+      "state": "active",
       "surfaces": {
         "cli": {
           "supported": true,
@@ -1802,23 +862,18 @@
         "functional": "tests/functional/node-native-extraction.functional.test.mjs"
       },
       "humanGate": "autonomous",
-      "lastValidated": "2026-06-26T20:01:39.686Z",
-      "edges": {
-        "cliCommands": [
-          "ingest"
-        ],
-        "npmScripts": [],
-        "workflows": []
-      },
-      "_semanticDigest": "{\"description\":\"Local extraction via unpdf/mammoth with docling/whisper for fidelity paths.\",\"criticality\":\"P0\",\"verification\":{\"functional\":\"tests/functional/node-native-extraction.functional.test.mjs\"}}"
+      "lastValidated": "2026-06-26T20:01:39.686Z"
     },
     {
       "id": "ingest.docling",
-      "kind": "ingest-strategy",
       "name": "Docling Sidecar Ingest",
       "description": "Offline docling Python sidecar for layout-aware PDF/Office and OCR.",
       "criticality": "P1",
-      "ingestStrategy": "adapter",
+      "ownerWorkerProfiles": [],
+      "requiredSkills": [],
+      "requiredProcedures": [],
+      "contracts": {},
+      "state": "active",
       "surfaces": {
         "cli": {
           "supported": true,
@@ -1829,24 +884,18 @@
         "functional": "tests/functional/mcp-ingest-resilience.functional.test.mjs"
       },
       "humanGate": "autonomous",
-      "lastValidated": "2026-06-26T20:01:40.642Z",
-      "edges": {
-        "cliCommands": [
-          "ingest",
-          "ingest --legacy-extractor=false"
-        ],
-        "npmScripts": [],
-        "workflows": []
-      },
-      "_semanticDigest": "{\"description\":\"Offline docling Python sidecar for layout-aware PDF/Office and OCR.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/mcp-ingest-resilience.functional.test.mjs\"}}"
+      "lastValidated": "2026-06-26T20:01:40.642Z"
     },
     {
       "id": "ingest.docling-remote",
-      "kind": "ingest-strategy",
       "name": "Docling Remote Ingest",
       "description": "Opt-in remote conversion via DOCLING_SERVE_URL (explicit user choice).",
       "criticality": "P2",
-      "ingestStrategy": "docling-remote",
+      "ownerWorkerProfiles": [],
+      "requiredSkills": [],
+      "requiredProcedures": [],
+      "contracts": {},
+      "state": "active",
       "surfaces": {
         "cli": {
           "supported": true,
@@ -1857,25 +906,22 @@
         "functional": "tests/functional/docling-remote-ingest.functional.test.mjs"
       },
       "humanGate": "requires-human-approval",
-      "lastValidated": "2026-06-26T20:01:40.816Z",
-      "edges": {
-        "cliCommands": [
-          "ingest"
-        ],
-        "npmScripts": [],
-        "workflows": []
-      },
-      "_semanticDigest": "{\"description\":\"Opt-in remote conversion via DOCLING_SERVE_URL (explicit user choice).\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/docling-remote-ingest.functional.test.mjs\"}}"
+      "lastValidated": "2026-06-26T20:01:40.816Z"
     },
     {
-      "id": "skill.roles-engineer",
-      "kind": "skill",
+      "id": "skill.perspectives-engineer",
       "name": "Role Skill: Engineer",
       "description": "Engineer role playbook — hot path per skill telemetry.",
-      "ownerSpecialists": [
+      "criticality": "P2",
+      "ownerWorkerProfiles": [
         "engineer"
       ],
-      "skill": "roles/engineer",
+      "requiredSkills": [
+        "perspectives/engineer"
+      ],
+      "requiredProcedures": [],
+      "contracts": {},
+      "state": "active",
       "surfaces": {
         "mcp": {
           "supported": true,
@@ -1887,23 +933,22 @@
         "hostEmulation": "tests/functional/host-mcp-emulation.functional.test.mjs"
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-26T20:01:41.286Z",
-      "edges": {
-        "cliCommands": [],
-        "npmScripts": [],
-        "workflows": []
-      },
-      "_semanticDigest": "{\"description\":\"Engineer role playbook — hot path per skill telemetry.\",\"criticality\":\"\",\"verification\":{\"hostEmulation\":\"tests/functional/host-mcp-emulation.functional.test.mjs\"}}"
+      "lastValidated": "2026-06-26T20:01:41.286Z"
     },
     {
-      "id": "skill.roles-architect-ai-systems",
-      "kind": "skill",
+      "id": "skill.perspectives-architect-ai-systems",
       "name": "Role Skill: Architect AI Systems",
       "description": "Architect AI systems flavor — hot path per skill telemetry.",
-      "ownerSpecialists": [
+      "criticality": "P2",
+      "ownerWorkerProfiles": [
         "architect"
       ],
-      "skill": "roles/architect.ai-systems",
+      "requiredSkills": [
+        "perspectives/architect.ai-systems"
+      ],
+      "requiredProcedures": [],
+      "contracts": {},
+      "state": "active",
       "surfaces": {
         "mcp": {
           "supported": true,
@@ -1915,23 +960,20 @@
         "hostEmulation": "tests/functional/host-mcp-emulation.functional.test.mjs"
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-26T20:01:41.754Z",
-      "edges": {
-        "cliCommands": [],
-        "npmScripts": [],
-        "workflows": []
-      },
-      "_semanticDigest": "{\"description\":\"Architect AI systems flavor — hot path per skill telemetry.\",\"criticality\":\"\",\"verification\":{\"hostEmulation\":\"tests/functional/host-mcp-emulation.functional.test.mjs\"}}"
+      "lastValidated": "2026-06-26T20:01:41.754Z"
     },
     {
       "id": "local.model.tier",
-      "kind": "capability",
       "name": "Local Model Tier Detection",
       "description": "resolveCapabilityTier and isLocalModel include local/ OpenAI-compatible models.",
       "criticality": "P1",
-      "ownerSpecialists": [
+      "ownerWorkerProfiles": [
         "orchestrator"
       ],
+      "requiredSkills": [],
+      "requiredProcedures": [],
+      "contracts": {},
+      "state": "active",
       "surfaces": {
         "cli": {
           "supported": true,
@@ -1944,26 +986,20 @@
         "untestableRationale": "Tier detection is covered by unit (capability-tier.test.mjs) and integration (model-router-local.test.mjs) tests; no functional binary spawn is needed since the logic has no cross-component side effects."
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-26T20:01:41.876Z",
-      "edges": {
-        "cliCommands": [
-          "models",
-          "models resolve"
-        ],
-        "npmScripts": [],
-        "workflows": []
-      },
-      "_semanticDigest": "{\"description\":\"resolveCapabilityTier and isLocalModel include local/ OpenAI-compatible models.\",\"criticality\":\"P1\",\"verification\":{\"unit\":\"tests/capability-tier.test.mjs\",\"integration\":\"tests/model-router-local.test.mjs\",\"untestableRationale\":\"Tier detection is covered by unit (capability-tier.test.mjs) and integration (model-router-local.test.mjs) tests; no functional binary spawn is needed since the logic has no cross-component side effects.\"}}"
+      "lastValidated": "2026-06-26T20:01:41.876Z"
     },
     {
       "id": "surfaces.opencode-primary",
-      "kind": "capability",
       "name": "OpenCode Primary Surface",
       "description": "OpenCode is the first-class conversational surface; the construct CLI remains setup/admin/headless infrastructure.",
       "criticality": "P1",
-      "ownerSpecialists": [
+      "ownerWorkerProfiles": [
         "orchestrator"
       ],
+      "requiredSkills": [],
+      "requiredProcedures": [],
+      "contracts": {},
+      "state": "active",
       "surfaces": {
         "opencode": {
           "supported": true,
@@ -1982,31 +1018,20 @@
         "functional": "tests/functional/opencode-primary-surface.functional.test.mjs",
         "hostEmulation": "tests/functional/host-config-parity.functional.test.mjs"
       },
-      "humanGate": "proposal-only",
-      "lastValidated": null,
-      "edges": {
-        "cliCommands": [
-          "sync"
-        ],
-        "npmScripts": [
-          "adapters",
-          "docs:sync",
-          "release:check",
-          "version"
-        ],
-        "workflows": []
-      },
-      "_semanticDigest": "{\"description\":\"OpenCode is the first-class conversational surface; the construct CLI remains setup/admin/headless infrastructure.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/opencode-primary-surface.functional.test.mjs\",\"hostEmulation\":\"tests/functional/host-config-parity.functional.test.mjs\"}}"
+      "humanGate": "proposal-only"
     },
     {
       "id": "mcp.tool-budget.trim",
-      "kind": "capability",
       "name": "MCP Tool Surface Trim",
       "description": "Heavy external MCP servers disabled when default model is local.",
       "criticality": "P2",
-      "ownerSpecialists": [
+      "ownerWorkerProfiles": [
         "orchestrator"
       ],
+      "requiredSkills": [],
+      "requiredProcedures": [],
+      "contracts": {},
+      "state": "active",
       "surfaces": {
         "opencode": {
           "supported": true
@@ -2015,14 +1040,7 @@
       "verification": {
         "functional": "tests/functional/host-config-parity.functional.test.mjs"
       },
-      "humanGate": "proposal-only",
-      "lastValidated": null,
-      "edges": {
-        "cliCommands": [],
-        "npmScripts": [],
-        "workflows": []
-      },
-      "_semanticDigest": "{\"description\":\"Heavy external MCP servers disabled when default model is local.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/host-config-parity.functional.test.mjs\"}}"
+      "humanGate": "proposal-only"
     }
   ]
 }

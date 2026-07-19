@@ -59,16 +59,16 @@ test('schema-infer throws a clear configuration error when fast tier is null and
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
     OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
     OPEN_ROUTER_API_KEY: process.env.OPEN_ROUTER_API_KEY,
-    CX_MODEL_FAST: process.env.CX_MODEL_FAST,
     CONSTRUCT_MODEL_FAST: process.env.CONSTRUCT_MODEL_FAST,
-    CX_USER_ENV_PATH: process.env.CX_USER_ENV_PATH,
+    CONSTRUCT_MODEL_FAST: process.env.CONSTRUCT_MODEL_FAST,
+    CONSTRUCT_USER_ENV_PATH: process.env.CONSTRUCT_USER_ENV_PATH,
   };
   process.env.ANTHROPIC_API_KEY = 'sk-test-anthropic';
   delete process.env.OPENROUTER_API_KEY;
   delete process.env.OPEN_ROUTER_API_KEY;
-  delete process.env.CX_MODEL_FAST;
   delete process.env.CONSTRUCT_MODEL_FAST;
-  process.env.CX_USER_ENV_PATH = envPath;
+  delete process.env.CONSTRUCT_MODEL_FAST;
+  process.env.CONSTRUCT_USER_ENV_PATH = envPath;
   const originalHome = process.env.HOME;
   process.env.HOME = dir;
 
@@ -88,7 +88,7 @@ test('schema-infer throws a clear configuration error when fast tier is null and
       caught = err;
     }
     assert.ok(caught, 'schema-infer should throw, not TypeError or silently succeed');
-    assert.match(caught.message, /fast-tier|construct models --apply|CX_MODEL_FAST/);
+    assert.match(caught.message, /fast-tier|construct models --apply|CONSTRUCT_MODEL_FAST/);
     assert.equal(caught.name, 'Error', 'should be a clear Error, not TypeError');
   } finally {
     process.chdir(originalCwd);

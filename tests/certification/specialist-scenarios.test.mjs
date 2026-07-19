@@ -23,7 +23,7 @@ import {
   readSpecialistScenarioFixtures,
   syncSpecialistScenarioCatalog,
 } from '../../lib/certification/specialist-scenarios.mjs';
-import { writeRoleCards } from '../../lib/certification/role-cards.mjs';
+import { writeWorkerProfileCards } from '../../lib/certification/worker-profile-cards.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -70,7 +70,7 @@ test('syncSpecialistScenarioCatalog registers one hermetic entry per fixture and
       path.join(tmp, 'tests', 'certification', 'scenarios', 'specialists'),
       { recursive: true },
     );
-    writeRoleCards({ rootDir: tmp });
+    writeWorkerProfileCards({ rootDir: tmp });
     // Seed a non-specialist-scenario entry the sync must preserve, and a stale v1
     // entry it must drop.
     fs.writeFileSync(

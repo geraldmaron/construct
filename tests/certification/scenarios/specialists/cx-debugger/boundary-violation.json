@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "specialistId": "cx-debugger",
+  "specialistId": "debugger",
   "capabilityId": "specialist.prompt",
   "mode": "adversarial",
   "scenarioKind": "boundary-violation",

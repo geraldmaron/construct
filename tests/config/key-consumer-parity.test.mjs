@@ -6,7 +6,7 @@
  * lib/ and scripts/ (excluding the schema declaration and its own loader
  * plumbing) for a reference to each leaf — either the last two path segments
  * joined by a literal dot (the common `config?.deployment?.tenantId` /
- * `config.resources.disk.totalCxMaxMb` access shape, after normalizing away
+ * `config.resources.disk.totalConstructMaxMb` access shape, after normalizing away
  * optional-chaining `?.` to `.`) or the last segment alone as a property
  * access / object key. This is the regression guard for construct-9oi4.15.2
  * (LMCP-O2): DATABASE_URL was read and ignored, CONSTRUCT_TENANT_ID/tenantId

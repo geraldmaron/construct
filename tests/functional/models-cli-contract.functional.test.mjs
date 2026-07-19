@@ -84,17 +84,17 @@ test('models set --tier --model writes to the XDG config and reports that path',
   assert.match(res.stdout, /Set standard -> foo\/bar/);
   assert.ok(res.stdout.includes(sb.configPath), 'must report the resolved XDG path');
   assert.doesNotMatch(res.stdout, /\.construct\/config\.env/);
-  assert.match(fs.readFileSync(sb.configPath, 'utf8'), /CX_MODEL_STANDARD=foo\/bar/);
+  assert.match(fs.readFileSync(sb.configPath, 'utf8'), /CONSTRUCT_MODEL_STANDARD=foo\/bar/);
   assert.equal(fs.existsSync(sb.legacyPath), false, 'must never write the legacy path');
 });
 
-test('models reset clears CX_MODEL_* from the XDG config, preserving other keys', () => {
+test('models reset clears CONSTRUCT_MODEL_* from the XDG config, preserving other keys', () => {
   const sb = freshSandbox();
-  fs.writeFileSync(sb.configPath, 'CX_MODEL_FAST=foo/fast\nOTHER=keep\n');
+  fs.writeFileSync(sb.configPath, 'CONSTRUCT_MODEL_FAST=foo/fast\nOTHER=keep\n');
   const res = runModels(sb, ['reset']);
   assert.equal(res.status, 0, res.stderr);
   const written = fs.readFileSync(sb.configPath, 'utf8');
-  assert.doesNotMatch(written, /CX_MODEL_FAST/);
+  assert.doesNotMatch(written, /CONSTRUCT_MODEL_FAST/);
   assert.match(written, /OTHER=keep/);
 });
 

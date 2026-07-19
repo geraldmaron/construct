@@ -16,7 +16,7 @@
  *     relays the service's run faithfully without fabricating local execution.
  *
  * Trace reads resolve through the machine-scoped state root (ADR-0066), so
- * CX_HOME_OVERRIDE is pinned for the whole file to keep them off the real
+ * CONSTRUCT_HOME_OVERRIDE is pinned for the whole file to keep them off the real
  * developer machine's $HOME.
  */
 
@@ -32,12 +32,12 @@ import { traceDir } from '../../lib/worker/trace.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const MODEL = 'anthropic/claude-sonnet-4-6';
-const ENV = { CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL };
+const ENV = { CONSTRUCT_MODEL_REASONING: MODEL, CONSTRUCT_MODEL_STANDARD: MODEL, CONSTRUCT_MODEL_FAST: MODEL };
 const REQUEST = 'refactor the auth module and review for security';
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-orch-truth-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 
 const dirs = [];
 function project(config = null) {
@@ -54,8 +54,8 @@ function traceMentions(cwd, needle) {
 test.after(() => {
   for (const d of dirs) { try { rmTmpDir(d); } catch {} }
   try { rmTmpDir(homeOverride); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 // A thinking-block response yields both specialist output and a reasoning trace, so
@@ -142,8 +142,8 @@ test('remote path relays the service run faithfully and fabricates no execution'
   const remoteRun = {
     runId: 'remote-1', status: 'completed',
     execution: { executionMode: 'construct-orchestrated', degraded: false },
-    plan: { intent: 'refactor', specialists: ['cx-architect'] },
-    tasks: [{ id: 't1', role: 'cx-architect', status: 'prepared', executor: 'inline:prepared', output: null, reasoning: null, error: null }],
+    plan: { intent: 'refactor', specialists: ['architect'] },
+    tasks: [{ id: 't1', role: 'architect', status: 'prepared', executor: 'inline:prepared', output: null, reasoning: null, error: null }],
   };
   let posted = null;
   const fetchImpl = async (url, opts) => { posted = { url, opts }; return { ok: true, status: 200, json: async () => ({ data: remoteRun }) }; };
@@ -162,8 +162,8 @@ test('remote path relays real provider output without rewriting it', async () =>
   const remoteRun = {
     runId: 'remote-2', status: 'completed',
     execution: { executionMode: 'construct-orchestrated', degraded: false },
-    plan: { intent: 'refactor', specialists: ['cx-architect'] },
-    tasks: [{ id: 't1', role: 'cx-architect', status: 'done', executor: 'provider:anthropic:claude-sonnet-4-6', output: 'real-remote-output', reasoning: null, error: null }],
+    plan: { intent: 'refactor', specialists: ['architect'] },
+    tasks: [{ id: 't1', role: 'architect', status: 'done', executor: 'provider:anthropic:claude-sonnet-4-6', output: 'real-remote-output', reasoning: null, error: null }],
   };
   const fetchImpl = async () => ({ ok: true, status: 200, json: async () => ({ data: remoteRun }) });
   const res = await orchestrationRun(

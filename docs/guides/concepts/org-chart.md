@@ -53,7 +53,7 @@ Each `displayName` is the specialist's own perspective bias, verbatim from its r
 
 ## What the consolidation absorbed
 
-The 12 anchors absorbed the retired roles as **skill overlays** (`skills/roles/<role>.*`) and prompt sections, not as separate personas — capability was folded in, not dropped. The high-traffic examples:
+The 12 anchors absorbed the retired roles as **skill overlays** (`skills/perspectives/<role>.*`) and prompt sections, not as separate personas — capability was folded in, not dropped. The high-traffic examples:
 
 - **cx-engineer** absorbs AI-engineering, data-engineering, and platform-engineering as skill bundles it loads by task.
 - **cx-reviewer** absorbs the pre-implementation challenge (devil's-advocate), eval scoring (evaluator), and fleet-trace review (trace-reviewer).

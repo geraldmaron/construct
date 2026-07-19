@@ -22,9 +22,9 @@ import { doctorRoot } from '../lib/config/xdg.mjs';
 // A resolvable model on the env is required for a PASS verdict: attachment
 // alone does not imply orchestration_run would actually serve on this env.
 const RESOLVABLE_ENV = {
-  CX_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
-  CX_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6',
-  CX_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
+  CONSTRUCT_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
+  CONSTRUCT_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6',
+  CONSTRUCT_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
   ANTHROPIC_API_KEY: 'sk-test-canary',
 };
 

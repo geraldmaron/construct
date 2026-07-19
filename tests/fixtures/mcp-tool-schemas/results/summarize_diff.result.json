@@ -70,15 +70,15 @@
       },
       {
         "status": "M",
-        "file": "lib/workflows/loader.mjs"
+        "file": "lib/procedures/loader.mjs"
       },
       {
         "status": "M",
-        "file": "lib/workflows/manifest-schema.mjs"
+        "file": "lib/procedures/manifest-schema.mjs"
       },
       {
         "status": "M",
-        "file": "scripts/sync-specialists.mjs"
+        "file": "scripts/sync-worker-profiles.mjs"
       },
       {
         "status": "M",

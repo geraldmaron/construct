@@ -1,7 +1,7 @@
 {
   "id": "product-manager-to-architect",
-  "producer": "cx-product-manager",
-  "consumer": "cx-architect",
+  "producer": "product-manager",
+  "consumer": "architect",
   "trigger": {
     "docAuthoring.docType": [
       "prd",
@@ -28,7 +28,7 @@
     "type": "decision"
   },
   "preconditions": [
-    "cx-reviewer framing challenge logged if riskFlags.architecture"
+    "reviewer framing challenge logged if riskFlags.architecture"
   ],
   "postconditions": [
     {

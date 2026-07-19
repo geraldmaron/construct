@@ -1,7 +1,7 @@
 {
   "id": "any-to-researcher",
   "producer": "*",
-  "consumer": "cx-researcher",
+  "consumer": "researcher",
   "trigger": {
     "intent": "investigation",
     "category": "exploration"
