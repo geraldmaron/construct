@@ -1,3 +1,9 @@
+/**
+ * procedure-definitions-drift.test.mjs — canonical Construct contract coverage.
+ *
+ * Assertions pin the clean-slate public model and reject retired terminology.
+ */
+
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';

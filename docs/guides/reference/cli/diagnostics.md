@@ -16,7 +16,7 @@ description: Diagnostics commands for Construct.
 | `construct docs:site` | Regenerate generated reference pages under docs/guides/reference/ |
 | `construct docs:update` | Regenerate AUTO-managed doc regions (alias for `docs update`) |
 | `construct docs:verify` | Validate documentation quality (alias for `docs verify`) |
-| `construct impact` | Change-impact analysis — map changed files to affected tests, capabilities, and workflows |
+| `construct impact` | Change-impact analysis — map changed files to affected tests, capabilities, and procedures |
 | `construct rules` | Rule and hook reference telemetry rollup |
 
 ## construct audit
@@ -26,13 +26,13 @@ Audit Construct internals and review the mutation trail
 **Usage**
 
 ```bash
-construct audit <skills|specialists|tests|trail>
+construct audit <skills|worker-profiles|tests|trail>
 ```
 
 **Subcommands**
 
 - `skills` — Audit skill corpus coverage and metadata (`--inventory` checks certification skill inventory freshness)
-- `specialists` — Audit specialist/skill matrix and cross-checks
+- `worker-profiles` — Audit worker profile and skill cross-checks
 - `tests` — Validate behavior-to-test capability traceability (`--corpus` checks test-file inventory)
 - `trail` — Review mutation audit trail
 
@@ -141,7 +141,7 @@ construct docs:verify
 
 ## construct impact
 
-Change-impact analysis — map changed files to affected tests, capabilities, and workflows
+Change-impact analysis — map changed files to affected tests, capabilities, and procedures
 
 **Usage**
 

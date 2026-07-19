@@ -753,7 +753,7 @@ Classify an artifact and return a role-aware plan (primary owner, role chain wit
 | `constraints` | array | Optional constraints (advisory). |
 | `available_roles` | array | Restrict the plan to these role ids; dropped roles are reported as warnings. |
 
-### `workflow_invoke`
+### `procedure_invoke`
 Invoke a named Construct workflow (perspectives/skills) non-interactively and return a provenanced execution plan: selected roles, rationale, applied skills, resolved model, evidence requirements, output contract, risks, and a traceId. Construct returns the orchestration plan; the host runtime performs specialist reasoning. Durable writes occur ONLY when approval_mode is allow-durable-write; proposal-only and requires-human-approval perform no durable writes.
 
 | Parameter | Type | Description |
@@ -803,7 +803,7 @@ Search the public web and return CITED results — the only search surface that 
 | `recency` | string | Optional freshness window hint (e.g. `30d`). |
 
 ### `orchestration_run`
-Execute a real multi-specialist orchestration run and return per-specialist output — the executing counterpart to `workflow_invoke` (which only plans). For MCP hosts with no subagent primitive (VS Code/Copilot, Cursor), this is how a specialist chain actually runs: the engine owns orchestration, the tool is the thin client (ADR-0022). Solo runs execute in-process — no daemon, no port, no token; a remote/team orchestration service is opt-in via `CONSTRUCT_ORCHESTRATION_URL`.
+Execute a real multi-specialist orchestration run and return per-specialist output — the executing counterpart to `procedure_invoke` (which only plans). For MCP hosts with no subagent primitive (VS Code/Copilot, Cursor), this is how a specialist chain actually runs: the engine owns orchestration, the tool is the thin client (ADR-0022). Solo runs execute in-process — no daemon, no port, no token; a remote/team orchestration service is opt-in via `CONSTRUCT_ORCHESTRATION_URL`.
 
 Three worker backends. `host` (the default for MCP-originated runs when neither `worker_backend` nor `construct.config.json`'s `orchestration.workerBackend` is set) materializes each specialist's prompt without spending any provider API credits — the calling host executes it in its own model session (the subscription it is already running under) and submits the result via `orchestration_task_result`; when the connected client declares the MCP `sampling` capability, construct-mcp instead drives that same loop itself (ADR-0063) and the run can complete in this same call. `provider` executes specialists against a configured provider key (real API spend). `inline` only prepares tasks — no execution at all (this stays the CLI's own default; the CLI has no attached host session to execute a `host`-backend run against).
 

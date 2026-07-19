@@ -572,7 +572,7 @@ async function cmdDoctor() {
   const add = (label, pass, optional = false, failureState = pass ? DOCTOR_STATES.healthy : null) => checks.push({ label, pass, optional, failureState });
   const { isConstructSourceCheckout } = await import('../lib/doctor/source-checkout.mjs');
   const isSourceCheckout = isConstructSourceCheckout(ROOT_DIR);
-  add('specialists/org exists', fs.existsSync(path.join(ROOT_DIR, 'specialists', 'org')));
+  add('registry/worker-profiles exists', fs.existsSync(path.join(ROOT_DIR, 'registry', 'worker-profiles')));
   add('sync-worker-profiles.mjs exists', fs.existsSync(path.join(ROOT_DIR, 'scripts', 'sync-worker-profiles.mjs')));
 
   // Extension manifests check
@@ -716,7 +716,7 @@ async function cmdDoctor() {
     const { buildOrchestrationReadiness, formatFirstRunExecutionReadiness } = await import('../lib/orchestration/readiness.mjs');
     const orchReadiness = buildOrchestrationReadiness({}, { env: process.env, cwd });
     const backendNote = orchReadiness.workerBackend === 'inline'
-      ? 'inline (prepare-only — no specialist LLM reasoning runs; set orchestration.workerBackend=provider for real execution)'
+      ? 'inline (prepare-only — no Worker Profile reasoning runs; set orchestration.workerBackend=provider for real execution)'
       : orchReadiness.workerBackend;
     add(`Worker backend: ${backendNote}`, true, true);
 
@@ -871,7 +871,7 @@ async function cmdDoctor() {
   add('User config ready', fs.existsSync(getUserEnvPath(HOME)) || fs.existsSync(configDir(HOME)), true);
   add('skills/ directory', fs.existsSync(path.join(ROOT_DIR, 'skills')));
   add('rules/common/', fs.existsSync(path.join(ROOT_DIR, 'rules', 'common')));
-  add('specialists/prompts/ directory', fs.existsSync(path.join(ROOT_DIR, 'specialists', 'prompts')));
+  add('registry/worker-profiles/prompts/ directory', fs.existsSync(path.join(ROOT_DIR, 'registry', 'worker-profiles', 'prompts')));
   add('Hybrid storage env keys documented', fs.existsSync(path.join(ROOT_DIR, '.env.example')));
   const perfReviewsDir = path.join(doctorRoot(), 'performance-reviews');
   fs.mkdirSync(perfReviewsDir, { recursive: true });
@@ -4199,13 +4199,12 @@ async function cmdExecution(args) {
 
 // Human-readable summary of a shaped run's routePath (construct-d1r7.15) —
 // shared by `orchestrate run` and `orchestrate status <id>` so both print the
-// same team/specialist/rationale line rather than drifting formats.
+// same assignment/rationale line rather than drifting formats.
 
 function printRoutePath(routePath) {
   if (!routePath) return;
-  const team = (routePath.teamPath || []).join(' > ') || 'none';
-  const sequence = (routePath.specialistSequence || []).join(' → ') || 'none';
-  println(`  route: team=${team} · specialists=${sequence}`);
+  const sequence = (routePath.assignmentSequence || []).join(' → ') || 'none';
+  println(`  route: assignments=${sequence}`);
   if (routePath.rationale) println(`  rationale: ${routePath.rationale}`);
 }
 
@@ -4805,10 +4804,10 @@ async function cmdModelsPolicy(args) {
 
 async function cmdModelsExplain(args) {
   const asJson = args.includes('--json');
-  const roleFlagIdx = args.indexOf('--role');
+  const roleFlagIdx = args.indexOf('--worker-profile');
   const role = roleFlagIdx !== -1 ? args[roleFlagIdx + 1] : (args[0] && !args[0].startsWith('-') ? args[0] : null);
   if (!role) {
-    errorln('Usage: construct models explain --role <specialist>');
+    errorln('Usage: construct models explain --worker-profile <id>');
     process.exit(1);
   }
   const { explainRole } = await import('../lib/model-policy.mjs');

@@ -172,19 +172,19 @@ The embed daemon writes its supervisor stdout log to the machine's XDG state dir
 | `construct oracle` | Oracle meta-controller — fleet health review and bounded-auto maintenance |
 | `construct participation` | Author and inspect ADR-0070 participation rules (condition → recruit with role/gate) over org-api — same writer and validation as Org Studio and the participation_rules MCP tool |
 | `construct recommendations` | View and manage artifact recommendations |
-| `construct sandbox` | Isolated tmpdir-based environment for QA / specialist dry-runs |
-| `construct scope` | Manage the active org scope and its lifecycle (draft, promote, archive, health) |
+| `construct sandbox` | Isolated tmpdir-based environment for QA and worker dry-runs |
 | `construct status` | Show system health and credentials |
 | `construct stop` | Stop all running services |
-| `construct studio` | Org Studio — local, zero-dependency web app for authoring specialists, teams, relationships, fences, and participation rules over org-api (loopback-only) |
+| `construct studio` | Workspace Studio — local authoring for worker profiles, assignments, fences, and participation rules (loopback-only) |
 | `construct sync` | Sync agent adapters to AI tools |
-| `construct workers` | List registered team workers and heartbeat freshness |
+| `construct workers` | List registered workers and heartbeat freshness |
+| `construct workspace-preset` | Inspect reusable workspace-wide defaults |
 
 ### Work
 
 | Command | What it does |
 |---|---|
-| `construct artifact` | Plan or locally execute manifest-backed artifact workflows with execution provenance |
+| `construct artifact` | Plan or locally execute manifest-backed artifact procedures with execution provenance |
 | `construct ask` | One-shot ask against the active knowledge index |
 | `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
 | `construct customer` | Manage customer profiles for product intelligence |
@@ -201,19 +201,19 @@ The embed daemon writes its supervisor stdout log to the machine's XDG state dir
 | `construct integrations` | Check and manage external system connections |
 | `construct knowledge` | Query, index, or add to the project knowledge base |
 | `construct memory` | Inspect memory layer |
-| `construct pack` | Specialist/team/profile pack enable/disable lifecycle (LMCP-E3) |
+| `construct pack` | Worker profile and workspace preset pack lifecycle |
+| `construct procedure` | Inspect reusable deterministic procedures |
 | `construct publish` | Publish typed artifacts: release gate + export PDF with figures + optional demos |
 | `construct reflect` | Capture improvement feedback and update Construct core |
 | `construct search` | Hybrid search across project state |
 | `construct storage` | Manage storage backend |
 | `construct synthesize` | Cross-project synthesis: map each registered project, reduce to an origin-cited answer |
 | `construct tags` | Manage the controlled tag vocabulary (propose, add, deprecate, audit) |
-| `construct team` | Team review, template listing, and custom team authoring (`team:add` / `team:remove` are internal registry editors) |
 | `construct tools` | Detect optional publish pipeline binaries (Pandoc, D2, VHS, Playwright) |
 | `construct tracker-projection` | Beads projection, field authority, and reconciliation (construct-b0nny.27, target-model.md concept 16) — treats bd as a projection of the graph-informed Work model with explicit per-field authority, detect-and-report drift, and read-only raw-record-preserving import. Sits behind bd; issues no bd write. |
 | `construct wireframe` | Generate wireframes from description |
 | `construct work-spec` | Work spec schema + graph-informed decomposition check (construct-b0nny.23, target-model.md concepts 6/7/9) — cycle detection, declared-dependency graph resolution, and independence-claim verification over a Work spec's decomposition. |
-| `construct workflow` | Instantiate workflow templates (PRD-to-review chains, onboarding, handoffs) |
+| `construct worker-profile` | Inspect assignable worker configurations |
 | `construct workplace-loop` | Production sources/directives/workplace loop (construct-b0nny.25) — detects real signals from a connected source, checks them against Workspace strategy, and routes any proposed external effect through the governed-write chokepoint. |
 | `construct workspace` | Manage PM workspaces for multi-PM signal routing |
 | `construct workspace-domain` | Workspace domain model (construct-b0nny.22, target-model.md concept 1) — owner, membership, settings, lifecycle. Distinct from `construct workspace` above, which is the unrelated multi-PM signal-routing command. |
@@ -223,10 +223,10 @@ The embed daemon writes its supervisor stdout log to the machine's XDG state dir
 | Command | What it does |
 |---|---|
 | `construct acp` | Run Construct as an Agent Client Protocol (ACP) server over stdio for Zed/JetBrains/VS Code ACP clients |
-| `construct capability` | Describe what this Construct install can do (embedded contract; read-only, secret-free) |
+| `construct capability` | Inspect typed operations the system can perform |
 | `construct claude:allow` | Manage Claude Code `permissions.allow` from the outside (auto-classifier blocks the agent from editing it) |
 | `construct db` | Inspect and migrate the optional Postgres backend |
-| `construct execution` | Resolve the execution-capability contract for an embedded workflow (orchestrated vs prompt-only; descriptive, not enforced) |
+| `construct execution` | Resolve the execution-capability contract for an embedded procedure (orchestrated vs prompt-only; descriptive, not enforced) |
 | `construct flow` | Deterministic flow-engine runs: start or resume a checkpointed flow, or inspect its status |
 | `construct hosts` | Show host support for Construct orchestration |
 | `construct mcp` | Manage MCP integrations |
@@ -251,7 +251,7 @@ The embed daemon writes its supervisor stdout log to the machine's XDG state dir
 | `construct eval-datasets` | Sync scored traces from the telemetry backend into eval datasets for prompt regression testing |
 | `construct evals` | Show evaluator catalog for prompt and agent experiments |
 | `construct feedback:history` | Show recorded outcome ratings |
-| `construct feedback:record` | Record an outcome rating for a recent specialist invocation |
+| `construct feedback:record` | Record an outcome rating for a recent worker invocation |
 | `construct improvement` | Governed improvement loop — review, approve, and record apply/rollback for proposals |
 | `construct llm-judge` | Run LLM-as-a-judge evaluations on unscored traces for continuous quality feedback |
 | `construct optimize` | Prompt optimization using telemetry trace quality scores |
@@ -273,7 +273,7 @@ The embed daemon writes its supervisor stdout log to the machine's XDG state dir
 | `construct docs:site` | Regenerate generated reference pages under docs/guides/reference/ |
 | `construct docs:update` | Regenerate AUTO-managed doc regions (alias for `docs update`) |
 | `construct docs:verify` | Validate documentation quality (alias for `docs verify`) |
-| `construct impact` | Change-impact analysis — map changed files to affected tests, capabilities, and workflows |
+| `construct impact` | Change-impact analysis — map changed files to affected tests, capabilities, and procedures |
 | `construct rules` | Rule and hook reference telemetry rollup |
 
 ### Advanced
@@ -295,13 +295,13 @@ The embed daemon writes its supervisor stdout log to the machine's XDG state dir
 | `construct hooks:health` | Check hook health |
 | `construct list` | List all agents |
 | `construct monitor` | One-command setup for continuous monitoring-as-a-role: sources.targets + embed.yaml roles + capability enable + daemon start |
-| `construct policy` | Show active policy gates with enforcement details |
+| `construct policy` | Inspect rules governing authority, approval, and external effects |
 | `construct provider` | Provider management |
 | `construct role` | Role framework management |
 | `construct roles:list` | List installed role contracts |
 | `construct roles:set` | Activate a role contract |
 | `construct scheduler` | Manage scheduled background jobs (tag-mining, doc-hygiene, skill-rollup) |
-| `construct server` | Shared workspace server (construct-b0nny.26, E7) — additive team/enterprise deployment mode: auth, Postgres-backed Workspace store, worker-claim queue. Solo/embedded mode is unaffected and needs none of this. |
+| `construct server` | Shared workspace server with authentication, a Postgres-backed Workspace store, and a worker-claim queue for multi-user deployments. |
 | `construct skills` | Skill relevance detection |
 | `construct sources` | Manage typed integration source targets in construct.config.json |
 | `construct templates` | List doc templates and register custom document classes (project-tier overlay; builtin manifest untouched) |
@@ -333,17 +333,16 @@ construct/
 ├── dev
 ├── docs             Architecture notes, runbooks, and documentation contract
 ├── examples         Example projects and persona fixtures
-├── Formula
 ├── lib              Core runtime: CLI, hooks, MCP, providers, oracle, sync
-├── packages         Shared workspace packages (e.g. cx-ui)
-├── personas         Persona prompt definitions
+├── packages         Shared workspace packages
+├── personas
 ├── platforms        Host adapter capability configs
 ├── registry         Product capability registry
 ├── rules            Coding and quality standards
 ├── schemas          Registry and config JSON Schema
 ├── scripts          Audit, alignment, release, and sync scripts
 ├── skills           Reusable domain knowledge files
-├── specialists      Org registry, contracts, and specialist prompts
+├── specialists
 ├── templates        Doc and workflow templates
 ├── tests            Test suite
 ├── vendor

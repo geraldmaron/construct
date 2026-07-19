@@ -216,7 +216,7 @@
         "mcp": {
           "supported": true,
           "primary": true,
-          "tool": "workflow_invoke"
+          "tool": "procedure_invoke"
         },
         "cli": {
           "supported": true,
@@ -296,7 +296,7 @@
         "mcp": {
           "supported": true,
           "primary": true,
-          "tool": "workflow_invoke"
+          "tool": "procedure_invoke"
         },
         "cli": {
           "supported": true,
@@ -423,7 +423,7 @@
         "mcp": {
           "supported": true,
           "primary": true,
-          "tool": "workflow_invoke"
+          "tool": "procedure_invoke"
         },
         "cli": {
           "supported": true,
@@ -459,7 +459,7 @@
         "mcp": {
           "supported": true,
           "primary": true,
-          "tool": "workflow_invoke"
+          "tool": "procedure_invoke"
         },
         "cli": {
           "supported": true,
@@ -491,7 +491,7 @@
         "mcp": {
           "supported": true,
           "primary": true,
-          "tool": "workflow_invoke"
+          "tool": "procedure_invoke"
         },
         "cli": {
           "supported": true,
@@ -524,7 +524,7 @@
         "mcp": {
           "supported": true,
           "primary": true,
-          "tool": "workflow_invoke"
+          "tool": "procedure_invoke"
         },
         "cli": {
           "supported": true,
@@ -559,7 +559,7 @@
         "mcp": {
           "supported": true,
           "primary": true,
-          "tool": "workflow_invoke"
+          "tool": "procedure_invoke"
         },
         "cli": {
           "supported": true,
@@ -592,7 +592,7 @@
         "mcp": {
           "supported": true,
           "primary": true,
-          "tool": "workflow_invoke"
+          "tool": "procedure_invoke"
         },
         "cli": {
           "supported": true,
@@ -625,7 +625,7 @@
         "mcp": {
           "supported": true,
           "primary": true,
-          "tool": "workflow_invoke"
+          "tool": "procedure_invoke"
         },
         "cli": {
           "supported": true,
@@ -658,7 +658,7 @@
         "mcp": {
           "supported": true,
           "primary": true,
-          "tool": "workflow_invoke"
+          "tool": "procedure_invoke"
         },
         "cli": {
           "supported": true,
@@ -691,7 +691,7 @@
         "mcp": {
           "supported": true,
           "primary": true,
-          "tool": "workflow_invoke"
+          "tool": "procedure_invoke"
         },
         "cli": {
           "supported": true,

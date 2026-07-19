@@ -1,3 +1,9 @@
+/**
+ * mcp-workspace-preset-tools.test.mjs — canonical Construct contract coverage.
+ *
+ * Assertions pin the clean-slate public model and reject retired terminology.
+ */
+
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';

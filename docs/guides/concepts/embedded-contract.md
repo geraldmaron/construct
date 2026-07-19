@@ -10,19 +10,19 @@ It lives in `lib/embedded-contract/` and exposes five contracts over one shared 
 ## The five contracts
 
 - **Capability discovery** — read-only description of what an install can do: versions, interfaces, roles, skills, workflows, schemas, models/providers, policies, telemetry posture, plugins. Use it to discover Construct safely instead of reading internal registries.
-- **Triage / planning** — classify an artifact and return a role-aware plan (owner, role chain with rationale, suggested skills, evidence requirements, expected outputs, approval requirements, risks, `canExecute`, `suggestedWorkflowType`) **without enqueuing or executing**. It is the preflight for workflow invocation. Input may be inline text or a file path; a file is extracted through Construct's pipeline (docling for PDF/Office, whisper for audio/video, transcript/plain-text incl. CSV), with the extraction method and any low-yield/truncation surfaced under `ingestion` and `warnings`.
-- **Artifact workflows** — `planArtifactWorkflow` / `runArtifactWorkflow` (SDK), `construct artifact workflow`, and MCP `artifact_workflow` resolve a registered manifest document class into author/reviewer, validation, branding, and export steps. Their report separates `plannedSteps`, `executedSteps`, `skippedSteps`, `producedFiles`, validation, and applied overrides. Specialist work remains skipped unless the host supplies execution evidence; local validation/export requires `allow-durable-write` approval.
+- **Triage / planning** — classify an artifact and return a role-aware plan (owner, role chain with rationale, suggested skills, evidence requirements, expected outputs, approval requirements, risks, `canExecute`, `suggestedProcedureType`) **without enqueuing or executing**. It is the preflight for workflow invocation. Input may be inline text or a file path; a file is extracted through Construct's pipeline (docling for PDF/Office, whisper for audio/video, transcript/plain-text incl. CSV), with the extraction method and any low-yield/truncation surfaced under `ingestion` and `warnings`.
+- **Artifact workflows** — `planArtifactProcedure` / `runArtifactProcedure` (SDK), `construct artifact workflow`, and MCP `artifact_workflow` resolve a registered manifest document class into author/reviewer, validation, branding, and export steps. Their report separates `plannedSteps`, `executedSteps`, `skippedSteps`, `producedFiles`, validation, and applied overrides. Specialist work remains skipped unless the host supplies execution evidence; local validation/export requires `allow-durable-write` approval.
 - **Model resolution** — given the host's provider/model context, resolve which model an embedded workflow should use: host model → same-provider-family fallback → Construct tier default → structured config error.
 - **Execution-capability resolution** — before/at workflow start, report whether a run will engage Construct orchestration or degrade to a prompt-only envelope, and why: `executionMode`, `constructCapabilitiesActive`, `degraded` + `degradationReason`, `requestedStrategy` vs `effectiveStrategy`. **Descriptive, not enforced** (see below).
-- **Workflow invocation** — invoke a named workflow (a role/skill chain) non-interactively and get back a provenanced execution plan, gated by approval mode.
+- **Procedure invocation** — invoke a named workflow (a role/skill chain) non-interactively and get back a provenanced execution plan, gated by approval mode.
 
 ## Surfaces
 
 Every contract is exposed on three transports that return the **same envelope**:
 
-- **CLI-JSON** — `construct capability describe --json`, `construct intake classify --json`, `construct models resolve --json`, `construct execution resolve --json`, `construct workflow invoke --json`.
-- **MCP tools** — `capability_describe`, `triage_recommend`, `model_resolve`, `construct_execution_resolve`, `workflow_invoke`.
-- **SDK** — `import { describeCapabilities, recommendPlan, resolveEmbeddedModel, resolveExecution, invokeWorkflow } from '@geraldmaron/construct/embedded-contract'`.
+- **CLI-JSON** — `construct capability describe --json`, `construct intake classify --json`, `construct models resolve --json`, `construct execution resolve --json`, `construct procedure invoke --json`.
+- **MCP tools** — `capability_describe`, `triage_recommend`, `model_resolve`, `construct_execution_resolve`, `procedure_invoke`.
+- **SDK** — `import { describeCapabilities, recommendPlan, resolveEmbeddedModel, resolveExecution, invokeProcedure } from '@geraldmaron/construct/embedded-contract'`.
 
 CLI and MCP are thin adapters over the same core functions the SDK calls; a parity test asserts they return structurally identical envelopes.
 

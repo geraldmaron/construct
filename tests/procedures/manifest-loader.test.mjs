@@ -1,3 +1,9 @@
+/**
+ * manifest-loader.test.mjs — canonical Construct contract coverage.
+ *
+ * Assertions pin the clean-slate public model and reject retired terminology.
+ */
+
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
