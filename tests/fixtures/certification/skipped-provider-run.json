@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "cert-skipped-provider-001",
-  "scenarioId": "specialist.engineer.normal",
-  "capabilityId": "specialist.engineer",
+  "scenarioId": "worker-profile.engineer.normal",
+  "capabilityId": "worker-profile.engineer",
   "model": {
     "provider": "openrouter",
     "requestedId": "openrouter/free-model",
@@ -11,7 +11,7 @@
     "paidOptIn": false
   },
   "fixture": {
-    "path": "tests/fixtures/certification/specialist-normal.json",
+    "path": "tests/fixtures/certification/worker-profile-normal.json",
     "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
   },
   "verdict": {

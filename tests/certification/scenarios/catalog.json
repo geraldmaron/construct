@@ -104,11 +104,11 @@
       }
     },
     {
-      "id": "specialist.prompt.normal",
+      "id": "worker-profile.prompt.normal",
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/fixtures/certification/specialist-normal.json"
+        "path": "tests/fixtures/certification/worker-profile-normal.json"
       },
       "gates": [
         {
@@ -125,11 +125,11 @@
       "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
     },
     {
-      "id": "specialist.prompt.paid-reference",
+      "id": "worker-profile.prompt.paid-reference",
       "capabilityId": "specialist.prompt",
       "mode": "live",
       "fixture": {
-        "path": "tests/fixtures/certification/specialist-normal.json"
+        "path": "tests/fixtures/certification/worker-profile-normal.json"
       },
       "gates": [
         {

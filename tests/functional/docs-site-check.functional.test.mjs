@@ -119,7 +119,7 @@ test('docs site catalog includes the document-intake guide pages', () => {
   assert.ok(urls.includes('/guides/intake/scanned-pdfs'), 'scanned-pdfs page must render');
 });
 
-test('public docs: .mdx reserved for pages with @cx/ui JSX components', () => {
+test('public docs: .mdx reserved for pages with @construct/ui JSX components', () => {
   const offenders = [];
   function walk(dir, relParts = []) {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

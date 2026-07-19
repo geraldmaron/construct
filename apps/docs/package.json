@@ -9,7 +9,7 @@
     "start": "next start"
   },
   "dependencies": {
-    "@cx/ui": "*",
+    "@construct/ui": "*",
     "@mdx-js/loader": "^3.1.0",
     "@mdx-js/react": "^3.1.0",
     "@next/mdx": "^16.2.10",

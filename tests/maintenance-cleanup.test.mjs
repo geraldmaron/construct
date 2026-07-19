@@ -16,6 +16,7 @@ import {
   cleanupEmbedLog,
   cleanupJsonlLogs,
   cleanupCacheDir,
+  cleanupLegacyConstructArtifacts,
   runFullCleanup,
   formatBytes,
   readVersionStamp,
@@ -205,6 +206,26 @@ describe('formatBytes', () => {
 });
 
 describe('version stamp and auto-upgrade trigger', () => {
+  it('upgrade cleanup removes legacy Construct artifacts but preserves current state', () => {
+    const home = mkHome();
+    fs.mkdirSync(path.join(home, '.cx'), { recursive: true });
+    fs.writeFileSync(path.join(home, '.cx', 'old.json'), 'old');
+    fs.mkdirSync(path.join(stateDir(home), 'bash-logs'), { recursive: true });
+    fs.writeFileSync(path.join(stateDir(home), 'bash-logs', 'old.log'), 'old');
+    fs.mkdirSync(path.join(home, '.construct', 'runtime'), { recursive: true });
+    fs.writeFileSync(path.join(home, '.construct', 'runtime', 'keep.json'), 'current');
+    fs.writeFileSync(path.join(home, '.construct-full-backup-20260719-000000.tar.gz'), 'backup');
+
+    const result = maybeRunCleanupOnUpgrade({ homeDir: home, currentVersion: '2.0.0' });
+    assert.equal(result.ran, true);
+    assert.equal(fs.existsSync(path.join(home, '.cx')), false);
+    assert.equal(fs.existsSync(path.join(stateDir(home), 'bash-logs')), false);
+    assert.equal(fs.existsSync(path.join(home, '.construct-full-backup-20260719-000000.tar.gz')), false);
+    assert.equal(fs.existsSync(path.join(home, '.construct', 'runtime', 'keep.json')), true);
+    assert.ok(result.summary.legacyConstruct.removed.length >= 3);
+    fs.rmSync(home, { recursive: true, force: true });
+  });
+
   it('writes and reads a stamp with the current version', () => {
     const home = mkHome();
     writeVersionStamp({ homeDir: home, version: '1.2.3', summary: { freedBytes: 1024, durationMs: 5 } });

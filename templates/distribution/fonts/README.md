@@ -9,13 +9,9 @@ Bundled for offline Typst export via `--font-path`. Family names must match Typs
 | SpaceGrotesk-Variable.ttf | Body, masthead, headings, deck/PPTX embed (weight axis 300–700) | [OFL-1.1](https://github.com/floriankarsten/space-grotesk/blob/master/OFL.txt) (Florian Karsten) |
 | JetBrainsMono-*.ttf | Code, IDs, monospace (Regular/Medium/SemiBold) | [OFL-1.1](https://github.com/JetBrains/JetBrainsMono/blob/master/OFL.txt) (JetBrains) |
 
-**Not active** — kept for reference or diagram labels only; do not copy back to the root unless re-promoting:
-
-| Location | Contents |
-| --- | --- |
-| `legacy/` | Inter, Source Serif, older IBM Plex Mono copies |
-| `PlusJakartaSans-*.ttf`, `Geist-*.ttf`, `GeistMono-*.ttf`, `IBMPlexMono-Regular.otf` | Pre-Space-Grotesk sans/mono (retired from brand) |
-| `handwritten/Caveat.ttf` | Mermaid/D2 hand-drawn diagram labels |
+Additional non-default faces remain only when a specific export or diagram
+template requests them. The active brand faces above are the only fonts copied
+by default.
 
 Refresh the brand faces from upstream:
 

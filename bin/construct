@@ -607,33 +607,6 @@ async function cmdDoctor() {
     }
   }
 
-  const userHome = HOME;
-  // (Pre-push bypass doctor check removed in v1.0.16.) v1.0.15 deleted the
-  // entire skip-var infrastructure (CONSTRUCT_SKIP_PREPUSH, _COMMENT_LINT,
-  // _PR_LINT, _DOCS, CONSTRUCT_ALLOW_CLAUDE_PUSH). Nothing writes to
-  // ~/.construct/audit/prepush-bypass.log, so any entries there are stale
-  // and would otherwise surface the warning indefinitely. The file itself
-  // is harmless — next cleanup tick may sweep it.
-
-  // Legacy Oracle/Doctor daemon sweep (construct-b0nny.29). The retired
-  // background daemons must never run; any instance still alive is a leak
-  // from an older install. The sweep is the remediation, so it runs on
-  // every doctor invocation — idempotent, quiet no-op on a clean machine.
-
-  try {
-    const { runLegacyCleanup } = await import('../lib/legacy-cleanup.mjs');
-    const { killed, purged } = runLegacyCleanup({ homeDir: userHome });
-    if (killed.length || purged.length) {
-      const parts = [];
-      if (killed.length) parts.push(`stopped ${killed.length} leaked daemon process(es)`);
-      if (purged.length) parts.push(`purged ${purged.length} stale state path(s)`);
-      println(`  fix: legacy daemon sweep — ${parts.join(', ')}`);
-    }
-    add('No legacy daemon processes or stale daemon state', true, killed.length + purged.length > 0);
-  } catch (err) {
-    add(`Legacy daemon sweep failed: ${String(err?.message || err).substring(0, 120)}`, false, true);
-  }
-
   // Embed daemon log size. The daemon's own scheduler rotates every
   // minute at 50MB, but a freshly-upgraded install with a 34GB legacy
   // log shouldn't wait 60s. --fix-embed-log forces rotation now.

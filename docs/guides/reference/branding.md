@@ -14,7 +14,7 @@ Single index for maintainers and agents. Generated surfaces (init scaffolding, p
 | Sans / display | Space Grotesk (weights 400–700) | [`lib/brand-tokens.mjs`](../../lib/brand-tokens.mjs) |
 | Monospace | JetBrains Mono | [`lib/brand-fonts.mjs`](../../lib/brand-fonts.mjs) |
 | Color | Monochrome ink ramp; white accent | [`templates/distribution/construct-brand.typ`](../../templates/distribution/construct-brand.typ) |
-| Published artifact tokens | Same ink + typography via templates and CSS vars | [`lib/brand-tokens.mjs`](../../lib/brand-tokens.mjs), [`packages/cx-ui/styles/theme.css`](../../packages/cx-ui/styles/theme.css) |
+| Published artifact tokens | Same ink + typography via templates and CSS vars | [`lib/brand-tokens.mjs`](../../lib/brand-tokens.mjs), [`packages/construct-ui/styles/theme.css`](../../packages/construct-ui/styles/theme.css) |
 
 Bundled fonts for offline export: [`templates/distribution/fonts/`](../../templates/distribution/fonts/). Typst export passes `--font-path`, `--ignore-system-fonts`, and `--ignore-embedded-fonts` so system fallbacks (Libertinus, DejaVu) never replace the brand faces.
 

@@ -102,7 +102,7 @@ const MDX_COMPONENT_RE = new RegExp(
   `<(?:${MDX_COMPONENT_NAMES.join('|')})(?:\\s|\\/|>)`,
 );
 
-/** True when the body uses `@cx/ui` MDX shims (PascalCase JSX tags). */
+/** True when the body uses `@construct/ui` MDX shims (PascalCase JSX tags). */
 export function docUsesMdxComponents(content: string): boolean {
   return MDX_COMPONENT_RE.test(content);
 }
@@ -133,7 +133,7 @@ function sanitizePlainMarkdown(content: string): string {
 
 /**
  * One pipeline for every doc page. Prose without JSX is sanitized and compiled
- * as CommonMark (`format: 'md'`). Only pages that embed `@cx/ui` components stay
+ * as CommonMark (`format: 'md'`). Only pages that embed `@construct/ui` components stay
  * on the MDX path.
  */
 export function prepareDocBody(content: string): { body: string; format: 'md' | 'mdx' } {

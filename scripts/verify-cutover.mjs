@@ -459,11 +459,6 @@ const BEADS = [
         run: () => allPresent(['lib/workplace-loop/directive-executor.mjs']),
       },
       {
-        name: 'Oracle state carries a migration path, not a silent drop',
-        kind: 'static',
-        run: () => allPresent(['lib/oracle/migrate-state.mjs']),
-      },
-      {
         name: 'reconciliation re-homed onto the E1 graph',
         kind: 'static',
         run: () => {
@@ -852,36 +847,6 @@ const BEADS = [
           if (wrongTracker.length) return fail(`bd must own but does not: ${wrongTracker.join(', ')}`);
           if (wrongDomain.length) return fail(`the domain must own but does not: ${wrongDomain.join(', ')}`);
           return pass('bd owns status/assignee/owner/priority/labels; the graph owns dependencies/parent');
-        },
-      },
-    ],
-  },
-  {
-    id: 'construct-b0nny.29',
-    milestone: 'cleanup',
-    title: 'Legacy daemon auto-spawn ripped out + cleanup sweeper',
-    criteria: [
-      {
-        name: 'zero daemon-entry spawn paths',
-        kind: 'static',
-        run: () => noLiveHits(/daemon-entry|oracle-start|startOracle/, ['lib', 'bin'], {
-          exclude: ['lib/legacy-cleanup.mjs'],
-        }),
-      },
-      {
-        name: 'cleanup sweeper present',
-        kind: 'static',
-        run: () => allPresent(['lib/legacy-cleanup.mjs']),
-      },
-      {
-        name: 'sweeper wired into postinstall and doctor',
-        kind: 'static',
-        run: () => {
-          const postinstall = /runLegacyCleanup/.test(readCode('bin/construct-postinstall.mjs') || '');
-          const doctor = /runLegacyCleanup/.test(readCode('bin/construct') || '');
-          if (postinstall && doctor) return pass('runLegacyCleanup reached from postinstall and doctor');
-          const missing = [!postinstall && 'postinstall', !doctor && 'doctor'].filter(Boolean);
-          return fail(`sweeper not wired into: ${missing.join(', ')}`);
         },
       },
     ],

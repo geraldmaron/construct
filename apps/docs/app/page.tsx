@@ -10,7 +10,7 @@ import Link from 'next/link';
 import {
   Section, CodeBlock, Diagram, Callout, FeatureGrid,
   ArrowRight, GitHubIcon, useTheme,
-} from '@cx/ui';
+} from '@construct/ui';
 
 const homeChart = `
 flowchart LR

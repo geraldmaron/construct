@@ -13,7 +13,7 @@ import { usePathname } from 'next/navigation';
 import {
   CommandPalette, SearchIcon, GitHubIcon,
   SunGlyph, MoonGlyph, DensityCompact, DensityComfy,
-} from '@cx/ui';
+} from '@construct/ui';
 import { PALETTE } from './nav-data';
 import type { SidebarSection } from '@/lib/docs-source';
 

@@ -10,6 +10,12 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Removed
 
+- Global 2.0.0 cleanup: removed the machine-local `.cx` marker/state, disposable historical Construct logs and backup archives, stale Construct cache records, and regenerated shell completions from the current command registry. Renamed the active docs design-system workspace from `packages/cx-ui` / `@cx/ui` to `packages/construct-ui` / `@construct/ui`.
+
+- Deleted the remaining v1 transition layer: legacy daemon cleanup and migration utilities, obsolete `cx-*` routing rules, legacy skill/doctrine reconciliation tasks, retired certification tests, and legacy distribution fonts. Doctor and postinstall now expose only current Construct behavior.
+
+- Added a repository ratchet that keeps retired specialist/persona roots out of the tracked and published product surface, and reconciled the root-disposition matrix with the removed legacy `.cx` root.
+
 - Clean-slate certification cleanup: removed the empty legacy specialist scenario system and its dangling catalog entries; certification now uses the canonical Worker Profile, Procedure, Skill, and Perspective surfaces.
 
 - Moved the shipped artifact manifest and schema from `specialists/` to `registry/`, updated all runtime consumers and fixtures, and removed the duplicate legacy ownership path.

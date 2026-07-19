@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-19T03:45:22.690Z",
+  "generatedAt": "2026-07-19T04:36:15.516Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 938,
+    "testFiles": 936,
     "topLevelTestFiles": 372,
-    "nestedTestFiles": 566,
+    "nestedTestFiles": 564,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 48,
     "byLayer": {
       "unit": 618,
-      "functional": 268,
+      "functional": 266,
       "visual": 12,
       "live-provider": 2,
       "integration": 38
     },
     "byCategory": {
       "unit": 555,
-      "functional": 268,
+      "functional": 266,
       "visual": 12,
       "structural-guard": 19,
       "contract-subsystem": 45,
@@ -3431,14 +3431,6 @@
       "maintainerNotes": "tests/functional/learning-loop-capture.functional.test.mjs"
     },
     {
-      "path": "tests/functional/legacy-daemon-cleanup.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "legacy-daemon-cleanup.functional.test.mjs — the sweeper kills leaked legacy"
-    },
-    {
       "path": "tests/functional/lifecycle-event-emission.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -4070,14 +4062,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/real-llm-scenarios.functional.test.mjs — opt-in S3 (PRD) + S8 (orchestration_run) scenarios."
-    },
-    {
-      "path": "tests/functional/reconcile-legacy-skills.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/reconcile-legacy-skills.functional.test.mjs"
     },
     {
       "path": "tests/functional/reconcile-tasks.functional.test.mjs",
