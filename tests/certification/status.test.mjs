@@ -27,11 +27,10 @@ test('buildCertificationStatus lists capabilities with never-run by default', ()
 
 test('buildCertificationStatus marks stale capabilities distinctly', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cert-status-'));
-  fs.mkdirSync(path.join(root, '.cx', 'certification'), { recursive: true });
+  fs.mkdirSync(path.join(root, '.construct', 'certification'), { recursive: true });
   fs.mkdirSync(path.join(root, 'tests', 'capabilities'), { recursive: true });
   fs.mkdirSync(path.join(root, 'tests', 'certification', 'scenarios'), { recursive: true });
   fs.mkdirSync(path.join(root, 'tests', 'certification', 'skills'), { recursive: true });
-  fs.mkdirSync(path.join(root, 'specialists'), { recursive: true });
   fs.copyFileSync(
     path.join(REPO, 'tests', 'capabilities', 'ledger.json'),
     path.join(root, 'tests', 'capabilities', 'ledger.json'),
@@ -44,11 +43,7 @@ test('buildCertificationStatus marks stale capabilities distinctly', () => {
     path.join(REPO, 'tests', 'certification', 'skills', 'inventory.json'),
     path.join(root, 'tests', 'certification', 'skills', 'inventory.json'),
   );
-  fs.cpSync(
-    path.join(REPO, 'specialists', 'org'),
-    path.join(root, 'specialists', 'org'),
-    { recursive: true },
-  );
+  fs.cpSync(path.join(REPO, 'registry'), path.join(root, 'registry'), { recursive: true });
   fs.copyFileSync(
     path.join(REPO, 'package.json'),
     path.join(root, 'package.json'),

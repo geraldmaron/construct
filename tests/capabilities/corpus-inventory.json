@@ -1,26 +1,26 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-18T20:56:25.646Z",
+  "generatedAt": "2026-07-19T00:51:53.031Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 964,
+    "testFiles": 962,
     "topLevelTestFiles": 379,
-    "nestedTestFiles": 585,
+    "nestedTestFiles": 583,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 50,
+    "capabilityMarkedFiles": 49,
     "byLayer": {
       "unit": 629,
-      "functional": 282,
+      "functional": 280,
       "visual": 12,
       "live-provider": 2,
       "integration": 39
     },
     "byCategory": {
-      "unit": 564,
-      "functional": 282,
+      "unit": 565,
+      "functional": 280,
       "visual": 12,
       "structural-guard": 20,
-      "contract-subsystem": 46,
+      "contract-subsystem": 45,
       "live-provider": 2,
       "integration": 29,
       "hook": 9
@@ -372,7 +372,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/audit-worker-profiles.test.mjs — Worker Profile and skill audit matrix."
+      "maintainerNotes": "Canonical Worker Profile and skill audit matrix."
     },
     {
       "path": "tests/audit/f01-mcp-safety/delete-traversal.test.mjs",
@@ -740,7 +740,7 @@
       "category": "structural-guard",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/audit/f10-registry-drift/schema-parity.red.mjs — F10 [R15] config schema vocabulary split."
+      "maintainerNotes": "schema-parity.test.mjs — canonical Construct contract coverage."
     },
     {
       "path": "tests/audit/f11-disposition/contradiction.test.mjs",
@@ -847,6 +847,14 @@
       "maintainerNotes": "tests/audit/f14-tools/token-budget-instrumentation.red.mjs — F14 [S2][S15] budget + telemetry."
     },
     {
+      "path": "tests/audit/root-disposition.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/root-disposition.test.mjs — repository-root ownership contract."
+    },
+    {
       "path": "tests/auto-docs.test.mjs",
       "layer": "unit",
       "category": "structural-guard",
@@ -937,6 +945,22 @@
       "maintainerNotes": "tests/browser/publish-html-artifact.test.mjs — LMCP-L8 Playwright adoption:"
     },
     {
+      "path": "tests/canonical-registry-cli.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "Canonical registry CLI contract: one public noun per registry concept and"
+    },
+    {
+      "path": "tests/canonical-terminology.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "canonical-terminology.test.mjs — Ratchets Construct's domain naming contract."
+    },
+    {
       "path": "tests/capabilities/mcp.broker.connection/mcp.test.mjs",
       "layer": "unit",
       "category": "contract-subsystem",
@@ -959,6 +983,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/capabilities/orchestration.routing/opencode.test.mjs"
+    },
+    {
+      "path": "tests/capability-contracts.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "Runtime tests for capability-owned contract queries."
     },
     {
       "path": "tests/capability-ledger.test.mjs",
@@ -1098,7 +1130,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/certification/evidence-tiers.test.mjs — specialist evidence-tier ladder."
+      "maintainerNotes": "Worker Profile evidence-tier ladder."
     },
     {
       "path": "tests/certification/export-format-cert.test.mjs",
@@ -1119,6 +1151,14 @@
       ],
       "skipped": false,
       "maintainerNotes": "tests/certification/p2-surface-harness.test.mjs — P2 certification surface harnesses."
+    },
+    {
+      "path": "tests/certification/perspectives.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "Perspective parity certification."
     },
     {
       "path": "tests/certification/pixel-regression.test.mjs",
@@ -1153,44 +1193,12 @@
       "maintainerNotes": "tests/certification/real-llm-scenarios.test.mjs — S3/S8 certification harness exports."
     },
     {
-      "path": "tests/certification/role-cards.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/certification/role-cards.test.mjs — specialist role card fixtures."
-    },
-    {
-      "path": "tests/certification/perspectives.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/certification/perspectives.test.mjs — Worker Profile perspective parity certification."
-    },
-    {
       "path": "tests/certification/skills/inventory.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/certification/skills/inventory.test.mjs — skill inventory audit and freshness."
-    },
-    {
-      "path": "tests/certification/specialist-contracts.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/certification/specialist-contracts.test.mjs — deterministic specialist contract gates."
-    },
-    {
-      "path": "tests/certification/specialist-scenarios.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/certification/specialist-scenarios.test.mjs — per-specialist scenario fixtures (schema v2)."
     },
     {
       "path": "tests/certification/specialist-status-aggregation.test.mjs",
@@ -1215,6 +1223,22 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/certification/status.test.mjs — certification status rollup."
+    },
+    {
+      "path": "tests/certification/worker-profile-cards.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/role-cards.test.mjs — specialist role card fixtures."
+    },
+    {
+      "path": "tests/certification/worker-profile-contracts.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "Deterministic Worker Profile prompt contract gates."
     },
     {
       "path": "tests/ci-parity.test.mjs",
@@ -1358,7 +1382,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/contracts-coverage.test.mjs — every specialist in specialists/org"
+      "maintainerNotes": "Capability-owned contract coverage and postcondition classification."
     },
     {
       "path": "tests/contracts-postconditions.test.mjs",
@@ -1367,14 +1391,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/contracts-postconditions.test.mjs — coverage for structured postcondition checks."
-    },
-    {
-      "path": "tests/contracts-team-boundaries.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/contracts-team-boundaries.test.mjs — Test Phase 3: team boundaries on contract handoffs."
     },
     {
       "path": "tests/contracts-violation-log.test.mjs",
@@ -1808,7 +1824,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/embed-capability-loader.test.mjs — embed-capability manifest loader,"
+      "maintainerNotes": "embed-capability-loader.test.mjs — canonical Construct contract coverage."
     },
     {
       "path": "tests/embed-cli.test.mjs",
@@ -1984,7 +2000,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/embedded-contract-capability.test.mjs — unit tests for capability discovery."
+      "maintainerNotes": "embedded-contract-capability.test.mjs — canonical Construct contract coverage."
     },
     {
       "path": "tests/embedded-contract-execution.test.mjs",
@@ -2027,28 +2043,28 @@
       "maintainerNotes": "tests/embedded-contract-parity.test.mjs — cross-surface parity and drift guards."
     },
     {
+      "path": "tests/embedded-contract-procedure-definitions.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "embedded-contract-procedure-definitions.test.mjs — canonical Construct contract coverage."
+    },
+    {
+      "path": "tests/embedded-contract-procedure-invoke.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "embedded-contract-procedure-invoke.test.mjs — canonical Construct contract coverage."
+    },
+    {
       "path": "tests/embedded-contract-triage.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/embedded-contract-triage.test.mjs — unit tests for embedded triage/planning."
-    },
-    {
-      "path": "tests/embedded-contract-workflow-defs.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/embedded-contract-workflow-defs.test.mjs — unit tests for workflow definitions."
-    },
-    {
-      "path": "tests/embedded-contract-workflow-invoke.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/embedded-contract-workflow-invoke.test.mjs — unit tests for workflow invocation."
     },
     {
       "path": "tests/embedding-engine.test.mjs",
@@ -2519,14 +2535,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/author-artifact-recruits.functional.test.mjs —"
-    },
-    {
-      "path": "tests/functional/b1-profile-loader.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/b1-profile-loader.functional.test.mjs — B1 end-to-end loop."
     },
     {
       "path": "tests/functional/bash-output-logger-redaction.functional.test.mjs",
@@ -3060,17 +3068,7 @@
       "maintainerNotes": "tests/functional/embedded-contract-model-resolve.functional.test.mjs"
     },
     {
-      "path": "tests/functional/embedded-contract-triage.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [
-        "workflow.triage"
-      ],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/embedded-contract-triage.functional.test.mjs"
-    },
-    {
-      "path": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs",
+      "path": "tests/functional/embedded-contract-procedure-invoke.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
       "capabilities": [
@@ -3088,6 +3086,16 @@
       ],
       "skipped": false,
       "maintainerNotes": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/embedded-contract-triage.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "workflow.triage"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/embedded-contract-triage.functional.test.mjs"
     },
     {
       "path": "tests/functional/enterprise-doctor-fail-closed.functional.test.mjs",
@@ -3204,16 +3212,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/handoff-context-flow.functional.test.mjs — construct-72gqn.10 (H6a)."
-    },
-    {
-      "path": "tests/functional/headhunt-profile-teams.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [
-        "orchestration.routing"
-      ],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/headhunt-profile-teams.functional.test.mjs"
     },
     {
       "path": "tests/functional/honest-terminal-states.functional.test.mjs",
@@ -3341,12 +3339,12 @@
       "maintainerNotes": "tests/functional/init-config-layer-tree.functional.test.mjs — per-layer tree"
     },
     {
-      "path": "tests/functional/init-gitignores-cx.functional.test.mjs",
+      "path": "tests/functional/init-gitignores-construct.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/init-gitignores-cx.functional.test.mjs"
+      "maintainerNotes": "tests/functional/init-gitignores-construct.functional.test.mjs"
     },
     {
       "path": "tests/functional/init-host-footprint.functional.test.mjs",
@@ -4082,22 +4080,6 @@
       "maintainerNotes": "tests/functional/preflight-scope-label.functional.test.mjs"
     },
     {
-      "path": "tests/functional/profile-lifecycle.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/profile-lifecycle.functional.test.mjs — Scope lifecycle."
-    },
-    {
-      "path": "tests/functional/profile-ux-preview.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/profile-ux-preview.functional.test.mjs. Mutating scope"
-    },
-    {
       "path": "tests/functional/project-dotenv-tier.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -4457,7 +4439,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/team-aware-fence.functional.test.mjs — integration test for"
+      "maintainerNotes": "Policy-aware worker-profile fence integration."
     },
     {
       "path": "tests/functional/team-sources.functional.test.mjs",
@@ -4555,7 +4537,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/w2-contract-enforcement.functional.test.mjs —"
+      "maintainerNotes": "Capability-owned contract validation and runtime enforcement."
     },
     {
       "path": "tests/functional/w3-consistency-watcher.functional.test.mjs",
@@ -4644,6 +4626,22 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/workspace-domain.functional.test.mjs — day-one proof for"
+    },
+    {
+      "path": "tests/functional/workspace-preset-lifecycle.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "workspace-preset-lifecycle.functional.test.mjs — canonical Construct contract coverage."
+    },
+    {
+      "path": "tests/functional/workspace-preset-loader.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "workspace-preset-loader.functional.test.mjs — canonical Construct contract coverage."
     },
     {
       "path": "tests/functional/workspace-server.functional.test.mjs",
@@ -5446,14 +5444,6 @@
       "maintainerNotes": "mcp-memory-bridge.test.mjs — verify the stdio MCP bridge in lib/mcp/memory-bridge.mjs."
     },
     {
-      "path": "tests/mcp-profile-tools.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/mcp-profile-tools.test.mjs — Contract tests for lib/mcp/tools/scope.mjs."
-    },
-    {
       "path": "tests/mcp-protocol-health.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -5518,6 +5508,14 @@
       "maintainerNotes": "tests/mcp-tools-list-coverage.test.mjs"
     },
     {
+      "path": "tests/mcp-workspace-preset-tools.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "mcp-workspace-preset-tools.test.mjs — canonical Construct contract coverage."
+    },
+    {
       "path": "tests/mcp/approval-flow.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -5532,6 +5530,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/mcp/broker-durability.test.mjs — LMCP-I1."
+    },
+    {
+      "path": "tests/mcp/canonical-registry-tools.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "canonical-registry-tools.test.mjs — canonical Construct contract coverage."
     },
     {
       "path": "tests/mcp/denial-audit.test.mjs",
@@ -5555,7 +5561,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/mcp/get-skill-entitlement.test.mjs — get_skill's specialistId entitlement path."
+      "maintainerNotes": "tests/mcp/get-skill-entitlement.test.mjs — get_skill's workerProfileId entitlement path."
     },
     {
       "path": "tests/mcp/host-role-clientinfo.test.mjs",
@@ -5808,6 +5814,14 @@
       "maintainerNotes": "tests/oracle-reconcile-staleness.test.mjs — contract violation SLA window logic."
     },
     {
+      "path": "tests/oracle/canonical-routing.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "canonical-routing.test.mjs — canonical Construct contract coverage."
+    },
+    {
       "path": "tests/oracle/directive-executor.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -5888,20 +5902,20 @@
       "maintainerNotes": "tests/orchestration-policy-context-packets.test.mjs"
     },
     {
+      "path": "tests/orchestration-policy-routing.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "Policy routing tests for canonical Worker Profile assignments."
+    },
+    {
       "path": "tests/orchestration-policy-task-graph.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/orchestration-policy-task-graph.test.mjs"
-    },
-    {
-      "path": "tests/orchestration-policy-team-routing.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/orchestration-policy-team-routing.test.mjs — Test Phase 2: team-aware orchestration policy."
     },
     {
       "path": "tests/orchestration-policy.test.mjs",
@@ -6157,7 +6171,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/participation-coverage.test.mjs — every specialist and team is"
+      "maintainerNotes": "tests/participation-coverage.test.mjs — every Worker Profile is recruitable"
     },
     {
       "path": "tests/participation-matrix.test.mjs",
@@ -6174,14 +6188,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/perf/hook-budgets.test.mjs — nightly gate for per-hook p95 budgets"
-    },
-    {
-      "path": "tests/persona-sections.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "persona-sections.test.mjs — Unit tests for lib/persona-sections.mjs."
     },
     {
       "path": "tests/pg-queue-reliability.test.mjs",
@@ -6320,36 +6326,60 @@
       "maintainerNotes": "tests/pricing-priority.test.mjs — pricing catalog resolution + divergence."
     },
     {
+      "path": "tests/procedures/liveness.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "liveness.test.mjs — canonical Construct contract coverage."
+    },
+    {
+      "path": "tests/procedures/manifest-loader.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "manifest-loader.test.mjs — canonical Construct contract coverage."
+    },
+    {
+      "path": "tests/procedures/manifest-schema.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "manifest-schema.test.mjs — canonical Construct contract coverage."
+    },
+    {
+      "path": "tests/procedures/procedure-definitions-drift.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "procedure-definitions-drift.test.mjs — canonical Construct contract coverage."
+    },
+    {
+      "path": "tests/procedures/procedure-records.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "procedure-records.test.mjs — canonical Construct contract coverage."
+    },
+    {
+      "path": "tests/procedures/surface-parity.test.mjs",
+      "layer": "unit",
+      "category": "structural-guard",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "surface-parity.test.mjs — canonical Construct contract coverage."
+    },
+    {
       "path": "tests/process-budget.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/process-budget.test.mjs — RSS cap resolution from construct.config.json."
-    },
-    {
-      "path": "tests/profile-rebrand.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/profile-rebrand.test.mjs — exercises the `getRebrand` lookup helper"
-    },
-    {
-      "path": "tests/profiles-teams.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/profiles-teams.test.mjs — Profile team resolution helpers."
-    },
-    {
-      "path": "tests/profiles/loader.test.mjs",
-      "layer": "unit",
-      "category": "contract-subsystem",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/profiles/loader.test.mjs — Profile loader contract."
     },
     {
       "path": "tests/project-config.test.mjs",
@@ -6390,6 +6420,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/prompt-metadata.test.mjs — validates prompt fingerprints for traces."
+    },
+    {
+      "path": "tests/prompt-sections.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "prompt-sections.test.mjs — unit tests for lib/prompt-sections.mjs."
     },
     {
       "path": "tests/prompt-surface.test.mjs",
@@ -6597,7 +6635,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/registry-loader.test.mjs — Test the unified registry loader."
+      "maintainerNotes": "tests/registry-loader.test.mjs — Canonical registry loader contract."
     },
     {
       "path": "tests/registry-phase-1-4.test.mjs",
@@ -6613,7 +6651,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/registry-validation.test.mjs — Registry validator tests."
+      "maintainerNotes": "tests/registry-validation.test.mjs — Canonical registry invariant tests."
     },
     {
       "path": "tests/registry/capability-registry.test.mjs",
@@ -6672,6 +6710,14 @@
       "maintainerNotes": "tests/registry/surface-map-manifest.test.mjs — LMCP-B7: COMMAND_SURFACE/"
     },
     {
+      "path": "tests/release-version-metadata.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "Release metadata has one version source and no checked-in formula snapshot."
+    },
+    {
       "path": "tests/release-workflow.test.mjs",
       "layer": "unit",
       "category": "structural-guard",
@@ -6702,6 +6748,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/resource-budget.test.mjs — disk budget + prune contract."
+    },
+    {
+      "path": "tests/retired-namespace-nonruntime.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/retired-namespace-nonruntime.test.mjs — shipped non-runtime namespace ratchet."
     },
     {
       "path": "tests/retrieval-bench.test.mjs",
@@ -6845,7 +6899,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/schema-validation.test.mjs — Validate unified registry schema and test with fixtures."
+      "maintainerNotes": "tests/schema-validation.test.mjs — Validate the canonical registry schema."
     },
     {
       "path": "tests/scripts/check-workflow-defs-drift.test.mjs",
@@ -7152,22 +7206,6 @@
       "maintainerNotes": "tests/source-taxonomy.test.mjs — source credibility taxonomy is wired in."
     },
     {
-      "path": "tests/specialist-contracts.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "specialist-contracts.test.mjs — Runtime contract-chain enforcement tests."
-    },
-    {
-      "path": "tests/specialist-coverage.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/specialist-coverage.test.mjs — construct-72gqn.31 (H5-gen)."
-    },
-    {
       "path": "tests/specialist-loop.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -7176,36 +7214,12 @@
       "maintainerNotes": "tests/specialist-loop.test.mjs — unit coverage for opt-in, attribution-first"
     },
     {
-      "path": "tests/specialist-prompt-format.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/specialist-prompt-format.test.mjs — hybrid specialist prompt format (ADR-0037)."
-    },
-    {
-      "path": "tests/specialist-prompts.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "agent-prompts.test.mjs — Contract tests for the Construct agent registry and prompt corpus."
-    },
-    {
       "path": "tests/specialist-roster.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/specialist-roster.test.mjs — lazy specialist catalog (construct-ymp5)."
-    },
-    {
-      "path": "tests/specialists-schema.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/agents-schema.test.mjs — pin the registry validation contract."
     },
     {
       "path": "tests/status-degradation-details.test.mjs",
@@ -7309,7 +7323,7 @@
       "category": "visual",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/sync-contract.test.mjs — contract tests for sync-specialists.mjs platform output shapes."
+      "maintainerNotes": "tests/sync-contract.test.mjs — contract tests for sync-worker-profiles.mjs platform output shapes."
     },
     {
       "path": "tests/sync-copilot-deselect.test.mjs",
@@ -7320,12 +7334,12 @@
       "maintainerNotes": "tests/sync-copilot-deselect.test.mjs — a sync that does not select the"
     },
     {
-      "path": "tests/sync-specialists-header.test.mjs",
+      "path": "tests/sync-worker-profiles-header.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/sync-specialists-header.test.mjs — verify sync-specialists.mjs emits canonical headers."
+      "maintainerNotes": "tests/sync-worker-profiles-header.test.mjs — verify sync-worker-profiles.mjs emits canonical headers."
     },
     {
       "path": "tests/sync/skill-frontmatter.test.mjs",
@@ -7538,14 +7552,6 @@
       "maintainerNotes": "tests/user-research-workflow.test.mjs — user-research workflow validity and inter-rater coverage."
     },
     {
-      "path": "tests/validator-caps.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/validator-caps.test.mjs — registry validator length-cap tests."
-    },
-    {
       "path": "tests/validators-skills.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -7594,6 +7600,30 @@
       "maintainerNotes": "tests/worker-entrypoint.test.mjs — worker loop contract."
     },
     {
+      "path": "tests/worker-profile-coverage.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/worker-profile-coverage.test.mjs — construct-72gqn.31 (H5-gen)."
+    },
+    {
+      "path": "tests/worker-profile-prompt-format.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/worker-profile-prompt-format.test.mjs — Worker Profile prompt format."
+    },
+    {
+      "path": "tests/worker-profile-prompts.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "worker-profile-prompts.test.mjs — Worker Profile prompt corpus contracts."
+    },
+    {
       "path": "tests/worker-run-mcp.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -7624,70 +7654,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "workflow-runtime.test.mjs — Integration tests for workflow state read/write and phase transitions."
-    },
-    {
-      "path": "tests/workflows/liveness.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/workflows/liveness.test.mjs — unit and fixture tests for workflow"
-    },
-    {
-      "path": "tests/workflows/manifest-loader.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/workflows/manifest-loader.test.mjs — unit tests for workflow manifest loader."
-    },
-    {
-      "path": "tests/workflows/manifest-schema.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/workflows/manifest-schema.test.mjs — unit tests for workflow manifest schema constants."
-    },
-    {
-      "path": "tests/workflows/surface-parity.test.mjs",
-      "layer": "unit",
-      "category": "structural-guard",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/workflows/surface-parity.test.mjs — unit and fixture tests for"
-    },
-    {
-      "path": "tests/workflows/template-resolution.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/workflows/template-resolution.test.mjs — Static drift guard, not a code-behavior test."
-    },
-    {
-      "path": "tests/workflows/template-shape.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/workflows/template-shape.test.mjs — Static drift guard, not a code-behavior test."
-    },
-    {
-      "path": "tests/workflows/workflow-defs-drift.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/workflows/workflow-defs-drift.test.mjs — regression guard for LMCP-D2."
-    },
-    {
-      "path": "tests/workflows/workflow-manifests.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/workflows/workflow-manifests.test.mjs — integration tests for all built-in workflow manifests."
     },
     {
       "path": "tests/workplace-loop/align.test.mjs",
@@ -7760,6 +7726,22 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/workplace-loop/verify.test.mjs — unit coverage for"
+    },
+    {
+      "path": "tests/workspace-preset-rebrand.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "workspace-preset-rebrand.test.mjs — canonical Construct contract coverage."
+    },
+    {
+      "path": "tests/workspace-presets/loader.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "loader.test.mjs — canonical Construct contract coverage."
     },
     {
       "path": "tests/workspace/store.test.mjs",

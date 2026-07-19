@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "catalog": {
-    "generatedAt": "2026-07-18T22:00:12.292Z",
+    "generatedAt": "2026-07-19T00:43:08.756Z",
     "npmScripts": [
       "adapters",
       "audit:published",
@@ -36,23 +36,23 @@
       "lint:comments",
       "lint:contracts",
       "lint:js",
-      "lint:scopes",
       "lint:templates",
+      "lint:workspace-presets",
       "mcp",
       "npm:publish",
       "postinstall",
+      "procedure-definitions:check",
       "release:check",
       "release:gate",
       "release:preflight",
       "release:preflight:no-auth",
       "skills:routes",
-      "specialists:coverage",
       "test",
       "test:functional",
       "test:unit",
       "test:visual",
       "version",
-      "workflow-defs:check"
+      "worker-profiles:coverage"
     ],
     "cliCommands": [
       {
@@ -446,25 +446,7 @@
         "internal": false
       },
       {
-        "name": "lint:agents",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
         "name": "lint:comments",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "lint:contracts",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "lint:prompts",
         "category": "Internal",
         "core": false,
         "internal": true
@@ -477,6 +459,12 @@
       },
       {
         "name": "lint:templates",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "lint:worker-profiles",
         "category": "Internal",
         "core": false,
         "internal": true
@@ -578,6 +566,12 @@
         "internal": false
       },
       {
+        "name": "procedure",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
         "name": "provider",
         "category": "Advanced",
         "core": false,
@@ -614,19 +608,7 @@
         "internal": false
       },
       {
-        "name": "registry:diff",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
         "name": "registry:generate-docs",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "registry:prune",
         "category": "Internal",
         "core": false,
         "internal": true
@@ -692,12 +674,6 @@
         "internal": false
       },
       {
-        "name": "scope",
-        "category": "Core",
-        "core": true,
-        "internal": false
-      },
-      {
         "name": "search",
         "category": "Work",
         "core": false,
@@ -726,24 +702,6 @@
         "category": "Advanced",
         "core": false,
         "internal": false
-      },
-      {
-        "name": "specialist",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "specialist:add",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "specialist:remove",
-        "category": "Internal",
-        "core": false,
-        "internal": true
       },
       {
         "name": "status",
@@ -786,24 +744,6 @@
         "category": "Work",
         "core": false,
         "internal": false
-      },
-      {
-        "name": "team",
-        "category": "Work",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "team:add",
-        "category": "Internal",
-        "core": false,
-        "internal": true
-      },
-      {
-        "name": "team:remove",
-        "category": "Internal",
-        "core": false,
-        "internal": true
       },
       {
         "name": "telemetry",
@@ -890,15 +830,15 @@
         "internal": false
       },
       {
-        "name": "workers",
-        "category": "Core",
-        "core": true,
+        "name": "worker-profile",
+        "category": "Work",
+        "core": false,
         "internal": false
       },
       {
-        "name": "workflow",
-        "category": "Work",
-        "core": false,
+        "name": "workers",
+        "category": "Core",
+        "core": true,
         "internal": false
       },
       {
@@ -918,66 +858,147 @@
         "category": "Work",
         "core": false,
         "internal": false
+      },
+      {
+        "name": "workspace-preset",
+        "category": "Core",
+        "core": true,
+        "internal": false
       }
     ],
-    "workflows": [
+    "procedures": [
       {
-        "type": "architecture-review",
-        "description": "Review an architecture or design for trade-offs, failure modes, and security exposure.",
-        "tier": "reasoning"
+        "id": "architecture-review",
+        "workerProfiles": [
+          "architect",
+          "security",
+          "reviewer"
+        ],
+        "modelTier": "strong",
+        "approvalMode": "requires-human-approval",
+        "outputSchema": {
+          "artifact": "review-report"
+        },
+        "description": "Review an architecture or design for trade-offs, failure modes, and security exposure."
       },
       {
-        "type": "data-structure",
-        "description": "Parse, validate, and profile a raw dataset into a structured, described shape.",
-        "tier": "standard"
+        "id": "data-structure",
+        "workerProfiles": [
+          "data-analyst",
+          "engineer"
+        ],
+        "modelTier": "standard",
+        "approvalMode": "proposal-only",
+        "outputSchema": null,
+        "description": "Parse, validate, and profile a raw dataset into a structured, described shape."
       },
       {
-        "type": "evidence-ingest",
-        "description": "Ingest and structure raw evidence (notes, documents, signals) into a normalized summary.",
-        "tier": "fast"
+        "id": "evidence-ingest",
+        "workerProfiles": [
+          "researcher",
+          "data-analyst"
+        ],
+        "modelTier": "cheap",
+        "approvalMode": "proposal-only",
+        "outputSchema": null,
+        "description": "Ingest and structure raw evidence (notes, documents, signals) into a normalized summary."
       },
       {
-        "type": "memo-draft",
-        "description": "Draft a decision or status memo from a problem statement and context.",
-        "tier": "fast"
+        "id": "memo-draft",
+        "workerProfiles": [
+          "operations",
+          "reviewer"
+        ],
+        "modelTier": "cheap",
+        "approvalMode": "proposal-only",
+        "outputSchema": null,
+        "description": "Draft a decision or status memo from a problem statement and context."
       },
       {
-        "type": "prd-draft",
-        "description": "Draft a product requirements document from a problem statement and supporting evidence.",
-        "tier": "standard"
+        "id": "prd-draft",
+        "workerProfiles": [
+          "product-manager",
+          "architect"
+        ],
+        "modelTier": "standard",
+        "approvalMode": "proposal-only",
+        "outputSchema": {
+          "artifact": "decision"
+        },
+        "description": "Draft a product requirements document from a problem statement and supporting evidence."
       },
       {
-        "type": "proposal-review",
-        "description": "Review a proposal for correctness, risk, and hidden assumptions before acceptance.",
-        "tier": "standard"
+        "id": "proposal-review",
+        "workerProfiles": [
+          "reviewer"
+        ],
+        "modelTier": "standard",
+        "approvalMode": "requires-human-approval",
+        "outputSchema": {
+          "artifact": "review-report"
+        },
+        "description": "Review a proposal for correctness, risk, and hidden assumptions before acceptance."
       },
       {
-        "type": "research-synthesis",
-        "description": "Synthesize multiple sources into a cited, evidence-graded research summary.",
-        "tier": "reasoning"
+        "id": "research-synthesis",
+        "workerProfiles": [
+          "researcher",
+          "data-analyst",
+          "reviewer"
+        ],
+        "modelTier": "strong",
+        "approvalMode": "proposal-only",
+        "outputSchema": null,
+        "description": "Synthesize multiple sources into a cited, evidence-graded research summary."
       },
       {
-        "type": "risk-review",
-        "description": "Stress-test a plan for risk: failure modes, security, and compliance exposure.",
-        "tier": "reasoning"
+        "id": "risk-review",
+        "workerProfiles": [
+          "reviewer",
+          "security"
+        ],
+        "modelTier": "strong",
+        "approvalMode": "requires-human-approval",
+        "outputSchema": {
+          "artifact": "review-report"
+        },
+        "description": "Stress-test a plan for risk: failure modes, security, and compliance exposure."
       },
       {
-        "type": "structure-notes",
-        "description": "Structure an unclassified brain-dump or rough notes into a normalized summary with extracted intents.",
-        "tier": "fast"
+        "id": "structure-notes",
+        "workerProfiles": [
+          "orchestrator",
+          "researcher"
+        ],
+        "modelTier": "cheap",
+        "approvalMode": "proposal-only",
+        "outputSchema": null,
+        "description": "Structure an unclassified brain-dump or rough notes into a normalized summary with extracted intents."
       },
       {
-        "type": "transcript-process",
-        "description": "Process a meeting/call transcript into a summary, decisions, and action items.",
-        "tier": "fast"
+        "id": "transcript-process",
+        "workerProfiles": [
+          "researcher",
+          "data-analyst"
+        ],
+        "modelTier": "cheap",
+        "approvalMode": "proposal-only",
+        "outputSchema": null,
+        "description": "Process a meeting/call transcript into a summary, decisions, and action items."
       },
       {
-        "type": "triage",
-        "description": "Classify and route unstructured input to the appropriate workflow.",
-        "tier": "fast"
+        "id": "triage",
+        "workerProfiles": [
+          "orchestrator",
+          "researcher"
+        ],
+        "modelTier": "cheap",
+        "approvalMode": "proposal-only",
+        "outputSchema": null,
+        "description": "Classify and route unstructured input to the appropriate workflow."
       }
     ],
-    "workflowTypes": [
+    "procedureIds": [
       "architecture-review",
       "data-structure",
       "evidence-ingest",
@@ -999,7 +1020,7 @@
         "orchestrate run"
       ],
       "npmScripts": [],
-      "workflows": []
+      "procedures": []
     },
     "oracle.meta-review": {
       "semanticDigest": "{\"description\":\"Deterministic read-model synthesis and bounded-auto maintenance for fleet health gaps.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/oracle-bounded-auto.functional.test.mjs\"}}",
@@ -1008,13 +1029,13 @@
         "oracle review"
       ],
       "npmScripts": [],
-      "workflows": []
+      "procedures": []
     },
     "mcp.broker.connection": {
       "semanticDigest": "{\"description\":\"Reliable MCP tool discovery and dispatch across hosts.\",\"criticality\":\"P0\",\"verification\":{\"functional\":\"tests/functional/mcp-parity.functional.test.mjs\",\"hostEmulation\":\"tests/functional/host-mcp-emulation.functional.test.mjs\"}}",
       "cliCommands": [],
       "npmScripts": [],
-      "workflows": []
+      "procedures": []
     },
     "workflow.evidence-ingest": {
       "semanticDigest": "{\"description\":\"Ingest and structure raw evidence into a normalized summary.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\",\"verificationBar\":\"Source metadata preserved; no invented quotes; confidence labeled\"}}",
@@ -1022,11 +1043,10 @@
         "workflow",
         "workflow invoke"
       ],
-      "npmScripts": [
-        "release:check",
-        "workflow-defs:check"
-      ],
-      "workflows": []
+      "npmScripts": [],
+      "procedures": [
+        "evidence-ingest"
+      ]
     },
     "workflow.research-synthesis": {
       "semanticDigest": "{\"description\":\"Synthesize multiple sources into a cited, evidence-graded research summary.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\",\"structureRequirements\":\"research-brief\",\"verificationBar\":\"≥2 primary sources; URLs fetched; confidence labeled\"}}",
@@ -1034,7 +1054,9 @@
         "ask"
       ],
       "npmScripts": [],
-      "workflows": []
+      "procedures": [
+        "research-synthesis"
+      ]
     },
     "workflow.prd-draft": {
       "semanticDigest": "{\"description\":\"Draft a product requirements document from a problem statement and evidence.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\",\"structureRequirements\":\"prd\",\"verificationBar\":\"Template chosen before draft; rejected alternatives recorded for ADR/RFC paths\"}}",
@@ -1042,11 +1064,10 @@
         "workflow",
         "workflow invoke"
       ],
-      "npmScripts": [
-        "release:check",
-        "workflow-defs:check"
-      ],
-      "workflows": []
+      "npmScripts": [],
+      "procedures": [
+        "prd-draft"
+      ]
     },
     "workflow.architecture-review": {
       "semanticDigest": "{\"description\":\"Review an architecture for trade-offs, failure modes, and security exposure.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}",
@@ -1054,11 +1075,10 @@
         "workflow",
         "workflow invoke"
       ],
-      "npmScripts": [
-        "release:check",
-        "workflow-defs:check"
-      ],
-      "workflows": []
+      "npmScripts": [],
+      "procedures": [
+        "architecture-review"
+      ]
     },
     "workflow.proposal-review": {
       "semanticDigest": "{\"description\":\"Review a proposal for correctness, risk, and hidden assumptions before acceptance.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}",
@@ -1066,11 +1086,10 @@
         "workflow",
         "workflow invoke"
       ],
-      "npmScripts": [
-        "release:check",
-        "workflow-defs:check"
-      ],
-      "workflows": []
+      "npmScripts": [],
+      "procedures": [
+        "proposal-review"
+      ]
     },
     "workflow.risk-review": {
       "semanticDigest": "{\"description\":\"Stress-test a plan for failure modes, security, and compliance exposure.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}",
@@ -1078,11 +1097,10 @@
         "workflow",
         "workflow invoke"
       ],
-      "npmScripts": [
-        "release:check",
-        "workflow-defs:check"
-      ],
-      "workflows": []
+      "npmScripts": [],
+      "procedures": [
+        "risk-review"
+      ]
     },
     "workflow.structure-notes": {
       "semanticDigest": "{\"description\":\"Structure unclassified notes into a normalized summary with extracted intents.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}",
@@ -1091,7 +1109,9 @@
         "intake classify"
       ],
       "npmScripts": [],
-      "workflows": []
+      "procedures": [
+        "structure-notes"
+      ]
     },
     "workflow.transcript-process": {
       "semanticDigest": "{\"description\":\"Process a meeting or call transcript into summary, decisions, and action items.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}",
@@ -1099,11 +1119,10 @@
         "workflow",
         "workflow invoke"
       ],
-      "npmScripts": [
-        "release:check",
-        "workflow-defs:check"
-      ],
-      "workflows": []
+      "npmScripts": [],
+      "procedures": [
+        "transcript-process"
+      ]
     },
     "workflow.data-structure": {
       "semanticDigest": "{\"description\":\"Parse, validate, and profile a raw dataset into a structured, described shape.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}",
@@ -1111,11 +1130,10 @@
         "workflow",
         "workflow invoke"
       ],
-      "npmScripts": [
-        "release:check",
-        "workflow-defs:check"
-      ],
-      "workflows": []
+      "npmScripts": [],
+      "procedures": [
+        "data-structure"
+      ]
     },
     "workflow.memo-draft": {
       "semanticDigest": "{\"description\":\"Draft a decision or status memo from a problem statement and context.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}",
@@ -1123,11 +1141,10 @@
         "workflow",
         "workflow invoke"
       ],
-      "npmScripts": [
-        "release:check",
-        "workflow-defs:check"
-      ],
-      "workflows": []
+      "npmScripts": [],
+      "procedures": [
+        "memo-draft"
+      ]
     },
     "workflow.triage": {
       "semanticDigest": "{\"description\":\"Classify and route unstructured input to the appropriate workflow.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-triage.functional.test.mjs\"}}",
@@ -1135,11 +1152,10 @@
         "workflow",
         "workflow invoke"
       ],
-      "npmScripts": [
-        "release:check",
-        "workflow-defs:check"
-      ],
-      "workflows": []
+      "npmScripts": [],
+      "procedures": [
+        "triage"
+      ]
     },
     "document-type.research-brief": {
       "semanticDigest": "{\"description\":\"Cited research findings with confidence summary and recommendation.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/certification/artifact-gates.test.mjs\",\"structureRequirements\":\"research-brief\",\"verificationBar\":\"Sources section with dates; confidence summary; recommendation\"}}",
@@ -1148,25 +1164,25 @@
         "knowledge add"
       ],
       "npmScripts": [],
-      "workflows": []
+      "procedures": []
     },
     "document-type.evidence-brief": {
       "semanticDigest": "{\"description\":\"Product evidence synthesis before decisions.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\",\"verificationBar\":\"Signal, evidence, counter-signal; no invented customer quotes\"}}",
       "cliCommands": [],
       "npmScripts": [],
-      "workflows": []
+      "procedures": []
     },
     "document-type.prd": {
       "semanticDigest": "{\"description\":\"Customer-facing product capabilities and requirements.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/certification/artifact-gates.test.mjs\",\"structureRequirements\":\"prd\",\"verificationBar\":\"Problem, goals, success metrics, risks and mitigations\"}}",
       "cliCommands": [],
       "npmScripts": [],
-      "workflows": []
+      "procedures": []
     },
     "document-type.adr": {
       "semanticDigest": "{\"description\":\"Record of an architecture decision with rejected alternatives.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/certification/artifact-gates.test.mjs\",\"structureRequirements\":\"adr\",\"verificationBar\":\"Problem, decision, rejected alternatives, consequences, reversibility\"}}",
       "cliCommands": [],
       "npmScripts": [],
-      "workflows": []
+      "procedures": []
     },
     "document-type.ingested-markdown": {
       "semanticDigest": "{\"description\":\"Normalized markdown from external documents with extraction metadata.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/node-native-extraction.functional.test.mjs\",\"verificationBar\":\"Source metadata preserved; droppedInfo surfaced; no invented structure\"}}",
@@ -1174,7 +1190,7 @@
         "ingest"
       ],
       "npmScripts": [],
-      "workflows": []
+      "procedures": []
     },
     "ingest.adapter": {
       "semanticDigest": "{\"description\":\"Local extraction via unpdf/mammoth with docling/whisper for fidelity paths.\",\"criticality\":\"P0\",\"verification\":{\"functional\":\"tests/functional/node-native-extraction.functional.test.mjs\"}}",
@@ -1182,7 +1198,7 @@
         "ingest"
       ],
       "npmScripts": [],
-      "workflows": []
+      "procedures": []
     },
     "ingest.docling": {
       "semanticDigest": "{\"description\":\"Offline docling Python sidecar for layout-aware PDF/Office and OCR.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/mcp-ingest-resilience.functional.test.mjs\"}}",
@@ -1191,7 +1207,7 @@
         "ingest --legacy-extractor=false"
       ],
       "npmScripts": [],
-      "workflows": []
+      "procedures": []
     },
     "ingest.docling-remote": {
       "semanticDigest": "{\"description\":\"Opt-in remote conversion via DOCLING_SERVE_URL (explicit user choice).\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/docling-remote-ingest.functional.test.mjs\"}}",
@@ -1199,19 +1215,19 @@
         "ingest"
       ],
       "npmScripts": [],
-      "workflows": []
+      "procedures": []
     },
     "skill.perspectives-engineer": {
       "semanticDigest": "{\"description\":\"Engineer role playbook — hot path per skill telemetry.\",\"criticality\":\"P2\",\"verification\":{\"hostEmulation\":\"tests/functional/host-mcp-emulation.functional.test.mjs\"}}",
       "cliCommands": [],
       "npmScripts": [],
-      "workflows": []
+      "procedures": []
     },
     "skill.perspectives-architect-ai-systems": {
       "semanticDigest": "{\"description\":\"Architect AI systems flavor — hot path per skill telemetry.\",\"criticality\":\"P2\",\"verification\":{\"hostEmulation\":\"tests/functional/host-mcp-emulation.functional.test.mjs\"}}",
       "cliCommands": [],
       "npmScripts": [],
-      "workflows": []
+      "procedures": []
     },
     "local.model.tier": {
       "semanticDigest": "{\"description\":\"resolveCapabilityTier and isLocalModel include local/ OpenAI-compatible models.\",\"criticality\":\"P1\",\"verification\":{\"unit\":\"tests/capability-tier.test.mjs\",\"integration\":\"tests/model-router-local.test.mjs\",\"untestableRationale\":\"Tier detection is covered by unit (capability-tier.test.mjs) and integration (model-router-local.test.mjs) tests; no functional binary spawn is needed since the logic has no cross-component side effects.\"}}",
@@ -1220,7 +1236,7 @@
         "models resolve"
       ],
       "npmScripts": [],
-      "workflows": []
+      "procedures": []
     },
     "surfaces.opencode-primary": {
       "semanticDigest": "{\"description\":\"OpenCode is the first-class conversational surface; the construct CLI remains setup/admin/headless infrastructure.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/opencode-primary-surface.functional.test.mjs\",\"hostEmulation\":\"tests/functional/host-config-parity.functional.test.mjs\"}}",
@@ -1233,13 +1249,13 @@
         "release:check",
         "version"
       ],
-      "workflows": []
+      "procedures": []
     },
     "mcp.tool-budget.trim": {
       "semanticDigest": "{\"description\":\"Heavy external MCP servers disabled when default model is local.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/host-config-parity.functional.test.mjs\"}}",
       "cliCommands": [],
       "npmScripts": [],
-      "workflows": []
+      "procedures": []
     }
   }
 }

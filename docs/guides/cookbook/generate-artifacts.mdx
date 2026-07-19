@@ -4,7 +4,7 @@ description: Create structured documents from templates, stamp intake provenance
 ---
 
 Construct supports every document class registered in
-`specialists/artifact-manifest.json`, including PRDs, ADRs, RFCs, memos,
+`registry/artifact-manifest.json`, including PRDs, ADRs, RFCs, memos,
 runbooks, research briefs, and project-specific registered classes. Use
 `construct artifact workflow` when the request includes review, rewriting,
 validation, branding, or a distribution format; unknown classes ask for
@@ -30,7 +30,7 @@ with `README.md` indices and starter templates under each lane's `templates/` di
 
 ## Generate a class the builtin manifest never registered
 
-The builtin `specialists/artifact-manifest.json` stays the shipped source of truth and is never modified. To generate a document class it doesn't list, either register it or use the sanctioned `adhoc` type.
+The builtin `registry/artifact-manifest.json` stays the shipped source of truth and is never modified. To generate a document class it doesn't list, either register it or use the sanctioned `adhoc` type.
 
 Register a reusable custom class (writes a project template plus a project-tier manifest overlay):
 

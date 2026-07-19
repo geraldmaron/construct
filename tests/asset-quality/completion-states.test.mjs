@@ -21,7 +21,7 @@ import { validateArtifactManifest } from '../../lib/artifact-manifest.mjs';
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 test('the JS enum is byte-identical to the manifest schema completionState enum', () => {
-  const schema = JSON.parse(readFileSync(resolve(REPO, 'specialists/artifact-manifest.schema.json'), 'utf8'));
+  const schema = JSON.parse(readFileSync(resolve(REPO, 'registry/artifact-manifest.schema.json'), 'utf8'));
   const schemaStates = schema.$defs.completionState.enum;
   assert.deepEqual([...COMPLETION_STATES], schemaStates);
 });

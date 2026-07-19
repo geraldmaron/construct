@@ -10,6 +10,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Removed
 
+- Clean-slate certification cleanup: removed the empty legacy specialist scenario system and its dangling catalog entries; certification now uses the canonical Worker Profile, Procedure, Skill, and Perspective surfaces.
+
+- Moved the shipped artifact manifest and schema from `specialists/` to `registry/`, updated all runtime consumers and fixtures, and removed the duplicate legacy ownership path.
+
 - Retired CLI compatibility forms: `construct install --scope`, `construct models --reset`, `construct models --tier=… --set=…`, and `construct models --poll` now fail rather than silently selecting another behavior. Canonical forms are `construct install --footprint=…` and `construct models reset|set|free`; the OpenCode fallback and generated Homebrew instructions now use those forms.
 
 - Removed the old user-state configuration import and global cleanup switch. `construct install` and `construct doctor` now operate only on their current paths and never read, copy, archive, or delete a prior user-state layout.
