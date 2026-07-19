@@ -10,7 +10,7 @@
 # Multi-stage: dependencies installed once with --ignore-scripts (the
 # postinstall step syncs project adapters for local dogfooding — irrelevant
 # and potentially failing with no .git present in a container) and
-# --workspaces=false (apps/docs, packages/cx-ui are unrelated build tooling,
+# --workspaces=false (apps/docs, packages/construct-ui are unrelated build tooling,
 # not part of this runtime). Runs as a non-root user.
 
 FROM node:22-alpine AS deps

@@ -101,7 +101,7 @@ jobs:
               - 'scripts/lint-commits-pr.mjs'
             docssite:
               - 'apps/docs/**'
-              - 'packages/cx-ui/**'
+              - 'packages/construct-ui/**'
               - 'docs/**'
               - '.github/workflows/pages.yml'
             workflow:
@@ -318,7 +318,7 @@ jobs:
       - name: docs site build
         if: needs.changes.outputs.docssite == 'true' || needs.changes.outputs.workflow == 'true'
         # PR-time guard for the Pages deploy. apps/docs depends on the
-        # workspace package @cx/ui (packages/cx-ui); root `npm ci` resolves
+        # workspace package @construct/ui (packages/construct-ui); root `npm ci` resolves
         # it via the workspaces config. Building from root here matches
         # what pages.yml does on main — catches workspace-resolution drift
         # before the Pages deploy fails post-merge with a 404 from the
@@ -396,7 +396,7 @@ jobs:
           node-version-file: .tool-versions
       - run: npm ci --ignore-scripts
       - name: npm audit (high+ only)
-        # Scope to root deps only. Workspace packages (apps/docs, packages/cx-ui)
+        # Scope to root deps only. Workspace packages (apps/docs, packages/construct-ui)
         # are build-time tooling for the docs site, not runtime deps of the
         # published @geraldmaron/construct CLI. Their
         # advisories are tracked separately; this gate guards the npm-published

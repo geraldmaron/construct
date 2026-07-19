@@ -48,25 +48,6 @@
       ]
     },
     {
-      "path": ".cx",
-      "owner": "legacy-construct",
-      "class": "governance",
-      "consumers": [],
-      "published": false,
-      "action": "delete",
-      "replacement": "canonical Construct 2.0.0 state under .construct",
-      "evidence": [
-        "legacy Construct metadata removed by construct-tsyfe.8.17",
-        "no active runtime or package references"
-      ],
-      "candidateEvidence": {
-        "staticImports": "no active imports",
-        "dynamicLookups": "no runtime lookup",
-        "npmPack": "excluded from package files",
-        "tests": "canonical namespace checks reject .cx"
-      }
-    },
-    {
       "path": ".dockerignore",
       "owner": "release-engineering",
       "class": "governance",
@@ -534,7 +515,7 @@
       "replacement": null,
       "evidence": [
         "package-lock workspace link",
-        "apps/docs imports @construct/cx-ui"
+        "apps/docs imports @construct/ui"
       ]
     },
     {

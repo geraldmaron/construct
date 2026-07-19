@@ -85,17 +85,17 @@ When a contract isn't registered for a specific pair, fall back to this minimum:
 
 Missing required fields mean the handoff is incomplete.
 
-## Primary persona contract
+## Primary worker-profile contract
 
-Personas own user interaction. When a worker returns `NEEDS_MAIN_INPUT`, ask the question in the main session, update `.construct/workflow.json` to `blocked_needs_user`, then resume or re-dispatch the worker after the user answers.
+The orchestrator owns user interaction. When a worker returns `NEEDS_MAIN_INPUT`, ask the question in the main session, update `.construct/workflow.json` to `blocked_needs_user`, then resume or re-dispatch the worker after the user answers.
 
 ## Parallel dispatch
 
-When two or more specialists can work independently, write `[parallel: cx-agent-a, cx-agent-b]` before the handoff list and give each agent a disjoint scope. Do not mark dependent work as parallel.
+When two or more workers can work independently, write `[parallel: worker-a, worker-b]` before the handoff list and give each worker a disjoint scope. Do not mark dependent work as parallel.
 
 ## Horizontal routing
 
-When your output directly feeds another specialist (e.g. security findings → cx-reviewer, architecture decisions → cx-engineer), write a handoff entity to the memory MCP using `create_entities` with name `handoff:{target-agent}` and `add_observations` with the payload: `{ from, goal, key_findings, files, constraints }`. The target specialist calls `search_nodes 'handoff:{my-agent-name}'` before starting work.
+When your output directly feeds another worker (e.g. security findings → reviewer, architecture decisions → engineer), write a handoff entity to the memory MCP using `create_entities` with name `handoff:{target-worker}` and `add_observations` with the payload: `{ from, goal, key_findings, files, constraints }`. The target worker calls `search_nodes 'handoff:{my-worker-name}'` before starting work.
 
 ## Context & efficiency (enforced)
 

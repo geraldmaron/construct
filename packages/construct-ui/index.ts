@@ -1,5 +1,5 @@
 /**
- * @cx/ui — shared editorial design system for Construct.
+ * @construct/ui — shared editorial design system for Construct.
  *
  * Both the docs site (apps/docs) and the dashboard (apps/dashboard) consume
  * the same primitives + theme tokens. Updates here ripple across both.

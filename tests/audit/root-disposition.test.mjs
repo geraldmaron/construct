@@ -67,3 +67,15 @@ test('the disposition matrix is itself tracked under the owned scripts root', ()
   assert.equal(fs.existsSync(matrix), true);
   assert.equal(JSON.parse(fs.readFileSync(matrix, 'utf8')).version, 1);
 });
+
+test('retired organization roots are absent from the tracked and published surface', () => {
+  const report = rootDispositionReport(ROOT);
+  const retiredRoots = ['specialists', 'personas'];
+
+  for (const root of retiredRoots) {
+    assert.equal(report.trackedRoots.includes(root), false, `${root}/ must not be tracked`);
+    assert.equal(report.packageFiles.some((entry) => entry === root || entry.startsWith(`${root}/`)), false,
+      `${root}/ must not be published`);
+    assert.equal(fs.existsSync(path.join(ROOT, root)), false, `${root}/ must not exist in the repository`);
+  }
+});
