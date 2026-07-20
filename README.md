@@ -175,8 +175,8 @@ The embed daemon writes its supervisor stdout log to the machine's XDG state dir
 | `construct status` | Show system health and credentials |
 | `construct stop` | Stop all running services |
 | `construct sync` | Sync agent adapters to AI tools |
-| `construct workers` | List registered workers and heartbeat freshness |
-| `construct workspace-preset` | Inspect reusable workspace-wide defaults |
+| `construct workers` | List shared-deployment worker heartbeats (requires DATABASE_URL; optional for solo) |
+| `construct workspace-preset` | Inspect and apply workspace-wide defaults |
 
 ### Work
 
@@ -291,11 +291,11 @@ The embed daemon writes its supervisor stdout log to the machine's XDG state dir
 | `construct embed` | Embed mode management |
 | `construct gates:audit` | Audit policy gates |
 | `construct hooks:health` | Check hook health |
-| `construct list` | List all agents |
+| `construct list` | List worker profiles (shortcut for worker-profile list); shows active Workspace Preset |
 | `construct monitor` | One-command setup for continuous monitoring-as-a-role: sources.targets + embed.yaml roles + capability enable + daemon start |
 | `construct policy` | Inspect rules governing authority, approval, and external effects |
 | `construct provider` | Provider management |
-| `construct role` | Role framework management |
+| `construct role` | Worker Profile invocation queue (event-driven dispatch) |
 | `construct roles:list` | List installed role contracts |
 | `construct roles:set` | Activate a role contract |
 | `construct scheduler` | Manage scheduled background jobs (tag-mining, doc-hygiene, skill-rollup) |

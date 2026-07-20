@@ -21,8 +21,8 @@ description: Core commands for Construct.
 | `construct status` | Show system health and credentials |
 | `construct stop` | Stop all running services |
 | `construct sync` | Sync agent adapters to AI tools |
-| `construct workers` | List registered workers and heartbeat freshness |
-| `construct workspace-preset` | Inspect reusable workspace-wide defaults |
+| `construct workers` | List shared-deployment worker heartbeats (requires DATABASE_URL; optional for solo) |
+| `construct workspace-preset` | Inspect and apply workspace-wide defaults |
 
 ## construct approvals
 
@@ -124,21 +124,31 @@ construct init [path] [options]
 
 | Flag | Description |
 |---|---|
-| `--yes` | Accept all defaults (non-interactive) |
+| `--yes` | Accept all defaults (non-interactive; auto-runs git init when .git/ is missing) |
 | `--no-start` | Do not start services after init |
+| `--auto-start` | Start services even in CI/test contexts |
+| `--no-beads` | Skip local issue-tracker initialization (CI/ephemeral) |
 | `--commit-bootstrap` | Keep the beads bootstrap commit (default: leave files uncommitted) |
+| `--force` | Scaffold even when content exists or target is a nested subdirectory |
 | `--with-<host>` | Force an adapter set (claude|codex|opencode|vscode|cursor|copilot); default writes detected hosts only |
 | `--all-hosts` | Write every adapter set regardless of what is installed |
-| `--interactive, -i` | Enable interactive setup with project detection |
+| `--interactive, -i` | Enable interactive setup (Packs / Individual docs / Skip) |
 | `--quiet, -q` | Minimal output |
 | `--verbose, -v` | Detailed output |
-| `--with-docs=adrs,rfcs` | Enable specific doc lanes (comma-separated) |
-| `--with-all-docs` | Enable all documentation lanes |
+| `--docs-preset=<pack>` | Opt into a curated docs pack: lean|product|full (default init is docs/ only) |
+| `--docs-lanes=<lanes>` | Opt into specific doc lanes (comma-separated) |
+| `--with-docs=<lanes>` | Same as --docs-lanes (comma-separated, or all) |
+| `--with-all-docs` | Enable every documentation lane |
 | `--with-adrs` | Enable Architecture Decision Records |
 | `--with-rfcs` | Enable RFCs (design reviews) |
 | `--with-runbooks` | Enable operational runbooks |
 | `--with-postmortems` | Enable incident postmortems |
 | `--with-architecture` | Create architecture.md |
+| `--with-readme` | Create README.md when missing |
+| `--watch-inbox` | Enable continuous inbox watching (non-interactive opt-in) |
+| `--seed-index` | Embed existing project docs into the local search index |
+| `--devcontainer` | Scaffold a .devcontainer/ recipe |
+| `--workspace-preset=<id>` | Set the active Workspace Preset in construct.config.json |
 
 ## construct install
 
@@ -264,7 +274,7 @@ construct sync [--project] [--dry-run] [--no-docs]
 
 ## construct workers
 
-List registered workers and heartbeat freshness
+List shared-deployment worker heartbeats (requires DATABASE_URL; optional for solo)
 
 **Usage**
 
@@ -280,15 +290,16 @@ construct workers <list> [--json]
 
 ## construct workspace-preset
 
-Inspect reusable workspace-wide defaults
+Inspect and apply workspace-wide defaults
 
 **Usage**
 
 ```bash
-construct workspace-preset list|show
+construct workspace-preset list|show|apply
 ```
 
 **Subcommands**
 
-- `list` — List workspace presets
-- `show <id>` — Show one workspace preset
+- `list [--grep=<term>]` — List workspace presets (sorted by id)
+- `show [<id>]` — Show active or named preset summary (--json for full record)
+- `apply <id> [--dry-run] [--docs-preset=lean|product|full] [--yes]` — Validate and persist workspacePreset; docs packs are opt-in via flag or TTY picker

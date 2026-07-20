@@ -31,8 +31,19 @@ test('a substantial external-research answer with zero verifiable sources is fla
   assert.match(v.reason, /verifiable/i);
 });
 
-test('an external-research answer that cites a URL, DOI, or arXiv id passes', () => {
-  assert.equal(gateResearchEvidence({ output: `${LONG} https://nodejs.org/en/blog`, workerProfileId: 'researcher', request: 'Research node' }).ok, true);
+test('external-research URLs require governed webEvidence; DOI and arXiv still pass', () => {
+  const bareUrl = gateResearchEvidence({ output: `${LONG} https://nodejs.org/en/blog`, workerProfileId: 'researcher', request: 'Research node' });
+  assert.equal(bareUrl.ok, false);
+  assert.match(bareUrl.reason, /webEvidence/i);
+
+  const backed = gateResearchEvidence({
+    output: `${LONG} https://nodejs.org/en/blog`,
+    workerProfileId: 'researcher',
+    request: 'Research node',
+    webEvidence: [{ url: 'https://nodejs.org/en/blog' }],
+  });
+  assert.equal(backed.ok, true);
+
   assert.equal(gateResearchEvidence({ output: `${LONG} doi: 10.1145/1234567`, workerProfileId: 'researcher', request: 'Research X' }).ok, true);
   assert.equal(gateResearchEvidence({ output: `${LONG} arxiv: 2401.01234`, workerProfileId: 'researcher', request: 'Research X' }).ok, true);
 });
@@ -52,4 +63,10 @@ test('codebase-mode requires file:line, not a URL', () => {
 test('the gate only applies to the research role', () => {
   assert.equal(gateResearchEvidence({ output: LONG, workerProfileId: 'engineer', request: 'x' }).applicable, false);
   assert.equal(gateResearchEvidence({ output: LONG, workerProfileId: 'engineer', request: 'x' }).ok, true);
+});
+
+test('localhost URLs inside fenced code are exempt from webEvidence requirement', () => {
+  const output = `${LONG}\n\nExample:\n\`\`\`sh\ncurl http://localhost:3000/health\n\`\`\``;
+  const verdict = gateResearchEvidence({ output, workerProfileId: 'researcher', request: 'Research node', webEvidence: [] });
+  assert.equal(verdict.ok, false, 'still needs a verifiable external source');
 });

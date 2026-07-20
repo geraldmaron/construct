@@ -15,7 +15,14 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-import { CLI_COMMANDS, CATEGORY_ORDER, formatCommandHelp } from '../lib/cli-commands.mjs';
+import {
+  CLI_COMMANDS,
+  CATEGORY_ORDER,
+  CLI_COMMANDS_BY_CATEGORY,
+  formatCommandHelp,
+  formatRetiredCommandHint,
+  suggestClosestMatch,
+} from '../lib/cli-commands.mjs';
 import { CONFIG_DIR_NAME, PROJECT_MARKERS, configPath } from '../lib/config-dir.mjs';
 import { buildStatus, formatStatusReport } from '../lib/status.mjs';
 import { validateRegistry as validateLegacyRegistry } from '../lib/validator.mjs';
@@ -141,9 +148,6 @@ function usage(opts = {}) {
   const showAll = opts.all ?? (restArgsCache.includes('--all') || restArgsCache.includes('-a'));
   // Always filter out internal commands; users can still run them directly,
   // but --all is for "everything humans use" not "every handler in the map".
-  const visible = CLI_COMMANDS.filter((c) => !c.internal);
-  const commands = showAll ? visible : visible.filter((c) => c.core);
-
   const ver = getInstalledVersion().version;
   const wordmark = `${COLORS.brandAccent}${COLORS.bold}construct${COLORS.reset}`;
   const tagline = showAll ? 'AI agent harness · all commands' : 'AI agent harness';
@@ -158,12 +162,12 @@ function usage(opts = {}) {
   // The name column sizes to the longest visible command (capped) so long names
   // are never truncated and descriptions stay aligned regardless of the set shown.
 
-  const nameWidth = Math.min(18, Math.max(...commands.map((c) => c.name.length)));
-
   for (const category of CATEGORY_ORDER) {
-    const categoryCommands = commands.filter((c) => c.category === category);
+    let categoryCommands = CLI_COMMANDS_BY_CATEGORY[category] || [];
+    if (!showAll) categoryCommands = categoryCommands.filter((c) => c.core);
     if (!categoryCommands.length) continue;
     println(`\n${uiSection(category, { colors: COLORS })}`);
+    const nameWidth = Math.min(18, Math.max(...categoryCommands.map((c) => c.name.length)));
     for (const command of categoryCommands) {
       const emoji = command.emoji ?? '  ';
       const name = `${COLORS.bold}${command.name.padEnd(nameWidth)}${COLORS.reset}`;
@@ -202,9 +206,15 @@ async function cmdRegistryGenerateDocs(args = []) {
   if (code) process.exit(code);
 }
 
+async function cmdWorkspacePreset(args = []) {
+  const { runWorkspacePresetCommand } = await import('../lib/workspace-presets/cli.mjs');
+  const code = await runWorkspacePresetCommand(args, { rootDir: ROOT_DIR, cwd: process.cwd(), println, errorln });
+  if (code) process.exit(code);
+}
+
 async function cmdRegistryCatalog(noun, args = []) {
   const { runCatalogCommand } = await import('../lib/registry/cli.mjs');
-  const code = await runCatalogCommand(noun, args, { rootDir: ROOT_DIR, println, errorln });
+  const code = await runCatalogCommand(noun, args, { rootDir: ROOT_DIR, cwd: process.cwd(), println, errorln });
   if (code) process.exit(code);
 }
 
@@ -351,16 +361,28 @@ async function cmdWorkers(args = []) {
   }
 
   const { createSqlClient, closeSqlClient } = await import('../lib/storage/backend.mjs');
-  const { WorkerRegistry } = await import('../lib/orchestration/worker-runtime.mjs');
+  const { WorkerRegistry, formatWorkersUnavailableGuidance } = await import('../lib/orchestration/worker-runtime.mjs');
   const { resolveIntakeTenantId, INTAKE_PROJECT_ENV_KEY } = await import('../lib/intake/queue.mjs');
   const sql = createSqlClient(process.env);
   const project = process.env[INTAKE_PROJECT_ENV_KEY] || path.basename(path.resolve(process.cwd())) || 'construct';
   const tenantId = resolveIntakeTenantId(process.env);
 
   if (!sql) {
-    const payload = { status: 'unavailable', reason: 'postgres-unavailable', workers: [] };
+    const guidance = formatWorkersUnavailableGuidance({ reason: 'postgres-unavailable' });
+    const payload = {
+      status: 'unavailable',
+      reason: 'postgres-unavailable',
+      workers: [],
+      optionalForSolo: true,
+      nextSteps: [
+        'Solo/local: skip workers — use construct orchestrate / host MCP',
+        'Shared/team: export DATABASE_URL or CONSTRUCT_DATABASE_URL',
+        'Then: construct db migrate && construct workers list',
+      ],
+      guidance,
+    };
     if (wantsJson) { println(JSON.stringify(payload, null, 2)); return; }
-    println('Workers unavailable: DATABASE_URL or CONSTRUCT_DATABASE_URL is not configured.');
+    println(guidance);
     return;
   }
 
@@ -480,12 +502,10 @@ async function cmdCompletions(args) {
   process.exit(1);
 }
 
-async function cmdList() {
-  const registry = loadRegistry({ rootDir: ROOT_DIR });
-  println('Construct Worker Profiles\n');
-  for (const profile of Object.values(registry.workerProfiles)) {
-    println(`  ${profile.id} ${profile.displayName || ''}`);
-  }
+async function cmdList(args = []) {
+  const { runCatalogList } = await import('../lib/registry/cli.mjs');
+  const code = await runCatalogList('worker-profile', args, { rootDir: ROOT_DIR, cwd: process.cwd(), println, errorln });
+  if (code) process.exit(code);
 }
 
 async function cmdDoctor() {
@@ -607,6 +627,8 @@ async function cmdDoctor() {
   const wantsFixAll = args.includes('--fix-all') || args.includes('--fix');
   const wantsFixGitignore = wantsFixAll || args.includes('--fix-gitignore');
   const wantsFixEmbedLog = wantsFixAll || args.includes('--fix-embed-log');
+  const wantsSummary = args.includes('--summary');
+  const wantsVerboseExport = args.includes('--verbose-export');
 
   const checks = [];
   // Set inside the worker-backend/web-capability readiness check below;
@@ -814,17 +836,8 @@ async function cmdDoctor() {
     : null;
   add('construct command on PATH', Boolean(constructPath), true);
   add('construct command is this CLI', Boolean(constructVersion && constructVersion.status === 0 && /^construct v\d+\./.test(constructVersion.stdout.trim())), true);
-  add('OpenCode config exists', fs.existsSync(path.join(HOME, '.config', 'opencode', 'opencode.json')), true);
-  add('Claude Code agents dir', fs.existsSync(path.join(HOME, '.claude', 'agents')), true);
-  add('Codex agents dir', fs.existsSync(path.join(HOME, '.codex', 'agents')), true);
-  add('Copilot prompts dir', fs.existsSync(path.join(HOME, '.github', 'prompts')), true);
-  // Only check Cursor MCP config when Cursor is actually installed (its home
-  // directory exists). Absent Cursor, no warning — the adapter parity check
-  // already surfaces 'cursor: not installed' for informational purposes.
-  const cursorHomeDir = path.join(HOME, '.cursor');
-  if (fs.existsSync(cursorHomeDir)) {
-    add('Cursor MCP config', fs.existsSync(path.join(cursorHomeDir, 'mcp.json')), true);
-  }
+  const { buildHostConfigChecks } = await import('../lib/doctor/host-config.mjs');
+  for (const hostCheck of buildHostConfigChecks(HOME)) add(hostCheck.label, hostCheck.pass, hostCheck.optional);
 
   const vscodeSettingsPaths = process.platform === 'darwin'
     ? [
@@ -886,7 +899,12 @@ async function cmdDoctor() {
       );
     }
   }
-  add('User config ready', fs.existsSync(getUserEnvPath(HOME)) || fs.existsSync(configDir(HOME)), true);
+  const userConfigReady = fs.existsSync(getUserEnvPath(HOME)) || fs.existsSync(configDir(HOME));
+  add(
+    userConfigReady ? 'User config ready' : 'User config not ready — run `construct install --footprint=user`',
+    userConfigReady,
+    true,
+  );
   add('skills/ directory', fs.existsSync(path.join(ROOT_DIR, 'skills')));
   add('rules/common/', fs.existsSync(path.join(ROOT_DIR, 'rules', 'common')));
   add('registry/worker-profiles/prompts/ directory', fs.existsSync(path.join(ROOT_DIR, 'registry', 'worker-profiles', 'prompts')));
@@ -922,6 +940,17 @@ async function cmdDoctor() {
     }
   } catch (err) {
     add(`construct.config.json check failed: ${err.message}`, false, true);
+  }
+
+  try {
+    const { checkWorkspacePresetForDoctor } = await import('../lib/doctor/workspace-preset.mjs');
+    const presetCheck = checkWorkspacePresetForDoctor(process.cwd());
+    if (presetCheck.run) {
+      add(presetCheck.label, presetCheck.pass, presetCheck.optional);
+      checks[checks.length - 1].alwaysShow = true;
+    }
+  } catch (err) {
+    add(`Workspace Preset check failed: ${err.message}`, false, true);
   }
 
   // Claude Code Stop-hook installation check. The settings template
@@ -1118,28 +1147,10 @@ async function cmdDoctor() {
       add(label, missing.length === 0);
     }
 
-    const beadsPreCommit = path.join(ROOT_DIR, '.beads', 'hooks', 'pre-commit');
     const inCI = process.env.CI === 'true' || process.env.CI === '1';
-    if (fs.existsSync(beadsPreCommit) && !inCI) {
-      const hp = spawnSync('git', ['config', '--get', 'core.hooksPath'], { cwd: ROOT_DIR, encoding: 'utf8' });
-      const value = hp.status === 0 ? (hp.stdout || '').trim() : '';
-      // Worktrees share one .git/config, so core.hooksPath must be absolute to
-      // resolve from every checkout — it then names the main checkout's hooks
-      // dir, not this one's. git still runs those hooks here, so the gate is
-      // active whenever the configured directory actually holds the hook.
-
-      const absEquiv = path.join(ROOT_DIR, '.beads', 'hooks');
-      const resolved = value && (path.isAbsolute(value) ? value : path.join(ROOT_DIR, value));
-      const wired = value === '.beads/hooks'
-        || value === absEquiv
-        || Boolean(resolved && fs.existsSync(path.join(resolved, 'pre-commit')));
-      const label = wired
-        ? `Git hooks wired (core.hooksPath = ${value})`
-        : value
-          ? `Git hooks unwired (core.hooksPath = '${value}', expected '.beads/hooks') — pre-commit policy gates inactive`
-          : 'Git hooks unwired (core.hooksPath unset) — pre-commit policy gates inactive. Fix: git config core.hooksPath .beads/hooks';
-      add(label, wired);
-    }
+    const { checkProjectGitHooks } = await import('../lib/doctor/git-hooks.mjs');
+    const gitHooks = checkProjectGitHooks(process.cwd(), { inCI });
+    if (gitHooks.run) add(gitHooks.label, gitHooks.pass);
 
     // Half-initialized Beads: .claude/settings.json references bd but .beads/ is
     // absent or has no database file. A project set up before D3 (fail-closed Beads)
@@ -1294,18 +1305,9 @@ async function cmdDoctor() {
 
     try {
       const { detectBeadsDrift } = await import('../lib/beads/drift.mjs');
-      const drift = detectBeadsDrift();
-      const ok = drift.counts.stuckInProgress === 0 && drift.counts.mergeDrift === 0;
-      let label = 'Beads hygiene: no drift';
-      if (!ok) {
-        const parts = [];
-        if (drift.counts.stuckInProgress > 0) parts.push(`${drift.counts.stuckInProgress} stuck in_progress`);
-        if (drift.counts.mergeDrift > 0) parts.push(`${drift.counts.mergeDrift} possible merge-drift`);
-        label = `Beads hygiene: ${parts.join(', ')} — run \`construct beads drift\``;
-      } else if (drift.counts.staleOpen > 0) {
-        label = `Beads hygiene: ${drift.counts.staleOpen} stale-open (advisory) — run \`construct beads drift\``;
-      }
-      add(label, ok, true);
+      const { checkBeadsHygieneForDoctor } = await import('../lib/doctor/beads-hygiene.mjs');
+      const beadsHygiene = checkBeadsHygieneForDoctor(process.cwd(), { detectBeadsDrift });
+      if (beadsHygiene.run) add(beadsHygiene.label, beadsHygiene.pass, beadsHygiene.optional);
     } catch {
       // bd not on PATH or repo not a bd workspace — skip silently.
     }
@@ -1483,10 +1485,19 @@ async function cmdDoctor() {
     if (docling.available) {
       add(`Docling runtime ready (docling ${docling.marker?.doclingVersion ?? '?'})`, true, true);
     } else {
-      add('Docling runtime not provisioned (`construct install --with-docling`, or auto on first ingest)', false, true);
+      add('Docling runtime: optional, not provisioned (auto on first ingest or `construct install --with-docling`)', true, true);
     }
   } catch (err) {
     add(`Docling runtime check failed: ${err.message}`, false, true);
+  }
+
+  try {
+    const { buildExportEngineChecks } = await import('../lib/doctor/export-engines.mjs');
+    for (const exportCheck of buildExportEngineChecks({ verbose: wantsVerboseExport, env: process.env })) {
+      add(exportCheck.label, exportCheck.pass, exportCheck.optional);
+    }
+  } catch (err) {
+    add(`Document export engine check failed: ${err.message}`, false, true);
   }
 
   // Capability honesty without re-probing: if the OpenCode default model is one the
@@ -1537,34 +1548,14 @@ async function cmdDoctor() {
     }
   }
 
-  println('Construct Health Check');
-  println('══════════════════════');
-  println('');
-  let okCount = 0; let warnCount = 0; let failCount = 0;
-  for (const check of checks) {
-    const symbol = check.pass ? '✓' : check.optional ? '⚠' : '✗';
-    println(`  ${check.label.padEnd(40)} ${symbol}`);
-    if (check.pass) okCount += 1;
-    else if (check.optional) warnCount += 1;
-    else failCount += 1;
-  }
-
-  if (reconcileDrift.length > 0) {
-    println('');
-    println('Reconciliation drift:');
-    for (const task of reconcileDrift) {
-      println(`  ⚠ ${task.id} (${task.safety})`);
-      if (task.summary) println(`       ${task.summary}`);
-      println(`       fix: construct sync --reconcile=${task.id}`);
-    }
-  }
-
-  println('');
-  println(`Results: ${okCount} passed, ${warnCount} warnings, ${failCount} failed`);
-  if (firstRunReadinessLine) {
-    println('');
-    println(firstRunReadinessLine);
-  }
+  const { renderDoctorReport } = await import('../lib/doctor/format-report.mjs');
+  const { failCount } = renderDoctorReport({
+    checks,
+    reconcileDrift,
+    firstRunReadinessLine,
+    showPasses: !wantsSummary,
+    println,
+  });
   if (failCount > 0) process.exit(1);
 }
 
@@ -4178,7 +4169,12 @@ async function cmdOrchestrate(args) {
   const wantsJson = rest.includes('--json') || args.includes('--json');
 
   if (sub === 'preflight') {
-    const { buildOrchestrationReadiness, recordOrchestrationReadinessEvent, summarizeOrchestrationReadiness } = await import('../lib/orchestration/readiness.mjs');
+    const {
+      buildOrchestrationReadiness,
+      recordOrchestrationReadinessEvent,
+      summarizeOrchestrationReadiness,
+      formatOrchestrationReadinessGuidance,
+    } = await import('../lib/orchestration/readiness.mjs');
     const { probeStdioMcpTools } = await import('../lib/mcp/stdio-mcp-probe.mjs');
     const splitCsv = (value) => value ? String(value).split(',').map((s) => s.trim()).filter(Boolean) : undefined;
     const timeoutMs = Number(eqFlag('--timeout-ms') || 8000);
@@ -4243,7 +4239,12 @@ async function cmdOrchestrate(args) {
 
     println(summarizeOrchestrationReadiness(readiness));
     println(`Reason: ${readiness.reasonCode}`);
+    if (readiness.diagnosticBundle?.detail) println(`Detail: ${readiness.diagnosticBundle.detail}`);
     println(`Next: ${readiness.nextStep}`);
+    const guidance = formatOrchestrationReadinessGuidance(readiness);
+    if (guidance) {
+      for (const line of guidance.split('\n')) println(line);
+    }
     const modelLine = MODEL_TIERS
       .map((tier) => `${tier}=${readiness.modelResolved?.[tier] ? 'resolved' : 'unresolved'}`)
       .join(' ');
@@ -6518,7 +6519,7 @@ const handlers = new Map([
   ['registry:status', cmdRegistryStatus],
   ['registry:validate', cmdRegistryValidate],
   ['registry:generate-docs', cmdRegistryGenerateDocs],
-  ['workspace-preset', (args) => cmdRegistryCatalog('workspace-preset', args)],
+  ['workspace-preset', cmdWorkspacePreset],
   ['worker-profile', (args) => cmdRegistryCatalog('worker-profile', args)],
   ['procedure', cmdProcedure],
   ['rules', cmdRulesUsage],
@@ -7536,37 +7537,14 @@ if (!handler) {
     process.exit(1);
   }
   errorln(uiFail(`Unknown command: ${COLORS.bold}${command}${COLORS.reset}`, { colors: COLORS, glyphs: GLYPHS }));
-  // Three-tier suggestion: prefix match → substring match → Levenshtein
-  // distance ≤ 2. Catches single-letter typos, missing-letter typos, and
-  // transpositions ('sycn' → 'sync') without dragging in a full fuzzy lib.
-  const known = CLI_COMMANDS.filter((c) => !c.internal).map((c) => c.name);
-  const editDistance = (a, b) => {
-    if (a === b) return 0;
-    if (!a.length || !b.length) return Math.max(a.length, b.length);
-    const row = Array(b.length + 1).fill(0).map((_, i) => i);
-    for (let i = 1; i <= a.length; i++) {
-      let prev = i;
-      for (let j = 1; j <= b.length; j++) {
-        const cur = a[i - 1] === b[j - 1]
-          ? row[j - 1]
-          : 1 + Math.min(row[j - 1], row[j], prev);
-        row[j - 1] = prev;
-        prev = cur;
-      }
-      row[b.length] = prev;
-    }
-    return row[b.length];
-  };
-  let suggestion = known.find((n) => n.startsWith(command)) ||
-                   known.find((n) => n.includes(command));
-  if (!suggestion) {
-    let bestDist = 3;
-    for (const name of known) {
-      const d = editDistance(command, name);
-      if (d < bestDist) { bestDist = d; suggestion = name; }
-    }
+  const retiredHint = formatRetiredCommandHint(command);
+  if (retiredHint) {
+    errorln(`${COLORS.muted}${retiredHint}${COLORS.reset}`);
+  } else {
+    const known = CLI_COMMANDS.filter((c) => !c.internal).map((c) => c.name);
+    const suggestion = suggestClosestMatch(command, known);
+    if (suggestion) errorln(`${COLORS.muted}Did you mean${COLORS.reset} ${COLORS.highlight}construct ${suggestion}${COLORS.reset}?`);
   }
-  if (suggestion) errorln(`${COLORS.muted}Did you mean${COLORS.reset} ${COLORS.highlight}construct ${suggestion}${COLORS.reset}?`);
   println('');
   println(`${COLORS.dim}Run ${COLORS.reset}construct --help${COLORS.dim} for available commands${COLORS.reset}`);
   process.exit(1);
@@ -7579,6 +7557,12 @@ if (!handler) {
 // formatCommandHelp(); per-command handlers need no opt-in.
 
 if (rest.includes('--help') || rest.includes('-h')) {
+  const subcommand = rest.find((arg) => !arg.startsWith('-'));
+  if (command === 'worker-profile' && subcommand === 'create') {
+    const { formatWorkerProfileCreateHelp } = await import('../lib/registry/cli.mjs');
+    process.stdout.write(formatWorkerProfileCreateHelp({ colors: true }));
+    process.exit(0);
+  }
   process.stdout.write(formatCommandHelp(command, { colors: true }));
   process.exit(0);
 }

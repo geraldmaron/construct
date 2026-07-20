@@ -1,29 +1,29 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-20T05:19:08.874Z",
+  "generatedAt": "2026-07-20T17:32:46.425Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 939,
-    "topLevelTestFiles": 375,
-    "nestedTestFiles": 564,
+    "testFiles": 958,
+    "topLevelTestFiles": 379,
+    "nestedTestFiles": 579,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 48,
     "byLayer": {
-      "unit": 621,
-      "functional": 266,
+      "unit": 635,
+      "functional": 270,
       "visual": 12,
       "live-provider": 2,
-      "integration": 38
+      "integration": 39
     },
     "byCategory": {
-      "unit": 558,
-      "functional": 266,
+      "unit": 566,
+      "functional": 270,
       "visual": 12,
       "structural-guard": 19,
-      "contract-subsystem": 45,
+      "contract-subsystem": 51,
       "live-provider": 2,
-      "integration": 28,
-      "hook": 9
+      "hook": 10,
+      "integration": 28
     }
   },
   "releaseCriticalGaps": [],
@@ -1273,6 +1273,14 @@
       "maintainerNotes": "tests/cli-catalog-accuracy.test.mjs — CLI catalog vs handler-map parity."
     },
     {
+      "path": "tests/cli-discovery-ux.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/cli-discovery-ux.test.mjs — CLI help, list sorting, and retired-term discovery UX."
+    },
+    {
       "path": "tests/cli-service-inventory.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -1705,6 +1713,14 @@
       "maintainerNotes": "tests/doctor/beads-half-staged.test.mjs — doctor detection for half-initialized Beads state."
     },
     {
+      "path": "tests/doctor/beads-hygiene-scope.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/doctor/beads-hygiene-scope.test.mjs — beads hygiene skipped without .beads/."
+    },
+    {
       "path": "tests/doctor/contract-validation.test.mjs",
       "layer": "unit",
       "category": "contract-subsystem",
@@ -1729,6 +1745,30 @@
       "maintainerNotes": "tests/doctor/degradation-watcher.test.mjs — daemon capability-decline watcher."
     },
     {
+      "path": "tests/doctor/export-engines.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/doctor/export-engines.test.mjs — compact export engine doctor lines."
+    },
+    {
+      "path": "tests/doctor/format-report.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/doctor/format-report.test.mjs — doctor report sorting, summary, and next steps."
+    },
+    {
+      "path": "tests/doctor/git-hooks-project-scope.test.mjs",
+      "layer": "integration",
+      "category": "hook",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/doctor/git-hooks-project-scope.test.mjs — git hooks doctor check uses project cwd."
+    },
+    {
       "path": "tests/doctor/graph-staleness-incremental.test.mjs",
       "layer": "unit",
       "category": "contract-subsystem",
@@ -1737,12 +1777,36 @@
       "maintainerNotes": "tests/doctor/graph-staleness-incremental.test.mjs — construct-b0nny.3"
     },
     {
+      "path": "tests/doctor/host-config.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/doctor/host-config.test.mjs — host config warnings only when host installed."
+    },
+    {
       "path": "tests/doctor/provider-breaker-watcher.test.mjs",
       "layer": "unit",
       "category": "contract-subsystem",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/doctor/provider-breaker-watcher.test.mjs — LMCP-B9 doctor watcher."
+    },
+    {
+      "path": "tests/doctor/setup-readiness.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/doctor/setup-readiness.test.mjs — pre-setup HOME advisory collapse."
+    },
+    {
+      "path": "tests/doctor/workspace-preset.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/doctor/workspace-preset.test.mjs — doctor echoes active Workspace Preset."
     },
     {
       "path": "tests/doctor/write-pipeline-watcher.test.mjs",
@@ -2888,6 +2952,14 @@
       "maintainerNotes": "tests/functional/docs-site-check.functional.test.mjs — Generated reference drift gate."
     },
     {
+      "path": "tests/functional/doctor-fresh-project-ux.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "doctor-fresh-project-ux.functional.test.mjs — fresh init doctor should not"
+    },
+    {
       "path": "tests/functional/doctor-no-repo-mutation.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3313,6 +3385,22 @@
       "maintainerNotes": "tests/functional/init-config-layer-tree.functional.test.mjs — per-layer tree"
     },
     {
+      "path": "tests/functional/init-docs-menu.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/init-docs-menu.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/init-git-repository.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/init-git-repository.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/init-gitignores-construct.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3375,6 +3463,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/init-watch-inbox-prompt.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/install-first-run-checklist.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/install-first-run-checklist.functional.test.mjs"
     },
     {
       "path": "tests/functional/install-parity.functional.test.mjs",
@@ -4984,12 +5080,36 @@
       "maintainerNotes": "tests/ingest/sidecar-providers.test.mjs — LMCP-K2 governed ingestion providers."
     },
     {
+      "path": "tests/init-docs-default.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/init-docs-default.test.mjs — docs selection for construct init."
+    },
+    {
+      "path": "tests/init-docs-interactive.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/init-docs-interactive.test.mjs — pins init docs menu options and harness resolution."
+    },
+    {
       "path": "tests/init-docs.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/init-docs.test.mjs — verifies non-destructive project and docs bootstrap."
+    },
+    {
+      "path": "tests/init-git-repository.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/init-git-repository.test.mjs — git repository bootstrap during init."
     },
     {
       "path": "tests/init-intake-defaults.test.mjs",
@@ -5014,6 +5134,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/init/detect-existing-structure.test.mjs — Unit coverage for the"
+    },
+    {
+      "path": "tests/install/first-run-checklist.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/install/first-run-checklist.test.mjs — install/postinstall next-steps checklist."
     },
     {
       "path": "tests/intake-attribution.test.mjs",
@@ -6498,6 +6626,22 @@
       "maintainerNotes": "tests/registry/capability-registry.test.mjs — registry/capabilities.json validation gate."
     },
     {
+      "path": "tests/registry/catalog-cli.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "Registry catalog CLI UX: preset apply, not-found hints, worker-profile validate."
+    },
+    {
+      "path": "tests/registry/catalog-format.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "Registry catalog formatting helpers — Worker Profile list label vs tagline."
+    },
+    {
       "path": "tests/registry/catalog.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -7538,6 +7682,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "workspace-preset-rebrand.test.mjs — canonical Construct contract coverage."
+    },
+    {
+      "path": "tests/workspace-presets/apply-docs-pack.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/workspace-presets/apply-docs-pack.test.mjs — explicit docs-pack opt-in on preset apply."
     },
     {
       "path": "tests/workspace-presets/loader.test.mjs",

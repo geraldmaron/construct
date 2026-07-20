@@ -46,17 +46,21 @@ docs/
 
 ## Interactive UX (TTY)
 
-When run interactively, `construct init --docs-preset=*` renders a keyboard-driven **full-screen checkbox picker**: all available lanes listed with the default set pre-checked and context-suggested lanes highlighted in the UI. No typing required.
+When run interactively on a real TTY, `construct init` renders keyboard-driven
+menus for documentation setup: **Packs**, **Individual docs**, or **Skip (docs
+folder only)**. Follow-up pack and lane pickers use the same menu pattern.
 
 - **↑ / ↓**: move cursor (details shown in a dedicated panel)
-- **Space**: toggle lane on/off
-- **a**: toggle all on/off
-- **Enter**: confirm and scaffold
-- Follow-up choices use the same menu pattern instead of free-text answers
+- **Space**: toggle lane on/off (individual lane picker)
+- **Enter**: confirm selection
+- **Q / Esc**: cancel
 
-The single canonical drop zone for ingestable files is `inbox/` at the project root (ADR-0045 §C); `construct init` scaffolds it with a gitignored `inbox/.staging/` for atomic handoff. The `intake` docs lane (`docs/intake/`) is a separate, optional durable paper-trail lane for intake batch records — it is not a watched drop zone.
+CI and non-TTY runs cannot exercise raw keyboard menus reliably. Automated
+coverage uses `CONSTRUCT_PROMPT_SCRIPT_FILE` (see
+`tests/functional/init-docs-menu.functional.test.mjs` and
+`lib/prompt-harness.mjs`) to queue scripted answers without manual input.
 
-When run non-interactively (`--yes` or piped stdin), the lean default set is used unless `--docs=` is supplied. `--docs=lean|product|full` or `--docs=adrs,prds,rfcs` both work.
+When run non-interactively (`--yes` or piped stdin), the default is **docs/ only** — no lane templates unless you pass `--docs-preset=lean|product|full`, `--docs=adrs,prds,rfcs`, or `--docs=all of them` (lean pack).
 
 ---
 
@@ -87,7 +91,7 @@ When run non-interactively (`--yes` or piped stdin), the lean default set is use
 | Has meeting minutes, agendas, retros, or standups | meetings |
 | Has `src/`, `lib/`, `api/`, or `services/` | rfcs |
 | Has research, customer, or market files | briefs |
-| Any project with decisions and requirements | adrs, prds (always lean default) |
+| Any project with decisions and requirements | adrs, prds (suggest when context warrants; not auto-scaffolded) |
 
 ---
 

@@ -24,8 +24,10 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-import { detect, exportMarkdown, EXPORT_FORMATS, docxRenderedDiagrams, htmlRenderedDiagrams } from '../../lib/document-export.mjs';
+import { detect, exportMarkdown, EXPORT_FORMATS, docxRenderedDiagrams, htmlRenderedDiagrams, assessFigureResolution } from '../../lib/document-export.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
+
+const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 
 const tmpDirs = [];
 
@@ -227,4 +229,48 @@ test('htmlRenderedDiagrams rejects raw source and accepts rendered tags', () => 
   fs.writeFileSync(resolved, '<html><body><img src="data:image/png;base64,abc" alt="diagram"></body></html>');
   assert.equal(htmlRenderedDiagrams(unresolved, src), false);
   assert.equal(htmlRenderedDiagrams(resolved, src), true);
+});
+
+test('assessFigureResolution reports figures:unresolved when HTML keeps diagram source', () => {
+  const dir = tmpDir('cx-figure-assess-');
+  const src = '## Flow\n\n```mermaid\nflowchart TD\nA --> B\n```\n';
+  const htmlPath = path.join(dir, 'unresolved.html');
+  fs.writeFileSync(htmlPath, '<html><body><pre>flowchart TD A --> B</pre></body></html>');
+  const assessment = assessFigureResolution('html', htmlPath, src);
+  assert.equal(assessment.resolved, false);
+  assert.equal(assessment.figuresUnresolved, true);
+  assert.equal(assessment.figuresExpected, 1);
+  assert.equal(assessment.figuresRendered, 0);
+});
+
+test('exportMarkdown soft-degrades figures:unresolved when figuresStrict is false', () => {
+  const dir = tmpDir('cx-export-soft-figures-');
+  const { dir: stubDir } = stubPandocPath('cx-export-soft-');
+  const inputPath = path.join(dir, 'diagrams.md');
+  const outputPath = path.join(dir, 'diagrams.html');
+  fs.writeFileSync(inputPath, '## Flow\n\n```mermaid\nflowchart TD\nA --> B\n```\n');
+  fs.writeFileSync(outputPath, '<html><body><pre>flowchart TD A --> B</pre></body></html>');
+  const env = { ...process.env, PATH: `${stubDir}:${process.env.PATH || ''}` };
+  const spawnFn = (_cmd, args, opts) => {
+    const oIdx = args.indexOf('-o');
+    if (oIdx >= 0 && args[oIdx + 1]) {
+      fs.copyFileSync(outputPath, args[oIdx + 1]);
+    }
+    return { status: 0, stdout: '', stderr: '' };
+  };
+  const result = exportMarkdown({
+    inputPath,
+    outputPath,
+    format: 'html',
+    figures: true,
+    figuresStrict: false,
+    env,
+    spawnFn,
+    repoRoot: REPO,
+    cwd: dir,
+    branding: 'plain',
+  });
+  assert.equal(result.ok, true, result.message);
+  assert.equal(result.figuresUnresolved, true);
+  assert.match(result.message, /figures:unresolved/);
 });

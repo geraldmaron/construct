@@ -51,7 +51,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/geraldmaron/construct.git"
+    "url": "git+https://github.com/geraldmaron/construct.git"
   },
   "homepage": "https://github.com/geraldmaron/construct",
   "bugs": {
@@ -144,5 +144,14 @@
     "knip": "^6.27.0",
     "playwright": "^1.61.1",
     "postject": "1.0.0-alpha.6"
-  }
+  },
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "example": "examples",
+    "lib": "lib",
+    "test": "tests"
+  },
+  "keywords": [],
+  "author": ""
 }

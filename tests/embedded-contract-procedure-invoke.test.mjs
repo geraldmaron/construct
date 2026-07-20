@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { invokeProcedure } from '../lib/embedded-contract/procedure-invoke.mjs';
+import { isLifecycleState } from '../lib/artifact-lifecycle.mjs';
 
 test('unknown Procedure returns a canonical error', async () => {
   const result = await invokeProcedure({ procedureId: 'unknown' }, { env: {} });
@@ -15,6 +16,7 @@ test('unknown Procedure returns a canonical error', async () => {
   assert.equal(result.errors[0].code, 'UNKNOWN_PROCEDURE');
   assert.match(result.procedureRunId, /^procedure-/);
   assert.ok(!('workflowId' in result));
+  assert.equal(result.lifecycle, undefined);
 });
 
 test('Procedure invocation selects Worker Profiles without retired fields', async () => {
@@ -24,6 +26,18 @@ test('Procedure invocation selects Worker Profiles without retired fields', asyn
   assert.deepEqual(result.selectedWorkerProfiles, ['product-manager', 'architect']);
   assert.equal(result.workerProfileStrategy, 'auto');
   for (const retired of ['workflowType', 'selectedRoles', 'roleStrategy']) assert.ok(!(retired in result));
+});
+
+test('Procedure invocation attaches plan-only lifecycle handoff', async () => {
+  const result = await invokeProcedure({ procedureId: 'prd-draft', approvalMode: 'proposal-only', recruitment: 'off' }, { env: {} });
+  assert.ok(result.lifecycle && typeof result.lifecycle === 'object');
+  assert.equal(result.lifecycle.state, 'planned');
+  assert.ok(isLifecycleState(result.lifecycle.state));
+  assert.equal(typeof result.lifecycle.nextAction, 'string');
+  assert.ok(result.lifecycle.nextAction.length > 0);
+  assert.match(result.lifecycle.nextAction, /plan only/i);
+  assert.equal(result.lifecycle.evidence.procedureId, 'prd-draft');
+  assert.equal(result.lifecycle.evidence.procedureStatus, 'proposed');
 });
 
 test('explicit Worker Profile selection filters unknown records', async () => {

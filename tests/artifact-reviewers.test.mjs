@@ -11,9 +11,31 @@ import {
   missingRequiredReviewers,
   parseReleaseGateFrontmatter,
   readAgentLogReviewers,
+  readOrchestrationRunReviewers,
 } from '../lib/artifact-reviewers.mjs';
+import { runtimeDir } from '../lib/orchestration/run-store.mjs';
 import { validateArtifactRelease } from '../lib/artifact-release-gate.mjs';
 import { validateArtifactPostconditions } from '../lib/contracts/validate.mjs';
+import { createHostSandbox } from './helpers/sterile-host-env.mjs';
+
+function writeOrchestrationRun(projectRoot, run) {
+  const dir = join(runtimeDir(projectRoot), 'runs');
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, `${run.runId}.json`), `${JSON.stringify(run, null, 2)}\n`);
+}
+
+function withSandbox(fn) {
+  const sandbox = createHostSandbox();
+  const prev = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = sandbox.root;
+  try {
+    fn(sandbox.root);
+  } finally {
+    if (prev === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prev;
+    sandbox.cleanup();
+  }
+}
 
 test('readAgentLogReviewers collects specialist ids', () => {
   const dir = mkdtempSync(join(tmpdir(), 'rev-log-'));
@@ -97,4 +119,43 @@ test('parseReleaseGateFrontmatter reads bypass fields', () => {
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test('readOrchestrationRunReviewers collects workerProfileIds from persisted runs', () => {
+  withSandbox((home) => {
+    const dir = mkdtempSync(join(home, 'rev-orch-'));
+    writeOrchestrationRun(dir, {
+      runId: 'run-reviewer-test',
+      status: 'completed',
+      createdAt: '2026-07-20T12:00:00.000Z',
+      tasks: [
+        { workerProfileId: 'architect', status: 'done' },
+        { workerProfileId: 'reviewer', status: 'done' },
+      ],
+    });
+    const seen = readOrchestrationRunReviewers(dir);
+    assert.ok(seen.has('reviewer'));
+    assert.ok(seen.has('cx-reviewer'));
+    assert.ok(seen.has('architect'));
+  });
+});
+
+test('missingRequiredReviewers accepts orchestration run evidence when agent log is empty', () => {
+  withSandbox((home) => {
+    const dir = mkdtempSync(join(home, 'rev-orch-gate-'));
+    mkdirSync(join(dir, 'docs', 'decisions', 'adr'), { recursive: true });
+    const file = join(dir, 'docs', 'decisions', 'adr', '001-example.md');
+    writeFileSync(file, '# ADR\n');
+    writeOrchestrationRun(dir, {
+      runId: 'run-adr-review',
+      status: 'completed',
+      createdAt: '2026-07-20T12:00:00.000Z',
+      tasks: [
+        { workerProfileId: 'architect', status: 'done' },
+        { workerProfileId: 'reviewer', status: 'done' },
+      ],
+    });
+    const missing = missingRequiredReviewers({ filePath: file, cwd: dir, docType: 'adr' });
+    assert.deepEqual(missing, []);
+  });
 });

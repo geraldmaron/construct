@@ -24,7 +24,7 @@ test('canonical registry commands list and show records', () => {
     const listed = execFileSync(process.execPath, [BIN, noun, 'list', '--json'], { cwd: ROOT, encoding: 'utf8' });
     const records = JSON.parse(listed);
     assert.ok(Array.isArray(records) && records.length > 0, `${noun} list should return records`);
-    const shown = execFileSync(process.execPath, [BIN, noun, 'show', records[0].id], { cwd: ROOT, encoding: 'utf8' });
+    const shown = execFileSync(process.execPath, [BIN, noun, 'show', records[0].id, '--json'], { cwd: ROOT, encoding: 'utf8' });
     assert.equal(JSON.parse(shown).id, records[0].id);
   }
 });

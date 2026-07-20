@@ -20,11 +20,11 @@ description: Advanced commands for Construct.
 | `construct embed` | Embed mode management |
 | `construct gates:audit` | Audit policy gates |
 | `construct hooks:health` | Check hook health |
-| `construct list` | List all agents |
+| `construct list` | List worker profiles (shortcut for worker-profile list); shows active Workspace Preset |
 | `construct monitor` | One-command setup for continuous monitoring-as-a-role: sources.targets + embed.yaml roles + capability enable + daemon start |
 | `construct policy` | Inspect rules governing authority, approval, and external effects |
 | `construct provider` | Provider management |
-| `construct role` | Role framework management |
+| `construct role` | Worker Profile invocation queue (event-driven dispatch) |
 | `construct roles:list` | List installed role contracts |
 | `construct roles:set` | Activate a role contract |
 | `construct scheduler` | Manage scheduled background jobs (tag-mining, doc-hygiene, skill-rollup) |
@@ -206,13 +206,19 @@ construct hooks:health
 
 ## construct list
 
-List all agents
+List worker profiles (shortcut for worker-profile list); shows active Workspace Preset
 
 **Usage**
 
 ```bash
-construct list
+construct list [--json]
 ```
+
+**Options**
+
+| Flag | Description |
+|---|---|
+| `--json` | Output worker profiles as JSON |
 
 ## construct monitor
 
@@ -275,13 +281,23 @@ construct provider list|status|health|validate|test|add|configure
 
 ## construct role
 
-Role framework management
+Worker Profile invocation queue (event-driven dispatch)
 
 **Usage**
 
 ```bash
 construct role <list|latest|show|status|resolve|prune|reset>
 ```
+
+**Subcommands**
+
+- `list` — Show pending Worker Profile invocations
+- `latest` — Show the most recent unresolved invocation brief
+- `show <fingerprint>` — Show one invocation by fingerprint
+- `status` — List onboarded Worker Profiles and their event types
+- `resolve <fingerprint>` — Mark one invocation resolved
+- `prune` — Drop resolved and TTL-expired queue entries
+- `reset` — Clear the pending invocation queue
 
 ## construct roles:list
 

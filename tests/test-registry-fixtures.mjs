@@ -69,7 +69,9 @@ export function getTeams() {
   return load().teams;
 }
 
-// For legacy compatibility: export objects that mimic the old file shapes
+// For legacy compatibility: export objects that mimic the old file shapes.
+// Compat surface (owner: construct-tsyfe.8.18, expires: 2026-12-31): test-only
+// specialists export mirrors workerProfiles until fixture corpus drops cx-era keys.
 export const registry = new Proxy({}, {
   get: (target, prop) => {
     const data = load();

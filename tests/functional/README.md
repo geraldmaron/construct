@@ -91,6 +91,15 @@ node --test tests/functional/a1-session-reflect.functional.test.mjs
 
 These run as part of `npm test` so the gate fails the same way locally as in CI.
 
+### Interactive init docs menu (construct-su4dd)
+
+CI has no dependable pseudo-TTY for keyboard menus. Functional coverage for
+`construct init --interactive` docs setup (Packs / Individual / Skip) uses
+`CONSTRUCT_PROMPT_SCRIPT` or `CONSTRUCT_PROMPT_SCRIPT_FILE` — a JSON queue
+consumed by `lib/prompt-harness.mjs` and `lib/tty-prompts.mjs` instead of
+`process.stdin` raw mode. See `tests/functional/init-docs-menu.functional.test.mjs`.
+Menu option stability is pinned in `tests/init-docs-interactive.test.mjs`.
+
 ## Test runner
 
 `node --test` (via `scripts/run-tests.mjs`) is the sole supported test runner. The suite

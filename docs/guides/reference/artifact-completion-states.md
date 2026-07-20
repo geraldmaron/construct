@@ -53,5 +53,6 @@ The `artifact-completion` module is consumed by:
 - **Publish pipeline** — records evidence from each export step
 - **Workflow reporter** — displays the state ladder and current position in run summaries
 - **MCP tools** — `artifact_workflow` and `publish_run` report completion ledgers
+- **Authoring handoff** — `author_artifact`, `runConstructArtifactLoop`, and `construct publish` return a compact lifecycle object (`planned` through `published`) with the next required action; this is separate from the 12-rung completion ledger above but uses overlapping vocabulary at the user boundary
 
 Use `construct publish --preview` to render an export and inspect screenshots before recording a visual-review verdict.
