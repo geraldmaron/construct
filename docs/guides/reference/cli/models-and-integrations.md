@@ -37,13 +37,14 @@ Inspect typed operations the system can perform
 **Usage**
 
 ```bash
-construct capability list|show
+construct capability list|show|describe
 ```
 
 **Subcommands**
 
 - `list` — List capabilities
 - `show <id>` — Show one capability
+- `describe` — Emit the read-only capability contract for this install (--json)
 
 ## construct claude:allow
 

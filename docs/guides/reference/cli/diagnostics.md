@@ -26,13 +26,14 @@ Audit Construct internals and review the mutation trail
 **Usage**
 
 ```bash
-construct audit <skills|worker-profiles|tests|trail>
+construct audit <skills|worker-profiles|prompts-skills|tests|trail>
 ```
 
 **Subcommands**
 
 - `skills` — Audit skill corpus coverage and metadata (`--inventory` checks certification skill inventory freshness)
 - `worker-profiles` — Audit worker profile and skill cross-checks
+- `prompts-skills` — Audit obsolete prompts, unrouted skills, and stale role references (`--remediate` fixes MCP catalog usedBy drift)
 - `tests` — Validate behavior-to-test capability traceability (`--corpus` checks test-file inventory)
 - `trail` — Review mutation audit trail
 
