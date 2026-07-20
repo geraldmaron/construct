@@ -78,7 +78,7 @@
     "graph:verify": "node scripts/run-graph-verify.mjs",
     "graph:impact-promotion": "node scripts/graph-impact-promotion-report.mjs",
     "graph:impact-gate": "node scripts/graph-impact-gate.mjs",
-    "lint:agents": "node ./bin/construct lint:agents",
+    "lint:agents": "node ./bin/construct lint:worker-profiles",
     "gates:audit": "node ./bin/construct gates:audit",
     "evals": "node ./bin/construct evals",
     "certify:demos": "node ./bin/construct certify demos",
