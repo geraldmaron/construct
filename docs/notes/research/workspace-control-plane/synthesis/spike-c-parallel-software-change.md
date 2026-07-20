@@ -299,10 +299,10 @@ parallel sessions against the same worktree, also left untouched.
 **One real-host side effect, found and cleaned up.** Running `npm test` in
 the scratch integration worktree tripped this repo's own sterility guard
 (`tests/helpers/sterile-host-env.mjs`): `Sterile drift — real host config
-changed: construct:projects — project keys added: f69263bdbb0833a4ecf55176`.
+changed: construct:projects — project keys added: <construct-project-key-from-npm-test>`.
 Separately, this spike's own manual `node bin/construct graph build` command
 (run to investigate the category-2 failures above) created a second entry,
-`be9a3556512aaaab62c57afe`. Both are literal directory names under the real
+`<construct-project-key-from-graph-build>`. Both are literal directory names under the real
 `~/.construct/projects/` on the host machine — `projectId`-keyed state that
 some code path writes outside of any sandbox, keyed by a hash of the cwd. Cross-
 checked their timestamps (20:23 and 20:26) against the nine other pre-existing
