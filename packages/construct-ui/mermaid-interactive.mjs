@@ -34,6 +34,7 @@ export function buildMermaidInitializeConfig({
   const palette = theme === 'light'
     ? { bg: '#fafaf9', txt: '#0a0a0a', line: '#bbb', node: '#ffffff', border: '#0a0a0a' }
     : { bg: '#050505', txt: '#f4f4f4', line: '#3a3a3a', node: '#0e0e0e', border: '#f4f4f4' };
+  /** @type {import('mermaid').MermaidConfig} */
   const config = {
     startOnLoad: false,
     theme: 'base',
@@ -84,6 +85,18 @@ export function withRenderTimeout(promise, timeoutMs = MERMAID_RENDER_TIMEOUT_MS
   });
 }
 
+/**
+ * @param {object} [options]
+ * @param {string} [options.id]
+ * @param {'dark'|'light'} [options.theme]
+ * @param {'classic'|'handDrawn'} [options.look]
+ * @param {number} [options.seed]
+ * @param {string} [options.engineVersion]
+ * @param {string} [options.accessibilityDescription]
+ * @param {boolean} [options.degraded]
+ * @param {string|null} [options.reason]
+ * @param {string} [options.chart]
+ */
 export function buildInteractiveMermaidDiagramCard({
   id,
   theme = 'dark',

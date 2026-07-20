@@ -6,6 +6,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Fixed
 
+- PR 419 CI: fix docs-site Mermaid `MermaidConfig` typing; regenerate `tests/AUDIT.md` / corpus inventory; pin CycloneDX SBOM via devDependency and `npm exec` in release workflow; VHS tapes accept bash `>` continuation prompts; per-batch 120s timeout for functional and lazy-import shards; align `git` provider manifest certification and manifest count tests.
+
 - PR 419 CI follow-up: eslint duplicate-key and `resolveRootDir` import fixes; move `@huggingface/transformers` to devDependencies so `audit:published` stays clean; remove no-op sync-worker-profiles branches.
 
 - PR 419 CI fixes: gitleaks allowlist for workspace-control-plane research synthesis docs and redacted construct project-key placeholders; `lib/document-export.mjs` resolves default format-engine manifest via `packageRoot` for Bun-compiled binaries; comment-lint skips email-mime and playwright demo fixtures; repair invalid `upload-artifact` action pin in `ci.yml`; `adm-zip` npm override for high CVE in optional `@huggingface/transformers`; comment-policy cleanups in certification/oracle sources.

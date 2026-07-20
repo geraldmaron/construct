@@ -374,6 +374,20 @@
       ]
     },
     {
+      "path": "compat",
+      "owner": "runtime",
+      "class": "product",
+      "consumers": [
+        "ADR-governed compatibility surface registry"
+      ],
+      "published": true,
+      "action": "retain",
+      "replacement": null,
+      "evidence": [
+        "compat/surfaces.json"
+      ]
+    },
+    {
       "path": "deploy",
       "owner": "deployment",
       "class": "distribution",

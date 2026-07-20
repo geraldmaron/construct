@@ -50,7 +50,8 @@
     "03-docs:unnavigated-doc-dir:docs/obsolete",
     "03d-brand:brand-marketing-voice:skills/perspectives/product-manager.md_26",
     "02-deadcode:module-test-only:lib/document-extract/audio-provider-benchmark.mjs",
-    "02-deadcode:module-test-only:lib/document-extract/docling-serve-parity.mjs"
+    "02-deadcode:module-test-only:lib/document-extract/docling-serve-parity.mjs",
+    "02-deadcode:module-test-only:lib/storage/vector-store-recovery.mjs"
   ],
   "justifications": {
     "03-docs:review-doc-reference:matrix": "ADR-0053 is the historical record of the `construct matrix` deprecation decision and names the command in its Decision, Alternatives, and Consequences sections. The removal it planned landed in construct-b0nny.28 (workspace-control-plane E9); the ADR carries a Removal note recording that. Rewriting a decision record to erase the command it decided to deprecate would falsify the record, so the reference is intentional.",
@@ -64,5 +65,8 @@
     "02-deadcode:dead-module:lib/telemetry/team-rollup.mjs": "Team-rollup telemetry module is orphaned pending org-metaphor removal in lib/.",
     "02-deadcode:module-test-only:lib/document-extract/audio-provider-benchmark.mjs": "Hermetic extraction benchmark harness (construct-tsyfe.2.10): compares whisper-cli vs Docling on fixtures; intentionally test-only until a scheduled benchmark runner imports it.",
     "02-deadcode:module-test-only:lib/document-extract/docling-serve-parity.mjs": "Docling Serve parity certification harness (construct-tsyfe.2.5): local sidecar vs remote comparison on the extraction corpus; test-only by design."
+  },
+  "notes": {
+    "02-deadcode:module-test-only:lib/storage/vector-store-recovery.mjs": "LanceDB backup/restore helpers exercised by tests/storage/vector-store-recovery.test.mjs; production wiring pending vector store rollout."
   }
 }

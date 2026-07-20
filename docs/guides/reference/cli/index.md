@@ -14,3 +14,4 @@ Commands are grouped by what they do. Pick a category below.
 - [Observability](/guides/reference/cli/observability) — 12 commands
 - [Diagnostics](/guides/reference/cli/diagnostics) — 11 commands
 - [Advanced](/guides/reference/cli/advanced) — 30 commands
+- [Command catalog](/guides/reference/cli/command-catalog) — machine-readable reconciliation table
