@@ -14,6 +14,12 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Added
 
+- Standing Assignment durable model on WCP branch (`construct-4uxq0.10.3`): restored `lib/embed/standing-assignments.mjs` and capability-job convergence from staging; `registerEmbedCapabilityJobs` materializes `capability:<id>` assignments and wraps ticks in `runAssignmentAttempt` so `lastAttemptAt` advances only after execution. CLI: `construct embed assignments list|status`. Covered by `tests/functional/standing-assignments.functional.test.mjs`.
+
+- Meaningful-change gate for Standing Assignments (`construct-4uxq0.11.4`): `lib/assignments/meaningful-change-gate.mjs` runs deterministic stages (cursor comparison, dedup, filter evaluation, content hashing, relevance threshold, prior-run comparison) before reasoning-token spend; `runCapabilityTick` consults the gate when snapshot evidence is present. Covered by `tests/assignments/meaningful-change-gate.test.mjs`.
+
+- Construct 2.0.0 certification posture (thin v2 hygiene): OSV/license dependency review and ACP host matrix are warn-first or documented-unverified until manual triage; `protocol-surface-rollup` and `supply-chain-release-gate` block on tag release path only; Bun binary smoke (`bun-binary-smoke.yml`) is non-gating; Node SEA (`release.yml`) is the production binary path.
+
 - OSV, license policy, and dependency review CI (`construct-tsyfe.10.1`): `.github/workflows/supply-chain.yml` runs OSV scanning against `package-lock.json` and GitHub dependency review with `.github/license-allowlist.json`, both warn-first until triage completes. Expiring exceptions live in `.github/supply-chain-exceptions.json` and fail mechanically when past `expires` via `scripts/check-supply-chain-exceptions.mjs` (also wired in `ci.yml` audit and the supply-chain workflow). Covered by `tests/scripts/check-supply-chain-exceptions.test.mjs`.
 
 - Composed supply-chain release go/no-go (`construct-tsyfe.10.7`): `scripts/supply-chain-release-gate.mjs` conjunctively composes OSV/license wiring, SBOM release step, provider-card validation, packed-install wiring, compiled-binary certification evidence, and compat-surface expiration. Wired as a blocking step on `release.yml`'s tag path. Philosophy mirrors `construct-4uxq0.14.4` (alive is not sufficient); scope lesson from `construct-9tg43`. Covered by `tests/scripts/supply-chain-release-gate.test.mjs`.
