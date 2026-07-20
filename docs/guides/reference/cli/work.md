@@ -184,13 +184,13 @@ Task graph management
 **Usage**
 
 ```bash
-construct graph <list|show|from-intake|recommend|build|stat|query|validate|explain|owasp|update|reconcile|queryUp|queryDown|path|orphans|cycles|owners|requirements|export>
+construct graph <list|show|from-intake|recommend|build|stat|query|validate|verify|impacted|intent|explain|owasp|update|reconcile|queryUp|queryDown|path|orphans|cycles|owners|requirements|export>
 ```
 
 **Subcommands**
 
 - `recommend --json [--text|--file|<stdin>]` — Return a role-aware plan for an artifact without enqueuing (embedded contract; alias of intake classify)
-- `build|stat|query|validate|explain` — Living dependency graph — build/inspect/validate the typed file↔capability↔procedure↔test↔embed graph
+- `build|stat|query|validate|verify|explain` — Living dependency graph — build/inspect/validate/verify the typed file↔capability↔procedure↔test↔embed graph
 - `owasp | missing-tests --security` — OWASP GenAI Top-10 coverage matrix and the procedure/preset security-coverage gap list (LMCP-N8)
 - `update | reconcile` — Relational graph store (construct-b0nny.3): drain the incremental outbox, or diff a fresh rebuild against live state and apply drift
 - `queryUp <id> [--rel <r>...] | queryDown <id> [--rel <r>...]` — Directive §4.8 up/downstream traversal (construct-b0nny.21), rel-filtered and depth-capped (construct-b0nny.12)
@@ -364,8 +364,14 @@ Manage storage backend
 **Usage**
 
 ```bash
-construct storage <status|reset>
+construct storage <sync|status|reset|delete-ingested|repair-migrations|migrations|reconcile>
 ```
+
+**Subcommands**
+
+- `sync` — Sync file-backed state into shared SQL when configured
+- `status` — Report storage backend status
+- `reset` — Reset storage (--yes required)
 
 ## construct synthesize
 

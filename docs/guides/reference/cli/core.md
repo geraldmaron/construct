@@ -96,7 +96,7 @@ Check installation health
 **Usage**
 
 ```bash
-construct doctor [<status|logs|tick|report|consistency|watch|stop|credentials>]
+construct doctor [<status|logs|tick|report|production|consistency|watch|stop|credentials>]
 ```
 
 **Subcommands**
@@ -105,6 +105,7 @@ construct doctor [<status|logs|tick|report|consistency|watch|stop|credentials>]
 - `logs` — Tail doctor daemon logs
 - `tick` — Run one doctor daemon check cycle now
 - `report` — Print the latest health report
+- `production` — Local production go/no-go health gate (construct-4uxq0.14.4)
 - `consistency` — Run cross-surface consistency checks
 - `watch` — Start the doctor daemon (continuous checks)
 - `stop` — Stop the doctor daemon
@@ -198,7 +199,7 @@ Oracle meta-controller — fleet health review and bounded-auto maintenance
 **Usage**
 
 ```bash
-construct oracle status|review|pending|approve|gaps|reconcile|invariants
+construct oracle status|review|pending|approve|gaps|reconcile|invariants|impact|semantic-review|miss|miss-analysis
 ```
 
 ## construct recommendations
