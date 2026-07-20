@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "type": "module",
   "packageManager": "npm@11.5.1",
-  "description": "Construct — agent orchestration layer for OpenCode, Claude Code, and other coding surfaces",
+  "description": "Construct \u2014 agent orchestration layer for OpenCode, Claude Code, and other coding surfaces",
   "bin": {
     "construct": "bin/construct"
   },
@@ -66,7 +66,7 @@
     "ci:local": "bash scripts/ci-repro/run.sh",
     "lint:js": "eslint bin/construct \"lib/**/*.mjs\" \"scripts/**/*.mjs\" \"tests/**/*.mjs\"",
     "coverage": "c8 --reporter=text-summary --reporter=lcov --src=lib --src=bin node scripts/run-tests.mjs --exclude=tests/functional",
-    "docs:init": "node -e \"console.error('docs:init is deprecated — use: construct init --docs-preset=lean|product|full'); process.exit(1)\"",
+    "docs:init": "node -e \"console.error('docs:init is deprecated \u2014 use: construct init --docs-preset=lean|product|full'); process.exit(1)\"",
     "docs:verify": "node ./bin/construct docs:verify",
     "docs:update": "node ./bin/construct docs:update",
     "docs:site": "node ./bin/construct docs:site",
@@ -83,7 +83,7 @@
     "evals": "node ./bin/construct evals",
     "certify:demos": "node ./bin/construct certify demos",
     "certify:document-io": "node ./bin/construct certify document-io --certified",
-    "build:sea": "esbuild bin/construct --bundle --platform=node --target=node20 --packages=external --outfile=dist/construct-bundle.cjs 2>&1 || (echo 'esbuild not found — install with: npm install -g esbuild' && exit 1)",
+    "build:sea": "esbuild bin/construct --bundle --platform=node --target=node20 --packages=external --outfile=dist/construct-bundle.cjs 2>&1 || (echo 'esbuild not found \u2014 install with: npm install -g esbuild' && exit 1)",
     "build:binary": "node scripts/build-binary.mjs",
     "build:binary:fallback": "node scripts/build-sea.mjs",
     "examples:deck": "node scripts/generate-deck-examples.mjs",
@@ -164,5 +164,8 @@
     "test": "tests"
   },
   "keywords": [],
-  "author": ""
+  "author": "",
+  "overrides": {
+    "adm-zip": "0.6.0"
+  }
 }

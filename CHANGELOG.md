@@ -6,6 +6,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Fixed
 
+- PR 419 CI fixes: gitleaks allowlist for workspace-control-plane research synthesis docs and redacted construct project-key placeholders; `lib/document-export.mjs` resolves default format-engine manifest via `packageRoot` for Bun-compiled binaries; comment-lint skips email-mime and playwright demo fixtures; repair invalid `upload-artifact` action pin in `ci.yml`; `adm-zip` npm override for high CVE in optional `@huggingface/transformers`; comment-policy cleanups in certification/oracle sources.
+
 - Cross-source watch evidence cursor (`construct-4uxq0.11.1`): `lib/sources/watch.mjs` no longer advances `lastSeenHead` / `lastSeenHash` at detection time when a change is pending. `refreshWatch()` records ledger entries and stores `pendingHead` / `pendingHash`; `acknowledgeSourceChange()` advances the watermark after downstream processing. Covered by `tests/sources/watch-evidence-cursor.test.mjs` and updated functional tests in `tests/functional/source-watch-*.functional.test.mjs`.
 
 ### Added

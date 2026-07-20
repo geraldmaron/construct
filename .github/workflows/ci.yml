@@ -184,7 +184,7 @@ jobs:
           cp .construct/shadow-impact.json ".construct/shadow-history/${{ github.run_id }}.json"
       - name: upload shadow-impact artifact
         if: github.event_name == 'pull_request' && matrix.shard == 1 && matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@ea165f8d65b6e75b539448e36bfa567e5b086e33 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4.6.2
         with:
           name: shadow-impact-${{ github.run_id }}
           path: .construct/shadow-impact.json

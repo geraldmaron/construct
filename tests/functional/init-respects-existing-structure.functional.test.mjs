@@ -186,7 +186,7 @@ test('issue #97 regression guard: clean project with --with-all-docs still scaff
     const result = runInit(f.dir, f.home, ['--with-all-docs']);
     assert.equal(result.status, 0, `init on clean project exited ${result.status}\nstderr:\n${result.stderr}`);
 
-    // Explicit --with-all-docs includes meetings; bare --yes no longer auto-picks lanes.
+    // --with-all-docs must materialize docs/meetings on a clean project.
     assert.equal(existsSync(join(f.dir, 'docs', 'meetings')), true, 'clean project with --with-all-docs must get docs/meetings/');
     assert.equal(existsSync(join(f.dir, 'inbox')), true, 'clean project must still get inbox/');
   } finally { f.cleanup(); }
