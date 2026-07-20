@@ -165,7 +165,7 @@ test('construct doctor surfaces cumulative spend from the real ledgers', () => {
   try {
     process.env.CONSTRUCT_DOCTOR_ROOT = rootDir;
     try {
-      recordSpend({ personaId: 'sre', tokens: 1200, costUsd: 0.25 });
+      recordSpend({ workerProfileId: 'sre', tokens: 1200, costUsd: 0.25 });
     } finally {
       delete process.env.CONSTRUCT_DOCTOR_ROOT;
     }

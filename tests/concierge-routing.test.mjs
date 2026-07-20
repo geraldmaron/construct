@@ -28,7 +28,9 @@ import {
 import { routeRequest } from "../lib/orchestration-policy.mjs";
 import { loadRegistry } from "../lib/registry/loader.mjs";
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+function assignmentWorkerProfileIds(route) {
+  return (route.assignments || []).map((assignment) => assignment.workerProfileId);
+}
 
 function tmpRoot() {
   const dir = mkdtempSync(join(tmpdir(), "cx-routing-"));
@@ -164,25 +166,20 @@ describe("dispatch plan persistence", () => {
 
 // ── Internal agent isolation ──────────────────────────────────────────────────
 
-describe("registry: internal agent isolation", () => {
-  it("all agents in registry have internal:true", async () => {
-     const registry = loadRegistry({ rootDir: join(import.meta.dirname, "..") });
-
-     const exposed = Object.values(registry.specialists).filter((a) => a.role !== "orchestrator" && !a.internal);
-     assert.deepEqual(
-       exposed,
-       [],
-       `These agents are not marked internal and will be visible in user-facing adapters: ${exposed.map((a) => a.name).join(", ")}`
-     );
-   });
-
-  it("only construct persona exists and is not internal", async () => {
+describe("registry: worker profile catalog", () => {
+  it("worker profiles are keyed by canonical id", () => {
     const registry = loadRegistry({ rootDir: join(import.meta.dirname, "..") });
 
-    const orch = Object.values(registry.specialists || {}).find((s) => s.role === "orchestrator");
-    assert.ok(orch, "Expected specialist with role=orchestrator");
-    assert.equal(orch.name, "orchestrator");
-    assert.equal(orch.internal, undefined, "Construct orchestrator must not be marked internal");
+    for (const [id, profile] of Object.entries(registry.workerProfiles)) {
+      assert.equal(profile.id, id);
+    }
+  });
+
+  it("orchestrator worker profile exists", () => {
+    const registry = loadRegistry({ rootDir: join(import.meta.dirname, "..") });
+
+    assert.ok(registry.workerProfiles.orchestrator);
+    assert.equal(registry.workerProfiles.orchestrator.id, "orchestrator");
   });
 });
 
@@ -211,8 +208,8 @@ describe("routing contract: expected dispatch per request type", () => {
     { request: "run full autonomous build", fileCount: 4, moduleCount: 2, explicitDrive: true, track: "orchestrated", specialists: ["architect", "engineer", "reviewer", "qa"] },
   ];
 
-  for (const { request, fileCount, moduleCount, explicitDrive, track, specialists, productFlavor, roleFlavors } of routingTable) {
-    it(`"${request}" → ${track}${specialists.length ? ` via ${specialists.join(" + ")}` : ""}`, () => {
+  for (const { request, fileCount, moduleCount, explicitDrive, track, specialists: workerProfiles, productFlavor, roleFlavors } of routingTable) {
+    it(`"${request}" → ${track}${workerProfiles.length ? ` via ${workerProfiles.join(" + ")}` : ""}`, () => {
       const route = routeRequest({ request, fileCount, moduleCount, explicitDrive });
       assert.equal(route.track, track);
       if (productFlavor) assert.equal(route.productFlavor, productFlavor);
@@ -221,8 +218,9 @@ describe("routing contract: expected dispatch per request type", () => {
           assert.equal(route.roleFlavors[role], flavor);
         }
       }
-      for (const specialist of specialists) {
-        assert.ok(route.specialists.includes(specialist), `${request} missing specialist ${specialist}`);
+      const routed = assignmentWorkerProfileIds(route);
+      for (const workerProfileId of workerProfiles) {
+        assert.ok(routed.includes(workerProfileId), `${request} missing worker profile ${workerProfileId}`);
       }
     });
   }

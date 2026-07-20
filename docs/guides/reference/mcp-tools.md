@@ -15,7 +15,7 @@ Construct exposes a Model Context Protocol (MCP) server consumed by Claude Code,
 
 ## Tool surface (gateway)
 
-To keep the serialized tool schema small enough for any context window — a flat 76-tool surface (~15k tokens) overran a 32k local-model window — `ListTools` exposes a **curated core** plus the `call` **gateway** and the `find_tool` **discovery** tool. The core front-loads the read/think tools (`orchestration_policy`, `orchestration_run`, `orchestration_readiness`, `get_skill`, `get_template`, `search_skills`, `suggest_skills`, `knowledge_search`, `memory_search`, `project_context`, `summarize_diff`, `find_tool`) **and the high-value action tools agents reach for directly** (`author_artifact`, `document_export`, `publish_run`, `artifact_workflow`, `triage_recommend`), since burying those behind the gateway made the common case the failing case. Every other tool stays reachable through `call`, and `find_tool` ranks the whole catalog by intent so the surface scales without a hand-maintained list (ADR-0048).
+To keep serialized tool schemas from consuming the context window, `ListTools` does not expose the flat 82-tool catalog. It exposes a **curated core** plus the `call` **gateway** and the `find_tool` **discovery** tool. The core front-loads the read/think tools (`orchestration_policy`, `orchestration_run`, `orchestration_readiness`, `get_skill`, `get_template`, `search_skills`, `suggest_skills`, `knowledge_search`, `memory_search`, `project_context`, `summarize_diff`, `find_tool`) **and the high-value action tools agents reach for directly** (`author_artifact`, `document_export`, `publish_run`, `artifact_workflow`, `triage_recommend`), since burying those behind the gateway made the common case the failing case. Every other tool stays reachable through `call`, and `find_tool` ranks the whole catalog by intent so the surface scales without a hand-maintained list (ADR-0048).
 
 ### `find_tool`
 Find Construct tools by intent when you do not know the exact name. Pass a natural-language `query` (and optional `limit`) describing the task; returns the best-matching tools with their full input schemas, ranked by hybrid local-embedding semantic similarity merged with normalized BM25 — degrading to BM25-only when no semantic model is provisioned, so it works offline. Then invoke a result via `call` (or directly when it is a flat tool). E.g. `find_tool({ query: "export a markdown file to pdf" })` → `document_export`.
@@ -252,7 +252,7 @@ Queries the MCP broker's policy gate for a pending action without executing it. 
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `role` | string | Yes | Persona name (e.g. `engineer`, `security`): must match a key in `specialists/role-manifests.json` for team / enterprise mode |
+| `role` | string | Yes | Worker Profile id (e.g. `engineer`, `security`): must match a profile in `registry/worker-profiles/*.json` for team / enterprise mode |
 | `tool` | string | Yes | Tool the agent wants to invoke (e.g. `github`, `fs`) |
 | `action` | string | Yes | Action on that tool (e.g. `create_pr`, `edit:lib/foo.mjs`) |
 | `project` | string (optional) | | Project scope for the decision |
@@ -540,7 +540,7 @@ Validate the current workflow state against the schema and run consistency check
 | `cwd` | string | Project root (default: server cwd). |
 
 ### `workflow_contract_validate`
-Validate a producer→consumer handoff against specialists/contracts.json. Required when a specialist hands off to another role: enforces input.mustContain, output schema, disk-artifact postconditions, and binary postconditions per producer (rubber-stamp prevention, post-hoc threat-model prevention, etc.). Self-enforcing: a producer with binary rules MUST pass `packet`, or the call itself is a contract violation.
+Validate a producer→consumer handoff against Capability postconditions in `registry/capabilities.json`. Required when one Worker Profile hands off to another: enforces input.mustContain, output schema, disk-artifact postconditions, and binary postconditions per producer (rubber-stamp prevention, post-hoc threat-model prevention, etc.). Self-enforcing: a producer with binary rules MUST pass `packet`, or the call itself is a contract violation.
 
 | Parameter | Type | Description |
 |---|---|---|
@@ -767,7 +767,7 @@ Describe what this Construct install can do: versions, contract interfaces (CLI/
 | `root_dir` | string | Optional Construct install root (default: server toolkit dir). |
 
 ### `construct_execution_resolve`
-Resolve the execution-capability contract for an embedded workflow before/at workflow start: `executionMode` (construct-orchestrated | construct-prompt-only | host-direct | same-family-fallback), `constructCapabilitiesActive` (subset of personas/skills/workflow-routing/prompt-envelope), `degraded` + machine-readable `degradationReason`, `requestedStrategy` vs `effectiveStrategy`, and the resolved provider/model. Descriptive, not enforced (ADR-0019): reports what Construct planned and can resolve a model for, never an observation that the host ran personas (see the `semantics` field). Read-only and secret-free.
+Resolve the execution-capability contract for an embedded workflow before/at workflow start: `executionMode` (construct-orchestrated | construct-prompt-only | host-direct | same-family-fallback), `constructCapabilitiesActive` (subset of Worker Profiles/skills/procedure-routing/prompt-envelope), `degraded` + machine-readable `degradationReason`, `requestedStrategy` vs `effectiveStrategy`, and the resolved provider/model. Descriptive, not enforced (ADR-0019): reports what Construct planned and can resolve a model for, never an observation that the host ran internal profiles (see the `semantics` field). Read-only and secret-free.
 
 | Parameter | Type | Description |
 |---|---|---|
@@ -810,7 +810,7 @@ Pass `candidates` to route pre-retrieved artifacts to specialists as role-aware 
 | `host` | string | Host/IDE identifier (advisory). |
 | `host_model` | string | Model the host uses, for model resolution. |
 | `host_provider` | string | Provider family the host uses, for model resolution. |
-| `file_count` | number | Optional planning hint: number of files in scope. Pass this (or `module_count`) when the work has real scope — see the specialists/routePath note above. |
+| `file_count` | number | Optional planning hint: number of files in the work boundary. Pass this (or `module_count`) when the Assignment has real breadth — see the routePath note above. |
 | `module_count` | number | Optional planning hint: number of modules in scope. |
 | `context_targets` | array | Optional registered source targets to bind for context (`[{id, role?}]`); an unknown id is rejected at plan time. |
 | `candidates` | array | Optional pre-retrieved artifacts routed to specialists as role-aware context (`[{path, title, kind, summary, score?, skillId?}]`). Filtered per role by the context policy; a `kind: "skill"` entry is dropped for any role not entitled to it. |
@@ -829,18 +829,6 @@ Submit one host-executed specialist task result for a run planned with `worker_b
 | `model` | string | Optional: the model used to execute this task (self-reported). |
 | `provider` | string | Optional: the provider/vendor family used (self-reported). |
 | `reasoning` | string | Optional: reasoning/thinking for this task, if disclosed. |
-
-### `participation_rules`
-Author and inspect ADR-0070 participation rules — condition-driven `when(signals) → recruit(specialists|teams)` declarations with role and gate semantics (construct-pteo2.16). Every action is a thin envelope over `lib/registry/org-api.mjs`, the same writer `construct participation` and Org Studio's participation canvas wrap, so all three surfaces produce identical config writes and identical validation errors. Writes land in the project or user tier only; the builtin tier is refused at the shared org-api layer.
-
-| Parameter | Type | Description |
-|---|---|---|
-| `action` | string | **required** — One of `list`, `show`, `add`, `validate`, `remove`, `preview`, `meta`. |
-| `owner` | string | Owning specialist or team id the rule attaches to (`show`/`add`/`validate`/`remove`). |
-| `rule_id` | string | Rule id (`show`/`remove`). |
-| `rule` | object | The participation rule (`add`/`validate`), `schemas/participation-rules.schema.json` shape. |
-| `request` | string | Sample request text (`preview` — recruited set via the live `requestSignals` + recruiter path). |
-| `scope` | string | Write tier for `add`/`remove`: `project` (default) or `user`. |
 
 ### `orchestration_readiness`
 Report whether this MCP session has Construct orchestration tools attached and reachable now. Returns a pass/fail verdict, typed `reasonCode`, one deterministic `nextStep`, required/observed/missing tools, and a redacted diagnostic bundle. This is an observed attachment check, unlike `construct_execution_resolve`, which remains a descriptive planning/model-resolution contract.

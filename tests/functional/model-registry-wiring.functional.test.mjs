@@ -36,14 +36,13 @@ after(() => {
   }
 });
 
-// A minimal toolkit whose org tree mirrors the repo (assembleRegistry requires
+// A minimal toolkit whose registry tree mirrors the repo (assembleRegistry requires
 // registry to exist) plus the registry file under test.
 function toolkitWith(models) {
   const dir = freshDir('cx-registry-toolkit-');
-  const org = path.join(dir, 'specialists', 'org');
-  fs.cpSync(path.join(REPO_ROOT, 'specialists', 'org'), org, { recursive: true });
+  fs.cpSync(path.join(REPO_ROOT, 'registry'), path.join(dir, 'registry'), { recursive: true });
   if (models) {
-    fs.writeFileSync(path.join(org, 'models.json'), JSON.stringify({ models }, null, 2));
+    fs.writeFileSync(path.join(dir, 'registry', 'models.json'), JSON.stringify({ models }, null, 2));
   }
   return dir;
 }

@@ -30,13 +30,13 @@ Two signal sources evaluate the same dimension vocabulary:
 
 Two mechanisms in `lib/orchestration/recruiter.mjs` map a truthy dimension to participants; a vertical typically uses both:
 
-- **Skill affinity** (`CANONICAL_AFFINITIES`) — the dimension names skill patterns, and the recruiter queries the assembled registry for specialists whose declared skills match; the specialist with the *fewest* declared skills wins (a narrow skill set that matches is a stronger specialization claim). For `cost` the patterns are `cost-optimization`, `pricing-positioning`, `raw-data-structuring`, which resolves to **cx-data-analyst** (3 declared skills) over cx-product-manager (13, matching `strategy/pricing-positioning`). Projects overlay affinities via `.construct/orchestration/recruitment-affinities.json`.
-- **Participation rules** — a `participationRules` block on any registry entry (specialist or team JSON under `registry/`), validated against `schemas/participation-rules.schema.json`. Each rule is `when(signalExpr | watchCondition) → recruit(specialists | teams)` plus `role` (author/reviewer/advisor), `gate` (advisory by default; `enforced` requires an `enforcementScope` naming a team decisionRight), and a `reason` string surfaced verbatim in trace output.
+- **Skill affinity** (`CANONICAL_AFFINITIES`) — the dimension names skill patterns, and the recruiter queries the assembled registry for Worker Profiles whose declared Skills match; the profile with the *fewest* declared skills wins (a narrow skill set that matches is a stronger specialization claim). For `cost` the patterns are `cost-optimization`, `pricing-positioning`, `raw-data-structuring`, which resolves to **data-analyst** (3 declared skills) over product-manager (13, matching `strategy/pricing-positioning`). Projects overlay affinities via `.construct/orchestration/recruitment-affinities.json`.
+- **Participation rules** — a `participationRules` block on any registry entry (Worker Profile JSON under `registry/worker-profiles/`), validated against `schemas/participation-rules.schema.json`. Each rule is `when(signalExpr | watchCondition) → recruit(workerProfiles | procedures)` plus `role` (author/reviewer/advisor), `gate` (advisory by default; `enforced` requires an `enforcementScope` naming a Policy decision right), and a `reason` string surfaced verbatim in trace output.
 
 The cost vertical declares two rules:
 
-- `cost-quant-review` on [`registry/specialists/cx-data-analyst.json`](../../../registry/specialists/cx-data-analyst.json): `signalExpr: "cost"` recruits **cx-data-analyst** as advisory reviewer, reason `cost/quant`.
-- `cost-value-tradeoff-review` on [`registry/specialists/cx-product-manager.json`](../../../registry/specialists/cx-product-manager.json): `signalExpr: "cost"` recruits **cx-product-manager** as advisory reviewer, reason `cost signal — value-tradeoff framework review (cx-pm-value-tradeoff)`.
+- `cost-quant-review` on [`registry/worker-profiles/data-analyst.json`](../../../registry/worker-profiles/data-analyst.json): `signalExpr: "cost"` recruits **data-analyst** as advisory reviewer, reason `cost/quant`.
+- `cost-value-tradeoff-review` on [`registry/worker-profiles/product-manager.json`](../../../registry/worker-profiles/product-manager.json): `signalExpr: "cost"` recruits **product-manager** as advisory reviewer, reason `cost signal — value-tradeoff framework review`.
 
 Rules recruit only roster specialists — the schema's `rosterSpecialist` enum is the fixed 12-role roster, so a vertical never invents a new role.
 

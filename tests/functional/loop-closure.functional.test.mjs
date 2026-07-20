@@ -135,7 +135,7 @@ test('loop stage 3 — role queue rejects fixtures and clears only on explicit r
   const pendingFile = join(root, '.construct', 'role-pending.jsonl');
   mkdirSync(join(root, '.construct'), { recursive: true });
   appendFileSync(pendingFile, JSON.stringify({
-    ts: Date.now(), personaId: 'engineer', workerProfileId: 'engineer',
+    ts: Date.now(), workerProfileId: 'engineer',
     fingerprint: 'fp-real', eventType: 'handoff.received', summary: 'loop test', source: 'manual',
   }) + '\n');
 

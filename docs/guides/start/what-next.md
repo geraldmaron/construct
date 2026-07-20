@@ -12,7 +12,7 @@ You have Construct installed, a project initialized, agents synced, and you've d
 | Why Construct works the way it does | [Architecture](/guides/concepts/architecture) |
 | Pick solo / team / enterprise | [Deployment model](/guides/concepts/deployment-model) |
 | How signals become triaged R&D work | [Intake and triage](/guides/concepts/intake-and-triage) |
-| The persona/specialist model | [Agents and personas](/guides/concepts/agents-and-personas) |
+| The Worker Profile model | [Worker Profiles reference](/guides/reference/worker-profiles) |
 | What blocks commits and why | [Gates and enforcement](/guides/concepts/gates-and-enforcement) |
 | The durable-state story | [Beads and state](/guides/concepts/beads-and-state) |
 
@@ -20,7 +20,7 @@ You have Construct installed, a project initialized, agents synced, and you've d
 
 | If you want to... | Go to |
 |---|---|
-| Add a new specialist or persona to your team | [Add a custom agent](/guides/cookbook/add-a-custom-agent) |
+| Extend Worker Profiles or Workspace Presets | [Worker Profiles reference](/guides/reference/worker-profiles) and [Workspace Preset lifecycle](/guides/concepts/workspace-preset-lifecycle) |
 | Inspect what agents are running and why | [Inspect running agents](/guides/cookbook/inspect-running-agents) |
 | Fix a CI failure or a blocked commit | [Fix a policy violation](/guides/cookbook/fix-a-policy-violation) |
 | Connect to GitHub, Jira, Slack, or Salesforce | [Configure providers](/guides/cookbook/manage-providers) |

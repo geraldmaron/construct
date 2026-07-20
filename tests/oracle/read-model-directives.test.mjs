@@ -70,7 +70,7 @@ test('a directive with no prior run state is due', () => {
   const env = freshEnv();
   try {
     writeDirectivesConfig(env.projectDir, [{
-      id: 'jira-weekly-summary', provider: 'team-jira', specialist: 'operations',
+      id: 'jira-weekly-summary', provider: 'jira', workerProfileId: 'operations',
       instruction: 'Summarize open Jira work', trigger: { kind: 'interval', intervalMinutes: 60 },
       action: 'summarize', output: { kind: 'beads' },
     }]);
@@ -79,8 +79,7 @@ test('a directive with no prior run state is due', () => {
     assert.equal(model.directives.present, true);
     assert.equal(model.directives.due.length, 1);
     assert.equal(model.directives.due[0].id, 'jira-weekly-summary');
-    assert.equal(model.directives.due[0].workerProfileId, 'operations');
-    assert.equal('specialist' in model.directives.due[0], false);
+    assert.equal(model.directives.due[0].instruction, 'Summarize open Jira work');
   } finally {
     env.cleanup();
   }
@@ -90,7 +89,7 @@ test('a directive run within its interval is not due', () => {
   const env = freshEnv();
   try {
     writeDirectivesConfig(env.projectDir, [{
-      id: 'jira-weekly-summary', provider: 'team-jira', specialist: 'operations',
+      id: 'jira-weekly-summary', provider: 'jira', workerProfileId: 'operations',
       instruction: 'Summarize open Jira work', trigger: { kind: 'interval', intervalMinutes: 60 },
       action: 'summarize', output: { kind: 'beads' },
     }]);
@@ -107,7 +106,7 @@ test('a directive naming an unknown Worker Profile is excluded, not surfaced as 
   const env = freshEnv();
   try {
     writeDirectivesConfig(env.projectDir, [{
-      id: 'bad-directive', provider: 'team-jira', specialist: 'cx-not-a-real-role',
+      id: 'bad-directive', provider: 'jira', workerProfileId: 'cx-not-a-real-worker-profile',
       instruction: 'do something', trigger: { kind: 'interval', intervalMinutes: 60 },
       action: 'summarize', output: { kind: 'beads' },
     }]);

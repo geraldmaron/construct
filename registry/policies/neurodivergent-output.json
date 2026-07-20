@@ -2,7 +2,7 @@
   "id": "neurodivergent-output",
   "ownerWorkerProfile": "orchestrator",
   "description": "Human-facing output (terminal, agent prose, dashboard) is formatted for neurodivergent readers; presentation never reshapes machine-readable output.",
-  "enforcement": "(persona prompt) + tests/term-format.test.mjs",
+  "enforcement": "(worker-profile prompt) + tests/term-format.test.mjs",
   "mode": "honor-system",
   "approvalWorkerProfiles": [],
   "requiredPolicies": [],

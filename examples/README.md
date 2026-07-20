@@ -1,6 +1,6 @@
 # Prompt Example Fixtures
 
-This directory holds shipped example fixtures for Construct's public persona and internal role layers.
+This directory holds shipped example fixtures for Construct's public Worker Profile prompt and internal role layers.
 
 Use it for three things:
 
@@ -10,7 +10,7 @@ Use it for three things:
 
 Best practice in this repo:
 
-- keep the public persona and internal specialist prompts lean and rule-based
+- keep the public Worker Profile prompt and internal profile prompts lean and rule-based
 - keep most examples here as regression fixtures, not embedded into prompt bodies
 - use bad examples as critique and eval assets, not as raw few-shot prompt content
 - add in-prompt examples only when behavior is hard to specify precisely in rules
@@ -19,7 +19,7 @@ Best practice in this repo:
 
 ```text
 examples/
-├── personas/
+├── worker-profile-examples/
 │   └── construct/
 │       ├── golden/
 │       ├── bad/
@@ -78,7 +78,7 @@ Required internal coverage:
 - Name the expected behavior in repo terms: branch confirmation, approval boundary, routing, verification, blocker surfacing, anti-pattern avoidance.
 - For bad examples, show the failure plainly and explain why it violates the surface contract.
 
-See `docs/guides/concepts/prompt-surfaces.md` for the canonical public-vs-internal taxonomy.
+See `docs/guides/concepts/prompt-surfaces.mdx` for the canonical public-vs-internal taxonomy.
 
 ## Scope
 

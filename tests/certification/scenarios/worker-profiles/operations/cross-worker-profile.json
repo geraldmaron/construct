@@ -1,9 +1,9 @@
 {
   "schemaVersion": 2,
-  "specialistId": "operations",
-  "capabilityId": "specialist.prompt",
+  "workerProfileId": "operations",
+  "capabilityId": "worker-profile.prompt",
   "mode": "normal",
-  "scenarioKind": "cross-specialist",
+  "scenarioKind": "cross-worker-profile",
   "representativeTask": {
     "prompt": "While mapping the release dependencies you find the migration script has a bug that corrupts rows when a rollback runs. The rollout can't proceed until that code is fixed. Route the fix and keep sequencing the rest.",
     "inputs": {}

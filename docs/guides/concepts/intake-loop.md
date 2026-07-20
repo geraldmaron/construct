@@ -5,7 +5,7 @@ description: The eight-step pipeline that turns inbox signals into routed work, 
 
 # Intake loop
 
-Construct's "org in a box" runs the same eight-step pipeline regardless of org type. The active profile (R&D, operations, creative, research, or a custom one) determines the taxonomy at the classification step; everything else is profile-agnostic.
+Construct's governed loop runs the same eight-step pipeline regardless of workspace type. The active Workspace Preset (`rnd`, `operations`, `creative`, `research`, or a custom one) determines the taxonomy at the classification step; everything else is preset-agnostic.
 
 For the operator's view of how to interact with this pipeline, see [Intake and triage](/guides/concepts/intake-and-triage). This page is the implementation deep dive.
 

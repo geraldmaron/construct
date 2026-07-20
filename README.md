@@ -10,7 +10,7 @@
 
 Construct sits on top of Claude Code, OpenCode, Codex, Cursor, and Copilot. The current product surface is defined by the canonical registry: Workspace Presets select configuration, Worker Profiles provide bounded execution identity, Procedures describe reusable sequences, and Assignments connect work to Capabilities and Policies. Sessions persist in `.construct/`, Beads, and optional local retrieval state.
 
-`construct scope show|list|set <id>` switches the active profile. See [Profile lifecycle](https://geraldmaron.github.io/construct/concepts/scope-lifecycle) for how new profiles are built.
+`construct workspace-preset list|show <id>` inspects the curated workspace-wide defaults (`rnd`, `operations`, `creative`, `research`). Set the active preset with `workspacePreset` in `construct.config.json`. See [Workspace Preset lifecycle](https://geraldmaron.github.io/construct/concepts/workspace-preset-lifecycle) for how new presets are researched and promoted.
 
 The team and enterprise modes exist because I wanted to learn what shipping a real multi-tenant tool would look like. The project is still open source, the code is still public, and the bar is still "does this help me learn." Run it solo if that's all you need.
 
@@ -59,7 +59,7 @@ construct intake list     # review new signals, if your project uses the inbox
 construct doctor          # diagnose install, service, MCP, and adapter drift
 ```
 
-In your editor, start with `@construct`. Ask for the outcome, not the specialist. Construct routes to the right specialist chain, keeps durable state in `.construct/` and Beads, and blocks risky mutations until the configured gates pass.
+In your editor, start with `@construct`. Ask for the outcome, not a Worker Profile name. Construct routes to the right Assignment chain, keeps durable state in `.construct/` and Beads, and blocks risky mutations until the configured gates pass.
 
 ## What you can do
 
@@ -69,7 +69,7 @@ In your editor, start with `@construct`. Ask for the outcome, not the specialist
 | Understand how it works | [Architecture](https://geraldmaron.github.io/construct/concepts/architecture) |
 | Pick a deployment mode | [Deployment model](https://geraldmaron.github.io/construct/concepts/deployment-model) |
 | Drop a signal and triage it | [Intake and triage](https://geraldmaron.github.io/construct/concepts/intake-and-triage) |
-| Add a custom specialist | [Add a custom specialist](https://geraldmaron.github.io/construct/cookbook/add-a-custom-agent) |
+| Add a custom Worker Profile | [Worker Profiles reference](https://geraldmaron.github.io/construct/reference/worker-profiles) and [Workspace Preset lifecycle](https://geraldmaron.github.io/construct/concepts/workspace-preset-lifecycle) |
 | Fix a blocked commit or red CI | [Fix a policy violation](https://geraldmaron.github.io/construct/cookbook/fix-a-policy-violation) |
 | Plug in your own LLM | [Plug in your own LLM](https://geraldmaron.github.io/construct/cookbook/plug-in-your-own-llm) |
 | Use Construct conversationally | [Connect your editor](https://geraldmaron.github.io/construct/start/connect-your-editor) |
@@ -200,7 +200,7 @@ The embed daemon writes its supervisor stdout log to the machine's XDG state dir
 | `construct knowledge` | Query, index, or add to the project knowledge base |
 | `construct memory` | Inspect memory layer |
 | `construct pack` | Worker profile and workspace preset pack lifecycle |
-| `construct procedure` | Inspect reusable deterministic procedures |
+| `construct procedure` | Inspect and invoke reusable deterministic procedures |
 | `construct publish` | Publish typed artifacts: release gate + export PDF with figures + optional demos |
 | `construct reflect` | Capture improvement feedback and update Construct core |
 | `construct search` | Hybrid search across project state |

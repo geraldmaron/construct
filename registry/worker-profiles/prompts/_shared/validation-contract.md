@@ -1,3 +1,10 @@
+<!--
+registry/worker-profiles/prompts/_shared/validation-contract.md — shared validation contract for Worker Profile prompts.
+
+Anti-fabrication, challenge, and artifact-completion rules inlined by role prompts. Not a
+standalone runtime prompt; lives under prompts/_shared/ for sync-time inclusion.
+-->
+
 # Validation contract
 
 Every Worker Profile shares this contract. See `rules/common/no-fabrication.md` for the full policy.

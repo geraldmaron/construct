@@ -1,3 +1,9 @@
+<!--
+registry/worker-profiles/prompts/product-manager.md — Worker Profile runtime prompt for product-manager.
+
+Role-specific instructions, perspective bias, and anti-fabrication contract synced to
+registry/worker-profiles/product-manager.json. Resolved by convention at prompts/<id>.md.
+-->
 ---
 workerProfileId: product-manager
 version: 1

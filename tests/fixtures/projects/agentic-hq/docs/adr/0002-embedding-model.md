@@ -35,4 +35,4 @@ Cohere `embed-multilingual-v3.0` (1024-dim).
 ## Source
 
 - Eval bench `memory-recall-q1-bench` (run id `eval-2026-02-04-mb-1247`)
-- Vendor pricing pages as-of 2026-02-09 (snapshot in `.cx/knowledge/external/vendor-pricing-snapshot-2026-02.md`)
+- Vendor pricing pages as-of 2026-02-09 (snapshot in `.construct/knowledge/external/vendor-pricing-snapshot-2026-02.md`)

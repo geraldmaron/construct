@@ -49,6 +49,6 @@ async function main() {
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   main().catch((error) => {
     console.error(`Procedure definition drift check failed: ${error.message}`);
-    process.exitCode = 1;
+    process.exitCode = 2;
   });
 }

@@ -6,8 +6,8 @@
  *   --global mode  → writes only the `construct` front-door agent to user-scope
  *                    paths (`~/.claude/agents/`, `~/.codex/agents/`, etc.).
  *                    Specialists, slash commands, and skills do NOT land.
- *   --project mode → writes all 29 registered agents (`construct` + 28 `cx-*`),
- *                    slash commands, skills, and MCP wiring to the cwd project
+ *   --project mode → writes the `construct` front door, slash commands, skills,
+ *                    and MCP wiring to the cwd project
  *                    (`<project>/.claude/`, `.codex/`, `.opencode/`, `.github/`,
  *                    `.cursor/`, `.vscode/`). User-scope is untouched.
  *
@@ -23,6 +23,7 @@ import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
+import { sterileSpawnEnv } from '../helpers/sterile-env.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SYNC_SCRIPT = join(REPO_ROOT, 'scripts', 'sync-worker-profiles.mjs');
@@ -38,9 +39,10 @@ function makeIsolatedEnv() {
   const project = join(sandbox, 'project');
   mkdirSync(HOME, { recursive: true });
   mkdirSync(project, { recursive: true });
-  spawnSync('git', ['init', '--quiet', '--initial-branch=main'], { cwd: project });
-  spawnSync('git', ['config', 'user.email', 'test@example.com'], { cwd: project });
-  spawnSync('git', ['config', 'user.name', 'Test'], { cwd: project });
+  const spawnEnv = sterileSpawnEnv({ HOME, CONSTRUCT_HOME_OVERRIDE: HOME });
+  spawnSync('git', ['init', '--quiet', '--initial-branch=main'], { cwd: project, env: spawnEnv });
+  spawnSync('git', ['config', 'user.email', 'test@example.com'], { cwd: project, env: spawnEnv });
+  spawnSync('git', ['config', 'user.name', 'Test'], { cwd: project, env: spawnEnv });
   return {
     sandbox, HOME, project,
     cleanup() { rmTmpDir(sandbox); },
@@ -52,12 +54,12 @@ function runSync(env, args, cwd) {
     cwd: cwd || env.project,
     encoding: 'utf8',
     timeout: 90_000,
-    env: {
-      ...process.env,
+    env: sterileSpawnEnv({
       HOME: env.HOME,
+      CONSTRUCT_HOME_OVERRIDE: env.HOME,
       CONSTRUCT_SKIP_POSTINSTALL: '1',
       CONSTRUCT_SYNC_HOSTS: ALL_HOSTS,
-    },
+    }),
   });
 }
 
@@ -142,6 +144,7 @@ test('user-authored cx-* files with names outside the registry are NOT swept', (
     writeFileSync(join(env.HOME, '.claude/agents/cx-mytool.md'), 'USER FILE — keep me\n');
     writeFileSync(join(env.HOME, '.github/prompts/cx-mytool.prompt.md'), 'USER FILE — keep me\n');
     writeFileSync(join(env.HOME, '.codex/agents/cx-mytool.toml'), '# USER FILE\nname = "cx-mytool"\n');
+    writeFileSync(join(env.HOME, '.claude/agents/.construct-manifest'), 'architect.md\n');
 
     const r = runSync(env, ['--global']);
     assert.equal(r.status, 0, `--global failed: ${r.stderr}`);
@@ -180,7 +183,7 @@ test('user-managed blocks in CLAUDE.md and copilot-instructions.md are preserved
   }
 });
 
-test('legacy cx-* files at HOME are swept by --global sync (idempotent)', () => {
+test('manifest-owned legacy Worker Profile files at HOME are swept by --global sync (idempotent)', () => {
   const env = makeIsolatedEnv();
   try {
     for (const sub of ['.claude/agents', '.codex/agents', '.github/prompts']) {
@@ -191,6 +194,9 @@ test('legacy cx-* files at HOME are swept by --global sync (idempotent)', () => 
       writeFileSync(join(env.HOME, '.codex/agents', `${name}.toml`), 'legacy\n');
       writeFileSync(join(env.HOME, '.github/prompts', `${name}.prompt.md`), 'legacy\n');
     }
+    writeFileSync(join(env.HOME, '.claude/agents/.construct-manifest'), 'architect.md\nengineer.md\nreviewer.md\n');
+    writeFileSync(join(env.HOME, '.codex/agents/.construct-manifest'), 'architect.toml\nengineer.toml\nreviewer.toml\n');
+    writeFileSync(join(env.HOME, '.github/prompts/.construct-manifest'), 'architect.prompt.md\nengineer.prompt.md\nreviewer.prompt.md\n');
 
     const r1 = runSync(env, ['--global']);
     assert.equal(r1.status, 0, `first --global failed: ${r1.stderr}`);

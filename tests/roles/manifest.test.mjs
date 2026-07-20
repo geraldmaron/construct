@@ -1,10 +1,15 @@
 /**
- * tests/roles/manifest.test.mjs — manifest loader and onboarded-persona logic.
+ * tests/roles/manifest.test.mjs — Worker Profile manifest loading and onboarding.
  */
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { loadManifest, isOnboarded, listOnboardedPersonas, listAllPersonas } from '../../lib/roles/manifest.mjs';
+import {
+  isOnboarded,
+  listAllWorkerProfiles,
+  listOnboardedWorkerProfiles,
+  loadManifest,
+} from '../../lib/roles/manifest.mjs';
 
 test('loadManifest returns a manifest for operations', () => {
   const m = loadManifest('operations');
@@ -18,7 +23,7 @@ test('loadManifest returns a manifest for operations', () => {
 
 test('loadManifest accepts cx- prefix', () => {
   const a = loadManifest('operations');
-  const b = loadManifest('operations');
+  const b = loadManifest('cx-operations');
   assert.deepEqual(a, b);
 });
 
@@ -30,10 +35,8 @@ test('isOnboarded is true only when events is non-empty', () => {
   assert.equal(isOnboarded('nonexistent'), false);
 });
 
-test('listOnboardedPersonas includes the core consolidated roster', () => {
-  const list = listOnboardedPersonas();
-  // construct-rf26.11 consolidated sre/release-manager/docs-keeper into
-  // operations and platform-engineer into engineer.
+test('listOnboardedWorkerProfiles includes the core roster', () => {
+  const list = listOnboardedWorkerProfiles();
   const required = ['operations', 'qa', 'security', 'engineer', 'architect', 'debugger', 'product-manager', 'reviewer'];
   for (const id of required) {
     assert.ok(list.includes(id), `expected ${id} onboarded, got: ${list.join(', ')}`);
@@ -41,10 +44,9 @@ test('listOnboardedPersonas includes the core consolidated roster', () => {
   assert.ok(list.length >= required.length, `expected at least ${required.length} onboarded`);
 });
 
-test('listAllPersonas covers all registry roles', () => {
-  const all = listAllPersonas();
+test('listAllWorkerProfiles covers the canonical registry', () => {
+  const all = listAllWorkerProfiles();
   assert.ok(all.includes('engineer'));
   assert.ok(all.includes('architect'));
-  // construct-rf26.11 consolidated the 29-specialist roster to 12 (orchestrator + 11 workers).
   assert.ok(all.length >= 12);
 });

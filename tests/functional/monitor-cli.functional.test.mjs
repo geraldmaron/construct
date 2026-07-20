@@ -5,7 +5,7 @@
  * (construct-jvjow.1). Proves the one-command flow writes all three durable
  * artifacts that today require three separate commands — construct.config.json
  * `sources.targets[]`, embed.yaml `roles{}`/`sources:`, and the enabled
- * `.construct/embed/<id>.manifest.json` capability manifest — and prints a summary of
+ * `.construct/procedures/<id>.manifest.json` capability manifest — and prints a summary of
  * what it assembled. The daemon-start step is exercised with `--no-start`
  * here (assembly only); the daemon actually starting is covered by the
  * `runEmbedCli(['start'], ...)` unit tests in tests/embed-cli.test.mjs, which
@@ -100,12 +100,13 @@ test('construct monitor --as operations --targets ... assembles all three durabl
   assert.match(embedYaml, /provider: github/);
   assert.match(embedYaml, /provider: jira/);
 
-  // .construct/embed/<id>.manifest.json, enabled
-  const manifestPath = join(project, '.construct', 'embed', 'operations.manifest.json');
+  // Project-tier enablement writes `.construct/procedures/<id>.manifest.json`
+  // (embedProjectDir → procedures after the 2.0 procedure cutover).
+  const manifestPath = join(project, '.construct', 'procedures', 'operations.manifest.json');
   assert.ok(existsSync(manifestPath), 'capability manifest exists');
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
   assert.equal(manifest.embed.enabled, true);
-  assert.equal(manifest.embed.specialist, 'operations');
+  assert.equal(manifest.embed.workerProfileId, 'operations');
 
   // Prints a summary naming the durable artifacts it wrote.
   assert.match(res.stdout, /construct monitor: assembled/);
@@ -135,8 +136,8 @@ test('construct monitor --as pm-feedback sets embed.yaml roles.primary from that
   const embedYaml = readFileSync(join(project, 'embed.yaml'), 'utf8');
   assert.match(embedYaml, /primary: product-manager/);
 
-  const manifestPath = join(project, '.construct', 'embed', 'pm-feedback.manifest.json');
+  const manifestPath = join(project, '.construct', 'procedures', 'pm-feedback.manifest.json');
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
-  assert.equal(manifest.embed.specialist, 'product-manager');
+  assert.equal(manifest.embed.workerProfileId, 'product-manager');
   assert.equal(manifest.embed.enabled, true);
 });

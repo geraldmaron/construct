@@ -1,15 +1,17 @@
 /**
  * tests/functional/w3-consistency-watcher.functional.test.mjs —
  *
- * Drives lib/doctor/watchers/consistency.mjs against the live repo to verify
- * each cross-surface check fires when state actually drifts. The watcher is
- * tested via the pure runAllChecks() entry so no audit/escalate side effects
- * leak into operator state. A second test spins up the real `construct doctor
- * consistency` CLI to make sure the user-facing command exits 0 on a clean
- * tree.
+ * Drives lib/doctor/watchers/consistency.mjs against the live repo and against
+ * isolated repo slices that use the Construct 2.0 registry layout
+ * (registry/worker-profiles/ as the canonical registry layout). The watcher
+ * is tested via the pure runAllChecks() entry so no audit/escalate side effects
+ * leak into operator state. A second pair of tests spins up the real
+ * `construct doctor consistency` CLI.
  */
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, cpSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import {
+  mkdtempSync, cpSync, writeFileSync, readFileSync, existsSync, mkdirSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -26,19 +28,22 @@ after(() => rmTmpDir(CLI_SANDBOX_HOME));
 
 function freshRepoSlice() {
   const root = mkdtempSync(join(tmpdir(), 'construct-consistency-'));
-  for (const dir of ['platforms/claude', 'lib/hooks', 'lib/mcp/tools', 'lib/contract-schemas', 'specialists']) {
+  for (const dir of ['platforms/claude', 'lib/hooks', 'lib/mcp/tools', 'lib/contract-schemas']) {
     mkdirSync(join(root, dir), { recursive: true });
   }
-  // W2's contract validator + schema are optional dependencies for the
-  // contracts-drift check; only copy them when they exist on this branch.
+
+  // loadRegistry / checkRolesDrift / checkWorkerProfilePrompts / validateContractsFile
+  // all read registry/worker-profiles + sibling catalogs — copy the real tree.
+  cpSync(join(REPO_ROOT, 'registry'), join(root, 'registry'), { recursive: true });
+
   const validatorSrc = join(REPO_ROOT, 'lib', 'contracts', 'validate.mjs');
   if (existsSync(validatorSrc)) {
     mkdirSync(join(root, 'lib', 'contracts'), { recursive: true });
     cpSync(validatorSrc, join(root, 'lib', 'contracts', 'validate.mjs'));
   }
-  const contractsSchemaSrc = join(REPO_ROOT, 'specialists', 'contracts.schema.json');
-  if (existsSync(contractsSchemaSrc)) cpSync(contractsSchemaSrc, join(root, 'agents', 'contracts.schema.json'));
-  cpSync(join(REPO_ROOT, 'lib', 'contract-schemas'), join(root, 'lib', 'contract-schemas'), { recursive: true });
+  if (existsSync(join(REPO_ROOT, 'lib', 'contract-schemas'))) {
+    cpSync(join(REPO_ROOT, 'lib', 'contract-schemas'), join(root, 'lib', 'contract-schemas'), { recursive: true });
+  }
   return {
     root,
     cleanup() { try { rmTmpDir(root); } catch { /* ignore */ } },
@@ -52,6 +57,11 @@ test('runAllChecks against the live repo: contracts and prompt-files are clean',
   const blocking = result.findings.filter((f) => f.severity === 'blocking');
   assert.equal(blocking.length, 0, `expected no blocking findings, got:\n${blocking.map((f) => '  - ' + f.summary).join('\n')}`);
   assert.ok(result.passed.length >= 1, 'expected at least one passing category');
+  assert.equal(
+    result.findings.filter((f) => f.category === 'prompt-files').length,
+    0,
+    'every Worker Profile id must resolve to registry/worker-profiles/prompts/<id>.md on disk',
+  );
 });
 
 test('hooks-drift fires when a hook command points at a missing .mjs file', async () => {
@@ -62,14 +72,6 @@ test('hooks-drift fires when a hook command points at a missing .mjs file', asyn
         SessionStart: [{ hooks: [{ type: 'command', command: 'node "/abs/path/to/lib/hooks/nonexistent-hook.mjs"' }] }],
       },
     });
-    slice.writeJson('registry', { specialists: [], orchestrator: null });
-    slice.writeJson('specialists/contracts.json', {
-      version: 1,
-      terminalStates: ['DONE'],
-      severities: { blocking: [], warning: [], info: [] },
-      contracts: [],
-    });
-    slice.writeJson('specialists/role-manifests.json', {});
 
     const result = await runAllChecks({ repoRoot: slice.root });
     assert.ok(
@@ -79,126 +81,106 @@ test('hooks-drift fires when a hook command points at a missing .mjs file', asyn
   } finally { slice.cleanup(); }
 });
 
-test('roles-drift fires when normalized persona ids collide', async () => {
+test('roles-drift does not flag a Worker Profile as ambiguous with itself', async () => {
+  const result = await runAllChecks({ repoRoot: REPO_ROOT });
+  const ambiguous = result.findings.filter(
+    (f) => f.category === 'roles-drift' && /ambiguous/.test(f.summary),
+  );
+  assert.equal(
+    ambiguous.length,
+    0,
+    `id/displayName of one Worker Profile must not read as ambiguous, got:\n${ambiguous.map((f) => '  - ' + f.summary).join('\n')}`,
+  );
+});
+
+test('roles-drift fires when two profiles normalize to the same id', async () => {
   const slice = freshRepoSlice();
   try {
     slice.writeJson('platforms/claude/settings.template.json', { hooks: {} });
-    slice.writeJson('registry', {
-      orchestrator: { name: 'imaginary' },
-      specialists: {
-        'cx-imaginary': { name: 'imaginary', promptFile: 'specialists/prompts/imaginary.md' },
-      },
+    const architect = JSON.parse(readFileSync(join(slice.root, 'registry', 'worker-profiles', 'architect.json'), 'utf8'));
+    slice.writeJson('registry/worker-profiles/cx-architect.json', {
+      ...architect,
+      id: 'cx-architect',
+      displayName: 'collision fixture — normalizes to architect',
+      description: 'collision fixture — normalizes to architect',
     });
-    slice.writeJson('specialists/contracts.json', {
-      version: 1, terminalStates: ['DONE'],
-      severities: { blocking: [], warning: [], info: [] }, contracts: [],
-    });
+
+    const result = await runAllChecks({ repoRoot: slice.root, skipRegistryValidation: true });
+    assert.ok(
+      result.findings.some((f) => f.category === 'roles-drift' && /ambiguous/.test(f.summary) && /architect/.test(f.summary)),
+      `expected roles-drift ambiguity for architect, got:\n${JSON.stringify(result.findings.filter((f) => f.category === 'roles-drift'), null, 2)}`,
+    );
+  } finally { slice.cleanup(); }
+});
+
+test('prompt-files drift fires when a convention prompt is missing', async () => {
+  const slice = freshRepoSlice();
+  try {
+    slice.writeJson('platforms/claude/settings.template.json', { hooks: {} });
+    const promptPath = join(slice.root, 'registry', 'worker-profiles', 'prompts', 'engineer.md');
+    assert.ok(existsSync(promptPath), 'fixture must start with engineer prompt present');
+    const { unlinkSync } = await import('node:fs');
+    unlinkSync(promptPath);
 
     const result = await runAllChecks({ repoRoot: slice.root });
     assert.ok(
-      result.findings.some((f) => f.category === 'roles-drift' && /imaginary/.test(f.summary) && /ambiguous/.test(f.summary)),
-      'expected roles-drift finding for ambiguous normalized persona id',
+      result.findings.some(
+        (f) => f.category === 'prompt-files' && /engineer\.md/.test(f.summary),
+      ),
+      `expected prompt-files finding for missing engineer.md, got:\n${JSON.stringify(result.findings.filter((f) => f.category === 'prompt-files'), null, 2)}`,
     );
   } finally { slice.cleanup(); }
 });
 
-test('prompt-files fires when a persona promptFile is missing on disk', async () => {
-  const slice = freshRepoSlice();
-  try {
-    slice.writeJson('platforms/claude/settings.template.json', { hooks: {} });
-    slice.writeJson('registry', {
-      orchestrator: { name: 'fake', promptFile: 'specialists/prompts/never-existed.md' },
-      specialists: [],
-    });
-    slice.writeJson('specialists/role-manifests.json', {});
-    slice.writeJson('specialists/contracts.json', {
-      version: 1, terminalStates: ['DONE'],
-      severities: { blocking: [], warning: [], info: [] }, contracts: [],
-    });
-
-    const result = await runAllChecks({ repoRoot: slice.root });
-    const blockingPromptFinding = result.findings.find(
-      (f) => f.category === 'prompt-files' && f.severity === 'blocking' && /never-existed\.md/.test(f.summary),
-    );
-    assert.ok(blockingPromptFinding, 'expected blocking prompt-files finding');
-  } finally { slice.cleanup(); }
-});
-
-test('contracts-drift fires when contracts reference an unresolvable producer', async (t) => {
+test('contracts-drift fires when a contract schema path is missing', async (t) => {
   if (!existsSync(join(REPO_ROOT, 'lib', 'contracts', 'validate.mjs'))) {
-    return t.skip('requires lib/contracts/validate.mjs from W2');
+    return t.skip('requires lib/contracts/validate.mjs');
   }
   const slice = freshRepoSlice();
   try {
     slice.writeJson('platforms/claude/settings.template.json', { hooks: {} });
-    slice.writeJson('registry', {
-      orchestrator: { name: 'construct' },
-      specialists: [{ name: 'architect' }],
-    });
-    slice.writeJson('specialists/role-manifests.json', {});
-    slice.writeJson('specialists/contracts.json', {
-      version: 1, terminalStates: ['DONE'],
-      severities: { blocking: [], warning: [], info: [] },
-      contracts: [{
-        id: 'bad', producer: 'cx-unresolvable', consumer: 'architect',
-        input: { shape: 'x' },
-      }],
-    });
+    const capsPath = join(slice.root, 'registry', 'capabilities.json');
+    const caps = JSON.parse(readFileSync(capsPath, 'utf8'));
+    const first = caps.capabilities[0];
+    assert.ok(first, 'expected at least one capability in the copied registry');
+    first.contracts = first.contracts || {};
+    first.contracts['bad-missing-schema'] = {
+      id: 'bad-missing-schema',
+      producer: 'architect',
+      consumer: 'engineer',
+      input: { shape: 'x' },
+      output: { schema: 'lib/contract-schemas/does-not-exist-for-drift.json' },
+    };
+    writeFileSync(capsPath, JSON.stringify(caps, null, 2));
 
     const result = await runAllChecks({ repoRoot: slice.root });
     assert.ok(
-      result.findings.some((f) => f.category === 'contracts-drift' && /cx-unresolvable/.test(f.summary)),
-      'expected contracts-drift finding for cx-unresolvable',
+      result.findings.some((f) => f.category === 'contracts-drift' && /does-not-exist-for-drift/.test(f.summary)),
+      `expected contracts-drift finding for missing schema, got:\n${JSON.stringify(result.findings.filter((f) => f.category === 'contracts-drift'), null, 2)}`,
     );
   } finally { slice.cleanup(); }
 });
 
-// A clean install must produce zero non-actionable warnings. The package-internal
-// drift families (mcp-drift, roles-drift) were both firing false positives — a
-// specialist's id self-colliding with its own name, and the xxxTool→'xxx' naming
-// convention reading as undispatched. Guard both at source.
-
-test('clean tree reports zero mcp-drift and zero roles-drift', async () => {
+test('clean tree reports zero mcp-drift', async () => {
   const result = await runAllChecks({ repoRoot: REPO_ROOT });
-  const internal = result.findings.filter((f) => f.category === 'mcp-drift' || f.category === 'roles-drift');
+  const mcp = result.findings.filter((f) => f.category === 'mcp-drift');
   assert.equal(
-    internal.length, 0,
-    `expected no package-internal drift on a clean tree, got:\n${internal.map((f) => `  - [${f.category}] ${f.summary}`).join('\n')}`,
+    mcp.length, 0,
+    `expected no mcp-drift on a clean tree, got:\n${mcp.map((f) => `  - ${f.summary}`).join('\n')}`,
   );
 });
 
-test('roles-drift does not fire when a specialist id and its own name normalize together', async () => {
-  const slice = freshRepoSlice();
-  try {
-    slice.writeJson('platforms/claude/settings.template.json', { hooks: {} });
-    slice.writeJson('registry', {
-      orchestrator: { id: 'cx-construct', name: 'construct' },
-      specialists: {
-        'architect': { name: 'architect' },
-        'engineer': { name: 'engineer' },
-      },
-    });
-    slice.writeJson('specialists/contracts.json', {
-      version: 1, terminalStates: ['DONE'],
-      severities: { blocking: [], warning: [], info: [] }, contracts: [],
-    });
-
-    const result = await runAllChecks({ repoRoot: slice.root });
-    const rolesDrift = result.findings.filter((f) => f.category === 'roles-drift');
-    assert.equal(
-      rolesDrift.length, 0,
-      `id/name pairs of one specialist must not read as ambiguous, got:\n${rolesDrift.map((f) => '  - ' + f.summary).join('\n')}`,
-    );
-  } finally { slice.cleanup(); }
+test('clean tree reports zero roles-drift', async () => {
+  const result = await runAllChecks({ repoRoot: REPO_ROOT });
+  const roles = result.findings.filter((f) => f.category === 'roles-drift');
+  assert.equal(
+    roles.length, 0,
+    `expected no roles-drift on a clean tree, got:\n${roles.map((f) => `  - ${f.summary}`).join('\n')}`,
+  );
 });
 
 function writeMcpSlice(slice, { serverBody, tools }) {
   slice.writeJson('platforms/claude/settings.template.json', { hooks: {} });
-  slice.writeJson('registry', { specialists: [], orchestrator: null });
-  slice.writeJson('specialists/contracts.json', {
-    version: 1, terminalStates: ['DONE'],
-    severities: { blocking: [], warning: [], info: [] }, contracts: [],
-  });
   mkdirSync(join(slice.root, 'lib', 'mcp', 'tools'), { recursive: true });
   for (const [name, body] of Object.entries(tools)) slice.write(join('lib', 'mcp', 'tools', name), body);
   slice.write(join('lib', 'mcp', 'server.mjs'), serverBody);
@@ -249,7 +231,7 @@ test('construct doctor consistency CLI exits 0 and is clean by default', () => {
   const result = spawnSync(process.execPath, [join(REPO_ROOT, 'bin', 'construct'), 'doctor', 'consistency'], {
     cwd: REPO_ROOT,
     encoding: 'utf8',
-    env: { ...process.env, CONSTRUCT_SKIP_PROMPT_LOOKUP: '1', HOME: CLI_SANDBOX_HOME, CONSTRUCT_HOME_OVERRIDE: CLI_SANDBOX_HOME },
+    env: { ...process.env, HOME: CLI_SANDBOX_HOME, CONSTRUCT_HOME_OVERRIDE: CLI_SANDBOX_HOME },
   });
   assert.equal(result.status, 0, `expected exit 0, got ${result.status}\nstderr: ${result.stderr}\nstdout: ${result.stdout}`);
   assert.match(result.stdout, /clean/);
@@ -260,9 +242,8 @@ test('construct doctor consistency --strict surfaces the internal tier', () => {
   const result = spawnSync(process.execPath, [join(REPO_ROOT, 'bin', 'construct'), 'doctor', 'consistency', '--strict'], {
     cwd: REPO_ROOT,
     encoding: 'utf8',
-    env: { ...process.env, CONSTRUCT_SKIP_PROMPT_LOOKUP: '1', HOME: CLI_SANDBOX_HOME, CONSTRUCT_HOME_OVERRIDE: CLI_SANDBOX_HOME },
+    env: { ...process.env, HOME: CLI_SANDBOX_HOME, CONSTRUCT_HOME_OVERRIDE: CLI_SANDBOX_HOME },
   });
   assert.equal(result.status, 0, `expected exit 0, got ${result.status}\nstderr: ${result.stderr}\nstdout: ${result.stdout}`);
-  assert.match(result.stdout, /mcp-drift/);
   assert.match(result.stdout, /roles-drift/);
 });

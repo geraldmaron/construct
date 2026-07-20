@@ -55,9 +55,10 @@ function freshRoot() {
   return root;
 }
 
-test('GRAPH_SEED_FILES lists registry contracts and workflow defs', () => {
+test('GRAPH_SEED_FILES lists registry contracts and procedure definitions', () => {
   assert.ok(GRAPH_SEED_FILES.includes('registry/capabilities.json'));
   assert.ok(GRAPH_SEED_FILES.includes('registry'));
+  assert.ok(GRAPH_SEED_FILES.includes('lib/embedded-contract/procedure-definitions.mjs'));
 });
 
 test('checkGraphStaleness reports absent graph without throwing', () => {
@@ -88,7 +89,7 @@ test('hashSourceGroup treats a missing path as a stable sentinel, not a throw', 
 test('computeSourceHashes returns a hash per named seed group', () => {
   const root = freshRoot();
   const hashes = computeSourceHashes(root);
-  for (const name of ['registry', 'overlays', 'specialistsOrg', 'plugins', 'providerManifests', 'workflowManifests']) {
+  for (const name of ['registry', 'overlays', 'workerProfiles', 'plugins', 'providerManifests', 'workflowManifests']) {
     assert.equal(typeof hashes[name], 'string', `${name} hash is a string`);
     assert.ok(hashes[name].length > 0);
   }
@@ -99,7 +100,7 @@ test('touching .construct/providers.json flips stale=true naming providerManifes
   fs.mkdirSync(path.join(root, '.construct'), { recursive: true });
 
   const initialHashes = computeSourceHashes(root);
-  writeGraph(root, { nodes: [{ id: 'workflow:w', type: 'workflow' }], edges: [], sourceHashes: initialHashes });
+  writeGraph(root, { nodes: [{ id: 'procedure:p', type: 'procedure' }], edges: [], sourceHashes: initialHashes });
 
   const clean = checkGraphStaleness(root);
   assert.equal(clean.stale, false);
@@ -113,26 +114,26 @@ test('touching .construct/providers.json flips stale=true naming providerManifes
   assert.match(dirty.staleReason, /providerManifests/);
 
   const rebuiltHashes = computeSourceHashes(root);
-  writeGraph(root, { nodes: [{ id: 'workflow:w', type: 'workflow' }], edges: [], sourceHashes: rebuiltHashes });
+  writeGraph(root, { nodes: [{ id: 'procedure:p', type: 'procedure' }], edges: [], sourceHashes: rebuiltHashes });
 
   const rebuilt = checkGraphStaleness(root);
   assert.equal(rebuilt.stale, false);
   assert.deepEqual(rebuilt.staleSources, []);
 });
 
-test('touching a file inside registry flips stale=true naming specialistsOrg', () => {
+test('touching a file inside registry flips stale=true naming workerProfiles', () => {
   const root = freshRoot();
-  const orgDir = path.join(root, 'specialists', 'org', 'scopes');
-  fs.mkdirSync(orgDir, { recursive: true });
-  fs.writeFileSync(path.join(orgDir, 'probe.json'), '{"id":"probe"}');
+  const profileDir = path.join(root, 'registry', 'worker-profiles');
+  fs.mkdirSync(profileDir, { recursive: true });
+  fs.writeFileSync(path.join(profileDir, 'probe.json'), '{"id":"probe"}');
 
   const initialHashes = computeSourceHashes(root);
-  writeGraph(root, { nodes: [{ id: 'workflow:w', type: 'workflow' }], edges: [], sourceHashes: initialHashes });
+  writeGraph(root, { nodes: [{ id: 'procedure:p', type: 'procedure' }], edges: [], sourceHashes: initialHashes });
   assert.equal(checkGraphStaleness(root).stale, false);
 
-  fs.writeFileSync(path.join(orgDir, 'probe.json'), '{"id":"probe","changed":true}');
+  fs.writeFileSync(path.join(profileDir, 'probe.json'), '{"id":"probe","changed":true}');
 
   const dirty = checkGraphStaleness(root);
   assert.equal(dirty.stale, true);
-  assert.ok(dirty.staleSources.includes('specialistsOrg'));
+  assert.ok(dirty.staleSources.includes('workerProfiles'));
 });

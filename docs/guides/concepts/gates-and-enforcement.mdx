@@ -48,7 +48,7 @@ Fires when you try to land changes.
 
 **`gh pr create` / `gh pr edit` (Layer 2.5):**
 
-- The pre-push hook also intercepts these commands and runs `construct lint:templates` on the body to catch PR-template policy violations before the PR even opens. Severity is conditional: hard-block (exit 2) when a specialist sub-agent is active; warning-only otherwise so a human driving the session can override editorial nits.
+- The pre-push hook also intercepts these commands and runs `construct lint:templates` on the body to catch PR-template policy violations before the PR even opens. Severity is conditional: hard-block (exit 2) when a Worker Profile sub-agent is active; warning-only otherwise so a human driving the session can override editorial nits.
 
 ### Local-only by design
 
@@ -77,7 +77,7 @@ Catches escapees from Layers 1 and 2.
 
 ## Layer 4: Brokered tool calls (team / enterprise)
 
-In team and enterprise deployments, MCP tool calls run through `lib/mcp/broker.mjs`. The broker consults `lib/policy/engine.mjs`, which reads per-role permissions from [`specialists/role-manifests.json`](https://github.com/geraldmaron/construct/blob/main/specialists/role-manifests.json) (`fence.deniedActions`, `fence.approvalRequired`, glob-suffix support for `edit:lib/**` style patterns), and returns a typed decision.
+In team and enterprise deployments, MCP tool calls run through `lib/mcp/broker.mjs`. The broker consults `lib/policy/engine.mjs`, which reads per-profile permissions from `registry/worker-profiles/*.json` (`policyFence.deniedActions`, `policyFence.approvalRequired`, glob-suffix support for `edit:lib/**` style patterns), and returns a typed decision.
 
 - **Denied calls** throw `PolicyDenied`: the tool is never invoked. The denial reason is structured and audit-logged.
 - **Approval-required calls** throw `ApprovalRequired`: the broker refuses to execute until human consent is recorded.

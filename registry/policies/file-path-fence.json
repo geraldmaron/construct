@@ -1,7 +1,7 @@
 {
   "id": "file-path-fence",
   "ownerWorkerProfile": "orchestrator",
-  "description": "Prevents specialists from touching files outside their declared path scope.",
+  "description": "Prevents Worker Profiles from touching files outside their declared path scope.",
   "enforcement": "lib/roles/fence.mjs#checkAction",
   "mode": "deterministic",
   "approvalWorkerProfiles": [],

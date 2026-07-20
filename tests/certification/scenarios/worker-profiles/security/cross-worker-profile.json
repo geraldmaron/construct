@@ -1,9 +1,9 @@
 {
   "schemaVersion": 2,
-  "specialistId": "security",
-  "capabilityId": "specialist.prompt",
+  "workerProfileId": "security",
+  "capabilityId": "worker-profile.prompt",
   "mode": "normal",
-  "scenarioKind": "cross-specialist",
+  "scenarioKind": "cross-worker-profile",
   "representativeTask": {
     "prompt": "Audit the file-upload handler in lib/upload.mjs for injection and path-traversal risk. If you confirm a vulnerability, package the finding with a concrete remediation for whoever will implement the fix.",
     "inputs": {}

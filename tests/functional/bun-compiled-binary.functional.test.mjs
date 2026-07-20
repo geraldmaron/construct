@@ -29,7 +29,7 @@ const BUILD_ENTRY = resolve(ROOT, 'bin', '.construct-build-entry.test.mjs');
 // resolveInstallRoot) resolves one directory up from process.execPath — the
 // same "bin/<entry> -> repo root" depth scripts/build-binary.mjs's dist/
 // layout assumes. An output path outside the checkout (e.g. os.tmpdir())
-// would not have a real specialists/skills/templates tree one level up and
+// would not have a real registry/skills/templates tree one level up and
 // would fail for a reason unrelated to the thing under test, so the compiled
 // binary under test is placed in the real dist/ dir alongside the real build.
 

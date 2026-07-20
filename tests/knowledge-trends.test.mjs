@@ -41,10 +41,8 @@ function makeDir() {
   return mkdtempSync(join(tmpdir(), 'construct-trends-'));
 }
 
-function seedObservations(rootDir, items) {
-  for (const item of items) {
-    addObservation(rootDir, item);
-  }
+async function seedObservations(rootDir, items) {
+  await Promise.all(items.map((item) => addObservation(rootDir, item)));
 }
 
 const SIMILAR_PATTERN = 'Authentication uses JWT tokens with RS256 for stateless session management';
@@ -62,10 +60,10 @@ test('detectRecurringPatterns returns empty array when no observations', () => {
   } finally { rmTmpDir(dir); }
 });
 
-test('detectRecurringPatterns clusters semantically similar observations', () => {
+test('detectRecurringPatterns clusters semantically similar observations', async () => {
   const dir = makeDir();
   try {
-    seedObservations(dir, [
+    await seedObservations(dir, [
       { summary: SIMILAR_PATTERN, content: SIMILAR_PATTERN, category: 'pattern', role: 'engineer' },
       { summary: SIMILAR_PATTERN_2, content: SIMILAR_PATTERN_2, category: 'pattern', role: 'architect' },
       { summary: 'Completely unrelated topic about Docker networking and multi-stage builds', content: '', category: 'insight', role: 'engineer' },
@@ -76,10 +74,10 @@ test('detectRecurringPatterns clusters semantically similar observations', () =>
   } finally { rmTmpDir(dir); }
 });
 
-test('detectRecurringPatterns includes roles in cluster', () => {
+test('detectRecurringPatterns includes roles in cluster', async () => {
   const dir = makeDir();
   try {
-    seedObservations(dir, [
+    await seedObservations(dir, [
       { summary: SIMILAR_PATTERN, content: SIMILAR_PATTERN, category: 'pattern', role: 'engineer' },
       { summary: SIMILAR_PATTERN_2, content: SIMILAR_PATTERN_2, category: 'pattern', role: 'architect' },
     ]);
@@ -93,10 +91,10 @@ test('detectRecurringPatterns includes roles in cluster', () => {
 
 // ── detectEscalatingRisks ─────────────────────────────────────────────────
 
-test('detectEscalatingRisks returns empty when no anti-patterns', () => {
+test('detectEscalatingRisks returns empty when no anti-patterns', async () => {
   const dir = makeDir();
   try {
-    seedObservations(dir, [
+    await seedObservations(dir, [
       { summary: 'A good pattern', content: 'something positive', category: 'pattern', role: 'engineer' },
     ]);
     const result = detectEscalatingRisks(dir);
@@ -104,11 +102,11 @@ test('detectEscalatingRisks returns empty when no anti-patterns', () => {
   } finally { rmTmpDir(dir); }
 });
 
-test('detectEscalatingRisks finds escalation when recent > older rate', () => {
+test('detectEscalatingRisks finds escalation when recent > older rate', async () => {
   const dir = makeDir();
   try {
     // Simulate recent observations by using current timestamps (default)
-    seedObservations(dir, [
+    await seedObservations(dir, [
       { summary: ANTI_PATTERN, content: ANTI_PATTERN, category: 'anti-pattern', role: 'security' },
       { summary: ANTI_PATTERN_2, content: ANTI_PATTERN_2, category: 'anti-pattern', role: 'security' },
     ]);
@@ -134,10 +132,10 @@ test('detectHotTopics returns empty array when no observations', () => {
   } finally { rmTmpDir(dir); }
 });
 
-test('detectHotTopics returns terms sorted by weightedFrequency descending', () => {
+test('detectHotTopics returns terms sorted by weightedFrequency descending', async () => {
   const dir = makeDir();
   try {
-    seedObservations(dir, [
+    await seedObservations(dir, [
       { summary: 'authentication JWT token session', content: 'authentication JWT token session auth', category: 'pattern', role: 'engineer' },
       { summary: 'authentication token validation', content: 'authentication token check', category: 'pattern', role: 'architect' },
       { summary: 'Docker build optimisation', content: 'Docker multi-stage build', category: 'insight', role: 'engineer' },
@@ -154,10 +152,10 @@ test('detectHotTopics returns terms sorted by weightedFrequency descending', () 
   } finally { rmTmpDir(dir); }
 });
 
-test('detectHotTopics result has required fields', () => {
+test('detectHotTopics result has required fields', async () => {
   const dir = makeDir();
   try {
-    seedObservations(dir, [
+    await seedObservations(dir, [
       { summary: 'webhook endpoint security rate limiting', content: 'rate limiting webhook', category: 'anti-pattern', role: 'security' },
     ]);
     const result = detectHotTopics(dir);
@@ -172,10 +170,10 @@ test('detectHotTopics result has required fields', () => {
 
 // ── detectDecisionDrift ───────────────────────────────────────────────────
 
-test('detectDecisionDrift returns empty when no decisions', () => {
+test('detectDecisionDrift returns empty when no decisions', async () => {
   const dir = makeDir();
   try {
-    seedObservations(dir, [
+    await seedObservations(dir, [
       { summary: ANTI_PATTERN, content: ANTI_PATTERN, category: 'anti-pattern', role: 'security' },
     ]);
     const result = detectDecisionDrift(dir);
@@ -183,10 +181,10 @@ test('detectDecisionDrift returns empty when no decisions', () => {
   } finally { rmTmpDir(dir); }
 });
 
-test('detectDecisionDrift result has required fields when drift found', () => {
+test('detectDecisionDrift result has required fields when drift found', async () => {
   const dir = makeDir();
   try {
-    seedObservations(dir, [
+    await seedObservations(dir, [
       { summary: 'We decided to skip rate limiting on webhooks for simplicity', content: 'webhook rate limiting skipped', category: 'decision', role: 'architect' },
       { summary: 'Webhook rate limiting absence is a security anti-pattern', content: 'webhook rate limiting anti-pattern security risk', category: 'anti-pattern', role: 'security' },
     ]);

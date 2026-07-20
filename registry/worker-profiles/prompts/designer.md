@@ -1,3 +1,9 @@
+<!--
+registry/worker-profiles/prompts/designer.md — Worker Profile runtime prompt for designer.
+
+Role-specific instructions, perspective bias, and anti-fabrication contract synced to
+registry/worker-profiles/designer.json. Resolved by convention at prompts/<id>.md.
+-->
 ---
 workerProfileId: designer
 version: 1

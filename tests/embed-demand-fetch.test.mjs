@@ -74,7 +74,7 @@ describe('resolveKnownSources', () => {
   });
 
   it('returns empty array when no sources configured', () => {
-    const sources = resolveKnownSources({});
+    const sources = resolveKnownSources({}, EMPTY_CWD);
     assert.equal(sources.length, 0);
   });
 });

@@ -64,8 +64,8 @@
       }
     },
     {
-      "id": "specialist.role-cards",
-      "capabilityId": "specialist.prompt",
+      "id": "worker-profile.role-cards",
+      "capabilityId": "worker-profile.prompt",
       "mode": "hermetic",
       "fixture": {
         "path": "registry"
@@ -84,8 +84,8 @@
       }
     },
     {
-      "id": "specialist.contracts",
-      "capabilityId": "specialist.prompt",
+      "id": "worker-profile.contracts",
+      "capabilityId": "worker-profile.prompt",
       "mode": "hermetic",
       "fixture": {
         "path": "registry"
@@ -105,7 +105,7 @@
     },
     {
       "id": "worker-profile.prompt.normal",
-      "capabilityId": "specialist.prompt",
+      "capabilityId": "worker-profile.prompt",
       "mode": "live",
       "fixture": {
         "path": "tests/fixtures/certification/worker-profile-normal.json"
@@ -126,7 +126,7 @@
     },
     {
       "id": "worker-profile.prompt.paid-reference",
-      "capabilityId": "specialist.prompt",
+      "capabilityId": "worker-profile.prompt",
       "mode": "live",
       "fixture": {
         "path": "tests/fixtures/certification/worker-profile-normal.json"
@@ -527,7 +527,7 @@
     },
     {
       "id": "worker-profile.perspectives",
-      "capabilityId": "specialist.prompt",
+      "capabilityId": "worker-profile.prompt",
       "mode": "hermetic",
       "fixture": {
         "path": "tests/certification/scenarios/skills/README.md"

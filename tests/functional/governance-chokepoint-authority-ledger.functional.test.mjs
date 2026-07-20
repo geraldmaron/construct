@@ -87,7 +87,7 @@ describe('construct-b0nny.15 — one authority ledger for both provider-write an
       providerId: 'jira',
       writeKind: 'issue',
       payload: { project: 'PROJ', issueType: 'Task', summary: 'Ledger reconciliation proof' },
-      requestedBy: { specialistId: 'qa-analyst' },
+      requestedBy: { workerProfileId: 'qa-analyst' },
       surface: 'specialist-recommendation',
     });
     const record = queue.enqueue({ tool: intent.tool, args: intent.payload, surface: intent.surface, requestedBy: intent.requestedBy });
@@ -143,7 +143,7 @@ describe('construct-b0nny.15 — a write attempted outside the chokepoint is rej
       providerId: 'jira',
       writeKind: 'issue',
       payload: { project: 'PROJ', issueType: 'Task', summary: 'Should never execute' },
-      requestedBy: { specialistId: 'qa-analyst' },
+      requestedBy: { workerProfileId: 'qa-analyst' },
       surface: 'specialist-recommendation',
     });
     const record = queue.enqueue({ tool: intent.tool, args: intent.payload, surface: intent.surface, requestedBy: intent.requestedBy });

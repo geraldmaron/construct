@@ -29,9 +29,9 @@ Use **`.md`** for every prose page (CommonMark + YAML frontmatter). Reserve **`.
 
 - [Start](./guides/start/). Install, initialize a project, connect an editor, and run the first task
 - [Architecture](./guides/concepts/architecture.mdx). Runtime shape, boundaries, and system map
-- [Agents and personas](./guides/concepts/agents-and-personas.mdx). One public persona with specialists behind it
+- [Worker Profiles](./guides/reference/worker-profiles.md). The 12 assignable execution profiles behind `@construct`
 - [Deployment model](./guides/concepts/deployment-model.mdx). Solo, team, and enterprise topology
-- [Prompt surface architecture](./guides/concepts/prompt-surfaces.mdx). Persona, specialist, skill, rule, and fixture surfaces
+- [Prompt surface architecture](./guides/concepts/prompt-surfaces.mdx). Public Worker Profile prompt, internal role overlays, skills, and fixtures
 - [Knowledge layout](./guides/concepts/knowledge-layout.md). `.construct/` directory structure, inbox routing, and durable knowledge lanes
 - [Project scopes](./guides/concepts/project-scopes.md). `.construct` vs the machine state root vs user home — what belongs in git
 - [Intake and triage](./guides/concepts/intake-and-triage.mdx). How dropped signals become owner-assigned work
@@ -40,7 +40,6 @@ Use **`.md`** for every prose page (CommonMark + YAML frontmatter). Reserve **`.
 - [Branding](./guides/reference/branding.md). Visual identity, naming, voice, tone, and profile terminology
 - [Learning loops](./guides/concepts/learning-loops.mdx). What is wired vs aspirational across A1-A4
 - [Workspace Preset lifecycle](./guides/concepts/workspace-preset-lifecycle.md). Draft → validate → promote → monitor → retire
-- [Persona and skill research](./guides/concepts/persona-research.md). Methodology grounded in Goodwin, Cooper, Galbraith STAR, Bloom
 - [Release policy](./operations/maintenance/release-policy.md). When to tag
 - [Release and deploy automation](./operations/maintenance/release-and-deploy.md). What fires when you tag, plus the failure-mode lookup
 - [Templates and role anti-patterns](../templates/docs/README.md)
@@ -95,8 +94,8 @@ Use the generated [CLI reference](./guides/reference/cli/) for exact flags and s
 
 It defines:
 
-- the sole public persona surface
-- internal specialist prompts and role overlays
+- the sole public Worker Profile prompt surface (`registry/worker-profiles/prompts/construct.md`)
+- internal Worker Profile prompts and perspective overlays
 - offline-only example fixtures
 - the required fixture coverage policy
 
@@ -124,7 +123,7 @@ Parallel work rule: one writer per file. If multiple agent or harness sessions a
 > Narrative docs index — this table is regenerated from `registry/capabilities.json`.
 > Run `npm run docs:sync` after catalog changes. Do not hand-edit inside the AUTO markers.
 
-Catalog census: 139 CLI commands, 50 npm scripts, 11 embedded workflows.
+Catalog census: 132 CLI commands, 50 npm scripts, 0 embedded workflows.
 
 | Capability | Criticality | CLI surface | Verification |
 |---|---|---|---|
@@ -135,12 +134,12 @@ Catalog census: 139 CLI commands, 50 npm scripts, 11 embedded workflows.
 | `oracle.meta-review` | P1 | construct oracle review | `tests/functional/oracle-bounded-auto.functional.test.mjs` |
 | `orchestration.routing` | P0 | construct orchestrate run | `tests/functional/orchestration-mcp.functional.test.mjs` |
 | `surfaces.opencode-primary` | P1 | construct sync | `tests/functional/opencode-primary-surface.functional.test.mjs` |
-| `workflow.architecture-review` | P1 | construct workflow invoke | `tests/functional/embedded-contract-workflow-invoke.functional.test.mjs` |
-| `workflow.evidence-ingest` | P1 | construct workflow invoke | `tests/functional/embedded-contract-workflow-invoke.functional.test.mjs` |
-| `workflow.prd-draft` | P1 | construct workflow invoke | `tests/functional/embedded-contract-workflow-invoke.functional.test.mjs` |
-| `workflow.proposal-review` | P1 | construct workflow invoke | `tests/functional/embedded-contract-workflow-invoke.functional.test.mjs` |
-| `workflow.research-synthesis` | P1 | construct ask | `tests/functional/embedded-contract-workflow-invoke.functional.test.mjs` |
-| `workflow.risk-review` | P1 | construct workflow invoke | `tests/functional/embedded-contract-workflow-invoke.functional.test.mjs` |
+| `workflow.architecture-review` | P1 | construct procedure invoke | `tests/functional/embedded-contract-procedure-invoke.functional.test.mjs` |
+| `workflow.evidence-ingest` | P1 | construct procedure invoke | `tests/functional/embedded-contract-procedure-invoke.functional.test.mjs` |
+| `workflow.prd-draft` | P1 | construct procedure invoke | `tests/functional/embedded-contract-procedure-invoke.functional.test.mjs` |
+| `workflow.proposal-review` | P1 | construct procedure invoke | `tests/functional/embedded-contract-procedure-invoke.functional.test.mjs` |
+| `workflow.research-synthesis` | P1 | construct ask | `tests/functional/embedded-contract-procedure-invoke.functional.test.mjs` |
+| `workflow.risk-review` | P1 | construct procedure invoke | `tests/functional/embedded-contract-procedure-invoke.functional.test.mjs` |
 <!-- /AUTO:catalog-sync -->
 
 ## Ownership

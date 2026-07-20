@@ -1,9 +1,9 @@
 {
   "schemaVersion": 2,
-  "specialistId": "product-manager",
-  "capabilityId": "specialist.prompt",
+  "workerProfileId": "product-manager",
+  "capabilityId": "worker-profile.prompt",
   "mode": "normal",
-  "scenarioKind": "cross-specialist",
+  "scenarioKind": "cross-worker-profile",
   "representativeTask": {
     "prompt": "The acceptance criteria for tenant audit-log export are locked and each one traces to a support ticket. Package the requirements and hand them off to the specialist who owns turning them into a technical design.",
     "inputs": {

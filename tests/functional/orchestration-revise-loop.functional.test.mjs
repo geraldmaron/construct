@@ -38,20 +38,20 @@ test.after(() => {
   else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
-// The user turn ends with "as the <role> specialist", so the scripted model can
-// answer in character: a reviewer always demands changes (to drive the loop to
+// The user turn ends with "using the <id> Worker Profile", so the scripted model
+// can answer in character: a reviewer always demands changes (to drive the loop to
 // its cap), qa approves, and producers return neutral work with no recruit-signal
 // keywords so evolving-signal recruitment does not perturb the task count.
-function roleAwareFetch(capturedBodies, { reviewerVerdict }) {
+function workerProfileAwareFetch(capturedBodies, { reviewerVerdict }) {
   return async (_url, opts) => {
     const body = JSON.parse(opts.body);
     capturedBodies.push(body);
     const user = body.messages[0].content[0].text;
-    const role = (user.match(/as the (\S+) specialist/) || [])[1] || '';
+    const workerProfileId = (user.match(/using the (\S+) Worker Profile/) || [])[1] || '';
     let text;
-    if (role === 'reviewer') text = reviewerVerdict === 'approve' ? 'APPROVED. No blocking issues.' : `CHANGES_REQUESTED: this needs rework before it can merge (call ${capturedBodies.length}).`;
-    else if (role === 'qa') text = 'APPROVED. Acceptance criteria met.';
-    else text = `${role} completed the work (call ${capturedBodies.length}).`;
+    if (workerProfileId === 'reviewer') text = reviewerVerdict === 'approve' ? 'APPROVED. No blocking issues.' : `CHANGES_REQUESTED: this needs rework before it can merge (call ${capturedBodies.length}).`;
+    else if (workerProfileId === 'qa') text = 'APPROVED. Acceptance criteria met.';
+    else text = `${workerProfileId} completed the work (call ${capturedBodies.length}).`;
     return { ok: true, json: async () => ({ content: [{ type: 'text', text }] }) };
   };
 }
@@ -63,7 +63,7 @@ test('reviseLoop on: a critic that requests changes drives a bounded reviser→r
   const bodies = [];
   const run = await runOrchestration(
     { request: REQUEST, requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 5, moduleCount: 2, reviseLoop: true },
-    { env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test' }, cwd, workerBackend: 'provider', fetchImpl: roleAwareFetch(bodies, { reviewerVerdict: 'changes' }) },
+    { env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test' }, cwd, workerBackend: 'provider', fetchImpl: workerProfileAwareFetch(bodies, { reviewerVerdict: 'changes' }) },
   );
   assert.equal(run.status, 'completed');
   assert.equal(run.reviseLoop, true);
@@ -81,7 +81,7 @@ test('reviseLoop on: a critic that requests changes drives a bounded reviser→r
   // loop only has value if the producer sees what it must fix.
   const reviserBody = bodies.find((b) => {
     const u = b.messages[0].content[0].text;
-    return /as the engineer specialist/.test(u) && /## Prior specialist results/.test(u) && /CHANGES_REQUESTED/.test(u);
+    return /using the engineer Worker Profile/.test(u) && /## Prior Worker Profile results/.test(u) && /CHANGES_REQUESTED/.test(u);
   });
   assert.ok(reviserBody, "the reviser's prompt folds in the critic's CHANGES_REQUESTED output");
 });
@@ -91,7 +91,7 @@ test('reviseLoop off (default): no reviser is spawned — the run is byte-identi
   const bodies = [];
   const run = await runOrchestration(
     { request: REQUEST, requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 5, moduleCount: 2 },
-    { env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test' }, cwd, workerBackend: 'provider', fetchImpl: roleAwareFetch(bodies, { reviewerVerdict: 'changes' }) },
+    { env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test' }, cwd, workerBackend: 'provider', fetchImpl: workerProfileAwareFetch(bodies, { reviewerVerdict: 'changes' }) },
   );
   assert.equal(run.status, 'completed');
   assert.equal(run.reviseLoop, undefined, 'a default run carries no reviseLoop field');
@@ -104,7 +104,7 @@ test('reviseLoop on but the critic approves: no revision is triggered', async ()
   const bodies = [];
   const run = await runOrchestration(
     { request: REQUEST, requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 5, moduleCount: 2, reviseLoop: true },
-    { env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test' }, cwd, workerBackend: 'provider', fetchImpl: roleAwareFetch(bodies, { reviewerVerdict: 'approve' }) },
+    { env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test' }, cwd, workerBackend: 'provider', fetchImpl: workerProfileAwareFetch(bodies, { reviewerVerdict: 'approve' }) },
   );
   assert.equal(run.status, 'completed');
   assert.equal(run.reviseLoop, true);

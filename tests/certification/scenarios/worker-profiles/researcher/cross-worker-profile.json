@@ -1,9 +1,9 @@
 {
   "schemaVersion": 2,
-  "specialistId": "researcher",
-  "capabilityId": "specialist.prompt",
+  "workerProfileId": "researcher",
+  "capabilityId": "worker-profile.prompt",
   "mode": "normal",
-  "scenarioKind": "cross-specialist",
+  "scenarioKind": "cross-worker-profile",
   "representativeTask": {
     "prompt": "Gather the top pain points users report with our onboarding flow, cite the primary sources with dates, then route the sourced findings to whoever owns the roadmap prioritization call.",
     "inputs": {}

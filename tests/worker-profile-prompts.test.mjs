@@ -12,6 +12,7 @@ import { inlinePerspectiveAntiPatterns, PERSPECTIVE_DIRECTIVE_RE } from "../lib/
 import { stripLeadingYamlFrontmatter } from "../lib/prompt-composer.mjs";
 import { loadRegistry } from "../lib/registry/loader.mjs";
 import { resolveWorkerProfilePromptPath } from "../lib/prompt-metadata.mjs";
+import { bindingForWorkerProfile } from "../lib/roles/flavor-bindings.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
@@ -67,13 +68,10 @@ test("product manager flavor overlays exist for Product Intelligence routing", (
 });
 
 test("domain role flavor overlays exist for routing metadata", () => {
-  const splitRoles = ["ai-engineer", "platform-engineer"];
-  for (const role of splitRoles) {
-    const p = path.join(root, "skills", "perspectives", `${role}.md`);
-    assert.ok(fs.existsSync(p), `Missing split role overlay: ${p}`);
-    const content = fs.readFileSync(p, "utf8");
-    assert.match(content, new RegExp(`perspective:\\s*${role}`));
-    assert.ok(content.length > 500, `${p} too short to provide useful guidance`);
+  for (const role of ["ai-engineer", "platform-engineer", "data-engineer"]) {
+    const binding = bindingForWorkerProfile(role);
+    assert.ok(binding, `Missing flavor binding for split role overlay: ${role}`);
+    assert.equal(binding.workerProfileId, "engineer", `${role} should bind to engineer in 2.0`);
   }
 
   const overlays = {
@@ -81,7 +79,6 @@ test("domain role flavor overlays exist for routing metadata", () => {
     qa: ["web-ui", "api-contract", "data-pipeline", "ai-eval"],
     security: ["appsec", "cloud", "ai", "privacy", "supply-chain"],
     "data-analyst": ["product", "experiment", "telemetry", "product-intelligence"],
-    "data-engineer": ["pipeline", "warehouse", "vector-retrieval"],
   };
 
   for (const [role, flavors] of Object.entries(overlays)) {
@@ -103,18 +100,16 @@ test("orchestrator perspective stays compact", () => {
 });
 
 test("inlinePerspectiveAntiPatterns expands the directive when preload: true", () => {
-  // On-demand is the default (see rules/common/skill-composition.md). Preload
-  // is opt-in for hosts without reliable runtime get_skill.
-  const src = '**Perspective guidance**: call `get_skill("perspectives/ai-engineer")` before drafting.';
-  const out = inlinePerspectiveAntiPatterns(src, root, "ai-engineer", () => {}, { preload: true });
+  const src = '**Perspective guidance**: call `get_skill("perspectives/engineer")` before drafting.';
+  const out = inlinePerspectiveAntiPatterns(src, root, "engineer", () => {}, { preload: true });
   assert.ok(!/get_skill\("perspectives\//.test(out), "raw directive should be expanded");
   assert.match(out, /## Perspective guidance/);
-  assert.match(out, /Prompt tuning without evals/i);
+  assert.match(out, /Speculative abstraction/i);
 });
 
 test("inlinePerspectiveAntiPatterns defaults to on-demand (leaves directive in place)", () => {
-  const src = '**Perspective guidance**: call `get_skill("perspectives/ai-engineer")` before drafting.';
-  const out = inlinePerspectiveAntiPatterns(src, root, "ai-engineer", () => {});
+  const src = '**Perspective guidance**: call `get_skill("perspectives/engineer")` before drafting.';
+  const out = inlinePerspectiveAntiPatterns(src, root, "engineer", () => {});
   assert.strictEqual(out, src, "default should leave the directive untouched for runtime get_skill");
 });
 

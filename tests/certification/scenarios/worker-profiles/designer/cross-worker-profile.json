@@ -1,9 +1,9 @@
 {
   "schemaVersion": 2,
-  "specialistId": "designer",
-  "capabilityId": "specialist.prompt",
+  "workerProfileId": "designer",
+  "capabilityId": "worker-profile.prompt",
   "mode": "normal",
-  "scenarioKind": "cross-specialist",
+  "scenarioKind": "cross-worker-profile",
   "representativeTask": {
     "prompt": "The accessibility annotations for the new checkout form are done. The keyboard and screen-reader behavior now has to be verified against the built implementation before release — get that verification covered.",
     "inputs": {}

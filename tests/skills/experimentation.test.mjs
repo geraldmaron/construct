@@ -23,9 +23,10 @@ import { loadRegistry } from '../../lib/registry/loader.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SKILL = 'strategy/experimentation';
 
-function entitled(reg, specialistId) {
-  const s = reg.specialists[specialistId] ?? Object.values(reg.specialists).find((x) => `cx-${x.name}` === specialistId);
-  return new Set(s?.skills ?? []);
+function entitled(reg, workerProfileId) {
+  const profile = reg.workerProfiles[workerProfileId]
+    ?? Object.values(reg.workerProfiles).find((entry) => `cx-${entry.id}` === workerProfileId);
+  return new Set(profile?.skillEmphasis ?? []);
 }
 
 test('the experimentation skill exists and passes the effectiveness lint', () => {

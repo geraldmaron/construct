@@ -32,10 +32,10 @@ test('generated CLI reference contains rendered subcommands, not object coercion
   }
 });
 
-test('artifact workflow is both documented and available at runtime', (t) => {
+test('artifact run is both documented and available at runtime', (t) => {
   const home = mkdtempSync(join(tmpdir(), 'cli-service-inventory-home-'));
   t.after(() => rmTmpDir(home));
-  const result = spawnSync(process.execPath, [resolve(REPO, 'bin/construct'), 'artifact', 'workflow', 'Create a runbook HTML.'], {
+  const result = spawnSync(process.execPath, [resolve(REPO, 'bin/construct'), 'artifact', 'run', 'Create a runbook HTML.'], {
     cwd: REPO,
     encoding: 'utf8',
     env: { ...process.env, CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1', BOOTSTRAP_CHECKED: '1', HOME: home, CONSTRUCT_HOME_OVERRIDE: home },

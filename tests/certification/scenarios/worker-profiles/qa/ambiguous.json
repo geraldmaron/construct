@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "specialistId": "qa",
-  "capabilityId": "specialist.prompt",
+  "workerProfileId": "qa",
+  "capabilityId": "worker-profile.prompt",
   "mode": "normal",
   "scenarioKind": "ambiguous",
   "representativeTask": {

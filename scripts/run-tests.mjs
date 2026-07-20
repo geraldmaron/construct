@@ -240,12 +240,17 @@ if (enableCoverage) {
 // dev machines keep the hard gate unconditionally.
 
 const drift = diffRealConfigs(sterileBefore);
-if (drift.drifted.length || drift.auditTrailLeaks > 0) {
+const sterileLeakCount =
+  drift.auditTrailLeaks + drift.hookScratchLeaks + drift.telemetryLeaks + drift.sessionStatusLeaks;
+if (drift.drifted.length || sterileLeakCount > 0) {
   const detail = [
     drift.drifted.length ? `Sterile drift — real host config changed: ${drift.drifted.join(", ")}` : null,
     drift.addedProjectKeys.length ? `  project keys added:   ${drift.addedProjectKeys.join(", ")}` : null,
     drift.removedProjectKeys.length ? `  project keys removed: ${drift.removedProjectKeys.join(", ")}` : null,
     drift.auditTrailLeaks > 0 ? `Sterile drift — ${drift.auditTrailLeaks} test-tagged record(s) appended to the real audit trail (a Broker was constructed without pinning the doctor root or injecting auditRecorder)` : null,
+    drift.hookScratchLeaks > 0 ? `Sterile drift — ${drift.hookScratchLeaks} hook scratch marker(s) leaked into real doctorRoot state` : null,
+    drift.telemetryLeaks > 0 ? `Sterile drift — ${drift.telemetryLeaks} test-tagged telemetry record(s) appended to real doctorRoot logs` : null,
+    drift.sessionStatusLeaks > 0 ? `Sterile drift — ${drift.sessionStatusLeaks} test-tagged session/status marker(s) leaked into real doctorRoot state` : null,
   ].filter(Boolean).join("\n");
   if (process.env.CI === "true") {
     console.warn(`\n[sterile-guard] WARNING (non-blocking on CI): ${detail}`);

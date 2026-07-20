@@ -1,9 +1,9 @@
 {
   "schemaVersion": 2,
-  "specialistId": "debugger",
-  "capabilityId": "specialist.prompt",
+  "workerProfileId": "debugger",
+  "capabilityId": "worker-profile.prompt",
   "mode": "normal",
-  "scenarioKind": "cross-specialist",
+  "scenarioKind": "cross-worker-profile",
   "representativeTask": {
     "prompt": "You've reproduced the intermittent 500 and confirmed the root cause: a race on the shared HTTP connection pool that violates the one-owner-per-connection invariant. Hand it off so the fix gets implemented in the client.",
     "inputs": {}

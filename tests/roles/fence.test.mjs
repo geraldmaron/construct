@@ -14,57 +14,57 @@ test('globMatch handles ** and *', () => {
 });
 
 test('operations may edit runbooks (in-fence)', () => {
-  const r = checkAction({ personaId: 'operations', action: 'edit', target: 'docs/operations/runbooks/postgres.md' });
+  const r = checkAction({ workerProfileId: 'operations', action: 'edit', target: 'docs/operations/runbooks/postgres.md' });
   assert.equal(r.allowed, true);
 });
 
 test('operations editing lib/ needs approval', () => {
-  const r = checkAction({ personaId: 'operations', action: 'edit', target: 'lib/foo.mjs' });
+  const r = checkAction({ workerProfileId: 'operations', action: 'edit', target: 'lib/foo.mjs' });
   assert.equal(r.allowed, false);
   assert.equal(r.approval, true);
 });
 
 test('security may edit security docs but not code', () => {
   assert.equal(
-    checkAction({ personaId: 'security', action: 'edit', target: 'docs/security/threat.md' }).allowed,
+    checkAction({ workerProfileId: 'security', action: 'edit', target: 'docs/security/threat.md' }).allowed,
     true
   );
-  const codeAttempt = checkAction({ personaId: 'security', action: 'edit', target: 'lib/foo.mjs' });
+  const codeAttempt = checkAction({ workerProfileId: 'security', action: 'edit', target: 'lib/foo.mjs' });
   assert.equal(codeAttempt.allowed, false);
   assert.equal(codeAttempt.approval, true);
 });
 
 test('operations may edit README and CHANGELOG', () => {
-  assert.equal(checkAction({ personaId: 'operations', action: 'edit', target: 'README.md' }).allowed, true);
-  assert.equal(checkAction({ personaId: 'operations', action: 'edit', target: 'sub/README.md' }).allowed, true);
-  assert.equal(checkAction({ personaId: 'operations', action: 'edit', target: 'CHANGELOG.md' }).allowed, true);
+  assert.equal(checkAction({ workerProfileId: 'operations', action: 'edit', target: 'README.md' }).allowed, true);
+  assert.equal(checkAction({ workerProfileId: 'operations', action: 'edit', target: 'sub/README.md' }).allowed, true);
+  assert.equal(checkAction({ workerProfileId: 'operations', action: 'edit', target: 'CHANGELOG.md' }).allowed, true);
 });
 
-test('every onboarded persona requires approval for commit and push', () => {
+test('every onboarded worker profile requires approval for commit and push', () => {
   for (const id of ['operations', 'qa', 'security']) {
-    assert.equal(checkAction({ personaId: id, action: 'commit', target: '' }).approval, true, `${id} commit`);
-    assert.equal(checkAction({ personaId: id, action: 'push', target: '' }).approval, true, `${id} push`);
+    assert.equal(checkAction({ workerProfileId: id, action: 'commit', target: '' }).approval, true, `${id} commit`);
+    assert.equal(checkAction({ workerProfileId: id, action: 'push', target: '' }).approval, true, `${id} push`);
   }
 });
 
 test('bash fence uses prefix match against allowedCommands', () => {
-  assert.equal(checkAction({ personaId: 'operations', action: 'bash', target: 'bd note construct-abc some-note' }).allowed, true);
-  assert.equal(checkAction({ personaId: 'operations', action: 'bash', target: 'bd create incident-x -t bug' }).allowed, true);
-  const denied = checkAction({ personaId: 'operations', action: 'bash', target: 'npm install lodash' });
+  assert.equal(checkAction({ workerProfileId: 'operations', action: 'bash', target: 'bd note construct-abc some-note' }).allowed, true);
+  assert.equal(checkAction({ workerProfileId: 'operations', action: 'bash', target: 'bd create incident-x -t bug' }).allowed, true);
+  const denied = checkAction({ workerProfileId: 'operations', action: 'bash', target: 'npm install lodash' });
   assert.equal(denied.allowed, false);
   assert.equal(denied.reason, 'outside-fence');
 });
 
 test('bd-label inside allowed list is permitted; outside is denied', () => {
-  assert.equal(checkAction({ personaId: 'operations', action: 'bd-label', target: 'incident,sre' }).allowed, true);
-  assert.equal(checkAction({ personaId: 'operations', action: 'bd-label', target: 'incident,next:engineer' }).allowed, true);
-  assert.equal(checkAction({ personaId: 'operations', action: 'bd-label', target: 'random' }).allowed, false);
+  assert.equal(checkAction({ workerProfileId: 'operations', action: 'bd-label', target: 'incident,sre' }).allowed, true);
+  assert.equal(checkAction({ workerProfileId: 'operations', action: 'bd-label', target: 'incident,next:engineer' }).allowed, true);
+  assert.equal(checkAction({ workerProfileId: 'operations', action: 'bd-label', target: 'random' }).allowed, false);
 });
 
-test('unknown persona is rejected', () => {
-  const r = checkAction({ personaId: 'made-up', action: 'edit', target: 'anything' });
+test('unknown worker profile is rejected', () => {
+  const r = checkAction({ workerProfileId: 'made-up', action: 'edit', target: 'anything' });
   assert.equal(r.allowed, false);
-  assert.equal(r.reason, 'persona-not-onboarded');
+  assert.equal(r.reason, 'worker-profile-not-onboarded');
 });
 
 test('computeEffectiveFence: team fence bounds specialist fence', () => {
@@ -84,7 +84,7 @@ test('computeEffectiveFence: team fence bounds specialist fence', () => {
 test('computeEffectiveFence: specialist cannot exceed team authority', () => {
   // Create a specialist fence that tries to allow something the team forbids
   const overreachingFence = {
-    allowedPaths: ['lib/**', 'tests/**', 'specialists/**'],
+    allowedPaths: ['lib/**', 'tests/**', 'registry/worker-profiles/**'],
     allowedCommands: ['npm', 'git'],
     deniedActions: [],
     approvalRequired: [],

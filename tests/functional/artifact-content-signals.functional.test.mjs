@@ -6,8 +6,8 @@
  * table. extractContentSignals must fire cost:true from the draft alone, and
  * runConstructArtifactLoop must re-evaluate recruitment after buildDraftBody:
  * the result carries the content signals and the late-recruited reviewer
- * (data-analyst via the cost skill affinity), folded into the overlay
- * specialists without displacing the workflow plan's own roles. Advisory per
+ * (data-analyst via the cost skill affinity), folded into the overlay Worker
+ * Profiles without displacing the Procedure plan's own assignments. Advisory per
  * ADR-0070 — recruitment never changes the release-gate verdict.
  */
 
@@ -108,14 +108,14 @@ test('runConstructArtifactLoop re-evaluates recruitment after buildDraftBody', a
   assert.ok(fs.existsSync(res.path), 'draft written to disk');
   assert.equal(res.contentSignals.cost, true, 'content signals surfaced on the result');
 
-  const recruited = res.recruited.find((p) => p.specialist === 'data-analyst');
+  const recruited = res.recruited.find((p) => p.workerProfile === 'data-analyst');
   assert.ok(recruited, 'cost content signal recruits data-analyst');
-  assert.equal(recruited.role, 'reviewer');
+  assert.equal(recruited.assignmentRole, 'reviewer');
   assert.equal(recruited.via, 'skill-affinity');
 
   assert.ok(
-    res.overlay.specialists.includes('data-analyst'),
-    'late recruit folded into overlay specialists',
+    res.recruited.some((p) => p.workerProfile === 'data-analyst'),
+    'late recruit recorded on the result',
   );
   assert.ok(
     res.summary.includes('Recruited (signals)'),
@@ -140,5 +140,5 @@ test('a draft with no emergent conditions recruits nobody and leaves the result 
   assert.ok(res.path, 'artifact file materialized');
   assert.deepEqual(res.recruited, [], 'no signals, no recruits');
   assert.equal(res.summary.includes('Recruited ('), false);
-  assert.ok(Array.isArray(res.overlay.specialists));
+  assert.ok(Array.isArray(res.overlay.workerProfiles));
 });

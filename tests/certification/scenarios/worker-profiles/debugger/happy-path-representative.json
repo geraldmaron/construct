@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "specialistId": "debugger",
-  "capabilityId": "specialist.prompt",
+  "workerProfileId": "debugger",
+  "capabilityId": "worker-profile.prompt",
   "mode": "normal",
   "scenarioKind": "happy-path-representative",
   "representativeTask": {

@@ -15,7 +15,7 @@ test('user-research-workflow documents validity threats and inter-rater reliabil
   const body = readFileSync(WORKFLOW, 'utf8');
   assert.match(body, /internal\/external\/construct\/conclusion/);
   assert.match(body, /Inter-rater reliability/i);
-  assert.match(body, /roles\/ux-researcher/);
+  assert.match(body, /perspectives\/researcher/);
   assert.match(body, /researcher/);
 });
 

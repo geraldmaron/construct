@@ -6,7 +6,7 @@
  * Spawns a real EmbedDaemon (tests/functional/fixtures/
  * embed-daemon-directive-runner-runner.mjs) against a construct.config.json
  * carrying two directives: one valid and due (interval trigger, never run),
- * one referencing an unknown specialist. Asserts within one tick:
+ * one referencing an unknown Worker Profile. Asserts within one tick:
  *
  *   - the valid directive gets a 'directive'+'due'-tagged observation and
  *     its due-tracker state (lib/directives/due-tracker.mjs) advances —
@@ -45,8 +45,8 @@ function freshProject() {
     directives: [
       {
         id: 'jira-weekly-summary',
-        provider: 'jira',
-        specialist: 'operations',
+        provider: 'atlassian-jira',
+        workerProfileId: 'operations',
         instruction: "Summarize what the team is working on",
         trigger: { kind: 'interval', intervalMinutes: 10_080 },
         action: 'summarize',
@@ -54,8 +54,8 @@ function freshProject() {
       },
       {
         id: 'bad-directive',
-        provider: 'jira',
-        specialist: 'cx-totally-not-a-real-specialist',
+        provider: 'atlassian-jira',
+        workerProfileId: 'cx-totally-not-a-real-worker-profile',
         instruction: 'Something',
         trigger: { kind: 'interval', intervalMinutes: 60 },
         action: 'summarize',
@@ -97,5 +97,5 @@ test('directive-runner surfaces a due directive as an observation and records an
 
   assert.ok(result.degradations.length > 0);
   assert.equal(result.degradations[0].reason, 'invalid-directive');
-  assert.match(result.degradations[0].detail, /cx-totally-not-a-real-specialist/);
+  assert.match(result.degradations[0].detail, /cx-totally-not-a-real-worker-profile/);
 });

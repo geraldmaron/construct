@@ -24,21 +24,31 @@ import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { isolationEnv, assertPathUnderRoot } from '../helpers/isolation-contract.mjs';
+import { assertPathUnderRoot } from '../helpers/isolation-contract.mjs';
 import { deriveProjectKey } from '../../lib/state-root.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
+import { sterileSpawnEnv } from '../helpers/sterile-env.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
 
 const HEAVY_STATE_DIRNAMES = new Set(['runtime', 'traces', 'lancedb']);
 
+function fixtureEnv(home, overrides = {}) {
+  return sterileSpawnEnv({
+    HOME: home,
+    CONSTRUCT_HOME_OVERRIDE: home,
+    ...overrides,
+  });
+}
+
 function makeFixture() {
   const project = mkdtempSync(join(tmpdir(), 'state-root-fp-project-'));
   const home = mkdtempSync(join(tmpdir(), 'state-root-fp-home-'));
-  spawnSync('git', ['init', '--quiet', '--initial-branch=main'], { cwd: project });
-  spawnSync('git', ['config', 'user.email', 'state-root@example.com'], { cwd: project });
-  spawnSync('git', ['config', 'user.name', 'State Root Test'], { cwd: project });
+  const env = fixtureEnv(home);
+  spawnSync('git', ['init', '--quiet', '--initial-branch=main'], { cwd: project, env });
+  spawnSync('git', ['config', 'user.email', 'state-root@example.com'], { cwd: project, env });
+  spawnSync('git', ['config', 'user.name', 'State Root Test'], { cwd: project, env });
   return {
     project,
     home,
@@ -65,7 +75,7 @@ test('construct init produces only text under .construct/ — no heavy state dir
   const { project, home, cleanup } = makeFixture();
   t.after(cleanup);
 
-  const env = isolationEnv(home, { CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1', BOOTSTRAP_CHECKED: '1' });
+  const env = fixtureEnv(home, { CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1', BOOTSTRAP_CHECKED: '1' });
   const result = spawnSync(process.execPath, [BIN, 'init', '--yes', '--no-start'], {
     cwd: project,
     encoding: 'utf8',
@@ -100,7 +110,7 @@ test('a trace write after init lands under the machine-scoped state root, not .c
   const { project, home, cleanup } = makeFixture();
   t.after(cleanup);
 
-  const initEnv = isolationEnv(home, { CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1', BOOTSTRAP_CHECKED: '1' });
+  const initEnv = fixtureEnv(home, { CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1', BOOTSTRAP_CHECKED: '1' });
   const initResult = spawnSync(process.execPath, [BIN, 'init', '--yes', '--no-start'], {
     cwd: project,
     encoding: 'utf8',
@@ -117,7 +127,7 @@ test('a trace write after init lands under the machine-scoped state root, not .c
     + `const event = emitTraceEvent({ rootDir: process.cwd(), eventType: 'intake.received', metadata: { probe: true } });\n`
     + `process.stdout.write(JSON.stringify(event));\n`,
   );
-  const traceEnv = isolationEnv(home);
+  const traceEnv = fixtureEnv(home);
   const traceResult = spawnSync(process.execPath, [script], { cwd: project, encoding: 'utf8', env: traceEnv });
   assert.equal(traceResult.status, 0, `trace emit failed: ${traceResult.stderr}`);
   const event = JSON.parse(traceResult.stdout);
@@ -144,7 +154,7 @@ test('construct status reads a persisted orchestration run back from the state r
   const { project, home, cleanup } = makeFixture();
   t.after(cleanup);
 
-  const initEnv = isolationEnv(home, { CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1', BOOTSTRAP_CHECKED: '1' });
+  const initEnv = fixtureEnv(home, { CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1', BOOTSTRAP_CHECKED: '1' });
   const initResult = spawnSync(process.execPath, [BIN, 'init', '--yes', '--no-start'], {
     cwd: project,
     encoding: 'utf8',
@@ -163,11 +173,11 @@ test('construct status reads a persisted orchestration run back from the state r
     + `  createdAt: new Date().toISOString(),\n`
     + `  status: 'degraded',\n`
     + `  executionState: 'degraded-executed',\n`
-    + `  tasks: [{ id: 't1', personaAvailable: false, degraded: 'persona-fallback' }],\n`
+    + `  tasks: [{ id: 't1', workerProfileAvailable: false, degraded: 'worker-profile-fallback' }],\n`
     + `});\n`
     + `process.stdout.write('ok');\n`,
   );
-  const saveEnv = isolationEnv(home);
+  const saveEnv = fixtureEnv(home);
   const saveResult = spawnSync(process.execPath, [script], { cwd: project, encoding: 'utf8', env: saveEnv });
   assert.equal(saveResult.status, 0, `saveRun failed: ${saveResult.stderr}`);
 
@@ -181,11 +191,11 @@ test('construct status reads a persisted orchestration run back from the state r
   assertPathUnderRoot(stateRunsDir, home, 'orchestration run store directory');
 
   // `construct status` reads the same directory back — it must surface the
-  // persona-fallback run and its executionState, not report zero runs (the
+  // worker-profile-fallback run and its executionState, not report zero runs (the
   // split-brain regression this test pins: a reader duplicating the writer's
   // path outside lib/orchestration/run-store.mjs's runtimeDir()).
 
-  const statusEnv = isolationEnv(home, { CONSTRUCT_SKIP_POSTINSTALL: '1' });
+  const statusEnv = fixtureEnv(home, { CONSTRUCT_SKIP_POSTINSTALL: '1' });
   const statusResult = spawnSync(process.execPath, [BIN, 'status', '--json'], {
     cwd: project,
     encoding: 'utf8',
@@ -195,8 +205,8 @@ test('construct status reads a persisted orchestration run back from the state r
   assert.equal(statusResult.status, 0, `status exited ${statusResult.status}: ${statusResult.stderr}`);
   const status = JSON.parse(statusResult.stdout);
 
-  assert.equal(status.personaDegradedRuns.total, 1, `expected one persona-degraded run; got ${JSON.stringify(status.personaDegradedRuns)}`);
-  assert.ok(status.personaDegradedRuns.runs.includes('run-fixture-degraded-1'));
+  assert.equal(status.workerProfileDegradedRuns.total, 1, `expected one Worker Profile-degraded run; got ${JSON.stringify(status.workerProfileDegradedRuns)}`);
+  assert.ok(status.workerProfileDegradedRuns.runs.includes('run-fixture-degraded-1'));
   assert.equal(status.recentRunExecutionStates.total, 1, `expected one recent run; got ${JSON.stringify(status.recentRunExecutionStates)}`);
   assert.equal(status.recentRunExecutionStates.byState['degraded-executed'], 1);
 });
@@ -205,7 +215,7 @@ test('construct doctor flags legacy in-project heavy state left over from a pre-
   const { project, home, cleanup } = makeFixture();
   t.after(cleanup);
 
-  const initEnv = isolationEnv(home, { CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1', BOOTSTRAP_CHECKED: '1' });
+  const initEnv = fixtureEnv(home, { CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1', BOOTSTRAP_CHECKED: '1' });
   const initResult = spawnSync(process.execPath, [BIN, 'init', '--yes', '--no-start'], {
     cwd: project,
     encoding: 'utf8',
@@ -220,7 +230,7 @@ test('construct doctor flags legacy in-project heavy state left over from a pre-
   mkdirSync(join(project, '.construct', 'traces'), { recursive: true });
   writeFileSync(join(project, '.construct', 'traces', '2026-01-01.jsonl'), '{"eventType":"legacy"}\n');
 
-  const doctorEnv = isolationEnv(home, { CONSTRUCT_SKIP_POSTINSTALL: '1' });
+  const doctorEnv = fixtureEnv(home, { CONSTRUCT_SKIP_POSTINSTALL: '1' });
   const doctorResult = spawnSync(process.execPath, [BIN, 'doctor'], {
     cwd: project,
     encoding: 'utf8',

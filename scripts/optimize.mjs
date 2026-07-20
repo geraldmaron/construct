@@ -52,7 +52,7 @@ const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 const MACHINE_STATE_DIR = doctorRoot(homeDir());
 const REVIEW_DIR = path.join(MACHINE_STATE_DIR, 'performance-reviews');
 const HISTORY_DIR = path.join(MACHINE_STATE_DIR, 'prompt-history');
-const SKILLS_DIR = path.join(ROOT_DIR, 'skills', 'roles');
+const SKILLS_DIR = path.join(ROOT_DIR, 'skills', 'perspectives');
 
 const TELEMETRY_BASEURL = (process.env.CONSTRUCT_TELEMETRY_BASEURL ?? '').replace(/\/$/, '');
 
@@ -123,14 +123,8 @@ function loadLatestReview() {
 // ─── Find the skill file for an agent ───────────────────────────────────────
 
 function findSkillFile(agentName) {
-  const bare = agentName.replace(/^cx-/, '');
-  const candidates = [
-    path.join(SKILLS_DIR, `${bare}.md`),
-    path.join(SKILLS_DIR, `${agentName}.md`),
-    path.join(ROOT_DIR, 'skills', 'roles', `${bare}.md`),
-    path.join(ROOT_DIR, 'specialists', 'prompts', `${agentName}.md`),
-  ];
-  return candidates.find((p) => fs.existsSync(p)) ?? null;
+  const candidate = path.join(SKILLS_DIR, `${agentName}.md`);
+  return fs.existsSync(candidate) ? candidate : null;
 }
 
 // ─── Generate improvement patch via LLM ─────────────────────────────────────
@@ -337,7 +331,7 @@ async function runOptimize(agentName) {
   // Find skill file
   const skillFile = findSkillFile(agentName);
   if (!skillFile) {
-    warn(`No skill file found for "${agentName}". Searched: skills/perspectives/${agentName.replace(/^cx-/, '')}.md`);
+    warn(`No skill file found for "${agentName}". Searched: skills/perspectives/${agentName}.md`);
     warn('Cannot apply patch without a skill file.');
     return;
   }

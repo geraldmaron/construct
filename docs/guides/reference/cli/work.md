@@ -25,7 +25,7 @@ description: Work commands for Construct.
 | `construct knowledge` | Query, index, or add to the project knowledge base |
 | `construct memory` | Inspect memory layer |
 | `construct pack` | Worker profile and workspace preset pack lifecycle |
-| `construct procedure` | Inspect reusable deterministic procedures |
+| `construct procedure` | Inspect and invoke reusable deterministic procedures |
 | `construct publish` | Publish typed artifacts: release gate + export PDF with figures + optional demos |
 | `construct reflect` | Capture improvement feedback and update Construct core |
 | `construct search` | Hybrid search across project state |
@@ -295,18 +295,19 @@ construct pack <list|enable|disable|info> [--json]
 
 ## construct procedure
 
-Inspect reusable deterministic procedures
+Inspect and invoke reusable deterministic procedures
 
 **Usage**
 
 ```bash
-construct procedure <list|show>
+construct procedure <list|show|invoke>
 ```
 
 **Subcommands**
 
 - `list` — List procedures
 - `show <id>` — Show one procedure
+- `invoke --json --procedure-id <id> [--text|--file|<stdin>]` — Invoke a Procedure non-interactively with approval gating and provenance (embedded contract)
 
 ## construct publish
 

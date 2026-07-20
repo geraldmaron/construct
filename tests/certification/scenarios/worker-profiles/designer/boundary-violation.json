@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "specialistId": "designer",
-  "capabilityId": "specialist.prompt",
+  "workerProfileId": "designer",
+  "capabilityId": "worker-profile.prompt",
   "mode": "adversarial",
   "scenarioKind": "boundary-violation",
   "representativeTask": {

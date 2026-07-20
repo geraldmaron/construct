@@ -39,7 +39,7 @@ Definition: tool returns content that includes an instruction-shaped string, age
 
 Evidence: 187,232 runs flagged by the prompt-injection detector. Sample 30: 28 confirmed prompt injection (a web search returning a page that says "ignore previous instructions"). 2 false positives.
 
-**Security implication. Separate finding tracked in `.cx/inbox/security-scan-finding-2026-05-15.json`.**
+**Security implication. Separate finding tracked in `.construct/inbox/security-scan-finding-2026-05-15.json`.**
 
 ### 4. Cross-tenant memory recall (rare but high-severity, 0.05% of runs but flagged 12 tenant complaints)
 
@@ -68,7 +68,7 @@ Evidence: 46,836 runs. Common pattern: agent says "I searched and found..." with
 
 ## Sources
 
-- `traces.agent_runs` table snapshot 2026-04-02 (query saved at `.cx/knowledge/internal/q1-trace-query.sql`)
+- `traces.agent_runs` table snapshot 2026-04-02 (query saved at `.construct/knowledge/internal/q1-trace-query.sql`)
 - Customer ticket export Q1 2026 (zendesk-style format, `[unverified]` — not preserved in repo)
 - Enterprise customer survey March 2026 (n=22 responses)
 - Eval bench `q1-2026-baseline` (run id `eval-2026-03-31-baseline`)

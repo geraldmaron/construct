@@ -2,7 +2,7 @@
   "id": "code-review",
   "ownerWorkerProfile": "orchestrator",
   "description": "Review standards applied by reviewer and qa before any change is marked done.",
-  "enforcement": "(persona prompt)",
+  "enforcement": "(worker-profile prompt)",
   "mode": "honor-system",
   "approvalWorkerProfiles": [],
   "requiredPolicies": [],

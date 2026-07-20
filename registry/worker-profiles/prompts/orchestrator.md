@@ -1,3 +1,9 @@
+<!--
+registry/worker-profiles/prompts/orchestrator.md — Worker Profile runtime prompt for orchestrator.
+
+Role-specific instructions, perspective bias, and anti-fabrication contract synced to
+registry/worker-profiles/orchestrator.json. Resolved by convention at prompts/<id>.md.
+-->
 ---
 workerProfileId: orchestrator
 version: 1

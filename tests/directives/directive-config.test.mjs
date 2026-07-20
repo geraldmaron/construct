@@ -16,7 +16,7 @@ function validDirective(overrides = {}) {
   return {
     id: 'jira-weekly-summary',
     provider: 'jira',
-    specialist: 'operations',
+    workerProfileId: 'operations',
     instruction: 'Summarize what the team is working on',
     trigger: { kind: 'interval', intervalMinutes: 10_080 },
     action: 'summarize',
@@ -64,16 +64,16 @@ describe('validateDirective', () => {
     assert.ok(errors.some((e) => e.includes('.autoRun:')));
   });
 
-  it('rejects an unresolvable specialist when knownSpecialists is supplied', () => {
-    const errors = validateDirective(validDirective({ specialist: 'cx-nonexistent' }), 0, {
-      knownSpecialists: ['operations', 'product-manager'],
+  it('rejects an unresolvable Worker Profile when knownWorkerProfiles is supplied', () => {
+    const errors = validateDirective(validDirective({ workerProfileId: 'cx-nonexistent' }), 0, {
+      knownWorkerProfiles: ['operations', 'product-manager'],
     });
-    assert.ok(errors.some((e) => e.includes('.specialist:')));
+    assert.ok(errors.some((e) => e.includes('.workerProfileId:')));
   });
 
-  it('accepts a bare specialist id matched against a cx-prefixed known list', () => {
-    const errors = validateDirective(validDirective({ specialist: 'operations' }), 0, {
-      knownSpecialists: ['operations'],
+  it('accepts a bare Worker Profile id matched against a cx-prefixed known list', () => {
+    const errors = validateDirective(validDirective({ workerProfileId: 'operations' }), 0, {
+      knownWorkerProfiles: ['cx-operations'],
     });
     assert.deepEqual(errors, []);
   });

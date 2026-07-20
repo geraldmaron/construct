@@ -9,7 +9,7 @@ Construct splits state across four roots. Mixing them is the usual source of “
 
 A host project directory carries a single Construct-authored directory — `.construct/` — plus one deliberate exception (`.beads/`). Everything Construct writes into the project lives under `.construct/` and falls into three kinds:
 
-1. **Config-layer (committed text)** — `construct.config.json`, `.construct/context.md`, and user-authored custom specialists/teams under `.construct/org/`, plus ADR-0027's marker blocks (`AGENTS.md`/`CLAUDE.md` fenced regions). Small, human-legible, meant to travel with the repo. `.construct/org/` is carved back out of the otherwise-ignored `.construct/` tree by a `.gitignore` negation so custom specialists stay version-controlled.
+1. **Config-layer (committed text)** — `construct.config.json`, `.construct/context.md`, and user-authored pack overlays under `.construct/packs/`, plus ADR-0027's marker blocks (`AGENTS.md`/`CLAUDE.md` fenced regions). Small, human-legible, meant to travel with the repo.
 2. **Machine-scoped heavy state** — traces, orchestration runs, worker logs, the LanceDB vector index, and the docling/whisper bootstrap venvs. None of this is project-relative any more: it lives at `~/.construct/projects/<key>/`, keyed by a derivation stable across every clone/worktree of the same git remote (ADR-0066), resolved through `lib/state-root.mjs`'s `resolveStateRoot`/`resolveStateDir`/`resolveStatePath`. A fresh `construct init` never scaffolds these directories — they appear only once the corresponding subsystem first writes.
 3. **Beads (`.beads/`)** — the deliberate exception. Issue history is project content, not machine state (ADR-0026), so it stays project-local and travels with the repository regardless of size.
 
@@ -23,7 +23,7 @@ Construct keeps project-local configuration and runtime markers in `.construct/`
 |---|---|---|---|
 | `templates/**` | Package (Construct repo) | Shipped demos, scripts, PDF themes, doc templates | Yes |
 | `docs/**` | Package / project docs | ADRs, cookbooks, durable research that informed decisions | Yes |
-| `.construct/` (project root) | Host project — config-layer + small runtime markers | `context.md`/`context.json`, `workflow.json`, `org/` (committed), intake, oracle, observations, knowledge, the living graph, project research briefs, recorded demos | No (gitignored, except `.construct/org/`) |
+| `.construct/` (project root) | Host project — config-layer + small runtime markers | `context.md`/`context.json`, `workflow.json`, `packs/`, intake, oracle, observations, knowledge, the living graph, project research briefs, recorded demos | No (gitignored; commit only deliberate pack/manifest overlays you author) |
 | `.construct/launcher/` (project root) | Host project — launcher | `run.mjs` shim hooks invoke, `version` pin, cached binary, bootstrap shims | No (gitignored) |
 | `.beads/` (project root) | Host project — issue history | Dolt-backed issue database (ADR-0026) | Yes (git-native sync) |
 | `~/.construct/projects/<key>/` | User machine, per-project | Traces, orchestration runs, worker logs, the LanceDB vector index, docling/whisper bootstrap venvs (ADR-0066) | No |
@@ -37,7 +37,7 @@ Construct keeps project-local configuration and runtime markers in `.construct/`
 | Subtree | Subsystem | Hand-edit? |
 |---|---|---|
 | `.construct/context.md` / `.construct/context.json` | Session handoff context | Yes |
-| `.construct/org/` | User-authored custom specialists/teams (committed) | Via `construct specialist\|team create --custom` |
+| `.construct/org/` | Retired v1 org overlay path | Do not author here in Construct 2.0; use `.construct/packs/` |
 | `.construct/workflow.json` | Workflow/task state (`lib/workflow-state.mjs`) | Via CLI/MCP workflow tools |
 | `.construct/intake/` | Intake triage queue (`pending/`, `processed/`, `skipped/`, `quarantine/`, `dead-letter/`) | Via `construct intake` CLI |
 | `.construct/knowledge/` | Ingested / curated knowledge | Yes (see [knowledge layout](/guides/concepts/knowledge-layout)) |
@@ -70,7 +70,7 @@ Construct keeps project-local configuration and runtime markers in `.construct/`
 
 `isConstructPackageRepo()` (`lib/host-disposition.mjs`) detects the Construct tool repository. There:
 
-- `.construct/**` is gitignored, with `.construct/org/` carved back out for committed custom specialists.
+- `.construct/**` is gitignored. Project-tier pack overlays live under `.construct/packs/` when you author them.
 - The package repo tracks its own `.construct/launcher/version` (force-added by the `version` npm script) even though `.construct/` is otherwise ignored.
 - Shipped VHS tapes live in `templates/demos/tapes/`; ADR-cited research inputs live in `docs/notes/research/decision-input/`.
 

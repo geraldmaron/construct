@@ -2,7 +2,7 @@
   "id": "patterns",
   "ownerWorkerProfile": "orchestrator",
   "description": "Architectural pattern guidance (module boundaries, error handling, async contracts) applied at authoring time.",
-  "enforcement": "(persona prompt)",
+  "enforcement": "(worker-profile prompt)",
   "mode": "honor-system",
   "approvalWorkerProfiles": [],
   "requiredPolicies": [],

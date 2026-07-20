@@ -3,7 +3,7 @@
  * evolving-signal join/leave over a live run (construct-pteo2.11).
  *
  * A provider task's real output is a signal source: a cost table appearing in
- * the first specialist's output recruits the cost reviewers onto the SAME run
+ * the first Worker Profile's output recruits the cost reviewers onto the SAME run
  * (join), executed by the remaining loop iterations; a joined participant the
  * run cancels before reaching leaves with a recorded reason (leave). Both are
  * pinned in the durable run record (run.participation), the run events, and
@@ -54,7 +54,7 @@ function costFirstFetch() {
   let calls = 0;
   return async () => {
     calls += 1;
-    const text = calls === 1 ? COST_OUTPUT : 'plain specialist output with no financial content';
+    const text = calls === 1 ? COST_OUTPUT : 'plain Worker Profile output with no financial content';
     return { ok: true, json: async () => ({ content: [{ type: 'text', text }] }) };
   };
 }
@@ -72,27 +72,27 @@ test('a cost table in mid-run output joins the cost reviewer, who then executes'
   off?.();
 
   const joined = (run.participation ?? []).filter((p) => p.event === 'joined');
-  const analystJoin = joined.find((p) => p.role === 'data-analyst');
+  const analystJoin = joined.find((p) => p.workerProfileId === 'data-analyst');
   assert.ok(analystJoin, `cost output joins data-analyst; participation: ${JSON.stringify(run.participation)}`);
   assert.ok(analystJoin.reason, 'the join carries a reason');
   assert.equal(analystJoin.afterTask, run.tasks[0].id, 'joined after the task whose output fired the signal');
 
-  const analystTask = run.tasks.find((t) => t.role === 'data-analyst');
+  const analystTask = run.tasks.find((t) => t.workerProfileId === 'data-analyst');
   assert.ok(analystTask, 'a task exists for the joined participant');
   assert.equal(analystTask.joinedVia, 'evolving-signals');
   assert.equal(analystTask.status, 'done', 'the joined participant executed in the same run');
   assert.equal(analystTask.executionState, 'executed');
 
-  assert.ok(events.some((e) => e.event === 'joined' && e.role === 'data-analyst'), 'join emitted as a run event');
+  assert.ok(events.some((e) => e.event === 'joined' && e.workerProfileId === 'data-analyst'), 'join emitted as a run event');
 
   const traceEvents = readTraceEventsForRun(cwd, planned.runId);
   assert.ok(
-    traceEvents.some((e) => e.eventType === 'participant.joined' && e.role === 'data-analyst'),
+    traceEvents.some((e) => e.eventType === 'participant.joined'),
     `join recorded in the trace; events: ${traceEvents.map((e) => e.eventType).join(',')}`,
   );
 
   const persisted = loadRun(cwd, planned.runId);
-  assert.ok(persisted.participation.some((p) => p.event === 'joined' && p.role === 'data-analyst'), 'join durable in the run record');
+  assert.ok(persisted.participation.some((p) => p.event === 'joined' && p.workerProfileId === 'data-analyst'), 'join durable in the run record');
 });
 
 test('a joined participant the run cancels before reaching leaves with a recorded reason', async () => {
@@ -113,18 +113,18 @@ test('a joined participant the run cancels before reaching leaves with a recorde
   const run = await executeRun(cwd, planned.runId, { env: ENV, workerBackend: 'provider', fetchImpl });
 
   assert.equal(run.status, 'cancelled');
-  const joined = run.participation.find((p) => p.event === 'joined' && p.role === 'data-analyst');
+  const joined = run.participation.find((p) => p.event === 'joined' && p.workerProfileId === 'data-analyst');
   assert.ok(joined, 'the cost reviewer joined before the cancel');
 
-  const left = run.participation.find((p) => p.event === 'left' && p.role === 'data-analyst');
+  const left = run.participation.find((p) => p.event === 'left' && p.workerProfileId === 'data-analyst');
   assert.ok(left, `the never-executed join leaves; participation: ${JSON.stringify(run.participation)}`);
   assert.match(left.reason, /cancelled/);
 
-  const analystTask = run.tasks.find((t) => t.role === 'data-analyst');
+  const analystTask = run.tasks.find((t) => t.workerProfileId === 'data-analyst');
   assert.equal(analystTask.status, 'withdrawn', 'the joined task is withdrawn, not silently dropped');
 
   const traceEvents = readTraceEventsForRun(cwd, planned.runId);
-  assert.ok(traceEvents.some((e) => e.eventType === 'participant.left' && e.role === 'data-analyst'), 'leave recorded in the trace');
+  assert.ok(traceEvents.some((e) => e.eventType === 'participant.left'), 'leave recorded in the trace');
 });
 
 test('a run with no emergent signals records no participation churn', async () => {

@@ -20,11 +20,11 @@ test('buildCatalogSnapshot stamps catalog census and derived capability edges', 
   assert.ok(snapshot.catalog);
   assert.ok(snapshot.catalog.npmScripts.length > 0);
   assert.ok(snapshot.catalog.cliCommands.length > 0);
-  assert.equal(snapshot.catalog.workflowTypes.length, snapshot.catalog.workflows.length);
+  assert.equal(snapshot.catalog.procedureIds.length, snapshot.catalog.procedures.length);
   for (const [capabilityId, edges] of Object.entries(snapshot.capabilityEdges)) {
     assert.ok(Array.isArray(edges.cliCommands), `${capabilityId} CLI edges`);
     assert.ok(Array.isArray(edges.npmScripts));
-    assert.ok(Array.isArray(edges.workflows));
+    assert.ok(Array.isArray(edges.procedures));
   }
 });
 

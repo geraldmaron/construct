@@ -1,9 +1,9 @@
 {
   "schemaVersion": 2,
-  "specialistId": "qa",
-  "capabilityId": "specialist.prompt",
+  "workerProfileId": "qa",
+  "capabilityId": "worker-profile.prompt",
   "mode": "normal",
-  "scenarioKind": "cross-specialist",
+  "scenarioKind": "cross-worker-profile",
   "representativeTask": {
     "prompt": "The test plan is done and one new integration test now reproduces a real defect: the pagination cursor drops the last row on the final page. Hand this off so it gets fixed.",
     "inputs": {}

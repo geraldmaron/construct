@@ -55,7 +55,7 @@
     "one-pager",
     "changelog-entry"
   ],
-  "tagline": "The default. Product, engineering, governance, operations under one persona.",
+  "tagline": "The default. Product, engineering, governance, operations under one Worker Profile.",
   "hooks": {
     "sessionReflect": "on",
     "sessionOptimize": "on"

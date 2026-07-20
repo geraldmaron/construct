@@ -37,7 +37,6 @@ import { create as createFeedbackProvider } from '../../lib/providers/feedback/i
 import { ApprovalQueue } from '../../lib/embed/approval-queue.mjs';
 import { runCapabilityTick } from '../../lib/embed/capability-jobs.mjs';
 import { createPmFeedbackReasoningExecutor, analyzePmFeedback } from '../../lib/embed/presets/pm-feedback.mjs';
-import { validatePacket } from '../../lib/capability-contracts.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const realFetch = globalThis.fetch;
@@ -68,12 +67,14 @@ const PM_FEEDBACK_MANIFEST = {
   id: 'pm-feedback',
   version: '1.0.0',
   type: 'embed',
-  defaultApprovalMode: 'proposal-only',
+  workerProfiles: [],
+  approvalMode: 'proposal-only',
+  modelTier: 'standard',
+  state: 'active',
   embed: {
-    specialist: 'product-manager',
+    workerProfileId: 'product-manager',
     providerBindings: ['feedback', 'atlassian-confluence'],
-    framework: 'cx-pm-value-tradeoff',
-    outputContract: 'pm-requirements-candidates',
+    framework: 'product-value-tradeoff',
     proposalAuthority: 'propose-only',
     runtime: 'in-process',
     cadence: { every: 'PT24H' },
@@ -94,6 +95,18 @@ const FIXED_NOW = Date.parse('2026-07-03T00:00:00.000Z');
 
 function tmpRoot() {
   return mkdtempSync(join(tmpdir(), 'pm-feedback-'));
+}
+
+function assertRequirementsPacketContract(packet) {
+  assert.deepEqual(
+    Object.keys(packet).sort(),
+    ['candidates', 'clusters', 'provenance', 'requirements', 'summary'],
+    'Procedure artifact exposes the complete requirements packet',
+  );
+  assert.equal(typeof packet.summary, 'string');
+  for (const section of ['candidates', 'clusters', 'requirements', 'provenance']) {
+    assert.equal(typeof packet[section].count, 'number', `${section} declares a count`);
+  }
 }
 
 function seedFeedbackDropDir(rootDir) {
@@ -160,7 +173,7 @@ test('seeded feedback theme matching a PRD requirement produces a supports candi
     });
 
     assert.equal(tick.status, 'ran', `tick should run, got ${tick.status} (${tick.reason ?? ''})`);
-    assert.equal(tick.contractStatus, 'ok', 'output packet must satisfy its contract');
+    assert.equal(tick.contractStatus, 'unchecked', 'final Procedure artifacts are not Assignment handoffs');
 
     const { outputPacket } = analyzePmFeedback(snapshot.sections, { now: FIXED_NOW });
     const candidates = outputPacket.candidates.items;
@@ -243,14 +256,13 @@ test('untrusted feedback text is quoted evidence, never instruction: trust label
     assert.match(dashboardCandidate.candidateId, /^RC-\d{3}$/);
     assert.equal(outputPacket.candidates.items.every((c) => !('approved' in c)), true, 'no candidate carries an "approved" field the feedback text tried to inject');
 
-    const result = validatePacket('pm-requirements-candidates', outputPacket, 'output');
-    assert.ok(result.ok, `packet must validate; missing: ${result.missing?.join(', ')}`);
+    assertRequirementsPacketContract(outputPacket);
   } finally {
     rmTmpDir(rootDir);
   }
 });
 
-test('output packet validates against pm-requirements-candidates contract; artifact-only, no writeProposals ever emitted', async () => {
+test('output packet satisfies its Procedure artifact shape; artifact-only, no writeProposals ever emitted', async () => {
   globalThis.fetch = () => { throw new Error('Real network blocked in acceptance test'); };
   const rootDir = tmpRoot();
   try {
@@ -270,13 +282,12 @@ test('output packet validates against pm-requirements-candidates contract; artif
     });
 
     assert.equal(tick.status, 'ran');
-    assert.equal(tick.contractStatus, 'ok');
+    assert.equal(tick.contractStatus, 'unchecked');
     assert.deepEqual(tick.proposalsEnqueued, [], 'artifact-only preset enqueues zero proposals');
     assert.deepEqual(tick.proposalsDenied, [], 'no proposal is even attempted, so none can be denied');
 
     const { outputPacket } = analyzePmFeedback(snapshot.sections, { now: FIXED_NOW });
-    const result = validatePacket('pm-requirements-candidates', outputPacket, 'output');
-    assert.ok(result.ok, `packet must validate against its contract; missing: ${result.missing?.join(', ')}`);
+    assertRequirementsPacketContract(outputPacket);
 
     assert.equal(providers.writeCalls.length, 0, 'zero adapter writes for an artifact-only preset');
   } finally {

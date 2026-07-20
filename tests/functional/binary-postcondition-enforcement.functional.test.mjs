@@ -117,10 +117,9 @@ describe('binary postcondition enforcement', () => {
   }
 });
 
-// In-run enforcement (construct-pteo2.14): the run path itself calls the full
-// validateHandoff pass on a task's output handoff — a PRD handoff whose packet
-// misses required fields produces BLOCKED_CONTRACT on the task, degrades the
-// run, and lands a runId-tagged record in .construct/contract-violations.jsonl.
+// The run path calls the full validateHandoff pass on an Assignment's output
+// handoff. A PRD Procedure handoff whose packet misses required fields produces
+// BLOCKED_CONTRACT, degrades the run, and lands a runId-tagged durable record.
 
 describe('in-run enforcement through the provider execution path', () => {
   test('a deliberately incomplete PRD handoff packet blocks in-run with a durable verdict', async () => {
@@ -138,25 +137,26 @@ describe('in-run enforcement through the provider execution path', () => {
       );
 
       const run = loadRun(tmpRoot, planned.runId);
-      const researcher = run.tasks.find((t) => t.role === 'researcher') ?? run.tasks[0];
-      researcher.outputContractId = 'researcher-to-product-manager';
-      researcher.outputPacket = { problem: 'observed problem statement' };
+      const productManager = run.tasks.find((t) => t.workerProfileId === 'product-manager');
+      assert.ok(productManager, 'the PRD route includes a product-manager Assignment');
+      productManager.outputContractId = 'product-manager-to-architect';
+      productManager.outputPacket = { problem: 'observed problem statement' };
       saveRun(tmpRoot, run);
 
       const fetchImpl = async () => ({ ok: true, json: async () => ({ content: [{ type: 'text', text: 'specialist output' }] }) });
       const executed = await executeRun(tmpRoot, planned.runId, { env, workerBackend: 'provider', fetchImpl });
 
       const blockedTask = executed.tasks.find((t) => t.contractStatus === 'blocked-contract');
-      assert.ok(blockedTask, `a task carries blocked-contract; got ${JSON.stringify(executed.tasks.map((t) => ({ role: t.role, contractStatus: t.contractStatus ?? null })))}`);
-      assert.equal(blockedTask.contractId, 'researcher-to-product-manager');
-      assert.ok(blockedTask.contractViolations.some((v) => v.includes('users')), 'missing required field named');
+      assert.ok(blockedTask, `an Assignment carries blocked-contract; got ${JSON.stringify(executed.tasks.map((t) => ({ workerProfileId: t.workerProfileId, contractStatus: t.contractStatus ?? null })))}`);
+      assert.equal(blockedTask.contractId, 'product-manager-to-architect');
+      assert.ok(blockedTask.contractViolations.some((v) => v.includes('functionalRequirements')), 'missing required field named');
 
       assert.equal(executed.degraded, true, 'run degrades on a blocked contract');
       assert.equal(executed.degradationReason, 'blocked-contract');
       assert.equal(executed.status, 'degraded', 'terminal status never reads bare completed');
 
       const log = readLog();
-      const verdict = log.find((r) => r.contractId === 'researcher-to-product-manager' && r.verdict === 'BLOCKED_CONTRACT');
+      const verdict = log.find((r) => r.contractId === 'product-manager-to-architect' && r.verdict === 'BLOCKED_CONTRACT');
       assert.ok(verdict, 'BLOCKED_CONTRACT recorded in .construct/contract-violations.jsonl');
       assert.equal(verdict.runId, planned.runId, 'the record is runId-tagged');
     } finally {
@@ -180,25 +180,25 @@ describe('in-run enforcement through the provider execution path', () => {
       );
 
       const run = loadRun(tmpRoot, planned.runId);
-      const researcher = run.tasks.find((t) => t.role === 'researcher') ?? run.tasks[0];
-      researcher.outputContractId = 'researcher-to-product-manager';
-      researcher.outputPacket = {
-        question: 'what slows enterprise admins during weekly audits',
-        findings: 'audit completion is dominated by manual cross-referencing',
-        sources: 'six user interviews, support ticket clustering [unverified]',
-        confidence: 'medium',
-        openQuestions: 'does the skew to large accounts change the ranking',
+      const productManager = run.tasks.find((t) => t.workerProfileId === 'product-manager');
+      assert.ok(productManager, 'the PRD route includes a product-manager Assignment');
+      productManager.outputContractId = 'product-manager-to-architect';
+      productManager.outputPacket = {
         problem: 'observed problem statement grounded in interviews',
-        users: 'enterprise admins running weekly audits',
         functionalRequirements: 'bulk cross-reference view with export',
-        acceptanceCriteria: 'audit completion time drops below five minutes',
+        nonFunctionalRequirements: 'audit exports complete without losing records',
+        acceptanceCriteria: 'audit completion time is measured against a declared baseline',
+        constraints: 'no live customer data leaves the audit boundary',
+        valueStatement: 'reduce manual cross-referencing for enterprise administrators',
+        tradeoffTable: 'accuracy over export throughput',
+        prioritizationCall: 'validate the audit boundary before optimizing throughput',
       };
       saveRun(tmpRoot, run);
 
       const fetchImpl = async () => ({ ok: true, json: async () => ({ content: [{ type: 'text', text: 'specialist output' }] }) });
       const executed = await executeRun(tmpRoot, planned.runId, { env, workerBackend: 'provider', fetchImpl });
 
-      const checkedTask = executed.tasks.find((t) => t.contractId === 'researcher-to-product-manager');
+      const checkedTask = executed.tasks.find((t) => t.contractId === 'product-manager-to-architect');
       assert.ok(checkedTask, 'the seeded task was checked in-run');
       assert.equal(checkedTask.contractStatus, 'ok', `conforming packet passes: ${JSON.stringify(checkedTask.contractViolations ?? null)}`);
       assert.notEqual(executed.degradationReason, 'blocked-contract');

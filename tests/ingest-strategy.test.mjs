@@ -70,7 +70,7 @@ test('config selects orchestrated; execution reports construct-orchestrated', ()
   const r = resolveIngestStrategy({ config: { ingest: { orchestration: 'orchestrated' } }, env: MODEL_ENV });
   assert.equal(r.orchestration, 'orchestrated');
   assert.equal(r.execution.executionMode, 'construct-orchestrated');
-  assert.deepEqual(r.execution.constructCapabilitiesActive.sort(), ['personas', 'prompt-envelope', 'skills', 'workflow-routing']);
+  assert.deepEqual(r.execution.constructCapabilitiesActive.sort(), ['prompt-envelope', 'skills', 'worker-profiles', 'workflow-routing']);
 });
 
 test('env CONSTRUCT_INGEST_ORCHESTRATION overrides config; explicit override beats both', () => {

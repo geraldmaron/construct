@@ -53,7 +53,7 @@ test('runTaskViaProvider surfaces a fenced write-proposal block as writeProposal
   assert.equal(result.writeProposals.length, 1);
   assert.equal(result.writeProposals[0].providerId, 'github');
   assert.equal(result.writeProposals[0].writeKind, 'pr');
-  assert.equal(result.writeProposals[0].requestedBy.specialistId, result.specialistId);
+  assert.equal(result.writeProposals[0].requestedBy.workerProfileId, result.workerProfileId);
 });
 
 test('runTaskViaProvider omits writeProposals entirely when the specialist recommended none', async () => {
@@ -83,6 +83,6 @@ test('executeRun (provider backend) threads writeProposals onto every persisted 
   for (const task of executed.tasks) {
     assert.equal(task.writeProposals?.length, 1, `task for role ${task.role} should carry the recommended write`);
     assert.equal(task.writeProposals[0].providerId, 'jira');
-    assert.equal(task.writeProposals[0].requestedBy.specialistId, task.specialistId);
+    assert.equal(task.writeProposals[0].requestedBy.workerProfileId, task.workerProfileId);
   }
 });

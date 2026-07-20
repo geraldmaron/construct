@@ -2,16 +2,15 @@
 
 - **Dispatched**: {YYYY-MM-DD HH:MM}
 - **Source**: Construct
-- **Target specialist**: cx-{role}
+- **Target Worker Profile**: {role}
 - **Track**: immediate | focused | orchestrated
 - **Status**: dispatched | accepted | done | blocked | needs-main-input
 
 <!--
-The shape emitted by Construct when dispatching to a specialist. Mirrors the
-`construct-to-orchestrator` contract in `specialists/contracts.json`. Required fields below
-are validated by the contract — a packet missing any required field BLOCKED_CONTRACTs at
-handoff. The specialist's response is one terminal state (DONE | BLOCKED | NEEDS_MAIN_INPUT),
-referencing this packet by id.
+The shape emitted by Construct when dispatching to a Worker Profile. Mirrors producer→consumer
+Capability postconditions in `registry/capabilities.json`. Required fields below are validated at
+handoff — a packet missing any required field BLOCKED_CONTRACTs at handoff. The profile's response
+is one terminal state (DONE | BLOCKED | NEEDS_MAIN_INPUT), referencing this packet by id.
 -->
 
 ## Goal
@@ -24,7 +23,7 @@ referencing this packet by id.
 <!-- One of: visual | deep | quick | writing | analysis. Drives the model tier. Authority: lib/orchestration-policy.mjs:WORK_CATEGORIES. -->
 
 ## Risk flags
-<!-- Subset of: architecture, security, dataIntegrity, ui, docs, ai. Drives whether cx-devil-advocate joins the chain. Authority: lib/orchestration-policy.mjs:detectRiskFlags. -->
+<!-- Subset of: architecture, security, dataIntegrity, ui, docs, ai. Drives whether challenge/review profiles join the chain. Authority: lib/orchestration-policy.mjs:detectRiskFlags. -->
 
 ## Acceptance criteria
 <!-- The conditions that, when all met, mean DONE. Each criterion is verifiable (a test, a check, an observable). Subjective criteria ("looks good") are not acceptable; restate them as observable behavior. -->
@@ -40,7 +39,7 @@ referencing this packet by id.
 <!-- Hard limits the specialist must respect: budget, timeline, contract boundaries, parts of the system that are off-limits, prior decisions that are not being revisited. -->
 
 ## Handoff candidates
-<!-- Specialists this packet may legitimately route to next. Defaults read from specialists/role-manifests.json → <role>.handoffCandidates. -->
+<!-- Worker Profiles this packet may legitimately route to next. Defaults read from registry/worker-profiles/<id>.json → handoffCandidates. -->
 
 ## Approval gates
 <!-- If the work crosses an approval boundary (commit, push, scope change, irreversible action), name it here. Construct must surface these to the user; the specialist must not bypass. -->

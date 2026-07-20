@@ -7,7 +7,7 @@ verdict: fail
 summary: Introduces an abstraction for future cases without evidence from the code.
 references:
   - skills/roles/engineer.md
-  - specialists/prompts/cx-engineer.md
+  - registry/worker-profiles/prompts/engineer.md
 tags:
   - speculative-abstraction
   - unnecessary-surface-area

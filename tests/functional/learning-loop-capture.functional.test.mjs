@@ -107,12 +107,11 @@ function freshOracleEnv() {
   roots.push(homeDir, rootDir);
   fs.mkdirSync(path.join(projectDir, '.construct', 'observations'), { recursive: true });
   fs.mkdirSync(path.join(projectDir, '.construct', 'outcomes'), { recursive: true });
-  fs.mkdirSync(path.join(rootDir, 'audit-artifacts'), { recursive: true });
   fs.mkdirSync(doctorRoot(homeDir), { recursive: true });
-  fs.mkdirSync(path.join(rootDir, 'specialists'), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, 'audit-artifacts'), { recursive: true });
   fs.cpSync(
-    path.join(process.cwd(), 'specialists', 'org'),
-    path.join(rootDir, 'specialists', 'org'),
+    path.join(process.cwd(), 'registry'),
+    path.join(rootDir, 'registry'),
     { recursive: true },
   );
   return { projectDir, homeDir, rootDir };

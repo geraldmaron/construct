@@ -261,19 +261,7 @@
       "core": false
     },
     {
-      "name": "lint:agents",
-      "core": false
-    },
-    {
       "name": "lint:comments",
-      "core": false
-    },
-    {
-      "name": "lint:contracts",
-      "core": false
-    },
-    {
-      "name": "lint:prompts",
       "core": false
     },
     {
@@ -282,6 +270,10 @@
     },
     {
       "name": "lint:templates",
+      "core": false
+    },
+    {
+      "name": "lint:worker-profiles",
       "core": false
     },
     {
@@ -298,10 +290,6 @@
     },
     {
       "name": "memory",
-      "core": false
-    },
-    {
-      "name": "migrate",
       "core": false
     },
     {
@@ -337,15 +325,15 @@
       "core": false
     },
     {
-      "name": "participation",
-      "core": false
-    },
-    {
       "name": "plugin",
       "core": false
     },
     {
       "name": "policy",
+      "core": false
+    },
+    {
+      "name": "procedure",
       "core": false
     },
     {
@@ -373,15 +361,7 @@
       "core": false
     },
     {
-      "name": "registry:diff",
-      "core": false
-    },
-    {
       "name": "registry:generate-docs",
-      "core": false
-    },
-    {
-      "name": "registry:prune",
       "core": false
     },
     {
@@ -425,10 +405,6 @@
       "core": false
     },
     {
-      "name": "scope",
-      "core": true
-    },
-    {
       "name": "search",
       "core": false
     },
@@ -449,18 +425,6 @@
       "core": false
     },
     {
-      "name": "specialist",
-      "core": false
-    },
-    {
-      "name": "specialist:add",
-      "core": false
-    },
-    {
-      "name": "specialist:remove",
-      "core": false
-    },
-    {
       "name": "status",
       "core": true
     },
@@ -473,10 +437,6 @@
       "core": false
     },
     {
-      "name": "studio",
-      "core": false
-    },
-    {
       "name": "sync",
       "core": true
     },
@@ -486,18 +446,6 @@
     },
     {
       "name": "tags",
-      "core": false
-    },
-    {
-      "name": "team",
-      "core": false
-    },
-    {
-      "name": "team:add",
-      "core": false
-    },
-    {
-      "name": "team:remove",
       "core": false
     },
     {
@@ -557,12 +505,12 @@
       "core": false
     },
     {
-      "name": "workers",
-      "core": true
+      "name": "worker-profile",
+      "core": false
     },
     {
-      "name": "workflow",
-      "core": false
+      "name": "workers",
+      "core": true
     },
     {
       "name": "workplace-loop",
@@ -575,6 +523,10 @@
     {
       "name": "workspace-domain",
       "core": false
+    },
+    {
+      "name": "workspace-preset",
+      "core": true
     }
   ],
   "workerProfiles": [

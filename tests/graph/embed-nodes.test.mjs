@@ -19,15 +19,16 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { buildFromEmbed } from '../../lib/graph/build-from-embed.mjs';
-import { writeGraph, loadGraph, dependenciesOf, dependentsOf } from '../../lib/graph/store.mjs';
+import { buildFromRegistry } from '../../lib/graph/build-from-registry.mjs';
+import { writeGraph, loadGraph } from '../../lib/graph/store.mjs';
 import { validateGraph } from '../../lib/graph/validate.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 const SHIPPED = [
-  { id: 'operations', specialist: 'specialist:operations', contract: 'contract:operations-tpm-briefing', test: 'test:tests/acceptance/tpm-preset.acceptance.test.mjs' },
-  { id: 'operations-triage', specialist: 'specialist:operations', contract: 'contract:operations-triage', test: 'test:tests/acceptance/ops-triage-preset.acceptance.test.mjs' },
-  { id: 'pm-feedback', specialist: 'specialist:product-manager', contract: 'contract:pm-requirements-candidates', test: 'test:tests/acceptance/pm-feedback-preset.acceptance.test.mjs' },
+  { id: 'operations', workerProfile: 'worker-profile:operations', contract: 'contract:operations-tpm-briefing', test: 'test:tests/acceptance/tpm-preset.acceptance.test.mjs' },
+  { id: 'operations-triage', workerProfile: 'worker-profile:operations', contract: 'contract:operations-triage', test: 'test:tests/acceptance/ops-triage-preset.acceptance.test.mjs' },
+  { id: 'pm-feedback', workerProfile: 'worker-profile:product-manager', contract: 'contract:pm-requirements-candidates', test: 'test:tests/acceptance/pm-feedback-preset.acceptance.test.mjs' },
 ];
 
 test('buildFromEmbed seeds an embed node + binding edges per manifest', () => {
@@ -39,7 +40,7 @@ test('buildFromEmbed seeds an embed node + binding edges per manifest', () => {
   for (const preset of SHIPPED) {
     const from = `embed:${preset.id}`;
     const hasEdge = (rel, to) => edges.some((e) => e.from === from && e.rel === rel && e.to === to);
-    assert.ok(hasEdge('owned_by', preset.specialist), `${preset.id} should own_by ${preset.specialist}`);
+    assert.ok(hasEdge('owned_by', preset.workerProfile), `${preset.id} should own_by ${preset.workerProfile}`);
     assert.ok(hasEdge('governed_by', preset.contract), `${preset.id} should be governed_by ${preset.contract}`);
     assert.ok(
       edges.some((e) => e.from === from && e.rel === 'uses' && e.to.startsWith('provider:')),
@@ -92,13 +93,29 @@ test('a broken binding target fails graph validate --strict', () => {
   }
 });
 
-test('the live graph exposes embed nodes with resolved binding targets', () => {
-  const graph = loadGraph(REPO_ROOT);
-  assert.ok(graph.exists, 'run `construct graph build` first');
+test('embed nodes resolve binding targets against registry-seeded provider and worker-profile nodes', () => {
+  const { nodes: embedNodes, edges: embedEdges } = buildFromEmbed({ rootDir: REPO_ROOT });
+  const { nodes: registryNodes } = buildFromRegistry({ rootDir: REPO_ROOT });
+  const registryIds = new Set(registryNodes.map((n) => n.id));
+
   for (const preset of SHIPPED) {
-    const id = `embed:${preset.id}`;
-    assert.ok(graph.nodes.has(id), `graph missing ${id}`);
-    assert.ok(dependenciesOf(graph, id, 'governed_by').includes(preset.contract));
-    assert.ok(dependentsOf(graph, id, 'validates').includes(preset.test), `${id} should be validated by ${preset.test}`);
+    const from = `embed:${preset.id}`;
+    assert.ok(embedNodes.some((n) => n.id === from), `missing embed node for ${preset.id}`);
+    assert.ok(
+      embedEdges.some((e) => e.from === from && e.rel === 'owned_by' && e.to === preset.workerProfile),
+      `${preset.id} should own_by ${preset.workerProfile}`,
+    );
+    assert.ok(registryIds.has(preset.workerProfile), `${preset.workerProfile} should exist in registry seed`);
+    assert.ok(
+      embedEdges.some((e) => e.from === from && e.rel === 'governed_by' && e.to === preset.contract),
+      `${preset.id} should be governed_by ${preset.contract}`,
+    );
+    assert.ok(
+      embedEdges.some((e) => e.from === preset.test && e.rel === 'validates' && e.to === from),
+      `${preset.id} missing validates edge from ${preset.test}`,
+    );
+    const uses = embedEdges.filter((e) => e.from === from && e.rel === 'uses');
+    assert.ok(uses.length >= 1, `${preset.id} should use at least one provider`);
+    for (const edge of uses) assert.ok(registryIds.has(edge.to), `${edge.to} should exist in registry seed`);
   }
 });

@@ -64,7 +64,7 @@ Ask Construct for a PRD; it'll follow the new shape.
 
 ### Registering a new document class
 
-Overriding a template reshapes an *existing* class. To generate a class the builtin manifest never registered, register it — this writes the template plus a project-tier manifest overlay, and never touches the builtin `specialists/artifact-manifest.json`:
+Overriding a template reshapes an *existing* class. To generate a class the builtin manifest never registered, register it — this writes the template plus a project-tier manifest overlay, and never touches the builtin `registry/artifact-manifest.json`:
 
 ```bash
 construct templates register convergence-brief \

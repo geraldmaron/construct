@@ -1,7 +1,7 @@
 /**
  * tests/functional/a4-optimize-gate.functional.test.mjs — A4 apply/rollback gate.
  *
- * Exercises the safety contract of `construct optimize <agent>`:
+ * Exercises the safety contract of `construct optimize <worker-profile>`:
  *   - Default (no flags) is preview only; no skill file is modified.
  *   - --apply requires no rate-limit collision; writes a backup + history.
  *   - --rollback restores from the latest backup.
@@ -29,7 +29,7 @@ function setupSkillFile() {
   // skills/perspectives/<agent>.md. To stay isolated, the test pre-stages a backup
   // by hand and exercises --rollback against it.
   const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'a4-home-'));
-  const skillsDir = path.join(REPO, 'skills', 'roles');
+  const skillsDir = path.join(REPO, 'skills', 'perspectives');
   const agentSkill = path.join(skillsDir, 'engineer.md');
   assert.ok(fs.existsSync(agentSkill), 'engineer.md must exist for this test');
   const original = fs.readFileSync(agentSkill, 'utf8');

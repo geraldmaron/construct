@@ -1,10 +1,8 @@
 /**
- * tests/prompt-composer.test.mjs — composePrompt assembly and role anti-pattern inlining tests
+ * tests/prompt-composer.test.mjs — Worker Profile prompt composition contracts.
  *
- * Tests lib/prompt-composer.mjs which assembles the final prompt from a Worker Profile,
- * task packet, and context digest. Verifies inlinePerspectiveAntiPatterns expands role directives
- * from skills/perspectives/ and that composePrompt is a no-op when directives are absent.
- * Run via npm test.
+ * Verifies prompt assembly, perspective overlays, task context, routing metadata,
+ * and fallback behavior across canonical Worker Profile inputs.
  */
 import assert from 'node:assert/strict';
 import path from 'node:path';
@@ -44,7 +42,7 @@ test('composePrompt assembles prompt from core prompt, task packet, and context 
   // Note: context digest may be pruned due to token limits in new token-efficient version
 });
 
-test('composePrompt returns empty prompt for unknown agent', () => {
+test('composePrompt returns empty prompt for an unknown Worker Profile', () => {
   const result = composePrompt('not-real', { rootDir: root });
   assert.equal(result.system, '');
   assert.deepEqual(result.fragments, []);
@@ -77,7 +75,7 @@ test('resolvePromptContract returns prompt text and runtime-aligned prompt metad
   assert.equal(result.metadata.workerProfileVersion, result.metadata.workerProfileHash.slice(0, 12));
 });
 
-test('composePrompt injects dynamic role-flavor overlay when roleFlavors are provided', () => {
+test('composePrompt injects a selected perspective overlay', () => {
   const result = composePrompt('architect', {
     rootDir: root,
     intent: 'implementation',
@@ -91,7 +89,7 @@ test('composePrompt injects dynamic role-flavor overlay when roleFlavors are pro
   assert.match(flavorFragment.content, /ai-systems domain guidance/);
 });
 
-test('composePrompt skips flavor overlay when no roleFlavors match agent', () => {
+test('composePrompt skips an overlay when no role flavor matches the Worker Profile', () => {
   const result = composePrompt('engineer', {
     rootDir: root,
     intent: 'implementation',
@@ -102,18 +100,18 @@ test('composePrompt skips flavor overlay when no roleFlavors match agent', () =>
   assert.equal(flavorFragment, undefined, 'engineer should not get architect flavor');
 });
 
-test('composePrompt injects role overlays selected for a Worker Profile', () => {
+test('composePrompt injects folded perspective overlays selected for a Worker Profile', () => {
   const result = composePrompt('engineer', {
     rootDir: root,
     intent: 'implementation',
-    roleFlavors: { platformEngineer: 'core' },
+    roleFlavors: { engineer: 'core' },
   });
 
   const flavorFragment = result.fragments.find((f) => f.type === 'role-flavor');
-  assert.ok(flavorFragment, 'should include platform-engineer role guidance');
-  assert.match(flavorFragment.label, /platform-engineer/);
-  assert.match(flavorFragment.content, /platform-engineer domain guidance/i);
-  assert.match(flavorFragment.content, /Tooling without adoption plan/i);
+  assert.ok(flavorFragment, 'should include engineer perspective guidance');
+  assert.match(flavorFragment.label, /engineer/);
+  assert.match(flavorFragment.content, /engineer domain guidance/i);
+  assert.match(flavorFragment.content, /Speculative abstraction/i);
 });
 
 test('composePrompt switches to compact small-model mode when requested by execution contract', () => {
@@ -161,7 +159,12 @@ test('resolveRuntimePromptMetadata includes explicit task packet and routing sum
       intent: 'fix',
       track: 'orchestrated',
       workCategory: 'deep',
-      specialists: ['architect', 'debugger', 'engineer', 'reviewer', 'qa'],
+      assignments: ['architect', 'debugger', 'engineer', 'reviewer', 'qa'].map((workerProfileId, index) => ({
+        id: `assignment-${index + 1}`,
+        workerProfileId,
+        reason: null,
+        recruited: false,
+      })),
       dispatchPlan: 'Plan: architect → debugger → engineer → reviewer + qa.',
     },
     hostConstraints: { runtime: 'mcp' },
@@ -172,16 +175,16 @@ test('resolveRuntimePromptMetadata includes explicit task packet and routing sum
   assert.equal(metadata.taskPacketPhase, 'implement');
   assert.equal(metadata.routeIntent, 'fix');
   assert.equal(metadata.routeTrack, 'orchestrated');
-  assert.ok(Array.isArray(metadata.routeSpecialists));
-  assert.ok(metadata.routeSpecialists.includes('architect'));
-  assert.ok(metadata.routeSpecialists.includes('debugger'));
+  assert.ok(Array.isArray(metadata.routeWorkerProfiles));
+  assert.ok(metadata.routeWorkerProfiles.some((assignment) => assignment.workerProfileId === 'architect'));
+  assert.ok(metadata.routeWorkerProfiles.some((assignment) => assignment.workerProfileId === 'debugger'));
   assert.ok(metadata.promptHasTaskPacket);
   assert.ok(metadata.promptHasContextDigest);
   assert.ok(metadata.promptHasHostConstraints);
   assert.equal(metadata.composedPromptVersion.length, 12);
 });
 
-test('resolveRuntimePromptMetadata exposes selected prompt role flavor', () => {
+test('resolveRuntimePromptMetadata exposes the selected prompt perspective', () => {
   const metadata = resolveRuntimePromptMetadata('engineer', {
     rootDir: root,
     request: 'tighten the CI and docker workflow for platform engineering',
@@ -189,9 +192,9 @@ test('resolveRuntimePromptMetadata exposes selected prompt role flavor', () => {
       intent: 'implementation',
       track: 'focused',
       workCategory: 'deep',
-      specialists: ['engineer'],
+      assignments: [{ id: 'assignment-1', workerProfileId: 'engineer', reason: null, recruited: false }],
       dispatchPlan: 'Plan: engineer.',
-      roleFlavors: { platformEngineer: 'core' },
+      roleFlavors: { engineer: 'core' },
     },
     executionContractModel: {
       version: 'v1',
@@ -203,7 +206,7 @@ test('resolveRuntimePromptMetadata exposes selected prompt role flavor', () => {
     },
   });
 
-  assert.equal(metadata.promptRoleFlavor, 'platform-engineer');
+  assert.equal(metadata.promptRoleFlavor, 'engineer');
 });
 
 test('resolveRuntimePromptMetadata exposes routed workflow guidance', () => {
@@ -214,7 +217,7 @@ test('resolveRuntimePromptMetadata exposes routed workflow guidance', () => {
       intent: 'research',
       track: 'focused',
       workCategory: 'quick',
-      specialists: ['researcher'],
+      assignments: [{ id: 'assignment-1', workerProfileId: 'researcher', reason: null, recruited: false }],
       dispatchPlan: 'Plan: researcher.',
       suggestedWorkflowType: 'research-synthesis',
     },

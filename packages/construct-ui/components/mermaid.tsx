@@ -70,7 +70,12 @@ export function Diagram({ id, title, chart, theme }: DiagramProps) {
       <div className="dh">
         <span>{title}</span>
       </div>
-      <div className="db">
+      <div
+        className="db"
+        role="region"
+        aria-label={title}
+        tabIndex={0}
+      >
         <Mermaid id={id} chart={chart} theme={theme} />
       </div>
     </div>

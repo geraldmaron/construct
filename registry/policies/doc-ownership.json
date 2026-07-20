@@ -1,8 +1,8 @@
 {
   "id": "doc-ownership",
   "ownerWorkerProfile": "orchestrator",
-  "description": "Routes artifacts to the correct specialist owner before writing (PRD to PM, ADR to Architect).",
-  "enforcement": "(persona prompt)",
+  "description": "Routes artifacts to the correct Worker Profile owner before writing (PRD to PM, ADR to Architect).",
+  "enforcement": "(worker-profile prompt)",
   "mode": "honor-system",
   "approvalWorkerProfiles": [],
   "requiredPolicies": [],

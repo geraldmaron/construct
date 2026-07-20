@@ -1,10 +1,8 @@
 /**
- * tests/policy/role-authority.test.mjs — identity-anchored role claim authority.
+ * tests/policy/role-authority.test.mjs — identity-anchored Worker Profile claims.
  *
- * Pins LMCP-I6: policy decisions take identity (H2) + role claims. In
- * team/enterprise an env-claimed role must be present in the identity's
- * registered grants or the claim is denied; solo keeps the env-ergonomic
- * CONSTRUCT_ROLE convenience unchanged.
+ * Policy decisions bind Worker Profile claims to identity grants in governed
+ * modes while preserving the solo-mode environment convenience.
  */
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
@@ -15,8 +13,8 @@ import { serviceIdentity, humanIdentity } from '../../lib/identity.mjs';
 
 beforeEach(() => clearManifestCache());
 
-function manifests(personas) {
-  return { personas };
+function manifests(workerProfiles) {
+  return { workerProfiles };
 }
 
 describe('resolveIdentityGrants', () => {
@@ -37,7 +35,7 @@ describe('resolveIdentityGrants', () => {
 });
 
 describe('authorizeRoleClaim', () => {
-  it('solo mode always authorizes the claim (env ergonomics preserved)', () => {
+  it('solo mode always authorizes the Worker Profile claim', () => {
     const result = authorizeRoleClaim({ identity: null, role: 'security', deploymentMode: 'solo' });
     assert.equal(result.authorized, true);
     assert.equal(result.source, 'solo-ergonomics');
@@ -48,13 +46,13 @@ describe('authorizeRoleClaim', () => {
     assert.equal(result.authorized, true);
   });
 
-  it('team mode denies a role claim with no identity', () => {
+  it('team mode denies a Worker Profile claim with no identity', () => {
     const result = authorizeRoleClaim({ identity: null, role: 'security', deploymentMode: 'team' });
     assert.equal(result.authorized, false);
     assert.match(result.reason, /no identity resolved/);
   });
 
-  it('team mode denies an env-claimed role not in the identity\'s grants', () => {
+  it('team mode denies an environment claim absent from identity grants', () => {
     const identity = { ...serviceIdentity({ serviceId: 'role:security', role: 'security', source: 'env-fallback' }), grants: ['engineer'] };
     const result = authorizeRoleClaim({ identity, role: 'security', deploymentMode: 'team' });
     assert.equal(result.authorized, false);
@@ -62,35 +60,28 @@ describe('authorizeRoleClaim', () => {
     assert.match(result.reason, /not in this identity's registered grants/);
   });
 
-  it('team mode authorizes a role claim present in the identity\'s grants', () => {
-    // humanIdentity()/serviceIdentity() (H2) accept no `grants` field; the
-    // registration resolver (future G5, or a test fixture) attaches grants
-    // separately, same pattern a real caller would use.
+  it('team mode authorizes a Worker Profile claim present in identity grants', () => {
     const identity = { ...humanIdentity({ userId: 'alice@co.com', role: 'security', source: 'headers' }), grants: ['security', 'engineer'] };
     const result = authorizeRoleClaim({ identity, role: 'security', deploymentMode: 'team' });
     assert.equal(result.authorized, true);
     assert.equal(result.source, 'identity-grant');
   });
 
-  it('enterprise mode denies an ungranted role claim same as team', () => {
-    const identity = { ...serviceIdentity({ serviceId: 'worker-1', role: 'release-manager', source: 'headers' }), grants: ['engineer'] };
-    const result = authorizeRoleClaim({ identity, role: 'release-manager', deploymentMode: 'enterprise' });
+  it('enterprise mode denies an ungranted Worker Profile claim', () => {
+    const identity = { ...serviceIdentity({ serviceId: 'worker-1', role: 'operations', source: 'headers' }), grants: ['engineer'] };
+    const result = authorizeRoleClaim({ identity, role: 'operations', deploymentMode: 'enterprise' });
     assert.equal(result.authorized, false);
   });
 
-  it('missing role claim is denied regardless of mode', () => {
+  it('missing Worker Profile claim is denied regardless of mode', () => {
     const result = authorizeRoleClaim({ identity: humanIdentity({ userId: 'x@y.com' }), role: '', deploymentMode: 'team' });
     assert.equal(result.authorized, false);
     assert.match(result.reason, /role claim is required/);
   });
 });
 
-// ---------------------------------------------------------------------------
-// End-to-end through policyDecision — the path the MCP broker calls.
-// ---------------------------------------------------------------------------
-
-describe('policyDecision — identity-anchored role authority (team mode)', () => {
-  it('denies an env-claimed role not in the identity\'s grants (acceptance criterion)', () => {
+describe('policyDecision — identity-anchored Worker Profile authority', () => {
+  it('denies an environment claim absent from identity grants', () => {
     const identity = { ...serviceIdentity({ serviceId: 'role:security', role: 'security', source: 'env-fallback' }), grants: ['engineer'] };
     const d = policyDecision(
       { role: 'security', tool: 'bash', action: 'bash:run', deploymentMode: 'team', identity },
@@ -100,7 +91,7 @@ describe('policyDecision — identity-anchored role authority (team mode)', () =
     assert.equal(d.source, 'role-authority.ungranted');
   });
 
-  it('allows a role claim present in the identity\'s grants, falling through to manifest rules', () => {
+  it('passes a granted Worker Profile claim to manifest rules', () => {
     const identity = { ...humanIdentity({ userId: 'alice@co.com', role: 'engineer', source: 'headers' }), grants: ['engineer'] };
     const d = policyDecision(
       { role: 'engineer', tool: 'bash', action: 'bash:run', deploymentMode: 'team', identity },
@@ -110,9 +101,7 @@ describe('policyDecision — identity-anchored role authority (team mode)', () =
     assert.equal(d.source, 'deny-by-default');
   });
 
-  it('denies before consulting the manifest at all — ungranted claim short-circuits', () => {
-    // Even a role with an explicit allow-everything manifest is denied when the
-    // identity has no matching grant — the authority gate runs first.
+  it('short-circuits before manifest evaluation for an ungranted claim', () => {
     const identity = { ...serviceIdentity({ serviceId: 'role:security', role: 'security', source: 'env-fallback' }), grants: [] };
     const d = policyDecision(
       { role: 'security', tool: 'pagerduty', action: 'acknowledge', risk: 'high', deploymentMode: 'team', identity },
@@ -122,11 +111,11 @@ describe('policyDecision — identity-anchored role authority (team mode)', () =
     assert.equal(d.source, 'role-authority.ungranted');
   });
 
-  it('enterprise mode also denies an ungranted env-claimed role', () => {
-    const identity = { ...serviceIdentity({ serviceId: 'role:release-manager', role: 'release-manager', source: 'env-fallback' }), grants: ['engineer'] };
+  it('enterprise mode denies an ungranted environment claim', () => {
+    const identity = { ...serviceIdentity({ serviceId: 'role:operations', role: 'operations', source: 'env-fallback' }), grants: ['engineer'] };
     const d = policyDecision(
-      { role: 'release-manager', tool: 'github', action: 'deploy', deploymentMode: 'enterprise', identity },
-      { manifests: manifests({ 'release-manager': { fence: {} } }) },
+      { role: 'operations', tool: 'github', action: 'deploy', deploymentMode: 'enterprise', identity },
+      { manifests: manifests({ operations: { fence: {} } }), checkSink: () => ({ available: true }) },
     );
     assert.equal(d.allowed, false);
     assert.equal(d.source, 'role-authority.ungranted');
@@ -143,8 +132,8 @@ describe('policyDecision — identity-anchored role authority (team mode)', () =
   });
 });
 
-describe('policyDecision — solo mode unchanged', () => {
-  it('solo mode allows regardless of identity/grants (env ergonomics preserved)', () => {
+describe('policyDecision — solo mode', () => {
+  it('allows a valid Worker Profile regardless of identity grants', () => {
     const identity = serviceIdentity({ serviceId: 'role:security', role: 'security', source: 'env-fallback' });
     const d = policyDecision(
       { role: 'security', tool: 'bash', action: 'bash:run', deploymentMode: 'solo', identity },

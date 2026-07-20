@@ -1,6 +1,6 @@
 ---
 title: Inspect running agents
-description: Capture session feedback and trace which specialists ran for a task.
+description: Capture session feedback and trace which Worker Profiles ran for a task.
 ---
 
 `construct reflect` captures a session insight or learning and writes it to your knowledge base. Use it after any session where you discovered something worth preserving.

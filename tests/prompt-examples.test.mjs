@@ -1,9 +1,8 @@
 /**
- * tests/prompt-examples.test.mjs — validates shipped public persona and internal role example fixtures.
+ * tests/prompt-examples.test.mjs — validates shipped Worker Profile examples.
  *
- * Ensures the examples corpus stays structured enough for regression use.
- * Also checks that every fixture points at real prompt surfaces so examples do not
- * drift into an undocumented side channel.
+ * Ensures the examples corpus stays structured enough for regression use and
+ * that every fixture points at a real prompt or perspective surface.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -59,6 +58,13 @@ function parseFrontmatter(text) {
   return { data, body: text.slice(match[0].length) };
 }
 
+function resolveExampleReference(reference) {
+  if (fs.existsSync(path.join(root, reference))) return reference;
+  const migrated = reference.replace(/^skills\/roles\//, 'skills/perspectives/');
+  if (fs.existsSync(path.join(root, migrated))) return migrated;
+  return reference;
+}
+
 function relative(filePath) {
   return path.relative(root, filePath).replaceAll(path.sep, '/');
 }
@@ -71,7 +77,7 @@ test('prompt examples corpus exists and contains shipped fixtures', () => {
 
 test('every example fixture has required frontmatter and body sections', () => {
   const files = walk(examplesRoot).filter((file) => !file.endsWith('README.md'));
-  const allowedSurfaces = new Set(['persona', 'internal-role']);
+  const allowedSurfaces = new Set(['worker-profile', 'persona', 'internal-role', 'internal-worker-profile']);
   const allowedCategories = new Set(['golden', 'bad', 'boundary', 'adversarial']);
   const allowedVerdicts = new Set(['pass', 'fail']);
 
@@ -104,13 +110,13 @@ test('example categories align with fixture path and target real repo surfaces',
     const { data } = parseFrontmatter(text);
     const parts = rel.split('/');
 
-    if (data.surface === 'persona') {
-      assert.equal(parts[1], 'personas', `${rel}: persona fixtures must live under examples/worker-profile-examples`);
-      assert.equal(parts[2], data.name, `${rel}: persona directory should match fixture name`);
-      assert.equal(parts[3], data.category, `${rel}: persona category directory should match category`);
+    if (data.surface === 'worker-profile' || data.surface === 'persona') {
+      assert.equal(parts[1], 'worker-profile-examples', `${rel}: public Worker Profile fixtures must use examples/worker-profile-examples`);
+      assert.equal(parts[2], data.name, `${rel}: Worker Profile directory should match fixture name`);
+      assert.equal(parts[3], data.category, `${rel}: Worker Profile category directory should match category`);
     }
 
-    if (data.surface === 'internal-role') {
+    if (data.surface === 'internal-worker-profile' || data.surface === 'internal-role') {
       assert.equal(parts[1], 'internal', `${rel}: internal fixtures must live under examples/internal`);
       assert.equal(parts[2], 'roles', `${rel}: internal role fixtures must live under examples/internal/roles`);
       assert.equal(parts[3], data.name, `${rel}: internal role directory should match fixture name`);
@@ -120,25 +126,27 @@ test('example categories align with fixture path and target real repo surfaces',
     const references = Array.isArray(data.references) ? data.references : [];
     assert.ok(references.length > 0, `${rel}: references should list at least one target file`);
     for (const reference of references) {
-      assert.ok(fs.existsSync(path.join(root, reference)), `${rel}: missing referenced file ${reference}`);
+      const resolved = resolveExampleReference(reference);
+      assert.ok(fs.existsSync(path.join(root, resolved)), `${rel}: missing referenced file ${reference} (resolved ${resolved})`);
     }
   }
 });
 
 test('examples README states the public-vs-internal fixture split and lean-prompt rule', () => {
   const readme = fs.readFileSync(path.join(examplesRoot, 'README.md'), 'utf8');
-  assert.match(readme, /public persona and internal role layers/);
-  assert.match(readme, /keep the public persona and internal specialist prompts lean and rule-based/);
+  assert.match(readme, /public Worker Profile prompt and internal role layers/);
+  assert.match(readme, /keep the public Worker Profile prompt and internal profile prompts lean and rule-based/);
   assert.match(readme, /keep most examples here as regression fixtures, not embedded into prompt bodies/);
 });
 
-test('Construct remains the sole public persona surface in docs and fixtures', () => {
+test('Construct remains the sole public Worker Profile surface in docs and fixtures', () => {
   const promptSurfaces = fs.readFileSync(path.join(root, 'docs', 'guides', 'concepts', 'prompt-surfaces.mdx'), 'utf8');
-  assert.match(promptSurfaces, /sole public persona/);
-  assert.match(promptSurfaces, /personas\/construct\.md/);
+  assert.match(promptSurfaces, /sole public Worker Profile prompt/);
+  assert.match(promptSurfaces, /worker-profiles\/prompts\/construct\.md/);
 
-  const personaDirs = fs.readdirSync(path.join(examplesRoot, 'personas')).filter((entry) => fs.statSync(path.join(examplesRoot, 'personas', entry)).isDirectory());
-  assert.deepEqual(personaDirs, ['construct']);
+  const workerProfileDirs = fs.readdirSync(path.join(examplesRoot, 'worker-profile-examples'))
+    .filter((entry) => fs.statSync(path.join(examplesRoot, 'worker-profile-examples', entry)).isDirectory());
+  assert.deepEqual(workerProfileDirs, ['construct']);
 });
 
 test('required fixture coverage exists for public and high-leverage internal surfaces', () => {
@@ -153,9 +161,15 @@ test('required fixture coverage exists for public and high-leverage internal sur
     index.set(key, categories);
   }
 
-  assert.deepEqual(index.get('persona:construct'), new Set(['golden', 'bad', 'boundary', 'adversarial']));
+  assert.deepEqual(index.get('persona:construct') ?? index.get('worker-profile:construct'), new Set(['golden', 'bad', 'boundary', 'adversarial']));
 
-  for (const role of ['architect', 'engineer', 'reviewer', 'qa', 'orchestrator']) {
-    assert.deepEqual(index.get(`internal-role:${role}`), new Set(['golden', 'bad']), `${role}: required internal coverage missing`);
+  for (const workerProfileId of ['architect', 'engineer', 'reviewer', 'qa', 'orchestrator']) {
+    const categories = index.get(`internal-role:${workerProfileId}`)
+      ?? index.get(`internal-worker-profile:${workerProfileId}`);
+    assert.deepEqual(
+      categories,
+      new Set(['golden', 'bad']),
+      `${workerProfileId}: required internal coverage missing`,
+    );
   }
 });

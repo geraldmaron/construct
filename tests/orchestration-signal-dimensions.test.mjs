@@ -6,7 +6,7 @@
  * lib/orchestration/signal-dimensions.mjs must flip the matching
  * requestSignals() field true and leave the others false. Also asserts that
  * hasNamedConstraints combined with the cost dimension drives a consuming
- * rule (routing-tables 'named-cost-constraint' -> product-manager).
+ * rule (routing-tables 'named-cost-constraint' -> product-manager Worker Profile).
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -81,7 +81,7 @@ test('hasNamedConstraints/budget is consumed: named-cost-constraint fires produc
   assert.equal(signals.cost, true);
   const triggers = proactiveTriggers(signals);
   assert.ok(
-    triggers.some((t) => t.specialist === 'product-manager' && t.reason.includes('cost')),
+    triggers.some((t) => t.workerProfile === 'product-manager' && t.reason.includes('cost')),
     `expected a product-manager cost trigger, got: ${JSON.stringify(triggers)}`,
   );
 });
@@ -91,5 +91,5 @@ test('hasNamedConstraints without a cost dimension does not fire the cost watche
   assert.equal(signals.hasNamedConstraints, true);
   assert.equal(signals.cost, false);
   const triggers = proactiveTriggers(signals);
-  assert.ok(!triggers.some((t) => t.specialist === 'product-manager' && t.reason.includes('cost')));
+  assert.ok(!triggers.some((t) => t.workerProfile === 'product-manager' && t.reason.includes('cost')));
 });

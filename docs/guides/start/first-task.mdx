@@ -30,8 +30,8 @@ Re-running `construct init` on an existing project is safe; it's idempotent. Re-
 Open your editor. Two modes depending on the request:
 
 <Cards>
-<Card title="Simple ask" href="/guides/concepts/agents-and-personas">
-Address `@construct` directly. The persona answers without a full specialist chain.
+<Card title="Simple ask" href="/guides/reference/worker-profiles">
+Address `@construct` directly. The public Worker Profile answers without a full Assignment chain.
 
 ```
 @construct read the README and summarize what this project is.
@@ -40,7 +40,7 @@ Address `@construct` directly. The persona answers without a full specialist cha
 Good for: questions, summaries, small lookups, one-file changes.
 </Card>
 <Card title="Involved work" href="/guides/concepts/architecture">
-Construct routes through the specialist chain: architect → researcher → reviewer → security.
+Construct routes through the Worker Profile chain: architect → researcher → reviewer → security.
 
 ```
 @construct review the auth flow in src/auth/ and flag risks.
@@ -50,23 +50,23 @@ Good for: code review, architectural decisions, security-sensitive changes, PRDs
 </Card>
 </Cards>
 
-### Confirm specialists will actually run
+### Confirm Worker Profiles will actually run
 
-Both dispatch paths above route through specialists — but a specialist chain only runs a real LLM (**EXECUTE**) when a provider is attached; otherwise it only prepares prompts (**PLAN**) and returns no reasoned output. `construct init` printed a line telling you which one you're in:
+Both dispatch paths above route through Worker Profiles — but a profile chain only runs a real LLM (**EXECUTE**) when a provider is attached; otherwise it only prepares prompts (**PLAN**) and returns no reasoned output. `construct init` printed a line telling you which one you're in:
 
 ```
-specialists will EXECUTE (provider <family> + key found)
-specialists will only PLAN (fix: set orchestration.workerBackend=provider + a key)
+Worker Profiles will EXECUTE (provider <family> + key found)
+Worker Profiles will only PLAN (fix: set orchestration.workerBackend=provider + a key)
 ```
 
-If you're in Claude Code or OpenCode, a host session is already attached, so specialists EXECUTE with no extra setup. On any other host (Codex, Copilot, VS Code, Cursor), or if you want Claude Code to use a specific provider model instead of the host's own, set `orchestration.workerBackend: "provider"` in `construct.config.json` and export a materialized provider key (`ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY`, or `OPENAI_API_KEY`). Rerun `construct doctor` and check the last line before trusting specialist output. See [install → EXECUTE vs PLAN](/guides/start/install#execute-vs-plan-do-specialists-actually-run-an-llm).
+If you're in Claude Code or OpenCode, a host session is already attached, so profiles EXECUTE with no extra setup. On any other host (Codex, Copilot, VS Code, Cursor), or if you want Claude Code to use a specific provider model instead of the host's own, set `orchestration.workerBackend: "provider"` in `construct.config.json` and export a materialized provider key (`ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY`, or `OPENAI_API_KEY`). Rerun `construct doctor` and check the last line before trusting profile output. See [install → EXECUTE vs PLAN](/guides/start/install#execute-vs-plan-do-worker-profiles-actually-run-an-llm).
 
 ## When you need more: working from files instead of chat
 
-Everything above assumes you're typing requests directly. For work that arrives as a file instead — a bug report, a customer comment, a competitor scan, a postmortem draft — Construct can pick it up automatically, classify it, and route it to the right specialist without you retyping it as a prompt. See [processing incoming files →](/guides/concepts/intake-and-triage) once you're comfortable with the basics above.
+Everything above assumes you're typing requests directly. For work that arrives as a file instead — a bug report, a customer comment, a competitor scan, a postmortem draft — Construct can pick it up automatically, classify it, and route it to the right Worker Profile without you retyping it as a prompt. See [processing incoming files →](/guides/concepts/intake-and-triage) once you're comfortable with the basics above.
 
 ## What just happened
 
-Construct's persona [held the conversation](/guides/concepts/agents-and-personas), but behind the scenes it [routed work through specialists](/guides/concepts/architecture) and [enforced policy gates](/guides/concepts/gates-and-enforcement) on any mutations. Session state was persisted to `.construct/context.md` so the next session resumes mid-flight.
+Construct's public Worker Profile [held the conversation](/guides/reference/worker-profiles), but behind the scenes it [routed work through internal profiles](/guides/concepts/architecture) and [enforced policy gates](/guides/concepts/gates-and-enforcement) on any mutations. Session state was persisted to `.construct/context.md` so the next session resumes mid-flight.
 
 Next: [connect your editor →](/guides/start/connect-your-editor)

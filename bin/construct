@@ -208,6 +208,51 @@ async function cmdRegistryCatalog(noun, args = []) {
   if (code) process.exit(code);
 }
 
+async function cmdProcedure(args = []) {
+  const sub = args[0] || 'list';
+
+  if (sub === 'invoke') {
+    const rest = args.slice(1);
+    const flag = (name) => {
+      const i = rest.indexOf(name);
+      return i !== -1 ? rest[i + 1] : undefined;
+    };
+    let input = flag('--text') || '';
+    const fileArg = flag('--file');
+    let ingestion = null;
+    if (!input && fileArg) {
+      const { resolveInput } = await import('../lib/embedded-contract/ingest.mjs');
+      const resolved = await resolveInput({ filePath: fileArg });
+      input = resolved.text;
+      ingestion = resolved.error ? { ...(resolved.ingestion || {}), error: resolved.error } : resolved.ingestion;
+    }
+    if (!input && !process.stdin.isTTY) input = fs.readFileSync(0, 'utf8');
+    const request = {
+      procedureId: flag('--procedure-id') || flag('--workflow-type'),
+      input,
+      ingestion,
+      workerProfileStrategy: flag('--worker-profile-strategy') || flag('--role-strategy'),
+      requestedWorkerProfiles: (flag('--worker-profiles') || flag('--roles'))
+        ?.split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+      approvalMode: flag('--approval-mode'),
+      trace: !rest.includes('--no-trace'),
+      host: flag('--host'),
+      hostModel: flag('--host-model'),
+      hostProvider: flag('--host-provider'),
+      recruitment: flag('--recruitment'),
+    };
+    const { invokeProcedure } = await import('../lib/embedded-contract/procedure-invoke.mjs');
+    const { wrapContractResult } = await import('../lib/embedded-contract/envelope.mjs');
+    const envelope = wrapContractResult(await invokeProcedure(request), { surface: 'cli' });
+    println(JSON.stringify(envelope, null, 2));
+    return;
+  }
+
+  return cmdRegistryCatalog('procedure', args);
+}
+
 async function cmdRulesUsage(args = []) {
   const { summarizeRuleCalls } = await import('../lib/telemetry/rule-calls.mjs');
   const { summarizeHookCalls } = await import('../lib/telemetry/hook-calls.mjs');
@@ -611,7 +656,7 @@ async function cmdDoctor() {
   // minute at 50MB, but a freshly-upgraded install with a 34GB legacy
   // log shouldn't wait 60s. --fix-embed-log forces rotation now.
 
-  const embedLogPath = path.join(doctorRoot(userHome), 'runtime', 'embed-daemon.log');
+  const embedLogPath = path.join(doctorRoot(), 'runtime', 'embed-daemon.log');
   if (fs.existsSync(embedLogPath)) {
     const sizeMb = fs.statSync(embedLogPath).size / 1024 / 1024;
     const FORCE_THRESHOLD_MB = Number(process.env.CONSTRUCT_DOCTOR_EMBED_LOG_FORCE_MB) || 500;
@@ -2011,8 +2056,9 @@ async function _cmdCosts(args) {
   const sub = args[0] || 'status';
   const {
     getDailySpend,
+    getDailySpendByWorkerProfile,
     getTotalDailySpend,
-    personaBudget,
+    workerProfileBudget,
     totalBudget,
     enforcementActive,
     checkBudget,
@@ -2025,31 +2071,31 @@ async function _cmdCosts(args) {
     println(`Today's total spend: $${total.costUsd.toFixed(4)} / $${cap.toFixed(2)} cap (${pct}%)`);
     println(`Enforcement: ${enforcementActive() ? 'on (hard-stop at cap)' : 'advisory (warning only)'}`);
     println('');
-    println('Per-persona daily spend:');
-    const personas = Object.keys(total.byPersona || {});
-    if (personas.length === 0) {
+    println('Per-worker-profile daily spend:');
+    const profiles = Object.keys(getDailySpendByWorkerProfile());
+    if (profiles.length === 0) {
       println('  (no recorded spend today)');
     } else {
-      for (const p of personas.sort()) {
-        const spend = getDailySpend({ personaId: p });
-        const personaCap = personaBudget(p);
-        const personaPct = personaCap > 0 ? Math.round((spend.costUsd / personaCap) * 100) : 0;
-        println(`  ${p.padEnd(22)} $${spend.costUsd.toFixed(4).padStart(10)} / $${personaCap.toFixed(2)} (${personaPct}%)`);
+      for (const id of profiles.sort()) {
+        const spend = getDailySpend({ workerProfileId: id });
+        const profileCap = workerProfileBudget(id);
+        const profilePct = profileCap > 0 ? Math.round((spend.costUsd / profileCap) * 100) : 0;
+        println(`  ${id.padEnd(22)} $${spend.costUsd.toFixed(4).padStart(10)} / $${profileCap.toFixed(2)} (${profilePct}%)`);
       }
     }
     return;
   }
 
   if (sub === 'check') {
-    const persona = args[1];
-    if (!persona) { errorln('Usage: construct costs check <personaId>'); process.exit(1); }
-    const result = checkBudget({ personaId: persona });
+    const workerProfileId = args[1];
+    if (!workerProfileId) { errorln('Usage: construct costs check <workerProfileId>'); process.exit(1); }
+    const result = checkBudget({ workerProfileId });
     println(JSON.stringify(result, null, 2));
     if (!result.allowed) process.exit(2);
     return;
   }
 
-  errorln('Usage: construct costs <status|check <personaId>>');
+  errorln('Usage: construct costs <status|check <workerProfileId>>');
   process.exit(1);
 }
 
@@ -4341,8 +4387,8 @@ async function cmdOrchestrate(args) {
     // caller has to know to check.
     if (shaped.message) println(`  ${shaped.message}`);
     printRoutePath(shaped.routePath);
-    if (run.tasks.length) println(`  tasks: ${run.tasks.map((t) => `${t.role}(${t.status})`).join(' → ')}`);
-    else println('  tasks: none (no Construct-owned specialist sequence for this execution mode)');
+    if (run.tasks.length) println(`  tasks: ${run.tasks.map((t) => `${t.workerProfileId ?? t.role}(${t.status})`).join(' → ')}`);
+    else println('  tasks: none (no Construct-owned worker-profile sequence for this execution mode)');
     if (run.contextBindings?.length) {
       println(`  context: ${run.contextBindings.map((b) => `${b.id}[${b.provider}${b.role ? `:${b.role}` : ''}]${b.contentRoot ? '✓' : ''}`).join(', ')}`);
     }
@@ -5128,7 +5174,7 @@ async function cmdDocsReconcile(args) {
 
   println(`Reconciling ${candidates.length} document(s) across ${scopes.join(', ')}…\n`);
   println('This performs a structural drift check (frontmatter, section headings, cross-refs).');
-  println('Full AI-assisted reconciliation requires a specialist dispatch via the MCP worker_run tool.\n');
+  println('Full AI-assisted reconciliation requires a worker-profile dispatch via the MCP worker_run tool.\n');
 
   const reports = [];
   const STALE_DAYS = 30;
@@ -6474,7 +6520,7 @@ const handlers = new Map([
   ['registry:generate-docs', cmdRegistryGenerateDocs],
   ['workspace-preset', (args) => cmdRegistryCatalog('workspace-preset', args)],
   ['worker-profile', (args) => cmdRegistryCatalog('worker-profile', args)],
-  ['procedure', (args) => cmdRegistryCatalog('procedure', args)],
+  ['procedure', cmdProcedure],
   ['rules', cmdRulesUsage],
   // Pricing / cost readouts are stubbed out: the ledger writes, model-pricing
   // catalog, and per-turn accounting still run, but no CLI surface exposes
@@ -6805,15 +6851,15 @@ const handlers = new Map([
   ['activation:status', async (args) => {
     const { getActivationSummary, getActivationStats } = await import('../lib/hooks/proactive-activation.mjs');
     const json = args.includes('--json');
-    const specialistIdx = args.indexOf('--specialist');
+    const profileIdx = args.indexOf('--worker-profile');
     
-    if (specialistIdx !== -1) {
-      const specialist = args[specialistIdx + 1];
-      const stats = getActivationStats(specialist);
+    if (profileIdx !== -1) {
+      const workerProfileId = args[profileIdx + 1];
+      const stats = getActivationStats(workerProfileId);
       if (json) {
         println(JSON.stringify(stats, null, 2));
       } else {
-        println(`Activation Stats: ${specialist}`);
+        println(`Activation Stats: ${workerProfileId}`);
         println(`Recent: ${stats.recentActivations}/${stats.rateLimit} (rate limit)`);
         println(`Total: ${stats.totalActivations}`);
         println(`Last: ${stats.lastActivation ? new Date(stats.lastActivation).toISOString() : 'never'}`);
@@ -6828,8 +6874,8 @@ const handlers = new Map([
         if (Object.keys(summary).length === 0) {
           println('No activations recorded yet');
         } else {
-          for (const [specialist, data] of Object.entries(summary)) {
-            println(`${specialist}: ${data.recentActivations} recent, ${data.totalActivations} total`);
+          for (const [workerProfileId, data] of Object.entries(summary)) {
+            println(`${workerProfileId}: ${data.recentActivations} recent, ${data.totalActivations} total`);
           }
         }
       }

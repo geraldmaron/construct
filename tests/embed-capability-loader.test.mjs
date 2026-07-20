@@ -62,6 +62,9 @@ test('enable and disable operate on canonical project Procedure records', () => 
     const enabled = enableCapability('operations', { rootDir: root, overrides: { embed: { runtime: 'none' } }, packRoots: [] });
     assert.equal(enabled.ok, true);
     assert.ok(listCapabilities({ rootDir: root, packRoots: [] }).capabilities.find((entry) => entry.id === 'operations').enabled);
-    assert.equal(disableCapability('operations', { rootDir: root }).disabled, true);
+    const disabled = disableCapability('operations', { rootDir: root });
+    assert.equal(disabled.ok, true);
+    assert.equal(disabled.wasEnabled, true);
+    assert.equal(listCapabilities({ rootDir: root, packRoots: [] }).capabilities.find((entry) => entry.id === 'operations').enabled, false);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });

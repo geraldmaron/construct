@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "specialistId": "architect",
-  "capabilityId": "specialist.prompt",
+  "workerProfileId": "architect",
+  "capabilityId": "worker-profile.prompt",
   "mode": "adversarial",
   "scenarioKind": "adversarial-role-tailored",
   "representativeTask": {

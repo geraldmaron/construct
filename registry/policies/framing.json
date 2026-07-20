@@ -1,8 +1,8 @@
 {
   "id": "framing",
   "ownerWorkerProfile": "orchestrator",
-  "description": "Requires that execution artifacts cite their source; prevents specialists from treating their own output as ground truth.",
-  "enforcement": "(persona prompt)",
+  "description": "Requires that execution artifacts cite their source; prevents Worker Profiles from treating their own output as ground truth.",
+  "enforcement": "(worker-profile prompt)",
   "mode": "honor-system",
   "approvalWorkerProfiles": [],
   "requiredPolicies": [],

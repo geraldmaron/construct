@@ -3,7 +3,7 @@
  *
  * The canonical names are dev/stop/dashboard; up/down/serve are retired. Three drift
  * classes the sweep flags:
- *   - retired aliases printed to users (skills, templates, personas, bin error strings)
+ *   - retired aliases printed to users (skills, templates, worker-profile prompts, bin error strings)
  *     — hard drift a user sees and copies;
  *   - retired aliases in internal comments — softer drift;
  *   - handler rows binding a function whose identity diverges from the command name
@@ -24,13 +24,13 @@ import { recordFindings } from './lib/findings.mjs';
 const RETIRED = { up: 'dev', down: 'stop', serve: 'dashboard' };
 const ALIAS_RE = /construct\s+(up|down|serve)\b/g;
 
-const SCAN_DIRS = ['bin', 'lib', 'scripts', 'skills', 'specialists', 'templates', 'personas', 'rules'];
+const SCAN_DIRS = ['bin', 'lib', 'scripts', 'skills', 'registry', 'templates', 'rules'];
 const SCAN_EXTS = ['.mjs', '.js', '.md', '.mdx', '.json', '.toml', '.txt'];
 const EXCLUDE = /(node_modules|\.git|audit-artifacts|scripts\/audit)/;
 
 // User-facing surfaces: a retired alias here is copied verbatim by a human or agent.
 
-const USER_FACING_DIR = /(^|\/)(skills|specialists|templates|personas)(\/|$)/;
+const USER_FACING_DIR = /(^|\/)(skills|registry\/worker-profiles|templates)(\/|$)/;
 const USER_FACING_LINE = /(errorln|println|console\.(log|error)|process\.stdout|process\.stderr)/;
 
 function walk(dir) {

@@ -312,6 +312,9 @@ jobs:
       - name: agent contracts schema
         if: needs.changes.outputs.agents == 'true' || needs.changes.outputs.workflow == 'true'
         run: npm run lint:contracts
+      - name: Workspace Preset schema
+        if: needs.changes.outputs.agents == 'true' || needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
+        run: npm run lint:workspace-presets
       - name: docs drift check
         if: needs.changes.outputs.docs == 'true' || needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
         run: npm run docs:update -- --check
@@ -333,6 +336,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run gates:audit
+      - name: static analysis (warn-first)
+        if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
+        run: |
+          npm run static:knip || true
+          npm run static:cruise || true
       - name: certification gate
         if: needs.changes.outputs.code == 'true' || needs.changes.outputs.agents == 'true' || needs.changes.outputs.templates == 'true' || needs.changes.outputs.workflow == 'true'
         run: node ./bin/construct certify gate

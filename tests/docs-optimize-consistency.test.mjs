@@ -41,7 +41,7 @@ test('scripts/optimize.mjs patch target stays skills/perspectives/', () => {
   const src = read('scripts/optimize.mjs');
   assert.match(
     src,
-    /['"]skills['"],\s*['"]roles['"]/,
+    /['"]skills['"],\s*['"]perspectives['"]/,
     'the optimizer must patch role skill files under skills/perspectives/ — the docs pin this target'
   );
   assert.ok(

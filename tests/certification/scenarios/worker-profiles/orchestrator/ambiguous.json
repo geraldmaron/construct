@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "specialistId": "orchestrator",
-  "capabilityId": "specialist.prompt",
+  "workerProfileId": "orchestrator",
+  "capabilityId": "worker-profile.prompt",
   "mode": "normal",
   "scenarioKind": "ambiguous",
   "representativeTask": {
