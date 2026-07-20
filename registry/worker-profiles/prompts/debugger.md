@@ -1,3 +1,9 @@
+<!--
+registry/worker-profiles/prompts/debugger.md — Worker Profile runtime prompt for debugger.
+
+Role-specific instructions, perspective bias, and anti-fabrication contract synced to
+registry/worker-profiles/debugger.json. Resolved by convention at prompts/<id>.md.
+-->
 ---
 workerProfileId: debugger
 version: 1

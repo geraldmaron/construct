@@ -1,8 +1,8 @@
 {
   "id": "agents-routing",
   "ownerWorkerProfile": "orchestrator",
-  "description": "Routing discipline: construct routes to specialists, specialists do not self-route except to adjacent roles.",
-  "enforcement": "(persona prompt)",
+  "description": "Routing discipline: Construct routes to Worker Profiles; Worker Profiles do not self-route except to adjacent roles.",
+  "enforcement": "(worker-profile prompt)",
   "mode": "honor-system",
   "approvalWorkerProfiles": [],
   "requiredPolicies": [],

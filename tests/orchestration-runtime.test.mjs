@@ -1,10 +1,10 @@
 /**
  * tests/orchestration-runtime.test.mjs — local orchestration runtime (Mode-A).
  *
- * Pins that the runtime plans a sequenced specialist chain for an orchestrated
+ * Pins that the runtime plans sequenced Worker Profile Assignments for an orchestrated
  * request, persists a durable run that round-trips through the filesystem store,
  * advances tasks to `prepared` via the inline backend, and reports honest
- * host-adapter metadata. Prompt-only and host-direct requests own no specialist
+ * host-adapter metadata. Prompt-only and host-direct requests own no Assignment
  * sequence — the runtime records that rather than implying orchestration — and
  * the inline backend marks tasks `prepared` (not executed), the boundary ADR-0020
  * makes explicit.
@@ -58,7 +58,7 @@ test.after(() => {
   else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
-test('orchestrated request plans a specialist chain and prepares every task', async () => {
+test('orchestrated request plans Worker Profile Assignments and prepares every task', async () => {
   const cwd = project();
   const run = await runOrchestration(
     { request: 'Refactor the auth module and add a migration; review for security', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 4, moduleCount: 2 },
@@ -67,7 +67,7 @@ test('orchestrated request plans a specialist chain and prepares every task', as
   assert.equal(run.status, 'completed-prepare-only');
   assert.equal(run.execution.executionMode, 'construct-orchestrated');
   assert.equal(run.workerBackend, 'inline');
-  assert.ok(run.tasks.length >= 2, 'multiple specialists sequenced');
+  assert.ok(run.tasks.length >= 2, 'multiple Worker Profiles sequenced');
   assert.ok(run.tasks.every((t) => t.status === 'prepared'), 'every task prepared');
   assert.ok(run.tasks.every((t) => t.executor === 'inline:prepared'), 'inline backend prepares, not executes');
   assert.ok(run.tasks.every((t, i) => t.seq === i), 'tasks carry a deterministic sequence');
@@ -85,7 +85,7 @@ test('a planned run persists durably and round-trips through the store', async (
   assert.equal((await getRun(cwd, planned.runId)).status, 'completed-prepare-only', 'execution is persisted');
 });
 
-test('prompt-only request owns no specialist sequence', async () => {
+test('prompt-only request owns no Assignment sequence', async () => {
   const cwd = project();
   const run = await runOrchestration({ request: 'summarize this note', requestedStrategy: 'prompt-only', hostModel: MODEL }, { env: ENV, cwd });
   assert.equal(run.execution.executionMode, 'construct-prompt-only');
@@ -93,7 +93,7 @@ test('prompt-only request owns no specialist sequence', async () => {
   assert.equal(run.status, 'completed');
 });
 
-test('host-direct request owns no specialist sequence and no Construct capabilities', async () => {
+test('host-direct request owns no Assignment sequence and no Construct capabilities', async () => {
   const cwd = project();
   const run = await runOrchestration({ request: 'do it your way', requestedStrategy: 'orchestrated', useConstruct: false, hostModel: MODEL }, { env: ENV, cwd });
   assert.equal(run.execution.executionMode, 'host-direct');
@@ -115,7 +115,7 @@ test('host-adapter metadata carries the runtime-backed fields and the semantics 
   for (const k of ['runId', 'traceId', 'requestedStrategy', 'effectiveStrategy', 'executionMode', 'constructCapabilitiesActive', 'workerBackend', 'hostRole', 'degraded', 'selectedProvider', 'selectedModel', 'tasks', 'warnings', 'semantics']) {
     assert.ok(k in meta, `metadata has ${k}`);
   }
-  assert.match(meta.semantics, /does not perform specialist LLM reasoning/i);
+  assert.match(meta.semantics, /does not perform Worker Profile LLM reasoning/i);
   assert.ok(WORKER_BACKENDS.includes(meta.workerBackend));
 });
 
@@ -141,7 +141,7 @@ test('provider backend executes tasks via the model and records real output', as
   let calls = 0;
   const fetchImpl = async () => {
     calls += 1;
-    return { ok: true, json: async () => ({ content: [{ type: 'text', text: `specialist-output-${calls}` }] }) };
+    return { ok: true, json: async () => ({ content: [{ type: 'text', text: `worker-profile-output-${calls}` }] }) };
   };
   const run = await runOrchestration(
     { request: 'refactor the auth module and review for security', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 4, moduleCount: 2 },
@@ -151,7 +151,7 @@ test('provider backend executes tasks via the model and records real output', as
   assert.ok(run.tasks.length >= 2);
   assert.ok(run.tasks.every((t) => t.status === 'done'), 'every provider task done');
   assert.ok(run.tasks.every((t) => /^provider:anthropic:/.test(t.executor)), 'executor records provider+model');
-  assert.ok(run.tasks.every((t) => /^specialist-output-/.test(t.output)), 'real model output recorded');
+  assert.ok(run.tasks.every((t) => /^worker-profile-output-/.test(t.output)), 'real model output recorded');
 });
 
 test('provider backend records a failed task and completes-with-failures, no crash', async () => {
@@ -226,7 +226,7 @@ test('submitHostTaskResult records a host-reported result and drives the awaitin
 
   let last;
   for (const task of run.tasks) {
-    last = await submitHostTaskResult(cwd, run.runId, task.id, { output: `result for ${task.role}`, model: 'claude-opus-4', provider: 'anthropic-subscription' }, { env: ENV });
+    last = await submitHostTaskResult(cwd, run.runId, task.id, { output: `result for ${task.workerProfileId}`, model: 'claude-opus-4', provider: 'anthropic-subscription' }, { env: ENV });
   }
   assert.equal(last.nextTask, null, 'the final submission reports no next task');
   assert.equal(last.run.status, 'completed');
@@ -331,23 +331,23 @@ test('submitHostTaskResult rejection matrix: unknown run, unknown task, wrong st
 test('assessRecruitmentHonesty: null without recruits or when every recruit executed', () => {
   assert.equal(assessRecruitmentHonesty([]), null);
   assert.equal(assessRecruitmentHonesty([
-    { role: 'engineer', recruited: false, executionState: 'prepared' },
+    { workerProfileId: 'engineer', recruited: false, executionState: 'prepared' },
   ]), null, 'non-recruited prepared tasks are the prepare-only signal, not a recruitment gap');
   assert.equal(assessRecruitmentHonesty([
-    { role: 'operations', recruited: true, executionState: 'executed' },
-    { role: 'security', recruited: true, executionState: 'degraded-executed' },
+    { workerProfileId: 'operations', recruited: true, executionState: 'executed' },
+    { workerProfileId: 'security', recruited: true, executionState: 'degraded-executed' },
   ]), null, 'executed recruits are honest');
 });
 
 test('assessRecruitmentHonesty: an unexecuted recruit is named, with its state and reason', () => {
   const honesty = assessRecruitmentHonesty([
-    { role: 'engineer', recruited: false, executionState: 'executed' },
-    { role: 'operations', recruited: true, executionState: 'prepared', reason: 'wide blast radius' },
+    { workerProfileId: 'engineer', recruited: false, executionState: 'executed' },
+    { workerProfileId: 'operations', recruited: true, executionState: 'prepared', reason: 'wide blast radius' },
   ]);
   assert.ok(honesty, 'mixed executed+recruited-prepared is the silent no-op this flags');
   assert.equal(honesty.unexecutedRecruits.length, 1);
   assert.deepEqual(honesty.unexecutedRecruits[0], {
-    role: 'operations', executionState: 'prepared', reason: 'wide blast radius',
+    workerProfileId: 'operations', executionState: 'prepared', reason: 'wide blast radius',
   });
   assert.match(honesty.note, /NOT performed/);
 });
@@ -359,7 +359,7 @@ test('a watcher-recruited task carries recruited:true and its dispatch reason', 
     { env: ENV, cwd },
   );
   const recruitedTasks = run.tasks.filter((t) => t.recruited);
-  assert.ok(recruitedTasks.length >= 1, `wide-blast-radius watcher recruits at least one task; roles: ${run.tasks.map((t) => t.role).join(',')}`);
+  assert.ok(recruitedTasks.length >= 1, `wide-blast-radius watcher recruits at least one task; Worker Profiles: ${run.tasks.map((t) => t.workerProfileId).join(',')}`);
   assert.ok(recruitedTasks.every((t) => t.reason), 'every recruited task names why it joined');
 });
 

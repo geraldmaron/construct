@@ -10,7 +10,7 @@
  *     records output, and a planned run has not executed at all;
  *   - the mandatory semantics disclaimer rides on every run, inline and provider;
  *   - chain-of-thought disclosure honors the configured mode — `hidden` keeps
- *     specialist reasoning off both task and trace, `surface` puts it on the task
+ *     Worker Profile reasoning off both task and trace, `surface` puts it on the task
  *     only, `telemetry_only` puts it in the trace only and never on the task;
  *   - the remote (team) HTTP path is opt-in via CONSTRUCT_ORCHESTRATION_URL and
  *     relays the service's run faithfully without fabricating local execution.
@@ -58,13 +58,13 @@ test.after(() => {
   else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
-// A thinking-block response yields both specialist output and a reasoning trace, so
+// A thinking-block response yields both Worker Profile output and a reasoning trace, so
 // the disclosure mode — not the model — decides where the reasoning is allowed to land.
 
 const REASONING = 'THINKING-CANARY-42';
 const providerFetch = async () => ({
   ok: true,
-  json: async () => ({ content: [{ type: 'thinking', thinking: REASONING }, { type: 'text', text: 'specialist-output' }] }),
+  json: async () => ({ content: [{ type: 'thinking', thinking: REASONING }, { type: 'text', text: 'worker-profile-output' }] }),
 });
 
 test('inline backend never claims execution: no done, no inline:executed, no output', async () => {
@@ -92,14 +92,14 @@ test('a planned run has not executed: queued tasks, no executor, no output', asy
 test('the semantics disclaimer rides on every run, inline and provider', async () => {
   const inlineCwd = project();
   const inline = await runOrchestration({ request: REQUEST, requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 4 }, { env: ENV, cwd: inlineCwd });
-  assert.match(hostAdapterMetadata(inline).semantics, /does not perform specialist LLM reasoning/i);
+  assert.match(hostAdapterMetadata(inline).semantics, /does not perform Worker Profile LLM reasoning/i);
 
   const providerCwd = project();
   const provider = await runOrchestration(
     { request: REQUEST, requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 4 },
     { env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test' }, cwd: providerCwd, workerBackend: 'provider', fetchImpl: providerFetch },
   );
-  assert.match(hostAdapterMetadata(provider).semantics, /does not perform specialist LLM reasoning/i);
+  assert.match(hostAdapterMetadata(provider).semantics, /does not perform Worker Profile LLM reasoning/i);
 });
 
 test('chain-of-thought hidden keeps reasoning off both task and trace', async () => {
@@ -142,8 +142,8 @@ test('remote path relays the service run faithfully and fabricates no execution'
   const remoteRun = {
     runId: 'remote-1', status: 'completed',
     execution: { executionMode: 'construct-orchestrated', degraded: false },
-    plan: { intent: 'refactor', specialists: ['architect'] },
-    tasks: [{ id: 't1', role: 'architect', status: 'prepared', executor: 'inline:prepared', output: null, reasoning: null, error: null }],
+    plan: { intent: 'refactor', assignments: [{ id: 'assignment-1', workerProfileId: 'architect', recruited: false }] },
+    tasks: [{ id: 't1', workerProfileId: 'architect', status: 'prepared', executor: 'inline:prepared', output: null, reasoning: null, error: null }],
   };
   let posted = null;
   const fetchImpl = async (url, opts) => { posted = { url, opts }; return { ok: true, status: 200, json: async () => ({ data: remoteRun }) }; };
@@ -162,8 +162,8 @@ test('remote path relays real provider output without rewriting it', async () =>
   const remoteRun = {
     runId: 'remote-2', status: 'completed',
     execution: { executionMode: 'construct-orchestrated', degraded: false },
-    plan: { intent: 'refactor', specialists: ['architect'] },
-    tasks: [{ id: 't1', role: 'architect', status: 'done', executor: 'provider:anthropic:claude-sonnet-4-6', output: 'real-remote-output', reasoning: null, error: null }],
+    plan: { intent: 'refactor', assignments: [{ id: 'assignment-1', workerProfileId: 'architect', recruited: false }] },
+    tasks: [{ id: 't1', workerProfileId: 'architect', status: 'done', executor: 'provider:anthropic:claude-sonnet-4-6', output: 'real-remote-output', reasoning: null, error: null }],
   };
   const fetchImpl = async () => ({ ok: true, status: 200, json: async () => ({ data: remoteRun }) });
   const res = await orchestrationRun(

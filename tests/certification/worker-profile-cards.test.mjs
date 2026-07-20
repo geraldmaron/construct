@@ -1,5 +1,5 @@
 /**
- * tests/certification/role-cards.test.mjs — specialist role card fixtures.
+ * tests/certification/worker-profile-cards.test.mjs — Worker Profile role card fixtures.
  */
 
 import test from 'node:test';

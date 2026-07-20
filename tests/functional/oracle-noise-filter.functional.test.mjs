@@ -25,8 +25,7 @@ function freshEnv() {
   mkdirSync(join(projectDir, '.construct', 'outcomes'), { recursive: true });
   mkdirSync(join(rootDir, 'audit-artifacts'), { recursive: true });
   mkdirSync(doctorRoot(homeDir), { recursive: true });
-  mkdirSync(join(rootDir, 'specialists'), { recursive: true });
-  cpSync(join(process.cwd(), 'specialists', 'org'), join(rootDir, 'specialists', 'org'), { recursive: true });
+  cpSync(join(process.cwd(), 'registry'), join(rootDir, 'registry'), { recursive: true });
   return {
     projectDir,
     homeDir,

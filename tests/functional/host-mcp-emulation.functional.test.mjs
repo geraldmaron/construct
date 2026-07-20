@@ -4,8 +4,8 @@
  * Sterile, no-LLM emulation of how a host (Claude Code, VS Code, Codex, OpenCode,
  * Cursor) actually drives Construct: connect to the real construct MCP server
  * (lib/mcp/server.mjs) over stdio as an MCP client and call the contract tools,
- * proving skills/templates/specialist-routing/the loop machinery are exercised —
- * the deterministic half of "are skills and specialists being used?". Specialist
+ * proving skills/templates/Assignment routing/the loop machinery are exercised —
+ * the deterministic half of "are skills and Worker Profiles being used?". Worker Profile
  * prompts (which need a real model) are out of scope here; the gated real-LLM
  * layer covers artifact quality.
  *
@@ -112,13 +112,13 @@ test('a host drives Construct over MCP: skills, templates, and worker-profile as
   const skill = payload(await client.callTool({ name: 'get_skill', arguments: { path: 'perspectives/architect' } }));
   assert.ok(skill.content && skill.content.length > 0, 'get_skill returns content');
   assert.ok(skill.content.trimStart().startsWith('---'), 'skill carries frontmatter');
-  const onDisk = readFileSync(join(REPO_ROOT, 'skills', 'roles', 'architect.md'), 'utf8');
+  const onDisk = readFileSync(join(REPO_ROOT, 'skills', 'perspectives', 'architect.md'), 'utf8');
   assert.equal(skill.content, onDisk, 'loaded skill matches the file on disk');
 
   // Audit: the skill load is recorded under the isolated HOME (proves "used").
   const skillLog = join(doctorRoot(env.HOME), 'skill-calls.jsonl');
   assert.ok(existsSync(skillLog), 'skill load is recorded in the doctor-root skill-calls.jsonl');
-  assert.match(readFileSync(skillLog, 'utf8'), /roles\/architect/, 'the loaded skill id appears in the audit log');
+  assert.match(readFileSync(skillLog, 'utf8'), /perspectives\/architect/, 'the loaded skill id appears in the audit log');
 
   // Templates are resolvable by name (the skeleton a PRD/ADR is authored from).
   const tmpl = payload(await client.callTool({ name: 'get_template', arguments: { name: 'prd' } }));
@@ -189,7 +189,7 @@ test('a host can execute a research-shaped request through orchestration_run aft
   assert.equal(run.degraded, false, 'the spawned-server happy path must not be degraded');
   assert.equal(run.track, 'focused');
   assert.equal(run.suggestedWorkflowType, 'research-synthesis');
-  assert.deepEqual(run.specialists, ['researcher']);
+  assert.deepEqual(run.assignments.map((assignment) => assignment.workerProfileId), ['researcher']);
   assert.equal(run.researchExecutionPolicy?.mode, 'evidence-first');
   assert.ok(Array.isArray(run.tasks) && run.tasks.length >= 1, 'the spawned-server run must return a non-empty executed task list');
   assert.ok(run.tasks.every((task) => task.status === 'prepared'), 'inline host-emulation tasks stay prepared on the happy path');

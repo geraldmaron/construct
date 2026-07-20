@@ -750,11 +750,11 @@
       "domain": "docs",
       "keywords": [
         "user research workflow",
-        "cx-researcher",
+        "researcher",
+        "worker",
+        "profile",
         "synthesizes",
-        "user",
-        "evidence",
-        "interviews"
+        "user"
       ],
       "path": "docs/user-research-workflow",
       "priority": 5

@@ -33,8 +33,10 @@ test('the skill exists and passes the effectiveness lint', () => {
 
 test('product-manager entitles the skill', () => {
   const reg = loadRegistry({ rootDir: ROOT });
-  const pm = reg.specialists['product-manager'] ?? Object.values(reg.specialists).find((s) => s.name === 'product-manager');
-  assert.ok((pm.skills ?? []).includes(SKILL), 'PM skills[] entitles strategy/prioritization-methods');
+  const pm = reg.workerProfiles['product-manager'];
+  assert.ok(pm, 'product-manager Worker Profile exists in registry');
+  const entitled = [...(pm.skills ?? []), ...(pm.skillEmphasis ?? [])];
+  assert.ok(entitled.includes(SKILL), 'PM skillEmphasis entitles strategy/prioritization-methods');
 });
 
 test('prioritization intents route to the skill in the top 3', () => {

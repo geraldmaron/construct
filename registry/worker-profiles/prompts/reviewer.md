@@ -1,3 +1,9 @@
+<!--
+registry/worker-profiles/prompts/reviewer.md — Worker Profile runtime prompt for reviewer.
+
+Role-specific instructions, perspective bias, and anti-fabrication contract synced to
+registry/worker-profiles/reviewer.json. Resolved by convention at prompts/<id>.md.
+-->
 ---
 workerProfileId: reviewer
 version: 1

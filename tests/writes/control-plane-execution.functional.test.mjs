@@ -51,7 +51,7 @@ describe('LMCP-J6 — a specialist-produced writeIntent executes only after plan
       providerId: 'jira',
       writeKind: 'issue',
       payload: { project: 'PROJ', issueType: 'Task', summary: 'Flaky test in CI' },
-      requestedBy: { specialistId: 'qa-analyst', role: 'qa-analyst' },
+      requestedBy: { workerProfileId: 'qa-analyst', role: 'qa-analyst' },
       surface: 'specialist-recommendation',
     });
 
@@ -114,7 +114,7 @@ describe('LMCP-J6 — a specialist-produced writeIntent executes only after plan
       providerId: 'jira',
       writeKind: 'issue',
       payload: { project: 'PROJ', issueType: 'Task', summary: 'Should not ship' },
-      requestedBy: { specialistId: 'qa-analyst' },
+      requestedBy: { workerProfileId: 'qa-analyst' },
       surface: 'specialist-recommendation',
     });
     const record = queue.enqueue({ tool: intent.tool, args: intent.payload, surface: intent.surface, requestedBy: intent.requestedBy });

@@ -96,7 +96,8 @@ test('every canonical dimension resolves to a live registry specialist', () => {
     const specialists = participants.filter((p) => p.workerProfile);
     assert.ok(specialists.length >= 1, `${aff.dimension} recruits at least one specialist`);
     for (const p of specialists) {
-      assert.match(p.workerProfile, /^cx-/, `${aff.dimension} resolves roster ids`);
+      assert.match(p.workerProfile, /^[a-z][a-z0-9-]*$/, `${aff.dimension} resolves canonical Worker Profile ids`);
+      assert.doesNotMatch(p.workerProfile, /^cx-/, `${aff.dimension} excludes retired persona ids`);
     }
   }
 });
@@ -106,7 +107,6 @@ test('participationRules with signalExpr recruit their stated targets with role 
     workerProfiles: {
       'architect': {
         skillEmphasis: [],
-        team: 'engineering-team',
         participationRules: {
           schemaVersion: 1,
           rules: [
@@ -114,7 +114,7 @@ test('participationRules with signalExpr recruit their stated targets with role 
               id: 'legal-scope-review',
               dimension: 'legal-compliance',
               when: { signalExpr: 'compliance && !privacy' },
-              recruit: { workerProfiles: ['security'], teams: ['governance-team'] },
+              workerProfiles: ['security'],
               assignmentRole: 'reviewer',
               gate: 'advisory',
               reason: 'compliance-flagged change needs security review',
@@ -122,7 +122,7 @@ test('participationRules with signalExpr recruit their stated targets with role 
           ],
         },
       },
-      'security': { skillEmphasis: [], team: 'governance-team' },
+      'security': { skillEmphasis: [] },
     },
   };
 
@@ -133,8 +133,6 @@ test('participationRules with signalExpr recruit their stated targets with role 
   assert.equal(specialist.rule, 'legal-scope-review');
   assert.equal(specialist.gate, 'advisory');
   assert.deepEqual(specialist.dimensions, ['legal-compliance']);
-  const team = hit.find((p) => p.team === 'governance-team' && !p.workerProfile);
-  assert.ok(team, 'rule recruits the governance team as a participant');
 
   const miss = recruit({ signals: { compliance: true, privacy: true }, registry });
   assert.equal(miss.length, 0, 'negated term suppresses the rule');
@@ -145,12 +143,11 @@ test('participationRules with watchCondition delegate to the shipped watcher pre
     workerProfiles: {
       'qa': {
         skillEmphasis: [],
-        team: 'quality-team',
         participationRules: [
           {
             id: 'wide-change-review',
             when: { watchCondition: 'wide-blast-radius' },
-            recruit: { workerProfiles: ['qa'] },
+            workerProfiles: ['qa'],
             assignmentRole: 'reviewer',
             gate: 'advisory',
           },
@@ -186,41 +183,40 @@ test('watcherFires evaluates known predicates and fails closed on unknown names'
   assert.equal(watcherFires('wide-blast-radius', undefined), false);
 });
 
-test('assembleParticipants keeps the Oracle static/swarm contract', () => {
+test('assembleParticipants creates canonical single and parallel Assignment sets', () => {
   const single = assembleParticipants({
-    seeds: ['cx-data-engineer'],
-    request: 'No .construct/outcomes/_summary.json — learning tiebreakers are blind',
-    cwd: process.cwd(),
+    seeds: ['engineer'],
   });
-  assert.equal(single.mode, 'static');
-  assert.equal(single.primary, 'cx-data-engineer');
-  assert.deepEqual(single.workerProfiles, ['cx-data-engineer']);
-  assert.ok(single.teamRouting);
+  assert.equal(single.mode, 'single');
+  assert.equal(single.primary, 'engineer');
+  assert.deepEqual(single.workerProfiles, ['engineer']);
+  assert.deepEqual(single.assignments, [
+    { id: 'assignment-1', workerProfileId: 'engineer', workerProfile: 'engineer', primary: true },
+  ]);
 
   const multi = assembleParticipants({
     seeds: ['engineer', 'operations'],
-    request: 'Project adapter parity check failed',
-    cwd: process.cwd(),
   });
-  assert.equal(multi.mode, 'swarm');
+  assert.equal(multi.mode, 'parallel');
   assert.equal(multi.primary, 'engineer');
-  assert.deepEqual([...multi.workerProfiles].sort(), ['engineer', 'operations']);
-  assert.ok((multi.teamRouting?.involvedTeams ?? []).length > 1);
+  assert.deepEqual(multi.workerProfiles, ['engineer', 'operations']);
+  assert.deepEqual(multi.assignments, [
+    { id: 'assignment-1', workerProfileId: 'engineer', workerProfile: 'engineer', primary: true },
+    { id: 'assignment-2', workerProfileId: 'operations', workerProfile: 'operations', primary: false },
+  ]);
 });
 
-test('resolveRemediationDispatch delegates to the recruiter with unchanged output shape', () => {
-  const dispatch = resolveRemediationDispatch(
-    {
-      id: 'hook-failures',
-      detail: 'hook failures in the last 24h',
-    },
-    { cwd: process.cwd() },
-  );
-  assert.ok(['static', 'swarm'].includes(dispatch.mode));
-  assert.equal(dispatch.primary, 'operations');
-  assert.ok(Array.isArray(dispatch.workerProfiles));
-  assert.ok(dispatch.workerProfiles.includes('operations'));
-  assert.ok(dispatch.teamRouting);
+test('resolveRemediationDispatch creates a canonical Assignment from the routed Worker Profile', () => {
+  const dispatch = resolveRemediationDispatch({
+    id: 'hook-failures',
+    detail: 'hook failures in the last 24h',
+  });
+  assert.deepEqual(dispatch, {
+    mode: 'single',
+    assignments: [
+      { id: 'assignment-1', workerProfileId: 'operations', primary: true },
+    ],
+  });
 });
 
 // outcomeBoost tie-breaker (ADR-0076): a bounded ±0.05 nudge between candidates
@@ -243,8 +239,8 @@ function seedOutcomes(cwd, role, { successes = 0, failures = 0 } = {}) {
 
 const TIED_REGISTRY = {
   workerProfiles: {
-    'data-analyst': { skillEmphasis: ['cost-optimization'], team: null },
-    'cx-finance-ops': { skillEmphasis: ['pricing-positioning'], team: null },
+    'data-analyst': { skillEmphasis: ['cost-optimization'] },
+    'product-manager': { skillEmphasis: ['pricing-positioning'] },
   },
 };
 
@@ -259,13 +255,13 @@ test('outcomeBoost re-ranks candidates the specialization signal left tied', () 
     );
 
     seedOutcomes(cwd, 'data-analyst', { failures: 5 });
-    seedOutcomes(cwd, 'finance-ops', { successes: 5 });
+    seedOutcomes(cwd, 'product-manager', { successes: 5 });
 
     const boosted = recruit({ signals: { cost: true }, kind: 'review', registry: TIED_REGISTRY, cwd });
     assert.deepEqual(
       boosted.map((p) => p.workerProfile),
-      ['cx-finance-ops'],
-      'cx-finance-ops\' strong recent outcomes flip the tie-break',
+      ['product-manager'],
+      'product-manager\'s strong recent outcomes flip the tie-break',
     );
   } finally {
     fs.rmSync(cwd, { recursive: true, force: true });
@@ -276,23 +272,22 @@ test('outcomeBoost can never override a lower declared-skill-count (most-special
   const cwd = tmpProject();
   const registry = {
     workerProfiles: {
-      'cx-narrow': { skillEmphasis: ['cost-optimization'], team: null },
-      'cx-broad': {
+      'data-analyst': { skillEmphasis: ['cost-optimization'] },
+      'engineer': {
         skillEmphasis: ['cost-optimization', 'pricing-positioning', 'raw-data-structuring'],
-        team: null,
       },
     },
   };
   try {
     // The narrower (more specialized) candidate gets the worst possible outcome
     // history and the broader one the best — the boost must still lose to skillCount.
-    seedOutcomes(cwd, 'narrow', { failures: 5 });
-    seedOutcomes(cwd, 'broad', { successes: 5 });
+    seedOutcomes(cwd, 'data-analyst', { failures: 5 });
+    seedOutcomes(cwd, 'engineer', { successes: 5 });
 
     const picks = recruit({ signals: { cost: true }, kind: 'review', registry, cwd });
     assert.deepEqual(
       picks.map((p) => p.workerProfile),
-      ['cx-narrow'],
+      ['data-analyst'],
       'a 1-skill candidate must beat a 3-skill candidate regardless of outcome history',
     );
   } finally {
@@ -304,7 +299,7 @@ test('orchestration.outcomeRouting=off restores plain alphabetical tie-breaking'
   const cwd = tmpProject();
   try {
     seedOutcomes(cwd, 'data-analyst', { failures: 5 });
-    seedOutcomes(cwd, 'finance-ops', { successes: 5 });
+    seedOutcomes(cwd, 'product-manager', { successes: 5 });
     fs.writeFileSync(
       path.join(cwd, 'construct.config.json'),
       JSON.stringify({ version: 1, orchestration: { outcomeRouting: 'off' } }),
@@ -328,7 +323,7 @@ test('missing outcome summary leaves recruitment order unchanged', () => {
     assert.deepEqual(
       picks.map((p) => p.workerProfile),
       ['data-analyst'],
-      'no outcome data must fall back to the pre-existing alphabetical tie-break',
+      'no outcome data must fall back to the deterministic alphabetical tie-break',
     );
   } finally {
     fs.rmSync(cwd, { recursive: true, force: true });

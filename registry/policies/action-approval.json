@@ -1,7 +1,7 @@
 {
   "id": "action-approval",
   "ownerWorkerProfile": "orchestrator",
-  "description": "Blocks specialists from taking actions not listed in their approved action set.",
+  "description": "Blocks Worker Profiles from taking actions not listed in their approved action set.",
   "enforcement": "lib/roles/fence.mjs#checkAction",
   "mode": "deterministic",
   "approvalWorkerProfiles": [],

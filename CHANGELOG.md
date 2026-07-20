@@ -6,6 +6,40 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Added
 
+- Static analysis tooling (`construct-4uxq0.13.10`): `knip` and `dependency-cruiser` as devDependencies with `knip.json` / `.dependency-cruiser.cjs` entry-point inventories, `npm run static:knip` / `static:cruise`, and a warn-first CI lint-suite step. Documented the ADR-0001 devDependency exemption in `docs/guides/reference/dependencies.md`.
+
+- Sterility fingerprint extension (`construct-4uxq0.14.8`): `tests/helpers/sterile-host-env.mjs` now detects test-tagged leaks in hook scratch state, telemetry logs, and session/status reporting via the shared `construct-sterile-test-leak` marker and `"source":"test"` JSONL convention; wired into `scripts/run-tests.mjs` with synthetic-leak proofs in `tests/helpers/sterile-host-env.test.mjs`.
+
+### Fixed
+
+- ENOTEMPTY cleanup race (`construct-nl9f`): migrated remaining subprocess-spawning tmpdir teardown in `tests/embed-cli.test.mjs` and `tests/scripts/graph-impact-shadow.test.mjs` onto `tests/helpers/cleanup.mjs#rmTmpDir`; local concurrent stress runs report zero ENOTEMPTY failures.
+
+- Knowledge-trends sterile leak: `tests/knowledge-trends.test.mjs` now awaits every `addObservation` seed before teardown so delayed keyword-index writes cannot land under the real `~/.construct/projects/<key>/` after `CONSTRUCT_HOME_OVERRIDE` is restored (suite sterile-guard key `a1d4d5c7a81efa4265ad7d74`).
+
+- Headless Chrome probes (`construct-tsyfe.8.8`): add `--use-mock-keychain` to browser usability checks in `lib/diagram-export.mjs`, distribution Mermaid Puppeteer config, and `lib/render-pipeline.mjs` so macOS test/release runs stop spawning Keychain Not Found dialogs.
+
+- Test corpus inventory: regenerated `tests/AUDIT.md` and `tests/capabilities/corpus-inventory.json` to **939** `*.test.mjs` files so the AUDIT.md staleness gate matches disk.
+
+### Changed
+
+- Certification lib blockers (`construct-tsyfe.8.8`): `splitFrontmatter` in `lib/worker-profiles/prompt-schema.mjs` strips Construct file-header HTML comments before YAML frontmatter so Worker Profile prompt contract checks pass; `workerProfileRuns()` in `lib/certification/evidence-tiers.mjs` matches `worker-profile.*` scenario ids; `readRegistryModels` in `lib/opencode-runtime-plugin.mjs` loads `registry/models.json` via `defaultModelRegistryPath` (same as `lib/hooks/model-fallback.mjs`). Un-skipped three OpenCode plugin fallback tests.
+
+- Root/package normalization (`construct-tsyfe.8.16`): classified the gitignored `.cursor/` host-adapter output in `scripts/audit/root-disposition.json` so the root-disposition ratchet stays complete when Cursor integration files are present locally. Stale checked-in Homebrew formula snapshots remain deleted; release metadata stays at `@geraldmaron/construct@2.0.0`.
+
+- W3 consistency watcher (`construct-tsyfe.8.8`): `checkRolesDrift` resolves Worker Profile identity via `.id` instead of retired `.name`; `checkWorkerProfilePrompts` validates convention paths at `registry/worker-profiles/prompts/<id>.md` via `resolveWorkerProfilePromptPath`. Un-skipped functional tests for roles-drift zero, collision, and missing prompt detection.
+
+- Comment-lint prompt headers (`construct-tsyfe.8.8`): added Construct file-header blocks to 13 `registry/worker-profiles/prompts/**/*.md` files so `lint:comments` passes on the Worker Profile prompt tree.
+
+- CLI/MCP/adapters terminology cutover (`construct-tsyfe.8.14`): `construct costs` now reports per-worker-profile spend with `workerProfileId`; `activation:status` accepts `--worker-profile`; orchestration and reconcile help strings use Worker Profile vocabulary; cost-ledger exposes `getDailySpendByWorkerProfile`; doctor measurement report uses `workerProfileBudget`; MCP memory tool schemas describe Worker Profile ids; `construct.config.json` uses `totalConstructMaxMb`.
+
+- Clean-slate test ratchet (`construct-tsyfe.8.17`): fixed w3 consistency watcher header comment; aligned cost-ledger, fence, gateway, and functional tests to `workerProfileId` / `workerProfileBudget` keys.
+
+- Catalog root collapse (`construct-tsyfe.8.13`): regenerated `registry/catalog.json` from the Worker Profile cutover (Pass B clean-clone catalog proof — `catalog:regen` produces no semantic diff); pointed prompt-resolution fallbacks in `scripts/optimize.mjs` at `registry/worker-profiles/prompts/` and `skills/perspectives/`; updated the naming audit scan roots and `schemas/brand-voice.schema.json` to drop retired `specialists/` / `personas/` catalog paths.
+
+### Added
+
+- Docs sweep (`construct-tsyfe.8.15`): rebuilt live guides, README, AGENTS, examples, and templates to teach Construct 2.0 vocabulary — Workspace Preset, Worker Profile, `.construct/`, and `registry/worker-profiles/` — and removed current-guidance references to deleted v1 roots (`specialists/`, `personas/`, `.cx/`, `construct scope`, custom-specialist cookbooks). Updated `.construct/context.md` to reflect the deleted legacy roots.
+
 - Workspace-control-plane final validation (`construct-b0nny.31`): `tests/functional/workplace-loop-signal-quality.functional.test.mjs` stress-tests the workplace loop's detection rules (`lib/workplace-loop/signals.mjs`) against a 10-issue, deliberately messy corpus, since the one live connected source (this checkout's own GitHub origin) has 0 open issues and construct-b0nny.25 could only prove detection against a single curated fixture. Per the maintainer's direction, this is a fixture-backed authenticated replay (`repo: 'fixture-replay/messy-issue-corpus'`, never presented as a live external source) driven through the real, unmodified `runDetect`/`signals`/`align`/`propose`/`gate` pipeline — only the network boundary is injected. Evidence: two structurally distinct unowned-risk-labeled issues (`GH-104`, uppercase `P0` label; `GH-105`, hyphenated `release-blocker` label, proving `\b` word-boundary matching on a real-world compound label) each correctly produced a `github.comment` effect on proposal `PROP-1`, `status: pending_approval`; a medium- and a high-severity stale issue were correctly detected by date math alone; an owned risk-labeled issue and an issue at the exact 30-day staleness boundary were correctly NOT flagged; a `wontfix`-labeled issue and a short, unlabeled, unowned issue were correctly classified as noise; a long-bodied unlabeled issue was correctly classified as neither meaningful nor noise; a pull-request-shaped record was filtered before signal detection ever ran. `apply` refused both effects pending approval, proving the real M2 governed-write gate (construct-b0nny.15) enforces on replayed data exactly as it does on the curated fixture.
 
 ### Removed

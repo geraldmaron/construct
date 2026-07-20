@@ -21,8 +21,8 @@ function baseRun(overrides = {}) {
   return {
     schemaVersion: 1,
     id: `cert-evidence-tiers-test-${randomUUID()}`,
-    scenarioId: 'specialist.representative.architect',
-    capabilityId: 'specialist.prompt',
+    scenarioId: 'worker-profile.happy-path-representative.architect',
+    capabilityId: 'worker-profile.prompt',
     evidenceVersion: '1',
     model: { provider: 'hermetic', requestedId: 'fixture/specialist', resolvedId: 'fixture/specialist', tier: 'hermetic', paidOptIn: false, operatorAckAt: null },
     fixture: { path: 'tests/certification/scenarios/worker-profiles/architect/happy-path-representative.json', sha256: 'a'.repeat(64) },

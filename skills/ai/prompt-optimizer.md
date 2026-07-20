@@ -6,7 +6,7 @@ artifactType: prompt
 ---
 # Prompt Optimization Loop
 
-Construct's prompt improvement system uses telemetry traces and quality scores as the feedback signal, an LLM as the optimizer, and the role skill files (`skills/perspectives/<role>.md`, inlined into specialist prompts at sync time) as the deployment layer. This is a closed loop with a human gate: production data → failure analysis → proposed patch → **manual apply** → sync → monitoring → rollback if needed.
+Construct's prompt improvement system uses telemetry traces and quality scores as the feedback signal, an LLM as the optimizer, and Worker Profile perspective files (`skills/perspectives/<worker-profile>.md`, inlined into Worker Profile prompts at sync time) as the deployment layer. This is a closed loop with a human gate: production data → failure analysis → proposed patch → **manual apply** → sync → monitoring → rollback if needed.
 
 `construct optimize` (implemented by `scripts/optimize.mjs`) runs the whole loop. It never mutates anything without an explicit `--apply`.
 
@@ -14,19 +14,19 @@ Construct's prompt improvement system uses telemetry traces and quality scores a
 
 ```bash
 # Dry run (the default) — diagnose failures and print the proposed patch
-construct optimize cx-engineer
+construct optimize engineer
 
-# Apply the patch to the agent's role skill file
-construct optimize cx-engineer --apply
+# Apply the patch to the Worker Profile perspective file
+construct optimize engineer --apply
 
 # Restore the most recent backup
-construct optimize cx-engineer --rollback
+construct optimize engineer --rollback
 
-# List all agents with current quality scores
+# List all Worker Profiles with current quality scores
 construct optimize --list
 
 # Tune parameters
-construct optimize cx-debugger --threshold=0.65 --days=14 --min-traces=5
+construct optimize debugger --threshold=0.65 --days=14 --min-traces=5
 ```
 
 Requires the telemetry backend: set `CONSTRUCT_TELEMETRY_BASEURL`, `CONSTRUCT_TELEMETRY_PUBLIC_KEY`, and `CONSTRUCT_TELEMETRY_SECRET_KEY`.
@@ -34,20 +34,20 @@ Requires the telemetry backend: set `CONSTRUCT_TELEMETRY_BASEURL`, `CONSTRUCT_TE
 ## When to run
 
 - Triggered by `/work:optimize-prompts` (manual), the weekly `optimize-loop` scheduled job, or the session-end hook — the scheduled and hook cadences run **dry-run only** and never apply; applying is always a human act.
-- Suggested when the latest performance review (`construct review`) flags an agent with an average quality score below 0.7 across at least 3 scored invocations.
-- Optimization needs at least `--min-traces` low-scoring traces (default 3) to have enough signal; raise it for noisy agents.
+- Suggested when the latest performance review (`construct review`) flags a Worker Profile with an average quality score below 0.7 across at least 3 scored invocations.
+- Optimization needs at least `--min-traces` low-scoring traces (default 3) to have enough signal; raise it for noisy Worker Profiles.
 
 ## Step 1: Gather signal
 
-The optimizer fetches recent traces and their quality scores for the target agent from the telemetry backend REST API:
+The optimizer fetches recent traces and their quality scores for the target Worker Profile from the telemetry backend REST API:
 
 ```
-GET {CONSTRUCT_TELEMETRY_BASEURL}/api/public/traces?tags={agentName}&limit=50
+GET {CONSTRUCT_TELEMETRY_BASEURL}/api/public/traces?tags={workerProfileId}&limit=50
 GET {CONSTRUCT_TELEMETRY_BASEURL}/api/public/scores?traceId={id}&name=quality
 # Auth: Basic base64(CONSTRUCT_TELEMETRY_PUBLIC_KEY:CONSTRUCT_TELEMETRY_SECRET_KEY)
 ```
 
-It filters to scores below the threshold (default 0.7) and extracts, per low-scoring trace: the prompt used, the user input, the model output, the quality score, and any human comments. It also reads the latest `~/.construct/performance-reviews/*-raw.json` for per-agent context.
+It filters to scores below the threshold (default 0.7) and extracts, per low-scoring trace: the prompt used, the user input, the model output, the quality score, and any human comments. It also reads the latest performance review for per-Worker-Profile context.
 
 ## Step 2: Diagnose failure patterns
 
@@ -78,32 +78,32 @@ The optimizer proposes a patch that directly addresses the diagnosed failures. R
 Read the dry-run output first — always review the proposed patch before applying. Then:
 
 ```bash
-construct optimize <agent> --apply
+construct optimize <worker-profile> --apply
 ```
 
 What `--apply` does, in order:
 
-1. **Rate limit**: refuses if the agent was applied within the last 7 days.
-2. **Patch target**: writes to the agent's role skill file `skills/perspectives/<role>.md` (e.g. `cx-engineer` → `skills/perspectives/engineer.md`). It never touches `registry/**` manifests or `registry/worker-profiles/prompts/construct.md`.
+1. **Rate limit**: refuses if the Worker Profile was applied within the last 7 days.
+2. **Patch target**: writes to `skills/perspectives/<worker-profile>.md` (for example, `engineer` → `skills/perspectives/engineer.md`). It never touches `registry/**` manifests or `registry/worker-profiles/prompts/construct.md`.
 3. **Backup**: saves a `.bak` of the previous file (most recent 5 kept) — `--rollback` restores it.
-4. **History**: appends the patch record to `~/.construct/prompt-history/<agent>.jsonl`.
+4. **History**: appends the patch record under the machine-state prompt history for the Worker Profile.
 5. **Integrity check**: verifies the patched file is structurally sane (non-empty, still a markdown document).
 6. **Sync**: runs `construct sync` so the updated skill propagates to all host adapters — sync's prompt composition is the contract gate and fails loudly on a skill that does not compose.
 
 ## Step 5: Monitor and roll back
 
-After applying, watch the agent's next scored invocations:
+After applying, watch the Worker Profile's next scored invocations:
 
-- `construct review` regenerates per-agent quality aggregates (`~/.construct/performance-reviews/`).
-- If the agent's average score drops after the patch, restore the previous prompt:
+- `construct review` regenerates per-Worker-Profile quality aggregates.
+- If the Worker Profile's average score drops after the patch, restore the previous prompt:
 
 ```bash
-construct optimize <agent> --rollback
+construct optimize <worker-profile> --rollback
 ```
 
 Rollback restores the latest `.bak` and records the reversal in the same history JSONL, so the audit trail stays complete.
 
 ## What this does not replace
 
-- **DSPy-style algorithmic optimization**: if you need optimization over large datasets with measurable metrics (classification, structured output), use a dedicated framework. This loop is for natural-language agent prompts where the metric is the quality score.
+- **DSPy-style algorithmic optimization**: if you need optimization over large datasets with measurable metrics (classification, structured output), use a dedicated framework. This loop is for natural-language Worker Profile prompts where the metric is the quality score.
 - **Human review**: the LLM optimizer can introduce subtle regressions. Applying is deliberately manual and rate-limited; automated cadences only ever propose.

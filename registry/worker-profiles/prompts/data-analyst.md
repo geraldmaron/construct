@@ -1,3 +1,9 @@
+<!--
+registry/worker-profiles/prompts/data-analyst.md — Worker Profile runtime prompt for data-analyst.
+
+Role-specific instructions, perspective bias, and anti-fabrication contract synced to
+registry/worker-profiles/data-analyst.json. Resolved by convention at prompts/<id>.md.
+-->
 ---
 workerProfileId: data-analyst
 version: 1

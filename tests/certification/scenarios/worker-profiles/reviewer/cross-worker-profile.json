@@ -1,9 +1,9 @@
 {
   "schemaVersion": 2,
-  "specialistId": "reviewer",
-  "capabilityId": "specialist.prompt",
+  "workerProfileId": "reviewer",
+  "capabilityId": "worker-profile.prompt",
   "mode": "normal",
-  "scenarioKind": "cross-specialist",
+  "scenarioKind": "cross-worker-profile",
   "representativeTask": {
     "prompt": "Review this diff that reworks the CSV export pagination in lib/export/csv.mjs. If you find blocking issues, route them to whoever needs to remediate them.",
     "inputs": { "files": ["lib/export/csv.mjs"], "change": "rework CSV export pagination" }

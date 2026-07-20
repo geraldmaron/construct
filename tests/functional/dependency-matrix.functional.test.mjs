@@ -102,9 +102,9 @@ test('Oracle synthesis emits and routes the dependency-matrix gaps', () => {
   assert.ok(ids.has('matrix-coverage-gap'), 'coverage gap emitted');
   assert.ok(ids.has('impact-untested'), 'freshness gap emitted');
 
-  assert.equal(routeGap({ id: 'matrix-coverage-gap' }).primary, 'architect');
-  assert.equal(routeGap({ id: 'impact-untested' }).primary, 'qa');
-  assert.equal(routeGap({ id: 'dependency-graph-stale' }).primary, 'engineer');
+  assert.equal(routeGap({ id: 'matrix-coverage-gap' }).workerProfileId, 'architect');
+  assert.equal(routeGap({ id: 'impact-untested' }).workerProfileId, 'qa');
+  assert.equal(routeGap({ id: 'dependency-graph-stale' }).workerProfileId, 'engineer');
 
   for (const g of gaps) assert.ok(g.remediationRoute, `gap ${g.id} carries a remediation route`);
 });

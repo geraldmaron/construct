@@ -4,7 +4,7 @@
  * Pins: validatePackPrompts() names the missing file and rejects a manifest
  * with invalid Worker Profile frontmatter; resolveWorkerProfilePrompt() reads
  * ONLY through the supplied pack list and returns {found:false} for an
- * undeclared role; loadPacksFromDir()/loadAllPacks() hard-fail a team/enterprise
+ * undeclared Worker Profile; loadPacksFromDir()/loadAllPacks() hard-fail a team/enterprise
  * pack whose declared prompt is missing (naming the file) while a solo-mode
  * load with the same broken pack succeeds — validation is deferred to the
  * worker's degraded-fallback path, not silently skipped.
@@ -103,7 +103,7 @@ test('resolveWorkerProfilePrompt', async (t) => {
     assert.equal(result.found, false);
   });
 
-  await t.test('returns found:false when no pack declares the role', () => {
+  await t.test('returns found:false when no pack declares the Worker Profile', () => {
     const result = resolveWorkerProfilePrompt('nonexistent', { packs: [{ id: '@test/pack', prompts: {} }], packageRoot: '/tmp' });
     assert.equal(result.found, false);
   });
@@ -179,10 +179,14 @@ test('loadAllPacks core pack prompt validation', async (t) => {
     assert.ok(core, 'core pack should load in solo mode');
   });
 
-  await t.test('team mode with the real repo core pack (well-formed) still includes it', () => {
+  await t.test('team mode rejects the core pack when canonical prompt frontmatter fails validation', () => {
     const result = loadAllPacks({ deploymentMode: 'team', rootDir: tmpRoot('cx-all-team-') });
     const core = result.packs.find((p) => p.id === '@construct/core');
-    assert.ok(core, 'the repo-shipped core pack prompts are well-formed and should pass team-mode validation');
+    assert.equal(core, undefined, 'invalid core pack prompts must not load under team mode');
+    assert.ok(
+      result.errors.some((e) => e.includes('@construct/core')),
+      'team mode should surface core prompt validation errors',
+    );
   });
 
   await t.test('rootDir is independent of the core pack source', () => {
@@ -202,7 +206,7 @@ test('loadAllPacks project-tier pack precedence (ADR-0055)', async (t) => {
       id: '@project/override', version: '1.0.0', compatVersion: 1,
       prompts: { 'engineer': 'prompts/engineer.md' },
     });
-    writePromptFile(projectDir, '.construct/packs/override-pack/prompts/engineer.md', 'name: engineer\nrole: engineer');
+    writePromptFile(projectDir, '.construct/packs/override-pack/prompts/engineer.md', 'workerProfileId: engineer');
 
     const result = loadAllPacks({ deploymentMode: 'solo', rootDir: projectDir });
     const projectPack = result.packs.find((p) => p.id === '@project/override');

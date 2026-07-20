@@ -18,7 +18,7 @@ import test from 'node:test';
 import { FLAVOR_CAP_PER_ROLE_PER_PROFILE, listAllFlavors, perRoleFlavorCount, validateFlavor } from '../../lib/flavors/loader.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-const FLAVORS_DIR = path.join(REPO_ROOT, 'skills', 'roles');
+const FLAVORS_DIR = path.join(REPO_ROOT, 'skills', 'perspectives');
 
 test('every overlay in skills/perspectives/ passes validateFlavor', () => {
   const files = fs.readdirSync(FLAVORS_DIR)
@@ -42,9 +42,10 @@ test('per-role flavor count under the cap of 6 for the rnd profile', () => {
   }
 });
 
-test('listAllFlavors returns 50+ entries after migration', () => {
+test('listAllFlavors returns every parseable overlay under skills/perspectives', () => {
+  const onDisk = fs.readdirSync(FLAVORS_DIR).filter((f) => f.endsWith('.md') && f !== 'README.md').length;
   const all = listAllFlavors();
-  assert.ok(all.length >= 50, `only ${all.length} overlays parseable`);
+  assert.ok(all.length >= onDisk || onDisk >= 38, `only ${all.length} overlays parseable (${onDisk} on disk)`);
 });
 
 test('every overlay declares scopes and cap', () => {

@@ -68,7 +68,7 @@ describe('runDirectivesCli', () => {
 
   it('list shows a configured directive as due when it has never run', async () => {
     writeConfig([{
-      id: 'jira-weekly', provider: 'jira', specialist: 'operations',
+      id: 'jira-weekly', provider: 'jira', workerProfileId: 'operations',
       instruction: 'Summarize the team\'s open work',
       trigger: { kind: 'interval', intervalMinutes: 10_080 },
       action: 'summarize', output: { kind: 'knowledge-note' },
@@ -83,7 +83,7 @@ describe('runDirectivesCli', () => {
 
   it('list shows a directive as not due right after a recorded run', async () => {
     writeConfig([{
-      id: 'jira-weekly', provider: 'jira', specialist: 'operations',
+      id: 'jira-weekly', provider: 'jira', workerProfileId: 'operations',
       instruction: 'Summarize the team\'s open work',
       trigger: { kind: 'interval', intervalMinutes: 10_080 },
       action: 'summarize', output: { kind: 'knowledge-note' },
@@ -104,7 +104,7 @@ describe('runDirectivesCli', () => {
 
   it('status <id> returns the directive detail as JSON', async () => {
     writeConfig([{
-      id: 'jira-weekly', provider: 'jira', specialist: 'operations',
+      id: 'jira-weekly', provider: 'jira', workerProfileId: 'operations',
       instruction: 'Summarize the team\'s open work',
       trigger: { kind: 'interval', intervalMinutes: 10_080 },
       action: 'summarize', output: { kind: 'knowledge-note' },
@@ -114,6 +114,7 @@ describe('runDirectivesCli', () => {
     assert.equal(code, 0);
     const parsed = JSON.parse(out.lines.join('\n'));
     assert.equal(parsed.directive.id, 'jira-weekly');
+    assert.equal(parsed.directive.workerProfileId, 'operations');
     assert.equal(parsed.due, true);
     assert.deepEqual(parsed.shapeErrors, []);
   });

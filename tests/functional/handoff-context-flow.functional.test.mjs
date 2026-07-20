@@ -2,13 +2,13 @@
  * tests/functional/handoff-context-flow.functional.test.mjs — construct-72gqn.10 (H6a).
  *
  * Before this bead, buildUserPrompt (lib/orchestration/worker.mjs) passed a
- * downstream specialist only the contract-id string — no prior specialist's
+ * downstream Worker Profile only the contract-id string — no prior Worker Profile's
  * real output ever reached a consumer, on either worker backend. This proves
  * the fix end to end on both backends the real orchestration runtime uses:
  * the provider backend (a real, scripted model call per task) and the host
  * backend (results submitted back via submitHostTaskResult), asserting the
- * downstream specialist's materialized prompt actually contains the upstream
- * specialist's real, trust-wrapped output — not just that the mechanism
+ * downstream Worker Profile's materialized prompt actually contains the upstream
+ * Worker Profile's real, trust-wrapped output — not just that the mechanism
  * exists in isolation (tests/orchestration-worker.test.mjs already covers
  * materializeTaskPrompt/buildUserPrompt as pure functions).
  */
@@ -55,7 +55,7 @@ test('provider backend: a downstream task\'s prompt contains the upstream task\'
   const fetchImpl = async (_url, opts) => {
     calls += 1;
     capturedBodies.push(JSON.parse(opts.body));
-    const text = calls === 1 ? ARCHITECT_OUTPUT : `specialist-output-${calls}`;
+    const text = calls === 1 ? ARCHITECT_OUTPUT : `worker-profile-output-${calls}`;
     return { ok: true, json: async () => ({ content: [{ type: 'text', text }] }) };
   };
   const run = await runOrchestration(
@@ -63,21 +63,21 @@ test('provider backend: a downstream task\'s prompt contains the upstream task\'
     { env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test' }, cwd, workerBackend: 'provider', fetchImpl },
   );
   assert.equal(run.status, 'completed');
-  assert.ok(run.tasks.length >= 2, 'the base orchestrated chain must dispatch at least architect + a downstream task');
+  assert.ok(run.tasks.length >= 2, 'the base orchestrated Assignment chain must dispatch at least architect + a downstream task');
   assert.ok(capturedBodies.length >= 2);
 
-  // Task 1 (architect, seq 0) is the first specialist dispatched — its own
-  // prompt must NOT contain a "Prior specialist results" section (nothing
+  // Task 1 (architect, seq 0) is the first Worker Profile dispatched — its own
+  // prompt must NOT contain a "Prior Worker Profile results" section (nothing
   // precedes it).
   const firstUserText = capturedBodies[0].messages[0].content[0].text;
-  assert.doesNotMatch(firstUserText, /## Prior specialist results/, 'the first-dispatched task has no upstream output to include');
+  assert.doesNotMatch(firstUserText, /## Prior Worker Profile results/, 'the first-dispatched task has no upstream output to include');
 
   // Every task dispatched after it must have architect's real output folded
   // into its prompt, trust-wrapped as untrusted data.
   for (let i = 1; i < capturedBodies.length; i++) {
     const userText = capturedBodies[i].messages[0].content[0].text;
-    assert.match(userText, /## Prior specialist results/, `task ${i + 1}'s prompt must include the prior-results section`);
-    assert.match(userText, /\[UNTRUSTED:team-authored:specialist:architect:/, `task ${i + 1}'s prompt must trust-wrap the architect's output`);
+    assert.match(userText, /## Prior Worker Profile results/, `task ${i + 1}'s prompt must include the prior-results section`);
+    assert.match(userText, /\[UNTRUSTED:team-authored:Worker Profile:architect:/, `task ${i + 1}'s prompt must trust-wrap the architect's output`);
     assert.ok(userText.includes(ARCHITECT_OUTPUT), `task ${i + 1}'s prompt must contain the architect's real output text`);
   }
 });
@@ -94,17 +94,17 @@ test('host backend: submitHostTaskResult refreshes the next awaiting task\'s mat
   // in one pass — the second task's prompt (materialized before task 1 ran)
   // must NOT yet contain task 1's output, since none existed at that point.
   const secondBefore = run.tasks[1].hostPrompt.user;
-  assert.doesNotMatch(secondBefore, /## Prior specialist results/, 'a prompt materialized before any upstream task ran must carry no prior-results section');
+  assert.doesNotMatch(secondBefore, /## Prior Worker Profile results/, 'a prompt materialized before any upstream task ran must carry no prior-results section');
 
   const { nextTask } = await submitHostTaskResult(cwd, run.runId, run.tasks[0].id, { output: ARCHITECT_OUTPUT }, { env: ENV });
   assert.equal(nextTask.id, run.tasks[1].id);
-  assert.match(nextTask.hostPrompt.user, /## Prior specialist results/, 'the re-materialized next-task prompt must now include the prior-results section');
+  assert.match(nextTask.hostPrompt.user, /## Prior Worker Profile results/, 'the re-materialized next-task prompt must now include the prior-results section');
   // Every submission on this test's host-backend run is host-reported (never
   // provider-verified — that trust level is covered by the provider-backend
   // test above, whose upstream output is real model output Construct itself
   // called for), so the re-materialized prompt wraps it at the lower
   // external-authenticated trust level.
-  assert.match(nextTask.hostPrompt.user, /\[UNTRUSTED:external-authenticated:specialist:architect:/);
+  assert.match(nextTask.hostPrompt.user, /\[UNTRUSTED:external-authenticated:Worker Profile:architect:/);
   assert.ok(nextTask.hostPrompt.user.includes(ARCHITECT_OUTPUT), 'the re-materialized prompt must contain the real submitted output text');
 });
 
@@ -123,7 +123,7 @@ test('host backend: a host-reported upstream output is trust-wrapped at the lowe
   // Both prior tasks were host-reported (this test never used the provider
   // backend), so both must carry the lower external-authenticated trust
   // level, never the higher team-authored level a provider-verified task gets.
-  assert.match(nextTask.hostPrompt.user, /\[UNTRUSTED:external-authenticated:specialist:architect:/);
-  assert.match(nextTask.hostPrompt.user, /\[UNTRUSTED:external-authenticated:specialist:.+:.+\]\nENGINEER-DONE/);
+  assert.match(nextTask.hostPrompt.user, /\[UNTRUSTED:external-authenticated:Worker Profile:architect:/);
+  assert.match(nextTask.hostPrompt.user, /\[UNTRUSTED:external-authenticated:Worker Profile:.+:.+\]\nENGINEER-DONE/);
   assert.doesNotMatch(nextTask.hostPrompt.user, /team-authored/, 'no host-reported upstream task may be wrapped at the higher team-authored level');
 });

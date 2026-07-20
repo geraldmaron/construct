@@ -21,7 +21,7 @@
         "registry/capabilities.json",
         "tests/providers/connection-probe.test.mjs",
         "tests/intake-prepare.test.mjs",
-        "tests/certification/specialists/*.role-card.json",
+        "tests/certification/worker-profiles/*.role-card.json",
         "tests/fixtures/artifacts/prd/golden.md",
         "docs/guides/concepts/intake-and-triage.mdx",
         "docs/guides/concepts/architecture.mdx",

@@ -1,10 +1,10 @@
 ---
 description: "Closed-loop prompt optimization: read telemetry traces, diagnose failures, propose an improved prompt for human apply"
 ---
-You are cx-trace-reviewer running a prompt optimization cycle for: $ARGUMENTS
+You are the reviewer Worker Profile running a prompt optimization cycle for: $ARGUMENTS
 
-If $ARGUMENTS is empty, review all agents whose average quality score is below 0.7 in the latest performance review (`construct optimize --list` shows them).
-If $ARGUMENTS names a specific agent (e.g. "engineer"), optimize only that agent.
+If $ARGUMENTS is empty, review all Worker Profiles whose average quality score is below 0.7 in the latest performance review (`construct optimize --list` shows them).
+If $ARGUMENTS names a specific Worker Profile (for example, "engineer"), optimize only that Worker Profile.
 
 Follow `skills/ai/prompt-optimizer.md` exactly.
 
@@ -12,26 +12,26 @@ Optimize prompt fragments and overlays, not the runtime orchestration policy. If
 
 ## Required steps
 
-1. **Dry-run the optimizer**: `construct optimize <agent>` — it reads the agent's role skill file (`skills/roles/<role>.md`), fetches recent traces and quality scores from the telemetry backend, and prints the diagnosis plus the proposed patch
-2. **Skip agents with insufficient signal**: fewer than `--min-traces` low-scoring traces (default 3) — note them but do not optimize
+1. **Dry-run the optimizer**: `construct optimize <worker-profile>` — it reads the Worker Profile's perspective file (`skills/perspectives/<worker-profile>.md`), fetches recent traces and quality scores from the telemetry backend, and prints the diagnosis plus the proposed patch
+2. **Skip Worker Profiles with insufficient signal**: fewer than `--min-traces` low-scoring traces (default 3) — note them but do not optimize
 3. **Review the diagnosis**: verify the top failure patterns are supported by the cited traces, not speculation
 4. **Review the proposed patch**: targeted edits that address failures without breaking high-scoring behaviors; reject rewrites
-5. **Apply only with explicit approval**: `construct optimize <agent> --apply` (rate-limited 1/agent/7 days; writes a `.bak` backup, appends under `$XDG_STATE_HOME/construct/prompt-history/` when that absolute XDG root is set or `~/.local/state/construct/prompt-history/` otherwise, then auto-runs `construct sync`)
-6. **Report**: for each agent — current average score, patterns addressed, applied or proposed-only status, and the monitoring plan
+5. **Apply only with explicit approval**: `construct optimize <worker-profile> --apply` (rate-limited once per Worker Profile every seven days; writes a `.bak` backup, appends under `$XDG_STATE_HOME/construct/prompt-history/` when that absolute XDG root is set or `~/.local/state/construct/prompt-history/` otherwise, then auto-runs `construct sync`)
+6. **Report**: for each Worker Profile — current average score, patterns addressed, applied or proposed-only status, and the monitoring plan
 
 ## Output
 
 ```
-AGENT: engineer
+WORKER PROFILE: engineer
 Status: PATCH PROPOSED (dry-run)
 Current avg: 0.61 (n=47 traces)
 Patterns addressed: missing file references, output verbosity, hallucination in tool-less responses
 Next: review the patch above, then `construct optimize engineer --apply`; monitor via `construct review`, revert with `--rollback` if the average drops.
 
-AGENT: reviewer
+WORKER PROFILE: reviewer
 Status: SKIPPED (insufficient low-scoring traces: 2 < 3)
 
-AGENT: debugger
+WORKER PROFILE: debugger
 Status: NO ACTION (avg 0.82 — above threshold)
 ```
 

@@ -21,8 +21,6 @@ import { FakeJira, FakeConfluence } from '../fakes/index.mjs';
 import { ApprovalQueue } from '../../lib/embed/approval-queue.mjs';
 import { runCapabilityTick } from '../../lib/embed/capability-jobs.mjs';
 import { createOpsTriageReasoningExecutor, analyzeOpsTriage } from '../../lib/embed/presets/ops-triage.mjs';
-import { writeWithEnvelope } from '../../lib/writes/envelope.mjs';
-import { validatePacket } from '../../lib/capability-contracts.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const realFetch = globalThis.fetch;
@@ -67,12 +65,14 @@ const OPERATIONS_MANIFEST = {
   id: 'operations-triage',
   version: '1.0.0',
   type: 'embed',
-  defaultApprovalMode: 'proposal-only',
+  workerProfiles: [],
+  approvalMode: 'proposal-only',
+  modelTier: 'standard',
+  state: 'active',
   embed: {
-    specialist: 'operations',
+    workerProfileId: 'operations',
     providerBindings: ['atlassian-jira', 'atlassian-confluence', 'directory'],
-    framework: 'cx-ops-dependency-sequencing',
-    outputContract: 'operations-triage',
+    framework: 'operations-dependency-sequencing',
     proposalAuthority: 'propose-only',
     runtime: 'in-process',
     cadence: { every: 'PT2H' },
@@ -123,6 +123,18 @@ function tmpRoot() {
   return mkdtempSync(join(tmpdir(), 'ops-triage-'));
 }
 
+function assertTriagePacketContract(packet) {
+  assert.deepEqual(
+    Object.keys(packet).sort(),
+    ['duplicates', 'inventoried', 'proposals', 'provenance', 'summary', 'underspecified'],
+    'Procedure artifact exposes the complete triage packet',
+  );
+  assert.equal(typeof packet.summary, 'string');
+  for (const section of ['inventoried', 'duplicates', 'underspecified', 'proposals', 'provenance']) {
+    assert.equal(typeof packet[section].count, 'number', `${section} declares a count`);
+  }
+}
+
 test('seeded duplicate pair detected → duplicate-link proposal queued, zero adapter writes', async () => {
   globalThis.fetch = () => { throw new Error('Real network blocked in acceptance test'); };
   const rootDir = tmpRoot();
@@ -141,7 +153,7 @@ test('seeded duplicate pair detected → duplicate-link proposal queued, zero ad
     });
 
     assert.equal(tick.status, 'ran', `tick should run, got ${tick.status} (${tick.reason ?? ''})`);
-    assert.equal(tick.contractStatus, 'ok', 'output packet must satisfy its contract');
+    assert.equal(tick.contractStatus, 'unchecked', 'final Procedure artifacts are not Assignment handoffs');
 
     // At least one duplicate-link proposal should be queued.
     const linkProposals = tick.proposalsEnqueued.filter((p) => p.writeKind === 'updateItem');
@@ -165,7 +177,6 @@ test('under-specified ticket → needs-info comment proposal queued', async () =
   globalThis.fetch = () => { throw new Error('Real network blocked in acceptance test'); };
   const rootDir = tmpRoot();
   try {
-    const providers = recordingProviders();
     const approvalQueue = new ApprovalQueue({ persistPath: join(rootDir, 'queue.jsonl') });
     const executor = createOpsTriageReasoningExecutor({ now: FIXED_NOW });
 
@@ -194,11 +205,10 @@ test('under-specified ticket → needs-info comment proposal queued', async () =
   }
 });
 
-test('triage output validates against its contract; findings carry provenance', () => {
+test('triage output satisfies its Procedure artifact shape; findings carry provenance', () => {
   const { outputPacket, analysis } = analyzeOpsTriage(buildSeededSnapshot().sections, { now: FIXED_NOW });
 
-  const result = validatePacket('operations-triage', outputPacket, 'output');
-  assert.ok(result.ok, `triage packet must validate; missing: ${result.missing?.join(', ')}`);
+  assertTriagePacketContract(outputPacket);
 
   // Verify duplicates findings cite the issues.
   for (const finding of analysis.duplicates) {

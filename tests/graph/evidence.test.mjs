@@ -33,7 +33,7 @@ import {
 } from '../../lib/graph/runtime-evidence.mjs';
 import { checkExecutionStaleness, EXECUTION_STALENESS_DEFAULT_THRESHOLD_DAYS } from '../../lib/graph/staleness.mjs';
 import { runGraphCli } from '../../lib/graph/cli.mjs';
-import { listWorkflowDefs } from '../../lib/embedded-contract/workflow-defs.mjs';
+import { listProcedureDefinitions } from '../../lib/embedded-contract/procedure-definitions.mjs';
 import { runtimeDir } from '../../lib/orchestration/run-store.mjs';
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-graph-evidence-home-'));
@@ -64,16 +64,16 @@ function runsDir(root) {
   return dir;
 }
 
-// A real embedded workflow type (not fabricated) so the fixture run maps
-// onto a workflow node buildFromRegistry would itself emit.
-const REAL_WORKFLOW_TYPE = listWorkflowDefs()[0].type;
+// A real embedded Procedure id (not fabricated) so the fixture run maps onto a
+// Procedure node buildFromRegistry would itself emit.
+const REAL_PROCEDURE_ID = listProcedureDefinitions()[0].id;
 
 function writeFixtureRun(root, overrides = {}) {
   const run = {
     runId: `run-fixture-${Math.random().toString(16).slice(2, 10)}`,
     createdAt: '2026-06-01T00:00:00.000Z',
     updatedAt: '2026-06-01T00:05:00.000Z',
-    request: { summary: 'fixture run', workflowType: REAL_WORKFLOW_TYPE },
+    request: { summary: 'fixture run', workflowType: REAL_PROCEDURE_ID },
     plan: { suggestedWorkflowType: null },
     tasks: [{ id: 't1', role: 'architect', status: 'done', executionState: 'executed' }],
     status: 'completed',
@@ -108,13 +108,13 @@ test('a fixture orchestration run produces an evidenced_by edge', () => {
   const [node] = evidence.nodes;
   assert.equal(node.type, 'runtime-evidence');
   assert.equal(node.id, nodeId('runtime-evidence', run.runId));
-  assert.equal(node.attrs.workflowType, REAL_WORKFLOW_TYPE);
+  assert.equal(node.attrs.workflowType, REAL_PROCEDURE_ID);
   assert.equal(node.attrs.outcome, 'executed');
   assert.equal(node.attrs.timestamp, run.updatedAt);
 
   const [edge] = evidence.edges;
   assert.equal(edge.from, nodeId('runtime-evidence', run.runId));
-  assert.equal(edge.to, nodeId('workflow', REAL_WORKFLOW_TYPE));
+  assert.equal(edge.to, nodeId('workflow', REAL_PROCEDURE_ID));
   assert.equal(edge.rel, 'evidenced_by');
   assert.equal(edge.source, 'runtime-evidence');
 });
@@ -125,14 +125,14 @@ test('the evidenced_by edge round-trips through the persisted graph store', () =
   const evidence = buildRuntimeEvidence({ rootDir: root });
 
   writeGraph(root, {
-    nodes: [{ id: nodeId('workflow', REAL_WORKFLOW_TYPE), type: 'workflow', name: REAL_WORKFLOW_TYPE }, ...evidence.nodes],
+    nodes: [{ id: nodeId('workflow', REAL_PROCEDURE_ID), type: 'workflow', name: REAL_PROCEDURE_ID }, ...evidence.nodes],
     edges: evidence.edges,
   });
 
   const graph = loadGraph(root);
   assert.equal(graph.meta.edgesByRel.evidenced_by, 1);
   const evidenceEdges = graph.edges.filter((e) => e.rel === 'evidenced_by');
-  assert.equal(evidenceEdges[0].to, nodeId('workflow', REAL_WORKFLOW_TYPE));
+  assert.equal(evidenceEdges[0].to, nodeId('workflow', REAL_PROCEDURE_ID));
 });
 
 test('a run with no resolvable workflow type is skipped, not fabricated', () => {
@@ -170,13 +170,13 @@ test('latestEvidenceByWorkflow picks the most recent run across repeats', () => 
 
   const evidence = buildRuntimeEvidence({ rootDir: root });
   const byWorkflow = latestEvidenceByWorkflow(evidence);
-  assert.equal(byWorkflow[REAL_WORKFLOW_TYPE].runId, 'run-newer');
-  assert.equal(byWorkflow[REAL_WORKFLOW_TYPE].outcome, 'degraded-executed');
+  assert.equal(byWorkflow[REAL_PROCEDURE_ID].runId, 'run-newer');
+  assert.equal(byWorkflow[REAL_PROCEDURE_ID].outcome, 'degraded-executed');
 
   // Every catalog workflow type is present in the map (even with no evidence),
   // so a caller can distinguish "no entry" bugs from "genuinely never executed".
-  for (const wf of listWorkflowDefs()) {
-    assert.ok(Object.prototype.hasOwnProperty.call(byWorkflow, wf.type), `${wf.type} present in map`);
+  for (const procedure of listProcedureDefinitions()) {
+    assert.ok(Object.prototype.hasOwnProperty.call(byWorkflow, procedure.id), `${procedure.id} present in map`);
   }
 });
 
@@ -184,22 +184,22 @@ test('computeLastExecutionByWorkflow reads straight off disk', () => {
   const root = freshRoot();
   const run = writeFixtureRun(root);
   const byWorkflow = computeLastExecutionByWorkflow(root);
-  assert.equal(byWorkflow[REAL_WORKFLOW_TYPE].runId, run.runId);
+  assert.equal(byWorkflow[REAL_PROCEDURE_ID].runId, run.runId);
 });
 
 test('checkExecutionStaleness flags never-executed distinctly from stale', () => {
   const root = freshRoot();
   const staleTimestamp = new Date(Date.now() - 200 * 24 * 60 * 60 * 1000).toISOString();
-  const otherType = listWorkflowDefs()[1].type;
+  const otherType = listProcedureDefinitions()[1].id;
   writeFixtureRun(root, { request: { summary: 'r', workflowType: otherType }, updatedAt: staleTimestamp });
 
   const state = checkExecutionStaleness(root);
 
-  // REAL_WORKFLOW_TYPE has zero evidence anywhere in this fixture root.
-  assert.equal(state.workflows[REAL_WORKFLOW_TYPE].neverExecuted, true);
-  assert.equal(state.workflows[REAL_WORKFLOW_TYPE].stale, false);
-  assert.ok(state.neverExecuted.includes(REAL_WORKFLOW_TYPE));
-  assert.ok(!state.staleWorkflows.includes(REAL_WORKFLOW_TYPE));
+  // REAL_PROCEDURE_ID has zero evidence anywhere in this fixture root.
+  assert.equal(state.workflows[REAL_PROCEDURE_ID].neverExecuted, true);
+  assert.equal(state.workflows[REAL_PROCEDURE_ID].stale, false);
+  assert.ok(state.neverExecuted.includes(REAL_PROCEDURE_ID));
+  assert.ok(!state.staleWorkflows.includes(REAL_PROCEDURE_ID));
 
   // otherType has evidence, but it is 200 days old — past the default 30-day
   // threshold — so it is stale, and explicitly NOT neverExecuted.
@@ -215,11 +215,11 @@ test('checkExecutionStaleness honors a per-workflow threshold override', () => {
   const recentTimestamp = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
   writeFixtureRun(root, { updatedAt: recentTimestamp });
 
-  const lenient = checkExecutionStaleness(root, { thresholds: { [REAL_WORKFLOW_TYPE]: 30 } });
-  assert.equal(lenient.workflows[REAL_WORKFLOW_TYPE].stale, false);
+  const lenient = checkExecutionStaleness(root, { thresholds: { [REAL_PROCEDURE_ID]: 30 } });
+  assert.equal(lenient.workflows[REAL_PROCEDURE_ID].stale, false);
 
-  const strict = checkExecutionStaleness(root, { thresholds: { [REAL_WORKFLOW_TYPE]: 1 } });
-  assert.equal(strict.workflows[REAL_WORKFLOW_TYPE].stale, true);
+  const strict = checkExecutionStaleness(root, { thresholds: { [REAL_PROCEDURE_ID]: 1 } });
+  assert.equal(strict.workflows[REAL_PROCEDURE_ID].stale, true);
 });
 
 test('graph explain --json shows last-execution data for an executed workflow', () => {
@@ -227,15 +227,15 @@ test('graph explain --json shows last-execution data for an executed workflow', 
   const run = writeFixtureRun(root);
   const evidence = buildRuntimeEvidence({ rootDir: root });
   writeGraph(root, {
-    nodes: [{ id: nodeId('workflow', REAL_WORKFLOW_TYPE), type: 'workflow', name: REAL_WORKFLOW_TYPE }, ...evidence.nodes],
+    nodes: [{ id: nodeId('workflow', REAL_PROCEDURE_ID), type: 'workflow', name: REAL_PROCEDURE_ID }, ...evidence.nodes],
     edges: evidence.edges,
   });
 
   const { result: code, output } = captureStdout(() =>
-    runGraphCli(['explain', REAL_WORKFLOW_TYPE, '--json'], { projectDir: root }));
+    runGraphCli(['explain', REAL_PROCEDURE_ID, '--json'], { projectDir: root }));
   assert.equal(code, 0);
   const parsed = JSON.parse(output);
-  assert.equal(parsed.id, nodeId('workflow', REAL_WORKFLOW_TYPE));
+  assert.equal(parsed.id, nodeId('workflow', REAL_PROCEDURE_ID));
   assert.equal(parsed.execution.neverExecuted, false);
   assert.equal(parsed.execution.lastExecution.runId, run.runId);
   assert.equal(parsed.execution.lastExecution.timestamp, run.updatedAt);
@@ -247,12 +247,12 @@ test('graph explain (human output) shows last-execution data', () => {
   const run = writeFixtureRun(root);
   const evidence = buildRuntimeEvidence({ rootDir: root });
   writeGraph(root, {
-    nodes: [{ id: nodeId('workflow', REAL_WORKFLOW_TYPE), type: 'workflow', name: REAL_WORKFLOW_TYPE }, ...evidence.nodes],
+    nodes: [{ id: nodeId('workflow', REAL_PROCEDURE_ID), type: 'workflow', name: REAL_PROCEDURE_ID }, ...evidence.nodes],
     edges: evidence.edges,
   });
 
   const { result: code, output } = captureStdout(() =>
-    runGraphCli(['explain', REAL_WORKFLOW_TYPE], { projectDir: root }));
+    runGraphCli(['explain', REAL_PROCEDURE_ID], { projectDir: root }));
   assert.equal(code, 0);
   assert.match(output, /last run/);
   assert.match(output, new RegExp(run.runId));
@@ -262,12 +262,12 @@ test('graph explain (human output) shows last-execution data', () => {
 test('graph explain flags a never-executed workflow distinctly, not as stale', () => {
   const root = freshRoot();
   writeGraph(root, {
-    nodes: [{ id: nodeId('workflow', REAL_WORKFLOW_TYPE), type: 'workflow', name: REAL_WORKFLOW_TYPE }],
+    nodes: [{ id: nodeId('workflow', REAL_PROCEDURE_ID), type: 'workflow', name: REAL_PROCEDURE_ID }],
     edges: [],
   });
 
   const { result: code, output } = captureStdout(() =>
-    runGraphCli(['explain', REAL_WORKFLOW_TYPE, '--json'], { projectDir: root }));
+    runGraphCli(['explain', REAL_PROCEDURE_ID, '--json'], { projectDir: root }));
   assert.equal(code, 0);
   const parsed = JSON.parse(output);
   assert.equal(parsed.execution.neverExecuted, true);
@@ -275,14 +275,14 @@ test('graph explain flags a never-executed workflow distinctly, not as stale', (
   assert.equal(parsed.execution.lastExecution, null);
 
   const { output: humanOutput } = captureStdout(() =>
-    runGraphCli(['explain', REAL_WORKFLOW_TYPE], { projectDir: root }));
+    runGraphCli(['explain', REAL_PROCEDURE_ID], { projectDir: root }));
   assert.match(humanOutput, /NEVER EXECUTED/);
 });
 
 test('graph explain on a missing graph exits 1', () => {
   const root = freshRoot();
   const { result: code } = captureStdout(() =>
-    runGraphCli(['explain', REAL_WORKFLOW_TYPE, '--json'], { projectDir: root }));
+    runGraphCli(['explain', REAL_PROCEDURE_ID, '--json'], { projectDir: root }));
   assert.equal(code, 1);
 });
 

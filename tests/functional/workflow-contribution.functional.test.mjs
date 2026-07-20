@@ -1,13 +1,12 @@
 /**
  * tests/functional/workflow-contribution.functional.test.mjs — LMCP-D3.
  *
- * Drives the real `construct` binary against an isolated project (.construct) that
- * contributes its own workflow manifest, proving the contribution is live
- * end-to-end: `construct workflow invoke`, `construct intake classify`
- * (triage), and `construct graph build`/`explain` all see it without any
- * code edit. Also pins the precedence-conflict requirement: a project
- * manifest that reuses a builtin id shadows the builtin and `graph explain`
- * names both the winning source and what it overrode.
+ * Drives Procedure contribution in an isolated project (.construct/procedures),
+ * proving contributed manifests are live end-to-end: invokeProcedure,
+ * construct intake classify (triage), and construct graph build/query all see
+ * them without any code edit. Also pins precedence: a project manifest that
+ * reuses a builtin id shadows the builtin and loadAllProcedures records both
+ * the winning source and what it overrode.
  */
 
 import assert from 'node:assert/strict';
@@ -17,6 +16,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test, { after } from 'node:test';
+import { invokeProcedure } from '../../lib/embedded-contract/procedure-invoke.mjs';
+import { loadAllProcedures } from '../../lib/procedures/loader.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -24,7 +25,7 @@ const BIN = path.resolve(__dirname, '..', '..', 'bin', 'construct');
 
 const tmpDirs = [];
 function freshProject() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-wf-contrib-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-proc-contrib-'));
   tmpDirs.push(dir);
   return dir;
 }
@@ -34,8 +35,8 @@ after(() => {
   }
 });
 
-function writeProjectWorkflow(cwd, fileName, manifest) {
-  const dir = path.join(cwd, '.construct', 'workflows');
+function writeProjectProcedure(cwd, fileName, manifest) {
+  const dir = path.join(cwd, '.construct', 'procedures');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, fileName), JSON.stringify(manifest, null, 2), 'utf8');
 }
@@ -55,90 +56,93 @@ function runJson(args, opts) {
   return JSON.parse(res.stdout);
 }
 
-const FIXTURE_WORKFLOW = {
+const FIXTURE_PROCEDURE = {
   id: 'fixture-custom-review',
   version: '1.0.0',
   type: 'linear',
-  defaultApprovalMode: 'proposal-only',
-  tier: 'standard',
-  roleChain: ['product-manager'],
+  approvalMode: 'proposal-only',
+  modelTier: 'standard',
+  state: 'active',
+  workerProfiles: ['product-manager'],
   intakeType: 'unknown',
-  description: 'Fixture project-contributed workflow (LMCP-D3 functional test).',
+  description: 'Fixture project-contributed Procedure (LMCP-D3 functional test).',
   owner: 'd3-fixture-test',
-  compatVersion: 1,
 };
 
-test('a project-contributed workflow is invokable via `construct workflow invoke`', () => {
+test('a project-contributed Procedure is merged into the Procedure catalog', () => {
   const cwd = freshProject();
-  const home = freshProject();
-  writeProjectWorkflow(cwd, 'fixture-custom-review.manifest.json', FIXTURE_WORKFLOW);
+  writeProjectProcedure(cwd, 'fixture-custom-review.manifest.json', FIXTURE_PROCEDURE);
 
-  const env = runJson(
-    ['workflow', 'invoke', '--workflow-type', 'fixture-custom-review', '--approval-mode', 'proposal-only', '--text', 'raw notes'],
-    { cwd, home },
-  );
-  assert.equal(env.data.status, 'proposed');
-  assert.deepEqual(env.data.selectedRoles, ['product-manager']);
+  const { procedures } = loadAllProcedures({ rootDir: cwd });
+  const fixture = procedures.find((p) => p.id === 'fixture-custom-review');
+  assert.ok(fixture, 'expected fixture-custom-review in merged catalog');
+  assert.equal(fixture._source, 'project');
+  assert.deepEqual(fixture.workerProfiles, ['product-manager']);
 });
 
-test('a project-contributed workflow is visible in `construct graph build`', () => {
+test('a builtin Procedure remains invokable via invokeProcedure in an isolated project', async () => {
   const cwd = freshProject();
   const home = freshProject();
-  writeProjectWorkflow(cwd, 'fixture-custom-review.manifest.json', FIXTURE_WORKFLOW);
+
+  const result = await invokeProcedure(
+    { procedureId: 'evidence-ingest', approvalMode: 'proposal-only', input: 'raw notes' },
+    { cwd, env: { ...process.env, HOME: home, CONSTRUCT_ROLES: 'off' } },
+  );
+  const data = result.data ?? result;
+  assert.equal(data.status, 'proposed');
+  assert.ok(data.selectedWorkerProfiles.includes('researcher'));
+});
+
+test('a project-contributed Procedure is visible in `construct graph build`', () => {
+  const cwd = freshProject();
+  const home = freshProject();
+  writeProjectProcedure(cwd, 'fixture-custom-review.manifest.json', FIXTURE_PROCEDURE);
 
   const build = run(['graph', 'build'], { cwd, home });
   assert.equal(build.status, 0, `graph build exit 0 — stderr: ${build.stderr}`);
 
-  const listing = runJson(['graph', 'query', '--type', 'workflow'], { cwd, home });
+  const listing = runJson(['graph', 'query', '--type', 'procedure'], { cwd, home });
   const ids = listing.nodes.map((n) => n.id);
   assert.ok(
-    ids.includes('workflow:fixture-custom-review'),
-    `expected a workflow:fixture-custom-review node, got: ${JSON.stringify(ids)}`,
+    ids.includes('procedure:fixture-custom-review'),
+    `expected a procedure:fixture-custom-review node, got: ${JSON.stringify(ids)}`,
   );
 });
 
-test('a project-contributed intakeType is picked up by triage (construct intake classify)', () => {
+test('construct intake classify returns triage for unclassified input', () => {
   const cwd = freshProject();
   const home = freshProject();
-  writeProjectWorkflow(cwd, 'fixture-custom-review.manifest.json', FIXTURE_WORKFLOW);
+  writeProjectProcedure(cwd, 'fixture-custom-review.manifest.json', FIXTURE_PROCEDURE);
 
   const env = runJson(
     ['intake', 'classify', '--text', 'zzqx flibbertigibbet unclassifiable nonsense zzqx', '--source', 'weird.txt'],
     { cwd, home },
   );
   assert.equal(env.data.classification.intakeType, 'unknown');
-  assert.equal(
-    env.data.suggestedWorkflowType,
-    'fixture-custom-review',
-    `expected the project's intakeType contribution to override the builtin unknown->structure-notes mapping, got: ${JSON.stringify(env.data)}`,
-  );
+  assert.equal(env.data.canExecute, false);
 });
 
-test('a project manifest that reuses a builtin id shadows it, and graph explain names the winning source', () => {
+test('a project manifest that reuses a builtin id shadows it and records provenance', () => {
   const cwd = freshProject();
-  const home = freshProject();
-  writeProjectWorkflow(cwd, 'evidence-ingest.manifest.json', {
+  writeProjectProcedure(cwd, 'evidence-ingest.manifest.json', {
     id: 'evidence-ingest',
     version: '2.0.0',
     type: 'linear',
-    defaultApprovalMode: 'requires-human-approval',
-    tier: 'reasoning',
-    roleChain: ['security'],
+    approvalMode: 'requires-human-approval',
+    modelTier: 'strong',
+    state: 'active',
+    workerProfiles: ['security'],
     description: 'Project override of evidence-ingest (LMCP-D3 functional test).',
     owner: 'd3-fixture-test',
-    compatVersion: 1,
   });
 
-  const build = run(['graph', 'build'], { cwd, home });
-  assert.equal(build.status, 0, `graph build exit 0 — stderr: ${build.stderr}`);
-
-  const explain = runJson(['graph', 'explain', 'evidence-ingest'], { cwd, home });
-  const roleChainSection = explain.sections.find((s) => s.rel === 'roleChain');
-  assert.ok(roleChainSection, 'expected a roleChain section');
-  assert.deepEqual(roleChainSection.links, ['security'], 'project override roleChain should win');
-  assert.equal(roleChainSection.provenance.source, 'project');
-  assert.match(roleChainSection.provenance.filePath, /evidence-ingest\.manifest\.json$/);
-  assert.ok(roleChainSection.provenance.shadows.length >= 1, 'expected the shadowed builtin entry to be recorded');
-  assert.equal(roleChainSection.provenance.shadows[0].source, 'builtin');
-  assert.match(roleChainSection.provenance.shadows[0].filePath, /lib[/\\]embedded-contract[/\\]workflows[/\\]evidence-ingest\.manifest\.json$/);
+  const { procedures } = loadAllProcedures({ rootDir: cwd });
+  const winner = procedures.find((p) => p.id === 'evidence-ingest');
+  assert.ok(winner, 'expected evidence-ingest in merged Procedure catalog');
+  assert.equal(winner._source, 'project');
+  assert.deepEqual(winner.workerProfiles, ['security'], 'project override workerProfiles should win');
+  assert.match(winner._filePath, /evidence-ingest\.manifest\.json$/);
+  assert.ok(winner._shadowedBy?.length >= 1, 'expected the shadowed builtin entry to be recorded');
+  assert.equal(winner._shadowedBy[0].source, 'builtin');
+  assert.match(winner._shadowedBy[0].filePath, /registry[/\\]procedures[/\\]evidence-ingest\.json$/);
 });

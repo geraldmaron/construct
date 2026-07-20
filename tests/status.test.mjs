@@ -14,7 +14,7 @@ import { buildStatus, formatStatusReport } from '../lib/status.mjs';
 import { writeEnvValues } from '../lib/env-config.mjs';
 import { configDir, doctorRoot } from '../lib/config/xdg.mjs';
 import { writeGraph, nodeId } from '../lib/graph/store.mjs';
-import { listWorkflowDefs } from '../lib/embedded-contract/workflow-defs.mjs';
+import { listProcedureDefinitions } from '../lib/embedded-contract/procedure-definitions.mjs';
 import { saveRun } from '../lib/orchestration/run-store.mjs';
 
 import { tempDir } from './helpers.mjs';
@@ -804,7 +804,7 @@ test('workflows section reports graph-not-built when .construct/graph is absent'
 
 test('workflows section classifies a clean workflow node as available', async () => {
   const { rootDir, homeDir } = await createFixture();
-  const [realType] = listWorkflowDefs().map((w) => w.type);
+  const [realType] = listProcedureDefinitions().map((w) => w.id);
 
   writeGraph(rootDir, {
     nodes: [
@@ -851,7 +851,7 @@ test('workflows section classifies a workflow with no graph node as missing', as
 
 test('workflows section classifies a workflow named in a validation error as degraded', async () => {
   const { rootDir, homeDir } = await createFixture();
-  const [realType] = listWorkflowDefs().map((w) => w.type);
+  const [realType] = listProcedureDefinitions().map((w) => w.id);
   const workflowNodeId = nodeId('workflow', realType);
   const capId = nodeId('capability', 'c1');
   const providerId = nodeId('provider', 'missing-provider');

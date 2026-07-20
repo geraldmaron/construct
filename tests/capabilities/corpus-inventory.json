@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-19T04:36:15.516Z",
+  "generatedAt": "2026-07-20T05:19:08.874Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 936,
-    "topLevelTestFiles": 372,
+    "testFiles": 939,
+    "topLevelTestFiles": 375,
     "nestedTestFiles": 564,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 48,
     "byLayer": {
-      "unit": 618,
+      "unit": 621,
       "functional": 266,
       "visual": 12,
       "live-provider": 2,
       "integration": 38
     },
     "byCategory": {
-      "unit": 555,
+      "unit": 558,
       "functional": 266,
       "visual": 12,
       "structural-guard": 19,
@@ -364,7 +364,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "audit-skills.test.mjs — agent/profile ↔ skill ownership (bead construct-ksfa)."
+      "maintainerNotes": "audit-skills.test.mjs — Worker Profile ↔ skill ownership audit."
     },
     {
       "path": "tests/audit-worker-profiles.test.mjs",
@@ -732,7 +732,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/audit/f10-registry-drift/registry-bridge-smell.red.mjs — F10 [R34] unified→legacy bridge."
+      "maintainerNotes": "tests/audit/f10-registry-drift/registry-bridge-smell.test.mjs — canonical registry cache guard."
     },
     {
       "path": "tests/audit/f10-registry-drift/schema-parity.test.mjs",
@@ -1222,7 +1222,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/certification/role-cards.test.mjs — specialist role card fixtures."
+      "maintainerNotes": "tests/certification/worker-profile-cards.test.mjs — Worker Profile role card fixtures."
     },
     {
       "path": "tests/certification/worker-profile-contracts.test.mjs",
@@ -1255,6 +1255,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "claude-allow.test.mjs — tests for ~/.claude/settings.json permissions.allow"
+    },
+    {
+      "path": "tests/clean-slate-retired-terms.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/clean-slate-retired-terms.test.mjs — active test/fixture retired-term ratchet."
     },
     {
       "path": "tests/cli-catalog-accuracy.test.mjs",
@@ -1398,7 +1406,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/contracts-worker-boundary.test.mjs — LMCP-F2: worker-boundary contract"
+      "maintainerNotes": "Verifies contract enforcement at the Worker Profile assignment boundary."
     },
     {
       "path": "tests/core-dependency-policy.test.mjs",
@@ -1553,6 +1561,14 @@
       "maintainerNotes": "tests/deprecate.test.mjs — deprecation warning behaviour."
     },
     {
+      "path": "tests/diagram-export.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/diagram-export.test.mjs — headless Chrome probe arg contract."
+    },
+    {
       "path": "tests/directives/directive-config.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -1615,6 +1631,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/doctor-command-on-path.test.mjs"
+    },
+    {
+      "path": "tests/doctor-embed-log-path.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/doctor-embed-log-path.test.mjs — embed daemon log size check in"
     },
     {
       "path": "tests/doctor-embedding-health.test.mjs",
@@ -3032,20 +3056,10 @@
       "layer": "functional",
       "category": "functional",
       "capabilities": [
-        "workflow.evidence-ingest",
-        "workflow.research-synthesis",
-        "workflow.prd-draft",
-        "workflow.architecture-review",
-        "workflow.proposal-review",
-        "workflow.risk-review",
-        "workflow.structure-notes",
-        "workflow.transcript-process",
-        "workflow.data-structure",
-        "workflow.memo-draft",
         "document-type.evidence-brief"
       ],
       "skipped": false,
-      "maintainerNotes": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs"
+      "maintainerNotes": "tests/functional/embedded-contract-procedure-invoke.functional.test.mjs"
     },
     {
       "path": "tests/functional/embedded-contract-triage.functional.test.mjs",
@@ -5537,7 +5551,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/no-fabrication-coverage.test.mjs — every specialist prompt and the"
+      "maintainerNotes": "tests/no-fabrication-coverage.test.mjs — Worker Profile prompt anti-fabrication ratchet."
     },
     {
       "path": "tests/npm-spawn-env.test.mjs",
@@ -6105,7 +6119,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/policy/role-authority.test.mjs — identity-anchored role claim authority."
+      "maintainerNotes": "tests/policy/role-authority.test.mjs — identity-anchored Worker Profile claims."
     },
     {
       "path": "tests/policy/unattended-budget.test.mjs",
@@ -6233,7 +6247,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/prompt-composer.test.mjs — composePrompt assembly and role anti-pattern inlining tests"
+      "maintainerNotes": "tests/prompt-composer.test.mjs — Worker Profile prompt composition contracts."
     },
     {
       "path": "tests/prompt-examples.test.mjs",
@@ -6241,7 +6255,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/prompt-examples.test.mjs — validates shipped public persona and internal role example fixtures."
+      "maintainerNotes": "tests/prompt-examples.test.mjs — validates shipped Worker Profile examples."
     },
     {
       "path": "tests/prompt-metadata.test.mjs",
@@ -6617,7 +6631,7 @@
       "category": "contract-subsystem",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/roles/manifest.test.mjs — manifest loader and onboarded-persona logic."
+      "maintainerNotes": "tests/roles/manifest.test.mjs — Worker Profile manifest loading and onboarding."
     },
     {
       "path": "tests/roots.test.mjs",
@@ -6700,12 +6714,12 @@
       "maintainerNotes": "tests/schema-validation.test.mjs — Validate the canonical registry schema."
     },
     {
-      "path": "tests/scripts/check-workflow-defs-drift.test.mjs",
+      "path": "tests/scripts/check-procedure-definitions-drift.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/scripts/check-workflow-defs-drift.test.mjs — exit-code contract for"
+      "maintainerNotes": "Verifies Procedure-definition drift-check exit-code semantics."
     },
     {
       "path": "tests/scripts/ci-repro-drift.test.mjs",
@@ -7259,7 +7273,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/tool-invisibility.test.mjs — the tool-invisibility guardrail"
+      "maintainerNotes": "Verifies the tool-invisibility guardrail for deliverable artifacts."
     },
     {
       "path": "tests/tracker-projection/import-store.test.mjs",

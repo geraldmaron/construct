@@ -67,7 +67,7 @@ test('the base chain covers more role concerns than a solo call, and the compari
   assert.equal(comparison.solo.coverage.count, 1, 'the solo generalist covers only implementation');
   assert.equal(comparison.deltas.concernCoverage, 3);
   assert.equal(comparison.verdict, 'team-adds-role-concern-coverage');
-  assert.ok(comparison.team.specialists >= 4, 'the base chain ran');
+  assert.ok(comparison.team.workerProfiles >= 4, 'the base chain ran');
 
   // The comparison is durably recorded in the comparisons store.
   assert.ok(file.startsWith(comparisonsDir(rootDir)), 'written under the comparisons store');

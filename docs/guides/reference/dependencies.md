@@ -21,6 +21,15 @@ Additional runtime dependencies are allowed. Each new dependency requires an ADR
 
 Dependencies are allowed freely. No ADR required. These never ship to end users.
 
+Static analysis (`knip`, `dependency-cruiser`) lives here as `devDependencies`. ADR-0001 restricts the **installed CLI runtime** in `lib/` and `bin/` — its Context section (lines 18–23) frames the restriction around `npm install -g construct` supply-chain risk for end users. `devDependencies` are stripped from consumer installs and are not subject to the ADR-0001 amendment gate. Run them via:
+
+```bash
+npm run static:knip    # unused files/exports/deps (warn-first in CI)
+npm run static:cruise  # dependency direction rules (warn-first in CI)
+```
+
+Both tools use explicit entry-point inventories (`knip.json`, `.dependency-cruiser.cjs`) so findings reflect shipped surfaces rather than orphan false positives.
+
 ## Adding a core dependency
 
 1. Write `docs/decisions/adr/NNNN-<title>.md` using the MADR template (see `docs/decisions/adr/0001-zero-npm-core.md` for format).

@@ -1,9 +1,9 @@
 {
   "schemaVersion": 2,
-  "specialistId": "orchestrator",
-  "capabilityId": "specialist.prompt",
+  "workerProfileId": "orchestrator",
+  "capabilityId": "worker-profile.prompt",
   "mode": "normal",
-  "scenarioKind": "cross-specialist",
+  "scenarioKind": "cross-worker-profile",
   "representativeTask": {
     "prompt": "This packet changes how we store and rotate API tokens (a secrets change) and needs the new rotation endpoint built and covered by tests. Route each part to the specialist who owns it and give each handoff a DONE definition.",
     "inputs": {

@@ -43,11 +43,11 @@ test('tool nodes are created from manifest capabilities and operations', () => {
   assert.ok(toolIds.has('tool:webhook'), 'expected tool:webhook from github capabilities');
 });
 
-test('specialist nodes are created from role registry', () => {
-  const specialists = idx.byType('specialist');
-  assert.ok(specialists.length >= 1, `expected >=1 specialist nodes, got ${specialists.length}`);
-  const specIds = new Set(specialists.map((n) => n.id));
-  assert.ok(specIds.has('specialist:engineer'), 'missing specialist:engineer');
+test('worker-profile nodes are created from the Worker Profile registry', () => {
+  const profiles = idx.byType('worker-profile');
+  assert.ok(profiles.length >= 1, `expected >=1 worker-profile nodes, got ${profiles.length}`);
+  const profileIds = new Set(profiles.map((n) => n.id));
+  assert.ok(profileIds.has('worker-profile:engineer'), 'missing worker-profile:engineer');
 });
 
 test('doc nodes are created from docs directory scanning', () => {
@@ -77,17 +77,17 @@ test('reads edges are created from core pack embedBindings (LMCP-E4)', () => {
   const reads = idx.edgesByRel('reads');
   assert.ok(reads.length >= 1, `expected >=1 reads edges, got ${reads.length}`);
   for (const e of reads) {
-    assert.ok(e.from.startsWith('specialist:'), `reads edge from ${e.from} must be a specialist`);
+    assert.ok(e.from.startsWith('worker-profile:'), `reads edge from ${e.from} must be a worker-profile`);
     assert.ok(e.to.startsWith('provider:'), `reads edge to ${e.to} must be a provider`);
     assert.equal(e.source, 'pack-embed-binding');
   }
   const froms = new Set(reads.map((e) => e.from));
-  assert.ok(froms.has('specialist:product-manager'), 'expected product-manager --reads--> provider edge');
-  assert.ok(froms.has('specialist:operations'), 'expected operations --reads--> provider edge');
-  assert.ok(froms.has('specialist:engineer'), 'expected engineer --reads--> provider edge');
+  assert.ok(froms.has('worker-profile:product-manager'), 'expected product-manager --reads--> provider edge');
+  assert.ok(froms.has('worker-profile:operations'), 'expected operations --reads--> provider edge');
+  assert.ok(froms.has('worker-profile:engineer'), 'expected engineer --reads--> provider edge');
 
   const jiraReaders = reads.filter((e) => e.to === 'provider:atlassian-jira').map((e) => e.from);
-  assert.ok(jiraReaders.includes('specialist:product-manager'));
+  assert.ok(jiraReaders.includes('worker-profile:product-manager'));
 });
 
 test('documents edges are created from heuristic doc linking', () => {
@@ -104,13 +104,13 @@ test('sourceHash differs from old 3-seed hash', () => {
   const oldHash = hashFiles(REPO_ROOT, [
     'registry/capabilities.json',
     'registry',
-    'lib/embedded-contract/workflow-defs.mjs',
+    'lib/embedded-contract/procedure-definitions.mjs',
   ]);
   assert.notEqual(built.sourceHash, oldHash, 'sourceHash must differ when new seed files are included');
 });
 
 test('all existing node types remain present', () => {
-  for (const t of ['capability', 'workflow', 'contract', 'test', 'skill', 'rule', 'surface', 'file']) {
+  for (const t of ['capability', 'procedure', 'contract', 'test', 'skill', 'rule', 'surface', 'file', 'worker-profile']) {
     assert.ok(idx.byType(t).length >= 0, `${t} nodes should still be present`);
   }
 });

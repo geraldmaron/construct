@@ -1071,6 +1071,20 @@
       ]
     },
     {
+      "pattern": ".cursor",
+      "owner": "host-adapter",
+      "class": "generated",
+      "consumers": [
+        "local Cursor integration"
+      ],
+      "published": false,
+      "action": "ignore",
+      "replacement": null,
+      "evidence": [
+        "gitignored host output"
+      ]
+    },
+    {
       "pattern": ".tmp",
       "owner": "engineering-operations",
       "class": "generated",

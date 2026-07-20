@@ -1,3 +1,9 @@
+<!--
+registry/worker-profiles/prompts/qa.md — Worker Profile runtime prompt for qa.
+
+Role-specific instructions, perspective bias, and anti-fabrication contract synced to
+registry/worker-profiles/qa.json. Resolved by convention at prompts/<id>.md.
+-->
 ---
 workerProfileId: qa
 version: 1

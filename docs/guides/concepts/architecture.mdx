@@ -165,17 +165,14 @@ construct/
 ├── docs/           human + generated reference
 ├── deploy/         terraform / docker
 ├── packages/       construct-ui shared workspace
-├── specialists/    org under registry/** (runtime merge) + prompts  ─┐
-├── registry/       product capability registry          │ org surface
-├── platforms/      host adapter capabilities            │ (see ADR-0044)
-├── schemas/        registry JSON Schema only            │
-├── profiles/       profile catalog                      │
-├── personas/       public persona                       │
-├── commands/       slash command assets                 │
-├── skills/         domain knowledge                     │
-├── rules/          coding standards                     │
-├── templates/      doc templates                        ─┘
-├── config/         tag-vocabulary.json
+├── registry/       Worker Profiles, Workspace Presets, Procedures, Policies, capabilities
+├── platforms/      host adapter capabilities
+├── schemas/        registry JSON Schema only
+├── commands/       slash command assets
+├── skills/         domain knowledge
+├── rules/          coding standards
+├── templates/      doc templates
+├── config/         tag-vocabulary.json, canonical-terminology.json
 ├── scripts/        audit, alignment, release
 ├── tests/
 └── examples/
@@ -225,7 +222,7 @@ The foundation. Handles orchestration, Assignment dispatch, memory, sessions, an
 - **CLI surface**. `bin/construct` and `lib/cli-commands.mjs`
 - **MCP server**. `lib/mcp/server.mjs`, tools split across `lib/mcp/tools/`
 - **Orchestration policy**. `lib/orchestration-policy.mjs` (intent classification, execution track selection, gate evaluation, contract-chain resolution)
-- **Agent contracts**. `registry/contracts/` and `lib/specialist-contracts.mjs` (producer→consumer service contracts with preconditions, postconditions, input/output schemas). Every postcondition is classified `executable` or `advisory` (`lib/contracts/coverage.mjs`, `construct-rf26.12`) rather than left as undifferentiated prose.
+- **Agent contracts**. `registry/capabilities.json` postconditions and `lib/contracts/validate.mjs` (producer→consumer Assignment contracts with preconditions, postconditions, input/output schemas). Every postcondition is classified `executable` or `advisory` (`lib/contracts/coverage.mjs`, `construct-rf26.12`) rather than left as undifferentiated prose.
 - **Observation store**. `.construct/observations/` (role-scoped, capped insights for continuous learning) backed by a retrieval adapter (`lib/storage/retrieval-adapter.mjs`, ADR-0081): a machine-scoped LanceDB vector index at `<stateRoot>/lancedb` (ADR-0066) when LanceDB is reachable, or a dependency-free keyword/BM25 index at `<stateRoot>/keyword-index` otherwise — selectable via `CONSTRUCT_RETRIEVAL_ADAPTER` (default `auto`). Both the vector index and the ONNX embedding model provision lazily — first `construct ingest`/observation store or search, not `construct init` (opt in early with `--seed-index`/`construct install --with-embeddings`). TTL/size eviction on the indexed rows (`resources.disk.observationsMaxDays`/`observationsMaxRows` in `construct.config.json`, default 90d/5000 rows) runs on every `construct ingest` and is surfaced in `construct doctor`/`construct prune` (`lib/storage/admin.mjs`'s `purgeExpiredData`, construct-rf26.17).
 - **Session persistence**. `lib/session-store.mjs`, `.construct/sessions/` (distilled session records for resumption)
 - **Hybrid search**. `lib/storage/` (file-state source, SQL store, vector index, hybrid query facade). One consolidated path: `lib/storage/hybrid-query.mjs` runs file BM25 + native pgvector HNSW ANN (`<=>`, with `hnsw.iterative_scan` on pgvector ≥ 0.8) + keyword, and fuses them by Reciprocal Rank Fusion (`lib/storage/rrf.mjs`) so incompatible score scales merge by rank. `lib/knowledge/search.mjs` accepts `tags` + `tagMatch` for tag-filtered BM25 over file content.
@@ -600,7 +597,7 @@ is reachable.
 
 A pack (`lib/packs/`, ADR-0055) is the unit of persona-resolution the provider worker backend trusts: a manifest (`pack.manifest.json`) declaring `id`, `version`, `compatVersion`, and optional `prompts` (specialist id → persona prompt file), `teams`, `frameworks`, `handoffContracts`, `gates`, and `embedBindings` (LMCP-E4: per-specialist provider read/search grants plus a flat list of external-write proposal tokens, cross-checked against the builtin extension manifests so a binding can never grant a capability the referenced provider doesn't itself advertise). `lib/packs/loader.mjs`'s `loadAllPacks()` reads three tiers — builtin (`lib/packs/manifests/`), user (`~/.config/construct/packs/`), project (`.construct/packs/`) — and merges them by id, later tiers overriding earlier ones (project > user > builtin). A programmatically-injected core pack (`lib/packs/core-pack.mjs`) is always present at the builtin tier.
 
-`lib/packs/prompts.mjs`'s `validatePackPrompts()` confirms every declared prompt file exists and carries parseable YAML frontmatter with a `role` field. `resolvePersonaPrompt()` is the *only* path `lib/orchestration/worker.mjs` uses to read a persona body — it walks the tier-precedence-ordered pack list and returns the first pack declaring the role, with no fallback to reading `specialists/prompts/` directly. That is the pack boundary: a specialist's persona is whatever the pack registry resolves, never a direct file read, so overriding a persona (or shipping a domain-specific one) is a pack-authoring operation, not a core-code change. How the provider worker backend consumes this at runtime — including the solo-mode degraded-fallback path when a pack miss occurs — is covered in the persona-resolution paragraph under Local orchestration runtime, next.
+`lib/packs/prompts.mjs`'s `validatePackPrompts()` confirms every declared prompt file exists and carries parseable YAML frontmatter with a `role` field. `resolvePersonaPrompt()` is the *only* path `lib/orchestration/worker.mjs` uses to read a Worker Profile prompt body — it walks the tier-precedence-ordered pack list and returns the first pack declaring the role, with no fallback to reading `registry/worker-profiles/prompts/` directly when a pack declares the override. That is the pack boundary: a Worker Profile's prompt is whatever the pack registry resolves, never an ad hoc file read, so overriding a profile (or shipping a domain-specific one) is a pack-authoring operation, not a core-code change. How the provider worker backend consumes this at runtime — including the solo-mode degraded-fallback path when a pack miss occurs — is covered in the prompt-resolution paragraph under Local orchestration runtime, next.
 
 ## Local orchestration runtime (host-independent)
 
@@ -621,7 +618,7 @@ ADR-0021).
 
 **Handoff context (`buildUserPrompt`, `lib/orchestration/worker.mjs`).** A downstream task's user prompt folds in every prior task's real output (`status:'done'`, non-empty `task.output`) under a `## Prior specialist results` section, wrapped by `lib/security/trust.mjs`'s `wrapUntrusted` — a provider-verified upstream task at `team-authored` trust, a host-reported one (`provenanceSource: 'host-reported'`) at the lower `external-authenticated` level — so the receiving specialist evaluates it as data, not instructions. Budgeted at 1200 chars/task, 6000 total, nearest-preceding task prioritized. Because `materializeTaskPrompt` is shared, provider and host runs resolve byte-identical prompts for the same task; on the host backend, `submitHostTaskResult` re-materializes the next `awaiting-host` task's prompt immediately after recording a result, since `executeRun` originally materialized every task's prompt in one pass before any host result existed.
 
-**Persona resolution and the pack boundary (LMCP-E2).** The provider backend resolves each persona prompt ONLY through the pack registry (`lib/packs/loader.mjs` + `lib/packs/prompts.mjs`), never by reading `specialists/prompts/` directly. Pack load validates every declared prompt file and its YAML frontmatter (`validatePackPrompts`); in team/enterprise deployment mode a missing or malformed prompt is a hard load-time error naming the file, and a run can never execute a specialist under a silently substituted persona (`PERSONA_UNAVAILABLE` if a miss somehow still reaches the worker). Solo mode does not hard-fail at load time — a miss there degrades visibly: the task result and the `worker.completed` trace event carry `personaAvailable: false` and `degraded: 'persona-fallback'`, and the run's terminal status becomes `degraded` rather than a bare `completed`. `construct status` surfaces a `personaDegradedRuns` count from `.construct/runtime/orchestration/runs/`.
+**Prompt resolution and the pack boundary (LMCP-E2).** The provider backend resolves each Worker Profile prompt ONLY through the pack registry (`lib/packs/loader.mjs` + `lib/packs/prompts.mjs`), falling back to `registry/worker-profiles/prompts/<id>.md` only when no pack declares an override. Pack load validates every declared prompt file and its YAML frontmatter (`validatePackPrompts`); in team/enterprise deployment mode a missing or malformed prompt is a hard load-time error naming the file, and a run can never execute a Worker Profile under a silently substituted prompt (`PERSONA_UNAVAILABLE` if a miss somehow still reaches the worker). Solo mode does not hard-fail at load time — a miss there degrades visibly: the task result and the `worker.completed` trace event carry `personaAvailable: false` and `degraded: 'persona-fallback'`, and the run's terminal status becomes `degraded` rather than a bare `completed`. `construct status` surfaces a `personaDegradedRuns` count from `.construct/runtime/orchestration/runs/`.
 
 **Governed web capability (ADR-0050).** A specialist that declares `liveWebAccess: true` (the researcher) executes with a live web tool instead of a tool-less completion, closing the seam where the orchestrator promised "web access lives with the researcher" but nothing wired it. A typed `resolveWebCapability` grant runs in strict priority — `governed` (`WEB_SEARCH_URL` → a client tool-use loop over Construct's own `webSearch()`, F08 by construction), `provider-native` (Anthropic `web_search_20250305` / OpenRouter `openrouter:web_search`, every citation re-graded), `host-delegated` (opt-in), `unavailable` (typed `capability-unavailable` forcing an honest refusal that degrades the run). `governWebResults` (`lib/mcp/tools/web-search-governance.mjs`) is the single grader: every web result on every path — including the fail-closed re-grade on remote-service ingress — emerges `trust:'untrusted'` + Admiralty-graded, so a citation can never reach a specialist ungoverned. The tool is least-privilege (only the declared web role gets it) and bounded (`CONSTRUCT_WORKER_TOOL_ROUNDS`).
 
@@ -817,30 +814,24 @@ Worker Profiles are assignable configurations. Each declares a runtime/model tie
 emphasis, Procedure affinity, and Policy fence. Construct selects them from an Assignment's
 requirements; they do not appear as separate public assistants.
 
-The checked-in implementation still stores these records and their prompt content below
-`specialists/`. That path is a cutover input, not the canonical owner. The registry migration
-moves assignable records to `registry/worker-profiles/`, loader behavior to
-`lib/worker-profiles/`, and host-specific prompt material to generated adapters. The exact
-current-to-canonical mapping is in `config/canonical-terminology.json`.
+The canonical owner is `registry/worker-profiles/<id>.json` with prompt bodies under
+`registry/worker-profiles/prompts/`. Loaders live in `lib/worker-profiles/` and
+`lib/registry/loader.mjs`. The exact current-to-canonical mapping is in
+`config/canonical-terminology.json`.
 
 ### User-defined Worker Profiles
 
-User-defined Profiles follow the same schema and validation as built-ins. Project configuration
-has higher precedence than user configuration, which has higher precedence than built-ins;
-resolution must report the winning source. A Profile may reference existing Skills, Procedures,
-Capabilities, and Policies, but must not duplicate their content or bypass their gates.
+User-defined Profiles follow the same schema and validation as built-ins. Project packs
+(`.construct/packs/`) have higher precedence than user packs (`~/.config/construct/packs/`),
+which have higher precedence than built-ins; resolution must report the winning source. A
+Profile may reference existing Skills, Procedures, Capabilities, and Policies, but must not
+duplicate their content or bypass their gates. Use `construct pack list|enable|info` to inspect
+and enable project-tier packs.
 
 ### Headhunt: domain-overlay activation and promotion
 
-`construct headhunt <domain>` (`lib/headhunt.mjs`) attaches a temporary domain-expertise overlay to the workers named by the request or selected by deterministic keyword buckets. It does not invent permanent workers or derive a fixed team from the active Workspace Preset. An overlay defaults to `permanence: 'temporary'` with a 7-day `expiresAt`; `--save` makes it durable and `construct headhunt cleanup` removes expired records. Overlay and promotion records live at `.construct/domain-overlays/` and `.construct/promotion-requests/`.
+`construct headhunt <domain>` (`lib/headhunt.mjs`) attaches a temporary domain-expertise overlay to the workers named by the request or selected by deterministic keyword buckets. It does not invent permanent Worker Profiles or derive a fixed roster from the active Workspace Preset. An overlay defaults to `permanence: 'temporary'` with a 7-day `expiresAt`; `--save` makes it durable and `construct headhunt cleanup` removes expired records. Overlay and promotion records live at `.construct/domain-overlays/` and `.construct/promotion-requests/`.
 
-Promotion (`construct headhunt promote <overlay-id>`) does not write directly into `registry/**` or go through `lib/registry/org-api.mjs` — it creates a `promotion-request` record carrying the overlay's domain/objective/scope and a fixed checklist (`buildPromotionGates()`: explicit user request, demonstrated reuse beyond one-off use, clear scope and owner, fits existing routing, security review if the domain touches infra/auth/data, docs and validation plan before any persistent registry change). Promotion is deliberately a paper trail requiring human review, not an automatic escalation — a domain overlay earns a permanent skill or specialist only after a maintainer acts on the request through the normal authoring paths (`construct specialist create --custom`, above, or the Org Studio surface, next).
+Promotion (`construct headhunt promote <overlay-id>`) does not write directly into `registry/**` — it creates a `promotion-request` record carrying the overlay's domain/objective/scope and a fixed checklist (`buildPromotionGates()`: explicit user request, demonstrated reuse beyond one-off use, clear scope and owner, fits existing routing, security review if the domain touches infra/auth/data, docs and validation plan before any persistent registry change). Promotion is deliberately a paper trail requiring human review, not an automatic escalation — a domain overlay earns a permanent Skill or Worker Profile only after a maintainer acts on the request through the normal pack and registry authoring paths.
 
-### Org Studio (no-code authoring surface)
-
-`construct studio` (`lib/org-studio/server.mjs`, construct-d1r7.14) serves a zero-dependency local web app — a plain `node:http` server plus one self-contained SPA (`lib/org-studio/app.html`, inline CSS/JS, no build step, no framework, per ADR-0001's no-npm-in-core rule) — for authoring specialists, teams, contracts, fences, and participation rules without hand-editing JSON. It binds loopback-only and rejects cross-origin requests, since it is a personal authoring tool, not a shared service.
-
-Every write goes through `lib/registry/org-api.mjs` (ADR-0072), the single org-config writer: `listEntities`/`getEntity`/`validateDraft`/`createEntity`/`updateEntity`/`removeEntity` for specialists, teams, contracts, fences, and skills; `exportOrg`/`importOrg` for a full round-trip; `previewRoute`/`previewEffectiveFence` to show what `orchestration_policy` would resolve before committing a change; and `listParticipationRules`/`validateParticipationRule`/`upsertParticipationRule`/`removeParticipationRule`/`previewParticipation` for the participation canvas (construct-pteo2.15) — the same writer `construct participation` uses (see [Participation verticals](/guides/concepts/participation-verticals)). Inline validation in the Studio UI is byte-for-byte the same schema the CLI enforces, so a change made visually and one made by hand-editing JSON pass through identical checks.
-
-Full roster with domain groupings: [Agents and personas](/guides/concepts/agents-and-personas).
-Full reference with tier and purpose per specialist: [Specialist reference](/guides/reference/specialists).
+Full roster with tier and purpose per profile: [Worker Profiles reference](/guides/reference/worker-profiles).

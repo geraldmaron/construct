@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "specialistId": "data-analyst",
-  "capabilityId": "specialist.prompt",
+  "workerProfileId": "data-analyst",
+  "capabilityId": "worker-profile.prompt",
   "mode": "normal",
   "scenarioKind": "ambiguous",
   "representativeTask": {

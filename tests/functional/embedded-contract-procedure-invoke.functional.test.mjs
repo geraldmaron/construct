@@ -1,22 +1,22 @@
 /**
- * tests/functional/embedded-contract-workflow-invoke.functional.test.mjs
+ * tests/functional/embedded-contract-procedure-invoke.functional.test.mjs
  *
- * Drives `construct workflow invoke --json` against the real binary in an
+ * Drives `construct procedure invoke --json` against the real binary in an
  * isolated tmpdir with a redirected HOME. Asserts the approval-mode write gate
  * end-to-end: proposal-only writes nothing, allow-durable-write lands an
  * observation, and requires-human-approval records an approval marker under
  * HOME/.construct without any durable project write.
  *
- * @capability workflow.evidence-ingest
- * @capability workflow.research-synthesis
- * @capability workflow.prd-draft
- * @capability workflow.architecture-review
- * @capability workflow.proposal-review
- * @capability workflow.risk-review
- * @capability workflow.structure-notes
- * @capability workflow.transcript-process
- * @capability workflow.data-structure
- * @capability workflow.memo-draft
+ * @procedure evidence-ingest
+ * @procedure research-synthesis
+ * @procedure prd-draft
+ * @procedure architecture-review
+ * @procedure proposal-review
+ * @procedure risk-review
+ * @procedure structure-notes
+ * @procedure transcript-process
+ * @procedure data-structure
+ * @procedure memo-draft
  * @capability document-type.evidence-brief
  */
 
@@ -45,7 +45,7 @@ after(() => {
 });
 
 function invoke(args, { cwd, home }) {
-  const res = spawnSync('node', [BIN, 'workflow', 'invoke', '--json', ...args], {
+  const res = spawnSync('node', [BIN, 'procedure', 'invoke', '--json', ...args], {
     cwd,
     encoding: 'utf8',
     timeout: 30_000,
@@ -58,7 +58,7 @@ function invoke(args, { cwd, home }) {
 test('proposal-only invocation returns a plan and writes nothing', () => {
   const cwd = fresh('cx-wf-prop-');
   const home = fresh('cx-wf-home-');
-  const env = invoke(['--workflow-type', 'evidence-ingest', '--approval-mode', 'proposal-only', '--text', 'raw notes'], { cwd, home });
+  const env = invoke(['--procedure-id', 'evidence-ingest', '--approval-mode', 'proposal-only', '--text', 'raw notes'], { cwd, home });
   assert.equal(env.surface, 'cli');
   assert.equal(env.data.status, 'proposed');
   assert.deepEqual(env.data.durableWritesPerformed, []);
@@ -69,16 +69,16 @@ test('proposal-only invocation returns a plan and writes nothing', () => {
 test('allow-durable-write lands an observation in the project', () => {
   const cwd = fresh('cx-wf-write-');
   const home = fresh('cx-wf-home-');
-  const env = invoke(['--workflow-type', 'evidence-ingest', '--approval-mode', 'allow-durable-write', '--text', 'raw notes'], { cwd, home });
+  const env = invoke(['--procedure-id', 'evidence-ingest', '--approval-mode', 'allow-durable-write', '--text', 'raw notes'], { cwd, home });
   assert.equal(env.data.status, 'recorded');
   assert.equal(env.data.durableWritesPerformed.length, 1);
   assert.ok(fs.existsSync(path.join(cwd, '.construct', 'observations')));
 });
 
-test('a credential in the environment never leaks into workflow output', () => {
+test('a credential in the environment never leaks into Procedure output', () => {
   const cwd = fresh('cx-wf-secret-');
   const home = fresh('cx-wf-home-');
-  const res = spawnSync('node', [BIN, 'workflow', 'invoke', '--json', '--workflow-type', 'prd-draft', '--approval-mode', 'proposal-only', '--host-model', 'anthropic/claude-sonnet-4-6', '--text', 'x'], {
+  const res = spawnSync('node', [BIN, 'procedure', 'invoke', '--json', '--procedure-id', 'prd-draft', '--approval-mode', 'proposal-only', '--host-model', 'anthropic/claude-sonnet-4-6', '--text', 'x'], {
     cwd, encoding: 'utf8', timeout: 30_000,
     env: { ...process.env, HOME: home, CONSTRUCT_ROLES: 'off', ANTHROPIC_API_KEY: 'cred-canary-wf-0001' },
   });
@@ -86,32 +86,32 @@ test('a credential in the environment never leaks into workflow output', () => {
   assert.equal(res.stdout.includes('cred-canary-wf-0001'), false, 'secret must not leak');
 });
 
-test('roleChain is a floor: cost/privacy signals recruit reviewers onto prd-draft (construct-pteo2.9)', () => {
+test('Procedure chain is a floor: cost/privacy signals recruit reviewers onto prd-draft', () => {
   const cwd = fresh('cx-wf-recruit-');
   const home = fresh('cx-wf-home-');
   const env = invoke([
-    '--workflow-type', 'prd-draft', '--approval-mode', 'proposal-only',
+    '--procedure-id', 'prd-draft', '--approval-mode', 'proposal-only',
     '--text', 'PRD for billing cost optimization with strict PII data retention and consent handling',
   ], { cwd, home });
 
-  assert.ok(env.data.selectedRoles.indexOf('product-manager') === 0, 'manifest chain honored as minimum, in order');
-  assert.equal(env.data.selectedRoles[1], 'architect', 'manifest chain honored as minimum, in order');
-  assert.ok(env.data.selectedRoles.includes('data-analyst'), `cost signal recruits data-analyst; got ${env.data.selectedRoles.join(',')}`);
-  assert.ok(env.data.selectedRoles.includes('security'), `privacy signal recruits security; got ${env.data.selectedRoles.join(',')}`);
+  assert.ok(env.data.selectedWorkerProfiles.indexOf('product-manager') === 0, 'Procedure chain honored as minimum, in order');
+  assert.equal(env.data.selectedWorkerProfiles[1], 'architect', 'Procedure chain honored as minimum, in order');
+  assert.ok(env.data.selectedWorkerProfiles.includes('data-analyst'), `cost signal recruits data-analyst; got ${env.data.selectedWorkerProfiles.join(',')}`);
+  assert.ok(env.data.selectedWorkerProfiles.includes('security'), `privacy signal recruits security; got ${env.data.selectedWorkerProfiles.join(',')}`);
 
   assert.ok(Array.isArray(env.data.recruitment.rationale), '--json carries recruitment rationale');
   assert.ok(env.data.recruitment.rationale.some((r) => r.includes('data-analyst')), 'rationale names the recruit');
-  assert.deepEqual(env.data.recruitment.addedRoles.slice().sort(), ['data-analyst', 'security']);
+  assert.deepEqual(env.data.recruitment.addedWorkerProfiles.slice().sort(), ['data-analyst', 'security']);
 });
 
-test('recruitment off keeps the bare manifest chain for the same signals', () => {
+test('recruitment off keeps the bare Procedure chain for the same signals', () => {
   const cwd = fresh('cx-wf-recruit-off-');
   const home = fresh('cx-wf-home-');
   const env = invoke([
-    '--workflow-type', 'prd-draft', '--approval-mode', 'proposal-only', '--recruitment', 'off',
+    '--procedure-id', 'prd-draft', '--approval-mode', 'proposal-only', '--recruitment', 'off',
     '--text', 'PRD for billing cost optimization with strict PII data retention and consent handling',
   ], { cwd, home });
 
-  assert.deepEqual(env.data.selectedRoles, ['product-manager', 'architect'], 'chain untouched when recruitment is off');
-  assert.deepEqual(env.data.recruitment.addedRoles, []);
+  assert.deepEqual(env.data.selectedWorkerProfiles, ['product-manager', 'architect'], 'chain untouched when recruitment is off');
+  assert.deepEqual(env.data.recruitment.addedWorkerProfiles, []);
 });

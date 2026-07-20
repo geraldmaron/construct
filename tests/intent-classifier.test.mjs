@@ -23,7 +23,7 @@ function stubCaller(responses) {
 
 test('verifyIntent short-circuits when flavor is null', async () => {
   resetCache();
-  const r = await verifyIntent({ request: 'foo', specialist: 'architect', flavor: null });
+  const r = await verifyIntent({ request: 'foo', workerProfileId: 'architect', flavor: null });
   assert.equal(r.source, 'no-flavor');
   assert.equal(r.verified, true);
 });
@@ -32,7 +32,7 @@ test('verifyIntent honours CONSTRUCT_INTENT_VERIFY=off', async () => {
   resetCache();
   process.env.CONSTRUCT_INTENT_VERIFY = 'off';
   try {
-    const r = await verifyIntent({ request: 'foo', specialist: 'architect', flavor: 'platform' });
+    const r = await verifyIntent({ request: 'foo', workerProfileId: 'architect', flavor: 'platform' });
     assert.equal(r.source, 'disabled');
     assert.equal(r.verified, true);
   } finally {
@@ -43,7 +43,7 @@ test('verifyIntent honours CONSTRUCT_INTENT_VERIFY=off', async () => {
 test('verifyIntent parses a valid JSON verdict from the model', async () => {
   resetCache();
   const caller = stubCaller([{ verified: true, confidence: 0.92, reason: 'clearly platform infra' }]);
-  const r = await verifyIntent({ request: 'design the kubernetes ingress', specialist: 'architect', flavor: 'platform', modelCaller: caller });
+  const r = await verifyIntent({ request: 'design the kubernetes ingress', workerProfileId: 'architect', flavor: 'platform', modelCaller: caller });
   assert.equal(r.source, 'llm');
   assert.equal(r.verified, true);
   assert.equal(r.confidence, 0.92);
@@ -53,7 +53,7 @@ test('verifyIntent parses a valid JSON verdict from the model', async () => {
 test('verifyIntent recognises a false-positive keyword match', async () => {
   resetCache();
   const caller = stubCaller([{ verified: false, confidence: 0.85, reason: 'request mentions AI in passing only' }]);
-  const r = await verifyIntent({ request: 'the AI is slow — fix the cache layer', specialist: 'architect', flavor: 'ai-systems', modelCaller: caller });
+  const r = await verifyIntent({ request: 'the AI is slow — fix the cache layer', workerProfileId: 'architect', flavor: 'ai-systems', modelCaller: caller });
   assert.equal(r.verified, false);
   assert.equal(r.confidence, 0.85);
 });
@@ -61,7 +61,7 @@ test('verifyIntent recognises a false-positive keyword match', async () => {
 test('verifyIntent falls back when the model throws', async () => {
   resetCache();
   const caller = stubCaller([new Error('timeout')]);
-  const r = await verifyIntent({ request: 'foo', specialist: 'architect', flavor: 'platform', modelCaller: caller });
+  const r = await verifyIntent({ request: 'foo', workerProfileId: 'architect', flavor: 'platform', modelCaller: caller });
   assert.equal(r.source, 'fallback');
   assert.equal(r.verified, true);
   assert.match(r.reason, /timeout/);
@@ -70,7 +70,7 @@ test('verifyIntent falls back when the model throws', async () => {
 test('verifyIntent falls back when JSON parse fails', async () => {
   resetCache();
   const caller = stubCaller(['this is not json at all']);
-  const r = await verifyIntent({ request: 'foo', specialist: 'architect', flavor: 'platform', modelCaller: caller });
+  const r = await verifyIntent({ request: 'foo', workerProfileId: 'architect', flavor: 'platform', modelCaller: caller });
   assert.equal(r.source, 'fallback');
   assert.equal(r.verified, true);
 });
@@ -81,8 +81,8 @@ test('verifyIntent caches identical requests', async () => {
     { verified: true, confidence: 0.9, reason: 'first call' },
     { verified: false, confidence: 0.1, reason: 'should not see' },
   ]);
-  const first = await verifyIntent({ request: 'same request', specialist: 'architect', flavor: 'data', modelCaller: caller });
-  const second = await verifyIntent({ request: 'same request', specialist: 'architect', flavor: 'data', modelCaller: caller });
+  const first = await verifyIntent({ request: 'same request', workerProfileId: 'architect', flavor: 'data', modelCaller: caller });
+  const second = await verifyIntent({ request: 'same request', workerProfileId: 'architect', flavor: 'data', modelCaller: caller });
   assert.equal(first.source, 'llm');
   assert.equal(second.source, 'cache');
   assert.equal(second.confidence, 0.9);
@@ -93,7 +93,7 @@ test('verifyRoute returns the route synchronously without awaiting the model', (
   resetCache();
   const route = {
     roleFlavors: { architect: 'platform', security: 'appsec', productManager: null },
-    specialists: ['architect', 'engineer'],
+    workerProfiles: ['architect', 'engineer'],
   };
   const caller = async () => new Promise(() => { /* never resolves */ });
   const result = verifyRoute(route, { request: 'design the platform', modelCaller: caller, logger: () => {} });
@@ -106,14 +106,14 @@ test('verifyRoute fires the logger for each background verification', async () =
   resetCache();
   const route = {
     roleFlavors: { architect: 'platform', security: 'appsec' },
-    specialists: ['architect'],
+    workerProfiles: ['architect'],
   };
   const responses = {
     'architect|platform': { verified: true, confidence: 0.95, reason: 'core infra' },
     'security|appsec': { verified: false, confidence: 0.3, reason: 'incidental' },
   };
   const caller = async ({ user }) => {
-    const spec = user.match(/Matched specialist: (\S+)/)[1];
+    const spec = user.match(/Matched Worker Profile: (\S+)/)[1];
     const flavor = user.match(/Candidate flavor: (\S+)/)[1];
     return JSON.stringify(responses[`${spec}|${flavor}`]);
   };
@@ -121,7 +121,7 @@ test('verifyRoute fires the logger for each background verification', async () =
   verifyRoute(route, { request: 'design the platform', modelCaller: caller, logger: (e) => logged.push(e) });
   await new Promise((r) => setTimeout(r, 30));
   assert.equal(logged.length, 2, 'one log entry per non-null flavor');
-  const securityEntry = logged.find((e) => e.specialist === 'security');
+  const securityEntry = logged.find((e) => e.workerProfileId === 'security');
   assert.equal(securityEntry.llmVerdict, false);
   assert.equal(securityEntry.agreed, false, 'keyword=true vs llm=false is a disagreement');
   assert.equal(securityEntry.confidence, 0.3);

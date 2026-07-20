@@ -74,33 +74,33 @@ test('the base chain collaborates: a reviewer disagreement propagates from engin
 
   // Terminal contract: the run completed and every task produced real output.
   assert.equal(run.status, 'completed');
-  const roles = run.tasks.map((t) => t.role);
+  const workerProfiles = run.tasks.map((t) => t.workerProfileId);
   // The base chain must be present in order; runtime recruitment (H8) may append extra
   // joins from output signals (e.g. a designer), which is expected, not a failure.
-  const baseIdx = ['architect', 'engineer', 'reviewer', 'qa'].map((r) => roles.indexOf(r));
-  assert.ok(baseIdx.every((i) => i >= 0), `base chain present in ${roles.join(',')}`);
+  const baseIdx = ['architect', 'engineer', 'reviewer', 'qa'].map((r) => workerProfiles.indexOf(r));
+  assert.ok(baseIdx.every((i) => i >= 0), `base chain present in ${workerProfiles.join(',')}`);
   assert.deepEqual([...baseIdx].sort((a, b) => a - b), baseIdx, 'base chain dispatched in architect->engineer->reviewer->qa order');
   for (const t of run.tasks) {
-    assert.equal(t.status, 'done', `${t.role} finished`);
-    assert.ok(typeof t.output === 'string' && t.output.trim().length > 0, `${t.role} produced output`);
+    assert.equal(t.status, 'done', `${t.workerProfileId} finished`);
+    assert.ok(typeof t.output === 'string' && t.output.trim().length > 0, `${t.workerProfileId} produced output`);
   }
 
   // bodies are captured in dispatch order, so bodies[i] is the prompt for run.tasks[i].
-  const promptFor = (role) => JSON.stringify(bodies[roles.indexOf(role)]);
+  const promptFor = (workerProfileId) => JSON.stringify(bodies[workerProfiles.indexOf(workerProfileId)]);
   const reviewerPrompt = promptFor('reviewer');
   const qaPrompt = promptFor('qa');
 
   // Collaboration: the reviewer actually saw the engineer's real, trust-wrapped output.
-  assert.match(reviewerPrompt, /## Prior specialist results/, "the reviewer's prompt carries prior specialist results");
+  assert.match(reviewerPrompt, /## Prior (specialist|Worker Profile) results/i, "the reviewer's prompt carries prior Worker Profile results");
   assert.ok(reviewerPrompt.includes(OUTPUTS['engineer']), "the reviewer's prompt contains the engineer's real output");
-  assert.match(reviewerPrompt, /UNTRUSTED:team-authored:specialist:engineer:/, "the engineer's output is trust-wrapped in the reviewer's prompt");
+  assert.match(reviewerPrompt, /UNTRUSTED:team-authored:(?:Worker Profile|specialist|worker-profile):engineer:/i, "the engineer's output is trust-wrapped in the reviewer's prompt");
 
   // Propagation: qa saw the reviewer's disagreement, so the arbitration carries forward.
   assert.ok(qaPrompt.includes(OUTPUTS['reviewer']), "qa's prompt contains the reviewer's disagreement");
   assert.match(qaPrompt, /DISAGREE/, "the reviewer's challenge language reaches qa");
 
   // And qa's own recorded output reconciles rather than silently dropping the conflict.
-  const qaOutput = run.tasks.find((t) => t.role === 'qa').output;
+  const qaOutput = run.tasks.find((t) => t.workerProfileId === 'qa').output;
   assert.match(qaOutput, /reconcile|unresolved/i, 'qa surfaces the unresolved disagreement rather than rubber-stamping');
 });
 

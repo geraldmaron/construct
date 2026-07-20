@@ -43,7 +43,7 @@ describe('AuthorityGuard embedBindings enforcement', () => {
       const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, queue, EMBED_BINDINGS);
       const result = await guard.check('externalPost', {
         description: 'Create Jira ticket for execution gap',
-        proposal: { specialistId: 'operations', providerId: 'atlassian-jira', writeKind: 'createIssue' },
+        proposal: { workerProfileId: 'operations', providerId: 'atlassian-jira', writeKind: 'createIssue' },
       });
       assert.equal(result.allowed, false);
       assert.equal(result.mode, 'queued');
@@ -53,7 +53,7 @@ describe('AuthorityGuard embedBindings enforcement', () => {
     it('a second granted provider/writeKind pair for the same specialist also proceeds', async () => {
       const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, makeQueue(), EMBED_BINDINGS);
       const result = await guard.check('externalPost', {
-        proposal: { specialistId: 'operations', providerId: 'slack', writeKind: 'postMessage' },
+        proposal: { workerProfileId: 'operations', providerId: 'slack', writeKind: 'postMessage' },
       });
       assert.equal(result.mode, 'queued');
     });
@@ -64,7 +64,7 @@ describe('AuthorityGuard embedBindings enforcement', () => {
       const queue = makeQueue();
       const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, queue, EMBED_BINDINGS);
       const result = await guard.check('externalPost', {
-        proposal: { specialistId: 'operations', providerId: 'atlassian-jira', writeKind: 'deleteIssue' },
+        proposal: { workerProfileId: 'operations', providerId: 'atlassian-jira', writeKind: 'deleteIssue' },
       });
       assert.equal(result.allowed, false);
       assert.equal(result.mode, 'denied');
@@ -76,7 +76,7 @@ describe('AuthorityGuard embedBindings enforcement', () => {
       const queue = makeQueue();
       const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, queue, EMBED_BINDINGS);
       const result = await guard.check('externalPost', {
-        proposal: { specialistId: 'product-manager', providerId: 'slack', writeKind: 'postMessage' },
+        proposal: { workerProfileId: 'product-manager', providerId: 'slack', writeKind: 'postMessage' },
       });
       assert.equal(result.allowed, false);
       assert.equal(result.mode, 'denied');
@@ -87,7 +87,7 @@ describe('AuthorityGuard embedBindings enforcement', () => {
       const queue = makeQueue();
       const guard = new AuthorityGuard(DEFAULT_OPERATING_PROFILE, queue, EMBED_BINDINGS);
       const result = await guard.check('externalPost', {
-        proposal: { specialistId: 'cx-unbound-specialist', providerId: 'atlassian-jira', writeKind: 'createIssue' },
+        proposal: { workerProfileId: 'cx-unbound-specialist', providerId: 'atlassian-jira', writeKind: 'createIssue' },
       });
       assert.equal(result.allowed, false);
       assert.equal(result.mode, 'denied');
@@ -103,7 +103,7 @@ describe('AuthorityGuard embedBindings enforcement', () => {
       queue.approve(primed.queueId);
 
       const result = await guard.check('externalPost', {
-        proposal: { specialistId: 'operations', providerId: 'atlassian-jira', writeKind: 'deleteIssue' },
+        proposal: { workerProfileId: 'operations', providerId: 'atlassian-jira', writeKind: 'deleteIssue' },
       });
       assert.equal(result.allowed, false, 'binding denial must precede auto-approval');
       assert.equal(result.mode, 'denied');
@@ -116,7 +116,7 @@ describe('AuthorityGuard embedBindings enforcement', () => {
       };
       const guard = new AuthorityGuard(profile, makeQueue(), EMBED_BINDINGS);
       const result = await guard.check('externalPost', {
-        proposal: { specialistId: 'operations', providerId: 'atlassian-jira', writeKind: 'deleteIssue' },
+        proposal: { workerProfileId: 'operations', providerId: 'atlassian-jira', writeKind: 'deleteIssue' },
       });
       assert.equal(result.allowed, false, 'binding grant must be checked before the authority level, not after');
       assert.equal(result.mode, 'denied');

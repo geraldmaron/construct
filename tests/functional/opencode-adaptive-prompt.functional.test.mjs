@@ -4,9 +4,10 @@
  * Asserts that the OpenCode `construct` agent prompt is sized to the configured default
  * model's capability tier. Spawns the real sync-worker-profiles.mjs into an isolated tmp HOME
  * seeded with (a) a small local default (7B → floor), (b) a mid local default (30B → mid),
- * and (c) a cloud default (→ full, unchanged). Verifies the must-keep sections survive at
- * every tier, prio-3 sections drop for local models, prio-2 sections drop only at floor,
- * and the cloud prompt is the full persona. The host binary is never executed.
+ * and (c) a cloud default (→ full, unchanged). Verifies the floor keeps the Worker Profile
+ * identity and orchestration handoff while omitting optional sections, and that mid/full
+ * retain the current unmarked (default priority 2) Worker Profile sections. The host binary
+ * is never executed, and every spawn uses a sterile HOME/XDG/state root.
  */
 
 import { spawnSync } from "node:child_process";
@@ -17,6 +18,7 @@ import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { rmTmpDir } from '../helpers/cleanup.mjs';
+import { sterileSpawnEnv } from '../helpers/sterile-env.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const SYNC_SCRIPT = join(REPO_ROOT, "scripts", "sync-worker-profiles.mjs");
@@ -51,7 +53,11 @@ function syncAndReadPrompt(config) {
   try {
     const res = spawnSync(process.execPath, [SYNC_SCRIPT, "--global"], {
       cwd: REPO_ROOT, encoding: "utf8", timeout: 90_000,
-      env: { ...process.env, HOME: env.sandbox, CONSTRUCT_SKIP_POSTINSTALL: "1" },
+      env: sterileSpawnEnv({
+        HOME: env.sandbox,
+        CONSTRUCT_HOME_OVERRIDE: env.sandbox,
+        CONSTRUCT_SKIP_POSTINSTALL: "1",
+      }),
     });
     assert.equal(res.status, 0, `sync failed: ${(res.stderr || "").slice(-400)}`);
     const out = JSON.parse(readFileSync(env.cfgPath, "utf8"));
@@ -61,34 +67,34 @@ function syncAndReadPrompt(config) {
   }
 }
 
-// Stable section anchors. Preamble + Branch/commit + Loop guard + Action discipline +
-// Classify = floor (prio 1). Quality gates = prio 2 (mid). Drive mode = prio 3 (full).
-const MUST_KEEP = ["Anti-fabrication contract", "Branch + commit approval", "Loop guard"];
-const PRIO2 = "Quality gates";
-const PRIO3 = "Drive mode";
+// The canonical Construct 2.0 prompt has an implicit priority-1 preamble and unmarked
+// sections, which default to priority 2. Floor therefore keeps identity and scope; mid
+// and full retain all current sections until an author explicitly marks priority 3.
+
+const FLOOR_IDENTITY = ["You are orchestrator", "Scope boundary"];
+const MID_SECTIONS = ["Anti-fabrication contract", "Quality gates", "Drive mode"];
 const MICRO_PROMPT = "call `construct-mcp_orchestration_policy`";
 const EXECUTION_PROMPT = "call `construct-mcp_orchestration_run`";
 
 test("small local default (7B) renders the floor tier", () => {
   const prompt = syncAndReadPrompt(seedConfig("ollama/qwen2.5-coder:7b-cx32k", true));
-  for (const anchor of MUST_KEEP) assert.match(prompt, new RegExp(anchor.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `floor must keep: ${anchor}`);
+  for (const anchor of FLOOR_IDENTITY) assert.match(prompt, new RegExp(anchor.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `floor must keep: ${anchor}`);
   assert.match(prompt, new RegExp(MICRO_PROMPT.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), "orchestration micro-prompt present");
   assert.match(prompt, new RegExp(EXECUTION_PROMPT.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), "execution handoff present");
-  assert.doesNotMatch(prompt, /Drive mode/, "floor drops prio-3 Drive mode");
-  assert.doesNotMatch(prompt, /## Quality gates/, "floor drops prio-2 Quality gates");
+  for (const section of MID_SECTIONS) assert.doesNotMatch(prompt, new RegExp(`## ${section}`), `floor drops optional section: ${section}`);
   assert.doesNotMatch(prompt, /construct:prio/, "section markers must not leak into the emitted prompt");
 });
 
-test("mid local default (30B) keeps prio-2 but drops prio-3", () => {
+test("mid local default (30B) keeps the current default-priority Worker Profile sections", () => {
   const prompt = syncAndReadPrompt(seedConfig("ollama/qwen3-coder:30b-cx32k", true));
-  assert.match(prompt, /## Quality gates/, "mid keeps prio-2 Quality gates");
-  assert.doesNotMatch(prompt, /Drive mode/, "mid drops prio-3 Drive mode");
+  for (const section of MID_SECTIONS) assert.match(prompt, new RegExp(`## ${section}`), `mid keeps default-priority section: ${section}`);
+  assert.match(prompt, /workerProfileId: orchestrator/, "Worker Profile metadata remains available");
 });
 
 test("cloud default renders the full persona, unchanged", () => {
   const prompt = syncAndReadPrompt(seedConfig("anthropic/claude-opus-4-6", false));
-  assert.match(prompt, new RegExp(PRIO3), "full keeps prio-3 Drive mode");
-  assert.match(prompt, new RegExp(`## ${PRIO2}`), "full keeps prio-2 Quality gates");
+  for (const section of MID_SECTIONS) assert.match(prompt, new RegExp(`## ${section}`), `full keeps section: ${section}`);
+  assert.match(prompt, /workerProfileId: orchestrator/, "full prompt carries Worker Profile metadata");
   assert.doesNotMatch(prompt, /construct:prio/, "section markers must not leak into the full prompt");
 });
 

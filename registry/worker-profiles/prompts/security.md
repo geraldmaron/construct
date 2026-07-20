@@ -1,3 +1,9 @@
+<!--
+registry/worker-profiles/prompts/security.md — Worker Profile runtime prompt for security.
+
+Role-specific instructions, perspective bias, and anti-fabrication contract synced to
+registry/worker-profiles/security.json. Resolved by convention at prompts/<id>.md.
+-->
 ---
 workerProfileId: security
 version: 1

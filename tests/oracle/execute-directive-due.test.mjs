@@ -14,7 +14,7 @@ import { executeApprovedAction } from '../../lib/oracle/execute.mjs';
 import { ApprovalQueue } from '../../lib/embed/approval-queue.mjs';
 import { tempDir } from '../helpers.mjs';
 
-// Worker Profile dispatch/recordAndMaybeInvoke resolve doctor-root/role-pending
+// Worker Profile dispatch/recordAndMaybeInvoke resolve machine-scoped pending
 // paths off the real $HOME by default — CONSTRUCT_HOME_OVERRIDE keeps every test
 // in this file off the real developer machine.
 
@@ -70,7 +70,7 @@ test('directive-due executes unattended when oracle.executeDirectives is on and 
       output: 'summary posted',
       writeProposals: [{
         providerId: 'jira', writeKind: 'comment', payload: { issueKey: 'OPS-1', body: 'status' },
-        requestedBy: { specialistId: 'operations' }, surface: 'orchestration-worker', tool: 'jira.comment',
+        requestedBy: { workerProfileId: 'operations' }, surface: 'orchestration-worker', tool: 'jira.comment',
       }],
     };
   };
@@ -88,7 +88,7 @@ test('directive-due executes unattended when oracle.executeDirectives is on and 
   assert.equal(result.directiveId, 'demo');
   assert.equal(result.output, 'summary posted');
   assert.equal(result.writeProposalsQueued, 1);
-  assert.equal(capturedTask.role, 'operations');
+  assert.equal(capturedTask.reason, 'post a status update');
   assert.equal(queue.getPending().length, 1);
 });
 

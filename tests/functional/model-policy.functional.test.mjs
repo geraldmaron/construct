@@ -30,6 +30,7 @@ import { MODEL_TIER_BY_WORK_CATEGORY } from '../../lib/model-router.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BIN = path.resolve(__dirname, '..', '..', 'bin', 'construct');
+const REPO_ROOT = path.resolve(__dirname, '..', '..');
 
 const tmpDirs = [];
 function freshDir(tag) {
@@ -131,7 +132,7 @@ function listFilesRel(root) {
 test('budget invariant: OpenRouter-only + budget policy resolves no frontier model for any tier or work category', () => {
   const home = freshDir('budget-home');
   const toolkit = freshDir('budget-toolkit');
-  fs.mkdirSync(path.join(toolkit, 'specialists', 'org'), { recursive: true });
+  fs.cpSync(path.join(REPO_ROOT, 'registry'), path.join(toolkit, 'registry'), { recursive: true });
   const preload = writePreload(home);
 
   const setRes = runHermetic(['models', 'policy', 'set', 'budget', '--no-sync', '--json'], { home, toolkit, preload });
@@ -140,9 +141,9 @@ test('budget invariant: OpenRouter-only + budget policy resolves no frontier mod
 
   // R1: models.json under the toolkit dir is the ONLY file the command wrote there.
   const toolkitFiles = listFilesRel(toolkit);
-  assert.deepEqual(toolkitFiles, [path.join('specialists', 'org', 'models.json')], `only models.json mutated — saw: ${toolkitFiles.join(', ')}`);
+  assert.deepEqual(toolkitFiles.filter((f) => f.endsWith('models.json')), ['registry/models.json'], `only registry/models.json mutated — saw: ${toolkitFiles.join(', ')}`);
 
-  const registry = JSON.parse(fs.readFileSync(path.join(toolkit, 'specialists', 'org', 'models.json'), 'utf8'));
+  const registry = JSON.parse(fs.readFileSync(path.join(toolkit, 'registry', 'models.json'), 'utf8'));
   for (const tier of POLICY_TIERS) {
     const primary = registry.models[tier]?.primary;
     assert.ok(primary, `budget must assign a ${tier} primary`);
@@ -183,7 +184,7 @@ test('budget invariant: OpenRouter-only + budget policy resolves no frontier mod
 test('policy show attributes an env-pin override and reports a clean install as not-configured (R2/AC3)', () => {
   const home = freshDir('show-home');
   const toolkit = freshDir('show-toolkit');
-  fs.mkdirSync(path.join(toolkit, 'specialists', 'org'), { recursive: true });
+  fs.cpSync(path.join(REPO_ROOT, 'registry'), path.join(toolkit, 'registry'), { recursive: true });
   const preload = writePreload(home);
 
   const clean = runHermetic(['models', 'policy', 'show', '--json'], { home, toolkit, preload });
@@ -204,17 +205,19 @@ test('policy show attributes an env-pin override and reports a clean install as 
   assert.equal(reasoning.source, 'env override', 'env pin is attributed as the winning source');
 });
 
-test('explain --role reports the specialist tier and matches models resolve (AC4)', () => {
+test('explain --worker-profile reports the Worker Profile tier and matches models resolve (AC4)', () => {
   const home = freshDir('explain-home');
   const toolkit = freshDir('explain-toolkit');
+  fs.cpSync(path.join(REPO_ROOT, 'registry'), path.join(toolkit, 'registry'), { recursive: true });
   const preload = writePreload(home);
 
-  const res = runHermetic(['models', 'explain', '--role', 'reviewer', '--json'], { home, toolkit, preload });
+  const res = runHermetic(['models', 'explain', '--worker-profile', 'reviewer', '--json'], { home, toolkit, preload });
   assert.equal(res.status, 0, `explain exit 0 — stderr: ${res.stderr}`);
   const trace = JSON.parse(res.stdout);
-  assert.equal(trace.role, 'reviewer');
-  assert.equal(trace.tier, 'reasoning', 'reviewer resolves at the reasoning tier');
-  assert.ok(trace.source, 'a winning source is named');
+  assert.equal(trace.workerProfile, 'reviewer');
+  assert.equal(trace.declaredTier, 'strong', 'reviewer declares the strong tier in registry/worker-profiles/reviewer.json');
+  assert.equal(trace.tier, 'strong', 'reviewer resolves at the strong tier');
+  assert.ok(trace.registryPath?.endsWith('models.json'), 'explain names the registry path used for resolution');
 });
 
 test('free preset reports a tier with no free model instead of substituting (AC2)', async () => {

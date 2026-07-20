@@ -24,11 +24,12 @@ function load() {
   _cached = {
     registry,
     // Legacy shape conversions for backward compat in tests
-    specialists: Object.entries(registry.specialists || {}).map(([id, spec]) => ({
-      name: spec.name,
-      displayName: spec.displayName,
-      description: spec.description,
-      ...spec
+    workerProfiles: Object.entries(registry.workerProfiles || {}).map(([id, profile]) => ({
+      id,
+      name: profile.id,
+      displayName: profile.displayName,
+      description: profile.description,
+      ...profile,
     })),
     contracts: Object.values(registry.contracts || {}),
     policies: Object.values(registry.policies || {}),
@@ -45,8 +46,12 @@ export function getRegistry() {
   return load().registry;
 }
 
+export function getWorkerProfiles() {
+  return load().workerProfiles;
+}
+
 export function getSpecialists() {
-  return load().specialists;
+  return getWorkerProfiles();
 }
 
 export function getContracts() {
@@ -68,15 +73,17 @@ export function getTeams() {
 export const registry = new Proxy({}, {
   get: (target, prop) => {
     const data = load();
-    if (prop === 'specialists') return data.specialists;
+    if (prop === 'workerProfiles' || prop === 'specialists') return data.workerProfiles;
     if (prop === 'teams') return data.teams;
     return data.registry[prop];
   }
 });
 
-export const specialists = new Proxy({}, {
-  get: () => load().specialists
+export const workerProfiles = new Proxy({}, {
+  get: () => load().workerProfiles,
 });
+
+export const specialists = workerProfiles;
 
 export const contracts = new Proxy({}, {
   get: () => ({ contracts: load().contracts })

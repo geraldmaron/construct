@@ -35,11 +35,11 @@ See [naming.md](./naming.md) and [prompt surfaces](../concepts/prompt-surfaces.m
 | Context | Form |
 |---------|------|
 | Product / docs name | **Construct** (capital C) |
-| CLI, npm package, public persona | `construct` (lowercase) |
-| Internal specialists | `cx-<role>` (never user-facing) |
-| Artifact metadata | `cx_doc_id`, `cx_release_gate`, … |
+| CLI, npm package, public Worker Profile | `construct` (lowercase) |
+| Internal Worker Profile ids | `architect`, `engineer`, … (never user-facing) |
+| Artifact metadata | `construct_doc_id`, release-gate stamps, … |
 
-Users address `@construct` only. Specialists route internally.
+Users address `@construct` only. Worker Profiles route internally.
 
 ## Voice and tone
 
@@ -48,7 +48,7 @@ Prose rules: [STYLE.md](../STYLE.md). No marketing voice (`robust`, `enterprise-
 Typed artifacts resolve tone from:
 
 1. [`registry/artifact-manifest.json`](../../registry/artifact-manifest.json) `toneDefault` / `toneAllowed`
-2. [`specialists/tone-profiles.json`](../../specialists/tone-profiles.json)
+2. Workspace Preset tone defaults in `registry/workspace-presets/*.json`
 3. Optional project override [`.construct/brand-voice.json`](../../schemas/brand-voice.schema.json)
 
 Validate before ship: `construct artifact validate <path> --type=<doc-type>`.

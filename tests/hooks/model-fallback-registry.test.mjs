@@ -33,10 +33,11 @@ after(() => {
   }
 });
 
+const REPO_ROOT = path.resolve(__dirname, '..', '..');
+
 function writeRegistry(toolkitDir, models) {
-  const orgDir = path.join(toolkitDir, 'specialists', 'org');
-  fs.mkdirSync(orgDir, { recursive: true });
-  fs.writeFileSync(path.join(orgDir, 'models.json'), JSON.stringify({ models }));
+  fs.cpSync(path.join(REPO_ROOT, 'registry'), path.join(toolkitDir, 'registry'), { recursive: true });
+  fs.writeFileSync(path.join(toolkitDir, 'registry', 'models.json'), JSON.stringify({ models }, null, 2));
 }
 
 function runHook({ toolkitDir, homeDir, cwd, hookInput }) {

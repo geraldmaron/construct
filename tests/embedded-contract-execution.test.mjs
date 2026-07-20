@@ -4,7 +4,7 @@
  * Drives resolveExecution through every decision-table row: orchestrated on a
  * recognized host model, same-family fallback (degraded), prompt-only-by-request,
  * orchestrated requested but unresolvable (degraded prompt-only), host-direct,
- * and an unknown workflowType. Pins the mandatory `semantics` disclaimer, that
+ * and an unknown Procedure. Pins the mandatory `semantics` disclaimer, that
  * constructCapabilitiesActive is a subset of the declared set, and that a
  * credential canary in env never reaches the response — the no-fabrication and
  * no-secret guarantees ADR-0019 records.
@@ -45,7 +45,7 @@ test('exports declare the enums', () => {
 
 test('orchestrated on a recognized host model → construct-orchestrated, not degraded', () => {
   const r = resolveExecution(
-    { workflowType: 'architecture-review', requestedStrategy: 'orchestrated', hostModel: ANTHROPIC_MODEL },
+    { procedureId: 'architecture-review', requestedStrategy: 'orchestrated', hostModel: ANTHROPIC_MODEL },
     { env: baseEnv() },
   );
   assertCommonShape(r);
@@ -53,12 +53,12 @@ test('orchestrated on a recognized host model → construct-orchestrated, not de
   assert.equal(r.effectiveStrategy, 'orchestrated');
   assert.equal(r.degraded, false);
   assert.equal(r.degradationReason, null);
-  assert.deepEqual(r.constructCapabilitiesActive.sort(), ['personas', 'prompt-envelope', 'skills', 'workflow-routing']);
+  assert.deepEqual(r.constructCapabilitiesActive.sort(), ['prompt-envelope', 'skills', 'worker-profiles', 'workflow-routing']);
 });
 
 test('same-family fallback → same-family-fallback mode and degraded=true', () => {
   const r = resolveExecution(
-    { workflowType: 'evidence-ingest', requestedStrategy: 'orchestrated', hostModel: 'ide-builtin-unknown', hostProvider: 'anthropic' },
+    { procedureId: 'evidence-ingest', requestedStrategy: 'orchestrated', hostModel: 'ide-builtin-unknown', hostProvider: 'anthropic' },
     { env: baseEnv() },
   );
   assertCommonShape(r);
@@ -71,7 +71,7 @@ test('same-family fallback → same-family-fallback mode and degraded=true', () 
 
 test('prompt-only by request → construct-prompt-only, not degraded', () => {
   const r = resolveExecution(
-    { workflowType: 'evidence-ingest', requestedStrategy: 'prompt-only', hostModel: ANTHROPIC_MODEL },
+    { procedureId: 'evidence-ingest', requestedStrategy: 'prompt-only', hostModel: ANTHROPIC_MODEL },
     { env: baseEnv() },
   );
   assertCommonShape(r);
@@ -83,7 +83,7 @@ test('prompt-only by request → construct-prompt-only, not degraded', () => {
 
 test('orchestrated requested but model unresolvable → degraded prompt-only with reason', () => {
   const r = resolveExecution(
-    { workflowType: 'architecture-review', requestedStrategy: 'orchestrated', hostModel: 'mystery/unknown', hostProvider: 'mystery' },
+    { procedureId: 'architecture-review', requestedStrategy: 'orchestrated', hostModel: 'mystery/unknown', hostProvider: 'mystery' },
     { env: {} },
   );
   assertCommonShape(r);
@@ -123,6 +123,7 @@ test('unknown Procedure warns and reports no orchestration plan', () => {
   assert.equal(r.executionMode, 'construct-prompt-only');
   assert.equal(r.degraded, true);
   assert.ok(r.warnings.some((w) => /not-a-real-procedure/.test(w)));
+  assert.match(r.degradationReason || '', /not-a-real-procedure|no orchestration plan/i);
 });
 
 test('invalid requestedStrategy defaults to auto with a warning', () => {

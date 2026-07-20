@@ -1,34 +1,34 @@
 /**
  * tests/functional/prd-request-full-chain-audit-trail.functional.test.mjs —
  * composed sterile test (construct-ifwhw.3): "write me a PRD" through the full
- * specialist chain, deterministic, to a durable PRD file whose paper trail
+ * Worker Profile Assignment chain, deterministic, to a durable PRD file whose paper trail
  * links the run record, the task chain, and a gate/postcondition verdict.
  *
- * A "write me a PRD" request routes through the REAL specialist chain:
+ * A "write me a PRD" request routes through the real Worker Profile Assignment chain:
  * lib/orchestration-policy.mjs's `routeRequest` decomposes it into a sequenced
- * specialist chain and resolves the contract chain that governs it (verified
+ * Assignment chain and resolves the contract chain that governs it (verified
  * live against the registry — a request containing "PRD" resolves
- * `researcher-to-product-manager`, the real contract this suite exercises,
+ * `researcher-to-architect`, the real contract this suite exercises,
  * into `run.plan.contractChain`), then `lib/orchestration/runtime.mjs`'s
  * `runOrchestration` executes it. This suite drives that path with the
  * `provider` worker backend and an injected deterministic `fetchImpl` — the
  * same no-network executor-injection pattern already proven in
  * tests/orchestration-runtime.test.mjs ("provider backend executes tasks via
  * the model and records real output", asserting `run.tasks.every(t =>
- * /^specialist-output-/.test(t.output))`) and reused live by
+ * /^worker-profile-output-/.test(t.output))`) and reused live by
  * lib/certification/real-llm-scenarios.mjs's opt-in S3 scenario for the same
  * "write me a PRD" shape — no live LLM call, no API key, deterministic output.
  *
- * The real specialist output text is then handed to the real MCP
+ * The real Worker Profile output text is then handed to the real MCP
  * `author_artifact` entrypoint (lib/mcp/tools/artifact-author.mjs, exercised
  * the same way tests/functional/artifact-loop-provenance.functional.test.mjs
  * exercises it for construct-ifwhw.2), which writes the durable PRD file AND
  * a durable provenance observation — the embedded-contract leg of the paper
- * trail, since `invokeWorkflow` (lib/embedded-contract/workflow-invoke.mjs)
+ * trail, since `invokeProcedure` (lib/embedded-contract/procedure-invoke.mjs)
  * never threads an orchestration `runId` through by itself.
  *
  * The orchestration leg of the paper trail is then composed on top: the
- * researcher task (real producer of `researcher-to-product-manager`, per the
+ * researcher Assignment (real producer of `researcher-to-architect`, per the
  * run's own resolved contractChain) is given an output packet naming the
  * just-authored PRD's artifactPath — the exact insertion point
  * lib/orchestration/build-audit-record.mjs's header documents ("set
@@ -42,7 +42,7 @@
  *
  * No overlap found with construct-rf26.22 (refit verification suite): that
  * bead's required shape (flow checkpoint/resume, config-layer init tree,
- * custom-specialist authoring, binary smoke, full-gate run) is a distinct set
+ * custom Worker Profile authoring, binary smoke, full-gate run) is a distinct set
  * of functional-test additions with no PRD/paper-trail scenario.
  */
 
@@ -55,7 +55,7 @@ import test from 'node:test';
 
 import { runOrchestration } from '../../lib/orchestration/runtime.mjs';
 import { loadRun, saveRun } from '../../lib/orchestration/run-store.mjs';
-import { validateOutputPacket } from '../../lib/orchestration/worker.mjs';
+import { validateInputPacket, validateOutputPacket } from '../../lib/orchestration/worker.mjs';
 import { buildAuditRecord, materializeAuditRecord, loadAuditRecord } from '../../lib/orchestration/build-audit-record.mjs';
 import { authorArtifact } from '../../lib/mcp/tools/artifact-author.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
@@ -64,7 +64,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(__dirname, '..', '..');
 
 const MODEL = 'anthropic/claude-sonnet-4-6';
-const REQUEST_TEXT = 'Write me a PRD for a customer loyalty rewards program';
+const REQUEST_TEXT = 'Write me a PRD for a customer loyalty rewards program architecture';
 
 const dirs = [];
 function freshProject() {
@@ -75,7 +75,7 @@ function freshProject() {
 }
 test.after(() => { for (const d of dirs) { try { rmTmpDir(d); } catch {} } });
 
-test('write-me-a-PRD drives the full specialist chain to a durable PRD file with a linked run/task/gate paper trail', async (t) => {
+test('write-me-a-PRD drives the full Assignment chain to a durable PRD file with a linked run/task/gate paper trail', async (t) => {
   const { cwd, home } = freshProject();
 
   const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
@@ -92,7 +92,7 @@ test('write-me-a-PRD drives the full specialist chain to a durable PRD file with
   // Deterministic, no-network provider executor: one fixed Anthropic-shaped
   // response body per call, distinguishable by an incrementing counter. The
   // same shape satisfies both the plain callAnthropic path and the
-  // provider-native web-search loop a web-capable role (researcher) takes
+  // provider-native web-search loop a web-capable Worker Profile (researcher) takes
   // (lib/orchestration/worker.mjs's runNativeAnthropic reads the same
   // `content: [{type:'text', ...}]` blocks and stops immediately absent a
   // `pause_turn` stop_reason) — this mirrors the injection pattern in
@@ -104,7 +104,7 @@ test('write-me-a-PRD drives the full specialist chain to a durable PRD file with
     return {
       ok: true,
       json: async () => ({
-        content: [{ type: 'text', text: `specialist-output-${calls}: findings and PRD-shaping input for the loyalty rewards request.` }],
+        content: [{ type: 'text', text: `worker-profile-output-${calls}: findings and PRD-shaping input for the loyalty rewards request.` }],
       }),
     };
   };
@@ -117,31 +117,33 @@ test('write-me-a-PRD drives the full specialist chain to a durable PRD file with
   };
 
   const run = await runOrchestration(
-    { request: REQUEST_TEXT, requestedStrategy: 'orchestrated', workflowType: 'prd-draft', hostModel: MODEL, fileCount: 2, moduleCount: 1 },
+    { request: REQUEST_TEXT, requestedStrategy: 'orchestrated', procedureId: 'prd-draft', hostModel: MODEL, fileCount: 2, moduleCount: 1 },
     { env, cwd, workerBackend: 'provider', fetchImpl },
   );
 
-  assert.equal(run.status, 'completed', 'the full specialist chain executes deterministically with no network call');
-  assert.ok(run.tasks.length >= 2, 'a PRD request decomposes into a multi-specialist chain');
-  assert.ok(run.tasks.every((t) => t.status === 'done'), 'every specialist task in the chain completed');
+  assert.equal(run.status, 'completed', 'the full Assignment chain executes deterministically with no network call');
+  assert.ok(run.tasks.length >= 2, 'a PRD request decomposes into a multi-Assignment chain');
+  assert.ok(run.tasks.every((t) => t.status === 'done'), 'every Worker Profile Assignment in the chain completed');
   assert.ok(run.tasks.every((t) => /^provider:anthropic:/.test(t.executor)), 'every task executed via the injected deterministic provider, not a live call');
-  assert.ok(run.tasks.every((t) => /^specialist-output-/.test(t.output)), 'every task carries real (deterministic) specialist output, not a prepared stub');
+  assert.ok(run.tasks.every((t) => /^worker-profile-output-/.test(t.output)), 'every task carries real deterministic Worker Profile output, not a prepared stub');
 
-  const researcherTask = run.tasks.find((t) => t.role === 'researcher');
-  assert.ok(researcherTask, 'the PRD chain includes the researcher role that owns researcher-to-product-manager');
-  const contractChainEntry = run.plan.contractChain.find((c) => c.id === 'researcher-to-product-manager');
-  assert.ok(contractChainEntry, 'routeRequest resolved the researcher-to-product-manager contract into this real PRD run, not an arbitrary choice');
+  const researcherTask = run.tasks.find((t) => t.workerProfileId === 'researcher');
+  assert.ok(researcherTask, 'the PRD chain includes the researcher Worker Profile that owns researcher-to-architect');
+  const contractChainEntry = run.plan.contractChain.find((c) => c.id === 'researcher-to-architect');
+  assert.ok(contractChainEntry, 'routeRequest resolved the researcher-to-architect contract into this real PRD run, not an arbitrary choice');
 
-  const productManagerTask = run.tasks.find((t) => t.role === 'product-manager');
-  assert.ok(productManagerTask, 'the PRD chain includes the product-manager role');
+  const productManagerTask = run.tasks.find((t) => t.workerProfileId === 'product-manager');
+  assert.ok(productManagerTask, 'the PRD chain includes the product-manager Worker Profile');
+  const architectTask = run.tasks.find((t) => t.workerProfileId === 'architect');
+  assert.ok(architectTask, 'the architecture-shaped PRD chain includes the architect Worker Profile');
 
-  // Draft content grounded in the run's own real (deterministic) specialist
+  // Draft content grounded in the run's own real deterministic Worker Profile
   // output — not invented product claims — the same grounding discipline
   // real-llm-scenarios.mjs's live S3 scenario applies to real model output.
   const draftMarkdown = [
     '# Customer loyalty rewards program PRD',
     '',
-    `Drafted from specialist chain output for run ${run.runId}.`,
+    `Drafted from Worker Profile Assignment output for run ${run.runId}.`,
     '',
     '## Problem',
     '',
@@ -174,42 +176,47 @@ test('write-me-a-PRD drives the full specialist chain to a durable PRD file with
 
   // build-audit-record.mjs's documented insertion point: no orchestration task
   // populates outputPacket.artifactPath on its own, so the real authored path
-  // is attached here — deliberately incomplete on the other required
-  // researcher-to-product-manager fields (mirrors
+  // is attached here. The matching architect Assignment receives a deliberately
+  // incomplete input packet for the current researcher-to-architect contract (mirrors
   // tests/functional/build-audit-record.functional.test.mjs's own fixture) so
   // validateOutputPacket logs a real, runId-tagged gate verdict.
   const reloadedRun = loadRun(cwd, run.runId);
-  const reloadedResearcherTask = reloadedRun.tasks.find((t) => t.role === 'researcher');
-  reloadedResearcherTask.outputContractId = 'researcher-to-product-manager';
+  const reloadedResearcherTask = reloadedRun.tasks.find((t) => t.workerProfileId === 'researcher');
+  reloadedResearcherTask.outputContractId = 'researcher-to-architect';
   reloadedResearcherTask.outputPacket = {
     problem: researcherTask.output,
     artifactPath: artifactAbsPath,
   };
+  const reloadedArchitectTask = reloadedRun.tasks.find((t) => t.workerProfileId === 'architect');
+  reloadedArchitectTask.inputContractId = 'researcher-to-architect';
+  reloadedArchitectTask.packet = { artifactPath: artifactAbsPath };
   saveRun(cwd, reloadedRun);
 
   const outputCheck = validateOutputPacket(reloadedResearcherTask, { cwd, runId: run.runId });
-  assert.equal(outputCheck.contractStatus, 'contract-failed', 'the deliberately incomplete packet fails researcher-to-product-manager');
-  assert.ok(outputCheck.violations.includes('users'), 'the missing required field is reported, not silently dropped');
+  assert.equal(outputCheck.contractStatus, 'ok', 'the current researcher output contract accepts the authored artifact packet');
+  const inputCheck = validateInputPacket(reloadedArchitectTask, { cwd, runId: run.runId, enforcement: 'warn' });
+  assert.equal(inputCheck.ok, false, 'the deliberately incomplete handoff fails researcher-to-architect');
+  assert.ok(inputCheck.warnings.includes('question'), 'the missing required field is reported, not silently dropped');
 
   const record = buildAuditRecord(cwd, run.runId);
   assert.ok(record, 'buildAuditRecord resolves a record for this real run');
   assert.equal(record.runId, run.runId);
   assert.equal(record.taskChain.length, run.tasks.length, 'the paper trail links the full task chain, not a subset');
-  assert.ok(record.taskChain.some((t) => t.role === 'researcher' && t.status === 'done'));
-  assert.ok(record.taskChain.some((t) => t.role === 'product-manager' && t.status === 'done'));
+  assert.ok(record.taskChain.some((t) => t.workerProfileId === 'researcher' && t.status === 'done'));
+  assert.ok(record.taskChain.some((t) => t.workerProfileId === 'product-manager' && t.status === 'done'));
   assert.ok(
-    record.traceEvents.some((e) => e.eventType === 'worker.completed' && e.role === 'product-manager'),
+    record.traceEvents.some((e) => e.eventType === 'worker.completed'),
     'the paper trail links real lifecycle trace events emitted during execution',
   );
   assert.ok(record.gateVerdicts.length >= 1, 'the paper trail links a real gate verdict tied to this run');
-  const gateVerdict = record.gateVerdicts.find((v) => v.contractId === 'researcher-to-product-manager');
-  assert.ok(gateVerdict, 'the gate verdict is the researcher-to-product-manager contract this PRD run actually resolved');
+  const gateVerdict = record.gateVerdicts.find((v) => v.contractId === 'researcher-to-architect');
+  assert.ok(gateVerdict, 'the gate verdict is the researcher-to-architect contract this PRD run actually resolved');
   assert.equal(gateVerdict.verdict, 'CONTRACT_VIOLATION');
 
   const artifactVerdictEntry = record.artifactVerdicts.find((v) => v.taskId === reloadedResearcherTask.id);
   assert.ok(artifactVerdictEntry, 'the paper trail links a postcondition verdict for the authored PRD file');
   assert.equal(artifactVerdictEntry.verdict.artifactPath, artifactAbsPath, 'the postcondition verdict points at the same durable PRD file written to disk');
-  assert.equal(artifactVerdictEntry.verdict.checked, true, 'researcher-to-product-manager resolved a real contract to check postconditions against');
+  assert.equal(artifactVerdictEntry.verdict.checked, true, 'researcher-to-architect resolved a real contract to check postconditions against');
 
   const materialized = materializeAuditRecord(cwd, run.runId);
   assert.equal(materialized.runId, run.runId);

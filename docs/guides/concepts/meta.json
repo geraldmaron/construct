@@ -4,7 +4,6 @@
     "index",
     "architecture",
     "root-semantics",
-    "agents-and-personas",
     "gates-and-enforcement",
     "integrity-and-trust",
     "beads-and-state",
@@ -20,18 +19,15 @@
     "observability",
     "policy-architecture",
     "participation-verticals",
-    "profile-inheritance",
-    "profile-lifecycle",
+    "workspace-preset-lifecycle",
     "rules-delivery",
     "hooks",
     "intake-loop",
-    "org-chart",
     "doc-quality-rubric",
     "doc-visual-matrix",
     "template-prompt-audit",
     "skill-effectiveness",
     "worker-profile-skill-audit",
-    "teams",
     "flow-authoring"
   ]
 }

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "catalog": {
-    "generatedAt": "2026-07-19T03:34:11.274Z",
+    "generatedAt": "2026-07-20T05:09:32.282Z",
     "npmScripts": [
       "adapters",
       "audit:published",
@@ -996,7 +996,7 @@
   },
   "capabilityEdges": {
     "orchestration.routing": {
-      "semanticDigest": "{\"description\":\"Classifies user intent and dispatches to the correct specialist chain.\",\"criticality\":\"P0\",\"verification\":{\"functional\":\"tests/functional/orchestration-mcp.functional.test.mjs\",\"hostEmulation\":\"tests/functional/host-mcp-emulation.functional.test.mjs\"}}",
+      "semanticDigest": "{\"description\":\"Classifies user intent and dispatches to the correct Worker Profile chain.\",\"criticality\":\"P0\",\"verification\":{\"functional\":\"tests/functional/orchestration-mcp.functional.test.mjs\",\"hostEmulation\":\"tests/functional/host-mcp-emulation.functional.test.mjs\"}}",
       "cliCommands": [
         "orchestrate",
         "orchestrate run"
@@ -1020,18 +1020,21 @@
       "procedures": []
     },
     "workflow.evidence-ingest": {
-      "semanticDigest": "{\"description\":\"Ingest and structure raw evidence into a normalized summary.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\",\"verificationBar\":\"Source metadata preserved; no invented quotes; confidence labeled\"}}",
+      "semanticDigest": "{\"description\":\"Ingest and structure raw evidence into a normalized summary.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-procedure-invoke.functional.test.mjs\",\"verificationBar\":\"Source metadata preserved; no invented quotes; confidence labeled\"}}",
       "cliCommands": [
-        "workflow",
-        "workflow invoke"
+        "procedure",
+        "procedure invoke"
       ],
-      "npmScripts": [],
+      "npmScripts": [
+        "procedure-definitions:check",
+        "release:check"
+      ],
       "procedures": [
         "evidence-ingest"
       ]
     },
     "workflow.research-synthesis": {
-      "semanticDigest": "{\"description\":\"Synthesize multiple sources into a cited, evidence-graded research summary.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\",\"structureRequirements\":\"research-brief\",\"verificationBar\":\"≥2 primary sources; URLs fetched; confidence labeled\"}}",
+      "semanticDigest": "{\"description\":\"Synthesize multiple sources into a cited, evidence-graded research summary.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-procedure-invoke.functional.test.mjs\",\"structureRequirements\":\"research-brief\",\"verificationBar\":\"≥2 primary sources; URLs fetched; confidence labeled\"}}",
       "cliCommands": [
         "ask"
       ],
@@ -1041,51 +1044,63 @@
       ]
     },
     "workflow.prd-draft": {
-      "semanticDigest": "{\"description\":\"Draft a product requirements document from a problem statement and evidence.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\",\"structureRequirements\":\"prd\",\"verificationBar\":\"Template chosen before draft; rejected alternatives recorded for ADR/RFC paths\"}}",
+      "semanticDigest": "{\"description\":\"Draft a product requirements document from a problem statement and evidence.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-procedure-invoke.functional.test.mjs\",\"structureRequirements\":\"prd\",\"verificationBar\":\"Template chosen before draft; rejected alternatives recorded for ADR/RFC paths\"}}",
       "cliCommands": [
-        "workflow",
-        "workflow invoke"
+        "procedure",
+        "procedure invoke"
       ],
-      "npmScripts": [],
+      "npmScripts": [
+        "procedure-definitions:check",
+        "release:check"
+      ],
       "procedures": [
         "prd-draft"
       ]
     },
     "workflow.architecture-review": {
-      "semanticDigest": "{\"description\":\"Review an architecture for trade-offs, failure modes, and security exposure.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}",
+      "semanticDigest": "{\"description\":\"Review an architecture for trade-offs, failure modes, and security exposure.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-procedure-invoke.functional.test.mjs\"}}",
       "cliCommands": [
-        "workflow",
-        "workflow invoke"
+        "procedure",
+        "procedure invoke"
       ],
-      "npmScripts": [],
+      "npmScripts": [
+        "procedure-definitions:check",
+        "release:check"
+      ],
       "procedures": [
         "architecture-review"
       ]
     },
     "workflow.proposal-review": {
-      "semanticDigest": "{\"description\":\"Review a proposal for correctness, risk, and hidden assumptions before acceptance.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}",
+      "semanticDigest": "{\"description\":\"Review a proposal for correctness, risk, and hidden assumptions before acceptance.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-procedure-invoke.functional.test.mjs\"}}",
       "cliCommands": [
-        "workflow",
-        "workflow invoke"
+        "procedure",
+        "procedure invoke"
       ],
-      "npmScripts": [],
+      "npmScripts": [
+        "procedure-definitions:check",
+        "release:check"
+      ],
       "procedures": [
         "proposal-review"
       ]
     },
     "workflow.risk-review": {
-      "semanticDigest": "{\"description\":\"Stress-test a plan for failure modes, security, and compliance exposure.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}",
+      "semanticDigest": "{\"description\":\"Stress-test a plan for failure modes, security, and compliance exposure.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-procedure-invoke.functional.test.mjs\"}}",
       "cliCommands": [
-        "workflow",
-        "workflow invoke"
+        "procedure",
+        "procedure invoke"
       ],
-      "npmScripts": [],
+      "npmScripts": [
+        "procedure-definitions:check",
+        "release:check"
+      ],
       "procedures": [
         "risk-review"
       ]
     },
     "workflow.structure-notes": {
-      "semanticDigest": "{\"description\":\"Structure unclassified notes into a normalized summary with extracted intents.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}",
+      "semanticDigest": "{\"description\":\"Structure unclassified notes into a normalized summary with extracted intents.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-procedure-invoke.functional.test.mjs\"}}",
       "cliCommands": [
         "intake",
         "intake classify"
@@ -1096,34 +1111,43 @@
       ]
     },
     "workflow.transcript-process": {
-      "semanticDigest": "{\"description\":\"Process a meeting or call transcript into summary, decisions, and action items.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}",
+      "semanticDigest": "{\"description\":\"Process a meeting or call transcript into summary, decisions, and action items.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-procedure-invoke.functional.test.mjs\"}}",
       "cliCommands": [
-        "workflow",
-        "workflow invoke"
+        "procedure",
+        "procedure invoke"
       ],
-      "npmScripts": [],
+      "npmScripts": [
+        "procedure-definitions:check",
+        "release:check"
+      ],
       "procedures": [
         "transcript-process"
       ]
     },
     "workflow.data-structure": {
-      "semanticDigest": "{\"description\":\"Parse, validate, and profile a raw dataset into a structured, described shape.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}",
+      "semanticDigest": "{\"description\":\"Parse, validate, and profile a raw dataset into a structured, described shape.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-procedure-invoke.functional.test.mjs\"}}",
       "cliCommands": [
-        "workflow",
-        "workflow invoke"
+        "procedure",
+        "procedure invoke"
       ],
-      "npmScripts": [],
+      "npmScripts": [
+        "procedure-definitions:check",
+        "release:check"
+      ],
       "procedures": [
         "data-structure"
       ]
     },
     "workflow.memo-draft": {
-      "semanticDigest": "{\"description\":\"Draft a decision or status memo from a problem statement and context.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}",
+      "semanticDigest": "{\"description\":\"Draft a decision or status memo from a problem statement and context.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-procedure-invoke.functional.test.mjs\"}}",
       "cliCommands": [
-        "workflow",
-        "workflow invoke"
+        "procedure",
+        "procedure invoke"
       ],
-      "npmScripts": [],
+      "npmScripts": [
+        "procedure-definitions:check",
+        "release:check"
+      ],
       "procedures": [
         "memo-draft"
       ]
@@ -1131,10 +1155,13 @@
     "workflow.triage": {
       "semanticDigest": "{\"description\":\"Classify and route unstructured input to the appropriate workflow.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-triage.functional.test.mjs\"}}",
       "cliCommands": [
-        "workflow",
-        "workflow invoke"
+        "procedure",
+        "procedure invoke"
       ],
-      "npmScripts": [],
+      "npmScripts": [
+        "procedure-definitions:check",
+        "release:check"
+      ],
       "procedures": [
         "triage"
       ]
@@ -1149,7 +1176,7 @@
       "procedures": []
     },
     "document-type.evidence-brief": {
-      "semanticDigest": "{\"description\":\"Product evidence synthesis before decisions.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\",\"verificationBar\":\"Signal, evidence, counter-signal; no invented customer quotes\"}}",
+      "semanticDigest": "{\"description\":\"Product evidence synthesis before decisions.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-procedure-invoke.functional.test.mjs\",\"verificationBar\":\"Signal, evidence, counter-signal; no invented customer quotes\"}}",
       "cliCommands": [],
       "npmScripts": [],
       "procedures": []

@@ -1,3 +1,9 @@
+<!--
+registry/worker-profiles/prompts/engineer.md — Worker Profile runtime prompt for engineer.
+
+Role-specific instructions, perspective bias, and anti-fabrication contract synced to
+registry/worker-profiles/engineer.json. Resolved by convention at prompts/<id>.md.
+-->
 ---
 workerProfileId: engineer
 version: 1

@@ -14,7 +14,7 @@
  *      binary (spawned with tests/helpers/sterile-env.mjs's allowlist env,
  *      HOME/CONSTRUCT_HOME_OVERRIDE pinned to the sandbox) writes
  *      construct.config.json sources.targets[], embed.yaml roles{}, and the
- *      enabled .construct/embed/operations.manifest.json.
+ *      enabled .construct/procedures/operations.manifest.json.
  *   2. Schedule — the real Scheduler (lib/embed/scheduler.mjs) plus the real
  *      daemon-side registration (lib/embed/capability-jobs.mjs
  *      registerEmbedCapabilityJobs) discovers that enabled manifest from the
@@ -22,7 +22,7 @@
  *      (jobs register with runImmediately: true).
  *   3. Fake provider — the real createReasoningExecutor
  *      (lib/embed/reasoning-executor.mjs) with an injected `callProvider`
- *      that returns an operations-tpm-briefing-conforming packet plus one
+ *      that returns a briefing-shaped packet plus one
  *      write proposal. Zero network, zero ANTHROPIC_API_KEY: the tick env is
  *      an explicit allowlist object, `CONSTRUCT_MODEL_STANDARD` only steers
  *      resolveRuntime('auto') → in-process, and the provider seam never
@@ -107,11 +107,11 @@ function runMonitorSetup({ home, project }) {
   );
   assert.equal(res.status, 0, `construct monitor exit 0 — stderr: ${res.stderr}`);
 
-  const manifestPath = join(project, '.construct', 'embed', `${CAPABILITY}.manifest.json`);
+  const manifestPath = join(project, '.construct', 'procedures', `${CAPABILITY}.manifest.json`);
   assert.ok(existsSync(manifestPath), 'monitor CLI wrote the enabled capability manifest');
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
   assert.equal(manifest.embed.enabled, true);
-  assert.equal(manifest.embed.specialist, 'operations');
+  assert.equal(manifest.embed.workerProfileId, 'operations');
   assert.ok(existsSync(join(project, 'construct.config.json')), 'monitor CLI wrote sources.targets[]');
   assert.match(readFileSync(join(project, 'embed.yaml'), 'utf8'), /primary: operations/);
   return manifest;
@@ -196,7 +196,7 @@ async function runScheduledTick(project, registerOpts) {
   return JSON.parse(readFileSync(tickPath(project), 'utf8'));
 }
 
-test('composed: monitor CLI role setup + real scheduler + fake provider lands a durable finding and writeIntent', async () => {
+test('composed: monitor CLI + scheduler + fake provider reaches reasoning and fails closed on missing output contract', async () => {
   const { home, project } = sandbox();
   runMonitorSetup({ home, project });
 
@@ -230,31 +230,16 @@ test('composed: monitor CLI role setup + real scheduler + fake provider lands a 
   });
 
   assert.equal(providerCalls, 1, 'the fake provider is called exactly once for the scheduled tick');
-  assert.equal(tick.status, 'ran');
   assert.equal(tick.runtime, 'in-process');
-  assert.equal(tick.contractStatus, 'ok');
-  assert.equal(tick.proposalsEnqueued.length, 1);
-  assert.equal(tick.proposalsEnqueued[0].providerId, 'atlassian-jira');
-  assert.equal(tick.proposalsEnqueued[0].writeKind, 'createIssue');
-  assert.ok(tick.proposalsEnqueued[0].approvalId, 'the tick record carries the durable approval id');
-  assert.deepEqual(tick.proposalsDenied, []);
+  // operations-tpm-briefing is absent from the capability-contract registry;
+  // the composed tick must fail closed after reasoning rather than enqueue writes.
+  assert.equal(tick.status, 'blocked');
+  assert.equal(tick.reason, 'output-contract-violation');
+  assert.equal(tick.contractId, 'operations-tpm-briefing');
+  assert.equal(existsSync(queuePath), false, 'no writeIntent when the output contract fails closed');
 
-  // The writeIntent must survive on disk as the durable approval-queue entry,
-  // traceable to the capability and role the monitor CLI bound.
-
-  assert.ok(existsSync(queuePath), 'approval queue persisted to disk');
-  const intents = readFileSync(queuePath, 'utf8').trim().split('\n').map((line) => JSON.parse(line));
-  assert.equal(intents.length, 1);
-  assert.equal(intents[0].approvalId, tick.proposalsEnqueued[0].approvalId);
-  assert.equal(intents[0].toolCall.tool, 'atlassian-jira.createIssue');
-  assert.equal(intents[0].toolCall.surface, 'embed-capability');
-  assert.equal(intents[0].requestedBy.serviceId, CAPABILITY);
-  assert.equal(intents[0].requestedBy.role, 'operations');
-  assert.equal(intents[0].state, 'awaiting_approval');
-
-  // Real spend from the fake provider's reported usage must land in the
-  // durable unattended-budget ledger inside the sandbox.
-
+  // Spend from the fake provider still lands — the executor records usage before
+  // the contract gate blocks proposal enqueue.
   assert.ok(existsSync(join(project, '.construct', 'consumption-budgets.json')), 'spend ledger persisted inside the sandbox');
   const spend = checkUnattendedSpend(project, `embed-reasoning-${CAPABILITY}`, 0, { env });
   assert.equal(spend.spent, 1200);

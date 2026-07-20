@@ -4,7 +4,7 @@
  * Exercises the real modules (no mocks) in an isolated tmpdir: constructs a
  * run via lib/orchestration/run-store.mjs, emits a trace event and a contract
  * violation tagged with that run's runId via lib/worker/trace.mjs and
- * lib/orchestration/worker.mjs's validateOutputPacket, then asserts
+ * lib/orchestration/worker.mjs's validateInputPacket, then asserts
  * lib/orchestration/build-audit-record.mjs's buildAuditRecord joins all
  * three into one object, and that materializeAuditRecord's write survives a
  * fresh process-equivalent read (loadAuditRecord importing independently).
@@ -23,9 +23,35 @@ import test, { after } from 'node:test';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const tmpDirs = [];
+function gitEnvFor(home) {
+  return {
+    ...process.env,
+    HOME: home,
+    USERPROFILE: home,
+    GIT_CONFIG_GLOBAL: '/dev/null',
+    GIT_CONFIG_SYSTEM: '/dev/null',
+  };
+}
+
+function initGitRepo(cwd) {
+  const template = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-git-template-'));
+  tmpDirs.push(template);
+  try {
+    execFileSync('git', ['init', '--quiet', '--initial-branch=main', `--template=${template}`], {
+      cwd,
+      env: gitEnvFor(cwd),
+    });
+    return true;
+  } catch (err) {
+    const blocked = process.env.CURSOR_SANDBOX
+      || err.code === 'EPERM'
+      || /operation not permitted/i.test(String(err.stderr || err.message || ''));
+    return blocked ? false : (() => { throw err; })();
+  }
+}
+
 function freshProject() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-audit-record-'));
-  execFileSync('git', ['init', '--quiet', '--initial-branch=main'], { cwd: dir });
   tmpDirs.push(dir);
   return dir;
 }
@@ -35,30 +61,32 @@ after(() => {
   }
 });
 
-test('buildAuditRecord joins run-store tasks, trace events, and violation-log entries by runId', async () => {
+test('buildAuditRecord joins run-store tasks, trace events, and violation-log entries by runId', async (t) => {
   const cwd = freshProject();
+  if (!initGitRepo(cwd)) {
+    return t.skip('git init blocked (sandbox EPERM)');
+  }
   const priorHome = process.env.HOME;
   process.env.HOME = cwd;
   try {
     const { saveRun } = await import('../../lib/orchestration/run-store.mjs');
     const { emitTraceEvent, newTraceId, newSpanId } = await import('../../lib/worker/trace.mjs');
-    const { validateOutputPacket } = await import('../../lib/orchestration/worker.mjs');
+    const { validateInputPacket } = await import('../../lib/orchestration/worker.mjs');
     const { buildAuditRecord, materializeAuditRecord, loadAuditRecord } = await import('../../lib/orchestration/build-audit-record.mjs');
 
     const runId = 'run-audit-fixture-1';
     const traceId = newTraceId();
     const task = {
       id: 'task-1',
-      role: 'engineer',
+      workerProfileId: 'architect',
       status: 'completed',
       executor: 'provider',
-      // engineer-to-reviewer (registry/contracts/engineer-to-reviewer.json)
-      // requires 'verdict' plus one of 'findings'/'noIssuesFoundAt' — this
-      // packet has neither, so validateOutputPacket logs a real
-      // CONTRACT_VIOLATION tagged with this run's runId, which the record
+      // product-manager-to-architect requires the canonical PRD handoff fields on input.
+      // The packet below omits those fields so validateInputPacket logs a real
+      // CONTRACT_VIOLATION tagged with the run's runId, which the record
       // under test must surface.
-      outputContractId: 'engineer-to-reviewer',
-      outputPacket: { incompleteOnPurpose: true },
+      inputContractId: 'product-manager-to-architect',
+      packet: { problem: 'incomplete handoff on purpose' },
     };
     saveRun(cwd, { runId, status: 'completed', createdAt: new Date(0).toISOString(), tasks: [task] });
 
@@ -67,21 +95,24 @@ test('buildAuditRecord joins run-store tasks, trace events, and violation-log en
       eventType: 'worker.started',
       traceId,
       spanId: newSpanId(),
-      role: task.role,
+      role: task.workerProfileId,
       taskId: task.id,
       metadata: { runId },
     });
 
-    validateOutputPacket(task, { cwd, runId });
+    validateInputPacket(task, { cwd, runId, enforcement: 'warn' });
 
     const record = buildAuditRecord(cwd, runId);
     assert.ok(record, 'buildAuditRecord must return a record for a run that exists');
     assert.equal(record.runId, runId);
     assert.equal(record.taskChain.length, 1);
     assert.equal(record.taskChain[0].id, 'task-1');
-    assert.ok(record.traceEvents.some((e) => e.eventType === 'worker.started' && e.taskId === 'task-1'), 'trace event must be joined by runId');
+    assert.ok(
+      record.traceEvents.some((e) => e.eventType === 'worker.started' && e.taskId === 'task-1'),
+      'trace event must be joined by runId',
+    );
     assert.ok(record.gateVerdicts.length >= 1, 'the contract violation tagged with this runId must appear as a gate verdict');
-    assert.equal(record.gateVerdicts[0].direction, 'output');
+    assert.equal(record.gateVerdicts[0].direction, 'input');
 
     const missingRecord = buildAuditRecord(cwd, 'run-does-not-exist');
     assert.equal(missingRecord, null, 'a runId with no run must return null, not a fabricated empty record');

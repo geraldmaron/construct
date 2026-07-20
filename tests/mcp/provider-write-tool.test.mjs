@@ -221,7 +221,7 @@ describe('provider_write — E4 embedBindings enforcement for embedded-specialis
     };
 
     const result = await providerWrite(
-      { provider: 'jira', item: ISSUE_ITEM, dry_run: false, specialist_id: 'writer' },
+      { provider: 'jira', item: ISSUE_ITEM, dry_run: false, worker_profile_id: 'writer' },
       { ...makeAdapterDeps(transport), embedBindings },
     );
 
@@ -233,7 +233,7 @@ describe('provider_write — E4 embedBindings enforcement for embedded-specialis
   it('denies a specialist with no embedBindings entry at all', async () => {
     const transport = createFakeJiraTransport({ projects: { PROJ: { issueTypes: { Task: {} } } } });
     const result = await providerWrite(
-      { provider: 'jira', item: ISSUE_ITEM, dry_run: false, specialist_id: 'unbound-specialist' },
+      { provider: 'jira', item: ISSUE_ITEM, dry_run: false, worker_profile_id: 'unbound-specialist' },
       { ...makeAdapterDeps(transport), embedBindings: {} },
     );
     assert.equal(result.status, 'denied');
@@ -248,7 +248,7 @@ describe('provider_write — E4 embedBindings enforcement for embedded-specialis
     };
 
     const result = await providerWrite(
-      { provider: 'jira', item: ISSUE_ITEM, dry_run: true, specialist_id: 'writer' },
+      { provider: 'jira', item: ISSUE_ITEM, dry_run: true, worker_profile_id: 'writer' },
       { ...makeAdapterDeps(transport), embedBindings },
     );
 
@@ -256,7 +256,7 @@ describe('provider_write — E4 embedBindings enforcement for embedded-specialis
     assert.equal(transport.createIssueCallCount(), 0);
   });
 
-  it('non-embed callers (no specialist_id) are unaffected by embedBindings', async () => {
+  it('non-embed callers (no worker_profile_id) are unaffected by embedBindings', async () => {
     const transport = createFakeJiraTransport({ projects: { PROJ: { issueTypes: { Task: {} } } } });
     const result = await providerWrite(
       { provider: 'jira', item: ISSUE_ITEM, dry_run: true },

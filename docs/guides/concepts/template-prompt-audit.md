@@ -1,13 +1,10 @@
 <!--
 docs/guides/concepts/template-prompt-audit.md — quality audit of every doc template and
-specialist prompt against the rubric in doc-quality-rubric.md. The backlog source
-of truth for the research-grade remediation (epic construct-7zrh): each remediation
-bead points at a row. Classifications are an assessment to re-verify on touch, not
-a settled score; remediation status is updated as items land.
+Worker Profile prompt against the rubric in doc-quality-rubric.md.
 -->
 # Template & prompt quality audit
 
-Every document template (`templates/docs/*.md`) and specialist prompt (`specialists/prompts/cx-*.md`) judged against [doc-quality-rubric.md](doc-quality-rubric.md): **strong** (an expert would respect it), **adequate** (sound structure, missing a depth dimension), **thin** (placeholder-level, not shippable). The gap column names what a domain expert would add; the standard column anchors it.
+Every document template (`templates/docs/*.md`) and Worker Profile prompt (`registry/worker-profiles/prompts/*.md`) judged against [doc-quality-rubric.md](doc-quality-rubric.md): **strong** (an expert would respect it), **adequate** (sound structure, missing a depth dimension), **thin** (placeholder-level, not shippable). The gap column names what a domain expert would add; the standard column anchors it.
 
 This is the assessment that drives remediation — re-verify a row when you touch it rather than trusting the label.
 

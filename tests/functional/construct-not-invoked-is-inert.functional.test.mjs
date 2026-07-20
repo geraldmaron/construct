@@ -49,8 +49,8 @@ function runHook(name, payload, env) {
 // role machinery is on.
 const TASK = {
   tool_name: 'Task',
-  tool_input: { subagent_type: 'architect', description: 'design the billing service' },
-  tool_result: { result: 'Design complete. next:engineer to implement.' },
+  tool_input: { subagent_type: 'cx-architect', description: 'design the billing service' },
+  tool_result: { result: 'Design complete. next:cx-engineer to implement.' },
 };
 
 test('default: a cx dispatch enqueues the role-pending handoff', (t) => {

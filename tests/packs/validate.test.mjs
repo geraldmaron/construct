@@ -2,8 +2,8 @@
  * tests/packs/validate.test.mjs — pack manifest validator unit tests.
  *
  * Packs are third-party distributable bundles (id/version/compatVersion per
- * ADR-0055) that can contribute specialists, prompts, tools, and provider
- * capability grants; validating a pack's manifest before it is trusted —
+ * ADR-0055) that can contribute Worker Profiles, prompts, tools, and provider
+ * capability grants. Validating a pack's manifest before it is trusted —
  * rejecting unknown fields, incompatible compatVersion, and embedBindings
  * naming providers/capabilities outside the known-provider allowlist — is
  * supply-chain integrity checking for that ingestion path.
@@ -190,7 +190,7 @@ test('validatePackManifest embedBindings (LMCP-E4)', async (t) => {
       },
     }, { knownProviders: KNOWN_PROVIDERS });
     assert.equal(result.valid, false);
-    assert.ok(result.errors.some(e => e.includes('not in this specialist\'s providers[] grant')));
+    assert.ok(result.errors.some(e => e.includes('not in this worker profile\'s providers[] grant')));
   });
 
   await t.test('unrecognized embedBindings field name fails with a path', () => {

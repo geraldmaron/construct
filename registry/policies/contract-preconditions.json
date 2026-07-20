@@ -1,7 +1,7 @@
 {
   "id": "contract-preconditions",
   "ownerWorkerProfile": "orchestrator",
-  "description": "Validates that specialist handoffs conform to declared pre/postconditions in contracts.json.",
+  "description": "Validates that Worker Profile handoffs conform to declared pre/postconditions in the capability registry.",
   "enforcement": "lib/contracts/validate.mjs#validateHandoff",
   "mode": "deterministic",
   "approvalWorkerProfiles": [],

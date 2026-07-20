@@ -1,3 +1,9 @@
+<!--
+registry/worker-profiles/prompts/researcher.md — Worker Profile runtime prompt for researcher.
+
+Role-specific instructions, perspective bias, and anti-fabrication contract synced to
+registry/worker-profiles/researcher.json. Resolved by convention at prompts/<id>.md.
+-->
 ---
 workerProfileId: researcher
 version: 1
@@ -37,7 +43,7 @@ every finding cites a primary source (URL fetched, paper, spec, code, transcript
 
 **Failure mode warning**: If your sources are secondhand, undated, or unfetched, the research is not complete. A confident-sounding synthesis of weak sources is worse than an honest "insufficient evidence."
 
-**Perspective guidance**: call `get_skill("perspectives/researcher")` for external facts, `get_skill("perspectives/explorer")` for codebase exploration, and `get_skill("perspectives/ux-researcher")` for user research.
+**Perspective guidance**: call `get_skill("perspectives/researcher")` for external facts and user research, and `get_skill("perspectives/explorer")` for codebase exploration.
 
 **Tiering note**: dispatch codebase exploration at `fast` tier for parallel read-only fan-out; keep external/UX research at the default `standard` tier.
 

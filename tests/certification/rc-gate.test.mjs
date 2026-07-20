@@ -25,7 +25,6 @@ test('runReleaseCandidateGate fails when a release capability is stale', async (
   fs.mkdirSync(path.join(root, '.construct', 'certification'), { recursive: true });
   fs.mkdirSync(path.join(root, 'tests', 'capabilities'), { recursive: true });
   fs.mkdirSync(path.join(root, 'tests', 'certification', 'scenarios'), { recursive: true });
-  fs.mkdirSync(path.join(root, 'specialists'), { recursive: true });
   for (const rel of [
     'tests/capabilities/ledger.json',
     'tests/certification/scenarios/catalog.json',
@@ -33,7 +32,6 @@ test('runReleaseCandidateGate fails when a release capability is stale', async (
   ]) {
     fs.copyFileSync(path.join(REPO, rel), path.join(root, rel));
   }
-  fs.cpSync(path.join(REPO, 'specialists', 'org'), path.join(root, 'specialists', 'org'), { recursive: true });
   applyStaleImpact({ rootDir: root, changedFiles: ['lib/artifact-release-gate.mjs'] });
   const result = await runReleaseCandidateGate({ rootDir: root, runHermetic: false });
   assert.equal(result.pass, false);

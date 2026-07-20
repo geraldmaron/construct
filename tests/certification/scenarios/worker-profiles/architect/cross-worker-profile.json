@@ -1,9 +1,9 @@
 {
   "schemaVersion": 2,
-  "specialistId": "architect",
-  "capabilityId": "specialist.prompt",
+  "workerProfileId": "architect",
+  "capabilityId": "worker-profile.prompt",
   "mode": "normal",
-  "scenarioKind": "cross-specialist",
+  "scenarioKind": "cross-worker-profile",
   "representativeTask": {
     "prompt": "Design the caching layer and hand off an implementable spec to engineering, with the interface contract explicit.",
     "inputs": {}

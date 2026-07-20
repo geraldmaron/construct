@@ -1,3 +1,9 @@
+<!--
+registry/worker-profiles/prompts/architect.md — Worker Profile runtime prompt for architect.
+
+Role-specific instructions, perspective bias, and anti-fabrication contract synced to
+registry/worker-profiles/architect.json. Resolved by convention at prompts/<id>.md.
+-->
 ---
 workerProfileId: architect
 version: 1

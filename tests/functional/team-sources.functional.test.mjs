@@ -22,9 +22,8 @@ import test, { before, after } from 'node:test';
 import {
   resolveTeamSources,
   targetsToEmbedSourcesWithFilters,
+  validateSourceTarget,
 } from '../../lib/config/source-targets.mjs';
-import { validate } from '../../lib/registry/validator.mjs';
-import { loadRegistry } from '../../lib/registry/loader.mjs';
 import { demandFetch } from '../../lib/embed/demand-fetch.mjs';
 import { listObservations, getObservation } from '../../lib/observation-store.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
@@ -70,29 +69,27 @@ test('a team resolves its declared sources and threads filters into tagged embed
   assert.equal(jira.jql, 'status != Done');
 });
 
-test('the unified-registry schema accepts a team with typed sources', () => {
-  const base = loadRegistry({ skipValidation: true });
-  const clone = JSON.parse(JSON.stringify(base));
-  const firstTeam = Object.keys(clone.teams)[0];
-  clone.teams[firstTeam].sources = [
-    { id: 'main-repo', provider: 'github', selector: { repo: 'anthropic/construct' }, filters: { refs: ['prs'] } },
-  ];
-  const result = validate(clone);
-  assert.equal(result.ok, true, `team-with-sources should validate: ${JSON.stringify(result.errors || [])}`);
+test('typed integration source targets validate as standalone config records', () => {
+  const errors = validateSourceTarget({
+    id: 'main-repo',
+    provider: 'github',
+    selector: { repo: 'anthropic/construct' },
+    filters: { refs: ['prs'] },
+  });
+  assert.equal(errors.length, 0, `typed source target should validate: ${JSON.stringify(errors)}`);
 });
 
 test('provider_fetch rejects a target outside the team with a typed OUT_OF_SCOPE error', async () => {
-  // product-group exists in the real registry but declares no sources, so any
-  // requested target id is out of scope — must be a typed refusal, not a fetch.
   const result = await demandFetch({
     query: 'anything',
-    teamId: 'product-group',
+    teamId: 'empty-group',
     targetIds: ['some-other-teams-repo'],
     rootDir: process.cwd(),
+    registry: { teams: { 'empty-group': { sources: [] } } },
   });
   assert.equal(result.ok, false);
   assert.equal(result.reason, 'OUT_OF_SCOPE');
-  assert.equal(result.teamId, 'product-group');
+  assert.equal(result.teamId, 'empty-group');
 });
 
 test('demandFetch drives reads from the team\'s sources and tags observations team:/target:', async () => {

@@ -1,3 +1,9 @@
+<!--
+registry/worker-profiles/prompts/operations.md — Worker Profile runtime prompt for operations.
+
+Role-specific instructions, perspective bias, and anti-fabrication contract synced to
+registry/worker-profiles/operations.json. Resolved by convention at prompts/<id>.md.
+-->
 ---
 workerProfileId: operations
 version: 1
