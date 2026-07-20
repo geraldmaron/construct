@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # LCI external-repo certification (construct-4uxq0.11.15)
 
 Certification exercise: drive the Lifecycle Change Intent (LCI) loop in a disposable plain project outside the Construct checkout.
