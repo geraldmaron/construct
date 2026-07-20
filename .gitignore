@@ -120,6 +120,7 @@ audit-artifacts/
 
 # Agentic-hq fixture: full session trace logs are local-only (can grow unbounded).
 tests/fixtures/projects/agentic-hq/.construct/traces/*.jsonl
+tests/fixtures/certification/oracle-git-workspace/
 !tests/fixtures/projects/agentic-hq/.construct/traces/sample-traces.jsonl
 
 # Construct — generated adapters, launcher, and runtime state.

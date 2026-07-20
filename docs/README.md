@@ -54,7 +54,7 @@ Use **`.md`** for every prose page (CommonMark + YAML frontmatter). Reserve **`.
 These directories stay in git for Construct maintainers. They are excluded from the published docs site and not linked from README.
 
 - [Audit snapshots](./operations/audit/). Dated alignment scorecards and baseline evidence
-- [Research notes](./notes/research/). Competitive audits and synthesis reports; ADR-cited inputs in [decision-input](./notes/research/decision-input/)
+- [Research notes](./notes/research/). Competitive audits and synthesis reports; ADR-cited inputs in [decision-input](./notes/research/decision-input/) and the workspace control plane program archive in [workspace-control-plane](./notes/research/workspace-control-plane/)
 - [PRDs](./specs/prd/). Draft product requirements for this repo
 - [Roadmap](./roadmap.md). Generated placeholder (excluded from public site)
 - [Tests audit](../tests/AUDIT.md). Category-by-category survey of test files

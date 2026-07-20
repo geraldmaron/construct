@@ -43,6 +43,7 @@ Includes the capability matrix (read/write/search/watch/webhook) and the provide
 
 ## Other
 
+- [Material pattern inventories](/guides/reference/material-pattern-inventories) — schema-validation, registration, and lifecycle/error/deprecation matrices (construct-tsyfe.1 investigation).
 - [Security](/guides/reference/security) — the threat model, key boundaries, and what's protected by hard gates.
 - [Standards](/guides/reference/standards) — comment policy, doc policy, commit policy.
 - [Dependencies](/guides/reference/dependencies) — every dependency and why.

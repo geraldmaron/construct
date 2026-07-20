@@ -120,10 +120,10 @@ Ingestion and export are optional halves bound to external tooling ([ADR-0024](/
 
 | Half | Entry | Engine |
 |------|-------|--------|
-| Ingest | `construct ingest` | Docling sidecar (high fidelity), unpdf/mammoth (fast), whisper (AV) |
+| Ingest | `construct ingest` | Quality-aware extraction ladder: unpdf/mammoth (lightweight), Docling sidecar (local OCR/layout), Docling Serve (remote when privacy allows), whisper (AV) |
 | Export | `construct export` / `construct publish` | Pandoc + Typst (PDF), branded HTML/deck, pptxgenjs (PPTX), LibreOffice (legacy `.doc`) |
 
-**In** accepts PDF, Office, email, AV, and plain text → normalized markdown. **Authoring** stays typed markdown artifacts. **Out** spans PDF, DOCX, DOC, HTML, deck, PPTX, RTF, ODT, EPUB, and more.
+**In** accepts PDF, Office, email, AV, and plain text → normalized markdown written from a RichDocument instance (ingest builds the IR once, renders markdown from it, and derives the `.assets.json` sidecar from the same object). Extraction tier selection (`lib/document-extract/extraction-ladder.mjs`) evaluates format, text yield, fidelity request, and privacy posture rather than extension alone: native structured parsers → lightweight parsers (unpdf/mammoth) → local Docling → remote Docling Serve → explicit unsupported/manual-recovery. Routing signals surface through `resolveExtractionRoutingSignals` in `lib/ingest/strategy.mjs`. **Authoring** stays typed markdown artifacts. **Out** spans PDF, DOCX, DOC, HTML, deck, PPTX, RTF, ODT, EPUB, and more. The production ingest → RichDocument → export path is certified end-to-end by `lib/certification/richdocument-production.mjs` (corpus fidelity, provenance survival, truthful `droppedInfo`).
 
 Canonical format matrix: [Document I/O reference](/guides/reference/document-io). Brand tokens live in `lib/brand-tokens.mjs` and flow to PDF/HTML/deck/PPTX via `lib/publish-template.mjs`.
 
@@ -403,6 +403,11 @@ Precedence is explicit: approval rules and tracker/doc ownership override profil
 Every snapshot discloses the active operating profile and any operating gaps, such as missing focal resources, missing sources, source read failures, or missing outputs. Roadmaps include the same profile obligations so operators can tell whether Construct is only observing or also missing responsibilities.
 
 ## Embedded contract layer (app-facing)
+
+Two different `embed` names exist in this repo and must not be conflated:
+
+- **`lib/embed/`** — the autonomous embed-mode daemon (`construct embed start`): scheduler, snapshot engine, approval queue, provider registry, and self-healing jobs. This is a running process, not a versioned SDK import surface.
+- **`lib/embedded-contract/`** — the **Embedded Contract Layer (ECL)**, the versioned in-process SDK published to package consumers via `package.json` `exports` (`.` and `./embedded-contract` both resolve here). Deep imports through a wildcard `./lib/*` export are intentionally closed so consumers negotiate compatibility through `CONTRACT_VERSION` instead of internal module paths.
 
 Distinct from Embed *mode* (the daemon above), the **Embedded Contract Layer (ECL)** is the stable, versioned surface another application uses to embed Construct as an orchestration layer. It lives in `lib/embedded-contract/` and exposes five read/execute contracts over one shared core, surfaced identically on three transports — CLI-JSON, MCP tools, and an SDK (`package.json` `exports` → `lib/embedded-contract/index.mjs`).
 

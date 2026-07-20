@@ -1,0 +1,43 @@
+{
+  "_fixture": true,
+  "_note": "Local stand-in for a Jira-style backlog. Not a real integration; no Jira API is called anywhere in this spike.",
+  "as_of": "2026-07-17",
+  "items": [
+    {
+      "id": "PROJ-88",
+      "title": "Enterprise SSO/SCIM rollout (SAML + SCIM group provisioning)",
+      "type": "epic",
+      "priority": "High",
+      "status": "In Progress",
+      "sprint": "Sprint 24",
+      "last_updated": "2026-06-01",
+      "linked_objectives": ["OBJ-2"],
+      "linked_issues": ["GH-101"],
+      "description": "Tracks full SAML + SCIM scope for the top 3 enterprise deals, per OBJ-2."
+    },
+    {
+      "id": "PROJ-90",
+      "title": "Dark mode toggle in account settings",
+      "type": "story",
+      "priority": "Low",
+      "status": "Backlog",
+      "sprint": null,
+      "last_updated": "2026-06-22",
+      "linked_objectives": [],
+      "linked_issues": ["GH-103"],
+      "description": "Opportunistic, not scheduled against any pillar."
+    },
+    {
+      "id": "PROJ-95",
+      "title": "Scope check: SAML-only vs. SAML+SCIM for Q3 enterprise deals",
+      "type": "task",
+      "priority": "Medium",
+      "status": "Backlog",
+      "sprint": null,
+      "last_updated": "2026-07-11",
+      "linked_objectives": ["OBJ-2"],
+      "linked_issues": [],
+      "description": "Opened to evaluate narrowing SSO scope; not yet actioned or linked back into PROJ-88's status."
+    }
+  ]
+}

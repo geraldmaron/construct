@@ -1,0 +1,1 @@
+customer reported checkout failure on mobile safari

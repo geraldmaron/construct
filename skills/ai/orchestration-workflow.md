@@ -40,10 +40,9 @@ For non-trivial work, create or update `.construct/workflow.json` with:
 ## Commands
 
 ```bash
-construct do "Goal"              # Unified natural language entry point
-construct workflow approve       # Executive sign-off on current phase
-construct workflow status        # Check alignment and progress
-construct workflow align         # Sync state and identify drift
+construct orchestrate run "Goal"   # Unified natural language entry point
+construct procedure invoke --json --procedure-id <id> --approval-mode proposal-only
+construct procedure list           # Inspect registered procedures
 ```
 
 ## Worker Packets

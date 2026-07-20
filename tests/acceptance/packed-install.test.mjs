@@ -18,6 +18,10 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
+import {
+  REMOVED_CLI_SURFACES,
+  assertRemovedSurfacesAbsent,
+} from './packed-install-removed-surfaces.mjs';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, '../../');
@@ -183,7 +187,17 @@ test('packed consumer install (npm pack → clean install → smoke)', { timeout
     assert.ok(parsed !== null && typeof parsed === 'object', 'Parsed JSON should be an object');
   });
 
-  // ── Step 7: construct doctor ──────────────────────────────────────────
+  // ── Step 7: removed CLI surfaces stay absent ───────────────────────────
+  await t.test('removed CLI surfaces are absent from the packed install', () => {
+    assert.ok(existsSync(binPath), `Binary should exist at ${binPath}`);
+
+    assertRemovedSurfacesAbsent(
+      (args) => run('node', [binPath, ...args], { cwd: tmpDir, env: soloEnv }),
+      { label: 'packed consumer install' },
+    );
+  });
+
+  // ── Step 8: construct doctor ──────────────────────────────────────────
   await t.test('construct doctor does not crash (MODULE_NOT_FOUND check)', () => {
     assert.ok(existsSync(binPath), `Binary should exist at ${binPath}`);
 
@@ -207,7 +221,7 @@ test('packed consumer install (npm pack → clean install → smoke)', { timeout
     );
   });
 
-  // ── Step 8: cleanup ───────────────────────────────────────────────────
+  // ── Step 9: cleanup ───────────────────────────────────────────────────
   await t.test('cleanup temp directory', () => {
     if (tmpDir && existsSync(tmpDir)) {
       rmTmpDir(tmpDir);
@@ -216,4 +230,21 @@ test('packed consumer install (npm pack → clean install → smoke)', { timeout
     rmTmpDir(packDir);
     rmTmpDir(sandboxHome);
   });
+});
+
+test('removed-surface guard fails when a removed command still dispatches (red-proof)', () => {
+  assert.throws(
+    () => assertRemovedSurfacesAbsent(
+      () => ({ status: 0, stdout: 'matrix stat ok', stderr: '' }),
+      {
+        label: 'red-proof fixture',
+        surfaces: REMOVED_CLI_SURFACES,
+      },
+    ),
+    (err) =>
+      err instanceof assert.AssertionError
+      && err.message.includes('removed surface "matrix"')
+      && err.message.includes('red-proof fixture'),
+    'expected failure to name the reintroduced matrix surface',
+  );
 });

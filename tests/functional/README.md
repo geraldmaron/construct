@@ -77,6 +77,22 @@ triggering a live 1Password biometric prompt mid-test.
   (`CONSTRUCT_MODEL_STANDARD=poison OPENROUTER_API_KEY=sk-poison ... npm run test:functional`
   must produce the same result as a clean env).
 
+## Live LLM agent execution proof (construct-b9n56)
+
+Provider-backed orchestration (real model call per specialist task) is **opt-in only**. Default CI runs skip these tests.
+
+| Harness | Entry |
+|---|---|
+| Library | `lib/certification/real-llm-scenarios.mjs` (`runRealLlmS3`, `runRealLlmS8`) |
+| Functional test | `tests/functional/real-llm-scenarios.functional.test.mjs` |
+| Certification | `construct certify run real-llm.s3` or `real-llm.s8` |
+| Evidence report | `tests/e2e/reports/live-agent-execution-proof-20260720.md` (manual run run-04aa7dcf9331) |
+| Hermetic chain (no live keys) | `tests/functional/prd-request-full-chain-audit-trail.functional.test.mjs` |
+
+Set `CONSTRUCT_CERTIFY_LIVE=1` (or legacy `CONSTRUCT_E2E_REAL_LLM=1`) and a provider key (`OPENROUTER_API_KEY` by default). Without opt-in or credentials the suite records inconclusive/skips; it never fake-greens a provider run.
+
+Research grounding and publish figure fidelity gates (`construct-1iljn.4`) live in `lib/orchestration/research-evidence-gate.mjs`, `lib/orchestration/output-quality-gate.mjs`, and `lib/publish.mjs`.
+
 ## Run
 
 ```bash

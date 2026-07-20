@@ -1,5 +1,5 @@
 /**
- * tests/demo-tour.test.mjs — guided demo tour: linear renderer + accessible path.
+ * tests/demo-tour.test.mjs - guided demo tour: linear renderer + accessible path.
  *
  * Exercises the WCAG-plain tour two ways: the renderer in isolation (color on/off,
  * step framing, headless auto-advance) and the real `construct demo tour` binary
@@ -60,7 +60,8 @@ test('renderTour accessible path emits numbered steps and no ANSI color', async 
     skipInput: true,
   });
   const text = out.text();
-  assert.equal(result.ok, true);
+  assert.equal(result.state, 'executed');
+  assert.equal(result.ok, false);
   assert.equal(result.steps, 2);
   assert.equal(result.accessible, true);
   assert.ok(text.includes('Demo tour: Sample tour'));
@@ -86,6 +87,7 @@ test('renderTour emits ANSI on a color-capable TTY', async () => {
 test('renderTour reports failure for a missing script', async () => {
   const out = collectOutput();
   const result = await renderTour({ script: null, output: out.stream, skipInput: true });
+  assert.equal(result.state, 'failed');
   assert.equal(result.ok, false);
   assert.equal(result.steps, 0);
 });
@@ -97,7 +99,8 @@ test('shipped demo script loads and tours headlessly', async () => {
   assert.ok(script);
   const out = collectOutput();
   const result = await renderTour({ script, output: out.stream, accessible: true, skipInput: true });
-  assert.equal(result.ok, true);
+  assert.equal(result.state, 'executed');
+  assert.equal(result.ok, false);
   assert.equal(result.steps, script.steps.length);
 });
 

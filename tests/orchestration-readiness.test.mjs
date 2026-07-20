@@ -15,8 +15,10 @@ import test from 'node:test';
 import {
   buildOrchestrationReadiness,
   formatOrchestrationReadinessGuidance,
+  loadOrchestrationReadinessEvents,
   recordOrchestrationReadinessEvent,
   summarizeOrchestrationReadiness,
+  summarizeOrchestrationReadinessMttr,
 } from '../lib/orchestration/readiness.mjs';
 import { doctorRoot } from '../lib/config/xdg.mjs';
 
@@ -127,6 +129,28 @@ test('readiness telemetry writes a redacted local event', () => {
     assert.equal(event.reasonCode, 'attached');
     assert.ok(eventPath.startsWith(doctorRoot(home)));
     assert.match(fs.readFileSync(eventPath, 'utf8'), /orchestration\.readiness/);
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test('readiness MTTR aggregates fail-to-pass recovery intervals', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-readiness-mttr-'));
+  try {
+    const fail = buildOrchestrationReadiness({ observationScope: 'local-config' }, { env: {}, cwd: '/tmp/project' });
+    recordOrchestrationReadinessEvent(fail, { homeDir: home, at: '2026-07-20T10:00:00.000Z' });
+    const pass = buildOrchestrationReadiness({
+      host: 'Cursor',
+      observedTools: ['orchestration_policy'],
+      reachableTools: ['orchestration_run'],
+    }, { env: RESOLVABLE_ENV, cwd: '/tmp/project' });
+    recordOrchestrationReadinessEvent(pass, { homeDir: home, at: '2026-07-20T10:05:00.000Z' });
+    const events = loadOrchestrationReadinessEvents({ homeDir: home });
+    const mttr = summarizeOrchestrationReadinessMttr(events);
+    assert.equal(mttr.sampleCount, 1);
+    assert.equal(mttr.meanRecoveryMs, 5 * 60 * 1000);
+    assert.equal(mttr.recoveries[0].fromReason, 'tool_unlisted');
+    assert.equal(mttr.recoveries[0].toReason, 'attached');
   } finally {
     fs.rmSync(home, { recursive: true, force: true });
   }

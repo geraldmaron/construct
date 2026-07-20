@@ -229,7 +229,7 @@
         "verificationBar": "Source metadata preserved; no invented quotes; confidence labeled"
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-26T20:01:33.468Z"
+      "lastValidated": "2026-07-20T20:51:25.501Z"
     },
     {
       "id": "workflow.research-synthesis",
@@ -314,7 +314,7 @@
         "verificationBar": "≥2 primary sources; URLs fetched; confidence labeled"
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-26T20:01:34.007Z"
+      "lastValidated": "2026-07-20T20:51:25.501Z"
     },
     {
       "id": "workflow.prd-draft",
@@ -437,7 +437,7 @@
         "verificationBar": "Template chosen before draft; rejected alternatives recorded for ADR/RFC paths"
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-26T20:01:34.544Z"
+      "lastValidated": "2026-07-20T20:51:25.501Z"
     },
     {
       "id": "workflow.architecture-review",
@@ -471,7 +471,7 @@
         "functional": "tests/functional/embedded-contract-procedure-invoke.functional.test.mjs"
       },
       "humanGate": "requires-human-approval",
-      "lastValidated": "2026-06-26T20:01:35.084Z"
+      "lastValidated": "2026-07-20T20:51:25.501Z"
     },
     {
       "id": "workflow.proposal-review",
@@ -503,7 +503,7 @@
         "functional": "tests/functional/embedded-contract-procedure-invoke.functional.test.mjs"
       },
       "humanGate": "requires-human-approval",
-      "lastValidated": "2026-06-26T20:01:35.624Z"
+      "lastValidated": "2026-07-20T20:51:25.501Z"
     },
     {
       "id": "workflow.risk-review",
@@ -536,7 +536,7 @@
         "functional": "tests/functional/embedded-contract-procedure-invoke.functional.test.mjs"
       },
       "humanGate": "requires-human-approval",
-      "lastValidated": "2026-06-26T20:01:36.161Z"
+      "lastValidated": "2026-07-20T20:51:25.501Z"
     },
     {
       "id": "workflow.structure-notes",
@@ -571,7 +571,7 @@
         "functional": "tests/functional/embedded-contract-procedure-invoke.functional.test.mjs"
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-26T20:01:36.696Z"
+      "lastValidated": "2026-07-20T20:51:25.501Z"
     },
     {
       "id": "workflow.transcript-process",
@@ -604,7 +604,7 @@
         "functional": "tests/functional/embedded-contract-procedure-invoke.functional.test.mjs"
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-26T20:01:37.237Z"
+      "lastValidated": "2026-07-20T20:51:25.501Z"
     },
     {
       "id": "workflow.data-structure",
@@ -637,7 +637,7 @@
         "functional": "tests/functional/embedded-contract-procedure-invoke.functional.test.mjs"
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-26T20:01:37.775Z"
+      "lastValidated": "2026-07-20T20:51:25.501Z"
     },
     {
       "id": "workflow.memo-draft",
@@ -670,7 +670,7 @@
         "functional": "tests/functional/embedded-contract-procedure-invoke.functional.test.mjs"
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-26T20:01:38.314Z"
+      "lastValidated": "2026-07-20T20:51:25.501Z"
     },
     {
       "id": "workflow.triage",
@@ -734,7 +734,7 @@
         "verificationBar": "Sources section with dates; confidence summary; recommendation"
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-26T20:01:38.464Z"
+      "lastValidated": "2026-07-20T20:43:54.053Z"
     },
     {
       "id": "document-type.evidence-brief",
@@ -756,7 +756,7 @@
         "verificationBar": "Signal, evidence, counter-signal; no invented customer quotes"
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-26T20:01:39.007Z"
+      "lastValidated": "2026-07-20T20:43:54.053Z"
     },
     {
       "id": "document-type.prd",
@@ -778,7 +778,7 @@
         "verificationBar": "Problem, goals, success metrics, risks and mitigations"
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-26T20:01:39.154Z"
+      "lastValidated": "2026-07-20T20:43:54.053Z"
     },
     {
       "id": "document-type.adr",
@@ -800,7 +800,7 @@
         "verificationBar": "Problem, decision, rejected alternatives, consequences, reversibility"
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-26T20:01:39.305Z"
+      "lastValidated": "2026-07-20T20:43:54.053Z"
     },
     {
       "id": "document-type.ingested-markdown",
@@ -833,7 +833,7 @@
         "verificationBar": "Source metadata preserved; droppedInfo surfaced; no invented structure"
       },
       "humanGate": "autonomous",
-      "lastValidated": "2026-06-26T20:01:39.495Z"
+      "lastValidated": "2026-07-20T20:43:54.053Z"
     },
     {
       "id": "ingest.adapter",
@@ -884,7 +884,7 @@
         "functional": "tests/functional/mcp-ingest-resilience.functional.test.mjs"
       },
       "humanGate": "autonomous",
-      "lastValidated": "2026-06-26T20:01:40.642Z"
+      "lastValidated": "2026-07-20T20:51:25.501Z"
     },
     {
       "id": "ingest.docling-remote",

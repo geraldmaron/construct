@@ -1,0 +1,47 @@
+{
+  "id": "changed-plan-before-approval",
+  "description": "Approval detects the plan changed after artifact production and blocks pending re-plan",
+  "checks": [
+    {
+      "name": "artifact-produced-before-plan-change",
+      "pass": true,
+      "detail": {
+        "stages": {
+          "dispatch": "complete",
+          "execution": "complete",
+          "artifact": "complete",
+          "approval": "awaiting_approval",
+          "external_write": "pending",
+          "integration": "pending",
+          "graph_update": "pending"
+        }
+      }
+    },
+    {
+      "name": "approval-blocked-plan-changed",
+      "pass": true,
+      "detail": {
+        "stages": {
+          "dispatch": "complete",
+          "execution": "complete",
+          "artifact": "complete",
+          "approval": "blocked_plan_changed",
+          "external_write": "pending",
+          "integration": "pending",
+          "graph_update": "pending"
+        }
+      }
+    },
+    {
+      "name": "no-approval-granted-on-stale-plan",
+      "pass": true,
+      "detail": {}
+    }
+  ],
+  "evidence": {
+    "harnessExit": {
+      "status": 0,
+      "signal": null
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "run_kind": "verify",
+  "proposal_id": "PROP-1",
+  "proposed_effects_hash": "d024b90c93a9c06dfe09c7abc6532ae342cb849ee9f6064fbd56b82fd772e16e",
+  "sent_effects_hash": "d024b90c93a9c06dfe09c7abc6532ae342cb849ee9f6064fbd56b82fd772e16e",
+  "result": "MATCH"
+}

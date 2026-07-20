@@ -1,0 +1,16 @@
+{
+  "schema": "construct/demo-manifest/1",
+  "name": "architecture-review-adr",
+  "title": "Architecture review — plan-only to enforced decisions",
+  "summary": "Invoke the architecture-review workflow as a plan only, then show the load-bearing decision index, fail-on-drift check, and an ADR artifact passing structure validation.",
+  "status": "declared",
+  "script": "templates/demos/scripts/architecture-review-adr.json",
+  "tape": "templates/demos/tapes/architecture-review-adr.tape",
+  "fallbackSurface": "tape",
+  "commands": [
+    "node bin/construct procedure invoke --json --workflow-type architecture-review --approval-mode proposal-only --text 'Review the orchestration runtime boundary for failure modes'",
+    "node bin/construct decisions list",
+    "node bin/construct decisions check",
+    "node bin/construct artifact validate tests/fixtures/artifacts/adr/golden.md --type=adr"
+  ]
+}

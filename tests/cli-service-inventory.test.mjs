@@ -11,7 +11,8 @@ import { dirname, resolve, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { buildCliServiceInventory } from '../lib/cli-service-inventory.mjs';
+import { buildCliServiceInventory, buildCliConsumerInvocationDrift, resolveConsumerInvocation } from '../lib/cli-service-inventory.mjs';
+import { CLI_COMMANDS } from '../lib/cli-commands.mjs';
 import { rmTmpDir } from './helpers/cleanup.mjs';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -24,6 +25,23 @@ test('public CLI service inventory reconciles dispatch, generated reference, and
     .filter((sub) => !sub.documented)
     .map((sub) => `${entry.name} ${sub.name}`));
   assert.deepEqual(undocumentedSubcommands, []);
+});
+
+test('consumer-facing construct invocations resolve to runnable commands (gate G3)', () => {
+  const drift = buildCliConsumerInvocationDrift({ rootDir: REPO }).filter((entry) => (
+    entry.file.startsWith('skills/')
+    || entry.file.startsWith('templates/')
+    || entry.file.startsWith('registry/worker-profiles/')
+  ));
+  assert.deepEqual(drift, [], `consumer CLI invocation drift: ${JSON.stringify(drift)}`);
+});
+
+test('retired construct commands are flagged as drift in consumer scan', () => {
+  const handlers = new Set(['graph', 'doctor']);
+  const commandIndex = new Map(CLI_COMMANDS.map((spec) => [spec.name, spec]));
+  const result = resolveConsumerInvocation(['matrix', 'build'], { handlers, commandIndex });
+  assert.equal(result.valid, false);
+  assert.match(result.reason, /retired command 'matrix'/);
 });
 
 test('generated CLI reference contains rendered subcommands, not object coercions', () => {

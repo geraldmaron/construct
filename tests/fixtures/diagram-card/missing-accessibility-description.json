@@ -1,0 +1,17 @@
+{
+  "id": "missing-accessibility",
+  "source": ".construct/diagrams/example.dot",
+  "engine": "dot",
+  "engineVersion": null,
+  "theme": null,
+  "seed": null,
+  "securityProfile": "sandboxed-subprocess",
+  "accessibilityDescription": "",
+  "provenance": {
+    "module": "lib/diagram.mjs",
+    "command": "construct diagram example",
+    "generatedAt": "2026-07-20T20:00:00.000Z"
+  },
+  "degraded": true,
+  "reason": "d2 not found, using dot fallback"
+}

@@ -98,13 +98,13 @@ test('Oracle synthesis emits and routes the dependency-matrix gaps', () => {
 
   const { gaps } = synthesizeVerdict(readModel);
   const ids = new Set(gaps.map((g) => g.id));
-  assert.ok(ids.has('dependency-graph-stale'), 'stale gap emitted');
+  assert.ok(ids.has('graph-stale'), 'stale gap emitted');
   assert.ok(ids.has('matrix-coverage-gap'), 'coverage gap emitted');
   assert.ok(ids.has('impact-untested'), 'freshness gap emitted');
 
   assert.equal(routeGap({ id: 'matrix-coverage-gap' }).workerProfileId, 'architect');
   assert.equal(routeGap({ id: 'impact-untested' }).workerProfileId, 'qa');
-  assert.equal(routeGap({ id: 'dependency-graph-stale' }).workerProfileId, 'engineer');
+  assert.equal(routeGap({ id: 'graph-stale' }).workerProfileId, 'engineer');
 
   for (const g of gaps) assert.ok(g.remediationRoute, `gap ${g.id} carries a remediation route`);
 });
@@ -114,5 +114,5 @@ test('absent dependency graph yields no matrix gaps', () => {
   const ids = new Set(gaps.map((g) => g.id));
   assert.ok(!ids.has('matrix-coverage-gap'));
   assert.ok(!ids.has('impact-untested'));
-  assert.ok(!ids.has('dependency-graph-stale'));
+  assert.ok(!ids.has('graph-stale'));
 });

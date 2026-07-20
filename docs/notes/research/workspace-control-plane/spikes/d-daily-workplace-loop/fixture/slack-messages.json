@@ -1,0 +1,61 @@
+{
+  "_fixture": true,
+  "_note": "Local stand-in for Slack + Confluence-style notes. Not a real integration; no Slack/Confluence API is called anywhere in this spike.",
+  "as_of": "2026-07-17",
+  "messages": [
+    {
+      "id": "SLACK-501",
+      "source": "slack",
+      "channel": "#leadership",
+      "author": "fictional-person:priya-nair (VP Product)",
+      "posted_at": "2026-07-12",
+      "text": "Given where the enterprise pipeline signals landed this week, let's deprioritize the SCIM group-claims edge cases for now -- SAML-only covers our top 3 deals. Move eng capacity to reliability instead. Can someone make sure the backlog and OBJ-2 reflect this?",
+      "refs": ["OBJ-2", "PROJ-88", "PROJ-95"]
+    },
+    {
+      "id": "SLACK-502",
+      "source": "slack",
+      "channel": "#eng-oncall",
+      "author": "fictional-person:sam (Reliability lead)",
+      "posted_at": "2026-07-15",
+      "text": "Post-incident review for the 07-09 5xx spike: 2 of 4 action items done, other 2 targeted for this week. Tracking against OBJ-3.",
+      "refs": ["OBJ-3", "GH-104"]
+    },
+    {
+      "id": "SLACK-503",
+      "source": "slack",
+      "channel": "#random",
+      "author": "fictional-person:jordan",
+      "posted_at": "2026-07-16",
+      "text": "anyone want to grab tacos from the new place on 5th at lunch today? 🌮",
+      "refs": []
+    },
+    {
+      "id": "SLACK-504",
+      "source": "slack",
+      "channel": "#product-eng",
+      "author": "fictional-person:dana (PM, onboarding)",
+      "posted_at": "2026-07-15",
+      "text": "Guided setup completion is up to 68% this week, on pace for OBJ-1. Nice trend, no action needed.",
+      "refs": ["OBJ-1"]
+    },
+    {
+      "id": "CONF-601",
+      "source": "confluence",
+      "channel": "Q3 Planning Notes (page)",
+      "author": "fictional-person:priya-nair (VP Product)",
+      "posted_at": "2026-06-01",
+      "text": "Q3 planning: reaffirm the 3 pillars (time-to-first-value, enterprise footprint, reliability). Enterprise footprint pillar text: 'ship full SSO/SCIM for the top 3 deals' -- note this predates the 07-12 Slack deprioritization call above and has not been revised.",
+      "refs": ["OBJ-2"]
+    },
+    {
+      "id": "SLACK-505",
+      "source": "slack",
+      "channel": "#random",
+      "author": "fictional-person:jordan",
+      "posted_at": "2026-07-17",
+      "text": "parking garage on 5th is closed for repaving today fyi",
+      "refs": []
+    }
+  ]
+}

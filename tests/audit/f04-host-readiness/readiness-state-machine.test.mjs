@@ -68,3 +68,20 @@ test('[F04] readiness must enumerate the distinct host-config states, not a bina
     );
   }
 });
+
+for (const runtimeState of ['untrusted', 'server_start_failure', 'missing_tool', 'sandbox_disabled']) {
+  test(`[F04] classifyHostReadiness resolves the runtime-only state "${runtimeState}" when no static check fires first`, () => {
+    assert.equal(mod.classifyHostReadiness({ host: 'vscode', runtimeState }), runtimeState);
+  });
+}
+
+test('[F04] a static blocking condition still wins over a supplied runtimeState', () => {
+  assert.equal(
+    mod.classifyHostReadiness({ host: 'vscode', mcpPath: '/nonexistent/mcp.json', runtimeState: 'untrusted' }),
+    'missing_config',
+  );
+});
+
+test('[F04] no runtimeState and no static blocker resolves to healthy', () => {
+  assert.equal(mod.classifyHostReadiness({ host: 'vscode' }), 'healthy');
+});

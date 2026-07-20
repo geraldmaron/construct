@@ -13,7 +13,7 @@ Protocol: newline-delimited JSON over stdin/stdout. Each request is
 
 Methods:
   - ping            → {"ok": true, "doclingVersion": "<x.y.z>"}
-  - extract {path}  → {"markdown": "...", "metadata": {...}, "droppedInfo": [...]}
+  - extract {path}  → {"markdown": "...", "metadata": {...}, "droppedInfo": [...], "structuredDict": {...}?}
   - shutdown        → {"ok": true}; process exits after acknowledgement
 
 Parent-PID watch (ADR-0068): spawned as a direct child of the Node process
@@ -93,6 +93,13 @@ def export_markdown(doc):
         return doc.export_to_markdown()
 
 
+def export_structured_dict(doc):
+    try:
+        return doc.export_to_dict()
+    except Exception:
+        return None
+
+
 def get_converter():
     global _converter
     if _converter is None:
@@ -132,11 +139,17 @@ def extract(params):
     except Exception:
         pass
 
-    return {
+    payload = {
         "markdown": markdown,
         "metadata": metadata,
         "droppedInfo": dropped_info,
     }
+
+    structured_dict = export_structured_dict(doc)
+    if structured_dict is not None:
+        payload["structuredDict"] = structured_dict
+
+    return payload
 
 
 def handle(request):

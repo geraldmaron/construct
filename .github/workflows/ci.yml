@@ -165,12 +165,30 @@ jobs:
         if: matrix.shard == 1
       - run: npm run docs:verify
         if: matrix.shard == 1
+      - name: restore shadow history cache
+        if: github.event_name == 'pull_request' && matrix.shard == 1 && matrix.os == 'ubuntu-latest'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .construct/shadow-history
+          key: shadow-history-store-v1
       - name: shadow-mode test-impact analysis (non-blocking)
         if: github.event_name == 'pull_request' && matrix.shard == 1 && matrix.os == 'ubuntu-latest'
         continue-on-error: true
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: node scripts/graph-impact-shadow.mjs
+      - name: archive shadow artifact to history
+        if: github.event_name == 'pull_request' && matrix.shard == 1 && matrix.os == 'ubuntu-latest'
+        run: |
+          mkdir -p .construct/shadow-history
+          cp .construct/shadow-impact.json ".construct/shadow-history/${{ github.run_id }}.json"
+      - name: upload shadow-impact artifact
+        if: github.event_name == 'pull_request' && matrix.shard == 1 && matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@ea165f8d65b6e75b539448e36bfa567e5b086e33 # v4.6.2
+        with:
+          name: shadow-impact-${{ github.run_id }}
+          path: .construct/shadow-impact.json
+          retention-days: 90
       - name: coverage (report-only, main pushes)
         if: matrix.shard == 1 && github.event_name == 'push' && github.ref == 'refs/heads/main'
         continue-on-error: true
@@ -303,6 +321,9 @@ jobs:
       - name: eslint (real-bug rules)
         if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
         run: npm run lint:js
+      - name: dependency intent
+        if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
+        run: npm run deps:check
       - name: profile + flavor schema
         if: needs.changes.outputs.agents == 'true' || needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
         run: npm run lint:scopes -- --quiet
@@ -375,6 +396,66 @@ jobs:
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
         run: npm run lint:templates
 
+  graph-verify:
+    name: graph verify
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version-file: .tool-versions
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: build derived test fixtures (living graph)
+        run: bash scripts/ci/build-test-fixtures.sh
+      - name: graph verify
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ -n "$PR_BASE_SHA" ]; then
+            CHANGED_FILES="$(git diff --name-only "$PR_BASE_SHA"...HEAD || true)"
+            export CHANGED_FILES
+          fi
+          node scripts/run-graph-verify.mjs
+
+  graph-impact-gate:
+    name: graph impact gate
+    runs-on: ubuntu-latest
+    needs: [changes, test]
+    if: github.event_name == 'pull_request' && (needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true')
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version-file: .tool-versions
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: build derived test fixtures (living graph)
+        run: bash scripts/ci/build-test-fixtures.sh
+      - name: restore shadow history cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .construct/shadow-history
+          key: shadow-history-store-v1
+      - name: download current shadow artifact
+        uses: actions/download-artifact@7a9775516c08852142e88030e7588e5a381a2e35 # v4.0.0
+        continue-on-error: true
+        with:
+          name: shadow-impact-${{ github.run_id }}
+          path: .construct
+      - name: graph impact promotion report
+        run: node scripts/graph-impact-promotion-report.mjs --json > .construct/promotion-report.json
+      - name: graph impact gate
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/graph-impact-gate.mjs
+
   evals:
     name: retrieval evals
     runs-on: ubuntu-latest
@@ -418,6 +499,9 @@ jobs:
         # catches transitive CVEs a repo-local override would otherwise mask.
         run: npm run audit:published
 
+      - name: supply-chain exception expiration
+        run: node scripts/check-supply-chain-exceptions.mjs
+
   secret-scan:
     name: secret scanning
     runs-on: ubuntu-latest
@@ -440,7 +524,7 @@ jobs:
     name: ci-required
     runs-on: ubuntu-latest
     if: always()
-    needs: [changes, test, lint, evals, audit, secret-scan]
+    needs: [changes, test, lint, graph-verify, graph-impact-gate, evals, audit, secret-scan]
     steps:
       - name: Verify required jobs passed or skipped
         env:

@@ -10,7 +10,6 @@
   "exports": {
     ".": "./lib/embedded-contract/index.mjs",
     "./embedded-contract": "./lib/embedded-contract/index.mjs",
-    "./lib/*": "./lib/*",
     "./package.json": "./package.json"
   },
   "files": [
@@ -76,6 +75,9 @@
     "lint:comments": "node ./bin/construct lint:comments",
     "lint:contracts": "node ./bin/construct lint:contracts",
     "graph:gate": "node scripts/run-graph-gate.mjs",
+    "graph:verify": "node scripts/run-graph-verify.mjs",
+    "graph:impact-promotion": "node scripts/graph-impact-promotion-report.mjs",
+    "graph:impact-gate": "node scripts/graph-impact-gate.mjs",
     "lint:agents": "node ./bin/construct lint:agents",
     "gates:audit": "node ./bin/construct gates:audit",
     "evals": "node ./bin/construct evals",
@@ -99,7 +101,7 @@
     "eval:routing": "node scripts/eval/score-intent-classifier.mjs",
     "eval:skill-routing": "node scripts/eval/skill-routing-bench.mjs",
     "adapters": "node lib/adapters-sync.mjs",
-    "release:check": "npm run doctor && node ./bin/construct registry:validate --unified && npm run catalog:validate -- --check && npm run skills:routes -- --check && npm run worker-profiles:coverage -- --check && npm run procedure-definitions:check && npm test && node scripts/release-evidence-gate.mjs --skip-tests && npm run docs:update -- --check && npm run docs:site -- --check && npm run docs:sync -- --check && node ./bin/construct registry:generate-docs --check && npm run docs:verify -- --strict && node scripts/alignment/census.mjs --ratchet && npm run lint:comments && node ./bin/construct certify gate && npm run graph:gate && npm run lint:templates",
+    "release:check": "npm run doctor && node ./bin/construct registry:validate --unified && npm run catalog:validate -- --check && npm run skills:routes -- --check && npm run worker-profiles:coverage -- --check && npm run procedure-definitions:check && npm test && node scripts/release-evidence-gate.mjs --skip-tests && node lib/certification/protocol-surface-rollup.mjs && npm run docs:update -- --check && npm run docs:site -- --check && npm run docs:sync -- --check && node ./bin/construct registry:generate-docs --check && npm run docs:verify -- --strict && node scripts/alignment/census.mjs --ratchet && npm run lint:comments && node ./bin/construct certify gate && npm run graph:gate && npm run graph:verify && npm run lint:templates",
     "release:gate": "node --test tests/functional/release-gate.functional.test.mjs",
     "audit:published": "node scripts/audit-published-artifact.mjs",
     "version": "node scripts/sync-construct-version.mjs && git add -f .construct/launcher/version",
@@ -108,12 +110,21 @@
     "npm:publish": "npm run release:check && npm publish --access public",
     "postinstall": "node ./bin/construct-postinstall.mjs",
     "deps:check": "node scripts/validate-dep-intent.mjs",
+    "supply-chain:exceptions": "node scripts/check-supply-chain-exceptions.mjs",
+    "supply-chain:gate": "node scripts/supply-chain-release-gate.mjs",
+    "compat:check": "node scripts/validate-compat-surfaces.mjs",
     "static:knip": "knip --reporter compact",
     "static:cruise": "depcruise --config .dependency-cruiser.cjs --output-type err bin lib scripts tests packages --validate"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
-    "js-yaml": "^5.2.1"
+    "js-yaml": "^5.2.1",
+    "mailparser": "^3.9.14",
+    "rehype-parse": "^9.0.1",
+    "rehype-sanitize": "^6.0.0",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "unified": "^11.0.5"
   },
   "optionalDependencies": {
     "@ai-sdk/anthropic": "^4.0.9",
@@ -130,11 +141,11 @@
     "pptx-embed-fonts": "^0.0.6",
     "pptxgenjs": "^4.0.1",
     "react": "^19.2.7",
-    "unpdf": "^1.6.2",
-    "zod": "^4.4.3"
+    "unpdf": "^1.6.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.61.1",
     "c8": "^11.0.0",
     "dependency-cruiser": "^17.4.3",
     "esbuild": "^0.28.1",

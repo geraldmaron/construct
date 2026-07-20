@@ -48,6 +48,20 @@
       ]
     },
     {
+      "path": ".dependency-cruiser.cjs",
+      "owner": "engineering-operations",
+      "class": "development",
+      "consumers": [
+        "dependency graph static analysis"
+      ],
+      "published": false,
+      "action": "retain",
+      "replacement": null,
+      "evidence": [
+        "package.json static:cruise"
+      ]
+    },
+    {
       "path": ".dockerignore",
       "owner": "release-engineering",
       "class": "governance",
@@ -458,6 +472,20 @@
       "replacement": null,
       "evidence": [
         "package.json files examples/**"
+      ]
+    },
+    {
+      "path": "knip.json",
+      "owner": "engineering-operations",
+      "class": "development",
+      "consumers": [
+        "unused export and dependency detection"
+      ],
+      "published": false,
+      "action": "retain",
+      "replacement": null,
+      "evidence": [
+        "package.json static:knip"
       ]
     },
     {

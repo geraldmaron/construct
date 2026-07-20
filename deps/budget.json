@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "rationale": "ADR-0097 install-footprint dimension as per-disposition ceilings on runtime npm deps in deps/intent.json. Ceilings sit above the current inventory for warn-first CI; tighten when promoting to enforcing.",
+  "ceilings": {
+    "core": 10,
+    "optional": 25,
+    "provider-plugin": 5,
+    "runtimeTotal": 35
+  },
+  "warnFirst": true
+}

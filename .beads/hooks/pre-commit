@@ -120,6 +120,14 @@ EOF
     if ! node ./bin/construct docs:verify; then
       exit 1
     fi
+    if ! node ./bin/construct graph verify; then
+      cat >&2 <<'EOF'
+
+[Construct pre-commit] Living graph verify failed.
+Fix the violations above, or set CONSTRUCT_SKIP_GATES=1 when re-running this commit.
+EOF
+      exit 1
+    fi
   fi
 fi
 # --- END CONSTRUCT POLICY GATES ---

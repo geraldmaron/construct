@@ -1,0 +1,38 @@
+{
+  "changeReviewContext": {
+    "scopeFiles": ["lib/graph/impact.mjs"],
+    "changeIntent": {
+      "intents": [
+        {
+          "id": "intent-cert-fixture-001",
+          "declaredAt": "2026-07-20T00:00:00.000Z",
+          "targets": ["file:lib/graph/impact.mjs"],
+          "impactPacket": {
+            "changed": ["lib/graph/impact.mjs"],
+            "impactedTests": ["tests/oracle/impact-analysis.test.mjs"],
+            "impactedCapabilities": ["oracle.meta-review"]
+          }
+        }
+      ]
+    },
+    "cards": { "note": "no card coverage" },
+    "layer2Impact": { "available": true }
+  },
+  "dependencyGraph": {
+    "present": true,
+    "partial": false,
+    "stale": false,
+    "coverage": {
+      "capabilitiesWithoutTest": [],
+      "capabilitiesWithoutImpl": [],
+      "workflowsUncovered": [],
+      "orphanFileCount": 0
+    },
+    "untested": [
+      {
+        "capability": "oracle.meta-review",
+        "reason": "implementation changed since last validation"
+      }
+    ]
+  }
+}

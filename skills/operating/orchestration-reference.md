@@ -37,7 +37,7 @@ The canonical lists live in `lib/orchestration-policy.mjs` (`INTENT_CLASSES`, `W
 
 Task packets include an optional `mcpScope` field: list MCP server names relevant to this task (e.g. `["github", "context7"]`). The mcp-task-scope hook warns when out-of-scope MCPs are called. The mcp-audit hook records all MCP usage per task key to `.construct/mcp-audit.json`.
 
-Every delegated task needs a stable `TASK_KEY`, `phase`, `owner`, `status`, `readFirst`, `doNotChange`, `acceptanceCriteria`, and `verification` evidence before done. Run `construct workflow align` at phase transitions.
+Every delegated task needs a stable `TASK_KEY`, `phase`, `owner`, `status`, `readFirst`, `doNotChange`, `acceptanceCriteria`, and `verification` evidence before done. Reconcile `.construct/workflow.json` at phase transitions.
 
 ## Native surfaces
 

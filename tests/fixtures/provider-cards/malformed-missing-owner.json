@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "providers": [
+    {
+      "id": "broken-provider",
+      "kind": "npm-dep",
+      "versionPolicy": { "type": "npm-semver", "range": "^1.0.0" },
+      "healthCheck": { "kind": "import-check", "detail": "require('broken-provider')" },
+      "fallback": { "behavior": "error" },
+      "removalCriteria": "unknown"
+    }
+  ]
+}

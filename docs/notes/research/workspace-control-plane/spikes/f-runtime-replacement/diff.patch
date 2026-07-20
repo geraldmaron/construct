@@ -1,0 +1,455 @@
+diff --git a/docs/guides/concepts/architecture.mdx b/docs/guides/concepts/architecture.mdx
+index 32d5e0cc..9c6fc78f 100644
+--- a/docs/guides/concepts/architecture.mdx
++++ b/docs/guides/concepts/architecture.mdx
+@@ -201,7 +201,7 @@ Transport-agnostic interface to external systems. Each provider implements a cap
+ | Git repo | git CLI | read, write, watch |
+ | Project tracker (Jira) | REST API v3 | read, write, search, webhook |
+ | Messaging (Slack) | Slack Web API | read, write, watch, webhook |
+-| Code host (GitHub) | gh CLI | read, write, search, webhook |
++| Code host (GitHub) | REST API v3 | read, write, search, webhook |
+ | Knowledge base (Confluence) | REST API v2 | read, write, search |
+ 
+ ### Runtime
+diff --git a/lib/providers/contract/adapter-factories.mjs b/lib/providers/contract/adapter-factories.mjs
+index fc98cf0e..ec0e1609 100644
+--- a/lib/providers/contract/adapter-factories.mjs
++++ b/lib/providers/contract/adapter-factories.mjs
+@@ -6,7 +6,8 @@
+  * means adding one entry here, not editing every caller.
+  *
+  * Real transports read credentials from process.env at construction time;
+- * github's transport is the gh CLI, already credential-free at construction.
++ * github's transport (GitHub REST API over fetch) reads its token in
++ * init(), which this registry never calls, so importing it is credential-free.
+  * Building the transport lazily per call (rather than once at module load)
+  * keeps a missing-credential AuthError scoped to the one call that needed it.
+  */
+diff --git a/lib/providers/contract/adapters/github/governed-write.mjs b/lib/providers/contract/adapters/github/governed-write.mjs
+index e403fd58..e4e9e4dc 100644
+--- a/lib/providers/contract/adapters/github/governed-write.mjs
++++ b/lib/providers/contract/adapters/github/governed-write.mjs
+@@ -2,9 +2,9 @@
+  * lib/providers/contract/adapters/github/governed-write.mjs — envelope-shaped
+  * GitHub write adapter.
+  *
+- * Wraps the CLI-backed github adapter (./index.mjs) in the provider shape
++ * Wraps the github transport adapter (./index.mjs) in the provider shape
+  * lib/writes/envelope.mjs expects: write(config, payload), meta.id, search().
+- * Adds two behaviors the raw CLI adapter cannot provide on its own:
++ * Adds two behaviors the raw transport adapter cannot provide on its own:
+  *
+  *   - Cross-run duplicate detection: every created issue carries a hidden
+  *     idempotency marker (HTML comment) in its body. Before creating, this
+@@ -12,11 +12,11 @@
+  *     dedup survives across process restarts and machines, not just the
+  *     local sent-log.
+  *   - Secondary-rate-limit backoff: GitHub content-creation endpoints return
+- *     403 with a "secondary rate limit" message (no clean HTTP Retry-After
+- *     on the gh CLI transport). This wrapper retries a bounded number of
+- *     times honoring the parsed retry-after, then surfaces the error rather
+- *     than spinning silently — the envelope's own generic retry/backoff is
+- *     bypassed here because it is not retry-after aware.
++ *     403 with a "secondary rate limit" message and a Retry-After header. A
++ *     bounded number of retries honor the transport's parsed retry-after,
++ *     then the error surfaces rather than spinning silently — the envelope's
++ *     own generic retry/backoff is bypassed here because it is not
++ *     retry-after aware.
+  *
+  * `type: 'issue'` writes get marker + dedup treatment. `type: 'pr'` writes
+  * (construct-p4cba.2) dedup by head branch instead of a body marker — GitHub
+@@ -45,7 +45,7 @@ function sleep(ms) {
+ 
+ /**
+  * @param {object} opts
+- * @param {object} opts.ghAdapter - underlying CLI adapter (default export of ./index.mjs)
++ * @param {object} opts.ghAdapter - underlying transport adapter (default export of ./index.mjs)
+  * @param {number} [opts.maxRateLimitRetries] - bounded retry-after retries before surfacing (default 2)
+  * @param {function} [opts.sleepFn] - injectable sleep for tests
+  */
+diff --git a/lib/providers/contract/adapters/github/index.mjs b/lib/providers/contract/adapters/github/index.mjs
+index ac6d5b9c..83a92796 100644
+--- a/lib/providers/contract/adapters/github/index.mjs
++++ b/lib/providers/contract/adapters/github/index.mjs
+@@ -1,7 +1,11 @@
+ /**
+  * providers/github/index.mjs — GitHub provider.
+  *
+- * Transport: gh CLI (must be installed and authenticated).
++ * Transport: GitHub REST API v3 over HTTPS (built-in fetch), token auth via
++ * GITHUB_TOKEN/GH_TOKEN env or config.token. No external binary dependency.
++ * Repo scoping requires an explicit owner/repo: config.repo, or
++ * GITHUB_REPOSITORY, or a best-effort inference from the git origin remote
++ * (see inferRepoFromGit()).
+  *
+  * Capabilities: read, write, search, webhook
+  *
+@@ -9,7 +13,7 @@
+  *   "prs"                     → open pull requests
+  *   "prs:all"                 → all PRs (open + closed)
+  *   "pr:<number>"             → single PR detail
+- *   "issues"                  → open issues
++ *   "issues"                  → open issues (PRs excluded, matches `gh issue list`)
+  *   "issue:<number>"          → single issue detail
+  *   "releases"                → recent releases
+  *   "repo"                    → repo metadata
+@@ -20,63 +24,90 @@
+  *   { type: 'comment', issue_number, body }            → comment on issue/PR
+  *   { type: 'pr-merge', number, merge_method? }        → merge a PR
+  *
+- * search: gh search issues/prs/code
++ * search: GitHub search API (issues/prs share the /search/issues endpoint;
++ * code uses /search/code)
+  *   { scope: 'issues'|'prs'|'code', q: 'query string' }
+  *
+  * webhook: process GitHub webhook event objects
+  */
+ 
+-import { spawnSync } from 'node:child_process';
++import { execFileSync } from 'node:child_process';
+ import { AuthError, NotFoundError, RateLimitError } from '../../errors.mjs';
+ 
+-// gh CLI has no HTTP header access; secondary rate limits surface as a 403
+-// with "secondary rate limit" text in stderr and sometimes a suggested wait
+-// in seconds. Default to GitHub's documented minimum backoff when absent.
++const DEFAULT_API_BASE = 'https://api.github.com';
++
++// The REST API returns a real `Retry-After` header (seconds) on both primary
++// (403 unauthenticated abuse) and secondary (403 "you have exceeded a
++// secondary rate limit") throttling, read directly off the response header.
+ const SECONDARY_RATE_LIMIT_DEFAULT_RETRY_AFTER = 60;
+ 
+-function parseRetryAfterSeconds(stderr) {
+-  const match = /retry.{0,10}?(\d+)\s*second/i.exec(stderr || '');
+-  return match ? parseInt(match[1], 10) : SECONDARY_RATE_LIMIT_DEFAULT_RETRY_AFTER;
++function parseRetryAfterSeconds(headers) {
++  const raw = headers?.get?.('retry-after');
++  const n = raw ? parseInt(raw, 10) : NaN;
++  return Number.isFinite(n) ? n : SECONDARY_RATE_LIMIT_DEFAULT_RETRY_AFTER;
+ }
+ 
+-function throwIfRateLimited(stderr) {
+-  if (/secondary rate limit|403/i.test(stderr || '') && /rate limit/i.test(stderr || '')) {
+-    throw new RateLimitError(stderr.trim(), {
+-      provider: 'github',
+-      retryAfter: parseRetryAfterSeconds(stderr),
+-    });
++// A REST call needs an explicit owner/repo; this is the only implicit-context
++// fallback, derived from `git remote get-url origin`. It covers a plain
++// origin remote only — not GH_REPO, gh config, or upstream tracking branches
++// — so callers that depend on those cases must pass config.repo explicitly.
++function inferRepoFromGit(cwd = process.cwd()) {
++  try {
++    const url = execFileSync('git', ['remote', 'get-url', 'origin'], {
++      cwd,
++      stdio: ['ignore', 'pipe', 'ignore'],
++      timeout: 5000,
++    }).toString().trim();
++    const scp = /^[^@/]+@[^:]+:(.+?)(?:\.git)?$/.exec(url);
++    const https = /github\.com[/:]([^/]+\/[^/]+?)(?:\.git)?$/.exec(url);
++    const match = scp || https;
++    return match ? match[1].replace(/\.git$/, '') : null;
++  } catch {
++    return null;
+   }
+ }
+ 
+-function gh(args, { json = true, input } = {}) {
+-  const fullArgs = json ? [...args, '--json', ...ghJsonFields(args)] : args;
+-  const result = spawnSync('gh', fullArgs, {
+-    encoding: 'utf8',
+-    input,
+-    env: process.env,
++async function githubRequest({ method = 'GET', path, apiBase, token, body }) {
++  const res = await fetch(`${apiBase}${path}`, {
++    method,
++    headers: {
++      Authorization: `Bearer ${token}`,
++      Accept: 'application/vnd.github+json',
++      'X-GitHub-Api-Version': '2022-11-28',
++      ...(body ? { 'Content-Type': 'application/json' } : {}),
++    },
++    body: body ? JSON.stringify(body) : undefined,
+   });
+-  if (result.error) throw new Error(`gh spawn error: ${result.error.message}`);
+-  if (result.status !== 0) {
+-    const msg = result.stderr?.trim() || `gh exited with status ${result.status}`;
+-    if (msg.includes('authentication') || msg.includes('401')) {
+-      throw new AuthError(msg, { provider: 'github' });
++
++  if (res.status === 401) {
++    throw new AuthError('GitHub REST API returned 401 (bad or missing token). Set GITHUB_TOKEN or GH_TOKEN.', { provider: 'github' });
++  }
++  if (res.status === 403) {
++    const text = await res.text().catch(() => '');
++    if (/rate limit/i.test(text)) {
++      throw new RateLimitError(text.trim() || 'rate limited', {
++        provider: 'github',
++        retryAfter: parseRetryAfterSeconds(res.headers),
++      });
+     }
+-    throw new Error(`gh error: ${msg}`);
++    throw new AuthError(`GitHub REST API returned 403: ${text.trim() || '(no body)'}`, { provider: 'github' });
+   }
+-  if (json && result.stdout) {
+-    try { return JSON.parse(result.stdout); } catch { return result.stdout; }
++  if (res.status === 404) {
++    throw new NotFoundError(`GitHub REST API 404 for ${method} ${path}`, { provider: 'github' });
+   }
+-  return result.stdout;
+-}
+-
+-// gh requires --json to list specific fields; default to a safe broad set
+-function ghJsonFields(args) {
+-  const cmd = args[0];
+-  if (cmd === 'pr') return ['number,title,state,url,body,headRefName,baseRefName,author,createdAt,mergeable,labels'];
+-  if (cmd === 'issue') return ['number,title,state,url,body,author,createdAt,labels,assignees'];
+-  if (cmd === 'release') return ['tagName,name,publishedAt,url,body'];
+-  if (cmd === 'repo') return ['name,description,url,defaultBranchRef,isPrivate,stargazerCount'];
+-  return [''];
++  if (res.status === 429) {
++    const text = await res.text().catch(() => '');
++    throw new RateLimitError(text.trim() || 'rate limited', {
++      provider: 'github',
++      retryAfter: parseRetryAfterSeconds(res.headers),
++    });
++  }
++  if (!res.ok) {
++    const text = await res.text().catch(() => '');
++    throw new Error(`GitHub REST API ${res.status} for ${method} ${path}: ${text.trim() || res.statusText}`);
++  }
++  if (res.status === 204) return null;
++  return res.json();
+ }
+ 
+ export default {
+@@ -84,113 +115,126 @@ export default {
+   capabilities: ['read', 'write', 'search', 'webhook'],
+ 
+   _repo: null,
++  _token: null,
++  _apiBase: DEFAULT_API_BASE,
+ 
+   async init(config = {}) {
+-    this._repo = config.repo ?? null; // optional "owner/repo" override
+-    // Verify gh is available and authenticated
+-    const check = spawnSync('gh', ['auth', 'status'], { encoding: 'utf8', env: process.env });
+-    if (check.status !== 0) {
+-      throw new AuthError('gh CLI not authenticated. Run: gh auth login', { provider: 'github' });
++    this._repo = config.repo ?? process.env.GITHUB_REPOSITORY ?? inferRepoFromGit(config.cwd) ?? null;
++    this._token = config.token ?? process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN ?? null;
++    this._apiBase = config.apiBase ?? DEFAULT_API_BASE;
++
++    if (!this._token) {
++      throw new AuthError('No GitHub token found. Set GITHUB_TOKEN or GH_TOKEN.', { provider: 'github' });
++    }
++    // Confirm the token authenticates before any capability call runs.
++    await githubRequest({ path: '/user', apiBase: this._apiBase, token: this._token });
++  },
++
++  _requireRepo() {
++    if (!this._repo) {
++      throw new Error('github provider: no repo configured (config.repo, GITHUB_REPOSITORY, or a resolvable git origin remote is required)');
+     }
++    return this._repo;
+   },
+ 
+   async read(ref, _opts = {}) {
+-    const repoFlag = this._repo ? ['-R', this._repo] : [];
++    const repo = this._requireRepo();
+ 
+     if (ref === 'prs' || ref === 'prs:all') {
+-      const stateFlag = ref === 'prs:all' ? ['--state', 'all'] : ['--state', 'open'];
+-      return gh(['pr', 'list', ...repoFlag, ...stateFlag, '--limit', '50']);
++      const state = ref === 'prs:all' ? 'all' : 'open';
++      return githubRequest({ path: `/repos/${repo}/pulls?state=${state}&per_page=50`, apiBase: this._apiBase, token: this._token });
+     }
+ 
+     if (ref.startsWith('pr:')) {
+       const num = ref.slice(3);
+-      return [gh(['pr', 'view', num, ...repoFlag])];
++      return [await githubRequest({ path: `/repos/${repo}/pulls/${num}`, apiBase: this._apiBase, token: this._token })];
+     }
+ 
+     if (ref === 'issues') {
+-      return gh(['issue', 'list', ...repoFlag, '--state', 'open', '--limit', '50']);
++      const items = await githubRequest({ path: `/repos/${repo}/issues?state=open&per_page=50`, apiBase: this._apiBase, token: this._token });
++      // The issues endpoint also returns PRs; `gh issue list` excludes them.
++      return (items || []).filter((i) => !i.pull_request);
+     }
+ 
+     if (ref.startsWith('issue:')) {
+       const num = ref.slice(6);
+-      return [gh(['issue', 'view', num, ...repoFlag])];
++      return [await githubRequest({ path: `/repos/${repo}/issues/${num}`, apiBase: this._apiBase, token: this._token })];
+     }
+ 
+     if (ref === 'releases') {
+-      return gh(['release', 'list', ...repoFlag, '--limit', '20']);
++      return githubRequest({ path: `/repos/${repo}/releases?per_page=20`, apiBase: this._apiBase, token: this._token });
+     }
+ 
+     if (ref === 'repo') {
+-      return [gh(['repo', 'view', ...repoFlag])];
++      return [await githubRequest({ path: `/repos/${repo}`, apiBase: this._apiBase, token: this._token })];
+     }
+ 
+     throw new NotFoundError(`Unknown GitHub read ref: "${ref}"`, { provider: 'github' });
+   },
+ 
+   async write(item) {
+-    const repoFlag = this._repo ? ['-R', this._repo] : [];
++    if (!['issue', 'pr', 'comment', 'pr-merge'].includes(item.type)) {
++      throw new Error(`Unknown GitHub write item type: "${item.type}"`);
++    }
++    const repo = this._requireRepo();
+ 
+     if (item.type === 'issue') {
+-      const args = ['issue', 'create', ...repoFlag, '--title', item.title, '--body', item.body ?? ''];
+-      if (item.labels?.length) args.push('--label', item.labels.join(','));
+-      const out = spawnSync('gh', args, { encoding: 'utf8', env: process.env });
+-      if (out.status !== 0) {
+-        throwIfRateLimited(out.stderr);
+-        throw new Error(`gh issue create failed: ${out.stderr?.trim() || `exit ${out.status}`}`);
+-      }
+-      return { type: 'issue-created', url: out.stdout.trim() };
++      const created = await githubRequest({
++        method: 'POST',
++        path: `/repos/${repo}/issues`,
++        apiBase: this._apiBase,
++        token: this._token,
++        body: { title: item.title, body: item.body ?? '', labels: item.labels?.length ? item.labels : undefined },
++      });
++      return { type: 'issue-created', url: created.html_url };
+     }
+ 
+     if (item.type === 'pr') {
+-      const args = ['pr', 'create', ...repoFlag,
+-        '--title', item.title,
+-        '--body', item.body ?? '',
+-        '--head', item.head,
+-        '--base', item.base ?? 'main',
+-      ];
+-      if (item.draft) args.push('--draft');
+-      const out = spawnSync('gh', args, { encoding: 'utf8', env: process.env });
+-      if (out.status !== 0) {
+-        throwIfRateLimited(out.stderr);
+-        throw new Error(`gh pr create failed: ${out.stderr?.trim() || `exit ${out.status}`}`);
+-      }
+-      return { type: 'pr-created', url: out.stdout.trim() };
++      const created = await githubRequest({
++        method: 'POST',
++        path: `/repos/${repo}/pulls`,
++        apiBase: this._apiBase,
++        token: this._token,
++        body: { title: item.title, body: item.body ?? '', head: item.head, base: item.base ?? 'main', draft: !!item.draft },
++      });
++      return { type: 'pr-created', url: created.html_url };
+     }
+ 
+     if (item.type === 'comment') {
+-      const args = ['issue', 'comment', String(item.issue_number), ...repoFlag, '--body', item.body];
+-      const out = spawnSync('gh', args, { encoding: 'utf8', env: process.env });
+-      if (out.status !== 0) {
+-        throwIfRateLimited(out.stderr);
+-        throw new Error(`gh issue comment failed: ${out.stderr?.trim() || `exit ${out.status}`}`);
+-      }
+-      return { type: 'comment-created', issue_number: item.issue_number };
++      const created = await githubRequest({
++        method: 'POST',
++        path: `/repos/${repo}/issues/${item.issue_number}/comments`,
++        apiBase: this._apiBase,
++        token: this._token,
++        body: { body: item.body },
++      });
++      return { type: 'comment-created', issue_number: item.issue_number, url: created.html_url };
+     }
+ 
+     if (item.type === 'pr-merge') {
+       const method = item.merge_method ?? 'squash';
+-      const out = spawnSync('gh', ['pr', 'merge', String(item.number), ...repoFlag, `--${method}`], {
+-        encoding: 'utf8',
+-        env: process.env,
++      await githubRequest({
++        method: 'PUT',
++        path: `/repos/${repo}/pulls/${item.number}/merge`,
++        apiBase: this._apiBase,
++        token: this._token,
++        body: { merge_method: method },
+       });
+-      if (out.status !== 0) {
+-        throwIfRateLimited(out.stderr);
+-        throw new Error(`gh pr merge failed: ${out.stderr?.trim() || `exit ${out.status}`}`);
+-      }
+       return { type: 'pr-merged', number: item.number };
+     }
+-
+-    throw new Error(`Unknown GitHub write item type: "${item.type}"`);
+   },
+ 
+   async search(query, opts = {}) {
+     const scope = opts.scope ?? 'issues';
+-    const repoFlag = this._repo ? ['--repo', this._repo] : [];
+-    const args = ['search', scope, query, ...repoFlag, '--limit', '30', '--json',
+-      scope === 'code' ? 'path,repository,url,textMatches' : 'number,title,state,url,repository',
+-    ];
+-    const results = gh(args, { json: false });
+-    try { return JSON.parse(results); } catch { return []; }
++    const repo = this._repo;
++    const qualifiedQuery = repo ? `${query} repo:${repo}` : query;
++    const endpoint = scope === 'code' ? '/search/code' : '/search/issues';
++    const result = await githubRequest({
++      path: `${endpoint}?q=${encodeURIComponent(qualifiedQuery)}&per_page=30`,
++      apiBase: this._apiBase,
++      token: this._token,
++    });
++    return result?.items ?? [];
+   },
+ 
+   async webhook(event) {
+diff --git a/tests/provider-github.test.mjs b/tests/provider-github.test.mjs
+index aa06f86a..5a98a368 100644
+--- a/tests/provider-github.test.mjs
++++ b/tests/provider-github.test.mjs
+@@ -1,8 +1,8 @@
+ /**
+  * tests/provider-github.test.mjs — GitHub provider contract + unit tests.
+  *
+- * Functional calls require gh CLI authentication. Those tests are skipped
+- * when GITHUB_TOKEN is absent.
++ * Exercises only pure/local behavior (contract shape, webhook normalization,
++ * write-type validation) — no live network call, no token required.
+  */
+ 
+ import { describe, it } from 'node:test';
+diff --git a/tests/writes/github.functional.test.mjs b/tests/writes/github.functional.test.mjs
+index d9486511..ae44fcc5 100644
+--- a/tests/writes/github.functional.test.mjs
++++ b/tests/writes/github.functional.test.mjs
+@@ -2,10 +2,10 @@
+  * tests/writes/github.functional.test.mjs — GitHub writes routed through the
+  * governed write envelope (LMCP-J5).
+  *
+- * Uses a fake `gh`-shaped adapter (no real network, no real gh CLI spawn) to
+- * validate the two acceptance behaviors: cross-run duplicate detection via
+- * issue search + idempotency marker, and secondary-rate-limit (403 +
+- * retry-after) handling that retries then surfaces rather than spinning.
++ * Uses a fake transport adapter (no real network call) to validate the two
++ * acceptance behaviors: cross-run duplicate detection via issue search +
++ * idempotency marker, and secondary-rate-limit (403 + retry-after) handling
++ * that retries then surfaces rather than spinning.
+  */
+ 
+ import { describe, it } from 'node:test';
+@@ -16,9 +16,9 @@ import { createGovernedGithubProvider } from '../../lib/providers/contract/adapt
+ import { RateLimitError } from '../../lib/providers/contract/errors.mjs';
+ 
+ /**
+- * Fake GitHub CLI adapter — mirrors the shape of
++ * Fake GitHub transport adapter — mirrors the shape of
+  * lib/providers/contract/adapters/github/index.mjs's write()/search(), but
+- * holds issues in memory and never spawns a process.
++ * holds issues in memory and never makes a network call.
+  */
+ function makeFakeGhAdapter({ rateLimitedAttempts = 0, retryAfterSeconds = 1 } = {}) {
+   const issues = [];
