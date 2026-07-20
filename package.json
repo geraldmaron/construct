@@ -114,7 +114,8 @@
     "supply-chain:gate": "node scripts/supply-chain-release-gate.mjs",
     "compat:check": "node scripts/validate-compat-surfaces.mjs",
     "static:knip": "knip --reporter compact",
-    "static:cruise": "depcruise --config .dependency-cruiser.cjs --output-type err bin lib scripts tests packages --validate"
+    "static:cruise": "depcruise --config .dependency-cruiser.cjs --output-type err bin lib scripts tests packages --validate",
+    "lint:scopes": "node scripts/lint-workspace-presets.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
