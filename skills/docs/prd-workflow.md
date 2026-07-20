@@ -67,6 +67,8 @@ Once the PRD is approved, run `/plan feature {feature-slug}` to produce a struct
 
 **`construct workflow invoke` returns a plan only** — it does not draft the PRD. Run the specialists the plan returns — the baseline chain plus every entry in its `recruitment.recruited` block — to author and review the artifact from the template. **Do not hand-write a stub and publish.**
 
+Authoring and publish surfaces return a **lifecycle handoff** object (`lifecycle: { state, evidence, nextAction, nextCommand? }`) so you can tell plan-only (`planned`), release-gate pass (`validated`), and export complete (`published`) apart. `author_artifact` also mirrors plan-only state on `workflow_lifecycle` / `invokePlan.lifecycle`. Prepared inline runs use `prepared`; they are not authored artifacts.
+
 Before distribution:
 
 ```bash

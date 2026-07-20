@@ -455,13 +455,15 @@ Inspect assignable worker configurations
 **Usage**
 
 ```bash
-construct worker-profile <list|show>
+construct worker-profile <list|show|validate|create>
 ```
 
 **Subcommands**
 
-- `list` — List worker profiles
-- `show <id>` — Show one worker profile
+- `list [--grep=<term>]` — List worker profiles (shows active Workspace Preset)
+- `show <id>` — Show one worker profile (--json for full record)
+- `validate [--file=<path>]` — Validate a custom Worker Profile JSON record from stdin or file
+- `create <id> [--scope=project|user]` — Scaffold a custom Worker Profile JSON record and prompt stub (see create --help)
 
 ## construct workplace-loop
 

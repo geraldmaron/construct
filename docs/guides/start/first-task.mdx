@@ -9,7 +9,7 @@ description: Initialize a project and dispatch one task end-to-end.
 cd ~/code/your-project
 ```
 
-It needs to be a git repo (Construct uses `.git/` to wire pre-commit hooks). Branch state doesn't matter.
+It needs to be a git repo (Construct uses `.git/` to wire pre-commit hooks). If it is not one yet, `construct init --yes` runs `git init` for you; use `construct init --interactive` to confirm first.
 
 ## Initialize Construct in the project
 
@@ -19,9 +19,19 @@ construct init --yes
 
 One command does all of it:
 
-- Scaffolds the project — `.construct/context.md` and `.construct/context.json` (durable per-project state Construct reads at session start), `.construct/handoffs/` (gitignored, session handoffs land here), `docs/` documentation lanes if your project doesn't have them yet, a local issue-tracking directory if your project doesn't already track issues (see [durable state →](/guides/concepts/beads-and-state)).
+- Scaffolds the project — `.construct/context.md` and `.construct/context.json` (durable per-project state Construct reads at session start), `.construct/handoffs/` (gitignored, session handoffs land here), a minimal `docs/` folder (index only — no guessed doc types), a local issue-tracking directory if your project doesn't already track issues (see [durable state →](/guides/concepts/beads-and-state)).
 - Syncs agent adapters into whichever editor configs it finds on disk — `~/.claude/agents/*.md` for Claude Code, `~/.config/opencode/opencode.json` for OpenCode, `~/.codex/agents/*.toml` for Codex, `~/.github/prompts/*.prompt.md` for Copilot prompt profiles, `~/.cursor/mcp.json` for Cursor MCP registrations if Cursor is already configured, VS Code user `settings.json` for GitHub Copilot MCP registrations if VS Code is already configured.
 - Starts the local runtime by default — local dashboard at `http://localhost:<port>` (port auto-selected), memory MCP server at `127.0.0.1:8765`, local trace capture in `.construct/traces/*.jsonl`. Pass `--no-start` to skip service startup, or `--interactive` for the guided flow.
+
+### Documentation packs (optional)
+
+`init --yes` does **not** auto-pick ADRs, PRDs, RFCs, or other lanes. When you want starter templates:
+
+```bash
+construct init --yes --docs-preset=lean    # ADRs, memos, meetings, notes, PRDs
+construct init --yes --with-adrs --with-rfcs
+construct init --interactive               # Packs / Individual docs / Skip menu
+```
 
 Re-running `construct init` on an existing project is safe; it's idempotent. Re-run `construct sync` on its own any time you only need to refresh adapters (after a registry, prompt, or config change), and `construct dev` on its own any time you only need to (re)start services without touching adapters.
 

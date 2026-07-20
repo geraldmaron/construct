@@ -33,8 +33,8 @@ const BIN = join(REPO_ROOT, 'bin', 'construct');
 function makeFixture(extraSetup) {
   const dir = mkdtempSync(join(tmpdir(), 'init-existing-'));
   const home = mkdtempSync(join(tmpdir(), 'init-existing-home-'));
-  // `construct init` requires the target to be a git repository — the
-  // tracker hooks wire into .git/hooks. Initialize one quietly.
+  // Seed a git repo with identity config so beads/init hooks behave; init also
+  // auto-runs `git init` in non-interactive mode when `.git/` is absent.
   spawnSync('git', ['init', '--quiet', '--initial-branch=main'], { cwd: dir });
   spawnSync('git', ['config', 'user.email', 'test@example.com'], { cwd: dir });
   spawnSync('git', ['config', 'user.name', 'Test'], { cwd: dir });
@@ -180,15 +180,14 @@ test('issue #97: --force scaffolds the full default tree even when project layou
   } finally { f.cleanup(); }
 });
 
-test('issue #97 regression guard: clean project still gets the full default scaffold', () => {
+test('issue #97 regression guard: clean project with --with-all-docs still scaffolds lane dirs', () => {
   const f = makeFixture();
   try {
     const result = runInit(f.dir, f.home, ['--with-all-docs']);
     assert.equal(result.status, 0, `init on clean project exited ${result.status}\nstderr:\n${result.stderr}`);
 
-    // The lean preset includes meetings, memos, prds; verify at least one
-    // scaffolded lane and the canonical inbox/ landed normally.
-    assert.equal(existsSync(join(f.dir, 'docs', 'meetings')), true, 'clean project must still get docs/meetings/');
+    // Explicit --with-all-docs includes meetings; bare --yes no longer auto-picks lanes.
+    assert.equal(existsSync(join(f.dir, 'docs', 'meetings')), true, 'clean project with --with-all-docs must get docs/meetings/');
     assert.equal(existsSync(join(f.dir, 'inbox')), true, 'clean project must still get inbox/');
   } finally { f.cleanup(); }
 });

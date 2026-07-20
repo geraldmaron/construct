@@ -42,6 +42,48 @@ test('construct init bootstraps repo state without overwriting existing AGENTS.m
   assert.doesNotMatch(plan, /workflow\.json/i);
 });
 
+test('init-docs --yes defaults to docs/ only (no lane dirs)', () => {
+  const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+  const cwd = tempDir('construct-init-docs-default-');
+
+  fs.writeFileSync(path.join(cwd, 'package.json'), `${JSON.stringify({ name: 'construct-docs-default', description: 'Construct docs default repo' }, null, 2)}\n`);
+
+  execFileSync(process.execPath, [
+    path.join(repoRoot, 'lib', 'init-docs.mjs'),
+    cwd,
+    '--yes',
+  ], {
+    cwd,
+    stdio: 'pipe',
+  });
+
+  assert.equal(fs.existsSync(path.join(cwd, 'docs', 'README.md')), true);
+  assert.equal(fs.existsSync(path.join(cwd, 'docs', 'adr')), false);
+  assert.equal(fs.existsSync(path.join(cwd, 'docs', 'prds')), false);
+  assert.equal(fs.existsSync(path.join(cwd, 'docs', 'meetings')), false);
+});
+
+test('init-docs --yes --docs-preset=lean scaffolds the lean pack', () => {
+  const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+  const cwd = tempDir('construct-init-docs-lean-preset-');
+
+  fs.writeFileSync(path.join(cwd, 'package.json'), `${JSON.stringify({ name: 'construct-docs-lean-preset', description: 'Construct docs lean preset repo' }, null, 2)}\n`);
+
+  execFileSync(process.execPath, [
+    path.join(repoRoot, 'lib', 'init-docs.mjs'),
+    cwd,
+    '--yes',
+    '--docs-preset=lean',
+  ], {
+    cwd,
+    stdio: 'pipe',
+  });
+
+  assert.equal(fs.existsSync(path.join(cwd, 'docs', 'adr', 'README.md')), true);
+  assert.equal(fs.existsSync(path.join(cwd, 'docs', 'prds', 'README.md')), true);
+  assert.equal(fs.existsSync(path.join(cwd, 'docs', 'rfcs', 'README.md')), false);
+});
+
 test('init-docs scaffolds selected doc lanes and preserves existing docs files', () => {
   const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
   const cwd = tempDir('construct-init-docs-');

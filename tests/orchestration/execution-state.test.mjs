@@ -69,6 +69,24 @@ test('an all-succeeding provider run aggregates to executionState=executed at ru
   assert.equal(run.executionState, 'executed');
 });
 
+test('a quality-gate hard failure degrades the run and host metadata', async () => {
+  const cwd = tempDir('cx-exec-state-quality-gate-', test);
+  const fetchImpl = async () => ({ ok: true, json: async () => ({ content: [{ type: 'text', text: 'See https://example.com/invented for details.' }] }) });
+  const run = await runOrchestration(
+    { request: 'Implement the API. Do not invent URLs.', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 4, moduleCount: 2 },
+    { env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test' }, cwd, workerBackend: 'provider', fetchImpl },
+  );
+  run.tasks[0].evidenceGate = { ok: false, kind: 'external', citationCount: 0, reason: 'missing citation' };
+  const metadata = hostAdapterMetadata(run);
+
+  assert.equal(run.status, 'degraded');
+  assert.equal(run.executionState, 'degraded-executed');
+  assert.equal(run.degradationReason, 'quality-gate-hard-fail');
+  assert.ok(run.tasks.every((task) => task.qualityGate?.hardFail));
+  assert.ok(metadata.tasks.every((task) => task.qualityGate?.hardFail));
+  assert.deepEqual(metadata.tasks[0].evidenceGate, run.tasks[0].evidenceGate);
+});
+
 // ── provider backend: failure precedence ────────────────────────────────────
 
 test('any failed task makes the run-level executionState=failed, even alongside executed tasks', async () => {

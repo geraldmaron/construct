@@ -63,6 +63,8 @@ test('proposal-only invocation returns a plan and writes nothing', () => {
   assert.equal(env.data.status, 'proposed');
   assert.deepEqual(env.data.durableWritesPerformed, []);
   assert.ok(env.data.traceId);
+  assert.equal(env.data.lifecycle?.state, 'planned');
+  assert.ok(typeof env.data.lifecycle?.nextAction === 'string' && env.data.lifecycle.nextAction.length > 0);
   assert.equal(fs.existsSync(path.join(cwd, '.construct', 'observations')), false);
 });
 

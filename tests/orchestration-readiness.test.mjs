@@ -14,6 +14,7 @@ import test from 'node:test';
 
 import {
   buildOrchestrationReadiness,
+  formatOrchestrationReadinessGuidance,
   recordOrchestrationReadinessEvent,
   summarizeOrchestrationReadiness,
 } from '../lib/orchestration/readiness.mjs';
@@ -48,12 +49,31 @@ test('readiness reports tool_unlisted when orchestration_run is not flat or gate
     observedTools: ['orchestration_policy', 'call'],
     reachableTools: ['workflow_invoke'],
     observationScope: 'host-session',
+    host: 'Cursor',
   }, { env: {}, cwd: '/tmp/project' });
 
   assert.equal(readiness.verdict, 'fail');
   assert.equal(readiness.reasonCode, 'tool_unlisted');
+  assert.equal(readiness.expectedUntilHostSync, false);
   assert.deepEqual(readiness.missingTools, ['orchestration_run']);
   assert.match(readiness.nextStep, /construct sync/);
+});
+
+test('tool_unlisted on local-config marks expectedUntilHostSync with teaching guidance', () => {
+  const readiness = buildOrchestrationReadiness({
+    observationScope: 'local-config',
+  }, { env: {}, cwd: '/tmp/fresh-project' });
+
+  assert.equal(readiness.verdict, 'fail');
+  assert.equal(readiness.reasonCode, 'tool_unlisted');
+  assert.equal(readiness.expectedUntilHostSync, true);
+  assert.match(readiness.diagnosticBundle.detail, /expected in a fresh project/);
+  assert.match(readiness.nextStep, /construct sync/);
+  assert.match(summarizeOrchestrationReadiness(readiness), /expected-until-host-sync/);
+  const guidance = formatOrchestrationReadinessGuidance(readiness);
+  assert.match(guidance, /Setup note/);
+  assert.match(guidance, /construct sync/);
+  assert.match(guidance, /not that the Construct install itself failed/);
 });
 
 test('readiness reports host_not_attached for host-session checks with no observed tools', () => {

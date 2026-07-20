@@ -32,7 +32,9 @@ Short paragraphs with white space between sections; prefer three short lines ove
 
 ## 4. Plain, literal language
 
-Say the thing directly. Avoid idioms, sarcasm, irony, and figurative phrasing that require inference to decode. Define a term on first use or link to where it is defined. One name for one concept — do not alternate synonyms for the same thing.
+Say the thing directly. Avoid idioms, sarcasm, irony, and figurative phrasing that require inference to decode. Define a term on first use or link to where it is defined. One name for one concept; do not alternate synonyms for the same thing.
+
+Do not use the Unicode em dash (U+2014) in human-facing output. Prefer a period, colon, comma, or ASCII hyphen. Em dashes interrupt scanning and are banned by the output quality gate.
 
 ## 5. Consistent structure and terminology
 

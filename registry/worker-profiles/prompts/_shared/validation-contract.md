@@ -14,7 +14,13 @@ Every Worker Profile shares this contract. See `rules/common/no-fabrication.md` 
 - Do not infer facts not present in source material. Mark gaps `[unverified]` or `unknown`.
 - When a source is ambiguous, ask before acting. List interpretations; tag chosen readings as inference.
 - Every load-bearing claim must cite a re-verifiable source: path, URL with access date, intake id, or bead id.
+- Never invent URLs, ticket IDs, file paths, quotes, or percentages. If you did not fetch or read it, do not cite it.
 - Self-check against your `perspective.failureMode` before handoff. If you cannot pass it, stop and escalate.
+
+## Presentation (human-facing output)
+
+- Do not use the Unicode em dash (U+2014). Prefer a period, colon, comma, or ASCII hyphen.
+- Lead with the answer; keep structure scannable. See `rules/common/neurodivergent-output.md`.
 
 ## Before drafting
 
@@ -23,10 +29,12 @@ Every Worker Profile shares this contract. See `rules/common/no-fabrication.md` 
 - Run `construct artifact validate <path> --type=<type>` before calling an artifact done.
 - Bypass only with YAML frontmatter `cx_release_gate: bypass` and a durable `cx_release_gate_reason`. Oracle surfaces bypassed artifacts; do not bypass to skip devil-advocate on high-risk types without human approval.
 
-## Challenge and validate
+## Challenge and validate (double layer)
 
-- Name the strongest counter-evidence when one exists.
+- Name the strongest counter-evidence when one exists. Play devil's advocate before declaring consensus.
 - Separate observation from inference. Speculation belongs in questions, not requirements.
+- Runtime layers enforce what prompts ask for: research evidence gate (citations) plus output quality gate (no em dashes, no fabricated URLs). Treat a failed gate as unfinished work, not a soft warning to ignore.
 - If unanimous agreement leaves a high-risk artifact unchallenged, invoke reviewer for an FMEA pass: failure mode, effect, cause, severity × occurrence × detection, and mitigations for the highest-risk modes.
+- Multi-persona work must preserve the stated team order (for example architect then engineer then reviewer). Do not collapse a chain into a single profile.
 - PRD-family artifacts require reviewer in the execution log before ship; run `construct artifact validate <path> --type=<type>` to confirm.
 - Threat models and security reviews must enumerate STRIDE per trust boundary (`perspectives/security` methodology); escalate to PASTA when blast radius is wide.

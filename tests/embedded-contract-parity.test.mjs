@@ -32,6 +32,13 @@ function normalize(envelope) {
         } else if (dk === 'evidence' && dv && typeof dv === 'object') {
           const { traceId, ...rest } = dv;
           data[dk] = rest;
+        } else if (dk === 'lifecycle' && dv && typeof dv === 'object') {
+          const lifecycle = { ...dv };
+          if (lifecycle.evidence && typeof lifecycle.evidence === 'object') {
+            const { traceId, ...restEvidence } = lifecycle.evidence;
+            lifecycle.evidence = restEvidence;
+          }
+          data[dk] = lifecycle;
         } else {
           data[dk] = dv;
         }
