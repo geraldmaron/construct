@@ -1101,9 +1101,6 @@ function syncClaude(entries, targetDir = null, wants = true) {
   if (!(targetDir && !wants)) {
     removeStaleAdapters(claudeAgentsDir, ".md", writeEntries);
   }
-  if (!targetDir) {
-  }
-
   if (targetDir) {
     writeProjectClaudeSettings(targetDir);
     writeProjectMcpJson(targetDir);
@@ -1233,9 +1230,6 @@ function syncCodex(entries, targetDir = null, wants = true) {
     writeFile(path.join(codexAgentsDir, `${adapterName(entry)}.toml`), codexAgentToml(entry, entries));
   }
   removeStaleAdapters(codexAgentsDir, ".toml", writeEntries);
-  if (!targetDir) {
-  }
-
   const configPath = targetDir
     ? path.join(codexDir, "config.toml")
     : getCodexConfigPath(home);
@@ -1358,9 +1352,6 @@ function syncCopilot(entries, targetDir = null, wants = true) {
     writeFile(path.join(promptsDir, `${adapterName(entry)}.prompt.md`), copilotPrompt(entry, entries), { stamp: false });
   }
   removeStaleAdapters(promptsDir, ".prompt.md", writeEntries);
-  if (!targetDir) {
-  }
-
   // VS Code reads custom agents from `.github/agents/*.agent.md`. The Claude
   // tool names in `.claude/agents/*.md` are not recognized there, so the front
   // door ships as a VS Code agent with namespaced tool grants (construct-mcp/*,

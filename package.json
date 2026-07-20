@@ -130,7 +130,6 @@
     "@ai-sdk/anthropic": "^4.0.9",
     "@ai-sdk/openai": "^4.0.8",
     "@ai-sdk/openai-compatible": "^3.0.5",
-    "@huggingface/transformers": "^4.2.0",
     "@lancedb/lancedb": "^0.31.0",
     "@opentelemetry/api": "^1.9.0",
     "ai": "^7.0.17",
@@ -154,7 +153,8 @@
     "ink-testing-library": "^4.0.0",
     "knip": "^6.27.0",
     "playwright": "^1.61.1",
-    "postject": "1.0.0-alpha.6"
+    "postject": "1.0.0-alpha.6",
+    "@huggingface/transformers": "^4.2.0"
   },
   "main": "index.js",
   "directories": {
