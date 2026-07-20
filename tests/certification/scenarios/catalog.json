@@ -607,6 +607,26 @@
       }
     },
     {
+      "id": "ingest.extraction-ladder",
+      "capabilityId": "ingest.adapter",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/fixtures/document-extraction-corpus/manifest.json"
+      },
+      "gates": [
+        {
+          "id": "extraction-ladder-corpus",
+          "type": "extraction-ladder-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/extraction-corpus",
+        "resolvedId": "fixture/extraction-corpus",
+        "tier": "hermetic"
+      }
+    },
+    {
       "id": "demo.parity.surfaces",
       "capabilityId": "demo.terminal-fallback",
       "mode": "hermetic",
@@ -623,6 +643,26 @@
         "provider": "hermetic",
         "requestedId": "fixture/demo",
         "resolvedId": "fixture/demo",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "visual.parity.surface",
+      "capabilityId": "artifact.diagram-card",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "lib/contract-schemas/diagram-card.schema.json"
+      },
+      "gates": [
+        {
+          "id": "visual-parity-report",
+          "type": "visual-parity-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/visual-parity",
+        "resolvedId": "fixture/visual-parity",
         "tier": "hermetic"
       }
     },
@@ -669,6 +709,90 @@
         "tier": "free"
       },
       "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "oracle.false-success.unreachable-sha",
+      "capabilityId": "oracle.meta-review",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/oracle/unreachable-sha-close.json"
+      },
+      "gates": [
+        {
+          "id": "oracle-unreachable-sha-close",
+          "type": "oracle-false-success-audit",
+          "scenario": "unreachable-sha-close"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/oracle-false-success",
+        "resolvedId": "fixture/oracle-false-success",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "oracle.false-success.closed-parent-open-children",
+      "capabilityId": "oracle.meta-review",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/oracle/closed-parent-open-children.json"
+      },
+      "gates": [
+        {
+          "id": "oracle-closed-parent-open-children",
+          "type": "oracle-false-success-audit",
+          "scenario": "closed-parent-open-children"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/oracle-false-success",
+        "resolvedId": "fixture/oracle-false-success",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "oracle.false-success.partial-graph",
+      "capabilityId": "oracle.meta-review",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/oracle/partial-graph-as-clean.json"
+      },
+      "gates": [
+        {
+          "id": "oracle-partial-graph-as-clean",
+          "type": "oracle-false-success-audit",
+          "scenario": "partial-graph-as-clean"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/oracle-false-success",
+        "resolvedId": "fixture/oracle-false-success",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "oracle.false-success.ignored-impact-context",
+      "capabilityId": "oracle.meta-review",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/oracle/ignored-impact-context.json"
+      },
+      "gates": [
+        {
+          "id": "oracle-ignored-impact-context",
+          "type": "oracle-false-success-audit",
+          "scenario": "ignored-impact-context"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/oracle-false-success",
+        "resolvedId": "fixture/oracle-false-success",
+        "tier": "hermetic"
+      }
     },
     {
       "id": "team.arbitration.base-chain",

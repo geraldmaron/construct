@@ -150,6 +150,23 @@ test('valid graph with real provider manifest passes strict', () => {
   assert.equal(result.errors.length, 0);
 });
 
+test('doc node resolves against packageRoot when missing under project root', () => {
+  const project = freshRoot();
+  const packageRoot = freshRoot();
+  const docDir = path.join(packageRoot, 'docs');
+  fs.mkdirSync(docDir, { recursive: true });
+  fs.writeFileSync(path.join(docDir, 'package-only.md'), '# Package doc');
+  writeGraph(project, {
+    nodes: [
+      { id: nodeId('doc', 'docs/package-only.md'), type: 'doc', name: 'docs/package-only.md', attrs: { path: 'docs/package-only.md' } },
+    ],
+    edges: [],
+  });
+  const result = validateGraph(project, { strict: true, packageRoot });
+  assert.equal(result.valid, true);
+  assert.equal(result.errors.length, 0);
+});
+
 test('nodeParts extracts type and key from node id', () => {
   assert.deepEqual(nodeParts('workflow:test'), { type: 'workflow', key: 'test' });
   assert.deepEqual(nodeParts('provider:slack'), { type: 'provider', key: 'slack' });

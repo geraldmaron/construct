@@ -1,0 +1,16 @@
+{
+  "measuredAt": "2026-07-20T20:35:33.806Z",
+  "bead": "construct-tsyfe.4.6",
+  "lazyEntry": {
+    "minifiedBytes": 8252374,
+    "gzipBytes": 2494128
+  },
+  "eagerEntry": {
+    "minifiedBytes": 8239645,
+    "gzipBytes": 2487761
+  },
+  "delta": {
+    "minifiedBytes": -12729,
+    "gzipBytes": -6367
+  }
+}

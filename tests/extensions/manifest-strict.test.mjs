@@ -178,6 +178,23 @@ test('validateManifest strict mode', async (t) => {
     assert.equal(result.valid, true);
   });
 
+  await t.test('9. invalid certification.tier rejected in strict mode', () => {
+    const result = validateManifest(
+      { id: 'test', version: '1.0.0', kind: 'data-source', certification: { tier: 'not-a-real-tier' } },
+      { strict: true }
+    );
+    assert.equal(result.valid, false);
+    assert.ok(result.errors.some((e) => e.includes("certification.tier 'not-a-real-tier'")));
+  });
+
+  await t.test('9b. valid certification.tier accepted in strict mode', () => {
+    const result = validateManifest(
+      { id: 'test', version: '1.0.0', kind: 'data-source', certification: { tier: 'contract-tested' } },
+      { strict: true }
+    );
+    assert.equal(result.valid, true);
+  });
+
   await t.test('strict=false by default, no breaking change', () => {
     const result = validateManifest({ id: 'test', version: '1.0.0', kind: 'mcp-tool', nonsenseField: true });
     assert.equal(result.valid, true);

@@ -10,7 +10,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { applyFreePreferenceToTierSet, applyFreeSameFamilyPreferenceToTierSet, classifyProviderFailure, getProviderModelCatalog, inferTierModelsFromSelection, isProviderOnCooldown, readCurrentModels, readProviderCooldowns, resolveExecutionContractModelMetadata, resolveFallbackAction, resolveModelOperatingProfile, selectFallbackModel, selectModelTierForWorkCategory, setModelWithTierInference, writeProviderCooldown } from '../lib/model-router.mjs';
+import { applyFreePreferenceToTierSet, applyFreeSameFamilyPreferenceToTierSet, capabilityClassSupportsOperatingProfileMapping, classifyProviderFailure, getProviderModelCatalog, inferTierModelsFromSelection, isProviderOnCooldown, readCurrentModels, readProviderCooldowns, resolveExecutionContractModelMetadata, resolveFallbackAction, resolveModelOperatingProfile, resolveOperatingProfileIdFromCapabilityClass, selectFallbackModel, selectModelTierForWorkCategory, setModelWithTierInference, writeProviderCooldown } from '../lib/model-router.mjs';
 
 function tempFile(prefix, t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
@@ -174,6 +174,46 @@ test('resolveModelOperatingProfile accepts explicit small-model override', () =>
   });
   assert.equal(profile.id, 'small');
   assert.equal(profile.retrievalFirst, true);
+});
+
+test('resolveModelOperatingProfile maps capability classes per ADR-0038', () => {
+  assert.equal(resolveOperatingProfileIdFromCapabilityClass('local-constrained'), 'small');
+  assert.equal(resolveOperatingProfileIdFromCapabilityClass('local-capable'), 'balanced');
+  assert.equal(resolveOperatingProfileIdFromCapabilityClass('hosted-direct'), 'balanced');
+  assert.equal(resolveOperatingProfileIdFromCapabilityClass('hosted-routed'), 'balanced');
+  assert.equal(
+    resolveModelOperatingProfile({
+      selectedModel: 'anthropic/claude-opus-4-6',
+      capabilityClass: 'hosted-direct',
+    }).id,
+    'balanced',
+  );
+  assert.equal(
+    resolveModelOperatingProfile({
+      selectedModel: 'openrouter/qwen/qwen3-coder:free',
+      capabilityClass: 'hosted-routed',
+    }).id,
+    'balanced',
+  );
+  assert.equal(
+    resolveModelOperatingProfile({
+      selectedModel: 'ollama/qwen2.5-coder:7b-cx32k',
+      capabilityClass: 'local-constrained',
+    }).id,
+    'small',
+  );
+  assert.equal(
+    resolveModelOperatingProfile({
+      selectedModel: 'ollama/devstral:24b-cx32k',
+      capabilityClass: 'local-capable',
+    }).id,
+    'balanced',
+  );
+});
+
+test('capabilityClassSupportsOperatingProfileMapping excludes unknown class', () => {
+  assert.equal(capabilityClassSupportsOperatingProfileMapping('unknown'), false);
+  assert.equal(capabilityClassSupportsOperatingProfileMapping('hosted-direct'), true);
 });
 
 test('resolveExecutionContractModelMetadata infers small-model posture for local small checkpoints', () => {

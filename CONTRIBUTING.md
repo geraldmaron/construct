@@ -69,9 +69,11 @@ node ./bin/construct lint:comments
 npm run lint:js
 npm run lint:scopes
 npm run graph:gate
+node ./bin/construct graph intent declare --target file:<path>   # code/runtime changes; repeat --target per file
+npm run graph:verify
 ```
 
-All nine must exit 0. To reproduce CI's `test` job bit-for-bit when a failure only shows up on the runner, `npm run ci:local` builds a Docker replica (`scripts/ci-repro/`) of the ubuntu leg — same `scripts/ci/setup-toolchain.sh` tool pins, same fixture build, same command sequence against a fresh clone of committed HEAD; `-- --node 20` and `-- --shard i/n` narrow it to one matrix cell. The release pipeline in `docs/operations/maintenance/release-and-deploy.md` runs the same checks before any artifact ships. `graph:gate` (LMCP-C8) rebuilds the living workflow/capability graph and fails on strict-mode validate drift — a workflow with zero tests, a capability with a missing doc, a provider without a manifest, or a declared-but-unregistered surface.
+All eleven must exit 0. For **code or runtime changes** (`lib/`, `bin/`, `scripts/`, `tests/`, hooks, workflows), declare change-intent **before editing** so `graph verify` can diff the pre-change impact packet against the actual diff at PR time. Doc-only or metadata-only changes may skip `graph intent declare`. To reproduce CI's `test` job bit-for-bit when a failure only shows up on the runner, `npm run ci:local` builds a Docker replica (`scripts/ci-repro/`) of the ubuntu leg — same `scripts/ci/setup-toolchain.sh` tool pins, same fixture build, same command sequence against a fresh clone of committed HEAD; `-- --node 20` and `-- --shard i/n` narrow it to one matrix cell. The release pipeline in `docs/operations/maintenance/release-and-deploy.md` runs the same checks before any artifact ships. `graph:gate` (LMCP-C8) rebuilds the living workflow/capability graph and fails on strict-mode validate drift — a workflow with zero tests, a capability with a missing doc, a provider without a manifest, or a declared-but-unregistered surface. `graph:verify` (construct-4uxq0.11.10) is the blocking guardrail on the persisted graph: strict validate, schema membership and provenance, partial-graph detection, and optional change-intent impact diff when changed files are supplied. CI runs it as the required `graph verify` job wired into `ci-required`.
 
 ### npm scripts wrap the gates; CI calls the scripts
 
@@ -134,7 +136,7 @@ When integrating multiple branches (release rollups, batch staging promotion), t
 
 - **Never use `git merge -X ours` on a protected branch** (`main`, `staging`). The `-X ours` strategy silently drops conflicting hunks from the other side without surfacing the loss — what looks like a clean merge can ship with regressions invisible to review. If a merge produces conflicts on a protected branch, resolve them explicitly, run the full gate, and have a second reviewer look at the resolved hunks.
 - **Keep integration branches off `staging`.** Build the rollup on a throwaway integration branch (e.g. `integrate/2026-06-04`), open it as a PR into `staging`, let the gate run, then merge that single PR. Merging individual feature branches directly into `staging` with `-X ours` recovery hides drift; merging one well-tested rollup PR exposes it to CI before it lands.
-- **The nine-check gate (see "Before opening a PR" above) gates entry to `staging`** — not post-hoc cleanup on `staging` itself. If a rollup PR fails any check, fix it on the integration branch and re-run; do not "fix it on staging."
+- **The pre-PR gate (see "Before opening a PR" above) gates entry to `staging`** — not post-hoc cleanup on `staging` itself. If a rollup PR fails any check, fix it on the integration branch and re-run; do not "fix it on staging."
 - **Rebase before merging long-lived integration branches** so the diff against `staging` reflects only the integration, not stale upstream noise.
 
 ## GitHub Pages

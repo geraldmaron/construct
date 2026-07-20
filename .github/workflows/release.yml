@@ -60,6 +60,17 @@ jobs:
         # package.json's `overrides` do not apply. Blocks publishing a release
         # whose transitive graph is only clean because of a repo-local override.
         run: npm run audit:published
+      - name: packed consumer install acceptance (npm pack, install, smoke)
+        # LMCP-L2: npm pack into a clean project, smoke version/status/doctor,
+        # and assert removed CLI surfaces (e.g. construct matrix) stay absent.
+        # Slower than unit tests; runs only on the release gate, not every PR.
+        run: node --test --test-timeout=120000 tests/acceptance/packed-install.test.mjs
+
+      - name: supply-chain release go/no-go
+        # construct-tsyfe.10.7: conjunctive gate over OSV/license wiring, SBOM,
+        # provider cards, packed install, binary certification evidence, and
+        # compat-surface expiration. Wired here (tag path) per construct-9tg43.
+        run: node scripts/supply-chain-release-gate.mjs
 
   # ── Build single-file binaries ────────────────────────────────────────────
   build-binary:
@@ -230,6 +241,15 @@ jobs:
         # installing the stable line.
         run: npm publish --provenance --access public --tag ${{ steps.ver.outputs.channel }}
 
+      - name: Generate SBOM (CycloneDX)
+        run: |
+          npx --yes @cyclonedx/cyclonedx-npm@latest \
+            --package-lock-only \
+            --ignore-npm-errors \
+            --output-file dist/sbom.cyclonedx.json \
+            --output-format JSON
+          node -e "JSON.parse(require('fs').readFileSync('dist/sbom.cyclonedx.json','utf8')); console.log('SBOM parse ok')"
+
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -249,6 +269,7 @@ jobs:
             dist/construct-darwin-arm64.sha256 \
             dist/construct-windows-x64.exe \
             dist/construct-windows-x64.exe.sha256 \
+            dist/sbom.cyclonedx.json \
           || { echo "ERROR: gh release create failed for ${{ github.ref_name }}"; exit 1; }
 
   # ── Homebrew tap formula bump ─────────────────────────────────────────────

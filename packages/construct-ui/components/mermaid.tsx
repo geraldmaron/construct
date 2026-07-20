@@ -2,19 +2,52 @@
  * Mermaid diagram renderer + framed container. Lazy-imports mermaid only
  * client-side to keep the static export tree small. Re-renders on theme
  * change so light/dark palettes stay in sync with the rest of the chrome.
+ *
+ * Hardened defaults (construct-tsyfe.4.2): strict securityLevel, sanitized SVG
+ * mount, size/timeout guards, deterministic handDrawn seed, and Diagram Card
+ * metadata on the rendered container.
  */
 
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import {
+  MERMAID_DEGRADED_TIMEOUT,
+  MERMAID_DEGRADED_TOO_LARGE,
+  MERMAID_PINNED_VERSION,
+  assessMermaidSource,
+  buildInteractiveMermaidDiagramCard,
+  buildMermaidInitializeConfig,
+  sanitizeMermaidSvg,
+  withRenderTimeout,
+} from '../mermaid-interactive.mjs';
 
 type MermaidProps = {
   id: string;
   chart: string;
   theme: 'dark' | 'light';
+  look?: 'classic' | 'handDrawn';
+  accessibilityDescription: string;
 };
 
-export function Mermaid({ id, chart, theme }: MermaidProps) {
+function mountSanitizedSvg(container: HTMLDivElement, svg: string) {
+  const safe = sanitizeMermaidSvg(svg);
+  const doc = new DOMParser().parseFromString(safe, 'image/svg+xml');
+  const root = doc.documentElement;
+  if (root.nodeName.toLowerCase() === 'parsererror') {
+    throw new Error('invalid mermaid svg');
+  }
+  container.replaceChildren();
+  container.appendChild(document.importNode(root, true));
+}
+
+export function Mermaid({
+  id,
+  chart,
+  theme,
+  look = 'classic',
+  accessibilityDescription,
+}: MermaidProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,39 +55,51 @@ export function Mermaid({ id, chart, theme }: MermaidProps) {
     let cancelled = false;
     (async () => {
       try {
+        const assessment = assessMermaidSource(chart);
+        if (!assessment.ok) {
+          if (!cancelled) setError(MERMAID_DEGRADED_TOO_LARGE);
+          return;
+        }
         const mermaid = (await import('mermaid')).default;
-        const palette = theme === 'light'
-          ? { bg: '#fafaf9', txt: '#0a0a0a', line: '#bbb', node: '#ffffff', border: '#0a0a0a' }
-          : { bg: '#050505', txt: '#f4f4f4', line: '#3a3a3a', node: '#0e0e0e', border: '#f4f4f4' };
-        mermaid.initialize({
-          startOnLoad: false,
-          theme: 'base',
-          themeVariables: {
-            background: palette.bg,
-            primaryColor: palette.node,
-            primaryTextColor: palette.txt,
-            primaryBorderColor: palette.border,
-            lineColor: palette.line,
-            secondaryColor: palette.node,
-            tertiaryColor: palette.node,
-            fontFamily: 'Space Grotesk, ui-sans-serif, system-ui',
-            fontSize: '13px',
-          },
-          flowchart: { curve: 'basis', padding: 14 },
-          securityLevel: 'loose',
-        });
+        mermaid.initialize(buildMermaidInitializeConfig({ theme, look }));
         const renderId = `${id}-svg`;
-        const { svg } = await mermaid.render(renderId, chart);
-        if (!cancelled && ref.current) ref.current.innerHTML = svg;
+        const { svg } = await withRenderTimeout(mermaid.render(renderId, chart));
+        if (cancelled || !ref.current) return;
+        mountSanitizedSvg(ref.current, svg);
+        const card = buildInteractiveMermaidDiagramCard({
+          id,
+          chart,
+          theme,
+          look,
+          engineVersion: MERMAID_PINNED_VERSION,
+          accessibilityDescription,
+        });
+        ref.current.dataset.diagramCard = JSON.stringify(card);
       } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'render failed');
+        if (!cancelled) {
+          const message = err instanceof Error ? err.message : 'render failed';
+          setError(message === MERMAID_DEGRADED_TIMEOUT ? MERMAID_DEGRADED_TIMEOUT : message);
+        }
       }
     })();
     return () => { cancelled = true; };
-  }, [chart, theme, id]);
+  }, [accessibilityDescription, chart, id, look, theme]);
 
-  if (error) return <div className="mermaid" style={{ color: 'var(--muted)' }}>Diagram error: {error}</div>;
-  return <div className="mermaid" ref={ref} />;
+  if (error) {
+    return (
+      <div className="mermaid" role="img" aria-label={accessibilityDescription} style={{ color: 'var(--muted)' }}>
+        Diagram error: {error}
+      </div>
+    );
+  }
+  return (
+    <div
+      className="mermaid"
+      ref={ref}
+      role="img"
+      aria-label={accessibilityDescription}
+    />
+  );
 }
 
 type DiagramProps = {
@@ -62,9 +107,10 @@ type DiagramProps = {
   title: string;
   chart: string;
   theme: 'dark' | 'light';
+  look?: 'classic' | 'handDrawn';
 };
 
-export function Diagram({ id, title, chart, theme }: DiagramProps) {
+export function Diagram({ id, title, chart, theme, look = 'classic' }: DiagramProps) {
   return (
     <div className="diagram">
       <div className="dh">
@@ -76,7 +122,13 @@ export function Diagram({ id, title, chart, theme }: DiagramProps) {
         aria-label={title}
         tabIndex={0}
       >
-        <Mermaid id={id} chart={chart} theme={theme} />
+        <Mermaid
+          id={id}
+          chart={chart}
+          theme={theme}
+          look={look}
+          accessibilityDescription={title}
+        />
       </div>
     </div>
   );

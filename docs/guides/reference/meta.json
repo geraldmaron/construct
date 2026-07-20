@@ -20,6 +20,8 @@
     "dependencies",
     "standards",
     "security",
-    "provider-worker-reliability"
+    "provider-worker-reliability",
+    "material-pattern-inventories",
+    "html-export-sanitization"
   ]
 }

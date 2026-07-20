@@ -59,6 +59,24 @@ Remediation ladder:
 
 A repo-local `overrides` pin is acceptable as defense-in-depth for this repo's own tree, but it is never the line item that closes a consumer-facing advisory.
 
+## OSV scanning, license policy, and exceptions
+
+Supply-chain scanning runs in `.github/workflows/supply-chain.yml`:
+
+- **OSV scan** (`google/osv-scanner-action`) against `package-lock.json`
+- **Dependency review** (`actions/dependency-review-action`) on pull requests, using allow/deny lists from `.github/license-allowlist.json`
+
+Both jobs are **warn-first** until the initial finding set is triaged. Promotion to blocking: flip `continue-on-error` to `false` once every remaining finding has a dated entry in `.github/supply-chain-exceptions.json` or is fixed.
+
+**Exceptions** mirror the `LEGACY_EXEMPT_SHAS` pattern in `scripts/lint-commits-pr.mjs`: each entry requires `id`, `reason`, and `expires` (`YYYY-MM-DD`). Expired entries fail `npm run supply-chain:exceptions` (also runs in CI before scans).
+
+Local checks:
+
+```bash
+npm run supply-chain:exceptions
+npm run supply-chain:gate    # composed release go/no-go (construct-tsyfe.10.7)
+```
+
 ## Rationale
 
 See `docs/decisions/adr/0001-zero-npm-core.md` for the original decision record.

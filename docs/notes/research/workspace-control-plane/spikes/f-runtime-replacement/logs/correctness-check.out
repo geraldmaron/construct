@@ -1,0 +1,8 @@
+  ok  init() authenticates against /user and stores repo/token
+  ok  read("issues") filters out items carrying pull_request
+  ok  write() maps a 403 secondary-rate-limit body to RateLimitError with header-derived retryAfter=1
+  ok  write() succeeds on retry and returns the created html_url
+  ok  search() qualifies the query with repo: and unwraps .items
+  ok  a 404 response maps to NotFoundError
+
+6/6 correctness checks passed against the mock REST server.

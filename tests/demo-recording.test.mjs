@@ -47,6 +47,13 @@ test('loadDemoRecordingValidated rejects invalid JSON', () => {
   }
 });
 
+test('loadDemoRecordingValidated loads shipped manifest recording', () => {
+  const result = loadDemoRecordingValidated('agentic-platforms-prd', { cwd: REPO, repoRoot: REPO });
+  assert.equal(result.ok, true);
+  assert.equal(result.recording.engine, 'playwright');
+  assert.match(result.recording.sourcePath, /templates\/demos\/manifests\//);
+});
+
 test('normalizeArtifactReveal accepts legacy path field', () => {
   const reveal = normalizeArtifactReveal({ path: 'report.pdf', mode: 'sameOrigin' });
   assert.equal(reveal.file, 'report.pdf');

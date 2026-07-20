@@ -1,0 +1,263 @@
+{
+  "id": "core-before_dispatch",
+  "description": "Core matrix @ before_dispatch: idempotent resume, safe cleanup, graph reconciliation",
+  "checks": [
+    {
+      "name": "crash-was-a-real-kill",
+      "pass": true,
+      "detail": {
+        "status": null,
+        "signal": "SIGKILL"
+      }
+    },
+    {
+      "name": "run-reached-done",
+      "pass": true,
+      "detail": {
+        "status": "done"
+      }
+    },
+    {
+      "name": "no-repeat-of-completed-work:dispatch-complete",
+      "pass": true,
+      "detail": {
+        "event": "dispatch-complete",
+        "count": 1,
+        "expected": 1
+      }
+    },
+    {
+      "name": "no-repeat-of-completed-work:execution-complete",
+      "pass": true,
+      "detail": {
+        "event": "execution-complete",
+        "count": 1,
+        "expected": 1
+      }
+    },
+    {
+      "name": "no-repeat-of-completed-work:artifact-content-written",
+      "pass": true,
+      "detail": {
+        "event": "artifact-content-written",
+        "count": 1,
+        "expected": 1
+      }
+    },
+    {
+      "name": "no-repeat-of-completed-work:approval-requested",
+      "pass": true,
+      "detail": {
+        "event": "approval-requested",
+        "count": 1,
+        "expected": 1
+      }
+    },
+    {
+      "name": "no-repeat-of-completed-work:approval-complete",
+      "pass": true,
+      "detail": {
+        "event": "approval-complete",
+        "count": 1,
+        "expected": 1
+      }
+    },
+    {
+      "name": "no-repeat-of-completed-work:external-write-complete",
+      "pass": true,
+      "detail": {
+        "event": "external-write-complete",
+        "count": 1,
+        "expected": 1
+      }
+    },
+    {
+      "name": "no-repeat-of-completed-work:integration-applied",
+      "pass": true,
+      "detail": {
+        "event": "integration-applied",
+        "count": 1,
+        "expected": 1
+      }
+    },
+    {
+      "name": "no-repeat-of-completed-work:graph-update-complete",
+      "pass": true,
+      "detail": {
+        "event": "graph-update-complete",
+        "count": 1,
+        "expected": 1
+      }
+    },
+    {
+      "name": "stages-before-crash-point-not-repeated",
+      "pass": true,
+      "detail": {
+        "note": "covered by the per-event count===1 checks above; listed here for matrix readability",
+        "stagesAlreadyDoneBeforeCrash": []
+      }
+    },
+    {
+      "name": "no-orphaned-tmp-files",
+      "pass": true,
+      "detail": {
+        "orphans": []
+      }
+    },
+    {
+      "name": "graph-nodes-reconciled",
+      "pass": true,
+      "detail": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      }
+    },
+    {
+      "name": "graph-edges-reconciled",
+      "pass": true,
+      "detail": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      }
+    },
+    {
+      "name": "graph-trust-incremental",
+      "pass": true,
+      "detail": {
+        "trustIncremental": true,
+        "reasons": []
+      }
+    },
+    {
+      "name": "graph-outbox-fully-drained",
+      "pass": true,
+      "detail": {
+        "pending": 0,
+        "applying": 0,
+        "applied": 3,
+        "failed": 0,
+        "deadLetter": 0
+      }
+    },
+    {
+      "name": "graph-has-exactly-one-artifact-node",
+      "pass": true,
+      "detail": {
+        "note": "Map keyed by id — a duplicate upsert cannot produce a second row by construction; this confirms presence, not just absence of a JS-level duplicate."
+      }
+    }
+  ],
+  "evidence": {
+    "crashInvocation": {
+      "status": null,
+      "signal": "SIGKILL"
+    },
+    "preResumeState": null,
+    "resumeInvocations": [
+      {
+        "i": 0,
+        "status": 0,
+        "signal": null,
+        "stderr": ""
+      },
+      {
+        "i": 1,
+        "status": 0,
+        "signal": null,
+        "stderr": ""
+      }
+    ],
+    "finalState": {
+      "runId": "run-core-before_dispatch",
+      "stages": {
+        "dispatch": "complete",
+        "execution": "complete",
+        "artifact": "complete",
+        "approval": "complete",
+        "external_write": "complete",
+        "integration": "complete",
+        "graph_update": "complete"
+      },
+      "status": "done",
+      "updatedAt": "2026-07-18T00:40:28.744Z",
+      "specHash": "7eceb6c147e5328c643aee3fe41cf743f27f95e3a464f19f8095bfc674c9186c",
+      "planHash": "f23225666720d326d05039cc88a90f1b9b0f55418b56964e3ea567d7dc5715ca",
+      "objectiveId": "obj-core-before_dispatch",
+      "credential": {
+        "token": "tok-run-core-before_dispatch",
+        "expiresAt": 1784335528429
+      },
+      "artifact": {
+        "hash": "05519fa907aee192af91cd966e396373d4553a7e0f344e77747996d948806a51",
+        "path": "/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/spike-e-recovery-bsnnuh/core-before_dispatch/run/artifact/doc.md",
+        "producedAt": "2026-07-18T00:40:28.485Z"
+      },
+      "approval": {
+        "grantedAt": "2026-07-18T00:40:28.511Z",
+        "token": "auto-grant",
+        "approvedArtifactHash": "05519fa907aee192af91cd966e396373d4553a7e0f344e77747996d948806a51"
+      },
+      "externalWrite": {
+        "recordId": "run-core-before_dispatch",
+        "done": true
+      },
+      "graphUpdate": {
+        "done": true,
+        "workId": "work:obj-core-before_dispatch",
+        "artifactId": "artifact:run-core-before_dispatch",
+        "drain": {
+          "applied": 3,
+          "failed": 0,
+          "deadLettered": 0,
+          "appliedIds": [
+            1,
+            2,
+            3
+          ]
+        }
+      }
+    },
+    "historyEventCounts": {
+      "dispatch-complete": 1,
+      "execution-complete": 1,
+      "artifact-content-written": 1,
+      "approval-requested": 1,
+      "approval-complete": 1,
+      "external-write-complete": 1,
+      "integration-applied": 1,
+      "graph-update-complete": 1
+    },
+    "stagesAlreadyDoneBeforeCrash": [],
+    "tmpOrphans": [],
+    "graph": {
+      "recon": {
+        "empty": true,
+        "nodes": {
+          "added": [],
+          "removed": [],
+          "changed": []
+        },
+        "edges": {
+          "added": [],
+          "removed": [],
+          "changed": []
+        },
+        "applied": false
+      },
+      "trust": {
+        "trustIncremental": true,
+        "reasons": []
+      },
+      "outboxState": {
+        "pending": 0,
+        "applying": 0,
+        "applied": 3,
+        "failed": 0,
+        "deadLetter": 0
+      }
+    },
+    "artifactNodePresent": true
+  }
+}

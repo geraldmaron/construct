@@ -45,6 +45,7 @@ test('a non-entitled worker profile is denied under CONSTRUCT_STRICT_SKILLS=1', 
   process.env.CONSTRUCT_STRICT_SKILLS = '1';
   try {
     const result = getSkill({ path: NOT_ENTITLED_PATH, workerProfileId: 'reviewer' }, { ROOT_DIR });
+    assert.equal(result.ok, false);
     assert.equal(result.content, undefined);
     assert.match(result.error, /not in worker profile reviewer's entitlement list/);
   } finally {

@@ -11,39 +11,47 @@ Set TypingSpeed 55ms
 Type "# 1) Show .construct/ usage vs cap in doctor"
 Sleep 400ms
 Enter
-Sleep 800ms
+Wait /[$%›]|construct|Construct|PASS|FAIL|Step/
+Sleep 400ms
 
 Type "node bin/construct doctor 2>&1 | tail -25"
 Sleep 400ms
 Enter
-Sleep 3s
+Wait /[$%›]|construct|Construct|PASS|FAIL|Step/
+Sleep 400ms
 
 Type "# 2) Preview retention prune (dry-run)"
 Sleep 400ms
 Enter
-Sleep 800ms
+Wait /[$%›]|construct|Construct|PASS|FAIL|Step/
+Sleep 400ms
 
 Type "node bin/construct prune --dry-run"
 Sleep 400ms
 Enter
-Sleep 2s
+Wait /[$%›]|construct|Construct|PASS|FAIL|Step/
+Sleep 400ms
 
 Type "# 3) Run resource budget functional test"
 Sleep 400ms
 Enter
-Sleep 800ms
+Wait /[$%›]|construct|Construct|PASS|FAIL|Step/
+Sleep 400ms
 
 Type "node --test tests/functional/resource-write-guard.functional.test.mjs"
 Sleep 400ms
 Enter
-Sleep 3s
+Wait /[$%›]|construct|Construct|PASS|FAIL|Step/
+Sleep 400ms
 
 Type "# 4) User-scope cleanup (logs + pressure)"
 Sleep 400ms
 Enter
-Sleep 800ms
+Wait /[$%›]|construct|Construct|PASS|FAIL|Step/
+Sleep 400ms
 
 Type "node bin/construct cleanup --disk-only --dry-run"
 Sleep 400ms
 Enter
-Sleep 2s
+Wait /[$%›]|construct|Construct|PASS|FAIL|Step/
+Sleep 400ms

@@ -22,6 +22,18 @@ test("withTimeout rejects a slow promise and resolves a fast one", async () => {
   assert.equal(await withTimeout(Promise.resolve("ok"), 1000, "x"), "ok");
 });
 
+test("withTimeout onTimeout fires once on timeout, not on early settle", async () => {
+  let calls = 0;
+  await assert.rejects(
+    withTimeout(new Promise(() => {}), 10, "too slow", { onTimeout: () => { calls += 1; } }),
+    /too slow/,
+  );
+  assert.equal(calls, 1);
+  calls = 0;
+  await withTimeout(Promise.resolve("ok"), 1000, "x", { onTimeout: () => { calls += 1; } });
+  assert.equal(calls, 0);
+});
+
 test("docling timeout falls back to the node-native extractor with a recorded drop", async () => {
   const out = await extractWithDoclingFallback("/tmp/doc.pdf", {
     timeoutMs: 10,

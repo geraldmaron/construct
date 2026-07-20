@@ -28,6 +28,9 @@ const SANCTIONED = new Set([
   // js-yaml: frontmatter parse/emit only (ADR-0028). New YAML use cases need
   // a fresh ADR; the allowlist entry is narrow on purpose.
   'js-yaml',
+  // mailparser: RFC 5322/MIME email parsing only (ADR-0098). Does not cover
+  // .msg/OLE parsing — that input fails loud with a typed error instead.
+  'mailparser',
 ]);
 
 // node-webvtt was removed (ADR-0028): zero in-tree usage. New deps may not

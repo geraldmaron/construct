@@ -27,7 +27,7 @@ Style constraint: do not produce a wall of bullets. Use paragraphs for reasoning
 
 ## Steps
 
-The numbered chain below is the manifest baseline, not the final roster. `construct workflow invoke` and `author_artifact` evaluate the request's content signals and append condition-recruited participants after the baseline chain (ADR-0070): the invoke result carries `recruitment: {recruited, addedRoles, rationale}`, and `author_artifact` returns `recruited: [{specialist, reason, role, gate, source}]`. Honor the recruited set — run those participants at their stated role and gate alongside the baseline; do not substitute a memorized roster. Override only on explicit request: `recruitment: "off"` skips recruitment for the run; on `author_artifact`, an explicit list of cx- ids replaces the signal-derived set.
+The numbered chain below is the manifest baseline, not the final roster. `construct procedure invoke` and `author_artifact` evaluate the request's content signals and append condition-recruited participants after the baseline chain (ADR-0070): the invoke result carries `recruitment: {recruited, addedRoles, rationale}`, and `author_artifact` returns `recruited: [{specialist, reason, role, gate, source}]`. Honor the recruited set — run those participants at their stated role and gate alongside the baseline; do not substitute a memorized roster. Override only on explicit request: `recruitment: "off"` skips recruitment for the run; on `author_artifact`, an explicit list of cx- ids replaces the signal-derived set.
 
 1. **cx-product-manager** produces the requirements package
 2. **cx-researcher** grounds requirements in user behavior and fills evidence gaps (invoke in parallel for new features)
@@ -65,7 +65,7 @@ Once the PRD is approved, run `/plan feature {feature-slug}` to produce a struct
 
 ## Distribution (publish pipeline)
 
-**`construct workflow invoke` returns a plan only** — it does not draft the PRD. Run the specialists the plan returns — the baseline chain plus every entry in its `recruitment.recruited` block — to author and review the artifact from the template. **Do not hand-write a stub and publish.**
+**`construct procedure invoke` returns a plan only** — it does not draft the PRD. Run the specialists the plan returns — the baseline chain plus every entry in its `recruitment.recruited` block — to author and review the artifact from the template. **Do not hand-write a stub and publish.**
 
 Authoring and publish surfaces return a **lifecycle handoff** object (`lifecycle: { state, evidence, nextAction, nextCommand? }`) so you can tell plan-only (`planned`), release-gate pass (`validated`), and export complete (`published`) apart. `author_artifact` also mirrors plan-only state on `workflow_lifecycle` / `invokePlan.lifecycle`. Prepared inline runs use `prepared`; they are not authored artifacts.
 

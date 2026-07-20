@@ -295,7 +295,14 @@ async function cmdRulesUsage(args = []) {
 
 async function cmdApprovals(args = []) {
   const { runApprovalsCli } = await import('../lib/cli/approvals.mjs');
-  const code = await runApprovalsCli(args, { rootDir: ROOT_DIR, homeDir: HOME, env: process.env, println, errorln });
+  const { resolveRootDir } = await import('../lib/project-root.mjs');
+  const code = await runApprovalsCli(args, {
+    rootDir: resolveRootDir(process.env, process.cwd()),
+    homeDir: HOME,
+    env: process.env,
+    println,
+    errorln,
+  });
   if (code) process.exit(code);
 }
 
@@ -511,7 +518,7 @@ async function cmdList(args = []) {
 async function cmdDoctor() {
   const args = process.argv.slice(3);
 
-  const DAEMON_SUBS = new Set(['status', 'watch', 'stop', 'logs', 'tick', 'report', 'consistency']);
+  const DAEMON_SUBS = new Set(['status', 'watch', 'stop', 'logs', 'tick', 'report', 'consistency', 'production']);
   if (args.length > 0 && DAEMON_SUBS.has(args[0])) {
     const { runCli } = await import('../lib/doctor/cli.mjs');
     const code = await runCli(args);
@@ -1087,6 +1094,9 @@ async function cmdDoctor() {
     if (isSourceCheckout) {
       const workerProfileAudit = auditWorkerProfiles({ rootDir: ROOT_DIR, silent: true });
       add('Worker Profile/Skill audit cross-checks', workerProfileAudit.pass, false);
+      const { auditPromptsSkills } = await import('../lib/audit-prompts-skills.mjs');
+      const promptsSkillsAudit = auditPromptsSkills({ rootDir: ROOT_DIR, silent: true });
+      add('Prompts/skills drift audit (four-check manifest)', promptsSkillsAudit.pass, false);
 
       // The catalog is the public-service source of truth; doctor joins it to runtime dispatch
       // and the generated reference so a command that is unroutable or undocumented surfaces here.
@@ -1097,6 +1107,7 @@ async function cmdDoctor() {
       add('Public CLI dispatch/reference parity', cliDrift.length === 0, false);
     } else {
       add('Worker Profile/Skill audit cross-checks (skipped — published package)', true, true);
+      add('Prompts/skills drift audit (skipped — published package)', true, true);
       add('Public CLI dispatch/reference parity (skipped — published package)', true, true);
     }
     const { lintResearchRepo } = await import('../lib/research-lint.mjs');
@@ -1846,7 +1857,8 @@ async function cmdExport(args) {
   const figures = !args.includes('--no-figures');
   const branding = args.includes('--plain') || args.includes('--no-brand') ? 'plain' : 'construct';
 
-  const { detect, exportMarkdown, EXPORT_FORMATS } = await import('../lib/document-export.mjs');
+  const { detect, EXPORT_FORMATS } = await import('../lib/document-export.mjs');
+  const { exportFromSource } = await import('../lib/export-from-source.mjs');
 
   if (detectOnly) {
     const format = toFlag || 'pdf';
@@ -1865,7 +1877,7 @@ async function cmdExport(args) {
 
   const resolvedIn = path.resolve(process.cwd(), inputPath);
   const resolvedOut = outFlag ? path.resolve(process.cwd(), outFlag) : null;
-  const result = exportMarkdown({
+  const result = exportFromSource({
     inputPath: resolvedIn,
     outputPath: resolvedOut,
     format: toFlag,
@@ -4174,6 +4186,8 @@ async function cmdOrchestrate(args) {
       recordOrchestrationReadinessEvent,
       summarizeOrchestrationReadiness,
       formatOrchestrationReadinessGuidance,
+      loadOrchestrationReadinessEvents,
+      summarizeOrchestrationReadinessMttr,
     } = await import('../lib/orchestration/readiness.mjs');
     const { probeStdioMcpTools } = await import('../lib/mcp/stdio-mcp-probe.mjs');
     const splitCsv = (value) => value ? String(value).split(',').map((s) => s.trim()).filter(Boolean) : undefined;
@@ -4211,6 +4225,10 @@ async function cmdOrchestrate(args) {
     }, { env: process.env, cwd: process.cwd() });
     let eventResult = null;
     try { eventResult = recordOrchestrationReadinessEvent(readiness, { homeDir: HOME }); } catch { /* telemetry must not break preflight */ }
+    let mttrSummary = null;
+    try {
+      mttrSummary = summarizeOrchestrationReadinessMttr(loadOrchestrationReadinessEvents({ homeDir: HOME }));
+    } catch { /* telemetry summary must not break preflight */ }
 
     // Opt-in deep credential check (construct-1yhp.5). Default preflight stays
     // presence-first — `--deep` performs the real network auth probe, only for
@@ -4233,11 +4251,14 @@ async function cmdOrchestrate(args) {
     }
 
     if (wantsJson) {
-      println(JSON.stringify({ ...readiness, eventPath: eventResult?.path ?? null, deepProbes }, null, 2));
+      println(JSON.stringify({ ...readiness, eventPath: eventResult?.path ?? null, mttrSummary, deepProbes }, null, 2));
       process.exit(readiness.attached ? 0 : 1);
     }
 
     println(summarizeOrchestrationReadiness(readiness));
+    if (mttrSummary?.sampleCount > 0 && mttrSummary.meanRecoveryMs != null) {
+      println(`MTTR: ${mttrSummary.sampleCount} recovery(ies), mean ${Math.round(mttrSummary.meanRecoveryMs / 1000)}s`);
+    }
     println(`Reason: ${readiness.reasonCode}`);
     if (readiness.diagnosticBundle?.detail) println(`Detail: ${readiness.diagnosticBundle.detail}`);
     println(`Next: ${readiness.nextStep}`);
@@ -4531,7 +4552,11 @@ async function cmdModels(args) {
   const KNOWN_SUBCOMMANDS = new Set(['list', 'set', 'free', 'reset', 'resolve', 'policy', 'explain']);
   const retiredFlag = args.find((arg) => arg === '--reset' || arg === '--poll' || arg.startsWith('--set='));
   if (retiredFlag) {
-    errorln(`Unknown models option: ${retiredFlag}. Use \`construct models --help\` for the supported commands.`);
+    const { resolveModelsRetiredSurface, formatRetiredCliMessage } = await import('../lib/compat-surfaces.mjs');
+    const surface = resolveModelsRetiredSurface(retiredFlag);
+    errorln(surface
+      ? formatRetiredCliMessage(surface, { attempted: retiredFlag })
+      : `Unknown models option: ${retiredFlag}. Use \`construct models --help\` for the supported commands.`);
     process.exit(1);
   }
   if (sub && !KNOWN_SUBCOMMANDS.has(sub)) {
@@ -6027,7 +6052,22 @@ async function cmdProvider(args) {
       process.exit(1);
     }
 
-    const record = writeInstanceConfig(process.cwd(), id, merged);
+    let record;
+    try {
+      record = writeInstanceConfig(process.cwd(), id, merged, { baseConfig: base });
+    } catch (err) {
+      if (err?.name === 'InstanceConfigWriteConflictError') {
+        const conflictResult = { ok: false, providerId: id, error: err.message, conflicts: err.conflicts };
+        if (jsonOutput) {
+          println(JSON.stringify(conflictResult, null, 2));
+        } else {
+          errorln(`✗ configure ${id} conflict: ${err.message}`);
+          for (const path of err.conflicts) errorln(`  ${path}`);
+        }
+        process.exit(1);
+      }
+      throw err;
+    }
     if (jsonOutput) {
       println(JSON.stringify({ ok: true, providerId: id, config: record.config, path: instanceConfigRelPath(id) }, null, 2));
       return;
@@ -6672,6 +6712,10 @@ const handlers = new Map([
     const sub = args[0];
     if (sub === 'skills') return runAuditSkillsCli(args.slice(1));
     if (sub === 'worker-profiles') return runAuditWorkerProfilesCli(args.slice(1));
+    if (sub === 'prompts-skills') {
+      const { runAuditPromptsSkillsCli } = await import('../lib/audit-prompts-skills.mjs');
+      return runAuditPromptsSkillsCli(args.slice(1));
+    }
     if (sub === 'tests') {
       const rest = args.slice(1);
       if (rest.includes('--corpus')) return runCorpusInventoryAuditCli(rest.filter((arg) => arg !== '--corpus'), { rootDir: ROOT_DIR });
@@ -6681,7 +6725,7 @@ const handlers = new Map([
       const { runAuditTrailCli } = await import('../lib/audit-trail.mjs');
       return runAuditTrailCli(args.slice(sub === 'trail' ? 1 : 0));
     }
-    errorln(`Unknown audit subcommand: ${sub}. Available: skills, worker-profiles, tests, trail`);
+    errorln(`Unknown audit subcommand: ${sub}. Available: skills, worker-profiles, prompts-skills, tests, trail`);
     process.exit(1);
   }],
   ['artifact', async (args) => {
@@ -7191,9 +7235,9 @@ const handlers = new Map([
    // status/recommend → cmdGraph).
    ['graph', async (args) => {
      const DEPENDENCY_GRAPH_SUBCOMMANDS = new Set([
-       'build', 'build-targets', 'stat', 'query', 'validate', 'impacted',
+       'build', 'build-targets', 'stat', 'query', 'validate', 'verify', 'impacted', 'intent',
        'missing-tests', 'missing-docs', 'stale', 'dependencies', 'providers', 'surfaces', 'explain', 'owasp',
-       'update', 'reconcile', 'queryUp', 'queryDown', 'path', 'orphans', 'cycles', 'owners', 'requirements', 'export',
+       'update', 'reconcile', 'queryUp', 'queryDown', 'path', 'orphans', 'cycles', 'owners', 'requirements', 'export', 'history',
      ]);
      if (DEPENDENCY_GRAPH_SUBCOMMANDS.has(args[0])) {
        const { runGraphCli } = await import('../lib/graph/cli.mjs');

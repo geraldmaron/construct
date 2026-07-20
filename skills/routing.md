@@ -1,6 +1,6 @@
 <!--
 skills/routing.md — generated render of skills/routing.json. Do not hand-edit: run
-`node scripts/generate-skill-routing.mjs --write` (or `construct skills:routes --write`).
+`node scripts/generate-skill-routing.mjs --write` (or `npm run skills:routes -- --write`).
 -->
 
 # Skill routing

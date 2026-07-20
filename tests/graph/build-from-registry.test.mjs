@@ -100,3 +100,25 @@ test('builder is deterministic and emits a stable sourceHash', () => {
   assert.equal(a.nodes.length, b.nodes.length);
   assert.equal(a.edges.length, b.edges.length);
 });
+
+test('document-type capabilities declare registry-sourced artifact gate realizers', () => {
+  const built = buildFromRegistry({ rootDir: REPO_ROOT });
+  const registry = loadCapabilityRegistry({ rootDir: REPO_ROOT });
+  const documentTypes = registry.capabilities.filter((c) => c.id.startsWith('document-type.'));
+  assert.ok(documentTypes.length >= 5, 'expected document-type capabilities in the registry');
+
+  for (const cap of documentTypes) {
+    const realizes = built.edges.filter(
+      (e) => e.rel === 'realizes'
+        && e.to === `capability:${cap.id}`
+        && e.source === 'registry',
+    );
+    assert.equal(
+      realizes.length,
+      2,
+      `${cap.id} must realize lib/artifact-manifest.mjs and lib/artifact-release-gate.mjs`,
+    );
+    const files = realizes.map((e) => e.from.slice('file:'.length)).sort();
+    assert.deepEqual(files, ['lib/artifact-manifest.mjs', 'lib/artifact-release-gate.mjs']);
+  }
+});

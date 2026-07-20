@@ -5,7 +5,7 @@ description: Where Construct writes state, what belongs in git, and how intake d
 
 Construct splits state across four roots. Mixing them is the usual source of “why is this in git?” or “why did my disk fill up?” confusion.
 
-## The three-way split (ADR-0074, ADR-0066)
+## The three-way split (ADR-0074, ADR-0066, ADR-0096)
 
 A host project directory carries a single Construct-authored directory — `.construct/` — plus one deliberate exception (`.beads/`). Everything Construct writes into the project lives under `.construct/` and falls into three kinds:
 
@@ -83,3 +83,5 @@ Consumer projects created with `construct init` get `.construct/` gitignored via
 - [Host disposition](/guides/concepts/architecture) — ADR-0027 ignored patterns
 - [ADR-0074](/decisions/adr/0074-single-project-directory-consolidation) — the single-directory consolidation this page documents
 - [ADR-0066](/decisions/adr/0066-config-layer-project-footprint) — the machine-scoped heavy-state split
+- [ADR-0092](/decisions/adr/0092-single-project-identity-derivation) — the one canonical project-identity derivation
+- [ADR-0096](/decisions/adr/0096-state-root-consolidation) — the three-root ownership table and identity migration tooling

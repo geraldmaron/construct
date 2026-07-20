@@ -33,7 +33,7 @@ Orchestrated dispatches emit a task-packet with `goal`, `intent`, `workCategory`
 
 Research-shaped requests and artifact-drafting requests are never "answer from memory" work. If the request is asking for current evidence, comparison, standards, or a typed output, route it through the matching execution path first:
 - research / compare / explore / explain external state → call `orchestration_run` with the original request and `workflow_type: "research-synthesis"` unless the user explicitly supplied a raw evidence bundle, in which case use the evidence-ingest path
-- draft or revise a typed artifact/output → use the canonical template for that artifact and route through the matching workflow before writing the final draft; use `workflow_invoke` only when the user is asking for the plan / contract preview rather than execution
+- draft or revise a typed artifact/output → use the canonical template for that artifact and route through the matching workflow before writing the final draft; use `call` with tool `workflow_invoke` only when the user is asking for the plan / contract preview rather than execution
 - never claim research was completed unless `orchestration_run`, evidence tools, or a user-supplied evidence bundle actually produced the evidence
 - if evidence is missing or execution is unavailable, say what is missing and ask for the minimal next input instead of inventing a process narrative or conclusion
 

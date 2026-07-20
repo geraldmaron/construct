@@ -74,6 +74,10 @@
     "0081-lancedb-optional-retrieval-adapter",
     "0092-single-project-identity-derivation",
     "0093-shared-workspace-server-auth-deployment",
-    "0094-beads-projection-field-authority"
+    "0094-beads-projection-field-authority",
+    "0095-certified-prompt-versions",
+    "0096-state-root-consolidation",
+    "0098-mailparser-email-extraction",
+    "0099-reject-promptfoo-dev-harness"
   ]
 }

@@ -144,6 +144,18 @@
     "disposition": "optional"
   },
   {
+    "id": "mailparser",
+    "kind": "npm-dep",
+    "purpose": "RFC 5322/MIME email parsing for .eml intake only (ADR-0098); dynamic import in lib/document-extract/email-extract.mjs with sync bridge via lib/document-extract/email-sync-worker.mjs",
+    "owningWorkflow": "docs-document-ingest-workflow, extract-document-text (email path)",
+    "modeRequirement": "all",
+    "healthCheck": "dynamic import('mailparser') in lib/document-extract/email-extract.mjs — verified when async email extraction runs; absent means .eml extraction fails at runtime",
+    "degradationBehavior": "error",
+    "securityConcerns": "Parses untrusted email/MIME input crossing the trust boundary; attachment policy and quarantine remain in-tree (lib/extractors/shared/attachment-policy.mjs); .msg/OLE input is rejected, not routed through mailparser",
+    "removalCriteria": "Email parsing reverts to an in-tree RFC 5322/MIME implementation with passing regression corpus, or email ingestion is removed",
+    "disposition": "core"
+  },
+  {
     "id": "unpdf",
     "kind": "npm-optional",
     "purpose": "PDF text extraction for document ingestion workflows (pure-JS, no native binary required)",
@@ -194,14 +206,14 @@
   {
     "id": "zod",
     "kind": "npm-optional",
-    "purpose": "Schema validation and type-safe parsing for MCP tool inputs, config files, and artifact manifests",
-    "owningWorkflow": "mcp-server tool validation, config parsing, artifact-release-gate",
+    "purpose": "Removed: was declared for MCP/config/artifact schema validation but never imported; Construct keeps hand-rolled JSON-Schema-subset validators in lib/config/schema.mjs, lib/flows/schema.mjs, lib/platforms/capabilities.mjs, lib/providers/instance-config.mjs, lib/registry/custom-schema.mjs, and lib/specialists/schema.mjs per ADR-0001 and ADR-0097 schema-validation class review.",
+    "owningWorkflow": "none (removed from package.json)",
     "modeRequirement": "all",
-    "healthCheck": "require('zod') — absent means schema validation falls back to manual checks; construct doctor warns",
+    "healthCheck": "n/a — not installed; zod may still appear transitively via @modelcontextprotocol/sdk peer deps only",
     "degradationBehavior": "graceful-skip",
     "securityConcerns": "null",
-    "removalCriteria": "Schema validation is replaced by a different library (e.g. valibot) or inlined",
-    "disposition": "optional"
+    "removalCriteria": "Completed: direct optionalDependency removed; intent entry retained for audit trail until dep-intent-reconcile prunes remove-disposition tombstones",
+    "disposition": "remove"
   },
   {
     "id": "@huggingface/transformers",
@@ -300,6 +312,30 @@
     "disposition": "dev"
   },
   {
+    "id": "knip",
+    "kind": "npm-dev",
+    "purpose": "Static analysis for unused files, exports, and dependencies (npm run static:knip); entry points declared in knip.json",
+    "owningWorkflow": "static:knip, CI lint suite (warn-first)",
+    "modeRequirement": "all",
+    "healthCheck": "npx knip --version",
+    "degradationBehavior": "error",
+    "securityConcerns": "null",
+    "removalCriteria": "Unused-export/dead-file scanning is removed or replaced with another static analysis tool",
+    "disposition": "dev"
+  },
+  {
+    "id": "dependency-cruiser",
+    "kind": "npm-dev",
+    "purpose": "Dependency graph validation and orphan-import rules (npm run static:cruise); config in .dependency-cruiser.cjs aligned with knip entry inventory",
+    "owningWorkflow": "static:cruise, CI lint suite (warn-first)",
+    "modeRequirement": "all",
+    "healthCheck": "npx depcruise --version",
+    "degradationBehavior": "error",
+    "securityConcerns": "null",
+    "removalCriteria": "Dependency graph linting is removed or replaced with another tool",
+    "disposition": "dev"
+  },
+  {
     "id": "pandoc",
     "kind": "binary-sidecar",
     "purpose": "Document conversion engine for PDF, DOCX, HTML, RTF, EPUB, and other export formats via the document-export workflow",
@@ -384,6 +420,18 @@
     "disposition": "dev"
   },
   {
+    "id": "@playwright/test",
+    "kind": "npm-dev",
+    "purpose": "Playwright test runner CLI and API for demo recording (lib/playwright-demo.mjs, lib/demo.mjs) and workspace demo templates; invoked via locally resolved node CLI, not npx",
+    "owningWorkflow": "certify:demos, demo recording, tests/playwright-demo-video.test.mjs",
+    "modeRequirement": "all",
+    "healthCheck": "require('@playwright/test') — dev-only; demo recording degrades gracefully when absent in a target workspace",
+    "degradationBehavior": "graceful-skip",
+    "securityConcerns": "Full browser automation during demo recording; demo scripts navigate user-authored local pages only",
+    "removalCriteria": "Demo recording and Playwright-based demo templates are removed or replaced with a different runner",
+    "disposition": "dev"
+  },
+  {
     "id": "docker",
     "kind": "binary-sidecar",
     "purpose": "Container builds for Construct distribution images and sandboxed execution environments",
@@ -418,5 +466,65 @@
     "securityConcerns": "Has access to the full 1Password vault; requires biometric or master-password authentication; token scope should be minimized to required vaults only",
     "removalCriteria": "Secrets management moves to a different tool (e.g. Doppler, AWS Secrets Manager) or direct environment variable injection",
     "disposition": "optional"
+  },
+  {
+    "id": "unified",
+    "kind": "npm-dep",
+    "purpose": "Core processor interface for RichDocument markdown/HTML parsing adapters (remark/rehype pipelines in lib/rich-document-adapters/)",
+    "owningWorkflow": "document-ingest, document-export, richdocument-ir",
+    "modeRequirement": "all",
+    "healthCheck": "require('unified') — verified at import time when RichDocument parsers load",
+    "degradationBehavior": "error",
+    "securityConcerns": "Parses untrusted markdown/HTML during document ingest; paired with rehype-sanitize on the HTML path",
+    "removalCriteria": "RichDocument parsers revert to in-tree hand-rolled implementation with passing fidelity corpus",
+    "disposition": "core"
+  },
+  {
+    "id": "remark-parse",
+    "kind": "npm-dep",
+    "purpose": "CommonMark markdown parser for RichDocument markdownToRichDocument adapter",
+    "owningWorkflow": "document-ingest, richdocument-ir",
+    "modeRequirement": "all",
+    "healthCheck": "require('remark-parse') — verified at import time via markdown adapter",
+    "degradationBehavior": "error",
+    "securityConcerns": "Parses untrusted markdown input; no arbitrary code execution in remark-parse itself",
+    "removalCriteria": "Removed when RichDocument markdown parsing no longer uses remark",
+    "disposition": "core"
+  },
+  {
+    "id": "remark-gfm",
+    "kind": "npm-dep",
+    "purpose": "GFM extensions (tables, task lists, strikethrough) for RichDocument markdown adapter",
+    "owningWorkflow": "document-ingest, richdocument-ir",
+    "modeRequirement": "all",
+    "healthCheck": "require('remark-gfm') — verified at import time via markdown adapter",
+    "degradationBehavior": "error",
+    "securityConcerns": "Extends markdown parse surface; same untrusted-input class as remark-parse",
+    "removalCriteria": "Removed when RichDocument markdown parsing no longer uses remark-gfm",
+    "disposition": "core"
+  },
+  {
+    "id": "rehype-parse",
+    "kind": "npm-dep",
+    "purpose": "HTML parser for RichDocument htmlToRichDocument adapter (inverts richDocumentToHtml output)",
+    "owningWorkflow": "document-ingest, richdocument-ir",
+    "modeRequirement": "all",
+    "healthCheck": "require('rehype-parse') — verified at import time via HTML adapter",
+    "degradationBehavior": "error",
+    "securityConcerns": "Parses HTML that may originate from external sources once ingest is wired; must stay paired with rehype-sanitize",
+    "removalCriteria": "Removed when RichDocument HTML parsing no longer uses rehype",
+    "disposition": "core"
+  },
+  {
+    "id": "rehype-sanitize",
+    "kind": "npm-dep",
+    "purpose": "HTML sanitization schema for RichDocument htmlToRichDocument (blocks javascript: href, script tags, event handlers)",
+    "owningWorkflow": "document-ingest, richdocument-ir",
+    "modeRequirement": "all",
+    "healthCheck": "require('rehype-sanitize') — verified at import time via HTML adapter",
+    "degradationBehavior": "error",
+    "securityConcerns": "Load-bearing security control on the HTML ingest path; schema must allow data-cx-* attributes for ADR-0073 round-trip",
+    "removalCriteria": "Removed only if RichDocument HTML parsing is dropped or replaced with an equivalent sanitization layer",
+    "disposition": "core"
   }
 ]

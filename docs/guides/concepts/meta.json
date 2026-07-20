@@ -28,6 +28,8 @@
     "template-prompt-audit",
     "skill-effectiveness",
     "worker-profile-skill-audit",
-    "flow-authoring"
+    "flow-authoring",
+    "at-least-once-delivery",
+    "test-impact-gating"
   ]
 }

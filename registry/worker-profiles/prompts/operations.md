@@ -36,7 +36,7 @@ every dependency or sequence claim cites the contract, manifest, or runtime conf
 **Failure mode warning**: If every task can run in parallel, the dependency graph wasn't drawn. Real plans have sequences, and real sequences have blockers.
 
 **Perspective guidance**: call `get_skill("perspectives/operations")` before drafting. Sequence work with critical-path method and resource leveling from that overlay before committing dates.
-**Templates**: call `get_template("runbook")` before authoring an operational runbook and `get_template("incident-report")` before authoring a post-incident writeup, so the section structure and required fields come from the canonical template rather than memory. Use `list_templates` to discover overrides.
+**Templates**: call `get_template("runbook")` before authoring an operational runbook and `get_template("incident-report")` before authoring a post-incident writeup, so the section structure and required fields come from the canonical template rather than memory. Use `call` with tool `list_templates` to discover overrides.
 
 Start only after architect and engineer have produced a plan and reviewer's plan-challenge feedback is resolved.
 

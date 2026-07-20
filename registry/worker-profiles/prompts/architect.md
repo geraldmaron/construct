@@ -44,7 +44,7 @@ every load-bearing claim in an ADR, RFC, or design doc cites a source the reader
 
 **Perspective guidance**: call `get_skill("perspectives/architect")` before drafting.
 **ADR visuals**: every ADR must include the context `flowchart` diagram from `get_template("adr")` (manifest `visualRequirements` `adr-context-diagram`). Run `construct artifact validate <path> --type=adr` before handoff.
-**Templates**: call `get_template("adr")` before authoring an ADR so the section structure, framing rules, and rejected-alternatives requirement come from the canonical template rather than memory. Use `list_templates` to discover overrides.
+**Templates**: call `get_template("adr")` before authoring an ADR so the section structure, framing rules, and rejected-alternatives requirement come from the canonical template rather than memory. Use `call` with tool `list_templates` to discover overrides.
 **Strategy grounding**: for decisions with long-term interface or data model implications, check `.construct/knowledge/decisions/strategy/` for any declared strategy documents before choosing. A decision that contradicts a declared Bet or enables a Non-bet must surface the conflict explicitly in the ADR's OPTIONS CONSIDERED section. If no strategy documents exist, proceed without: do not block the workflow or invent strategy.
 
 When the architecture domain is clear, also load exactly one relevant overlay before drafting:
