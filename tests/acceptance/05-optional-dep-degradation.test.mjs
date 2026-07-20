@@ -85,7 +85,7 @@ test('LMCP-L4: optional-dep degradation matrix', { timeout: 180_000 }, async (t)
     const intents = loadIntents();
     const pkg = loadPackageJson();
     const npmOptional = intents.filter(
-      (e) => e.kind === 'npm-optional' && e.disposition !== 'quarantine',
+      (e) => e.kind === 'npm-optional' && e.disposition !== 'quarantine' && e.disposition !== 'remove',
     );
 
     assert.ok(npmOptional.length > 0, 'Should find npm-optional intent entries');

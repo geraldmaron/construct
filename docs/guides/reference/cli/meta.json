@@ -2,13 +2,13 @@
   "title": "CLI",
   "pages": [
     "index",
+    "command-catalog",
     "core",
     "work",
     "models-and-integrations",
     "integrations",
     "observability",
     "diagnostics",
-    "advanced",
-    "command-catalog"
+    "advanced"
   ]
 }

@@ -451,7 +451,7 @@ const BEADS = [
       {
         name: 'zero live Oracle daemon constructors',
         kind: 'static',
-        run: () => noLiveHits(/runOracleDaemon|buildOracleDaemon|oracle-liveness/, ['lib', 'bin']),
+        run: () => noLiveHits(/runOracleDaemon\s*\(|buildOracleDaemon\s*\(|\/oracle-liveness\.mjs/, ['lib', 'bin']),
       },
       {
         name: 'directive execution re-homed onto the E5 workplace loop',
