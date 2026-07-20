@@ -76,9 +76,6 @@ function resolveModel(args, env = {}) {
       CONSTRUCT_MODEL_REASONING: '',
       CONSTRUCT_MODEL_STANDARD: '',
       CONSTRUCT_MODEL_FAST: '',
-      CONSTRUCT_MODEL_REASONING: '',
-      CONSTRUCT_MODEL_STANDARD: '',
-      CONSTRUCT_MODEL_FAST: '',
       ...env,
     },
   });

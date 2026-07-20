@@ -60,7 +60,6 @@ test('schema-infer throws a clear configuration error when fast tier is null and
     OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
     OPEN_ROUTER_API_KEY: process.env.OPEN_ROUTER_API_KEY,
     CONSTRUCT_MODEL_FAST: process.env.CONSTRUCT_MODEL_FAST,
-    CONSTRUCT_MODEL_FAST: process.env.CONSTRUCT_MODEL_FAST,
     CONSTRUCT_USER_ENV_PATH: process.env.CONSTRUCT_USER_ENV_PATH,
   };
   process.env.ANTHROPIC_API_KEY = 'sk-test-anthropic';
