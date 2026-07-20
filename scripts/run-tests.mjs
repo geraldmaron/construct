@@ -192,17 +192,10 @@ if (listOnly) {
   process.exit(0);
 }
 
-// Default 30s per-test; raise to 180s when sweeping the dashboard-build or
-// LLM suites (Next.js cold build + live OpenRouter calls routinely exceed
-// 30s even with retries). Dedicated CI jobs already pass --test-timeout
-// explicitly; this default keeps `npm test` honest on a clean checkout.
+// Per-batch timeouts: functional and deadcode audit suites exceed the 30s
+// default on CI runners; timeoutForBatch raises limits only for batches that
+// include those files so unit tests keep a tight ceiling.
 
-const wantsHeavyTimeout = files.some((f) => /(dashboard-build|llm\/|llm\\)/.test(f));
-const defaultTimeout = wantsHeavyTimeout ? 180_000 : 30_000;
-const nodeArgs = ["--test", `--test-timeout=${defaultTimeout}`];
-if (enableCoverage) {
-  nodeArgs.push("--experimental-test-coverage");
-}
 const sterileBefore = snapshotRealConfigs();
 
 // One node --test process per bounded batch keeps peak memory flat regardless of
@@ -213,8 +206,22 @@ const sterileBefore = snapshotRealConfigs();
 
 const BATCH_SIZE = Number(process.env.CONSTRUCT_TEST_BATCH_SIZE) || 120;
 
+function timeoutForBatch(batchFiles) {
+  if (batchFiles.some((f) => /tests\/functional\//.test(f) || /lazy-import-reachability/.test(f))) {
+    return 120_000;
+  }
+  if (batchFiles.some((f) => /(dashboard-build|llm\/|llm\\)/.test(f))) {
+    return 180_000;
+  }
+  return 30_000;
+}
+
 function runFiles(batchFiles) {
-  return spawnSync(process.execPath, [...nodeArgs, ...batchFiles, ...args], { stdio: "inherit" }).status ?? 1;
+  const batchNodeArgs = ["--test", `--test-timeout=${timeoutForBatch(batchFiles)}`];
+  if (enableCoverage) {
+    batchNodeArgs.push("--experimental-test-coverage");
+  }
+  return spawnSync(process.execPath, [...batchNodeArgs, ...batchFiles, ...args], { stdio: "inherit" }).status ?? 1;
 }
 
 let runStatus = 0;

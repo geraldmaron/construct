@@ -11,47 +11,47 @@ Set TypingSpeed 42ms
 Type "node bin/construct --demo=agentic-platforms-prd"
 Sleep 800ms
 Enter
-Wait /[$%›]|construct|Construct|PASS|FAIL|Step/
+Wait /[$>%›]|construct|Construct|PASS|FAIL|Step/
 Sleep 400ms
 
 Type "/demo steps"
 Sleep 400ms
 Enter
-Wait /[$%›]|construct|Construct|PASS|FAIL|Step/
+Wait /[$>%›]|construct|Construct|PASS|FAIL|Step/
 Sleep 400ms
 
 Type "/demo next"
 Sleep 400ms
 Enter
-Wait /[$%›]|construct|Construct|PASS|FAIL|Step/
+Wait /[$>%›]|construct|Construct|PASS|FAIL|Step/
 Sleep 400ms
 
 Type "/demo next"
 Sleep 400ms
 Enter
-Wait /[$%›]|construct|Construct|PASS|FAIL|Step/
+Wait /[$>%›]|construct|Construct|PASS|FAIL|Step/
 Sleep 400ms
 
 Type "/demo next"
 Sleep 400ms
 Enter
-Wait /[$%›]|construct|Construct|PASS|FAIL|Step/
+Wait /[$>%›]|construct|Construct|PASS|FAIL|Step/
 Sleep 400ms
 
 Type "/demo next"
 Sleep 400ms
 Enter
-Wait /[$%›]|construct|Construct|PASS|FAIL|Step/
+Wait /[$>%›]|construct|Construct|PASS|FAIL|Step/
 Sleep 400ms
 
 Type "/demo next"
 Sleep 400ms
 Enter
-Wait /[$%›]|construct|Construct|PASS|FAIL|Step/
+Wait /[$>%›]|construct|Construct|PASS|FAIL|Step/
 Sleep 400ms
 
 Type "/exit"
 Sleep 400ms
 Enter
-Wait /[$%›]|construct|Construct|PASS|FAIL|Step/
+Wait /[$>%›]|construct|Construct|PASS|FAIL|Step/
 Sleep 400ms

@@ -21,17 +21,17 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const MANIFESTS_DIR = join(__dirname, '../../lib/extensions/manifests');
 
 const EXPECTED_PROVIDERS = ['github', 'atlassian-jira', 'atlassian-confluence', 'slack', 'salesforce', 'directory', 'feedback'];
-const MANIFEST_ONLY_PROVIDERS = ['linear'];
+const MANIFEST_ONLY_PROVIDERS = ['linear', 'git'];
 
 test('built-in provider manifests', async (t) => {
-  await t.test('loadManifestsFromDir loads all 8 manifests without errors', () => {
+  await t.test('loadManifestsFromDir loads all 9 manifests without errors', () => {
     const { manifests, errors } = loadManifestsFromDir(MANIFESTS_DIR);
     assert.deepEqual(errors, [], 'manifest loading should produce no errors');
     const dataSourceManifests = manifests.filter((m) => m.kind === 'data-source');
     assert.equal(
       dataSourceManifests.length,
-      8,
-      'should have exactly 8 data-source manifests (7 unified + 1 manifest-only)',
+      9,
+      'should have exactly 9 data-source manifests (7 unified + 2 manifest-only)',
     );
   });
 
@@ -65,6 +65,15 @@ test('built-in provider manifests', async (t) => {
     const manifestIds = manifests.filter((m) => m.kind === 'data-source').map((m) => m.id).sort();
     const { BUILT_INS } = await import('../../lib/providers/registry.mjs');
     assert.deepEqual([...BUILT_INS].sort(), manifestIds);
+  });
+
+
+  await t.test('git manifest exists but has no unified lib/providers/<id> adapter yet', () => {
+    const { manifests } = loadManifestsFromDir(MANIFESTS_DIR);
+    const gitManifest = manifests.find((m) => m.id === 'git');
+    assert.ok(gitManifest, 'git manifest should exist');
+    assert.equal(gitManifest.kind, 'data-source');
+    assert.ok(gitManifest.capabilities.includes('read'));
   });
 
   await t.test('linear manifest exists but has no unified lib/providers/<id> adapter yet', () => {

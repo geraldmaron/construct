@@ -9,7 +9,7 @@ Started 2026-07-17 · Branch `feat/workspace-control-plane` · Epic `construct-b
 Construct becomes a **workspace-level work and governance control plane over replaceable
 human and AI execution runtimes**, founded on the dynamic capability/dependency graph as a
 day-one operational subsystem. Full requirements: [directive.md](directive.md). Wave 0
-evidence: [subagents/](subagents/) · Synthesis: [synthesis/](synthesis/).
+evidence: [subagents/](subagents/) · Synthesis: [synthesis/](synthesis/) · LCI external repo certification: [lci-external-repo-certification.md](lci-external-repo-certification.md).
 
 ## Operating rules
 

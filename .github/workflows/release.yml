@@ -243,7 +243,7 @@ jobs:
 
       - name: Generate SBOM (CycloneDX)
         run: |
-          npx --yes @cyclonedx/cyclonedx-npm@latest \
+          npm exec -- @cyclonedx/cyclonedx-npm \
             --package-lock-only \
             --ignore-npm-errors \
             --output-file dist/sbom.cyclonedx.json \
