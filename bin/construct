@@ -5673,6 +5673,19 @@ async function cmdLintResearch() {
   if (exitCode !== 0) process.exit(exitCode);
 }
 
+
+async function cmdLintContracts() {
+  const { validateContractsFile } = await import('../lib/contracts/validate.mjs');
+  const result = validateContractsFile({ repoRoot: ROOT_DIR });
+  if (result.ok) {
+    println('capability contracts: 0 errors');
+    return;
+  }
+  errorln(`capability contracts: ${result.errors.length} error(s)`);
+  for (const err of result.errors) errorln(`  ${err}`);
+  process.exit(1);
+}
+
 async function cmdLintWorkerProfiles() {
   const { validate } = await import('../lib/registry/validator.mjs');
   const registry = loadRegistry({ rootDir: ROOT_DIR, skipValidation: true });
@@ -6694,6 +6707,7 @@ const handlers = new Map([
   ['tags', cmdTags],
   ['scheduler', cmdScheduler],
   ['lint:research', cmdLintResearch],
+  ['lint:contracts', cmdLintContracts],
   ['lint:worker-profiles', cmdLintWorkerProfiles],
   ['decisions', async (args) => {
     const { runDecisionsCli } = await import('../lib/decisions/registry.mjs');
