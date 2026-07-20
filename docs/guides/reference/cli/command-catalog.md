@@ -91,7 +91,7 @@ This page reconciles three sources:
 | `integrations` | current | Work | no | Check and manage external system connections |
 | `knowledge` | current | Work | no | Query, index, or add to the project knowledge base |
 | `lint:comments` | internal | Internal | no | Internal lint: source comments |
-| `lint:contracts` | internal | n/a | no | Internal lint gate |
+| `lint:contracts` | internal | Internal | no | Internal lint: registry contracts |
 | `lint:research` | internal | Internal | no | Internal lint: research artifacts |
 | `lint:templates` | internal | Internal | no | Internal lint: shipped templates |
 | `lint:worker-profiles` | internal | Internal | no | Internal lint: worker profile definitions |

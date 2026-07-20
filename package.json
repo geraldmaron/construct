@@ -16,6 +16,7 @@
     "bin/construct",
     "bin/construct-postinstall.mjs",
     "lib/**",
+  "packages/construct-ui/**",
     "examples/**",
     "commands/**",
     "skills/**",

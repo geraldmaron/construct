@@ -10,7 +10,7 @@
  *      original 2-release-cycle window) carries a documented extension
  *      rather than being silently past-expiration.
  *
- * @enforces construct-tsyfe.10.6
+ * @enforces ADR-0053
  */
 
 import test from 'node:test';

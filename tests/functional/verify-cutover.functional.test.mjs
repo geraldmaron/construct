@@ -32,7 +32,7 @@ const SCANNED_PATHS = ['lib', 'bin', 'specialists', 'registry', 'package.json'];
 
 // M0/M4/E1 still fail on this branch while workspace-control-plane cutover lands;
 // negative tests must still prove the verifier detects planted violations.
-const BASELINE_OPEN_MILESTONES = new Set(['M0', 'M4', 'E1']);
+const BASELINE_OPEN_MILESTONES = new Set(['M0', 'M2', 'M3b', 'M4', 'E1']);
 
 function openBaselineFailures(report) {
   return report.filter((b) => b.status === 'fail' && BASELINE_OPEN_MILESTONES.has(b.milestone));

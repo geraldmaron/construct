@@ -74,6 +74,8 @@ const LEGACY_EXEMPT_SHAS = new Set([
   "68cb664af8369d5e3e6834ebe95d7d07b19c3d14", // "docs+tests: changelog and corpus inventory for construct-jvjow.4 merge" (2026-07-09)
   "bfe20bf86d455fc09f4ab25374750f12c65a139f", // "Release 1.5.4-alpha.2 (alpha, off staging — doc-io cert + version-regex fixed)" (2026-07-10, already tagged+published to npm)
   "6342a737e6bf38612edb937d5432ff6067b5fe96", // "Release 1.5.4-alpha.1 (alpha, off staging for tester validation)" (2026-07-10, already tagged+published to npm)
+  "e2fb90a49b0c5e7152389abebb55bdcea5b3c454", // feat/workspace-control-plane rollup commit predating enforced conventional subjects (2026-07)
+  "38cff0dddc7fc10720ff8362a8b2cfe3779259ca", // tsyfe.8 epic close commit predating enforced conventional subjects (2026-07)
 ]);
 
 const REQUIRED_PR_HEADINGS = [
@@ -90,48 +92,56 @@ const REQUIRED_GATE_GROUPS = [
   { label: "Local gates", marker: "## Local gates" },
 ];
 
+function resolveBaseRef() {
+  const raw = process.env.PR_BASE_REF || process.env.GITHUB_BASE_REF || "main";
+  return raw.replace(/^origin\//, "");
+}
+
 function getRange() {
+  const baseRef = resolveBaseRef();
+  const remoteBase = `origin/${baseRef}`;
+
+  try {
+    execSync(`git fetch --no-tags --depth=500 origin ${baseRef}`, { stdio: "pipe" });
+  } catch { /* may already be present or offline */ }
+
+  try {
+    execSync(`git rev-parse --verify ${remoteBase}^{commit}`, { stdio: "pipe" });
+    const mergeBase = execSync(`git merge-base ${remoteBase} HEAD`, {
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+    if (mergeBase) return `${mergeBase}..HEAD`;
+  } catch { /* fall through */ }
+
   const currentBranch = process.env.GIT_BRANCH;
-  const upstreamRef = process.env.GIT_UPSTREAM_REF;
-  const baseSha = process.env.PR_BASE_SHA;
-  const baseRef = process.env.PR_BASE_REF || process.env.GITHUB_BASE_REF;
-
-  if (baseSha && /^[0-9a-f]{7,40}$/i.test(baseSha)) {
-    try {
-      execSync(`git fetch --no-tags --depth=200 origin ${baseSha}`, { stdio: "pipe" });
-    } catch { /* may already be present */ }
-    try {
-      execSync(`git rev-parse --verify ${baseSha}^{commit}`, { stdio: "pipe" });
-      return `${baseSha}..HEAD`;
-    } catch { /* fall through */ }
-  }
-
-  if (baseRef) {
-    try {
-      execSync(`git fetch --no-tags --depth=200 origin ${baseRef}`, { stdio: "pipe" });
-      return `origin/${baseRef}..HEAD`;
-    } catch { /* fall through */ }
-  }
-
-  if (!baseSha && !baseRef) {
+  if (!process.env.PR_BASE_REF && !process.env.GITHUB_BASE_REF) {
     try {
       const branch = currentBranch || execSync('git branch --show-current', { stdio: 'pipe', encoding: 'utf8' }).trim();
-      const upstream = upstreamRef || execSync(`git rev-parse --abbrev-ref ${branch}@{upstream}`, {
+      const upstream = process.env.GIT_UPSTREAM_REF || execSync(`git rev-parse --abbrev-ref ${branch}@{upstream}`, {
         stdio: 'pipe',
         encoding: 'utf8',
       }).trim();
       if (upstream) {
         try {
-          execSync(`git fetch --no-tags --depth=200 ${upstream.split('/')[0]} ${upstream.split('/').slice(1).join('/')}`, { stdio: 'pipe' });
+          execSync(`git fetch --no-tags --depth=500 ${upstream.split('/')[0]} ${upstream.split('/').slice(1).join('/')}`, { stdio: 'pipe' });
         } catch { /* already available or offline */ }
-        return `${upstream}..HEAD`;
+        const mergeBase = execSync(`git merge-base ${upstream} HEAD`, {
+          encoding: 'utf8',
+          stdio: ['pipe', 'pipe', 'pipe'],
+        }).trim();
+        if (mergeBase) return `${mergeBase}..HEAD`;
       }
     } catch { /* no upstream configured */ }
   }
 
   try {
     execSync("git rev-parse --verify origin/main", { stdio: "pipe" });
-    return "origin/main..HEAD";
+    const mergeBase = execSync("git merge-base origin/main HEAD", {
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+    return mergeBase ? `${mergeBase}..HEAD` : "origin/main..HEAD";
   } catch {
     return "HEAD~10..HEAD";
   }
@@ -154,7 +164,7 @@ function lintCommits() {
   const records = log.split("\x1e").map((r) => r.trim()).filter(Boolean);
   for (const record of records) {
     const [sha, subject, body] = record.split("\t");
-    const merge = subject?.startsWith("Merge ") || subject?.startsWith("Revert ");
+    const merge = subject?.startsWith("Merge ") || subject?.startsWith("Revert ") || /^merge:/i.test(subject ?? "");
     if (merge || LEGACY_EXEMPT_SHAS.has(sha)) continue;
     if (!COMMIT_SUBJECT_RE.test(subject ?? "")) {
       violations.push(`${sha.slice(0, 9)}: subject does not match \`type(scope): subject\` (≤140 chars, no leading space): ${JSON.stringify(subject)}`);

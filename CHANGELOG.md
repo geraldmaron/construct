@@ -6,6 +6,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Fixed
 
+- PR 419 CI unblock (batch): `scripts/lint-commits-pr.mjs` enumerates commits from `git merge-base origin/<base> HEAD..HEAD`, skips bead `merge:` subjects, and documents two pre-policy branch SHAs; `lib/auto-docs.mjs` links `command-catalog` in generated CLI nav; npm `files` includes `packages/construct-ui/**` for packed installs; `verify-cutover` tightens the Oracle daemon live-reference regex; optional-dep matrix ignores `remove`-disposition intent tombstones; registers `lint:contracts` in `CLI_COMMANDS`; demo manifest commands match the v2 capability surface.
+
 - PR 419 CI: fix docs-site Mermaid `MermaidConfig` typing; regenerate `tests/AUDIT.md` / corpus inventory; pin CycloneDX SBOM via devDependency and `npm exec` in release workflow; VHS tapes accept bash `>` continuation prompts; per-batch 120s timeout for functional and lazy-import shards; align `git` provider manifest certification and manifest count tests.
 
 - PR 419 CI follow-up: eslint duplicate-key and `resolveRootDir` import fixes; move `@huggingface/transformers` to devDependencies so `audit:published` stays clean; remove no-op sync-worker-profiles branches.
