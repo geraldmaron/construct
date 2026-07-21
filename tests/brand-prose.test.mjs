@@ -26,6 +26,39 @@ test('lintMarketingVoiceLine skips WCAG Robust principle mentions', () => {
   assert.equal(hit, null);
 });
 
+test('lintMarketingVoiceLine skips meta-guidance that bans marketing tokens', () => {
+  const refuse = lintMarketingVoiceLine(
+    'skills/docs/adr-workflow.md',
+    55,
+    '**Before you write (voice):** refuse AI tells (delve, leverage, robust as filler, "it\'s important to note"); sound like a careful colleague.',
+  );
+  assert.equal(refuse, null);
+
+  const ban = lintMarketingVoiceLine(
+    'skills/docs/prd-workflow.md',
+    55,
+    '- Each AC is stranger-checkable. Ban “intuitive / fast / robust / delightful” without thresholds.',
+  );
+  assert.equal(ban, null);
+
+  const symptom = lintMarketingVoiceLine(
+    'skills/perspectives/product-manager.md',
+    26,
+    '**Symptom**: criteria use words like "intuitive", "fast", "robust", "delightful" with no numeric or observable threshold.',
+  );
+  assert.equal(symptom, null);
+});
+
+test('lintMarketingVoiceLine still flags real marketing voice claims', () => {
+  const hit = lintMarketingVoiceLine(
+    'skills/docs/prd-workflow.md',
+    10,
+    'Ship a robust billing ledger for every tenant.',
+  );
+  assert.equal(hit?.kind, 'marketing-voice');
+  assert.equal(hit?.token, 'robust');
+});
+
 test('lintConstructNamingLine flags miscapitalized CLI', () => {
   const hit = lintConstructNamingLine('docs/foo.md', 2, 'Run Construct doctor after changes.');
   assert.equal(hit?.kind, 'construct-naming');

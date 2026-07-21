@@ -51,8 +51,7 @@
     "03-docs:unnavigated-doc-dir:docs/notes/research/workspace-control-plane/spikes/c-parallel-software-change",
     "03-docs:unnavigated-doc-dir:docs/notes/research/workspace-control-plane/spikes/d-daily-workplace-loop/fixtur",
     "03-docs:unnavigated-doc-dir:docs/obsolete",
-    "03c-root-layout:unclassified-package-file:packages/construct-ui/_",
-    "03d-brand:brand-marketing-voice:skills/perspectives/product-manager.md_26"
+    "03c-root-layout:unclassified-package-file:packages/construct-ui/_"
   ],
   "justifications": {
     "03-docs:review-doc-reference:matrix": "ADR-0053 is the historical record of the `construct matrix` deprecation decision and names the command in its Decision, Alternatives, and Consequences sections. The removal it planned landed in construct-b0nny.28 (workspace-control-plane E9); the ADR carries a Removal note recording that. Rewriting a decision record to erase the command it decided to deprecate would falsify the record, so the reference is intentional.",
