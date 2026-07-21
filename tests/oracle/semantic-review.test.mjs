@@ -39,11 +39,11 @@ test('runSemanticReview on real repo detects monitor vs embed watch overlap', ()
   assert.equal(dup.status, 'failed');
 });
 
-test('runSemanticReview flags envelope PolicyDenied-only catch on real repo', () => {
+test('runSemanticReview passes when envelope catch rethrows non-policy errors on real repo', () => {
   const result = runSemanticReview({ rootDir: process.cwd() });
   const latent = result.reviews.find((r) => r.id === 'latent-catch-swallows-non-primary-error');
   assert.ok(latent);
-  assert.equal(latent.status, 'failed');
+  assert.equal(latent.status, 'passed');
 });
 
 test('runSemanticReview combined-pr check fails without Layer 2 couplings', () => {

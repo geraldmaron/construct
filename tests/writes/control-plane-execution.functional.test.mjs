@@ -36,7 +36,7 @@ afterEach(() => {
 });
 
 function jiraFactories(transport) {
-  return { 'atlassian-jira': () => createGovernedJiraProvider({ jiraTransport: transport }) };
+  return { jira: () => createGovernedJiraProvider({ jiraTransport: transport }) };
 }
 
 describe('LMCP-J6 — a specialist-produced writeIntent executes only after plane authorization', () => {
@@ -48,7 +48,7 @@ describe('LMCP-J6 — a specialist-produced writeIntent executes only after plan
     // The specialist step: recommend, never execute. buildWriteIntent is the
     // only shape a specialist may produce; it does not import an adapter.
     const intent = buildWriteIntent({
-      providerId: 'atlassian-jira',
+      providerId: 'jira',
       writeKind: 'issue',
       payload: { project: 'PROJ', issueType: 'Task', summary: 'Flaky test in CI' },
       requestedBy: { specialistId: 'qa-analyst', role: 'cx-qa-analyst' },
@@ -108,7 +108,7 @@ describe('LMCP-J6 — a specialist-produced writeIntent executes only after plan
     const sentLog = new WriteSentLog({ persistPath: path.join(tmpRoot, 'sent-log.jsonl') });
 
     const intent = buildWriteIntent({
-      providerId: 'atlassian-jira',
+      providerId: 'jira',
       writeKind: 'issue',
       payload: { project: 'PROJ', issueType: 'Task', summary: 'Should not ship' },
       requestedBy: { specialistId: 'qa-analyst' },
@@ -141,7 +141,7 @@ describe('LMCP-J6 — embed-daemon-originated writeIntent executes only post-app
     // (lib/embed/capability-jobs.mjs) reads.
     const snapshot = {
       generatedAt: new Date().toISOString(),
-      sections: [{ provider: 'atlassian-jira', items: [{ id: 'OPS-1', title: 'Pager fired: disk usage' }] }],
+      sections: [{ provider: 'jira', items: [{ id: 'OPS-1', title: 'Pager fired: disk usage' }] }],
     };
 
     // Step 2: specialist plan — the embed capability's reasoningExecutor
@@ -149,7 +149,7 @@ describe('LMCP-J6 — embed-daemon-originated writeIntent executes only post-app
     // reasoning engine would return per ADR-0061 §3. This is the specialist
     // "recommending" — it returns proposals, it does not call an adapter.
     const writeProposals = [
-      { providerId: 'atlassian-jira', writeKind: 'issue', payload: { project: 'OPS', issueType: 'Task', summary: 'Disk usage pager: create ticket' } },
+      { providerId: 'jira', writeKind: 'issue', payload: { project: 'OPS', issueType: 'Task', summary: 'Disk usage pager: create ticket' } },
     ];
 
     // Step 3: writeIntent in queue — mirrors runCapabilityTick's enqueue
@@ -191,12 +191,11 @@ describe('LMCP-J6 — embed-daemon-originated writeIntent executes only post-app
   });
 });
 
-// ADR-0082 round-trip: DEFAULT_ADAPTER_FACTORIES (control-plane.mjs) resolves
-// only the manifest-namespace provider IDs; the short IDs "jira" and
-// "confluence" resolve to nothing. Credential env vars are cleared so a
-// resolved atlassian-jira/atlassian-confluence/slack factory fails fast on
-// AuthError at transport construction — proof of resolution with no real
-// network call, since AuthError is thrown before any I/O.
+// ADR-0082 round-trip: DEFAULT_ADAPTER_FACTORIES resolves both the canonical
+// short IDs (jira, confluence) and the legacy manifest-namespace IDs
+// (atlassian-jira, atlassian-confluence). Credential env vars are cleared so
+// a resolved factory fails fast on AuthError at transport construction — proof
+// of resolution with no real network call, since AuthError is thrown before any I/O.
 
 const CREDENTIAL_ENV_KEYS = [
   'JIRA_URL', 'JIRA_EMAIL', 'JIRA_TOKEN',
@@ -227,7 +226,17 @@ describe('ADR-0082 — provider-ID namespace canonicalization round-trip (constr
     }
   });
 
-  it('resolves the real DEFAULT_ADAPTER_FACTORIES entry for "atlassian-jira" (fails on missing credentials, not on missing adapter)', async () => {
+  it('resolves the real DEFAULT_ADAPTER_FACTORIES entry for "jira" (fails on missing credentials, not on missing adapter)', async () => {
+    const queue = new ApprovalQueue({ persistPath: path.join(tmpRoot, 'ns-queue.jsonl') });
+    const record = approvedRecord(queue, { tool: 'jira.issue', args: { project: 'PROJ', issueType: 'Task', summary: 'x' } });
+
+    await assert.rejects(
+      () => executeApprovedWriteIntent(record, { rootDir: tmpRoot }),
+      /Jira transport requires JIRA_BASE_URL/,
+    );
+  });
+
+  it('resolves the real DEFAULT_ADAPTER_FACTORIES entry for "atlassian-jira" (legacy alias, fails on missing credentials, not on missing adapter)', async () => {
     const queue = new ApprovalQueue({ persistPath: path.join(tmpRoot, 'ns-queue.jsonl') });
     const record = approvedRecord(queue, { tool: 'atlassian-jira.issue', args: { project: 'PROJ', issueType: 'Task', summary: 'x' } });
 
@@ -237,7 +246,17 @@ describe('ADR-0082 — provider-ID namespace canonicalization round-trip (constr
     );
   });
 
-  it('resolves the real DEFAULT_ADAPTER_FACTORIES entry for "atlassian-confluence" (fails on missing credentials, not on missing adapter)', async () => {
+  it('resolves the real DEFAULT_ADAPTER_FACTORIES entry for "confluence" (fails on missing credentials, not on missing adapter)', async () => {
+    const queue = new ApprovalQueue({ persistPath: path.join(tmpRoot, 'ns-queue.jsonl') });
+    const record = approvedRecord(queue, { tool: 'confluence.page', args: { spaceKey: 'OPS', title: 'x' } });
+
+    await assert.rejects(
+      () => executeApprovedWriteIntent(record, { rootDir: tmpRoot }),
+      /Confluence transport requires CONFLUENCE_BASE_URL/,
+    );
+  });
+
+  it('resolves the real DEFAULT_ADAPTER_FACTORIES entry for "atlassian-confluence" (legacy alias, fails on missing credentials, not on missing adapter)', async () => {
     const queue = new ApprovalQueue({ persistPath: path.join(tmpRoot, 'ns-queue.jsonl') });
     const record = approvedRecord(queue, { tool: 'atlassian-confluence.page', args: { spaceKey: 'OPS', title: 'x' } });
 
@@ -278,29 +297,9 @@ describe('ADR-0082 — provider-ID namespace canonicalization round-trip (constr
     });
     assert.equal(result.status, 'sent');
   });
-
-  it('the pre-rename short ID "jira" is unresolvable in the real DEFAULT_ADAPTER_FACTORIES', async () => {
-    const queue = new ApprovalQueue({ persistPath: path.join(tmpRoot, 'ns-queue.jsonl') });
-    const record = approvedRecord(queue, { tool: 'jira.issue', args: { project: 'PROJ', issueType: 'Task', summary: 'x' } });
-
-    await assert.rejects(
-      () => executeApprovedWriteIntent(record, { rootDir: tmpRoot }),
-      /no governed adapter registered for provider "jira"/,
-    );
-  });
-
-  it('the pre-rename short ID "confluence" is unresolvable in the real DEFAULT_ADAPTER_FACTORIES', async () => {
-    const queue = new ApprovalQueue({ persistPath: path.join(tmpRoot, 'ns-queue.jsonl') });
-    const record = approvedRecord(queue, { tool: 'confluence.page', args: { spaceKey: 'OPS', title: 'x' } });
-
-    await assert.rejects(
-      () => executeApprovedWriteIntent(record, { rootDir: tmpRoot }),
-      /no governed adapter registered for provider "confluence"/,
-    );
-  });
 });
 
-// ADR-0089/ADR-0096 (construct-4uxq0.9.5): drainApprovedWriteIntents must
+// ADR-0089/ADR-0101 (construct-4uxq0.9.5): drainApprovedWriteIntents must
 // acquire a durable ApprovalQueue lease per record before executing it, so
 // two callers racing the same 'approved' record (an automated drain tick
 // racing a second drain, or a manual approve) can never both reach the
@@ -312,14 +311,14 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-describe('ADR-0089/ADR-0096 — drainApprovedWriteIntents lease guarding (construct-4uxq0.9.5)', () => {
+describe('ADR-0089/ADR-0101 — drainApprovedWriteIntents lease guarding (construct-4uxq0.9.5)', () => {
   it('acquires a lease before executing, and releases it to the terminal executed state on success', async () => {
     const transport = createFakeJiraTransport({ projects: { PROJ: { issueTypes: { Task: {} } } } });
     const queue = new ApprovalQueue({ persistPath: path.join(tmpRoot, 'lease-queue.jsonl') });
     const sentLog = new WriteSentLog({ persistPath: path.join(tmpRoot, 'lease-sent-log.jsonl') });
 
     const record = approvedRecord(queue, {
-      tool: 'atlassian-jira.issue',
+      tool: 'jira.issue',
       args: { project: 'PROJ', issueType: 'Task', summary: 'Lease-guarded drain' },
     });
 
@@ -342,7 +341,7 @@ describe('ADR-0089/ADR-0096 — drainApprovedWriteIntents lease guarding (constr
     const sentLog = new WriteSentLog({ persistPath: path.join(tmpRoot, 'conflict-sent-log.jsonl') });
 
     const record = approvedRecord(queue, {
-      tool: 'atlassian-jira.issue',
+      tool: 'jira.issue',
       args: { project: 'PROJ', issueType: 'Task', summary: 'Should stay untouched' },
     });
 
@@ -384,11 +383,11 @@ describe('ADR-0089/ADR-0096 — drainApprovedWriteIntents lease guarding (constr
     const queue = new ApprovalQueue({ persistPath: path.join(tmpRoot, 'failure-queue.jsonl') });
     const sentLog = new WriteSentLog({ persistPath: path.join(tmpRoot, 'failure-sent-log.jsonl') });
     const record = approvedRecord(queue, {
-      tool: 'atlassian-jira.issue',
+      tool: 'jira.issue',
       args: { project: 'PROJ', issueType: 'Task', summary: 'Adapter construction will fail' },
     });
 
-    const brokenFactories = { 'atlassian-jira': () => { throw new Error('adapter construction failed: missing credentials'); } };
+    const brokenFactories = { jira: () => { throw new Error('adapter construction failed: missing credentials'); } };
     const drained = await drainApprovedWriteIntents(queue, { adapterFactories: brokenFactories, sentLog });
     assert.equal(drained.length, 1);
     assert.match(drained[0].error, /adapter construction failed/, 'the outcome must carry the failure');
@@ -413,7 +412,7 @@ describe('ADR-0089/ADR-0096 — drainApprovedWriteIntents lease guarding (constr
     const sentLog = new WriteSentLog({ persistPath: path.join(tmpRoot, 'crash-sent-log.jsonl') });
 
     const record = approvedRecord(queue, {
-      tool: 'atlassian-jira.issue',
+      tool: 'jira.issue',
       args: { project: 'PROJ', issueType: 'Task', summary: 'Held by a crashed worker' },
     });
 

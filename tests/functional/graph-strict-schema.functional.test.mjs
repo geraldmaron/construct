@@ -38,6 +38,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const BIN = path.join(REPO_ROOT, 'bin', 'construct');
 
+const constructHome = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-graph-strict-home-'));
+const prevHome = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = constructHome;
+test.after(() => {
+  if (prevHome === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHome;
+  try { fs.rmSync(constructHome, { recursive: true, force: true }); } catch {}
+});
+
 const dirs = [];
 function freshDir(prefix) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
@@ -80,7 +89,7 @@ test('a builder that throws partway through `graph build` marks the graph partia
   assert.equal(parsedBlocked.ok, false);
   assert.equal(parsedBlocked.partial, true);
   assert.ok(
-    parsedBlocked.partialReasons.some((r) => r.includes('buildFromRegistry threw') && r.includes('Modular org not found')),
+    parsedBlocked.partialReasons.some((r) => r.includes('buildFromRegistry threw') && /Registry catalog not found|Modular org not found|workspace-presets/.test(r)),
     `expected a buildFromRegistry throw reason in ${JSON.stringify(parsedBlocked.partialReasons)}`,
   );
 
@@ -92,7 +101,9 @@ test('a builder that throws partway through `graph build` marks the graph partia
   // that it is not acceptable as-is — spawned as the real binary so the
   // process.exit(...) path in lib/graph/cli.mjs's runValidate is exercised
   // end to end, not just the inner validateGraph() function.
-  const env = sterileSpawnEnv();
+  const env = sterileSpawnEnv({
+    CONSTRUCT_HOME_OVERRIDE: process.env.CONSTRUCT_HOME_OVERRIDE,
+  });
   const validateBlocked = spawnSync(process.execPath, [BIN, 'graph', 'validate', '--json'], {
     cwd: project, encoding: 'utf8', timeout: 60_000, env,
   });
@@ -124,7 +135,9 @@ test('construct graph validate --strict reports an injected bad-type node and ba
     ],
   });
 
-  const env = sterileSpawnEnv();
+  const env = sterileSpawnEnv({
+    CONSTRUCT_HOME_OVERRIDE: process.env.CONSTRUCT_HOME_OVERRIDE,
+  });
   const strict = spawnSync(process.execPath, [BIN, 'graph', 'validate', '--strict', '--json'], {
     cwd: project, encoding: 'utf8', timeout: 60_000, env,
   });

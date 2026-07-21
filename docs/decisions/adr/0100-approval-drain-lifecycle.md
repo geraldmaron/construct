@@ -1,4 +1,4 @@
-# ADR-0094: Approval/drain lifecycle — manual single-record approval stays canonical until ADR-D lands leases
+# ADR-0100: Approval/drain lifecycle — manual single-record approval stays canonical until ADR-D lands leases
 
 - **Date**: 2026-07-16
 - **Status**: superseded
@@ -6,7 +6,7 @@
 - **Supersedes**: none
 - **Resolves (decision only)**: `construct-4uxq0.4.14` (ADR-N) — whether the production drain path for approved write intents should stay manual single-record approval, or become an automated batch drain via `drainApprovedWriteIntents`. Does not resolve `construct-4uxq0.4.4` (ADR-D, delivery semantics/leases), which this decision is hard-gated on and which remains open.
 
-**Superseded 2026-07-16**: ADR-D (`docs/decisions/adr/0089-delivery-semantics-leases-idempotency.md`) landed with a concrete, per-call-site lease mechanism this document identified as the missing input. Per this document's own stated resolution plan ("revisit... as a new revision or superseding ADR, not a silent edit"), see ADR-0096 for the actual drain-model decision. This document is preserved as the accurate record of what was verifiable before ADR-D existed.
+**Superseded 2026-07-16**: ADR-D (`docs/decisions/adr/0089-delivery-semantics-leases-idempotency.md`) landed with a concrete, per-call-site lease mechanism this document identified as the missing input. Per this document's own stated resolution plan ("revisit... as a new revision or superseding ADR, not a silent edit"), see ADR-0101 for the actual drain-model decision. This document is preserved as the accurate record of what was verifiable before ADR-D existed.
 
 ## Problem
 

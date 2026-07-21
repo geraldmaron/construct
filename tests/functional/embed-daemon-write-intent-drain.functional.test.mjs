@@ -2,7 +2,7 @@
  * tests/functional/embed-daemon-write-intent-drain.functional.test.mjs —
  * end-to-end proof that the embed daemon's 'write-intent-drain' job
  * (lib/embed/daemon.mjs, construct-4uxq0.9.5) actually calls
- * drainApprovedWriteIntents on its own cadence, closing the gap ADR-0094
+ * drainApprovedWriteIntents on its own cadence, closing the gap ADR-0100
  * described: drainApprovedWriteIntents (lib/writes/control-plane.mjs) was
  * implemented and tested but called by nothing in lib/ or bin/, leaving
  * `construct approvals approve <id>` as the only production drain path.
@@ -63,7 +63,7 @@ function runDaemonTick(root, persistPath, approvalId, timeoutMs = 15_000) {
   const env = sterileSpawnEnv({
     HOME: root,
     USERPROFILE: root,
-    CX_HOME_OVERRIDE: root,
+    CONSTRUCT_HOME_OVERRIDE: root,
     CX_ROOT_DIR: root,
     QUEUE_PERSIST_PATH: persistPath,
     APPROVAL_ID: approvalId,

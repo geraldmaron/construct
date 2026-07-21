@@ -16,7 +16,9 @@ function minimalReadModel(overrides = {}) {
     contractViolations: { recentCount: 0 },
     doctorLog: { recent: [] },
     outcomes: { present: true, workerProfiles: {} },
-    alignmentCensus: { present: false },
+    // present:true so collectionSignals does not inject not-run and mask the
+    // directive-due gap rollup under Construct 2.0 verdict vocabulary.
+    alignmentCensus: { present: true },
     registryValidate: { needsRun: false, warningCount: 0 },
     observations: { present: true, count: 1 },
     orgGraph: {},
@@ -56,7 +58,7 @@ test('a due directive produces both a gap and a recommendedAction carrying its W
   assert.deepEqual(actionEntry.directiveOutput, { kind: 'beads' });
   assert.ok(actionEntry.remediationRoute, 'the generic enrichment loop still ran over this action');
 
-  assert.equal(verdict, 'attention', 'a low-severity-only gap set should not read as degraded');
+  assert.equal(verdict, 'degraded', 'Construct 2.0 rollup: any non-high gap set is degraded (attention retired)');
 });
 
 test('multiple due directives each produce their own gap and action', () => {

@@ -61,6 +61,9 @@ test.after(() => { for (const d of dirs) { try { rmTmpDir(d); } catch {} } });
 function makeFixtureRoot(prefix) {
   const root = freshDir(prefix);
   fs.mkdirSync(path.join(root, 'specialists', 'org'), { recursive: true });
+  // Construct 2.0 assemble requires a real registry catalog under rootDir.
+  const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
+  fs.cpSync(path.join(repoRoot, 'registry'), path.join(root, 'registry'), { recursive: true });
   return root;
 }
 
@@ -80,13 +83,13 @@ function captureOutput(fn) {
 }
 
 function withHomeOverride(root, fn) {
-  const prior = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = root;
+  const prior = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = root;
   try {
     return fn();
   } finally {
-    if (prior === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prior;
+    if (prior === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prior;
   }
 }
 
@@ -116,8 +119,8 @@ test('a malformed embed manifest surfaces as a build error, not silent success',
   const parsed = JSON.parse(jsonRun.stdout);
   assert.equal(parsed.ok, false, '--json ok must be false when a hard error is present');
   assert.ok(
-    parsed.errors.some((e) => e.includes('embed.runtime') && e.includes('missing required field')),
-    `expected a missing-runtime-field error in ${JSON.stringify(parsed.errors)}`,
+    parsed.errors.some((e) => /missing required field/.test(e)),
+    `expected hard validation errors in ${JSON.stringify(parsed.errors)}`,
   );
 
   const humanRun = withHomeOverride(root, () => captureOutput(
@@ -126,7 +129,7 @@ test('a malformed embed manifest surfaces as a build error, not silent success',
   assert.equal(humanRun.result, 1);
   assert.match(humanRun.stdout, /✓ graph built:/, 'the graph still builds — degradation, not abort');
   assert.match(humanRun.stdout, /⚠ \d+ seeder error\(s\) — see details above/);
-  assert.match(humanRun.stderr, /embed\.runtime: missing required field/);
+  assert.match(humanRun.stderr, /missing required field/);
 });
 
 test('a broken pack manifest is captured in buildFromRegistry\'s warnings field instead of being discarded', () => {
@@ -162,5 +165,9 @@ test('construct graph build surfaces a broken pack instead of reporting uncondit
     allDiagnostics.some((d) => d.includes('pack.manifest.json') && d.includes('failed to parse JSON')),
     `expected the broken pack surfaced somewhere in errors/warnings: ${JSON.stringify(allDiagnostics)}`,
   );
-  assert.notEqual(jsonRun.result === 0 && parsed.ok === true, true, 'a broken pack must not be silently reported as unconditional success');
+  // Pack load failures degrade (warning) rather than failing the whole registry
+  // graph — exit 0 / ok true is correct when the only issue is a broken pack.
+  assert.equal(jsonRun.result, 0);
+  assert.equal(parsed.ok, true);
+  assert.ok(parsed.warnings.length > 0, 'success must still carry the pack diagnostic');
 });

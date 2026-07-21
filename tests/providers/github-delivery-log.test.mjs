@@ -112,17 +112,17 @@ describe('WebhookDeliveryLog', () => {
     }
   });
 
-  it('resolvePersistPath lands under the ADR-0066 machine state root, relocated by CX_HOME_OVERRIDE', () => {
+  it('resolvePersistPath lands under the ADR-0066 machine state root, relocated by CONSTRUCT_HOME_OVERRIDE', () => {
     const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-delivery-home-'));
-    const previous = process.env.CX_HOME_OVERRIDE;
-    process.env.CX_HOME_OVERRIDE = fakeHome;
+    const previous = process.env.CONSTRUCT_HOME_OVERRIDE;
+    process.env.CONSTRUCT_HOME_OVERRIDE = fakeHome;
     try {
       const resolved = WebhookDeliveryLog.resolvePersistPath(fakeHome);
       assert.ok(resolved.startsWith(path.join(fakeHome, '.construct', 'projects')));
       assert.ok(resolved.endsWith(path.join('webhooks', 'github-deliveries.jsonl')));
     } finally {
-      if (previous === undefined) delete process.env.CX_HOME_OVERRIDE;
-      else process.env.CX_HOME_OVERRIDE = previous;
+      if (previous === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+      else process.env.CONSTRUCT_HOME_OVERRIDE = previous;
       fs.rmSync(fakeHome, { recursive: true, force: true });
     }
   });

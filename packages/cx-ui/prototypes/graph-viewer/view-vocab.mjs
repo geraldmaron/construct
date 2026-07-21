@@ -25,12 +25,14 @@ export const DEPENDENCY_EDGE_RELS = new Set(['imports', 'contains', 'co_changes'
 // of lib/graph/store.mjs's `node:fs` dependency.
 
 export const APPLICATION_NODE_TYPES = new Set([
-  'capability', 'test', 'contract', 'surface', 'skill', 'rule', 'provider', 'tool', 'pack',
-  'doc', 'specialist', 'runtime-evidence', 'embed', 'source', 'tombstone', 'workflow',
+  'capability', 'card', 'composed-prompt', 'contract', 'demo-manifest', 'doc', 'embed', 'pack', 'source',
+  'procedure', 'prompt-fragment', 'provider', 'rule', 'runtime-evidence', 'skill', 'surface', 'test',
+  'tombstone', 'tool', 'worker-profile', 'workflow',
 ]);
 export const APPLICATION_EDGE_RELS = new Set([
-  'realizes', 'validates', 'covers', 'exposes', 'governed_by', 'uses', 'embeds', 'requires',
-  'documents', 'evidenced_by', 'owned_by', 'reads', 'secures', 'derived_from',
+  'composes_into', 'consumes_schema', 'couples_state', 'covers', 'derived_from', 'documents', 'embeds', 'evidenced_by',
+  'executes_write', 'exposes', 'governed_by', 'merged_in', 'owned_by', 'reads', 'realizes', 'released_in',
+  'requires', 'secures', 'uses', 'validates',
 ]);
 
 export const VIEWS = Object.freeze({

@@ -380,7 +380,7 @@ test('cli review annotates a non-clean verdict and stays fast on a fresh project
         ...process.env,
         HOME: homeDir,
         USERPROFILE: homeDir,
-        CX_HOME_OVERRIDE: homeDir,
+        CONSTRUCT_HOME_OVERRIDE: homeDir,
         CONSTRUCT_ORACLE_AUTO_RAISE: 'off',
       },
     });

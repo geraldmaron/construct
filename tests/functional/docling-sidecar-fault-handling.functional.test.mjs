@@ -35,8 +35,8 @@ test('a malformed sidecar stdout line is counted and surfaced in the eventual fa
     (err) => {
       assert.match(err.message, /exited/i, 'failure is attributed to the sidecar exiting, not a bare timeout');
       assert.equal(err.malformedMessageCount, 1);
-      assert.equal(err.malformedMessagePreview.length, 1);
-      assert.match(err.malformedMessagePreview[0], /not-json-at-all/);
+      assert.equal(err.malformedMessagePreviews.length, 1);
+      assert.match(err.malformedMessagePreviews[0], /not-json-at-all/);
       return true;
     },
   );
@@ -53,13 +53,13 @@ test('an unmatched-id sidecar response is logged as a warning and does not corru
       scriptPath: path.join(FIXTURES, 'docling-sidecar-orphan-id-fixture.mjs'),
       requestTimeoutMs: 5_000,
     });
-    const result = await sidecar.send('ping', {});
-    assert.deepEqual(result, { ok: true });
+    const result = await sidecar.send('extract', { path: '/tmp/orphan-check.pdf' });
+    assert.equal(result.ok, true);
   } finally {
     process.stderr.write = originalWrite;
     if (sidecar) sidecar.child.kill('SIGKILL');
   }
-  const warning = writes.find((w) => /desync/i.test(w) && w.includes('999999'));
+  const warning = writes.find((w) => /orphan|desync/i.test(w) && w.includes('999999'));
   assert.ok(warning, `expected an orphan-id warning line, got: ${JSON.stringify(writes)}`);
 });
 

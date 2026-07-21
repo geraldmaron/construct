@@ -9,7 +9,7 @@
  * the real `git` binary (no bin/construct spawn, no fake wire boundary) —
  * git fixture setup is an unavoidable real subprocess, but the module under
  * test is exercised in-process through its actual exported function, not
- * through the CLI. CX_HOME_OVERRIDE isolates the state root per test so the
+ * through the CLI. CONSTRUCT_HOME_OVERRIDE isolates the state root per test so the
  * corpus cache never touches the real machine's ~/.construct.
  *
  * Typed error classification (construct-h48jh): sync failures surface as the
@@ -64,19 +64,19 @@ function makeLiveRepoPair() {
 }
 
 /**
- * Runs `fn` with CX_HOME_OVERRIDE pointed at a fresh tmpdir, so
+ * Runs `fn` with CONSTRUCT_HOME_OVERRIDE pointed at a fresh tmpdir, so
  * resolveStateRoot's corpus cache lands under an isolated fake home rather
  * than the real machine's ~/.construct, then restores the prior value.
  */
 function withIsolatedHome(fn) {
   const home = freshDir('cx-repocache-home-');
-  const previous = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = home;
+  const previous = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = home;
   try {
     return fn();
   } finally {
-    if (previous === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = previous;
+    if (previous === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = previous;
   }
 }
 

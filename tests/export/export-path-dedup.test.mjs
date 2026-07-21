@@ -28,8 +28,10 @@ function grepExportMarkdownCallSites(rootDir) {
       const rel = path.relative(rootDir, file);
       const lines = fs.readFileSync(file, 'utf8').split('\n');
       lines.forEach((line, index) => {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*')) return;
         if (/\bexportMarkdown\s*\(/.test(line)) {
-          hits.push({ file: rel, line: index + 1, text: line.trim() });
+          hits.push({ file: rel, line: index + 1, text: trimmed });
         }
       });
     }

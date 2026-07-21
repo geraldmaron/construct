@@ -198,8 +198,9 @@
       "owningWorkflow": "document-extraction",
       "securityConcerns": "installSource='uv-venv', securityClassification='trusted' per lib/extensions/manifests/docling.manifest.json",
       "versionPolicy": {
-        "type": "unmanaged",
-        "notes": "Provisioned via uv-venv; no enforced version pin, version (if any) is reported by the health-check subprocess only."
+        "type": "external-pinned",
+        "expectedVersion": "2.45.0",
+        "notes": "Must match DOCLING_PIN in lib/runtime/uv-bootstrap.mjs; uv.lock and pyproject pin the same version."
       },
       "healthCheck": {
         "kind": "subprocess-version",

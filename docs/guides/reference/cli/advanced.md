@@ -368,7 +368,7 @@ Manage typed integration source targets in construct.config.json
 **Usage**
 
 ```bash
-construct sources list|add|remove|validate|sync
+construct sources list|add|remove|validate|sync|link|unlink
 ```
 
 **Subcommands**
