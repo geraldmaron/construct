@@ -6,6 +6,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Fixed
 
+- CI figure toolchain for `figures: true` gates (PR 419): pin sha256-verified `d2` in `scripts/ci/setup-toolchain.sh`, install `@mermaid-js/mermaid-cli` via `scripts/ci/setup-mermaid-cli.sh` after `npm ci` (ci.yml, release.yml, ci-repro job), and trim `skills/perspectives/orchestrator.md` under the 450-word compact cap while keeping Symptom/Counter-move structure.
+
 - Brand alignment ratchet: backtick `construct publish` in `construct tools detect` CLI catalog prose (`lib/cli-commands.mjs` → `docs/guides/reference/cli/work.md`).
 
 - CI reconcile on `feat/workspace-control-plane` (PR 419 test shards): regenerate `tests/AUDIT.md` + corpus/skill inventories for new test files; allow comma-separated `adr_reference` on rules; always compact role-flavor overlays to `roleFlavorTokens` and hash full overlay source so large perspectives stay in-budget and still trip prompt re-cert on edit; clear skill-inventory blockers (PM owns competitive-intel/financial-model; align research-brief verificationBar; orchestrator Symptom/Counter-move); regenerate artifact goldens + PRD/ADR fixtures for raised depth bar; pass `figures: true` in document-io and render-visual checks; decode XML entities in DOCX/HTML roundtrip extraction; densify publish golden Platform flow prose to avoid blank PDF chapter pages; pin init footprint with `--with-claude`; refresh certified prompt-version baseline and `docs:site` reference.
