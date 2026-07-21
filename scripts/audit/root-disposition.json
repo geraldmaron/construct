@@ -1143,6 +1143,20 @@
       ]
     },
     {
+      "pattern": ".local",
+      "owner": "engineering-operations",
+      "class": "local",
+      "consumers": [
+        "local toolchain inspect and scratch state"
+      ],
+      "published": false,
+      "action": "ignore",
+      "replacement": null,
+      "evidence": [
+        "gitignored local scratch"
+      ]
+    },
+    {
       "pattern": ".tmp",
       "owner": "engineering-operations",
       "class": "generated",
