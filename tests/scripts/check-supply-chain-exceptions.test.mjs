@@ -4,7 +4,8 @@
  */
 
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import fs from 'node:fs';
+const { mkdtempSync, writeFileSync } = fs;
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';

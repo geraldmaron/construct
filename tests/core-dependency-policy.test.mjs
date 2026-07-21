@@ -98,10 +98,14 @@ test('LanceDB + apache-arrow stay optional, never forced into core', () => {
 test('local-embedding ML stack stays optional, never forced into core', () => {
   assert.ok(
     !('@huggingface/transformers' in (pkg.dependencies || {})),
-    '@huggingface/transformers must live in optionalDependencies (see docs/decisions/adr/0014-local-embeddings-optional.md) — the in-tree hashing embedder is the zero-dependency default',
+    '@huggingface/transformers must not ship in dependencies (see docs/decisions/adr/0014-local-embeddings-optional.md) — the in-tree hashing embedder is the zero-dependency default',
   );
   assert.ok(
-    '@huggingface/transformers' in (pkg.optionalDependencies || {}),
-    '@huggingface/transformers should be declared in optionalDependencies so local ONNX embedding remains an opt-in capability',
+    !('@huggingface/transformers' in (pkg.optionalDependencies || {})),
+    '@huggingface/transformers must not ship in optionalDependencies — consumer installs inherit a vulnerable transitive chain (audit-published-artifact gate)',
+  );
+  assert.ok(
+    '@huggingface/transformers' in (pkg.devDependencies || {}),
+    '@huggingface/transformers should be declared in devDependencies for repo-local ONNX embedding experiments',
   );
 });
