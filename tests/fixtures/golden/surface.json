@@ -265,6 +265,10 @@
       "core": false
     },
     {
+      "name": "lint:contracts",
+      "core": false
+    },
+    {
       "name": "lint:research",
       "core": false
     },

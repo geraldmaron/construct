@@ -6,6 +6,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Fixed
 
+- PR 419 CI test shards: map embed snapshot items through the meaningful-change gate body field; pass governed webEvidence into research evidence gate and pin orchestration worker DOI fixture; gate relational graph CLI/latency suites on node:sqlite (Node 20 matrix); extend oracle-approval-dedupe batch timeout; regenerate decisions golden surface; run alignment census in CI fixture build; ADR-0073 RichDocument deps on SANCTIONED allowlist; restore @huggingface/transformers optionalDependencies; accept construct-ui audit baseline finding.
+
 - PR 419 CI unblock (batch): `scripts/lint-commits-pr.mjs` enumerates commits from `git merge-base origin/<base> HEAD..HEAD`, skips bead `merge:` subjects, and documents two pre-policy branch SHAs; `lib/auto-docs.mjs` links `command-catalog` in generated CLI nav; npm `files` includes `packages/construct-ui/**` for packed installs; `verify-cutover` tightens the Oracle daemon live-reference regex; optional-dep matrix ignores `remove`-disposition intent tombstones; registers `lint:contracts` in `CLI_COMMANDS`; demo manifest commands match the v2 capability surface.
 
 - PR 419 CI: fix docs-site Mermaid `MermaidConfig` typing; regenerate `tests/AUDIT.md` / corpus inventory; pin CycloneDX SBOM via devDependency and `npm exec` in release workflow; VHS tapes accept bash `>` continuation prompts; per-batch 120s timeout for functional and lazy-import shards; align `git` provider manifest certification and manifest count tests.

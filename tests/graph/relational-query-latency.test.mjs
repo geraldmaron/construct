@@ -32,6 +32,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
+import { sqliteAvailable } from '../../lib/graph/relational/sqlite-db.mjs';
 import { writeGraph } from '../../lib/graph/relational/sqlite-store.mjs';
 import { queryDown, queryUp, queryPath, queryImpact } from '../../lib/graph/relational/queries.mjs';
 
@@ -136,6 +137,12 @@ function elapsedMs(fn) {
 }
 
 const { nodes, edges } = buildHubScaleFixture();
+
+if (!sqliteAvailable()) {
+  test('relational query latency skipped — node:sqlite unavailable (Node <22.5)', () => {
+    assert.equal(sqliteAvailable(), false);
+  });
+} else {
 const built = writeGraph(root, { nodes, edges });
 
 test('fixture reaches hub-scale node/edge counts comparable to the real repo graph', () => {
@@ -186,3 +193,5 @@ test('queryImpact with default options (impactRel defaults to imports) stays bou
   assert.deepEqual(result.map((r) => r.id).sort(), Array.from({ length: TEST_NODE_COUNT }, (_, i) => `test:synth-test-${i}`).sort());
   assert.ok(ms < 8000, `queryImpact defaults took ${ms.toFixed(1)}ms, expected under 8000ms (was a 20s+ hard kill on a real 148-importer hub before the fix)`);
 });
+
+}

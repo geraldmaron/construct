@@ -31,6 +31,12 @@ const SANCTIONED = new Set([
   // mailparser: RFC 5322/MIME email parsing only (ADR-0098). Does not cover
   // .msg/OLE parsing — that input fails loud with a typed error instead.
   'mailparser',
+  // RichDocument markdown/HTML adapters (ADR-0073); narrow parse/sanitize surface only.
+  'unified',
+  'remark-parse',
+  'remark-gfm',
+  'rehype-parse',
+  'rehype-sanitize',
 ]);
 
 // node-webvtt was removed (ADR-0028): zero in-tree usage. New deps may not
