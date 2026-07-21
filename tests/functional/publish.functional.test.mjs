@@ -12,6 +12,7 @@ import { spawnSync } from 'node:child_process';
 import { detectPublishPipeline } from '../../lib/publish-tooling.mjs';
 import { runPublish, formatGateFailureMessage } from '../../lib/publish.mjs';
 import { validateArtifactRelease } from '../../lib/artifact-release-gate.mjs';
+import { countPdfEmbeddedImages, pdfRenderedDiagrams } from '../../lib/document-export.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
@@ -214,6 +215,10 @@ test('runPublish exports golden fixture when toolchain present', () => {
     assert.equal(result.ok, true, result.message);
     assert.ok(fs.existsSync(out));
     assert.ok(fs.statSync(out).size > 1000);
+    assert.equal(result.ledger.export.exportPath, 'richdocument');
+    const source = fs.readFileSync(GOLDEN, 'utf8');
+    assert.ok(countPdfEmbeddedImages(out) > 0, 'golden PDF should embed rendered diagrams');
+    assert.equal(pdfRenderedDiagrams(out, source), true, 'diagram fences should not remain as raw source');
   } finally {
     rmTmpDir(dir);
   }
