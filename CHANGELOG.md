@@ -6,6 +6,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Fixed
 
+- Brand alignment ratchet: backtick `construct publish` in `construct tools detect` CLI catalog prose (`lib/cli-commands.mjs` → `docs/guides/reference/cli/work.md`).
+
 - CI reconcile on `feat/workspace-control-plane` (PR 419 test shards): regenerate `tests/AUDIT.md` + corpus/skill inventories for new test files; allow comma-separated `adr_reference` on rules; always compact role-flavor overlays to `roleFlavorTokens` and hash full overlay source so large perspectives stay in-budget and still trip prompt re-cert on edit; clear skill-inventory blockers (PM owns competitive-intel/financial-model; align research-brief verificationBar; orchestrator Symptom/Counter-move); regenerate artifact goldens + PRD/ADR fixtures for raised depth bar; pass `figures: true` in document-io and render-visual checks; decode XML entities in DOCX/HTML roundtrip extraction; densify publish golden Platform flow prose to avoid blank PDF chapter pages; pin init footprint with `--with-claude`; refresh certified prompt-version baseline and `docs:site` reference.
 
 - Alignment census / certify gate (PR 419): brand prose lint no longer flags meta-guidance that bans marketing tokens (`robust` in AI/LLM-tells lists); backtick `construct publish` naming hits; remove accidental repo-root `~/Downloads` residue; add golden fixtures for `compliance-memo` and `dpia-or-privacy-assessment` so hermetic `artifact.provenance` passes. Tightens brand ratchet by clearing the `product-manager.md` marketing-voice baseline entry.
