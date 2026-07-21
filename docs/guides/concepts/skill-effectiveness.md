@@ -22,14 +22,14 @@ Structural validation (`lib/validators/skills.mjs`) is the floor. Effectiveness 
 - ≥3 numbered failure modes with Symptom and Counter-move (or Counter)
 - Base roles include Self-check, Methodology, or Ship Check
 - `scopes:` frontmatter lists applicable work scopes
-- `applies_to` matches ADR-0047 specialist bindings
+- `applies_to` matches ADR-0047 Worker Profile bindings
 
 ### Workflow skills (`skills/docs/*-workflow.md`)
 
 - `verificationBar` ≥40 characters, testable against artifact release gate
 - `artifactType` set (may differ from manifest type when orchestrating)
 - ≥4 numbered steps; mentions `construct artifact validate`
-- Specialist ids exist in registry; `get_skill("…")` paths resolve
+- Worker Profile ids exist in `registry/worker-profiles/`; `get_skill("…")` paths resolve
 
 ### Domain skills
 

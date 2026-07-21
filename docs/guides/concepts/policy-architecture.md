@@ -90,6 +90,6 @@ Sources: [Oso: OPA vs Cedar vs Zanzibar](https://www.osohq.com/learn/opa-vs-ceda
 
 - **Deterministic (100%)**: a machine check that cannot be bypassed in normal operation. The action is blocked or the artifact is rejected.
 - **Deterministic (~N%)**: a pattern-based check with known false-negative rate. The patterns cover the most common failure modes; adversarial bypasses exist but require intent.
-- **Honor-system**: enforced at the conversation level by the persona prompt. Relies on the model following its instructions. Not a security boundary; a quality boundary.
+- **Honor-system**: enforced at the conversation level by the front-door / Worker Profile prompt. Relies on the model following its instructions. Not a security boundary; a quality boundary.
 
 The distinction matters when you're deciding where to invest. Converting honor-system rules to deterministic requires either a reliable pattern (cheap) or an LLM call (expensive and introduces the LLM-as-judge circularity problem).

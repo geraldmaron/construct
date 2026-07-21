@@ -6,9 +6,9 @@
  *      entry fails and names the entry; a within-window entry passes. Covers
  *      both expiration shapes (date, releaseCount).
  *   2. Every entry in the real compat/surfaces.json is structurally valid.
- *   3. The real registry's construct-matrix entry (ADR-0053, past its
- *      original 2-release-cycle window) carries a documented extension
- *      rather than being silently past-expiration.
+ *   3. Removed surfaces are honest tombstones (status:removed) and do not
+ *      claim live module paths or handlers; the matrix ADR-0053 entry keeps
+ *      its documented extension history.
  *
  * @enforces ADR-0053
  */
@@ -37,23 +37,32 @@ test('compat/surfaces.json exists and is a non-empty array', () => {
   assert.ok(surfaces.length > 0, 'compat/surfaces.json must have at least one entry');
 });
 
-test('registry contains the five truth-21 surfaces named in construct-tsyfe.10.6', () => {
-  const ids = new Set(surfaces.map((entry) => entry.id));
-  const expectedLocations = [
-    'lib/setup.mjs',
-    'bin/construct:4719-4768',
-    'bin/construct:7798-7806',
-    'lib/config/legacy-config-migration.mjs',
-    'lib/install/legacy-global-cleanup.mjs',
+test('registry retains the five truth-21 surfaces as honest tombstones', () => {
+  const byId = new Map(surfaces.map((entry) => [entry.id, entry]));
+  const expectedIds = [
+    'cli-matrix-graph-alias',
+    'install-scope-footprint-alias',
+    'cli-models-legacy-flags',
+    'legacy-config-migration-module',
+    'legacy-global-cleanup-module',
   ];
-  const locations = surfaces.map((entry) => entry.location);
-  for (const expected of expectedLocations) {
-    assert.ok(
-      locations.some((loc) => loc.includes(expected) || expected.includes(loc)),
-      `no registry entry covers ${expected}`,
-    );
+  for (const id of expectedIds) {
+    const entry = byId.get(id);
+    assert.ok(entry, `missing registry entry ${id}`);
+    assert.equal(entry.status, 'removed', `${id} must be status:removed`);
+    assert.match(entry.location, /^tombstone:/, `${id} location must be a tombstone, not a live path`);
   }
-  assert.ok(ids.size === surfaces.length, 'entry ids must be unique');
+  assert.equal(
+    fs.existsSync(resolve(ROOT, 'lib/config/legacy-config-migration.mjs')),
+    false,
+    'legacy-config-migration.mjs must stay deleted',
+  );
+  assert.equal(
+    fs.existsSync(resolve(ROOT, 'lib/install/legacy-global-cleanup.mjs')),
+    false,
+    'legacy-global-cleanup.mjs must stay deleted',
+  );
+  assert.ok(byId.size === surfaces.length, 'entry ids must be unique');
 });
 
 test('every registry entry has all required fields and a valid shape', () => {
@@ -77,6 +86,19 @@ test('date-type fixture entry in the future is not expired', () => {
   const { expired, detail } = isExpired(entry, { today: '2026-07-17', changelogVersions: [] });
   assert.equal(expired, false);
   assert.match(detail, /not yet reached/);
+});
+
+test('status:removed tombstones are never unresolved-expired', () => {
+  const entry = {
+    id: 'fixture-removed',
+    status: 'removed',
+    location: 'tombstone:fixture',
+    expiration: { type: 'date', date: '2020-01-01' },
+    extensionHistory: [],
+  };
+  const { expired, detail } = isExpired(entry, { today: '2026-07-21', changelogVersions: [] });
+  assert.equal(expired, false);
+  assert.match(detail, /tombstone/i);
 });
 
 test('releaseCount fixture entry past its cycle window is reported expired', () => {
@@ -127,15 +149,16 @@ test('real registry has zero unresolved-expired entries as of today', () => {
   assert.deepEqual(
     violations.map((v) => `${v.id}: ${v.detail}`),
     [],
-    'every compat-surface entry must either be within its expiration window or carry a documented extension moving that window forward',
+    'every compat-surface entry must either be within its expiration window, be status:removed, or carry a documented extension moving that window forward',
   );
 });
 
-test('the construct-matrix ADR-0053 surface documents its expired-and-extended history rather than hiding it', () => {
-  const matrixEntry = surfaces.find((entry) => entry.location.startsWith('bin/construct:7798'));
+test('the construct-matrix ADR-0053 tombstone documents its expired-and-extended history', () => {
+  const matrixEntry = surfaces.find((entry) => entry.id === 'cli-matrix-graph-alias');
   assert.ok(matrixEntry, 'construct matrix entry must be present in the registry');
+  assert.equal(matrixEntry.status, 'removed');
   assert.ok(matrixEntry.extensionHistory.length > 0, 'construct matrix entry must record its expired ADR-0053 window as an extension, not silently move the field');
-  const [firstExtension] = matrixEntry.extensionHistory;
-  assert.equal(firstExtension.previousExpiration.type, 'releaseCount');
+  const firstExtension = matrixEntry.extensionHistory.find((ext) => ext.previousExpiration?.type === 'releaseCount');
+  assert.ok(firstExtension, 'first releaseCount→date extension must remain on the tombstone');
   assert.ok(firstExtension.reason && firstExtension.reason.length > 0);
 });

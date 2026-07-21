@@ -69,6 +69,16 @@ test('ADR-0053 matrix alias decision is explicit and removed', () => {
   assert.ok(!catalog.commands.some((row) => row.name === 'matrix' && row.status === 'current'));
 });
 
+test('up/down legacy aliases are sunset as removed, not live handler-only aliases', () => {
+  assert.equal(CLI_SUNSET_DECISIONS.up.status, 'removed');
+  assert.equal(CLI_SUNSET_DECISIONS.down.status, 'removed');
+  const catalog = buildCliCommandCatalog({ rootDir: REPO });
+  assert.equal(catalog.commands.find((row) => row.name === 'up')?.status, 'removed');
+  assert.equal(catalog.commands.find((row) => row.name === 'down')?.status, 'removed');
+  assert.ok(!catalog.commands.some((row) => row.name === 'up' && row.status === 'legacy-alias'));
+  assert.ok(!catalog.commands.some((row) => row.name === 'down' && row.status === 'legacy-alias'));
+});
+
 test('architecture.mdx no longer references construct matrix build', () => {
   const text = fs.readFileSync(ARCH_PATH, 'utf8');
   assert.doesNotMatch(text, /construct matrix build/i);

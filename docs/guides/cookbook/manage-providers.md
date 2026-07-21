@@ -146,7 +146,7 @@ Shows each agent's average quality score and trace count: useful for deciding wh
 ## Dry-run prompt optimization
 
 ```bash
-construct optimize cx-engineer --dry-run
+construct optimize engineer --dry-run
 ```
 
 Previews prompt changes inferred from low-quality traces without applying them.
@@ -154,7 +154,7 @@ Previews prompt changes inferred from low-quality traces without applying them.
 ## Apply prompt optimization
 
 ```bash
-construct optimize cx-engineer
+construct optimize engineer
 ```
 
 Rewrites the agent's system prompt slice in `registry.json` based on recurring failure patterns in telemetry traces. Requires `CONSTRUCT_TELEMETRY_PUBLIC_KEY` and `CONSTRUCT_TELEMETRY_SECRET_KEY` to be set.

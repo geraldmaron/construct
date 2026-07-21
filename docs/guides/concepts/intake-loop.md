@@ -109,29 +109,29 @@ Retrieved Documents:
 
 **Fallback:** If Postgres unavailable → local JSON index
 
-### 4. Specialist Dispatch
+### 4. Worker Profile Dispatch
 
 **Module:** `lib/orchestration-policy.mjs`
 
 ```javascript
 // For bug intake:
 Dispatch Chain:
-  1. cx-debugger      (primary. root cause analysis)
-  2. cx-engineer      (implementation)
-  3. cx-qa            (verification)
-  4. cx-reviewer      (parallel. code review)
+  1. debugger         (primary. root cause analysis)
+  2. engineer         (implementation)
+  3. qa               (verification)
+  4. reviewer         (parallel. code review)
   
 // For user-signal intake:
 Dispatch Chain:
-  1. cx-product-manager (primary. clarify requirements)
-  2. cx-researcher     (user research + competitive analysis)
+  1. product-manager  (primary. clarify requirements)
+  2. researcher       (user research + competitive analysis)
 ```
 
 **Parallel Checks** (new in 2026 enhancements):
 
 ```javascript
 identifyParallelChecks({ request, riskFlags })
-// Returns: ['cx-security', 'cx-designer']
+// Returns: ['security', 'designer']
 
 // These run concurrently with implementation for faster feedback
 ```
@@ -171,7 +171,7 @@ identifyParallelChecks({ request, riskFlags })
 ```javascript
 // After work completes:
 addObservation(rootDir, {
-  role: 'cx-engineer',
+  role: 'engineer',
   category: 'decision',
   summary: 'Implement sliding session with 5-min warning + auto-save hook',
   content: 'Full context of the decision...',
@@ -292,7 +292,7 @@ Results:
        ▼
 ┌──────────────┐
 │   DISPATCH   │  lib/orchestration-policy.mjs
-│              │  → Select specialists, identify parallel checks
+│              │  → Select Worker Profiles, identify parallel checks
 └──────┬───────┘
        │
        ▼

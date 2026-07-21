@@ -22,31 +22,33 @@ and persisted. The rest of this page is wiring.
 
 ## Canonical domain language
 
-`config/canonical-terminology.json` is the machine-readable naming and ownership contract. This
-table is its architecture-level summary:
+`config/canonical-terminology.json` is the machine-readable naming and ownership contract. The
+table below separates **target owners** (the names that catalog promises) from **on-disk owners**
+(what this checkout actually has). Do not read a target path as present unless the on-disk column
+says so.
 
-| Concept | Responsibility | Public identifier | Checked-in owner |
-|---|---|---|---|
-| Workspace | Governed project context and durable state boundary | `workspace` | `lib/workspaces/`; project data in `.construct/` |
-| Workspace Preset | Workspace-wide intake taxonomy, artifact defaults, tone, Skills, and Procedures | `workspace-preset` | `registry/workspace-presets/`; runtime in `lib/workspace-presets/` |
-| Source | Cursor-based signal origin connected to a Workspace | `source` | `.construct/sources/`; runtime in `lib/sources/` |
-| Objective | Durable desired result and rationale | `objective` | `.construct/objectives/`; runtime in `lib/objectives/` |
-| Directive | Standing instruction that generates Objectives or Work | `directive` | `.construct/directives/`; runtime in `lib/directives/` |
-| Work | Bounded owned unit that advances an Objective | `work` | `.construct/work/`; runtime in `lib/work/` |
-| Work Specification | Versioned what-and-why agreement for Work | `work-specification` | `.construct/work-specifications/`; runtime in `lib/work-specifications/` |
-| Plan | Versioned approach decomposing Work into Assignments | `plan` | `.construct/plans/`; runtime in `lib/plans/` |
-| Run | One execution attempt of a Plan | `run` | `.construct/runs/`; runtime in `lib/runs/` |
-| Worker Profile | Assignable runtime, model tier, Skill emphasis, Procedure affinity, and Policy fence | `worker-profile` | `registry/worker-profiles/`; runtime in `lib/worker-profiles/` |
-| Skill | Reusable domain knowledge or operating guidance | `skill` | `skills/`; runtime in `lib/skills/` |
-| Procedure | Reusable deterministic sequence invoked by Plans | `procedure` | `registry/procedures/`; runtime in `lib/procedures/` |
-| Assignment | Bounded unit from a Plan, owned by one worker under a contract | `assignment` | `lib/assignments/` |
-| Capability | Typed system operation with inputs, outputs, preconditions, and postconditions | `capability` | `registry/capabilities.json`; runtime in `lib/capabilities/` |
-| Policy | Authority, approval, and external-effect rule | `policy` | `registry/policies/`; runtime in `lib/policy/` |
-| Artifact | Content-identified output from a Run or Assignment | `artifact` | `.construct/artifacts/`; runtime in `lib/artifacts/` |
-| Evidence | Assertion that an Artifact satisfies a requirement; a relationship, not a standalone record | `evidence` | `evidenced-by` graph edge; runtime in `lib/evidence/` |
-| Projection | Derived adapter view of Construct-owned state | `projection` | `lib/projections/` |
-| Graph Node | Non-authoritative representation of a domain or implementation entity | `graph-node` | `.construct/graph/`; runtime in `lib/graph/` |
-| Graph Edge | Typed, provenance-bearing relationship between Graph Nodes | `graph-edge` | `.construct/graph/`; runtime in `lib/graph/` |
+| Concept | Responsibility | Public identifier | On-disk today | Target owner (catalog) |
+|---|---|---|---|---|
+| Workspace | Governed project context and durable state boundary | `workspace` | `lib/workspace/` (CLI `workspace-domain`); project data in `.construct/` | `lib/workspaces/` |
+| Workspace Preset | Workspace-wide intake taxonomy, artifact defaults, tone, Skills, and Procedures | `workspace-preset` | `registry/workspace-presets/`; `lib/workspace-presets/` | same |
+| Source | Cursor-based signal origin connected to a Workspace | `source` | `lib/sources/` (partial; content roots / watch); data under project state | `lib/sources/` + `.construct/sources/` |
+| Objective | Durable desired result and rationale | `objective` | **planned** — no `lib/objectives/` yet | `lib/objectives/`; `.construct/objectives/` |
+| Directive | Standing instruction that generates Objectives or Work | `directive` | `lib/directives/` (config / due-tracker; not full domain store) | `lib/directives/`; `.construct/directives/` |
+| Work | Bounded owned unit that advances an Objective | `work` | **planned** — tracker projection + beads interim; no `lib/work/` yet | `lib/work/`; `.construct/work/` |
+| Work Specification | Versioned what-and-why agreement for Work | `work-specification` | `lib/planning/work-spec.mjs` (+ `build-work-spec`, CLI `work-spec`) | `lib/work-specifications/` |
+| Plan | Versioned approach decomposing Work into Assignments | `plan` | interim via `lib/planning/` + orchestration dispatch; no `lib/plans/` yet | `lib/plans/`; `.construct/plans/` |
+| Run | One execution attempt of a Plan | `run` | `lib/orchestration/run-store*.mjs` under machine-scoped runtime state | `lib/runs/`; `.construct/runs/` |
+| Worker Profile | Assignable runtime, model tier, Skill emphasis, Procedure affinity, and Policy fence | `worker-profile` | `registry/worker-profiles/` (unprefixed ids); `lib/worker-profiles/` | same |
+| Skill | Reusable domain knowledge or operating guidance | `skill` | `skills/`; `lib/skills/` | same |
+| Procedure | Reusable deterministic sequence invoked by Plans | `procedure` | `registry/procedures/`; `lib/procedures/` | same |
+| Assignment | Bounded unit from a Plan, owned by one worker under a contract | `assignment` | `lib/assignments/` | same |
+| Capability | Typed system operation with inputs, outputs, preconditions, and postconditions | `capability` | `registry/capabilities.json`; `lib/capabilities/` | same |
+| Policy | Authority, approval, and external-effect rule | `policy` | `lib/policy/` (+ `registry/policies/` where present) | `lib/policy/`; `registry/policies/` |
+| Artifact | Content-identified output from a Run or Assignment | `artifact` | scattered `lib/artifact-*.mjs` + publish/ingest paths; no `lib/artifacts/` dir | `lib/artifacts/`; `.construct/artifacts/` |
+| Evidence | Assertion that an Artifact satisfies a requirement; a relationship, not a standalone record | `evidence` | `evidenced-by` graph edges / task-graph evidence fields; no `lib/evidence/` dir | relationship; runtime may later consolidate under `lib/evidence/` |
+| Projection | Derived adapter view of Construct-owned state | `projection` | `lib/tracker-projection/` (beads projection) | `lib/projections/` |
+| Graph Node | Non-authoritative representation of a domain or implementation entity | `graph-node` | `.construct/graph/`; `lib/graph/` | same |
+| Graph Edge | Typed, provenance-bearing relationship between Graph Nodes | `graph-edge` | `.construct/graph/`; `lib/graph/` | same |
 
 Workspace Preset and Worker Profile are deliberately separate. The `rnd`, `operations`,
 `creative`, and `research` records contain workspace-wide intake, document, tone, and Skill
@@ -71,7 +73,8 @@ The cutover is one-way and ordered: registry/schema → catalogs/loaders → CLI
 boundaries → docs, examples, and templates → tests and generated adapters. Producers and
 consumers change together at each boundary; there is no alias or dual-read phase. The complete
 consumer inventory, config fields, CLI/MCP nouns, graph-node names, and current-to-owner mapping
-live in `config/canonical-terminology.json`.
+live in `config/canonical-terminology.json` (target names) — use the on-disk column above when
+asserting what this tree implements today.
 
 ## Intake loop
 
@@ -318,7 +321,7 @@ Sequencing that used to live as prose injected into an agent's context (`lib/orc
 
 **Checkpoint and resume.** `lib/flows/checkpoint.mjs` persists a run after every completed step to the project's machine-scoped state root (`runtime/flows/runs/<runId>.json`, [ADR-0066](/decisions/adr/0066-config-layer-project-footprint)), atomic write via temp-file-then-rename — the same pattern `lib/orchestration/run-store.mjs` uses for orchestration runs. `resumeRun`/`startRun`/`runCheckpointed` reconstruct a run's state on resume and throw `FlowCheckpointError` rather than silently reinterpreting history if the checkpoint's flow id doesn't match the flow definition it's resumed against. `construct flow resume <run-id> --flow=<path> [--state=<json>]` drives a run (new or resumed) to completion; `construct flow status <run-id>` reads a checkpoint without driving it — this CLI is the engine's only live caller today.
 
-**Delegation port removed (`construct-b0nny.13`, workspace-control-plane M0).** `lib/orchestration/delegation-flow.mjs` — the `construct-rf26.9` additive port of contract-chain dispatch onto the flow engine above — was deleted as dead code: it never gained a live caller beyond its own test suite once the MCP tool that would have exposed it (`orchestration_delegation_next`) was removed under the tool-surface budget, confirmed via the disposition matrix (`docs/notes/research/workspace-control-plane/synthesis/disposition-matrix.md`, Cluster C5). Contract-chain dispatch (see above) resolves directly from `routeRequest`'s `specialists`/`dispatchReasons` output, consumed by the orchestrator persona and `lib/orchestration/runtime.mjs`'s `buildTasks()` — there is no flow-step abstraction in that path.
+**Delegation port removed (`construct-b0nny.13`, workspace-control-plane M0).** `lib/orchestration/delegation-flow.mjs` — the `construct-rf26.9` additive port of contract-chain dispatch onto the flow engine above — was deleted as dead code: it never gained a live caller beyond its own test suite once the MCP tool that would have exposed it (`orchestration_delegation_next`) was removed under the tool-surface budget, confirmed via the disposition matrix (`docs/notes/research/workspace-control-plane/synthesis/disposition-matrix.md`, Cluster C5). The flow engine itself (`lib/flows/`) remains live for hand-authored flows via `construct flow resume` / `construct flow status`. Contract-chain dispatch (see above) resolves directly from `routeRequest`'s Worker Profile dispatch output, consumed by the orchestrator Worker Profile and `lib/orchestration/runtime.mjs`'s `buildTasks()` — there is no flow-step abstraction in that path.
 
 ## Construct on Construct
 
@@ -333,7 +336,7 @@ Four operational tiers:
 3. **Assignments.** Events and requests resolve to a worker profile and bounded capability set. The gateway applies thresholds, cooldowns, and rate ceilings, records the assignment in `~/.construct/role-pending.jsonl`, and surfaces it to Construct for execution within the declared policy fence.
 4. **L2. User.** Commits, pushes, novel decisions, budget overrides, kill switches. Approval-required actions per `rules/common/commit-approval.md` are always L2. The goal is to make L2 rare. not zero.
 
-Kill switches throughout: `CONSTRUCT_ROLES=off` (global L1), `CONSTRUCT_ROLE_<NAME>=off` (per-persona L1).
+Kill switches throughout: `CONSTRUCT_ROLES=off` (global L1), `CONSTRUCT_ROLE_<NAME>=off` (per-profile L1).
 
 ## Modes of operation
 
@@ -426,7 +429,7 @@ Invariants that make it safe to embed, especially for teams where auditability i
 - **Versioned.** Every envelope carries `contractVersion` (`contract-version.mjs`, semver, independent of the package version) plus `constructVersion` and `deploymentMode`, so an embedder can negotiate compatibility.
 - **No secrets, structurally.** Every response passes `redaction.assertNoSecrets` before serialization; credential state is reported as a boolean (`requiresCredential`), never a value.
 - **No drift.** Capability discovery reads the live registries (roles, skills, workflow defs, policies, providers), so the published contract cannot diverge from what the install actually supports.
-- **Approval-gated writes.** Only workflow invocation can write, and only under `allow-durable-write`; `proposal-only` and `requires-human-approval` perform no durable writes. Team/enterprise durable writes are flagged as audited. Specialist reasoning is delegated to the host agent runtime — Construct returns the orchestration plan and provenance, never fabricated specialist output.
+- **Approval-gated writes.** Only workflow invocation can write, and only under `allow-durable-write`; `proposal-only` and `requires-human-approval` perform no durable writes. Team/enterprise durable writes are flagged as audited. Worker Profile reasoning is delegated to the host agent runtime — Construct returns the orchestration plan and provenance, never fabricated Worker Profile output.
 
 See [Embedded contract layer](/guides/concepts/embedded-contract) for the contract model and [Embedded contract API](/guides/reference/embed-api) for request/response schemas.
 
@@ -440,7 +443,7 @@ Do not confuse this with `platforms/capabilities.json` (ADR-0033): that file des
 
 `construct certify` (`lib/certification/`) is scenario-based evidence: a catalog of certification scenarios (`scenarios.mjs`) exercised through `runner.mjs`, each producing a durable run record (`schemas/certification-run.schema.json`, validated by `run.mjs`) stored at `.construct/certification/runs/<run-id>/run.json` (`store.mjs`). A run's verdict is one of `pass` / `fail` / `inconclusive` (`VERDICT_STATUSES`) from one of four sources — `deterministic`, `qualitative`, `skipped-provider`, `error` (`VERDICT_SOURCES`) — and a skipped provider call can never be promoted to a pass: hermetic scenarios run deterministic gates only, live scenarios require `CONSTRUCT_CERTIFY_LIVE=1`, and paid reference models additionally require `CONSTRUCT_CERTIFY_ALLOW_PAID=1` with an operator-acknowledged budget cap (`model-routing.mjs`, `CONSTRUCT_CERTIFY_BUDGET_USD`). Model routing defaults to OpenRouter's free tier.
 
-`runner.mjs` composes certification from existing validators rather than duplicating them — capability ledger freshness, test-corpus inventory, artifact release gates, role-card validation, specialist-contract audits, golden artifact gates, and skill-scenario fixtures all feed one run. `status.mjs` rolls up latest verdicts, stale-impact markers, and catalog coverage across capabilities, specialists, skills, artifact types, document categories, and demos (`construct certify status`). `rc-gate.mjs` is the release-candidate gate: it blocks a release when release-critical capabilities are stale, hermetic scenarios regress, or only skipped live runs exist, running hermetic scenarios inline so CI does not depend on local run history (`construct certify gate`, wired into `release:check`).
+`runner.mjs` composes certification from existing validators rather than duplicating them — capability ledger freshness, test-corpus inventory, artifact release gates, role-card validation, Worker Profile contract audits, golden artifact gates, and skill-scenario fixtures all feed one run. `status.mjs` rolls up latest verdicts, stale-impact markers, and catalog coverage across capabilities, Worker Profiles, skills, artifact types, document categories, and demos (`construct certify status`). `rc-gate.mjs` is the release-candidate gate: it blocks a release when release-critical capabilities are stale, hermetic scenarios regress, or only skipped live runs exist, running hermetic scenarios inline so CI does not depend on local run history (`construct certify gate`, wired into `release:check`).
 
 ## Living dependency matrix (change-impact spine)
 
@@ -450,7 +453,7 @@ Population is hybrid (`construct graph build`): (1) **registry ingest** (`build-
 
 `construct graph build-targets` derives a static import graph for each registered source target. Each target graph persists independently at `.construct/graph/targets/<targetId>/{nodes,edges}.jsonl` and is queryable with `construct graph query`.
 
-`construct impact [files] [--stdin] [--run] [--json]` (`lib/graph/impact.mjs`) is Test Impact Analysis: a changed file selects the tests that transitively import it plus the tests validating any capability it realizes, rolls up impacted capabilities and workflows, and flags changed files that realize no capability. **Oracle is the overseer** — `collectDependencyGraph` (`lib/oracle/read-model.mjs`) feeds `synthesizeVerdict` three gaps with deterministic routes (`lib/oracle/routing.mjs`): `matrix-coverage-gap` (no impl/test edge → `cx-architect`/`cx-qa`), `impact-untested` (realizing files changed after `lastValidated` → `cx-qa`/`cx-engineer`), and `dependency-graph-stale` (seeds changed since last build → `cx-engineer`). Document-type capabilities rely on `tests/certification/artifact-gates.test.mjs` plus workflow-level functional tests for validation stamps. Advisory-first: gaps and the `impact` command surface signals; nothing blocks.
+`construct impact [files] [--stdin] [--run] [--json]` (`lib/graph/impact.mjs`) is Test Impact Analysis: a changed file selects the tests that transitively import it plus the tests validating any capability it realizes, rolls up impacted capabilities and workflows, and flags changed files that realize no capability. **Oracle is the overseer** — `collectDependencyGraph` (`lib/oracle/read-model.mjs`) feeds `synthesizeVerdict` three gaps with deterministic routes (`lib/oracle/routing.mjs`): `matrix-coverage-gap` (no impl/test edge → `architect`/`qa`), `impact-untested` (realizing files changed after `lastValidated` → `qa`/`engineer`), and `dependency-graph-stale` (seeds changed since last build → `engineer`). Document-type capabilities rely on `tests/certification/artifact-gates.test.mjs` plus workflow-level functional tests for validation stamps. Advisory-first: gaps and the `impact` command surface signals; nothing blocks.
 
 ## Workspace domain model
 
@@ -471,9 +474,11 @@ get/set). `construct workspace-domain init|show|activate|archive|member|settings
 surface (`lib/workspace/cli.mjs`) — named `workspace-domain`, not `workspace`, because `construct
 workspace` already names the pre-existing multi-PM product-intelligence command described above
 under "Product intelligence: customer profiles and multi-PM workspaces," an unrelated concept.
-Source, Objective, Directive, Work, and Policy stores (target-model.md concepts 2–7, 13) do not
-exist yet; each is expected to carry a non-null `workspace` scope column referencing this table
-when its own epic (E3/E5/E6) builds it.
+Full target-model Source / Objective / Directive / Work / Policy *domain stores* with a
+non-null `workspace` scope column (target-model.md concepts 2–7, 13) are not all present yet —
+see the on-disk column in Canonical domain language. Interim modules exist for some
+(`lib/sources/`, `lib/directives/`, `lib/policy/`); Objective and Work remain planned. Each
+missing store is expected to reference this Workspace table when its own epic builds it.
 
 ## Work spec and graph-informed planning
 
@@ -547,10 +552,12 @@ E9 outcome) is the mechanical acceptance gate for the whole program: it re-deriv
 bead's deletion and completion criteria from the tree on disk and reports pass/fail *per bead*,
 rather than trusting the sign-off recorded on each closed bead. Directive §15 singles this bead
 out as the only one required to have mechanically verifiable acceptance, so the script — not a
-review document — is the deliverable. It covers M0–M5b (flow-engine deletion, identity and
-run-store convergence, the governed-write chokepoint, routing consolidation, Oracle-entity
-deletion, the org-metaphor migration, the model loop, and the LanceDB de-core) and E1–E9, and
-runs as `node scripts/verify-cutover.mjs [--json] [--bead=<id>] [--static-only]`.
+review document — is the deliverable. It covers M0–M5b (delegation-flow deletion with
+`lib/flows/` kept live, identity and run-store convergence, the governed-write chokepoint,
+routing consolidation, Oracle-entity deletion, the org-metaphor migration, the model loop, and
+the LanceDB de-core) and E1–E9, and runs as
+`node scripts/verify-cutover.mjs [--json] [--bead=<id>] [--static-only]`. Do not read this as
+"the flow engine was deleted" — only the unused `delegation-flow` port was removed.
 
 Two properties keep it honest. First, criteria are real assertions — file absence, source scans
 for live references, package metadata, and spawned CLI invocations — and the source scan is
@@ -601,13 +608,13 @@ is reachable.
 
 ## Packs
 
-A pack (`lib/packs/`, ADR-0055) is the unit of persona-resolution the provider worker backend trusts: a manifest (`pack.manifest.json`) declaring `id`, `version`, `compatVersion`, and optional `prompts` (specialist id → persona prompt file), `teams`, `frameworks`, `handoffContracts`, `gates`, and `embedBindings` (LMCP-E4: per-specialist provider read/search grants plus a flat list of external-write proposal tokens, cross-checked against the builtin extension manifests so a binding can never grant a capability the referenced provider doesn't itself advertise). `lib/packs/loader.mjs`'s `loadAllPacks()` reads three tiers — builtin (`lib/packs/manifests/`), user (`~/.config/construct/packs/`), project (`.construct/packs/`) — and merges them by id, later tiers overriding earlier ones (project > user > builtin). A programmatically-injected core pack (`lib/packs/core-pack.mjs`) is always present at the builtin tier.
+A pack (`lib/packs/`, ADR-0055) is the unit of Worker Profile prompt resolution the provider worker backend trusts: a manifest (`pack.manifest.json`) declaring `id`, `version`, `compatVersion`, and optional `prompts` (Worker Profile id → prompt file), `teams`, `frameworks`, `handoffContracts`, `gates`, and `embedBindings` (LMCP-E4: per-profile provider read/search grants plus a flat list of external-write proposal tokens, cross-checked against the builtin extension manifests so a binding can never grant a capability the referenced provider doesn't itself advertise). `lib/packs/loader.mjs`'s `loadAllPacks()` reads three tiers — builtin (`lib/packs/manifests/`), user (`~/.config/construct/packs/`), project (`.construct/packs/`) — and merges them by id, later tiers overriding earlier ones (project > user > builtin). A programmatically-injected core pack (`lib/packs/core-pack.mjs`) is always present at the builtin tier.
 
 `lib/packs/prompts.mjs`'s `validatePackPrompts()` confirms every declared prompt file exists and carries parseable YAML frontmatter with a `role` field. `resolvePersonaPrompt()` is the *only* path `lib/orchestration/worker.mjs` uses to read a Worker Profile prompt body — it walks the tier-precedence-ordered pack list and returns the first pack declaring the role, with no fallback to reading `registry/worker-profiles/prompts/` directly when a pack declares the override. That is the pack boundary: a Worker Profile's prompt is whatever the pack registry resolves, never an ad hoc file read, so overriding a profile (or shipping a domain-specific one) is a pack-authoring operation, not a core-code change. How the provider worker backend consumes this at runtime — including the solo-mode degraded-fallback path when a pack miss occurs — is covered in the prompt-resolution paragraph under Local orchestration runtime, next.
 
 ## Local orchestration runtime (host-independent)
 
-Hosts are front doors; Construct is the system. To stop the best orchestration experience from being coupled to whichever editor exposes native multi-agent execution, Construct owns a local orchestration runtime (`lib/orchestration/runtime.mjs` + `run-store.mjs`), surfaced as `construct orchestrate run|status [--json]`. A run intakes a request, plans a sequenced specialist chain (reusing `orchestration-policy.routeRequest`), resolves the execution-capability contract (`resolveExecution`), persists a durable, resumable run + task lifecycle, and emits lifecycle traces — returning the host-adapter metadata a thin host integration consumes (`executionMode`, `constructCapabilitiesActive`, `workerBackend`, `hostRole`, `degraded`, `selectedProvider`/`selectedModel`, `traceId`).
+Hosts are front doors; Construct is the system. To stop the best orchestration experience from being coupled to whichever editor exposes native multi-agent execution, Construct owns a local orchestration runtime (`lib/orchestration/runtime.mjs` + `run-store.mjs`), surfaced as `construct orchestrate run|status [--json]`. A run intakes a request, plans a sequenced Worker Profile Assignment chain (reusing `orchestration-policy.routeRequest`), resolves the execution-capability contract (`resolveExecution`), persists a durable, resumable run + task lifecycle, and emits lifecycle traces — returning the host-adapter metadata a thin host integration consumes (`executionMode`, `constructCapabilitiesActive`, `workerBackend`, `hostRole`, `degraded`, `selectedProvider`/`selectedModel`, `traceId`).
 
 The runtime has two pluggable axes behind unchanged callers: a worker backend and a run store.
 
@@ -620,13 +627,13 @@ records real output as `task.output`, and records provider failures per Assignme
 crashing the Run. The prepare-only disclaimer applies only to inline Assignments (ADR-0020,
 ADR-0021).
 
-**Host execution seat (ADR-0063).** The `host` backend materializes each task's persona/user prompt (`materializeTaskPrompt`, shared with the `provider` backend so both resolve byte-identical prompts) and stops — no model call runs inside Construct. The run stands at a real, non-terminal `awaiting-host` status until the calling MCP host executes each prompt in its own session (its own subscription, not a separate API credential) and reports the result via the `orchestration_task_result` tool; `submitHostTaskResult` records it tagged `provenanceSource: 'host-reported'` (never conflated with a construct-verified `provider` execution) and finalizes the run through the same terminal-status computation the synchronous path uses. `orchestration_run`, reached only via MCP, defaults `worker_backend` to `host` when neither the call nor `construct.config.json` names one explicitly — the CLI's own default stays `inline` and fails loud on `--worker-backend=host` (no attached host session to execute against). A stale `awaiting-host` run (host disconnected mid-run) is a doctor advisory, not a silent failure. Phase 2 drives the identical loop server-side via MCP sampling when the connected client declares that capability.
+**Host execution seat (ADR-0063).** The `host` backend materializes each task's Worker Profile / user prompt (`materializeTaskPrompt`, shared with the `provider` backend so both resolve byte-identical prompts) and stops — no model call runs inside Construct. The run stands at a real, non-terminal `awaiting-host` status until the calling MCP host executes each prompt in its own session (its own subscription, not a separate API credential) and reports the result via the `orchestration_task_result` tool; `submitHostTaskResult` records it tagged `provenanceSource: 'host-reported'` (never conflated with a construct-verified `provider` execution) and finalizes the run through the same terminal-status computation the synchronous path uses. `orchestration_run`, reached only via MCP, defaults `worker_backend` to `host` when neither the call nor `construct.config.json` names one explicitly — the CLI's own default stays `inline` and fails loud on `--worker-backend=host` (no attached host session to execute against). A stale `awaiting-host` run (host disconnected mid-run) is a doctor advisory, not a silent failure. Phase 2 drives the identical loop server-side via MCP sampling when the connected client declares that capability.
 
-**Handoff context (`buildUserPrompt`, `lib/orchestration/worker.mjs`).** A downstream task's user prompt folds in every prior task's real output (`status:'done'`, non-empty `task.output`) under a `## Prior specialist results` section, wrapped by `lib/security/trust.mjs`'s `wrapUntrusted` — a provider-verified upstream task at `team-authored` trust, a host-reported one (`provenanceSource: 'host-reported'`) at the lower `external-authenticated` level — so the receiving specialist evaluates it as data, not instructions. Budgeted at 1200 chars/task, 6000 total, nearest-preceding task prioritized. Because `materializeTaskPrompt` is shared, provider and host runs resolve byte-identical prompts for the same task; on the host backend, `submitHostTaskResult` re-materializes the next `awaiting-host` task's prompt immediately after recording a result, since `executeRun` originally materialized every task's prompt in one pass before any host result existed.
+**Handoff context (`buildUserPrompt`, `lib/orchestration/worker.mjs`).** A downstream task's user prompt folds in every prior task's real output (`status:'done'`, non-empty `task.output`) under a `## Prior specialist results` section (historical heading string in the prompt template), wrapped by `lib/security/trust.mjs`'s `wrapUntrusted` — a provider-verified upstream task at `team-authored` trust, a host-reported one (`provenanceSource: 'host-reported'`) at the lower `external-authenticated` level — so the receiving Worker Profile evaluates it as data, not instructions. Budgeted at 1200 chars/task, 6000 total, nearest-preceding task prioritized. Because `materializeTaskPrompt` is shared, provider and host runs resolve byte-identical prompts for the same task; on the host backend, `submitHostTaskResult` re-materializes the next `awaiting-host` task's prompt immediately after recording a result, since `executeRun` originally materialized every task's prompt in one pass before any host result existed.
 
-**Prompt resolution and the pack boundary (LMCP-E2).** The provider backend resolves each Worker Profile prompt ONLY through the pack registry (`lib/packs/loader.mjs` + `lib/packs/prompts.mjs`), falling back to `registry/worker-profiles/prompts/<id>.md` only when no pack declares an override. Pack load validates every declared prompt file and its YAML frontmatter (`validatePackPrompts`); in team/enterprise deployment mode a missing or malformed prompt is a hard load-time error naming the file, and a run can never execute a Worker Profile under a silently substituted prompt (`PERSONA_UNAVAILABLE` if a miss somehow still reaches the worker). Solo mode does not hard-fail at load time — a miss there degrades visibly: the task result and the `worker.completed` trace event carry `personaAvailable: false` and `degraded: 'persona-fallback'`, and the run's terminal status becomes `degraded` rather than a bare `completed`. `construct status` surfaces a `personaDegradedRuns` count from `.construct/runtime/orchestration/runs/`.
+**Prompt resolution and the pack boundary (LMCP-E2).** The provider backend resolves each Worker Profile prompt ONLY through the pack registry (`lib/packs/loader.mjs` + `lib/packs/prompts.mjs`), falling back to `registry/worker-profiles/prompts/<id>.md` only when no pack declares an override. Pack load validates every declared prompt file and its YAML frontmatter (`validatePackPrompts`); in team/enterprise deployment mode a missing or malformed prompt is a hard load-time error naming the file, and a run can never execute a Worker Profile under a silently substituted prompt (`PERSONA_UNAVAILABLE` if a miss somehow still reaches the worker — historical error code name). Solo mode does not hard-fail at load time — a miss there degrades visibly: the task result and the `worker.completed` trace event carry `personaAvailable: false` and `degraded: 'persona-fallback'` (historical field names), and the run's terminal status becomes `degraded` rather than a bare `completed`. `construct status` surfaces a `personaDegradedRuns` count from `.construct/runtime/orchestration/runs/`.
 
-**Governed web capability (ADR-0050).** A specialist that declares `liveWebAccess: true` (the researcher) executes with a live web tool instead of a tool-less completion, closing the seam where the orchestrator promised "web access lives with the researcher" but nothing wired it. A typed `resolveWebCapability` grant runs in strict priority — `governed` (`WEB_SEARCH_URL` → a client tool-use loop over Construct's own `webSearch()`, F08 by construction), `provider-native` (Anthropic `web_search_20250305` / OpenRouter `openrouter:web_search`, every citation re-graded), `host-delegated` (opt-in), `unavailable` (typed `capability-unavailable` forcing an honest refusal that degrades the run). `governWebResults` (`lib/mcp/tools/web-search-governance.mjs`) is the single grader: every web result on every path — including the fail-closed re-grade on remote-service ingress — emerges `trust:'untrusted'` + Admiralty-graded, so a citation can never reach a specialist ungoverned. The tool is least-privilege (only the declared web role gets it) and bounded (`CONSTRUCT_WORKER_TOOL_ROUNDS`).
+**Governed web capability (ADR-0050).** A Worker Profile that declares `liveWebAccess: true` (the researcher) executes with a live web tool instead of a tool-less completion, closing the seam where the orchestrator promised "web access lives with the researcher" but nothing wired it. A typed `resolveWebCapability` grant runs in strict priority — `governed` (`WEB_SEARCH_URL` → a client tool-use loop over Construct's own `webSearch()`, F08 by construction), `provider-native` (Anthropic `web_search_20250305` / OpenRouter `openrouter:web_search`, every citation re-graded), `host-delegated` (opt-in), `unavailable` (typed `capability-unavailable` forcing an honest refusal that degrades the run). `governWebResults` (`lib/mcp/tools/web-search-governance.mjs`) is the single grader: every web result on every path — including the fail-closed re-grade on remote-service ingress — emerges `trust:'untrusted'` + Admiralty-graded, so a citation can never reach a Worker Profile ungoverned. The tool is least-privilege (only the declared web role gets it) and bounded (`CONSTRUCT_WORKER_TOOL_ROUNDS`).
 
 **Run stores.** `resolveRunStore` (`lib/orchestration/store.mjs`) returns one `{ saveRun, loadRun, listRuns }` interface over three backends: **Mode-A** filesystem (zero-dependency default, `.construct/runtime/orchestration/runs/`, no Docker), **Mode-B** SQLite (`run-store-sqlite.mjs`, lazy `node:sqlite` with `sqliteAvailable()` — falls back on Node older than 22.5), and **Mode-C** Postgres (`run-store-postgres.mjs`, shared team/enterprise store). Selection follows `orchestration.store` config / `CONSTRUCT_ORCHESTRATION_STORE` env override, else deployment mode (solo→filesystem, team/enterprise→postgres), resolving explicit storage backends through `kind:"storage"` manifests and degrading to filesystem with visible `requestedBackend`/`degradedReason` metadata when unavailable. Postgres uses the optional `postgres` SQL client only when `DATABASE_URL`/`CONSTRUCT_DATABASE_URL` is configured; `construct db status|migrate` probes and applies repo-owned migrations idempotently. Filesystem + inline is the byte-for-byte-unchanged default. Decisions recorded in ADR-0020 and ADR-0021 (extending ADR-0019).
 
@@ -667,7 +674,7 @@ Hybrid: autonomous for low-risk, human-gated for high-risk.
 ### Governed-write chokepoint
 
 `lib/writes/control-plane.mjs` is the sole path from a queued writeIntent to an executed
-external write. A specialist only ever *recommends* a write (`lib/writes/write-intent.mjs`);
+external write. A Worker Profile only ever *recommends* a write (`lib/writes/write-intent.mjs`);
 the durable `ApprovalQueue` (`lib/embed/approval-queue.mjs`) holds it in state
 `awaiting_approval`; a human or policy actor decides out of band; and only
 `control-plane.mjs`'s `executeApprovedWriteIntent`/`drainApprovedWriteIntents` resolve a
@@ -795,10 +802,10 @@ body_hash:   sha256:<hex>          # SHA-256 of trimmed body
 
 ## Managed artifact directories
 
-| Directory | Contents | Owner |
+| Directory | Contents | Owner (Worker Profile) |
 |---|---|---|
-| `docs/specs/prd/` | Product requirements documents | cx-product-manager |
-| `docs/decisions/adr/` | Architecture decision records | cx-architect |
+| `docs/specs/prd/` | Product requirements documents | `product-manager` |
+| `docs/decisions/adr/` | Architecture decision records | `architect` |
 | `docs/decisions/rfc/` | Requests for comment | Varies by topic |
 
 ## Key invariants

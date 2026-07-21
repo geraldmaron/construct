@@ -1,10 +1,10 @@
 /**
- * tests/teams.test.mjs — Unit tests for team model, decision rights, forbidden decisions, and escalation paths.
- * 
- * Tests verify:
- * 1. Team accountability — each team has a clear owner
- * 2. Forbidden-decision blocking — attempts to make forbidden decisions are blocked
- * 3. Correct escalation routing — unresolved decisions follow the escalation path
+ * tests/teams.test.mjs — Unit tests for injected-registry team helpers and
+ * decision-audit writers on the roles gateway.
+ *
+ * These helpers accept a caller-supplied registry object. They do not load
+ * deleted v1 files (registry/policies/teams-registry.json). Fixture data below
+ * exercises the pure decision-rights / escalation path logic.
  */
 
 import { test } from 'node:test';
@@ -20,6 +20,19 @@ import {
   recordTeamDecision,
   recordForbiddenDecision,
 } from '../lib/roles/gateway.mjs';
+import * as gateway from '../lib/roles/gateway.mjs';
+
+test('gateway no longer exports a v1 teams-registry file loader', () => {
+  assert.equal('loadTeamRegistry' in gateway, false);
+});
+
+test('team helpers safely no-op on null or missing registry', () => {
+  assert.equal(findTeamByRoleOwner('product-manager', null), null);
+  assert.deepEqual(getTeamEscalationPath('product-group', null), []);
+  assert.equal(canTeamMakeDecision('product-group', 'intake-triage', null), false);
+  assert.equal(findTeamByRoleOwner('product-manager', {}), null);
+  assert.deepEqual(getTeamEscalationPath('product-group', { teams: null }), []);
+});
 
 const teamsRegistry = {
   version: 1,

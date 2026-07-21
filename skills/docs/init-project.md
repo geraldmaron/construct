@@ -39,7 +39,7 @@ docs/                   ← human-readable project documentation
 3. Update them whenever work changes active reality: decisions, workflow phase, architecture assumptions, or documentation contract.
 4. Run `construct status` to review the project's current state (workflow phase, core docs, uncommitted changes).
 
-## For cx-docs-keeper
+## For operations (docs overlay)
 At session start, check the core docs set. If missing, suggest running `construct init --docs-preset=lean` (or `construct init --docs-preset=full` for the full lane set).
 At session end, update the affected core docs so the next LLM session inherits current project reality.
 

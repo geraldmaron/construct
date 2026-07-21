@@ -16,6 +16,8 @@ This page reconciles three sources:
 | Surface | Status | Replacement | Record |
 | --- | --- | --- | --- |
 | `construct matrix <subcommand>` | removed | `construct graph <subcommand>` | ADR-0053: Removed after ADR-0053 two-release-cycle deprecation window (alias shipped v1.5.0; removed construct-b0nny.28 / workspace-control-plane E9). |
+| `construct up` | removed | `construct dev` | Legacy alias of construct dev removed; handler no longer present in bin/construct. |
+| `construct down` | removed | `construct stop` | Legacy alias of construct stop removed; handler no longer present in bin/construct. |
 | `construct install --scope=<project|user|both>` | removed | `construct install --footprint=<project|user|both>` | ADR-0071: Retired in Construct 2.0 cleanup; canonical install-write-target flag is --footprint per ADR-0071. |
 | `construct models --reset` | removed | `construct models reset` | Retired top-level flag form; canonical subcommand is construct models reset. |
 | `construct models --tier=<t> --set=<model>` | removed | `construct models set --tier=<reasoning|standard|fast> --model=<provider/model-id>` | Retired top-level flag form; canonical subcommand is construct models set --tier=<t> --model=<id>. |
@@ -62,6 +64,7 @@ This page reconciles three sources:
 | `docs:update` | current | Diagnostics | no | Regenerate AUTO-managed doc regions (alias for `docs update`) |
 | `docs:verify` | current | Diagnostics | no | Validate documentation quality (alias for `docs verify`) |
 | `doctor` | current | Core | yes | Check installation health |
+| `down` | removed | n/a | no | Legacy alias of construct stop removed; handler no longer present in bin/construct. |
 | `drop` | current | Work | no | Ingest file from Downloads/Desktop |
 | `efficiency` | current | Observability | no | Show read efficiency, repeated files, and context-budget guidance |
 | `embed` | current | Advanced | no | Embed mode management |
@@ -153,6 +156,7 @@ This page reconciles three sources:
 | `tracker` | current | Models & Integrations | no | Analyze registered projects and contribute governed issue proposals to an external tracker (Jira) |
 | `tracker-projection` | current | Work | no | Beads projection, field authority, and reconciliation (construct-b0nny.27, target-model.md concept 16) — treats bd as a projection of the graph-informed Work model with explicit per-field authority, detect-and-report drift, and read-only raw-record-preserving import. Sits behind bd; issues no bd write. |
 | `uninstall` | current | Advanced | no | Remove Construct state |
+| `up` | removed | n/a | no | Legacy alias of construct dev removed; handler no longer present in bin/construct. |
 | `update` | current | Advanced | no | Reinstall this checkout |
 | `upgrade` | current | Advanced | no | Upgrade to latest npm version |
 | `validate` | current | Advanced | no | Validate registry structure |

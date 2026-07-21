@@ -95,7 +95,7 @@ MCP tool call spans also carry:
 
 ## W3C trace propagation across MCP
 
-Persona-to-specialist dispatches inject `traceparent` into `params._meta` per SEP-414. The specialist MCP handler extracts it and creates a child span, so the full persona-to-tool chain appears as one connected trace tree in your backend.
+Front-door-to-Worker-Profile dispatches inject `traceparent` into `params._meta` per SEP-414. The Worker Profile MCP handler extracts it and creates a child span, so the full Construct-to-tool chain appears as one connected trace tree in your backend.
 
 ## Audit trail (tamper-evidence)
 

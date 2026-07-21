@@ -3,7 +3,7 @@ title: Plug in your own LLM
 description: "Swap models per tier (reasoning / standard / fast): Anthropic, OpenAI, OpenRouter, Ollama, or any OpenAI-compatible endpoint."
 ---
 
-Construct doesn't hardcode a single LLM. It assigns three tiers (`reasoning`, `standard`, `fast`) and each specialist declares which tier it uses. Swapping providers is a config change, not a code change.
+Construct doesn't hardcode a single LLM. It assigns three tiers (`reasoning`, `standard`, `fast`) and each Worker Profile declares which tier it uses. Swapping providers is a config change, not a code change.
 
 ## The tier model
 
@@ -13,13 +13,13 @@ Construct doesn't hardcode a single LLM. It assigns three tiers (`reasoning`, `s
   { label: 'fast tier', sub: 'quick lookups\nhaiku · gpt-4o-mini · qwen' },
 ]} />
 
-Three tiers. Every specialist uses one of them.
+Three tiers. Every Worker Profile uses one of them.
 
 - **`reasoning`**: slow, expensive, best at long-context analysis and architectural decisions. Defaults to Claude Opus.
 - **`standard`**: everyday work. Defaults to Claude Sonnet.
 - **`fast`**: quick lookups, low-stakes responses. Defaults to Claude Haiku.
 
-Specialists declare their tier in `registry`. Changing the tier→model mapping changes the model for every specialist on that tier.
+Worker Profiles declare their tier in `registry/worker-profiles/`. Changing the tier→model mapping changes the model for every profile on that tier.
 
 ## Inspect current assignments
 
@@ -123,13 +123,13 @@ construct models policy set local       # Ollama / local server first
 
 A preset **refuses** (non-zero exit, nothing written) when no provider credential can back it — `free` needs an OpenRouter key, `local` needs a running local provider — so it never writes an unbacked default. `policy set` writes only `models.json`; it touches no env file or `construct.config.json`.
 
-Trace how a single specialist resolves its model:
+Trace how a single Worker Profile resolves its model:
 
 ```bash
-construct models explain --role cx-reviewer
+construct models explain --worker-profile reviewer
 ```
 
-It names the specialist's declared tier, the tier it maps to, the resolved model, and the winning rule — the same result `construct models resolve --json --tier <tier>` reports.
+It names the profile's declared tier, the tier it maps to, the resolved model, and the winning rule — the same result `construct models resolve --json --tier <tier>` reports.
 
 ## Resolve keys from 1Password
 
@@ -173,24 +173,23 @@ construct doctor
 
 `doctor` checks that the active models are reachable (it does a `models list` call against each provider). If a model is configured but the API key is missing, doctor reports it as a critical failure.
 
-## Per-specialist override
+## Per-profile override
 
-Most of the time you swap by tier: but a single specialist can override its tier with a direct model:
+Most of the time you swap by tier: but a single Worker Profile can override its tier with a direct model:
 
 ```json
 {
-  "name": "performance-auditor",
-  "role": "Performance specialist",
+  "id": "performance-auditor",
   "model": "openrouter/openai/o1-preview",
-  "model_tier": "reasoning"
+  "modelTier": "reasoning"
 }
 ```
 
-When `model` is set, it overrides the tier mapping for this specialist only. Use sparingly: it defeats the point of the tier model.
+When `model` is set, it overrides the tier mapping for this profile only. Use sparingly: it defeats the point of the tier model.
 
 ## Track cost across providers
 
-`construct status --json | jq .sessionUsage` shows the local token and estimated-cost ledger across configured providers. The dashboard's Doctor page shows live per-persona burn. If you swap to a new provider, `construct optimize` can rebalance specialists to the new cost curve.
+`construct status --json | jq .sessionUsage` shows the local token and estimated-cost ledger across configured providers. The dashboard's Doctor page shows live per-Worker-Profile burn. If you swap to a new provider, `construct optimize` can rebalance Worker Profiles to the new cost curve.
 
 ## What about embeddings?
 
@@ -199,5 +198,5 @@ Embedding model is separate from LLM model. See [Plug in a retrieval backend](/g
 ## Reference
 
 - [`construct models`](/guides/reference/cli/models-and-integrations): every flag.
-- [`registry`](https://github.com/geraldmaron/construct/blob/main/registry): the `models` block + per-specialist overrides.
+- [`registry`](https://github.com/geraldmaron/construct/blob/main/registry): the `models` block + per-Worker-Profile overrides.
 - [Concepts → Deployment model](/guides/concepts/deployment-model): solo/team/enterprise topology and model-swap implications for the offline story.

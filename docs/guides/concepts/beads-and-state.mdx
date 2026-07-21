@@ -22,17 +22,17 @@ Four stores carry the load. Each has a clear job; nothing important lives in onl
 Why beads, not GitHub Issues / Jira / a markdown checklist:
 
 - **Repo-resident.** Works offline; in solo mode the data is in your repo. In team/enterprise mode the same `bd` interface talks to a shared Dolt remote.
-- **AI-friendly.** `bd list --json` and `bd show --json` give specialists structured data they can reason about without scraping HTML or hitting an API.
+- **AI-friendly.** `bd list --json` and `bd show --json` give Worker Profiles structured data they can reason about without scraping HTML or hitting an API.
 - **Audit trail.** Every state change is recorded with timestamps and actor.
 - **Session-end gate.** The policy engine refuses to end a session if any beads issue is `in_progress` and not explicitly acknowledged.
 
-Construct's relationship to beads is one-way authoritative: specialists write issues during a session; the runtime reads them at session-start to know what's mid-flight.
+Construct's relationship to beads is one-way authoritative: Worker Profiles write issues during a session; the runtime reads them at session-start to know what's mid-flight.
 
 ## .construct/: resumable project context
 
-`.construct/context.md` and `.construct/context.json` are the canonical "where this project is right now" record. They're written by the docs-keeper specialist whenever durable state changes: architectural decisions, active workstreams, open questions.
+`.construct/context.md` and `.construct/context.json` are the canonical "where this project is right now" record. They're written whenever durable state changes: architectural decisions, active workstreams, open questions.
 
-When you open a new session, Construct reads `.construct/context.md` first. The persona has all the architectural and decision context the previous session built up. You don't recap; you continue.
+When you open a new session, Construct reads `.construct/context.md` first. The front-door agent has all the architectural and decision context the previous session built up. You don't recap; you continue.
 
 Other `.construct/` files:
 
@@ -58,7 +58,7 @@ The codebase itself is durable in git. Construct doesn't try to be a code-versio
 Two newer surfaces complete the durable substrate, both written by the daemon and read by the agent:
 
 - **`.construct/intake/{pending,processed,skipped}/<id>.json`**: incoming signals after deterministic R&D triage. Each packet carries the triage block (intakeType, rdStage, primaryOwner, recommendedChain, recommendedAction, risk, confidence, rationale), a docs-lane suggestion, the top-K related artifacts, and an excerpt. `construct intake list / show / done / skip / reopen` drives the queue. In team / enterprise mode the same packets live in the `construct_intake_items` Postgres table; the CLI contract is identical.
-- **`.construct/task-graphs/<graph-id>.json`**: per-signal plans of work. Generated from a triage packet with `construct graph from-intake <intake-id>`; one node per persona in the recommendedChain; depends_on edges chain the work; evidence records ride with each node so a node can't reach `done` without a verified result. See [intake and triage](/guides/concepts/intake-and-triage) for the full taxonomy.
+- **`.construct/task-graphs/<graph-id>.json`**: per-signal plans of work. Generated from a triage packet with `construct graph from-intake <intake-id>`; one node per Worker Profile in the recommendedChain; depends_on edges chain the work; evidence records ride with each node so a node can't reach `done` without a verified result. See [intake and triage](/guides/concepts/intake-and-triage) for the full taxonomy.
 
 These two are distinct from `bd` issues. Beads is the project-wide task tracker. The intake queue is the inbox; task graphs are the per-signal execution plans. They eventually graduate to beads issues when work crosses session boundaries.
 
@@ -84,7 +84,7 @@ The stores are independent by design. When Postgres is unavailable, search falls
 
 - **Cloud went down mid-session.** Postgres / remote telemetry export / the dashboard can all fail. Construct keeps working from beads + `.construct/` + git + the local vector index.
 - **Session ended with work in progress.** The Stop hook refuses to end a session with open beads issues. You either close them, defer them, or explicitly acknowledge with `CONSTRUCT_STOP_OK_OPEN_BD=1`.
-- **A specialist's reasoning got lost.** Observations are written as the chain runs; the next session can re-read them via semantic retrieval.
+- **A Worker Profile's reasoning got lost.** Observations are written as the chain runs; the next session can re-read them via semantic retrieval.
 - **A decision drifted without anyone noticing.** ADRs in `docs/decisions/adr/` are append-only and reviewed; `.construct/context.md` mirrors active state and is part of the doc-coupling gate.
 
 The substrate is intentionally boring. The interesting work is the orchestration on top of it; the substrate just has to be reliable enough that the orchestration can trust it.

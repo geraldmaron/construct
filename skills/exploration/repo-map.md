@@ -9,7 +9,7 @@ triggers: ["explore repo", "map codebase", "codebase map", "unfamiliar codebase"
 
 Use this skill when entering an unfamiliar codebase, doing deep investigation work, or producing a `.construct/codebase-map.md` artifact for future sessions.
 
-Agents: `cx-explorer` (primary), `cx-debugger` (tracing failures), `cx-architect` (architecture questions)
+Agents: `researcher` (primary — codebase exploration; retired `cx-explorer` folded here), `debugger` (tracing failures), `architect` (architecture questions)
 
 ---
 
@@ -198,7 +198,7 @@ Write `.construct/codebase-map.md` in the project root using this template:
 # Codebase Map — {project-name}
 
 Generated: {date}
-Mapped by: cx-explorer
+Mapped by: researcher
 
 ## Overview
 {1-3 sentences: what this is, what it does, who uses it}
@@ -292,8 +292,8 @@ find . -name "schema.*" -o -name "models.*" -o -name "*.prisma" \
 
 After producing `.construct/codebase-map.md`:
 
-- **Explain architecture decisions** → `cx-architect`
-- **Trace a specific failure** → `cx-debugger` (provide the codebase-map as context)
-- **Check security posture** → `cx-security` (highlight auth files from the map)
-- **Assess test coverage** → `cx-qa` (provide the files-to-know list)
-- **Understand a library used** → `cx-docs-researcher` (provide the dep name)
+- **Explain architecture decisions** → `architect`
+- **Trace a specific failure** → `debugger` (provide the codebase-map as context)
+- **Check security posture** → `security` (highlight auth files from the map)
+- **Assess test coverage** → `qa` (provide the files-to-know list)
+- **Understand a library used** → `researcher` (provide the dep name)

@@ -8,7 +8,7 @@ grounding, and why a free OpenRouter model is not a stable release gate.
 
 # Provider worker reliability
 
-The `provider` worker backend (`orchestration.workerBackend: 'provider'`, ADR-0021) executes each specialist task by calling a real model. A `2xx` HTTP response from the provider is transport success, not task success — the body can still carry an empty answer, a content-policy refusal, or a reasoning-only response with nothing in the visible channel. This page documents how `lib/orchestration/worker.mjs` classifies every outcome, what retries, and what a host or operator should do about each failure mode.
+The `provider` worker backend (`orchestration.workerBackend: 'provider'`, ADR-0021) executes each Worker Profile Assignment by calling a real model. A `2xx` HTTP response from the provider is transport success, not task success — the body can still carry an empty answer, a content-policy refusal, or a reasoning-only response with nothing in the visible channel. This page documents how `lib/orchestration/worker.mjs` classifies every outcome, what retries, and what a host or operator should do about each failure mode.
 
 ## Typed error codes
 
@@ -68,9 +68,9 @@ Requesting reasoning (`chainOfThought !== 'hidden'`) reserves extra output-token
 - **Anthropic**: extended-thinking `budget_tokens` (or adaptive thinking on newer models) is added on top of `max_tokens`, per Anthropic's own requirement that thinking budget stay under the turn's total ceiling.
 - **OpenRouter**: `max_tokens` is raised the same way when `reasoning.enabled` is set, because OpenRouter charges reasoning tokens against the same completion budget as the visible answer. Without that headroom, a reasoning-heavy model can spend the entire budget on reasoning and return empty visible content — the exact failure this bead's live validation observed. If a reasoning-only response still occurs (`PROVIDER_REASONING_ONLY`), the fix is a larger output-token ceiling for that specific model, not a retry.
 
-## Evidence grounding for web-capable specialists
+## Evidence grounding for web-capable Worker Profiles
 
-A web-capable specialist's only *observed* evidence is its own governed `webEvidence` (ADR-0050: every result trust-labeled `untrusted` + Admiralty-graded before the model ever sees it). After the model answers, the worker extracts every URL the answer cites and compares it against `webEvidence`. A citation absent from that list was never actually retrieved through Construct's governed path — it is either fabricated outright or recalled from the model's own ungoverned training memory.
+A web-capable Worker Profile's only *observed* evidence is its own governed `webEvidence` (ADR-0050: every result trust-labeled `untrusted` + Admiralty-graded before the model ever sees it). After the model answers, the worker extracts every URL the answer cites and compares it against `webEvidence`. A citation absent from that list was never actually retrieved through Construct's governed path — it is either fabricated outright or recalled from the model's own ungoverned training memory.
 
 The task is not failed for this — the output is real, already-paid-for model work — but it carries:
 

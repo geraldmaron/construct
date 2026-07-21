@@ -23,7 +23,7 @@ A signal that becomes durable cross-session work crosses over: the graph nodes a
 
 ## Perspective architecture
 
-Each specialist carries a distinct cognitive profile shaped by professional prior, characteristic suspicion, and productive tension with adjacent roles. When you dispatch specialists, you are not delegating tasks (you are assembling perspectives. The value is not parallelism; it is forcing the same problem through genuinely different cognitive lenses in sequence. A plan challenged by cx-devil-advocate and reviewed by cx-reviewer is not slower) it is more likely to survive contact with reality.
+Each Worker Profile carries a distinct cognitive profile shaped by professional prior, characteristic suspicion, and productive tension with adjacent roles. When you dispatch profiles, you are not delegating tasks (you are assembling perspectives. The value is not parallelism; it is forcing the same problem through genuinely different cognitive lenses in sequence. A plan challenged via `perspectives/devil-advocate` on `reviewer` and then correctness-reviewed by `reviewer` is not slower) it is more likely to survive contact with reality.
 
 ## Execution contract
 
@@ -49,26 +49,27 @@ Do not duplicate skill internals inside agent prompts. Reference the relevant sk
 
 ## Agent-to-agent service contracts
 
-Every producer→consumer pair has an explicit contract in `specialists/contracts.json`, loaded via `lib/specialist-contracts.mjs`. Specialists call the MCP tool `agent_contract` at the start of a handoff to see:
+Producer→consumer handoff contracts are capability-owned in `registry/capabilities.json` and queried via `lib/capability-contracts.mjs`. Standalone pair files also live under `registry/contracts/` (for example compliance chains restored after the specialists cutover). Worker Profiles call the MCP tool `workflow_contract_validate` at handoff time; runtime enforcement goes through `lib/contracts/validate.mjs#validateHandoff`, including binary producer rules in `lib/capabilities/postconditions.mjs`.
+
+A contract surfaces:
 
 - `input.mustContain`: fields the packet must carry
 - `input.schema`: JSON schema (when applicable) from `lib/contract-schemas/`
 - `preconditions`: what must be true before work starts
 - `output.schema` / `output.shape`: expected return shape
-- `postconditions`: what must be true before marking DONE
+- `postconditions`: what must be true before marking DONE (executable checks and advisory prose; binary packet invariants via `lib/capabilities/postconditions.mjs`)
 
-Examples of contracts (full list in `specialists/contracts.json`):
+Examples of live contracts (inspect `registry/capabilities.json` and `registry/contracts/` for the full set):
 
-- `researcher-to-architect`: research brief with ≥2 primary sources → decision
+- `user-to-construct` / `construct-to-orchestrator`: front-door routing into the orchestrator
+- `researcher-to-architect`: research brief with primary sources → architectural decision
 - `product-manager-to-architect`: PRD handoff → decision with Rejected alternatives
-- `architect-to-devil-advocate`: framing proposal → challenge report (blocks if framing is weak)
-- `architect-to-engineer`: decision → implementation
-- `engineer-to-reviewer`: implementation → review verdict
-- `engineer-to-qa`: implementation → test report
-- `reviewer-to-security`: review with auth/secrets scope → specialized security review
-- `any-to-docs-keeper`: any DONE mutation that changed core docs → doc sync
+- `architect-to-legal-compliance` (`registry/contracts/`): architecture with compliance/privacy/licensing risk → `security` compliance memo
+- `legal-compliance-to-release-manager` (`registry/contracts/`): compliance memo → `operations` release consideration
 
-`routeRequest` returns a `contractChain` that enumerates which of these fire for a given request. Honor the chain: missing a contract stage is the signal a handoff is incomplete.
+Plan-challenge and docs-sync are not separate Producer Profile ids: FMEA / framing challenge loads `perspectives/devil-advocate` on `reviewer`; core-doc currency is owned by `operations` (docs-keeper folded in). Use Worker Profile ids from `registry/worker-profiles/` (`architect`, `engineer`, `reviewer`, `operations`, …) — never retired `cx-devil-advocate` / `cx-docs-keeper` pairs.
+
+`routeRequest` returns a `contractChain` that enumerates which contracts fire for a given request. Honor the chain: missing a contract stage is the signal a handoff is incomplete.
 
 ## Legacy handoff contract (fallback)
 
@@ -122,7 +123,7 @@ When choosing between named options (SDK vs SDK, library vs library, pattern vs 
 
 ## Dispatch-first test
 
-If work touches 3+ files across 2+ modules, or introduces a new contract/dependency/SDK, the persona must not produce the implementation plan itself: dispatch cx-architect. In-persona implementation planning for complex work is the primary failure mode this rule exists to prevent.
+If work touches 3+ files across 2+ modules, or introduces a new contract/dependency/SDK, the persona must not produce the implementation plan itself: dispatch Worker Profile `architect`. In-persona implementation planning for complex work is the primary failure mode this rule exists to prevent.
 
 ## Executive communication
 

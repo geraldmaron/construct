@@ -15,7 +15,7 @@ The directory where the Construct npm package is installed. Resolved from `impor
 import { packageRoot } from './lib/roots.mjs';
 ```
 
-Use `packageRoot` to locate assets that ship **with Construct itself**: persona prompts, skill files, schemas, hook scripts, templates, and the registry. These assets are always relative to the package, regardless of where the user's project lives.
+Use `packageRoot` to locate assets that ship **with Construct itself**: Worker Profile prompts, skill files, schemas, hook scripts, templates, and the registry. These assets are always relative to the package, regardless of where the user's project lives.
 
 ### resolveProjectRoot(cwd?)
 
@@ -39,7 +39,7 @@ The raw working directory at the moment the process started. Useful for resolvin
 
 | Subsystem | Root used | Reason |
 |---|---|---|
-| Persona loader (`lib/persona.mjs`) | `packageRoot` | Personas ship with the package |
+| Worker Profile loader (`lib/worker-profiles/`, pack prompts via `lib/packs/prompts.mjs`) | `packageRoot` | Profiles and prompts ship with the package |
 | Skill loader (`lib/skills/`) | `packageRoot` | Skills are bundled assets |
 | Schema validation (`schemas/`) | `packageRoot` | Schemas are bundled with the package |
 | Hook scripts (`lib/hooks/`) | `packageRoot` | Hooks reference the install's lib/ |

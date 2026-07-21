@@ -78,7 +78,7 @@ Hooks that own audit-shaped data (audit-trail, audit-reads, mcp-audit) write via
 | `artifact-release-gate.mjs` | PostToolUse | Write\|Edit\|MultiEdit | Advisory: manifest structure/visual gaps on typed docs |
 | `audit-trail.mjs` | PostToolUse | Edit\|Write\|MultiEdit\|NotebookEdit\|Bash | Tamper-evident JSONL audit chain (project-scoped) |
 | `audit-reads.mjs` | PostToolUse | Read | Always-on file-hash store for edit-guard staleness; opt-in tamper-evident read audit |
-| `agent-tracker.mjs` | PostToolUse | Task | Records dispatched subagent; emits `handoff.received` on `next:cx-<role>` results |
+| `agent-tracker.mjs` | PostToolUse | Task | Records dispatched subagent; emits `handoff.received` on `next:<worker-profile>` results |
 | `edit-guard.mjs` | PreToolUse | Edit | Validates `old_string` presence and file-hash freshness before allowing the edit |
 | `edit-accumulator.mjs` | PostToolUse | Write\|Edit\|MultiEdit | Edit counter + TS/JS pending-typecheck queue |
 | `scan-secrets.mjs` | PostToolUse | Write\|Edit\|MultiEdit | Blocks edits containing high-signal secret patterns |

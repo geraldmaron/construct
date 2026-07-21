@@ -62,7 +62,7 @@ View recent entries:
 
 ```bash
 construct audit trail
-construct audit trail --agent cx-engineer --since 2026-05-01
+construct audit trail --agent engineer --since 2026-05-01
 construct audit trail --json | jq 'select(.tool == "Bash")'
 ```
 

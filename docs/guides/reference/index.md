@@ -1,6 +1,6 @@
 ---
 title: Reference
-description: Look up CLI commands, hooks, MCP tools, config, specialists, and providers.
+description: Look up CLI commands, hooks, MCP tools, config, Worker Profiles, and providers.
 ---
 
 Reference is where you go when you know what you're looking for. For task-oriented walkthroughs, see [Cookbook](/guides/cookbook). For the *why* behind a subsystem, see [Concepts](/guides/concepts).
@@ -17,11 +17,13 @@ Generated from `lib/cli-commands.mjs`; refreshed by `construct docs:site`.
 
 Generated from `lib/hooks/`; each entry shows what triggers the hook and what it does.
 
-## Specialists
+## Worker Profiles
 
-[The construct persona + 12 specialists →](/guides/reference/specialists)
+[The `construct` front door + 12 Worker Profiles →](/guides/reference/worker-profiles)
 
-Generated from `registry`; each entry shows the specialist's role, model tier, and one-line purpose.
+Generated from `registry/worker-profiles/`; each entry shows the profile's model tier and one-line purpose.
+
+[Coverage matrix →](/guides/reference/worker-profile-coverage-matrix) — skill emphasis, perspectives, guardrails, and pass/fail floor per profile.
 
 ## Config
 
