@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- Isolation UX pass: `construct init --all-hosts` now passes an explicit host list (including Cursor) instead of `null` (which meant “detected only”); empty host selection skips adapter sync; `construct sync` gains `--all-hosts` / `--with-<host>` / `CONSTRUCT_SYNC_HOSTS=all` with `--with-<host>` unioning into detection (not replacing). `artifact validate` help lists valid types and prints them on unknown `--type=`; bare `construct tools` shows `Next: detect`; fresh-machine `status` collapses optional “not configured” integrations and missing-credentials embed providers into summary lines.
+
 ### Changed
 
 - Citation methodology made canonical: new `rules/common/citation.md` (inline linked short titles, `[source: …]`, footnotes); wired through no-fabrication, research policy, artifact-authorship, research-workflow, researcher perspective, research-brief template, and doc-quality-rubric. `lib/artifact-link-validate.mjs` extracts/verifies http(s) URLs; `construct artifact validate --check-links` fetches them; research-brief/finding types also require `[label](url)` coverage (not title-only cites). PDF Typst tables use horizontal rules + roomier padding; callout labels sit in-flow so text no longer overlaps borders/drawings; masthead list fields join with ` · `.

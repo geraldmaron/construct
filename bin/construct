@@ -1902,8 +1902,18 @@ async function cmdPublish(args) {
 
 async function cmdTools(args) {
   const [sub, ...rest] = args;
+  if (!sub || sub === '--help' || sub === '-h') {
+    println('Usage: construct tools detect [--json] [--figures] [--no-figures] [--demo=NAME]');
+    println('');
+    println('Detect optional publish-pipeline binaries (Pandoc, Typst, D2, Mermaid, VHS).');
+    println('');
+    println('Next: construct tools detect');
+    return;
+  }
   if (sub !== 'detect') {
+    errorln(`Unknown tools subcommand: ${sub}`);
     errorln('Usage: construct tools detect [--json] [--figures] [--no-figures] [--demo=NAME]');
+    errorln('Next: construct tools detect');
     process.exit(1);
   }
   const { detectPublishPipeline, formatToolsDetectReport } = await import('../lib/publish-tooling.mjs');
