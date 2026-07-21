@@ -17,7 +17,7 @@
  * counts.
  *
  * runWorkerLoop writes trace events through the machine-scoped state root
- * (ADR-0066); CX_HOME_OVERRIDE is pinned per test per the same pattern as
+ * (ADR-0066); CONSTRUCT_HOME_OVERRIDE is pinned per test per the same pattern as
  * tests/worker-entrypoint.test.mjs.
  */
 import { describe, it, beforeEach, afterEach } from 'node:test';
@@ -38,14 +38,14 @@ beforeEach(() => {
   projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-worker-pgqueue-'));
   originalCwd = process.cwd();
   process.chdir(projectRoot);
-  prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = projectRoot;
+  prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = projectRoot;
 });
 
 afterEach(() => {
   process.chdir(originalCwd);
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
   fs.rmSync(projectRoot, { recursive: true, force: true });
 });
 

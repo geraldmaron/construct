@@ -26,3 +26,6 @@ set -euo pipefail
 node ./bin/construct graph build
 
 node -e "import('./lib/storage/sync.mjs').then((m) => m.syncFileStateToSql(process.cwd(), { env: process.env, project: 'construct' }))"
+
+node scripts/alignment/census.mjs --ratchet
+

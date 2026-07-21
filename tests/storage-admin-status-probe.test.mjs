@@ -14,7 +14,7 @@ import { resolveStateDir } from '../lib/state-root.mjs';
 const ROOT = '/fake/project';
 
 // Matches the machine-scoped state root (ADR-0066) getStorageStatus actually
-// resolves the lancedb store against, not a hardcoded `.cx/lancedb`.
+// resolves the lancedb store against, not a hardcoded `.construct/lancedb`.
 const LANCEDB_STATE_PATH = resolveStateDir(ROOT, 'lancedb', { ensureDir: false });
 
 function makeExistsStub({ cx, lancedb }) {
@@ -26,18 +26,18 @@ function makeExistsStub({ cx, lancedb }) {
 }
 
 describe('getStorageStatus health probe', () => {
-  it('returns healthy when both .cx/ and .cx/lancedb exist', async () => {
+  it('returns healthy when both .construct/ and .construct/lancedb exist', async () => {
     const status = await getStorageStatus(ROOT, { fsExistsSync: makeExistsStub({ cx: true, lancedb: true }) });
     assert.equal(status.status, 'healthy');
     assert.equal(status.backend, 'lancedb');
   });
 
-  it('returns degraded when .cx/ exists but .cx/lancedb is absent', async () => {
+  it('returns degraded when .construct/ exists but .construct/lancedb is absent', async () => {
     const status = await getStorageStatus(ROOT, { fsExistsSync: makeExistsStub({ cx: true, lancedb: false }) });
     assert.equal(status.status, 'degraded');
   });
 
-  it('returns unavailable when .cx/ is absent', async () => {
+  it('returns unavailable when .construct/ is absent', async () => {
     const status = await getStorageStatus(ROOT, { fsExistsSync: makeExistsStub({ cx: false, lancedb: false }) });
     assert.equal(status.status, 'unavailable');
   });

@@ -49,7 +49,7 @@ The deployment posture is explicit. One config field (`CONSTRUCT_DEPLOYMENT_MODE
   },
 ]} />
 
-The agent loop (persona, specialists, contracts, gates) is the same across all three. Only the backend topology changes.
+The agent loop (front door, Worker Profiles, contracts, gates) is the same across all three. Only the backend topology changes.
 
 ## Modes
 
@@ -114,9 +114,9 @@ Three concrete cases:
 
 1. **Plane wifi (solo mode).** You can still plan, write code, run tests, and have a coherent agent conversation. The vector index uses whatever you embedded locally; the LLM is whichever local model you wired up.
 2. **A vendor outage (any mode).** Falling back to a local model or to a different OpenAI-compatible endpoint is a config change, not a rewrite.
-3. **A team that needs centralized telemetry and policy.** Team mode promotes the intake queue, memory, and MCP through shared resources without changing the agent loop or the persona contracts.
+3. **A team that needs centralized telemetry and policy.** Team mode promotes the intake queue, memory, and MCP through shared resources without changing the agent loop or the Worker Profile contracts.
 
-The orchestration loop (persona, specialists, contracts, gates, durable state) is the same across modes. What changes is the backend topology that supports it.
+The orchestration loop (front door, Worker Profiles, contracts, gates, durable state) is the same across modes. What changes is the backend topology that supports it.
 
 ## What remains remote even in team mode
 

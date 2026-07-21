@@ -4,7 +4,7 @@
  * (construct-pteo2.12).
  *
  * shapeRun is a pure function over a run record, so the mixed silent-no-op
- * case — chain tasks executed, a recruited reviewer only prepared, run
+ * case — Assignment tasks executed, a recruited Worker Profile only prepared, run
  * persisted 'completed' before finalizeRun's degrade flip existed — is pinned
  * synthetically: the shaped surface must carry recruitmentHonesty and a
  * RECRUITED-NOT-EXECUTED message, and a prepare-only run keeps its own louder
@@ -20,7 +20,14 @@ function baseRun(overrides = {}) {
   return {
     runId: 'run-recruit-honesty',
     status: 'completed',
-    plan: { intent: 'build', track: 'focused', specialists: ['cx-engineer', 'cx-operations'] },
+    plan: {
+      intent: 'build',
+      track: 'focused',
+      assignments: [
+        { id: 'assignment-1', workerProfileId: 'engineer', recruited: false },
+        { id: 'assignment-2', workerProfileId: 'operations', recruited: true },
+      ],
+    },
     tasks: [],
     ...overrides,
   };
@@ -29,11 +36,11 @@ function baseRun(overrides = {}) {
 test('a mixed run with an unexecuted recruit surfaces RECRUITED-NOT-EXECUTED, never a bare completed read', () => {
   const shaped = shapeRun(baseRun({
     tasks: [
-      { id: 't1', role: 'engineer', status: 'done', executor: 'provider:anthropic:m', executionState: 'executed', recruited: false },
-      { id: 't2', role: 'operations', status: 'prepared', executor: 'inline:prepared', executionState: 'prepared', recruited: true },
+      { id: 't1', workerProfileId: 'engineer', status: 'done', executor: 'provider:anthropic:m', executionState: 'executed', recruited: false },
+      { id: 't2', workerProfileId: 'operations', status: 'prepared', executor: 'inline:prepared', executionState: 'prepared', recruited: true },
     ],
     recruitmentHonesty: {
-      unexecutedRecruits: [{ role: 'operations', executionState: 'prepared', reason: 'wide blast radius' }],
+      unexecutedRecruits: [{ workerProfileId: 'operations', executionState: 'prepared', reason: 'wide blast radius' }],
       note: 'recruited reviewer(s) were prepared but never executed — their review was NOT performed',
     },
   }));
@@ -47,11 +54,11 @@ test('a mixed run with an unexecuted recruit surfaces RECRUITED-NOT-EXECUTED, ne
 test('a prepare-only run keeps its own notice and still lists the recruits', () => {
   const shaped = shapeRun(baseRun({
     tasks: [
-      { id: 't1', role: 'engineer', status: 'prepared', executionState: 'prepared', recruited: false },
-      { id: 't2', role: 'operations', status: 'prepared', executionState: 'prepared', recruited: true },
+      { id: 't1', workerProfileId: 'engineer', status: 'prepared', executionState: 'prepared', recruited: false },
+      { id: 't2', workerProfileId: 'operations', status: 'prepared', executionState: 'prepared', recruited: true },
     ],
     recruitmentHonesty: {
-      unexecutedRecruits: [{ role: 'operations', executionState: 'prepared', reason: 'wide blast radius' }],
+      unexecutedRecruits: [{ workerProfileId: 'operations', executionState: 'prepared', reason: 'wide blast radius' }],
       note: 'recruited reviewer(s) were prepared but never executed — their review was NOT performed',
     },
   }));
@@ -64,8 +71,8 @@ test('a prepare-only run keeps its own notice and still lists the recruits', () 
 test('a run whose recruits executed shapes with no honesty block and no message', () => {
   const shaped = shapeRun(baseRun({
     tasks: [
-      { id: 't1', role: 'engineer', status: 'done', executionState: 'executed', recruited: false },
-      { id: 't2', role: 'operations', status: 'done', executionState: 'executed', recruited: true },
+      { id: 't1', workerProfileId: 'engineer', status: 'done', executionState: 'executed', recruited: false },
+      { id: 't2', workerProfileId: 'operations', status: 'done', executionState: 'executed', recruited: true },
     ],
   }));
   assert.equal(shaped.recruitmentHonesty ?? null, null);

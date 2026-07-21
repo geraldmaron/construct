@@ -25,21 +25,21 @@ const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..
 
 function tmpProject() {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-status-path-'));
-  fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
   return cwd;
 }
 
 // orchestrationRun/orchestrationStatus resolve the machine-scoped state root
-// (ADR-0066) via CX_HOME_OVERRIDE read from real process.env, not from the
+// (ADR-0066) via CONSTRUCT_HOME_OVERRIDE read from real process.env, not from the
 // `env` option bag passed to these calls — the ENV/degradedEnv() HOME below
 // is inert for that purpose. Pin the real process env or these leak into the
 // real developer machine's ~/.construct/projects.
 function pinHome(cwd) {
-  const prev = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = cwd;
+  const prev = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = cwd;
   return () => {
-    if (prev === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prev;
+    if (prev === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prev;
   };
 }
 
@@ -50,34 +50,34 @@ const ORCH_REQUEST = { request: 'design and implement a new authentication archi
 // resolves user-scoped state from this bag — or from a child spawned with it —
 // writes ~/.construct-shaped state into the working tree (this is exactly how
 // a stray <repo>/projects/<key>/lancedb appeared during a suite run). A
-// disposable home keeps those writes in tmp; CX_TOOLKIT_DIR stays on the repo
+// disposable home keeps those writes in tmp; CONSTRUCT_TOOLKIT_DIR stays on the repo
 // because it only locates toolkit assets, never durable state.
 const ENV_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-status-path-home-'));
 test.after(() => fs.rmSync(ENV_HOME, { recursive: true, force: true }));
 
 const ENV = {
   ...process.env,
-  CX_TOOLKIT_DIR: REPO_ROOT,
+  CONSTRUCT_TOOLKIT_DIR: REPO_ROOT,
   HOME: ENV_HOME,
   USERPROFILE: ENV_HOME,
   OPENROUTER_API_KEY: '',
   ANTHROPIC_API_KEY: '',
-  CX_MODEL_REASONING: MODEL,
-  CX_MODEL_STANDARD: MODEL,
-  CX_MODEL_FAST: MODEL,
+  CONSTRUCT_MODEL_REASONING: MODEL,
+  CONSTRUCT_MODEL_STANDARD: MODEL,
+  CONSTRUCT_MODEL_FAST: MODEL,
 };
 
 function degradedEnv() {
   return {
     ...process.env,
-    CX_TOOLKIT_DIR: REPO_ROOT,
+    CONSTRUCT_TOOLKIT_DIR: REPO_ROOT,
     HOME: ENV_HOME,
     USERPROFILE: ENV_HOME,
     OPENROUTER_API_KEY: '',
     ANTHROPIC_API_KEY: '',
-    CX_MODEL_REASONING: '',
-    CX_MODEL_STANDARD: '',
-    CX_MODEL_FAST: '',
+    CONSTRUCT_MODEL_REASONING: '',
+    CONSTRUCT_MODEL_STANDARD: '',
+    CONSTRUCT_MODEL_FAST: '',
   };
 }
 

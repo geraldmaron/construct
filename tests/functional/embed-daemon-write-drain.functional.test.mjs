@@ -49,7 +49,7 @@ function freshProject({ policyMode } = {}) {
   writeFileSync(join(root, '.construct', 'context.md'), '# test project\n');
   writeFileSync(join(root, 'construct.config.json'), JSON.stringify({
     version: 1,
-    writes: { policy: { 'atlassian-jira.comment': policyMode } },
+    writes: { policy: { 'jira.comment': policyMode } },
   }, null, 2));
   return root;
 }
@@ -58,7 +58,7 @@ function runDaemonTick(root, { timeoutMs = 15_000 } = {}) {
   const persistPath = join(root, '.construct', 'approvals', 'queue.jsonl');
   const seedQueue = new ApprovalQueue({ persistPath });
   const record = seedQueue.enqueue({
-    tool: 'atlassian-jira.comment',
+    tool: 'jira.comment',
     args: { issueKey: 'OPS-1', body: 'daemon-drafted status update' },
     surface: 'test',
   });
@@ -66,12 +66,12 @@ function runDaemonTick(root, { timeoutMs = 15_000 } = {}) {
   const env = sterileSpawnEnv({
     HOME: root,
     USERPROFILE: root,
-    CX_HOME_OVERRIDE: root,
-    CX_ROOT_DIR: root,
-    CX_APPROVAL_QUEUE_PATH: persistPath,
+    CONSTRUCT_HOME_OVERRIDE: root,
+    CONSTRUCT_ROOT_DIR: root,
+    CONSTRUCT_APPROVAL_QUEUE_PATH: persistPath,
     TICK_TIMEOUT_MS: String(timeoutMs),
     CONSTRUCT_EMBEDDING_MODEL: 'hashing',
-    CX_INBOX_LIVE_WATCH: 'off',
+    CONSTRUCT_INBOX_LIVE_WATCH: 'off',
     CONSTRUCT_EMBED_ROADMAP_ENABLED: '0',
   });
   const res = spawnSync(process.execPath, [RUNNER], {

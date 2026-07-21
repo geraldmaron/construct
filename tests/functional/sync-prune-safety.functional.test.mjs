@@ -5,7 +5,7 @@
  * or an auto-detection miss (binary not on PATH) — must never have its prior
  * managed output deleted. Regression coverage for the Codex data-loss bug
  * (construct-lqp4c's copilot precedent, generalized to codex + claude project
- * scope) and an invariant sweep across every host sync-specialists.mjs manages.
+ * scope) and an invariant sweep across every host sync-worker-profiles.mjs manages.
  */
 
 import { spawnSync } from 'node:child_process';
@@ -18,7 +18,7 @@ import test from 'node:test';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const SYNC_SCRIPT = join(REPO_ROOT, 'scripts', 'sync-specialists.mjs');
+const SYNC_SCRIPT = join(REPO_ROOT, 'scripts', 'sync-worker-profiles.mjs');
 const ALL_HOSTS = ['claude', 'codex', 'copilot', 'opencode', 'vscode', 'cursor'];
 
 // Each host's managed marker path a prior sync would have created, relative

@@ -1,0 +1,15 @@
+{
+  "schema": "construct/demo-manifest/1",
+  "name": "capability-contract",
+  "title": "Capability contract \u2014 registry to enforcement",
+  "summary": "Walk capability describe, execution resolve, and certification posture rollup.",
+  "status": "declared",
+  "script": "templates/demos/scripts/capability-contract.json",
+  "tape": "templates/demos/tapes/capability-contract.tape",
+  "fallbackSurface": "tape",
+  "commands": [
+    "node bin/construct capability describe --json",
+    "node bin/construct execution resolve --json",
+    "node bin/construct certify status"
+  ]
+}

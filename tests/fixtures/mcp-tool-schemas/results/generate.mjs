@@ -19,7 +19,7 @@ import { dispatchToolByName } from '../../../../lib/mcp/server.mjs';
 const HERE = dirname(fileURLToPath(import.meta.url));
 
 const CASES = [
-  ['get_skill', { path: 'roles/engineer' }],
+  ['get_skill', { path: 'perspectives/engineer' }],
   ['workflow_status', {}],
   ['memory_search', { query: 'lmcp' }],
   ['project_context', {}],
@@ -31,7 +31,7 @@ const CASES = [
   ['get_template', { name: 'adr' }],
   ['list_teams', {}],
   ['search_skills', { pattern: 'engineer' }],
-  ['scope_list', {}],
+  ['workspace_preset_list', {}],
   ['orchestration_readiness', {}],
   ['capability_describe', {}],
   ['model_resolve', {}],

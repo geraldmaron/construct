@@ -25,7 +25,7 @@ test('corpus inventory names all five catalogs with a real file, consumer, and d
   assert.equal(CORPUS_CATALOGS.length, 5, 'exactly five catalogs are inventoried');
   const expectedFiles = [
     'lib/certification/scenarios.mjs',
-    'lib/certification/specialist-scenarios.mjs',
+    'lib/certification/worker-profile-cards.mjs',
     'lib/certification/canonical-scenarios.mjs',
     'lib/certification/real-llm-scenarios.mjs',
     'lib/certification/skill-scenarios.mjs',

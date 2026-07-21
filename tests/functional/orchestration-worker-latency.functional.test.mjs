@@ -35,7 +35,7 @@ function latentMockFetch(payload, delayMs) {
 test('[latency] a mock call with a representative 1.2s round-trip succeeds under the real production default timeout (no override set)', async () => {
   assert.ok(PROVIDER_TIMEOUT_DEFAULT_MS >= 1000, `production default (${PROVIDER_TIMEOUT_DEFAULT_MS}ms) must clear a plausible provider round-trip`);
 
-  const task = { role: 'cx-engineer', reason: 'implement the change', handoffContract: null };
+  const task = { role: 'engineer', reason: 'implement the change', handoffContract: null };
   const run = { request: { summary: 'refactor the auth module' } };
   const fetchImpl = latentMockFetch({ content: [{ type: 'text', text: 'engineer result' }] }, 1200);
 
@@ -49,7 +49,7 @@ test('[latency] a mock call with a representative 1.2s round-trip succeeds under
 });
 
 test('[latency] the harness genuinely discriminates: a deliberately small timeout still aborts a slow mock', async () => {
-  const task = { role: 'cx-engineer', reason: 'implement the change', handoffContract: null };
+  const task = { role: 'engineer', reason: 'implement the change', handoffContract: null };
   const run = { request: { summary: 'refactor the auth module' } };
   const fetchImpl = latentMockFetch({ content: [{ type: 'text', text: 'should never arrive' }] }, 1000);
 

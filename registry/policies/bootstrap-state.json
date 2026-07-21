@@ -1,0 +1,14 @@
+{
+  "id": "bootstrap-state",
+  "ownerWorkerProfile": "orchestrator",
+  "description": "State machine enforces valid session bootstrap sequence before any agent work begins.",
+  "enforcement": "lib/hooks/policy-engine.mjs",
+  "mode": "deterministic",
+  "approvalWorkerProfiles": [],
+  "requiredPolicies": [],
+  "vetoWorkerProfiles": [],
+  "escalationWorkerProfiles": [],
+  "governs": [],
+  "conditions": [],
+  "evidence": []
+}

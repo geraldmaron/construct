@@ -17,7 +17,7 @@ import { detectRenderer } from '../../lib/render-pipeline.mjs';
 
 const NO_TOOLING_ENV = { PATH: '/nonexistent-bin-dir' };
 
-test('renderEvidenceDir places images under a stable .cx/render path', () => {
+test('renderEvidenceDir places images under a stable .construct/render path', () => {
   const dir = renderEvidenceDir('/repo', 'prd.pdf');
   assert.equal(dir, path.join('/repo', '.construct', 'render', 'prd.pdf'));
 });

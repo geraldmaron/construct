@@ -3,7 +3,7 @@
  *
  * Pins Tier 1 sub-bead 2: when orchestration_policy receives an intakeId,
  * the response carries a task graph generated from that packet's triage,
- * persisted under .cx/task-graphs/, with a task_graph.created trace event
+ * persisted under .construct/task-graphs/, with a task_graph.created trace event
  * whose traceId correlates to the originating intake.
  */
 import { describe, it, beforeEach, afterEach } from 'node:test';
@@ -26,8 +26,8 @@ beforeEach(() => {
   originalCwd = process.cwd();
   originalHome = process.env.HOME;
   // Mark the tmpdir as a Construct project so intent-verifications,
-  // skill-calls, and friends write into <projectRoot>/.cx/ instead of
-  // leaking into the dev box's real ~/.cx/. Set HOME too so any cross-
+  // skill-calls, and friends write into <projectRoot>/.construct/ instead of
+  // leaking into the dev box's real ~/.construct/. Set HOME too so any cross-
   // project writer fallback also lands in the sandbox.
 
   fs.mkdirSync(path.join(projectRoot, '.construct'), { recursive: true });
@@ -83,7 +83,7 @@ describe('orchestrationPolicy intakeId auto-generates task graph', () => {
     assert.match(result.taskGraph.traceId, /^trace-/);
   });
 
-  it('persists the generated graph to .cx/task-graphs/', async () => {
+  it('persists the generated graph to .construct/task-graphs/', async () => {
     const { id: intakeId } = seedIntake('CVE-2026-1234: SQLi in the search endpoint. Vulnerability disclosure deadline next week.');
     const result = await orchestrationPolicy({
       request: 'address the CVE disclosure',

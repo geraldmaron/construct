@@ -1,0 +1,14 @@
+{
+  "id": "beads-hygiene",
+  "ownerWorkerProfile": "orchestrator",
+  "description": "Validates beads close-reason quality: requires PR reference or file:line evidence.",
+  "enforcement": "lib/contracts/validate.mjs#validateBeadsCloseReason",
+  "mode": "deterministic",
+  "approvalWorkerProfiles": [],
+  "requiredPolicies": [],
+  "vetoWorkerProfiles": [],
+  "escalationWorkerProfiles": [],
+  "governs": [],
+  "conditions": [],
+  "evidence": []
+}

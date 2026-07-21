@@ -42,7 +42,7 @@ For every non-trivial change:
 
 1. **A Beads issue exists.** `bd ready` to find or create one. `bd show <id>` to read context. `bd update <id> --claim` to claim before editing files.
 2. **`plan.md` reflects the work.** Even though `plan.md` is local-only and gitignored, it stays the human-readable working plan. Mark items `done` when they ship; add new rows for work that wasn't previously tracked.
-3. **Doc updates land in the same change as code.** If runtime shape, contracts, boundaries, or major dependencies changed, update `docs/guides/concepts/architecture.md` in the same commit. If the docs surface or maintenance contract changed, update `docs/README.md`. If active work, decisions, or assumptions changed, update `.cx/context.md` and `.cx/context.json`. Always add a `CHANGELOG.md` entry.
+3. **Doc updates land in the same change as code.** If runtime shape, contracts, boundaries, or major dependencies changed, update `docs/guides/concepts/architecture.md` in the same commit. If the docs surface or maintenance contract changed, update `docs/README.md`. If active work, decisions, or assumptions changed, update `.construct/context.md` and `.construct/context.json`. Always add a `CHANGELOG.md` entry.
 4. **Beads close on green.** `bd close <id>` happens after CI is green and the work is verified: not before.
 
 ## Hard rules

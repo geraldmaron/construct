@@ -1,19 +1,20 @@
 {
-  "type": "diagram-card",
-  "id": "diagram-card:docs/architecture.md#system-overview",
-  "source": "flowchart TD\n  A[Client] --> B[API]\n  B --> C[(Store)]",
-  "engine": "mermaid-source-only",
-  "engineVersion": null,
-  "theme": "construct",
+  "id": "sample-architecture-diagram",
+  "source": ".construct/diagrams/web-app-client-api-db.d2",
+  "engine": "dot",
+  "engineVersion": "dot - graphviz version 9.0.0",
+  "theme": "neutral",
   "seed": null,
-  "securityProfile": "browser-innerHTML-loose",
-  "accessibilityDescription": "Flowchart showing the client calling the API, which reads and writes the store.",
+  "securityProfile": "sandboxed-subprocess",
+  "accessibilityDescription": "architecture diagram: web app client to api to db",
   "provenance": {
     "module": "lib/diagram.mjs",
-    "command": "renderDiagram(sourceOnly=true)",
-    "generatedAt": "2026-07-17T00:00:00.000Z"
+    "command": "construct diagram web app: client -> api -> db",
+    "generatedAt": "2026-07-20T20:00:00.000Z"
   },
-  "degraded": false,
-  "reason": null,
-  "renderedOutput": null
+  "degraded": true,
+  "reason": "d2 not found, using dot fallback",
+  "renderedOutput": {
+    "path": ".construct/diagrams/web-app-client-api-db.svg"
+  }
 }

@@ -17,7 +17,7 @@ Any time the work would produce or significantly rewrite one of:
 - A top-level repo doc (README, CHANGELOG, STRATEGY, AGENTS, CONTRIBUTING).
 - A profile under `profiles/` or a registered agent.
 
-It does not apply to local-only working files (`plan.md`, `.cx/` state, draft scratch).
+It does not apply to local-only working files (`plan.md`, `.construct/` state, draft scratch).
 
 ## The audit
 

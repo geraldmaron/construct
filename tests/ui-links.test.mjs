@@ -38,7 +38,7 @@ describe('lib/ui/links.mjs link enablement gate', () => {
   });
   it('disables for NO_COLOR, plain, and explicit opt-out', () => {
     assert.equal(terminalLinksEnabled({ NO_COLOR: '1' }, { stream: { isTTY: true } }), false);
-    assert.equal(terminalLinksEnabled({ CX_LINKS: '0' }, { stream: { isTTY: true } }), false);
+    assert.equal(terminalLinksEnabled({ CONSTRUCT_LINKS: '0' }, { stream: { isTTY: true } }), false);
     assert.equal(terminalLinksEnabled({}, { stream: { isTTY: true }, plain: true }), false);
   });
   it('disables on a plain pipe', () => {

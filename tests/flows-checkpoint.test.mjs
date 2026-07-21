@@ -8,7 +8,7 @@
  * completed step; runCheckpointed() drives a flow to completion across a
  * simulated crash/restart (a fresh in-memory run rebuilt from the checkpoint
  * rather than the live object continuing); resuming against a different
- * flow id throws FlowCheckpointError. CX_HOME_OVERRIDE is pinned for the
+ * flow id throws FlowCheckpointError. CONSTRUCT_HOME_OVERRIDE is pinned for the
  * whole file so state-root reads/writes never touch the real machine's
  * $HOME (see rules/common — leaking test state under ~/.construct/projects/
  * is a repeat regression this repo has already paid for once).
@@ -32,12 +32,12 @@ import {
 } from '../lib/flows/checkpoint.mjs';
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-flow-checkpoint-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 test.after(() => {
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 const dirs = [];

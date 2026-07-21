@@ -26,10 +26,10 @@ test('skips non-Construct projects', () => {
   }
 });
 
-test('reports absent project adapters when .cx exists', () => {
+test('reports absent project adapters when .construct exists', () => {
   const dir = mkdtempSync(join(tmpdir(), 'cx-parity-miss-'));
   try {
-    mkdirSync(join(dir, '.cx'));
+    mkdirSync(join(dir, '.construct'));
     const r = checkProjectParity({ rootDir: ROOT, projectDir: dir });
     assert.equal(r.skipped, false);
     const absent = r.surfaces.filter((s) => s.status === 'absent');
@@ -42,7 +42,7 @@ test('reports absent project adapters when .cx exists', () => {
 test('ok when construct agent and cursor rule present', () => {
   const dir = mkdtempSync(join(tmpdir(), 'cx-parity-ok-'));
   try {
-    mkdirSync(join(dir, '.cx'));
+    mkdirSync(join(dir, '.construct'));
     mkdirSync(join(dir, '.claude', 'agents'), { recursive: true });
     writeFileSync(join(dir, '.claude', 'agents', 'construct.md'), '# construct');
     mkdirSync(join(dir, '.cursor', 'rules'), { recursive: true });

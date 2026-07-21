@@ -1,4 +1,4 @@
-# ADR-0037: Specialist Prompt Format — Hybrid Markdown + Structured Frontmatter
+# Obsolete: ADR-0037 — Specialist Prompt Format — Hybrid Markdown + Structured Frontmatter
 
 - **Date**: 2026-06-17
 - **Status**: proposed

@@ -1,0 +1,29 @@
+{
+  "schema_name": "DoclingDocument",
+  "version": "1.0.0",
+  "name": "table-fixture.pdf",
+  "pages": [
+    { "page_no": 1, "size": { "width": 612.0, "height": 792.0 } }
+  ],
+  "texts": [
+    {
+      "self_ref": "#/texts/0",
+      "label": "paragraph",
+      "text": "Quarterly metrics table fixture."
+    }
+  ],
+  "tables": [
+    {
+      "self_ref": "#/tables/0",
+      "data": {
+        "grid": [
+          [{ "text": "Metric" }, { "text": "Value" }],
+          [{ "text": "Latency ms" }, { "text": "42" }]
+        ],
+        "num_rows": 2,
+        "num_cols": 2
+      },
+      "prov": [{ "page_no": 1 }]
+    }
+  ]
+}

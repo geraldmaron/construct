@@ -2,7 +2,7 @@
  * tests/functional/embed-daemon-write-intent-drain.functional.test.mjs —
  * end-to-end proof that the embed daemon's 'write-intent-drain' job
  * (lib/embed/daemon.mjs, construct-4uxq0.9.5) actually calls
- * drainApprovedWriteIntents on its own cadence, closing the gap ADR-0094
+ * drainApprovedWriteIntents on its own cadence, closing the gap ADR-0100
  * described: drainApprovedWriteIntents (lib/writes/control-plane.mjs) was
  * implemented and tested but called by nothing in lib/ or bin/, leaving
  * `construct approvals approve <id>` as the only production drain path.
@@ -19,7 +19,7 @@
  * tick's real effect instead of sleeping for the full interval.
  *
  * The parent test pre-seeds the ApprovalQueue's persistence file (outside
- * the daemon process) with one 'approved' atlassian-jira.issue record before
+ * the daemon process) with one 'approved' jira.issue record before
  * spawning the runner, and clears Jira credential env vars from the spawn
  * env (sterileSpawnEnv's allowlist already excludes them by construction,
  * asserted explicitly rather than merely assumed). The daemon wires
@@ -63,7 +63,7 @@ function runDaemonTick(root, persistPath, approvalId, timeoutMs = 15_000) {
   const env = sterileSpawnEnv({
     HOME: root,
     USERPROFILE: root,
-    CX_HOME_OVERRIDE: root,
+    CONSTRUCT_HOME_OVERRIDE: root,
     CX_ROOT_DIR: root,
     QUEUE_PERSIST_PATH: persistPath,
     APPROVAL_ID: approvalId,
@@ -93,7 +93,7 @@ test('the real EmbedDaemon write-intent-drain job drains an approved record on i
 
   const seedQueue = new ApprovalQueue({ persistPath });
   const record = seedQueue.enqueue({
-    tool: 'atlassian-jira.issue',
+    tool: 'jira.issue',
     args: { project: 'PROJ', issueType: 'Task', summary: 'Drained by the daemon job' },
     surface: 'test-seed',
     requestedBy: { userId: 'test-seed' },

@@ -10,4 +10,4 @@ You are Construct. Write a handoff for: $ARGUMENTS
 - DO NOT TOUCH: files or systems that must stay unchanged
 - READ FIRST: files or memory queries that provide critical context
 
-Save to `.cx/handoffs/{date}-{slug}.md`. Write handoff entity to memory MCP if available.
+Save to `.construct/handoffs/{date}-{slug}.md`. Write handoff entity to memory MCP if available.

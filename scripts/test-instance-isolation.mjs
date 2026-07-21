@@ -155,7 +155,7 @@ async function main() {
   console.log('\n=== Recommended isolation practices ===');
   console.log('\n1. Always set CONSTRUCT_INSTANCE_ID for embedded instances');
   console.log('2. Use different ports for different instances');
-  console.log('3. Consider using different data directories via CX_DATA_DIR');
+  console.log('3. Consider using different data directories via CONSTRUCT_DATA_DIR');
   console.log('4. Use boundary registration API for parent-child relationships');
   console.log('5. Monitor for config.env shadowing warnings');
   

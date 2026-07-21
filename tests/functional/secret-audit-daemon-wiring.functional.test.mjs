@@ -38,14 +38,16 @@ const RESOLVED_CANARY = 'RESOLVED-CANARY-zz9-not-a-key';
 
 // Long-lived Construct process entrypoints that wire the audit sink. bin/construct
 // is the CLI baseline; the MCP server and embed daemon genuinely resolve provider
-// secrets in their own process; the doctor and oracle daemons wire it defensively.
-// The ACP server runs inside `construct acp`, so the CLI wiring already covers it.
+// secrets in their own process; the doctor daemon wires it defensively. The ACP
+// server runs inside `construct acp`, so the CLI wiring already covers it. The
+// oracle daemon-entry is gone (construct-b0nny.17): its directive-execution job
+// runs under the embed-owned E5 path, whose secret resolution the embed worker
+// entry above already covers.
 const WIRED_PROCESS_ENTRYPOINTS = [
   'bin/construct',
   'lib/mcp/server.mjs',
   'lib/embed/worker.mjs',
   'lib/doctor/index.mjs',
-  'lib/oracle/daemon-entry.mjs',
 ];
 
 function sandbox(t) {

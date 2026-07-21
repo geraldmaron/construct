@@ -3,15 +3,15 @@
  * coverage for the Stop-time tracking-refresh hook.
  *
  * Spawns lib/hooks/session-tracking-refresh.mjs in a tmpdir seeded with a
- * minimal Construct project layout (.cx/, context.md, plan.md, an
+ * minimal Construct project layout (.construct/, context.md, plan.md, an
  * observation file). PATH-shimmed `bd` answers `list` and `show` queries.
  *
  * Contracts:
- *   1. The hook only runs inside Construct projects (.cx/ present).
- *   2. `.cx/context.md` Active Work section reflects the current open-bead
+ *   1. The hook only runs inside Construct projects (.construct/ present).
+ *   2. `.construct/context.md` Active Work section reflects the current open-bead
  *      set after the hook runs.
  *   3. When all referenced beads are closed and plan.md is idle, plan.md
- *      is archived into `.cx/handoffs/` and reset to the template.
+ *      is archived into `.construct/handoffs/` and reset to the template.
  *   4. Failures are best-effort — exit 0 even when bd is unavailable.
  */
 
@@ -100,7 +100,7 @@ test('session-tracking-refresh is a no-op outside Construct projects', () => {
   }
 });
 
-test('session-tracking-refresh updates .cx/context.md Active Work from open beads', () => {
+test('session-tracking-refresh updates .construct/context.md Active Work from open beads', () => {
   const env = seed();
   try {
     writeShim(env.shimDir, 'bd', `

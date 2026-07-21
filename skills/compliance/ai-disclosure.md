@@ -57,3 +57,11 @@ For each AI feature, document:
 5. **Human oversight**: who reviews AI decisions and how
 6. **Bias mitigation**: what testing was done for fairness
 7. **Audit trail**: what is logged for post-hoc review
+
+## Anti-fabrication
+
+Regulation rows above are orientation, not verified cites for a specific product. Before asserting article numbers, risk-tier conclusions, or “AI Act compliant” claims: verify primary text or mark `[unverified]` with counsel owner. See `rules/common/no-fabrication.md` and `skills/compliance/case-law-research.md`. Do not invent bias-audit results or disclosure language that is not in the product.
+
+## Authorship / voice
+
+Typed disclosure / compliance prose: `get_skill("docs/artifact-authorship")` + `rules/common/human-voice.md`. Keep statutory shall/must and quoted regime text exact.

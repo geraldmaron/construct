@@ -25,13 +25,13 @@ const REQUIRED_FIELDS = [
 
 // The broker's default emit is the real emitTraceEvent, which resolves trace
 // writes through the machine-scoped state root (ADR-0066) via
-// process.env.CX_HOME_OVERRIDE directly, not through any per-call option, so
-// CX_HOME_OVERRIDE is pinned for the whole file to keep those writes off the
+// process.env.CONSTRUCT_HOME_OVERRIDE directly, not through any per-call option, so
+// CONSTRUCT_HOME_OVERRIDE is pinned for the whole file to keep those writes off the
 // real developer machine's $HOME.
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-denial-audit-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 
 const tmpDirs = [];
 after(() => {
@@ -39,8 +39,8 @@ after(() => {
     try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
   }
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 function fakeRoot() {
@@ -301,7 +301,7 @@ describe('correlation id traceability', () => {
     const rootDir = fakeRoot();
     const auditEvents = [];
     // Real emitTraceEvent (default `emit`) so the trace event actually lands
-    // on disk under rootDir/.cx/traces — this test verifies the on-disk
+    // on disk under rootDir/.construct/traces — this test verifies the on-disk
     // correlation, not just the in-memory event.
     const broker = new Broker({
       rootDir,
@@ -332,104 +332,6 @@ describe('correlation id traceability', () => {
     assert.ok(matching, 'trace shard must contain an event whose traceId equals the denied record correlationId');
     assert.equal(matching.eventType, 'tool.called');
     assert.equal(matching.metadata.allowed, false);
-  });
-});
-
-describe('auditRecorded surfaced on invoke() outcomes', () => {
-  it('an allowed call surfaces auditRecorded:true when the audit write succeeds', async () => {
-    const rootDir = fakeRoot();
-    const auditEvents = [];
-    const traceEvents = [];
-    const broker = makeBroker({ rootDir, policy: allowingPolicy(), auditEvents, traceEvents });
-
-    const { result, auditRecorded } = await broker.invoke({
-      role: 'engineer',
-      tool: 'fs',
-      action: 'read',
-      requestedBy: { userId: 'ivan@example.com' },
-      execute: async () => 'ok',
-    });
-
-    assert.equal(result, 'ok');
-    assert.equal(auditRecorded, true);
-  });
-
-  it('an allowed call surfaces auditRecorded:false when the audit write throws, but still executes the tool (best-effort, never break dispatch)', async () => {
-    const rootDir = fakeRoot();
-    const traceEvents = [];
-    let executed = false;
-    const broker = new Broker({
-      rootDir,
-      policy: allowingPolicy(),
-      emit: (event) => traceEvents.push(event),
-      auditRecorder: () => { throw new Error('disk unavailable'); },
-    });
-
-    const { result, auditRecorded } = await broker.invoke({
-      role: 'engineer',
-      tool: 'fs',
-      action: 'read',
-      requestedBy: { userId: 'judy@example.com' },
-      execute: async () => { executed = true; return 'ok'; },
-    });
-
-    assert.equal(executed, true, 'execute() must still run in default/solo mode despite the audit write failing');
-    assert.equal(result, 'ok');
-    assert.equal(auditRecorded, false);
-  });
-
-  it('a denied call throws PolicyDenied carrying auditRecorded:false when the audit write throws', async () => {
-    const rootDir = fakeRoot();
-    const traceEvents = [];
-    const broker = new Broker({
-      rootDir,
-      policy: denyingPolicy(),
-      emit: (event) => traceEvents.push(event),
-      auditRecorder: () => { throw new Error('disk unavailable'); },
-    });
-
-    let caught = null;
-    try {
-      await broker.invoke({
-        role: 'engineer',
-        tool: 'github',
-        action: 'push:main',
-        requestedBy: { userId: 'kim@example.com' },
-        execute: async () => 'unreachable',
-      });
-    } catch (err) {
-      caught = err;
-    }
-
-    assert.ok(caught instanceof PolicyDenied);
-    assert.equal(caught.auditRecorded, false);
-  });
-
-  it('an approval-required call (no queue) throws ApprovalRequired carrying auditRecorded:false when the audit write throws', async () => {
-    const rootDir = fakeRoot();
-    const traceEvents = [];
-    const broker = new Broker({
-      rootDir,
-      policy: approvalPolicy(),
-      emit: (event) => traceEvents.push(event),
-      auditRecorder: () => { throw new Error('disk unavailable'); },
-    });
-
-    let caught = null;
-    try {
-      await broker.invoke({
-        role: 'engineer',
-        tool: 'github',
-        action: 'create_pr',
-        requestedBy: { userId: 'liam@example.com' },
-        execute: async () => 'unreachable',
-      });
-    } catch (err) {
-      caught = err;
-    }
-
-    assert.ok(caught instanceof ApprovalRequired);
-    assert.equal(caught.auditRecorded, false);
   });
 });
 

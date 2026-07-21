@@ -1,7 +1,7 @@
 /**
  * tests/context-state.test.mjs — context state prefers JSON and preserves markdown compatibility
  *
- * Tests the context-state module that loads and writes .cx/context.json and .cx/context.md.
+ * Tests the context-state module that loads and writes .construct/context.json and .construct/context.md.
  * Verifies JSON takes precedence over markdown, field preservation, and round-trip compatibility.
  * Run via npm test.
  */

@@ -17,11 +17,11 @@ Use when: the user points at a PDF, Word doc, spreadsheet, slide deck, export, o
 
 ## Default destination
 
-Write outputs to `.cx/knowledge/internal/` unless the user explicitly wants a typed `knowledge/<subdir>`, sibling markdown file, or another output path.
+Write outputs to `.construct/knowledge/internal/` unless the user explicitly wants a typed `knowledge/<subdir>`, sibling markdown file, or another output path.
 
 Why:
 
-- files under `.cx/knowledge/` are part of Construct's file-state retrieval path
+- files under `.construct/knowledge/` are part of Construct's file-state retrieval path
 - they can be picked up by hybrid search immediately
 - `construct ingest --sync` can then push them into shared SQL/vector storage when configured
 
@@ -57,3 +57,9 @@ Do not overwrite an existing markdown artifact unless the user explicitly asks f
 ## Release gate
 
 Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.
+
+## Shared authorship contract
+
+Before drafting or reviewing, call `get_skill("docs/artifact-authorship")` for framing, template population, storytelling, human voice, adversarial review, anti-fabrication, and cross-persona triggers. Persona overlays under `skills/perspectives/` add failure modes; they do not waive that contract.
+
+**Before you write (voice):** prefer contractions (`don't`/`won't`/`can't`); avoid spaced em dashes (` — `); refuse AI tells (delve, leverage, robust as filler, "it's important to note", "In today's…", "This ensures that…", empty tricolons); sound like a careful colleague. Exceptions: ACs, legal shall/must not, quoted statute, exact required section titles. See `rules/common/human-voice.md`.

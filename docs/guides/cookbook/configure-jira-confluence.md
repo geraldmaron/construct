@@ -66,7 +66,7 @@ Returns matching pages.
 | Watch (webhooks) | ✓ | ✓ |
 | Attachments | ✓ | ✓ |
 
-Write actions only fire when the originating specialist's fence allows them. By default, fences are read-only: opt into write per-specialist.
+Write actions only fire when the originating Worker Profile's fence allows them. By default, fences are read-only: opt into write per profile.
 
 ## Webhooks (optional)
 
@@ -81,9 +81,9 @@ Set `ATLASSIAN_WEBHOOK_SECRET` to a strong random value for signature verificati
 
 Typical event-to-role mappings:
 
-- `jira:issue_created` with label `bug` → `cx-debugger`
-- `jira:issue_in_review` → `cx-reviewer`
-- `confluence:page_published` with parent "Runbooks" → `cx-operations` (for ingest)
+- `jira:issue_created` with label `bug` → `debugger`
+- `jira:issue_in_review` → `reviewer`
+- `confluence:page_published` with parent "Runbooks" → `operations` (for ingest)
 
 ## Common gotchas
 

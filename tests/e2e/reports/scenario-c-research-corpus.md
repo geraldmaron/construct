@@ -1,7 +1,7 @@
 <!--
 tests/e2e/reports/scenario-c-research-corpus.md — Scenario C (Research project) E2E owner-review report.
 
-Generated from a real sterile run on 2026-06-06: research profile + real corpus (3 arXiv PDFs + 5 internal notes) in .cx/inbox/, intake loop, and an evidence brief via cx-researcher -> cx-evaluator (scored 4.8/5).
+Generated from a real sterile run on 2026-06-06: research profile + real corpus (3 arXiv PDFs + 5 internal notes) in .construct/inbox/, intake loop, and an evidence brief via cx-researcher -> cx-evaluator (scored 4.8/5).
 Tiers 1, 3, 4(intake), 6, 7 executed; catalog-level tiers (2, 5) validated in Scenario A. Evidence: /tmp/c-setup.json, /tmp/c-ingest-nosync.out.
 -->
 
@@ -12,8 +12,8 @@ Tiers 1, 3, 4(intake), 6, 7 executed; catalog-level tiers (2, 5) validated in Sc
 ## Scenario definition
 
 - **Profile:** `research` (switched from `rnd` via `construct profile set research`; structural diff confirmed: roles `+product-lead, operator`, `−architect, engineer, qa, …`).
-- **Fixture:** fresh `git init` + a real corpus in `.cx/inbox/` — **3 arXiv PDFs** (Sentence-BERT 1908.10084 · Dense Passage Retrieval 2004.04906 · Lost in the Middle 2307.03172, all downloaded fresh, all <2 MB: 549 KB / 384 KB / 748 KB) + **5 markdown notes** (prior internal thinking on hybrid retrieval, normalization, context ordering, chunking, eval gap).
-- **Sterile env:** dedicated tmpdir, isolated `HOME` + `CX_HOME_OVERRIDE`, `CONSTRUCT_DEV_PATH` → repo under test. Root: `/var/folders/.../cx-e2e-c-xRT2lb`.
+- **Fixture:** fresh `git init` + a real corpus in `.construct/inbox/` — **3 arXiv PDFs** (Sentence-BERT 1908.10084 · Dense Passage Retrieval 2004.04906 · Lost in the Middle 2307.03172, all downloaded fresh, all <2 MB: 549 KB / 384 KB / 748 KB) + **5 markdown notes** (prior internal thinking on hybrid retrieval, normalization, context ordering, chunking, eval gap).
+- **Sterile env:** dedicated tmpdir, isolated `HOME` + `CONSTRUCT_HOME_OVERRIDE`, `CONSTRUCT_DEV_PATH` → repo under test. Root: `/var/folders/.../cx-e2e-c-xRT2lb`.
 - **Reproducibility:** PDFs are fetched at run time from canonical arXiv URLs (manifest in `scenario-c.mjs`) rather than committed, keeping the repo clean.
 
 ---
@@ -34,7 +34,7 @@ Catalog-level and scenario-independent; see `scenario-a-greenfield-nextjs.md` Ti
 
 ## Tier 3 — Quality-bar artifact (real specialist chain, independently scored)
 
-**Artifact:** `.cx/research/0001-retrieval-evidence-brief.md` — synthesizes the corpus on dense-vs-sparse retrieval and context positioning.
+**Artifact:** `.construct/research/0001-retrieval-evidence-brief.md` — synthesizes the corpus on dense-vs-sparse retrieval and context positioning.
 
 **Chain:** `cx-researcher` (authored) → persisted → `cx-evaluator` (independent rubric score). Both are Read-only specialists (consistent mechanism).
 
@@ -62,8 +62,8 @@ Catalog-level and scenario-independent; see `scenario-a-greenfield-nextjs.md` Ti
 ## Tier 4 — Loops, skills, specialists, templates + the intake loop
 
 **Intake loop (research profile) — executed, with a reliability finding:**
-- After dropping 8 corpus files into `.cx/inbox/`, `intake list` returned **"No pending questions"** — files are not auto-enqueued instantly; the queue is populated by the intake daemon (interval poll) or an explicit `construct ingest ./.cx/inbox --sync`. The plan's "drop to trigger" assumption needs the daemon or an explicit ingest.
-- `construct ingest ./.cx/inbox` **hung indefinitely** (killed at >3 min with `--sync`, >40 s without). Root cause: install auto-applied local **Ollama** model defaults (`llama3.2:3b` etc.) that are **not pulled** in the local Ollama (only `qwen3-coder:32k` is present); intake triage's model call blocks on the missing model with no timeout and no progress output. → **bd `construct-h8tx.11`** (P2). The evidence brief was therefore produced by the host specialist reading the corpus directly, which is the real specialist path.
+- After dropping 8 corpus files into `.construct/inbox/`, `intake list` returned **"No pending questions"** — files are not auto-enqueued instantly; the queue is populated by the intake daemon (interval poll) or an explicit `construct ingest ./.construct/inbox --sync`. The plan's "drop to trigger" assumption needs the daemon or an explicit ingest.
+- `construct ingest ./.construct/inbox` **hung indefinitely** (killed at >3 min with `--sync`, >40 s without). Root cause: install auto-applied local **Ollama** model defaults (`llama3.2:3b` etc.) that are **not pulled** in the local Ollama (only `qwen3-coder:32k` is present); intake triage's model call blocks on the missing model with no timeout and no progress output. → **bd `construct-h8tx.11`** (P2). The evidence brief was therefore produced by the host specialist reading the corpus directly, which is the real specialist path.
 
 **Specialist chain + skills + templates:** the cx-researcher → cx-evaluator chain ran and produced distinct role output (Tier 3). Skill loading verified in Scenario A (scenario-independent). Template fidelity confirmed in Tier 3.
 

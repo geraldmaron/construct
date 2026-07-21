@@ -47,7 +47,7 @@ describe('agentic-hq: intake classifier', () => {
     classify = m.classifyRdIntake;
   });
 
-  const FIXTURE_HOME_INBOX = join(FIXTURE_HOME, '.cx', 'inbox');
+  const FIXTURE_HOME_INBOX = join(FIXTURE_HOME, '.construct', 'inbox');
 
   // Actual classifier output for these fixtures (verified against current classifier).
   // Demo regression guards: ux-research must NOT be 'security'; eval must NOT be 'bug'.
@@ -193,18 +193,18 @@ describe('agentic-hq: skill telemetry extended payload', () => {
     const tmpLog = join(TMP_ROOT, 'skill-calls-test.jsonl');
     assert.doesNotThrow(() => {
       logSkillCall({
-        skillId: 'roles/researcher',
+        skillId: 'perspectives/researcher',
         source: 'mcp',
         latencyMs: 42,
-        agentId: 'cx-researcher',
+        agentId: 'researcher',
         sessionId: 'test-session-001',
         tokensReturned: 500,
       }, { logPath: tmpLog });
     });
     const line = JSON.parse(readFileSync(tmpLog, 'utf8').trim());
-    assert.equal(line.skillId, 'roles/researcher');
+    assert.equal(line.skillId, 'perspectives/researcher');
     assert.equal(line.latencyMs, 42);
-    assert.equal(line.agentId, 'cx-researcher');
+    assert.equal(line.agentId, 'researcher');
     assert.equal(line.sessionId, 'test-session-001');
     assert.equal(line.tokensReturned, 500);
   });
@@ -214,8 +214,8 @@ describe('agentic-hq: workflow templates', () => {
   it('templates directory has at least three workflows', async () => {
     const { readdirSync } = await import('node:fs');
     const { join: pjoin } = await import('node:path');
-    const dir = pjoin(new URL('../..', import.meta.url).pathname, 'templates', 'workflows');
-    const files = readdirSync(dir).filter((f) => f.endsWith('.yml') || f.endsWith('.yaml'));
+    const dir = pjoin(new URL('../..', import.meta.url).pathname, 'registry', 'procedures');
+    const files = readdirSync(dir).filter((f) => f.endsWith('.json'));
     assert.ok(files.length >= 3, `expected ≥3 workflow templates, found ${files.length}`);
   });
 });
@@ -223,7 +223,7 @@ describe('agentic-hq: workflow templates', () => {
 describe('agentic-hq: VTT structured extraction (Workstream F)', () => {
   it('extracts two speakers from standup-sample.vtt', async () => {
     const { extractTranscript } = await import('../../lib/extractors/transcript.mjs');
-    const p = join(FIXTURE_HOME, '.cx', 'inbox', 'standup-sample.vtt');
+    const p = join(FIXTURE_HOME, '.construct', 'inbox', 'standup-sample.vtt');
     if (!existsSync(p)) return;
     const result = extractTranscript(p);
     assert.ok(result.structured, 'structured field present');

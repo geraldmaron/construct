@@ -8,7 +8,7 @@
  * self-contained Markdown report per scenario plus a cross-scenario summary.
  *
  * Isolation contract: every scenario gets its own tmpdir, its own HOME and
- * CX_HOME_OVERRIDE so no machine state leaks in or out, and its own git init.
+ * CONSTRUCT_HOME_OVERRIDE so no machine state leaks in or out, and its own git init.
  * Cleanup is this runner's job; on failure the tmpdir is preserved and its path
  * printed for forensics.
  *
@@ -40,28 +40,28 @@ export const SCENARIOS = {
   a: {
     id: 'a',
     title: 'Greenfield Next.js',
-    profile: 'rnd',
+    workspacePreset: 'rnd',
     reportFile: 'scenario-a-greenfield-nextjs.md',
     fixture: 'npx create-next-app (TypeScript, Tailwind, ESLint, app router, src dir)',
-    tier3Artifact: 'ADR for the routing-layer choice (cx-architect → cx-engineer → cx-reviewer)',
+    tier3Artifact: 'ADR for the routing-layer choice (architect → engineer → reviewer)',
     peer: 'A',
   },
   b: {
     id: 'b',
     title: 'Established noisy project',
-    profile: 'rnd',
+    workspacePreset: 'rnd',
     reportFile: 'scenario-b-established-noisy.md',
     fixture: 'real OSS TypeScript clone + pre-seeded noise (AGENTS.md, .cursor/, .claude/agents/foo.md, polluted .gitignore)',
-    tier3Artifact: 'PRD for a feature traced to the repo issue tracker (cx-product-manager → cx-researcher → cx-architect → cx-engineer)',
+    tier3Artifact: 'PRD for a feature traced to the repo issue tracker (product-manager → researcher → architect → engineer)',
     peer: 'B',
   },
   c: {
     id: 'c',
     title: 'Research project',
-    profile: 'research',
+    workspacePreset: 'research',
     reportFile: 'scenario-c-research-corpus.md',
     fixture: 'three primary-source PDFs + five markdown notes dropped into inbox/',
-    tier3Artifact: 'evidence brief synthesizing the corpus (cx-researcher → cx-evaluator)',
+    tier3Artifact: 'evidence brief synthesizing the corpus (researcher → cx-evaluator)',
     peer: 'C',
   },
 };
@@ -120,7 +120,7 @@ function renderSkeletonReport(scenario, counts) {
   lines.push(`- **Profile:** \`${scenario.profile}\``);
   lines.push(`- **Fixture:** ${scenario.fixture}`);
   lines.push(`- **Tier-3 artifact:** ${scenario.tier3Artifact}`);
-  lines.push(`- **Sterile env:** dedicated tmpdir, isolated \`HOME\` + \`CX_HOME_OVERRIDE\`, own \`git init\`.`);
+  lines.push(`- **Sterile env:** dedicated tmpdir, isolated \`HOME\` + \`CONSTRUCT_HOME_OVERRIDE\`, own \`git init\`.`);
   lines.push('');
   lines.push('## Verified inputs (read from source at render time)');
   lines.push('');

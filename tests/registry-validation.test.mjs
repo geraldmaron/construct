@@ -1,344 +1,123 @@
 /**
- * tests/registry-validation.test.mjs — Registry validator tests.
- *
- * Tests all 13 invariants with positive and negative cases.
- * Plus a smoke test against the real unified registry.
+ * tests/registry-validation.test.mjs — Canonical registry invariant tests.
  */
 
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it } from 'node:test';
-import { validate } from '../lib/registry/validator.mjs';
 import { loadRegistry } from '../lib/registry/loader.mjs';
+import { validate } from '../lib/registry/validator.mjs';
 
 const ROOT_DIR = path.resolve(import.meta.dirname, '..');
 
 function validRegistry() {
   return {
-    version: 2,
-    teams: {
-      'team-a': {
-        id: 'team-a',
-        name: 'Team A',
-        owner: 'role-a',
-        roles: ['role-a', 'role-b'],
-        decisionRights: ['decision-1'],
-        forbiddenDecisions: [],
-        escalationPath: ['role-a', 'orchestrator'],
-        charter: 'Team A charter.',
-        contact: {},
-        evidence: [],
-      },
+    schemaVersion: 1,
+    workspacePresets: {
+      rnd: { id: 'rnd', skills: [], procedures: [] },
     },
-    specialists: {
-      'cx-spec-a': {
-        name: 'spec-a',
-        team: 'team-a',
-        role: 'role-a',
-        modelTier: 'standard',
-      },
+    workerProfiles: {
+      engineer: { id: 'engineer', procedureAffinity: ['build'], capabilities: ['code.write'] },
+      reviewer: { id: 'reviewer', procedureAffinity: ['build'], capabilities: [] },
     },
-    contracts: {
-      'contract-1': {
-        id: 'contract-1',
-        producer: 'user',
-        consumer: 'cx-spec-a',
+    procedures: {
+      build: { id: 'build', workerProfiles: ['engineer', 'reviewer'] },
+    },
+    capabilities: {
+      'code.write': {
+        id: 'code.write',
+        ownerWorkerProfiles: ['engineer'],
+        requiredProcedures: ['build'],
+        contracts: {
+          review: { id: 'review', producer: 'engineer', consumer: 'reviewer' },
+        },
       },
     },
     policies: {
-      'decision-1': {
-        id: 'decision-1',
-        owner: 'team-a',
+      approval: {
+        id: 'approval',
+        ownerWorkerProfile: 'reviewer',
+        approvalWorkerProfiles: ['reviewer'],
+        vetoWorkerProfiles: [],
+        escalationWorkerProfiles: [],
+        requiredPolicies: [],
       },
     },
   };
 }
 
-describe('registry validator', () => {
-  describe('1. Schema compliance', () => {
-    it('passes with valid version and all required objects', () => {
-      const reg = validRegistry();
-      const result = validate(reg);
-      assert.equal(result.ok, true);
-    });
-
-    it('rejects invalid version', () => {
-      const reg = validRegistry();
-      reg.version = 1;
-      const result = validate(reg);
-      assert.equal(result.ok, false);
-      assert.ok(result.errors.some((e) => e.id === 'invalid-version'));
-    });
-
-    it('rejects missing teams object', () => {
-      const reg = validRegistry();
-      delete reg.teams;
-      const result = validate(reg);
-      assert.equal(result.ok, false);
-      assert.ok(result.errors.some((e) => e.id === 'missing-teams'));
-    });
-
-    it('rejects null input', () => {
-      const result = validate(null);
-      assert.equal(result.ok, false);
-      assert.ok(result.errors.some((e) => e.id === 'invalid-input'));
-    });
+describe('canonical registry validator', () => {
+  it('accepts a coherent registry', () => {
+    assert.equal(validate(validRegistry()).ok, true);
   });
 
-  describe('2. Team has owner specialist', () => {
-    it('passes when team owner specialist exists', () => {
-      const reg = validRegistry();
-      const result = validate(reg);
-      assert.equal(result.ok, true);
-    });
-
-    it('fails when team owner specialist is missing', () => {
-      const reg = validRegistry();
-      reg.specialists['cx-spec-a'].role = 'member';
-      const result = validate(reg);
-      assert.equal(result.ok, false);
-      assert.ok(result.errors.some((e) => e.id === 'team-no-owner-specialist'));
-    });
-
-    it('fails when team missing owner field', () => {
-      const reg = validRegistry();
-      delete reg.teams['team-a'].owner;
-      const result = validate(reg);
-      assert.equal(result.ok, false);
-      assert.ok(result.errors.some((e) => e.id === 'team-missing-owner'));
-    });
+  it('rejects null input', () => {
+    const result = validate(null);
+    assert.equal(result.ok, false);
+    assert.ok(result.errors.some((entry) => entry.id === 'invalid-input'));
   });
 
-  describe('3. Specialist team exists', () => {
-    it('passes when all specialists reference valid teams', () => {
-      const reg = validRegistry();
-      const result = validate(reg);
-      assert.equal(result.ok, true);
-    });
-
-    it('fails when specialist references unknown team', () => {
-      const reg = validRegistry();
-      reg.specialists['cx-spec-a'].team = 'unknown-team';
-      const result = validate(reg);
-      assert.equal(result.ok, false);
-      assert.ok(result.errors.some((e) => e.id === 'specialist-unknown-team'));
-    });
-
-    it('fails when specialist missing team', () => {
-      const reg = validRegistry();
-      delete reg.specialists['cx-spec-a'].team;
-      const result = validate(reg);
-      assert.equal(result.ok, false);
-      assert.ok(result.errors.some((e) => e.id === 'specialist-missing-team'));
-    });
+  it('rejects invalid schema version and missing canonical maps', () => {
+    const registry = validRegistry();
+    registry.schemaVersion = 3;
+    delete registry.workspacePresets;
+    const result = validate(registry);
+    assert.ok(result.errors.some((entry) => entry.id === 'invalid-schema-version'));
+    assert.ok(result.errors.some((entry) => entry.id === 'missing-workspacePresets'));
   });
 
-  describe('4. Every team has at least one specialist', () => {
-    it('passes when team has specialist', () => {
-      const reg = validRegistry();
-      const result = validate(reg);
-      assert.equal(result.ok, true);
+  for (const field of ['teams', 'groups', 'specialists', 'contracts', 'roles', 'personas', 'scopes', 'workflows']) {
+    it(`rejects retired peer field ${field}`, () => {
+      const registry = validRegistry();
+      registry[field] = {};
+      const result = validate(registry);
+      assert.ok(result.errors.some((entry) => entry.id === 'retired-registry-field' && entry.location === `#/${field}`));
     });
+  }
 
-    it('fails when team has no specialists', () => {
-      const reg = validRegistry();
-      delete reg.specialists['cx-spec-a'];
-      const result = validate(reg);
-      assert.equal(result.ok, false);
-      assert.ok(result.errors.some((e) => e.id === 'team-no-specialists'));
-    });
+  it('rejects unknown public fields', () => {
+    const registry = validRegistry();
+    registry.metadata = {};
+    assert.ok(validate(registry).errors.some((entry) => entry.id === 'unknown-registry-field'));
   });
 
-  describe('5. No name collisions', () => {
-    it('passes with unique specialist names', () => {
-      const reg = validRegistry();
-      const result = validate(reg);
-      assert.equal(result.ok, true);
-    });
-
-    it('fails with duplicate specialist names', () => {
-      const reg = validRegistry();
-      reg.specialists['cx-spec-b'] = { ...reg.specialists['cx-spec-a'], team: 'team-a' };
-      const result = validate(reg);
-      assert.equal(result.ok, false);
-      assert.ok(result.errors.some((e) => e.id === 'specialist-name-collision'));
-    });
+  it('rejects retired or unknown fields inside canonical entities', () => {
+    const registry = validRegistry();
+    registry.workerProfiles.engineer.team = 'engineering';
+    assert.ok(validate(registry).errors.some((entry) => entry.id === 'unknown-entity-field'));
   });
 
-  describe('6. Decision right has policy', () => {
-    it('passes when decision right has corresponding policy', () => {
-      const reg = validRegistry();
-      const result = validate(reg);
-      assert.equal(result.ok, true);
-    });
-
-    it('warns when decision right has no policy', () => {
-      const reg = validRegistry();
-      reg.teams['team-a'].decisionRights = ['decision-1', 'nonexistent-decision'];
-      const result = validate(reg);
-      assert.ok(result.warnings.some((w) => w.id === 'decision-no-policy'));
-    });
+  it('rejects prefixed Worker Profile ids', () => {
+    const registry = validRegistry();
+    const retiredId = `${'cx'}-engineer`;
+    registry.workerProfiles[retiredId] = { ...registry.workerProfiles.engineer, id: retiredId };
+    assert.ok(validate(registry).errors.some((entry) => entry.id === 'prefixed-worker-profile-id'));
   });
 
-  describe('7. Forbidden decisions are valid', () => {
-    it('passes when forbidden decisions are recognized', () => {
-      const reg = validRegistry();
-      reg.teams['team-a'].forbiddenDecisions = ['decision-1'];
-      const result = validate(reg);
-      assert.equal(result.ok, true);
-    });
-
-    it('warns when forbidden decision is not recognized', () => {
-      const reg = validRegistry();
-      reg.teams['team-a'].forbiddenDecisions = ['nonexistent-decision'];
-      const result = validate(reg);
-      assert.ok(result.warnings.some((w) => w.id === 'forbidden-decision-invalid'));
-    });
+  it('rejects mismatched map keys and ids', () => {
+    const registry = validRegistry();
+    registry.procedures.build.id = 'other';
+    assert.ok(validate(registry).errors.some((entry) => entry.id === 'registry-id-mismatch'));
   });
 
-  describe('8. Escalation path valid', () => {
-    it('passes with valid escalation path', () => {
-      const reg = validRegistry();
-      const result = validate(reg);
-      assert.equal(result.ok, true);
-    });
-
-    it('fails with invalid role in escalation path', () => {
-      const reg = validRegistry();
-      reg.teams['team-a'].escalationPath = ['nonexistent-role', 'orchestrator'];
-      const result = validate(reg);
-      assert.equal(result.ok, false);
-      assert.ok(result.errors.some((e) => e.id === 'escalation-path-invalid-role'));
-    });
-
-    it('allows orchestrator in escalation path', () => {
-      const reg = validRegistry();
-      reg.teams['team-a'].escalationPath = ['role-a', 'orchestrator'];
-      const result = validate(reg);
-      assert.equal(result.ok, true);
-    });
+  it('rejects dangling Procedure, Capability, contract-party, and Policy references', () => {
+    const registry = validRegistry();
+    registry.workerProfiles.engineer.procedureAffinity = ['missing'];
+    registry.procedures.build.workerProfiles = ['missing'];
+    registry.capabilities['code.write'].ownerWorkerProfiles = ['missing'];
+    registry.capabilities['code.write'].contracts.review.consumer = 'missing';
+    registry.policies.approval.requiredPolicies = ['missing'];
+    const ids = new Set(validate(registry).errors.map((entry) => entry.id));
+    assert.ok(ids.has('worker-profile-unknown-procedure'));
+    assert.ok(ids.has('procedure-unknown-worker-profile'));
+    assert.ok(ids.has('capability-unknown-worker-profile'));
+    assert.ok(ids.has('capability-contract-unknown-consumer'));
+    assert.ok(ids.has('policy-unknown-policy'));
   });
 
-  describe('9. No circular escalation', () => {
-    it('passes with linear escalation path', () => {
-      const reg = validRegistry();
-      const result = validate(reg);
-      assert.equal(result.ok, true);
-    });
-
-    it('fails with circular escalation path', () => {
-      const reg = validRegistry();
-      reg.teams['team-a'].escalationPath = ['role-a', 'role-a'];
-      const result = validate(reg);
-      assert.equal(result.ok, false);
-      assert.ok(result.errors.some((e) => e.id === 'circular-escalation'));
-    });
-  });
-
-  describe('10. Contract parties exist', () => {
-    it('passes when contract parties are valid', () => {
-      const reg = validRegistry();
-      const result = validate(reg);
-      assert.equal(result.ok, true);
-    });
-
-    it('fails with unknown producer', () => {
-      const reg = validRegistry();
-      reg.contracts['contract-1'].producer = 'cx-unknown';
-      const result = validate(reg);
-      assert.equal(result.ok, false);
-      assert.ok(result.errors.some((e) => e.id === 'contract-unknown-producer'));
-    });
-
-    it('fails with unknown consumer', () => {
-      const reg = validRegistry();
-      reg.contracts['contract-1'].consumer = 'cx-unknown';
-      const result = validate(reg);
-      assert.equal(result.ok, false);
-      assert.ok(result.errors.some((e) => e.id === 'contract-unknown-consumer'));
-    });
-
-    it('allows user and construct as parties', () => {
-      const reg = validRegistry();
-      reg.contracts['contract-2'] = { id: 'contract-2', producer: 'construct', consumer: 'user' };
-      const result = validate(reg);
-      assert.equal(result.ok, true);
-    });
-  });
-
-  describe('11. Contract team boundaries valid', () => {
-    it('passes when team boundaries reference valid teams', () => {
-      const reg = validRegistry();
-      reg.contracts['contract-1'].teamBoundary = {
-        crosses: true,
-        producerTeam: 'team-a',
-        consumerTeam: 'team-a',
-      };
-      const result = validate(reg);
-      assert.equal(result.ok, true);
-    });
-
-    it('fails when team boundary references unknown team', () => {
-      const reg = validRegistry();
-      reg.contracts['contract-1'].teamBoundary = {
-        crosses: true,
-        producerTeam: 'unknown-team',
-        consumerTeam: 'team-a',
-      };
-      const result = validate(reg);
-      assert.equal(result.ok, false);
-      assert.ok(result.errors.some((e) => e.id === 'contract-unknown-team'));
-    });
-  });
-
-  describe('12. Policy team owner exists', () => {
-    it('passes when policy owner is valid team', () => {
-      const reg = validRegistry();
-      const result = validate(reg);
-      assert.equal(result.ok, true);
-    });
-
-    it('fails when policy owner is unknown team', () => {
-      const reg = validRegistry();
-      reg.policies['decision-1'].owner = 'unknown-team';
-      const result = validate(reg);
-      assert.equal(result.ok, false);
-      assert.ok(result.errors.some((e) => e.id === 'policy-unknown-owner'));
-    });
-
-    it('allows orchestrator as owner', () => {
-      const reg = validRegistry();
-      reg.policies['decision-1'].owner = 'orchestrator';
-      const result = validate(reg);
-      assert.equal(result.ok, true);
-    });
-  });
-
-  describe('13. Policy approver teams exist', () => {
-    it('passes when approvers are valid teams', () => {
-      const reg = validRegistry();
-      reg.policies['decision-1'].requiresApprovalFrom = ['team-a'];
-      const result = validate(reg);
-      assert.equal(result.ok, true);
-    });
-
-    it('fails when approver is unknown team', () => {
-      const reg = validRegistry();
-      reg.policies['decision-1'].requiresApprovalFrom = ['unknown-team'];
-      const result = validate(reg);
-      assert.equal(result.ok, false);
-      assert.ok(result.errors.some((e) => e.id === 'policy-unknown-approver'));
-    });
-  });
-
-  describe('smoke test: real modular registry', () => {
-    it('validates real modular registry successfully', () => {
-      const reg = loadRegistry({ rootDir: ROOT_DIR });
-
-      const result = validate(reg);
-      assert.equal(result.ok, true, `Real registry has errors: ${result.errors.map((e) => `${e.id}: ${e.message}`).join('; ')}`);
-      assert.ok(result.errors.length === 0, 'No errors should be present');
-    });
+  it('validates the assembled checked-in registry', () => {
+    const registry = loadRegistry({ rootDir: ROOT_DIR });
+    const result = validate(registry);
+    assert.equal(result.ok, true, result.errors.map((entry) => `${entry.id}: ${entry.message}`).join('\n'));
   });
 });

@@ -1,0 +1,20 @@
+{
+  "id": "design-approval",
+  "ownerWorkerProfile": "product-manager",
+  "description": "Product group approves design before implementation begins.",
+  "enforcement": "hard",
+  "mode": "approval",
+  "approvalWorkerProfiles": [],
+  "requiredPolicies": [],
+  "vetoWorkerProfiles": [
+    "architect"
+  ],
+  "escalationWorkerProfiles": [
+    "orchestrator"
+  ],
+  "governs": [
+    "design-approval"
+  ],
+  "conditions": [],
+  "evidence": []
+}

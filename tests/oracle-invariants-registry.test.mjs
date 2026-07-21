@@ -7,8 +7,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { INVARIANTS, runInvariants } from '../lib/oracle/invariants/registry.mjs';
+import { INVARIANTS, LAYER1_INVARIANTS, LAYER2_INVARIANTS, runInvariants } from '../lib/oracle/invariants/registry.mjs';
 import * as closedBeadShaReachable from '../lib/oracle/invariants/closed-bead-sha-reachable.mjs';
+import * as dueDetectionDoesNotEqualCompletion from '../lib/oracle/invariants/due-detection-does-not-equal-completion.mjs';
 
 function stubInvariant(id, status) {
   return { id, layer: 1, description: `stub ${id}`, check: async () => ({ status }) };
@@ -27,6 +28,12 @@ test('INVARIANTS is a frozen array of {id, layer, description, check} definition
 
 test('the headline invariant is registered', () => {
   assert.ok(INVARIANTS.includes(closedBeadShaReachable));
+});
+
+test('Layer 2 invariants are registered separately and included in INVARIANTS', () => {
+  assert.ok(LAYER2_INVARIANTS.includes(dueDetectionDoesNotEqualCompletion));
+  assert.ok(INVARIANTS.includes(dueDetectionDoesNotEqualCompletion));
+  assert.equal(LAYER1_INVARIANTS.length + LAYER2_INVARIANTS.length, INVARIANTS.length);
 });
 
 test('runInvariants: all passed rolls up to overall passed', async () => {

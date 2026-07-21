@@ -16,9 +16,9 @@ import { spawnSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 import { parseTapFailedFiles } from '../../scripts/graph-impact-shadow.mjs';
-import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 function runTap(fixtureDir, files) {
   // Strip NODE_TEST_CONTEXT/NODE_TEST_WORKER_ID: this file itself runs under

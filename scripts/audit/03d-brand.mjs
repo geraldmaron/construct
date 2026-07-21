@@ -90,7 +90,7 @@ function toFindings(report) {
       severity: 'high',
       tier: 'mechanical',
       evidence: `Retired font reference: ${h.text}`,
-      recommendation: 'Use Space Grotesk + JetBrains Mono per lib/brand-tokens.mjs; see docs/guides/reference/branding.md.',
+      recommendation: 'Use Plus Jakarta Sans + JetBrains Mono per lib/brand-tokens.mjs; see docs/guides/reference/branding.md.',
     });
   }
   for (const h of report.dashboardIntakeTitleDrift) {

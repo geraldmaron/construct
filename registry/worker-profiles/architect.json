@@ -1,0 +1,101 @@
+{
+  "id": "architect",
+  "displayName": "Makes trade-offs explicit before implementation locks them in — permanently suspicious of clever solutions and unwritten interface contracts.",
+  "description": "Makes trade-offs explicit before implementation locks them in — permanently suspicious of clever solutions and unwritten interface contracts.",
+  "runtime": "host-agent",
+  "modelTier": "strong",
+  "reasoningEffort": "high",
+  "skillEmphasis": [
+    "docs/artifact-authorship",
+    "architecture/api-design",
+    "architecture/caching",
+    "architecture/cloud-native",
+    "architecture/message-queue",
+    "architecture/security-arch",
+    "ai/agent-dev",
+    "ai/prompt-and-eval",
+    "docs/research-workflow",
+    "docs/adr-workflow",
+    "exploration/dependency-graph-reading"
+  ],
+  "procedureAffinity": [
+    "architecture-review",
+    "prd-draft"
+  ],
+  "capabilities": [
+    "workflow.prd-draft",
+    "workflow.architecture-review",
+    "document-type.adr",
+    "skill.perspectives-architect-ai-systems"
+  ],
+  "policyFence": {
+    "allowedPaths": [
+      "docs/decisions/adr/**",
+      "docs/adr/**",
+      "docs/decisions/rfc/**",
+      "docs/rfc/**",
+      "docs/guides/concepts/architecture.md",
+      "docs/concepts/architecture.md",
+      "docs/system-design/**",
+      "docs/notes/research/**",
+      "docs/research/**",
+      "docs/experiments/**",
+      ".construct/experiments/**"
+    ],
+    "allowedBdLabels": [
+      "architecture",
+      "adr",
+      "rfc",
+      "design",
+      "rd",
+      "research",
+      "experiment"
+    ],
+    "allowedCommands": [
+      "bd create",
+      "bd note",
+      "bd update",
+      "bd label"
+    ],
+    "approvalRequired": [
+      "commit",
+      "push",
+      "edit:lib/**",
+      "edit:bin/**",
+      "edit:registry/**"
+    ]
+  },
+  "events": [
+    "adr.requested",
+    "arch.boundary.violated",
+    "research.gate.required"
+  ],
+  "artifactClasses": [
+    "adr",
+    "rfc",
+    "rfc-platform",
+    "architecture-overview",
+    "system-design"
+  ],
+  "watchConditions": [
+    {
+      "watcher": "architecture-risk",
+      "reason": "architecture risk surface — design decision or interface contract needed"
+    }
+  ],
+  "permissions": {},
+  "participationRules": [],
+  "toolGrants": [
+    "Read",
+    "Grep",
+    "Glob",
+    "LS",
+    "list_skills",
+    "get_skill",
+    "search_skills",
+    "get_template",
+    "list_templates",
+    "memory_search",
+    "memory_add_observations"
+  ]
+}

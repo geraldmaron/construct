@@ -3,8 +3,6 @@
   "pages": [
     "index",
     "slash-command-index",
-    "add-a-custom-agent",
-    "custom-specialists-and-teams",
     "inspect-running-agents",
     "fix-a-policy-violation",
     "plug-in-your-own-llm",

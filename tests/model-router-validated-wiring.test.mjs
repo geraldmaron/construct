@@ -6,7 +6,7 @@
  * through the validated-model subsystem in lib/model-router.mjs
  * (resolveValidatedModel/recommendTierModel/formatModelResolutionNotices/
  * isModelAvailable, plus RETIRED_MODEL_SLUGS), so a retired slug pinned via
- * CX_MODEL_STANDARD surfaces a named warning instead of resolving silently,
+ * CONSTRUCT_MODEL_STANDARD surfaces a named warning instead of resolving silently,
  * and that every exported symbol in model-router.mjs is reachable from
  * outside the file.
  */
@@ -19,7 +19,7 @@ import test from 'node:test';
 import { resolveEmbeddedModel } from '../lib/embedded-contract/model-resolve.mjs';
 
 test('retired slug pinned via env yields a user-visible warning naming the slug', () => {
-  const env = { CX_MODEL_STANDARD: 'anthropic/claude-3.5-sonnet', ANTHROPIC_API_KEY: 'sk-test' };
+  const env = { CONSTRUCT_MODEL_STANDARD: 'anthropic/claude-3.5-sonnet', ANTHROPIC_API_KEY: 'sk-test' };
   const r = resolveEmbeddedModel({ requestedTier: 'standard' }, { env });
   assert.ok(
     r.warnings.some((w) => w.includes('anthropic/claude-3.5-sonnet')),
@@ -29,7 +29,7 @@ test('retired slug pinned via env yields a user-visible warning naming the slug'
 });
 
 test('a valid pin resolves unchanged with no warning', () => {
-  const env = { CX_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6', ANTHROPIC_API_KEY: 'sk-test' };
+  const env = { CONSTRUCT_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6', ANTHROPIC_API_KEY: 'sk-test' };
   const r = resolveEmbeddedModel({ requestedTier: 'standard' }, { env });
   assert.equal(r.warnings.length, 0);
   assert.equal(r.selectedModel, 'anthropic/claude-sonnet-4-6');

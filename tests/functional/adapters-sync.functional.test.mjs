@@ -14,7 +14,7 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 test('resolveAdapterHosts forceAll returns every host in HOST_ID_MAP', () => {
   // A host present in HOST_ID_MAP but missing from forceAll's return value
   // gets its adapter files deleted as "stale" on any contributor machine that
-  // doesn't have that host installed (sync-specialists.mjs prunes whatever
+  // doesn't have that host installed (sync-worker-profiles.mjs prunes whatever
   // isn't in the --hosts= selection) — this must stay exhaustive, not a
   // spot-check of a few names, or an incident like the missing 'copilot'
   // entry (which deleted the committed .github/agents/construct.agent.md)

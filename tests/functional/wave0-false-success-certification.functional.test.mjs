@@ -70,18 +70,18 @@ function captureOutput(fn) {
 }
 
 function withHomeOverride(root, fn) {
-  const prior = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = root;
+  const prior = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = root;
   try {
     return fn();
   } finally {
-    if (prior === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prior;
+    if (prior === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prior;
   }
 }
 
 test('cross-surface smoke: forced script-only demo, malformed Docling message, and malformed embed manifest all surface honestly in the same session', async (t) => {
-  await t.test('demo: script-only fallback carries a status discriminator, not a bare ok:true', async () => {
+  await t.test('demo: script-only fallback carries a state discriminator, not a bare ok:true', async () => {
     const dir = freshDir('w0-cert-demo-');
     const scriptsDir = path.join(dir, '.construct', 'demos', 'scripts');
     fs.mkdirSync(scriptsDir, { recursive: true });
@@ -94,9 +94,8 @@ test('cross-surface smoke: forced script-only demo, malformed Docling message, a
     const output = { write: () => {}, isTTY: false };
     const result = await runDemoGuided('cert-demo', { cwd: dir, repoRoot: REPO, output });
 
-    assert.equal(result.ok, true, 'the operation itself did not error');
-    assert.notEqual(result.status, undefined, 'a script-only result must carry a status discriminator');
-    assert.equal(result.status, 'script-only');
+    assert.equal(result.ok, false, 'script-only is not a recording success');
+    assert.equal(result.state, 'script-only', 'feat demo-state vocabulary tags script fallback honestly');
     assert.equal(result.artifactPath, undefined, 'no artifact was produced — ok:true alone would be a false success');
   });
 
@@ -118,6 +117,7 @@ test('cross-surface smoke: forced script-only demo, malformed Docling message, a
   await t.test('graph build: a malformed embed manifest surfaces a build error, not unconditional success', () => {
     const root = freshDir('w0-cert-graph-root-');
     fs.mkdirSync(path.join(root, 'specialists', 'org'), { recursive: true });
+    fs.cpSync(path.join(REPO, 'registry'), path.join(root, 'registry'), { recursive: true });
     const project = freshDir('w0-cert-graph-proj-');
 
     writeProjectEmbedManifest('cert-broken-preset', {

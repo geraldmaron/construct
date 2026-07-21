@@ -29,17 +29,17 @@ test("opencode construct micro-prompt carries the few-shot example, within the w
     mkdirSync(join(sandbox.root, ".claude", "agents"), { recursive: true });
     writeFileSync(join(sandbox.root, ".claude", "settings.json"), JSON.stringify({ mcpServers: {} }));
 
-    // CX_HOME_OVERRIDE pinned alongside the sandboxed HOME: lib/paths.mjs's
-    // homeDir()/constructDir() check CX_HOME_OVERRIDE first, so any state-root
+    // CONSTRUCT_HOME_OVERRIDE pinned alongside the sandboxed HOME: lib/paths.mjs's
+    // homeDir()/constructDir() check CONSTRUCT_HOME_OVERRIDE first, so any state-root
     // read (ADR-0066: lib/state-root.mjs) inside this subprocess resolves under
     // the sandbox rather than falling back to a HOME-propagation assumption.
-    // No CX_TOOLKIT_DIR: sync-specialists.mjs derives its own root from
-    // import.meta.dirname and self-populates CX_TOOLKIT_DIR from it when
+    // No CONSTRUCT_TOOLKIT_DIR: sync-worker-profiles.mjs derives its own root from
+    // import.meta.dirname and self-populates CONSTRUCT_TOOLKIT_DIR from it when
     // unset; supplying repoRoot here would also feed constructDir() and
     // redirect the state root into the repo instead of the sandbox above.
     // No CONSTRUCT_SYNC_FORCE: an over-cap prompt would exit non-zero here.
-    const r = spawnSync(process.execPath, [join(repoRoot, "scripts", "sync-specialists.mjs"), "--global"], {
-      env: { ...sandbox.env, CX_HOME_OVERRIDE: sandbox.root, CONSTRUCT_SYNC_HOSTS: "opencode" },
+    const r = spawnSync(process.execPath, [join(repoRoot, "scripts", "sync-worker-profiles.mjs"), "--global"], {
+      env: { ...sandbox.env, CONSTRUCT_HOME_OVERRIDE: sandbox.root, CONSTRUCT_SYNC_HOSTS: "opencode" },
       encoding: "utf8",
       timeout: 60_000,
     });

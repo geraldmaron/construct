@@ -12,7 +12,7 @@
     "kind": "binary-on-path",
     "candidates": ["whisper-cli", "whisper-cpp", "main"],
     "runtimeDirEnv": "CONSTRUCT_WHISPER_RUNTIME_DIR",
-    "defaultRuntimeDir": ".cx/runtime/whisper",
+    "defaultRuntimeDir": ".construct/runtime/whisper",
     "cachedBinary": "bin/whisper-cli",
     "description": "which(1) lookup for whisper-cli/whisper-cpp/main on PATH, falling back to a cached binary at <runtimeDir>/bin/whisper-cli."
   },

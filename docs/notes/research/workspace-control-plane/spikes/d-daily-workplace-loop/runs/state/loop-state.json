@@ -1,0 +1,24 @@
+{
+  "fingerprint": "44fe78ef729c128507d7d7e1656f6b08717835d8e4842f216a630ae8a644dd65",
+  "runNumber": 1,
+  "lastRunAt": "2026-07-17",
+  "signals": [
+    {
+      "id": "SIG-STALE-OBJ-2",
+      "type": "stale_or_overdue_objective"
+    },
+    {
+      "id": "SIG-ISSUE-GH-101",
+      "type": "unaddressed_issue"
+    },
+    {
+      "id": "SIG-GAP-SLACK-501",
+      "type": "decision_propagation_gap"
+    },
+    {
+      "id": "SIG-RISK-GH-101-unowned",
+      "type": "unowned_blocker_risk"
+    }
+  ],
+  "lastProposalId": "PROP-1"
+}

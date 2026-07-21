@@ -5,4 +5,4 @@ rule: drive
 hook_event: Stop
 condition: drive_state.active == true AND drive_state.canStop != true
 action: block
-message: "Drive mode active — unmet criteria remain. Record evidence in .cx/drive-state.json to unblock."
+message: "Drive mode active — unmet criteria remain. Record evidence in .construct/drive-state.json to unblock."

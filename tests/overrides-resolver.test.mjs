@@ -36,31 +36,32 @@ afterEach(() => {
 });
 
 function writeOriginal(category, name, content, opts = {}) {
-  const dir = path.join(projectRoot, opts.dir || category);
+  const defaultDir = category === 'worker-profiles' ? path.join('registry', 'worker-profiles', 'prompts') : category;
+  const dir = path.join(projectRoot, opts.dir || defaultDir);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, opts.filename || `${name}.md`), content);
 }
 
 describe('resolveOverride', () => {
   it('returns the original when no override exists', () => {
-    writeOriginal('personas', 'construct', '# Construct persona');
-    const r = resolveOverride(projectRoot, 'personas', 'construct');
+    writeOriginal('worker-profiles', 'construct', '# Construct Worker Profile');
+    const r = resolveOverride(projectRoot, 'worker-profiles', 'construct');
     assert.equal(r.source, 'original');
     assert.equal(r.overrideExists, false);
-    assert.ok(r.path.endsWith('personas/construct.md'));
+    assert.ok(r.path.endsWith('registry/worker-profiles/prompts/construct.md'));
   });
 
   it('returns the override when one exists', () => {
-    writeOriginal('personas', 'construct', '# Construct persona');
-    applyEdit(projectRoot, 'personas', 'construct', '# Atlas persona');
-    const r = resolveOverride(projectRoot, 'personas', 'construct');
+    writeOriginal('worker-profiles', 'construct', '# Construct Worker Profile');
+    applyEdit(projectRoot, 'worker-profiles', 'construct', '# Atlas Worker Profile');
+    const r = resolveOverride(projectRoot, 'worker-profiles', 'construct');
     assert.equal(r.source, 'override');
     assert.equal(r.overrideExists, true);
-    assert.ok(r.path.includes('.construct/personas/construct.md'));
+    assert.ok(r.path.includes('.construct/worker-profiles/construct.md'));
   });
 
   it('reports source=missing when neither original nor override exists', () => {
-    const r = resolveOverride(projectRoot, 'personas', 'phantom');
+    const r = resolveOverride(projectRoot, 'worker-profiles', 'phantom');
     assert.equal(r.source, 'missing');
     assert.equal(r.path, null);
   });
@@ -84,38 +85,38 @@ describe('resolveOverride', () => {
 
 describe('applyEdit', () => {
   it('writes the override file and returns the path it wrote', () => {
-    writeOriginal('personas', 'construct', '# original');
-    const r = applyEdit(projectRoot, 'personas', 'construct', '# changed');
+    writeOriginal('worker-profiles', 'construct', '# original');
+    const r = applyEdit(projectRoot, 'worker-profiles', 'construct', '# changed');
     assert.ok(fs.existsSync(r.overridePath));
     assert.equal(fs.readFileSync(r.overridePath, 'utf8'), '# changed');
     assert.equal(r.wrote, '# changed'.length);
   });
 
   it('snapshots the prior content to .construct/backups/<category>/<name>.<iso>.<ext>', () => {
-    writeOriginal('personas', 'construct', '# original');
-    const r = applyEdit(projectRoot, 'personas', 'construct', '# changed');
+    writeOriginal('worker-profiles', 'construct', '# original');
+    const r = applyEdit(projectRoot, 'worker-profiles', 'construct', '# changed');
     assert.ok(r.backupPath, 'first edit must back up the original');
     assert.equal(fs.readFileSync(r.backupPath, 'utf8'), '# original');
-    assert.match(r.backupPath, /\.construct\/backups\/personas\/construct\..+\.md$/);
+    assert.match(r.backupPath, /\.construct\/backups\/worker-profiles\/construct\..+\.md$/);
   });
 
   it('snapshots subsequent edits from the override, not the original', () => {
-    writeOriginal('personas', 'construct', '# original');
-    applyEdit(projectRoot, 'personas', 'construct', '# v1');
-    const r2 = applyEdit(projectRoot, 'personas', 'construct', '# v2');
+    writeOriginal('worker-profiles', 'construct', '# original');
+    applyEdit(projectRoot, 'worker-profiles', 'construct', '# v1');
+    const r2 = applyEdit(projectRoot, 'worker-profiles', 'construct', '# v2');
     assert.ok(r2.backupPath, 'second edit must back up v1');
     assert.equal(fs.readFileSync(r2.backupPath, 'utf8'), '# v1');
   });
 
   it('does not write a backup when content is identical', () => {
-    writeOriginal('personas', 'construct', '# same');
-    const r = applyEdit(projectRoot, 'personas', 'construct', '# same');
+    writeOriginal('worker-profiles', 'construct', '# same');
+    const r = applyEdit(projectRoot, 'worker-profiles', 'construct', '# same');
     assert.equal(r.backupPath, null);
   });
 
   it('creates .construct/.gitignore excluding backups/ on first apply', () => {
-    writeOriginal('personas', 'construct', '# x');
-    applyEdit(projectRoot, 'personas', 'construct', '# y');
+    writeOriginal('worker-profiles', 'construct', '# x');
+    applyEdit(projectRoot, 'worker-profiles', 'construct', '# y');
     const gi = fs.readFileSync(path.join(projectRoot, '.construct', '.gitignore'), 'utf8');
     assert.match(gi, /^backups\/$/m);
   });
@@ -123,35 +124,35 @@ describe('applyEdit', () => {
 
 describe('listBackups + restoreFromBackup', () => {
   it('lists backups newest-first by mtime', async () => {
-    writeOriginal('personas', 'construct', '# v0');
-    applyEdit(projectRoot, 'personas', 'construct', '# v1');
+    writeOriginal('worker-profiles', 'construct', '# v0');
+    applyEdit(projectRoot, 'worker-profiles', 'construct', '# v1');
     await new Promise((r) => setTimeout(r, 10));
-    applyEdit(projectRoot, 'personas', 'construct', '# v2');
-    const backups = listBackups(projectRoot, 'personas', 'construct');
+    applyEdit(projectRoot, 'worker-profiles', 'construct', '# v2');
+    const backups = listBackups(projectRoot, 'worker-profiles', 'construct');
     assert.equal(backups.length, 2);
     assert.ok(backups[0].mtimeMs >= backups[1].mtimeMs);
   });
 
   it('restoreFromBackup replaces the current override with the backup content', async () => {
-    writeOriginal('personas', 'construct', '# v0');
-    applyEdit(projectRoot, 'personas', 'construct', '# v1');
+    writeOriginal('worker-profiles', 'construct', '# v0');
+    applyEdit(projectRoot, 'worker-profiles', 'construct', '# v1');
     await new Promise((r) => setTimeout(r, 20));
-    applyEdit(projectRoot, 'personas', 'construct', '# v2');
-    const backups = listBackups(projectRoot, 'personas', 'construct');
+    applyEdit(projectRoot, 'worker-profiles', 'construct', '# v2');
+    const backups = listBackups(projectRoot, 'worker-profiles', 'construct');
     const oldest = backups[backups.length - 1];
-    restoreFromBackup(projectRoot, 'personas', 'construct', oldest.filename);
-    const current = readResolved(projectRoot, 'personas', 'construct');
+    restoreFromBackup(projectRoot, 'worker-profiles', 'construct', oldest.filename);
+    const current = readResolved(projectRoot, 'worker-profiles', 'construct');
     assert.equal(current.content, '# v0');
   });
 });
 
 describe('pruneBackups', () => {
   it('deletes backups older than the cap and keeps newer ones', () => {
-    writeOriginal('personas', 'construct', '# v0');
-    applyEdit(projectRoot, 'personas', 'construct', '# v1');
-    const backups = listBackups(projectRoot, 'personas', 'construct');
+    writeOriginal('worker-profiles', 'construct', '# v0');
+    applyEdit(projectRoot, 'worker-profiles', 'construct', '# v1');
+    const backups = listBackups(projectRoot, 'worker-profiles', 'construct');
     const fresh = backups[0].path;
-    const oldDir = path.join(projectRoot, '.construct', 'backups', 'personas');
+    const oldDir = path.join(projectRoot, '.construct', 'backups', 'worker-profiles');
     const stalePath = path.join(oldDir, 'construct.stale.md');
     fs.writeFileSync(stalePath, '# stale');
     const sevenYearsAgo = Date.now() - 7 * 365 * 24 * 60 * 60 * 1000;
@@ -178,11 +179,11 @@ describe('describeOverrides', () => {
   });
 
   it('lists every override file per category', () => {
-    writeOriginal('personas', 'construct', '# x');
-    applyEdit(projectRoot, 'personas', 'construct', '# y');
-    applyEdit(projectRoot, 'personas', 'cx-explorer', '# z');
+    writeOriginal('worker-profiles', 'construct', '# x');
+    applyEdit(projectRoot, 'worker-profiles', 'construct', '# y');
+    applyEdit(projectRoot, 'worker-profiles', 'cx-explorer', '# z');
     const summary = describeOverrides(projectRoot);
-    assert.ok(summary.personas.includes('construct.md'));
-    assert.ok(summary.personas.includes('cx-explorer.md'));
+    assert.ok(summary['worker-profiles'].includes('construct.md'));
+    assert.ok(summary['worker-profiles'].includes('cx-explorer.md'));
   });
 });

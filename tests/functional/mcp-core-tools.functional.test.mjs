@@ -9,9 +9,8 @@
  *      and returns a result envelope (a tool-level error is still a valid
  *      round-trip; a wedged tool can't hang the suite because the per-call
  *      timeout is pinned low).
- *   3. construct_call reaches a long-tail tool by name (list_teams) and returns
- *      real data from the unified registry — the end-to-end dispatch path the
- *      P0 list_teams/get_team fix restored.
+ *   3. construct_call reaches a canonical registry tool by name and returns
+ *      real worker-profile data from the unified registry.
  *
  * @enforces ADR-0022
  */
@@ -50,7 +49,7 @@ function mcpClient(home) {
     env: {
       ...process.env,
       HOME: home,
-      CX_TOOLKIT_DIR: REPO,
+      CONSTRUCT_TOOLKIT_DIR: REPO,
       CONSTRUCT_MCP_TOOL_TIMEOUT_MS: '8000',
     },
     stdio: ['pipe', 'pipe', 'pipe'],
@@ -114,14 +113,13 @@ test('Construct MCP stdio server: core surface + per-tool round-trip + construct
     }
 
     const ccId = ++id;
-    c.send({ jsonrpc: '2.0', id: ccId, method: 'tools/call', params: { name: 'construct_call', arguments: { tool: 'list_teams', args: {} } } });
+    c.send({ jsonrpc: '2.0', id: ccId, method: 'tools/call', params: { name: 'construct_call', arguments: { tool: 'list_worker_profiles', args: {} } } });
     const ccFrame = await c.waitFor(ccId);
     const ccText = envelopeText(ccFrame);
     assert.ok(typeof ccText === 'string', 'construct_call must return a result envelope');
     const ccPayload = JSON.parse(ccText);
-    assert.equal(ccPayload.error, undefined, `construct_call -> list_teams must not error: ${ccText.slice(0, 200)}`);
-    const teams = Array.isArray(ccPayload) ? ccPayload : (ccPayload.teams ?? ccPayload.result ?? []);
-    assert.ok(Array.isArray(teams) && teams.length > 0, 'list_teams must return teams from the unified registry');
+    assert.equal(ccPayload.error, undefined, `construct_call -> list_worker_profiles must not error: ${ccText.slice(0, 200)}`);
+    assert.ok(Array.isArray(ccPayload.workerProfiles) && ccPayload.workerProfiles.length > 0, 'list_worker_profiles must return canonical registry data');
   } finally {
     c.kill();
     rmTmpDir(home);

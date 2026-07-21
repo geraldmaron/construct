@@ -32,7 +32,7 @@ function sandbox() {
   const home = join(root, 'home');
   const project = join(root, 'project');
   mkdirSync(join(home, '.config', 'construct'), { recursive: true });
-  mkdirSync(join(project, '.cx'), { recursive: true });
+  mkdirSync(join(project, '.construct'), { recursive: true });
   writeFileSync(join(home, '.config', 'construct', 'config.env'), 'CONSTRUCT_INSTANCE_ID=from-config\n', 'utf8');
   return {
     home,
@@ -51,7 +51,7 @@ test('CLI: the shadow warning names the shell value as the winner, matching the 
       env: sterileSpawnEnv({
         HOME: env.home,
         USERPROFILE: env.home,
-        CX_HOME_OVERRIDE: env.home,
+        CONSTRUCT_HOME_OVERRIDE: env.home,
         XDG_CONFIG_HOME: join(env.home, '.config'),
         CI: 'true',
         CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',

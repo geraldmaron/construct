@@ -20,7 +20,7 @@ construct init --docs-preset=lean [path]                  # docs-only lean prese
 
 ## What it creates
 ```
-.cx/                    ← agent session memory and decisions
+.construct/                    ← agent session memory and decisions
   context.md
   context.json
   workflow.json
@@ -34,12 +34,12 @@ docs/                   ← human-readable project documentation
 ```
 
 ## After init
-1. Treat `.cx/context.md`, `.cx/context.json`, `.cx/workflow.json`, `docs/README.md`, and `docs/architecture.md` as required project state.
+1. Treat `.construct/context.md`, `.construct/context.json`, `.construct/workflow.json`, `docs/README.md`, and `docs/architecture.md` as required project state.
 2. Read them at the start of every meaningful session.
 3. Update them whenever work changes active reality: decisions, workflow phase, architecture assumptions, or documentation contract.
 4. Run `construct status` to review the project's current state (workflow phase, core docs, uncommitted changes).
 
-## For cx-docs-keeper
+## For operations (docs overlay)
 At session start, check the core docs set. If missing, suggest running `construct init --docs-preset=lean` (or `construct init --docs-preset=full` for the full lane set).
 At session end, update the affected core docs so the next LLM session inherits current project reality.
 
@@ -47,10 +47,16 @@ At session end, update the affected core docs so the next LLM session inherits c
 
 These files are not optional documentation. They are the repo's shared operating state:
 
-- `.cx/context.md`
-- `.cx/context.json`
-- `.cx/workflow.json`
+- `.construct/context.md`
+- `.construct/context.json`
+- `.construct/workflow.json`
 - `docs/README.md`
 - `docs/architecture.md`
 
 If your work changes project reality, update the affected file before calling the task done.
+
+## Shared authorship contract
+
+Before drafting or reviewing, call `get_skill("docs/artifact-authorship")` for framing, template population, storytelling, human voice, adversarial review, anti-fabrication, and cross-persona triggers. Persona overlays under `skills/perspectives/` add failure modes; they do not waive that contract.
+
+**Before you write (voice):** prefer contractions (`don't`/`won't`/`can't`); avoid spaced em dashes (` — `); refuse AI tells (delve, leverage, robust as filler, "it's important to note", "In today's…", "This ensures that…", empty tricolons); sound like a careful colleague. Exceptions: ACs, legal shall/must not, quoted statute, exact required section titles. See `rules/common/human-voice.md`.

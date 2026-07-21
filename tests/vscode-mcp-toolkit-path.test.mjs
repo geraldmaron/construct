@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { mcpEntryPointsOutsideToolkit, pinVscodeChatSettings } from '../scripts/sync-specialists.mjs';
+import { mcpEntryPointsOutsideToolkit, pinVscodeChatSettings } from '../scripts/sync-worker-profiles.mjs';
 
 const ROOT = '/Users/dev/Developer/Projects/construct';
 

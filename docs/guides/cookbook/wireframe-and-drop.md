@@ -39,6 +39,20 @@ construct wireframe "new user activation" --type user-journey
 HTML output is self-contained: no server needed. Share the file directly or commit it under
 `docs/wireframes/`.
 
+### Design contract: no custom canvas engine
+
+`lib/wireframe.mjs` is intentionally a scaffold generator, not a model-backed visual
+synthesis engine. Wireframes use semantic HTML5 landmarks (layout kind) or Mermaid
+diagrams (flow, state, sequence, er, user-journey kinds) with inlined sketch CSS and
+zero npm dependencies.
+
+Do not add a canvas-based drawing library (fabric.js, konva, Excalidraw embed, etc.).
+That would reverse a deliberate architectural choice: wireframe output must stay
+review-able in PRs, diff-able, and accessible without a rendering runtime. Mermaid
+kinds emit Diagram Cards through the same provenance contract as `construct diagram`.
+
+The guardrail is enforced by `tests/wireframe-contract.test.mjs`.
+
 ---
 
 ## Ingest a dropped file

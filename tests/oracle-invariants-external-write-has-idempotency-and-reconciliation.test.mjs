@@ -83,7 +83,7 @@ test('check(): a missing producer file degrades that entry to collection-error w
   assert.equal(result.status, 'collection-error');
 });
 
-test('check(): the real repo\'s known external-write producers currently satisfy every required capability', async () => {
+test('check(): the real repo satisfies external-write idempotency/reconciliation for sent-log and approval-queue', async () => {
   const result = await check({});
   assert.equal(result.status, 'passed');
   assert.ok(result.evaluated >= 4);

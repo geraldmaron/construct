@@ -14,7 +14,7 @@ R&D-loop trace events (`intake.received`, `intake.triaged`, `task_graph.created`
 ```bash
 construct review
 construct review --days=7
-construct review --agent=cx-engineer
+construct review run --agent=engineer
 ```
 
 Fetches traces from the configured trace source, computes per-agent quality scores, and writes a markdown report to
@@ -33,14 +33,14 @@ patterns.
 
 ```bash
 construct optimize --list
-construct optimize cx-engineer
-construct optimize cx-engineer --apply
+construct optimize engineer
+construct optimize engineer --apply
 ```
 
 `--list` shows every agent with a quality score and trace count. Use it to decide which agent
 to target. The bare command is a dry-run: it prints the failure diagnosis and proposed patch
 without writing anything. `--apply` is the explicit gate that rewrites the agent's role skill
-file (`skills/roles/<role>.md`) — rate-limited to one apply per agent per 7 days, with a `.bak`
+file (`skills/perspectives/<role>.md`) — rate-limited to one apply per agent per 7 days, with a `.bak`
 backup restorable via `--rollback`.
 
 | Flag | Effect |

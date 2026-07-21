@@ -1,0 +1,67 @@
+name: supply-chain
+
+# Warn-first staging (construct-tsyfe.10.1): OSV and dependency-review jobs report
+# findings but do not block merges until the initial scan set is triaged and any
+# remaining findings carry dated entries in .github/supply-chain-exceptions.json.
+# Promotion condition: flip continue-on-error to false on osv-scan and
+# dependency-review once triage is complete. Exception expiration is already
+# blocking via scripts/check-supply-chain-exceptions.mjs (mirrors
+# LEGACY_EXEMPT_SHAS in scripts/lint-commits-pr.mjs).
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exceptions:
+    name: supply-chain exceptions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - name: enforce expiring OSV/license exceptions
+        run: node scripts/check-supply-chain-exceptions.mjs
+
+  osv-scan:
+    name: OSV scan (package-lock.json)
+    needs: exceptions
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    continue-on-error: true
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@3adb4b14a2b0623876d18d863a498b785fb3752d # v2.3.8
+    with:
+      scan-args: |-
+        --lockfile=package-lock.json
+
+  dependency-review:
+    name: dependency review (license + vulnerability)
+    needs: exceptions
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - name: read license allowlist
+        id: licenses
+        run: |
+          node -e "const j=require('./.github/license-allowlist.json'); console.log(j.allow.join(', '))" > /tmp/allow-licenses.txt
+          node -e "const j=require('./.github/license-allowlist.json'); console.log(j.deny.join(', '))" > /tmp/deny-licenses.txt
+          echo "allow=$(cat /tmp/allow-licenses.txt)" >> "$GITHUB_OUTPUT"
+          echo "deny=$(cat /tmp/deny-licenses.txt)" >> "$GITHUB_OUTPUT"
+      - name: GitHub dependency review
+        uses: actions/dependency-review-action@fd07d42ce87ab09f10c61a2d1a5e59e6c655620a # v4.1.1
+        with:
+          fail-on-severity: critical
+          allow-licenses: ${{ steps.licenses.outputs.allow }}
+          deny-licenses: ${{ steps.licenses.outputs.deny }}
+          comment-summary-in-pr: always

@@ -122,7 +122,7 @@ If a provider is in `Open` state and the underlying service is back up, wait 30 
 
 ## Audit trail
 
-All mutations (file edits, bash commands, git operations) are recorded to `~/.cx/audit-trail.jsonl`. View the trail:
+All mutations (file edits, bash commands, git operations) are recorded to `~/.construct/audit-trail.jsonl`. View the trail:
 
 ```bash
 construct audit trail

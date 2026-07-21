@@ -90,7 +90,7 @@ test('paid scenario without opt-in persists blocked model state', async (t) => {
   t.after(() => fs.rmSync(rootDir, { recursive: true, force: true }));
   const env = { ...process.env, CONSTRUCT_CERTIFY_LIVE: '1' };
   delete env[PAID_OPT_IN_ENV];
-  const result = await runCertificationScenario('specialist.prompt.paid-reference', {
+  const result = await runCertificationScenario('worker-profile.prompt.paid-reference', {
     projectDir: rootDir,
     repoRoot: process.cwd(),
     env,

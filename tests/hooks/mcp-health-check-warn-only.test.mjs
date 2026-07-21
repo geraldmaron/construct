@@ -26,12 +26,12 @@ function runHook(fakeHome, args, stdin) {
 
 function makeFakeHome() {
   const dir = mkdtempSync(join(tmpdir(), 'mcp-health-'));
-  mkdirSync(join(dir, '.cx'), { recursive: true });
+  mkdirSync(join(dir, '.construct'), { recursive: true });
   return dir;
 }
 
 function readCache(fakeHome) {
-  return JSON.parse(readFileSync(join(fakeHome, '.cx', 'mcp-health.json'), 'utf8'));
+  return JSON.parse(readFileSync(join(fakeHome, '.construct', 'mcp-health.json'), 'utf8'));
 }
 
 test('a single tool failure never blocks the next tool use (warn-only)', () => {
@@ -69,7 +69,7 @@ test('failure counter resets once the failure window has elapsed', () => {
     const mark = runHook(home, ['--mark-failure'], JSON.stringify({ tool_name: TOOL_NAME }));
     assert.equal(mark.status, 0);
 
-    const cachePath = join(home, '.cx', 'mcp-health.json');
+    const cachePath = join(home, '.construct', 'mcp-health.json');
     const cache = readCache(home);
     cache.Claude_Preview.since = Date.now() - 61_000;
     writeFileSync(cachePath, JSON.stringify(cache, null, 2));

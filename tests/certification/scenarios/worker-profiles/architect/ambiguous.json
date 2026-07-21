@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 2,
+  "workerProfileId": "architect",
+  "capabilityId": "worker-profile.prompt",
+  "mode": "normal",
+  "scenarioKind": "ambiguous",
+  "representativeTask": {
+    "prompt": "Make the system faster.",
+    "inputs": {}
+  },
+  "expectedBehavior": {
+    "mustContainAny": ["which", "what breaks", "invariant", "constraint", "clarify", "assumption"],
+    "mustNotContain": [],
+    "mustRefuse": false,
+    "mustEscalateTo": [],
+    "mustStateAssumptions": true
+  }
+}

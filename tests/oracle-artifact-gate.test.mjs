@@ -35,7 +35,7 @@ test('synthesizeVerdict surfaces artifact-gate-bypass gap', () => {
     parity: { ok: true, skipped: false },
     contractViolations: { recentCount: 0 },
     doctorLog: { recent: [] },
-    outcomes: { present: true, roles: {} },
+    outcomes: { present: true, workerProfiles: {} },
     alignmentCensus: { present: true, stale: false, audit: { regressions: [] } },
     registryValidate: { needsRun: false, warningCount: 0 },
     hookFailures: { count: 0 },
@@ -48,7 +48,7 @@ test('synthesizeVerdict surfaces artifact-gate-bypass gap', () => {
       bypassed: [{ path: 'docs/prd/001.md', reason: 'draft' }],
       reviewerGapCount: 0,
       reviewerGaps: [],
-      specialistAudit: { present: false, pass: true },
+      workerProfileAudit: { present: false, pass: true },
     },
   };
   const { gaps } = synthesizeVerdict(readModel);

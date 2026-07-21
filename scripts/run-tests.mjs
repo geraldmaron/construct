@@ -33,8 +33,8 @@
  * must isolate via tests/helpers/sterile-host-env.mjs.
  *
  * Read-hermeticity: beyond XDG, clearHermeticEnvVars() blanks the provider-key
- * and model-tier families (CX_MODEL_ and CONSTRUCT_MODEL_ tiers, ANTHROPIC/OPENAI/
- * OPENROUTER_API_KEY, WEB_SEARCH_URL, CX_USER_ENV_PATH,
+ * and model-tier families (CONSTRUCT_MODEL_ and CONSTRUCT_MODEL_ tiers, ANTHROPIC/OPENAI/
+ * OPENROUTER_API_KEY, WEB_SEARCH_URL, CONSTRUCT_USER_ENV_PATH,
  * CONSTRUCT_PROVIDER_TIMEOUT_MS, CONSTRUCT_TELEMETRY_URL) before spawning
  * `node --test`, so a developer's ambient shell can't leak into a suite that
  * spreads `...process.env`. Opt-in live-LLM suites (tests/certification,
@@ -47,7 +47,7 @@
  * exhausted memory and the process was SIGKILLed (construct-ox25y) — the run
  * never finished and every release:check step after it never ran. The selected
  * files run in bounded sequential batches of fresh child processes instead
- * (CX_TEST_BATCH_SIZE, default 120); memory is released between batches and the
+ * (CONSTRUCT_TEST_BATCH_SIZE, default 120); memory is released between batches and the
  * aggregate status is non-zero if any batch fails. --shard composes (its subset
  * is simply batched within), and --coverage stays single-process because
  * per-batch coverage reports do not merge.
@@ -69,15 +69,15 @@ const HERMETIC_ENV_VARS = [
   "ANTHROPIC_API_KEY",
   "OPENAI_API_KEY",
   "OPENROUTER_API_KEY",
-  "CX_MODEL_REASONING",
-  "CX_MODEL_STANDARD",
-  "CX_MODEL_FAST",
+  "CONSTRUCT_MODEL_REASONING",
+  "CONSTRUCT_MODEL_STANDARD",
+  "CONSTRUCT_MODEL_FAST",
   "CONSTRUCT_MODEL_REASONING",
   "CONSTRUCT_MODEL_STANDARD",
   "CONSTRUCT_MODEL_FAST",
   "CONSTRUCT_PROVIDER_TIMEOUT_MS",
   "WEB_SEARCH_URL",
-  "CX_USER_ENV_PATH",
+  "CONSTRUCT_USER_ENV_PATH",
   "CONSTRUCT_TELEMETRY_URL",
 ];
 
@@ -192,17 +192,10 @@ if (listOnly) {
   process.exit(0);
 }
 
-// Default 30s per-test; raise to 180s when sweeping the dashboard-build or
-// LLM suites (Next.js cold build + live OpenRouter calls routinely exceed
-// 30s even with retries). Dedicated CI jobs already pass --test-timeout
-// explicitly; this default keeps `npm test` honest on a clean checkout.
+// Per-batch timeouts: functional and deadcode audit suites exceed the 30s
+// default on CI runners; timeoutForBatch raises limits only for batches that
+// include those files so unit tests keep a tight ceiling.
 
-const wantsHeavyTimeout = files.some((f) => /(dashboard-build|llm\/|llm\\)/.test(f));
-const defaultTimeout = wantsHeavyTimeout ? 180_000 : 30_000;
-const nodeArgs = ["--test", `--test-timeout=${defaultTimeout}`];
-if (enableCoverage) {
-  nodeArgs.push("--experimental-test-coverage");
-}
 const sterileBefore = snapshotRealConfigs();
 
 // One node --test process per bounded batch keeps peak memory flat regardless of
@@ -211,10 +204,27 @@ const sterileBefore = snapshotRealConfigs();
 // aggregate status is the first non-zero child status. Coverage keeps its single
 // process so its one report is complete.
 
-const BATCH_SIZE = Number(process.env.CX_TEST_BATCH_SIZE) || 120;
+const BATCH_SIZE = Number(process.env.CONSTRUCT_TEST_BATCH_SIZE) || 120;
+
+function timeoutForBatch(batchFiles) {
+  if (batchFiles.some((f) => /tests\/graph\/incremental\.test\.mjs/.test(f))) {
+    return 300_000;
+  }
+  if (batchFiles.some((f) => /tests\/functional\//.test(f) || /lazy-import-reachability/.test(f) || /oracle-approval-dedupe/.test(f))) {
+    return 120_000;
+  }
+  if (batchFiles.some((f) => /(dashboard-build|llm\/|llm\\)/.test(f))) {
+    return 180_000;
+  }
+  return 30_000;
+}
 
 function runFiles(batchFiles) {
-  return spawnSync(process.execPath, [...nodeArgs, ...batchFiles, ...args], { stdio: "inherit" }).status ?? 1;
+  const batchNodeArgs = ["--test", `--test-timeout=${timeoutForBatch(batchFiles)}`];
+  if (enableCoverage) {
+    batchNodeArgs.push("--experimental-test-coverage");
+  }
+  return spawnSync(process.execPath, [...batchNodeArgs, ...batchFiles, ...args], { stdio: "inherit" }).status ?? 1;
 }
 
 let runStatus = 0;
@@ -240,13 +250,17 @@ if (enableCoverage) {
 // dev machines keep the hard gate unconditionally.
 
 const drift = diffRealConfigs(sterileBefore);
-if (drift.drifted.length || drift.auditTrailLeaks > 0 || drift.approvalQueueLeaks > 0) {
+const sterileLeakCount =
+  drift.auditTrailLeaks + drift.hookScratchLeaks + drift.telemetryLeaks + drift.sessionStatusLeaks;
+if (drift.drifted.length || sterileLeakCount > 0) {
   const detail = [
     drift.drifted.length ? `Sterile drift — real host config changed: ${drift.drifted.join(", ")}` : null,
     drift.addedProjectKeys.length ? `  project keys added:   ${drift.addedProjectKeys.join(", ")}` : null,
     drift.removedProjectKeys.length ? `  project keys removed: ${drift.removedProjectKeys.join(", ")}` : null,
     drift.auditTrailLeaks > 0 ? `Sterile drift — ${drift.auditTrailLeaks} test-tagged record(s) appended to the real audit trail (a Broker was constructed without pinning the doctor root or injecting auditRecorder)` : null,
-    drift.approvalQueueLeaks > 0 ? `Sterile drift — ${drift.approvalQueueLeaks} test-tagged record(s) appended to the real approval queue (an ApprovalQueue was constructed without pinning the doctor root)` : null,
+    drift.hookScratchLeaks > 0 ? `Sterile drift — ${drift.hookScratchLeaks} hook scratch marker(s) leaked into real doctorRoot state` : null,
+    drift.telemetryLeaks > 0 ? `Sterile drift — ${drift.telemetryLeaks} test-tagged telemetry record(s) appended to real doctorRoot logs` : null,
+    drift.sessionStatusLeaks > 0 ? `Sterile drift — ${drift.sessionStatusLeaks} test-tagged session/status marker(s) leaked into real doctorRoot state` : null,
   ].filter(Boolean).join("\n");
   if (process.env.CI === "true") {
     console.warn(`\n[sterile-guard] WARNING (non-blocking on CI): ${detail}`);

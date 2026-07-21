@@ -33,7 +33,7 @@
     },
     "project": {
       "type": "string",
-      "description": "The host project name this demo belongs to, seeded from real project signals (.cx/context.json, package.json, or directory name).",
+      "description": "The host project name this demo belongs to, seeded from real project signals (.construct/context.json, package.json, or directory name).",
       "minLength": 1
     },
     "script": {

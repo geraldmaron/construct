@@ -3,8 +3,8 @@
  *
  * resolveWebCapability returns a typed grant in strict priority: governed (WEB_SEARCH_URL) →
  * provider-native (Anthropic / OpenRouter server tools) → host-delegated (explicit opt-in) →
- * unavailable. roleHoldsWebCapability derives the web role from the specialist's declared
- * claudeTools (WebSearch/WebFetch), never a hardcoded string.
+ * unavailable. roleHoldsWebCapability derives web access from the Worker Profile,
+ * never a hardcoded profile id.
  */
 import assert from 'node:assert/strict';
 import test from 'node:test';
@@ -46,9 +46,8 @@ test('explicit CONSTRUCT_ORCHESTRATION_WEB_DELEGATE → host-delegated', () => {
   assert.equal(g.mode, 'host-delegated');
 });
 
-test('roleHoldsWebCapability derives the web role from the specialist claudeTools', () => {
-  assert.equal(roleHoldsWebCapability('researcher'), true, 'cx-researcher declares WebSearch/WebFetch');
-  assert.equal(roleHoldsWebCapability('cx-researcher'), true, 'cx- prefix is tolerated');
-  assert.equal(roleHoldsWebCapability('engineer'), false, 'cx-engineer holds no web tool');
-  assert.equal(roleHoldsWebCapability('does-not-exist'), false, 'unknown role is not web-capable');
+test('roleHoldsWebCapability derives web access from the Worker Profile', () => {
+  assert.equal(roleHoldsWebCapability('researcher'), true, 'researcher enables governed web access');
+  assert.equal(roleHoldsWebCapability('engineer'), false, 'engineer does not enable web access');
+  assert.equal(roleHoldsWebCapability('does-not-exist'), false, 'unknown profile is not web-capable');
 });

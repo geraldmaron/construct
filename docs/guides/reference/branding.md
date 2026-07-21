@@ -11,10 +11,12 @@ Single index for maintainers and agents. Generated surfaces (init scaffolding, p
 
 | Element | Value | Source |
 |---------|-------|--------|
-| Sans / display | Space Grotesk (weights 400–700) | [`lib/brand-tokens.mjs`](../../lib/brand-tokens.mjs) |
+| Sans / display | Plus Jakarta Sans (weights 400–700) | [`lib/brand-tokens.mjs`](../../lib/brand-tokens.mjs) |
 | Monospace | JetBrains Mono | [`lib/brand-fonts.mjs`](../../lib/brand-fonts.mjs) |
-| Color | Monochrome ink ramp; white accent | [`templates/distribution/construct-brand.typ`](../../templates/distribution/construct-brand.typ) |
-| Published artifact tokens | Same ink + typography via templates and CSS vars | [`lib/brand-tokens.mjs`](../../lib/brand-tokens.mjs), [`packages/cx-ui/styles/theme.css`](../../packages/cx-ui/styles/theme.css) |
+| Color | Field-notebook ink ramp with slate-teal evidence accent (`#1f5c61`) | [`templates/distribution/construct-brand.typ`](../../templates/distribution/construct-brand.typ) |
+| Published artifact tokens | Same ink + typography via templates and CSS vars | [`lib/brand-tokens.mjs`](../../lib/brand-tokens.mjs), [`packages/construct-ui/styles/theme.css`](../../packages/construct-ui/styles/theme.css) |
+| Diagrams (publish) | Compact notebook-ink: Mermaid handDrawn + Caveat, tight spacing, slate-teal accent; D2 light sketch dense pad | [`lib/diagram-export.mjs`](../../lib/diagram-export.mjs) |
+| Optional whiteboard | Excalidraw / host MCP — agent canvas only, not publish | Leave to the tool; do not bolt into pandoc |
 
 Bundled fonts for offline export: [`templates/distribution/fonts/`](../../templates/distribution/fonts/). Typst export passes `--font-path`, `--ignore-system-fonts`, and `--ignore-embedded-fonts` so system fallbacks (Libertinus, DejaVu) never replace the brand faces.
 
@@ -22,7 +24,7 @@ Bundled fonts for offline export: [`templates/distribution/fonts/`](../../templa
 
 These families are retired from active brand surfaces. References in docs, templates, or app source are drift:
 
-- Plus Jakarta Sans
+- Space Grotesk (retired Construct 2.0 folio sans)
 - Geist / Geist Mono
 - IBM Plex (sans or mono as brand body)
 - Inter as primary UI font
@@ -35,11 +37,11 @@ See [naming.md](./naming.md) and [prompt surfaces](../concepts/prompt-surfaces.m
 | Context | Form |
 |---------|------|
 | Product / docs name | **Construct** (capital C) |
-| CLI, npm package, public persona | `construct` (lowercase) |
-| Internal specialists | `cx-<role>` (never user-facing) |
-| Artifact metadata | `cx_doc_id`, `cx_release_gate`, … |
+| CLI, npm package, public Worker Profile | `construct` (lowercase) |
+| Internal Worker Profile ids | `architect`, `engineer`, … (never user-facing) |
+| Artifact metadata | `construct_doc_id`, release-gate stamps, … |
 
-Users address `@construct` only. Specialists route internally.
+Users address `@construct` only. Worker Profiles route internally.
 
 ## Voice and tone
 
@@ -47,15 +49,15 @@ Prose rules: [STYLE.md](../STYLE.md). No marketing voice (`robust`, `enterprise-
 
 Typed artifacts resolve tone from:
 
-1. [`specialists/artifact-manifest.json`](../../specialists/artifact-manifest.json) `toneDefault` / `toneAllowed`
-2. [`specialists/tone-profiles.json`](../../specialists/tone-profiles.json)
+1. [`registry/artifact-manifest.json`](../../registry/artifact-manifest.json) `toneDefault` / `toneAllowed`
+2. Workspace Preset tone defaults in `registry/workspace-presets/*.json`
 3. Optional project override [`.construct/brand-voice.json`](../../schemas/brand-voice.schema.json)
 
 Validate before ship: `construct artifact validate <path> --type=<doc-type>`.
 
 ## Artifact workflow branding
 
-`specialists/artifact-manifest.json` also defines the registered document-class
+`registry/artifact-manifest.json` also defines the registered document-class
 workflow. A class resolves its author chain, reviewer chain, validation policy,
 output formats, and branding policy from that manifest. Any registered class is
 eligible; Construct does not silently substitute a PRD for an unknown class.
@@ -68,7 +70,7 @@ nature; a request or project configuration can explicitly opt out of branding.
 
 ## Profile terminology (rebrand)
 
-Each curated profile may define `rebrand.intakeQueueLabel` and `rebrand.signalNoun` in `profiles/*.json`. [`lib/scopes/rebrand.mjs`](../../lib/scopes/rebrand.mjs) centralizes lookup; defaults are `Intake queue` / `signal`.
+Each Workspace Preset may define `rebrand.intakeQueueLabel` and `rebrand.signalNoun` in `registry/workspace-presets/*.json`. [`lib/workspace-presets/rebrand.mjs`](../../../lib/workspace-presets/rebrand.mjs) centralizes lookup; defaults are `Intake queue` / `signal`.
 
 User-facing surfaces that must honor rebrand:
 

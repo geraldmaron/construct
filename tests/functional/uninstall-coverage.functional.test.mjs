@@ -20,7 +20,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, lstatSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 
@@ -215,5 +215,24 @@ test('uninstall is idempotent when nothing install-created remains', async () =>
     const second = await uninstall(env.home, env.project);
     assert.equal(second.canceled, false, 'second run does not error');
     assert.ok(!second.removed.some((r) => /error:/.test(r.detail || '')), 'no errors on a clean second run');
+  } finally { env.cleanup(); }
+});
+
+test('uninstall removes the install-created lib symlink even once it dangles', async () => {
+  const env = makeSandbox();
+  try {
+    gitInit(env.project);
+    const { ensureLibSymlink } = await import('../../lib/setup.mjs');
+    const packageRoot = join(env.sandbox, 'package-root');
+    mkdirSync(join(packageRoot, 'lib'), { recursive: true });
+    const created = ensureLibSymlink({ homeDir: env.home, rootDir: packageRoot });
+    assert.equal(created.status, 'created', 'install created the symlink');
+    assert.ok(lstatSync(created.target).isSymbolicLink(), 'target is a symlink');
+
+    rmSync(join(packageRoot, 'lib'), { recursive: true, force: true });
+    assert.equal(existsSync(created.target), false, 'the link now dangles and statSync reports absent');
+
+    await uninstall(env.home, env.project);
+    assert.throws(() => lstatSync(created.target), 'uninstall removed the dangling symlink');
   } finally { env.cleanup(); }
 });

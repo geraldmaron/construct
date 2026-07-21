@@ -16,11 +16,11 @@
     "core": [
       {
         "name": "orchestration_policy",
-        "use": "Classify intent and get the specialist routing policy for a request."
+        "use": "Classify intent and get the Worker Profile routing policy for a request."
       },
       {
         "name": "orchestration_run",
-        "use": "Dispatch the routed specialist chain for a request after classifying it."
+        "use": "Dispatch the routed Worker Profile chain for a request after classifying it."
       },
       {
         "name": "get_skill",
@@ -36,7 +36,7 @@
       },
       {
         "name": "suggest_skills",
-        "use": "Get ranked skill suggestions for the current intent, with per-specialist entitlement annotated on each result."
+        "use": "Get ranked skill suggestions for the current intent, with per-Worker Profile entitlement annotated on each result."
       },
       {
         "name": "knowledge_search",

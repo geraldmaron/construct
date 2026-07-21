@@ -111,12 +111,13 @@ test('check(): a known site whose export disappeared is unknown, not a false fai
   assert.equal(result.unresolved.length, 1);
 });
 
-test('check(): the real repo currently has the known, expected construct-36w10 shape (two tracked, one untracked)', async () => {
+test('check(): the real repo on feat/workspace-control-plane has resolveRootDir moved to lib/project-root.mjs (four scanned sites, one new violation, daemon site unresolved)', async () => {
   const result = await check({});
   assert.equal(result.status, 'failed');
-  assert.equal(result.evaluated, 3);
+  assert.equal(result.evaluated, 4);
   assert.equal(result.violations.length, 1);
-  assert.equal(result.violations[0].site, 'lib/embed/daemon.mjs::resolveRootDir');
+  assert.equal(result.violations[0].site, 'lib/project-root.mjs::resolveRootDir');
+  assert.ok(result.unresolved.some((u) => u.site === 'lib/embed/daemon.mjs::resolveRootDir'));
   const passing = result.results.filter((r) => r.status === 'passed');
   assert.equal(passing.length, 2);
 });

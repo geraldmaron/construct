@@ -124,7 +124,7 @@ test('resolver-bypass consumers treat unresolved op:// refs as not configured an
         HOME: fakeHome,
         XDG_CONFIG_HOME: path.join(fakeHome, '.config'),
         OPENROUTER_API_KEY: UNRESOLVED_REF,
-        CX_TOOLKIT_DIR: toolkitDir,
+        CONSTRUCT_TOOLKIT_DIR: toolkitDir,
       },
       input: JSON.stringify({ error: { message: '429 rate limit', provider: 'openrouter' } }),
       encoding: 'utf8',

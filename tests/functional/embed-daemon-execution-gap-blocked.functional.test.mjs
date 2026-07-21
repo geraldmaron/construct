@@ -50,7 +50,7 @@ test('Job 12 reports "did not run" distinctly from "no gaps" when the Jira provi
   const env = sterileSpawnEnv({
     HOME: root,
     USERPROFILE: root,
-    CX_HOME_OVERRIDE: root,
+    CONSTRUCT_HOME_OVERRIDE: root,
     CX_ROOT_DIR: root,
     TICK_TIMEOUT_MS: String(timeoutMs),
     CONSTRUCT_EMBEDDING_MODEL: 'hashing',

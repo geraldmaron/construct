@@ -49,7 +49,9 @@ test('npm_config_global=true: postinstall prints footprint guidance and writes n
   });
   assert.equal(res.status, 0, `expected exit 0, got ${res.status} — stderr: ${res.stderr}`);
   assert.match(res.stdout, /machine-scope setup is opt-in/);
+  assert.match(res.stdout, /Next steps:/);
   assert.match(res.stdout, /construct install --footprint=user/);
+  assert.match(res.stdout, /construct doctor/);
   assert.equal(fs.existsSync(path.join(home, '.claude', 'settings.json')), false, 'postinstall must not write to ~/.claude/');
   assert.equal(fs.existsSync(path.join(home, '.claude', 'CLAUDE.md')), false, 'postinstall must not write to ~/.claude/CLAUDE.md');
   assert.equal(fs.existsSync(path.join(configDir(home), 'config.env')), false, 'postinstall must not write to configDir()/config.env');

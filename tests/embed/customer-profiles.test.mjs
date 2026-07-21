@@ -18,8 +18,8 @@ describe('customer profiles', () => {
 
   before(async () => {
     tmpHome = mkdtempSync(join(tmpdir(), 'cx-customer-profiles-home-'));
-    process.env.CX_HOME_OVERRIDE = tmpHome;
-    profilesDir = join(tmpHome, '.cx', 'knowledge', 'internal', 'customer-profiles');
+    process.env.CONSTRUCT_HOME_OVERRIDE = tmpHome;
+    profilesDir = join(tmpHome, '.construct', 'knowledge', 'internal', 'customer-profiles');
     indexFile = join(profilesDir, 'index.json');
     profiles = await import('../../lib/embed/customer-profiles.mjs');
   });
@@ -38,7 +38,7 @@ describe('customer profiles', () => {
   });
 
   after(() => {
-    delete process.env.CX_HOME_OVERRIDE;
+    delete process.env.CONSTRUCT_HOME_OVERRIDE;
     rmSync(tmpHome, { recursive: true, force: true });
   });
 

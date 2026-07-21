@@ -79,6 +79,8 @@ const LEGACY_EXEMPT_SHAS = new Set([
   "68cb664af8369d5e3e6834ebe95d7d07b19c3d14", // "docs+tests: changelog and corpus inventory for construct-jvjow.4 merge" (2026-07-09)
   "bfe20bf86d455fc09f4ab25374750f12c65a139f", // "Release 1.5.4-alpha.2 (alpha, off staging — doc-io cert + version-regex fixed)" (2026-07-10, already tagged+published to npm)
   "6342a737e6bf38612edb937d5432ff6067b5fe96", // "Release 1.5.4-alpha.1 (alpha, off staging for tester validation)" (2026-07-10, already tagged+published to npm)
+  "e2fb90a49b0c5e7152389abebb55bdcea5b3c454", // "Improve control-plane UX…" (feat history; already pushed, cannot rewrite for integrate PR)
+  "38cff0dddc7fc10720ff8362a8b2cfe3779259ca", // "Close Construct 2.0 legacy decommission epic…" (feat history; already pushed)
 ]);
 
 const REQUIRED_PR_HEADINGS = [
@@ -159,7 +161,7 @@ export function lintCommits() {
   const records = log.split("\x1e").map((r) => r.trim()).filter(Boolean);
   for (const record of records) {
     const [sha, subject, body] = record.split("\t");
-    const merge = subject?.startsWith("Merge ") || subject?.startsWith("Revert ");
+    const merge = subject?.startsWith("Merge ") || subject?.startsWith("Revert ") || /^merge:/i.test(subject ?? "");
     if (merge || LEGACY_EXEMPT_SHAS.has(sha)) continue;
     if (!COMMIT_SUBJECT_RE.test(subject ?? "")) {
       violations.push(`${sha.slice(0, 9)}: subject does not match \`type(scope): subject\` (≤140 chars, no leading space): ${JSON.stringify(subject)}`);
