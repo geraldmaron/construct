@@ -39,6 +39,8 @@ jobs:
         run: bash scripts/ci/setup-toolchain.sh && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: install mermaid-cli (mmdc) + Chrome for figures:true exports
         run: bash scripts/ci/setup-mermaid-cli.sh && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: install Chromium OS libraries for headless Chrome
+        run: npx playwright install-deps chromium
       - name: build derived test fixtures (living graph + seeded vector index)
         run: bash scripts/ci/build-test-fixtures.sh
       - name: Full test suite

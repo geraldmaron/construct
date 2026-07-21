@@ -6,7 +6,9 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Fixed
 
-- Mermaid CI browser for DOCX figures (PR 419): `setup-mermaid-cli.sh` now installs the `puppeteer` peer plus Chrome for Testing into `~/.local/mermaid-cli/puppeteer-cache` and exports `PUPPETEER_EXECUTABLE_PATH`. `lib/diagram-export.mjs` discovers Linux Playwright/Puppeteer cache paths (not only macOS `Library/Caches`) and merges `executablePath` into the mmdc puppeteer config so Ubuntu runners no longer 404 on the retired `playwright.azureedge.net` driver CDN.
+- DOCX d2 figures without Playwright (PR 419): office-format diagram negotiation preferred PNG, so `d2` PNG export pulled playwright-go's retired `playwright.azureedge.net` driver (404) and left `figures:unresolved 0/3`. Prefer SVG for DOCX/ODT (pandoc embeds it), honor `CONSTRUCT_D2_MIME=image/svg+xml` from `buildDistributionDiagramEnv`, and assert the Chrome-merged mermaid puppeteer temp config (not only the repo-relative template path).
+
+- Mermaid CI browser for DOCX figures (PR 419): `setup-mermaid-cli.sh` now installs the `puppeteer` peer plus Chrome for Testing into `~/.local/mermaid-cli/puppeteer-cache` and exports `PUPPETEER_EXECUTABLE_PATH`; CI also runs `npx playwright install-deps chromium` for shared libraries. `lib/diagram-export.mjs` discovers Linux Playwright/Puppeteer cache paths (not only macOS `Library/Caches`) and merges `executablePath` into the mmdc puppeteer config.
 
 - Typst PDF figure staging (PR 419): branded PDF export spawns pandoc with cwd `templates/distribution/`, and the diagram filter puts content-hashed SVG/PNG into the mediabag. Without `--extract-media`, pandoc's typst writer emits relative `#image("<hash>.svg")` paths that never land on disk there (pandoc exit 43 / file not found on Ubuntu). `exportMarkdown` now extracts mediabag assets to a temp dir so Typst receives absolute paths (works with existing `--root=/`). Covered by `tests/functional/document-export.functional.test.mjs`.
 

@@ -224,11 +224,15 @@ test('buildDistributionDiagramEnv sets CONSTRUCT_D2_THEME and compact sketch', (
   assert.equal(env.CONSTRUCT_D2_THEME, '0');
   assert.equal(env.CONSTRUCT_D2_SCALE, '0.9');
   assert.equal(env.CONSTRUCT_D2_SKETCH, '1');
+  assert.equal(env.CONSTRUCT_D2_MIME, 'image/svg+xml');
   assert.equal(env.CONSTRUCT_MERMAID_THEME, 'construct');
   assert.equal(env.CONSTRUCT_MERMAID_MIME, 'image/png');
   assert.equal(env.CONSTRUCT_MERMAID_WIDTH, '1600');
   assert.equal(env.CONSTRUCT_MERMAID_SCALE, '2');
-  assert.match(env.CONSTRUCT_MERMAID_PPTR_CONFIG || '', /templates\/distribution\/mermaid-puppeteer\.json$/);
+  assert.ok(env.CONSTRUCT_MERMAID_PPTR_CONFIG);
+  const cfg = JSON.parse(fs.readFileSync(env.CONSTRUCT_MERMAID_PPTR_CONFIG, 'utf8'));
+  assert.ok(Array.isArray(cfg.args));
+  assert.ok(cfg.args.includes('--no-sandbox'));
 });
 
 test('construct-brand.typ de-brands the PDF running footer', () => {
