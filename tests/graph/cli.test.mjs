@@ -13,6 +13,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { runGraphCli } from '../../lib/graph/cli.mjs';
+import { sqliteAvailable } from '../../lib/graph/relational/sqlite-db.mjs';
 import { writeGraph } from '../../lib/graph/store.mjs';
 
 // construct-b0nny.3: the relational graph store (lib/graph/relational/)
@@ -99,6 +100,11 @@ test('query --missing-tests on a project with no graph exits 1', () => {
 // via --rel, and reports "no path found" rather than hanging when a path
 // only exists along a relation the default excludes.
 
+if (!sqliteAvailable()) {
+  test('relational graph CLI skipped — node:sqlite unavailable (Node <22.5)', () => {
+    assert.equal(sqliteAvailable(), false);
+  });
+} else {
 test('graph path finds a default-rel (embeds) path without --rel', () => {
   const root = freshRoot();
   writeGraph(root, {
@@ -228,3 +234,5 @@ test('graph queryDown without an id exits 1', () => {
   const { result: code } = captureStdout(() => runGraphCli(['queryDown'], { rootDir: root, projectDir: root }));
   assert.equal(code, 1);
 });
+
+}

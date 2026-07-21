@@ -212,7 +212,7 @@ test('a research task whose output cites nothing is flagged by the evidence gate
 
 test('a research task that cites a real source passes the evidence gate', async () => {
   const cwd = project();
-  const sourced = `Node.js v24 is Active LTS per the release blog. See https://nodejs.org/en/blog/release/v24.0.0 for details. `.repeat(6);
+  const sourced = `Node.js v24 is Active LTS per the release blog. doi: 10.0000/nodejs-lts-release. `.repeat(6);
   const fetchImpl = async () => ({ ok: true, json: async () => ({ content: [{ type: 'text', text: sourced }] }) });
   const run = await runOrchestration(
     { request: 'Research the latest Node.js LTS and cite primary sources', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 0, moduleCount: 0 },

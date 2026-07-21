@@ -66,7 +66,7 @@ function fakeSnapshot() {
       {
         provider: 'atlassian-jira',
         items: [
-          { id: 'PLATFORM-1', project: 'PLATFORM', statusCategory: 'to-do', summary: 'Migrate queue' },
+          { id: 'PLATFORM-1', project: 'PLATFORM', statusCategory: 'to-do', assignee: 'platform-team', summary: 'Migrate queue backlog to the new service with explicit ownership and rollout checkpoints.' },
         ],
       },
     ],
