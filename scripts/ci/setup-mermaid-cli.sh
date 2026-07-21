@@ -37,6 +37,18 @@ fi
 
 npx --prefix "$PREFIX" puppeteer browsers install chrome
 
+# Shared libraries Chrome needs on Ubuntu (libnss, libgbm, …). Prefer the
+# repo-local playwright CLI after npm ci so release.yml never calls npx directly
+# (tests/audit/f07-cicd/release-tooling-pin.test.mjs).
+
+if [ -x "node_modules/.bin/playwright" ]; then
+  if command -v sudo >/dev/null 2>&1; then
+    sudo node_modules/.bin/playwright install-deps chromium || node_modules/.bin/playwright install-deps chromium || true
+  else
+    node_modules/.bin/playwright install-deps chromium || true
+  fi
+fi
+
 CHROME=""
 while IFS= read -r -d '' candidate; do
   case "$candidate" in
