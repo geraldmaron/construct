@@ -6,6 +6,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Fixed
 
+- Hybrid CI on `integrate/workspace-control-plane-staging` → `staging` (PR 421): reconcile Construct 2.0 / control-plane truth with staging suites — graph build/validate partial+schema honesty (`source` nodes, `derived_from` attrs, seeder errors/warnings), sources link/unlink + `classifyGitFailure`, approval-queue path canonicalize, authority-ledger provider-write recording, MCP orchestration `workerProfileId`, Oracle dock/CLI clean-verdict vocabulary, prompt-layer contract aligned to `prompt-layer-model`, Docling pin + sidecar fixtures, git provider certification tier, ADR approval-drain renumber (0100/0101), corpus inventory + worker-profile-cards contract, and obsolete feat-branch oracle invariant expectations. Covered by the prior CI-failure theme suite (289 tests).
+
 - CI hang safety: `ci.yml` `test` job and `release.yml` `gate` set `timeout-minutes: 30`, toolchain install steps set `timeout-minutes: 12`, and `scripts/ci/setup-toolchain.sh` bounds apt (`Acquire::{http,https}::Timeout=30`, `Retries=3`) and curl (`--connect-timeout 15 --max-time 180`) so a stuck Ubuntu mirror fails instead of crawling for ~60m. Covered by `tests/scripts/ci-repro-drift.test.mjs`.
 
 ### Changed

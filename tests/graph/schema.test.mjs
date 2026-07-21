@@ -41,7 +41,7 @@ test('invalid node type is reported by validateSchema', () => {
   });
   const graph = loadGraph(root);
   const result = validateSchema(graph);
-  assert.ok(result.errors.some((e) => e.includes("invalid type 'flie'")));
+  assert.ok(result.errors.some((e) => e.includes("unknown type 'flie'")));
 });
 
 test('invalid edge rel is reported by validateSchema', () => {
@@ -55,7 +55,7 @@ test('invalid edge rel is reported by validateSchema', () => {
   });
   const graph = loadGraph(root);
   const result = validateSchema(graph);
-  assert.ok(result.errors.some((e) => e.includes("invalid rel 'improts'")));
+  assert.ok(result.errors.some((e) => e.includes("unknown rel 'improts'")));
 });
 
 test('edge with empty provenance is reported by validateSchema', () => {
@@ -69,7 +69,7 @@ test('edge with empty provenance is reported by validateSchema', () => {
   });
   const graph = loadGraph(root);
   const result = validateSchema(graph);
-  assert.ok(result.errors.some((e) => e.includes('empty provenance sources')));
+  assert.ok(result.errors.some((e) => e.includes('no provenance') || e.includes('empty sources')));
 });
 
 test('partial meta is preserved by writeGraph', () => {

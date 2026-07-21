@@ -1,17 +1,18 @@
 /**
  * tests/functional/prompt-layer-contract.functional.test.mjs —
- * lib/prompt-layer-contract.mjs vs. lib/prompt-composer.js's real fragment
+ * lib/prompt-layer-contract.mjs vs. lib/prompt-composer.mjs's real fragment
  * assembly (construct-72gqn.33).
  *
  * Drives the real composePrompt() against the repo's own prompt/role/registry
  * files (rootDir = repo root, matching tests/prompt-composer.test.mjs's
- * convention) and checks the resulting fragment sequence against the
- * declared PROMPT_LAYER_ORDER, including a token-constrained ('small' model
- * profile) request that exercises pruneFragments' budget-drop path, the
- * live path an assembly-order regression can hide in undetected
- * (fragments.indexOf() against a spread copy always returns -1, collapsing
- * pruned output to priority-sort order instead of declared assembly order
- * unless pruneFragments carries its own index tiebreaker).
+ * convention) and checks the resulting fragment sequence against
+ * PROMPT_LAYER_ORDER from lib/prompt-layer-model.mjs, including a
+ * token-constrained ('small' model profile) request that exercises
+ * pruneFragments' budget-drop path, the live path an assembly-order
+ * regression can hide in undetected (fragments.indexOf() against a spread
+ * copy always returns -1, collapsing pruned output to priority-sort order
+ * instead of declared assembly order unless pruneFragments carries its own
+ * index tiebreaker).
  * A second block proves validateFragmentOrder() itself is a real tripwire:
  * a synthetic, deliberately reordered fragment-type sequence must fail it.
  */
@@ -22,7 +23,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
-import { composePrompt } from '../../lib/prompt-composer.js';
+import { composePrompt } from '../../lib/prompt-composer.mjs';
 import {
   PRIORITY,
   PROMPT_LAYER_ORDER,
@@ -34,7 +35,7 @@ import {
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 test('composePrompt() assembles a full-layer request in declared PROMPT_LAYER_ORDER', () => {
-  const result = composePrompt('cx-engineer', {
+  const result = composePrompt('engineer', {
     rootDir: root,
     intent: 'implementation',
     workCategory: 'deep',
@@ -54,7 +55,7 @@ test('composePrompt() assembles a full-layer request in declared PROMPT_LAYER_OR
 });
 
 test('composePrompt() preserves declared order under token-constrained pruning', () => {
-  const result = composePrompt('cx-engineer', {
+  const result = composePrompt('engineer', {
     rootDir: root,
     intent: 'implementation',
     workCategory: 'deep',
@@ -79,13 +80,13 @@ test('composePrompt() preserves declared order under token-constrained pruning',
 });
 
 test('validateFragmentOrder() rejects a fragment sequence reordered relative to PROMPT_LAYER_CONTRACT', () => {
-  const inOrder = ['core', 'team-context', 'role-flavor', 'task-packet', 'context-digest', 'host-constraints'];
+  const inOrder = ['core', 'role-flavor', 'task-packet', 'context-digest', 'host-constraints'];
   assert.deepEqual(validateFragmentOrder(inOrder), { ok: true, reason: null });
 
-  const reordered = ['core', 'task-packet', 'team-context', 'role-flavor', 'context-digest', 'host-constraints'];
+  const reordered = ['core', 'task-packet', 'role-flavor', 'context-digest', 'host-constraints'];
   const result = validateFragmentOrder(reordered);
   assert.equal(result.ok, false);
-  assert.match(result.reason, /team-context.*appears after.*task-packet/);
+  assert.match(result.reason, /role-flavor.*appears after.*task-packet/);
 });
 
 test('validateFragmentOrder() rejects a fragment type absent from PROMPT_LAYER_ORDER', () => {
@@ -95,7 +96,7 @@ test('validateFragmentOrder() rejects a fragment type absent from PROMPT_LAYER_O
 });
 
 test('explicit roleFlavors override workspaceType-derived defaults end to end', () => {
-  const withoutOverride = composePrompt('cx-product-manager', {
+  const withoutOverride = composePrompt('product-manager', {
     rootDir: root,
     intent: 'implementation',
     workspaceType: 'platform',
@@ -103,7 +104,7 @@ test('explicit roleFlavors override workspaceType-derived defaults end to end', 
   const autoSelected = withoutOverride.fragments.find((f) => f.type === 'role-flavor');
   assert.match(autoSelected.label, /product-manager\.platform/);
 
-  const withOverride = composePrompt('cx-product-manager', {
+  const withOverride = composePrompt('product-manager', {
     rootDir: root,
     intent: 'implementation',
     workspaceType: 'platform',
@@ -149,9 +150,9 @@ test('task-packet may override learned-patterns; learned-patterns may never over
   assert.ok(learnedPatterns.neverOverride.includes('core'));
 });
 
-test('lib/prompt-composer.js no longer declares its own PRIORITY literal', () => {
-  const composerSrc = fs.readFileSync(path.join(root, 'lib', 'prompt-composer.js'), 'utf8');
-  assert.doesNotMatch(composerSrc, /PRIORITY = \{/, 'PRIORITY must be imported from prompt-layer-contract.mjs, not redeclared');
+test('lib/prompt-composer.mjs imports PRIORITY from prompt-layer-contract.mjs', () => {
+  const composerSrc = fs.readFileSync(path.join(root, 'lib', 'prompt-composer.mjs'), 'utf8');
+  assert.doesNotMatch(composerSrc, /const PRIORITY = \{/, 'PRIORITY must be imported from prompt-layer-contract.mjs, not redeclared');
   assert.match(composerSrc, /from '\.\/prompt-layer-contract\.mjs'/);
 
   const contractSrc = fs.readFileSync(path.join(root, 'lib', 'prompt-layer-contract.mjs'), 'utf8');

@@ -12,39 +12,39 @@ import {
 } from '../../lib/writes/write-policy.mjs';
 
 test('resolveWriteAuthorityKey maps known governed writes to their authority key', () => {
-  assert.equal(resolveWriteAuthorityKey('atlassian-jira', 'issue'), 'createIssues');
-  assert.equal(resolveWriteAuthorityKey('atlassian-jira', 'issue-update'), 'updateIssues');
-  assert.equal(resolveWriteAuthorityKey('atlassian-jira', 'comment'), 'updateIssues');
+  assert.equal(resolveWriteAuthorityKey('jira', 'issue'), 'createIssues');
+  assert.equal(resolveWriteAuthorityKey('jira', 'issue-update'), 'updateIssues');
+  assert.equal(resolveWriteAuthorityKey('jira', 'comment'), 'updateIssues');
   assert.equal(resolveWriteAuthorityKey('github', 'pr'), 'repoWrites');
-  assert.equal(resolveWriteAuthorityKey('atlassian-confluence', 'page'), 'publishDocs');
+  assert.equal(resolveWriteAuthorityKey('confluence', 'page'), 'publishDocs');
   assert.equal(resolveWriteAuthorityKey('slack', 'message'), 'externalPost');
   assert.equal(resolveWriteAuthorityKey('slack', 'reply'), 'externalPost');
 });
 
 test('resolveWriteAuthorityKey fails safe to externalPost for an unlisted kind', () => {
-  assert.equal(resolveWriteAuthorityKey('atlassian-jira', 'some-future-kind'), 'externalPost');
+  assert.equal(resolveWriteAuthorityKey('jira', 'some-future-kind'), 'externalPost');
   assert.equal(resolveWriteAuthorityKey('unknown-provider', 'x'), 'externalPost');
 });
 
 test('resolveWritePolicy defaults to approval when unconfigured', () => {
-  assert.equal(resolveWritePolicy('atlassian-jira', 'issue', {}), DEFAULT_WRITE_POLICY_MODE);
-  assert.equal(resolveWritePolicy('atlassian-jira', 'issue', undefined), 'approval');
+  assert.equal(resolveWritePolicy('jira', 'issue', {}), DEFAULT_WRITE_POLICY_MODE);
+  assert.equal(resolveWritePolicy('jira', 'issue', undefined), 'approval');
 });
 
 test('resolveWritePolicy honors a configured mode', () => {
-  const config = { writes: { policy: { 'atlassian-jira.comment': 'auto', 'github.issue': 'deny' } } };
-  assert.equal(resolveWritePolicy('atlassian-jira', 'comment', config), 'auto');
+  const config = { writes: { policy: { 'jira.comment': 'auto', 'github.issue': 'deny' } } };
+  assert.equal(resolveWritePolicy('jira', 'comment', config), 'auto');
   assert.equal(resolveWritePolicy('github', 'issue', config), 'deny');
-  assert.equal(resolveWritePolicy('atlassian-jira', 'issue', config), 'approval', 'unconfigured tool falls back to default');
+  assert.equal(resolveWritePolicy('jira', 'issue', config), 'approval', 'unconfigured tool falls back to default');
 });
 
 test('resolveWritePolicy fails safe on a malformed configured mode', () => {
-  const config = { writes: { policy: { 'atlassian-jira.comment': 'yolo' } } };
-  assert.equal(resolveWritePolicy('atlassian-jira', 'comment', config), 'approval');
+  const config = { writes: { policy: { 'jira.comment': 'yolo' } } };
+  assert.equal(resolveWritePolicy('jira', 'comment', config), 'approval');
 });
 
 test('validateWritePolicyConfig accepts a well-formed policy', () => {
-  const result = validateWritePolicyConfig({ 'atlassian-jira.comment': 'auto', 'github.pr': 'deny' });
+  const result = validateWritePolicyConfig({ 'jira.comment': 'auto', 'github.pr': 'deny' });
   assert.equal(result.ok, true);
 });
 
@@ -64,7 +64,7 @@ test('validateWritePolicyConfig rejects an unknown provider', () => {
 });
 
 test('validateWritePolicyConfig rejects an invalid mode', () => {
-  const result = validateWritePolicyConfig({ 'atlassian-jira.comment': 'sometimes' });
+  const result = validateWritePolicyConfig({ 'jira.comment': 'sometimes' });
   assert.equal(result.ok, false);
   assert.match(result.errors[0], /mode must be one of/);
 });
