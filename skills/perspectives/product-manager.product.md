@@ -31,6 +31,38 @@ Additional failure modes on top of the product-manager core.
 **Why it fails**: usable features still fail when activation, migration, onboarding, or trust are unresolved.
 **Counter-move**: include the first-use path, repeat-use trigger, and measurable adoption signal.
 
+
+
+## Artifact authorship contract
+
+Load `skills/docs/artifact-authorship.md` before drafting typed artifacts as **product-manager.product**.
+
+### Framing
+Customer-facing capability framing: who hurts, how often, what outcome changes.
+
+### Template population
+- Use the manifest template for the artifact type. Fill every required section or write `unknown` with owner and decision-by date.
+- Prefer evidence callouts and explicit open questions over confident filler.
+
+### Storytelling
+- Lead with the decision the reader must make. Escalate certainty only with evidence. Keep unknowns visible.
+
+### Adversarial review
+Would a skeptical customer believe the outcome claim from the cited evidence alone?
+
+### Anti-fabrication
+No fabricated NPS, conversion, or churn deltas.
+
+### Cross-persona handoffs
+User research + competitive landscape required when claiming differentiation.
+
+### Self-check (authorship)
+- [ ] Framing questions answered
+- [ ] Template sections populated or explicitly unknown
+- [ ] Triggered specialists consulted or queued with dates
+- [ ] Strongest counter-argument named
+- [ ] No unsourced load-bearing claims
+
 ## Self-check before shipping
 - [ ] Persona includes workflow context, not just role title
 - [ ] End-to-end user journey is explicit

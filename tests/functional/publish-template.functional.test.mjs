@@ -31,9 +31,10 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const GOLDEN = path.join(REPO, 'tests', 'fixtures', 'publish', 'golden-prd-platform.md');
 
-test('BRAND uses monochrome ink accent', () => {
-  assert.equal(BRAND.accent, '#0a0c10');
+test('BRAND uses field-notebook slate-teal accent', () => {
+  assert.equal(BRAND.accent, '#1f5c61');
   assert.notEqual(BRAND.accent, '#38bdf8');
+  assert.notEqual(BRAND.accent, '#0a0c10');
 });
 
 test('templateForArtifactType routes prd-platform to construct-prd.typ', () => {
@@ -77,7 +78,10 @@ test('parseArtifactMetadata reads golden fixture fields', () => {
 test('bundled distribution fonts ship with templates', () => {
   const fontDir = path.join(REPO, 'templates', 'distribution', 'fonts');
   for (const file of [
-    'SpaceGrotesk-Variable.ttf',
+    'PlusJakartaSans-Regular.ttf',
+    'PlusJakartaSans-Medium.ttf',
+    'PlusJakartaSans-SemiBold.ttf',
+    'PlusJakartaSans-Bold.ttf',
     'JetBrainsMono-Regular.ttf',
     'JetBrainsMono-Medium.ttf',
     'JetBrainsMono-SemiBold.ttf',
@@ -106,7 +110,7 @@ test('preprocessMarkdownForPdfExport strips duplicate cover title and metadata b
   const out = preprocessMarkdownForPdfExport(raw, meta);
   assert.doesNotMatch(out, /^#\s+Platform PRD/m);
   assert.doesNotMatch(out, /\*\*Owner\*\*:/);
-  assert.match(out, /^>\s+Platform teams need/m);
+  assert.match(out, /Platform teams need a governed layer/);
   assert.match(out, /^## Problem/m);
 });
 
@@ -138,23 +142,23 @@ test('distribution diagram defaults use compact hand-drawn sizing', () => {
   assert.equal(defaults.mermaidLook, 'handDrawn');
   assert.equal(defaults.mermaidWidth, 2400);
   assert.equal(defaults.mermaidScale, 2);
-  assert.equal(defaults.accent, '#0a0c10');
+  assert.equal(defaults.accent, '#1f5c61');
 });
 
-test('injectMermaidBrandTheme adds handDrawn init with monochrome ink and handwritten font', () => {
+test('injectMermaidBrandTheme adds handDrawn init with field-notebook ink and handwritten font', () => {
   const out = injectMermaidBrandTheme('flowchart TD\n  A --> B');
   assert.match(out, /%%\{init:/);
   assert.match(out, /handDrawn/);
   assert.match(out, /htmlLabels/);
   assert.match(out, /Caveat/);
-  assert.match(out, /0a0c10/);
+  assert.match(out, /1a1d24/);
   assert.doesNotMatch(out, /8b5cf6/);
 });
 
-test('preprocessMarkdownDiagrams brands mermaid and d2 fences monochrome', () => {
+test('preprocessMarkdownDiagrams brands mermaid and d2 fences field-notebook', () => {
   const md = '# Doc\n\n```mermaid\nflowchart TD\n  A --> B\n```\n\n```d2\na -> b\n```\n';
   const out = preprocessMarkdownDiagrams(md);
-  assert.match(out, /0a0c10/);
+  assert.match(out, /1a1d24/);
   assert.doesNotMatch(out, /8b5cf6/);
   assert.match(out, /style\.font-size: 14/);
   assert.match(out, /```d2/);
@@ -184,17 +188,17 @@ test('construct-brand.typ omits pre-2.0 compat color token shims', () => {
   assert.doesNotMatch(brand, /brand-warm|brand-violet|brand-accent-deep|brand-surface-warm/);
 });
 
-test('construct-brand.typ uses Construct 2.0 folio visual system', () => {
+test('construct-brand.typ uses field-notebook hand-drawn visual system', () => {
   const brand = fs.readFileSync(path.join(REPO, 'templates', 'distribution', 'construct-brand.typ'), 'utf8');
-  assert.match(brand, /construct-font-sans = \("Space Grotesk",\)/);
+  assert.match(brand, /construct-font-sans = \("Plus Jakarta Sans",\)/);
   assert.match(brand, /set par\(justify: false, leading: 1\.02em, spacing: 1\.35em\)/);
-  assert.doesNotMatch(brand, /Libertinus|SourceSerif|Geist|IBM Plex Sans|"Inter"/);
-  assert.match(brand, /fill: ink, inset: \(x: 16pt/);
+  assert.doesNotMatch(brand, /Libertinus|SourceSerif|Geist|IBM Plex Sans|"Inter"|"Space Grotesk"/);
+  assert.match(brand, /fill: surface/);
   assert.match(brand, /construct-status-label/);
   assert.match(brand, /#upper\(status\)/);
   assert.match(brand, /construct-meta-grid/);
   assert.match(brand, /section-counter/);
-  assert.match(brand, /stroke: 3pt \+ ink/);
+  assert.match(brand, /stroke: \(paint: accent, thickness: 2\.2pt, dash: "dashed"\)/);
   assert.doesNotMatch(brand, /construct-status-pill/);
   assert.doesNotMatch(brand, /construct-meta-chips/);
   assert.doesNotMatch(brand, /line\(length: 46pt/);
@@ -213,16 +217,16 @@ test('construct-brand.typ uses Construct 2.0 folio visual system', () => {
   assert.match(brand, /set list\(.*indent: 0\.3em, body-indent: 0\.7em, spacing: 1\.05em\)/);
   assert.match(brand, /set enum\(numbering: "1\.", indent: 0\.3em, body-indent: 0\.7em, spacing: 1\.05em\)/);
   assert.match(brand, /set terms\(/);
-  assert.match(brand, /fill: \(x, y\) => if y == 0 \{ ink \}/);
+  assert.match(brand, /fill: \(x, y\) => if y == 0 \{ accent-soft \}/);
 });
 
-test('construct-deck.html and construct-web.html use Space Grotesk brand stack', () => {
+test('construct-deck.html and construct-web.html use Plus Jakarta Sans brand stack', () => {
   const dist = path.join(REPO, 'templates', 'distribution');
   for (const file of ['construct-deck.html', 'construct-web.html']) {
     const html = fs.readFileSync(path.join(dist, file), 'utf8');
-    assert.match(html, /Space Grotesk/, `${file} must reference Space Grotesk`);
+    assert.match(html, /Plus Jakarta Sans/, `${file} must reference Plus Jakarta Sans`);
     assert.match(html, /JetBrains Mono/, `${file} must reference JetBrains Mono`);
-    assert.doesNotMatch(html, /Plus Jakarta|Geist|IBM Plex|Libertinus/i, `${file} must not cite retired fonts`);
+    assert.doesNotMatch(html, /Space Grotesk|Geist|IBM Plex|Libertinus/i, `${file} must not cite retired fonts`);
   }
 });
 
@@ -246,7 +250,7 @@ test('all PDF layout wrappers share the brand page-geometry tokens', () => {
   const dist = path.join(REPO, 'templates', 'distribution');
   const brand = fs.readFileSync(path.join(dist, 'construct-brand.typ'), 'utf8');
   assert.match(brand, /#let construct-page-paper = "a4"/);
-  assert.match(brand, /#let construct-page-margin = \(left: 2\.7cm/);
+  assert.match(brand, /#let construct-page-margin = \(left: 2\.4cm/);
   for (const file of ['construct-pdf.typ', 'construct-prd.typ', 'construct-research.typ', 'construct-decision.typ']) {
     const tpl = fs.readFileSync(path.join(dist, file), 'utf8');
     assert.match(tpl, /paper: construct-page-paper/, `${file} must use the shared paper token`);

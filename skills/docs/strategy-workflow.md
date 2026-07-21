@@ -3,12 +3,19 @@ name: docs-strategy-workflow
 description: "Use when: the user asks about product direction, strategic bets, what to prioritize, whether a signal aligns with strategy, or wants to update the strategy."
 inputs: [signal, decision-context]
 artifactType: strategy
-verificationBar: "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
+verificationBar: "Vision→Bets(with kill criteria)→Non-bets→Metrics→Competitive Positioning→Risks; baselines/targets may be unknown but never fabricated."
 triggers: ["strategy", "bets", "non-bets"]
 ---
 # Strategy Workflow
 
 Use when: the user asks about product direction, strategic bets, what to prioritize, whether a signal aligns with strategy, or wants to update the strategy.
+
+## Native spine (blocking)
+
+Vision → Bets → Non-bets → Time Horizon → North Star Metric → Metrics → Milestones → Competitive Positioning → Risks → Open Bets → References.
+
+- Every Bet needs Why + Leading indicator + **Kill criterion**.
+- `construct artifact validate --type=strategy` runs `lintStrategyDeliveryDepth`.
 
 ## Reading Strategy
 
@@ -28,7 +35,7 @@ Given a product signal or PRD, check:
 1. Show the user the current section being updated.
 2. Propose the change with rationale.
 3. Write the updated section and increment the `updated` date.
-4. If a Bet is being added, check for conflicting Non-bets and surface them.
+4. If a Bet is being added, check for conflicting Non-bets and surface them; refuse bets without kill criteria.
 5. Strategy changes are always approved by the user before writing.
 
 ## Storage
@@ -40,3 +47,7 @@ Given a product signal or PRD, check:
 ## Release gate
 
 Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.
+
+## Shared authorship contract
+
+Before drafting or reviewing, call `get_skill("docs/artifact-authorship")` for framing, template population, storytelling, adversarial review, anti-fabrication, and cross-persona triggers. Persona overlays under `skills/perspectives/` add failure modes; they do not waive that contract.

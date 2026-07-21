@@ -1,6 +1,6 @@
 # Distribution examples
 
-Branded PDF, HTML, deck, and PPTX samples generated from typed markdown sources. Use these to preview Construct's publish layouts (Space Grotesk, monochrome ink, hand-drawn figures).
+Branded PDF, HTML, deck, and PPTX samples generated from typed markdown sources. Use these to preview Construct's publish layouts (Plus Jakarta Sans, field-notebook ink, hand-drawn figures).
 
 ## Generate locally
 
@@ -30,8 +30,21 @@ npm run examples:deck
 | `sources/rfc-platform.md` | rfc-platform | construct-decision.typ |
 | `sources/strategy.md` | strategy | construct-prd.typ |
 | `sources/deck-one-pager.md` | one-pager | construct-deck.html + PPTX |
+| `sources/stress-multi-persona-prd.md` | prd | Multi-persona authorship stress (PDF) |
+| `sources/stress-multi-persona-deck.md` | one-pager | Same scenario as slide deck (PPTX; `---` separators; layout audit must pass) |
 
 Edit sources, then re-run the generator. Outputs land in `.tmp/distribution-examples/` (gitignored).
+
+### Multi-persona stress exports
+
+Dense PRD markdown is valid for PDF but fails PPTX layout audit by design (no slide separators / dense prose). Use the deck source for PPTX:
+
+```bash
+node bin/construct export examples/distribution/sources/stress-multi-persona-deck.md --to=pptx --output=~/Downloads/construct-stress-multi-persona.pptx
+node bin/construct export examples/distribution/sources/stress-multi-persona-prd.md --to=pdf --figures --output=~/Downloads/construct-stress-multi-persona.pdf
+```
+
+Both fixtures force legal/privacy triggers, user-advocacy evidence gaps (`unknown` / `[unverified]`), competitive landscape honesty, and adversarial FMEA.
 
 ## Single-file export
 

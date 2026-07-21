@@ -1,35 +1,37 @@
 /**
- * templates/distribution/construct-brand.typ — Construct 2.0 distribution brand system.
+ * templates/distribution/construct-brand.typ — field-notebook distribution brand.
  *
- * Monochrome ink ramp and Space Grotesk typography for bundled PDF layouts (prd,
- * research, decision, fallback). The visual language is editorial-folio: inverted
- * cover band, asymmetric margins, numbered section heads, outlined callouts, and
- * zebra tables. Color belongs to diagrams, not page furniture.
+ * Cool stone paper, charcoal ink, slate-teal evidence accent, Plus Jakarta Sans.
+ * Visual language is hand-drawn editorial: open (not inverted) cover band, dashed
+ * rules, circle section markers, sketched callout frames. Color on the page is for
+ * evidence/decision emphasis; diagrams carry sketch geometry separately.
  *
- * Space Grotesk uses explicit numeric weights (400/500/600/700) on the bundled
- * variable TTF; never use named weight families. Document-wide #set/#show rules
- * live in construct-theme; layout templates import helpers from here.
+ * Plus Jakarta Sans uses explicit numeric weights (400/500/600/700) on bundled
+ * TTF cuts. Document-wide #set/#show rules live in construct-theme; layout
+ * templates import helpers from here.
  */
 
-// Monochrome ink ramp. `ink` accents rules and emphasis; greys carry hierarchy.
+// Field-notebook ink ramp. Accent marks evidence and decision chrome only.
 
-#let ink = rgb("#0a0c10")
-#let ink-strong = rgb("#16191f")
-#let ink-body = rgb("#23272e")
-#let ink-muted = rgb("#565c66")
-#let ink-faint = rgb("#9499a2")
-#let hairline = rgb("#e3e4e8")
-#let hairline-strong = rgb("#cdd0d6")
-#let surface = rgb("#fafafa")
-#let surface-alt = rgb("#f3f4f6")
-#let paper = rgb("#ffffff")
+#let ink = rgb("#1a1d24")
+#let ink-strong = rgb("#12141a")
+#let ink-body = rgb("#2c313a")
+#let ink-muted = rgb("#545b66")
+#let ink-faint = rgb("#8b919a")
+#let hairline = rgb("#d5d8dd")
+#let hairline-strong = rgb("#c0c5cc")
+#let surface = rgb("#eef1f3")
+#let surface-alt = rgb("#e3e7ea")
+#let paper = rgb("#f7f8f9")
+#let accent = rgb("#1f5c61")
+#let accent-soft = rgb("#d8e6e7")
 
-#let construct-font-sans = ("Space Grotesk",)
-#let construct-font-display = ("Space Grotesk",)
+#let construct-font-sans = ("Plus Jakarta Sans",)
+#let construct-font-display = ("Plus Jakarta Sans",)
 #let construct-font-mono = ("JetBrains Mono",)
 
 #let horizontalrule = block(width: 100%, above: 1.5em, below: 1.5em)[
-  #line(length: 100%, stroke: 0.75pt + hairline-strong)
+  #line(length: 100%, stroke: (paint: hairline-strong, thickness: 0.9pt, dash: "dashed"))
 ]
 
 // Type scale. Modular ramp off an 11pt body; every step must read distinctly.
@@ -51,10 +53,10 @@
 #let wt-semibold = 600
 #let wt-bold = 700
 
-// Asymmetric folio geometry: wider binding gutter, tighter outer edge.
+// Notebook page geometry: slightly wider outer margin for sketch breathing room.
 
 #let construct-page-paper = "a4"
-#let construct-page-margin = (left: 2.7cm, right: 1.95cm, top: 2.25cm, bottom: 2.55cm)
+#let construct-page-margin = (left: 2.4cm, right: 2.2cm, top: 2.2cm, bottom: 2.5cm)
 
 #let construct-figure-max-width = 94%
 #let construct-figure-max-height = 3.6in
@@ -77,12 +79,18 @@
   }
 }
 
-// Status reads as bracketed uppercase text, not a rounded pill.
+// Status reads as bracketed uppercase text beside a hand-drawn accent tick.
 
 #let construct-status-label(status) = {
   if status == "" { none }
   else {
-    text(font: construct-font-mono, size: fs-small, weight: wt-medium, fill: ink, tracking: 0.06em)[\[#upper(status)\]]
+    grid(
+      columns: (auto, auto),
+      column-gutter: 8pt,
+      align: horizon,
+      box(width: 10pt, height: 10pt, stroke: (paint: accent, thickness: 1.1pt, dash: "dashed"), radius: 50%),
+      text(font: construct-font-mono, size: fs-small, weight: wt-medium, fill: ink, tracking: 0.06em)[\[#upper(status)\]],
+    )
   }
 }
 
@@ -105,9 +113,10 @@
   else {
     block(
       width: 100%,
-      stroke: 0.6pt + hairline-strong,
+      fill: paper,
+      stroke: (paint: hairline-strong, thickness: 0.85pt, dash: "dashed"),
       inset: 10pt,
-      radius: 2pt,
+      radius: 4pt,
       above: 1.1em,
       below: 0.4em,
     )[
@@ -116,7 +125,7 @@
         column-gutter: 14pt,
         row-gutter: 6pt,
         ..rows.map(row => (
-          text(font: construct-font-sans, size: fs-micro, weight: wt-bold, fill: ink-faint, tracking: 0.08em)[#upper(row.at(0))],
+          text(font: construct-font-sans, size: fs-micro, weight: wt-bold, fill: accent, tracking: 0.08em)[#upper(row.at(0))],
           text(font: construct-font-sans, size: fs-small, weight: wt-medium, fill: ink-strong)[#row.at(1)],
         )).flatten()
       )
@@ -124,7 +133,7 @@
   }
 }
 
-// Cover masthead: inverted band, display title, metadata grid, heavy rule.
+// Cover masthead: open notebook band (paper on stone), display title, dashed rule.
 
 #let construct-masthead(
   title,
@@ -137,17 +146,23 @@
   doc-id: "",
   classification: "",
 ) = {
-  block(width: 100%, fill: ink, inset: (x: 16pt, y: 12pt), radius: 2pt)[
-    #set text(font: construct-font-sans, fill: paper)
+  block(
+    width: 100%,
+    fill: surface,
+    stroke: (paint: hairline-strong, thickness: 1pt, dash: "dashed"),
+    inset: (x: 16pt, y: 12pt),
+    radius: 4pt,
+  )[
+    #set text(font: construct-font-sans, fill: ink)
     #grid(
       columns: (1fr, auto),
       align: (left, right),
       [
-        #text(size: fs-cover-badge, weight: wt-bold, tracking: 0.12em)[#construct-badge-label(artifact-type)]
+        #text(size: fs-cover-badge, weight: wt-bold, fill: accent, tracking: 0.12em)[#construct-badge-label(artifact-type)]
       ],
       [
         #if doc-id != "" [
-          #text(font: construct-font-mono, size: fs-micro, weight: wt-medium, tracking: 0.04em)[#doc-id]
+          #text(font: construct-font-mono, size: fs-micro, weight: wt-medium, tracking: 0.04em, fill: ink-muted)[#doc-id]
         ]
       ],
     )
@@ -155,7 +170,7 @@
   v(1.35em)
   par(
     leading: 0.38em,
-    text(font: construct-font-display, size: fs-title, weight: wt-bold, fill: ink, tracking: -0.025em)[#construct-smart-text(title)],
+    text(font: construct-font-display, size: fs-title, weight: wt-bold, fill: ink, tracking: -0.02em)[#construct-smart-text(title)],
   )
   if subtitle != "" {
     v(0.65em)
@@ -179,19 +194,19 @@
   )
   if grid != none { grid }
   v(1.25em)
-  line(length: 100%, stroke: 3pt + ink)
+  line(length: 100%, stroke: (paint: accent, thickness: 2.2pt, dash: "dashed"))
   v(1.65em)
 }
 
-// Outlined callout shell: white fill, full border, overline label.
+// Sketched callout shell: soft fill, dashed border, overline label.
 
 #let construct-callout(label, body, tint: paper) = {
   block(
     fill: tint,
-    stroke: 0.75pt + hairline-strong,
+    stroke: (paint: hairline-strong, thickness: 0.9pt, dash: "dashed"),
     inset: (left: 14pt, top: 13pt, bottom: 12pt, right: 14pt),
     width: 100%,
-    radius: 3pt,
+    radius: 4pt,
     above: 1.15em,
     below: 1.15em,
   )[
@@ -199,7 +214,7 @@
     #set text(font: construct-font-sans, size: fs-body, fill: ink-body)
     #place(top + left, dx: 10pt, dy: -7pt)[
       #box(fill: paper, inset: (x: 4pt, y: 0pt))[
-        #text(size: fs-micro, weight: wt-bold, fill: ink, tracking: 0.1em)[#upper(label)]
+        #text(size: fs-micro, weight: wt-bold, fill: accent, tracking: 0.1em)[#upper(label)]
       ]
     ]
     #v(0.35em)
@@ -207,7 +222,7 @@
   ]
 }
 
-#let construct-at-a-glance(body) = construct-callout("At a glance", body, tint: surface)
+#let construct-at-a-glance(body) = construct-callout("At a glance", body, tint: accent-soft)
 
 #let construct-note(body) = construct-callout("Note", body, tint: paper)
 
@@ -216,29 +231,29 @@
 #let construct-key-metrics(body) = {
   block(
     fill: surface,
-    stroke: (top: 2pt + ink, rest: 0.75pt + hairline-strong),
+    stroke: (top: 2.2pt + accent, rest: (paint: hairline-strong, thickness: 0.85pt, dash: "dashed")),
     inset: 14pt,
     width: 100%,
-    radius: (bottom: 3pt),
+    radius: (bottom: 4pt),
     above: 1.15em,
     below: 1.15em,
   )[
-    #text(font: construct-font-sans, size: fs-micro, weight: wt-bold, fill: ink, tracking: 0.11em)[KEY METRICS]
+    #text(font: construct-font-sans, size: fs-micro, weight: wt-bold, fill: accent, tracking: 0.11em)[KEY METRICS]
     #v(0.55em)
     #body
   ]
 }
 
-// Running header: page number in outer corner only (folio style).
+// Running header: sketched page chip in outer corner.
 
 #let construct-running-header(title, doc-id: "", version: "") = context {
   if counter(page).get().first() > 1 [
     #set text(font: construct-font-mono, size: fs-micro, fill: ink-muted)
     #align(right)[
       #box(
-        stroke: 0.5pt + hairline-strong,
+        stroke: (paint: hairline-strong, thickness: 0.7pt, dash: "dashed"),
         inset: (x: 5pt, y: 2pt),
-        radius: 2pt,
+        radius: 3pt,
       )[
         #counter(page).display()
       ]
@@ -256,7 +271,7 @@
 ) = context {
   if counter(page).get().first() > 1 [
     #v(0.35em)
-    #line(length: 100%, stroke: 0.5pt + hairline)
+    #line(length: 100%, stroke: (paint: hairline, thickness: 0.6pt, dash: "dashed"))
     #v(0.38em)
     #grid(
       columns: (1fr, auto),
@@ -282,6 +297,7 @@
 #let section-counter = counter("construct-section")
 
 #let construct-theme(body) = {
+  set page(fill: paper)
   set text(font: construct-font-sans, size: fs-body, fill: ink-body, lang: "en", tracking: 0.001em)
   set par(justify: false, leading: 1.02em, spacing: 1.35em)
   set heading(numbering: none, outlined: true)
@@ -289,19 +305,19 @@
   show strong: set text(font: construct-font-sans, weight: wt-semibold, fill: ink)
   show emph: set text(style: "italic")
 
-  set list(marker: (text(fill: ink)[—], text(fill: ink-muted)[–], text(fill: ink-faint)[·]), indent: 0.3em, body-indent: 0.7em, spacing: 1.05em)
+  set list(marker: (text(fill: accent)[•], text(fill: ink-muted)[◦], text(fill: ink-faint)[·]), indent: 0.3em, body-indent: 0.7em, spacing: 1.05em)
   set enum(numbering: "1.", indent: 0.3em, body-indent: 0.7em, spacing: 1.05em)
   set terms(hanging-indent: 1em, spacing: 1.05em)
 
   show link: it => {
-    set text(fill: ink-strong)
-    underline(offset: 2pt, stroke: 0.55pt + ink-faint, it)
+    set text(fill: accent)
+    underline(offset: 2pt, stroke: 0.55pt + accent-soft, it)
   }
 
   show heading.where(level: 1): it => {
     block(sticky: true, above: 2.2em, below: 1em, {
       v(0.15em)
-      line(length: 100%, stroke: 2pt + ink)
+      line(length: 100%, stroke: (paint: accent, thickness: 1.6pt, dash: "dashed"))
       v(0.55em)
       set par(leading: 0.42em)
       text(font: construct-font-display, size: fs-h1, weight: wt-bold, fill: ink, tracking: -0.018em)[#it.body]
@@ -315,9 +331,10 @@
       line(length: 100%, stroke: (dash: "dotted", paint: hairline-strong))
       v(0.65em)
       grid(
-        columns: (auto, 1fr),
-        column-gutter: 10pt,
-        align: (bottom, bottom),
+        columns: (auto, auto, 1fr),
+        column-gutter: 8pt,
+        align: (horizon, bottom, bottom),
+        box(width: 9pt, height: 9pt, stroke: (paint: accent, thickness: 1pt, dash: "dashed"), radius: 50%),
         text(font: construct-font-mono, size: fs-h4, weight: wt-medium, fill: ink-faint)[
           #section-counter.display("01")
         ],
@@ -349,9 +366,9 @@
 
   show raw.where(block: true): it => block(
     fill: surface,
-    stroke: 0.6pt + hairline-strong,
+    stroke: (paint: hairline-strong, thickness: 0.7pt, dash: "dashed"),
     inset: 12pt,
-    radius: 3pt,
+    radius: 4pt,
     width: 100%,
     above: 1.35em,
     below: 1.35em,
@@ -360,11 +377,11 @@
   set table(
     stroke: 0.5pt + hairline,
     inset: (x: 10pt, y: 8pt),
-    fill: (x, y) => if y == 0 { ink } else if calc.rem(y, 2) == 0 { surface } else { paper },
+    fill: (x, y) => if y == 0 { accent-soft } else if calc.rem(y, 2) == 0 { surface } else { paper },
   )
   show table.cell: it => {
     if it.y == 0 {
-      set text(font: construct-font-sans, weight: wt-bold, fill: paper, size: fs-small)
+      set text(font: construct-font-sans, weight: wt-bold, fill: ink, size: fs-small)
       it
     } else {
       set text(
@@ -386,11 +403,11 @@
   set figure(supplement: "Figure")
   show figure.where(kind: image): it => block(above: 1.25em, below: 1.25em, breakable: false, {
     block(
-      stroke: 0.6pt + hairline-strong,
+      stroke: (paint: hairline-strong, thickness: 0.85pt, dash: "dashed"),
       fill: paper,
       inset: 12pt,
       width: 100%,
-      radius: 3pt,
+      radius: 4pt,
     )[
       #align(center, layout(avail => {
         let natural = measure(it.body)
@@ -407,7 +424,7 @@
     if it.caption != none {
       v(0.45em)
       align(left)[
-        #text(font: construct-font-mono, size: fs-micro, weight: wt-medium, fill: ink-muted)[Fig. #it.counter.display()]
+        #text(font: construct-font-mono, size: fs-micro, weight: wt-medium, fill: accent)[Fig. #it.counter.display()]
         #text(font: construct-font-sans, size: fs-micro, fill: ink-muted)[: #it.caption.body]
       ]
     }

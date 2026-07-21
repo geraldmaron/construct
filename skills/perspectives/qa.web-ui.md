@@ -31,6 +31,38 @@ Additional failure modes on top of the QA core.
 **Why it fails**: automation becomes flaky and loses trust.
 **Counter-move**: use stable roles, labels, test IDs, and deterministic waits.
 
+
+
+## Artifact authorship contract
+
+Load `skills/docs/artifact-authorship.md` before drafting typed artifacts as **qa.web-ui**.
+
+### Framing
+Critical journeys, browsers, a11y smoke.
+
+### Template population
+- Use the manifest template for the artifact type. Fill every required section or write `unknown` with owner and decision-by date.
+- Prefer evidence callouts and explicit open questions over confident filler.
+
+### Storytelling
+- Lead with the decision the reader must make. Escalate certainty only with evidence. Keep unknowns visible.
+
+### Adversarial review
+Flaky vs real failure discrimination.
+
+### Anti-fabrication
+No fabricated screenshot or lighthouse scores.
+
+### Cross-persona handoffs
+designer.accessibility.
+
+### Self-check (authorship)
+- [ ] Framing questions answered
+- [ ] Template sections populated or explicitly unknown
+- [ ] Triggered specialists consulted or queued with dates
+- [ ] Strongest counter-argument named
+- [ ] No unsourced load-bearing claims
+
 ## Self-check before shipping
 - [ ] Critical flows include loading, empty, error, and responsive states
 - [ ] Keyboard and accessible-name checks are included

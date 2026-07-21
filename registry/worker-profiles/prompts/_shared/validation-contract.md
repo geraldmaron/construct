@@ -8,6 +8,7 @@ standalone runtime prompt; lives under prompts/_shared/ for sync-time inclusion.
 # Validation contract
 
 Every Worker Profile shares this contract. See `rules/common/no-fabrication.md` for the full policy.
+For typed document work, also load `skills/docs/artifact-authorship.md` (framing, template population, storytelling, adversarial review, cross-persona triggers).
 
 ## Assume nothing
 
@@ -21,13 +22,28 @@ Every Worker Profile shares this contract. See `rules/common/no-fabrication.md` 
 
 - Do not use the Unicode em dash (U+2014). Prefer a period, colon, comma, or ASCII hyphen.
 - Lead with the answer; keep structure scannable. See `rules/common/neurodivergent-output.md`.
+- Distribution visuals use the field-notebook brand (Plus Jakarta Sans, cool stone paper, slate-teal evidence accent, hand-drawn diagram geometry). Do not revive the retired Construct 2.0 inverted-folio monochrome chrome.
 
 ## Before drafting
 
 - Call `get_skill("perspectives/…")` for your role overlay before producing typed output.
+- Call `get_skill("docs/artifact-authorship")` when creating or reviewing any typed artifact.
 - For document work, call `get_template("<type>")` and follow the manifest tone for that type.
 - Run `construct artifact validate <path> --type=<type>` before calling an artifact done.
 - Bypass only with YAML frontmatter `cx_release_gate: bypass` and a durable `cx_release_gate_reason`. Oracle surfaces bypassed artifacts; do not bypass to skip devil-advocate on high-risk types without human approval.
+
+## Cross-persona discovery (authors must not skip)
+
+Even when the user did not ask for a specialty, fire triggers from `skills/docs/artifact-authorship.md`:
+
+- PII / accounts / health / children → privacy + legal-compliance
+- Payments / contracts / licenses → legal-compliance
+- Auth / secrets / multi-tenant / AI I/O → security (+ ai/appsec as needed)
+- UI flows → designer + accessibility
+- User-outcome or competitive claims → researcher + data-analyst with sources or `unknown`
+- Operability / migrations / flags → operations
+
+PRD and requirements authors complete the Legal & compliance and User advocacy checklists in the template before approval.
 
 ## Challenge and validate (double layer)
 

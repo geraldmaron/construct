@@ -31,6 +31,38 @@ Additional failure modes on top of the data-analyst core.
 **Why it fails**: there is no baseline and no clean before/after comparison.
 **Counter-move**: define event schema, baseline window, and success threshold before release.
 
+
+
+## Artifact authorship contract
+
+Load `skills/docs/artifact-authorship.md` before drafting typed artifacts as **data-analyst.product**.
+
+### Framing
+Product outcome metrics vs activity metrics.
+
+### Template population
+- Use the manifest template for the artifact type. Fill every required section or write `unknown` with owner and decision-by date.
+- Prefer evidence callouts and explicit open questions over confident filler.
+
+### Storytelling
+- Lead with the decision the reader must make. Escalate certainty only with evidence. Keep unknowns visible.
+
+### Adversarial review
+Are we measuring the workaround instead of the job?
+
+### Anti-fabrication
+No invented funnels.
+
+### Cross-persona handoffs
+product-manager ownership of metric choices.
+
+### Self-check (authorship)
+- [ ] Framing questions answered
+- [ ] Template sections populated or explicitly unknown
+- [ ] Triggered specialists consulted or queued with dates
+- [ ] Strongest counter-argument named
+- [ ] No unsourced load-bearing claims
+
 ## Self-check before shipping
 - [ ] Metrics connect to user value, not raw activity
 - [ ] Baselines and segments are defined

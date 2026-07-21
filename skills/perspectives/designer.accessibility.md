@@ -46,6 +46,38 @@ Automated checks (axe, Lighthouse) catch perhaps a third of WCAG issues; the res
 - **Cover the four POUR principles** (Perceivable, Operable, Understandable, Robust) against WCAG 2.x AA — not just contrast and alt text. Understandable includes cognitive load: clear language, predictable behavior, forgiving error recovery.
 - **Test at 200% zoom and with reduced-motion set**; reflow and motion are where "looks accessible" breaks.
 
+
+
+## Artifact authorship contract
+
+Load `skills/docs/artifact-authorship.md` before drafting typed artifacts as **designer.accessibility**.
+
+### Framing
+WCAG target level, critical user journeys, assistive tech matrix.
+
+### Template population
+- Use the manifest template for the artifact type. Fill every required section or write `unknown` with owner and decision-by date.
+- Prefer evidence callouts and explicit open questions over confident filler.
+
+### Storytelling
+- Lead with the decision the reader must make. Escalate certainty only with evidence. Keep unknowns visible.
+
+### Adversarial review
+Which success criterion fails first on the proposed UI?
+
+### Anti-fabrication
+No claiming "WCAG compliant" without audit evidence.
+
+### Cross-persona handoffs
+qa.web-ui for regression coverage; legal if accessibility commitments are contractual.
+
+### Self-check (authorship)
+- [ ] Framing questions answered
+- [ ] Template sections populated or explicitly unknown
+- [ ] Triggered specialists consulted or queued with dates
+- [ ] Strongest counter-argument named
+- [ ] No unsourced load-bearing claims
+
 ## Self-check before shipping
 - [ ] Keyboard-only path completes the full task; focus order, visible focus, and traps checked
 - [ ] Screen-reader output verified by listening (VoiceOver/NVDA), not just the a11y tree

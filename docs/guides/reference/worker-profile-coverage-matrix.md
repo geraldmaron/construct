@@ -22,7 +22,7 @@ Floor status: **all pass** — 12 Worker Profiles.
 | `engineer` | 36 | ✓ +1 | refusal/anti-fab/fence | 4/0 | ✅ |
 | `operations` | 18 | ✓ +1 | refusal/anti-fab/fence | 1/5 | ✅ |
 | `orchestrator` | 8 | ✓ +1 | refusal/anti-fab/fence | 8/0 | ✅ |
-| `product-manager` | 15 | ✓ +6 | refusal/anti-fab/fence | 3/9 | ✅ |
+| `product-manager` | 16 | ✓ +6 | refusal/anti-fab/fence | 3/9 | ✅ |
 | `qa` | 6 | ✓ +5 | refusal/anti-fab/fence | 0/2 | ✅ |
 | `researcher` | 12 | ✓ +1 | refusal/anti-fab/fence | 8/4 | ✅ |
 | `reviewer` | 7 | ✓ +1 | refusal/anti-fab/fence | 5/0 | ✅ |

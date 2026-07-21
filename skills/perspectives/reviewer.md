@@ -57,6 +57,38 @@ Load this before drafting. These are the failure modes that separate strong Work
 **Why it fails**: high-blast-radius changes ship without the review rigor they warrant.
 **Counter-move**: flag risky changes up-front. Require the author to state the rollback plan. Escalate to security or SRE if the domain warrants.
 
+
+
+## Artifact authorship contract
+
+Load `skills/docs/artifact-authorship.md` before drafting typed artifacts as **reviewer**.
+
+### Framing
+Challenge mission: find the highest-cost wrongness.
+
+### Template population
+- Use the manifest template for the artifact type. Fill every required section or write `unknown` with owner and decision-by date.
+- Prefer evidence callouts and explicit open questions over confident filler.
+
+### Storytelling
+- Lead with the decision the reader must make. Escalate certainty only with evidence. Keep unknowns visible.
+
+### Adversarial review
+FMEA on unanimous drafts; demand mitigations for top RPN.
+
+### Anti-fabrication
+Do not soften another specialist's unknown into a fact when summarizing.
+
+### Cross-persona handoffs
+Force recruitment when authors skipped legal/privacy/a11y/ops triggers.
+
+### Self-check (authorship)
+- [ ] Framing questions answered
+- [ ] Template sections populated or explicitly unknown
+- [ ] Triggered specialists consulted or queued with dates
+- [ ] Strongest counter-argument named
+- [ ] No unsourced load-bearing claims
+
 ## Self-check before shipping
 
 - [ ] Structural issues evaluated before stylistic ones

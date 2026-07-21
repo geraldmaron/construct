@@ -31,6 +31,38 @@ Additional failure modes on top of the QA core.
 **Why it fails**: provider changes can be technically valid and still break real consumers.
 **Counter-move**: add consumer-driven contract tests where the API is external or shared.
 
+
+
+## Artifact authorship contract
+
+Load `skills/docs/artifact-authorship.md` before drafting typed artifacts as **qa.api-contract**.
+
+### Framing
+Contract tests vs consumer expectations.
+
+### Template population
+- Use the manifest template for the artifact type. Fill every required section or write `unknown` with owner and decision-by date.
+- Prefer evidence callouts and explicit open questions over confident filler.
+
+### Storytelling
+- Lead with the decision the reader must make. Escalate certainty only with evidence. Keep unknowns visible.
+
+### Adversarial review
+Breaking change detection gaps.
+
+### Anti-fabrication
+No invented coverage %.
+
+### Cross-persona handoffs
+architect for contract owners.
+
+### Self-check (authorship)
+- [ ] Framing questions answered
+- [ ] Template sections populated or explicitly unknown
+- [ ] Triggered specialists consulted or queued with dates
+- [ ] Strongest counter-argument named
+- [ ] No unsourced load-bearing claims
+
 ## Self-check before shipping
 - [ ] Schemas, status codes, error bodies, and auth states are verified
 - [ ] Compatibility and deprecation behavior have tests

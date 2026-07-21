@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-20T04:16:24.652Z",
+  "generatedAt": "2026-07-21T02:56:08.036Z",
   "generator": "lib/certification/skill-inventory.mjs",
-  "skillCount": 140,
+  "skillCount": 141,
   "skills": [
     {
       "id": "ai/agent-dev",
@@ -788,6 +788,37 @@
         }
       ],
       "workflowSkill": true
+    },
+    {
+      "id": "docs/artifact-authorship",
+      "owners": [
+        "worker-profile:product-manager"
+      ],
+      "activationTriggers": [
+        "Use when: drafting or reviewing any Construct typed artifact (PRD, ADR, research, runbook, strategy, security review, QA plan, etc.). Canonical framing, population, storytelling, adversarial, anti-fabrication, and cross-persona trigger contract."
+      ],
+      "inputs": [
+        "[artifact-type, evidence, audience]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "docs-artifact-authorship"
+      },
+      "verificationHooks": [
+        {
+          "kind": "verificationBar",
+          "value": "Every load-bearing claim cites a re-verifiable source; unknowns marked; cross-persona triggers fired before ship."
+        },
+        {
+          "kind": "cli",
+          "value": "construct artifact validate"
+        },
+        {
+          "kind": "mcp",
+          "value": "get_template"
+        }
+      ],
+      "workflowSkill": false
     },
     {
       "id": "docs/backlog-proposal-workflow",
@@ -2749,5 +2780,5 @@
   ],
   "blockingFindings": [],
   "effectivenessFindings": [],
-  "digest": "0d88a1d8984c92cc5aaae3cbfc1f7a0ced5585373941ef9b5d44682553bf7bd9"
+  "digest": "854596a5c03e83078e441dd659788b0411707594a4ee636327ba9bbe131daeca"
 }

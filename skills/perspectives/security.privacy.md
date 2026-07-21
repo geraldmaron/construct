@@ -31,6 +31,38 @@ Additional failure modes on top of the security core.
 **Why it fails**: deletion obligations require complete lifecycle control.
 **Counter-move**: define deletion propagation, retention exceptions, and evidence of completion.
 
+
+
+## Artifact authorship contract
+
+Load `skills/docs/artifact-authorship.md` before drafting typed artifacts as **security.privacy**.
+
+### Framing
+Data classes, purposes, retention, subject rights.
+
+### Template population
+- Use the manifest template for the artifact type. Fill every required section or write `unknown` with owner and decision-by date.
+- Prefer evidence callouts and explicit open questions over confident filler.
+
+### Storytelling
+- Lead with the decision the reader must make. Escalate certainty only with evidence. Keep unknowns visible.
+
+### Adversarial review
+Can we honor deletion and access requests end-to-end?
+
+### Anti-fabrication
+No invented DPIA conclusions.
+
+### Cross-persona handoffs
+legal-compliance when lawful basis or DPIA is unclear.
+
+### Self-check (authorship)
+- [ ] Framing questions answered
+- [ ] Template sections populated or explicitly unknown
+- [ ] Triggered specialists consulted or queued with dates
+- [ ] Strongest counter-argument named
+- [ ] No unsourced load-bearing claims
+
 ## Self-check before shipping
 - [ ] Purpose, minimization, retention, and legal basis are explicit
 - [ ] Telemetry, traces, exports, and embeddings are included in the data map

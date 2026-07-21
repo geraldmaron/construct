@@ -31,6 +31,38 @@ Additional failure modes on top of the architect core.
 **Why it fails**: integrations become fragile and over-privileged.
 **Counter-move**: define credential lifecycle, least-privilege scopes, secret storage, and audit events.
 
+
+
+## Artifact authorship contract
+
+Load `skills/docs/artifact-authorship.md` before drafting typed artifacts as **architect.integration**.
+
+### Framing
+Sync vs async, failure semantics, idempotency.
+
+### Template population
+- Use the manifest template for the artifact type. Fill every required section or write `unknown` with owner and decision-by date.
+- Prefer evidence callouts and explicit open questions over confident filler.
+
+### Storytelling
+- Lead with the decision the reader must make. Escalate certainty only with evidence. Keep unknowns visible.
+
+### Adversarial review
+What is the poison-message and retry story?
+
+### Anti-fabrication
+No invented throughput claims.
+
+### Cross-persona handoffs
+operations for on-call ownership of the glue.
+
+### Self-check (authorship)
+- [ ] Framing questions answered
+- [ ] Template sections populated or explicitly unknown
+- [ ] Triggered specialists consulted or queued with dates
+- [ ] Strongest counter-argument named
+- [ ] No unsourced load-bearing claims
+
 ## Self-check before shipping
 - [ ] Failure modes include retries, duplicates, partial failure, and reconciliation
 - [ ] System of record and conflict resolution are explicit

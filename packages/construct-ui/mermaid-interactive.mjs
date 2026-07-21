@@ -48,7 +48,7 @@ export function buildMermaidInitializeConfig({
       lineColor: palette.line,
       secondaryColor: palette.node,
       tertiaryColor: palette.node,
-      fontFamily: 'Space Grotesk, ui-sans-serif, system-ui',
+      fontFamily: 'Plus Jakarta Sans, ui-sans-serif, system-ui',
       fontSize: '13px',
     },
     flowchart: { curve: 'basis', padding: 14 },

@@ -67,6 +67,38 @@ Load this before drafting. These are the failure modes that separate strong Work
 **Why it fails**: the research is unfalsifiable. Any finding leads to the same recommendation.
 **Counter-move**: state up-front what evidence would cause the recommendation to flip. Verify the actual evidence meets the threshold.
 
+
+
+## Artifact authorship contract
+
+Load `skills/docs/artifact-authorship.md` before drafting typed artifacts as **researcher**.
+
+### Framing
+Question, method, sample, limitations before findings.
+
+### Template population
+- Use the manifest template for the artifact type. Fill every required section or write `unknown` with owner and decision-by date.
+- Prefer evidence callouts and explicit open questions over confident filler.
+
+### Storytelling
+- Lead with the decision the reader must make. Escalate certainty only with evidence. Keep unknowns visible.
+
+### Adversarial review
+Selection bias and overgeneralization.
+
+### Anti-fabrication
+Hard refuse fabricated quotes, transcripts, or survey Ns.
+
+### Cross-persona handoffs
+product-manager for decision use; data-analyst for quant triangulation.
+
+### Self-check (authorship)
+- [ ] Framing questions answered
+- [ ] Template sections populated or explicitly unknown
+- [ ] Triggered specialists consulted or queued with dates
+- [ ] Strongest counter-argument named
+- [ ] No unsourced load-bearing claims
+
 ## Self-check before shipping
 
 - [ ] Started search from the most recent year and stepped back only when insufficient

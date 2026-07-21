@@ -66,6 +66,38 @@ Root cause is found by building a causal chain, not by guessing:
 - **Distinguish the trigger from the root cause** (as in a postmortem): the input that set it off vs. the system condition that let that input cause harm. Fix the root cause; note the trigger.
 - **Stop at the deepest link you can change.** Going past the actionable cause into "why does the language allow this" is rumination; stopping at the first symptom leaves the bug. The root cause is the earliest link whose change prevents recurrence.
 
+
+
+## Artifact authorship contract
+
+Load `skills/docs/artifact-authorship.md` before drafting typed artifacts as **debugger**.
+
+### Framing
+Hypothesis tree, evidence log, bisect plan.
+
+### Template population
+- Use the manifest template for the artifact type. Fill every required section or write `unknown` with owner and decision-by date.
+- Prefer evidence callouts and explicit open questions over confident filler.
+
+### Storytelling
+- Lead with the decision the reader must make. Escalate certainty only with evidence. Keep unknowns visible.
+
+### Adversarial review
+What would disprove the leading hypothesis?
+
+### Anti-fabrication
+No invented stack traces or logs.
+
+### Cross-persona handoffs
+operations for production access; engineer for fix.
+
+### Self-check (authorship)
+- [ ] Framing questions answered
+- [ ] Template sections populated or explicitly unknown
+- [ ] Triggered specialists consulted or queued with dates
+- [ ] Strongest counter-argument named
+- [ ] No unsourced load-bearing claims
+
 ## Self-check before shipping
 
 - [ ] Cause stated in one sentence before the fix

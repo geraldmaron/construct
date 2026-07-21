@@ -32,6 +32,38 @@ Additional failure modes on top of the QA core.
 **Why it fails**: improvements in one class hide regressions in another.
 **Counter-move**: keep golden traces, compare against baseline, and require promotion gates.
 
+
+
+## Artifact authorship contract
+
+Load `skills/docs/artifact-authorship.md` before drafting typed artifacts as **qa.ai-eval**.
+
+### Framing
+Eval sets, scorers, regression gates.
+
+### Template population
+- Use the manifest template for the artifact type. Fill every required section or write `unknown` with owner and decision-by date.
+- Prefer evidence callouts and explicit open questions over confident filler.
+
+### Storytelling
+- Lead with the decision the reader must make. Escalate certainty only with evidence. Keep unknowns visible.
+
+### Adversarial review
+Eval set contamination and metric hacking.
+
+### Anti-fabrication
+No invented eval leaderboard positions.
+
+### Cross-persona handoffs
+security.ai for abuse cases.
+
+### Self-check (authorship)
+- [ ] Framing questions answered
+- [ ] Template sections populated or explicitly unknown
+- [ ] Triggered specialists consulted or queued with dates
+- [ ] Strongest counter-argument named
+- [ ] No unsourced load-bearing claims
+
 ## Self-check before shipping
 - [ ] Eval set includes negative and adversarial cases
 - [ ] Rubric, thresholds, and failure taxonomy are defined

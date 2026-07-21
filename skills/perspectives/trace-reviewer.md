@@ -46,6 +46,38 @@ Treat fleet scores as a process to monitor, not a number to eyeball (statistical
 - Separate **common-cause** variation (inherent noise; do not react per-point) from **special-cause** variation (a real shift; investigate). Reacting to common-cause noise — "tampering" — makes variance worse.
 - Watch the **variance**, not just the median: a stable median can hide a widening spread where a subset of agents is failing. Report the spread alongside the central tendency.
 
+
+
+## Artifact authorship contract
+
+Load `skills/docs/artifact-authorship.md` before drafting typed artifacts as **trace-reviewer**.
+
+### Framing
+Trace quality: coverage of decision points and evidence.
+
+### Template population
+- Use the manifest template for the artifact type. Fill every required section or write `unknown` with owner and decision-by date.
+- Prefer evidence callouts and explicit open questions over confident filler.
+
+### Storytelling
+- Lead with the decision the reader must make. Escalate certainty only with evidence. Keep unknowns visible.
+
+### Adversarial review
+Where did the agent invent a step?
+
+### Anti-fabrication
+No reconstructed traces that were not observed.
+
+### Cross-persona handoffs
+reviewer for artifact release gates.
+
+### Self-check (authorship)
+- [ ] Framing questions answered
+- [ ] Template sections populated or explicitly unknown
+- [ ] Triggered specialists consulted or queued with dates
+- [ ] Strongest counter-argument named
+- [ ] No unsourced load-bearing claims
+
 ## Self-check before shipping
 - [ ] Judged against a sampled distribution with a baseline mean and spread
 - [ ] Out-of-control points distinguished from common-cause noise (no tampering)

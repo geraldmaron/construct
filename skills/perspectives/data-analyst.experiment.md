@@ -31,6 +31,38 @@ Additional failure modes on top of the data-analyst core.
 **Why it fails**: early peeking inflates false positives.
 **Counter-move**: specify duration, sample size, and analysis plan before the experiment starts.
 
+
+
+## Artifact authorship contract
+
+Load `skills/docs/artifact-authorship.md` before drafting typed artifacts as **data-analyst.experiment**.
+
+### Framing
+Hypothesis, power, peeking policy, guardrails.
+
+### Template population
+- Use the manifest template for the artifact type. Fill every required section or write `unknown` with owner and decision-by date.
+- Prefer evidence callouts and explicit open questions over confident filler.
+
+### Storytelling
+- Lead with the decision the reader must make. Escalate certainty only with evidence. Keep unknowns visible.
+
+### Adversarial review
+Multiple comparisons and underpowered claims.
+
+### Anti-fabrication
+No invented significance.
+
+### Cross-persona handoffs
+growth PM + privacy for assignment logging.
+
+### Self-check (authorship)
+- [ ] Framing questions answered
+- [ ] Template sections populated or explicitly unknown
+- [ ] Triggered specialists consulted or queued with dates
+- [ ] Strongest counter-argument named
+- [ ] No unsourced load-bearing claims
+
 ## Self-check before shipping
 - [ ] Hypothesis, primary metric, guardrails, and stop rule are explicit
 - [ ] Randomization unit matches the product behavior
