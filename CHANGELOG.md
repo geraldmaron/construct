@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- CI hang safety: `ci.yml` `test` job and `release.yml` `gate` set `timeout-minutes: 30`, toolchain install steps set `timeout-minutes: 12`, and `scripts/ci/setup-toolchain.sh` bounds apt (`Acquire::{http,https}::Timeout=30`, `Retries=3`) and curl (`--connect-timeout 15 --max-time 180`) so a stuck Ubuntu mirror fails instead of crawling for ~60m. Covered by `tests/scripts/ci-repro-drift.test.mjs`.
+
 ### Changed
 
 - v1 leftover cleanup W1–W4 (`construct-5ir13`, `construct-kl9eg`, `construct-s0b9a`, `construct-ht2gg`): retire stale specialist/persona/team-registry teaching and dead loaders without removing intentional keeps (`lib/flows/`, scheduler, oracle non-daemon, hashing embedder, provider `.js` tier).

@@ -13,6 +13,9 @@ jobs:
   gate:
     name: release:check
     runs-on: ubuntu-latest
+    # Same hang bound as ci.yml's test job — stuck apt/curl must fail the
+    # release gate rather than sit until the runner is reclaimed.
+    timeout-minutes: 30
     env:
       CONSTRUCT_EMBEDDING_MODEL: hashing
     steps:
@@ -36,6 +39,7 @@ jobs:
             ~/.local/mermaid-cli
           key: toolbin-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/ci/setup-toolchain.sh', 'scripts/ci/setup-mermaid-cli.sh') }}
       - name: install test toolchain (typst, bd, d2, pandoc, poppler, libreoffice)
+        timeout-minutes: 12
         run: bash scripts/ci/setup-toolchain.sh && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: install mermaid-cli (mmdc) + Chrome for figures:true exports
         run: bash scripts/ci/setup-mermaid-cli.sh && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
