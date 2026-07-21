@@ -14,6 +14,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Fixed
 
+- CI corpus inventory (PR 419): regenerate `tests/AUDIT.md` + `tests/capabilities/corpus-inventory.json` so `tests/verify-cutover-graph-sweep.test.mjs` is indexed (1079 test files).
+
 - CI docs/site + cutover (PR 419): regenerate `docs/guides/reference/hooks.md` after Worker Profile → specialist activation prose drift; E1 `graph cycles`/`orphans` cutover criteria treat the Node <22.5 `node:sqlite` relational-store guard as a runtime-contract pass (same hermetic HOME empty-state path still applies on Node ≥22.5). Covered by `tests/verify-cutover-graph-sweep.test.mjs`.
 
 - Alignment census ratchet: sunset tombstones for retired `up`/`down` aliases in `lib/cli-compat-catalog.mjs` / generated `command-catalog.md` no longer spell the banned `construct up` / `construct down` invocation forms (status remains removed → `construct dev` / `construct stop`); classify `.local/` as ignored local scratch so root-layout audit stays clean.
