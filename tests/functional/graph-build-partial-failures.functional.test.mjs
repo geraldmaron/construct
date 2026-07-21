@@ -53,14 +53,13 @@ function freshDir(prefix) {
 }
 test.after(() => { for (const d of dirs) { try { rmTmpDir(d); } catch {} } });
 
-// A fixture rootDir needs a `specialists/org` directory (even empty) so
+// A fixture rootDir needs a copied registry/ catalog so
 // lib/registry/loader.mjs's loadRegistry -> assembleRegistry call succeeds —
-// its "not found" throw is a pre-existing, unrelated crash surface for a
-// truly bare directory, not something this bead's fix touches.
+// a bare directory without registry catalogs is a pre-existing, unrelated
+// crash surface, not something this bead's fix touches.
 
 function makeFixtureRoot(prefix) {
   const root = freshDir(prefix);
-  fs.mkdirSync(path.join(root, 'specialists', 'org'), { recursive: true });
   // Construct 2.0 assemble requires a real registry catalog under rootDir.
   const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
   fs.cpSync(path.join(repoRoot, 'registry'), path.join(root, 'registry'), { recursive: true });

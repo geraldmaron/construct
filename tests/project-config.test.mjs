@@ -226,17 +226,17 @@ describe('writeProjectConfig + initProjectConfig', () => {
   it('refuses to write an invalid writes.policy block', () => {
     const cfgPath = path.join(tmpRoot, PROJECT_CONFIG_FILENAME);
     assert.throws(
-      () => writeProjectConfig(cfgPath, { ...DEFAULT_PROJECT_CONFIG, writes: { policy: { 'atlassian-jira.issue': 'sometimes' } } }),
+      () => writeProjectConfig(cfgPath, { ...DEFAULT_PROJECT_CONFIG, writes: { policy: { 'jira.issue': 'sometimes' } } }),
       /refusing to write invalid config/,
     );
   });
 
   it('writes a valid writes.policy block and round-trips through load', () => {
     const cfgPath = path.join(tmpRoot, PROJECT_CONFIG_FILENAME);
-    writeProjectConfig(cfgPath, { ...DEFAULT_PROJECT_CONFIG, writes: { policy: { 'atlassian-jira.comment': 'auto' } } });
+    writeProjectConfig(cfgPath, { ...DEFAULT_PROJECT_CONFIG, writes: { policy: { 'jira.comment': 'auto' } } });
     try {
       const loaded = loadProjectConfig(tmpRoot, {});
-      assert.equal(loaded.config.writes.policy['atlassian-jira.comment'], 'auto');
+      assert.equal(loaded.config.writes.policy['jira.comment'], 'auto');
     } finally {
       fs.unlinkSync(cfgPath);
     }
@@ -246,11 +246,11 @@ describe('writeProjectConfig + initProjectConfig', () => {
     const cfgPath = path.join(tmpRoot, PROJECT_CONFIG_FILENAME);
     const config = {
       ...DEFAULT_PROJECT_CONFIG,
-      writes: { policy: { 'atlassian-jira.comment': 'auto', 'slack.message': 'approval' } },
+      writes: { policy: { 'jira.comment': 'auto', 'slack.message': 'approval' } },
       directives: [
         {
           id: 'watch-jira-roadmap',
-          provider: 'atlassian-jira',
+          provider: 'jira',
           workerProfileId: 'researcher',
           instruction: 'Watch Jira, summarize what the team is working on.',
           trigger: { kind: 'interval', intervalMinutes: 1440 },
@@ -268,7 +268,7 @@ describe('writeProjectConfig + initProjectConfig', () => {
       assert.deepEqual(onDisk.writes, config.writes);
       assert.deepEqual(onDisk.directives, config.directives);
       const loaded = loadProjectConfig(tmpRoot, {});
-      assert.equal(loaded.config.writes.policy['atlassian-jira.comment'], 'auto');
+      assert.equal(loaded.config.writes.policy['jira.comment'], 'auto');
       assert.equal(loaded.config.directives[0].id, 'watch-jira-roadmap');
     } finally {
       fs.unlinkSync(cfgPath);

@@ -49,7 +49,7 @@ function freshProject({ policyMode } = {}) {
   writeFileSync(join(root, '.construct', 'context.md'), '# test project\n');
   writeFileSync(join(root, 'construct.config.json'), JSON.stringify({
     version: 1,
-    writes: { policy: { 'atlassian-jira.comment': policyMode } },
+    writes: { policy: { 'jira.comment': policyMode } },
   }, null, 2));
   return root;
 }
@@ -58,7 +58,7 @@ function runDaemonTick(root, { timeoutMs = 15_000 } = {}) {
   const persistPath = join(root, '.construct', 'approvals', 'queue.jsonl');
   const seedQueue = new ApprovalQueue({ persistPath });
   const record = seedQueue.enqueue({
-    tool: 'atlassian-jira.comment',
+    tool: 'jira.comment',
     args: { issueKey: 'OPS-1', body: 'daemon-drafted status update' },
     surface: 'test',
   });

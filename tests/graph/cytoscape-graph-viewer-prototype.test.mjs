@@ -24,7 +24,7 @@ import { NODE_TYPES, EDGE_RELS } from '../../lib/graph/store.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '../..');
-const fixturesDir = path.join(rootDir, 'packages/cx-ui/prototypes/graph-viewer/fixtures');
+const fixturesDir = path.join(rootDir, 'packages', 'cx-ui', 'prototypes', 'graph-viewer', 'fixtures');
 
 const nodes = JSON.parse(readFileSync(path.join(fixturesDir, 'nodes.sample.json'), 'utf8'));
 const edges = JSON.parse(readFileSync(path.join(fixturesDir, 'edges.sample.json'), 'utf8'));

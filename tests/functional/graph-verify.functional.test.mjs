@@ -75,5 +75,5 @@ test('runGraphVerify surfaces schema violations from a broken fixture graph', ()
   });
   const verdict = runGraphVerify({ cwd: projectDir });
   assert.equal(verdict.ok, false);
-  assert.ok(verdict.violations.some((v) => v.message.includes("invalid type 'flie'")));
+  assert.ok(verdict.violations.some((v) => v.message.includes("unknown type 'flie'")));
 });

@@ -45,7 +45,7 @@ function readJsonFiles(dir) {
 
 function findArtifacts() {
   const queue = new ApprovalQueue({ persistPath });
-  const record = queue.list().find((r) => r.toolCall?.tool === 'atlassian-jira.comment') ?? null;
+  const record = queue.list().find((r) => r.toolCall?.tool === 'jira.comment') ?? null;
   const observations = readJsonFiles(join(rootDir, '.construct', 'observations'))
     .filter((o) => o.tags?.includes('write-intent-drain'));
   return { record, observations };

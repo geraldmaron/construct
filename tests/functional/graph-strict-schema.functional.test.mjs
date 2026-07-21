@@ -7,9 +7,9 @@
  * normalizeNodes/normalizeEdges never checked membership against either set,
  * nothing checked that an edge carried provenance (`sources`), there was no
  * rename/alias/tombstone mechanism, and a seeder that threw partway through
- * `construct graph build` (a fixture rootDir with no specialists/org
- * directory makes lib/registry/loader.mjs's loadRegistry throw "Modular org
- * not found", called unguarded from buildFromRegistry) crashed the whole CLI
+ * `construct graph build` (a fixture rootDir with no registry/worker-profiles
+ * catalogs makes lib/registry/assemble.mjs's assembleRegistry throw
+ * "Registry catalog not found", called unguarded from buildFromRegistry) crashed the whole CLI
  * process with zero record of what had been collected — reproduced directly
  * against this repo's code before the fix landed.
  *
@@ -66,9 +66,9 @@ function captureOutput(fn) {
   }
 }
 
-// A fixture rootDir with a registry/ dir but no specialists/org directory
+// A fixture rootDir with a registry/ dir but missing worker-profiles catalogs
 // reproduces a real, currently-uncaught throw: lib/registry/assemble.mjs's
-// assembleRegistry throws "Modular org not found" and buildFromRegistry
+// assembleRegistry throws "Registry catalog not found" and buildFromRegistry
 // calls it unguarded (via lib/registry/loader.mjs's loadRegistry) for its
 // contracts-doc read, at a call site with no try/catch of its own.
 
