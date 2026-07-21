@@ -102,7 +102,7 @@ test('a private observation (no visibility field) is refused from the shared-mem
   const sql = sharedFakeSql();
   const store = resolveSharedMemoryStore({ env: {}, sql });
 
-  const privateObservation = { id: 'obs-1', category: 'insight', summary: 'private scratch note', provenance: { role: 'cx-engineer' } };
+  const privateObservation = { id: 'obs-1', category: 'insight', summary: 'private scratch note', provenance: { role: 'engineer' } };
   const result = await store.writeSharedMemory(privateObservation, { project: 'acme' });
   assert.equal(result.ok, false);
   assert.match(result.reason, /visibility/);
@@ -115,7 +115,7 @@ test('a sessionScratch-marked observation is refused even with visibility set to
   const sql = sharedFakeSql();
   const store = resolveSharedMemoryStore({ env: {}, sql });
 
-  const scratch = { id: 'obs-2', category: 'insight', visibility: 'shared-project', provenance: { role: 'cx-engineer' }, sessionScratch: true };
+  const scratch = { id: 'obs-2', category: 'insight', visibility: 'shared-project', provenance: { role: 'engineer' }, sessionScratch: true };
   const result = await store.writeSharedMemory(scratch, { project: 'acme' });
   assert.equal(result.ok, false);
   assert.match(result.reason, /sessionScratch/);
@@ -128,7 +128,7 @@ test('an explicit shared-project observation with provenance is written and read
 
   const shared = {
     id: 'obs-3', category: 'decision', summary: 'Adopted postgres for team mode',
-    visibility: 'shared-project', provenance: { role: 'cx-architect', runId: 'run-9' },
+    visibility: 'shared-project', provenance: { role: 'architect', runId: 'run-9' },
   };
   const result = await writerStore.writeSharedMemory(shared, { project: 'acme', tenantId: 'local' });
   assert.equal(result.ok, true);
@@ -136,7 +136,7 @@ test('an explicit shared-project observation with provenance is written and read
   const listed = await readerStore.listSharedMemory({ project: 'acme', tenantId: 'local' });
   assert.equal(listed.length, 1);
   assert.equal(listed[0].id, 'obs-3');
-  assert.equal(listed[0].provenance.role, 'cx-architect');
+  assert.equal(listed[0].provenance.role, 'architect');
 });
 
 test('solo mode with no injected sql resolves the shared-memory store to a none-store', async () => {

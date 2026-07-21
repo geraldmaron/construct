@@ -40,7 +40,7 @@ test('construct version exits 0 and prints version string', () => {
   const stdout = execFileSync(process.execPath, [BIN, 'version'], {
     cwd: ROOT,
     encoding: 'utf8',
-    env: { ...process.env, HOME, CX_HOME_OVERRIDE: HOME },
+    env: { ...process.env, HOME, CONSTRUCT_HOME_OVERRIDE: HOME },
   });
 
   assert.match(stdout.trim(), /^construct v\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/,
@@ -51,7 +51,7 @@ test('construct evals --json exits 0 and returns valid JSON', () => {
   const stdout = execFileSync(process.execPath, [BIN, 'evals', '--json'], {
     cwd: ROOT,
     encoding: 'utf8',
-    env: { ...process.env, HOME, CX_HOME_OVERRIDE: HOME },
+    env: { ...process.env, HOME, CONSTRUCT_HOME_OVERRIDE: HOME },
   });
 
   let parsed;

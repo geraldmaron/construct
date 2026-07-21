@@ -12,14 +12,15 @@
     "mcp-tools",
     "artifact-completion-states",
     "embed-api",
-    "specialists",
-    "specialist-coverage-matrix",
+    "worker-profiles",
+    "worker-profile-coverage-matrix",
     "capabilities",
-    "naming",
     "providers",
     "dependencies",
     "standards",
     "security",
-    "provider-worker-reliability"
+    "provider-worker-reliability",
+    "material-pattern-inventories",
+    "html-export-sanitization"
   ]
 }

@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "description": "SPDX license identifiers compatible with the Construct npm dependency set. Consumed by .github/workflows/supply-chain.yml dependency-review-action allow-licenses.",
+  "allow": [
+    "Apache-2.0",
+    "MIT",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "0BSD",
+    "CC0-1.0",
+    "BlueOak-1.0.0",
+    "MPL-2.0",
+    "LGPL-3.0-or-later",
+    "CC-BY-4.0",
+    "Unlicense"
+  ],
+  "deny": [
+    "GPL-3.0",
+    "AGPL-3.0",
+    "SSPL-1.0"
+  ]
+}

@@ -7,9 +7,9 @@
   "fallbackSurface": "tape",
   "steps": [
     {
-      "title": "Profiles — curated catalog",
-      "prompt": "Run construct scope list to show curated org profiles.",
-      "command": "node bin/construct scope list"
+      "title": "Workspace Presets — curated catalog",
+      "prompt": "Run construct workspace-preset list to show curated Workspace Presets.",
+      "command": "node bin/construct workspace-preset list"
     },
     {
       "title": "Consistency — cross-surface checks",

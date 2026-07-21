@@ -51,6 +51,6 @@ is `unverified` — not a finding.
 
 ## Handoff
 
-- design fixes → `next:cx-designer`
-- code fixes → `next:cx-engineer`
-- review of remediation → `next:cx-reviewer`
+- design fixes → `next:designer`
+- code fixes → `next:engineer`
+- review of remediation → `next:reviewer`

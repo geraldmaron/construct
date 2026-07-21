@@ -9,7 +9,7 @@
  *      mode when CONSTRUCT_DEGRADED_OK is not set.
  *   2. requireTeamCapabilityOrDegrade succeeds (does not throw) when
  *      CONSTRUCT_DEGRADED_OK includes the subsystem, and writes a
- *      degradation record to .cx/degradation.jsonl.
+ *      degradation record to .construct/degradation.jsonl.
  *   3. createIntakeQueue throws in team mode without CONSTRUCT_DEGRADED_OK.
  *   4. createIntakeQueue succeeds in team mode with CONSTRUCT_DEGRADED_OK
  *      set and returns a GitIntakeQueue (degraded git-backed queue).

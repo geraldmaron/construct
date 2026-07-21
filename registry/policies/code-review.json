@@ -1,0 +1,14 @@
+{
+  "id": "code-review",
+  "ownerWorkerProfile": "orchestrator",
+  "description": "Review standards applied by reviewer and qa before any change is marked done.",
+  "enforcement": "(worker-profile prompt)",
+  "mode": "honor-system",
+  "approvalWorkerProfiles": [],
+  "requiredPolicies": [],
+  "vetoWorkerProfiles": [],
+  "escalationWorkerProfiles": [],
+  "governs": [],
+  "conditions": [],
+  "evidence": []
+}

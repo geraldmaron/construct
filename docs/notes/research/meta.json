@@ -1,14 +1,7 @@
 {
   "title": "Research",
   "pages": [
-    "2026-06-construct-audit",
-    "2026-07-continuous-work-audit",
-    "2026-07-mailparser-benchmark",
-    "2026-07-org-capability-audit",
-    "construct-asset-quality",
-    "construct-self-audit",
     "decision-input",
-    "lancedb-vs-sqlite-vec-benchmark",
-    "vector-search-best-practices"
+    "workspace-control-plane"
   ]
 }

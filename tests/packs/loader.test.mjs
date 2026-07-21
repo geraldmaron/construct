@@ -102,13 +102,13 @@ test('loadPacksFromDir embedBindings validation (LMCP-E4)', async (t) => {
       version: '1.0.0',
       compatVersion: 1,
       embedBindings: {
-        'cx-operations': { providers: [{ id: 'not-a-real-provider', capabilities: ['read'] }] },
+        'operations': { providers: [{ id: 'not-a-real-provider', capabilities: ['read'] }] },
       },
     });
     try {
       const result = loadPacksFromDir(dir, { packageRoot: PACKAGE_ROOT });
       assert.equal(result.packs.length, 0);
-      assert.ok(result.errors.some(e => e.includes('embedBindings.cx-operations.providers[0].id') && e.includes('not-a-real-provider')));
+      assert.ok(result.errors.some(e => e.includes('embedBindings.operations.providers[0].id') && e.includes('not-a-real-provider')));
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -121,13 +121,13 @@ test('loadPacksFromDir embedBindings validation (LMCP-E4)', async (t) => {
       compatVersion: 1,
       embedBindings: {
         // github manifest does not declare "write".
-        'cx-engineer': { providers: [{ id: 'github', capabilities: ['write'] }] },
+        'engineer': { providers: [{ id: 'github', capabilities: ['write'] }] },
       },
     });
     try {
       const result = loadPacksFromDir(dir, { packageRoot: PACKAGE_ROOT });
       assert.equal(result.packs.length, 0);
-      assert.ok(result.errors.some(e => e.includes('embedBindings.cx-engineer.providers[0].capabilities[0]')));
+      assert.ok(result.errors.some(e => e.includes('embedBindings.engineer.providers[0].capabilities[0]')));
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -139,7 +139,7 @@ test('loadPacksFromDir embedBindings validation (LMCP-E4)', async (t) => {
       version: '1.0.0',
       compatVersion: 1,
       embedBindings: {
-        'cx-engineer': { providers: [{ id: 'github', capabilities: ['read', 'search'] }], proposals: ['github.createIssue'] },
+        'engineer': { providers: [{ id: 'github', capabilities: ['read', 'search'] }], proposals: ['github.createIssue'] },
       },
     });
     try {

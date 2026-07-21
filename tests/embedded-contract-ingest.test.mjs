@@ -80,7 +80,7 @@ test('provider strategy runs a real provider call and surfaces provider-extracte
   const r = await resolveInput({
     filePath: fixture('s.txt', 'raw content'),
     config: { ingest: { strategy: 'provider', fallback: 'none' } },
-    env: { CX_MODEL_FAST: 'test-fast-model', OPENROUTER_API_KEY: 'sk-test' },
+    env: { CONSTRUCT_MODEL_FAST: 'test-fast-model', OPENROUTER_API_KEY: 'sk-test' },
     fetchImpl: mockFetch,
   });
   assert.equal(r.error, null);
@@ -94,7 +94,7 @@ test('provider strategy with fallback=none and no key surfaces a structured erro
   const r = await resolveInput({
     filePath: fixture('s.txt', 'content'),
     config: { ingest: { strategy: 'provider', fallback: 'none' } },
-    env: { CX_MODEL_FAST: 'test-fast-model' },
+    env: { CONSTRUCT_MODEL_FAST: 'test-fast-model' },
   });
   assert.equal(r.text, '');
   assert.equal(r.error.code, 'PROVIDER_KEY_MISSING');
@@ -107,7 +107,7 @@ test('provider strategy with fallback=adapter extracts via adapter and records t
   const r = await resolveInput({
     filePath: fixture('s.txt', 'fallback content'),
     config: { ingest: { strategy: 'provider', fallback: 'adapter' } },
-    env: { CX_MODEL_FAST: 'test-fast-model' },
+    env: { CONSTRUCT_MODEL_FAST: 'test-fast-model' },
   });
   assert.match(r.text, /fallback content/);
   assert.equal(r.ingestion.strategy, 'provider');

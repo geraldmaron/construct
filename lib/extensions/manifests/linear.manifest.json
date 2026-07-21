@@ -9,6 +9,9 @@
   "owner": "construct-core",
   "compatVersion": 1,
   "installSource": "builtin",
+  "certification": {
+    "tier": "contract-tested"
+  },
   "sourceTarget": {
     "provider": "linear",
     "selector": {

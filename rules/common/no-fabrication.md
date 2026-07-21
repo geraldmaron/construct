@@ -10,7 +10,7 @@ Fabrication is the single largest threat to trust in an agent system. A persona 
 
 ## 1. Stick to source
 
-- Every load-bearing claim must trace to a source the reader can re-verify. Cite with `[source: path#anchor]`, `[source: intake-<id>]`, `[source: bd-<id>]`, `[source: <commit-sha>]`, or a fetched URL with the date the fetch happened.
+- Every load-bearing claim must trace to a source the reader can re-verify. Cite inline per [`rules/common/citation.md`](citation.md): linked short title `([Title](url); accessed YYYY-MM-DD)`, `[source: path#anchor]`, or a defined footnote `[^n]`. A References dump without inline cites is not enough.
 - If a fact is not in the source you have access to, write `unknown` or `[unverified]`. Do not paper over the gap with prose that sounds confident.
 - Never invent: customer names, quotes, ticket IDs, commit hashes, percentages, dates, file paths, function names, API surfaces, dependency names, version numbers.
 
@@ -55,8 +55,8 @@ Fabrication is the single largest threat to trust in an agent system. A persona 
 
 ## Enforcement
 
-- `lib/comment-lint.mjs` enforces a subset of these patterns on artifact paths (`docs/specs/prd/**`, `docs/decisions/adr/**`, `docs/decisions/rfc/**`, `docs/notes/research/**`, `.cx/knowledge/**`, `.cx/handoffs/**`, `.cx/research/**`). PostToolUse warns; `npm run lint:comments`, `construct lint:comments`, and the release gate block.
-- Contracts under `specialists/org/contracts/` carry postconditions that check structural requirements (mandatory sections, intake traceability, citation density). `lib/contracts/validate.mjs#validateHandoff` blocks handoffs that fail validation; binary postconditions in `lib/specialists/postconditions.mjs` block rubber-stamp reviews, post-hoc threat models, symptom-only fixes, stale-doc PRs, and post-hoc accessibility. Enforcement is hard-default `block`.
+- `lib/comment-lint.mjs` enforces a subset of these patterns on artifact paths (`docs/specs/prd/**`, `docs/decisions/adr/**`, `docs/decisions/rfc/**`, `docs/notes/research/**`, `.construct/knowledge/**`, `.construct/handoffs/**`, `.construct/research/**`). PostToolUse warns; `npm run lint:comments`, `construct lint:comments`, and the release gate block.
+- Capability-owned contract postconditions in `registry/capabilities.json` (and pair files under `registry/contracts/`) check structural requirements (mandatory sections, intake traceability, citation density). `lib/contracts/validate.mjs#validateHandoff` blocks handoffs that fail validation; binary postconditions in `lib/capabilities/postconditions.mjs` block rubber-stamp reviews, post-hoc threat models, symptom-only fixes, stale-doc PRs, and post-hoc accessibility. Enforcement is hard-default `block`.
 - `construct intake done <id> --output=<path>` stamps `intake_id`, `intake_confidence`, and `intake_rationale` into the artifact's frontmatter so every intake-derived artifact carries verifiable provenance.
 
 ## Bypass

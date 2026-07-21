@@ -11,7 +11,7 @@ description: Observability commands for Construct.
 | `construct eval-datasets` | Sync scored traces from the telemetry backend into eval datasets for prompt regression testing |
 | `construct evals` | Show evaluator catalog for prompt and agent experiments |
 | `construct feedback:history` | Show recorded outcome ratings |
-| `construct feedback:record` | Record an outcome rating for a recent specialist invocation |
+| `construct feedback:record` | Record an outcome rating for a recent worker invocation |
 | `construct improvement` | Governed improvement loop — review, approve, and record apply/rollback for proposals |
 | `construct llm-judge` | Run LLM-as-a-judge evaluations on unscored traces for continuous quality feedback |
 | `construct optimize` | Prompt optimization using telemetry trace quality scores |
@@ -62,7 +62,7 @@ construct feedback:history [--days=N]
 
 ## construct feedback:record
 
-Record an outcome rating for a recent specialist invocation
+Record an outcome rating for a recent worker invocation
 
 **Usage**
 

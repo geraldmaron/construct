@@ -34,7 +34,7 @@ function seedProject() {
 function startServer() {
   const proc = spawn(process.execPath, [SERVER], {
     stdio: ['pipe', 'pipe', 'pipe'],
-    env: { ...process.env, CX_TOOLKIT_DIR: REPO },
+    env: { ...process.env, CONSTRUCT_TOOLKIT_DIR: REPO },
   });
   let buffered = '';
   const pending = new Map();

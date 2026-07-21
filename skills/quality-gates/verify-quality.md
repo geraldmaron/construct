@@ -85,6 +85,17 @@ Use this skill to check code quality, complexity, and maintainability after chan
 
 **Severity**: Tangled control flow = High. Speculative abstraction = Medium.
 
+## Artifact prose (when reviewing docs)
+
+When the change includes typed artifacts, also check the human voice bar (`rules/common/human-voice.md`, `skills/docs/artifact-authorship.md`):
+
+- [ ] Prose prefers contractions (`don't` / `won't` / `can't`) except AC/legal/quote/title exceptions
+- [ ] No spaced em-dash theater; no Unicode em dash (U+2014)
+- [ ] No LLM tells (delve, landscape outside required titles, robust/leverage filler, "it's important to note", empty tricolons)
+- [ ] Reads like a careful colleague; inclusive impact named where relevant
+
+**Severity**: Dense AI-voice / em-dash theater in shippable artifacts = Medium. Fabrication still High/Critical via no-fabrication.
+
 ## Severity Reference
 
 | Level | Meaning | Action |

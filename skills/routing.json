@@ -233,6 +233,18 @@
       "priority": 5
     },
     {
+      "domain": "compliance",
+      "keywords": [
+        "case law",
+        "courtlistener",
+        "citation",
+        "precedent",
+        "legal research"
+      ],
+      "path": "compliance/case-law-research",
+      "priority": 5
+    },
+    {
       "domain": "development",
       "keywords": [
         "cpp",
@@ -642,6 +654,19 @@
     {
       "domain": "docs",
       "keywords": [
+        "artifact authorship",
+        "typed artifact",
+        "anti-fabrication",
+        "cross-persona",
+        "adversarial review",
+        "author requirements"
+      ],
+      "path": "docs/artifact-authorship",
+      "priority": 8
+    },
+    {
+      "domain": "docs",
+      "keywords": [
         "prd",
         "product requirements",
         "write a prd"
@@ -750,11 +775,11 @@
       "domain": "docs",
       "keywords": [
         "user research workflow",
-        "cx-researcher",
+        "researcher",
+        "worker",
+        "profile",
         "synthesizes",
-        "user",
-        "evidence",
-        "interviews"
+        "user"
       ],
       "path": "docs/user-research-workflow",
       "priority": 5
@@ -1201,6 +1226,30 @@
         "market"
       ],
       "path": "strategy/competitive-landscape",
+      "priority": 5
+    },
+    {
+      "domain": "strategy",
+      "keywords": [
+        "competitive intel",
+        "competitor pricing",
+        "sec edgar",
+        "win loss",
+        "market share"
+      ],
+      "path": "strategy/competitive-intel",
+      "priority": 5
+    },
+    {
+      "domain": "strategy",
+      "keywords": [
+        "financial model",
+        "unit economics",
+        "roi ranges",
+        "cost of delay",
+        "low base high"
+      ],
+      "path": "strategy/financial-model",
       "priority": 5
     },
     {

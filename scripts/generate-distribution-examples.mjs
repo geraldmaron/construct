@@ -127,7 +127,7 @@ function writeIndexHtml(outDir, rows) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Construct distribution examples</title>
   <style>
-    :root { --ink: #0a0c10; --muted: #565c66; --hairline: #e3e4e8; --sans: 'Space Grotesk', system-ui, sans-serif; }
+    :root { --ink: #1a1d24; --muted: #545b66; --hairline: #d5d8dd; --sans: 'Plus Jakarta Sans', system-ui, sans-serif; }
     body { font-family: var(--sans); max-width: 52rem; margin: 2rem auto; padding: 0 1.25rem; color: var(--ink); line-height: 1.5; }
     h1 { font-size: 1.75rem; font-weight: 600; margin-bottom: 0.25rem; }
     .lede { color: var(--muted); margin-bottom: 2rem; }

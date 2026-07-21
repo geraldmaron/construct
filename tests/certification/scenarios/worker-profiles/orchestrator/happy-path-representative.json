@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 2,
+  "workerProfileId": "orchestrator",
+  "capabilityId": "worker-profile.prompt",
+  "mode": "normal",
+  "scenarioKind": "happy-path-representative",
+  "representativeTask": {
+    "prompt": "This task packet adds a new authenticated billing endpoint with a schema change and a UI form. Which specialists do you dispatch, in what order, and what does DONE look like for each handoff?",
+    "inputs": {
+      "surface": "billing endpoint",
+      "touches": ["auth", "schema", "UI"]
+    }
+  },
+  "expectedBehavior": {
+    "mustContainAny": ["route", "sequence", "handoff", "specialist", "dependency"],
+    "mustNotContain": [],
+    "mustRefuse": false,
+    "mustEscalateTo": ["architect", "engineer"],
+    "mustStateAssumptions": true
+  }
+}

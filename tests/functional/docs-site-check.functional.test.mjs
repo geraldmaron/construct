@@ -2,7 +2,7 @@
  * tests/functional/docs-site-check.functional.test.mjs — Generated reference drift gate.
  *
  * Asserts construct docs:site --check passes so docs/guides/reference/ stays aligned
- * with lib/cli-commands.mjs, lib/hooks/, and specialists/org.
+ * with lib/cli-commands.mjs, lib/hooks/, and registry.
  * Also asserts maintainer-only lanes are excluded from the public site catalog.
  */
 
@@ -96,7 +96,7 @@ test('release gate: construct docs:site --check reports no drift', () => {
     cwd: REPO_ROOT,
     encoding: 'utf8',
     timeout: 120_000,
-    env: { ...process.env, HOME: SANDBOX_HOME, CX_HOME_OVERRIDE: SANDBOX_HOME },
+    env: { ...process.env, HOME: SANDBOX_HOME, CONSTRUCT_HOME_OVERRIDE: SANDBOX_HOME },
   });
   assert.equal(result.status, 0, `docs:site --check exited ${result.status}; stdout: ${result.stdout}`);
 });
@@ -119,7 +119,7 @@ test('docs site catalog includes the document-intake guide pages', () => {
   assert.ok(urls.includes('/guides/intake/scanned-pdfs'), 'scanned-pdfs page must render');
 });
 
-test('public docs: .mdx reserved for pages with @cx/ui JSX components', () => {
+test('public docs: .mdx reserved for pages with @construct/ui JSX components', () => {
   const offenders = [];
   function walk(dir, relParts = []) {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "description": "Hermetic audio transcription benchmark fixtures for construct-tsyfe.2.10.",
+  "fixtures": [
+    {
+      "id": "01-short-clear",
+      "file": "01-short-clear.wav.txt",
+      "kind": "short-clear-speech",
+      "durationSec": 3,
+      "expectedTranscript": "welcome to the construct audio benchmark fixture"
+    },
+    {
+      "id": "02-noisy-background",
+      "file": "02-noisy-background.wav.txt",
+      "kind": "noisy-background",
+      "durationSec": 5,
+      "expectedTranscript": "customer reported checkout failure on mobile safari"
+    },
+    {
+      "id": "03-long-form",
+      "file": "03-long-form.wav.txt",
+      "kind": "long-form",
+      "durationSec": 12,
+      "expectedTranscript": "the quarterly review covers routing thresholds docling sidecar hardening and email attachment quarantine behavior"
+    }
+  ]
+}

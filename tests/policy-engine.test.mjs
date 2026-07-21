@@ -12,16 +12,16 @@ import assert from 'node:assert/strict';
 
 import { policyDecision, clearManifestCache } from '../lib/policy/engine.mjs';
 
-function manifests(personas) {
-  return { personas };
+function manifests(workerProfiles) {
+  return { workerProfiles };
 }
 
 beforeEach(() => clearManifestCache());
 
 describe('policyDecision', () => {
   it('denies when role / tool / action are missing', () => {
-    assert.equal(policyDecision({}, { manifests: { personas: {} } }).allowed, false);
-    assert.equal(policyDecision({ role: 'engineer' }, { manifests: { personas: {} } }).allowed, false);
+    assert.equal(policyDecision({}, { manifests: { workerProfiles: {} } }).allowed, false);
+    assert.equal(policyDecision({ role: 'engineer' }, { manifests: { workerProfiles: {} } }).allowed, false);
   });
 
   it('denies an unknown role in team / enterprise mode by default', () => {
@@ -92,30 +92,27 @@ describe('policyDecision', () => {
   });
 });
 
-describe('policyDecision against the unified registry specialists', () => {
-  it('reads the shipped specialist manifests when no manifestPath override is supplied', () => {
+describe('policyDecision against the canonical worker-profile registry', () => {
+  it('reads the shipped worker-profile manifests when no manifestPath override is supplied', () => {
     const d = policyDecision({ role: 'sre', tool: 'github', action: 'create_pr' });
     assert.equal(typeof d.allowed, 'boolean');
     assert.ok(d.reason);
   });
 });
 
-describe('policyDecision with team-aware decision gates', () => {
-  it('blocks a decision forbidden by the role\'s team', () => {
-    // product-manager is in product-group which forbids product-scope (counter-intuitive but tests forbidding)
-    // security-override is forbidden by governance-group
+describe('policyDecision with policy decision gates', () => {
+  it('blocks a decision vetoed by a governing policy', () => {
     const mockRegistry = {
-      teams: {
-        'governance-group': {
-          id: 'governance-group',
-          roles: ['security'],
-          forbiddenDecisions: ['security-override'],
-          decisionRights: ['security-approval'],
+      policies: {
+        governance: {
+          id: 'governance',
+          governs: ['security-override'],
+          vetoWorkerProfiles: ['security'],
         },
       },
     };
     const manifestsWithRegistry = {
-      personas: {
+      workerProfiles: {
         security: { fence: {} },
       },
       registry: mockRegistry,
@@ -125,23 +122,22 @@ describe('policyDecision with team-aware decision gates', () => {
       { manifests: manifestsWithRegistry }
     );
     assert.equal(d.allowed, false);
-    assert.equal(d.source, 'team.forbiddenDecisions');
-    assert.match(d.reason, /forbidden/);
+    assert.equal(d.source, 'policy.vetoWorkerProfiles');
+    assert.match(d.reason, /vetoed/);
   });
 
-  it('allows a decision authorized by the role\'s team', () => {
+  it('allows a decision when the governing policy does not veto the profile', () => {
     const mockRegistry = {
-      teams: {
-        'governance-group': {
-          id: 'governance-group',
-          roles: ['security'],
-          forbiddenDecisions: [],
-          decisionRights: ['security-approval'],
+      policies: {
+        governance: {
+          id: 'governance',
+          governs: ['security-approval'],
+          vetoWorkerProfiles: ['reviewer'],
         },
       },
     };
     const manifestsWithRegistry = {
-      personas: {
+      workerProfiles: {
         security: { fence: {} },
       },
       registry: mockRegistry,
@@ -153,19 +149,12 @@ describe('policyDecision with team-aware decision gates', () => {
     assert.equal(d.allowed, true);
   });
 
-  it('allows a decision when no team restriction is set', () => {
+  it('allows a decision when no policy governs it', () => {
     const mockRegistry = {
-      teams: {
-        'governance-group': {
-          id: 'governance-group',
-          roles: ['security'],
-          forbiddenDecisions: [],
-          decisionRights: [],
-        },
-      },
+      policies: {},
     };
     const manifestsWithRegistry = {
-      personas: {
+      workerProfiles: {
         security: { fence: {} },
       },
       registry: mockRegistry,
@@ -174,31 +163,22 @@ describe('policyDecision with team-aware decision gates', () => {
       { role: 'security', tool: 'github', action: 'anything', decision: 'random-decision' },
       { manifests: manifestsWithRegistry }
     );
-    // No explicit forbid, so should be allowed
     assert.equal(d.allowed, true);
   });
 
   it('allows actions when no decision parameter is supplied', () => {
     const manifestsWithRegistry = {
-      personas: {
+      workerProfiles: {
         engineer: { fence: {} },
       },
       registry: {
-        teams: {
-          'engineering-group': {
-            id: 'engineering-group',
-            roles: ['engineer'],
-            forbiddenDecisions: ['product-scope'],
-            decisionRights: ['architecture'],
-          },
-        },
+        policies: {},
       },
     };
     const d = policyDecision(
       { role: 'engineer', tool: 'github', action: 'create_pr' },
       { manifests: manifestsWithRegistry }
     );
-    // Without decision param, team gates don't apply
     assert.equal(d.allowed, true);
   });
 });

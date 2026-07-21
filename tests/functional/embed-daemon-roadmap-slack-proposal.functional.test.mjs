@@ -52,13 +52,13 @@ test('Job 10 proposes a Slack write-intent for the generated roadmap within one 
   const env = sterileSpawnEnv({
     HOME: root,
     USERPROFILE: root,
-    CX_HOME_OVERRIDE: root,
-    CX_ROOT_DIR: root,
+    CONSTRUCT_HOME_OVERRIDE: root,
+    CONSTRUCT_ROOT_DIR: root,
     TICK_TIMEOUT_MS: String(timeoutMs),
     CONSTRUCT_EMBED_ROADMAP_JOB_INTERVAL_MS: '250',
     SLACK_CHANNELS: '#roadmap-updates',
     CONSTRUCT_EMBEDDING_MODEL: 'hashing',
-    CX_INBOX_LIVE_WATCH: 'off',
+    CONSTRUCT_INBOX_LIVE_WATCH: 'off',
     CONSTRUCT_EMBED_ROADMAP_ENABLED: '1',
   });
 

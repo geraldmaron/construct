@@ -24,17 +24,17 @@ function project() {
 test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} } });
 
 // createSqliteRunStore resolves its db directory through the machine-scoped
-// state root (ADR-0066), which reads CX_HOME_OVERRIDE from real process.env
+// state root (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE from real process.env
 // directly. Pin it for the whole file so these runs never write into the
 // real developer machine's ~/.construct/projects/.
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-orch-sqlite-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 test.after(() => {
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 function sampleRun(id) {
@@ -44,7 +44,7 @@ function sampleRun(id) {
     status: 'completed',
     execution: { executionMode: 'construct-orchestrated' },
     request: { summary: `summary for ${id}` },
-    tasks: [{ id: 't1', role: 'cx-engineer', status: 'done' }],
+    tasks: [{ id: 't1', role: 'engineer', status: 'done' }],
   };
 }
 
@@ -60,7 +60,7 @@ if (!sqliteAvailable()) {
     const loaded = store.loadRun('run-sqlite-1');
     assert.equal(loaded.runId, 'run-sqlite-1');
     assert.equal(loaded.status, 'completed');
-    assert.equal(loaded.tasks[0].role, 'cx-engineer');
+    assert.equal(loaded.tasks[0].role, 'engineer');
   });
 
   test('saveRun upserts on the same runId', () => {

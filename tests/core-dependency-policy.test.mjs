@@ -25,18 +25,30 @@ const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8'));
 
 const SANCTIONED = new Set([
   '@modelcontextprotocol/sdk',
-  '@lancedb/lancedb',
-  'apache-arrow',
   // js-yaml: frontmatter parse/emit only (ADR-0028). New YAML use cases need
   // a fresh ADR; the allowlist entry is narrow on purpose.
   'js-yaml',
   // mailparser: RFC 5322/MIME email parsing only (ADR-0098). Does not cover
   // .msg/OLE parsing — that input fails loud with a typed error instead.
   'mailparser',
+  // RichDocument markdown/HTML adapters (ADR-0073); narrow parse/sanitize surface only.
+  'unified',
+  'remark-parse',
+  'remark-gfm',
+  'rehype-parse',
+  'rehype-sanitize',
 ]);
 
 // node-webvtt was removed (ADR-0028): zero in-tree usage. New deps may not
 // enter this map — the ratchet only releases via SANCTIONED.
+
+// @lancedb/lancedb and apache-arrow are declared in optionalDependencies, not
+// SANCTIONED (ADR-0081): the retrieval-adapter contract
+// (lib/storage/retrieval-adapter.mjs) treats LanceDB as one adapter among
+// possible others, with a dependency-free keyword/BM25 fallback, so core does
+// not require a vector database (directive §13). Re-promoting either package
+// to a core `dependencies` entry needs a fresh ADR, same as any other
+// unaccounted-for dependency.
 
 const PENDING_ADR = new Map();
 
@@ -70,13 +82,30 @@ test('the @xenova transformers chain is not reintroduced', () => {
   );
 });
 
+test('LanceDB + apache-arrow stay optional, never forced into core', () => {
+  for (const dep of ['@lancedb/lancedb', 'apache-arrow']) {
+    assert.ok(
+      !(dep in (pkg.dependencies || {})),
+      `${dep} must live in optionalDependencies (see docs/decisions/adr/0081-lancedb-optional-retrieval-adapter.md) — the keyword/BM25 adapter is the zero-dependency default`,
+    );
+    assert.ok(
+      dep in (pkg.optionalDependencies || {}),
+      `${dep} should be declared in optionalDependencies so the vector-backed retrieval adapter remains an opt-in capability`,
+    );
+  }
+});
+
 test('local-embedding ML stack stays optional, never forced into core', () => {
   assert.ok(
     !('@huggingface/transformers' in (pkg.dependencies || {})),
-    '@huggingface/transformers must live in optionalDependencies (see docs/decisions/adr/0014-local-embeddings-optional.md) — the in-tree hashing embedder is the zero-dependency default',
+    '@huggingface/transformers must not ship in dependencies (see docs/decisions/adr/0014-local-embeddings-optional.md) — the in-tree hashing embedder is the zero-dependency default',
   );
   assert.ok(
-    '@huggingface/transformers' in (pkg.optionalDependencies || {}),
-    '@huggingface/transformers should be declared in optionalDependencies so local ONNX embedding remains an opt-in capability',
+    !('@huggingface/transformers' in (pkg.optionalDependencies || {})),
+    '@huggingface/transformers must not ship in optionalDependencies — consumer installs inherit a vulnerable transitive chain (audit-published-artifact gate)',
+  );
+  assert.ok(
+    '@huggingface/transformers' in (pkg.devDependencies || {}),
+    '@huggingface/transformers should be declared in devDependencies for repo-local ONNX embedding experiments',
   );
 });

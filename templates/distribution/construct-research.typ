@@ -21,6 +21,8 @@
   footer: construct-running-footer(
     "Research brief",
     classification: "$if(classification)$$classification$$endif$",
+    doc-id: "$if(docId)$$docId$$endif$",
+    version: "$if(version)$$version$$endif$",
   ),
 )
 
@@ -34,6 +36,9 @@ $if(title)$
   "$if(artifactType)$$artifactType$$endif$",
   version: "$if(version)$$version$$endif$",
   doc-id: "$if(docId)$$docId$$endif$",
+  tags: "$if(tags)$$tags$$endif$",
+  contributors: "$if(contributors)$$contributors$$endif$",
+  approvers: "$if(approvers)$$approvers$$endif$",
   classification: "$if(classification)$$classification$$endif$",
 )
 $endif$

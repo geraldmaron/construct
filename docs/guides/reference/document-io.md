@@ -20,7 +20,7 @@ Construct treats document I/O as an **optional capability** with two independent
 | Stage | Command | Input formats | Output |
 |-------|---------|---------------|--------|
 | **Ingest** | `construct ingest` | PDF, Office, email, AV, text, transcripts, calendar, … | Normalized **markdown** + optional assets |
-| **Author** | specialists / workflows | — | Typed **markdown** artifacts (PRD, ADR, RFC, …) |
+| **Author** | Worker Profiles / workflows | — | Typed **markdown** artifacts (PRD, ADR, RFC, …) |
 | **Export** | `construct export` / `construct publish` | **Markdown** artifact (`.md` / `.mdx`) | PDF, DOCX, DOC, HTML, deck, PPTX, RTF, ODT, EPUB, TeX, TXT, MD copy |
 
 Export does not accept PDF or DOCX as input — those are **ingest** sources. Once ingested or authored as markdown, artifacts export to any supported distributable format.
@@ -172,4 +172,4 @@ Reports export (Pandoc, Typst, LibreOffice for `.doc`, pptxgenjs, deck template)
 
 ## Brand consistency
 
-Distribution exports, dashboard, supported hosts, and wireframe scaffolds share the Construct brand contract documented in [branding.md](./branding.md). Visual tokens live in [`lib/brand-tokens.mjs`](../../lib/brand-tokens.mjs) (monochrome ink ramp, Space Grotesk / JetBrains Mono). PPTX exports embed bundled TTF cuts via [`lib/brand-fonts.mjs`](../../lib/brand-fonts.mjs) when `pptx-embed-fonts` is installed.
+Distribution exports, dashboard, supported hosts, and wireframe scaffolds share the Construct brand contract documented in [branding.md](./branding.md). Visual tokens live in [`lib/brand-tokens.mjs`](../../lib/brand-tokens.mjs) (field-notebook ink ramp with slate-teal accent, Plus Jakarta Sans / JetBrains Mono). PPTX exports embed bundled TTF cuts via [`lib/brand-fonts.mjs`](../../lib/brand-fonts.mjs) when `pptx-embed-fonts` is installed.

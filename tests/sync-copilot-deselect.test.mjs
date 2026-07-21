@@ -23,7 +23,7 @@ import test from 'node:test';
 import { rmTmpDir } from './helpers/cleanup.mjs';
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const SCRIPT = path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs');
+const SCRIPT = path.join(ROOT_DIR, 'scripts', 'sync-worker-profiles.mjs');
 
 const dirs = [];
 test.after(() => { for (const d of dirs) { try { rmTmpDir(d); } catch {} } });

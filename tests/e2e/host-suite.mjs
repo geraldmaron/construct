@@ -65,9 +65,9 @@ for (const r of rows) {
 lines.push('');
 lines.push('## Auditable evidence each layer reads');
 lines.push('');
-lines.push('- Skill loads → `~/.cx/skill-calls.jsonl`; specialist dispatch/handoff → `<project>/.cx/agent-log.jsonl`, `~/.cx/role-pending.jsonl`.');
+lines.push('- Skill loads → `~/.construct/skill-calls.jsonl`; specialist dispatch/handoff → `<project>/.construct/agent-log.jsonl`, `~/.construct/role-pending.jsonl`.');
 lines.push('- Config disposition → adapter dirs + `.construct/` gitignored; shareable artifacts tracked.');
-lines.push('- Contract enforcement → `~/.cx/contract-violations.jsonl` (empty on a clean run).');
+lines.push('- Contract enforcement → `~/.construct/contract-violations.jsonl` (empty on a clean run).');
 lines.push('- Artifact quality → `lintDocStructure` (template sections) + prose/citation heuristics in `lib/artifact-quality.mjs`.');
 lines.push('');
 lines.push('## Opt-in real-LLM layer');

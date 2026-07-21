@@ -8,7 +8,7 @@
  * at AUTHORED_PRIORITY. A skill without one gets a lower-priority
  * FALLBACK_PRIORITY entry derived from its own name and description, so
  * every skill is reachable before anyone hand-tunes its triggers.
- * `roles/*` skills are excluded — they load via role-directive preload and
+ * `perspectives/*` skills are excluded — they load through Worker Profile selection and
  * registry entitlement, never via intent-based routing (the same exclusion
  * lib/skills/composition-graph.mjs already applies to reachability checks).
  *
@@ -86,7 +86,7 @@ function fallbackKeywords(rel, frontmatter) {
 function buildRoutes() {
   const routes = [];
   for (const { rel, full } of walkSkillFiles(SKILLS_DIR)) {
-    if (rel.startsWith('roles/')) continue;
+    if (rel.startsWith('perspectives/')) continue;
     const frontmatter = parseFrontmatter(fs.readFileSync(full, 'utf8'));
     const domain = rel.includes('/') ? rel.split('/')[0] : 'utility';
     const authored = Array.isArray(frontmatter.triggers) && frontmatter.triggers.length > 0;

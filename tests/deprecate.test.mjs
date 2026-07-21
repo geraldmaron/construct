@@ -51,4 +51,11 @@ describe('deprecate', () => {
       /deprecated: breakme/
     );
   });
+
+  it('exports canonical result helpers', async () => {
+    const { resultError, resultOk, evaluateCompatSurface } = await import('../lib/deprecate.mjs');
+    assert.deepEqual(resultError('nope'), { ok: false, error: 'nope' });
+    assert.deepEqual(resultOk({ value: 1 }), { ok: true, value: 1 });
+    assert.equal(evaluateCompatSurface('matrix').expired, true);
+  });
 });

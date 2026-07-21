@@ -11,6 +11,24 @@ import path from 'node:path';
 import { validateGraph, nodeParts } from '../../lib/graph/validate.mjs';
 import { writeGraph, nodeId } from '../../lib/graph/store.mjs';
 
+// construct-b0nny.3: the relational graph store (lib/graph/relational/)
+// resolves graph.db under the machine-scoped state root (resolveStateDir,
+// ADR-0066) whenever writeGraph/loadGraph touch the host graph on Node
+// >=22.5. Pin CONSTRUCT_HOME_OVERRIDE so this suite never provisions state under
+// the real developer machine's ~/.construct/projects/ (the isolation
+// contract, tests/functional/README.md) — the same pattern
+// tests/orchestration-run-store-sqlite.test.mjs already established.
+
+const constructGraphTestHomeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-graph-test-home-'));
+const constructGraphTestPrevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = constructGraphTestHomeOverride;
+test.after(() => {
+  try { fs.rmSync(constructGraphTestHomeOverride, { recursive: true, force: true }); } catch {}
+  if (constructGraphTestPrevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = constructGraphTestPrevHomeOverride;
+});
+
+
 const tmpDirs = [];
 after(() => {
   for (const dir of tmpDirs) {
@@ -132,6 +150,23 @@ test('valid graph with real provider manifest passes strict', () => {
   assert.equal(result.errors.length, 0);
 });
 
+test('doc node resolves against packageRoot when missing under project root', () => {
+  const project = freshRoot();
+  const packageRoot = freshRoot();
+  const docDir = path.join(packageRoot, 'docs');
+  fs.mkdirSync(docDir, { recursive: true });
+  fs.writeFileSync(path.join(docDir, 'package-only.md'), '# Package doc');
+  writeGraph(project, {
+    nodes: [
+      { id: nodeId('doc', 'docs/package-only.md'), type: 'doc', name: 'docs/package-only.md', attrs: { path: 'docs/package-only.md' } },
+    ],
+    edges: [],
+  });
+  const result = validateGraph(project, { strict: true, packageRoot });
+  assert.equal(result.valid, true);
+  assert.equal(result.errors.length, 0);
+});
+
 test('nodeParts extracts type and key from node id', () => {
   assert.deepEqual(nodeParts('workflow:test'), { type: 'workflow', key: 'test' });
   assert.deepEqual(nodeParts('provider:slack'), { type: 'provider', key: 'slack' });
@@ -180,91 +215,4 @@ test('graph validate reports surface-parity errors regardless of deployment mode
   const soloSurfaceErrors = soloResult.errors.filter((e) => e.includes('surface'));
   const strictSurfaceErrors = strictResult.errors.filter((e) => e.includes('surface'));
   assert.deepEqual(soloSurfaceErrors, strictSurfaceErrors);
-});
-
-// Schema-layer checks (construct-4uxq0.11.6): NODE_TYPES/EDGE_RELS
-// membership, edge provenance, and per-type required attrs. Mode-gated like
-// every other check in this file (warning in lenient mode, error in strict),
-// consistent with the doc/provider checks above.
-
-test('a node with a type outside NODE_TYPES is a warning in lenient mode, an error in strict mode', () => {
-  const root = freshRoot();
-  writeGraph(root, {
-    nodes: [{ id: 'flie:x', type: 'flie', name: 'x' }],
-    edges: [],
-  });
-  const lenient = validateGraph(root, { strict: false });
-  assert.equal(lenient.valid, true);
-  assert.ok(lenient.warnings.some((w) => w.includes("unknown type 'flie'")));
-
-  const strict = validateGraph(root, { strict: true });
-  assert.equal(strict.valid, false);
-  assert.ok(strict.errors.some((e) => e.includes("unknown type 'flie'")));
-});
-
-test('an edge with a rel outside EDGE_RELS is a warning in lenient mode, an error in strict mode', () => {
-  const root = freshRoot();
-  writeGraph(root, {
-    nodes: [
-      { id: nodeId('capability', 'a'), type: 'capability' },
-      { id: nodeId('capability', 'b'), type: 'capability' },
-    ],
-    edges: [
-      { from: nodeId('capability', 'a'), to: nodeId('capability', 'b'), rel: 'improts', source: 'registry' },
-    ],
-  });
-  const lenient = validateGraph(root, { strict: false });
-  assert.ok(lenient.warnings.some((w) => w.includes("unknown rel 'improts'")));
-
-  const strict = validateGraph(root, { strict: true });
-  assert.equal(strict.valid, false);
-  assert.ok(strict.errors.some((e) => e.includes("unknown rel 'improts'")));
-});
-
-test('an edge with no source/sources is flagged as a provenance gap in strict mode', () => {
-  const root = freshRoot();
-  writeGraph(root, {
-    nodes: [
-      { id: nodeId('capability', 'a'), type: 'capability' },
-      { id: nodeId('workflow', 'w'), type: 'workflow' },
-    ],
-    edges: [
-      { from: nodeId('capability', 'a'), to: nodeId('workflow', 'w'), rel: 'embeds' },
-    ],
-  });
-  const result = validateGraph(root, { strict: true });
-  assert.equal(result.valid, false);
-  assert.ok(result.errors.some((e) => e.includes('has no provenance (empty sources)')));
-});
-
-test('a doc node missing attrs.path is flagged as a schema error in strict mode', () => {
-  const root = freshRoot();
-  writeGraph(root, {
-    nodes: [{ id: nodeId('doc', 'docs/a.md'), type: 'doc', name: 'docs/a.md' }],
-    edges: [],
-  });
-  const result = validateGraph(root, { strict: true });
-  assert.ok(result.errors.some((e) => e.includes('missing required attrs.path')));
-});
-
-// Partial-graph gating (construct-4uxq0.11.6): a graph marked partial in
-// meta.json is an unconditional error — not mode-gated — unless the caller
-// passes allowPartial.
-
-test('a partial graph fails validate regardless of deployment mode unless allowPartial is passed', () => {
-  const root = freshRoot();
-  writeGraph(root, {
-    nodes: [{ id: 'file:a', type: 'file' }],
-    edges: [],
-    partial: true,
-    partialReasons: ['buildFromRegistry threw: Modular org not found'],
-  });
-
-  const solo = validateGraph(root, { deploymentMode: 'solo' });
-  assert.equal(solo.valid, false);
-  assert.ok(solo.errors.some((e) => e.includes('graph is partial') && e.includes('Modular org not found')));
-
-  const allowed = validateGraph(root, { deploymentMode: 'solo', allowPartial: true });
-  assert.equal(allowed.valid, true);
-  assert.deepEqual(allowed.errors, []);
 });

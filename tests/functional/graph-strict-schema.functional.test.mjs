@@ -7,9 +7,9 @@
  * normalizeNodes/normalizeEdges never checked membership against either set,
  * nothing checked that an edge carried provenance (`sources`), there was no
  * rename/alias/tombstone mechanism, and a seeder that threw partway through
- * `construct graph build` (a fixture rootDir with no specialists/org
- * directory makes lib/registry/loader.mjs's loadRegistry throw "Modular org
- * not found", called unguarded from buildFromRegistry) crashed the whole CLI
+ * `construct graph build` (a fixture rootDir with no registry/worker-profiles
+ * catalogs makes lib/registry/assemble.mjs's assembleRegistry throw
+ * "Registry catalog not found", called unguarded from buildFromRegistry) crashed the whole CLI
  * process with zero record of what had been collected — reproduced directly
  * against this repo's code before the fix landed.
  *
@@ -38,6 +38,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const BIN = path.join(REPO_ROOT, 'bin', 'construct');
 
+const constructHome = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-graph-strict-home-'));
+const prevHome = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = constructHome;
+test.after(() => {
+  if (prevHome === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHome;
+  try { fs.rmSync(constructHome, { recursive: true, force: true }); } catch {}
+});
+
 const dirs = [];
 function freshDir(prefix) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
@@ -57,9 +66,9 @@ function captureOutput(fn) {
   }
 }
 
-// A fixture rootDir with a registry/ dir but no specialists/org directory
+// A fixture rootDir with a registry/ dir but missing worker-profiles catalogs
 // reproduces a real, currently-uncaught throw: lib/registry/assemble.mjs's
-// assembleRegistry throws "Modular org not found" and buildFromRegistry
+// assembleRegistry throws "Registry catalog not found" and buildFromRegistry
 // calls it unguarded (via lib/registry/loader.mjs's loadRegistry) for its
 // contracts-doc read, at a call site with no try/catch of its own.
 
@@ -80,7 +89,7 @@ test('a builder that throws partway through `graph build` marks the graph partia
   assert.equal(parsedBlocked.ok, false);
   assert.equal(parsedBlocked.partial, true);
   assert.ok(
-    parsedBlocked.partialReasons.some((r) => r.includes('buildFromRegistry threw') && r.includes('Modular org not found')),
+    parsedBlocked.partialReasons.some((r) => r.includes('buildFromRegistry threw') && /Registry catalog not found|Modular org not found|workspace-presets/.test(r)),
     `expected a buildFromRegistry throw reason in ${JSON.stringify(parsedBlocked.partialReasons)}`,
   );
 
@@ -92,7 +101,9 @@ test('a builder that throws partway through `graph build` marks the graph partia
   // that it is not acceptable as-is — spawned as the real binary so the
   // process.exit(...) path in lib/graph/cli.mjs's runValidate is exercised
   // end to end, not just the inner validateGraph() function.
-  const env = sterileSpawnEnv();
+  const env = sterileSpawnEnv({
+    CONSTRUCT_HOME_OVERRIDE: process.env.CONSTRUCT_HOME_OVERRIDE,
+  });
   const validateBlocked = spawnSync(process.execPath, [BIN, 'graph', 'validate', '--json'], {
     cwd: project, encoding: 'utf8', timeout: 60_000, env,
   });
@@ -124,7 +135,9 @@ test('construct graph validate --strict reports an injected bad-type node and ba
     ],
   });
 
-  const env = sterileSpawnEnv();
+  const env = sterileSpawnEnv({
+    CONSTRUCT_HOME_OVERRIDE: process.env.CONSTRUCT_HOME_OVERRIDE,
+  });
   const strict = spawnSync(process.execPath, [BIN, 'graph', 'validate', '--strict', '--json'], {
     cwd: project, encoding: 'utf8', timeout: 60_000, env,
   });

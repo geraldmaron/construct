@@ -82,8 +82,9 @@ test('check(): a schema fixture that fully matches the real FIELD_RULES top-leve
   fs.writeFileSync(schemaPath, JSON.stringify(fixtureSchema({})));
 
   const result = await check({ schemaPath });
-  const scopeResult = result.results.find((r) => r.path === 'scope');
-  assert.equal(scopeResult.status, 'passed');
+  const aliasResult = result.results.find((r) => r.path === 'alias');
+  assert.ok(aliasResult);
+  assert.equal(aliasResult.status, 'passed');
 });
 
 test('check(): the real repo schema/FIELD_RULES pair has a known, cited drift (rolls up to failed)', async () => {

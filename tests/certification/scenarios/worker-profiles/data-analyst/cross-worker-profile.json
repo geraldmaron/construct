@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 2,
+  "workerProfileId": "data-analyst",
+  "capabilityId": "worker-profile.prompt",
+  "mode": "normal",
+  "scenarioKind": "cross-worker-profile",
+  "representativeTask": {
+    "prompt": "We want to measure onboarding activation, but the client never emits an 'onboarding_completed' event, so the funnel has no denominator. Define the metric and get the instrumentation built.",
+    "inputs": {}
+  },
+  "expectedBehavior": {
+    "mustContainAny": ["instrumentation", "event", "schema", "engineer", "handoff", "denominator"],
+    "mustNotContain": [],
+    "mustRefuse": false,
+    "mustEscalateTo": ["engineer"],
+    "mustStateAssumptions": true
+  }
+}

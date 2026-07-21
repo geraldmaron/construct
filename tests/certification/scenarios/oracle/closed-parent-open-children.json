@@ -1,0 +1,16 @@
+{
+  "closedBeads": [
+    {
+      "id": "fixture-cert-parent-closed",
+      "status": "closed",
+      "notes": ""
+    }
+  ],
+  "openBeads": [
+    {
+      "id": "fixture-cert-child-open",
+      "status": "open",
+      "parent": "fixture-cert-parent-closed"
+    }
+  ]
+}

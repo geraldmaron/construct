@@ -19,7 +19,7 @@ function confirmRequired(result) {
 
 function makeProjectWithArtifacts() {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-f01-destroy-'));
-  const internalDir = path.join(cwd, '.cx', 'knowledge', 'internal');
+  const internalDir = path.join(cwd, '.construct', 'knowledge', 'internal');
   fs.mkdirSync(internalDir, { recursive: true });
   fs.writeFileSync(path.join(internalDir, 'doc-a.md'), '# A\n');
   fs.writeFileSync(path.join(internalDir, 'doc-b.md'), '# B\n');
@@ -57,15 +57,18 @@ test('[R11] destructive gate rejects storage_reset without out-of-band token', (
   assert.ok(result.reason.includes('approval token'), 'reason should mention approval token');
 });
 
-test('[R11] destructive gate accepts storage_reset with valid token', () => {
-  const token = issueApprovalToken('storage_reset');
-  const result = checkDestructiveGate('storage_reset', { confirm: true, approval_token: token });
+test('[R11] destructive gate accepts storage_reset with valid token', (t) => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-f01-ledger-'));
+  t.after(() => { try { fs.rmSync(rootDir, { recursive: true, force: true }); } catch {} });
+
+  const token = issueApprovalToken('storage_reset', { rootDir });
+  const result = checkDestructiveGate('storage_reset', { confirm: true, approval_token: token }, { rootDir });
   assert.ok(result.gated, 'gate should intercept destructive tool');
   assert.ok(result.allowed, 'gate should allow with valid token');
 });
 
-test('[R11] destructive gate rejects scope_archive without out-of-band token', () => {
-  const result = checkDestructiveGate('scope_archive', { id: 'test', reason: 'test archival' });
+test('[R11] destructive gate rejects workspace_preset_archive without out-of-band token', () => {
+  const result = checkDestructiveGate('workspace_preset_archive', { id: 'test', reason: 'test archival' });
   assert.ok(result.gated, 'gate should block destructive tool without token');
   assert.ok(!result.allowed, 'gate should not allow without token');
   assert.ok(result.reason.includes('approval token'), 'reason should mention approval token');

@@ -1,7 +1,7 @@
 # Debug Investigation: {symptom-or-bd-id}
 
 - **Date**: {YYYY-MM-DD}
-- **Debugger**: cx-debugger (or named human)
+- **Debugger**: debugger (or named human)
 - **Severity**: critical / high / medium / low
 - **Status**: in-progress | root-cause-identified | fix-proposed | resolved
 
@@ -48,6 +48,6 @@ the cause is `unknown` — not a guess.
 
 ## Handoff
 
-- fix to implement → `next:cx-engineer`
-- additional test coverage → `next:cx-qa`
-- design review of the invariant → `next:cx-architect`
+- fix to implement → `next:engineer`
+- additional test coverage → `next:qa`
+- design review of the invariant → `next:architect`

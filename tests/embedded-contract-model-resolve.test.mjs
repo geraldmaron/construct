@@ -52,7 +52,7 @@ test('no host context + no configured tier → config-error (ADR-0027 no-implici
 });
 
 test('env tier override is reflected in tierSource', () => {
-  const r = resolveEmbeddedModel({ requestedTier: 'reasoning' }, { env: { CX_MODEL_REASONING: 'anthropic/claude-opus-4-6' } });
+  const r = resolveEmbeddedModel({ requestedTier: 'reasoning' }, { env: { CONSTRUCT_MODEL_REASONING: 'anthropic/claude-opus-4-6' } });
   assert.equal(r.resolutionSource, 'tier-default');
   assert.equal(r.selectedModel, 'anthropic/claude-opus-4-6');
   assert.equal(r.tierSource, 'env override');
@@ -81,7 +81,7 @@ test('cross-provider opt-in cascades to config-error when no tier is configured 
 test('cross-provider opt-in reaches tier-default when an env override resolves the tier', () => {
   const r = resolveEmbeddedModel(
     { hostModel: 'mystery/model-x', allowCrossProviderFallback: true },
-    { env: { ...NO_CREDS, CX_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6' } },
+    { env: { ...NO_CREDS, CONSTRUCT_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6' } },
   );
   assert.equal(r.resolutionSource, 'tier-default');
   assert.equal(r.selectedModel, 'anthropic/claude-sonnet-4-6');

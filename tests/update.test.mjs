@@ -28,7 +28,7 @@ function makeConstructCheckout() {
     bin: { construct: 'bin/construct' },
   }, null, 2)}\n`);
   writeFile(root, 'bin/construct', '#!/usr/bin/env node\n');
-  writeFile(root, 'scripts/sync-specialists.mjs', 'export {};\n');
+  writeFile(root, 'scripts/sync-worker-profiles.mjs', 'export {};\n');
   writeFile(root, 'lib/cli-commands.mjs', 'export const CLI_COMMANDS = [];\n');
   return root;
 }
@@ -66,7 +66,6 @@ test('runUpdate installs globally, then runs sync and doctor from the checkout',
   assert.deepEqual(calls.filter((entry) => entry[0] !== 'stdout'), [
     ['npm', ['install', '-g', '.'], root, 'inherit'],
     [process.execPath, [path.join(root, 'bin', 'construct'), 'sync', '--no-docs'], root, 'inherit'],
-    [process.execPath, [path.join(root, 'bin', 'construct'), 'doctor', '--fix-legacy-agents'], root, 'inherit'],
     [process.execPath, [path.join(root, 'bin', 'construct'), 'doctor'], root, 'inherit'],
   ]);
 });

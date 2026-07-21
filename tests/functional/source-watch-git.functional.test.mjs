@@ -10,25 +10,23 @@
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { tmpdir } from 'node:os';
 import { execSync } from 'node:child_process';
 
-import { refreshWatch, readWatchState } from '../../lib/sources/watch.mjs';
+import {
+  refreshWatch,
+  readWatchState,
+  acknowledgeSourceChange,
+} from '../../lib/sources/watch.mjs';
 import { readSourceLedger } from '../../lib/sources/staleness-ledger.mjs';
 
-// refreshWatch persists watch state via resolveStatePath (lib/state-root.mjs),
-// which anchors to the real user home unless CX_HOME_OVERRIDE is set — an
-// unpinned run leaks a fresh ~/.construct/projects/<hash>/context-repos/ key
-// per run (the hash covers a random tmpdir projectRoot).
-
 const HOME_OVERRIDE = fs.mkdtempSync(path.join(tmpdir(), 'watch-git-home-'));
-const PREV_HOME_OVERRIDE = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = HOME_OVERRIDE;
+const PREV_HOME_OVERRIDE = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = HOME_OVERRIDE;
 after(() => {
-  if (PREV_HOME_OVERRIDE === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = PREV_HOME_OVERRIDE;
+  if (PREV_HOME_OVERRIDE === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = PREV_HOME_OVERRIDE;
   fs.rmSync(HOME_OVERRIDE, { recursive: true, force: true });
 });
 
@@ -40,12 +38,6 @@ function git(workDir, args) {
   return execSync(`git -C "${workDir}" ${args}`, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 }
 
-function initBareRemote() {
-  const remote = makeTempDir('watch-remote-');
-  git(remote, `init --bare -b main "${remote}"`.replace(`-C "${remote}" `, ''));
-  return remote;
-}
-
 function makeCommit(workDir, message, fileName, contents) {
   fs.writeFileSync(path.join(workDir, fileName), contents);
   git(workDir, 'add -A');
@@ -54,10 +46,10 @@ function makeCommit(workDir, message, fileName, contents) {
 
 test('refreshWatch detects a git remote HEAD change and records it', () => {
   const remote = makeTempDir('watch-remote-');
-  git(remote, `init --bare -b main`);
+  git(remote, 'init --bare -b main');
 
   const work = makeTempDir('watch-work-');
-  git(work, `init -b main`);
+  git(work, 'init -b main');
   git(work, 'config user.email test@example.com');
   git(work, 'config user.name test');
   makeCommit(work, 'first', 'file.txt', 'one');
@@ -72,7 +64,6 @@ test('refreshWatch detects a git remote HEAD change and records it', () => {
     selector: { remote, content: { mode: 'corpus', ref: 'main' } },
   };
 
-  // Baseline refresh: capture current HEAD, no change yet.
   const first = refreshWatch(target, { projectRoot });
   assert.equal(first.kind, 'git');
   assert.equal(first.changed, false);
@@ -82,14 +73,24 @@ test('refreshWatch detects a git remote HEAD change and records it', () => {
   assert.equal(afterFirst.lastSeenHead, first.current);
   assert.equal(afterFirst.changedAt, null);
 
-  // Push a new commit upstream.
   makeCommit(work, 'second', 'file.txt', 'two');
   git(work, 'push origin main');
 
   const second = refreshWatch(target, { projectRoot });
   assert.equal(second.changed, true);
+  assert.equal(second.pending, true);
   assert.equal(second.previous, first.current);
   assert.notEqual(second.current, first.current);
+
+  const afterSecond = readWatchState(target, { projectRoot });
+  assert.equal(afterSecond.lastSeenHead, first.current);
+  assert.equal(afterSecond.pendingHead, second.current);
+  assert.equal(afterSecond.changedAt != null, true);
+
+  const ack = acknowledgeSourceChange(target, { projectRoot });
+  assert.equal(ack.lastSeenHead, second.current);
+  assert.equal(ack.pendingHead, null);
+  assert.equal(ack.changedAt, null);
 
   const ledger = readSourceLedger({ projectRoot });
   assert.ok(ledger.length >= 1);

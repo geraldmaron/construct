@@ -34,7 +34,7 @@ test('deck export produces non-empty branded html or actionable degradation', ()
       assert.ok(fs.existsSync(out));
       assert.ok(fs.statSync(out).size > 0);
       const html = fs.readFileSync(out, 'utf8');
-      assert.match(html, /Construct|Space Grotesk|deck/i);
+      assert.match(html, /Construct|Plus Jakarta|deck/i);
     } else {
       assert.ok(result.hint || result.reason || result.message, 'missing engine should return actionable hint');
     }

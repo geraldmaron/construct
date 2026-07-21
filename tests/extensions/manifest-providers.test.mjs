@@ -69,6 +69,15 @@ test('built-in provider manifests', async (t) => {
     assert.deepEqual([...BUILT_INS].sort(), manifestIds);
   });
 
+
+  await t.test('git manifest exists but has no unified lib/providers/<id> adapter yet', () => {
+    const { manifests } = loadManifestsFromDir(MANIFESTS_DIR);
+    const gitManifest = manifests.find((m) => m.id === 'git');
+    assert.ok(gitManifest, 'git manifest should exist');
+    assert.equal(gitManifest.kind, 'data-source');
+    assert.ok(gitManifest.capabilities.includes('read'));
+  });
+
   await t.test('linear manifest exists but has no unified lib/providers/<id> adapter yet', () => {
     const { manifests } = loadManifestsFromDir(MANIFESTS_DIR);
     const linear = manifests.find((m) => m.id === 'linear');

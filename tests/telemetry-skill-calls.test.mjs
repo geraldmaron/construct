@@ -28,34 +28,34 @@ afterEach(() => {
 
 describe('logSkillCall', () => {
   it('writes one JSONL line per call with skillId, source, ts', () => {
-    logSkillCall({ skillId: 'roles/engineer', source: 'mcp' }, { logPath, env: {} });
+    logSkillCall({ skillId: 'perspectives/engineer', source: 'mcp' }, { logPath, env: {} });
     const lines = fs.readFileSync(logPath, 'utf8').split('\n').filter(Boolean);
     assert.equal(lines.length, 1);
     const entry = JSON.parse(lines[0]);
-    assert.equal(entry.skillId, 'roles/engineer');
+    assert.equal(entry.skillId, 'perspectives/engineer');
     assert.equal(entry.source, 'mcp');
     assert.match(entry.ts, /^\d{4}-\d{2}-\d{2}T/);
   });
 
   it('includes callerContext when provided', () => {
     logSkillCall(
-      { skillId: 'roles/architect.security', source: 'prompt-composer', callerContext: 'cx-architect' },
+      { skillId: 'perspectives/architect.security', source: 'prompt-composer', callerContext: 'architect' },
       { logPath, env: {} },
     );
     const entry = JSON.parse(fs.readFileSync(logPath, 'utf8').trim());
-    assert.equal(entry.callerContext, 'cx-architect');
+    assert.equal(entry.callerContext, 'architect');
   });
 
   it('appends across multiple calls (concurrent-safe shape)', () => {
     logSkillCall({ skillId: 'a', source: 'mcp' }, { logPath, env: {} });
-    logSkillCall({ skillId: 'b', source: 'role-preload' }, { logPath, env: {} });
+    logSkillCall({ skillId: 'b', source: 'perspective-preload' }, { logPath, env: {} });
     logSkillCall({ skillId: 'a', source: 'mcp' }, { logPath, env: {} });
     const lines = fs.readFileSync(logPath, 'utf8').split('\n').filter(Boolean);
     assert.equal(lines.length, 3, 'append-only, no overwrite');
   });
 
   it('honors CONSTRUCT_SKILL_TELEMETRY=off kill switch', () => {
-    logSkillCall({ skillId: 'roles/engineer', source: 'mcp' }, { logPath, env: { CONSTRUCT_SKILL_TELEMETRY: 'off' } });
+    logSkillCall({ skillId: 'perspectives/engineer', source: 'mcp' }, { logPath, env: { CONSTRUCT_SKILL_TELEMETRY: 'off' } });
     assert.equal(fs.existsSync(logPath), false, 'kill switch prevents file creation');
   });
 
@@ -85,17 +85,17 @@ describe('summarizeSkillCalls', () => {
     const t0 = new Date(Date.now() - 1000).toISOString();
     const t1 = new Date().toISOString();
     fs.writeFileSync(logPath, [
-      JSON.stringify({ ts: t0, skillId: 'roles/engineer', source: 'mcp' }),
-      JSON.stringify({ ts: t1, skillId: 'roles/engineer', source: 'prompt-composer', callerContext: 'cx-engineer' }),
-      JSON.stringify({ ts: t0, skillId: 'roles/architect', source: 'mcp' }),
+      JSON.stringify({ ts: t0, skillId: 'perspectives/engineer', source: 'mcp' }),
+      JSON.stringify({ ts: t1, skillId: 'perspectives/engineer', source: 'prompt-composer', callerContext: 'engineer' }),
+      JSON.stringify({ ts: t0, skillId: 'perspectives/architect', source: 'mcp' }),
     ].join('\n') + '\n');
 
     const summary = summarizeSkillCalls({ logPath });
     assert.equal(summary.totalEvents, 3);
-    assert.equal(summary.skills['roles/engineer'].calls, 2);
-    assert.deepEqual(summary.skills['roles/engineer'].sources, ['mcp', 'prompt-composer']);
-    assert.equal(summary.skills['roles/engineer'].lastCalledAt, t1);
-    assert.equal(summary.skills['roles/architect'].calls, 1);
+    assert.equal(summary.skills['perspectives/engineer'].calls, 2);
+    assert.deepEqual(summary.skills['perspectives/engineer'].sources, ['mcp', 'prompt-composer']);
+    assert.equal(summary.skills['perspectives/engineer'].lastCalledAt, t1);
+    assert.equal(summary.skills['perspectives/architect'].calls, 1);
   });
 
   it('returns empty result when log does not exist', () => {

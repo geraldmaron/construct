@@ -52,9 +52,9 @@ auth headers and non-managed agents are explicitly preserved on merge.
 
 | Config surface | Owner | Rule |
 |---|---|---|
-| `agent.construct`, `agent.cx-*` (and their prompts) | Construct | Regenerated from the registry + personas; swept by name prefix |
+| `agent.construct`, `agent.construct-*` (and their prompts) | Construct | Regenerated from the registry + Worker Profile prompts; swept by name prefix |
 | `agent.construct.permission.bash` | Construct | Scoped map emitted by `opencodePermissions` (deny `rm -rf *`; ask on `git push`/force/`reset --hard`) |
-| `agent.<your-name>` | user | Preserved — non-`construct`/`cx-*` agents survive the sweep |
+| `agent.<your-name>` | user | Preserved — non-`construct` agents survive the sweep |
 | `mcp.*` (context7, memory, github, …) | Construct | Regenerated from the registry; rewritten only on placeholder/transport mismatch. Opt-in MCPs like `playwright` (added via `construct mcp add`) are not in the registry, so they are left untouched. |
 | `mcp.github` Authorization | Construct | Written as `Bearer {env:GITHUB_TOKEN}` — an env ref, never a plaintext token |
 | `mcp.<your-server>` | user | Preserved on merge |
@@ -74,7 +74,7 @@ auth headers and non-managed agents are explicitly preserved on merge.
 `syncOpencode` reads the existing config, mutates only the managed sections, and
 writes the result — it does not regenerate the file wholesale:
 
-- **Agents** are swept by prefix: a `construct`/`cx-*` agent that is not in the
+- **Agents** are swept by prefix: a `construct` agent (and legacy `cx-*` ids left from older installs) that is not in the
   current write set is deleted; everything else is left alone. So a user-authored
   agent survives untouched.
 - **Providers** merge: the registry definition is spread in, but an existing

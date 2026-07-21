@@ -83,7 +83,7 @@ test('loadManifest recovers from a corrupted manifest file by returning empty', 
   assert.deepEqual(m.files, {});
 });
 
-test('saveManifest creates the .cx/intake directory if absent', () => {
+test('saveManifest creates the .construct/intake directory if absent', () => {
   rmSync(join(projectRoot, '.construct', 'intake'), { recursive: true, force: true });
   saveManifest(projectRoot, { version: 1, files: {} });
   assert.ok(existsSync(join(projectRoot, MANIFEST_REL_PATH)));

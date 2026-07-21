@@ -29,7 +29,14 @@ function tmpDoc() {
 
 function serve(handler) {
   return new Promise((resolve) => {
-    const server = http.createServer(handler);
+    const server = http.createServer((req, res) => {
+      if (req.method === 'GET' && (req.url === '/health' || req.url === '/v1/health')) {
+        res.statusCode = 200;
+        res.end('ok');
+        return;
+      }
+      handler(req, res);
+    });
     server.listen(0, '127.0.0.1', () => {
       const { port } = server.address();
       resolve({ url: `http://127.0.0.1:${port}`, close: () => new Promise((r) => server.close(r)) });

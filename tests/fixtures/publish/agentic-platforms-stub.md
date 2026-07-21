@@ -11,7 +11,7 @@ status: draft
 # PRD: Enterprise Agentic Platform
 
 - **Date**: 2026-06-19
-- **Owner**: cx-product-manager
+- **Owner**: product-manager
 - **Status**: draft
 
 ## Summary
@@ -51,10 +51,10 @@ cli: construct CLI {
 router: Workflow invoke\n(prd-draft) {
   shape: rectangle
 }
-pm: cx-product-manager {
+pm: product-manager {
   shape: rectangle
 }
-arch: cx-architect {
+arch: architect {
   shape: rectangle
 }
 prd: docs/prd/*.md {
@@ -95,7 +95,7 @@ pdf -> user: distribution
 ## Acceptance criteria
 
 - AC-1: `construct workflow invoke --workflow-type prd-draft` selects `product-manager` and `architect` with `docs/prd-workflow` in applied skills.
-- AC-2: `construct publish <this-file> --figures` writes a PDF under `.cx/publish/` with the architecture diagram rendered (not raw code).
+- AC-2: `construct publish <this-file> --figures` writes a PDF under `.construct/publish/` with the architecture diagram rendered (not raw code).
 - AC-3: `construct artifact validate` reports structure and citation gaps on draft PRDs before approval.
 
 ## Distribution

@@ -10,10 +10,10 @@ Specialist agent prompts are lean on purpose. Domain depth lives in skill files 
 Every specialist prompt carries a marker:
 
 ```
-**Role guidance**: call `get_skill("roles/NAME")` before drafting.
+**Perspective guidance**: call `get_skill("perspectives/NAME")` before drafting.
 ```
 
-When the agent begins substantive work in its domain, it calls `get_skill("roles/NAME")` via the construct-mcp server. The skill body is returned for that turn only: no permanent prompt budget is consumed.
+When the agent begins substantive work in its domain, it calls `get_skill("perspectives/NAME")` via the construct-mcp server. The skill body is returned for that turn only: no permanent prompt budget is consumed.
 
 All hosts Construct supports (Claude Code, OpenCode, Codex, Copilot) have `get_skill` available through the construct-mcp server, so the runtime call is reliable.
 
@@ -43,14 +43,14 @@ This should be rare. If you find yourself preloading most agents, revisit the re
 Two different mechanisms for two different purposes:
 
 - **Registry `skills: [...]` array**: declarative metadata listing which skills the agent is *entitled* to call. Not inlined into the prompt. Used by `list_skills`, routing heuristics, and audit tooling. Add skills here liberally.
-- **Role guidance directive**: the single `**Role guidance**: call get_skill("roles/NAME")` line in the prompt. Points the agent at its role file and (by default) tells it to load on demand. Exactly one per agent.
+- **Perspective guidance directive**: the single `**Perspective guidance**: call get_skill("perspectives/NAME")` line in the prompt. Points the agent at its perspective file and (by default) tells it to load on demand. Exactly one per agent.
 
 ## Contributor guidance
 
 When adding or editing a specialist:
 
 1. Keep the base prompt short: role, perspective, productive tension, handoff contract. Under 400 words is normal.
-2. Put domain depth into `skills/roles/NAME.md` and optional flavor overlays like `skills/roles/NAME.FLAVOR.md`.
+2. Put domain depth into `skills/perspectives/NAME.md` and optional flavor overlays like `skills/perspectives/NAME.FLAVOR.md`.
 3. Leave the role-guidance directive in place. Do not manually inline role content into the prompt body.
 4. Only add `preloadRoleGuidance: true` with a written reason in the registry description.
 

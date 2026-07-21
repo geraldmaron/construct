@@ -28,7 +28,7 @@ The only data that leaves your machine is what you explicitly send to an LLM or 
 - **Provider integrations**: if you configure Slack, GitHub, Jira, or Salesforce, Construct reads from those APIs. It does not write back unless you invoke a command that explicitly does so.
 - **Embed mode parent/child**: if you run a child Construct instance embedded in another tool, the instances communicate locally over a configured port. No external relay.
 
-The LLM context packet is the main surface to be aware of. It is scoped by role: `buildContextPacket` selects only the artifact kinds relevant to the dispatched specialist, within an explicit token budget. Unrelated artifacts are omitted.
+The LLM context packet is the main surface to be aware of. It is scoped by role: `buildContextPacket` selects only the artifact kinds relevant to the dispatched Worker Profile, within an explicit token budget. Unrelated artifacts are omitted.
 
 ## Modes
 

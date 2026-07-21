@@ -7,7 +7,7 @@
  * install checkout (ROOT_DIR) instead of the user's project, and
  * lib/mcp/server.mjs passed no `rootDir` at all. Both now resolve the
  * project root via lib/roots.mjs's resolveProjectRoot() (walk up from cwd to
- * a `.cx/` or `package.json` marker) before loading env, so a `.env` in the
+ * a `.construct/` or `package.json` marker) before loading env, so a `.env` in the
  * user's repo loads on both surfaces.
  *
  * `CONSTRUCT_DEPLOYMENT_MODE` is the probe: bin/construct's `config mode`
@@ -17,7 +17,7 @@
  * only exists in a temp project's `.env` proves that file was actually read.
  *
  * The toolkit-dev-checkout case (running construct from inside its own
- * source tree, no `.cx/` ancestor) stays unaffected: resolveProjectRoot falls
+ * source tree, no `.construct/` ancestor) stays unaffected: resolveProjectRoot falls
  * back to the nearest `package.json`, the same directory ROOT_DIR already
  * pointed to.
  */
@@ -52,7 +52,7 @@ function sandbox() {
   const home = join(root, 'home');
   const project = join(root, 'project');
   mkdirSync(join(home, '.config', 'construct'), { recursive: true });
-  mkdirSync(join(project, '.cx'), { recursive: true });
+  mkdirSync(join(project, '.construct'), { recursive: true });
   return {
     root,
     home,
@@ -71,7 +71,7 @@ function runCli(env, args) {
     env: sterileSpawnEnv({
       HOME: env.home,
       USERPROFILE: env.home,
-      CX_HOME_OVERRIDE: env.home,
+      CONSTRUCT_HOME_OVERRIDE: env.home,
       XDG_CONFIG_HOME: join(env.home, '.config'),
       CI: 'true',
       CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
@@ -88,7 +88,7 @@ async function connectMcp(env) {
     env: sterileSpawnEnv({
       HOME: env.home,
       USERPROFILE: env.home,
-      CX_HOME_OVERRIDE: env.home,
+      CONSTRUCT_HOME_OVERRIDE: env.home,
       XDG_CONFIG_HOME: join(env.home, '.config'),
       CI: 'true',
     }),
@@ -162,7 +162,7 @@ test('MCP: project .env wins over user config.env (documented tier order)', asyn
   assert.equal(status.deploymentMode, 'team', 'project .env must win over user config.env on the MCP surface too');
 });
 
-test('toolkit-dev-checkout case: resolveProjectRoot falls back to the nearest package.json when there is no .cx/ ancestor', () => {
+test('toolkit-dev-checkout case: resolveProjectRoot falls back to the nearest package.json when there is no .construct/ ancestor', () => {
   const root = mkdtempSync(join(tmpdir(), 'cx-toolkit-equiv-'));
   try {
     writeFileSync(join(root, 'package.json'), JSON.stringify({ name: 'pretend-toolkit-checkout' }), 'utf8');

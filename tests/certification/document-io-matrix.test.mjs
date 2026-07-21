@@ -12,10 +12,13 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { runDocumentIoMatrix, DOCUMENT_IO_EXPORT_MATRIX } from '../../lib/certification/document-io-matrix.mjs';
+import { validateExportProviderResult } from '../../lib/export-provider-contract.mjs';
+import { validateDiagramRendered } from '../../lib/export-validate.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -58,4 +61,30 @@ test('report identifies exact format, engines, and detail for every row', () => 
     assert.ok(['certified', 'skipped', 'failed'].includes(r.status));
   }
   assert.ok(report.fixtureAudit.pass, `intake fixtures incomplete: ${report.fixtureAudit.errors.join(', ')}`);
+});
+
+test('validateExportProviderResult rejects export results missing fidelity evidence', () => {
+  const broken = {
+    ok: true,
+    format: 'md',
+    outputPath: '/tmp/x',
+    provider: { name: 'construct', version: '1' },
+    contentHash: `sha256:${'a'.repeat(64)}`,
+    fidelity: undefined,
+  };
+  assert.equal(validateExportProviderResult(broken).ok, false);
+});
+
+test('validateDiagramRendered fails when mermaid source is left as raw text without img/svg', () => {
+  const dir = path.join(REPO, '.tmp');
+  fs.mkdirSync(dir, { recursive: true });
+  const htmlPath = path.join(dir, 'diagram-placeholder.html');
+  fs.writeFileSync(htmlPath, '<html><body><pre>flowchart TD\nA-->B</pre></body></html>');
+  try {
+    const result = validateDiagramRendered(htmlPath, 'html');
+    assert.equal(result.ok, false);
+    assert.match(result.message, /diagram/i);
+  } finally {
+    try { fs.unlinkSync(htmlPath); } catch { /* skip */ }
+  }
 });

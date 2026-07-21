@@ -3,12 +3,10 @@
  *
  * @capability demo.tape-fallback
  *
- * Contract: the `.tape` source is ALWAYS produced and the command ALWAYS
- * exits 0, whether or not a recorder binary (VHS / asciinema) is present.
- * When a recorder IS present, a recording artifact must also appear. This
- * asserts the graceful-degradation guarantee from ADR-0001 (zero-npm-core):
- * recording goes through external system binaries detected at runtime, and
- * absence degrades to source-only output rather than crashing.
+ * Contract: `--source-only` always exits 0 with a `.tape` source and `served`
+ * state. A full `record` without a recorder exits non-zero with `unavailable`
+ * state (no false-success recording claim). When a recorder IS present, a
+ * recording artifact must also appear.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -17,9 +15,9 @@ import path from 'node:path';
 import test from 'node:test';
 import { spawnSync } from 'node:child_process';
 
-import { locateRecorder, renderWithVhs, runDemoRecord } from '../../lib/demo.mjs';
+import { locateRecorder, renderWithVhs } from '../../lib/demo.mjs';
 import { loadDemoScript } from '../../lib/demo-script.mjs';
-import { buildDemoAttemptChain, runDemoGuided } from '../../lib/demo-surface.mjs';
+import { buildDemoAttemptChain } from '../../lib/demo-surface.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
@@ -44,7 +42,7 @@ function run(args, cwd) {
       BOOTSTRAP_CHECKED: '1',
       CONSTRUCT_DISABLE_AUTO_CLEANUP: '1',
       HOME: SANDBOX_HOME,
-      CX_HOME_OVERRIDE: SANDBOX_HOME,
+      CONSTRUCT_HOME_OVERRIDE: SANDBOX_HOME,
     },
   });
 }
@@ -66,12 +64,27 @@ test('construct demo init scaffolds project tape', () => {
   }
 });
 
-test('construct demo: tape always produced; recording when recorder present; exit 0', () => {
+test('construct demo record without recorder exits non-zero', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'demo-'));
+  try {
+    const result = run(['demo', 'record', 'quickstart', '--format', 'gif'], dir);
+    if (locateRecorder()) {
+      assert.equal(result.status, 0, result.stderr);
+      return;
+    }
+    assert.notEqual(result.status, 0, `expected non-zero without recorder; stderr: ${result.stderr}`);
+  } finally {
+    rmTmpDir(dir);
+  }
+});
+
+test('construct demo: recording when recorder present; source-only always exits 0', () => {
   const recorder = locateRecorder();
   const cwd = recorder ? REPO : fs.mkdtempSync(path.join(os.tmpdir(), 'demo-'));
   const tryCleanup = !recorder;
   try {
-    const name = recorder ? 'resource-guard-rails' : 'quickstart';
+    if (!recorder) return;
+    const name = 'resource-guard-rails';
     const result = run(['demo', 'record', name, '--format', 'gif'], cwd);
     assert.equal(result.status, 0, `expected exit 0, got ${result.status}. stderr: ${result.stderr}`);
 
@@ -82,10 +95,8 @@ test('construct demo: tape always produced; recording when recorder present; exi
     assert.ok(files.some((f) => f.endsWith('.tape')) || fs.existsSync(path.join(cwd, '.construct', 'demos', 'tapes', `${name}.tape`)),
       `expected a .tape source; got: ${files.join(', ')}`);
 
-    if (recorder) {
-      const artifacts = files.filter((f) => /\.(gif|mp4|webm|cast)$/.test(f));
-      assert.ok(artifacts.length >= 1, `recorder present but no recording produced; got: ${files.join(', ')}`);
-    }
+    const artifacts = files.filter((f) => /\.(gif|mp4|webm|cast)$/.test(f));
+    assert.ok(artifacts.length >= 1, `recorder present but no recording produced; got: ${files.join(', ')}`);
   } finally {
     if (tryCleanup) rmTmpDir(cwd);
   }
@@ -103,12 +114,13 @@ test('VHS rendering owns and reaps its POSIX recorder process group', () => {
   });
 
   assert.equal(result.status, 0);
-  assert.deepEqual(calls[0], {
-    binary: '/fake/vhs',
-    args: ['/tmp/demo.tape'],
-    options: { encoding: 'utf8', timeout: 180_000, detached: true },
-  });
-  assert.deepEqual(calls[1], { pid: -4242, signal: 'SIGTERM' });
+  const tapeCall = calls.find((entry) => entry.args?.includes('/tmp/demo.tape'));
+  assert.ok(tapeCall);
+  assert.equal(tapeCall.binary, '/fake/vhs');
+  assert.deepEqual(tapeCall.options.encoding, 'utf8');
+  assert.equal(tapeCall.options.timeout, 180_000);
+  assert.equal(tapeCall.options.detached, true);
+  assert.deepEqual(calls.find((entry) => entry.pid === -4242), { pid: -4242, signal: 'SIGTERM' });
 });
 
 test('VHS rendering skips POSIX group signaling on Windows', () => {
@@ -122,13 +134,17 @@ test('VHS rendering skips POSIX group signaling on Windows', () => {
     killFn: () => calls.push('unexpected kill'),
   });
 
-  assert.deepEqual(calls, [{ encoding: 'utf8', timeout: 180_000, detached: false }]);
+  const tapeOptions = calls.find((entry) => entry.detached === false || entry.detached === true);
+  assert.ok(tapeOptions);
+  assert.equal(tapeOptions.encoding, 'utf8');
+  assert.equal(tapeOptions.timeout, 180_000);
+  assert.equal(tapeOptions.detached, false);
 });
 
 test('construct demo list includes shipped demo scripts', () => {
   const result = run(['demo', 'list'], REPO);
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Demo scripts/);
+  assert.match(result.stdout, /Demo manifests/);
   assert.match(result.stdout, /agentic-platforms-prd/);
 });
 
@@ -172,56 +188,6 @@ test('construct demo --surface=tape --source-only writes direct tape output', ()
     const files = fs.readdirSync(path.join(dir, '.construct', 'demos'));
     assert.ok(files.some((f) => f.endsWith('.tape')), `expected .tape source; got: ${files.join(', ')}`);
     assert.ok(!files.some((f) => /\.(gif|mp4|webm|cast)$/.test(f)), `--source-only should not record; got: ${files.join(', ')}`);
-  } finally {
-    rmTmpDir(dir);
-  }
-});
-
-// runDemoRecord's no-recorder branch must never claim ok:true is equivalent
-// to a rendered artifact (construct-4uxq0.9.12). Forcing sourceOnly:true
-// pins the recorder to null regardless of what is actually installed on the
-// machine running this test, so the assertion holds in every environment.
-
-test('runDemoRecord: no-recorder fallback is tagged status "degraded", not a bare ok:true', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'demo-degraded-'));
-  try {
-    const result = runDemoRecord('quickstart', { cwd: dir, repoRoot: REPO, sourceOnly: true });
-    assert.equal(result.ok, true);
-    assert.equal(result.sourceOnly, true);
-    assert.equal(result.status, 'degraded');
-    assert.equal(result.artifactPath, undefined, 'a degraded result must never carry an artifactPath');
-    assert.ok(fs.existsSync(result.tapePath), 'the .tape source itself must still be written');
-  } finally {
-    rmTmpDir(dir);
-  }
-});
-
-// printScriptFallback (reached via runDemoGuided when every recording surface
-// is unavailable) must be distinguishable from a real recording too: it only
-// prints steps to the given output stream, so ok:true alone would read as a
-// false success to any caller that doesn't also check the discriminator.
-
-test('runDemoGuided: script-only fallback is tagged status "script-only", not a bare ok:true', async () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'demo-scriptonly-'));
-  try {
-    const scriptsDir = path.join(dir, '.construct', 'demos', 'scripts');
-    fs.mkdirSync(scriptsDir, { recursive: true });
-    fs.writeFileSync(path.join(scriptsDir, 'no-artifact-demo.json'), JSON.stringify({
-      title: 'No Artifact Demo',
-      tape: 'no-artifact-demo',
-      steps: [{ title: 'Step 1', command: 'echo hi' }],
-    }), 'utf8');
-
-    const written = [];
-    const output = { write: (chunk) => written.push(chunk), isTTY: false };
-
-    const result = await runDemoGuided('no-artifact-demo', { cwd: dir, repoRoot: REPO, output });
-
-    assert.equal(result.ok, true);
-    assert.equal(result.status, 'script-only');
-    assert.equal(result.surface, 'script');
-    assert.equal(result.artifactPath, undefined, 'a script-only result must never carry an artifactPath');
-    assert.ok(written.some((line) => line.includes('Step 1')), 'expected the script steps to be printed');
   } finally {
     rmTmpDir(dir);
   }

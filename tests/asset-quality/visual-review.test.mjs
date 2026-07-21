@@ -37,14 +37,14 @@ test('makeVisualReview rejects an unknown rubric, bad verdict, or missing image'
 });
 
 test('a visual review cannot be recorded without a real captured screenshot', () => {
-  const review = makeVisualReview({ rubricId: 'document-v1', image: 'prd-1.png', verdict: 'pass', reviewer: 'cx-designer' });
+  const review = makeVisualReview({ rubricId: 'document-v1', image: 'prd-1.png', verdict: 'pass', reviewer: 'designer' });
   assert.throws(() => recordVisualReview({ screenshotEvidence: null, review }), /no source inference/);
   const degraded = makeEvidence('screenshot-captured', { actor: 'construct-render', degradation: 'unavailable-renderer' });
   assert.throws(() => recordVisualReview({ screenshotEvidence: degraded, review }), /no source inference/);
 });
 
 test('a recorded review from a real screenshot advances the ladder, verdict in proof', () => {
-  const review = makeVisualReview({ rubricId: 'document-v1', image: 'prd-1.png', verdict: 'pass', reviewer: 'cx-designer' });
+  const review = makeVisualReview({ rubricId: 'document-v1', image: 'prd-1.png', verdict: 'pass', reviewer: 'designer' });
   const evidence = recordVisualReview({ screenshotEvidence: capturedShot, review });
   assert.equal(evidence.state, 'visually-reviewed');
   assert.equal(evidence.proof.verdict, 'pass');
@@ -53,7 +53,7 @@ test('a recorded review from a real screenshot advances the ladder, verdict in p
 });
 
 test('a failing verdict still records that a review occurred', () => {
-  const review = makeVisualReview({ rubricId: 'deck-v1', image: 'slide-1.png', verdict: 'fail', reviewer: 'cx-designer' });
+  const review = makeVisualReview({ rubricId: 'deck-v1', image: 'slide-1.png', verdict: 'fail', reviewer: 'designer' });
   const evidence = recordVisualReview({ screenshotEvidence: capturedShot, review });
   assert.equal(evidence.state, 'visually-reviewed');
   assert.equal(evidence.proof.verdict, 'fail');

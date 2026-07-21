@@ -24,7 +24,7 @@ const SERVER = path.join(REPO, 'lib', 'mcp', 'server.mjs');
 function startServer() {
   const proc = spawn(process.execPath, [SERVER], {
     stdio: ['pipe', 'pipe', 'pipe'],
-    env: sterileSpawnEnv({ CX_TOOLKIT_DIR: REPO }),
+    env: sterileSpawnEnv({ CONSTRUCT_TOOLKIT_DIR: REPO }),
   });
 
   let buffered = '';
@@ -85,7 +85,7 @@ function callResult(response) {
   return text ? JSON.parse(text) : null;
 }
 
-test('the PR #67 scope/learning tools are reachable through the construct_call gateway', async () => {
+test('Workspace Preset and learning tools are reachable through the construct_call gateway', async () => {
   // The gateway exposes a lean flat surface; long-tail tools stay reachable by
   // name through construct_call's enum, not as flat tools/list entries.
   await withServer(async (send) => {
@@ -94,54 +94,54 @@ test('the PR #67 scope/learning tools are reachable through the construct_call g
     assert.ok(gateway, 'construct_call gateway is exposed');
     const reachable = new Set(gateway.inputSchema?.properties?.tool?.enum ?? []);
     for (const expected of [
-      'scope_show', 'scope_list', 'scope_drafts', 'scope_health',
+      'workspace_preset_show', 'workspace_preset_list', 'workspace_preset_drafts', 'workspace_preset_health',
       'outcomes_summary', 'outcomes_record', 'knowledge_add',
-      'scope_create', 'scope_archive', 'sandbox_list', 'learning_status',
+      'workspace_preset_create', 'workspace_preset_archive', 'sandbox_list', 'learning_status',
     ]) {
       assert.ok(reachable.has(expected), `MCP tool ${expected} not reachable via construct_call`);
     }
   });
 });
 
-test('scope_show + scope_list reach Construct state over MCP', async () => {
+test('Workspace Preset show and list reach Construct state over MCP', async () => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-parity-show-'));
-  fs.writeFileSync(path.join(cwd, 'construct.config.json'), JSON.stringify({ version: 1, scope: 'rnd' }, null, 2));
+  fs.writeFileSync(path.join(cwd, 'construct.config.json'), JSON.stringify({ version: 1, workspacePreset: 'rnd' }, null, 2));
 
   await withServer(async (send) => {
-    const show = await send('tools/call', { name: 'scope_show', arguments: { cwd } });
+    const show = await send('tools/call', { name: 'workspace_preset_show', arguments: { cwd } });
     const parsed = callResult(show);
     assert.equal(parsed.id, 'rnd');
-    assert.ok(Array.isArray(parsed.roles));
+    assert.ok(Array.isArray(parsed.skills));
 
-    const list = await send('tools/call', { name: 'scope_list', arguments: {} });
+    const list = await send('tools/call', { name: 'workspace_preset_list', arguments: {} });
     const catalog = callResult(list);
-    assert.ok(Array.isArray(catalog.scopes));
-    assert.ok(catalog.scopes.some((p) => p.id === 'rnd'));
+    assert.ok(Array.isArray(catalog.workspacePresets));
+    assert.ok(catalog.workspacePresets.some((preset) => preset.id === 'rnd'));
   });
   rmTmpDir(cwd);
 });
 
 test('outcomes_record refuses without confirm but writes JSONL when confirmed (via MCP)', async () => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-parity-outcomes-'));
-  fs.writeFileSync(path.join(cwd, 'construct.config.json'), JSON.stringify({ version: 1, scope: 'rnd' }, null, 2));
+  fs.writeFileSync(path.join(cwd, 'construct.config.json'), JSON.stringify({ version: 1, workspacePreset: 'rnd' }, null, 2));
 
   await withServer(async (send) => {
     const reject = await send('tools/call', {
       name: 'outcomes_record',
-      arguments: { cwd, role: 'cx-engineer', success: true },
+      arguments: { cwd, role: 'engineer', success: true },
     });
     const rejectBody = callResult(reject);
     assert.ok(rejectBody.error && rejectBody.error.includes('confirm=true'));
 
     const accept = await send('tools/call', {
       name: 'outcomes_record',
-      arguments: { cwd, confirm: true, role: 'cx-engineer', success: true, notes: 'parity test' },
+      arguments: { cwd, confirm: true, role: 'engineer', success: true, notes: 'parity test' },
     });
     const acceptBody = callResult(accept);
     assert.ok(acceptBody.ok);
   });
 
-  const file = path.join(cwd, '.construct', 'outcomes', 'cx-engineer.jsonl');
+  const file = path.join(cwd, '.construct', 'outcomes', 'engineer.jsonl');
   assert.ok(fs.existsSync(file), 'outcomes_record did not write JSONL via MCP');
   const entry = JSON.parse(fs.readFileSync(file, 'utf8').trim());
   assert.equal(entry.success, true);
@@ -151,12 +151,12 @@ test('outcomes_record refuses without confirm but writes JSONL when confirmed (v
 
 test('learning_status delivers a structured dashboard over MCP', async () => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-parity-learning-'));
-  fs.writeFileSync(path.join(cwd, 'construct.config.json'), JSON.stringify({ version: 1, scope: 'rnd' }, null, 2));
+  fs.writeFileSync(path.join(cwd, 'construct.config.json'), JSON.stringify({ version: 1, workspacePreset: 'rnd' }, null, 2));
 
   await withServer(async (send) => {
     const res = await send('tools/call', { name: 'learning_status', arguments: { cwd } });
     const body = callResult(res);
-    assert.equal(body.scope.id, 'rnd');
+    assert.equal(body.workspacePreset.id, 'rnd');
     assert.equal(body.research.count, 0);
     assert.equal(typeof body.observations.total, 'number');
   });

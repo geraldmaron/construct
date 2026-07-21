@@ -59,7 +59,7 @@ describe('construct-handoff', () => {
     const artifact = enrichConstructOrchestratorHandoff({ goal: 'fix oracle hygiene bead' });
     const result = withRepoRoot((repoRoot) => validateHandoff({
       producer: 'construct',
-      consumer: 'cx-orchestrator',
+      consumer: 'orchestrator',
       id: 'construct-to-orchestrator',
       artifact,
       enforcement: 'block',

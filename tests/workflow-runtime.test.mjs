@@ -35,7 +35,7 @@ test("workflow alignment requires Construct-native task packets", (t) => {
   const workflow = addTask(root, {
     title: "Implement task runtime",
     phase: "implement",
-    owner: "cx-engineer",
+    owner: "engineer",
     acceptanceCriteria: ["runtime state is enforced"],
   });
 
@@ -50,7 +50,7 @@ test("done tasks require verification evidence", (t) => {
   let workflow = addTask(root, {
     title: "Verify before done",
     phase: "implement",
-    owner: "cx-engineer",
+    owner: "engineer",
     readFirst: ["src/index.ts"],
     doNotChange: ["package-lock.json"],
     acceptanceCriteria: ["tests pass"],
@@ -92,7 +92,7 @@ test("blocked_needs_user is a first-class worker status", (t) => {
 test("NEEDS_MAIN_INPUT packet is structured for primary persona resumption", () => {
   const packet = createNeedsMainInputPacket({
     taskKey: "todo:7",
-    worker: "cx-security",
+    worker: "security",
     blocker: "Cannot choose an auth policy safely",
     question: "Should this endpoint be admin-only or project-member writable?",
     safeDefault: "admin-only",
@@ -111,7 +111,7 @@ test("workflow schema validator catches broken dependencies and phase drift", (t
   let workflow = addTask(root, {
     title: "Blocked task",
     phase: "implement",
-    owner: "cx-engineer",
+    owner: "engineer",
     readFirst: ["src/a.ts"],
     doNotChange: ["src/b.ts"],
     acceptanceCriteria: ["done"],
@@ -135,14 +135,14 @@ test("plans can be imported into workflow task packets", (t) => {
   ].join("\n");
   const { workflow, count } = addTasksFromPlan(root, plan, {
     phase: "implement",
-    owner: "cx-engineer",
+    owner: "engineer",
     readFirst: ["plan.md"],
     doNotChange: [".env"],
   });
 
   assert.equal(count, 3);
   assert.equal(workflow.tasks.length, 3);
-  assert.equal(workflow.tasks[0].owner, "cx-engineer");
+  assert.equal(workflow.tasks[0].owner, "engineer");
   assert.deepEqual(workflow.tasks[0].readFirst, ["plan.md"]);
 });
 
@@ -151,7 +151,7 @@ test("extractTasksFromPlan parses rich T-section format into full task packets",
 ## Tasks
 
 ### T1 — Setup backend
-- **Owner**: cx-engineer
+- **Owner**: engineer
 - **Phase**: implement
 - **Files**: lib/backend.mjs
 - **Depends on**: (none)
@@ -162,7 +162,7 @@ test("extractTasksFromPlan parses rich T-section format into full task packets",
   - passes unit test
 
 ### T2 — Wire rollup
-- **Owner**: cx-engineer
+- **Owner**: engineer
 - **Phase**: implement
 - **Files**: lib/rollup.mjs
 - **Depends on**: T1
@@ -173,7 +173,7 @@ test("extractTasksFromPlan parses rich T-section format into full task packets",
   const tasks = extractTasksFromPlan(plan);
   assert.equal(tasks.length, 2);
   assert.equal(tasks[0].title, "Setup backend");
-  assert.equal(tasks[0].owner, "cx-engineer");
+  assert.equal(tasks[0].owner, "engineer");
   assert.deepEqual(tasks[0].files, ["lib/backend.mjs"]);
   assert.deepEqual(tasks[0].readFirst, ["lib/noop.mjs"]);
   assert.deepEqual(tasks[0].doNotChange, [".env"]);
@@ -185,7 +185,7 @@ test("extractTasksFromPlan parses rich T-section format into full task packets",
 
 test("extractTasksFromPlan falls back to flat list when no T-sections present", () => {
   const plan = ["- [ ] Update contracts", "- [ ] Add hooks", "1. Verify adapters"].join("\n");
-  const tasks = extractTasksFromPlan(plan, { owner: "cx-engineer" });
+  const tasks = extractTasksFromPlan(plan, { owner: "engineer" });
   assert.equal(tasks.length, 3);
-  assert.equal(tasks[0].owner, "cx-engineer");
+  assert.equal(tasks[0].owner, "engineer");
 });

@@ -4,11 +4,9 @@
 
 ### Core zone: `lib/`, `bin/`
 
-**Allowed:** Node.js built-ins (`node:fs`, `node:path`, `node:crypto`, etc.) plus the ADR-sanctioned runtime dependencies tracked in `tests/core-dependency-policy.test.mjs`'s `SANCTIONED` allowlist:
+**Allowed:** Node.js built-ins (`node:fs`, `node:path`, `node:crypto`, etc.) plus the two declared runtime dependencies:
 - `@modelcontextprotocol/sdk`: MCP server/client protocol
-- `@lancedb/lancedb` + `apache-arrow`: vector storage backend (retain-as-canonical decision, `construct-tsyfe.7.2`)
-- `js-yaml`: markdown frontmatter parse/emit only (ADR-0028)
-- `mailparser`: RFC 5322/MIME email parsing only (ADR-0098)
+- `postgres`: PostgreSQL client for SQL storage backend
 
 **Not allowed:** Any other npm package without an ADR (see below).
 
@@ -23,12 +21,20 @@ Additional runtime dependencies are allowed. Each new dependency requires an ADR
 
 Dependencies are allowed freely. No ADR required. These never ship to end users.
 
+Static analysis (`knip`, `dependency-cruiser`) lives here as `devDependencies`. ADR-0001 restricts the **installed CLI runtime** in `lib/` and `bin/` — its Context section (lines 18–23) frames the restriction around `npm install -g construct` supply-chain risk for end users. `devDependencies` are stripped from consumer installs and are not subject to the ADR-0001 amendment gate. Run them via:
+
+```bash
+npm run static:knip    # unused files/exports/deps (warn-first in CI)
+npm run static:cruise  # dependency direction rules (warn-first in CI)
+```
+
+Both tools use explicit entry-point inventories (`knip.json`, `.dependency-cruiser.cjs`) so findings reflect shipped surfaces rather than orphan false positives.
+
 ## Adding a core dependency
 
 1. Write `docs/decisions/adr/NNNN-<title>.md` using the MADR template (see `docs/decisions/adr/0001-zero-npm-core.md` for format).
 2. Answer all three questions above in the ADR body.
-3. If the candidate falls into one of ADR-0097's named delegation classes (markdown/HTML parsing, MIME/RFC message parsing, schema validation, graph/diagram rendering), apply its lifecycle-cost rubric explicitly — install footprint, maintenance burden transferred, security surface, replaceability, evidence bar — citing the class's standing verdict rather than re-arguing whether the class is delegable at all. See `docs/decisions/adr/0097-capability-delegation-rubric.md`.
-4. PR must link the ADR. Reviewer confirms the ADR is complete before approving the dependency addition.
+3. PR must link the ADR. Reviewer confirms the ADR is complete before approving the dependency addition.
 
 ## Promotion trigger
 
@@ -53,27 +59,23 @@ Remediation ladder:
 
 A repo-local `overrides` pin is acceptable as defense-in-depth for this repo's own tree, but it is never the line item that closes a consumer-facing advisory.
 
-## External binary, sidecar, and model provenance
+## OSV scanning, license policy, and exceptions
 
-Construct shells out to a set of external binaries, a Python sidecar, and
-downloaded ML models that npm audit and `deps/intent.json` do not cover
-(neither is a package in `package-lock.json`). Each is recorded as a
-Provider Card in `registry/provider-cards.json`, validated against
-`schemas/provider-card.schema.json` (`node scripts/validate-provider-cards.mjs`),
-per construct-tsyfe.10.3:
+Supply-chain scanning runs in `.github/workflows/supply-chain.yml`:
 
-| Provider | Kind | Pin mechanism |
-|---|---|---|
-| `pandoc`, `typst`, `d2`, `dot`, `soffice`, `vhs`, `ffmpeg` | `binary` | User-installed (Homebrew/apt); `versionPolicy.expectedVersion` records a reference version and `lib/providers/binary-health.mjs`'s `checkBinaryVersion` warns (never hard-fails) on drift. |
-| `docling` | `sidecar` | Genuinely pinned: `lib/runtime/docling-runtime/pyproject.toml` + committed `uv.lock` (118 packages, checksummed); `lib/runtime/uv-bootstrap.mjs` provisions via `uv sync --frozen`, which fails rather than silently re-resolving if the two files drift apart. `DOCLING_PIN` in that module must match the lockfile's `docling==` pin — `tests/functional/docling-venv-pin.functional.test.mjs` asserts this. |
-| `whisper` (whisper.cpp CLI) | `sidecar` | Unmanaged — no upstream release channel to pin against; presence/health only. |
-| `docling-models` | `model` | Downloaded by the pinned `docling` package itself; Construct does not independently track the HF model revision docling requests (documented gap, not a fabricated pin). |
-| `local-embedding-model` (`Xenova/all-MiniLM-L6-v2`) | `model` | `lib/storage/embeddings-local.mjs` requests an explicit, overridable HF revision (`CONSTRUCT_EMBEDDING_MODEL_REVISION`, default `main`) instead of an implicit default; no commit SHA is pinned yet pending a live Hub lookup. |
+- **OSV scan** (`google/osv-scanner-action`) against `package-lock.json`
+- **Dependency review** (`actions/dependency-review-action`) on pull requests, using allow/deny lists from `.github/license-allowlist.json`
 
-A version-identity mismatch on any of these is additive: it layers a warning
-on top of the existing presence/absence check and does not change any
-degradation behavior (D2→dot→source, docling→node-native→refuse, etc. are
-unchanged).
+Both jobs are **warn-first** until the initial finding set is triaged. Promotion to blocking: flip `continue-on-error` to `false` once every remaining finding has a dated entry in `.github/supply-chain-exceptions.json` or is fixed.
+
+**Exceptions** mirror the `LEGACY_EXEMPT_SHAS` pattern in `scripts/lint-commits-pr.mjs`: each entry requires `id`, `reason`, and `expires` (`YYYY-MM-DD`). Expired entries fail `npm run supply-chain:exceptions` (also runs in CI before scans).
+
+Local checks:
+
+```bash
+npm run supply-chain:exceptions
+npm run supply-chain:gate    # composed release go/no-go (construct-tsyfe.10.7)
+```
 
 ## Rationale
 

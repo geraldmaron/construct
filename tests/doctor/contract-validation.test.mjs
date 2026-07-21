@@ -1,6 +1,6 @@
 /**
  * Tests for a locally defined contract-shape predicate, exercised in isolation
- * against lib/specialist-contracts.mjs. This does not call or mirror bin/construct's
+ * against lib/capability-contracts.mjs. This does not call or mirror bin/construct's
  * "Agent contract schema intact" doctor check — that check uses a different
  * predicate (a consumer-naming filter, tracked as broken/vacuous in construct-ik8g)
  * and is not imported here. A regression in the doctor check would not be caught
@@ -18,12 +18,12 @@ const isBroken = (c) =>
 
 describe('contract-validation predicate', () => {
   it('flags a contract missing id', () => {
-    const contract = { producer: 'construct', consumer: 'cx-orchestrator', postconditions: ['done'] };
+    const contract = { producer: 'construct', consumer: 'orchestrator', postconditions: ['done'] };
     assert.equal(isBroken(contract), true);
   });
 
   it('flags a contract missing producer', () => {
-    const contract = { id: 'x-to-y', consumer: 'cx-qa', postconditions: ['done'] };
+    const contract = { id: 'x-to-y', consumer: 'qa', postconditions: ['done'] };
     assert.equal(isBroken(contract), true);
   });
 
@@ -33,7 +33,7 @@ describe('contract-validation predicate', () => {
   });
 
   it('flags a contract missing both postconditions and output', () => {
-    const contract = { id: 'x-to-y', producer: 'construct', consumer: 'cx-qa' };
+    const contract = { id: 'x-to-y', producer: 'construct', consumer: 'qa' };
     assert.equal(isBroken(contract), true);
   });
 
@@ -41,7 +41,7 @@ describe('contract-validation predicate', () => {
     const contract = {
       id: 'construct-to-orchestrator',
       producer: 'construct',
-      consumer: 'cx-orchestrator',
+      consumer: 'orchestrator',
       postconditions: ['Dispatch plan emitted'],
     };
     assert.equal(isBroken(contract), false);
@@ -58,7 +58,7 @@ describe('contract-validation predicate', () => {
   });
 
   it('all real contracts pass the predicate', async () => {
-    const { getAllContracts } = await import('../../lib/specialist-contracts.mjs');
+    const { getAllContracts } = await import('../../lib/capability-contracts.mjs');
     const contracts = getAllContracts();
     assert.ok(contracts.length > 0, 'getAllContracts returned no contracts');
     const broken = contracts.filter(isBroken);

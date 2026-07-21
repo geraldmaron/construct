@@ -1,0 +1,16 @@
+{
+  "id": "incident-response",
+  "ownerWorkerProfile": "operations",
+  "description": "Operations group leads incident response.",
+  "enforcement": "hard",
+  "mode": "approval",
+  "approvalWorkerProfiles": [],
+  "requiredPolicies": [],
+  "vetoWorkerProfiles": [],
+  "escalationWorkerProfiles": [],
+  "governs": [
+    "incident-response"
+  ],
+  "conditions": [],
+  "evidence": []
+}

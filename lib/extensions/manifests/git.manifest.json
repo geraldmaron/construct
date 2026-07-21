@@ -2,9 +2,13 @@
   "id": "git",
   "version": "1.0.0",
   "kind": "data-source",
-  "capabilities": ["read"],
+  "capabilities": [
+    "read"
+  ],
   "secretEnvKeys": [],
-  "operations": ["read"],
+  "operations": [
+    "read"
+  ],
   "securityClassification": "trusted",
   "owner": "construct-core",
   "compatVersion": 1,
@@ -17,7 +21,10 @@
       "normalize": "trim",
       "expand": "tilde"
     },
-    "signature": { "template": "git:remote:{value}", "valueMode": "path" },
+    "signature": {
+      "template": "git:remote:{value}",
+      "valueMode": "path"
+    },
     "content": {
       "field": "content",
       "modeField": "mode",
@@ -27,20 +34,37 @@
       "remoteField": "remote",
       "clone": "git"
     },
-    "aliases": { "strategy": "path", "displayPrefix": null, "catchAll": false }
+    "aliases": {
+      "strategy": "path",
+      "displayPrefix": null,
+      "catchAll": false
+    }
   },
   "certification": {
     "tier": "process-boundary-tested",
-    "computedAt": "2026-07-16",
-    "computedBy": "lib/certification/provider-evidence-tiers.mjs#auditKnownProviderManifests (construct-4uxq0.13.3)",
+    "computedAt": "2026-07-21",
+    "computedBy": "lib/certification/provider-evidence-tiers.mjs#auditKnownProviderManifests",
     "reason": "a functional test crosses a real subprocess boundary, but live-sandbox verification requires an explicit human attestation not present in the manifest",
     "evidence": {
-      "contractTestFiles": ["tests/extensions/manifest-providers.test.mjs"],
-      "processBoundaryTestFiles": ["tests/functional/source-links.functional.test.mjs", "tests/functional/source-target-directory.functional.test.mjs", "tests/functional/source-target-git.functional.test.mjs", "tests/sources/repo-cache-git-behaviors.test.mjs"]
+      "contractTestFiles": [],
+      "processBoundaryTestFiles": [
+        "tests/functional/source-links.functional.test.mjs",
+        "tests/functional/source-target-git.functional.test.mjs"
+      ]
     },
     "manualAttestation": {
-      "liveSandboxTested": { "attested": false, "attestedAt": null, "attestedBy": null, "note": null },
-      "productionProven": { "attested": false, "attestedAt": null, "attestedBy": null, "note": null }
+      "liveSandboxTested": {
+        "attested": false,
+        "attestedAt": null,
+        "attestedBy": null,
+        "note": null
+      },
+      "productionProven": {
+        "attested": false,
+        "attestedAt": null,
+        "attestedBy": null,
+        "note": null
+      }
     }
   }
 }

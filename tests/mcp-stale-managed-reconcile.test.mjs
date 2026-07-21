@@ -15,7 +15,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { reconcileStaleManagedEntries } from '../scripts/sync-specialists.mjs';
+import { reconcileStaleManagedEntries } from '../scripts/sync-worker-profiles.mjs';
 import { buildClaudeMcpEntry, buildOpenCodeMcpEntry } from '../lib/mcp-platform-config.mjs';
 
 const rebuild = (id, def) => buildClaudeMcpEntry(id, def, process.env, { host: 'vscode' });

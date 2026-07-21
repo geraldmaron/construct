@@ -84,17 +84,17 @@ test('models set --tier --model writes to the XDG config and reports that path',
   assert.match(res.stdout, /Set standard -> foo\/bar/);
   assert.ok(res.stdout.includes(sb.configPath), 'must report the resolved XDG path');
   assert.doesNotMatch(res.stdout, /\.construct\/config\.env/);
-  assert.match(fs.readFileSync(sb.configPath, 'utf8'), /CX_MODEL_STANDARD=foo\/bar/);
+  assert.match(fs.readFileSync(sb.configPath, 'utf8'), /CONSTRUCT_MODEL_STANDARD=foo\/bar/);
   assert.equal(fs.existsSync(sb.legacyPath), false, 'must never write the legacy path');
 });
 
-test('models reset clears CX_MODEL_* from the XDG config, preserving other keys', () => {
+test('models reset clears CONSTRUCT_MODEL_* from the XDG config, preserving other keys', () => {
   const sb = freshSandbox();
-  fs.writeFileSync(sb.configPath, 'CX_MODEL_FAST=foo/fast\nOTHER=keep\n');
+  fs.writeFileSync(sb.configPath, 'CONSTRUCT_MODEL_FAST=foo/fast\nOTHER=keep\n');
   const res = runModels(sb, ['reset']);
   assert.equal(res.status, 0, res.stderr);
   const written = fs.readFileSync(sb.configPath, 'utf8');
-  assert.doesNotMatch(written, /CX_MODEL_FAST/);
+  assert.doesNotMatch(written, /CONSTRUCT_MODEL_FAST/);
   assert.match(written, /OTHER=keep/);
 });
 
@@ -116,11 +116,13 @@ test('subcommands removed from help error instead of silently listing', () => {
   }
 });
 
-test('legacy flag form still mutates but warns it is deprecated', () => {
-  const sb = freshSandbox();
-  const res = runModels(sb, ['--tier=fast', '--set=baz/qux']);
-  assert.equal(res.status, 0, res.stderr);
-  assert.match(res.stdout, /Set fast -> baz\/qux/);
-  assert.match(res.stderr, /deprecated/i);
-  assert.match(fs.readFileSync(sb.configPath, 'utf8'), /CX_MODEL_FAST=baz\/qux/);
+test('retired models flags fail without mutating configuration', () => {
+  for (const args of [['--reset'], ['--tier=fast', '--set=baz/qux'], ['--poll']]) {
+    const sb = freshSandbox();
+    const res = runModels(sb, args);
+    assert.equal(res.status, 1, `${args.join(' ')} should exit 1`);
+    const err = `${res.stderr}${res.stdout}`;
+    assert.match(err, /Unknown models option|Retired CLI surface/);
+    assert.equal(fs.existsSync(sb.configPath), false, 'retired flags must not write configuration');
+  }
 });

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 2,
+  "workerProfileId": "designer",
+  "capabilityId": "worker-profile.prompt",
+  "mode": "normal",
+  "scenarioKind": "cross-worker-profile",
+  "representativeTask": {
+    "prompt": "The accessibility annotations for the new checkout form are done. The keyboard and screen-reader behavior now has to be verified against the built implementation before release — get that verification covered.",
+    "inputs": {}
+  },
+  "expectedBehavior": {
+    "mustContainAny": ["qa", "verify", "verification", "handoff", "accessibility"],
+    "mustNotContain": [],
+    "mustRefuse": false,
+    "mustEscalateTo": ["qa"],
+    "mustStateAssumptions": true
+  }
+}

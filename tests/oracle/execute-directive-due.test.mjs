@@ -14,17 +14,17 @@ import { executeApprovedAction } from '../../lib/oracle/execute.mjs';
 import { ApprovalQueue } from '../../lib/embed/approval-queue.mjs';
 import { tempDir } from '../helpers.mjs';
 
-// dispatchSpecialist/recordAndMaybeInvoke resolve doctor-root/role-pending
-// paths off the real $HOME by default — CX_HOME_OVERRIDE keeps every test
+// Worker Profile dispatch/recordAndMaybeInvoke resolve machine-scoped pending
+// paths off the real $HOME by default — CONSTRUCT_HOME_OVERRIDE keeps every test
 // in this file off the real developer machine.
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-directive-due-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 test.after(() => {
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 function makeAction(overrides = {}) {
@@ -33,7 +33,7 @@ function makeAction(overrides = {}) {
     kind: 'directive-due',
     summary: "Run directive 'demo': post a status update",
     directiveId: 'demo',
-    directiveSpecialist: 'cx-operations',
+    directiveWorkerProfileId: 'operations',
     directiveInstruction: 'post a status update',
     directiveOutput: { kind: 'beads' },
     ...overrides,
@@ -50,7 +50,8 @@ test('directive-due is toast-only when oracle.executeDirectives is not set (defa
   });
 
   assert.equal(result.ok, true);
-  assert.equal(result.personaId, 'cx-operations');
+  assert.equal(result.workerProfileId, 'operations');
+  assert.equal(result.assignment.workerProfileId, 'operations');
   assert.ok(result.artifactPath, 'toast dispatch still writes a routing artifact');
   assert.equal('output' in result, false, 'no LLM output when execution is not enabled');
 });
@@ -68,8 +69,8 @@ test('directive-due executes unattended when oracle.executeDirectives is on and 
     return {
       output: 'summary posted',
       writeProposals: [{
-        providerId: 'atlassian-jira', writeKind: 'comment', payload: { issueKey: 'OPS-1', body: 'status' },
-        requestedBy: { specialistId: 'cx-operations' }, surface: 'orchestration-worker', tool: 'atlassian-jira.comment',
+        providerId: 'jira', writeKind: 'comment', payload: { issueKey: 'OPS-1', body: 'status' },
+        requestedBy: { workerProfileId: 'operations' }, surface: 'orchestration-worker', tool: 'jira.comment',
       }],
     };
   };
@@ -87,7 +88,7 @@ test('directive-due executes unattended when oracle.executeDirectives is on and 
   assert.equal(result.directiveId, 'demo');
   assert.equal(result.output, 'summary posted');
   assert.equal(result.writeProposalsQueued, 1);
-  assert.equal(capturedTask.role, 'cx-operations');
+  assert.equal(capturedTask.reason, 'post a status update');
   assert.equal(queue.getPending().length, 1);
 });
 

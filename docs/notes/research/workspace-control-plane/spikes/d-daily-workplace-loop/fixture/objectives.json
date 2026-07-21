@@ -1,0 +1,49 @@
+{
+  "_fixture": true,
+  "_note": "Local stand-in for an internal OKR tracker. Not a real integration.",
+  "as_of": "2026-07-17",
+  "objectives": [
+    {
+      "id": "OBJ-1",
+      "title": "Cut onboarding time-to-first-value to under 10 minutes",
+      "pillar": "Pillar 1 — Time-to-first-value",
+      "owner": "fictional-owner:dana",
+      "status": "on_track",
+      "target_date": "2026-09-30",
+      "last_updated": "2026-07-15",
+      "key_results": [
+        "Median setup time down from 35min to 14min (was 35min baseline)",
+        "Guided-setup completion rate up from 41% to 68%"
+      ]
+    },
+    {
+      "id": "OBJ-2",
+      "title": "Ship enterprise SSO/SCIM for the top 3 pipeline deals",
+      "pillar": "Pillar 2 — Enterprise footprint",
+      "owner": "fictional-owner:marcus",
+      "status": "on_track",
+      "target_date": "2026-06-30",
+      "last_updated": "2026-05-20",
+      "key_results": [
+        "SAML SSO shipped for Okta, Azure AD, Google Workspace",
+        "SCIM group provisioning shipped for all 3 pipeline accounts"
+      ],
+      "linked_backlog": ["PROJ-88"],
+      "linked_issues": ["GH-101"]
+    },
+    {
+      "id": "OBJ-3",
+      "title": "Hold 99.9% monthly uptime",
+      "pillar": "Pillar 3 — Reliability",
+      "owner": "fictional-owner:sam",
+      "status": "at_risk",
+      "target_date": "2026-12-31",
+      "last_updated": "2026-07-16",
+      "key_results": [
+        "July uptime tracking at 99.86% after the 2026-07-09 incident",
+        "Post-incident action items 2 of 4 complete"
+      ],
+      "linked_issues": ["GH-104"]
+    }
+  ]
+}

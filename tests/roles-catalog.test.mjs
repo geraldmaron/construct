@@ -1,7 +1,7 @@
 /**
  * tests/roles-catalog.test.mjs — regression tests for lib/roles/catalog.mjs.
  *
- * listRoles must read the live registry.specialists array (not absent keys like
+ * listRoles must read the live registry.workerProfiles catalog (not absent keys like
  * registry.agents/departments, which yield an empty list and silently break
  * roles:list and the embedded capability contract). These tests pin the reader
  * to that array and assert the descriptor shape.
@@ -15,9 +15,9 @@ import { loadRegistry } from '../lib/registry/loader.mjs';
 
 const registry = loadRegistry({ rootDir: new URL('..', import.meta.url).pathname });
 
-test('listRoles returns one descriptor per registry specialist', () => {
+test('listRoles returns one descriptor per registry worker profile', () => {
   const roles = listRoles();
-  assert.equal(roles.length, Object.values(registry.specialists).length);
+  assert.equal(roles.length, Object.values(registry.workerProfiles).length);
   // construct-rf26.11 consolidated the 29-specialist roster to 12 (orchestrator + 11 workers).
   assert.ok(roles.length >= 12, `expected at least 12 roles, got ${roles.length}`);
 });
@@ -26,7 +26,7 @@ test('listRoles descriptors carry the prefixed name and required fields', () => 
   const roles = listRoles();
   const engineer = roles.find((r) => r.id === 'engineer');
   assert.ok(engineer, 'engineer role present');
-  assert.equal(engineer.name, 'cx-engineer');
+  assert.equal(engineer.name, 'engineer');
   assert.equal(typeof engineer.description, 'string');
   assert.ok(engineer.description.length > 0);
   assert.equal(typeof engineer.modelTier, 'string');

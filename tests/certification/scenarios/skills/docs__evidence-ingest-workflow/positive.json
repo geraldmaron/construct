@@ -17,7 +17,7 @@
     "inventory lists owners and workflowSkill=true"
   ],
   "owners": [
-    "cx-product-manager",
-    "cx-researcher"
+    "product-manager",
+    "researcher"
   ]
 }

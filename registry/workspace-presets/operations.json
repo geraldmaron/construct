@@ -1,0 +1,57 @@
+{
+  "id": "operations",
+  "displayName": "Operations",
+  "skills": [
+    "operating/incident-response",
+    "operating/oncall-rotation",
+    "operating/change-management",
+    "docs/runbook-workflow",
+    "quality-gates/verify-change"
+  ],
+  "procedures": [],
+  "intake": {
+    "types": [
+      "request",
+      "bug",
+      "incident",
+      "ops",
+      "security",
+      "docs",
+      "unknown"
+    ],
+    "stages": [
+      "request",
+      "triage",
+      "resolve",
+      "document",
+      "improve"
+    ],
+    "classificationTable": "lib/intake/tables/operations.mjs"
+  },
+  "artifactClasses": [
+    "runbook",
+    "incident-report",
+    "memo",
+    "one-pager",
+    "changelog-entry"
+  ],
+  "tagline": "Request, triage, resolve, document, improve. Keep things running.",
+  "hooks": {
+    "sessionReflect": "on",
+    "sessionOptimize": "on"
+  },
+  "toneDefaults": {
+    "runbook": "blameless",
+    "incident-report": "blameless",
+    "memo": "direct"
+  },
+  "researchProfiles": {
+    "incident": "codebase",
+    "request": "external",
+    "change": "codebase"
+  },
+  "rebrand": {
+    "intakeQueueLabel": "Request queue",
+    "signalNoun": "request"
+  }
+}

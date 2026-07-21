@@ -27,7 +27,7 @@ The minimum useful scope set:
 | `read:org` | Search across organizations you're a member of. |
 | `read:user` | Resolve commit authors and PR reviewers. |
 
-For PR-creation/edit access (e.g., specialists that can open PRs on your behalf), you also need `repo:status` and `workflow`. Don't grant these unless you actually want agents creating PRs.
+For PR-creation/edit access (e.g., Worker Profiles that can open PRs on your behalf), you also need `repo:status` and `workflow`. Don't grant these unless you actually want agents creating PRs.
 
 **Rate limits:** without a token, the GitHub API allows 60 requests/hour per IP. With a token, 5,000/hour. Construct's circuit breaker backs off automatically when limits get close.
 
@@ -59,7 +59,7 @@ Once `@construct` knows about GitHub, it can:
 - Search code across visible repos (`@construct find usages of foo_bar in our org`).
 - Read PR diff + comments (`@construct review the changes in PR #456`).
 
-The provider is read-only by default. Write actions (create issue, comment on PR) only happen when you've granted the scope AND the specialist's fence allows the action.
+The provider is read-only by default. Write actions (create issue, comment on PR) only happen when you've granted the scope AND the Worker Profile's fence allows the action.
 
 ## Webhook (optional)
 

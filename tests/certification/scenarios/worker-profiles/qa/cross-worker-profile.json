@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 2,
+  "workerProfileId": "qa",
+  "capabilityId": "worker-profile.prompt",
+  "mode": "normal",
+  "scenarioKind": "cross-worker-profile",
+  "representativeTask": {
+    "prompt": "The test plan is done and one new integration test now reproduces a real defect: the pagination cursor drops the last row on the final page. Hand this off so it gets fixed.",
+    "inputs": {}
+  },
+  "expectedBehavior": {
+    "mustContainAny": ["engineer", "reproduction", "expected vs. actual", "handoff", "implementation"],
+    "mustNotContain": [],
+    "mustRefuse": false,
+    "mustEscalateTo": ["engineer"],
+    "mustStateAssumptions": true
+  }
+}

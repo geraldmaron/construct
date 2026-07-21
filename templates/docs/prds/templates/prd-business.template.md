@@ -5,57 +5,178 @@
 - **Status**: draft | in-review | approved | shipped | deprecated
 
 <!--
-Use this for strategic bets, market positioning decisions, business model changes,
-partnership structures, pricing strategy, and make-vs-buy decisions.
+Strategic bets, market positioning, business model changes, partnerships,
+pricing, and make-vs-buy. This is NOT a feature spec.
 
-This is not a feature spec. It defines the bet, the market thesis, the alternatives
-rejected, and what would have to be true for this to work.
+Use prd.md for customer-facing product capabilities (12-section Phase→FR→AC).
+Use prd-platform.md for internal platform / API / SDK consumers.
+Use meta-prd.md for product operating-system / process requirements.
 
-Use prd.md for customer-facing product capabilities.
-Use prd-platform.md for internal platform and developer-facing capabilities.
+Owning specialist: product-manager (or business-strategist when recruited).
+Before drafting: rules/common/framing.md + get_skill("docs/artifact-authorship")
+  + get_skill("perspectives/product-manager").
+
+NATIVE SPINE (do not invent parallel top-level headings):
+  The bet → Market thesis → Problem and opportunity → Strategic goals
+  → Alternatives rejected → What must be true → Competitive analysis
+  → Make vs. buy vs. partner → Go-to-market implications → Financial frame
+  → Kill criteria → Risks → Constraints → Open questions → References
+
+Depth means: falsifiable bet, sourced market claims, kill criteria that can
+actually stop the work, and adversarial FMEA under Risks. Prefer unknown /
+[unverified] with owner + decision-by date over fabrication.
 -->
 
 ## The bet
-<!-- One or two sentences: what we are committing to and why now. This should be falsifiable. -->
+
+{One or two sentences: what we are committing to and why now. Must be falsifiable.}
+
+| Field | Value |
+|---|---|
+| Commitment | {concrete bet} |
+| Time box | {horizon or unknown} |
+| Decision sought | {approve / kill / defer / reshape} |
+| Owner | {name} |
 
 ## Market thesis
-<!-- The one-paragraph view of market shape, buyer behavior, and where value accrues. Every decision in this document links back here or challenges it. -->
+
+{One paragraph: market shape, buyer behavior, where value accrues. Every later decision links back here or challenges it.}
+
+| Claim | Observation vs inference | Source |
+|---|---|---|
+| {market shape claim} | observation / inference | {URL+date / report / unknown} |
+| {buyer behavior claim} | observation / inference | {…} |
 
 ## Problem and opportunity
-<!-- What is broken in the market or business today? What does the opportunity look like at full scale? State the pain and the size of the prize: with evidence. -->
+
+{What is broken in the market or business today? What does the opportunity look like at full scale? Pain + size of prize with evidence.}
+
+| Evidence source | Type | What it shows | Link / id |
+|---|---|---|---|
+| {interview / filing / ticket / research} | qualitative / quantitative | {claim} | {path or URL + access date} |
+| {second independent source} | … | … | … |
+
+If fewer than two sources exist, mark **research-required** and open a research task before locking the bet.
 
 ## Strategic goals
-<!-- What this decision achieves at the business level: position, revenue, defensibility, optionality. Tie to company objectives. -->
+
+**Goals** (business outcomes, not activity; 3–5 max):
+
+1. {Position / revenue / defensibility / optionality outcome}
+2. {…}
+3. {…}
+
+**Non-goals** (protect focus):
+
+| Non-goal | Why deferred |
+|---|---|
+| {explicitly out of scope} | {reason} |
+| {adjacent follow-up} | {reason} |
 
 ## Alternatives rejected
-<!-- The other credible paths that were considered. For each: what it is, why it was rejected, and what would have to change to reconsider it. No strawmen. -->
+
+No strawmen. For each credible path:
+
+| Alternative | What it is | Why rejected | Reconsider if |
+|---|---|---|---|
+| {path A} | {concrete} | {specific reason + evidence} | {trigger} |
+| {path B} | {…} | {…} | {…} |
 
 ## What must be true
-<!-- The conditions that have to hold for this bet to pay off. Make them explicit so they can be monitored. -->
+
+Conditions that must hold for the bet to pay off. Make them monitorable.
+
+| Assumption | Leading signal | Owner | Review by |
+|---|---|---|---|
+| {condition} | {observable metric or event} | {name} | {YYYY-MM-DD} |
 
 ## Competitive analysis
-<!-- For each relevant competitor: business model (unit economics, distribution, defensibility), not just feature surface. Avoid feature parity tables that ignore economics. -->
+
+Business model lens (unit economics, distribution, defensibility). Not feature parity tables that ignore economics.
+
+| Competitor / alternative | Business model | Distribution | Defensibility | Our stance | Source |
+|---|---|---|---|---|---|
+| {name or unknown} | {observed} | {…} | {…} | match / differentiate / defer | {URL+date or unknown} |
+
+Do not invent market share or pricing. Prefer `unknown` / `[unverified]`.
 
 ## Make vs. buy vs. partner
-<!-- If applicable: the build/buy/partner tradeoffs with rationale. Include cost, control, speed, and strategic leverage. -->
+
+| Option | Cost | Control | Speed | Strategic leverage | Decision |
+|---|---|---|---|---|---|
+| Build | {or unknown} | {…} | {…} | {…} | chosen / rejected |
+| Buy | {…} | {…} | {…} | {…} | … |
+| Partner | {…} | {…} | {…} | {…} | … |
+
+If not applicable, write **N/A** with one sentence why.
 
 ## Go-to-market implications
-<!-- Pricing, packaging, channels, positioning changes. What motion this requires from sales, marketing, or customer success. -->
+
+{Pricing, packaging, channels, positioning. What motion this requires from sales, marketing, or customer success.}
+
+| Motion | Change | Owner | Evidence |
+|---|---|---|---|
+| Pricing / packaging | {…} | {…} | {or unknown} |
+| Channel | {…} | {…} | {…} |
+| Positioning | {…} | {…} | {…} |
 
 ## Financial frame
-<!-- Revenue model, cost structure, expected unit economics. Include the range of outcomes, not just the upside case. -->
+
+Range of outcomes, not only the upside case. Refuse fabricated ROI.
+
+| Item | Low | Base | High | Confidence | Source |
+|---|---|---|---|---|---|
+| Revenue model | unknown | unknown | unknown | low | [unverified] — owner: {name} by {YYYY-MM-DD} |
+| Cost structure | unknown | unknown | unknown | low | [unverified] |
+| Unit economics | unknown | unknown | unknown | low | [unverified] |
 
 ## Kill criteria
-<!-- The leading indicator and the threshold at which this strategy is revisited or abandoned. Without this, bad bets survive longer than they should. -->
+
+Without this, bad bets survive longer than they should.
+
+| Leading indicator | Threshold | Action when crossed | Owner |
+|---|---|---|---|
+| {metric or signal} | {numeric or behavioral} | revisit / reshape / abandon | {name} |
 
 ## Risks
-<!-- Market, execution, regulatory, competitive, and technical risks. Rate each by likelihood and impact. State the mitigation or acceptance rationale. -->
+
+### Market, execution, and competitive risks
+
+| Risk | Likelihood | Impact | Mitigation or accept-with-rationale |
+|---|---|---|---|
+| {risk} | low / med / high | low / med / high | {action} |
+
+### Legal, privacy, and compliance triggers
+
+Complete even if the requester never mentioned legal. Route fired rows to
+`security.privacy` / `security.legal-compliance` before approval.
+
+| Trigger | Present? | Specialist | Gate before ship |
+|---|---|---|---|
+| Payments / money movement | yes / no / unknown | security.legal-compliance | PCI/contract controls or N/A |
+| Contracts / ToS / licenses | yes / no / unknown | security.legal-compliance | counsel or policy owner named |
+| PII / accounts / identity | yes / no / unknown | security.privacy | retention + deletion path named |
+| Export controls / regulated markets | yes / no / unknown | security.legal-compliance | counsel named |
+| AI processing / model training | yes / no / unknown | security.ai + privacy | disclosure plan |
+
+### Adversarial challenge (FMEA)
+
+| Failure mode | Effect | Cause | S×O×D (1–10) | Mitigation or accept-with-rationale |
+|---|---|---|---|---|
+| {highest-cost wrongness of this bet} | {who hurts} | {why} | {product} | {action} |
 
 ## Constraints
-<!-- Budget, timeline, team, regulatory, or partner dependencies that shape the scope of this decision. -->
+
+| Constraint | Type | Hard / soft | Implication |
+|---|---|---|---|
+| {budget / timeline / team / regulatory / partner} | {…} | hard / soft | {how it shapes the bet} |
 
 ## Open questions
-<!-- Genuine unknowns. Each names an owner and a decision deadline. -->
+
+| Question | Owner | Decision needed by |
+|---|---|---|
+| {unknown that could reshape the bet} | {role} | {YYYY-MM-DD} |
 
 ## References
-<!-- Market research, customer interviews, financial models, prior decisions, analyst reports, competitor filings. -->
+
+- {market research / interviews / filings / financial models / prior decisions / URL + access date / bead id}

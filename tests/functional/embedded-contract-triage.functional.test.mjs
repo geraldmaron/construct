@@ -4,7 +4,7 @@
  * Drives `construct intake classify --json` and `construct graph recommend --json`
  * against the real binary in an isolated tmpdir. The load-bearing assertion is
  * that classification performs NO durable write — nothing lands under
- * .cx/intake/pending — so the planning surface is safe to call on any input.
+ * .construct/intake/pending — so the planning surface is safe to call on any input.
  *
  * @capability workflow.triage
  */
@@ -49,7 +49,7 @@ test('intake classify returns a plan and writes nothing to the queue', () => {
   assert.equal(env.data.canExecute, true);
   assert.equal(env.data.confidenceKind, 'classification');
 
-  assert.equal(fs.existsSync(path.join(cwd, '.cx', 'intake', 'pending')), false, 'no pending queue entry may be written');
+  assert.equal(fs.existsSync(path.join(cwd, '.construct', 'intake', 'pending')), false, 'no pending queue entry may be written');
 });
 
 test('graph recommend is an alias for the same planning contract', () => {

@@ -16,10 +16,10 @@
  * boots a real EmbedDaemon with an injected fake registry exposing only a
  * credential-free `jira.read()` (Job 12 has `runImmediately: true`, so it
  * fires on the same tick as `.start()`), and polls for the resulting
- * writeIntent (an 'awaiting_approval' record for tool "atlassian-jira.issue") plus
+ * writeIntent (an 'awaiting_approval' record for tool "jira.issue") plus
  * the execution-gap observation.
  *
- * Reads CX_ROOT_DIR and TICK_TIMEOUT_MS from env.
+ * Reads CONSTRUCT_ROOT_DIR and TICK_TIMEOUT_MS from env.
  */
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
@@ -30,7 +30,7 @@ import { EMPTY_CONFIG } from '../../../lib/embed/config.mjs';
 import { ApprovalQueue } from '../../../lib/embed/approval-queue.mjs';
 import { addObservation } from '../../../lib/observation-store.mjs';
 
-const rootDir = process.env.CX_ROOT_DIR;
+const rootDir = process.env.CONSTRUCT_ROOT_DIR;
 const timeoutMs = Number(process.env.TICK_TIMEOUT_MS || 15_000);
 const pollIntervalMs = 150;
 
@@ -57,7 +57,7 @@ function fakeRegistry() {
 
 function findArtifacts(persistPath) {
   const queue = new ApprovalQueue({ persistPath });
-  const proposedIssue = queue.list().find((r) => r.toolCall?.tool === 'atlassian-jira.issue') ?? null;
+  const proposedIssue = queue.list().find((r) => r.toolCall?.tool === 'jira.issue') ?? null;
   const observations = readJsonFiles(join(rootDir, '.construct', 'observations'))
     .filter((o) => o.tags?.includes('execution-gap'));
   return { proposedIssue, observations };

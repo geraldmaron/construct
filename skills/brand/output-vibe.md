@@ -12,15 +12,15 @@ Apply this skill before drafting or exporting any customer-facing artifact (PRD,
 
 ## Typography and color
 
-- Sans: Space Grotesk (400–700). Mono: JetBrains Mono for code, IDs, and tables.
-- Monochrome ink ramp only for page furniture: near-black body (`#23272e`), muted labels (`#565c66`), hairline rules (`#e3e4e8`). Color belongs in diagrams and data, not chrome.
+- Sans: Plus Jakarta Sans (400–700). Mono: JetBrains Mono for code, IDs, and tables.
+- Monochrome ink ramp only for page furniture: near-black body (`#2c313a`), muted labels (`#545b66`), hairline rules (`#e3e4e8`). Color belongs in diagrams and data, not chrome.
 - Do not stamp "Construct" on external deliverables unless the user asks.
 
 ## Prose rhythm
 
 - Lead with a short declarative paragraph, then structure (headings, one compact table, selective bullets).
 - Avoid bullet walls; never more than seven bullets in a row without a prose bridge.
-- Rare em dashes; prefer commas or parentheses.
+- Prefer contractions (`don't`, `won't`, `can't`); no spaced em dashes; refuse LLM tells. Full bar: `rules/common/human-voice.md` and `get_skill("docs/artifact-authorship")`.
 
 ## Diagrams (sketch-forward)
 
@@ -28,7 +28,7 @@ Apply this skill before drafting or exporting any customer-facing artifact (PRD,
 - In Mermaid, open with a sketch theme block:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#fafafa', 'primaryBorderColor': '#565c66', 'lineColor': '#23272e', 'fontFamily': 'Space Grotesk'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#eef1f3', 'primaryBorderColor': '#545b66', 'lineColor': '#2c313a', 'fontFamily': 'Plus Jakarta Sans'}}}%%
 flowchart LR
   User --> Product
 ```

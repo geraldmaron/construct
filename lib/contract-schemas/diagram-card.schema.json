@@ -1,10 +1,9 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "DiagramCard",
-  "description": "Provenance record for one rendered diagram (Mermaid, D2, Cytoscape, semantic-HTML wireframe, or other provider): what engine and version produced it, its source, its security profile, and its accessibility description. See lib/diagram-card.mjs.",
+  "description": "Provenance record for a rendered diagram artifact",
   "type": "object",
   "required": [
-    "type",
     "id",
     "source",
     "engine",
@@ -18,47 +17,36 @@
     "reason"
   ],
   "properties": {
-    "type": { "type": "string", "enum": ["diagram-card"] },
-    "id": { "type": "string", "minLength": 1, "description": "Stable identity, used as the graph node key (contract:<id>)" },
-    "source": { "type": "string", "minLength": 1, "description": "Diagram-definition text (e.g. mermaid/d2 syntax) or a path to it" },
+    "id": { "type": "string" },
+    "source": { "type": "string" },
     "engine": {
       "type": "string",
-      "enum": ["d2", "dot", "mermaid-source-only", "unknown"],
-      "description": "unknown means no renderer could be resolved at build time"
+      "enum": ["d2", "dot", "mermaid-source-only", "unknown"]
     },
-    "engineVersion": {
-      "type": ["string", "null"],
-      "description": "Resolved via the engine's own --version at render time; null when source-only or unresolved"
-    },
-    "theme": { "type": ["string", "null"], "description": "Theme id/name used, null when not applicable" },
-    "seed": { "type": ["string", "number", "null"], "description": "Deterministic seed for hand-drawn/random layout modes; null when the engine has none" },
-    "securityProfile": {
-      "type": "string",
-      "minLength": 1,
-      "description": "e.g. sandboxed-subprocess (D2/dot), browser-innerHTML-loose (current Mermaid web path); never omitted"
-    },
-    "accessibilityDescription": {
-      "type": "string",
-      "minLength": 1,
-      "description": "Plain-text alt description, never markdown/HTML"
-    },
+    "engineVersion": { "type": ["string", "null"] },
+    "theme": { "type": ["string", "null"] },
+    "seed": { "type": ["string", "null", "number"] },
+    "securityProfile": { "type": "string" },
+    "accessibilityDescription": { "type": "string", "minLength": 1 },
     "provenance": {
       "type": "object",
-      "required": ["module", "generatedAt"],
+      "required": ["module", "command", "generatedAt"],
       "properties": {
-        "module": { "type": "string", "minLength": 1, "description": "e.g. lib/diagram.mjs" },
-        "command": { "type": ["string", "null"], "description": "Plain-text description of the invocation, never markdown/HTML" },
-        "generatedAt": { "type": "string", "minLength": 1, "description": "ISO 8601 timestamp" }
-      }
+        "module": { "type": "string" },
+        "command": { "type": "string" },
+        "generatedAt": { "type": "string" }
+      },
+      "additionalProperties": false
     },
-    "degraded": { "type": "boolean", "description": "true when any required field could not be genuinely resolved" },
-    "reason": { "type": ["string", "null"], "description": "Non-empty when degraded is true, null otherwise" },
+    "degraded": { "type": "boolean" },
+    "reason": { "type": ["string", "null"] },
     "renderedOutput": {
-      "type": ["object", "null"],
+      "type": "object",
       "properties": {
-        "path": { "type": ["string", "null"], "description": "Path to the rendered artifact (PNG/SVG/etc.)" },
-        "sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" }
-      }
+        "path": { "type": "string" },
+        "sha256": { "type": "string" }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false

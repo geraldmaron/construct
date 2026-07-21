@@ -6,7 +6,7 @@
  * (`PROJECT_DEFAULT_MCP_IDS`), so a managed-but-optional entry like `memory`
  * carrying a stale toolkit path is outside the sync-set loop and was never
  * revisited before this fix (construct-6y6w.1's gap, extended here to OpenCode).
- * Spawns the real sync-specialists.mjs into an isolated tmp project + HOME,
+ * Spawns the real sync-worker-profiles.mjs into an isolated tmp project + HOME,
  * seeds a stale `memory` entry in OpenCode's own `command`-array shape, and
  * asserts the real binary rewrites it in place, leaves an unmanaged entry
  * untouched, and is idempotent on a second run.
@@ -22,7 +22,7 @@ import test from "node:test";
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const SYNC_SCRIPT = join(REPO_ROOT, "scripts", "sync-specialists.mjs");
+const SYNC_SCRIPT = join(REPO_ROOT, "scripts", "sync-worker-profiles.mjs");
 
 function makeEnv() {
   const sandbox = mkdtempSync(join(tmpdir(), "opencode-stale-reconcile-"));

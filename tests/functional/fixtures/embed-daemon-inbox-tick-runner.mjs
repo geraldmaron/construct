@@ -11,7 +11,7 @@
  * asynchronously-resolved — this script polls in short intervals until that
  * fire-and-forget tick lands or a bounded timeout elapses.
  *
- * Reads CX_ROOT_DIR (project root, inbox/ already seeded by the parent test)
+ * Reads CONSTRUCT_ROOT_DIR (project root, inbox/ already seeded by the parent test)
  * and TICK_TIMEOUT_MS from env. Prints one JSON line to stdout on success or
  * failure and exits 0/1 accordingly. No network: config carries zero sources
  * so ProviderRegistry.fromEnv() resolves only credential-free providers.
@@ -23,7 +23,7 @@ import { join } from 'node:path';
 import { EmbedDaemon } from '../../../lib/embed/daemon.mjs';
 import { EMPTY_CONFIG } from '../../../lib/embed/config.mjs';
 
-const rootDir = process.env.CX_ROOT_DIR;
+const rootDir = process.env.CONSTRUCT_ROOT_DIR;
 const timeoutMs = Number(process.env.TICK_TIMEOUT_MS || 15_000);
 const pollIntervalMs = 150;
 

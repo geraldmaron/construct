@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-const SYNC_SCRIPT = path.join(REPO_ROOT, 'scripts', 'sync-specialists.mjs');
+const SYNC_SCRIPT = path.join(REPO_ROOT, 'scripts', 'sync-worker-profiles.mjs');
 
 // The kill-guard keeps any unexpected interactive path from wedging CI.
 function runBin(argv, extraEnv = {}) {

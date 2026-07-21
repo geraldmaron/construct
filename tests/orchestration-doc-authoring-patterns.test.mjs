@@ -23,6 +23,6 @@ test('every DOC_AUTHORING_PATTERNS docType is a registry-known doc type', () => 
     orphaned,
     [],
     `authoring patterns reference docType(s) absent from knownDocTypes(): ${orphaned.join(', ')} — `
-      + 'rename the pattern to a registered type or register the type in specialists/org.',
+      + 'rename the pattern to a registered type or register the type in registry.',
   );
 });
