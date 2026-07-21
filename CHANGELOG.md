@@ -10,6 +10,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Fixed
 
+- Publish diagram embedding (`feat/workspace-control-plane`): RichDocument export routed HTML through Pandoc without the diagram filter, so d2/mermaid blocks became inert `<pre>` tags and PDF/HTML/DOCX exports dropped figures silently. Engine formats now pivot to the authored markdown source (or a body-only fence copy) when `figures: true` and the IR contains diagram blocks; strict export without `--figures` fails closed with an explicit `figures:unresolved` message instead of omitting diagrams. Covered by `tests/functional/publish.functional.test.mjs` and `tests/functional/rich-document-export.functional.test.mjs`.
+
 - PDF publish templates (`construct-tsyfe.8` legacy cutover follow-up): restored de-branded running footers in `templates/distribution/construct-brand.typ` (the compact-rhythm pass had reintroduced a `CONSTRUCT` wordmark), removed pre-2.0 compat color token shims (`brand-warm`, `brand-violet-soft`, …), and aligned publish guidance in `skills/docs/prd-workflow.md`, `templates/docs/README.md`, and `templates/docs/construct_guide.md` with Construct 2.0 Worker Profile / monochrome Space Grotesk vocabulary. Covered by new assertions in `tests/functional/publish-template.functional.test.mjs`.
 
 - CI shard 2/3: capability tick noise gate no longer skips provider snapshot ticks; graph freshness reads SQLite meta over JSONL overlay; doctor surfaces VS Code MCP readiness pre-setup; published audit drops optional `@huggingface/transformers` from consumer tree; root disposition, MCP tool docs, artifact export completion, and test hygiene aligned with workspace-control-plane.
