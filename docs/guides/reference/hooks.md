@@ -38,7 +38,7 @@ Hooks are wired in `platforms/claude/settings.template.json` and execute as chil
 | `post-merge-tracking` | close beads referenced by a merged PR. |
 | `pre-compact` | Pre-compact hook — prepares context summary before compaction runs. |
 | `pre-push-gate` | PreToolUse / Bash |
-| `proactive-activation` | Event-driven Worker Profile activation. |
+| `proactive-activation` | Event-driven specialist activation. |
 | `readme-age-check` | Stop hook (async) |
 | `registry-sync` | Registry-change reminder hook. |
 | `rule-verifier` | Stop hook that audits the session for |
