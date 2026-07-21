@@ -131,7 +131,7 @@ construct init [path] [options]
 | `--no-beads` | Skip local issue-tracker initialization (CI/ephemeral) |
 | `--commit-bootstrap` | Keep the beads bootstrap commit (default: leave files uncommitted) |
 | `--force` | Scaffold even when content exists or target is a nested subdirectory |
-| `--with-<host>` | Force an adapter set (claude|codex|opencode|vscode|cursor|copilot); default writes detected hosts only |
+| `--with-<host>` | Force-include an adapter set (claude|codex|opencode|vscode|cursor|copilot); unions with detection |
 | `--all-hosts` | Write every adapter set regardless of what is installed |
 | `--interactive, -i` | Enable interactive setup (Packs / Individual docs / Skip) |
 | `--quiet, -q` | Minimal output |
@@ -262,16 +262,19 @@ Sync agent adapters to AI tools
 **Usage**
 
 ```bash
-construct sync [--project] [--dry-run] [--no-docs]
+construct sync [--project] [--dry-run] [--no-docs] [--all-hosts] [--with-<host>] [--hosts=<list>]
 ```
 
 **Options**
 
 | Flag | Description |
 |---|---|
-| `--project` | Write project-local Claude adapters into the current repo only |
+| `--project` | Write project-local adapters into the current repo only |
 | `--dry-run` | Preview adapter changes without writing files |
 | `--no-docs` | Skip AUTO docs regeneration after syncing adapters |
+| `--with-<host>` | Force-include an adapter set (claude|codex|opencode|vscode|cursor|copilot); unions with detection unless --hosts= is set |
+| `--all-hosts` | Sync every adapter set regardless of what is installed |
+| `--hosts=<list>` | Restrict to a comma-separated host list (or all); CONSTRUCT_SYNC_HOSTS= is the env equivalent |
 
 ## construct workers
 

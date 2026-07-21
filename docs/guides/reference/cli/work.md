@@ -48,13 +48,23 @@ Plan or locally execute manifest-backed artifact procedures with execution prove
 **Usage**
 
 ```bash
-construct artifact <validate|run> ...
+construct artifact validate <path> --type=<doc-type> [--check-links] [--json] | construct artifact run ...
 ```
 
 **Subcommands**
 
-- `validate` — Run manifest structure, citation, and reviewer checks
+- `validate <path> --type=<doc-type>` — Run manifest structure, citation, and reviewer checks
 - `run` — Return a truthful plan/run report; --apply only runs local validation/export after approval
+
+**Options**
+
+| Flag | Description |
+|---|---|
+| `--type=<doc-type>` | Registered artifact class (prd, adr, research-brief, …); required for validate |
+| `--check-links` | Fetch http(s) citation URLs and fail on broken links |
+| `--no-check-links` | Skip link fetch even when the type enables citationLint |
+| `--json` | Emit the gate result as JSON |
+| `--recruited=<csv>` | Condition-recruited reviewer ids for enforced reviewerGate |
 
 ## construct ask
 
@@ -402,6 +412,10 @@ Detect optional publish pipeline binaries (Pandoc, D2, VHS, Playwright)
 ```bash
 construct tools detect [--json] [--figures] [--demo=NAME]
 ```
+
+**Subcommands**
+
+- `detect` — Probe Pandoc/Typst/D2/Mermaid/VHS readiness for construct publish
 
 **Options**
 

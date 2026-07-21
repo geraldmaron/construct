@@ -28,6 +28,9 @@
  *   --global              Write only the global tier (orchestrator + hooks at `~/`).
  *   (no scope flag)       Write the global tier. If cwd is inside a Construct
  *                         project, also write the project tier.
+ *   --all-hosts           Write every host adapter set (claude|codex|opencode|vscode|cursor|copilot).
+ *   --with-<host>         Force-include one host; unions with detection (or with --hosts=).
+ *   --hosts=<list>|all    Restrict to a comma-separated list (or all). Env: CONSTRUCT_SYNC_HOSTS.
  *   --compress-worker-profiles  Compress Worker Profile prompts before writing
  *                         platform adapters. The canonical source
  *                         file is unchanged; only the runtime adapter is shorter.
@@ -159,7 +162,10 @@ const summary = (msg) => { if (!QUIET) console.log(msg); };
 // Project-tier host selection. `--hosts=claude,codex,…` (or CONSTRUCT_SYNC_HOSTS)
 // restricts which adapter sets the project tier writes, so `construct init` can
 // scaffold only the hosts the user actually has (construct-4xy6 / ADR-0027 §1).
-// Absent → null → write every host, preserving `construct sync` back-compat.
+// Absent → detect installed hosts (plus config-dir fallbacks). `--all-hosts` /
+// `CONSTRUCT_SYNC_HOSTS=all` writes every HOST_KEYS entry. `--with-<host>` always
+// unions into the selection (with detection when --hosts= is omitted, or with an
+// explicit --hosts= list) so force-including Cursor never prunes other hosts.
 
 import { detectHostCapabilities } from "../lib/host-capabilities.mjs";
 import {
@@ -171,47 +177,67 @@ import {
 } from "../lib/platforms/capabilities.mjs";
 
 function parseHostSelection() {
-  const arg = process.argv.find((a) => a.startsWith("--hosts="));
-  const raw = arg ? arg.slice("--hosts=".length) : process.env.CONSTRUCT_SYNC_HOSTS;
-  if (!raw) {
-    // Default to detected hosts if none are explicitly requested.
-    const detected = new Set();
-    const nameToKey = displayNameToKey();
-    try {
-      for (const cap of detectHostCapabilities()) {
-        if (cap.availability === "installed" && nameToKey[cap.host]) {
-          detected.add(nameToKey[cap.host]);
-        }
-      }
-    } catch { /* detection is advisory */ }
-
-    // Config file present means the user has (or had) OpenCode — include it
-    // so the sync writes to the existing config rather than pruning it.
-    // Binary-based detection misses non-PATH installs and CI-runner setups.
-    if (!detected.has("opencode")) {
-      try {
-        if (fs.existsSync(findOpenCodeConfigPath())) detected.add("opencode");
-      } catch { /* advisory */ }
-    }
-
-    // Same rationale for Codex: an existing `~/.codex/agents/` dir means the
-    // user has it even when the `codex` binary is not on PATH — the same dir
-    // doctor's parity check reads, so both sides agree on "installed". A
-    // detection miss without this fallback prunes the managed adapter and
-    // config.toml block, and doctor then reports permanent drift with no
-    // self-heal short of putting `codex` on PATH.
-    if (!detected.has("codex")) {
-      try {
-        if (fs.existsSync(path.join(home, ".codex", "agents"))) detected.add("codex");
-      } catch { /* advisory */ }
-    }
-
-    // Always include Claude as the baseline if nothing else is detected.
-    if (detected.size === 0) detected.add("claude");
-    return detected;
+  if (process.argv.includes("--all-hosts")) {
+    return new Set(HOST_KEYS);
   }
-  const wanted = new Set(raw.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean));
-  return new Set(HOST_KEYS.filter((k) => wanted.has(k)));
+
+  const withFlags = HOST_KEYS.filter((k) => process.argv.includes(`--with-${k}`));
+  const hostsArg = process.argv.find((a) => a.startsWith("--hosts="));
+  const fromCli = hostsArg ? hostsArg.slice("--hosts=".length) : null;
+  const fromEnv = process.env.CONSTRUCT_SYNC_HOSTS || null;
+  const raw = fromCli != null ? fromCli : fromEnv;
+
+  if (raw != null) {
+    if (String(raw).trim().toLowerCase() === "all") return new Set(HOST_KEYS);
+    const wanted = new Set(String(raw).split(",").map((s) => s.trim().toLowerCase()).filter(Boolean));
+    for (const k of withFlags) wanted.add(k);
+    return new Set(HOST_KEYS.filter((k) => wanted.has(k)));
+  }
+
+  // Default to detected hosts if none are explicitly requested via --hosts=.
+  const detected = new Set();
+  const nameToKey = displayNameToKey();
+  try {
+    for (const cap of detectHostCapabilities()) {
+      if (cap.availability === "installed" && nameToKey[cap.host]) {
+        detected.add(nameToKey[cap.host]);
+      }
+    }
+  } catch { /* detection is advisory */ }
+
+  // Config file present means the user has (or had) OpenCode — include it
+  // so the sync writes to the existing config rather than pruning it.
+  // Binary-based detection misses non-PATH installs and CI-runner setups.
+  if (!detected.has("opencode")) {
+    try {
+      if (fs.existsSync(findOpenCodeConfigPath())) detected.add("opencode");
+    } catch { /* advisory */ }
+  }
+
+  // Same rationale for Codex: an existing `~/.codex/agents/` dir means the
+  // user has it even when the `codex` binary is not on PATH — the same dir
+  // doctor's parity check reads, so both sides agree on "installed". A
+  // detection miss without this fallback prunes the managed adapter and
+  // config.toml block, and doctor then reports permanent drift with no
+  // self-heal short of putting `codex` on PATH.
+  if (!detected.has("codex")) {
+    try {
+      if (fs.existsSync(path.join(home, ".codex", "agents"))) detected.add("codex");
+    } catch { /* advisory */ }
+  }
+
+  // Cursor GUI installs often lack a PATH binary; an existing mcp.json is enough.
+  if (!detected.has("cursor")) {
+    try {
+      if (fs.existsSync(path.join(home, ".cursor", "mcp.json"))) detected.add("cursor");
+    } catch { /* advisory */ }
+  }
+
+  for (const k of withFlags) detected.add(k);
+
+  // Always include Claude as the baseline if nothing else is detected.
+  if (detected.size === 0) detected.add("claude");
+  return detected;
 }
 
 const HOST_SELECTION = parseHostSelection();
