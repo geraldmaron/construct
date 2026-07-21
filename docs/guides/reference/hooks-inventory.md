@@ -27,7 +27,7 @@ Hook count target: ≤ 30 (see projection below).
 | `bash-output-logger.mjs` | PostToolUse | 20 | Saves long Bash stdout to `~/.construct/bash-logs/` |
 | `mcp-audit.mjs` | PostToolUse | 10 | Logs every `mcp__*` call to `.construct/mcp-audit.json` |
 | `audit-reads.mjs` | PostToolUse | 8 | Always-on: file-hash store for edit-guard staleness detection + read-tracker delta. Opt-in (`CONSTRUCT_AUDIT_READS=1`): tamper-evident audit chain to `.construct/audit-reads.jsonl`. |
-| `agent-tracker.mjs` | PostToolUse | 10 | Records last dispatched subagent + emits `handoff.received` events on `next:cx-<role>` results |
+| `agent-tracker.mjs` | PostToolUse | 10 | Records last dispatched subagent + emits `handoff.received` events on `next:<worker-profile>` results |
 | `stop-notify.mjs` | Stop | 500 | Session summary: cost, TS results, macOS notification |
 | `session-tracking-refresh.mjs` | Stop | 2000 | Refreshes `.construct/context.{md,json}` from observations/commits/beads; syncs plan.md bead-status table; archives plan.md to `.construct/handoffs/` when all referenced beads are closed |
 | `post-merge-tracking.mjs` | PostToolUse | 3000 | After `gh pr merge` succeeds, closes `construct-XXX` beads named in the PR body's `Refs:` / `Closes:` / `Fixes:` lines |

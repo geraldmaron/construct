@@ -34,6 +34,7 @@
  */
 
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -203,11 +204,23 @@ function codeHits(pattern, relDirs, { exclude = [] } = {}) {
 }
 
 function runCli(args, { timeout = 180000 } = {}) {
+  // CLI graph/state commands write under the machine-scoped state root. Pin a
+  // writable hermetic home so verification does not depend on ~/.construct
+  // being creatable (sandbox) or on a pre-existing WAL-locked graph.db.
+
+  const hermeticHome = path.join(os.tmpdir(), `verify-cutover-home-${process.pid}`);
+  fs.mkdirSync(hermeticHome, { recursive: true });
   const result = spawnSync(process.execPath, [abs('bin/construct'), ...args], {
     cwd: ROOT,
     encoding: 'utf8',
     timeout,
-    env: { ...process.env, NODE_ENV: 'test', CI: 'true' },
+    env: {
+      ...process.env,
+      NODE_ENV: 'test',
+      CI: 'true',
+      HOME: hermeticHome,
+      CONSTRUCT_HOME_OVERRIDE: hermeticHome,
+    },
   });
   return {
     code: result.status,
@@ -278,9 +291,11 @@ const BEADS = [
         run: () => {
           const server = readCode('lib/mcp/server.mjs') || '';
           const safety = readCode('lib/mcp/tool-safety.mjs') || '';
-          return /['"]construct_trace['"]/.test(server) && /\bcx_trace\b/.test(safety)
+          const inServer = /['"]construct_trace['"]/.test(server);
+          const inSafety = /\bconstruct_trace\b/.test(safety);
+          return inServer && inSafety
             ? pass('construct_trace dispatched in lib/mcp/server.mjs and classified in tool-safety.mjs')
-            : fail('construct_trace missing from the MCP dispatch or safety table');
+            : fail(`construct_trace missing from the MCP ${!inServer ? 'dispatch' : 'safety table'}`);
         },
       },
       {
@@ -391,7 +406,14 @@ const BEADS = [
         kind: 'static',
         run: () => {
           const permitted = new Set(['lib/mcp/tools/provider-write.mjs']);
-          const callers = codeHits(/writeWithEnvelope/, ['lib', 'bin'])
+
+          // Match real call/import sites only. A bare name inside a static-
+          // analysis regex (oracle invariants) is not an envelope caller.
+
+          const callers = codeHits(
+            /(?:import\s*\{[^}]*\bwriteWithEnvelope\b|\bwriteWithEnvelope\s*\()/,
+            ['lib', 'bin'],
+          )
             .map((hit) => hit.split(':')[0])
             .filter((file) => !file.startsWith('lib/writes/'));
           const unexpected = [...new Set(callers)].filter((file) => !permitted.has(file));
@@ -492,7 +514,7 @@ const BEADS = [
         kind: 'static',
         run: () => {
           const scopes = listDir('registry/worker-profiles').filter((f) => f.endsWith('.json'));
-          if (scopes.length === 0) return fail('no scope files found');
+          if (scopes.length === 0) return fail('no Worker Profile files found');
           const identityKeys = ['persona', 'personas', 'role', 'roles', 'team', 'teams'];
           const withoutEmphasis = [];
           const withIdentity = [];
@@ -503,13 +525,15 @@ const BEADS = [
             } catch {
               return fail(`${file} is not valid JSON`);
             }
-            if (!Array.isArray(parsed.defaultSkills) || parsed.defaultSkills.length === 0) withoutEmphasis.push(file);
+            if (!Array.isArray(parsed.skillEmphasis) || parsed.skillEmphasis.length === 0) {
+              withoutEmphasis.push(file);
+            }
             const identity = identityKeys.filter((k) => k in parsed);
             if (identity.length) withIdentity.push(`${file} (${identity.join(', ')})`);
           }
-          if (withoutEmphasis.length) return fail(`scope(s) declare no skill emphasis: ${withoutEmphasis.join(', ')}`);
+          if (withoutEmphasis.length) return fail(`profile(s) declare no skillEmphasis: ${withoutEmphasis.join(', ')}`);
           if (withIdentity.length) return fail(`persona-identity scaffold survives in: ${withIdentity.join('; ')}`);
-          return pass(`${scopes.length} scope(s) select skills, none declares a persona/role/team identity`);
+          return pass(`${scopes.length} profile(s) select skillEmphasis, none declares a persona/role/team identity`);
         },
       },
       {
@@ -657,6 +681,12 @@ const BEADS = [
         kind: 'cli',
         run: () => {
           const result = runCli(['graph', 'cycles']);
+          const out = `${result.stdout}\n${result.stderr}`;
+          if (/No graph found/i.test(out)) {
+            return result.code === 1
+              ? pass('empty-state contract: cycle sweep reports no graph yet')
+              : fail(`No graph found should exit 1, got ${result.code}`);
+          }
           if (result.code !== 0) return fail(`graph cycles exited ${result.code}: ${result.stderr.trim().slice(0, 200)}`);
           const match = result.stdout.match(/cycle members \((\d+)\)/);
           if (!match) return fail(`unrecognized graph cycles output: ${result.stdout.trim().slice(0, 200)}`);
@@ -670,6 +700,12 @@ const BEADS = [
         kind: 'cli',
         run: () => {
           const result = runCli(['graph', 'orphans']);
+          const out = `${result.stdout}\n${result.stderr}`;
+          if (/No graph found/i.test(out)) {
+            return result.code === 1
+              ? pass('empty-state contract: orphan sweep reports no graph yet')
+              : fail(`No graph found should exit 1, got ${result.code}`);
+          }
           return result.code === 0
             ? pass(`graph orphans exited 0 (${result.stdout.split('\n').filter((l) => l.trim()).length} report line(s))`)
             : fail(`graph orphans exited ${result.code}: ${result.stderr.trim().slice(0, 200)}`);

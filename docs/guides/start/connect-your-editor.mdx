@@ -1,12 +1,12 @@
 ---
 title: Connect your editor
-description: Construct syncs host adapters to Claude Code, OpenCode, Codex, Copilot, VS Code, and Cursor. Two scopes — global keeps only the `construct` front door; project writes the front door plus skills, hooks, and MCP wiring (Single Front Door — specialists dispatch internally).
+description: Construct syncs host adapters to Claude Code, OpenCode, Codex, Copilot, VS Code, and Cursor. Two scopes — global keeps only the `construct` front door; project writes the front door plus skills, hooks, and MCP wiring (Single Front Door — Worker Profiles dispatch internally).
 ---
 
 `construct sync` keeps one canonical registry and writes the right host-specific shape for each supported tool. The CLI runs in two scopes:
 
-- **Global (`construct sync --global`, or the `npm i -g` postinstall)** installs the session-level hooks and a `construct` front door for Codex and Copilot. It does **not** write a global Claude agent: Claude Code *and* VS Code both read `~/.claude/agents/`, so a global agent there would show up twice (once from the project, once from home) in the VS Code picker — the orchestrator is project-scoped instead. Specialists never land at global scope either; they would pollute every editor picker on your machine regardless of the workspace.
-- **Project (`construct sync` inside a Construct project, `construct init`, or `npm run adapters` in the tool repo)** writes the **`construct` front door only** in agent pickers, plus slash commands, skills (`.claude/skills/`), MCP configs, and Cursor rules. The 28 `cx-*` specialists are **internal** — reached via `orchestration_policy` / `orchestration_run`, not editor pickers. Adapter files are gitignored (ADR-0027); run sync after clone.
+- **Global (`construct sync --global`, or the `npm i -g` postinstall)** installs the session-level hooks and a `construct` front door for Codex and Copilot. It does **not** write a global Claude agent: Claude Code *and* VS Code both read `~/.claude/agents/`, so a global agent there would show up twice (once from the project, once from home) in the VS Code picker — the orchestrator is project-scoped instead. Worker Profiles never land at global scope either; they would pollute every editor picker on your machine regardless of the workspace.
+- **Project (`construct sync` inside a Construct project, `construct init`, or `npm run adapters` in the tool repo)** writes the **`construct` front door only** in agent pickers, plus slash commands, skills (`.claude/skills/`), MCP configs, and Cursor rules. The 12 Worker Profiles (`architect`, `data-analyst`, `debugger`, `designer`, `engineer`, `operations`, `orchestrator`, `product-manager`, `qa`, `researcher`, `reviewer`, `security`) are **internal** — reached via `orchestration_policy` / `orchestration_run`, not editor pickers. Adapter files are gitignored (ADR-0027); run sync after clone.
 
 `construct sync` auto-detects a Construct project by the presence of `.construct/` and runs project mode when inside one; global mode otherwise. Pass `--global` or `--project` to force a tier.
 
@@ -29,24 +29,24 @@ Construct classifies every host honestly — no surface is cosmetic. `construct 
 
 | Host | Capability | What that means |
 |---|---|---|
-| Claude Code | `full-native` | Runs the multi-specialist chain natively (Agent Teams / subagent dispatch). |
+| Claude Code | `full-native` | Runs the multi-profile Assignment chain natively (Agent Teams / subagent dispatch). |
 | OpenCode | `full-native` | Config-driven agents + subagents run the chain in OpenCode itself. |
 | Codex · VS Code · Cursor · Copilot | `mcp-orchestrated` | No native subagent primitive, but the host calls the `orchestration_run` MCP tool to reach the **same** orchestrated outcome in-process. |
 
-`mcp-orchestrated` hosts get genuine multi-specialist results — the engine owns orchestration, the editor is a thin client (see [orchestrated outcomes in VS Code](#orchestrated-outcomes-in-vs-code) and ADR-0022). A host would only be `prompt-only` if it had neither native dispatch nor MCP — none of the supported hosts are.
+`mcp-orchestrated` hosts get genuine multi-profile results — the engine owns orchestration, the editor is a thin client (see [orchestrated outcomes in VS Code](#orchestrated-outcomes-in-vs-code) and ADR-0022). A host would only be `prompt-only` if it had neither native dispatch nor MCP — none of the supported hosts are.
 
 ## EXECUTE vs PLAN: which hosts need a provider key
 
-`full-native` and `mcp-orchestrated` both describe whether a host can *reach* the specialist chain — not whether that chain actually calls an LLM. `construct init` and `construct doctor` print the real verdict as their last line:
+`full-native` and `mcp-orchestrated` both describe whether a host can *reach* the Worker Profile chain — not whether that chain actually calls an LLM. `construct init` and `construct doctor` print the real verdict as their last line:
 
 ```
-specialists will EXECUTE (provider <family> + key found)
-specialists will only PLAN (fix: set orchestration.workerBackend=provider + a key)
+Worker Profiles will EXECUTE (provider <family> + key found)
+Worker Profiles will only PLAN (fix: set orchestration.workerBackend=provider + a key)
 ```
 
-EXECUTE requires the config-resolved `orchestration.workerBackend` to be `"provider"` **and** a materialized (not `op://...`) key present for the selected provider family. Anything else — the default `inline` backend, `host` with no attached session, or `provider` with no key — degrades to PLAN: Construct still prepares specialist prompts/tasks, but no LLM ever reasons over them.
+EXECUTE requires the config-resolved `orchestration.workerBackend` to be `"provider"` **and** a materialized (not `op://...`) key present for the selected provider family. Anything else — the default `inline` backend, `host` with no attached session, or `provider` with no key — degrades to PLAN: Construct still prepares Worker Profile prompts/tasks, but no LLM ever reasons over them.
 
-- **Claude Code and OpenCode** (`full-native`) run the specialist chain through the host's own attached session, so they EXECUTE with no provider key required — the host's own model does the reasoning.
+- **Claude Code and OpenCode** (`full-native`) run the Worker Profile chain through the host's own attached session, so they EXECUTE with no provider key required — the host's own model does the reasoning.
 - **Codex, Copilot, VS Code, Cursor** (`mcp-orchestrated`) have no attached subagent session to fall back on. They need `orchestration.workerBackend: "provider"` in `construct.config.json`, plus a materialized `ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY`, or `OPENAI_API_KEY` in the environment the MCP server runs in — without both, `orchestration_run` on these hosts only plans.
 - Even inside Claude Code or OpenCode, set `orchestration.workerBackend: "provider"` (+ a key) if you want a specific provider model instead of the host's own.
 
@@ -69,7 +69,7 @@ Verify with `construct doctor` (reads the last line) or `construct orchestrate p
 - `<project>/.claude/commands/*.md` — slash commands
 - `<project>/.claude/skills/<name>/SKILL.md` — Anthropic Agent Skills
 
-In Claude Code, address the persona with `@construct`. Internal specialists dispatch via MCP — not as separate `@cx-*` picker entries.
+In Claude Code, address Construct with `@construct`. Internal Worker Profiles dispatch via MCP — not as separate picker entries.
 
 ## OpenCode
 
@@ -89,7 +89,7 @@ For substantive external research, first verify attachment with `orchestration_r
 
 **Global** writes only `~/.github/prompts/construct.prompt.md` and a minimal Construct-managed block in `~/.github/copilot-instructions.md` listing the front-door prompt.
 
-**Project** writes `construct.prompt.md` under `<project>/.github/prompts/` and a managed block in `<project>/.github/copilot-instructions.md`. Copilot **agent mode** reads `<project>/.claude/agents/construct.md` — the Single Front Door. Multi-specialist runs use the `orchestration_run` MCP tool.
+**Project** writes `construct.prompt.md` under `<project>/.github/prompts/` and a managed block in `<project>/.github/copilot-instructions.md`. Copilot **agent mode** reads `<project>/.claude/agents/construct.md` — the Single Front Door. Multi-profile runs use the `orchestration_run` MCP tool.
 
 ## VS Code
 
@@ -97,12 +97,12 @@ Construct writes `<project>/.vscode/mcp.json` (top-level `servers`) per the offi
 
 ### Orchestrated outcomes in VS Code
 
-VS Code/Copilot has no extension-facing subagent primitive, so the editor's own agent can't run a multi-specialist chain itself. Construct closes that gap the way Claude Code and OpenCode do — **the engine runs the orchestration; the editor is a thin client.** Reach it two ways:
+VS Code/Copilot has no extension-facing subagent primitive, so the editor's own agent can't run a multi-profile chain itself. Construct closes that gap the way Claude Code and OpenCode do — **the engine runs the orchestration; the editor is a thin client.** Reach it two ways:
 
-- **From the editor's chat, via MCP** — the Construct MCP server exposes `orchestration_readiness` to verify attachment, `orchestration_run` to execute a real run and return per-specialist output, and `orchestration_status` to inspect runs. Solo runs execute in-process — no daemon, no port, no token. MCP tools are exactly what VS Code/Copilot and Cursor *do* expose, so the host gets a genuine multi-specialist outcome through a tool it can actually call — no subagent primitive required.
+- **From the editor's chat, via MCP** — the Construct MCP server exposes `orchestration_readiness` to verify attachment, `orchestration_run` to execute a real run and return per-profile output, and `orchestration_status` to inspect runs. Solo runs execute in-process — no daemon, no port, no token. MCP tools are exactly what VS Code/Copilot and Cursor *do* expose, so the host gets a genuine multi-profile outcome through a tool it can actually call — no subagent primitive required.
 - **From a script/CI** — `construct orchestrate run "<request>"` runs in-process and stores runs in the current project's `.construct/`. For a shared team service, set `CONSTRUCT_ORCHESTRATION_URL` (and `CONSTRUCT_ORCHESTRATION_TOKEN`) and use `construct orchestrate run --remote "<request>"`, which proxies the same call over HTTP.
 
-A run executed with the `provider` worker backend (set `orchestration.workerBackend` and a provider key) returns real specialist output — the same outcome a Claude Code user gets. See [architecture → engine-as-service](/guides/concepts/architecture) and ADR-0022.
+A run executed with the `provider` worker backend (set `orchestration.workerBackend` and a provider key) returns real Worker Profile output — the same outcome a Claude Code user gets. See [architecture → engine-as-service](/guides/concepts/architecture) and ADR-0022.
 
 ## Cursor
 
@@ -118,7 +118,7 @@ Editors that speak the [Agent Client Protocol](https://agentclientprotocol.com) 
 construct acp
 ```
 
-The editor speaks JSON-RPC 2.0 over stdio; an ACP `session/prompt` runs a real multi-specialist orchestration through the same engine the daemon and the MCP tool use, streaming progress as `session/update` events (ADR-0023). The engine owns orchestration; the editor is a thin ACP client. Run `provider`-backed orchestration (a provider key + the daemon) for real specialist output.
+The editor speaks JSON-RPC 2.0 over stdio; an ACP `session/prompt` runs a real multi-profile orchestration through the same engine the daemon and the MCP tool use, streaming progress as `session/update` events (ADR-0023). The engine owns orchestration; the editor is a thin ACP client. Run `provider`-backed orchestration (a provider key + the daemon) for real Worker Profile output.
 
 ## What stays global vs goes to the project
 
@@ -140,11 +140,11 @@ Hooks stay global because they're session-level (pre-tool-use, session-start). E
 
 ## Migration from older Construct versions
 
-If you ran an older version of Construct that wrote specialists to user-scope (`~/.claude/agents/cx-*.md`, `~/.github/prompts/cx-*.prompt.md`, `~/.codex/agents/cx-*.toml`), the next `construct sync --global` cleans them up automatically — only files whose names match a registered specialist are removed, so any user-authored `cx-*` files you kept in those directories stay put.
+If you ran an older version of Construct that wrote v1 specialist agents to user-scope (`~/.claude/agents/cx-*.md`, `~/.github/prompts/cx-*.prompt.md`, `~/.codex/agents/cx-*.toml`), the next `construct sync --global` cleans them up automatically — only files whose names match a retired registered specialist id are removed, so any user-authored files you kept in those directories stay put.
 
 ## Cross-surface parity
 
-`construct doctor` includes a parity check that diffs your registry against every installed editor's adapter state. If you add a specialist and forget to sync, doctor reports the drift.
+`construct doctor` includes a parity check that diffs your registry against every installed editor's adapter state. If you add a Worker Profile and forget to sync, doctor reports the drift.
 
 ```bash
 construct doctor

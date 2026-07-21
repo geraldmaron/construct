@@ -75,7 +75,7 @@ Drop any supported file into `inbox/` and the embed daemon will:
 3. Extract text (PDF, DOCX, XLSX, PPTX, Markdown, plain text, code…)
 4. Write a normalised Markdown artifact to `.construct/knowledge/<subdir>/<filename>.md`
 5. Record a typed observation in `.construct/observations/` with tag `knowledge:<subdir>`
-6. Run `classifyRdIntake` and write an R&D triage packet to `.construct/intake/pending/<id>.json`: intake type, R&D stage, primary owner persona, recommended chain, recommended action, risk, confidence, rationale. Drive the queue with `construct intake list / show / done / skip / reopen`. See [intake and triage](/guides/concepts/intake-and-triage).
+6. Run `classifyRdIntake` and write an R&D triage packet to `.construct/intake/pending/<id>.json`: intake type, R&D stage, primary owner Worker Profile, recommended chain, recommended action, risk, confidence, rationale. Drive the queue with `construct intake list / show / done / skip / reopen`. See [intake and triage](/guides/concepts/intake-and-triage).
 
 Supported formats:
 - **Plain text / Code**: `.md`, `.txt`, `.rst`, `.adoc`, `.json`, `.yaml`, `.yml`, `.toml`, `.js`, `.mjs`, `.ts`, `.tsx`, `.jsx`, `.py`, `.go`, `.rs`, `.sh`, `.bash`, `.html`, `.css`, `.csv`, `.tsv`, `.xml`, `.env`, `.conf`, `.ini`, `.sql`, `.log`

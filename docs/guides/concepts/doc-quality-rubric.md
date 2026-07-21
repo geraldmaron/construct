@@ -18,7 +18,7 @@ lib/templates/visual-requirements.mjs (STRUCTURE_REQUIREMENTS).
 6. **Decision-forcing** — the document drives a decision or action, not just description: it carries the acceptance criteria, severity rationale, kill criteria, or thresholds its family requires. Phased delivery docs also carry a human **Why?** per phase (who benefits, what risk it reduces) — see `skills/docs/artifact-authorship.md`.
 7. **Worked example** — templates for non-obvious doc types ship a filled-in example, so an author sees the bar rather than guessing it.
 8. **Inclusive / human framing** — named roles and contexts; impact on people who are helped or harmed; avoid ableist or gendered defaults; accessibility is product quality where UI ships.
-9. **Multi-persona tension** — substantive fingerprints from recruited specialists (researcher, architect, privacy/legal, a11y, ops/QA, engineer, reviewer) in Requirements, Risks, and Open questions — not Contributors name-drops alone.
+9. **Multi-persona tension** — substantive fingerprints from recruited Worker Profiles (researcher, architect, privacy/legal, a11y, ops/QA, engineer, reviewer) in Requirements, Risks, and Open questions — not Contributors name-drops alone.
 10. **Human voice** — careful-colleague prose: prefer contractions; avoid spaced em dashes and LLM tells; engaging and concrete without fabricating warmth. Exceptions for ACs, legal shall/must, quoted statute, and exact required section titles. See [`rules/common/human-voice.md`](../../../rules/common/human-voice.md) and [`skills/docs/artifact-authorship.md`](../../../skills/docs/artifact-authorship.md).
 
 ## Grades

@@ -12,7 +12,7 @@ Use when: the user asks to create a PRD, platform spec, business case, RFC, or r
 
 Choose the document type before drafting:
 
-Resolve tone from `specialists/tone-profiles.json` and optional `.construct/brand-voice.json` override for the selected template.
+Resolve tone via `lib/artifact-manifest.mjs#resolveToneForArtifact` for the selected template (`toneDefault` / `toneAllowed` on the artifact entry), with optional `.construct/brand-voice.json` `toneOverride` and workspace-preset `toneDefaults`.
 
 | Template | Use when |
 |---|---|

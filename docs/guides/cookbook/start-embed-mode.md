@@ -35,7 +35,7 @@ roles:
   secondary: product-manager     # secondary orientation (optional)
 ```
 
-Available role names match the specialist agents in the registry (e.g. `architect`, `product-manager`, `engineer`, `sre`, `security`). You can also set roles from the **Config** section in the dashboard.
+Available role names match the 12 Worker Profiles in `registry/worker-profiles/` (e.g. `architect`, `product-manager`, `engineer`, `operations`, `security`). You can also set roles from the **Config** section in the dashboard.
 
 **Targets** tell embed where to route artifacts. Remote-only targets (no local `path`) receive docs via provider APIs. Local targets get direct filesystem writes.
 

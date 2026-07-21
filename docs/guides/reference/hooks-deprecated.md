@@ -8,7 +8,7 @@ This file is the authoritative ledger; do not infer hook history from git blame 
 # Deprecated Hooks
 
 Hooks are removed when their behavior is absorbed into a consolidated hook, moved into
-declarative rules, or expressed as persona/skill guidance. Removal without an entry here
+declarative rules, or expressed as Worker Profile / skill guidance. Removal without an entry here
 is a policy violation: `construct doctor` checks this ledger against the hooks manifest.
 
 ## Consolidation into `lib/hooks/policy-engine.mjs`

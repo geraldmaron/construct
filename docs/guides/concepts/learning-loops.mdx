@@ -1,6 +1,6 @@
 ---
 title: Learning loops
-description: How Construct gets better the more you use it — every loop that captures session outcomes, research findings, and specialist performance, and feeds them back into the next session.
+description: How Construct gets better the more you use it — every loop that captures session outcomes, research findings, and Worker Profile performance, and feeds them back into the next session.
 ---
 
 Construct should get better the more you use it. This page lists every learning loop, what state it's actually in, where the data lives, and how to turn pieces off if you need to.
@@ -62,9 +62,9 @@ Skipped automatically: sessions carrying no durable signal — no mutation, no b
 
 `commands/understand/research.md` produces FINDINGS, INFERENCES, GAPS, RECOMMENDATION. The output lands as `.construct/knowledge/external/research/<slug>.md` with frontmatter (`kind: research-finding`, topic, confidence, sources, accessedAt, expiresAt, profile). Schema validates `confidence=confirmed` against `sources[]`. Files cap at 50 KB. The standard sync path indexes them for retrieval. CLI: `construct knowledge add --source=research --slug=<topic>`. MCP: `knowledge_add` (requires `confirm=true`).
 
-### Specialist outcome capture (A3)
+### Worker Profile outcome capture (A3)
 
-Every dispatched specialist writes a JSONL line to `.construct/outcomes/<role>.jsonl` via `lib/outcomes/record.mjs`. The agent-tracker hook stamps `success`, `escalated`, `durationMs`, `profile`. `lib/outcomes/aggregate.mjs` rolls up per-role success rate and 30-day trend into `.construct/outcomes/_summary.json`, and exposes `outcomeBoost` — a soft re-rank signal capped at plus or minus 0.05 that cannot invert a primary signal. Intake classification deliberately never consults it (`lib/intake/classify.mjs` stays deterministic); routing consumption is tracked in construct-4z0qq. Files rotate at 10k lines per role. MCP: `outcomes_summary` (read), `outcomes_record` (write, requires `confirm=true`).
+Every dispatched Worker Profile writes a JSONL line to `.construct/outcomes/<role>.jsonl` via `lib/outcomes/record.mjs`. The agent-tracker hook stamps `success`, `escalated`, `durationMs`, `profile`. `lib/outcomes/aggregate.mjs` rolls up per-role success rate and 30-day trend into `.construct/outcomes/_summary.json`, and exposes `outcomeBoost` — a soft re-rank signal capped at plus or minus 0.05 that cannot invert a primary signal. Intake classification deliberately never consults it (`lib/intake/classify.mjs` stays deterministic); routing consumption is tracked in construct-4z0qq. Files rotate at 10k lines per role. MCP: `outcomes_summary` (read), `outcomes_record` (write, requires `confirm=true`).
 
 ### Skill outcome attribution (A3-skills)
 
@@ -72,7 +72,7 @@ The skill-level twin of A3, phase 1 of the skill effectiveness pipeline. When an
 
 ### Prompt improvement (A4)
 
-`construct optimize <agent>` (`scripts/optimize.mjs`) fetches the agent's low-scoring telemetry traces, diagnoses the top failure patterns with an LLM, and proposes a patch to the agent's role skill file (`skills/perspectives/<role>.md`, inlined into specialist prompts at sync time). The default run is a dry-run that only prints the diagnosis and patch. Nothing auto-applies: the weekly `optimize-loop` scheduled job and the session-end hook run dry-run only. `--apply` is the human gate — rate-limited to one apply per agent per 7 days, it writes a `.bak` backup (most recent 5 kept), appends the patch record to `~/.construct/prompt-history/<agent>.jsonl`, integrity-checks the patched file, and runs `construct sync` so the change propagates; `--rollback` restores the latest backup and records the reversal in the same history. Apply/rollback are CLI-only by design. Registry mutations stay on the operator path.
+`construct optimize <agent>` (`scripts/optimize.mjs`) fetches the agent's low-scoring telemetry traces, diagnoses the top failure patterns with an LLM, and proposes a patch to the agent's role skill file (`skills/perspectives/<role>.md`, inlined into Worker Profile prompts at sync time). The default run is a dry-run that only prints the diagnosis and patch. Nothing auto-applies: the weekly `optimize-loop` scheduled job and the session-end hook run dry-run only. `--apply` is the human gate — rate-limited to one apply per agent per 7 days, it writes a `.bak` backup (most recent 5 kept), appends the patch record to `~/.construct/prompt-history/<agent>.jsonl`, integrity-checks the patched file, and runs `construct sync` so the change propagates; `--rollback` restores the latest backup and records the reversal in the same history. Apply/rollback are CLI-only by design. Registry mutations stay on the operator path.
 
 ### Tool discoverability (Oracle)
 

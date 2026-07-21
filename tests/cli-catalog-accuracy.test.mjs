@@ -27,7 +27,6 @@ const BIN = fs.readFileSync(path.join(REPO, 'bin', 'construct'), 'utf8');
 // something is not meant to be user-discoverable.
 const HANDLER_ONLY_ALLOWLIST = new Set([
   'help',                  // built-in help
-  'up', 'down',            // legacy aliases for dev/stop
   'prune',                 // sub-tool for cleanup paths
   'resources', 'costs',    // sub-namespaces under config/observability
   'handoffs',              // namespace under role framework

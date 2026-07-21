@@ -1,9 +1,9 @@
 ---
 title: Intake and triage
-description: How signals dropped into `inbox/` get classified by the active profile's taxonomy and routed to the right specialist.
+description: How signals dropped into `inbox/` get classified by the active Workspace Preset's taxonomy and routed to the right Worker Profile.
 ---
 
-Construct treats every file that lands in `inbox/` as a candidate signal: a bug report, a customer comment, an experiment hypothesis, an incident note, a competitor PDF, a campaign brief, a research question. The active org profile decides how that signal is classified and where it routes; the pipeline that moves it through triage is the same across every profile.
+Construct treats every file that lands in `inbox/` as a candidate signal: a bug report, a customer comment, an experiment hypothesis, an incident note, a competitor PDF, a campaign brief, a research question. The active Workspace Preset decides how that signal is classified and where it routes; the pipeline that moves it through triage is the same across every preset.
 
 This page explains the pipeline once, then walks the taxonomy under each curated profile.
 
@@ -48,7 +48,7 @@ Each Workspace Preset selects a classification table under `lib/intake/tables/`.
 - the **intake types** the Workspace Preset recognizes (e.g. `bug`, `brief`, `request`)
 - the **stages** in its work loop (e.g. `implementation` vs `draft` vs `triage`)
 - the **owner role** per intake type
-- the **recommended chain** of specialists for the handoff sequence
+- the **recommended chain** of Worker Profiles for the handoff sequence
 
 `construct workspace-preset show <id>` shows a preset. Select one with the
 `workspacePreset` field in `construct.config.json` or `construct init --workspace-preset=<id>`.
@@ -148,7 +148,7 @@ In `solo` mode the queue is the filesystem (`.construct/intake/`). In `team` and
 ## See also
 
 - [Workspace Preset lifecycle](/guides/concepts/workspace-preset-lifecycle). How intake taxonomies are designed and validated.
-- [Persona and skill research](/guides/concepts/persona-research). The methodology behind the owners and chains each profile names.
+- [Worker Profiles reference](/guides/reference/worker-profiles). The roster that owns and chains each triage recommendation.
 - [Intake loop](/guides/concepts/intake-loop). Implementation deep dive of the 8-step pipeline (that doc is the internals; this one is the operator's view).
 - [Deployment model](/guides/concepts/deployment-model). Solo vs team vs enterprise topology.
 - [Beads and durable state](/guides/concepts/beads-and-state). How triaged work becomes tracked work.

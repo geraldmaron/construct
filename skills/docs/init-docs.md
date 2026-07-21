@@ -191,9 +191,9 @@ Stack: [stack]
 ## Routing
 
 After completing the docs init:
-- If the user has architecture questions → `@cx-explorer` or `@cx-docs-keeper` to explore and update `docs/architecture/`
+- If the user has architecture questions → Worker Profile `researcher` (codebase exploration) or `architect` to explore and update `docs/architecture/`; `operations` owns durable doc currency
 - If the user wants to document a decision → record it in `docs/decisions/adr/` using the ADR template
-- If the user wants to add API docs → `@cx-docs-keeper` to generate stubs from code
+- If the user wants to add API docs → `operations` (docs overlay) to generate stubs from code
 - If the user wants to file an incident report → use `docs/postmortems/` with the incident-report template
 - If the user wants to document a release → use `docs/changelogs/` with the changelog-entry template
 

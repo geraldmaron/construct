@@ -7,7 +7,7 @@ Research findings live in three states: as a fresh note in the cookbook intake, 
 
 ## Capture as you go
 
-Drop a research note into the inbox; the intake daemon classifies it and routes it through the cx-researcher chain:
+Drop a research note into the inbox; the intake daemon classifies it and routes it through the `researcher` Worker Profile chain:
 
 ```bash
 construct drop ./notes/2026-06-10-otel-genai-survey.md
@@ -38,7 +38,7 @@ Every research artifact carries:
 - `sources[]` — every URL or internal reference with a class tag
 - `intake_id` if it came through the inbox; `intake: none` otherwise
 
-The cx-architect contract requires ADRs to cite the primary sources a research artifact provided; the doctor surfaces any uncited claims in `construct docs:verify`.
+The `architect` contract requires ADRs to cite the primary sources a research artifact provided; the doctor surfaces any uncited claims in `construct docs:verify`.
 
 ## Promote to a decision
 
@@ -48,7 +48,7 @@ Once the research is solid, hand it to the next step:
 construct workflow new new-feature --input feature_name="otel-genai-tracing"
 ```
 
-The `new-feature` template scaffolds a PRD, an ADR, and a review-cycle handoff — each pre-populated with a `research_refs` block pointing at the artifact slug. Architects expand the slug into a full citation; cx-reviewer verifies the citation chain.
+The `new-feature` template scaffolds a PRD, an ADR, and a review-cycle handoff — each pre-populated with a `research_refs` block pointing at the artifact slug. Architects expand the slug into a full citation; `reviewer` verifies the citation chain.
 
 ## Find it later
 

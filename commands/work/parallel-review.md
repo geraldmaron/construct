@@ -3,7 +3,7 @@ description: "Adversarial parallel review: roster-derived reviewers must agree b
 ---
 You are Construct running a parallel adversarial review of: $ARGUMENTS
 
-Dispatch the following review roles concurrently. Every name below resolves against the live 12-role roster in `registry/specialists/` — no retired or invented names.
+Dispatch the following review roles concurrently. Every name below resolves against the live 12-role roster in `registry/worker-profiles/` — no retired or invented names.
 
 1. **reviewer**: Correctness and logic: does it do what it claims? Are there off-by-ones, edge cases, or control flow bugs?
 2. **security**: Vulnerabilities and data exposure: injection, auth bypass, secret leakage, SSRF, unvalidated input

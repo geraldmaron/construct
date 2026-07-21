@@ -45,7 +45,7 @@ Question → Method → Sources → Findings → Counter-evidence → Confidence
 
 6. **Source hierarchy**: primary → secondary → tertiary (tertiary never alone for load-bearing claims).
 7. **Cite inline and verify every URL** before publish: use linked short titles at the claim (`([Title](url); accessed YYYY-MM-DD)`), keep the Sources table, and run `construct artifact validate … --type=research-brief --check-links` (see `rules/common/citation.md`). Mark unconfirmed as `[unverified]`.
-8. **Tone**: resolve from artifact manifest (`direct`). See `specialists/tone-profiles.json`.
+8. **Tone**: resolve from the artifact manifest (`toneDefault: direct`) via `lib/artifact-manifest.mjs#resolveToneForArtifact`; optional `.construct/brand-voice.json` override.
 9. **Structure** with `get_template("research-brief")`; write to `.construct/research/{topic-slug}.md`.
 10. **Reference** the research doc in the requesting agent's output.
 

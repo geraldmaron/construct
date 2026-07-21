@@ -14,7 +14,7 @@ R&D-loop trace events (`intake.received`, `intake.triaged`, `task_graph.created`
 ```bash
 construct review
 construct review --days=7
-construct review --agent=cx-engineer
+construct review run --agent=engineer
 ```
 
 Fetches traces from the configured trace source, computes per-agent quality scores, and writes a markdown report to
@@ -33,8 +33,8 @@ patterns.
 
 ```bash
 construct optimize --list
-construct optimize cx-engineer
-construct optimize cx-engineer --apply
+construct optimize engineer
+construct optimize engineer --apply
 ```
 
 `--list` shows every agent with a quality score and trace count. Use it to decide which agent

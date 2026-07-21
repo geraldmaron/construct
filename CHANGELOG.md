@@ -4,7 +4,17 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Changed
+
+- v1 leftover cleanup W1–W4 (`construct-5ir13`, `construct-kl9eg`, `construct-s0b9a`, `construct-ht2gg`): retire stale specialist/persona/team-registry teaching and dead loaders without removing intentional keeps (`lib/flows/`, scheduler, oracle non-daemon, hashing embedder, provider `.js` tier).
+  - Docs/nav W1 (`construct-5ir13`): guides + STRATEGY teach Construct 2.0 Worker Profiles / Workspace Presets; reference nav points at worker-profiles pages; architecture separates on-disk vs target domain owners and keeps `lib/flows/` live (only unused delegation-flow port removed).
+  - Agent-facing skills/rules/commands W2 (`construct-kl9eg`): no longer teach deleted v1 paths (`specialists/contracts.json`, `lib/specialist-contracts.mjs`, `specialists/tone-profiles.json`, `registry/specialists/`, `lib/specialists/postconditions.mjs`). Orchestration reference points at capability-owned contracts (`registry/capabilities.json` + `registry/contracts/`), `lib/capability-contracts.mjs`, `workflow_contract_validate` / `lib/contracts/validate.mjs`, and `lib/capabilities/postconditions.mjs`, with live Worker Profile ids. PRD/research tone resolution documents `resolveToneForArtifact`. Doc ownership, init-docs/init-project, repo-map, and review-work route to the 12-profile roster; parallel-review roster path is `registry/worker-profiles/`.
+  - Roles loaders W3 (`construct-s0b9a`): remove dead v1 `teams-registry.json` loader from roles gateway (file deleted; always null); drop unused fence live-registry.teams lookup and `intersectFences` helper (Worker Profile fence is the live path); fix stale roles comments referencing deleted `router.mjs`. Intentional residual team APIs (`createCustomTeam`, injected-registry helpers, decision audit writers) kept.
+  - Cutover/compat W4 (`construct-ht2gg`): `verify-cutover` aligns M0 with `construct_trace`, M4 with `skillEmphasis`, M2 envelope caller detection, and E1 hermetic empty-state graph sweep; `compat/surfaces.json` converts five truth-21 surfaces to `status:removed` tombstones; `cli-compat-catalog` sunsets `up`/`down` as removed (handlers gone).
+
 ### Fixed
+
+- Architecture and root/prompt-surface docs no longer claim missing modules (`lib/workspaces/`, `lib/persona.mjs`, `lib/persona-sections.mjs`, full Objective/Work stores) as present; intake/triage and related guides drop live specialist/persona roster teaching and the dead persona-research link (`construct-5ir13`).
 
 - DOCX d2 figures without Playwright (PR 419): office-format diagram negotiation preferred PNG, so `d2` PNG export pulled playwright-go's retired `playwright.azureedge.net` driver (404) and left `figures:unresolved 0/3`. Prefer SVG for DOCX/ODT (pandoc embeds it), honor `CONSTRUCT_D2_MIME=image/svg+xml` from `buildDistributionDiagramEnv`, and assert the Chrome-merged mermaid puppeteer temp config (not only the repo-relative template path).
 

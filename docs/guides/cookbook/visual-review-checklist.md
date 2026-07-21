@@ -105,7 +105,7 @@ const review = makeVisualReview({
 const evidence = recordVisualReview({
   screenshotEvidence: capturedScreenshot,
   review,
-  actor: 'cx-reviewer'
+  actor: 'reviewer'
 });
 ```
 

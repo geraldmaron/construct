@@ -56,7 +56,7 @@ Fabrication is the single largest threat to trust in an agent system. A persona 
 ## Enforcement
 
 - `lib/comment-lint.mjs` enforces a subset of these patterns on artifact paths (`docs/specs/prd/**`, `docs/decisions/adr/**`, `docs/decisions/rfc/**`, `docs/notes/research/**`, `.construct/knowledge/**`, `.construct/handoffs/**`, `.construct/research/**`). PostToolUse warns; `npm run lint:comments`, `construct lint:comments`, and the release gate block.
-- `specialists/contracts.json` postconditions check structural requirements (mandatory sections, intake traceability, citation density). `lib/contracts/validate.mjs#validateHandoff` blocks handoffs that fail validation; binary postconditions in `lib/specialists/postconditions.mjs` block rubber-stamp reviews, post-hoc threat models, symptom-only fixes, stale-doc PRs, and post-hoc accessibility. Enforcement is hard-default `block`.
+- Capability-owned contract postconditions in `registry/capabilities.json` (and pair files under `registry/contracts/`) check structural requirements (mandatory sections, intake traceability, citation density). `lib/contracts/validate.mjs#validateHandoff` blocks handoffs that fail validation; binary postconditions in `lib/capabilities/postconditions.mjs` block rubber-stamp reviews, post-hoc threat models, symptom-only fixes, stale-doc PRs, and post-hoc accessibility. Enforcement is hard-default `block`.
 - `construct intake done <id> --output=<path>` stamps `intake_id`, `intake_confidence`, and `intake_rationale` into the artifact's frontmatter so every intake-derived artifact carries verifiable provenance.
 
 ## Bypass
