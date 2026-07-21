@@ -16,7 +16,7 @@
  * boots a real EmbedDaemon with an injected fake registry exposing only a
  * credential-free `jira.read()` (Job 12 has `runImmediately: true`, so it
  * fires on the same tick as `.start()`), and polls for the resulting
- * writeIntent (an 'awaiting_approval' record for tool "atlassian-jira.issue") plus
+ * writeIntent (an 'awaiting_approval' record for tool "jira.issue") plus
  * the execution-gap observation.
  *
  * Reads CONSTRUCT_ROOT_DIR and TICK_TIMEOUT_MS from env.
@@ -57,7 +57,7 @@ function fakeRegistry() {
 
 function findArtifacts(persistPath) {
   const queue = new ApprovalQueue({ persistPath });
-  const proposedIssue = queue.list().find((r) => r.toolCall?.tool === 'atlassian-jira.issue') ?? null;
+  const proposedIssue = queue.list().find((r) => r.toolCall?.tool === 'jira.issue') ?? null;
   const observations = readJsonFiles(join(rootDir, '.construct', 'observations'))
     .filter((o) => o.tags?.includes('execution-gap'));
   return { proposedIssue, observations };

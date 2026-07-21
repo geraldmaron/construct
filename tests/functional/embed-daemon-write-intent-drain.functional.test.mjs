@@ -19,7 +19,7 @@
  * tick's real effect instead of sleeping for the full interval.
  *
  * The parent test pre-seeds the ApprovalQueue's persistence file (outside
- * the daemon process) with one 'approved' atlassian-jira.issue record before
+ * the daemon process) with one 'approved' jira.issue record before
  * spawning the runner, and clears Jira credential env vars from the spawn
  * env (sterileSpawnEnv's allowlist already excludes them by construction,
  * asserted explicitly rather than merely assumed). The daemon wires
@@ -93,7 +93,7 @@ test('the real EmbedDaemon write-intent-drain job drains an approved record on i
 
   const seedQueue = new ApprovalQueue({ persistPath });
   const record = seedQueue.enqueue({
-    tool: 'atlassian-jira.issue',
+    tool: 'jira.issue',
     args: { project: 'PROJ', issueType: 'Task', summary: 'Drained by the daemon job' },
     surface: 'test-seed',
     requestedBy: { userId: 'test-seed' },

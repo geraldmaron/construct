@@ -11,7 +11,7 @@
  * embed-daemon-execution-gap-runner.mjs) with a credential-free fake Jira
  * registry entry (only `read('issues', ...)` — no existing tickets), seeds
  * one strategy-doc observation with no matching ticket, and asserts within
- * one tick: a writeIntent ("atlassian-jira.issue") lands in the approval queue as
+ * one tick: a writeIntent ("jira.issue") lands in the approval queue as
  * 'awaiting_approval' (proposed, never auto-executed — the same governed
  * pipeline every other write in this codebase goes through), and an
  * 'execution-gap' observation is recorded describing the gap.
@@ -65,7 +65,7 @@ test('Job 12 proposes a Jira issue for an unticketed strategy doc within one tic
   const result = JSON.parse(res.stdout.trim().split('\n').pop());
   assert.equal(result.ok, true, `tick did not produce the expected proposal + observation: ${JSON.stringify(result)}`);
 
-  assert.equal(result.proposedIssue.toolCall.tool, 'atlassian-jira.issue');
+  assert.equal(result.proposedIssue.toolCall.tool, 'jira.issue');
   assert.equal(result.proposedIssue.state, 'awaiting_approval', 'proposed, never auto-executed by this job directly');
   assert.equal(result.proposedIssue.requestedBy?.serviceId, 'execution-gap-job');
   assert.match(result.proposedIssue.toolCall.args.summary, /Execution gap/);
