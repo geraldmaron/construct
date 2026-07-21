@@ -12,6 +12,12 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import test from 'node:test';
+const __hygieneTmpDirs = [];
+test.after(() => {
+  for (const dir of __hygieneTmpDirs) {
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+  }
+});
 import { fileURLToPath } from 'node:url';
 import {
   buildCliCommandCatalog,
@@ -83,6 +89,7 @@ test('command-catalog artifact matches the live dispatch table', () => {
 
 test('construct --help hides deprecated aliases when CLI is runnable', { skip: !canSpawnConstruct() ? 'CLI spawn preflight failed' : false }, () => {
   const home = fs.mkdtempSync(path.join(tmpdir(), 'construct-cli-help-'));
+  __hygieneTmpDirs.push(home);
   const result = spawnSync(process.execPath, [BIN, '--help'], {
     cwd: REPO,
     encoding: 'utf8',

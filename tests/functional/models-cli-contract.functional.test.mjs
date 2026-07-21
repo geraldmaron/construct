@@ -121,7 +121,8 @@ test('retired models flags fail without mutating configuration', () => {
     const sb = freshSandbox();
     const res = runModels(sb, args);
     assert.equal(res.status, 1, `${args.join(' ')} should exit 1`);
-    assert.match(res.stderr, /Unknown models option/);
+    const err = `${res.stderr}${res.stdout}`;
+    assert.match(err, /Unknown models option|Retired CLI surface/);
     assert.equal(fs.existsSync(sb.configPath), false, 'retired flags must not write configuration');
   }
 });

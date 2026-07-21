@@ -3,6 +3,12 @@
  */
 
 import test from 'node:test';
+const __hygieneTmpDirs = [];
+test.after(() => {
+  for (const dir of __hygieneTmpDirs) {
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+  }
+});
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -40,6 +46,7 @@ test('demos without titled steps report no description available', () => {
 
 test('writeDemoAnnotationSidecar writes durable JSON next to the artifact', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'demo-annotations-'));
+  __hygieneTmpDirs.push(dir);
   const artifactPath = path.join(dir, 'demo.mp4');
   fs.writeFileSync(artifactPath, 'fake');
   const sidecar = buildDemoChapterSidecar({

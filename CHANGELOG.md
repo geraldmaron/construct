@@ -6,6 +6,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Fixed
 
+- CI shard 2/3: capability tick noise gate no longer skips provider snapshot ticks; graph freshness reads SQLite meta over JSONL overlay; doctor surfaces VS Code MCP readiness pre-setup; published audit drops optional `@huggingface/transformers` from consumer tree; root disposition, MCP tool docs, artifact export completion, and test hygiene aligned with workspace-control-plane.
+
+### Fixed
+
 - PR 419 CI test shards: map embed snapshot items through the meaningful-change gate body field; pass governed webEvidence into research evidence gate and pin orchestration worker DOI fixture; gate relational graph CLI/latency suites on node:sqlite (Node 20 matrix); extend oracle-approval-dedupe batch timeout; regenerate decisions golden surface; run alignment census in CI fixture build; ADR-0073 RichDocument deps on SANCTIONED allowlist; restore @huggingface/transformers optionalDependencies; accept construct-ui audit baseline finding.
 
 - PR 419 CI unblock (batch): `scripts/lint-commits-pr.mjs` enumerates commits from `git merge-base origin/<base> HEAD..HEAD`, skips bead `merge:` subjects, and documents two pre-policy branch SHAs; `lib/auto-docs.mjs` links `command-catalog` in generated CLI nav; npm `files` includes `packages/construct-ui/**` for packed installs; `verify-cutover` tightens the Oracle daemon live-reference regex; optional-dep matrix ignores `remove`-disposition intent tombstones; registers `lint:contracts` in `CLI_COMMANDS`; demo manifest commands match the v2 capability surface.

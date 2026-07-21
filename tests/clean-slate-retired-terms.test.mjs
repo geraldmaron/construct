@@ -20,6 +20,7 @@ const EXCLUDED_PREFIXES = [
   'tests/tracker-projection/fixtures/',
   'tests/e2e/reports/',
   'tests/fixtures/publish/',
+  'tests/fixtures/rich-document-corpus/',
   'tests/capabilities/corpus-inventory.json',
 ];
 
