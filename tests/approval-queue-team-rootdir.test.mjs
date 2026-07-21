@@ -10,11 +10,19 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
+const tmpDirs = [];
+test.after(() => {
+  for (const dir of tmpDirs) {
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+  }
+});
+
 import { ApprovalQueue } from '../lib/embed/approval-queue.mjs';
 import { resolveRootDir } from '../lib/project-root.mjs';
 
 function mkProject() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-team-queue-'));
+  tmpDirs.push(root);
   const nested = path.join(root, 'packages', 'app');
   fs.mkdirSync(nested, { recursive: true });
   fs.mkdirSync(path.join(root, '.construct'), { recursive: true });
@@ -37,6 +45,7 @@ test('team mode canonicalizes queue path from nested cwd', () => {
 
 test('solo mode ignores cwd canonicalization and uses doctor root', () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-solo-queue-'));
+  tmpDirs.push(home);
   const env = {
     CONSTRUCT_DEPLOYMENT_MODE: 'solo',
     CONSTRUCT_HOME_OVERRIDE: home,

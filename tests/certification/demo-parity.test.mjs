@@ -3,6 +3,12 @@
  */
 
 import test from 'node:test';
+const __hygieneTmpDirs = [];
+test.after(() => {
+  for (const dir of __hygieneTmpDirs) {
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+  }
+});
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -16,6 +22,7 @@ const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
 test('canonical demos pass cross-surface parity probes when verified state is present', () => {
   const stateCwd = fs.mkdtempSync(path.join(os.tmpdir(), 'demo-parity-report-'));
+  __hygieneTmpDirs.push(stateCwd);
   for (const id of [
     'agentic-platforms-prd',
     'construct-cockpit',

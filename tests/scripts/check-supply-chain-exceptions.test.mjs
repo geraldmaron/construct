@@ -8,6 +8,12 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
+const __hygieneTmpDirs = [];
+test.after(() => {
+  for (const dir of __hygieneTmpDirs) {
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+  }
+});
 
 import { evaluateSupplyChainExceptions } from '../../scripts/check-supply-chain-exceptions.mjs';
 
@@ -19,6 +25,7 @@ function writeExceptions(dir, exceptions) {
 
 test('expired fixture entry fails and names the entry', () => {
   const dir = mkdtempSync(join(tmpdir(), 'supply-chain-exc-'));
+  __hygieneTmpDirs.push(dir);
   const filePath = writeExceptions(dir, [
     {
       id: 'GHSA-fixture-expired',
@@ -37,6 +44,7 @@ test('expired fixture entry fails and names the entry', () => {
 
 test('active fixture entry within its window passes', () => {
   const dir = mkdtempSync(join(tmpdir(), 'supply-chain-exc-'));
+  __hygieneTmpDirs.push(dir);
   const filePath = writeExceptions(dir, [
     {
       id: 'GHSA-fixture-active',

@@ -7,6 +7,13 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+
+const tmpDirs = [];
+test.after(() => {
+  for (const dir of tmpDirs) {
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+  }
+});
 import { fileURLToPath } from 'node:url';
 
 import {
@@ -29,6 +36,7 @@ function seedVerifiedStates(stateCwd, ids) {
 
 test('script-only state fails certification with explicit reason', () => {
   const stateCwd = fs.mkdtempSync(path.join(os.tmpdir(), 'demo-parity-script-only-'));
+  tmpDirs.push(stateCwd);
   persistDemoState('agentic-platforms-prd', {
     cwd: stateCwd,
     state: 'script-only',
@@ -44,6 +52,7 @@ test('script-only state fails certification with explicit reason', () => {
 
 test('recorded alone fails certification', () => {
   const stateCwd = fs.mkdtempSync(path.join(os.tmpdir(), 'demo-parity-recorded-'));
+  tmpDirs.push(stateCwd);
   persistDemoState('agentic-platforms-prd', {
     cwd: stateCwd,
     state: 'recorded',
@@ -59,6 +68,7 @@ test('recorded alone fails certification', () => {
 
 test('verified state passes certification', () => {
   const stateCwd = fs.mkdtempSync(path.join(os.tmpdir(), 'demo-parity-verified-'));
+  tmpDirs.push(stateCwd);
   persistDemoState('agentic-platforms-prd', {
     cwd: stateCwd,
     state: 'verified',
@@ -73,6 +83,7 @@ test('verified state passes certification', () => {
 
 test('stale tape file with unavailable state fails terminal certification', () => {
   const stateCwd = fs.mkdtempSync(path.join(os.tmpdir(), 'demo-parity-stale-'));
+  tmpDirs.push(stateCwd);
   persistDemoState('agentic-platforms-prd', {
     cwd: stateCwd,
     state: 'unavailable',
@@ -88,6 +99,7 @@ test('stale tape file with unavailable state fails terminal certification', () =
 
 test('canonical demos pass when verified state is seeded', () => {
   const stateCwd = fs.mkdtempSync(path.join(os.tmpdir(), 'demo-parity-canonical-'));
+  tmpDirs.push(stateCwd);
   seedVerifiedStates(stateCwd, [
     'agentic-platforms-prd',
     'construct-cockpit',

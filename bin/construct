@@ -846,32 +846,33 @@ async function cmdDoctor() {
   const { buildHostConfigChecks } = await import('../lib/doctor/host-config.mjs');
   for (const hostCheck of buildHostConfigChecks(HOME)) add(hostCheck.label, hostCheck.pass, hostCheck.optional);
 
+  const doctorHome = process.env.HOME || HOME;
   const vscodeSettingsPaths = process.platform === 'darwin'
     ? [
-        path.join(HOME, 'Library', 'Application Support', 'Code', 'User', 'settings.json'),
-        path.join(HOME, 'Library', 'Application Support', 'Code - Insiders', 'User', 'settings.json'),
+        path.join(doctorHome, 'Library', 'Application Support', 'Code', 'User', 'settings.json'),
+        path.join(doctorHome, 'Library', 'Application Support', 'Code - Insiders', 'User', 'settings.json'),
       ]
     : process.platform === 'linux'
       ? [
-          path.join(HOME, '.config', 'Code', 'User', 'settings.json'),
-          path.join(HOME, '.config', 'Code - Insiders', 'User', 'settings.json'),
+          path.join(doctorHome, '.config', 'Code', 'User', 'settings.json'),
+          path.join(doctorHome, '.config', 'Code - Insiders', 'User', 'settings.json'),
         ]
       : [
-          path.join(process.env.APPDATA ?? path.join(HOME, 'AppData', 'Roaming'), 'Code', 'User', 'settings.json'),
-          path.join(process.env.APPDATA ?? path.join(HOME, 'AppData', 'Roaming'), 'Code - Insiders', 'User', 'settings.json'),
+          path.join(process.env.APPDATA ?? path.join(doctorHome, 'AppData', 'Roaming'), 'Code', 'User', 'settings.json'),
+          path.join(process.env.APPDATA ?? path.join(doctorHome, 'AppData', 'Roaming'), 'Code - Insiders', 'User', 'settings.json'),
         ];
   // Only check VS Code settings when VS Code is actually installed. On macOS,
   // Code's Application Support directory is the installation signal.
   const vscodeAppSupportRoots = process.platform === 'darwin'
     ? [
-        path.join(HOME, 'Library', 'Application Support', 'Code'),
-        path.join(HOME, 'Library', 'Application Support', 'Code - Insiders'),
+        path.join(doctorHome, 'Library', 'Application Support', 'Code'),
+        path.join(doctorHome, 'Library', 'Application Support', 'Code - Insiders'),
       ]
     : process.platform === 'linux'
-      ? [path.join(HOME, '.config', 'Code'), path.join(HOME, '.config', 'Code - Insiders')]
+      ? [path.join(doctorHome, '.config', 'Code'), path.join(doctorHome, '.config', 'Code - Insiders')]
       : [
-          path.join(process.env.APPDATA ?? path.join(HOME, 'AppData', 'Roaming'), 'Code'),
-          path.join(process.env.APPDATA ?? path.join(HOME, 'AppData', 'Roaming'), 'Code - Insiders'),
+          path.join(process.env.APPDATA ?? path.join(doctorHome, 'AppData', 'Roaming'), 'Code'),
+          path.join(process.env.APPDATA ?? path.join(doctorHome, 'AppData', 'Roaming'), 'Code - Insiders'),
         ];
   if (vscodeAppSupportRoots.some((r) => fs.existsSync(r))) {
     // VS Code installed → check settings.json presence as a green/info signal.
@@ -904,6 +905,7 @@ async function cmdDoctor() {
         reasonCode === 'healthy',
         true,
       );
+      checks[checks.length - 1].alwaysShow = true;
     }
   }
   const userConfigReady = fs.existsSync(getUserEnvPath(HOME)) || fs.existsSync(configDir(HOME));

@@ -2,11 +2,18 @@
  * tests/export/html-provider.test.mjs — sanitized direct-HTML export provider (construct-tsyfe.6.6).
  */
 
-import { test } from 'node:test';
+import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+
+const __hygieneTmpDirs = [];
+after(() => {
+  for (const dir of __hygieneTmpDirs) {
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+  }
+});
 
 import {
   makeRichDocument, makeSection, makeHtmlBlock, makeParagraphBlock, makeRun,
@@ -17,6 +24,7 @@ import { validateExportProviderResult } from '../../lib/export-provider-contract
 
 function tmpFile() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'html-export-'));
+  __hygieneTmpDirs.push(dir);
   return path.join(dir, 'out.html');
 }
 

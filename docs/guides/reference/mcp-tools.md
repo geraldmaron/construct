@@ -201,6 +201,19 @@ Deletes ingested markdown artifacts. Requires explicit `confirm: true`.
 ### `list_skills`
 Lists all available categories and playbooks in the Construct knowledge base.
 
+
+### `graph_query`
+
+Query the living dependency graph: lookup one node by id (dependencies and dependents) or list all nodes of a type. Read-only; matches `construct graph query --json`.
+
+### `graph_impacted`
+
+Traverse from changed repo-relative files to impacted workflows, tests, docs, and capabilities. Read-only; matches `construct graph impacted --changed <files> --json`.
+
+### `graph_explain`
+
+Full ownership picture for one procedure or workflow: EDGE_RELS sections, roleChain, execution evidence. Read-only; matches `construct graph explain <id> --json`.
+
 ### `get_skill`
 Reads a specific skill playbook from the knowledge base. Pass `specialistId` when reading on a specialist's behalf: if that specialist has a non-empty entitlement list and the skill is not on it, the response carries an entitlement warning (or, under `CONSTRUCT_STRICT_SKILLS=1`, an error instead of the content) — entitlement is advisory by default, since a bare MCP call carries no authenticated specialist identity to enforce against.
 

@@ -16,7 +16,7 @@
     "bin/construct",
     "bin/construct-postinstall.mjs",
     "lib/**",
-  "packages/construct-ui/**",
+    "packages/construct-ui/**",
     "examples/**",
     "commands/**",
     "skills/**",
@@ -129,7 +129,6 @@
     "unified": "^11.0.5"
   },
   "optionalDependencies": {
-    "@huggingface/transformers": "^4.2.0",
     "@ai-sdk/anthropic": "^4.0.9",
     "@ai-sdk/openai": "^4.0.8",
     "@ai-sdk/openai-compatible": "^3.0.5",

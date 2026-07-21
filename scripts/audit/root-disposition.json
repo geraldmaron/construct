@@ -1016,6 +1016,22 @@
       "evidence": [
         "npm pack"
       ]
+    },
+    {
+      "path": "packages/construct-ui/**",
+      "owner": "developer-experience",
+      "class": "product",
+      "consumers": [
+        "npm pack",
+        "construct UI package surface"
+      ],
+      "published": true,
+      "action": "retain",
+      "replacement": null,
+      "evidence": [
+        "package.json files",
+        "packages/construct-ui/package.json"
+      ]
     }
   ],
   "localRootRules": [
