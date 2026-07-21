@@ -73,9 +73,10 @@ Record:
 
 ## 5. URL verification
 
-Every URL cited in a committed document must be verified before the document is published.
+Every URL cited in a committed document must be verified before the document is published. See [`citation.md`](citation.md) for the inline citation forms.
 
-- Fetch the URL. Confirm it resolves and the content matches the cited claim.
+- Fetch the URL (`construct artifact validate … --check-links`). Confirm it resolves and the content matches the cited claim.
+- Cite inline with a markdown link at the claim, not only in a Sources table.
 - Do not cite aggregate or index pages (e.g., arxiv.org search results, Google Scholar listings) for quantitative claims: cite the specific paper or article URL.
 - If a URL returns a 404, paywall, or redirect loop, find the canonical source or replace the citation.
 - Unverified URLs must be marked `[unverified]` until confirmed.

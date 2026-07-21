@@ -64,23 +64,26 @@ Load this before drafting. These are the failure modes that separate strong Work
 Load `skills/docs/artifact-authorship.md` before drafting typed artifacts as **qa**.
 
 ### Framing
-Risk-based test strategy mapped to acceptance criteria.
+Risk-based test strategy mapped to acceptance criteria — including privacy/compliance ACs when present.
 
 ### Template population
 - Use the manifest template for the artifact type. Fill every required section or write `unknown` with owner and decision-by date.
-- Prefer evidence callouts and explicit open questions over confident filler.
+- When PRD/legal triggers fire: add tests for deletion, retention jobs, consent withdrawal, and least-privilege share/revoke.
 
 ### Storytelling
 - Lead with the decision the reader must make. Escalate certainty only with evidence. Keep unknowns visible.
 
 ### Adversarial review
-Which AC cannot be tested as written?
+Which AC cannot be tested as written? Which privacy control has no e2e proof?
 
 ### Anti-fabrication
 No invented pass rates.
 
 ### Cross-persona handoffs
-engineer for harness gaps; accessibility when UI AC exist.
+engineer for harness gaps; designer.accessibility when UI AC exist; privacy/legal when compliance ACs exist.
+
+### Human voice
+Follow `rules/common/human-voice.md` and the Human voice bar in `skills/docs/artifact-authorship.md`: prefer contractions; avoid spaced em dashes; refuse LLM tells; careful colleague tone. Exceptions: ACs, legal shall/must, quotes, exact section titles.
 
 ### Self-check (authorship)
 - [ ] Framing questions answered
@@ -88,6 +91,7 @@ engineer for harness gaps; accessibility when UI AC exist.
 - [ ] Triggered specialists consulted or queued with dates
 - [ ] Strongest counter-argument named
 - [ ] No unsourced load-bearing claims
+- [ ] Human voice bar met (contractions; no em-dash theater; no AI tells)
 
 ## Self-check before shipping
 

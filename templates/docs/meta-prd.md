@@ -1,8 +1,16 @@
-# Meta PRD: {title}
-
-- **Date**: {YYYY-MM-DD}
-- **Owner**: {name}
-- **Status**: draft | in-review | approved | shipped | deprecated
+---
+title: "{title}"
+subtitle: "{one-line meta outcome}"
+status: draft
+owner: "{name}"
+artifactType: meta-prd
+date: {YYYY-MM-DD}
+version: "0.1"
+doc_id: META-PRD-{NNN}
+tags: []
+contributors: []
+approvers: []
+---
 
 <!--
 Product operating system itself: agent workflow, document standard, evidence
@@ -25,9 +33,8 @@ HIERARCHY (mandatory — skeleton bullets fail review):
   Phase → Workflow req (MR-<phase>.<n>) and/or Doc+eval req (DR-<phase>.<n>)
   Requirement → Acceptance (*Acceptance* or AC-MR/DR-<phase>.<n>.<k>)
 
-MR = how the process/agent workflow must behave (observable in artifacts/state).
-DR = how outputs are shaped, reviewed, scored (sections, evidence, rubrics).
-
+Each phase needs **Why?** (human purpose for operators/authors) plus **Goal**.
+Inclusive framing: name who runs the practice and who is harmed if it fails.
 Prefer unknown / [unverified] with owner + decision-by date over fabrication.
 -->
 
@@ -72,6 +79,19 @@ Examples of the right shape:
 
 **Practitioner outcome** (one sentence): {What becomes different when someone opens the artifact or runs the workflow.}
 
+## Timing & stakes
+
+<!-- Org-system bets still need urgency without cloning the full customer PRD spine. -->
+
+{Why this operating-system change cannot wait. Name revenue/ops/compliance stakes or mark unknown with owner.}
+
+| Timing dimension | Present? | Estimate / window | Source |
+|---|---|---|---|
+| Revenue / adoption at risk | yes / no / unknown | {or unknown} | {URL+date / unknown — owner: {name} by {YYYY-MM-DD}} |
+| Cost of delay | yes / no / unknown | {toil / incident / unknown} | {…} |
+| Compliance / legal deadline | yes / no / unknown | {or unknown} | {recruit privacy/legal if yes} |
+| Competitive / market window | yes / no / unknown | {or unknown} | {…} |
+
 ## Principles
 
 Durable rules this operating system must preserve across phases. Each principle should be testable enough to guide tradeoffs when phases conflict.
@@ -97,6 +117,7 @@ Status: not started | in progress | shipped | deferred.
 
 ### Phase 1: {name}
 
+- **Why?**: {human purpose — which operators/authors benefit and what failure mode this phase reduces}
 - **Goal**: {what this phase delivers for the operating system}
 - **Status**: not started
 - **Requirements**: MR-1.1, DR-1.1, …
@@ -114,6 +135,7 @@ Status: not started | in progress | shipped | deferred.
 
 ### Phase 2: {name}
 
+- **Why?**: {human purpose for this phase}
 - **Goal**: {…}
 - **Status**: not started
 - **Requirements**: MR-2.1, DR-2.1, …
@@ -131,6 +153,7 @@ Status: not started | in progress | shipped | deferred.
 
 ### Phase 3: {name}
 
+- **Why?**: {human purpose for this phase}
 - **Goal**: {…}
 - **Status**: not started
 - **Requirements**: MR-3.1, DR-3.1, …

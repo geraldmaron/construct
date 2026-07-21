@@ -34,6 +34,7 @@ Fixture content for Inputs and evidence.
 
 ### Phase 1: Evidence gate
 
+- **Why?**: Authors and reviewers need cited sources before review so fabricated claims cannot pass as research-grade.
 - **Goal**: Require cited sources before review.
 - **Status**: not started
 - **Requirements**: MR-1.1, DR-1.1

@@ -26,6 +26,7 @@ suspected risk you can't pinpoint is a question, not a finding.
 - [ ] XSS / CSRF / SSRF
 - [ ] Dependencies (known CVEs in direct dependencies)
 - [ ] Cryptography (weak algorithms, hardcoded keys, insufficient entropy)
+- [ ] Compliance / privacy obligations (retention, deletion, disclosure, licensing — see Compliance section)
 
 <!-- Tick boxes for what was actually examined. A category not ticked is not "passed" — it's "not audited." Say so. -->
 
@@ -33,7 +34,18 @@ suspected risk you can't pinpoint is a question, not a finding.
 
 | Category | Severity | Location | Trigger | Evidence | Recommended Fix |
 |---|---|---|---|---|---|
-| {one of the 8 categories above} | critical / high / medium / low | `path/to/file.ext:NNN` | {how an attacker reaches it} | CVE-NNNN / repro / pattern | {minimum patch} |
+| {one of the categories above} | critical / high / medium / low | `path/to/file.ext:NNN` | {how an attacker reaches it} | CVE-NNNN / repro / pattern | {minimum patch} |
+
+## Compliance
+
+Complete when PII, regulated processing, licensing, or contractual a11y appears. Produce or link a `compliance-memo` / DPIA when triggers fire. Not legal advice.
+
+| Obligation class | Present? | Control evidence | Residual risk | Follow-up artifact |
+|---|---|---|---|---|
+| Privacy / PII | yes / no / unknown | {path or missing} | {…} | dpia-or-privacy-assessment / none |
+| Regulatory / contractual | yes / no / unknown | {…} | {…} | compliance-memo / none |
+| License / supply chain | yes / no / unknown | {SBOM / license scan} | {…} | license-audit / none |
+| Accessibility as legal duty | yes / no / unknown | {audit path} | {…} | accessibility-audit / legal-compliance |
 
 ## Remediation priority
 <!-- Order the findings by what to fix first. Group critical/high together; medium/low can be backlogged with explicit acceptance. -->
@@ -45,4 +57,5 @@ suspected risk you can't pinpoint is a question, not a finding.
 
 - code fix → `next:engineer`
 - platform / infrastructure fix → `next:cx-platform-engineer`
+- compliance memo / counsel → `security.legal-compliance` + `templates/docs/compliance-memo.md`
 - review of remediation → `next:reviewer`

@@ -8,7 +8,7 @@ triggers: ["artifact", "prd", "requirements", "draft", "author", "anti-fabricati
 ---
 # Artifact authorship (all specialists)
 
-Canonical contract for how Construct specialists create and review typed artifacts. Load before drafting. Persona overlays add failure modes; they do not waive this contract. See also `rules/common/no-fabrication.md` and `registry/worker-profiles/prompts/_shared/validation-contract.md`.
+Canonical contract for how Construct specialists create and review typed artifacts. Load before drafting. Persona overlays add failure modes; they do not waive this contract. See also `rules/common/no-fabrication.md`, `rules/common/human-voice.md`, and `registry/worker-profiles/prompts/_shared/validation-contract.md`.
 
 ## Lifecycle (do not skip steps)
 
@@ -43,7 +43,8 @@ Answer before drafting body prose:
 - Separate **observation**, **inference**, and **recommendation**. Label confidence.
 - Percentages, market sizes, competitor features, legal conclusions, and customer quotes are high-risk fabrication surfaces: mark `unknown` until evidenced.
 - User advocacy requires researched user data (interviews, tickets, telemetry, research briefs). Stakeholder preference alone is insufficient for requirements that claim user benefit.
-- Competitive landscape sections require named competitors, compared dimensions, and sources. "Everyone does X" is blocked.
+- Competitive landscape sections require named competitors, compared dimensions, and sources (`skills/strategy/competitive-intel.md`). "Everyone does X" is blocked.
+- **Why This Matters Now** owns timing economics (revenue at risk, upside window, market timing, cost of delay, competitive window, compliance deadline). Structural unit economics stay under Competitive/Financial; use `skills/strategy/financial-model.md` for Low/Base/High ranges.
 
 ## Template population rules
 
@@ -51,9 +52,18 @@ Answer before drafting body prose:
 2. Leave placeholders only when the field is truly unknown: replace `{…}` with `unknown` + owner + decision-by date.
 3. Do not delete required sections to hide ignorance. Empty required sections fail review.
 4. Narrative sections use short paragraphs. Tables for comparisons. Bullets for scans only.
-5. Diagrams use Mermaid/D2 with hand-drawn distribution styling on publish (`--figures`). Caption every figure; alt text for accessibility.
-6. **Hierarchy depth (PRD and phased delivery docs):** Phase → Requirement (`FR-<phase>.<n>`) → Acceptance Criteria (`AC-<phase>.<n>.<k>`). Skeleton bullets without nested ACs fail. Customer PRDs must use the exact 12-section set in `templates/docs/prd.md` (TL;DR … References).
-7. **Refusal:** if the user asks for a “quick PRD” that would drop hierarchy, competitive/financial honesty, legal triggers, or user evidence, refuse the thin shape and return the template sections that remain `unknown` with owners.
+5. Diagrams use Mermaid/D2 with **compact notebook-ink** styling on publish (`--figures`): handDrawn + Caveat labels, tight spacing, slate-teal accent, not the old loose Construct sketch theater. Prefer LR flowcharts with short labels. Caption every figure.
+6. **Hierarchy depth (PRD and phased delivery docs):** Phase → Requirement (`FR-<phase>.<n>`) → Acceptance Criteria (`AC-<phase>.<n>.<k>`). List ACs under each FR; keep ## Acceptance Criteria as an index. Don't restate Phase on every FR; use `### Phase N: Name` then `#### Area` then `##### FR`. Skeleton bullets without nested ACs fail. Why Now must include the timing-economics table; one-line stubs fail lint. Mix prose, short lists, compact tables, and diagrams; walls of tables fail review.
+7. **Phase Why? (phased docs):** Every phase needs a human **Why?**: purpose, who benefits (named roles/contexts), what risk it reduces. Put Why? in the Phases roadmap table and as `**Why?**` prose under each `### Phase N` heading before FRs/MRs. Meta-PRDs use `- **Why?**:` beside Goal. Skeleton phase tables without Why? fail review (`lintPrdDeliveryDepth` checks customer/platform PRDs).
+8. **Inclusive / human framing:** Write for people in named roles and contexts. Avoid ableist or gendered defaults. Name impact: who is helped or harmed if the artifact ships wrong. Accessibility (WCAG) is product quality where UI ships, not a footnote. Sterile body duplicates of masthead (H1 + Date/Owner/Status) are banned when YAML frontmatter already carries those fields.
+9. **Human voice bar (load-bearing):** Sound like a careful colleague, not a corporate LLM. See `rules/common/human-voice.md`.
+
+   - **Prefer contractions** in prose: `don't`, `won't`, `can't`, `isn't`, `we're`, `it's`, `that's`.
+   - **Avoid spaced em dashes** (` — `) and Unicode em dash (U+2014). Prefer commas, periods, colons, or parentheses.
+   - **Refuse LLM tells** (non-exhaustive): `delve`, `landscape` (outside required section titles), `robust`, `leverage` as filler, `it's important to note`, `In today's…`, `This ensures that…`, stacked empty tricolons.
+   - **Tone:** engaging, concrete, skeptical of fluff; still no fabrication and still depth-first.
+   - **Exceptions:** acceptance-criteria precision; legal `shall` / `must` / `must not`; quoted statute or primary source; validators that require exact section titles.
+10. **Refusal:** if the user asks for a “quick PRD” that would drop hierarchy, Phase Why?, Why-Now timing economics, competitive/financial honesty, legal triggers, user evidence, or human voice, refuse the thin shape and return the template sections that remain `unknown` with owners.
 
 ## PRD section contract (customer `prd`)
 
@@ -72,7 +82,7 @@ Exact top-level headings (validators match case-insensitively):
 11. Risks
 12. References
 
-Legal trigger tables, FMEA, and open questions live under **Risks**. User-evidence tables live under **Background**. Do not invent parallel top-level sections that replace these.
+Legal trigger tables, FMEA, and open questions live under **Risks**. User-evidence tables live under **Background**. Why Now carries financially meaningful **timing** pressure; Competitive/Financial carries landscape + structural economics. Do not invent parallel top-level sections that replace these.
 
 ## Artifact family spines (native; do not force the 12 PRD sections)
 
@@ -97,7 +107,9 @@ Runtime: `lintArtifactDeliveryDepth(type, body)` via `construct artifact validat
 - Escalate certainty only as evidence accumulates. Do not open with confident metrics that appear later as `[unverified]`.
 - Make tradeoffs and the strongest counter-argument visible before the recommendation.
 - End with open questions that name owners. Do not bury blockers in prose.
-- Publish/PDF/PPT: preserve the same hierarchy — phases as chapters or slides; one FR cluster per slide max; never dump a dense PRD into a single PPTX slide (use `---` separators; layout audit must pass).
+- **One continuous story** across related artifacts (PRD ↔ ADR ↔ compliance memo ↔ deck): same problem, same phase boundaries, same open questions with the same owners, not jumpy rewrites per persona.
+- **Multi-persona fingerprints** must be substantive: researcher evidence gaps, architect tradeoffs, privacy/legal gates, a11y criteria, ops/QA verify paths, engineer constraints, reviewer FMEA, written into Requirements/Risks/Open questions, not Contributors name-drops.
+- Publish/PDF/PPT: preserve the same hierarchy (phases as chapters or slides; one FR cluster per slide max). Never dump a dense PRD into a single PPTX slide (use `---` separators; layout audit must pass).
 
 ## Adversarial review (minimum)
 
@@ -116,6 +128,7 @@ High-risk types (PRD family, threat-model, security-review, strategy with regula
 - No "studies show" without a citation the reader can open.
 - No silent promotion of inference to fact.
 - Research evidence gate and output quality gate failures are unfinished work, not warnings to ignore.
+- **Inline citations** per [`rules/common/citation.md`](../../rules/common/citation.md): after each load-bearing claim use `([Short title](https://…); accessed YYYY-MM-DD)`, `[source: path#anchor]`, or a defined `[^n]` footnote. Keep the Sources/References table, but do not rely on title-only cites ("see Architecture") with no link. Verify http(s) URLs with `construct artifact validate … --check-links` before publish.
 
 ## Cross-persona trigger matrix (authors must fire these)
 
@@ -151,13 +164,22 @@ Use during PRD/requirements/strategy authoring even when the user did not ask fo
 | Strategy / memo | product-manager or business-strategist | reviewer + researcher |
 | Accessibility audit | designer.accessibility | designer + qa.web-ui |
 
+## Before you write (voice checklist)
+
+- [ ] Contractions prose where natural (`don't` / `won't` / `can't`)
+- [ ] No spaced em-dash theater; commas/periods/colons/parens instead
+- [ ] No LLM tells from the refuse set above
+- [ ] Reads like a careful colleague; inclusive impact named
+- [ ] Exceptions respected (ACs, legal shall/must, quotes, exact section titles)
+
 ## DONE definition (shared)
 
 An artifact is DONE only when:
 
 1. Framing questions answered
 2. Template sections populated or explicitly unknown with owners
-3. Triggered cross-persona reviews completed or queued with dates
-4. Adversarial pass recorded
-5. `construct artifact validate` passes for the type
-6. Publish evidence present if distribution was requested
+3. Human voice bar met (contractions prose; no em-dash theater; no AI tells)
+4. Triggered cross-persona reviews completed or queued with dates
+5. Adversarial pass recorded
+6. `construct artifact validate` passes for the type
+7. Publish evidence present if distribution was requested

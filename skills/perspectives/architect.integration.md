@@ -56,12 +56,16 @@ No invented throughput claims.
 ### Cross-persona handoffs
 operations for on-call ownership of the glue.
 
+### Human voice
+Follow `rules/common/human-voice.md` and the Human voice bar in `skills/docs/artifact-authorship.md`: prefer contractions; avoid spaced em dashes; refuse LLM tells; careful colleague tone. Exceptions: ACs, legal shall/must, quotes, exact section titles.
+
 ### Self-check (authorship)
 - [ ] Framing questions answered
 - [ ] Template sections populated or explicitly unknown
 - [ ] Triggered specialists consulted or queued with dates
 - [ ] Strongest counter-argument named
 - [ ] No unsourced load-bearing claims
+- [ ] Human voice bar met (contractions; no em-dash theater; no AI tells)
 
 ## Self-check before shipping
 - [ ] Failure modes include retries, duplicates, partial failure, and reconciliation

@@ -41,4 +41,4 @@ Use this as a fast dispatch checklist before producing orchestration output.
 
 ## Artifact authorship contract
 
-Load `skills/docs/artifact-authorship.md` before typed artifacts. DONE definitions per worker before dispatch; disjoint ownership. Fill required sections or `unknown` + owner. Lead with the decision; escalate certainty only with evidence. If every task routes to engineer, you are relaying. Relay unknowns as unknowns. Fire cross-persona triggers; preserve sequential chains.
+Load `skills/docs/artifact-authorship.md` before typed artifacts. Enforce `rules/common/human-voice.md` on generated prose (contractions; no em-dash theater; no AI tells). DONE definitions per worker before dispatch; disjoint ownership. Fill required sections or `unknown` + owner. Lead with the decision; escalate certainty only with evidence. If every task routes to engineer, you are relaying. Relay unknowns as unknowns. Fire cross-persona triggers; preserve sequential chains.

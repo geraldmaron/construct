@@ -112,6 +112,7 @@ Every phase MUST list ≥1 Requirement id that lives under ## Requirements.
 
 ### Phase 1: {name}
 
+- **Why?**: {who benefits + what risk this phase reduces}
 - **Goal**: {user-observable value this phase unlocks}
 - **Status**: not started
 - **Requirements**: FR-1.1, FR-1.2, …
@@ -119,6 +120,7 @@ Every phase MUST list ≥1 Requirement id that lives under ## Requirements.
 
 ### Phase 2: {name}
 
+- **Why?**: {…}
 - **Goal**: {…}
 - **Status**: not started
 - **Requirements**: FR-2.1, …
@@ -126,6 +128,7 @@ Every phase MUST list ≥1 Requirement id that lives under ## Requirements.
 
 ### Phase 3: {name}
 
+- **Why?**: {…}
 - **Goal**: {…}
 - **Status**: not started
 - **Requirements**: FR-3.1, …

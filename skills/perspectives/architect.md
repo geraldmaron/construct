@@ -86,12 +86,16 @@ No invented latency/cost numbers; mark estimates as estimates with method.
 ### Cross-persona handoffs
 Security for trust boundaries; ops for operability; engineer for buildability.
 
+### Human voice
+Follow `rules/common/human-voice.md` and the Human voice bar in `skills/docs/artifact-authorship.md`: prefer contractions; avoid spaced em dashes; refuse LLM tells; careful colleague tone. Exceptions: ACs, legal shall/must, quotes, exact section titles.
+
 ### Self-check (authorship)
 - [ ] Framing questions answered
 - [ ] Template sections populated or explicitly unknown
 - [ ] Triggered specialists consulted or queued with dates
 - [ ] Strongest counter-argument named
 - [ ] No unsourced load-bearing claims
+- [ ] Human voice bar met (contractions; no em-dash theater; no AI tells)
 
 ## Self-check before shipping
 

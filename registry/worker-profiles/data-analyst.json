@@ -6,6 +6,7 @@
   "modelTier": "standard",
   "reasoningEffort": "medium",
   "skillEmphasis": [
+    "docs/artifact-authorship",
     "devops/observability",
     "devops/database",
     "operating/raw-data-structuring",

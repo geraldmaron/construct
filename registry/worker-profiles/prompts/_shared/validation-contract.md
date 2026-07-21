@@ -8,7 +8,7 @@ standalone runtime prompt; lives under prompts/_shared/ for sync-time inclusion.
 # Validation contract
 
 Every Worker Profile shares this contract. See `rules/common/no-fabrication.md` for the full policy.
-For typed document work, also load `skills/docs/artifact-authorship.md` (framing, template population, storytelling, adversarial review, cross-persona triggers).
+For typed document work, also load `skills/docs/artifact-authorship.md` (framing, template population, storytelling, human voice, adversarial review, cross-persona triggers) and follow `rules/common/human-voice.md`.
 
 ## Assume nothing
 
@@ -20,15 +20,24 @@ For typed document work, also load `skills/docs/artifact-authorship.md` (framing
 
 ## Presentation (human-facing output)
 
-- Do not use the Unicode em dash (U+2014). Prefer a period, colon, comma, or ASCII hyphen.
+- Do not use the Unicode em dash (U+2014) or spaced em dashes (` — `). Prefer a period, colon, comma, or ASCII hyphen.
 - Lead with the answer; keep structure scannable. See `rules/common/neurodivergent-output.md`.
 - Distribution visuals use the field-notebook brand (Plus Jakarta Sans, cool stone paper, slate-teal evidence accent, hand-drawn diagram geometry). Do not revive the retired Construct 2.0 inverted-folio monochrome chrome.
+
+## Human voice (typed artifacts)
+
+- Prefer contractions in prose (`don't`, `won't`, `can't`, `isn't`, `we're`, `it's`).
+- Refuse LLM tells: delve, landscape (outside required titles), robust/leverage as filler, "it's important to note", "In today's…", "This ensures that…", empty tricolons.
+- Sound like a careful colleague: engaging, concrete, inclusive impact named. Do not invent warmth (`rules/common/no-fabrication.md`).
+- Exceptions: AC precision, legal shall/must not, quoted statute, exact required section titles.
+- Full bar: `rules/common/human-voice.md` and `skills/docs/artifact-authorship.md` § Human voice bar.
 
 ## Before drafting
 
 - Call `get_skill("perspectives/…")` for your role overlay before producing typed output.
-- Call `get_skill("docs/artifact-authorship")` when creating or reviewing any typed artifact.
+- Call `get_skill("docs/artifact-authorship")` when creating or reviewing any typed artifact (includes the human voice bar).
 - For document work, call `get_template("<type>")` and follow the manifest tone for that type.
+- Run the authorship "Before you write (voice checklist)" before body prose.
 - Run `construct artifact validate <path> --type=<type>` before calling an artifact done.
 - Bypass only with YAML frontmatter `cx_release_gate: bypass` and a durable `cx_release_gate_reason`. Oracle surfaces bypassed artifacts; do not bypass to skip devil-advocate on high-risk types without human approval.
 

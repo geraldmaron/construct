@@ -100,15 +100,23 @@
   date,
   doc-id: "",
   version: "",
+  status: "",
+  tags: "",
+  contributors: "",
+  approvers: "",
   classification: "",
 ) = {
   let rows = ()
   if artifact-type != "" { rows.push(("Type", construct-badge-label(artifact-type))) }
   if doc-id != "" { rows.push(("ID", doc-id)) }
   if version != "" { rows.push(("Version", "v" + version)) }
-  if classification != "" { rows.push(("Classification", upper(classification))) }
+  if status != "" { rows.push(("Status", upper(status))) }
   if owner != "" { rows.push(("Owner", owner)) }
+  if contributors != "" { rows.push(("Contributors", contributors)) }
+  if approvers != "" { rows.push(("Approvers", approvers)) }
+  if tags != "" { rows.push(("Tags", tags)) }
   if date != "" { rows.push(("Date", date)) }
+  if classification != "" { rows.push(("Classification", upper(classification))) }
   if rows.len() == 0 { none }
   else {
     block(
@@ -126,7 +134,11 @@
         row-gutter: 6pt,
         ..rows.map(row => (
           text(font: construct-font-sans, size: fs-micro, weight: wt-bold, fill: accent, tracking: 0.08em)[#upper(row.at(0))],
-          text(font: construct-font-sans, size: fs-small, weight: wt-medium, fill: ink-strong)[#row.at(1)],
+          {
+            set text(font: construct-font-sans, size: fs-small, weight: wt-medium, fill: ink-strong)
+            set par(leading: 0.72em)
+            row.at(1)
+          },
         )).flatten()
       )
     ]
@@ -144,6 +156,9 @@
   artifact-type,
   version: "",
   doc-id: "",
+  tags: "",
+  contributors: "",
+  approvers: "",
   classification: "",
 ) = {
   block(
@@ -190,6 +205,10 @@
     date,
     doc-id: doc-id,
     version: version,
+    status: status,
+    tags: tags,
+    contributors: contributors,
+    approvers: approvers,
     classification: classification,
   )
   if grid != none { grid }
@@ -204,20 +223,17 @@
   block(
     fill: tint,
     stroke: (paint: hairline-strong, thickness: 0.9pt, dash: "dashed"),
-    inset: (left: 14pt, top: 13pt, bottom: 12pt, right: 14pt),
+    inset: (left: 14pt, top: 14pt, bottom: 12pt, right: 14pt),
     width: 100%,
     radius: 4pt,
     above: 1.15em,
     below: 1.15em,
+    breakable: true,
   )[
-    #set par(leading: 0.68em, spacing: 0.78em)
+    #set par(leading: 0.72em, spacing: 0.82em)
     #set text(font: construct-font-sans, size: fs-body, fill: ink-body)
-    #place(top + left, dx: 10pt, dy: -7pt)[
-      #box(fill: paper, inset: (x: 4pt, y: 0pt))[
-        #text(size: fs-micro, weight: wt-bold, fill: accent, tracking: 0.1em)[#upper(label)]
-      ]
-    ]
-    #v(0.35em)
+    #text(size: fs-micro, weight: wt-bold, fill: accent, tracking: 0.1em)[#upper(label)]
+    #v(0.5em)
     #body
   ]
 }
@@ -374,12 +390,21 @@
     below: 1.35em,
   )[#text(font: construct-font-mono, size: fs-meta, fill: ink-body)[#it]]
 
+  // Horizontal rules only: vertical grid lines often collide with wrapped cell text.
+
   set table(
-    stroke: 0.5pt + hairline,
-    inset: (x: 10pt, y: 8pt),
+    stroke: (x, y) => (
+      top: if y == 0 { 0pt } else { 0.45pt + hairline },
+      bottom: 0.45pt + hairline,
+      left: 0pt,
+      right: 0pt,
+    ),
+    inset: (x: 12pt, y: 10pt),
     fill: (x, y) => if y == 0 { accent-soft } else if calc.rem(y, 2) == 0 { surface } else { paper },
   )
+  show table: set block(breakable: true, above: 1.35em, below: 1.5em, width: 100%)
   show table.cell: it => {
+    set par(leading: 0.88em)
     if it.y == 0 {
       set text(font: construct-font-sans, weight: wt-bold, fill: ink, size: fs-small)
       it
@@ -397,17 +422,18 @@
   show figure.where(kind: table): set block(breakable: true)
   show figure.where(kind: table): it => {
     let content = if it.body.has("body") { it.body.body } else { it.body }
-    block(above: 1.25em, below: 1.4em, width: 100%, align(left, content))
+    block(above: 1.35em, below: 1.55em, width: 100%, align(left, content))
   }
 
   set figure(supplement: "Figure")
-  show figure.where(kind: image): it => block(above: 1.25em, below: 1.25em, breakable: false, {
+  show figure.where(kind: image): it => block(above: 1.4em, below: 1.5em, breakable: false, {
     block(
       stroke: (paint: hairline-strong, thickness: 0.85pt, dash: "dashed"),
       fill: paper,
-      inset: 12pt,
+      inset: 14pt,
       width: 100%,
       radius: 4pt,
+      clip: true,
     )[
       #align(center, layout(avail => {
         let natural = measure(it.body)
@@ -422,7 +448,7 @@
       }))
     ]
     if it.caption != none {
-      v(0.45em)
+      v(0.55em)
       align(left)[
         #text(font: construct-font-mono, size: fs-micro, weight: wt-medium, fill: accent)[Fig. #it.counter.display()]
         #text(font: construct-font-sans, size: fs-micro, fill: ink-muted)[: #it.caption.body]

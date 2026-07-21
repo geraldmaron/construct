@@ -6,6 +6,7 @@
   "modelTier": "strong",
   "reasoningEffort": "high",
   "skillEmphasis": [
+    "docs/artifact-authorship",
     "quality-gates/verify-change",
     "devops/observability",
     "devops/performance",

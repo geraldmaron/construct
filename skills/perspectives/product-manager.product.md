@@ -56,12 +56,16 @@ No fabricated NPS, conversion, or churn deltas.
 ### Cross-persona handoffs
 User research + competitive landscape required when claiming differentiation.
 
+### Human voice
+Follow `rules/common/human-voice.md` and the Human voice bar in `skills/docs/artifact-authorship.md`: prefer contractions; avoid spaced em dashes; refuse LLM tells; careful colleague tone. Exceptions: ACs, legal shall/must, quotes, exact section titles.
+
 ### Self-check (authorship)
 - [ ] Framing questions answered
 - [ ] Template sections populated or explicitly unknown
 - [ ] Triggered specialists consulted or queued with dates
 - [ ] Strongest counter-argument named
 - [ ] No unsourced load-bearing claims
+- [ ] Human voice bar met (contractions; no em-dash theater; no AI tells)
 
 ## Self-check before shipping
 - [ ] Persona includes workflow context, not just role title

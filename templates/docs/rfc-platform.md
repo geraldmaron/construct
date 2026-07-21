@@ -125,6 +125,17 @@ Flag consumers that require coordinated migration.
 |---|---|---|---|
 | {compatibility / adoption / coordination} | low / med / high | low / med / high | {action} |
 
+### Legal, privacy, and security triggers
+
+Align thickness with customer RFC / PRD. Route fired rows before acceptance.
+
+| Trigger | Present? | Data / boundary | Specialist | Gate |
+|---|---|---|---|---|
+| PII / accounts / identity | yes / no / unknown | {what} | security.privacy | DPIA / retention |
+| AuthN / AuthZ / secrets | yes / no / unknown | {trust boundary} | security | threat model or N/A |
+| Breaking consumer contracts | yes / no / unknown | {who} | architect + ops | migration + rollback |
+| Compliance / licensing | yes / no / unknown | {what} | security.legal-compliance | compliance-memo |
+
 ### Adversarial challenge (FMEA)
 
 | Failure mode | Effect | Cause | S×O×D (1–10) | Mitigation or accept-with-rationale |

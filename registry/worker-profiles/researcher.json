@@ -6,6 +6,7 @@
   "modelTier": "standard",
   "reasoningEffort": "medium",
   "skillEmphasis": [
+    "docs/artifact-authorship",
     "docs/research-workflow",
     "devops/dependency-management",
     "docs/transcript-synthesis",

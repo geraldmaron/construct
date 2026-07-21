@@ -56,12 +56,16 @@ No invented adoption counts or API call volumes.
 ### Cross-persona handoffs
 Ops + security for multi-tenant or shared-service changes.
 
+### Human voice
+Follow `rules/common/human-voice.md` and the Human voice bar in `skills/docs/artifact-authorship.md`: prefer contractions; avoid spaced em dashes; refuse LLM tells; careful colleague tone. Exceptions: ACs, legal shall/must, quotes, exact section titles.
+
 ### Self-check (authorship)
 - [ ] Framing questions answered
 - [ ] Template sections populated or explicitly unknown
 - [ ] Triggered specialists consulted or queued with dates
 - [ ] Strongest counter-argument named
 - [ ] No unsourced load-bearing claims
+- [ ] Human voice bar met (contractions; no em-dash theater; no AI tells)
 
 ## Self-check before shipping
 - [ ] Platform actor and owned boundary are explicit

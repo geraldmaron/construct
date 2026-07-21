@@ -102,6 +102,20 @@ Who to page, in what order, after how long. Technical and business paths.
 | {N min without recovery} | {role / rotation} | {…} |
 | {…} | {business / exec} | {…} |
 
+### PII / privacy breach branch
+
+When the incident involves personal data, accounts, or unauthorized disclosure:
+
+| Step | Action | Owner | Deadline |
+|---|---|---|---|
+| Confirm data classes exposed | {inventory} | security.privacy | immediate |
+| Contain + revoke access | {steps} | on-call + security | immediate |
+| Notification assessment | jurisdiction clocks (e.g. 72h where applicable) — `[unverified]` until counsel | security.legal-compliance | {hours} |
+| Counsel / DPO gate | named contact | counsel | before external statements |
+| External notice | only after counsel | legal + comms | per counsel |
+
+Do not invent notification clocks. Mark jurisdiction duties `[unverified]` until counsel confirms. Link DPIA / compliance-memo when one exists.
+
 ## Post-incident
 
 What to capture for the incident report. Pointers to logs, dashboards, trace IDs to preserve.
@@ -110,6 +124,7 @@ What to capture for the incident report. Pointers to logs, dashboards, trace IDs
 |---|---|---|
 | Logs / traces | {path or query} | {role} |
 | Timeline notes | {…} | {…} |
+| Privacy / legal notes | {if PII involved} | security.privacy / legal-compliance |
 
 ## Adversarial challenge
 
@@ -118,6 +133,7 @@ Failure mode that would strand an on-call engineer mid-incident:
 | Failure mode | Effect | Mitigation |
 |---|---|---|
 | {missing permission / stale command / unknown dependency} | {stranded operator} | {guardrail or verified alternate path} |
+| PII incident treated as “just SEV-2 outage” | Missed notification window | Force privacy breach branch above |
 
 ## References
 

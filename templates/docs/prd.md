@@ -1,8 +1,16 @@
-# PRD: {title}
-
-- **Date**: {YYYY-MM-DD}
-- **Owner**: {name}
-- **Status**: draft | in-review | approved | shipped | deprecated
+---
+title: "{title}"
+subtitle: "{one-line outcome or scope}"
+status: draft
+owner: "{name}"
+artifactType: prd
+date: {YYYY-MM-DD}
+version: "0.1"
+doc_id: PRD-{NNN}
+tags: []
+contributors: []
+approvers: []
+---
 
 <!--
 Customer-facing product capability, user workflow, or requirement set.
@@ -13,188 +21,233 @@ Owning specialist: product-manager (rules/common/doc-ownership.md).
 Before drafting: rules/common/framing.md + get_skill("docs/artifact-authorship")
   + get_skill("perspectives/product-manager").
 
-HIERARCHY (mandatory — skeleton bullets fail review):
+HIERARCHY (mandatory; skeleton bullets fail review):
   Phase → one or more Requirements (FR-<phase>.<n>)
-  Requirement → one or more Acceptance Criteria (AC-<phase>.<n>.<k>)
-Depth means: each FR states the system obligation in prose; each AC is an
-observable, falsifiable check a stranger can run without asking the author.
+  Requirement → one or more Acceptance Criteria (AC-<phase>.<n>.<k>) listed
+  under that requirement (not only referenced by id).
+
+PHASE WHY? (mandatory):
+  Every phase needs a human Why?: purpose, who benefits, what risk it reduces.
+  Put Why? in the Phases roadmap table and as **Why?** prose under each
+  ### Phase N heading (before FRs). Name roles/contexts, not a monolithic "user."
+
+LAYOUT (mandatory; walls of tables fail review):
+  Mix prose, short lists, compact tables, and diagrams. Prefer LR Mermaid
+  flowcharts with short labels. Don't restate Phase on every FR; phase is
+  the ### heading under Requirements; area is the #### subsection.
+  Prose must carry real thought. Bullet theater fails review.
+
+INCLUSIVE / HUMAN FRAMING:
+  Write for people in named roles and contexts. Avoid ableist or gendered
+  defaults. Accessibility is product quality (WCAG targets where UI ships),
+  not a footnote. Impact framing: who is helped or harmed if this ships wrong.
+
+VOICE (human, not corporate-LLM) — rules/common/human-voice.md +
+  get_skill("docs/artifact-authorship") Human voice bar:
+  Short beats. Prefer contractions (don't, won't, can't, isn't, we're, it's)
+  except where formal negation is load-bearing (shall not, AC precision).
+  Avoid spaced em dashes; prefer commas, periods, colons, or parentheses.
+  Avoid AI tells: delve, landscape (outside the section title), robust,
+  leverage, "it's important to note", "In today's…", "This ensures that…".
 
 Refuse fabrication. Prefer unknown / [unverified] with owner + decision-by date.
 When ordering Goals or phase priority is contested, use
 strategy/prioritization-methods rather than gut ranking.
+Multi-persona tension (researcher, architect, privacy/legal, a11y, ops/QA,
+engineer, reviewer) belongs in Requirements, Risks, and Open questions, not
+as name-drops in Contributors alone.
 -->
 
 ## TL;DR
 
-{3–5 sentence executive brief: what changes, who it is for, why now, what “done” looks like for the decision-maker. No undecided solutions. No ticket IDs. No team names.}
-
-<!-- Busy-reader section. If this is thin, the PRD is not ready. -->
+{3–5 sentence executive brief in human voice: what changes, which named roles
+it serves, why now, what “done” looks like for the decision-maker. No undecided
+solutions. No ticket IDs. No invented team or customer names.}
 
 ## Background
 
-{Current workflow or system, prior decisions (linked PRDs/ADRs), and re-verifiable evidence. Cite ≥2 independent user-evidence sources or mark research-required.}
+{1–2 short paragraphs: current workflow, prior decisions, and what evidence exists. Then a compact evidence table, not a dump of process docs.}
 
-| Evidence source | Type | What it shows | Link / id |
-|---|---|---|---|
-| {interview / ticket / telemetry / research brief} | qualitative / quantitative | {claim} | {path or URL + access date} |
-| {second independent source} | … | … | … |
+| Evidence | What it shows | Link / id |
+|---|---|---|
+| {interview / ticket / telemetry} | {claim} | {path or URL + access date} |
+| {second independent source} | {claim} | {…} |
 
-If fewer than two sources exist, set implication to **research-required** and open a research task before locking scope. Stakeholder preference alone is insufficient.
+If fewer than two sources exist, mark **research-required** and open a research task before locking scope.
 
 ## Problem
 
-{Affected users} cannot reliably achieve {desired outcome} because {constraint or failure mode}.
+{Affected users} can't reliably achieve {desired outcome} because {constraint or failure mode}.
 
-Write pain, not solution. Must not cite ticket IDs, OKRs, or “the team decided.” Must cite observed behavior or quantitative signals (or mark `[unverified]`).
+Write pain in prose, not a solution pitch. Cite observed behavior or mark `[unverified]`.
 
 ```mermaid
-flowchart TD
-  A[User starts] --> B{Current friction?}
-  B -->|Yes| C[Costly workaround]
-  B -->|No| D[Existing path]
-  C --> E[Blocked outcome]
+flowchart LR
+  A[Start] --> B{Friction?}
+  B -->|yes| C[Workaround]
+  B -->|no| D[Path]
+  C --> E[Blocked]
   D --> E
 ```
 
+*Figure: where the user journey breaks today. Keep labels short; prefer LR layout.*
+
 ## Outcomes - Goals & Non-Goals
 
-**Goals** (outcome change, not activity; 3–5 max; order by importance):
+**Goals** (outcome change, not activity; 3–5 max):
 
 1. {Measurable or observable outcome for a named segment}
 2. {…}
 3. {…}
 
-**Non-goals** (protect schedule; be specific):
+**Non-goals** (protect schedule):
 
-| Non-goal | Why deferred |
-|---|---|
-| {explicitly out of scope} | {reason} |
-| {adjacent follow-up} | {reason} |
+- {explicitly out of scope}: {one-line why}
+- {adjacent follow-up}: {one-line why}
 
 ## Why This Matters Now
 
-{Why this decision cannot wait: cost of delay, competitive pressure, compliance window, or compounding user harm. Separate observation from inference. No roadmap-speak without evidence.}
+<!-- Timing economics: revenue, upside, market, cost of delay, competitive window, compliance. -->
 
-| Trigger | Present? | Why it forces timing |
+{2–4 sentences: the timing thesis in prose. Name what compounds if we wait.}
+
+Then the compact timing table (do not expand into six separate essays):
+
+| Timing dimension | Estimate / window | Source |
 |---|---|---|
-| User harm / support load | yes / no / unknown | {evidence or unknown} |
-| Competitive pressure | yes / no / unknown | {see Competitive section} |
-| Legal / compliance window | yes / no / unknown | {recruit privacy/legal if yes} |
-| Cost of delay | yes / no / unknown | {what compounds if we wait} |
+| Revenue at risk | {ARR/pipeline/$ or unknown} | {URL+date / unknown; owner: {name} by {YYYY-MM-DD}} |
+| Upside / opportunity window | {window end or unknown} | {…} |
+| Market timing | {season / shift or unknown} | {…} |
+| Cost of delay | {$ / compounding harm or unknown} | {…} |
+| Competitive window | {who moves / when or unknown} | {see Competitive} |
+| Compliance / legal deadline | {date / regulation or unknown} | {recruit privacy/legal if yes} |
 
 ## Competitive Landscape & Financial Considerations
 
 ### Competitive landscape
 
+{2–3 sentences on how alternatives solve (or fail) this job. Then a small matrix.}
+
 | Competitor / alternative | Dimension | Their approach | Our stance | Source |
 |---|---|---|---|---|
-| {name or unknown} | price / workflow / trust / … | {observed} | match / differentiate / defer | {URL+date or unknown} |
-
-Do not invent market share, pricing, or feature matrices. Prefer `unknown` / `[unverified]`.
+| {name or unknown} | price / workflow / trust | {observed} | match / differentiate / defer | {URL+date or unknown} |
 
 ### Financial considerations
 
-| Item | Estimate | Confidence | Source |
-|---|---|---|---|
-| Build / run cost | unknown | low | [unverified] — owner: {name} by {YYYY-MM-DD} |
-| Expected value / ROI | unknown | low | [unverified] until model + evidence exist |
-| Support / compliance cost | unknown | low | {path or unknown} |
+{One short paragraph on structural economics. Refuse point ROI.}
 
-Refuse fabricated ROI. If finance claims are load-bearing, recruit data-analyst (and finance if available) before approval.
+| Item | Low | Base | High | Source |
+|---|---|---|---|---|
+| Build / run cost | unknown | unknown | unknown | [unverified]; owner: {name} by {YYYY-MM-DD} |
+| Unit economics | unknown | unknown | unknown | [unverified] |
+| Expected value / ROI | unknown | unknown | unknown | [unverified] until model exists |
 
 ## Phases
 
-<!--
-Each phase is independently shippable user/platform value — not “backend then frontend”.
-Status: not started | in progress | shipped | deferred.
-Every phase MUST list ≥1 Requirement id that lives under ## Requirements.
--->
+<!-- Roadmap only. Don't list every FR id here; that lives under Requirements. -->
 
-### Phase 1: {name}
+| Phase | Name | Why? (human purpose) | Ships when | Status |
+|---|---|---|---|---|
+| 1 | {name} | {who benefits + what risk this phase reduces} | {exit in one line} | not started |
+| 2 | {name} | {…} | {…} | not started |
+| 3 | {name} | {…} | {…} | deferred |
 
-- **Goal**: {user-observable value this phase unlocks}
-- **Status**: not started
-- **Requirements**: FR-1.1, FR-1.2, …
-- **Exit**: {what must be true to call this phase shipped}
-
-### Phase 2: {name}
-
-- **Goal**: {…}
-- **Status**: not started
-- **Requirements**: FR-2.1, …
-- **Exit**: {…}
-
-### Phase 3: {name}
-
-- **Goal**: {…}
-- **Status**: not started
-- **Requirements**: FR-3.1, …
-- **Exit**: {…}
+```mermaid
+flowchart LR
+  P1[Phase 1] --> P2[Phase 2]
+  P2 --> P3[Phase 3]
+```
 
 ## Requirements
 
 <!--
-Hierarchy: Phase owns Requirements. Nest by phase. Each FR needs prose depth
-(what/why/constraint), not a one-line slogan. NFR categories to consider:
-performance, reliability, security, privacy, accessibility, observability,
-compliance, cost — with numeric targets where possible.
+Nest once: ### Phase N: Name, then #### Area, then ##### FR-n.m.
+Do NOT repeat **Phase**: N on every FR. List Acceptance criteria under each FR.
+Each phase opens with **Why?** (human purpose) before the first FR.
 -->
 
-### Phase 1 requirements
+### Phase 1: {name}
 
-#### FR-1.1: {imperative system obligation}
+**Why?** {2–4 sentences: purpose for named roles/contexts, who benefits, what
+risk this phase reduces. Include substantive tension from recruited personas
+(e.g. privacy retention, a11y keyboard path, ops revoke SLO), not name-drops.}
 
-{Paragraph: what the system must do, for whom, under what constraints. Link to evidence in Background.}
+{One sentence: user-observable value this phase unlocks.}
 
-- **Phase**: 1
-- **Acceptance criteria**: AC-1.1.1, AC-1.1.2
-- **NFR notes**: {privacy / a11y / perf as applicable, or n/a}
+#### {Area: e.g. Access control}
 
-#### FR-1.2: {…}
+##### FR-1.1: {imperative system obligation}
+
+{Paragraph: what the system must do, for whom, under what constraints. Link Background evidence.}
+
+**Acceptance criteria**
+
+1. **AC-1.1.1**: {stranger-checkable condition}. *Verify:* {manual / automated / review}.
+2. **AC-1.1.2**: {condition}. *Verify:* {…}.
+
+*NFR:* {privacy / a11y / perf as applicable, or n/a}
+
+##### FR-1.2: {…}
 
 {Paragraph depth.}
 
-- **Phase**: 1
-- **Acceptance criteria**: AC-1.2.1
-- **NFR notes**: {…}
+**Acceptance criteria**
 
-### Phase 2 requirements
+1. **AC-1.2.1**: {condition}. *Verify:* {…}.
 
-#### FR-2.1: {…}
+#### {Area: e.g. Audit}
+
+##### FR-1.3: {…}
 
 {Paragraph depth.}
 
-- **Phase**: 2
-- **Acceptance criteria**: AC-2.1.1
-- **NFR notes**: {…}
+**Acceptance criteria**
+
+1. **AC-1.3.1**: {condition}. *Verify:* {…}.
+2. **AC-1.3.2**: {condition}. *Verify:* {…}.
+
+### Phase 2: {name}
+
+**Why?** {Human purpose for this phase: who benefits, what risk it reduces.}
+
+{One sentence goal.}
+
+#### {Area}
+
+##### FR-2.1: {…}
+
+{Paragraph depth.}
+
+**Acceptance criteria**
+
+1. **AC-2.1.1**: {condition}. *Verify:* {…}.
 
 ## Acceptance Criteria
 
-<!--
-Every AC maps to exactly one FR. Observable and falsifiable. Ban “intuitive”,
-“fast”, “robust”, “delightful” without a numeric or behavioral threshold.
--->
+<!-- Index of every AC for scanning and release gates. Detail lives under Requirements. -->
 
-| AC id | FR id | Criterion (stranger-checkable) | Verification method |
+| AC id | FR | Criterion | Verify |
 |---|---|---|---|
-| AC-1.1.1 | FR-1.1 | {condition} | manual / automated / review |
-| AC-1.1.2 | FR-1.1 | {condition} | … |
-| AC-1.2.1 | FR-1.2 | {condition} | … |
-| AC-2.1.1 | FR-2.1 | {condition} | … |
+| AC-1.1.1 | FR-1.1 | {same text as under FR-1.1} | automated |
+| AC-1.1.2 | FR-1.1 | {…} | … |
+| AC-1.2.1 | FR-1.2 | {…} | … |
+| AC-2.1.1 | FR-2.1 | {…} | … |
 
 ## Success Metrics
 
-<!-- Leading vs lagging. No vanity metrics. Baseline/target may be unknown. -->
+{One sentence on how you will know the bet worked.}
 
 | Metric | Type | Baseline | Target | Owner | Source |
 |---|---|---|---|---|---|
-| {name} | leading / lagging | {current or unknown} | {goal or unknown} | {name} | {path/URL or [unverified]} |
+| {name} | leading / lagging | {or unknown} | {or unknown} | {name} | {path/URL or [unverified]} |
 
 ## Risks
 
 ### Delivery and product risks
 
-| Risk | Likelihood | Impact | Mitigation or accept-with-rationale |
+{Short prose on the top delivery risks, then the table.}
+
+| Risk | L | I | Mitigation or accept-with-rationale |
 |---|---|---|---|
 | {risk} | low / med / high | low / med / high | {action} |
 
@@ -214,18 +267,16 @@ Complete even if the requester never mentioned legal. Route fired rows to
 
 ### Adversarial challenge (FMEA)
 
-| Failure mode | Effect | Cause | S×O×D (1–10) | Mitigation or accept-with-rationale |
+| Failure mode | Effect | Cause | S×O×D | Mitigation or accept-with-rationale |
 |---|---|---|---|---|
 | {highest-cost wrongness} | {who hurts} | {why} | {product} | {action} |
 
 ### Open questions
 
-| Question | Owner | Decision needed by |
+| Question | Owner | Needed by |
 |---|---|---|
 | {unknown} | {role} | {YYYY-MM-DD} |
 
 ## References
-
-<!-- Every load-bearing claim above should resolve here. -->
 
 - {path / URL + access date / bead id / intake id}

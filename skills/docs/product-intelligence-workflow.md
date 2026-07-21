@@ -70,7 +70,7 @@ Stop and ask the primary persona before:
 
 ## Quality bar
 
-Product Intelligence output must cite evidence, distinguish observation from inference, name confidence, and avoid a wall of bullets. Keep em dashes rare. Use paragraphs for reasoning, tables for comparisons, and bullets for scanability.
+Product Intelligence output must cite evidence, distinguish observation from inference, name confidence, and avoid a wall of bullets. Prefer contractions; avoid spaced em dashes; refuse LLM tells (`rules/common/human-voice.md`). Use paragraphs for reasoning, tables for comparisons, and bullets for scanability.
 
 For time-sensitive or externally sourced claims, include the date basis. For load-bearing claims, prefer two independent sources unless one authoritative primary source is enough.
 ## Release gate
@@ -79,4 +79,6 @@ Run `construct artifact validate <path> --type=<type>` before marking the artifa
 
 ## Shared authorship contract
 
-Before drafting or reviewing, call `get_skill("docs/artifact-authorship")` for framing, template population, storytelling, adversarial review, anti-fabrication, and cross-persona triggers. Persona overlays under `skills/perspectives/` add failure modes; they do not waive that contract.
+Before drafting or reviewing, call `get_skill("docs/artifact-authorship")` for framing, template population, storytelling, human voice, adversarial review, anti-fabrication, and cross-persona triggers. Persona overlays under `skills/perspectives/` add failure modes; they do not waive that contract.
+
+**Before you write (voice):** prefer contractions (`don't`/`won't`/`can't`); avoid spaced em dashes (` — `); refuse AI tells (delve, leverage, robust as filler, "it's important to note", "In today's…", "This ensures that…", empty tricolons); sound like a careful colleague. Exceptions: ACs, legal shall/must not, quoted statute, exact required section titles. See `rules/common/human-voice.md`.

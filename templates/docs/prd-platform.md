@@ -1,8 +1,16 @@
-# Platform PRD: {title}
-
-- **Date**: {YYYY-MM-DD}
-- **Owner**: {name}
-- **Status**: draft | in-review | approved | shipped | deprecated
+---
+title: "{title}"
+subtitle: "{one-line platform outcome}"
+status: draft
+owner: "{name}"
+artifactType: prd-platform
+date: {YYYY-MM-DD}
+version: "0.1"
+doc_id: PRD-PLATFORM-{NNN}
+tags: []
+contributors: []
+approvers: []
+---
 
 <!--
 Internal platform / API / SDK / ops tooling — not end-customer UX.
@@ -14,7 +22,9 @@ and get_skill("perspectives/product-manager") before drafting.
 
 Same hierarchy as customer PRDs:
   Phase → Requirement (FR-<phase>.<n>) → Acceptance Criteria (AC-<phase>.<n>.<k>)
-Depth is mandatory. Prefer unknown / [unverified] over fabrication.
+Each phase needs **Why?** (human purpose: who benefits, what risk it reduces).
+Depth is mandatory. Inclusive framing for named consumer roles.
+Prefer unknown / [unverified] over fabrication.
 -->
 
 ## TL;DR
@@ -55,60 +65,82 @@ Depth is mandatory. Prefer unknown / [unverified] over fabrication.
 
 ## Why This Matters Now
 
-{Cost of delay, incident pressure, contract freeze window. Observation vs inference.}
+<!-- Timing economics for platform bets. -->
+
+{2–4 sentences: why this platform decision cannot wait.}
+
+| Timing dimension | Estimate / window | Source |
+|---|---|---|
+| Revenue at risk | {downstream revenue / contract $ or unknown} | {URL+date / unknown — owner: {name} by {YYYY-MM-DD}} |
+| Upside / opportunity window | {enablement window or unknown} | {…} |
+| Market timing | {ecosystem / partner pressure or unknown} | {…} |
+| Cost of delay | {incident / toil $ or unknown} | {…} |
+| Competitive window | {build-vs-buy / vendor move or unknown} | {see Competitive} |
+| Compliance / legal deadline | {date / obligation or unknown} | {recruit privacy/legal if yes} |
 
 ## Competitive Landscape & Financial Considerations
+
+### Competitive landscape
+
+{Short prose, then matrix.}
 
 | Alternative | Dimension | Approach | Our stance | Source |
 |---|---|---|---|---|
 | {build vs buy / prior internal tool} | {…} | {…} | {…} | {unknown or URL+date} |
 
-| Cost / value item | Estimate | Confidence | Source |
-|---|---|---|---|
-| Build / run cost | unknown | low | [unverified] |
-| Consumer migration cost | unknown | low | [unverified] |
+### Financial considerations
+
+| Item | Low | Base | High | Source |
+|---|---|---|---|---|
+| Build / run cost | unknown | unknown | unknown | [unverified] — owner: {name} by {YYYY-MM-DD} |
+| Unit economics | unknown | unknown | unknown | [unverified] |
+| Consumer migration cost | unknown | unknown | unknown | [unverified] |
+| Expected value / ROI | unknown | unknown | unknown | [unverified] |
 
 ## Phases
 
-### Phase 1: {name}
-
-- **Goal**: {…}
-- **Status**: not started
-- **Requirements**: FR-1.1, …
-- **Exit**: {…}
-
-### Phase 2: {name}
-
-- **Goal**: {…}
-- **Status**: not started
-- **Requirements**: FR-2.1, …
-- **Exit**: {…}
+| Phase | Name | Why? (human purpose) | Ships when | Status |
+|---|---|---|---|---|
+| 1 | {name} | {which consumer roles benefit + risk reduced} | {exit} | not started |
+| 2 | {name} | {…} | {…} | not started |
 
 ## Requirements
 
-### Phase 1 requirements
+### Phase 1 — {name}
 
-#### FR-1.1: {contract or capability obligation}
+**Why?** {Human purpose for named platform consumers; what operational or security risk this phase reduces.}
+
+{One sentence consumer-observable value.}
+
+#### {Area: e.g. Contract surface}
+
+##### FR-1.1: {contract or capability obligation}
 
 {Prose depth: what consumers get, constraints, compatibility stance.}
 
-- **Phase**: 1
-- **Acceptance criteria**: AC-1.1.1
-- **NFR notes**: {perf / security / …}
+**Acceptance criteria**
 
-### Phase 2 requirements
+1. **AC-1.1.1** — {condition}. *Verify:* contract test / review.
 
-#### FR-2.1: {…}
+*NFR:* {perf / security / …}
+
+### Phase 2 — {name}
+
+**Why?** {Human purpose for this phase.}
+
+{One sentence goal.}
+
+#### {Area}
+
+##### FR-2.1: {…}
 
 {Prose depth.}
 
-- **Phase**: 2
-- **Acceptance criteria**: AC-2.1.1
-- **NFR notes**: {…}
+**Acceptance criteria**
+
+1. **AC-2.1.1** — {condition}. *Verify:* {…}.
 
 ### API and interface contract
-
-<!-- Numbered contract items C-1… may map to FRs above. -->
 
 | Id | Surface | Change | Breaking? |
 |---|---|---|---|
@@ -120,14 +152,14 @@ Depth is mandatory. Prefer unknown / [unverified] over fabrication.
 
 ### Operational requirements
 
-{Observability, audit, rate limits, failure modes, admin controls — product requirements, not afterthoughts.}
+{Observability, audit, rate limits, failure modes, admin controls.}
 
 ## Acceptance Criteria
 
-| AC id | FR id | Criterion (stranger-checkable) | Verification method |
+| AC id | FR | Criterion | Verify |
 |---|---|---|---|
-| AC-1.1.1 | FR-1.1 | {condition} | contract test / review |
-| AC-2.1.1 | FR-2.1 | {condition} | … |
+| AC-1.1.1 | FR-1.1 | {same as under FR} | contract test |
+| AC-2.1.1 | FR-2.1 | {…} | … |
 
 ## Success Metrics
 
@@ -137,7 +169,9 @@ Depth is mandatory. Prefer unknown / [unverified] over fabrication.
 
 ## Risks
 
-| Risk | Likelihood | Impact | Mitigation |
+{Short prose, then table.}
+
+| Risk | L | I | Mitigation |
 |---|---|---|---|
 | {…} | low / med / high | low / med / high | {…} |
 
@@ -157,17 +191,17 @@ Depth is mandatory. Prefer unknown / [unverified] over fabrication.
 
 ### Open questions
 
-| Question | Owner | Decision needed by |
+| Question | Owner | Needed by |
 |---|---|---|
 | {unknown} | {role} | {YYYY-MM-DD} |
 
 ## Platform flow
 
 ```mermaid
-flowchart TD
-  A[Consumer] --> B[Platform API]
-  B --> C[Core service]
-  C --> D[Response / event]
+flowchart LR
+  A[Consumer] --> B[API]
+  B --> C[Service]
+  C --> D[Event]
 ```
 
 ## References

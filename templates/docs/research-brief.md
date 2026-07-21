@@ -27,8 +27,10 @@ NATIVE SPINE:
 
 Depth means: falsifiable Question, reproducible Method, Sources table with
 reliability/credibility, Findings that separate observation from inference,
-and a Recommendation that states its flip threshold.
+inline linked citations at each claim (rules/common/citation.md), and a
+Recommendation that states its flip threshold.
 Prefer unknown / [unverified] over fabrication. Never invent URLs.
+Verify http(s) links with `construct artifact validate --check-links` before publish.
 -->
 
 ## Question
@@ -72,7 +74,7 @@ For each finding, state separately: Observation, Inference, Confidence, Sources.
 **Observation**: {what the sources say}
 **Inference**: {what is concluded — labeled as inference}
 **Confidence**: high / medium / low: {reason}
-**Sources**: {source title(s) from table}
+**Sources**: {([Short title](https://canonical.url); accessed YYYY-MM-DD) · … — see rules/common/citation.md}
 
 ### Finding N: {short label}
 

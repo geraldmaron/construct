@@ -6,6 +6,7 @@
   "modelTier": "standard",
   "reasoningEffort": "medium",
   "skillEmphasis": [
+    "docs/artifact-authorship",
     "development/typescript",
     "development/python",
     "development/go",

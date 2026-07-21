@@ -86,7 +86,7 @@ test('spawnD2Render returns card identity with the spawn result', () => {
   });
   assert.equal(spawned.providerId, D2_PROVIDER_ID);
   assert.equal(spawned.profile, 'distribution');
-  assert.deepEqual(spawned.flags.slice(0, 4), ['--sketch', '--pad', '16', '--theme']);
+  assert.deepEqual(spawned.flags.slice(0, 4), ['--sketch', '--pad', '8', '--theme']);
 });
 
 test('lib/diagram.mjs routes D2 renders through spawnD2Render', () => {

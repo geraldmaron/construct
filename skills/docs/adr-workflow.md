@@ -12,9 +12,12 @@ Use when: an architectural decision is made that affects the system structure, d
 
 ## Native spine (blocking)
 
-Problem → Context → Decision → Rationale → Rejected alternatives → Consequences → Reversibility → Adversarial challenge → Open questions → References.
+Problem → Context → Decision → Rationale → Rejected alternatives → Consequences → Reversibility → Legal/privacy/security triggers → Adversarial challenge → Open questions → References.
 
 - An ADR without rejected alternatives is a proposal, not a decision.
+- Prefer YAML frontmatter for status/tags/contributors/approvers; do not duplicate masthead as body H1/Date/Owner.
+- Depth: prose Problem/Context (who is helped or harmed), concrete rejection reasons, multi-persona tension (privacy retention, ops runbooks, eng cost, a11y of investigator UX).
+- Refuse fabricated latency/cost/compliance numbers — `unknown` / `[unverified]` with owners. See `rules/common/no-fabrication.md`.
 - `construct artifact validate --type=adr` runs `lintAdrDeliveryDepth`.
 
 ## Trigger automatically when
@@ -47,4 +50,6 @@ Run `construct artifact validate <path> --type=<type>` before marking the artifa
 
 ## Shared authorship contract
 
-Before drafting or reviewing, call `get_skill("docs/artifact-authorship")` for framing, template population, storytelling, adversarial review, anti-fabrication, and cross-persona triggers. Persona overlays under `skills/perspectives/` add failure modes; they do not waive that contract.
+Before drafting or reviewing, call `get_skill("docs/artifact-authorship")` for framing, template population, storytelling, human voice, adversarial review, anti-fabrication, and cross-persona triggers. Persona overlays under `skills/perspectives/` add failure modes; they do not waive that contract.
+
+**Before you write (voice):** prefer contractions (`don't`/`won't`/`can't`); avoid spaced em dashes (` — `); refuse AI tells (delve, leverage, robust as filler, "it's important to note", "In today's…", "This ensures that…", empty tricolons); sound like a careful colleague. Exceptions: ACs, legal shall/must not, quoted statute, exact required section titles. See `rules/common/human-voice.md`.

@@ -68,13 +68,16 @@ Decision sought is usually ship / defer / research-more. Audience is eng+design+
 
 ### Template population
 - Use the exact 12-section customer PRD template (`templates/docs/prd.md`): TL;DR through References.
-- Enforce Phase → Requirement (`FR-p.n`) → Acceptance Criteria (`AC-p.n.k`). Skeleton FRs fail.
+- Enforce Phase → Why? → Requirement (`FR-p.n`) → Acceptance Criteria (`AC-p.n.k`). Skeleton FRs fail.
+- Every phase needs human Why? (who benefits, what risk it reduces) in the roadmap table and under `### Phase N`.
 - Fill every required section or write `unknown` with owner and decision-by date.
 - Prefer evidence callouts and explicit open questions over confident filler.
 - Fold legal triggers + FMEA under Risks; user evidence under Background; competitive+financial under their section.
+- Inclusive framing: named roles/contexts; avoid ableist or gendered defaults; WCAG targets where UI ships.
 
 ### Storytelling
 - Lead with the decision the reader must make (TL;DR). Escalate certainty only with evidence. Keep unknowns visible.
+- Keep one continuous story with related ADR/compliance/deck artifacts; multi-persona tension in Requirements/Risks, not name-drops.
 - Publish/deck: one phase or FR cluster per slide; never dump the dense PRD into a single PPTX slide.
 
 ### Adversarial review
@@ -86,12 +89,16 @@ Never invent user quotes, win rates, or TAM figures. Stakeholder preference ≠ 
 ### Cross-persona handoffs
 Always run Legal/privacy/competitive/user-evidence checklists from skills/docs/artifact-authorship.md before PRD approval.
 
+### Human voice
+Follow `rules/common/human-voice.md` and the Human voice bar in `skills/docs/artifact-authorship.md`: prefer contractions; avoid spaced em dashes; refuse LLM tells; careful colleague tone. Exceptions: ACs, legal shall/must, quotes, exact section titles.
+
 ### Self-check (authorship)
 - [ ] Framing questions answered
 - [ ] Template sections populated or explicitly unknown
 - [ ] Triggered specialists consulted or queued with dates
 - [ ] Strongest counter-argument named
 - [ ] No unsourced load-bearing claims
+- [ ] Human voice bar met (contractions; no em-dash theater; no AI tells)
 
 ## Self-check before shipping
 

@@ -75,12 +75,16 @@ Challenge mission: find the highest-cost wrongness.
 
 ### Adversarial review
 FMEA on unanimous drafts; demand mitigations for top RPN.
+Checklist: Why-Now timing economics present (not one-line theater); Competitive/Financial honesty; legal memo recruited when triggers fire; publish diagrams are crisp (not sketch/handDrawn cargo-cult).
 
 ### Anti-fabrication
 Do not soften another specialist's unknown into a fact when summarizing.
 
 ### Cross-persona handoffs
-Force recruitment when authors skipped legal/privacy/a11y/ops triggers.
+Force recruitment when authors skipped legal/privacy/a11y/ops/Why-Now economics triggers. Demand `compliance-memo` / DPIA when PII or regulated processing is present.
+
+### Human voice
+Follow `rules/common/human-voice.md` and the Human voice bar in `skills/docs/artifact-authorship.md`: prefer contractions; avoid spaced em dashes; refuse LLM tells; careful colleague tone. Exceptions: ACs, legal shall/must, quotes, exact section titles.
 
 ### Self-check (authorship)
 - [ ] Framing questions answered
@@ -88,6 +92,7 @@ Force recruitment when authors skipped legal/privacy/a11y/ops triggers.
 - [ ] Triggered specialists consulted or queued with dates
 - [ ] Strongest counter-argument named
 - [ ] No unsourced load-bearing claims
+- [ ] Human voice bar met (contractions; no em-dash theater; no AI tells)
 
 ## Self-check before shipping
 
