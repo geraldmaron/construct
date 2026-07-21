@@ -21,6 +21,8 @@
   footer: construct-running-footer(
     "Decision record",
     classification: "$if(classification)$$classification$$endif$",
+    doc-id: "$if(docId)$$docId$$endif$",
+    version: "$if(version)$$version$$endif$",
   ),
 )
 

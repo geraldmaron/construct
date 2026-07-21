@@ -184,41 +184,36 @@ test('construct-brand.typ omits pre-2.0 compat color token shims', () => {
   assert.doesNotMatch(brand, /brand-warm|brand-violet|brand-accent-deep|brand-surface-warm/);
 });
 
-test('construct-brand.typ uses Space Grotesk family names for body prose', () => {
+test('construct-brand.typ uses Construct 2.0 folio visual system', () => {
   const brand = fs.readFileSync(path.join(REPO, 'templates', 'distribution', 'construct-brand.typ'), 'utf8');
   assert.match(brand, /construct-font-sans = \("Space Grotesk",\)/);
-  assert.match(brand, /set text\(font: construct-font-sans[\s\S]*justify: false/);
+  assert.match(brand, /set par\(justify: false, leading: 1\.02em, spacing: 1\.35em\)/);
   assert.doesNotMatch(brand, /Libertinus|SourceSerif|Geist|IBM Plex Sans|"Inter"/);
-  assert.match(brand, /construct-figure-max-width = 92%/);
-  assert.match(brand, /construct-figure-max-height = 3\.4in/);
-
-  // Figures scale by measured natural size (no reserved-height letterbox):
-  // forcing width+height with fit:contain floated small diagrams in dead space.
-
+  assert.match(brand, /fill: ink, inset: \(x: 16pt/);
+  assert.match(brand, /construct-status-label/);
+  assert.match(brand, /#upper\(status\)/);
+  assert.match(brand, /construct-meta-grid/);
+  assert.match(brand, /section-counter/);
+  assert.match(brand, /stroke: 3pt \+ ink/);
+  assert.doesNotMatch(brand, /construct-status-pill/);
+  assert.doesNotMatch(brand, /construct-meta-chips/);
+  assert.doesNotMatch(brand, /line\(length: 46pt/);
+  assert.doesNotMatch(brand, /line\(length: 26pt, stroke: 1\.5pt \+ ink\)/);
+  assert.match(brand, /construct-figure-max-width = 94%/);
+  assert.match(brand, /construct-figure-max-height = 3\.6in/);
   assert.match(brand, /measure\(it\.body\)/);
   assert.match(brand, /scale\(x: f \* 100%, y: f \* 100%, reflow: true/);
   assert.doesNotMatch(brand, /fit: "contain"/);
-  assert.match(brand, /set par\(justify: false, leading: 0\.9em, spacing: 1\.24em\)/);
   assert.match(brand, /set enum\(numbering: "1\."/);
   assert.match(brand, /#let horizontalrule = block/);
   assert.doesNotMatch(brand, /show enum\.item:/, 'ordered lists must keep native Typst numbering context');
-
-  // Tables must flow across pages: figures stay unbreakable even when a show
-  // rule replaces their body, so the lift needs an explicit breakable block.
-
   assert.match(brand, /show figure\.where\(kind: table\): set block\(breakable: true\)/);
-
-  // Heading boundary spacing must live on block(above/below) — a trailing weak
-  // v() inside the block is trimmed at the boundary and never renders.
-
-  assert.match(brand, /block\(sticky: true, above: 1\.8em, below: 0\.9em/);
+  assert.match(brand, /block\(sticky: true, above: 2em, below: 0\.85em/);
   assert.doesNotMatch(brand, /v\(0\.6em, weak: true\)/);
-
-  // Lists share one em-based text column across bullets and numbers.
-
-  assert.match(brand, /set list\(.*indent: 0\.25em, body-indent: 0\.65em, spacing: 1em\)/);
-  assert.match(brand, /set enum\(numbering: "1\.", indent: 0\.25em, body-indent: 0\.65em, spacing: 1em\)/);
+  assert.match(brand, /set list\(.*indent: 0\.3em, body-indent: 0\.7em, spacing: 1\.05em\)/);
+  assert.match(brand, /set enum\(numbering: "1\.", indent: 0\.3em, body-indent: 0\.7em, spacing: 1\.05em\)/);
   assert.match(brand, /set terms\(/);
+  assert.match(brand, /fill: \(x, y\) => if y == 0 \{ ink \}/);
 });
 
 test('construct-deck.html and construct-web.html use Space Grotesk brand stack', () => {
@@ -251,11 +246,12 @@ test('all PDF layout wrappers share the brand page-geometry tokens', () => {
   const dist = path.join(REPO, 'templates', 'distribution');
   const brand = fs.readFileSync(path.join(dist, 'construct-brand.typ'), 'utf8');
   assert.match(brand, /#let construct-page-paper = "a4"/);
-  assert.match(brand, /#let construct-page-margin = \(/);
+  assert.match(brand, /#let construct-page-margin = \(left: 2\.7cm/);
   for (const file of ['construct-pdf.typ', 'construct-prd.typ', 'construct-research.typ', 'construct-decision.typ']) {
     const tpl = fs.readFileSync(path.join(dist, file), 'utf8');
     assert.match(tpl, /paper: construct-page-paper/, `${file} must use the shared paper token`);
     assert.match(tpl, /margin: construct-page-margin/, `${file} must use the shared margin token`);
+    assert.match(tpl, /doc-id: "\$if\(docId\)/, `${file} must pass doc-id to running footer`);
     assert.doesNotMatch(tpl, /margin:\s*\(x:\s*\d/, `${file} must not hardcode margins`);
   }
 });
