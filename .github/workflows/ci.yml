@@ -147,17 +147,23 @@ jobs:
       - run: npm ci --ignore-scripts
       # Tool installs live in scripts/ci/setup-toolchain.sh — the single source
       # of truth shared with the local Docker replica (scripts/ci-repro/). It
-      # pins typst + bd as sha256-verified release binaries, so the setup-go
+      # pins typst + bd + d2 as sha256-verified release binaries, so the setup-go
       # step the old inline bd-install needed is gone (the go-install fallback
       # is documented in the script). The pinned binaries land in ~/.local/bin,
       # which is cached; apt/brew packages are cheap enough to install per run.
-      - name: cache pinned tool binaries (typst, bd)
+      # mermaid-cli needs npm, so setup-mermaid-cli.sh runs after npm ci (the
+      # Docker replica installs Node after baking setup-toolchain.sh).
+      - name: cache pinned tool binaries (typst, bd, d2)
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: ~/.local/bin
-          key: toolbin-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/ci/setup-toolchain.sh') }}
-      - name: install test toolchain (typst, bd, pandoc, poppler, libreoffice)
+          path: |
+            ~/.local/bin
+            ~/.local/mermaid-cli
+          key: toolbin-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/ci/setup-toolchain.sh', 'scripts/ci/setup-mermaid-cli.sh') }}
+      - name: install test toolchain (typst, bd, d2, pandoc, poppler, libreoffice)
         run: bash scripts/ci/setup-toolchain.sh && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: install mermaid-cli (mmdc) for figures:true exports
+        run: bash scripts/ci/setup-mermaid-cli.sh && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: build derived test fixtures (living graph + seeded vector index)
         run: bash scripts/ci/build-test-fixtures.sh
       - run: npm test -- --shard=${{ matrix.shard }}/${{ matrix.os == 'macos-latest' && '1' || '3' }}

@@ -26,14 +26,19 @@ jobs:
       # typst and reads the living graph + seeded vector index; without these
       # the gate dies on `spawnSync bd ENOENT` (v1.5.0's first run) while the
       # per-PR matrix stays green. scripts/ci/setup-toolchain.sh is the single
-      # source of truth shared with the local Docker replica.
-      - name: cache pinned tool binaries (typst, bd)
+      # source of truth shared with the local Docker replica. mermaid-cli is
+      # installed after npm ci (needs Node; figures:true certify/visual gates).
+      - name: cache pinned tool binaries (typst, bd, d2)
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: ~/.local/bin
-          key: toolbin-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/ci/setup-toolchain.sh') }}
-      - name: install test toolchain (typst, bd, pandoc, poppler, libreoffice)
+          path: |
+            ~/.local/bin
+            ~/.local/mermaid-cli
+          key: toolbin-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/ci/setup-toolchain.sh', 'scripts/ci/setup-mermaid-cli.sh') }}
+      - name: install test toolchain (typst, bd, d2, pandoc, poppler, libreoffice)
         run: bash scripts/ci/setup-toolchain.sh && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: install mermaid-cli (mmdc) for figures:true exports
+        run: bash scripts/ci/setup-mermaid-cli.sh && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: build derived test fixtures (living graph + seeded vector index)
         run: bash scripts/ci/build-test-fixtures.sh
       - name: Full test suite

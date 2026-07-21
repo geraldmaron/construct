@@ -33,7 +33,14 @@ const jobScriptCommands = jobScript
   .join('\n');
 
 const IMAGE_CORE = ['scripts/ci/setup-toolchain.sh'];
-const JOB_CORE = ['npm ci --ignore-scripts', 'scripts/ci/build-test-fixtures.sh', 'npm test', 'npm run doctor', 'npm run docs:verify'];
+const JOB_CORE = [
+  'npm ci --ignore-scripts',
+  'scripts/ci/setup-mermaid-cli.sh',
+  'scripts/ci/build-test-fixtures.sh',
+  'npm test',
+  'npm run doctor',
+  'npm run docs:verify',
+];
 
 test('ci.yml test job still runs every core invocation the replica mirrors', () => {
   for (const core of [...IMAGE_CORE, ...JOB_CORE]) {
