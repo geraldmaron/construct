@@ -37,6 +37,17 @@ Fixture content for Consequences.
 
 Fixture content for Reversibility.
 
+## Legal, privacy, and security triggers
+
+| Trigger | Present? | Data / boundary | Specialist | Gate before accept |
+|---|---|---|---|---|
+| PII / accounts / identity | no | n/a | security.privacy | n/a |
+| AuthN / AuthZ / secrets | yes | tenant boundary | security.appsec | threat model |
+| Payments / money movement | no | n/a | security.legal-compliance | n/a |
+| Contracts / ToS / licenses | no | n/a | security.legal-compliance | n/a |
+| Cross-border / regulated data | unknown | unknown | security.legal-compliance | [unverified] |
+| AI processing / model training | no | n/a | security.ai + privacy | n/a |
+
 ## Adversarial challenge
 
 | Challenge | Severity | Response |

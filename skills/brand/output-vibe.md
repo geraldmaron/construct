@@ -20,7 +20,7 @@ Apply this skill before drafting or exporting any customer-facing artifact (PRD,
 
 - Lead with a short declarative paragraph, then structure (headings, one compact table, selective bullets).
 - Avoid bullet walls; never more than seven bullets in a row without a prose bridge.
-- Rare em dashes; prefer commas or parentheses.
+- Prefer contractions (`don't`, `won't`, `can't`); no spaced em dashes; refuse LLM tells. Full bar: `rules/common/human-voice.md` and `get_skill("docs/artifact-authorship")`.
 
 ## Diagrams (sketch-forward)
 

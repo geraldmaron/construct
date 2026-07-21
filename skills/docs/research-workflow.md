@@ -44,7 +44,7 @@ Question → Method → Sources → Findings → Counter-evidence → Confidence
    | Regulatory | Primary regulation text, official agency guidance |
 
 6. **Source hierarchy**: primary → secondary → tertiary (tertiary never alone for load-bearing claims).
-7. **Verify every URL** before citing. Mark unconfirmed as `[unverified]`.
+7. **Cite inline and verify every URL** before publish: use linked short titles at the claim (`([Title](url); accessed YYYY-MM-DD)`), keep the Sources table, and run `construct artifact validate … --type=research-brief --check-links` (see `rules/common/citation.md`). Mark unconfirmed as `[unverified]`.
 8. **Tone**: resolve from artifact manifest (`direct`). See `specialists/tone-profiles.json`.
 9. **Structure** with `get_template("research-brief")`; write to `.construct/research/{topic-slug}.md`.
 10. **Reference** the research doc in the requesting agent's output.
@@ -89,4 +89,6 @@ Do **not** claim PDF/demo done until `construct tools detect` reports ready or `
 
 ## Shared authorship contract
 
-Before drafting or reviewing, call `get_skill("docs/artifact-authorship")` for framing, template population, storytelling, adversarial review, anti-fabrication, and cross-persona triggers. Persona overlays under `skills/perspectives/` add failure modes; they do not waive that contract.
+Before drafting or reviewing, call `get_skill("docs/artifact-authorship")` for framing, template population, storytelling, human voice, adversarial review, anti-fabrication, and cross-persona triggers. Persona overlays under `skills/perspectives/` add failure modes; they do not waive that contract.
+
+**Before you write (voice):** prefer contractions (`don't`/`won't`/`can't`); avoid spaced em dashes (` — `); refuse AI tells (delve, leverage, robust as filler, "it's important to note", "In today's…", "This ensures that…", empty tricolons); sound like a careful colleague. Exceptions: ACs, legal shall/must not, quoted statute, exact required section titles. See `rules/common/human-voice.md`.

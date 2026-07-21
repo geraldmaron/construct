@@ -4,9 +4,10 @@
  *
  * Metadata contract (Pandoc -M vars, sourced from artifact YAML frontmatter by
  * lib/publish-template.mjs parseArtifactMetadata): title, subtitle, date, status,
- * owner, artifactType, version, docId, classification. All optional; the masthead
- * and running chrome degrade gracefully when a field is absent. Page geometry and
- * all type/spacing tokens come from construct-brand.typ — never hardcode them here.
+ * owner, artifactType, version, docId, classification, tags, contributors,
+ * approvers. All optional; the masthead and running chrome degrade gracefully
+ * when a field is absent. Page geometry and all type/spacing tokens come from
+ * construct-brand.typ — never hardcode them here.
  */
 
 #import "construct-brand.typ": *
@@ -40,6 +41,9 @@ $if(title)$
   "$if(artifactType)$$artifactType$$endif$",
   version: "$if(version)$$version$$endif$",
   doc-id: "$if(docId)$$docId$$endif$",
+  tags: "$if(tags)$$tags$$endif$",
+  contributors: "$if(contributors)$$contributors$$endif$",
+  approvers: "$if(approvers)$$approvers$$endif$",
   classification: "$if(classification)$$classification$$endif$",
 )
 $endif$

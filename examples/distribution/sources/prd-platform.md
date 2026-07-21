@@ -126,6 +126,7 @@ Without a shared gate, distribution drift and unprovenanced artifacts compound a
 
 ### Phase 1: Gate + branded publish
 
+- **Why?**: Authors and reviewers need validate-before-export so thin docs cannot ship as branded PDFs; reduces the risk of distribution without a release gate.
 - **Goal**: Validate-before-export and branded PDF/figures on one `construct publish` path.
 - **Status**: not started
 - **Requirements**: FR-1.1, FR-1.2, FR-1.3, FR-1.4, FR-1.5
@@ -133,6 +134,7 @@ Without a shared gate, distribution drift and unprovenanced artifacts compound a
 
 ### Phase 2: Toolchain detect in CI
 
+- **Why?**: CI operators need missing Pandoc/Typst/D2/Mermaid to fail loud so publish regressions surface before release, not as silent blank figures.
 - **Goal**: Fail loud when Pandoc/Typst/D2/Mermaid missing; demos as fallback.
 - **Status**: not started
 - **Requirements**: FR-2.1
@@ -168,7 +170,7 @@ PDF export uses bundled Construct Typst template unless `.construct/publish-them
 
 #### FR-1.4: Figures render with hand-drawn styling
 
-`--figures` renders fenced `d2` and `mermaid` via vendored `pandoc-ext/diagram` with D2 `--sketch` and Mermaid `handDrawn`.
+`--figures` renders fenced `d2` and `mermaid` via vendored `pandoc-ext/diagram` with crisp D2 (no `--sketch`) and Mermaid classic look.
 
 - **Phase**: 1
 - **Acceptance criteria**: AC-1.4.1
@@ -210,7 +212,7 @@ Ops can detect missing figure toolchain; CI uses detect or committed demo MP4s a
 | Gate pass before publish | lagging | manual validate | enforced by default | product-manager | this PRD |
 | PDF export p95 | leading | n/a | ≤10s with figures | ops | [unverified] until measured |
 | Demo tapes using `--no-gate` | lagging | unknown | 0 in CI | ops | CI policy |
-| Distribution diagram style | lagging | ad hoc | D2 `--sketch` + Mermaid `handDrawn` | designer | publish templates |
+| Distribution diagram style | lagging | ad hoc | Crisp D2 + Mermaid classic | designer | publish templates |
 
 ## Risks
 

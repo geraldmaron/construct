@@ -6,6 +6,7 @@
   "modelTier": "strong",
   "reasoningEffort": "high",
   "skillEmphasis": [
+    "docs/artifact-authorship",
     "security/red-team",
     "security/blue-team",
     "security/pentest",
@@ -17,7 +18,8 @@
     "compliance/license-audit",
     "compliance/data-privacy",
     "compliance/ai-disclosure",
-    "compliance/regulatory-review"
+    "compliance/regulatory-review",
+    "compliance/case-law-research"
   ],
   "procedureAffinity": [
     "architecture-review",

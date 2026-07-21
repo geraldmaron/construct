@@ -1,7 +1,17 @@
-# ADR-{NNN}: {title}
+---
+title: "ADR-{NNN}: {title}"
+status: proposed
+owner: "{architect or decider}"
+artifactType: adr
+date: {YYYY-MM-DD}
+version: "0.1"
+doc_id: ADR-{NNN}
+subtitle: "{one-line decision}"
+tags: []
+contributors: []
+approvers: []
+---
 
-- **Date**: {YYYY-MM-DD}
-- **Status**: proposed | accepted | superseded | deprecated
 - **Deciders**: {names}
 - **Supersedes**: {ADR-NNN or none}
 
@@ -10,17 +20,27 @@ Architectural decision record. Records a decision already made (or proposed
 for acceptance). Use rfc.md when the proposal still needs structured review
 before a decision.
 
+Masthead fields (status, tags, contributors, approvers, date, owner) live in
+YAML frontmatter. Don't duplicate Date/Owner/Status as a body H1 block.
+
 Owning specialist: architect (rules/common/doc-ownership.md).
 Before drafting: rules/common/framing.md + get_skill("docs/artifact-authorship")
   + get_skill("perspectives/architect").
 
 NATIVE SPINE:
   Problem → Context → Decision → Rationale → Rejected alternatives
-  → Consequences → Reversibility → Adversarial challenge → Open questions
-  → References
+  → Consequences → Reversibility → Legal, privacy, and security triggers
+  → Adversarial challenge → Open questions → References
 
-Depth means: domain problem (not ticket IDs), ≥1 concrete rejected alternative
-with a specific rejection reason, and consequences that name what is locked in.
+Depth means: domain problem in prose (not ticket IDs), ≥1 concrete rejected
+alternative with a specific rejection reason, consequences that name what is
+locked in, and explicit legal/privacy/security triggers (even when omitted).
+Include multi-persona tension (privacy retention, ops runbooks, eng cost,
+a11y of investigator UX) in Context / Consequences / Open questions.
+Human framing: name who is helped or harmed (investigators, on-call, subjects
+in audit rows), not sterile "the system."
+Voice: rules/common/human-voice.md — prefer contractions; avoid spaced em
+dashes; skip AI tells (delve, robust, leverage, "This ensures that…").
 An ADR without rejected alternatives is a proposal, not a decision.
 Prefer unknown / [unverified] with owner + decision-by date over fabrication.
 -->
@@ -66,7 +86,7 @@ For each alternative considered:
 
 | Alternative | What it is | Why rejected | Reconsider if |
 |---|---|---|---|
-| {option A} | {concrete enough to evaluate} | {specific reason — not "we preferred the chosen option"} | {trigger} |
+| {option A} | {concrete enough to evaluate} | {specific reason; not "we preferred the chosen option"} | {trigger} |
 | {option B} | {…} | {…} | {…} |
 
 An empty table fails review.
@@ -86,6 +106,21 @@ Include second-order effects. Mark unverified second-order claims as `[unverifie
 | Door type | one-way / two-way |
 | Cost to reverse | {or unknown} |
 | Revisit triggers | {conditions that force reconsideration} |
+
+## Legal, privacy, and security triggers
+
+Complete even if the requester never mentioned legal. Route fired rows to
+`security.privacy` / `security.legal-compliance` (and produce a compliance-memo
+or DPIA when PII/regulated processing is present). Name the threat boundary.
+
+| Trigger | Present? | Data / boundary | Specialist | Gate before accept |
+|---|---|---|---|---|
+| PII / accounts / identity | yes / no / unknown | {what crosses the boundary} | security.privacy | retention + deletion path |
+| AuthN / AuthZ / secrets | yes / no / unknown | {trust boundary} | security.appsec | threat model or N/A |
+| Payments / money movement | yes / no / unknown | {what} | security.legal-compliance | PCI/contract controls or N/A |
+| Contracts / ToS / licenses | yes / no / unknown | {what} | security.legal-compliance | counsel or policy owner |
+| Cross-border / regulated data | yes / no / unknown | {what} | security.legal-compliance | transfer mechanism or unknown |
+| AI processing / model training | yes / no / unknown | {what} | security.ai + privacy | disclosure plan |
 
 ## Adversarial challenge
 

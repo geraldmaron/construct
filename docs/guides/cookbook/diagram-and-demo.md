@@ -24,9 +24,10 @@ node bin/construct publish docs/prd-platform/brief.md --strict --figures
 ```
 
 - Runs **artifact release gate** before export (structure, visuals, citations, prose minimum)
-- Renders fenced `d2` / `mermaid` via vendored `pandoc-ext/diagram` with **hand-drawn distribution styling** (D2 `--sketch`, Mermaid `handDrawn` look + bundled Caveat handwriting, monochrome ink accent)
+- Renders fenced `d2` / `mermaid` via vendored `pandoc-ext/diagram` with **crisp field-notebook distribution styling** (D2 without `--sketch`, Mermaid classic look + Plus Jakarta Sans labels, charcoal ink + slate-teal accent)
 - PDF routes by `artifactType`: `construct-prd.typ` (product editorial), `construct-research.typ` (analytics), `construct-decision.typ` (ADR/RFC); override: `.construct/publish-theme.typ`
-- Typography ships bundled in `templates/distribution/fonts/` (Plus Jakarta Sans body + headings, JetBrains Mono code; Caveat handwriting for hand-drawn diagram labels). Success metrics tables in blockquotes render as **Key metrics** callouts.
+- Typography ships bundled in `templates/distribution/fonts/` (Plus Jakarta Sans body + headings, JetBrains Mono code). Success metrics tables in blockquotes render as **Key metrics** callouts.
+- Optional interactive whiteboarding (Excalidraw, etc.) stays at the agent/tool layer — Construct publish remains Mermaid/D2 diagram-as-code.
 - Optional VHS terminal demo + Playwright app demo via frontmatter or flags
 
 Authoring conventions for richer PDFs:
@@ -51,7 +52,7 @@ flowchart TD
 \`\`\`
 ```
 
-Reference D2 sources live under `tests/fixtures/publish/diagrams/` in the tool repo; inline fenced blocks export at publish time with **D2 `--sketch`** and **Mermaid `handDrawn`** (monochrome ink, Caveat handwriting labels).
+Reference D2 sources live under `tests/fixtures/publish/diagrams/` in the tool repo; inline fenced blocks export at publish time with **crisp D2** and **Mermaid classic** (field-notebook ink, Plus Jakarta Sans labels).
 
 Optional masthead metadata (renders in the compact header — do not repeat in body):
 
@@ -124,7 +125,7 @@ Shared scroll helpers ship in `templates/demos/specs/_helpers/scroll-artifact.ts
 construct diagram "web app: client -> api -> db"
 ```
 
-Default D2 theme is **neutral** (clean geometry). Use `--theme sketch` for hand-drawn output (`construct diagram` and publish `--figures` both honor sketch on the distribution path).
+Default D2 theme is **neutral** (clean geometry). Publish distribution path does **not** enable `--sketch`; use `construct diagram --theme sketch` only when an author explicitly wants sketch CLI output outside the brand publish path.
 
 Output: `.construct/diagrams/*.svg` (or `.d2` source when no renderer).
 

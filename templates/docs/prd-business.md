@@ -1,8 +1,16 @@
-# Business PRD: {title}
-
-- **Date**: {YYYY-MM-DD}
-- **Owner**: {name}
-- **Status**: draft | in-review | approved | shipped | deprecated
+---
+title: "{title}"
+subtitle: "{one-line business outcome}"
+status: draft
+owner: "{name}"
+artifactType: prd-business
+date: {YYYY-MM-DD}
+version: "0.1"
+doc_id: PRD-BUSINESS-{NNN}
+tags: []
+contributors: []
+approvers: []
+---
 
 <!--
 Strategic bets, market positioning, business model changes, partnerships,

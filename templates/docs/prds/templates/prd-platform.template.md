@@ -72,6 +72,7 @@ Depth is mandatory. Prefer unknown / [unverified] over fabrication.
 
 ### Phase 1: {name}
 
+- **Why?**: {which consumer roles benefit + risk reduced}
 - **Goal**: {…}
 - **Status**: not started
 - **Requirements**: FR-1.1, …
@@ -79,6 +80,7 @@ Depth is mandatory. Prefer unknown / [unverified] over fabrication.
 
 ### Phase 2: {name}
 
+- **Why?**: {…}
 - **Goal**: {…}
 - **Status**: not started
 - **Requirements**: FR-2.1, …

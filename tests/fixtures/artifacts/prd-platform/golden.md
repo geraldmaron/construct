@@ -24,39 +24,64 @@ Fixture content for Outcomes - Goals & Non-Goals.
 
 ## Why This Matters Now
 
-Fixture content for Why This Matters Now.
+Timing thesis for the fixture: revenue and compliance windows force a decision now.
+
+| Timing dimension | Estimate / window | Source |
+|---|---|---|
+| Revenue at risk | unknown $ | https://example.com/fixture (accessed 2026-06-22) |
+| Upside / opportunity window | unknown | [unverified] — owner: pm by 2026-08-15 |
+| Market timing | unknown | [unverified] |
+| Cost of delay | toil compounds | https://example.com/fixture (accessed 2026-06-22) |
+| Competitive window | unknown | [unverified] |
+| Compliance / legal deadline | PII in scope | https://example.com/fixture (accessed 2026-06-22) |
 
 ## Competitive Landscape & Financial Considerations
 
-Fixture content for Competitive Landscape & Financial Considerations.
+### Competitive landscape
+
+Prose on status quo, then matrix.
+
+| Alternative | Dimension | Approach | Our stance | Source |
+|---|---|---|---|---|
+| Status quo | workflow | manual | differentiate | https://example.com/fixture (accessed 2026-06-22) |
+
+### Financial considerations
+
+| Item | Low | Base | High | Source |
+|---|---|---|---|---|
+| Build / run cost | unknown | unknown | unknown | [unverified] — owner: eng by 2026-08-15 |
+| Unit economics | unknown | unknown | unknown | [unverified] |
+| Expected value / ROI | unknown | unknown | unknown | [unverified] |
 
 ## Phases
 
-### Phase 1: Fixture delivery
-
-- **Goal**: Ship an isolated billing ledger per tenant.
-- **Status**: not started
-- **Requirements**: FR-1.1
-
+| Phase | Name | Why? (human purpose) | Ships when | Status |
+|---|---|---|---|---|
+| 1 | Fixture delivery | Platform consumers need tenant-isolated ledgers so reconciliation cannot leak across accounts | AC-1.1.1 green | not started |
 
 ## Requirements
 
-### Phase 1 requirements
+### Phase 1 — Fixture delivery
 
-#### FR-1.1: Isolate tenant ledger
+**Why?** App developers and billing operators need a hard tenant boundary for ledger events. This phase reduces cross-tenant read risk before broader platform migration work.
+
+Ship an isolated billing ledger per tenant.
+
+#### Isolation
+
+##### FR-1.1: Isolate tenant ledger
 
 Each tenant invoice derives only from that tenant ledger events.
 
-- **Phase**: 1
-- **Acceptance criteria**: AC-1.1.1
+**Acceptance criteria**
 
+1. **AC-1.1.1** — Reconciliation test passes without cross-tenant reads. *Verify:* automated.
 
 ## Acceptance Criteria
 
-| AC id | FR id | Criterion (stranger-checkable) | Verification method |
+| AC id | FR | Criterion | Verify |
 |---|---|---|---|
 | AC-1.1.1 | FR-1.1 | Reconciliation test passes without cross-tenant reads | automated |
-
 
 ## Success Metrics
 
@@ -79,6 +104,6 @@ flowchart LR
 | --- | --- | --- | --- | --- | --- |
 | Metric value | Type value | Baseline value | Target value | Owner value | Source value |
 
-| AC id | FR id | Criterion (stranger-checkable) | Verification method |
+| AC id | FR | Criterion | Verify |
 | --- | --- | --- | --- |
-| AC id value | FR id value | Criterion (stranger-checkable) value | Verification method value |
+| AC id value | FR id value | Criterion value | Verify value |

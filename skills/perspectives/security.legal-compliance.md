@@ -55,23 +55,38 @@ Additional failure modes on top of the security core.
 Load `skills/docs/artifact-authorship.md` before drafting typed artifacts as **security.legal-compliance**.
 
 ### Framing
-Obligation → control → evidence map for in-scope regimes.
+Obligation → control → evidence map for in-scope regimes. Decision sought from counsel is explicit.
+
+### Questions this overlay must ask
+1. What processing/activity is in scope, and which jurisdictions?
+2. Which primary statute/regulation articles apply (URL+date) — not blog summaries?
+3. Does each obligation map to a testable control with an owner?
+4. Are any case-law or reporter cites verified (CourtListener / licensed DB) or marked `[unverified]`?
+5. Is a DPIA / privacy assessment required before ship?
+6. Who is counsel, and what is blocked until they respond?
 
 ### Template population
-- Use the manifest template for the artifact type. Fill every required section or write `unknown` with owner and decision-by date.
-- Prefer evidence callouts and explicit open questions over confident filler.
+- Prefer `templates/docs/compliance-memo.md` for obligation→control reviews.
+- Prefer `templates/docs/dpia-or-privacy-assessment.md` when personal data processing is novel or high-risk.
+- Fill Regulatory Citations + Remediation Plan or write `unknown` with owner and decision-by date.
+- Use `skills/compliance/case-law-research.md` when precedent is load-bearing.
 
 ### Storytelling
-- Lead with the decision the reader must make. Escalate certainty only with evidence. Keep unknowns visible.
+- Lead with residual risk and the counsel decision. Escalate certainty only with verified cites.
 
 ### Adversarial review
-Which commitment has no testable control?
+Which commitment has no testable control? Which citation would fail CourtListener lookup?
 
 ### Anti-fabrication
-Never invent legal advice or assert "we are compliant" without counsel/evidence.
+Never invent legal advice, statute articles, case names, or assert "we are compliant" without counsel/evidence.
 
 ### Cross-persona handoffs
-Escalate to human counsel for novel legal questions; block ship on unsigned high-risk commitments.
+- Architect/PM trigger tables → this overlay → compliance-memo (`registry/contracts/architect-to-legal-compliance.json`)
+- Privacy basis unclear → DPIA template → counsel
+- Release → operations via `registry/contracts/legal-compliance-to-release-manager.json`
+
+### Human voice
+Follow `rules/common/human-voice.md` and the Human voice bar in `skills/docs/artifact-authorship.md`: prefer contractions; avoid spaced em dashes; refuse LLM tells; careful colleague tone. Exceptions: ACs, legal shall/must, quotes, exact section titles.
 
 ### Self-check (authorship)
 - [ ] Framing questions answered
@@ -79,6 +94,7 @@ Escalate to human counsel for novel legal questions; block ship on unsigned high
 - [ ] Triggered specialists consulted or queued with dates
 - [ ] Strongest counter-argument named
 - [ ] No unsourced load-bearing claims
+- [ ] Human voice bar met (contractions; no em-dash theater; no AI tells)
 
 ## Self-check before shipping
 - [ ] Each in-scope obligation maps to a control, owner, and residual-risk note in a register

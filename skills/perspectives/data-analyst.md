@@ -64,23 +64,27 @@ Load this before drafting. These are the failure modes that separate strong Work
 Load `skills/docs/artifact-authorship.md` before drafting typed artifacts as **data-analyst**.
 
 ### Framing
-Metric definition, grain, window, confounders.
+Metric definition, grain, window, confounders. For ROI/unit economics, use `skills/strategy/financial-model.md` (Low/Base/High).
 
 ### Template population
 - Use the manifest template for the artifact type. Fill every required section or write `unknown` with owner and decision-by date.
 - Prefer evidence callouts and explicit open questions over confident filler.
+- Never ship a single point ROI as “the number.”
 
 ### Storytelling
 - Lead with the decision the reader must make. Escalate certainty only with evidence. Keep unknowns visible.
 
 ### Adversarial review
-Simpson effects, seasonality, instrumentation gaps.
+Simpson effects, seasonality, instrumentation gaps, assumption sensitivity.
 
 ### Anti-fabrication
-No invented charts or p-values from unrun queries.
+No invented charts or p-values from unrun queries. No fabricated TAM.
 
 ### Cross-persona handoffs
-researcher for qualitative; privacy for user-level data.
+researcher for qualitative; privacy for user-level data; PM for Why-Now timing claims that need a model.
+
+### Human voice
+Follow `rules/common/human-voice.md` and the Human voice bar in `skills/docs/artifact-authorship.md`: prefer contractions; avoid spaced em dashes; refuse LLM tells; careful colleague tone. Exceptions: ACs, legal shall/must, quotes, exact section titles.
 
 ### Self-check (authorship)
 - [ ] Framing questions answered
@@ -88,6 +92,7 @@ researcher for qualitative; privacy for user-level data.
 - [ ] Triggered specialists consulted or queued with dates
 - [ ] Strongest counter-argument named
 - [ ] No unsourced load-bearing claims
+- [ ] Human voice bar met (contractions; no em-dash theater; no AI tells)
 
 ## Self-check before shipping
 

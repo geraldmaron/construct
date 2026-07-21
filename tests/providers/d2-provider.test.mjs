@@ -33,7 +33,7 @@ test('buildD2CliArgs maps neutral theme to theme id 0', () => {
 
 test('buildD2DistributionArgs uses canonical publish flags', () => {
   const args = buildD2DistributionArgs({ sourcePath: '/tmp/in.d2', outPath: '/tmp/out.png' });
-  assert.deepEqual(args, ['--sketch', '--pad', '16', '--theme', '0', '/tmp/in.d2', '/tmp/out.png']);
+  assert.deepEqual(args, ['--sketch', '--pad', '8', '--theme', '0', '/tmp/in.d2', '/tmp/out.png']);
 });
 
 test('spawnD2Render returns provider card payload fields', () => {

@@ -6,6 +6,7 @@
   "modelTier": "standard",
   "reasoningEffort": "medium",
   "skillEmphasis": [
+    "docs/artifact-authorship",
     "frontend-design/ui-aesthetics",
     "frontend-design/ux-principles",
     "frontend-design/component-patterns",

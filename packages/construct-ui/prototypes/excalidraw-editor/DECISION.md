@@ -10,7 +10,8 @@ If Construct needed an editable freeform-drawing surface later, what would Excal
 
 - `bd ready` and open beads on `feat/workspace-control-plane` show no user-facing request for editable drawing.
 - `docs/guides/cookbook/wireframe-and-drop.md` explicitly rejects canvas libraries including Excalidraw embeds (`construct-tsyfe.4.7`).
-- Hand-drawn aesthetic need is already covered by D2 `--sketch` and Mermaid `handDrawn` (`lib/diagram-export.mjs`, `lib/diagram.mjs`).
+- Hand-drawn aesthetic need for **interactive** whiteboarding is covered by optional Excalidraw / host MCP — not Construct publish.
+- Publish diagrams use crisp Mermaid + D2 (`lib/diagram-export.mjs`, `lib/diagram.mjs`) without sketch geometry.
 
 ## Prototype
 

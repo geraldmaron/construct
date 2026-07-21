@@ -23,7 +23,7 @@ Resolve tone from `specialists/tone-profiles.json` and optional `.construct/bran
 | `rfc` | Technical or architectural proposals that need structured review before implementation: no contract changes |
 | `rfc-platform` | Proposals that change an external contract: API, SDK, schema, event payload, permission model, protocol |
 
-Style constraint: do not produce a wall of bullets. Use paragraphs for reasoning and narrative, tables for comparison, and bullets only where scanability helps. Keep em dashes rare.
+Style constraint: do not produce a wall of bullets. Use paragraphs for reasoning and narrative, tables for comparison, and bullets only where scanability helps. Prefer contractions; avoid spaced em dashes; refuse LLM tells (`rules/common/human-voice.md`).
 
 ## Canonical PRD structure (customer `prd` template — exact)
 
@@ -31,10 +31,10 @@ Style constraint: do not produce a wall of bullets. Use paragraphs for reasoning
 2. Background
 3. Problem
 4. Outcomes - Goals & Non-Goals
-5. Why This Matters Now
-6. Competitive Landscape & Financial Considerations
-7. Phases
-8. Requirements
+5. Why This Matters Now — **timing economics** table (revenue at risk, upside window, market timing, cost of delay, competitive window, compliance deadline). One-line stubs fail `lintPrdDeliveryDepth`.
+6. Competitive Landscape & Financial Considerations — landscape + structural Low/Base/High finance (not a duplicate of Why Now)
+7. Phases — roadmap table includes **Why? (human purpose)** per phase
+8. Requirements — each `### Phase N` opens with `**Why?**` before FRs
 9. Acceptance Criteria
 10. Success Metrics
 11. Risks
@@ -45,13 +45,15 @@ Do not invent alternate top-level headings. Fold legal triggers, FMEA, and open 
 ## Hierarchy contract (blocking)
 
 ```text
-Phase  →  one or more Requirements (FR-<phase>.<n>)
+Phase  →  Why? (human purpose)  →  one or more Requirements (FR-<phase>.<n>)
 Requirement  →  one or more Acceptance Criteria (AC-<phase>.<n>.<k>)
 ```
 
 - Skeleton one-line FRs fail review. Each FR needs prose (what/why/constraint) plus linked AC ids.
+- Each phase needs Why? — who benefits (named roles), what risk it reduces. Multi-persona tension belongs here and under Risks, not as contributor name-drops.
+- Inclusive / human framing: avoid ableist or gendered defaults; WCAG targets where UI ships.
 - Each AC is stranger-checkable. Ban “intuitive / fast / robust / delightful” without thresholds.
-- `construct artifact validate` runs `lintPrdDeliveryDepth` for type `prd` and `prd-platform`: missing sections, missing Phase headings, orphan AC ids, or FRs without a Phase all fail.
+- `construct artifact validate` runs `lintPrdDeliveryDepth` for type `prd` and `prd-platform`: missing sections, missing Phase headings, missing Phase Why?, orphan AC ids, or FRs without a Phase all fail.
 
 ## Variant spines (same depth bar, native headings)
 
@@ -133,10 +135,12 @@ node bin/construct publish docs/specs/prd/<slug>.md --strict --figures
 
 `construct publish` runs the artifact release gate by default. Thin or unscaffolded docs **exit 2** with remediation hints. Do not use `--no-gate` or `--no-strict` in demos or ship paths.
 
-**Presentation is part of done.** Published PDFs use type-specific Typst templates (`construct-prd.typ`, `construct-research.typ`, `construct-decision.typ`) with the field-notebook brand: Plus Jakarta Sans, cool stone paper, slate-teal evidence accent, dashed sketch chrome (see `templates/distribution/construct-brand.typ`). Lead with a filled **TL;DR**, not a bullet wall. Deck/PPTX exports require `---` slide separators and must pass the PPTX layout audit. Diagrams on the publish path use D2 `--sketch` and Mermaid `handDrawn` styling with charcoal ink (`#1a1d24`) and the same accent family.
+**Presentation is part of done.** Published PDFs use type-specific Typst templates (`construct-prd.typ`, `construct-research.typ`, `construct-decision.typ`) with the field-notebook brand: Plus Jakarta Sans, cool stone paper, slate-teal evidence accent (see `templates/distribution/construct-brand.typ`). Lead with a filled **TL;DR**, not a bullet wall. Deck/PPTX exports require `---` slide separators and must pass the PPTX layout audit. Diagrams on the publish path use crisp D2 (no `--sketch`) and Mermaid classic styling with charcoal ink (`#1a1d24`) and Plus Jakarta Sans labels.
 
 `--strict` means **toolchain and release gate** both pass. Invoke alone is not "done."
 
 ## Shared authorship contract
 
-Before drafting or reviewing, call `get_skill("docs/artifact-authorship")` for framing, template population, storytelling, adversarial review, anti-fabrication, and cross-persona triggers. Persona overlays under `skills/perspectives/` add failure modes; they do not waive that contract.
+Before drafting or reviewing, call `get_skill("docs/artifact-authorship")` for framing, template population, storytelling, human voice, adversarial review, anti-fabrication, and cross-persona triggers. Persona overlays under `skills/perspectives/` add failure modes; they do not waive that contract.
+
+**Before you write (voice):** prefer contractions (`don't`/`won't`/`can't`); avoid spaced em dashes (` — `); refuse AI tells (delve, leverage, robust as filler, "it's important to note", "In today's…", "This ensures that…", empty tricolons); sound like a careful colleague. Exceptions: ACs, legal shall/must not, quoted statute, exact required section titles. See `rules/common/human-voice.md`.

@@ -18,7 +18,7 @@ Score each dimension as pass, warning, or fail:
 - Scope discipline: goals, non-goals, and tradeoffs are explicit.
 - Approval safety: external writes and approved status are gated.
 - Storage readiness: artifact path is under `.construct/knowledge/`, `docs/specs/prd/`, or `docs/meta-prd/` so hybrid retrieval can index it.
-- Readability: balanced paragraphs, tables, and bullets. Few em dashes.
+- Readability: balanced paragraphs, tables, and bullets. Human voice bar (`rules/common/human-voice.md`): contractions; no em-dash theater; no AI tells.
 
 ## Output
 
@@ -26,4 +26,6 @@ Return findings first, ordered by severity. Include concrete fixes and cite sect
 
 ## Shared authorship contract
 
-Before drafting or reviewing, call `get_skill("docs/artifact-authorship")` for framing, template population, storytelling, adversarial review, anti-fabrication, and cross-persona triggers. Persona overlays under `skills/perspectives/` add failure modes; they do not waive that contract.
+Before drafting or reviewing, call `get_skill("docs/artifact-authorship")` for framing, template population, storytelling, human voice, adversarial review, anti-fabrication, and cross-persona triggers. Persona overlays under `skills/perspectives/` add failure modes; they do not waive that contract.
+
+**Before you write (voice):** prefer contractions (`don't`/`won't`/`can't`); avoid spaced em dashes (` — `); refuse AI tells (delve, leverage, robust as filler, "it's important to note", "In today's…", "This ensures that…", empty tricolons); sound like a careful colleague. Exceptions: ACs, legal shall/must not, quoted statute, exact required section titles. See `rules/common/human-voice.md`.

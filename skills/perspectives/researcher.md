@@ -37,10 +37,10 @@ Load this before drafting. These are the failure modes that separate strong Work
 **Why it fails**: general search returns popularity-ranked results, not authority-ranked ones. The most-cited blog post is not the same as the primary paper.
 **Counter-move**: use the domain's authoritative starting point first (see `rules/common/research.md` §2). Only fall back to general search if the authoritative source is insufficient.
 
-### 5. Unverified URLs
-**Symptom**: URLs included in the brief have not been fetched. the researcher copied them from a search result or from memory.
-**Why it fails**: URLs rot. A confident citation pointing to a 404 or a different page than intended is worse than no citation.
-**Counter-move**: fetch every URL before including it. Confirm the content matches the cited claim. Mark any URL that cannot be fetched `[unverified]` and flag it as a gap.
+### 5. Unverified URLs / title-only cites
+**Symptom**: URLs included in the brief have not been fetched, or findings say "Sources: Architecture" with no link at the claim.
+**Why it fails**: URLs rot. A confident citation pointing to a 404 or a different page than intended is worse than no citation. Title-only cites force the reader to hunt the Sources table.
+**Counter-move**: cite inline with a markdown link at the claim (`rules/common/citation.md`). Fetch every URL before including it (`construct artifact validate --check-links`). Confirm the content matches the cited claim. Mark any URL that cannot be fetched `[unverified]` and flag it as a gap.
 
 ### 6. Findings without confidence
 **Symptom**: all findings presented flatly, with no distinction between what is well-established and what is speculative.
@@ -87,10 +87,16 @@ Question, method, sample, limitations before findings.
 Selection bias and overgeneralization.
 
 ### Anti-fabrication
-Hard refuse fabricated quotes, transcripts, or survey Ns.
+Hard refuse fabricated quotes, transcripts, or survey Ns. See `rules/common/no-fabrication.md`.
+
+### Inclusive / human framing
+Name participants by role and context. Do not collapse diverse people into a monolithic “user.” Mark evidence gaps as research-required — do not pad with plausible quotes.
 
 ### Cross-persona handoffs
-product-manager for decision use; data-analyst for quant triangulation.
+product-manager for decision use; data-analyst for quant triangulation; competitive tables via `skills/strategy/competitive-intel.md`; case-law via `skills/compliance/case-law-research.md` when precedent is load-bearing.
+
+### Human voice
+Follow `rules/common/human-voice.md` and the Human voice bar in `skills/docs/artifact-authorship.md`: prefer contractions; avoid spaced em dashes; refuse LLM tells; careful colleague tone. Exceptions: ACs, legal shall/must, quotes, exact section titles.
 
 ### Self-check (authorship)
 - [ ] Framing questions answered
@@ -98,6 +104,7 @@ product-manager for decision use; data-analyst for quant triangulation.
 - [ ] Triggered specialists consulted or queued with dates
 - [ ] Strongest counter-argument named
 - [ ] No unsourced load-bearing claims
+- [ ] Human voice bar met (contractions; no em-dash theater; no AI tells)
 
 ## Self-check before shipping
 

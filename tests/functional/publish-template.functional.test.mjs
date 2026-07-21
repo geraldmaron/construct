@@ -114,6 +114,53 @@ test('preprocessMarkdownForPdfExport strips duplicate cover title and metadata b
   assert.match(out, /^## Problem/m);
 });
 
+test('preprocessMarkdownForPdfExport strips prefixed H1 when title lacks artifact prefix', () => {
+  const md = `---
+title: "Team workspace sharing"
+status: draft
+owner: product-manager
+---
+
+# PRD: Team workspace sharing
+
+- **Date**: 2026-07-21
+- **Owner**: product-manager
+- **Status**: draft
+
+## TL;DR
+
+Body starts here.
+`;
+  const meta = { title: 'Team workspace sharing', status: 'draft', owner: 'product-manager' };
+  const out = preprocessMarkdownForPdfExport(md, meta);
+  assert.doesNotMatch(out, /^#\s+PRD:/m);
+  assert.doesNotMatch(out, /\*\*Owner\*\*:/);
+  assert.match(out, /Body starts here/);
+});
+
+test('parseArtifactMetadata reads tags contributors and approvers from frontmatter', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'publish-meta-'));
+  try {
+    const file = path.join(dir, 'meta.md');
+    fs.writeFileSync(file, `---
+title: "Sample"
+tags:
+  - alpha
+  - beta
+contributors: alice, bob
+approvers:
+  - counsel
+---
+`, 'utf8');
+    const meta = parseArtifactMetadata(file);
+    assert.equal(meta.tags, 'alpha · beta');
+    assert.equal(meta.contributors, 'alice · bob');
+    assert.equal(meta.approvers, 'counsel');
+  } finally {
+    rmTmpDir(dir);
+  }
+});
+
 test('pandocMetadataArgs forwards non-empty metadata', () => {
   const args = pandocMetadataArgs({
     title: 'T',
@@ -122,6 +169,9 @@ test('pandocMetadataArgs forwards non-empty metadata', () => {
     artifactType: 'prd-platform',
     version: '0.1',
     docId: 'DOC-1',
+    tags: 'alpha · beta',
+    contributors: 'alice',
+    approvers: 'counsel',
   });
   assert.deepEqual(args, [
     '-M', 'title=T',
@@ -129,28 +179,33 @@ test('pandocMetadataArgs forwards non-empty metadata', () => {
     '-M', 'artifactType=prd-platform',
     '-M', 'version=0.1',
     '-M', 'docId=DOC-1',
+    '-M', 'tags=alpha · beta',
+    '-M', 'contributors=alice',
+    '-M', 'approvers=counsel',
   ]);
 });
 
-test('distribution diagram defaults use compact hand-drawn sizing', () => {
+test('distribution diagram defaults use compact notebook-ink sizing', () => {
   const defaults = distributionDiagramDefaults();
   assert.equal(defaults.d2Theme, 'neutral');
   assert.equal(defaults.d2Sketch, true);
-  assert.equal(defaults.d2Scale, 0.72);
-  assert.equal(defaults.d2FontSize, 14);
-  assert.equal(defaults.figureMaxWidth, '92%');
+  assert.equal(defaults.d2Scale, 0.9);
+  assert.equal(defaults.d2FontSize, 12);
+  assert.equal(defaults.figureMaxWidth, '72%');
   assert.equal(defaults.mermaidLook, 'handDrawn');
-  assert.equal(defaults.mermaidWidth, 2400);
+  assert.equal(defaults.mermaidWidth, 1600);
   assert.equal(defaults.mermaidScale, 2);
   assert.equal(defaults.accent, '#1f5c61');
 });
 
-test('injectMermaidBrandTheme adds handDrawn init with field-notebook ink and handwritten font', () => {
+test('injectMermaidBrandTheme adds compact handDrawn init with notebook ink', () => {
   const out = injectMermaidBrandTheme('flowchart TD\n  A --> B');
   assert.match(out, /%%\{init:/);
   assert.match(out, /handDrawn/);
-  assert.match(out, /htmlLabels/);
   assert.match(out, /Caveat/);
+  assert.match(out, /nodeSpacing': 24/);
+  assert.match(out, /htmlLabels/);
+  assert.match(out, /1f5c61/);
   assert.match(out, /1a1d24/);
   assert.doesNotMatch(out, /8b5cf6/);
 });
@@ -160,18 +215,18 @@ test('preprocessMarkdownDiagrams brands mermaid and d2 fences field-notebook', (
   const out = preprocessMarkdownDiagrams(md);
   assert.match(out, /1a1d24/);
   assert.doesNotMatch(out, /8b5cf6/);
-  assert.match(out, /style\.font-size: 14/);
+  assert.match(out, /style\.font-size: 12/);
   assert.match(out, /```d2/);
 });
 
-test('buildDistributionDiagramEnv sets CONSTRUCT_D2_THEME and sketch flag', () => {
+test('buildDistributionDiagramEnv sets CONSTRUCT_D2_THEME and compact sketch', () => {
   const env = buildDistributionDiagramEnv({});
   assert.equal(env.CONSTRUCT_D2_THEME, '0');
-  assert.equal(env.CONSTRUCT_D2_SCALE, '0.72');
+  assert.equal(env.CONSTRUCT_D2_SCALE, '0.9');
   assert.equal(env.CONSTRUCT_D2_SKETCH, '1');
   assert.equal(env.CONSTRUCT_MERMAID_THEME, 'construct');
   assert.equal(env.CONSTRUCT_MERMAID_MIME, 'image/png');
-  assert.equal(env.CONSTRUCT_MERMAID_WIDTH, '2400');
+  assert.equal(env.CONSTRUCT_MERMAID_WIDTH, '1600');
   assert.equal(env.CONSTRUCT_MERMAID_SCALE, '2');
   assert.match(env.CONSTRUCT_MERMAID_PPTR_CONFIG || '', /templates\/distribution\/mermaid-puppeteer\.json$/);
 });

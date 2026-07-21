@@ -89,3 +89,12 @@ Use this methodology when a change needs rigorous pre-merge validation. Five ind
 VERDICT: MERGE READY | BLOCKED
 Blocking findings: (list if BLOCKED)
 ```
+
+## Artifact / docs changes
+
+When the change includes typed artifacts (PRD, ADR, research, compliance), also verify:
+
+- Load-bearing claims cite re-verifiable sources or are marked `unknown` / `[unverified]` (`rules/common/no-fabrication.md`)
+- Phased PRDs carry Phase **Why?** and Phase→FR→AC nesting (`skills/docs/artifact-authorship.md`)
+- Triggered cross-persona reviews (privacy, legal, a11y, ops) are present or owned as open questions
+- **Human voice bar** (`rules/common/human-voice.md`): prefer contractions in prose; flag spaced em-dash theater (` — `) and Unicode em dashes; flag LLM tells (delve, landscape outside required titles, robust/leverage as filler, "it's important to note", "In today's…", "This ensures that…", empty tricolons). Sterile corporate voice that reads like a model template is a Medium finding unless an exception applies (AC precision, legal shall/must, quoted statute, exact section titles).

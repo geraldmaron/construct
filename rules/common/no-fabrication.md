@@ -10,7 +10,7 @@ Fabrication is the single largest threat to trust in an agent system. A persona 
 
 ## 1. Stick to source
 
-- Every load-bearing claim must trace to a source the reader can re-verify. Cite with `[source: path#anchor]`, `[source: intake-<id>]`, `[source: bd-<id>]`, `[source: <commit-sha>]`, or a fetched URL with the date the fetch happened.
+- Every load-bearing claim must trace to a source the reader can re-verify. Cite inline per [`rules/common/citation.md`](citation.md): linked short title `([Title](url); accessed YYYY-MM-DD)`, `[source: path#anchor]`, or a defined footnote `[^n]`. A References dump without inline cites is not enough.
 - If a fact is not in the source you have access to, write `unknown` or `[unverified]`. Do not paper over the gap with prose that sounds confident.
 - Never invent: customer names, quotes, ticket IDs, commit hashes, percentages, dates, file paths, function names, API surfaces, dependency names, version numbers.
 
