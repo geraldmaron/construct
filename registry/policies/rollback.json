@@ -1,0 +1,16 @@
+{
+  "id": "rollback",
+  "ownerWorkerProfile": "operations",
+  "description": "Operations group executes rollbacks during incidents.",
+  "enforcement": "hard",
+  "mode": "approval",
+  "approvalWorkerProfiles": [],
+  "requiredPolicies": [],
+  "vetoWorkerProfiles": [],
+  "escalationWorkerProfiles": [],
+  "governs": [
+    "rollback"
+  ],
+  "conditions": [],
+  "evidence": []
+}

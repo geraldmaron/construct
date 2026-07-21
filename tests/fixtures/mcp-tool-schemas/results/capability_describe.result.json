@@ -88,7 +88,7 @@
         },
         {
           "id": "architect",
-          "name": "cx-architect",
+          "name": "architect",
           "description": "Makes trade-offs explicit before implementation locks them in — permanently suspicious of clever solutions and unwritten interface contracts.",
           "modelTier": "reasoning",
           "internal": true,
@@ -117,7 +117,7 @@
         },
         {
           "id": "data-analyst",
-          "name": "cx-data-analyst",
+          "name": "data-analyst",
           "description": "Measures carefully because measurement shapes behavior — suspicious of metrics that can be hit without solving the problem.",
           "modelTier": "standard",
           "internal": true,
@@ -144,7 +144,7 @@
         },
         {
           "id": "debugger",
-          "name": "cx-debugger",
+          "name": "debugger",
           "description": "Traces to root cause before proposing a fix — the real bug is always one layer deeper than where it presents.",
           "modelTier": "reasoning",
           "internal": true,
@@ -157,7 +157,7 @@
         },
         {
           "id": "designer",
-          "name": "cx-designer",
+          "name": "designer",
           "description": "Treats visual decisions as interaction decisions — a design that only exists in the happy state is incomplete.",
           "modelTier": "standard",
           "internal": true,
@@ -200,7 +200,7 @@
         },
         {
           "id": "engineer",
-          "name": "cx-engineer",
+          "name": "engineer",
           "description": "Reads before writing — understanding the existing pattern matters more than having the better one.",
           "modelTier": "standard",
           "internal": true,
@@ -270,13 +270,13 @@
         },
         {
           "id": "operations",
-          "name": "cx-operations",
+          "name": "operations",
           "description": "The logistics mind who maps dependencies, sequences, and ownership — because hidden dependencies surface as blocked work.",
           "modelTier": "standard",
           "internal": true,
           "canEdit": false,
           "skills": [
-            "roles/operations",
+            "perspectives/operations",
             "docs/init-project",
             "operating/incident-response",
             "operating/oncall-rotation",
@@ -293,12 +293,12 @@
           "skills": [
             "ai/orchestration-workflow",
             "exploration/dependency-graph-reading",
-            "roles/trace-reviewer"
+            "perspectives/trace-reviewer"
           ]
         },
         {
           "id": "orchestrator",
-          "name": "cx-orchestrator",
+          "name": "orchestrator",
           "description": "Sees the whole board — orchestrates by assembling the right perspectives in the right sequence, routing each request to the minds that will see what others miss.",
           "modelTier": "standard",
           "internal": false,
@@ -328,7 +328,7 @@
         },
         {
           "id": "product-manager",
-          "name": "cx-product-manager",
+          "name": "product-manager",
           "description": "Translates user reality into technical deliverables — skeptical of any requirement that can't be traced to observed user behavior.",
           "modelTier": "reasoning",
           "internal": true,
@@ -347,7 +347,7 @@
         },
         {
           "id": "qa",
-          "name": "cx-qa",
+          "name": "qa",
           "description": "Asks whether the tests test what matters — coverage numbers are hypotheses about quality, not proof of it.",
           "modelTier": "standard",
           "internal": true,
@@ -386,7 +386,7 @@
         },
         {
           "id": "researcher",
-          "name": "cx-researcher",
+          "name": "researcher",
           "description": "Never trusts recall alone — sources every claim with a primary reference and a date.",
           "modelTier": "standard",
           "internal": true,
@@ -399,7 +399,7 @@
         },
         {
           "id": "reviewer",
-          "name": "cx-reviewer",
+          "name": "reviewer",
           "description": "Finds bugs by looking at the conditions the author didn't test for — happy path review is not review.",
           "modelTier": "reasoning",
           "internal": true,
@@ -412,7 +412,7 @@
         },
         {
           "id": "security",
-          "name": "cx-security",
+          "name": "security",
           "description": "Thinks like an attacker — sees the attack surface the developer didn't know existed.",
           "modelTier": "reasoning",
           "internal": true,
@@ -976,7 +976,7 @@
         },
         {
           "id": "docs/research-workflow",
-          "description": "Use when: cx-researcher must investigate external facts — CVEs, APIs, market data, regulations, or vendor behavior.",
+          "description": "Use when: researcher must investigate external facts — CVEs, APIs, market data, regulations, or vendor behavior.",
           "inputs": [
             "research-question"
           ],
@@ -1028,7 +1028,7 @@
         },
         {
           "id": "exploration/repo-map",
-          "description": "Use this skill when entering an unfamiliar codebase, doing deep investigation work, or producing a `.cx/codebase-map.md` artifact for future sessions.",
+          "description": "Use this skill when entering an unfamiliar codebase, doing deep investigation work, or producing a `.construct/codebase-map.md` artifact for future sessions.",
           "inputs": [
             "repo",
             "codebase"
@@ -1252,7 +1252,7 @@
           "artifactType": "vulnerability-report"
         },
         {
-          "id": "roles/ai-engineer",
+          "id": "perspectives/ai-engineer",
           "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer — AI role. Use when reviewing or generating work by cx-ai-engineer, or when an agent is acting in the Engineer — AI role.",
           "inputs": [
             "code-diff",
@@ -1261,8 +1261,8 @@
           "artifactType": "role-guidance"
         },
         {
-          "id": "roles/architect",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect role. Use when reviewing or generating work by cx-architect, cx-rd-lead, or when an agent is acting in the Architect role.",
+          "id": "perspectives/architect",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect role. Use when reviewing or generating work by architect, cx-rd-lead, or when an agent is acting in the Architect role.",
           "inputs": [
             "architecture-design",
             "requirements"
@@ -1270,8 +1270,8 @@
           "artifactType": "role-guidance"
         },
         {
-          "id": "roles/architect.ai-systems",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — AI Systems role. Use when reviewing or generating work by cx-architect, or when an agent is acting in the Architect — AI Systems role.",
+          "id": "perspectives/architect.ai-systems",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — AI Systems role. Use when reviewing or generating work by architect, or when an agent is acting in the Architect — AI Systems role.",
           "inputs": [
             "architecture-design",
             "adr"
@@ -1279,8 +1279,8 @@
           "artifactType": "role-guidance"
         },
         {
-          "id": "roles/architect.data",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — Data role. Use when reviewing or generating work by cx-architect, or when an agent is acting in the Architect — Data role.",
+          "id": "perspectives/architect.data",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — Data role. Use when reviewing or generating work by architect, or when an agent is acting in the Architect — Data role.",
           "inputs": [
             "data-model",
             "architecture-design"
@@ -1288,8 +1288,8 @@
           "artifactType": "role-guidance"
         },
         {
-          "id": "roles/architect.enterprise",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — Enterprise role. Use when reviewing or generating work by cx-architect, or when an agent is acting in the Architect — Enterprise role.",
+          "id": "perspectives/architect.enterprise",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — Enterprise role. Use when reviewing or generating work by architect, or when an agent is acting in the Architect — Enterprise role.",
           "inputs": [
             "architecture-design",
             "compliance-requirements"
@@ -1297,8 +1297,8 @@
           "artifactType": "role-guidance"
         },
         {
-          "id": "roles/architect.integration",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — Integration role. Use when reviewing or generating work by cx-architect, or when an agent is acting in the Architect — Integration role.",
+          "id": "perspectives/architect.integration",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — Integration role. Use when reviewing or generating work by architect, or when an agent is acting in the Architect — Integration role.",
           "inputs": [
             "integration-design",
             "sequence-diagram"
@@ -1306,8 +1306,8 @@
           "artifactType": "role-guidance"
         },
         {
-          "id": "roles/architect.platform",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — Platform role. Use when reviewing or generating work by cx-architect, or when an agent is acting in the Architect — Platform role.",
+          "id": "perspectives/architect.platform",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — Platform role. Use when reviewing or generating work by architect, or when an agent is acting in the Architect — Platform role.",
           "inputs": [
             "platform-design",
             "adr"
@@ -1315,7 +1315,7 @@
           "artifactType": "role-guidance"
         },
         {
-          "id": "roles/business-strategist",
+          "id": "perspectives/business-strategist",
           "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Business Strategy role. Use when reviewing or generating work by cx-business-strategist, or when an agent is acting in the Product Manager — Business Strategy role.",
           "inputs": [
             "strategy-doc",
@@ -1324,8 +1324,8 @@
           "artifactType": "guidance"
         },
         {
-          "id": "roles/data-analyst",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst role. Use when reviewing or generating work by cx-data-analyst, or when an agent is acting in the Data Analyst role.",
+          "id": "perspectives/data-analyst",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst role. Use when reviewing or generating work by data-analyst, or when an agent is acting in the Data Analyst role.",
           "inputs": [
             "dataset",
             "metrics-analysis"
@@ -1333,8 +1333,8 @@
           "artifactType": "role-guidance"
         },
         {
-          "id": "roles/data-analyst.experiment",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst — Experiment role. Use when reviewing or generating work by cx-data-analyst, or when an agent is acting in the Data Analyst — Experiment role.",
+          "id": "perspectives/data-analyst.experiment",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst — Experiment role. Use when reviewing or generating work by data-analyst, or when an agent is acting in the Data Analyst — Experiment role.",
           "inputs": [
             "experiment-plan",
             "metrics"
@@ -1342,8 +1342,8 @@
           "artifactType": "role-guidance"
         },
         {
-          "id": "roles/data-analyst.product",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst — Product role. Use when reviewing or generating work by cx-data-analyst, or when an agent is acting in the Data Analyst — Product role.",
+          "id": "perspectives/data-analyst.product",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst — Product role. Use when reviewing or generating work by data-analyst, or when an agent is acting in the Data Analyst — Product role.",
           "inputs": [
             "product-metrics",
             "funnel-data"
@@ -1351,8 +1351,8 @@
           "artifactType": "role-guidance"
         },
         {
-          "id": "roles/data-analyst.product-intelligence",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst — Product Intelligence role. Use when reviewing or generating work by cx-data-analyst, cx-product-manager, or when an agent is acting in the Data Analyst — Product Intelligence role.",
+          "id": "perspectives/data-analyst.product-intelligence",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst — Product Intelligence role. Use when reviewing or generating work by data-analyst, product-manager, or when an agent is acting in the Data Analyst — Product Intelligence role.",
           "inputs": [
             "customer-signals",
             "telemetry"
@@ -1360,8 +1360,8 @@
           "artifactType": "role-guidance"
         },
         {
-          "id": "roles/data-analyst.telemetry",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst — Telemetry role. Use when reviewing or generating work by cx-data-analyst, cx-sre, or when an agent is acting in the Data Analyst — Telemetry role.",
+          "id": "perspectives/data-analyst.telemetry",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst — Telemetry role. Use when reviewing or generating work by data-analyst, cx-sre, or when an agent is acting in the Data Analyst — Telemetry role.",
           "inputs": [
             "telemetry",
             "metrics"
@@ -1369,7 +1369,7 @@
           "artifactType": "role-guidance"
         },
         {
-          "id": "roles/data-engineer",
+          "id": "perspectives/data-engineer",
           "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer — Data role. Use when reviewing or generating work by cx-data-engineer, or when an agent is acting in the Engineer — Data role.",
           "inputs": [
             "code-diff",
@@ -1378,7 +1378,7 @@
           "artifactType": "role-guidance"
         },
         {
-          "id": "roles/data-engineer.pipeline",
+          "id": "perspectives/data-engineer.pipeline",
           "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Engineer — Pipeline role. Use when reviewing or generating work by cx-data-engineer, or when an agent is acting in the Data Engineer — Pipeline role.",
           "inputs": [
             "pipeline-design",
@@ -1387,7 +1387,7 @@
           "artifactType": "role-guidance"
         },
         {
-          "id": "roles/data-engineer.vector-retrieval",
+          "id": "perspectives/data-engineer.vector-retrieval",
           "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Engineer — Vector Retrieval role. Use when reviewing or generating work by cx-data-engineer, cx-ai-engineer, or when an agent is acting in the Data Engineer — Vector Retrieval role.",
           "inputs": [
             "retrieval-design",
@@ -1396,7 +1396,7 @@
           "artifactType": "role-guidance"
         },
         {
-          "id": "roles/data-engineer.warehouse",
+          "id": "perspectives/data-engineer.warehouse",
           "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Engineer — Warehouse role. Use when reviewing or generating work by cx-data-engineer, or when an agent is acting in the Data Engineer — Warehouse role.",
           "inputs": [
             "warehouse-model",
@@ -1405,8 +1405,8 @@
           "artifactType": "role-guidance"
         },
         {
-          "id": "roles/debugger",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Debugger role. Use when reviewing or generating work by cx-debugger, or when an agent is acting in the Debugger role.",
+          "id": "perspectives/debugger",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Debugger role. Use when reviewing or generating work by debugger, or when an agent is acting in the Debugger role.",
           "inputs": [
             "bug-report",
             "failure-signal"
@@ -1414,15 +1414,15 @@
           "artifactType": "role-guidance"
         },
         {
-          "id": "roles/designer",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Designer role. Use when reviewing or generating work by cx-designer, cx-accessibility, or when an agent is acting in the Designer role.",
+          "id": "perspectives/designer",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Designer role. Use when reviewing or generating work by designer, cx-accessibility, or when an agent is acting in the Designer role.",
           "inputs": [
             "ui-design"
           ],
           "artifactType": "role-guidance"
         },
         {
-          "id": "roles/designer.accessibility",
+          "id": "perspectives/designer.accessibility",
           "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Designer — Accessibility role. Use when reviewing or generating work by cx-accessibility, or when an agent is acting in the Designer — Accessibility role.",
           "inputs": [
             "ui-design",
@@ -1431,7 +1431,7 @@
           "artifactType": "role-guidance"
         },
         {
-          "id": "roles/devil-advocate",
+          "id": "perspectives/devil-advocate",
           "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer — Devil Advocate role. Use when reviewing or generating work by cx-devil-advocate, or when an agent is acting in the Reviewer — Devil Advocate role.",
           "inputs": [
             "plan",
@@ -1440,7 +1440,7 @@
           "artifactType": "guidance"
         },
         {
-          "id": "roles/docs-keeper",
+          "id": "perspectives/docs-keeper",
           "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator — Docs role. Use when reviewing or generating work by cx-docs-keeper, or when an agent is acting in the Operator — Docs role.",
           "inputs": [
             "docs",
@@ -1449,8 +1449,8 @@
           "artifactType": "role-guidance"
         },
         {
-          "id": "roles/engineer",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer role. Use when reviewing or generating work by cx-engineer, or when an agent is acting in the Engineer role.",
+          "id": "perspectives/engineer",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer role. Use when reviewing or generating work by engineer, or when an agent is acting in the Engineer role.",
           "inputs": [
             "code-diff",
             "task-context"
@@ -1458,7 +1458,7 @@
           "artifactType": "role-guidance"
         },
         {
-          "id": "roles/evaluator",
+          "id": "perspectives/evaluator",
           "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer — Evaluator role. Use when reviewing or generating work by cx-evaluator, or when an agent is acting in the Reviewer — Evaluator role.",
           "inputs": [
             "model-output",
@@ -1467,7 +1467,7 @@
           "artifactType": "guidance"
         },
         {
-          "id": "roles/explorer",
+          "id": "perspectives/explorer",
           "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Researcher — Explorer role. Use when reviewing or generating work by cx-explorer, or when an agent is acting in the Researcher — Explorer role.",
           "inputs": [
             "repo",
@@ -1476,8 +1476,8 @@
           "artifactType": "guidance"
         },
         {
-          "id": "roles/operations",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator role. Use when reviewing or generating work by cx-sre, cx-operations, cx-release-manager, cx-docs-keeper, or when an agent is acting in the Operator role.",
+          "id": "perspectives/operations",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator role. Use when reviewing or generating work by cx-sre, operations, cx-release-manager, cx-docs-keeper, or when an agent is acting in the Operator role.",
           "inputs": [
             "runbook",
             "deployment-plan"
@@ -1485,8 +1485,8 @@
           "artifactType": "role-guidance"
         },
         {
-          "id": "roles/orchestrator",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Orchestrator role. Use when reviewing or generating work by cx-orchestrator, or when an agent is acting in the Orchestrator role.",
+          "id": "perspectives/orchestrator",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Orchestrator role. Use when reviewing or generating work by orchestrator, or when an agent is acting in the Orchestrator role.",
           "inputs": [
             "task-context",
             "request"
@@ -1494,7 +1494,7 @@
           "artifactType": "role-guidance"
         },
         {
-          "id": "roles/platform-engineer",
+          "id": "perspectives/platform-engineer",
           "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer — Platform role. Use when reviewing or generating work by cx-platform-engineer, or when an agent is acting in the Engineer — Platform role.",
           "inputs": [
             "code-diff",
@@ -1503,8 +1503,8 @@
           "artifactType": "role-guidance"
         },
         {
-          "id": "roles/product-manager",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager role. Use when reviewing or generating work by cx-product-manager, cx-business-strategist, or when an agent is acting in the Product Manager role.",
+          "id": "perspectives/product-manager",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager role. Use when reviewing or generating work by product-manager, cx-business-strategist, or when an agent is acting in the Product Manager role.",
           "inputs": [
             "prd",
             "user-evidence"
@@ -1512,8 +1512,8 @@
           "artifactType": "guidance"
         },
         {
-          "id": "roles/product-manager.ai-product",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — AI Product role. Use when reviewing or generating work by cx-product-manager, or when an agent is acting in the Product Manager — AI Product role.",
+          "id": "perspectives/product-manager.ai-product",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — AI Product role. Use when reviewing or generating work by product-manager, or when an agent is acting in the Product Manager — AI Product role.",
           "inputs": [
             "prd",
             "eval-criteria"
@@ -1521,8 +1521,8 @@
           "artifactType": "role-guidance"
         },
         {
-          "id": "roles/product-manager.enterprise",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Enterprise role. Use when reviewing or generating work by cx-product-manager, or when an agent is acting in the Product Manager — Enterprise role.",
+          "id": "perspectives/product-manager.enterprise",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Enterprise role. Use when reviewing or generating work by product-manager, or when an agent is acting in the Product Manager — Enterprise role.",
           "inputs": [
             "prd",
             "task-context"
@@ -1530,8 +1530,8 @@
           "artifactType": "guidance"
         },
         {
-          "id": "roles/product-manager.growth",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Growth role. Use when reviewing or generating work by cx-product-manager, cx-business-strategist, or when an agent is acting in the Product Manager — Growth role.",
+          "id": "perspectives/product-manager.growth",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Growth role. Use when reviewing or generating work by product-manager, cx-business-strategist, or when an agent is acting in the Product Manager — Growth role.",
           "inputs": [
             "prd",
             "growth-metrics"
@@ -1539,8 +1539,8 @@
           "artifactType": "guidance"
         },
         {
-          "id": "roles/product-manager.platform",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Platform role. Use when reviewing or generating work by cx-product-manager, or when an agent is acting in the Product Manager — Platform role.",
+          "id": "perspectives/product-manager.platform",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Platform role. Use when reviewing or generating work by product-manager, or when an agent is acting in the Product Manager — Platform role.",
           "inputs": [
             "prd",
             "api-spec"
@@ -1548,8 +1548,8 @@
           "artifactType": "guidance"
         },
         {
-          "id": "roles/product-manager.product",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Product role. Use when reviewing or generating work by cx-product-manager, or when an agent is acting in the Product Manager — Product role.",
+          "id": "perspectives/product-manager.product",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Product role. Use when reviewing or generating work by product-manager, or when an agent is acting in the Product Manager — Product role.",
           "inputs": [
             "prd",
             "task-context"
@@ -1557,8 +1557,8 @@
           "artifactType": "guidance"
         },
         {
-          "id": "roles/qa",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA role. Use when reviewing or generating work by cx-qa, cx-test-automation, or when an agent is acting in the QA role.",
+          "id": "perspectives/qa",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA role. Use when reviewing or generating work by qa, cx-test-automation, or when an agent is acting in the QA role.",
           "inputs": [
             "test-suite",
             "code-diff"
@@ -1566,8 +1566,8 @@
           "artifactType": "guidance"
         },
         {
-          "id": "roles/qa.ai-eval",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — AI Eval role. Use when reviewing or generating work by cx-qa, cx-test-automation, cx-evaluator, or when an agent is acting in the QA — AI Eval role.",
+          "id": "perspectives/qa.ai-eval",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — AI Eval role. Use when reviewing or generating work by qa, cx-test-automation, cx-evaluator, or when an agent is acting in the QA — AI Eval role.",
           "inputs": [
             "eval-set",
             "model-output"
@@ -1575,8 +1575,8 @@
           "artifactType": "guidance"
         },
         {
-          "id": "roles/qa.api-contract",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — API Contract role. Use when reviewing or generating work by cx-qa, cx-test-automation, or when an agent is acting in the QA — API Contract role.",
+          "id": "perspectives/qa.api-contract",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — API Contract role. Use when reviewing or generating work by qa, cx-test-automation, or when an agent is acting in the QA — API Contract role.",
           "inputs": [
             "api-spec",
             "test-suite"
@@ -1584,8 +1584,8 @@
           "artifactType": "guidance"
         },
         {
-          "id": "roles/qa.data-pipeline",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — Data Pipeline role. Use when reviewing or generating work by cx-qa, cx-test-automation, or when an agent is acting in the QA — Data Pipeline role.",
+          "id": "perspectives/qa.data-pipeline",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — Data Pipeline role. Use when reviewing or generating work by qa, cx-test-automation, or when an agent is acting in the QA — Data Pipeline role.",
           "inputs": [
             "pipeline",
             "test-suite"
@@ -1593,8 +1593,8 @@
           "artifactType": "guidance"
         },
         {
-          "id": "roles/qa.web-ui",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — Web UI role. Use when reviewing or generating work by cx-qa, cx-test-automation, or when an agent is acting in the QA — Web UI role.",
+          "id": "perspectives/qa.web-ui",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — Web UI role. Use when reviewing or generating work by qa, cx-test-automation, or when an agent is acting in the QA — Web UI role.",
           "inputs": [
             "test-suite",
             "ui"
@@ -1602,7 +1602,7 @@
           "artifactType": "guidance"
         },
         {
-          "id": "roles/release-manager",
+          "id": "perspectives/release-manager",
           "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator — Release role. Use when reviewing or generating work by cx-release-manager, or when an agent is acting in the Operator — Release role.",
           "inputs": [
             "release-plan",
@@ -1611,8 +1611,8 @@
           "artifactType": "role-guidance"
         },
         {
-          "id": "roles/researcher",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Researcher role. Use when reviewing or generating work by cx-researcher, cx-ux-researcher, cx-explorer, or when an agent is acting in the Researcher role.",
+          "id": "perspectives/researcher",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Researcher role. Use when reviewing or generating work by researcher, cx-ux-researcher, cx-explorer, or when an agent is acting in the Researcher role.",
           "inputs": [
             "research-question",
             "sources"
@@ -1620,8 +1620,8 @@
           "artifactType": "guidance"
         },
         {
-          "id": "roles/reviewer",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer role. Use when reviewing or generating work by cx-reviewer, cx-devil-advocate, cx-evaluator, cx-trace-reviewer, or when an agent is acting in the Reviewer role.",
+          "id": "perspectives/reviewer",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer role. Use when reviewing or generating work by reviewer, cx-devil-advocate, cx-evaluator, cx-trace-reviewer, or when an agent is acting in the Reviewer role.",
           "inputs": [
             "code-diff",
             "pull-request"
@@ -1629,8 +1629,8 @@
           "artifactType": "review-report"
         },
         {
-          "id": "roles/security",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security role. Use when reviewing or generating work by cx-security, cx-legal-compliance, or when an agent is acting in the Security role.",
+          "id": "perspectives/security",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security role. Use when reviewing or generating work by security, cx-legal-compliance, or when an agent is acting in the Security role.",
           "inputs": [
             "code-diff",
             "threat-model"
@@ -1638,8 +1638,8 @@
           "artifactType": "guidance"
         },
         {
-          "id": "roles/security.ai",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — AI role. Use when reviewing or generating work by cx-security, cx-ai-engineer, or when an agent is acting in the Security — AI role.",
+          "id": "perspectives/security.ai",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — AI role. Use when reviewing or generating work by security, cx-ai-engineer, or when an agent is acting in the Security — AI role.",
           "inputs": [
             "ai-system",
             "task-context"
@@ -1647,8 +1647,8 @@
           "artifactType": "guidance"
         },
         {
-          "id": "roles/security.appsec",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Appsec role. Use when reviewing or generating work by cx-security, or when an agent is acting in the Security — Appsec role.",
+          "id": "perspectives/security.appsec",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Appsec role. Use when reviewing or generating work by security, or when an agent is acting in the Security — Appsec role.",
           "inputs": [
             "code-diff",
             "task-context"
@@ -1656,8 +1656,8 @@
           "artifactType": "guidance"
         },
         {
-          "id": "roles/security.cloud",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Cloud role. Use when reviewing or generating work by cx-security, or when an agent is acting in the Security — Cloud role.",
+          "id": "perspectives/security.cloud",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Cloud role. Use when reviewing or generating work by security, or when an agent is acting in the Security — Cloud role.",
           "inputs": [
             "cloud-config",
             "iam-policy"
@@ -1665,7 +1665,7 @@
           "artifactType": "guidance"
         },
         {
-          "id": "roles/security.legal-compliance",
+          "id": "perspectives/security.legal-compliance",
           "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Legal Compliance role. Use when reviewing or generating work by cx-legal-compliance, or when an agent is acting in the Security — Legal Compliance role.",
           "inputs": [
             "policy",
@@ -1674,8 +1674,8 @@
           "artifactType": "guidance"
         },
         {
-          "id": "roles/security.privacy",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Privacy role. Use when reviewing or generating work by cx-security, cx-legal-compliance, or when an agent is acting in the Security — Privacy role.",
+          "id": "perspectives/security.privacy",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Privacy role. Use when reviewing or generating work by security, cx-legal-compliance, or when an agent is acting in the Security — Privacy role.",
           "inputs": [
             "data-flow",
             "task-context"
@@ -1683,8 +1683,8 @@
           "artifactType": "guidance"
         },
         {
-          "id": "roles/security.supply-chain",
-          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Supply Chain role. Use when reviewing or generating work by cx-security, cx-platform-engineer, or when an agent is acting in the Security — Supply Chain role.",
+          "id": "perspectives/security.supply-chain",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Supply Chain role. Use when reviewing or generating work by security, cx-platform-engineer, or when an agent is acting in the Security — Supply Chain role.",
           "inputs": [
             "dependencies",
             "ci-config"
@@ -1692,7 +1692,7 @@
           "artifactType": "guidance"
         },
         {
-          "id": "roles/sre",
+          "id": "perspectives/sre",
           "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator — SRE role. Use when reviewing or generating work by cx-sre, or when an agent is acting in the Operator — SRE role.",
           "inputs": [
             "alert-config",
@@ -1701,7 +1701,7 @@
           "artifactType": "role-guidance"
         },
         {
-          "id": "roles/test-automation",
+          "id": "perspectives/test-automation",
           "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — Test Automation role. Use when reviewing or generating work by cx-test-automation, or when an agent is acting in the QA — Test Automation role.",
           "inputs": [
             "test-suite",
@@ -1710,7 +1710,7 @@
           "artifactType": "guidance"
         },
         {
-          "id": "roles/trace-reviewer",
+          "id": "perspectives/trace-reviewer",
           "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer — Trace role. Use when reviewing or generating work by cx-trace-reviewer, or when an agent is acting in the Reviewer — Trace role.",
           "inputs": [
             "trace",
@@ -1719,7 +1719,7 @@
           "artifactType": "guidance"
         },
         {
-          "id": "roles/ux-researcher",
+          "id": "perspectives/ux-researcher",
           "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Researcher — UX role. Use when reviewing or generating work by cx-ux-researcher, or when an agent is acting in the Researcher — UX role.",
           "inputs": [
             "user-research",
@@ -2247,7 +2247,7 @@
           "id": "code-review",
           "enforcement": "(persona prompt)",
           "mode": "honor-system",
-          "description": "Review standards applied by cx-reviewer and cx-qa before any change is marked done."
+          "description": "Review standards applied by reviewer and qa before any change is marked done."
         },
         {
           "id": "coding-style",
@@ -2397,7 +2397,7 @@
           "id": "security",
           "enforcement": "(persona prompt)",
           "mode": "honor-system",
-          "description": "Security review checklist applied by cx-security and cx-reviewer on any change touching auth, credentials, or external I/O."
+          "description": "Security review checklist applied by security and reviewer on any change touching auth, credentials, or external I/O."
         },
         {
           "id": "session-efficiency",

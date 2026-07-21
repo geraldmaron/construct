@@ -35,12 +35,12 @@ function env() {
     env: {
       ...process.env,
       HOME: home,
-      CX_HOME_OVERRIDE: home,
+      CONSTRUCT_HOME_OVERRIDE: home,
       CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
       BOOTSTRAP_CHECKED: '1',
-      CX_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
-      CX_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6',
-      CX_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
+      CONSTRUCT_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
+      CONSTRUCT_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6',
+      CONSTRUCT_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
       ANTHROPIC_API_KEY: 'sk-test-canary',
     },
     cleanup() { rmTmpDir(home); },
@@ -89,7 +89,33 @@ test('construct orchestrate preflight --json returns typed missing-tool failure'
     const payload = JSON.parse(result.stdout);
     assert.equal(payload.reasonCode, 'tool_unlisted');
     assert.deepEqual(payload.missingTools, ['orchestration_run']);
+    assert.equal(payload.expectedUntilHostSync, true);
     assert.match(payload.nextStep, /construct sync/);
+    assert.match(payload.diagnosticBundle.detail, /fresh project|tarball|Missing required tool/);
+  } finally {
+    ctx.cleanup();
+  }
+});
+
+test('construct orchestrate preflight human output teaches sync path for missing tools', () => {
+  const ctx = env();
+  try {
+    const result = spawnSync(process.execPath, [
+      BIN,
+      'orchestrate',
+      'preflight',
+      '--no-probe',
+      '--observation-scope=local-config',
+    ], {
+      cwd: REPO,
+      env: ctx.env,
+      encoding: 'utf8',
+      timeout: 10_000,
+    });
+    assert.equal(result.status, 1, result.stderr || result.stdout);
+    assert.match(result.stdout, /expected-until-host-sync|Setup note/);
+    assert.match(result.stdout, /construct sync/);
+    assert.match(result.stdout, /not that the Construct install itself failed/);
   } finally {
     ctx.cleanup();
   }

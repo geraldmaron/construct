@@ -1,10 +1,9 @@
 /**
  * tests/functional/embedded-contract-capability.functional.test.mjs
  *
- * Drives `construct capability describe --json` against the real binary and
- * asserts the versioned envelope, the presence of every section, and the
- * load-bearing guarantee that a credential in the environment never appears in
- * the discovery output.
+ * Drives canonical `construct capability list|show` discovery against the real
+ * binary. Asserts list/show parity for a known record and the load-bearing
+ * guarantee that credentials never appear in discovery output.
  */
 
 import assert from 'node:assert/strict';
@@ -31,26 +30,30 @@ after(() => {
   }
 });
 
-test('capability describe --json returns a complete versioned contract', () => {
-  const res = spawnSync('node', [BIN, 'capability', 'describe', '--json'], { cwd: freshCwd(), encoding: 'utf8', timeout: 30_000 });
-  assert.equal(res.status, 0, `exit 0 — stderr: ${res.stderr}`);
-  const env = JSON.parse(res.stdout);
-  assert.equal(env.surface, 'cli');
-  assert.match(env.contractVersion, /^\d+\.\d+\.\d+$/);
-  // construct-rf26.11 consolidated the 29-specialist roster to 12 (orchestrator + 11 workers).
-  assert.ok(env.data.roles.length >= 12);
-  assert.ok(env.data.workflows.length >= 6, `expected at least the base workflow set, got ${env.data.workflows.length}`);
-  assert.ok(env.data.skills.length > 0);
-  assert.ok(env.data.policies.length > 0);
+test('capability list and show expose the same canonical registry record', () => {
+  const cwd = freshCwd();
+  const list = spawnSync('node', [BIN, 'capability', 'list', '--json'], { cwd, encoding: 'utf8', timeout: 30_000 });
+  assert.equal(list.status, 0, `list exits 0 — stderr: ${list.stderr}`);
+  const records = JSON.parse(list.stdout);
+  assert.ok(Array.isArray(records));
+  assert.ok(records.length > 0);
+
+  const listed = records.find((record) => record.id === 'orchestration.routing');
+  assert.ok(listed, 'canonical orchestration capability is listed');
+  assert.equal(listed.state, 'active');
+  assert.ok(listed.ownerWorkerProfiles.includes('orchestrator'));
+
+  const show = spawnSync('node', [BIN, 'capability', 'show', listed.id, '--json'], { cwd, encoding: 'utf8', timeout: 30_000 });
+  assert.equal(show.status, 0, `show exits 0 — stderr: ${show.stderr}`);
+  assert.deepEqual(JSON.parse(show.stdout), listed);
 });
 
-test('a credential in the environment never leaks into the capability contract', () => {
-  const res = spawnSync('node', [BIN, 'capability', 'describe', '--json'], {
-    cwd: freshCwd(),
-    encoding: 'utf8',
-    timeout: 30_000,
-    env: { ...process.env, OPENAI_API_KEY: 'cred-canary-capability-fn-0001' },
-  });
-  assert.equal(res.status, 0, `exit 0 — stderr: ${res.stderr}`);
-  assert.equal(res.stdout.includes('cred-canary-capability-fn-0001'), false, 'secret must not appear in output');
+test('a credential in the environment never leaks from capability list or show', () => {
+  const env = { ...process.env, OPENAI_API_KEY: 'cred-canary-capability-fn-0001' };
+  const cwd = freshCwd();
+  for (const args of [['list', '--json'], ['show', 'orchestration.routing', '--json']]) {
+    const res = spawnSync('node', [BIN, 'capability', ...args], { cwd, encoding: 'utf8', timeout: 30_000, env });
+    assert.equal(res.status, 0, `exit 0 — stderr: ${res.stderr}`);
+    assert.equal(res.stdout.includes(env.OPENAI_API_KEY), false, 'secret must not appear in output');
+  }
 });

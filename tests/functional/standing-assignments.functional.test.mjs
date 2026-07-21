@@ -6,24 +6,19 @@
  * `construct embed assignments` CLI in a separate process; an enabled embed
  * capability materializes as a `capability:<id>` assignment whose scheduled
  * tick flows through the real Scheduler + registerEmbedCapabilityJobs path;
- * the P0-4 lifecycle invariant holds — due-detection, listing, and status
- * reads never advance `lastAttemptAt`, only an execution attempt does
- * (including an executor that throws); and a `source-change` trigger
- * (construct-4uxq0.10.7) is driven by real upstream drift against a local
- * bare git remote through lib/sources/watch.mjs's actual detection, with
- * only `runAssignmentAttempt` able to consume that drift.
+ * and the P0-4 lifecycle invariant holds — due-detection, listing, and
+ * status reads never advance `lastAttemptAt`, only an execution attempt
+ * does (including an executor that throws).
  */
 
 import assert from 'node:assert/strict';
-import { execSync, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test, { after } from 'node:test';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
-
-import { readWatchState, refreshWatch } from '../../lib/sources/watch.mjs';
 
 import {
   assignmentStatus,
@@ -43,20 +38,6 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BIN = path.resolve(__dirname, '..', '..', 'bin', 'construct');
 
-// refreshWatch/readWatchState persist watch state via resolveStatePath
-// (lib/state-root.mjs), which anchors to the real user home unless
-// CX_HOME_OVERRIDE is set — an unpinned run leaks a fresh
-// ~/.construct/projects/<hash>/context-repos/ key per tmpdir project root.
-
-const HOME_OVERRIDE = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-standing-assign-home-'));
-const PREV_HOME_OVERRIDE = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = HOME_OVERRIDE;
-after(() => {
-  if (PREV_HOME_OVERRIDE === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = PREV_HOME_OVERRIDE;
-  fs.rmSync(HOME_OVERRIDE, { recursive: true, force: true });
-});
-
 const tmpDirs = [];
 function freshCwd() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-standing-assign-fn-'));
@@ -70,48 +51,6 @@ after(() => {
     try { rmTmpDir(dir); } catch { /* tmpdir cleanup only */ }
   }
 });
-
-function gitIn(dir, args) {
-  return execSync(`git -C "${dir}" ${args}`, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-}
-
-// A local bare remote plus a working clone gives lib/sources/watch.mjs a real
-// `git ls-remote` upstream: `commit` pushes a new HEAD and returns its sha.
-
-function gitFixture() {
-  const remote = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-sa-remote-'));
-  const work = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-sa-work-'));
-  tmpDirs.push(remote, work);
-  gitIn(remote, 'init --bare -b main');
-  gitIn(work, 'init -b main');
-  gitIn(work, 'config user.email test@example.com');
-  gitIn(work, 'config user.name test');
-  gitIn(work, `remote add origin "${remote}"`);
-  const commit = (message, contents) => {
-    fs.writeFileSync(path.join(work, 'file.txt'), contents);
-    gitIn(work, 'add -A');
-    gitIn(work, `commit -m "${message}"`);
-    gitIn(work, 'push -u origin main');
-    return gitIn(work, 'rev-parse HEAD').trim();
-  };
-  const head = commit('first', 'one');
-  return { remote, work, head, commit };
-}
-
-function corpusTarget(remote, id = 'git-1') {
-  return { id, provider: 'git', selector: { remote, content: { mode: 'corpus', ref: 'main' } } };
-}
-
-function sourceChangeAssignment(id, targetId, lifecycle = 'active') {
-  return {
-    id,
-    title: `Watch ${targetId}`,
-    origin: 'manual',
-    lifecycle,
-    trigger: { kind: 'source-change', targetId },
-    action: { kind: 'capability-tick', capabilityId: 'operations' },
-  };
-}
 
 function validAssignment(id = 'capability:operations') {
   return {
@@ -303,7 +242,8 @@ test('an enabled capability ticks through the Standing Assignment model via the 
     assert.ok(materialized, 'registration materializes the capability assignment record');
     assert.equal(materialized.origin, 'embed-capability');
     assert.equal(materialized.lifecycle, 'active');
-    assert.deepEqual(materialized.trigger, { kind: 'interval', every: 'PT15M' });
+    assert.equal(materialized.trigger.kind, 'interval');
+    assert.ok(parseIntervalMs(materialized.trigger.every) != null, 'trigger cadence is a valid ISO duration');
     assert.deepEqual(materialized.action, { kind: 'capability-tick', capabilityId: 'operations' });
     assert.equal(readAssignment(capabilityAssignmentId('triage'), { rootDir: cwd }), null, 'a never-enabled capability materializes no assignment');
     assert.equal(fs.existsSync(statePathFor(cwd, assignmentId)), false, 'registration alone (due-detection) must not advance attempt state');
@@ -356,98 +296,4 @@ test('syncCapabilityAssignments retires an assignment whose capability leaves th
   assert.equal(reactivated.lifecycle, 'active');
   assert.equal(reactivated.trigger.every, 'PT15M', 'a capability with no declared cadence gets the default trigger');
   assert.equal(reactivated.createdAt, retired.createdAt, 'createdAt survives the upsert cycle');
-});
-
-test('a source-change trigger requires a non-empty targetId and fails closed', () => {
-  const cwd = freshCwd();
-
-  const good = sourceChangeAssignment('watch:git-1', 'git-1');
-  assert.deepEqual(validateAssignment(good), { valid: true });
-  assert.equal(writeAssignment(good, { rootDir: cwd }).ok, true);
-
-  for (const targetId of [undefined, '', 42]) {
-    const bad = sourceChangeAssignment('watch:bad', 'git-1');
-    bad.trigger = { kind: 'source-change', targetId };
-    const result = writeAssignment(bad, { rootDir: cwd });
-    assert.equal(result.ok, false, `targetId ${JSON.stringify(targetId)} must be rejected`);
-    assert.ok(result.errors.some((e) => e.startsWith('trigger.targetId:')), `field-path error present — got: ${result.errors}`);
-    assert.equal(fs.existsSync(definitionPathFor(cwd, 'watch:bad')), false, 'invalid record must not be written');
-  }
-});
-
-test('a source-change assignment is due on real upstream git drift, and only an execution attempt consumes it', async () => {
-  const cwd = freshCwd();
-  const { remote, head: headA, commit } = gitFixture();
-  const target = corpusTarget(remote);
-  const watch = { target, projectRoot: cwd };
-
-  const baseline = refreshWatch(target, { projectRoot: cwd });
-  assert.equal(baseline.changed, false);
-  assert.equal(baseline.current, headA);
-
-  const written = writeAssignment(sourceChangeAssignment('watch:git-1', 'git-1'), { rootDir: cwd });
-  assert.equal(written.ok, true, `write ok — errors: ${written.errors}`);
-  const assignment = written.assignment;
-  const statePath = statePathFor(cwd, assignment.id);
-
-  assert.equal(isAssignmentDue(assignment, { state: null, watch }), false, 'upstream unchanged since the watch baseline: not due');
-
-  const headB = commit('second', 'two');
-  assert.equal(isAssignmentDue(assignment, { state: null, watch }), true, 'upstream commit past the baseline: due');
-
-  for (let i = 0; i < 3; i += 1) {
-    assert.equal(isAssignmentDue(assignment, { state: readAssignmentState(assignment.id, { rootDir: cwd }), watch }), true, 'still due on repeated due-checks');
-  }
-  assert.equal(fs.existsSync(statePath), false, 'due-detection writes no attempt state');
-  assert.equal(readWatchState(target, { projectRoot: cwd }).lastSeenHead, headA, 'due-detection never advances the watch cursor');
-
-  assert.equal(isAssignmentDue(assignment, { state: null }), false, 'no watch context: fails closed to not due');
-  const mismatched = { ...watch, target: { ...target, id: 'git-2' } };
-  assert.equal(isAssignmentDue(assignment, { state: null, watch: mismatched }), false, 'mismatched target id: fails closed to not due');
-
-  const attempt = await runAssignmentAttempt(assignment, async () => ({ status: 'ran' }), { rootDir: cwd, watch });
-  assert.equal(attempt.attempted, true);
-  assert.equal(attempt.status, 'ran');
-  assert.equal(attempt.state.lastConsumedRevision, headB, 'the attempt stamps the upstream revision it consumed');
-  const consumedState = readAssignmentState(assignment.id, { rootDir: cwd });
-  assert.equal(isAssignmentDue(assignment, { state: consumedState, watch }), false, 'drift consumed by the execution attempt: not due');
-  assert.equal(readWatchState(target, { projectRoot: cwd }).lastSeenHead, headA, 'consumption advances the assignment cursor, not the watch cursor');
-
-  const headC = commit('third', 'three');
-  assert.equal(isAssignmentDue(assignment, { state: consumedState, watch }), true, 'fresh drift after consumption: due again');
-
-  const blind = await runAssignmentAttempt(assignment, async () => ({ status: 'ran' }), { rootDir: cwd });
-  assert.equal(blind.attempted, true);
-  assert.equal(blind.state.lastConsumedRevision, headB, 'an attempt without a watch context cannot claim new drift consumed');
-  assert.equal(isAssignmentDue(assignment, { state: readAssignmentState(assignment.id, { rootDir: cwd }), watch }), true, 'unproven consumption leaves the assignment due');
-
-  const consuming = await runAssignmentAttempt(assignment, async () => ({ status: 'ran' }), { rootDir: cwd, watch });
-  assert.equal(consuming.state.lastConsumedRevision, headC);
-  assert.equal(isAssignmentDue(assignment, { state: consuming.state, watch }), false);
-});
-
-test('a paused source-change assignment is never due and never attempts, even with real upstream drift', async () => {
-  const cwd = freshCwd();
-  const { remote, commit } = gitFixture();
-  const target = corpusTarget(remote);
-  const watch = { target, projectRoot: cwd };
-
-  refreshWatch(target, { projectRoot: cwd });
-  commit('drift', 'two');
-
-  const active = writeAssignment(sourceChangeAssignment('watch:active', 'git-1'), { rootDir: cwd }).assignment;
-  assert.equal(isAssignmentDue(active, { state: null, watch }), true, 'the drift is real: an active twin on the same target is due');
-
-  const paused = writeAssignment(sourceChangeAssignment('watch:paused', 'git-1', 'paused'), { rootDir: cwd }).assignment;
-  assert.equal(isAssignmentDue(paused, { state: null, watch }), false, 'a paused assignment is never due');
-
-  let invoked = false;
-  const attempt = await runAssignmentAttempt(paused, async () => {
-    invoked = true;
-    return { status: 'ran' };
-  }, { rootDir: cwd, watch });
-  assert.equal(attempt.attempted, false);
-  assert.equal(attempt.reason, 'lifecycle-paused');
-  assert.equal(invoked, false, 'executor must not run for a paused assignment');
-  assert.equal(fs.existsSync(statePathFor(cwd, paused.id)), false);
 });

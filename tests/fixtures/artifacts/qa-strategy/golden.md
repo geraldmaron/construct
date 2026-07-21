@@ -8,11 +8,11 @@ cx_fixture_source: templates/docs/qa-strategy.md
 
 ## Scope
 
-This paragraph supports the Scope section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Scope section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Scope section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Scope section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Scope section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Scope section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Test strategy
 
-This paragraph supports the Test strategy section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Test strategy section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Test strategy section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Test strategy section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Test strategy section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Test strategy section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Coverage
 

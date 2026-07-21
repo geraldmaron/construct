@@ -42,7 +42,7 @@ function run(args, cwd) {
       BOOTSTRAP_CHECKED: '1',
       CONSTRUCT_DISABLE_AUTO_CLEANUP: '1',
       HOME: SANDBOX_HOME,
-      CX_HOME_OVERRIDE: SANDBOX_HOME,
+      CONSTRUCT_HOME_OVERRIDE: SANDBOX_HOME,
     },
   });
 }
@@ -54,7 +54,7 @@ test('construct diagram: source always produced; SVG when renderer present; exit
     assert.equal(result.status, 0, `expected exit 0, got ${result.status}. stderr: ${result.stderr}`);
 
     const outDir = path.join(dir, '.construct', 'diagrams');
-    assert.ok(fs.existsSync(outDir), 'expected .cx/diagrams/ to exist');
+    assert.ok(fs.existsSync(outDir), 'expected .construct/diagrams/ to exist');
     const files = fs.readdirSync(outDir);
 
     const sourceFiles = files.filter((f) => /\.(d2|dot|md)$/.test(f));

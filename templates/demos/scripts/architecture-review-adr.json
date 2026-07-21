@@ -7,9 +7,9 @@
   "fallbackSurface": "tape",
   "steps": [
     {
-      "title": "Plan only — architecture review workflow",
-      "prompt": "Run construct workflow invoke for architecture-review in proposal-only mode and show the specialist chain. This is plan-only — it does not draft the ADR.",
-      "command": "node bin/construct workflow invoke --json --workflow-type architecture-review --approval-mode proposal-only --text 'Review the orchestration runtime boundary for failure modes'"
+      "title": "Plan only — architecture review procedure",
+      "prompt": "Run construct procedure invoke for architecture-review in proposal-only mode and show the specialist chain. This is plan-only — it does not draft the ADR.",
+      "command": "node bin/construct procedure invoke --json --workflow-type architecture-review --approval-mode proposal-only --text 'Review the orchestration runtime boundary for failure modes'"
     },
     {
       "title": "Decision index — load-bearing decisions",

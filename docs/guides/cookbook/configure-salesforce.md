@@ -67,7 +67,7 @@ Returns 5 accounts.
 | Apex execution | ✗ not supported |
 | Reports / Dashboards API | ✗ not supported |
 
-Write actions follow the same fence model as every other provider: opt-in per specialist.
+Write actions follow the same fence model as every other provider: opt-in per Worker Profile.
 
 ## Common gotchas
 

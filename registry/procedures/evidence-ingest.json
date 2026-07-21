@@ -1,0 +1,22 @@
+{
+  "id": "evidence-ingest",
+  "version": "1.0.0",
+  "type": "linear",
+  "workerProfiles": [
+    "researcher",
+    "data-analyst"
+  ],
+  "approvalMode": "proposal-only",
+  "modelTier": "cheap",
+  "state": "active",
+  "modes": [
+    "solo",
+    "team"
+  ],
+  "surfaces": [
+    "mcp",
+    "cli"
+  ],
+  "description": "Ingest and structure raw evidence (notes, documents, signals) into a normalized summary.",
+  "durableStateModel": "none"
+}

@@ -13,16 +13,16 @@ import { runDirectivesCli } from '../../lib/cli/directives.mjs';
 import { writeDirectiveState } from '../../lib/directives/due-tracker.mjs';
 
 // writeDirectiveState/readDirectiveState resolve through the machine-scoped
-// state root (ADR-0066, lib/state-root.mjs) — CX_HOME_OVERRIDE keeps that
+// state root (ADR-0066, lib/state-root.mjs) — CONSTRUCT_HOME_OVERRIDE keeps that
 // off the real developer machine's $HOME for the whole file.
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-directives-cli-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 after(() => {
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 let rootDir;
@@ -68,7 +68,7 @@ describe('runDirectivesCli', () => {
 
   it('list shows a configured directive as due when it has never run', async () => {
     writeConfig([{
-      id: 'jira-weekly', provider: 'jira', specialist: 'cx-operations',
+      id: 'jira-weekly', provider: 'jira', workerProfileId: 'operations',
       instruction: 'Summarize the team\'s open work',
       trigger: { kind: 'interval', intervalMinutes: 10_080 },
       action: 'summarize', output: { kind: 'knowledge-note' },
@@ -83,7 +83,7 @@ describe('runDirectivesCli', () => {
 
   it('list shows a directive as not due right after a recorded run', async () => {
     writeConfig([{
-      id: 'jira-weekly', provider: 'jira', specialist: 'cx-operations',
+      id: 'jira-weekly', provider: 'jira', workerProfileId: 'operations',
       instruction: 'Summarize the team\'s open work',
       trigger: { kind: 'interval', intervalMinutes: 10_080 },
       action: 'summarize', output: { kind: 'knowledge-note' },
@@ -104,7 +104,7 @@ describe('runDirectivesCli', () => {
 
   it('status <id> returns the directive detail as JSON', async () => {
     writeConfig([{
-      id: 'jira-weekly', provider: 'jira', specialist: 'cx-operations',
+      id: 'jira-weekly', provider: 'jira', workerProfileId: 'operations',
       instruction: 'Summarize the team\'s open work',
       trigger: { kind: 'interval', intervalMinutes: 10_080 },
       action: 'summarize', output: { kind: 'knowledge-note' },
@@ -114,6 +114,7 @@ describe('runDirectivesCli', () => {
     assert.equal(code, 0);
     const parsed = JSON.parse(out.lines.join('\n'));
     assert.equal(parsed.directive.id, 'jira-weekly');
+    assert.equal(parsed.directive.workerProfileId, 'operations');
     assert.equal(parsed.due, true);
     assert.deepEqual(parsed.shapeErrors, []);
   });

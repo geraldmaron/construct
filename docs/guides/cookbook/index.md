@@ -5,11 +5,11 @@ description: Task-oriented recipes — "I want to do X." One page per job-to-be-
 
 Cookbook pages start from your goal, not the tool. Pick the one that matches what you want to do.
 
-## Customize the team
+## Customize execution
 
-- [Add a custom agent](/guides/cookbook/add-a-custom-agent) — define a new specialist (registry, prompt, sync, smoke test).
-- [Custom specialists and teams](/guides/cookbook/custom-specialists-and-teams) — author your own specialist or team into `.construct/org/` or `~/.construct/org/`, without touching the built-in roster.
-- [Inspect running agents](/guides/cookbook/inspect-running-agents) — see what specialists ran for a task and why.
+- [Worker Profiles reference](/guides/reference/worker-profiles) — the 12 built-in assignable profiles, tiers, and purposes.
+- [Workspace Preset lifecycle](/guides/concepts/workspace-preset-lifecycle) — research, validate, and promote workspace-wide defaults.
+- [Inspect running agents](/guides/cookbook/inspect-running-agents) — see which Worker Profiles ran for a task and why.
 
 ## Fix something
 

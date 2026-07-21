@@ -2,8 +2,8 @@
  * tests/outcomes/record.test.mjs — A3 outcome recorder + aggregator + classifier tiebreaker.
  *
  * Verifies the loop:
- *   recordOutcome -> .cx/outcomes/<role>.jsonl
- *   aggregateOutcomes -> .cx/outcomes/_summary.json
+ *   recordOutcome -> .construct/outcomes/<role>.jsonl
+ *   aggregateOutcomes -> .construct/outcomes/_summary.json
  *   outcomeBoost(cwd, role) -> capped ±0.05 nudge
  *   classifyRdIntake({ cwd, ... }) still classifies correctly when no outcome data exists,
  *   and uses the soft tiebreaker without ever inverting the primary keyword signal.

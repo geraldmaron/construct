@@ -3,7 +3,7 @@
  * enforcement on the real trace writer in an isolated project tmpdir.
  *
  * Traces resolve through the machine-scoped state root (ADR-0066), so
- * CX_HOME_OVERRIDE is pinned for the file to keep measureUsage/emitTraceEvent
+ * CONSTRUCT_HOME_OVERRIDE is pinned for the file to keep measureUsage/emitTraceEvent
  * off the real developer machine's $HOME.
  */
 
@@ -18,12 +18,12 @@ import { measureUsage } from '../../lib/resources/budget.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-res-guard-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 after(() => {
   try { rmTmpDir(homeOverride); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 let projectRoot;
@@ -33,7 +33,7 @@ beforeEach(() => {
   fs.mkdirSync(path.join(projectRoot, '.git'));
   fs.writeFileSync(
     path.join(projectRoot, 'construct.config.json'),
-    JSON.stringify({ version: 1, resources: { disk: { totalCxMaxMb: 1 } } }),
+    JSON.stringify({ version: 1, resources: { disk: { totalConstructMaxMb: 1 } } }),
   );
   fs.mkdirSync(path.join(projectRoot, '.construct', 'intake', 'processed'), { recursive: true });
   fs.writeFileSync(
@@ -49,7 +49,7 @@ afterEach(() => {
 describe('resource write guard (functional)', () => {
   it('blocks trace append when .construct/ is over cap and reclaim cannot help', () => {
     const before = measureUsage(projectRoot);
-    assert.ok(before.totalCxUsageRatio > 1);
+    assert.ok(before.totalConstructUsageRatio > 1);
 
     const event = emitTraceEvent({
       rootDir: projectRoot,
@@ -60,6 +60,6 @@ describe('resource write guard (functional)', () => {
 
     assert.equal(event.budgetSkipped, true);
     const after = measureUsage(projectRoot);
-    assert.equal(after.totalCxBytes, before.totalCxBytes);
+    assert.equal(after.totalConstructBytes, before.totalConstructBytes);
   });
 });

@@ -1,0 +1,25 @@
+{
+  "id": "risk-review",
+  "version": "1.0.0",
+  "type": "linear",
+  "workerProfiles": [
+    "reviewer",
+    "security"
+  ],
+  "approvalMode": "requires-human-approval",
+  "modelTier": "strong",
+  "state": "active",
+  "modes": [
+    "solo",
+    "team"
+  ],
+  "surfaces": [
+    "mcp",
+    "cli"
+  ],
+  "description": "Stress-test a plan for risk: failure modes, security, and compliance exposure.",
+  "outputSchema": {
+    "artifact": "review-report"
+  },
+  "durableStateModel": "none"
+}

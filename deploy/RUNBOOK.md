@@ -176,7 +176,7 @@ All config is injected at container start. Nothing is baked into the image.
 | `NODE_ENV` | ECS task env | Set to `production`: enables `0.0.0.0` bind |
 | `PORT` | ECS task env | Default `4242` |
 | `HOME` | ECS task env | Set to `/data` so Construct writes user-scoped state to the mounted data path |
-| `CX_DATA_DIR` | ECS task env | Explicit Construct data root; also set to `/data` |
+| `CONSTRUCT_DATA_DIR` | ECS task env | Explicit Construct data root; also set to `/data` |
 | `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USER` | ECS task env | Discrete Postgres connection parts used to synthesize `DATABASE_URL` at runtime |
 | `DB_PASSWORD` | Secrets Manager | Postgres password secret injected into the task |
 | `WEBHOOK_SECRET_GITHUB` | Secrets Manager or env | HMAC secret for GitHub webhooks |

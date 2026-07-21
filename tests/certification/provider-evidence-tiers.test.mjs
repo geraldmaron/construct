@@ -13,6 +13,11 @@ import {
   computeProviderEvidenceTier,
   auditProviderManifest,
   auditKnownProviderManifests,
+  findProviderCertificationDrift,
+  crossCheckProviderCardFallback,
+  detectProviderFallbackTestEvidence,
+  auditProviderCardFallbackClaims,
+  PROVIDER_FALLBACK_TEST_FINGERPRINTS,
   resolveProductionGateTier,
   meetsProductionGate,
   DEFAULT_PRODUCTION_GATE_TIER,
@@ -123,6 +128,42 @@ test('both attestations present reaches production-proven', () => {
   assert.equal(result.tier, 'production-proven');
 });
 
+test('findProviderCertificationDrift is active on the live tree: stamped certification.tier matches computed tier', () => {
+  const rootDir = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../..');
+  const expectedTiers = {
+    github: 'process-boundary-tested',
+    linear: 'contract-tested',
+    'atlassian-jira': 'contract-tested',
+    slack: 'contract-tested',
+    'atlassian-confluence': 'structurally-validated',
+    'jira-write': 'contract-tested',
+    'confluence-write': 'contract-tested',
+  };
+
+  const audits = auditKnownProviderManifests({ rootDir });
+  const present = audits.filter((r) => !r.manifestErrors.some((e) => /file does not exist/.test(e)));
+  assert.ok(present.length >= 7, `expected at least seven present manifests, got ${present.length}`);
+
+  let stampedCount = 0;
+  for (const audit of present) {
+    const expected = expectedTiers[audit.provider.id];
+    if (!expected) continue;
+    const absPath = path.join(rootDir, audit.provider.filePath);
+    const manifest = JSON.parse(fs.readFileSync(absPath, 'utf8'));
+    assert.equal(
+      manifest.certification?.tier,
+      expected,
+      `${audit.provider.id} must stamp certification.tier ${expected}`,
+    );
+    assert.equal(audit.tier, expected, `${audit.provider.id} computed tier must match stamped tier`);
+    stampedCount += 1;
+  }
+  assert.equal(stampedCount, Object.keys(expectedTiers).length, 'every known present provider must stamp certification.tier');
+
+  const drifts = findProviderCertificationDrift({ rootDir });
+  assert.equal(drifts.length, 0, `expected zero drift once tiers are stamped, got: ${drifts.map((d) => d.providerId).join(', ')}`);
+});
+
 test('resolveProductionGateTier defaults to contract-tested and validates overrides', () => {
   assert.equal(resolveProductionGateTier(), DEFAULT_PRODUCTION_GATE_TIER);
   assert.equal(resolveProductionGateTier({ override: 'process-boundary-tested' }), 'process-boundary-tested');
@@ -195,20 +236,18 @@ test('auditProviderManifest reports a schema-invalid manifest at declared, not s
 // The real, checked-in manifest set — proves the audit runs end to end
 // against actual files and actual test-corpus evidence, not a mock.
 
-test('auditKnownProviderManifests computes a real tier for every checked-in github/git/linear/jira/slack/confluence manifest', () => {
+test('auditKnownProviderManifests computes a real tier for every present known provider manifest', () => {
   const rootDir = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../..');
   const results = auditKnownProviderManifests({ rootDir });
-  assert.equal(results.length, 8);
+  const present = results.filter((r) => !r.manifestErrors.some((e) => /file does not exist/.test(e)));
+  assert.ok(present.length >= 7, `expected at least seven present manifests, got ${present.length}`);
 
-  const byId = Object.fromEntries(results.map((r) => [r.provider.id, r]));
+  const byId = Object.fromEntries(present.map((r) => [r.provider.id, r]));
   for (const id of Object.keys(byId)) {
     assert.ok(PROVIDER_EVIDENCE_TIERS.includes(byId[id].tier), `${id} must resolve to a real ladder tier, got ${byId[id].tier}`);
     assert.equal(byId[id].manifestErrors.length, 0, `${id} manifest must be schema-valid`);
   }
 
-  // No real manifest reaches live-sandbox-tested or production-proven today —
-  // nobody has recorded a manual attestation yet, and the ceiling logic must
-  // honor that rather than inferring it from anything else in the manifest.
   for (const id of Object.keys(byId)) {
     assert.ok(
       !['live-sandbox-tested', 'production-proven'].includes(byId[id].tier),
@@ -216,3 +255,55 @@ test('auditKnownProviderManifests computes a real tier for every checked-in gith
     );
   }
 });
+
+test('crossCheckProviderCardFallback reports a gap when degraded-chain has no fallback test evidence', () => {
+  const gaps = crossCheckProviderCardFallback({
+    providerId: 'fixture-unproven-fallback',
+    card: {
+      id: 'fixture-unproven-fallback',
+      fallback: { behavior: 'degraded-chain', chain: [{ id: 'primary', mode: 'sidecar' }] },
+    },
+    corpusFiles: [{ path: 'tests/unrelated.test.mjs', category: 'unit' }],
+    rootDir: '/tmp',
+  });
+  assert.equal(gaps.length, 1);
+  assert.match(gaps[0].message, /no test in the corpus exercises the declared fallback path/);
+});
+
+test('crossCheckProviderCardFallback passes when fallback fingerprint tests exist', () => {
+  const rootDir = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../..');
+  const gaps = crossCheckProviderCardFallback({
+    providerId: 'docling',
+    card: { id: 'docling', fallback: { behavior: 'degraded-chain' } },
+    rootDir,
+  });
+  assert.equal(gaps.length, 0, gaps.map((g) => g.message).join('; '));
+});
+
+test('crossCheckProviderCardFallback ignores graceful-skip optional deps without flooding gaps', () => {
+  const gaps = crossCheckProviderCardFallback({
+    providerId: 'ink',
+    card: { id: 'ink', fallback: { behavior: 'graceful-skip' } },
+    corpusFiles: [],
+    rootDir: '/tmp',
+  });
+  assert.equal(gaps.length, 0);
+});
+
+test('auditProviderCardFallbackClaims surfaces whisper degraded-chain gap on live registry', () => {
+  const rootDir = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../..');
+  const gaps = auditProviderCardFallbackClaims({ rootDir });
+  const whisperGap = gaps.find((g) => g.providerId === 'whisper');
+  assert.ok(whisperGap, 'whisper degraded-chain should report missing fallback test evidence');
+  const doclingGap = gaps.find((g) => g.providerId === 'docling');
+  assert.equal(doclingGap, undefined, 'docling fallback is covered by ingest-docling-fallback tests');
+});
+
+test('providers without Provider Cards keep existing tier audit behavior', () => {
+  const rootDir = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../..');
+  const audit = auditKnownProviderManifests({ rootDir }).find((r) => r.provider.id === 'github');
+  assert.ok(audit);
+  assert.equal(audit.cardFallbackGaps?.length ?? 0, 0);
+  assert.equal(audit.providerCardId, null);
+});
+

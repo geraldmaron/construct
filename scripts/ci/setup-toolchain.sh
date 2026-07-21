@@ -13,6 +13,9 @@
 #               Fallback when GitHub release assets are unavailable (requires a
 #               Go toolchain; intentionally not automated here):
 #                 go install github.com/steveyegge/beads/cmd/bd@v1.1.0
+#   - d2      — pinned terrastruct/d2 release binary, sha256-verified, to
+#               ~/.local/bin. Required when exports run with figures:true
+#               (document-io certify + rendered-artifact visual gate).
 #   - doc toolchain — pandoc + poppler + LibreOffice via the platform package
 #               manager. Linux installs the writer/impress/calc component
 #               packages instead of the huge `libreoffice` metapackage; the
@@ -20,10 +23,25 @@
 #               libreoffice-export) only convert text/presentation/spreadsheet
 #               documents.
 #
+# Mermaid-cli (mmdc) needs npm, so it lives in scripts/ci/setup-mermaid-cli.sh
+# and runs after `npm ci` (the Docker replica installs Node after this script).
+#
+# Network bounds: apt uses Acquire::{http,https}::Timeout=30 and Retries=3 so a
+# dead Ubuntu mirror fails in minutes instead of hanging; curl uses
+# --connect-timeout 15 --max-time 180 for pinned release downloads (typst/bd/d2
+# archives are small; 180s is generous headroom without unbounded waits).
+#
 # Callers must put ~/.local/bin on PATH (ci.yml appends it to $GITHUB_PATH;
 # the Docker replica sets ENV PATH).
 
 set -euo pipefail
+
+APT_OPTS=(
+  -o Acquire::http::Timeout=30
+  -o Acquire::https::Timeout=30
+  -o Acquire::Retries=3
+)
+CURL_OPTS=(--connect-timeout 15 --max-time 180 --retry 3)
 
 TYPST_VERSION="0.15.0"
 TYPST_SHA256_LINUX_X86_64="59b207df01be2dab9f13e80f73d04d7ff8273ffd46b3dd1b9eef5c60f3eeabea"
@@ -34,6 +52,11 @@ BD_VERSION="1.1.0"
 BD_SHA256_LINUX_AMD64="b0f3dd607c3fb989ee08d0a6854fba80d0402971eb108f9af6170bc14d491a34"
 BD_SHA256_LINUX_ARM64="e64eb6f5f998c9eae3ef9ec786f5f1c907ab3ed04fe220ebf265ca9952e21b2f"
 BD_SHA256_DARWIN_ARM64="c42e24d83b258f7ba9f52a6d2d5f6b055869dfe7807165055988b12e7ea8c564"
+
+D2_VERSION="0.7.1"
+D2_SHA256_LINUX_AMD64="eb172adf59f38d1e5a70ab177591356754ffaf9bebb84e0ca8b767dfb421dad7"
+D2_SHA256_LINUX_ARM64="ce3a0b985a8f91335a826c254b3a88736fd81afcdd08b58f6c749d2add6864b0"
+D2_SHA256_DARWIN_ARM64="80de85f3b0ac7d9569acac0780ed65dd994ea78969b6b230c58bbb2c6113465b"
 
 BIN_DIR="$HOME/.local/bin"
 OS="$(uname -s)"
@@ -66,7 +89,7 @@ install_typst() {
   esac
   local tmp
   tmp="$(mktemp -d)"
-  curl -fsSL --retry 3 -o "$tmp/typst.tar.xz" \
+  curl -fsSL "${CURL_OPTS[@]}" -o "$tmp/typst.tar.xz" \
     "https://github.com/typst/typst/releases/download/v${TYPST_VERSION}/typst-${target}.tar.xz"
   sha256_check "$tmp/typst.tar.xz" "$sha"
   tar -xJf "$tmp/typst.tar.xz" -C "$tmp" "typst-${target}/typst"
@@ -89,13 +112,36 @@ install_bd() {
   esac
   local tmp
   tmp="$(mktemp -d)"
-  curl -fsSL --retry 3 -o "$tmp/bd.tar.gz" \
+  curl -fsSL "${CURL_OPTS[@]}" -o "$tmp/bd.tar.gz" \
     "https://github.com/steveyegge/beads/releases/download/v${BD_VERSION}/beads_${BD_VERSION}_${target}.tar.gz"
   sha256_check "$tmp/bd.tar.gz" "$sha"
   tar -xzf "$tmp/bd.tar.gz" -C "$tmp" bd
   install -m 0755 "$tmp/bd" "$BIN_DIR/bd"
   rm -rf "$tmp"
   echo "installed bd $BD_VERSION -> $BIN_DIR/bd"
+}
+
+install_d2() {
+  if [ -x "$BIN_DIR/d2" ] && "$BIN_DIR/d2" --version 2>/dev/null | grep -qF "v${D2_VERSION}"; then
+    echo "d2 $D2_VERSION already installed, skipping"
+    return
+  fi
+  local asset sha
+  case "$OS/$ARCH" in
+    Linux/x86_64)  asset="d2-v${D2_VERSION}-linux-amd64.tar.gz";  sha="$D2_SHA256_LINUX_AMD64" ;;
+    Linux/aarch64) asset="d2-v${D2_VERSION}-linux-arm64.tar.gz";  sha="$D2_SHA256_LINUX_ARM64" ;;
+    Darwin/arm64)  asset="d2-v${D2_VERSION}-macos-arm64.tar.gz";  sha="$D2_SHA256_DARWIN_ARM64" ;;
+    *) echo "no pinned d2 asset for $OS/$ARCH" >&2; exit 1 ;;
+  esac
+  local tmp
+  tmp="$(mktemp -d)"
+  curl -fsSL "${CURL_OPTS[@]}" -o "$tmp/d2.tar.gz" \
+    "https://github.com/terrastruct/d2/releases/download/v${D2_VERSION}/${asset}"
+  sha256_check "$tmp/d2.tar.gz" "$sha"
+  tar -xzf "$tmp/d2.tar.gz" -C "$tmp" "d2-v${D2_VERSION}/bin/d2"
+  install -m 0755 "$tmp/d2-v${D2_VERSION}/bin/d2" "$BIN_DIR/d2"
+  rm -rf "$tmp"
+  echo "installed d2 $D2_VERSION -> $BIN_DIR/d2"
 }
 
 install_doc_toolchain_linux() {
@@ -107,9 +153,9 @@ install_doc_toolchain_linux() {
     echo "doc toolchain already installed, skipping"
     return
   fi
-  sudo apt-get update
+  sudo apt-get "${APT_OPTS[@]}" update
   # shellcheck disable=SC2086
-  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $missing
+  sudo DEBIAN_FRONTEND=noninteractive apt-get "${APT_OPTS[@]}" install -y --no-install-recommends $missing
 }
 
 install_doc_toolchain_darwin() {
@@ -123,10 +169,11 @@ install_doc_toolchain_darwin() {
 mkdir -p "$BIN_DIR"
 install_typst
 install_bd
+install_d2
 case "$OS" in
   Linux)  install_doc_toolchain_linux ;;
   Darwin) install_doc_toolchain_darwin ;;
   *) echo "unsupported platform: $OS" >&2; exit 1 ;;
 esac
 
-echo "toolchain ready: typst $TYPST_VERSION, bd $BD_VERSION, pandoc/poppler/libreoffice via $([ "$OS" = Linux ] && echo apt || echo brew)"
+echo "toolchain ready: typst $TYPST_VERSION, bd $BD_VERSION, d2 $D2_VERSION, pandoc/poppler/libreoffice via $([ "$OS" = Linux ] && echo apt || echo brew)"

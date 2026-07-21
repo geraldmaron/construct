@@ -91,7 +91,7 @@ export function runInstallFlow() {
     add('init does NOT fetch the embedding model over the network (offline-safe first run)', !downloadedModel(home), downloadedModel(home) ? 'model.onnx downloaded to ~/.construct/cache during init — embeddings-local.mjs leaves allowRemoteModels at default true; contradicts semantic.mjs:6 "no external API calls"' : 'no remote fetch');
     info.initHomeDirs = homeDirsTouched(home);
     const after1 = tree(proj);
-    add('init scaffolds the project (.cx present)', after1.some((p) => p.startsWith(CONFIG_DIR_NAME)), `${after1.length} entries`);
+    add('init scaffolds the project (.construct present)', after1.some((p) => p.startsWith(CONFIG_DIR_NAME)), `${after1.length} entries`);
 
     const second = runConstruct(['init', proj, '--yes', '--no-start', '--quiet'], { env, timeout: 120000 });
     const after2 = tree(proj);

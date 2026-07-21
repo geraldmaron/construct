@@ -261,23 +261,11 @@
       "core": false
     },
     {
-      "name": "lint:agents",
-      "core": false
-    },
-    {
       "name": "lint:comments",
       "core": false
     },
     {
       "name": "lint:contracts",
-      "core": false
-    },
-    {
-      "name": "lint:pr",
-      "core": false
-    },
-    {
-      "name": "lint:prompts",
       "core": false
     },
     {
@@ -289,6 +277,10 @@
       "core": false
     },
     {
+      "name": "lint:worker-profiles",
+      "core": false
+    },
+    {
       "name": "list",
       "core": false
     },
@@ -297,19 +289,11 @@
       "core": false
     },
     {
-      "name": "matrix",
-      "core": false
-    },
-    {
       "name": "mcp",
       "core": false
     },
     {
       "name": "memory",
-      "core": false
-    },
-    {
-      "name": "migrate",
       "core": false
     },
     {
@@ -345,15 +329,15 @@
       "core": false
     },
     {
-      "name": "participation",
-      "core": false
-    },
-    {
       "name": "plugin",
       "core": false
     },
     {
       "name": "policy",
+      "core": false
+    },
+    {
+      "name": "procedure",
       "core": false
     },
     {
@@ -381,15 +365,7 @@
       "core": false
     },
     {
-      "name": "registry:diff",
-      "core": false
-    },
-    {
       "name": "registry:generate-docs",
-      "core": false
-    },
-    {
-      "name": "registry:prune",
       "core": false
     },
     {
@@ -433,10 +409,6 @@
       "core": false
     },
     {
-      "name": "scope",
-      "core": true
-    },
-    {
       "name": "search",
       "core": false
     },
@@ -445,23 +417,15 @@
       "core": false
     },
     {
+      "name": "server",
+      "core": false
+    },
+    {
       "name": "skills",
       "core": false
     },
     {
       "name": "sources",
-      "core": false
-    },
-    {
-      "name": "specialist",
-      "core": false
-    },
-    {
-      "name": "specialist:add",
-      "core": false
-    },
-    {
-      "name": "specialist:remove",
       "core": false
     },
     {
@@ -477,10 +441,6 @@
       "core": false
     },
     {
-      "name": "studio",
-      "core": false
-    },
-    {
       "name": "sync",
       "core": true
     },
@@ -490,18 +450,6 @@
     },
     {
       "name": "tags",
-      "core": false
-    },
-    {
-      "name": "team",
-      "core": false
-    },
-    {
-      "name": "team:add",
-      "core": false
-    },
-    {
-      "name": "team:remove",
       "core": false
     },
     {
@@ -529,6 +477,10 @@
       "core": false
     },
     {
+      "name": "tracker-projection",
+      "core": false
+    },
+    {
       "name": "uninstall",
       "core": false
     },
@@ -553,19 +505,35 @@
       "core": false
     },
     {
+      "name": "work-spec",
+      "core": false
+    },
+    {
+      "name": "worker-profile",
+      "core": false
+    },
+    {
       "name": "workers",
       "core": true
     },
     {
-      "name": "workflow",
+      "name": "workplace-loop",
       "core": false
     },
     {
       "name": "workspace",
       "core": false
+    },
+    {
+      "name": "workspace-domain",
+      "core": false
+    },
+    {
+      "name": "workspace-preset",
+      "core": true
     }
   ],
-  "agents": [
+  "workerProfiles": [
     "architect",
     "data-analyst",
     "debugger",

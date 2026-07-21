@@ -25,13 +25,13 @@ const REQUIRED_FIELDS = [
 
 // The broker's default emit is the real emitTraceEvent, which resolves trace
 // writes through the machine-scoped state root (ADR-0066) via
-// process.env.CX_HOME_OVERRIDE directly, not through any per-call option, so
-// CX_HOME_OVERRIDE is pinned for the whole file to keep those writes off the
+// process.env.CONSTRUCT_HOME_OVERRIDE directly, not through any per-call option, so
+// CONSTRUCT_HOME_OVERRIDE is pinned for the whole file to keep those writes off the
 // real developer machine's $HOME.
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-denial-audit-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 
 const tmpDirs = [];
 after(() => {
@@ -39,8 +39,8 @@ after(() => {
     try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
   }
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 function fakeRoot() {
@@ -301,7 +301,7 @@ describe('correlation id traceability', () => {
     const rootDir = fakeRoot();
     const auditEvents = [];
     // Real emitTraceEvent (default `emit`) so the trace event actually lands
-    // on disk under rootDir/.cx/traces — this test verifies the on-disk
+    // on disk under rootDir/.construct/traces — this test verifies the on-disk
     // correlation, not just the in-memory event.
     const broker = new Broker({
       rootDir,

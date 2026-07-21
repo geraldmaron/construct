@@ -19,7 +19,7 @@ Tick what was updated in this same change. Tick `n/a` only when the concern genu
 - [ ] `CHANGELOG.md` - entry added (or `n/a`: <reason>)
 - [ ] `docs/guides/concepts/architecture.md` - runtime shape, contracts, or boundaries (or `n/a`)
 - [ ] `docs/README.md` - docs surface or maintenance contract (or `n/a`)
-- [ ] `.cx/context.md` / `.cx/context.json` - active work, decisions, assumptions (or `n/a`)
+- [ ] `.construct/context.md` / `.construct/context.json` - active work, decisions, assumptions (or `n/a`)
 - [ ] `plan.md` - local working plan reflects completed work (local-only, gitignored)
 
 ## Local gates (paste evidence below or attest)

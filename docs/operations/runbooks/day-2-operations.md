@@ -107,7 +107,7 @@ run `construct distill` with a focused query and compact context before continui
 construct review --days=7
 ```
 
-Generates a performance report under `~/.cx/performance-reviews/`. Check for agents with quality score < 0.7.
+Generates a performance report under `~/.construct/performance-reviews/`. Check for agents with quality score < 0.7.
 
 If any agent is below threshold:
 

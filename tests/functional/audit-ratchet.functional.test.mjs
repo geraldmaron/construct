@@ -29,7 +29,7 @@ function idsFor(phase, rows) {
   return rows.map((r) => r.id || makeId(phase, r.type, r.target));
 }
 
-// 06-audit's chain-broken finding reflects the machine's ~/.cx trail, not the repo, so it
+// 06-audit's chain-broken finding reflects the machine's ~/.construct trail, not the repo, so it
 // is excluded from this repo gate (the dedicated chain functional tests cover it); only the
 // repo-deterministic hook present/registered invariant is ratcheted here.
 

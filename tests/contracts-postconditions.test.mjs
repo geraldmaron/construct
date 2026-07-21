@@ -156,39 +156,30 @@ test('descriptive (string) postconditions are ignored by the validator', () => {
 
 test('validateHandoff integrates postcondition checks via artifactPath', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-pc-int-'));
-  fs.mkdirSync(path.join(root, 'agents'), { recursive: true });
-  fs.mkdirSync(path.join(root, 'docs', 'prd'), { recursive: true });
-  fs.writeFileSync(path.join(root, 'docs', 'prd', 'fixture.md'), '# PRD\n\nbody without sections\n');
-  fs.writeFileSync(path.join(root, 'agents', 'contracts.json'), JSON.stringify({
-    version: 1,
-    terminalStates: ['DONE'],
-    severities: { blocking: [], warning: [], info: [] },
-    contracts: [
-      {
-        id: 'test-contract',
-        producer: 'cx-product-manager',
-        consumer: 'cx-architect',
-        input: { mustContain: [] },
-        output: {},
-        postconditions: [
-          { id: 'has-problem', check: 'artifact-has-section', section: 'Problem' },
-        ],
-      },
-    ],
-  }, null, 2));
+  fs.mkdirSync(path.join(root, 'docs', 'decisions'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'docs', 'decisions', 'fixture.md'), '# ADR\n\nbody without required sections\n');
 
   const result = validateHandoff({
-    producer: 'cx-product-manager',
-    consumer: 'cx-architect',
-    artifact: { artifactPath: 'docs/prd/fixture.md' },
-    contractsPath: path.join(root, 'agents', 'contracts.json'),
+    producer: 'product-manager',
+    consumer: 'architect',
+    artifact: {
+      problem: 'Canonical registry contracts',
+      functionalRequirements: ['Capability ownership'],
+      nonFunctionalRequirements: ['No compatibility aliases'],
+      acceptanceCriteria: ['Nested lookup succeeds'],
+      constraints: ['Clean cutover'],
+      valueStatement: 'One contract owner',
+      tradeoffTable: [['choice', 'tradeoff']],
+      prioritizationCall: 'ship',
+      artifactPath: 'docs/decisions/fixture.md',
+    },
     repoRoot: root,
     enforcement: 'block',
   });
 
   assert.equal(result.ok, false);
   assert.equal(result.status, 'BLOCKED_CONTRACT');
-  assert.ok(result.errors.some((e) => e.includes('Problem')));
+  assert.ok(result.errors.some((e) => e.includes('Rejected Alternatives')));
 
   try { fs.rmSync(root, { recursive: true, force: true }); } catch { /* ignore */ }
 });

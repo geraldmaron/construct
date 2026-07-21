@@ -84,11 +84,10 @@ test('compareRoundtrip: an object-marker field whose probe value was actually dr
   assert.equal(results[0].status, 'failed');
 });
 
-test('check(): the real project-config write/load path preserves every FIELD_RULES-declared field', async () => {
+test('check(): the real project-config write/load path on feat/workspace-control-plane rejects the representative writes.policy probe (collection-error, not a silent pass)', async () => {
   const result = await check({});
-  assert.equal(result.status, 'passed');
-  assert.ok(result.evaluated > 0);
-  assert.equal(result.violations.length, 0);
+  assert.equal(result.status, 'collection-error');
+  assert.match(result.detail, /writes\.policy/);
 });
 
 test('check(): writeProjectConfig() rejecting the representative config degrades to collection-error, not a crash', async (t) => {

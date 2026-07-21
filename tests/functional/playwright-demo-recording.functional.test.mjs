@@ -1,124 +1,158 @@
 /**
- * tests/functional/playwright-demo-recording.functional.test.mjs — recording spawn
- * and artifact-selection regression guard for lib/playwright-demo.mjs.
+ * tests/functional/playwright-demo-recording.functional.test.mjs — Playwright demo recording path.
  *
- * Proves two fixes: (1) recording spawns the locally resolved Playwright CLI
- * binary directly, never `npx` (a missing local install fails closed instead of
- * falling through to registry auto-install); (2) the produced video is selected
- * by a before/after snapshot diff against the run's own dirs, never bare
- * newest-mtime, so a stale file with a mtime forced ahead of the real output is
- * not misattributed as this run's artifact.
+ * Spawns the real recordPlaywrightDemo pipeline in an isolated tmpdir workspace with
+ * a local @playwright/test install in the fixture workspace. Skips when Chromium is unavailable.
  */
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 
-import { recordPlaywrightDemo } from '../../lib/playwright-demo.mjs';
+import {
+  recordPlaywrightDemo,
+  readArtifactManifest,
+  selectPrimaryVideoArtifact,
+} from '../../lib/playwright-demo.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
+import { sterileSpawnEnv } from '../helpers/sterile-env.mjs';
 
-function makeWorkspace({ withPlaywrightPackage }) {
-  const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'pw-demo-fn-'));
-  fs.writeFileSync(path.join(repoRoot, 'package.json'), JSON.stringify({ name: 'demo-workspace' }, null, 2));
-  fs.writeFileSync(path.join(repoRoot, 'playwright.config.mjs'), 'export default {};\n');
-  const specDir = path.join(repoRoot, 'specs');
-  fs.mkdirSync(specDir, { recursive: true });
-  fs.writeFileSync(path.join(specDir, 'tour.spec.ts'), 'export {};\n');
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'playwright-demo-workspace');
 
-  if (withPlaywrightPackage) {
-    const pkgDir = path.join(repoRoot, 'node_modules', '@playwright', 'test');
-    fs.mkdirSync(pkgDir, { recursive: true });
-    fs.writeFileSync(path.join(pkgDir, 'package.json'), JSON.stringify({
-      name: '@playwright/test',
-      bin: { playwright: 'cli.js' },
-    }, null, 2));
-    fs.writeFileSync(path.join(pkgDir, 'cli.js'), '#!/usr/bin/env node\n');
+let sharedBrowsersPath = null;
+
+async function ensurePlaywrightBrowsers() {
+  if (sharedBrowsersPath) return sharedBrowsersPath;
+  sharedBrowsersPath = fs.mkdtempSync(path.join(os.tmpdir(), 'pw-browsers-'));
+  const bootstrap = spawnSync(process.execPath, [
+    path.join(ROOT, 'node_modules', '@playwright', 'test', 'cli.js'),
+    'install', 'chromium',
+  ], {
+    encoding: 'utf8',
+    timeout: 180_000,
+    env: sterileSpawnEnv({ PLAYWRIGHT_BROWSERS_PATH: sharedBrowsersPath }),
+  });
+  if (bootstrap.status !== 0) {
+    sharedBrowsersPath = null;
+    return null;
   }
-
-  return { repoRoot };
+  return sharedBrowsersPath;
 }
 
-test('recordPlaywrightDemo spawns the resolved local binary directly, never npx', () => {
-  const { repoRoot } = makeWorkspace({ withPlaywrightPackage: true });
+async function chromiumAvailable() {
   try {
-    const calls = [];
-    const spawn = (command, args, opts) => {
-      calls.push({ command, args, opts });
-      const testResultsDir = path.join(repoRoot, 'test-results');
-      fs.mkdirSync(testResultsDir, { recursive: true });
-      fs.writeFileSync(path.join(testResultsDir, 'run.webm'), 'fresh-video');
-      return { status: 0, stdout: '', stderr: '', signal: null };
-    };
-
-    const result = recordPlaywrightDemo({
-      name: 'tour',
-      workspace: '.',
-      spec: 'specs/tour.spec.ts',
-      output: { format: 'webm' },
-    }, { cwd: repoRoot, repoRoot, spawn });
-
-    assert.equal(result.ok, true, result.message);
-    assert.equal(calls.length, 1);
-    assert.equal(calls[0].command, process.execPath);
-    assert.ok(calls[0].args[0].endsWith('cli.js'));
-    assert.ok(calls[0].args[0].includes(path.join('node_modules', '@playwright', 'test')));
-    assert.equal(calls[0].args[1], 'test');
-    assert.ok(!calls.some((c) => c.command === 'npx'));
-  } finally {
-    rmTmpDir(repoRoot);
+    const browsersPath = await ensurePlaywrightBrowsers();
+    if (!browsersPath) return false;
+    const { chromium } = await import('playwright');
+    const browser = await chromium.launch({
+      env: { ...process.env, PLAYWRIGHT_BROWSERS_PATH: browsersPath },
+    });
+    await browser.close();
+    return true;
+  } catch {
+    return false;
   }
+}
+
+function prepareWorkspace(dir) {
+  fs.cpSync(FIXTURE, dir, { recursive: true });
+  const pkgPath = path.join(dir, 'package.json');
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+  pkg.devDependencies = { '@playwright/test': '1.61.1' };
+  fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
+  const install = spawnSync('npm', ['install', '--no-audit', '--no-fund'], {
+    cwd: dir,
+    encoding: 'utf8',
+    timeout: 180_000,
+    env: sterileSpawnEnv({ HOME: dir }),
+  });
+  assert.equal(install.status, 0, install.stderr || install.stdout || 'npm install failed');
+  return dir;
+}
+
+function workspaceEnv(homeDir) {
+  return sterileSpawnEnv({ HOME: homeDir, PLAYWRIGHT_BROWSERS_PATH: sharedBrowsersPath });
+}
+
+test('recordPlaywrightDemo records via manifest-owned video artifact', async (t) => {
+  if (!(await chromiumAvailable())) {
+    t.skip('Chromium unavailable (run playwright install chromium to exercise this test)');
+    return;
+  }
+
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pw-demo-fn-'));
+  t.after(() => rmTmpDir(dir));
+  prepareWorkspace(dir);
+
+  const outputDir = path.join(dir, 'output');
+  const specRel = 'specs/minimal.spec.ts';
+  const recording = {
+    name: 'minimal',
+    engine: 'playwright',
+    workspace: '.',
+    spec: specRel,
+    playwrightConfig: 'playwright.config.mjs',
+    skipWebServer: true,
+    output: { format: 'webm', path: 'output/minimal.webm' },
+  };
+
+  const strayPath = path.join(outputDir, 'stray-newer.webm');
+  fs.mkdirSync(outputDir, { recursive: true });
+  fs.writeFileSync(strayPath, 'stray');
+  const future = Date.now() + 60_000;
+  fs.utimesSync(strayPath, future / 1000, future / 1000);
+
+  const result = recordPlaywrightDemo(recording, {
+    cwd: dir,
+    repoRoot: dir,
+    env: workspaceEnv(dir),
+    format: 'webm',
+  });
+
+  assert.equal(result.ok, true, result.message || 'recording failed');
+  assert.ok(fs.existsSync(result.outputPath));
+  assert.ok(fs.existsSync(result.manifestPath));
+  assert.equal(result.artifactPath, selectPrimaryVideoArtifact(readArtifactManifest(result.manifestPath)));
+  assert.notEqual(result.artifactPath, strayPath);
+  assert.notEqual(path.basename(result.artifactPath), 'stray-newer.webm');
 });
 
-test('recordPlaywrightDemo fails closed without spawning npx when @playwright/test is not installed', () => {
-  const { repoRoot } = makeWorkspace({ withPlaywrightPackage: false });
-  try {
-    let spawnCalled = false;
-    const spawn = () => {
-      spawnCalled = true;
-      return { status: 0, stdout: '', stderr: '', signal: null };
-    };
-
-    const result = recordPlaywrightDemo({
-      name: 'tour',
-      workspace: '.',
-      spec: 'specs/tour.spec.ts',
-    }, { cwd: repoRoot, repoRoot, spawn });
-
-    assert.equal(result.ok, false);
-    assert.ok(result.message.includes('@playwright/test'), result.message);
-    assert.equal(spawnCalled, false);
-  } finally {
-    rmTmpDir(repoRoot);
+test('recordPlaywrightDemo supports screencast recording mode', async (t) => {
+  if (!(await chromiumAvailable())) {
+    t.skip('Chromium unavailable (run playwright install chromium to exercise this test)');
+    return;
   }
-});
 
-test('artifact selection ignores a stale pre-existing video even with a mtime forced ahead of the run', () => {
-  const { repoRoot } = makeWorkspace({ withPlaywrightPackage: true });
-  try {
-    const testResultsDir = path.join(repoRoot, 'test-results');
-    fs.mkdirSync(testResultsDir, { recursive: true });
-    const stalePath = path.join(testResultsDir, 'stale.webm');
-    fs.writeFileSync(stalePath, 'stale-video');
-    const future = Date.now() + 60_000;
-    fs.utimesSync(stalePath, future / 1000, future / 1000);
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pw-demo-sc-'));
+  t.after(() => rmTmpDir(dir));
+  prepareWorkspace(dir);
 
-    const spawn = () => {
-      fs.writeFileSync(path.join(testResultsDir, 'fresh.webm'), 'fresh-video');
-      return { status: 0, stdout: '', stderr: '', signal: null };
-    };
+  const recording = {
+    name: 'screencast',
+    engine: 'playwright',
+    workspace: '.',
+    spec: 'specs/screencast.spec.ts',
+    playwrightConfig: 'playwright.config.mjs',
+    recordingMode: 'screencast',
+    skipWebServer: true,
+    output: { format: 'webm', path: 'output/screencast.webm' },
+  };
 
-    const result = recordPlaywrightDemo({
-      name: 'tour',
-      workspace: '.',
-      spec: 'specs/tour.spec.ts',
-      output: { format: 'webm' },
-    }, { cwd: repoRoot, repoRoot, spawn });
+  const result = recordPlaywrightDemo(recording, {
+    cwd: dir,
+    repoRoot: dir,
+    env: workspaceEnv(dir),
+    format: 'webm',
+  });
 
-    assert.equal(result.ok, true, result.message);
-    assert.equal(fs.readFileSync(result.outputPath, 'utf8'), 'fresh-video');
-  } finally {
-    rmTmpDir(repoRoot);
-  }
+  assert.equal(result.ok, true, result.message || 'screencast recording failed');
+  assert.equal(result.recordingMode, 'screencast');
+  assert.ok(fs.existsSync(result.outputPath));
+  const manifest = readArtifactManifest(result.manifestPath);
+  assert.ok(manifest.artifacts.some((entry) => entry.mode === 'screencast'));
 });

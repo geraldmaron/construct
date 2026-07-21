@@ -22,8 +22,8 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 import { pinDoctorRoot } from '../helpers/doctor-root.mjs';
 
 // Broker trace writes resolve through the machine-scoped state root
-// (ADR-0066) via lib/worker/trace.mjs#traceDir, keyed off process.env.CX_HOME_OVERRIDE
-// directly rather than any per-call env option, so CX_HOME_OVERRIDE is pinned
+// (ADR-0066) via lib/worker/trace.mjs#traceDir, keyed off process.env.CONSTRUCT_HOME_OVERRIDE
+// directly rather than any per-call env option, so CONSTRUCT_HOME_OVERRIDE is pinned
 // for the whole file to keep them off the real developer machine's $HOME.
 // The broker's default auditRecorder writes a second durable artifact — the
 // audit-trail JSONL under CONSTRUCT_DOCTOR_ROOT (lib/audit-trail.mjs) — so
@@ -31,14 +31,14 @@ import { pinDoctorRoot } from '../helpers/doctor-root.mjs';
 // under the pinned root, never the real ~/.local/state/construct.
 
 const homeOverride = mkdtempSync(join(tmpdir(), 'cx-broker-enforcement-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 const doctorPin = pinDoctorRoot('cx-broker-enforcement-doctor-');
 after(() => {
   doctorPin.restore();
   try { rmTmpDir(homeOverride); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 // ---------------------------------------------------------------------------
@@ -79,7 +79,7 @@ function makeBroker({ root, allowed = true, approvalRequired = false }) {
   };
   return new Broker({
     rootDir: root,
-    // Real emitTraceEvent — writes to root/.cx/traces/ so we can verify the audit trail.
+    // Real emitTraceEvent — writes to root/.construct/traces/ so we can verify the audit trail.
     policy: () => decision,
   });
 }

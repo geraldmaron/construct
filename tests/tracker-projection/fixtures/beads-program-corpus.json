@@ -1,0 +1,1524 @@
+{
+  "note": "Snapshot of this program's own bd history (construct-b0nny epic + .1 .. .31, incl. spike sub-beads), captured via bd list --all --limit 0 --json for construct-b0nny.27 (E8) validation. Frozen fixture: tests read this rather than live bd, which a sibling agent may mutate concurrently.",
+  "capturedFrom": "bd list --all --limit 0 --json",
+  "program": "workspace-control-plane",
+  "epic": "construct-b0nny",
+  "count": 38,
+  "issues": [
+    {
+      "id": "construct-b0nny",
+      "title": "Workspace control plane re-architecture program",
+      "description": "Umbrella for the workspace-control-plane program: Construct as a workspace-level work/governance control plane over replaceable runtimes, founded on the dynamic capability/dependency graph. Program charter, source-directive extraction, and Wave 0 evidence live in docs/notes/research/workspace-control-plane/ on branch feat/workspace-control-plane. Naming rule: neutral capability names only — no version-suffixed names. Waves need per-wave maintainer opt-in (routing-plan.md).",
+      "status": "open",
+      "priority": 1,
+      "issue_type": "epic",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-17T19:32:15Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-17T19:32:15Z",
+      "dependency_count": 0,
+      "dependent_count": 0,
+      "comment_count": 0
+    },
+    {
+      "id": "construct-b0nny.1",
+      "title": "Draft target product and conceptual model (glossary, work schemas, state machines)",
+      "description": "Wave 1, single-lead, no fan-out. Validate or replace the directive's 18-concept glossary (Workspace, Source, Objective, Directive, Work, Work Spec version, Plan version, Run, Assignment, Worker Profile, Procedure, Capability, Policy, Artifact, Evidence, Projection, Graph node/edge) against Wave 0 findings; reject synonyms; per retained concept define meaning, source of truth, owner, lifecycle, enforcement, extension, tests, migration, deletion behavior, graph representation. Inputs: docs/notes/research/workspace-control-plane/{directive.md,synthesis/consolidated-findings.md}.",
+      "acceptance_criteria": "Target-model document in synthesis/ covering all 18 concepts with keep/replace/merge verdicts and schemas + realistic examples; contradictions with Wave 0 evidence resolved or logged as assumptions; no version-suffixed names introduced.",
+      "status": "closed",
+      "priority": 1,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-17T19:32:54Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-17T22:24:43Z",
+      "started_at": "2026-07-17T22:13:35Z",
+      "closed_at": "2026-07-17T22:24:43Z",
+      "close_reason": "Target conceptual model drafted: docs/notes/research/workspace-control-plane/synthesis/target-model.md (commit edb46cd5). All 18 directive concepts covered with keep(12)/merge(4)/replace(2) verdicts, per-concept 10-field definitions + target schemas + examples, synonym rulings, Wave 0 A1-A5 honored as open gates, 3 new assumptions logged (A6-A8). No version-suffixed names.",
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.1",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T15:32:54Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 0,
+      "dependent_count": 2,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.2",
+      "title": "Design relational graph store: schema, incremental update, reconciliation, missing queries",
+      "description": "Wave 2 design, single-lead. Port existing lib/graph semantics (16 node types/16 edge rels, provenance, staleness) onto SQLite (embedded) + Postgres (shared) node/typed-edge tables with recursive-CTE traversal; design incremental update (transactional outbox), diff-based reconciliation against full rebuild, and the missing generic queries (cycles, orphans, path, drift, owners, requirements, export). Must map the target ontology (~35 node types/~30 edge types) as a superset of the existing model. Reuse verdict and gap table: subagents/graph-and-state-audit.md. Check assumption A3 (change-intent branch ff17508e landed on main) at start.",
+      "acceptance_criteria": "Design doc + DDL for both backends; ontology mapping table existing→target; incremental-update and reconciliation state machines; query surface spec covering directive §4.8; measured-workload plan for validation spike A.",
+      "status": "closed",
+      "priority": 1,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-17T19:32:57Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-17T22:55:49Z",
+      "started_at": "2026-07-17T22:40:08Z",
+      "closed_at": "2026-07-17T22:55:49Z",
+      "close_reason": "Design complete (commit 27bf3478 on chore/b0nny.2-graph-schema-design; not pushed). Deliverables under docs/notes/research/workspace-control-plane/synthesis/: graph-store-design.md (design doc: schema, transactional-outbox incremental update + state machine, diff-based reconciliation trust-vs-rebuild decision + freshness state machine, §4.8 query surface spec, ontology mapping existing 16/16 -> target ~35/~30, Spike A measured-workload plan, assumptions incl. A3 resolved-negative) + graph-store/ddl-sqlite.sql, ddl-postgres.sql, queries.sql (portable recursive CTEs; SQLite DDL+queries executed against a fixture, cycle/orphan/impact verified). Ontology headline: nodes 10 1:1 / 4 merge / 1 split / 1 demote / ~23 new; edges 5 exact / 8 rename / 3 merge / 16 new.",
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.2",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T15:32:57Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.2",
+          "depends_on_id": "construct-b0nny.1",
+          "type": "blocks",
+          "created_at": "2026-07-17T15:33:33Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 1,
+      "dependent_count": 1,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.3",
+      "title": "Build graph foundation on the relational store with day-one milestone proof",
+      "description": "Wave 2 build. Implement the designed store, port seeders (declared/discovered/runtime-observed) and impact analysis, add incremental update + reconciliation, wire CLI surface, keep JSONL export for diff-clean review. Day-one milestone per directive §4.11: register→derive→incremental update→query→cycle→orphan→impact→affected tests/adapters→block unvalidated change→export JSON+diagram→SQLite/Postgres parity→rebuild+reconcile.",
+      "acceptance_criteria": "All 12 day-one milestone checks pass as functional tests in tests/functional/; existing graph consumers (impact hook, doctor watcher, oracle read-model) migrated or shimmed with expiration; full test gate green.",
+      "status": "closed",
+      "priority": 1,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-17T19:32:59Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-17T23:55:17Z",
+      "started_at": "2026-07-17T23:00:10Z",
+      "closed_at": "2026-07-17T23:55:17Z",
+      "close_reason": "Implemented the relational graph store per graph-store-design.md (construct-b0nny.2), commit 0acfe27c19a068580157f9f493207d11b4382e50 on chore/b0nny.3-graph-foundation-build.\n\nFiles: lib/graph/relational/{sqlite-db,migrate-sqlite,sqlite-store,outbox,reconcile,queries,postgres-store,export,workspace,schema-version}.mjs + migrations/001_graph_foundation.sql; lib/db/migrations/007_graph_foundation.sql (Postgres, via existing lib/db/migrate.mjs); lib/graph/normalize.mjs (shared merge semantics); lib/graph/store.mjs (host graph now delegates to the relational store on Node >=22.5, JSONL fallback on older runtimes and for per-target graphs, zero API change); lib/graph/cli.mjs + bin/construct + lib/cli-commands.mjs (new subcommands: update, reconcile, path, orphans, cycles, owners, requirements, export); lib/hooks/graph-impact-advisory.mjs + lib/doctor/watchers/graph-staleness.mjs (opportunistic outbox drain, the design's named non-daemon trigger surfaces); lib/oracle/read-model.mjs (doc-only, already migrated transparently).\n\nMilestone-check status (directive §4.11, all 12 pinned as real functional tests in tests/functional/graph-relational-store.functional.test.mjs, spawning the real binary + importing real modules against one isolated project): register, derive, incremental update, query up/down, cycle detection, orphan detection, impact-for-a-changed-node, affected tests/adapters, block-unvalidated-change (real `graph validate --strict` gate), export JSON+diagram, and rebuild+reconcile are all verified end-to-end. SQLite/Postgres parity (#11) is STRUCTURAL ONLY, not live-verified — no Postgres instance was reachable in this build environment; verified instead: every query template is free of backend-specific SQL functions and bindNamedParams round-trips all of them (unit + functional coverage), plus a full PostgresGraphStore class gated on DATABASE_URL (tests/graph/relational-postgres-store.test.mjs) that will run for real once b0nny.5 has a live Postgres. The 'schema' node type used in milestone #7/8 has no live seeder yet (target-ontology type, graph-store-design.md §8.1) — the query capability is proven generic over node type, not that a real seeder populates schema nodes today.\n\nDesign-doc corrections recorded in graph-store-design.md §14 and queries.sql: (1) four query templates (impact/requirements/orphaned-capability/owners) hardcoded target-ontology rel literals that don't exist in the live 16-relation vocabulary yet — would have silently returned zero rows; parameterized instead. (2) the cycles query's original default relation set included 'imports' (4,276 edges on this repo's own graph), causing a real multi-minute hang on a whole-graph scan against the live corpus — narrowed the default to small-cardinality acyclic-by-intent relations.\n\nExisting consumers migrated (not shimmed — store.mjs's public API is unchanged, so each needed zero-to-minimal code changes): impact hook (also gained outbox-drain wiring), doctor graph-staleness watcher (also gained outbox-drain + trust-decision wiring, new test tests/doctor/graph-staleness-incremental.test.mjs), oracle read-model (transparent, doc comment only).\n\nFull unit suite green: 5,073 tests across the whole suite (scripts/run-tests.mjs --exclude=tests/functional), one pre-existing failure cluster in tests/mcp-manager.test.mjs (ERR_MODULE_NOT_FOUND), confirmed via git stash to fail identically on the pre-b0nny.3 code — unrelated to this work. construct doctor: 56 passed, 2 failed (Git hooks unwired, Cross-surface adapter parity — both explicitly named as known-unrelated baseline noise in the bead brief), 7 warnings, \"Living graph valid (0 warnings)\". Representative functional-suite slice green (dependency-matrix, graph-target-build, doctor-no-repo-mutation, doctor-warning-paths, oracle-read-model, oracle-noise-filter, plus the new milestone suite).\n\nNot pushed (per instructions — integration happens centrally).",
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.3",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T15:32:59Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.3",
+          "depends_on_id": "construct-b0nny.2",
+          "type": "blocks",
+          "created_at": "2026-07-17T15:33:37Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 1,
+      "dependent_count": 3,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.4",
+      "title": "Produce retain/rebuild/replace/remove matrix + migration and cleanup strategy",
+      "description": "Wave 2 (parallel with graph design), lead-decided verdicts. Cover every major subsystem from subagents/execution-surfaces-truth-map.md (CLI, daemons x3, hooks, MCP surface, workflows, dead lib/flows, orchestration runtime, roles layer, providers+legacy .js tier, memory x2, five approval surfaces, telemetry, schedulers x3) plus D1-D9 duplications and X4/X5 deletion candidates in synthesis/consolidated-findings.md. Per subsystem: purpose, use, problems, graph dependencies, disposition, rationale, migration, deletion criteria. Include replacement strategy (evolution vs parallel vs direct), cleanup milestones, point of no return, rollback.",
+      "acceptance_criteria": "Matrix covers every subsystem in the truth map with evidence-cited verdicts; every 'remove' has deletion criteria + reconciliation of old state; maintenance budget estimate per retained subsystem.",
+      "status": "closed",
+      "priority": 1,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-17T19:33:02Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-17T22:56:16Z",
+      "started_at": "2026-07-17T22:41:40Z",
+      "closed_at": "2026-07-17T22:56:16Z",
+      "close_reason": "Done. Disposition matrix at docs/notes/research/workspace-control-plane/synthesis/disposition-matrix.md (commit e28f0ad6, branch chore/b0nny.4-disposition-matrix). Covers all 24 truth-map subsystems + D1-D9/X4-X5 with evidence-cited verdicts: 17 retain / 1 rebuild / 5 replace / 1 remove. Only whole-subsystem remove = dead flow engine (lib/flows/ + delegation-flow.mjs, verified dead by static+name-string search+baseline). Every remove has deletion criteria + old-state reconciliation; per-retained-subsystem maintenance budget included. Narrowed 4 Wave-0 claims (roles/router not orphaned; D1 five-surfaces->one-pipeline+2-satellites, A4 supported; scheduled-tasks MCP external; no run-store-filesystem.mjs). Includes replacement strategy, 6 cleanup milestones, point of no return (M3), rollback plan. Not pushed (central integration).",
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.4",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T15:33:01Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.4",
+          "depends_on_id": "construct-b0nny.1",
+          "type": "blocks",
+          "created_at": "2026-07-17T15:33:38Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 1,
+      "dependent_count": 1,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.5",
+      "title": "Run executable validation spikes A-F (disposable, isolated)",
+      "description": "Wave 3. Six spikes per directive §11 (graph workload, parallel research, parallel software change, daily workplace loop, recovery, runtime replacement) in isolated scratch dirs; never merged unless a later bead adopts them. Measurements per directive; failed spikes reported, not hidden. Split into per-spike beads at wave start.",
+      "acceptance_criteria": "Per-spike: runnable code + commands + measurements + go/no-go recorded in synthesis/; comparison against one strong worker for parallel spikes; no spike code merged into production paths.",
+      "status": "closed",
+      "priority": 1,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-17T19:33:04Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T00:54:46Z",
+      "started_at": "2026-07-18T00:10:53Z",
+      "closed_at": "2026-07-18T00:54:46Z",
+      "close_reason": "Wave 3 complete: all 6 spikes (A-F) executed, measured, and reported per directive §11/§12. Mixed verdicts recorded honestly (2 no-go/conditional, 4 go/conditional-go). One real bug found and filed as follow-up: construct-b0nny.12.",
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.5",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T15:33:04Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.5",
+          "depends_on_id": "construct-b0nny.3",
+          "type": "blocks",
+          "created_at": "2026-07-17T15:33:40Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 1,
+      "dependent_count": 1,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.5.1",
+      "title": "Spike A — graph foundation validation",
+      "description": "Prove directive §4 on the relational SQLite/Postgres graph store (lib/graph/relational/, built in construct-b0nny.3). Measure build time, incremental update time, query latency, impact correctness, reconciliation, cycle/orphan detection, storage footprint, migration burden, dependency count, cross-platform behavior.",
+      "acceptance_criteria": "Runnable code + commands + measurements + go/no-go recorded in synthesis/spike-a-*.md; no spike code merged into production paths; if comparison-applicable, comparison against one strong worker included.",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-18T00:11:21Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T00:54:26Z",
+      "started_at": "2026-07-18T00:11:42Z",
+      "closed_at": "2026-07-18T00:54:26Z",
+      "close_reason": "Conditional GO. Measured build/incremental-update/reconciliation/cycle/orphan/query on real repo graph (2,371-3,129 nodes). Blocking finding filed as construct-b0nny.12 (uncapped recursive-CTE hang on hub queries, depth 5+). Report: docs/notes/research/workspace-control-plane/synthesis/spike-a-graph-foundation.md",
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.5.1",
+          "depends_on_id": "construct-b0nny.5",
+          "type": "parent-child",
+          "created_at": "2026-07-17T20:11:20Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 0,
+      "dependent_count": 0,
+      "comment_count": 0,
+      "parent": "construct-b0nny.5"
+    },
+    {
+      "id": "construct-b0nny.5.2",
+      "title": "Spike B — parallel research validation",
+      "description": "Lead + workers on a real research problem. Prove eligibility decision, non-overlap, concurrency, independent artifacts, source quality, duplicate prevention, synthesis, conflict detection, cost/latency/evidence reporting, comparison against one strong worker baseline.",
+      "acceptance_criteria": "Runnable code + commands + measurements + go/no-go recorded in synthesis/spike-b-*.md; no spike code merged into production paths; if comparison-applicable, comparison against one strong worker included.",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-18T00:11:23Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T00:54:28Z",
+      "started_at": "2026-07-18T00:11:44Z",
+      "closed_at": "2026-07-18T00:54:28Z",
+      "close_reason": "No-go for open-ended codebase-archaeology research: single-worker baseline beat 4-agent parallel fan-out (15 findings incl. 3 high-severity vs ~10), decomposition assumed the doc's taxonomy was complete so no worker looked outside it. Report: docs/notes/research/workspace-control-plane/synthesis/spike-b-parallel-research.md",
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.5.2",
+          "depends_on_id": "construct-b0nny.5",
+          "type": "parent-child",
+          "created_at": "2026-07-17T20:11:23Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 0,
+      "dependent_count": 0,
+      "comment_count": 0,
+      "parent": "construct-b0nny.5"
+    },
+    {
+      "id": "construct-b0nny.5.3",
+      "title": "Spike C — parallel software change validation",
+      "description": "Execution-ready work spec, graph-informed decomposition, concurrent safe assignments, isolated workspaces, ownership, independent tests, merge candidates, integration, whole-system validation, failure and conflict handling, provenance, no premature tracker closure.",
+      "acceptance_criteria": "Runnable code + commands + measurements + go/no-go recorded in synthesis/spike-c-*.md; no spike code merged into production paths; if comparison-applicable, comparison against one strong worker included.",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-18T00:11:26Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T00:54:30Z",
+      "started_at": "2026-07-18T00:11:46Z",
+      "closed_at": "2026-07-18T00:54:30Z",
+      "close_reason": "Go for additive graph-verified-independent changes, conditioned on full-suite re-run post-merge. 3 real parallel workers, zero merge conflicts, 8 post-merge test failures all triaged/fixed. Report: docs/notes/research/workspace-control-plane/synthesis/spike-c-parallel-software-change.md",
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.5.3",
+          "depends_on_id": "construct-b0nny.5",
+          "type": "parent-child",
+          "created_at": "2026-07-17T20:11:26Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 0,
+      "dependent_count": 0,
+      "comment_count": 0,
+      "parent": "construct-b0nny.5"
+    },
+    {
+      "id": "construct-b0nny.5.4",
+      "title": "Spike D — daily workplace loop validation",
+      "description": "Realistic workspace (strategy, objectives, standing directive, GitHub/Jira/Slack-Confluence stand-ins, authority policy). Prove signal detection, normalization, graph updates, strategy alignment, meaningful-change filtering, risk/gap detection, recommendation, artifact proposal, approval-before-external-mutation, external effect, verification, source-linked record, no fabricated activity when nothing changed.",
+      "acceptance_criteria": "Runnable code + commands + measurements + go/no-go recorded in synthesis/spike-d-*.md; no spike code merged into production paths; if comparison-applicable, comparison against one strong worker included.",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-18T00:11:29Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T00:54:32Z",
+      "started_at": "2026-07-18T00:11:47Z",
+      "closed_at": "2026-07-18T00:54:32Z",
+      "close_reason": "Conditional go on the detect->normalize->align->filter->gate->simulate->verify->no-fabricate scaffolding; no-go on it alone supplying TPM/PM capacity (rule-based detection over a fixture built to make the gap obvious). No-fabrication check passed on second no-op run. Report: docs/notes/research/workspace-control-plane/synthesis/spike-d-daily-workplace-loop.md",
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.5.4",
+          "depends_on_id": "construct-b0nny.5",
+          "type": "parent-child",
+          "created_at": "2026-07-17T20:11:28Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 0,
+      "dependent_count": 0,
+      "comment_count": 0,
+      "parent": "construct-b0nny.5"
+    },
+    {
+      "id": "construct-b0nny.5.5",
+      "title": "Spike E — recovery validation",
+      "description": "Interrupt before dispatch, during execution, after artifact production, before approval, during external write, before integration, during graph update. Prove resume without repeating accepted work, idempotent effects, stale-approval handling, expired credentials, changed source/spec/plan, cancellation, supersession, safe cleanup, graph reconciliation.",
+      "acceptance_criteria": "Runnable code + commands + measurements + go/no-go recorded in synthesis/spike-e-*.md; no spike code merged into production paths; if comparison-applicable, comparison against one strong worker included.",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-18T00:11:31Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T00:54:42Z",
+      "started_at": "2026-07-18T00:11:49Z",
+      "closed_at": "2026-07-18T00:54:42Z",
+      "close_reason": "Go, with one documented gap: 15/16 scenarios, 163/164 checks passed across all 7 interruption points; genuine idempotency gap found at during_graph_update (edge weight double-counted on crash-forced redo), fix pattern documented not applied (disposable spike). Report: docs/notes/research/workspace-control-plane/synthesis/spike-e-recovery.md",
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.5.5",
+          "depends_on_id": "construct-b0nny.5",
+          "type": "parent-child",
+          "created_at": "2026-07-17T20:11:31Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 0,
+      "dependent_count": 0,
+      "comment_count": 0,
+      "parent": "construct-b0nny.5"
+    },
+    {
+      "id": "construct-b0nny.5.6",
+      "title": "Spike F — runtime replacement validation",
+      "description": "Upgrade or replace one runtime adapter. Measure files changed, contracts affected, graph/test/doc changes, migration, user-facing breakage, rollback, ability of existing runs to finish safely.",
+      "acceptance_criteria": "Runnable code + commands + measurements + go/no-go recorded in synthesis/spike-f-*.md; no spike code merged into production paths; if comparison-applicable, comparison against one strong worker included.",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-18T00:11:34Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T00:54:44Z",
+      "started_at": "2026-07-18T00:11:50Z",
+      "closed_at": "2026-07-18T00:54:44Z",
+      "close_reason": "Go, cheaply, for well-isolated adapters. Replaced GitHub provider's gh-CLI transport with REST in isolated worktree: 6 files changed, zero contract/graph changes, 1 test fix, 524/524 suite green, clean single-revert rollback, in-flight process safety proven empirically. Report: docs/notes/research/workspace-control-plane/synthesis/spike-f-runtime-replacement.md",
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.5.6",
+          "depends_on_id": "construct-b0nny.5",
+          "type": "parent-child",
+          "created_at": "2026-07-17T20:11:34Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 0,
+      "dependent_count": 0,
+      "comment_count": 0,
+      "parent": "construct-b0nny.5"
+    },
+    {
+      "id": "construct-b0nny.6",
+      "title": "Compile executable bead program with graph-derived dependencies + neutral export",
+      "description": "Wave 4, last. Full implementation bead DAG (epic structure preserving directive §17 outcomes E0-E9 under neutral names), critical path, parallel waves with ownership boundaries, integration/migration/deletion/validation/rollback beads, per-bead quality fields per directive §15. Dependencies derived from the graph, not narrative. File via scripted per-issue bd create + bd dep add (bd create --graph is lossy). Also export a neutral machine-readable representation (JSON) into docs/notes/research/workspace-control-plane/ so the program is not trapped in the tracker. Route through construct/cx-operations for dependency sequencing + hygiene.",
+      "acceptance_criteria": "Bead records exist with full dependency edges and wave assignments; JSON export committed; every deletion target from the disposition matrix has a deletion bead with criteria; final epic bead acceptance criteria mechanically verifiable.",
+      "status": "closed",
+      "priority": 1,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-17T19:33:07Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T01:25:06Z",
+      "started_at": "2026-07-18T01:08:30Z",
+      "closed_at": "2026-07-18T01:25:06Z",
+      "close_reason": "Wave 4 complete: 16 execution beads filed (construct-b0nny.13-.28) reconciling M0-M5 (disposition-matrix cleanup milestones) with directive §17's remaining E-outcomes, real DAG wired via scripted bd create+dep add, neutral JSON export at synthesis/bead-program-export.json (17 nodes, 31 edges). Epic itself stays open — its 16 new children are the actual forward implementation program.",
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.6",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T15:33:06Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.6",
+          "depends_on_id": "construct-b0nny.4",
+          "type": "blocks",
+          "created_at": "2026-07-17T15:33:42Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.6",
+          "depends_on_id": "construct-b0nny.5",
+          "type": "blocks",
+          "created_at": "2026-07-17T15:33:44Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 2,
+      "dependent_count": 0,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.7",
+      "title": "Rewrite README runtime-state sections: .construct/ references to .construct/ (ADR-0074)",
+      "description": "README.md has 13 references treating .construct/ as the canonical runtime state tree (incl. the whole 'is local-only runtime state' section, .construct/context.md, .construct/observations/, .construct/traces/, .construct/construct_guide.md). Code writes .construct/ (lib/config-dir.mjs CONFIG_DIR_NAME, lib/init-unified.mjs); .construct survives only as a backward-detection marker. Evidence: docs/notes/research/workspace-control-plane/subagents/intent-and-docs-drift.md §2.",
+      "acceptance_criteria": "No README claim states .construct/ is written by construct init; state-layout section matches project-scopes.md; footprint table consistent.",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "chore",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-17T19:33:47Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-17T22:22:50Z",
+      "started_at": "2026-07-17T22:13:47Z",
+      "closed_at": "2026-07-17T22:22:50Z",
+      "close_reason": "Fixed all 13 README.md .construct/ references (lines 11,43,45,62,85,127,139,147,149-153,355,366). Verified against lib/config-dir.mjs (CONFIG_DIR_NAME='.construct'), lib/init-unified.mjs, lib/state-root.mjs (ADR-0066 machine-scoped ~/.construct/projects/<key>/ for traces+lancedb), lib/runtime/uv-bootstrap.mjs (docling venv), lib/config/xdg.mjs + lib/embed/supervision.mjs (embed daemon log), lib/uninstall/uninstall.mjs (uninstall categories). Rewrote the .construct/ is local-only runtime state section to split project-local .construct/ from machine-scoped ~/.construct/projects/<key>/, matching docs/guides/concepts/project-scopes.md's three-way split. Fixed footprint table Project row and uninstall section. construct doctor: 56 passed/7 warnings/2 failed both before and after (pre-existing worktree-environment conditions, unrelated to this docs-only change). Commit: 251dd92b22280885030277dd2c2cfe5c9217d5e2 on chore/b0nny.7-readme-cx-rewrite.",
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.7",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T15:33:47Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 0,
+      "dependent_count": 0,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.8",
+      "title": "Rename lib/storage/embeddings-legacy.mjs — active fallback mislabeled legacy",
+      "description": "embeddings-legacy.mjs is the active hashing-bow-v1 fallback embedder with 8 importers (used when ONNX unavailable or CONSTRUCT_EMBEDDING_MODEL=hashing). The 'legacy' name mislabels a load-bearing adapter; rename (e.g. embeddings-hashing.mjs) and update importers. Evidence: intent-and-docs-drift.md §3.",
+      "acceptance_criteria": "Module renamed with all importers updated; no references to the old path outside CHANGELOG/history; test gate green.",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "chore",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-17T19:33:50Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-17T22:21:11Z",
+      "started_at": "2026-07-17T22:13:57Z",
+      "closed_at": "2026-07-17T22:21:11Z",
+      "close_reason": "Renamed lib/storage/embeddings-legacy.mjs -> lib/storage/embeddings-hashing.mjs.\n8 importers updated: lib/storage/embeddings-engine.mjs, lib/storage/embeddings-local.mjs (x2 dynamic imports), lib/storage/embeddings.mjs (comment refs), lib/session-store.mjs, lib/entity-store.mjs, lib/knowledge/trends.mjs, lib/knowledge/rag.mjs, lib/engine/eval-retrieval.mjs, tests/knowledge-rag.test.mjs.\nVerified via broad repo-wide string grep (not just static-import grep) for \"embeddings-legacy\" -- no remaining references outside historical/dated research docs (docs/notes/research/workspace-control-plane/*, docs/notes/research/2026-06-construct-audit/*) and ADR-0014 (left untouched per existing repo precedent of not rewriting ADR text on mechanical renames, verified against past rename commit 702fd6ff which only touched CHANGELOG, not ADRs).\nTests: targeted suite (knowledge-rag, entity-store, knowledge-trends, engine-eval-retrieval, session-store, embedding-engine, embeddings-warmup, doctor-embedding-health) = 86 tests, 81 pass, 5 skip, 0 fail. Functional test tests/functional/init-lazy-embedding.functional.test.mjs (exercises CONSTRUCT_EMBEDDING_MODEL=hashing end-to-end via real binary spawn) = 3/3 pass -- confirms adequate multi-component coverage already exists, no new functional test needed. Full unit suite (node scripts/run-tests.mjs --exclude=tests/functional) = 516/516 pass.\nconstruct doctor: 56 passed, 7 warnings, 2 failed -- both failures (git hooks unwired, cross-surface adapter parity) confirmed pre-existing via stash-and-rerun on baseline commit adeff6d9, unrelated to this change.\nCommit: fcfa3652 on chore/b0nny.8-rename-embeddings. Not pushed, not merged.",
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.8",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T15:33:49Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 0,
+      "dependent_count": 0,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.9",
+      "title": "Verify and remove orphaned lib/scheduler/ (superseded scheduling surface)",
+      "description": "lib/scheduler/ (cron -> launchd/systemd native triggers) appears orphaned: only a mutual import with lib/hygiene/scan.mjs. Superseded by lib/embed/scheduler.mjs + scheduled-tasks MCP. Before deletion: check dynamic dispatch by name-string (MCP call gateway pattern), runtime references from installed launchd/systemd artifacts on user machines, and any construct sync/init writers that install native triggers. If removal is safe, delete and add uninstall/cleanup for already-installed native triggers (leave no orphaned launchd/systemd jobs behind). Evidence: execution-surfaces-truth-map.md §2, X4 in consolidated-findings.md.",
+      "acceptance_criteria": "Either removed with importers cleaned + native-trigger uninstall path shipped + test gate green, or a documented keep-verdict with the concrete caller evidence that blocked removal.",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "chore",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-17T19:33:52Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-17T22:18:00Z",
+      "started_at": "2026-07-17T22:14:16Z",
+      "closed_at": "2026-07-17T22:18:00Z",
+      "close_reason": "Keep-verdict: lib/scheduler/ is NOT orphaned. Verified real callers beyond the truth-map's \"mutual import with hygiene/scan only\" claim:\n1. bin/construct:6461 dynamically imports runJobOnce/listJobs; cmdScheduler is registered in the dispatch table (bin/construct:7251) and documented in the CLI registry (lib/cli-commands.mjs:1179-1186, category Advanced). Ran `node bin/construct scheduler list` directly — returns 4 real jobs.\n2. 4 test files import lib/scheduler/index.mjs directly (tests/scheduler-optimize-job.test.mjs, tests/scheduler-doc-hygiene.test.mjs, tests/functional/agentic-hq-integration.functional.test.mjs, tests/functional/deployment-mode-single-resolver.functional.test.mjs) — all 18+7+4 relevant assertions pass.\n3. docs/decisions/adr/0077-prompt-optimization-auto-apply-tier.md (proposed) names lib/scheduler/index.mjs's optimize-loop --apply throw as one of three deliberately-enforced safety gates.\nSecondary finding: lib/scheduler/solo.mjs's registerNativeTrigger/removeNativeTrigger have zero callers anywhere (checked construct init/sync/setup paths too) — no installed-artifact risk exists today, but doesn't change the keep verdict.\nNo deletion performed. Full writeup: docs/notes/research/workspace-control-plane/synthesis/b0nny-9-keep-verdict.md. consolidated-findings.md X4 row updated to point to it. Tests pass; construct doctor shows only 2 pre-existing/environmental failures (git hooks path, cross-surface adapter drift) unrelated to this change (no code touched, doc-only commit ad67c28c on chore/b0nny.9-scheduler-removal).",
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.9",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T15:33:52Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 0,
+      "dependent_count": 0,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.10",
+      "title": "Verify and remove legacy provider .js tier (pre-lib/models generation)",
+      "description": "provider-capabilities-*.js, cache-strategy-*.js, token-estimator-*.js, token-engine.js, dispatch-batch.js (May 2026 vintage) look superseded by lib/models/ + lib/providers/contract. Verify via static imports AND name-string dispatch before deleting. Evidence: execution-surfaces-truth-map.md §7, X5 in consolidated-findings.md.",
+      "acceptance_criteria": "Either deleted with test gate green, or documented keep-verdict with caller evidence.",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "chore",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-17T19:33:55Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-17T22:23:26Z",
+      "started_at": "2026-07-17T22:14:25Z",
+      "closed_at": "2026-07-17T22:23:26Z",
+      "close_reason": "Split verdict, not a single delete/keep: lib/dispatch-batch.js was truly dead\n(zero static imports, zero name-string dispatch, zero tests repo-wide) and\nwas deleted. The other four families (provider-capabilities-*.js,\ncache-strategy-*.js, token-estimator-*.js, token-engine.js) are load-bearing:\nlib/models/execution-capability-profile.mjs (construct-6zga.1.8, the very\ntier X5 assumed superseded this code) imports provider-capabilities.js\ndirectly at line 30, and lib/prompt-composer.js + lib/certification/\nprompt-budget.mjs depend on token-engine.js. Full evidence with file:line\ncitations in docs/notes/research/workspace-control-plane/synthesis/\nb0nny-10-keep-verdict.md. npm run test:unit: 516/516 pass. node bin/construct\ndoctor: 56 passed/7 warnings/2 pre-existing failures unrelated to this change\n(confirmed identical with the deletion stashed vs applied). Committed\n93d1e273 on chore/b0nny.10-legacy-provider-tier, not pushed.",
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.10",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T15:33:54Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 0,
+      "dependent_count": 0,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.11",
+      "title": "Document shipped-but-undocumented systems in architecture.mdx",
+      "description": "architecture.mdx has zero coverage of: Org Studio (lib/org-studio/, construct studio), participation rules (ADR-0070, construct participation), scope/profile lifecycle (lib/scopes/lifecycle.mjs), packs as persona-resolution boundary, multi-PM workspaces, customer profiles, certification, headhunt/domain overlays, cross-project synthesize. Evidence: intent-and-docs-drift.md §2.",
+      "acceptance_criteria": "Each listed system has an architecture section or an explicit pointer to its own concept doc; docs build passes.",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "chore",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-17T19:33:57Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-17T22:24:12Z",
+      "started_at": "2026-07-17T22:14:47Z",
+      "closed_at": "2026-07-17T22:24:12Z",
+      "close_reason": "Added 9/9 systems to docs/guides/concepts/architecture.mdx: Org Studio (new subsection), Headhunt/domain overlays (new subsection), Customer profiles + Multi-PM workspaces (new \"Product intelligence\" section), Certification (new section), Packs as persona-resolution boundary (new \"Packs\" section), Cross-project synthesize (new section) — plus pointers for Participation rules (-> participation-verticals.md, ADR-0070) and Scope/profile lifecycle (-> profile-lifecycle.md, lib/scopes/lifecycle.mjs), both of which already had dedicated concept docs. Verification: node ./bin/construct docs:verify and docs:update --check pass; apps/docs `npm run build` (Next.js) compiles clean, 209 static pages incl. the updated architecture page (build-tool side effects reverted before commit, not part of the diff). Commit 84e8f78ccc9c85510935c336617677e5a0bccd0b on chore/b0nny.11-architecture-docs, not pushed.",
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.11",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T15:33:57Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 0,
+      "dependent_count": 0,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.12",
+      "title": "Fix uncapped recursive-CTE hang in graph queryDown/queryPath/queryImpact on hub nodes",
+      "description": "construct-b0nny.5.1 (Spike A validation, see docs/notes/research/workspace-control-plane/synthesis/spike-a-graph-foundation.md) found that lib/graph/relational/'s queryDown/queryPath/queryImpact share an uncapped, no-relationship-filter recursive CTE. On this repo's own graph (52.8% of edges are 'imports'), latency goes from ~2s at depth 3 to a hard 12-30s timeout at depth 5+ or any hub-scale impact query — reproduced twice, required kill-guards in the spike harness to avoid hanging it. The code's own comments already flagged a hang risk for a sibling query at smaller scale. Built in construct-b0nny.3 (lib/graph/relational/), shipped to feat/workspace-control-plane at 712fbcd6.",
+      "acceptance_criteria": "queryDown/queryPath/queryImpact accept a relationship-type filter and/or depth cap; a latency regression test pins acceptable latency at hub scale (using this repo's own graph or an equivalent synthetic fixture) so this can't silently regress again; existing callers (construct graph CLI, day-one milestone tests) still pass.",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-18T00:54:08Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T03:29:41Z",
+      "started_at": "2026-07-18T02:53:07Z",
+      "closed_at": "2026-07-18T03:29:41Z",
+      "close_reason": "Rel-type filter + depth cap added to queryDown/queryUp/queryPath/queryImpact; hub-scale latency regression test added. Merged into feat/workspace-control-plane.",
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.12",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T20:54:07Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.12",
+          "depends_on_id": "construct-b0nny.3",
+          "type": "blocks",
+          "created_at": "2026-07-17T20:54:07Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 1,
+      "dependent_count": 1,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.13",
+      "title": "Delete dead flow engine + cx_trace_telemetry alias + .construct naming residue",
+      "description": "## Objective\nExecute the disposition matrix's \"M0 — free removals\" milestone: delete the confirmed-dead\nflow engine, the redundant MCP telemetry alias, and the `.construct`/`~/.construct` naming residue — the\nthree cleanups the matrix classifies as zero-dependency and individually `git revert`-safe.\n\n## Desired outcome\nThree real deletions land with green tests: no production code imports `lib/flows/` or\n`delegation-flow.mjs`; the MCP tool surface exposes only `cx_trace` (not the\n`cx_trace_telemetry` alias); and no `.construct`/`~/.construct` string remains in a live (non-historical)\ncode comment or path where `.construct`/`~/.construct` is the actual current convention.\n\n## Locked architectural decision\nPer disposition-matrix.md Cluster C5 and the D9/D8 rows: the *live* flow capability is\n`lib/workflows/` (retained, target concept 11 Procedure) — `lib/flows/` is not a parallel\nimplementation worth preserving. `cx_trace` (not `cx_trace_telemetry`) is the canonical MCP\ntool name. `.construct`/`~/.construct` (XDG-era naming, ADR-0074) is canonical; `.construct` survives\nonly as an intentional legacy-detection marker, never as fresh prose/comments.\n\n## Requirements\n1. Delete `lib/flows/` (9 files) and `lib/orchestration/delegation-flow.mjs`.\n2. Delete the ~11 test files that exist only to exercise them: `tests/flows-engine`,\n   `flows-define`, `flows-state`, `flows-checkpoint`, `flows-schema`, `flows-demo`,\n   `tests/functional/flow-join-resume`, `flow-checkpoint-resume`,\n   `tests/orchestration-delegation-flow`; rewrite `orchestration-route-path`/\n   `orchestration-policy` if they assert live routing behavior independent of the flow engine\n   (do not delete these two wholesale — they may cover real routing behavior beyond flows).\n3. Remove the `02-deadcode:…delegation-flow.mjs` allowlist entry from `scripts/audit/baseline.json`.\n4. Remove the `delegation-flow` mention from `lib/flows/checkpoint.mjs:151`'s header (moot once\n   the file is deleted; verify no other file references it in prose).\n5. Delete the `cx_trace_telemetry` alias's 3 sites: `tool-safety.mjs:82`, `server.mjs:305`,\n   `tool-definitions-workflow.mjs:271`; keep `cx_trace`.\n6. Rewrite `.construct`/`~/.construct` docstrings and solo paths flagged in D8 (graph-store comments,\n   `embed/approval-queue.mjs` solo path, `recommendation-store` references) to\n   `.construct`/`~/.construct` — verify each site individually before editing (D8's own\n   confidence is \"medium on which are genuinely divergent vs aliased\").\n\n## Acceptance criteria\n- `grep -rn \"lib/flows\\|delegation-flow\" --include=*.mjs --include=*.js lib/ bin/ scripts/`\n  returns zero non-test, non-historical hits.\n- `npm run test:unit` and `construct doctor` both green after removal.\n- MCP surface-parity test and tool-budget test green with only `cx_trace` present.\n- `grep -rn \"\\.construct\\b\\|~/.construct\\b\"` against the D8-flagged files returns zero remaining live-prose\n  hits (historical/dated docs are out of scope, matching the auto-docs precedent from\n  construct-b0nny.11).\n\n## Context\nDisposition-matrix.md Cluster C5 (dead flow engine, **remove**), duplication rows D8 (`.construct`\nvs `.construct` naming residue, **remove**) and D9 (`cx_trace_telemetry` alias, **remove**). This is the\nmatrix's own \"Cleanup milestones § M0\" verbatim.\n\n## Source evidence\n[source: docs/notes/research/workspace-control-plane/synthesis/disposition-matrix.md] — Cluster\nC5 (lines ~357–387), D8/D9 rows (~608–609), \"Cleanup milestones\" M0 (~656–658).\n\n## Graph nodes created/modified/deprecated/deleted\nDeleted: `workflow`/`capability`-typed nodes (if any) uniquely owned by `lib/flows/` —\n`construct graph orphans` should be re-run after deletion to confirm no orphaned capability\nnodes remain pointing at deleted files. No new nodes created.\n\n## Expected edge changes\nRemoval of `imports`/`realizes` edges from the ~20 deleted files; `construct graph reconcile`\nshould report only removals, zero additions, on this bead.\n\n## Impacted dependents\nNone outside the deleted files' own test suite — X1's evidence (disposition-matrix.md\nnarrowing 5) already confirmed zero non-test production callers.\n\n## Dependency rationale\nNone. This bead depends on nothing else in the program — it is the matrix's own \"free removal,\nno dependency\" tier. It can start immediately.\n\n## Non-goals\nDoes not touch `lib/workflows/` (the retained, live workflow engine — target concept 11). Does\nnot attempt the `workflow`→`procedure` graph node rename (that is a separate migration note\nunder target-model.md, not part of this bead).\n\n## Risks\nLow. The main risk is deleting `orchestration-route-path`/`orchestration-policy` test coverage\nthat happens to also exercise live routing behavior alongside the dead flow — mitigated by the\n\"rewrite, don't delete wholesale\" requirement above.\n\n## Security\nNone — no security-relevant surface is touched.\n\n## Authority requirements\nNone — this is a local code deletion with no external effect; no approval/authority chokepoint\napplies.\n\n## Implementation guidance\nDelete in the order listed (flows → tests → baseline allowlist → alias → naming residue) so\neach step's test run isolates any regression to the step that caused it. Use `git rm` for\ndeleted files, not raw `rm`, so the deletion is tracked.\n\n## Required capabilities\nRead/Grep/Edit/Bash (git rm, test runner). No external tool access needed.\n\n## Recommended runtime and model capability\nMid-tier coding runtime; this is mechanical deletion + grep verification, not a design task.\n\n## Parallelization eligibility and rationale\nInternally parallel-safe: the three cleanups (flows, alias, naming residue) touch disjoint file\nsets with no shared ownership, so a single worker can do all three sequentially in one\nworktree, or three workers could split them — the matrix's own guidance not to over-split small\nwork argues for one bead, one worker, sequential steps.\n\n## Workspace/worktree ownership\nOne throwaway worktree off `feat/workspace-control-plane`, merged back when green.\n\n## File ownership\n`lib/flows/**`, `lib/orchestration/delegation-flow.mjs`, `scripts/audit/baseline.json`,\n`lib/mcp/tool-safety.mjs`, `lib/mcp/server.mjs`, `lib/mcp/tool-definitions-workflow.mjs`, and\nthe D8-flagged `.construct`-residue files. No shared-ownership conflict with any other bead in this\nprogram (verified against the file-ownership lists of every other bead below).\n\n## Inputs\nThe disposition matrix's own evidence (already gathered — no new investigation needed beyond\nthe individual-site verification D8 asks for).\n\n## Outputs\nA clean diff: ~20 files deleted, 3 alias sites removed, a handful of `.construct`→`.construct` string\nfixes. No new files.\n\n## Integration contract\nNone — no other subsystem calls into the deleted code by contract (confirmed dead).\n\n## Validation\n`npm run test:unit`, `construct doctor`, MCP surface-parity + tool-budget tests, `construct\ngraph orphans`.\n\n## Graph validation\n`construct graph orphans` and `construct graph cycles` both clean post-deletion (no orphaned\ncapability nodes left pointing at removed files).\n\n## Migration\nNone — no data to migrate, no production behavior carried forward.\n\n## Rollback\n`git revert` — per the matrix's own rollback plan, M0 is individually revertible with no state\nloss, since nothing durable is discarded and no external effect changes.\n\n## Deletion/cleanup\nThis bead *is* the cleanup — see Requirements above for the full deletion list.\n\n## Completion evidence\nLink the merge commit; paste the `grep`/test-run output confirming zero remaining\n`lib/flows`/`delegation-flow`/`cx_trace_telemetry`/live-`.construct` references.\n",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-18T01:19:50Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T03:29:47Z",
+      "started_at": "2026-07-18T01:34:50Z",
+      "closed_at": "2026-07-18T03:29:47Z",
+      "close_reason": "Dead delegation-flow.mjs port deleted, cx_trace_telemetry alias removed, .construct residue fixed. lib/flows/ correctly kept (live via bin/construct's dynamic import). Merged into feat/workspace-control-plane.",
+      "labels": [
+        "execution-program",
+        "workspace-control-plane"
+      ],
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.13",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T21:19:50Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 0,
+      "dependent_count": 1,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.14",
+      "title": "Converge project identity to one Workspace id + version the SQLite run-store",
+      "description": "## Objective\nExecute the disposition matrix's \"M1 — identity + persistence\" milestone: converge the three\ndivergent project-identity derivations onto one Workspace id, and give the SQLite run-store\nreal versioned migrations with a SQLite/Postgres parity test.\n\n## Desired outcome\nExactly one project/workspace identity derivation exists and is used everywhere state is\nkeyed; the SQLite run-store's schema lives in `lib/db/migrations/` (not an inline `CREATE\nTABLE`), and a parity test proves SQLite and Postgres return equivalent run records for the\nsame operations.\n\n## Locked architectural decision\n`deriveProjectKey` (git-remote hash) is the canonical Workspace-identity derivation (target\nconcept 1). `orchestration/store.projectKey` and `embed/daemon.resolveRootDir` are rewritten to\nread it rather than deriving independently. The SQLite run-store's schema becomes\nversion-1-controlled via the migration runner, reproducing the current inline schema exactly\n(no behavior change, only a storage-shape rebuild — disposition-matrix.md verdict C2 \"rebuild\").\n\n## Requirements\n1. Rewrite `orchestration/store.projectKey` and `embed/daemon.resolveRootDir` to call the one\n   canonical `deriveProjectKey`.\n2. Assert one id across all three call sites (extend the existing\n   `cross-process-state-has-one-authoritative-location` invariant test).\n3. Reconcile any state currently stored under a divergent key (audit for stray state directories\n   keyed by the two non-canonical derivations before deleting them).\n4. Author `lib/db/migrations/` files reproducing the current inline SQLite run-store schema as\n   version 1.\n5. Add a backend-parity test asserting SQLite and Postgres return equivalent run records for the\n   same write/read sequence (mirrors directive §4's day-one \"equivalent results on SQLite and\n   Postgres,\" applied here to run-store rather than the graph store).\n6. Delete the inline `CREATE TABLE` code path in `run-store-sqlite.mjs` only after the migration\n   runner owns the schema and the parity test is green.\n\n## Acceptance criteria\n- A single test asserts `deriveProjectKey`, `orchestration/store.projectKey`, and\n  `embed/daemon.resolveRootDir` return the identical key for the same repo.\n- `lib/db/migrations/` contains a run-store version-1 migration; `run-store-sqlite.mjs` no\n  longer contains an inline `CREATE TABLE`.\n- A parity test runs the same operation sequence against both backends and asserts equal\n  results.\n- `npm run test:unit` and `construct doctor` green.\n\n## Context\nDisposition-matrix.md duplication row D6 (project-identity ×3, **remove 2 of 3**) and Cluster C2\n(run-store backends, **rebuild**). Matrix's own \"Cleanup milestones § M1.\"\n\n## Source evidence\n[source: docs/notes/research/workspace-control-plane/synthesis/disposition-matrix.md] — D6 row\n(~606), Cluster C2 (~291–309), M1 (~659–661).\n\n## Graph nodes created/modified/deprecated/deleted\nNo graph-store nodes affected (this is run-store, not the dependency graph); if project-identity\nconvergence touches any graph-store keying by project, re-run `construct graph reconcile` to\nconfirm no drift.\n\n## Expected edge changes\nNone in the dependency graph proper.\n\n## Impacted dependents\nEvery consumer of `orchestration/store.projectKey` or `embed/daemon.resolveRootDir` (state-root\nresolution, `.construct/projects/<key>/` scoping) — a full-suite run after the rewrite is the\nregression gate.\n\n## Dependency rationale\nNone on other new beads in this program — this is foundational, evidence-grounded cleanup that\ncan start immediately alongside M0/M2.\n\n## Non-goals\nDoes not touch the Postgres migration runner itself (already real, per C2's own evidence) — only\nbrings SQLite up to the same discipline. Does not attempt E7's shared-workspace server work;\nthis is local persistence hygiene only.\n\n## Risks\nMedium — rewriting identity derivation touches every state-root resolution path; a botched\nmigration could scope existing user state under a new key and orphan it. Mitigate with the\nreconciliation-audit requirement (item 3) before any deletion of old-keyed state.\n\n## Security\nNone beyond standard care around not silently losing user state during the identity/key\nrewrite (data-loss risk, not a security vulnerability).\n\n## Authority requirements\nNone — local persistence change, no external effect, no approval chokepoint.\n\n## Implementation guidance\nDo the identity convergence and the run-store migration as two independent, sequential steps\ninside one bead (they touch different files but are grouped under one milestone per the\nmatrix); write the reconciliation audit script before touching any deletion.\n\n## Required capabilities\nRead/Grep/Edit/Bash; direct SQLite/Postgres access for the parity test.\n\n## Recommended runtime and model capability\nMid-to-strong coding runtime — the identity-convergence rewrite has real regression risk across\nmany call sites and deserves careful review, not a cheap worker.\n\n## Parallelization eligibility and rationale\nThe two halves (identity convergence; run-store migration) touch disjoint files and could run\nas two workers, but are kept as one bead per the matrix's own grouping — split further only if a\nfuture lead judges the integration overhead of doing them separately is worth it.\n\n## Workspace/worktree ownership\nOne throwaway worktree off `feat/workspace-control-plane`.\n\n## File ownership\n`lib/orchestration/store.mjs`, `lib/embed/daemon.mjs`, `lib/paths.mjs` (or wherever\n`deriveProjectKey` canonically lives), `lib/db/migrations/`, `lib/storage/run-store-sqlite.mjs`,\n`lib/storage/backend-registry.mjs`. No conflict with M0's file set.\n\n## Inputs\nDisposition-matrix.md's D6/C2 evidence; the existing Postgres migration runner\n(`lib/db/migrate.mjs`, `lib/db/migrations/001_orchestration_runs.sql`) as the pattern to mirror.\n\n## Outputs\nNew migration file(s), a rewritten identity-derivation call graph, a new parity test.\n\n## Integration contract\n`orchestration/store.projectKey` and `embed/daemon.resolveRootDir`'s public signatures are\nunchanged — only their internals now delegate to `deriveProjectKey`.\n\n## Validation\nThe identity-equality test, the backend-parity test, full unit suite, `construct doctor`.\n\n## Graph validation\n`construct graph reconcile` clean (no drift attributable to this change).\n\n## Migration\nRun-store SQLite schema becomes version 1 in the migration runner, reproducing current schema\nexactly — no data transformation needed, only a mechanism change. Any state found under a\ndivergent project key (item 3) is reconciled into the canonical key's location, not discarded.\n\n## Rollback\nPer the matrix's rollback plan: run-store migrations are additive (version 1 reproduces the\ncurrent inline schema), so reverting the migration files leaves data readable by the old inline\npath; identity convergence keeps `deriveProjectKey` as the canonical it already is, so revert is\na no-op on stored keys.\n\n## Deletion/cleanup\nDelete the inline `CREATE TABLE` code path only after the migration runner owns the schema and\nthe parity test is green (per Requirements item 6).\n\n## Completion evidence\nLink the merge commit, the identity-equality test output, and the parity-test output.\n",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-18T01:19:56Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T03:29:50Z",
+      "started_at": "2026-07-18T01:34:53Z",
+      "closed_at": "2026-07-18T03:29:50Z",
+      "close_reason": "Project identity converged onto deriveProjectKey; SQLite run-store versioned via lib/db/migrations/. ADR-0092. Merged into feat/workspace-control-plane.",
+      "labels": [
+        "execution-program",
+        "workspace-control-plane"
+      ],
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.14",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T21:19:55Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 0,
+      "dependent_count": 3,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.15",
+      "title": "Formalize the governed-write pipeline as the sole authority chokepoint",
+      "description": "## Objective\nExecute the disposition matrix's \"M2 — governance formalization\" milestone (directive §17 E6):\ndeclare the existing control-plane→ApprovalQueue→envelope→sent-log pipeline the single governed-\nwrite chokepoint, fold in the two satellite approval recorders, and delete the one recorder that\nbecomes redundant.\n\n## Desired outcome\nEvery external effect (provider write, destructive MCP tool call, workflow-driven mutation)\npasses through exactly one authority/approval/idempotency chokepoint. `roles/approval-surface.mjs`\nis deleted because its callers now route through the chokepoint directly.\n\n## Locked architectural decision\nPer disposition-matrix.md's narrowing 2 (A4 supported): the \"five competing approval surfaces\"\nfinding was wrong — three of five are already layers of one pipeline\n(`control-plane.mjs`→`write-intent.mjs`→`ApprovalQueue`→`envelope.mjs`+`sent-log.mjs`). The\nchokepoint is `control-plane.mjs`; it does not need to be rebuilt, only formalized and completed.\nThis *is* target concept 13 (Policy chokepoint) and directive §17 E6 in full.\n\n## Requirements\n1. Declare `control-plane.mjs` the single governed-write path in code/docs (a header-comment and\n   an architecture-doc update, not a rewrite).\n2. Wire `mcp/destructive-gate.mjs`'s `issueApprovalToken`/`consumeApprovalToken` to record token\n   issuance in control-plane's authority store, so there is one authority ledger instead of a\n   parallel one.\n3. Route `roles/approval-surface.mjs`'s three consumers (`hooks/edit-guard`, `hooks/guard-bash`,\n   `embedded-contract/workflow-invoke`) through the chokepoint directly.\n4. Delete `roles/approval-surface.mjs` once all three consumers are migrated and zero remaining\n   callers exist.\n5. Migrate any per-surface idempotency logic found in the three consumers to the envelope's\n   existing idempotency/dedup/retry/audit machinery, rather than keeping a second idempotency\n   implementation.\n\n## Acceptance criteria\n- `grep -rn \"roles/approval-surface\"` returns zero hits outside the deletion commit's own diff.\n- A single authority-ledger test asserts both a provider-write approval and an MCP\n  destructive-tool-token approval are recorded in the same store.\n- `npm run test:unit`, `construct doctor`, and the no-skip-vars hook test all green (this\n  chokepoint is exactly the kind of gate CLAUDE.md's no-skip-vars rule protects).\n\n## Context\nDisposition-matrix.md Cluster E1g/E2g (**retain**, **retain+reconcile**) and duplication row D1\n(narrowed High→Medium). Matrix's own \"Cleanup milestones § M2.\" This bead is also the concrete\ncontent of directive §17's E6 (\"policies, approvals, and effects — authority, policy, approval,\nrevalidation, leases, idempotency, transactional outbox, external verification, GitHub/Jira\neffects\").\n\n## Source evidence\n[source: docs/notes/research/workspace-control-plane/synthesis/disposition-matrix.md] — Cluster\nE1g/E2g (~495–527), D1 narrowing (~89–102), M2 (~662–663).\n\n## Graph nodes created/modified/deprecated/deleted\nNo dependency-graph nodes change; this is a runtime authority/approval mechanism, not a graph\nartifact.\n\n## Expected edge changes\nNone in the dependency graph.\n\n## Impacted dependents\n`hooks/edit-guard`, `hooks/guard-bash`, `embedded-contract/workflow-invoke` (rewired), every\nprovider governed-write path and the MCP destructive-tool flow (must remain green throughout).\n\n## Dependency rationale\nNone on other new beads — this can start immediately, in parallel with M0/M1. It is itself a\nprecondition (per the matrix's own point-of-no-return note) for M3's daemon/routing\nconsolidation: M3 must not begin \"until... the D1/A4 chokepoint (M2) is proven to have zero\nwrite-path bypass.\"\n\n## Non-goals\nDoes not touch the graph, run-store, or org-metaphor subsystems. Does not add new governed-write\ncapability — only consolidates the authority ledger for what already exists.\n\n## Risks\nMedium-high — this gates every external effect in the system; a bug here has the highest blast\nradius of any M0-M2 bead. Mitigate with the no-skip-vars test suite and a staged rollout: wire\nthe MCP token-gate authority recording first (additive, low-risk), delete\n`roles/approval-surface.mjs` only after all three consumers are proven migrated.\n\n## Security\nThis *is* the security-relevant chokepoint — the whole point is a single, auditable authority\nledger instead of two. No new attack surface; consolidation should reduce it (fewer places an\napproval can be silently bypassed).\n\n## Authority requirements\nThis bead touches the authority/approval mechanism itself. Any change here should be reviewed\nagainst `rules/common/commit-approval.md`-equivalent rigor even though it is not itself a\ncommit-approval change — i.e., extra scrutiny before merge, not a special external approval.\n\n## Implementation guidance\nDo the additive step (wire MCP token authority into control-plane's ledger) first and prove it\ngreen before touching the destructive step (deleting `roles/approval-surface.mjs`), so a bug in\nthe additive step doesn't compound with a deletion.\n\n## Required capabilities\nRead/Grep/Edit/Bash; access to run the full governed-write test surface.\n\n## Recommended runtime and model capability\nStrongest available coding runtime — this is the highest-blast-radius bead in the M0-M2 tier and\nshould not be a cheap-worker task.\n\n## Parallelization eligibility and rationale\nLow — the additive wiring and the consumer migration are sequentially dependent (can't delete\n`approval-surface.mjs` before its three consumers are migrated), so this is a single-worker,\nsingle-sequence bead, not a fan-out candidate. Matches the matrix's own \"never fan out\" spirit\nfor governance-shaped work even though this specific bead isn't WS5/WS6.\n\n## Workspace/worktree ownership\nOne dedicated worktree off `feat/workspace-control-plane`, not shared with M0/M1 (different\nconcern, avoids any accidental cross-contamination of a governance-critical change).\n\n## File ownership\n`lib/writes/control-plane.mjs`, `write-intent.mjs`, `envelope.mjs`, `sent-log.mjs`,\n`lib/embed/approval-queue.mjs`, `lib/mcp/destructive-approval.mjs`, `destructive-gate.mjs`,\n`lib/roles/approval-surface.mjs`, `lib/hooks/edit-guard.mjs`, `guard-bash.mjs`,\n`lib/embedded-contract/workflow-invoke.mjs`.\n\n## Inputs\nDisposition-matrix.md's D1/A4 narrowing (already-gathered evidence); the existing chokepoint\ncode as the base to formalize, not rebuild.\n\n## Outputs\nA documented single chokepoint, one authority ledger, three rewired consumers, one deleted\nmodule.\n\n## Integration contract\n`hooks/edit-guard`/`guard-bash`/`workflow-invoke`'s calls into the (soon-deleted)\n`approval-surface.recordApprovalRequest` are replaced with calls into the chokepoint's\nequivalent function — same semantic guarantee (an approval is recorded before the guarded action\nproceeds), different call target.\n\n## Validation\nFull unit suite, `construct doctor`, no-skip-vars hook test, the new authority-ledger test.\n\n## Graph validation\nNot applicable (no graph-store change).\n\n## Migration\nReconcile `.construct/…/routing/` or any approval-surface-specific state into the control-plane\nauthority store before deleting `approval-surface.mjs` — no approval history should be silently\nlost.\n\n## Rollback\nPer the matrix's rollback plan (M2 is pre-point-of-no-return): `git revert` per step; the\nadditive MCP-token-ledger wiring is safe to revert on its own, and `approval-surface.mjs`'s\ndeletion should be the last, most-reversible-checked step.\n\n## Deletion/cleanup\nDelete `roles/approval-surface.mjs` only after zero remaining callers are confirmed (see\nRequirements item 4).\n\n## Completion evidence\nLink the merge commit, the authority-ledger test output, and a `grep` confirming zero remaining\n`approval-surface` references outside history.\n",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-18T01:19:59Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T03:29:52Z",
+      "started_at": "2026-07-18T01:34:55Z",
+      "closed_at": "2026-07-18T03:29:52Z",
+      "close_reason": "Governed-write pipeline formalized as sole chokepoint with shared authority ledger; roles/approval-surface.mjs deleted. Merged into feat/workspace-control-plane.",
+      "labels": [
+        "execution-program",
+        "workspace-control-plane"
+      ],
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.15",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T21:19:58Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 0,
+      "dependent_count": 4,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.16",
+      "title": "Consolidate roles routing into orchestration/routing-tables",
+      "description": "## Objective\nFold the roles layer's routing primitives (`roles/router.mjs`, `roles/gateway.mjs`) into\n`orchestration/routing-tables.mjs`, resolving duplication row D4 — the first half of the\ndisposition matrix's \"M3 — routing + daemon consolidation\" milestone.\n\n## Desired outcome\nOne routing implementation (`orchestration/routing-tables`) decides event→persona/worker\nrouting; `roles/router.mjs`/`gateway.mjs` are deleted once every caller (including the Oracle\ndaemon, until M3b replaces it) routes through the consolidated table.\n\n## Locked architectural decision\nPer disposition-matrix.md narrowing 1: `roles/router.mjs` is NOT dead — `route()` is called by\n`gateway.mjs:257`, and `gateway.recordAndMaybeInvoke` is called live by `oracle/execute.mjs:65`.\nThis is a **replace via consolidation**, not a deletion of dead code. The `event-bus.mjs` signal\nbackbone (5 live importers) is *rehomed*, not deleted, per the matrix's replacement-strategy\ntable (\"Parallel next-generation → direct cutover... Preserve event-bus + contracts across the\nseam\").\n\n## Requirements\n1. Merge `roles/router.mjs`'s routing logic into `orchestration/routing-tables.mjs` so there is\n   one routing-table implementation.\n2. Rewire `roles/gateway.mjs`'s callers (`oracle/execute.mjs:65` today, superseded by M3b's\n   consolidated overseer) to call the consolidated routing table directly.\n3. Preserve `roles/event-bus.mjs` as-is (or move it, keeping its public API) — it has 5 live\n   importers (`embed/recommendation-store`, `embed/docs-lifecycle`, `intake/prepare`,\n   `hooks/agent-tracker`, `scopes/lifecycle`) that must not break.\n4. Delete `roles/router.mjs` and `roles/gateway.mjs` only after their sole caller\n   (`oracle/execute.mjs`) is itself replaced by M3b's consolidated overseer — this bead prepares\n   the target; M3b's daemon cutover is what removes the last caller.\n\n## Acceptance criteria\n- A routing-equivalence test asserts the consolidated `orchestration/routing-tables` produces\n  the same routing decision as the current `roles/router.route()` for a representative event\n  set.\n- `event-bus.mjs`'s 5 importers pass their existing tests unchanged.\n- `npm run test:unit` and `construct doctor` green.\n- `roles/router.mjs`/`gateway.mjs` are NOT yet deleted at the end of this bead (that happens once\n  M3b removes their last caller) — this bead's AC is \"routing consolidated and equivalence\n  proven,\" not \"old files gone.\"\n\n## Context\nDisposition-matrix.md Cluster C4 (roles layer, **replace**) and duplication row D4 (routing\nlayers). Matrix's own \"Cleanup milestones § M3\" (routing half).\n\n## Source evidence\n[source: docs/notes/research/workspace-control-plane/synthesis/disposition-matrix.md] — Cluster\nC4 (~327–355), D4 row (~604), M3 (~664–666), point-of-no-return note (~673–684).\n\n## Graph nodes created/modified/deprecated/deleted\nNone directly (routing is a runtime mechanism, not a graph artifact) — `specialist` node type\nmigration (→ `worker profile`) is M4's concern, not this bead's.\n\n## Expected edge changes\nNone in the dependency graph.\n\n## Impacted dependents\n`event-bus.mjs`'s 5 importers (must remain green); `oracle/execute.mjs` (temporarily still calls\nthe old gateway until M3b cuts it over).\n\n## Dependency rationale\nDepends on M2 (governance chokepoint proven) per the matrix's explicit point-of-no-return\nprecondition: \"do not begin M3 until... (b) the D1/A4 chokepoint (M2) is proven to have zero\nwrite-path bypass.\" This bead is the lower-risk half of M3 and can start once M2 is green,\nwithout waiting for M3b's Oracle-daemon cutover (which additionally needs E5's production\nworkplace loop).\n\n## Non-goals\nDoes not delete `roles/router.mjs`/`gateway.mjs` (M3b's job, gated on the daemon cutover). Does\nnot touch `event-bus.mjs`'s implementation, only preserves its call surface.\n\n## Risks\nHigh — this is inside the point-of-no-return window the matrix names. A routing-equivalence\nregression would silently misroute events. Mitigate with the equivalence test as a hard gate\nbefore any deletion.\n\n## Security\nNone new — routing decisions are internal dispatch, not an external-effect boundary (that's\nM2's concern, already formalized).\n\n## Authority requirements\nNone beyond standard merge review given the point-of-no-return status.\n\n## Implementation guidance\nBuild the consolidated routing table beside the existing `roles/router`, prove equivalence, then\nswitch callers over one at a time (not a big-bang cutover) — matches the matrix's own \"Parallel\nnext-generation → direct cutover\" strategy for this cluster.\n\n## Required capabilities\nRead/Grep/Edit/Bash; ability to run the full orchestration test surface.\n\n## Recommended runtime and model capability\nStrongest available coding runtime — point-of-no-return-adjacent work, same caution tier as M2.\n\n## Parallelization eligibility and rationale\nLow — routing consolidation is a single coherent piece of surgery, not fan-out-friendly. One\nworker, sequential steps (build parallel table → prove equivalence → switch callers).\n\n## Workspace/worktree ownership\nOne dedicated worktree off `feat/workspace-control-plane`.\n\n## File ownership\n`lib/roles/router.mjs`, `gateway.mjs`, `event-bus.mjs`, `lib/orchestration/routing-tables.mjs`.\nNo conflict with M2's file set (different modules within perspectives/orchestration).\n\n## Inputs\nDisposition-matrix.md's D4/C4 evidence; the existing `orchestration/routing-tables.mjs` as the\nconsolidation target.\n\n## Outputs\nA consolidated routing implementation; an equivalence test; `event-bus.mjs` preserved unchanged.\n\n## Integration contract\nCallers of `roles/gateway.recordAndMaybeInvoke` get an equivalent routing decision whether they\ncall the old gateway or (once cut over) the consolidated table directly — same semantic contract,\ndifferent implementation location.\n\n## Validation\nThe routing-equivalence test, full unit suite, `construct doctor`.\n\n## Graph validation\nNot applicable.\n\n## Migration\nNone — routing decisions are not durable state; no data migration needed, only a call-graph\nchange.\n\n## Rollback\nPer the matrix's rollback plan: keep the Oracle daemon-entry and roles router behind a\nconfig-declared selection seam (not a skip env var) for one release after cutover, so rollback\nre-selects the old routing path without redeploying deleted code.\n\n## Deletion/cleanup\nActual deletion of `roles/router.mjs`/`gateway.mjs` happens in M3b once the last caller\n(`oracle/execute.mjs`) is replaced — tracked there, not here, to keep this bead's blast radius\ncontained to routing consolidation only.\n\n## Completion evidence\nLink the merge commit and the routing-equivalence test output.\n",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-18T01:20:02Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T04:17:29Z",
+      "started_at": "2026-07-18T03:36:05Z",
+      "closed_at": "2026-07-18T04:17:29Z",
+      "close_reason": "Consolidated roles/router.mjs routing into orchestration/routing-tables.mjs; router/gateway kept alive pending M3b. Merged into feat/workspace-control-plane.",
+      "labels": [
+        "execution-program",
+        "workspace-control-plane"
+      ],
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.16",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T21:20:01Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.16",
+          "depends_on_id": "construct-b0nny.15",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:20:56Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 1,
+      "dependent_count": 3,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.17",
+      "title": "Consolidate Oracle daemon into embed daemon, then delete the Oracle entity",
+      "description": "## Objective\nConsolidate the Oracle daemon into the embed daemon (the survivor per disposition-matrix.md\nCluster B1/B2), migrating Oracle's non-duplicative jobs to their new owners, then delete the\nOracle daemon entity — the second half of \"M3 — routing + daemon consolidation.\"\n\n## Desired outcome\nOne overseer daemon (embed) runs the union of both daemons' non-duplicative jobs.\n`lib/oracle/daemon-entry.mjs` and `doctor/watchers/oracle-liveness.mjs` are deleted;\n`.construct/oracle/` state is reconciled into its new owners, not silently dropped.\n\n## Locked architectural decision\nOracle is **replaced**, not removed outright: its capabilities (directive execution,\nreconciliation) survive under new owners. `directive-executor.mjs` re-homes under E5 (workplace\nloop); read-model reconciliation re-homes under E1 (graph, already largely built by\nconstruct-b0nny.3). The embed daemon is the survivor because it is already the more-wired\noverseer (8 importers, ~11 job families, interval scheduler, write-intent drain).\n\n## Requirements\n1. Re-home `directive-executor.mjs` under the E5 workplace-loop bead's ownership.\n2. Re-home read-model reconciliation under E1 (the relational graph store,\n   `lib/graph/relational/reconcile.mjs`).\n3. Route remediation dispatch through the M2 governed-write chokepoint.\n4. Keep the roles-gateway call path (via M3a's consolidated routing) until Oracle's daemon-entry\n   is deleted.\n5. Delete `lib/oracle/daemon-entry.mjs` and `doctor/watchers/oracle-liveness.mjs` only after: (a)\n   directive execution runs under E5 with equivalent tests green, (b) reconciliation runs under\n   E1, (c) zero remaining importers of `lib/oracle/read-model.mjs` outside migrated code, (d)\n   `construct dev`/`service-manager` no longer starts `runOracleDaemon`.\n6. Reconcile `.construct/oracle/` state (pending, raised-issues, verdicts, routing) into the\n   E5/E1 stores before removing the directory.\n\n## Acceptance criteria\n- The embed daemon runs directive execution and reconciliation with tests equivalent to\n  Oracle's current coverage.\n- `grep -rn \"runOracleDaemon\\|oracle/daemon-entry\\|oracle-liveness\"` returns zero hits outside\n  history after deletion.\n- `.construct/oracle/` state is reconciled (a migration script + its own test), not silently\n  lost.\n- `npm run test:unit`, `construct doctor` green; the four gating conditions in Requirements\n  item 5 are each individually demonstrated in the PR description.\n\n## Context\nDisposition-matrix.md Cluster B1 (embed daemon, **retain** as survivor)/B2 (Oracle, **replace**)\nand duplication row D3. Matrix's own point-of-no-return note names this bead's preconditions\nexplicitly.\n\n## Source evidence\n[source: docs/notes/research/workspace-control-plane/synthesis/disposition-matrix.md] — Cluster\nB1/B2 (~219–257), D3 row (~603), point-of-no-return (~673–684).\n\n## Graph nodes created/modified/deprecated/deleted\nNone new; the reconciliation logic being re-homed already exists in `lib/graph/relational/`\n(construct-b0nny.3) and is not re-invented here.\n\n## Expected edge changes\nNone.\n\n## Impacted dependents\nEverything currently watching Oracle liveness (`doctor/watchers/oracle-liveness.mjs`) or\nconsuming `oracle/read-model.mjs` — each must have a proven equivalent before deletion.\n\n## Dependency rationale\nDepends on M2 (chokepoint proven), M3a (routing consolidated, so the last gateway caller has\nsomewhere to route to), and the new E5 bead (workplace loop must exist and pass equivalence\ntests before Oracle's directive-execution job can be safely deleted) — this is the actual\npoint-of-no-return gate the matrix names.\n\n## Non-goals\nDoes not build E5's workplace loop from scratch (that is E5's own bead) — this bead only\nmigrates Oracle's directive-execution *job* onto whatever E5 builds, once E5 is green.\n\n## Risks\nHigh — named point-of-no-return in the matrix. A missed Oracle capability becomes a silent\nregression once the daemon is deleted. Mitigate with the four explicit gating conditions and the\nconfig-declared rollback seam (see Rollback).\n\n## Security\nNone new.\n\n## Authority requirements\nNone beyond standard high-caution merge review for a point-of-no-return change.\n\n## Implementation guidance\nDo not delete the Oracle daemon-entry until all four gating conditions are independently\ndemonstrated — this is the single most important discipline in the whole program, per the\nmatrix's own explicit warning.\n\n## Required capabilities\nRead/Grep/Edit/Bash; ability to run the daemon supervision test surface.\n\n## Recommended runtime and model capability\nStrongest available coding runtime — highest-risk single bead in the program.\n\n## Parallelization eligibility and rationale\nLow — sequential by nature (migrate job A, prove it, migrate job B, prove it, then delete).\n\n## Workspace/worktree ownership\nOne dedicated worktree off `feat/workspace-control-plane`.\n\n## File ownership\n`lib/oracle/**`, `lib/embed/daemon.mjs`, `doctor/watchers/oracle-liveness.mjs`,\n`lib/service-manager.mjs` (daemon start/stop wiring). No conflict with M3a's file set.\n\n## Inputs\nM3a's consolidated routing; the E5 bead's production workplace loop; construct-b0nny.3's graph\nreconciliation.\n\n## Outputs\nOne consolidated overseer daemon; Oracle's daemon-entry and liveness watcher deleted;\n`.construct/oracle/` state reconciled.\n\n## Integration contract\nAny caller of Oracle's public functions (`directive-executor`, `read-model`) gets equivalent\nbehavior from the new owner (E5, E1) — same semantic guarantee, different module.\n\n## Validation\nEquivalence tests for directive execution and reconciliation; full unit suite; `construct\ndoctor`; the four explicit gating-condition checks.\n\n## Graph validation\n`construct graph reconcile` clean post-migration.\n\n## Migration\n`.construct/oracle/` state (pending, raised-issues, verdicts, routing) reconciled into the E5/E1\nstores — a migration script with its own test, not a silent drop.\n\n## Rollback\nPer the matrix's rollback plan: keep the Oracle daemon-entry and roles router behind a\nconfig-declared overseer-selection seam for one release after cutover; delete the seam and old\ncode only in the *following* release once the consolidated overseer has run clean in production.\n\n## Deletion/cleanup\n`lib/oracle/daemon-entry.mjs`, `doctor/watchers/oracle-liveness.mjs`, and (once M3a's last\ncaller is gone) `roles/router.mjs`/`gateway.mjs` — see Requirements item 5 for the exact gating.\n\n## Completion evidence\nLink the merge commit; paste each of the four gating-condition proofs; link the\n`.construct/oracle/` reconciliation script's test output.\n",
+      "status": "in_progress",
+      "priority": 2,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-18T01:20:05Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T06:31:14Z",
+      "started_at": "2026-07-18T06:31:14Z",
+      "labels": [
+        "execution-program",
+        "workspace-control-plane"
+      ],
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.17",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T21:20:04Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.17",
+          "depends_on_id": "construct-b0nny.15",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:00Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.17",
+          "depends_on_id": "construct-b0nny.16",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:02Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.17",
+          "depends_on_id": "construct-b0nny.25",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:04Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.17",
+          "depends_on_id": "construct-b0nny.29",
+          "type": "blocks",
+          "created_at": "2026-07-18T01:28:51Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 4,
+      "dependent_count": 1,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.18",
+      "title": "Migrate org metaphor (scopes/personas/teams) into Worker Profiles",
+      "description": "## Objective\nExecute the disposition matrix's \"M4 — org-metaphor cutover\": migrate `registry/scopes/`\ninto Worker Profiles (target concept 10), fold personas into skill-emphasis inputs, retire\nteams/groups as fixed structure, and preserve handoff contracts + capability registry.\n\n## Desired outcome\nParallelism is expressed as a Plan property (directive §10), not a fixed team; a Worker Profile\n(flow + skill emphasis) replaces the persona/role/specialist/team scaffolding.\n`registry/contracts/` and `registry/capabilities.json` survive unchanged.\n\n## Locked architectural decision\nPer disposition-matrix.md Cluster F3 (**replace**) and target-model.md concept 10: a Profile is\n\"a flow + skill emphasis,\" not an organizational identity. Handoff contracts and the capability\nregistry are the load-bearing parts and are retained; the metaphor scaffolding (teams, groups,\nseparate persona identities) is replaced.\n\n## Requirements\n1. Follow the existing profile lifecycle (`docs/guides/concepts/profile-lifecycle.md`,\n   `construct scope create`) to migrate each of the 4 scopes into a Worker Profile.\n2. Fold personas into skill-emphasis inputs rather than standalone identity files.\n3. Retire `registry/teams/`/`groups/` once Plans express parallelism directly (directive\n   §10) and no flow references a team.\n4. Regenerate platform files via `construct sync` so deleted personas leave no generated\n   residue (program rule 2: \"every replacement carries its deletion\").\n5. Keep `registry/contracts/` and `registry/capabilities.json` untouched.\n\n## Acceptance criteria\n- All 4 scopes have a corresponding Worker Profile passing the profile-lifecycle's own\n  validation gate.\n- `grep -rn` for team/group references in any live flow returns zero hits before\n  `registry/teams/`/`groups/` are deleted.\n- `construct sync` run after deletion leaves no stale generated persona files.\n- `npm run test:unit`, `construct doctor` green.\n\n## Context\nDisposition-matrix.md Cluster F3 (~568–590), replacement-strategy row \"Roles + org metaphor\"\n(~634), Cleanup milestones § M4 (~667–668); target-model.md concept 10 (Worker Profile).\n\n## Source evidence\n[source: docs/notes/research/workspace-control-plane/synthesis/disposition-matrix.md] Cluster F3;\n[source: docs/notes/research/workspace-control-plane/synthesis/target-model.md] concept 10.\n\n## Graph nodes created/modified/deprecated/deleted\n`specialist` node type migrates to `worker profile` (target concept 10's own migration note).\n\n## Expected edge changes\n`owned_by` edges currently pointing at specialist nodes re-point at worker-profile nodes.\n\n## Impacted dependents\n`registry/contracts/` postcondition enforcement (CLAUDE.md) — must keep resolving against\nwhatever now owns handoffs; anything reading persona identity directly.\n\n## Dependency rationale\nDepends on M3a (Worker Profile routing rides on the consolidated `orchestration/routing-tables`,\nnot the old roles router) — cutting over the org metaphor before routing is consolidated would\ncreate two migrations touching the same seam at once.\n\n## Non-goals\nDoes not touch `registry/contracts/` or `registry/capabilities.json` — both explicitly\nretained. Does not redesign the profile-lifecycle process itself (already documented).\n\n## Risks\nMedium — persona/team deletion could silently break a flow that still references a team by name.\nMitigate with the pre-deletion grep gate (Requirements item 3/AC).\n\n## Security\nNone new.\n\n## Authority requirements\nNone beyond standard merge review; this is a repo-content migration, not a runtime authority\nchange.\n\n## Implementation guidance\nFollow `profile-lifecycle.md`'s discover→frame→emphasize→validate→promote sequence per scope,\nrather than inventing a new migration process — CLAUDE.md already mandates this lifecycle for\nany new profile.\n\n## Required capabilities\nRead/Grep/Edit/Bash; `construct scope create`/`construct sync` CLI access.\n\n## Recommended runtime and model capability\nMid-to-strong — profile design benefits from real judgment (per profile-lifecycle.md, \"research\nartifacts, not JSON exercises\"), but the migration itself is mechanical once profiles exist.\n\n## Parallelization eligibility and rationale\nThe 4 scope migrations are independent of each other (different scope files) and could run in\nparallel, but the final teams/groups retirement is a single integration step gating all of them\n— structure as fan-out-then-integrate if desired by whoever executes this bead.\n\n## Workspace/worktree ownership\nOne worktree off `feat/workspace-control-plane`, or 4 short-lived worktrees for the scope\nmigrations plus one for final integration.\n\n## File ownership\n`registry/scopes/`, `registry/teams/`, `registry/groups/`, `personas/*.md`.\nExplicitly NOT `registry/contracts/` or `registry/capabilities.json`.\n\n## Inputs\ntarget-model.md's Worker Profile schema (concept 10); the existing profile-lifecycle process.\n\n## Outputs\n4 Worker Profiles; retired teams/groups; regenerated platform files with no stale persona\nresidue.\n\n## Integration contract\nHandoff contracts continue to resolve the same way — only what they resolve *against* (Worker\nProfile instead of persona/specialist) changes.\n\n## Validation\nProfile-lifecycle's own validation gate per profile; the pre-deletion team/group reference grep;\nfull unit suite; `construct doctor`.\n\n## Graph validation\n`construct graph orphans` clean after the `specialist`→`worker profile` node-type migration.\n\n## Migration\n`registry/scopes/*.json` → Worker Profiles; personas → skill-emphasis inputs — both are\nexplicit \"migrated data\" entries in the disposition matrix's replacement-strategy table, not\nsilent drops.\n\n## Rollback\nPer the matrix's rollback plan: Worker Profiles are authored *beside* the scopes/personas before\ndeletion; rollback re-points selection at the retained scope files until profiles are validated.\nNo persona data is deleted until migrated.\n\n## Deletion/cleanup\n`registry/teams/`/`groups/` deleted only after Plans express parallelism directly and no\nflow references a team (Requirements item 3).\n\n## Completion evidence\nLink the merge commit; the 4 profile-lifecycle validation results; the `construct sync` output\nshowing no stale residue.\n",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-18T01:20:08Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T06:27:09Z",
+      "started_at": "2026-07-18T04:27:25Z",
+      "closed_at": "2026-07-18T06:27:09Z",
+      "close_reason": "Merged to feat/workspace-control-plane (9c5c472c). Org-metaphor M4 cutover: persona-identity scaffold folded into skill-emphasis worksheets, threaded through MCP/CLI/docs/tests. Teams/groups retirement correctly left blocked+documented (live registry.teams consumers). 5295 integrated tests pass.",
+      "labels": [
+        "execution-program",
+        "workspace-control-plane"
+      ],
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.18",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T21:20:07Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.18",
+          "depends_on_id": "construct-b0nny.16",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:06Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 1,
+      "dependent_count": 1,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.19",
+      "title": "Migrate model invocation/routing off model-router onto runtime adapters",
+      "description": "## Objective\nMigrate model invocation/routing off the bespoke `model-router.mjs` loop onto the E4\nruntime-adapter contract, per disposition-matrix.md Cluster D2s (**replace**, E4-gated) — the\nfirst half of \"M5 — model-loop + vector de-core.\"\n\n## Desired outcome\nModel invocation/routing is delegated to runtime adapters (directive §3: Construct delegates\nmodel invocation/routing to runtimes). Model capability-tier/policy metadata\n(`model-tiers`/`model-policy`/`model-pricing`) survives as Worker Profile input\n(`model_tier`); the routing/dispatch loop itself is deleted.\n\n## Locked architectural decision\nThis is a **split** verdict: the invocation/routing *loop* is replaced (deleted once migrated);\nthe tier/policy *metadata* is retained and folds into Worker Profile's `model_tier` (target\nconcept 10). Construct still decides *which tier* a Profile needs; it stops owning *how* the call\nis routed.\n\n## Requirements\n1. Build/confirm the E4 runtime-adapter contract exists and has a conformance suite (this bead\n   depends on the E4 bead's output, not on redesigning it here).\n2. Migrate the ≥16 importers of `model-router.mjs` (or its exported surface) onto the E4 runtime\n   contract, one at a time, not big-bang.\n3. Keep `model-tiers`/`model-policy`/`model-pricing` as retained metadata, re-homed as Worker\n   Profile `model_tier` inputs.\n4. Retire `model-registry.mjs` (a 501-byte stub with no real registry behavior).\n5. Delete `model-router.mjs`'s routing/dispatch path only after every importer resolves model\n   invocation through an E4 runtime adapter.\n\n## Acceptance criteria\n- Every former `model-router.mjs` importer now resolves invocation through an E4 adapter,\n  verified by an equivalence test per migrated call site (or a representative sample if ≥16 is\n  impractical to cover individually — state which sites were sampled and why).\n- `model-tiers`/`model-policy`/`model-pricing` tests still pass, now reading as Worker Profile\n  input.\n- `grep -rn \"model-router\"` (routing/dispatch path only, not the retained metadata files) returns\n  zero hits after deletion.\n- `npm run test:unit`, `construct doctor` green.\n\n## Context\nDisposition-matrix.md Cluster D2s (~405–427), replacement-strategy row \"Model/provider loop\"\n(~635, \"Highest-risk seam; keep tier/policy metadata\"). Directive §17 E9 lists \"model-provider\nloop deletion\" as a named outcome.\n\n## Source evidence\n[source: docs/notes/research/workspace-control-plane/synthesis/disposition-matrix.md] Cluster\nD2s; spike F's b0nny.5.6 report (a real, if narrower, runtime-adapter swap already proven safe\nfor one provider adapter) [source:\ndocs/notes/research/workspace-control-plane/synthesis/spike-f-runtime-replacement.md].\n\n## Graph nodes created/modified/deprecated/deleted\nNone new; `provider`/`tool` nodes unaffected — this is invocation routing, not provider identity.\n\n## Expected edge changes\nNone in the dependency graph.\n\n## Impacted dependents\n≥16 modules referencing `model-router` (truth-map §7 estimate; matrix notes a looser 25-file\ngrep count) — the highest-risk migration surface in the program per the matrix's own framing.\n\n## Dependency rationale\nDepends on the new E4 bead (runtime-adapter contract + conformance suite must exist first). Does\nnot depend on M0-M4 — can run in parallel with them once E4 is ready.\n\n## Non-goals\nDoes not touch provider/contract adapters themselves (D1s, already retained) — only the\ninvocation/routing loop that decides which runtime handles a call.\n\n## Risks\nHigh — matrix's own words, \"Highest-risk seam.\" A migration bug here could misroute every model\ncall in the system. Mitigate with per-importer equivalence tests and a parallel-run period before\ndeletion (matches spike F's proven pattern of shipping the new path beside the old one).\n\n## Security\nNone new beyond the general care any invocation-path change deserves.\n\n## Authority requirements\nNone beyond standard high-caution review given the risk tier.\n\n## Implementation guidance\nFollow spike F's proven pattern (b0nny.5.6): build the new path beside the old one, prove\nequivalence per call site, migrate incrementally, keep a config-declared rollback seam, delete\nlast.\n\n## Required capabilities\nRead/Grep/Edit/Bash; access to run the model-invocation test surface across all migrated call\nsites.\n\n## Recommended runtime and model capability\nStrongest available coding runtime — matrix-flagged highest-risk seam in the whole program.\n\n## Parallelization eligibility and rationale\nThe ≥16 importers can migrate in parallel batches (independent call sites) once the E4 adapter\nexists, but the final deletion of `model-router.mjs`'s routing path is a single integration step\ngating all batches.\n\n## Workspace/worktree ownership\nOne or more worktrees off `feat/workspace-control-plane`, one per migration batch if\nparallelized.\n\n## File ownership\n`lib/model-router.mjs`, `model-policy.mjs`, `model-tiers.mjs`, `model-free-selector.mjs`,\n`model-cheapest-provider.mjs`, `model-pricing.mjs`, `model-registry.mjs`, plus each of the ≥16\nimporter files (enumerate before starting to avoid silent scope creep).\n\n## Inputs\nThe E4 runtime-adapter contract and conformance suite; spike F's proven swap pattern.\n\n## Outputs\n≥16 call sites migrated; retained tier/policy metadata re-homed as Worker Profile input;\n`model-router.mjs`'s routing path and `model-registry.mjs` deleted.\n\n## Integration contract\nEvery migrated call site gets equivalent model-invocation behavior via the E4 adapter contract\ninstead of the bespoke loop — same semantic guarantee (a model call happens with the right\ntier/capability), different implementation.\n\n## Validation\nPer-call-site equivalence tests (or a justified representative sample); full unit suite;\n`construct doctor`.\n\n## Graph validation\nNot applicable.\n\n## Migration\nTier/policy metadata migrates to Worker Profile `model_tier` inputs — an explicit \"migrated data\"\nentry, not a silent drop.\n\n## Rollback\nPer the matrix's rollback plan: the runtime-adapter path ships in parallel with `model-router`; a\nconfig-declared runtime selection lets a bad adapter roll back to the bespoke loop for one\nrelease.\n\n## Deletion/cleanup\nDelete `model-router.mjs`'s routing/dispatch path and `model-registry.mjs` only after every\nimporter is migrated and proven equivalent (Requirements item 5).\n\n## Completion evidence\nLink the merge commit; the per-call-site (or sampled) equivalence-test results; a `grep`\nconfirming zero remaining routing-path references.\n",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-18T01:20:11Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T04:17:35Z",
+      "started_at": "2026-07-18T03:36:08Z",
+      "closed_at": "2026-07-18T04:17:35Z",
+      "close_reason": "Migrated model-router.mjs's 2 real invocation sites (intent-classifier, schema-infer) onto E4 claude-api adapter; honestly documented as partial since model-router.mjs contains no dispatch loop. Merged into feat/workspace-control-plane.",
+      "labels": [
+        "execution-program",
+        "workspace-control-plane"
+      ],
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.19",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T21:20:11Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.19",
+          "depends_on_id": "construct-b0nny.24",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:08Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 1,
+      "dependent_count": 1,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.20",
+      "title": "De-core LanceDB behind an optional retrieval adapter with a no-vector fallback",
+      "description": "## Objective\nMove LanceDB behind an optional retrieval-adapter contract with a no-vector (keyword/BM25)\nfallback, so the embedded/core product runs without a required vector database — disposition-\nmatrix.md Cluster D6s (**replace**), the second half of \"M5 — model-loop + vector de-core.\"\n\n## Desired outcome\nCore Construct runs with no required vector DB (directive §13). LanceDB becomes one retrieval\nadapter among possible others; a no-vector fallback passes the same memory tests.\n\n## Locked architectural decision\nThe memory *domain model* (observation/entity store, D4s) is unaffected and stays retained —\nonly the *storage backend* is de-cored. `.construct/lancedb/observations_v1.lance` data is\nre-indexed behind the adapter, never dropped.\n\n## Requirements\n1. Introduce a retrieval-adapter contract (interface for \"given a query, return ranked memory\n   hits\") that LanceDB implements as one adapter.\n2. Provide a no-vector fallback (keyword/BM25) implementing the same contract.\n3. Re-index existing `.construct/lancedb/` data behind the adapter boundary (no silent data\n   loss).\n4. Remove the hard LanceDB import from core only after the adapter contract lands and the\n   no-vector path passes the existing memory test suite.\n\n## Acceptance criteria\n- The existing observation/entity memory test suite passes against both the LanceDB adapter and\n  the no-vector fallback.\n- `grep -rn \"lancedb\"` outside the new adapter module returns zero hits in core code paths after\n  cutover.\n- A re-indexing script + test proves no data loss from `.construct/lancedb/`.\n- `npm run test:unit`, `construct doctor` green.\n\n## Context\nDisposition-matrix.md Cluster D6s (~477–491), replacement-strategy row \"Memory backend\"\n(~636, \"Compatibility-backed\").\n\n## Source evidence\n[source: docs/notes/research/workspace-control-plane/synthesis/disposition-matrix.md] Cluster\nD6s.\n\n## Graph nodes created/modified/deprecated/deleted\nNone — memory nodes (D4s) are backed by this storage, not defined by it.\n\n## Expected edge changes\nNone.\n\n## Impacted dependents\nEvery consumer of `memory_search`/`knowledge_search` and the observation/entity store (D4s,\nD5s) — must pass identically against either backend.\n\n## Dependency rationale\nIndependent of M0-M4 and of E4/model-loop work — can run fully in parallel with everything else\nin this program.\n\n## Non-goals\nDoes not redesign the observation/entity domain model (D4s, retained as-is). Does not remove\nLanceDB entirely — it remains a valid, first-class adapter, just no longer required.\n\n## Risks\nMedium — a re-indexing bug could lose or corrupt existing memory data. Mitigate with the\nexplicit \"no silent data loss\" acceptance criterion and a re-indexing dry-run mode.\n\n## Security\nNone new.\n\n## Authority requirements\nNone — local storage change, no external effect.\n\n## Implementation guidance\nBuild the adapter contract and no-vector fallback first, prove both green against the existing\ntest suite, then do the re-index as a separate, reversible step before removing the hard import.\n\n## Required capabilities\nRead/Grep/Edit/Bash; ability to run the full memory/retrieval test surface.\n\n## Recommended runtime and model capability\nMid-to-strong coding runtime; moderate risk, well-scoped.\n\n## Parallelization eligibility and rationale\nFully parallel-safe with the rest of the program — touches a self-contained subsystem (memory\nstorage backend) with no shared file ownership with M0-M5a or the E-outcome beads.\n\n## Workspace/worktree ownership\nOne worktree off `feat/workspace-control-plane`.\n\n## File ownership\n`lib/storage/vector-client.mjs`, `lib/storage/embeddings-*.mjs`, new retrieval-adapter contract\nmodule, `.construct/lancedb/` re-indexing script.\n\n## Inputs\nDirective §13's \"no required vector database\" constraint; the existing observation/entity memory\ntest suite as the equivalence bar.\n\n## Outputs\nA retrieval-adapter contract; a no-vector fallback implementation; a re-indexing script; LanceDB\ndemoted from hard dependency to optional adapter.\n\n## Integration contract\n`memory_search`/`knowledge_search` callers see no interface change — only the backend behind\nthem becomes swappable.\n\n## Validation\nFull memory test suite against both backends; the re-indexing dry-run + real-run test.\n\n## Graph validation\nNot applicable.\n\n## Migration\n`.construct/lancedb/` data re-indexed behind the adapter — explicit \"migrated data,\" never\ndropped, per the matrix's own replacement-strategy table.\n\n## Rollback\nPer the matrix's rollback plan: the LanceDB adapter ships with the no-vector fallback already\ngreen, so de-coring the vector DB is reversible by re-selecting the LanceDB adapter;\n`.construct/lancedb/` data is re-indexed, never dropped.\n\n## Deletion/cleanup\nRemove the hard LanceDB import from core (Requirements item 4) only after the gating conditions\nare met — LanceDB itself is not deleted, only its required-ness.\n\n## Completion evidence\nLink the merge commit; the dual-backend test results; the re-indexing proof.\n",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-18T01:20:14Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T03:29:54Z",
+      "started_at": "2026-07-18T01:34:57Z",
+      "closed_at": "2026-07-18T03:29:54Z",
+      "close_reason": "LanceDB de-cored behind retrieval-adapter contract with BM25 keyword fallback; lancedb/apache-arrow now optionalDependencies. ADR-0081. Merged into feat/workspace-control-plane.",
+      "labels": [
+        "execution-program",
+        "workspace-control-plane"
+      ],
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.20",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T21:20:14Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 0,
+      "dependent_count": 1,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.21",
+      "title": "Expose queryUp/queryDown via CLI + prove real Postgres graph parity",
+      "description": "## Objective\nClose the two concrete gaps spike A (construct-b0nny.5.1) found in the E1 graph foundation\nbeyond the recursive-CTE hang already tracked as construct-b0nny.12: `queryUp`/`queryDown` exist\nin `lib/graph/relational/queries.mjs` but have no CLI subcommand exposing them, and Postgres\nparity is still structural-only (never run against a live Postgres instance).\n\n## Desired outcome\n`construct graph` exposes `queryUp`/`queryDown` (directive §4.8 \"query up/downstream\") as real\ncommands, and Postgres parity is proven against a live Postgres instance at least once, not just\nstructurally mirrored SQL.\n\n## Locked architectural decision\nNo new design — this is closing gaps in the already-designed and already-built relational graph\nstore (construct-b0nny.2/.3). Nothing about the store's shape changes here.\n\n## Requirements\n1. Add CLI subcommands (or extend `construct graph query`) exposing `queryUp`/`queryDown` with\n   the rel-filter + depth-cap fix from construct-b0nny.12 applied.\n2. Stand up a real Postgres instance (Docker Compose, per directive §17 E7's own deployment\n   image work — coordinate with that bead rather than duplicating the setup) and run the day-one\n   milestone functional tests against it.\n3. Document the honest result either way — if Postgres parity holds, upgrade the \"structural\n   only\" disclosure in `tests/functional/graph-relational-store.functional.test.mjs`'s\n   documentation to \"proven\"; if it doesn't, file the gap as its own bead.\n\n## Acceptance criteria\n- `construct graph queryUp <id>`/`queryDown <id>` (or equivalent) work from the CLI with the\n  b0nny.12 rel-filter/depth-cap applied.\n- The 12 day-one milestone tests pass against a live Postgres instance at least once, with the\n  run logged as real evidence (not simulated).\n- `npm run test:unit`, `construct doctor` green.\n\n## Context\nSpike A (construct-b0nny.5.1) explicitly found: \"`queryUp`/`queryDown` are exported from\n`queries.mjs` but are not called from any CLI subcommand or any other `lib/` module today... the\ndirective §4.8 'query up/downstream' milestone capability exists as a function but has no exposed\ncommand surface yet,\" and Postgres/Node<22.5 were both honestly disclosed as unverified in this\nenvironment.\n\n## Source evidence\n[source: docs/notes/research/workspace-control-plane/synthesis/spike-a-graph-foundation.md].\n\n## Graph nodes created/modified/deprecated/deleted\nNone — this exposes existing query functions, doesn't add graph schema.\n\n## Expected edge changes\nNone.\n\n## Impacted dependents\nAny future E7 (shared workspace) work that needs a real, tested Postgres backend — this bead is\na precondition for trusting that backend in production.\n\n## Dependency rationale\nDepends on construct-b0nny.3 (built) and construct-b0nny.12 (the CTE-hang fix, must land first\nso the exposed CLI commands don't ship a known-hanging query path).\n\n## Non-goals\nDoes not redesign the graph store or its ontology. Does not build the E7 shared-workspace server\n— only proves the Postgres backend works, which E7 can then depend on with confidence.\n\n## Risks\nLow-medium — standing up a real Postgres instance for testing may surface real parity bugs the\nstructural mirroring missed; that's the point of this bead, not a risk to avoid.\n\n## Security\nNone.\n\n## Authority requirements\nNone.\n\n## Implementation guidance\nReuse construct-b0nny.3's existing DDL/migration files against a real Postgres container rather\nthan re-deriving them.\n\n## Required capabilities\nRead/Edit/Bash; Docker for the Postgres instance.\n\n## Recommended runtime and model capability\nMid-tier — mechanical CLI wiring + running an existing test suite against a new backend.\n\n## Parallelization eligibility and rationale\nFully parallel-safe with everything else in the program; depends only on b0nny.3/.12.\n\n## Workspace/worktree ownership\nOne worktree off `feat/workspace-control-plane`.\n\n## File ownership\n`lib/graph/cli.mjs`, `lib/graph/relational/queries.mjs`,\n`tests/graph/relational-postgres-store.test.mjs`.\n\n## Inputs\nconstruct-b0nny.3's Postgres DDL; construct-b0nny.12's fix.\n\n## Outputs\nNew CLI commands; a real (not structural-only) Postgres parity proof.\n\n## Integration contract\n`queryUp`/`queryDown` follow the same CLI conventions as existing `construct graph` subcommands.\n\n## Validation\nThe 12 day-one milestone tests, run against both SQLite and a live Postgres instance.\n\n## Graph validation\n`construct graph validate` against both backends.\n\n## Migration\nNone.\n\n## Rollback\nPurely additive (new CLI commands, new test evidence) — trivially revertible.\n\n## Deletion/cleanup\nNone.\n\n## Completion evidence\nLink the merge commit and the live-Postgres test run's output.\n",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-18T01:20:17Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T04:17:37Z",
+      "started_at": "2026-07-18T03:36:10Z",
+      "closed_at": "2026-07-18T04:17:37Z",
+      "close_reason": "queryUp/queryDown exposed via CLI; real Postgres parity proven via live Docker container. Merged into feat/workspace-control-plane.",
+      "labels": [
+        "execution-program",
+        "workspace-control-plane"
+      ],
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.21",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T21:20:17Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.21",
+          "depends_on_id": "construct-b0nny.12",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:11Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.21",
+          "depends_on_id": "construct-b0nny.3",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:10Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 2,
+      "dependent_count": 2,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.22",
+      "title": "Design and build the Workspace domain model and durable storage",
+      "description": "## Objective\nDesign and build directive §17's E2 outcome: the Workspace domain model and its durable storage\n— the concrete data model for \"Workspace\" (target concept 1) as a first-class, persisted entity,\ndistinct from the ad hoc project-identity/state-root mechanics M1 converges.\n\n## Desired outcome\nA Workspace is a durable, queryable entity (owner, membership, settings, linked sources,\nlifecycle) with real storage — not just an identity key (M1) but a full domain object other\nepics (E3 planning, E7 shared server, E8 tracker projection) can depend on.\n\n## Locked architectural decision\nNone yet — this bead's first deliverable is the design itself, following the same single-strong-\nlead, no-fan-out discipline the program used for target-model.md and graph-store-design.md\n(routing-plan.md WS3b/WS5 precedent). Do not fan this out; a strong lead designs the schema, then\nbuilds it.\n\n## Requirements\n1. Define the Workspace domain schema (fields, lifecycle states, relationships to Source,\n   Directive, Policy — target-model.md concepts 1-7).\n2. Choose and build durable storage (SQLite embedded, Postgres shared — mirroring the pattern\n   construct-b0nny.2/.3 already proved for the dependency graph, not reinventing a third storage\n   pattern).\n3. Reconcile with M1's identity convergence — Workspace id IS the canonical `deriveProjectKey`\n   output, not a second identity.\n4. Produce migration/versioning discipline from day one (the E1 lesson: unversioned inline\n   schema was a real problem, per disposition-matrix.md C2 — do not repeat it here).\n\n## Acceptance criteria\n- A committed design doc (target-model.md-equivalent depth) citing target-model.md's concepts\n  1-7 as its grounding, reviewed before implementation starts.\n- A working, versioned-migration-backed Workspace store with CRUD + lifecycle transitions,\n  covered by functional tests per CLAUDE.md's multi-component-feature rule.\n- `construct doctor` and full unit suite green.\n\n## Context\nDirective §17 E2: \"workspace domain and durable storage.\" target-model.md's concepts 1\n(Workspace) through 7 already define the target shape at the concept level; this bead builds the\nstorage and domain logic behind those concepts.\n\n## Source evidence\n[source: docs/notes/research/workspace-control-plane/synthesis/target-model.md] concepts 1-7;\n[source: docs/notes/research/workspace-control-plane/synthesis/disposition-matrix.md] C2 (the\nunversioned-schema lesson to not repeat).\n\n## Graph nodes created/modified/deprecated/deleted\nNew `workspace` node type in the dependency graph, if Workspace-level relationships need\ngraph-backed impact analysis (design decision for this bead's lead to make and justify).\n\n## Expected edge changes\nNew edges from `workspace` to `source`/`directive`/`policy` nodes, if the graph-node decision\nabove is made affirmatively.\n\n## Impacted dependents\nE3 (planning needs a Workspace to plan within), E7 (shared workspace server needs this domain\nmodel), E8 (tracker projection needs a Workspace to project from).\n\n## Dependency rationale\nDepends on M1 (identity convergence — Workspace id must be the one canonical id, not a new\nthird one). Independent of M0/M2-M5 and E4/E5 — can run in parallel with those once M1 lands.\n\n## Non-goals\nDoes not build the shared-workspace *server* (E7's job) or the planning logic (E3's job) — only\nthe domain model and storage those depend on. Does not touch the dependency graph's own schema\n(E1, already built) beyond possibly adding a `workspace` node type.\n\n## Risks\nMedium — getting the Workspace domain schema wrong here has high downstream cost (E3/E7/E8 all\nbuild on it). Mitigate with the single-strong-lead design-first discipline (no fan-out) that\nalready worked for target-model.md and graph-store-design.md.\n\n## Security\nWorkspace membership/ownership fields are the seed of any future multi-user authorization (E7) —\ndesign with that in mind even though E7 builds the actual auth.\n\n## Authority requirements\nNone yet — this is local domain modeling, no external effect.\n\n## Implementation guidance\nDo not start building storage before the design doc is reviewed — this mirrors the\nconstruct-b0nny.2→.3 (design→build) sequencing that worked well in this program.\n\n## Required capabilities\nRead/Grep/Edit/Bash; strong architectural reasoning for the design phase.\n\n## Recommended runtime and model capability\nStrongest available reasoning model for the design phase (single lead, no fan-out); mid-tier\ncoding runtime acceptable for the build phase once the design is locked.\n\n## Parallelization eligibility and rationale\nDesign phase: no fan-out (single lead). Build phase: internally parallelizable across schema/\nstorage/migration/tests once the design is locked, similar to how b0nny.3's build proceeded from\nb0nny.2's design.\n\n## Workspace/worktree ownership\nOne worktree for design, a separate (or the same) worktree for the build, off\n`feat/workspace-control-plane`.\n\n## File ownership\nNew `lib/workspace/` module (or equivalent — the design phase decides the exact location).\n\n## Inputs\ntarget-model.md concepts 1-7; the graph-store-design.md pattern as a template for how to design\na new persisted domain concept in this codebase.\n\n## Outputs\nA design doc; a built, tested Workspace domain store.\n\n## Integration contract\nDownstream epics (E3, E7, E8) depend on this bead's public API — define it deliberately, since\nchanging it later means touching three dependents.\n\n## Validation\nFunctional tests per CLAUDE.md's multi-component-feature rule (this touches domain model +\ndurable state); full unit suite; `construct doctor`.\n\n## Graph validation\n`construct graph validate` if a `workspace` node type is added.\n\n## Migration\nNone yet (new subsystem) — but must ship its OWN versioned migration discipline from day one, per\nthe requirement above.\n\n## Rollback\nNew, additive subsystem — no existing behavior to break; revert is a clean `git revert` if the\ndesign proves wrong before other epics depend on it.\n\n## Deletion/cleanup\nNone.\n\n## Completion evidence\nLink the design-doc commit and the build's merge commit with functional test output.\n",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-18T01:20:20Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T04:17:40Z",
+      "started_at": "2026-07-18T03:36:11Z",
+      "closed_at": "2026-07-18T04:17:40Z",
+      "close_reason": "Workspace domain model designed and built: SQLite versioned-migration store, CRUD+lifecycle, workspace-domain CLI. Merged into feat/workspace-control-plane.",
+      "labels": [
+        "execution-program",
+        "workspace-control-plane"
+      ],
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.22",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T21:20:20Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.22",
+          "depends_on_id": "construct-b0nny.14",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:13Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 1,
+      "dependent_count": 4,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.23",
+      "title": "Build graph-informed work specification and planning",
+      "description": "## Objective\nDesign and build directive §17's E3 outcome: work specification and graph-informed planning —\nturning a Workspace's Sources/Directives into executable Work specs whose decomposition is\nchecked against the dependency graph (not narrative judgment alone).\n\n## Desired outcome\nA Work spec (target-model.md concept 8, \"Plan\"/\"Assignment\") can be produced from a Workspace's\ninputs and validated for parallel-safety using `construct graph` queries — directly reusing\nspike C's proven pattern (graph-independence-check before dispatch) rather than inventing a new\ncheck.\n\n## Locked architectural decision\nPlanning is graph-informed, not graph-replacing: `construct graph` (E1) answers \"are these two\nassignments independent,\" planning logic decides \"what should the assignments be.\" No new\nindependence-checking mechanism — reuse spike C's `graph-independence-check.sh` pattern\n[source: docs/notes/research/workspace-control-plane/spikes/c-parallel-software-change/graph-independence-check.sh].\n\n## Requirements\n1. Define the Work-spec schema (target-model.md concept 8/9: Plan, Assignment) with fields for\n   objective, decomposition, ownership, dependency rationale — mirroring this program's own bead\n   quality-field discipline (§15), since Work specs ARE beads at execution time.\n2. Build the graph-informed decomposition check as a reusable library function (not a one-off\n   shell script), generalizing spike C's proven pattern.\n3. Wire Work-spec production to read from the E2 Workspace domain model (Sources, Directives).\n\n## Acceptance criteria\n- A Work spec can be generated from a Workspace's real inputs and includes a graph-checked\n  independence/dependency report for its own decomposition.\n- The graph-independence check is a tested library function, not a shell script duplicated per\n  caller.\n- `construct doctor` and full unit suite green.\n\n## Context\nDirective §17 E3. Spike C (construct-b0nny.5.3) already proved graph-informed decomposition\nworks end-to-end for a real task and found it Go-conditioned-on-post-merge-full-suite-run — this\nbead generalizes that proof into production planning logic, it does not re-derive it.\n\n## Source evidence\n[source: docs/notes/research/workspace-control-plane/synthesis/spike-c-parallel-software-change.md];\n[source: docs/notes/research/workspace-control-plane/synthesis/target-model.md] concepts 8-9.\n\n## Graph nodes created/modified/deprecated/deleted\nNone new — reads existing graph, does not extend its schema.\n\n## Expected edge changes\nNone.\n\n## Impacted dependents\nE9's final bead-program cutover depends on this being real (planning must graph-check its own\ndecompositions before the legacy tracker/planning path is removed).\n\n## Dependency rationale\nDepends on E2 (Workspace domain model must exist to plan within) and E1 (already built,\nconstruct-b0nny.3) for the independence-check queries.\n\n## Non-goals\nDoes not replace `bd`/beads as the tracker (E8's job) — this is about *producing* well-formed,\ngraph-checked work specs, not where they're tracked.\n\n## Risks\nMedium — a wrong independence check could greenlight an unsafe parallel decomposition. Mitigate\nby reusing spike C's already-proven pattern rather than a new untested heuristic.\n\n## Security\nNone.\n\n## Authority requirements\nNone — planning logic, no external effect.\n\n## Implementation guidance\nGeneralize, don't rewrite: spike C's shell-script pattern already works; the job here is turning\nit into a proper library function with tests, not redesigning the underlying graph queries.\n\n## Required capabilities\nRead/Grep/Edit/Bash; `construct graph` CLI access.\n\n## Recommended runtime and model capability\nMid-to-strong — the schema design benefits from care, the library-ification is mechanical.\n\n## Parallelization eligibility and rationale\nSchema design: single lead. Library implementation + tests: parallelizable across independent\nfunctions once the schema is locked.\n\n## Workspace/worktree ownership\nOne worktree off `feat/workspace-control-plane`.\n\n## File ownership\nNew `lib/planning/` module (or equivalent).\n\n## Inputs\nSpike C's proven harness scripts; target-model.md concepts 8-9; the E2 Workspace domain model.\n\n## Outputs\nA Work-spec schema; a tested graph-independence-check library.\n\n## Integration contract\nWork specs produced here should be directly usable as `bd create` input (bridges into E8's\ntracker-projection work without a second translation layer).\n\n## Validation\nFunctional tests generalizing spike C's proof; full unit suite; `construct doctor`.\n\n## Graph validation\n`construct graph` query correctness tests (reusing, not duplicating, E1's own test suite).\n\n## Migration\nNone (new subsystem).\n\n## Rollback\nNew, additive — clean revert if needed.\n\n## Deletion/cleanup\nNone.\n\n## Completion evidence\nLink the schema-design commit and the library's test output.\n",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-18T01:20:23Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T06:27:14Z",
+      "started_at": "2026-07-18T04:27:29Z",
+      "closed_at": "2026-07-18T06:27:14Z",
+      "close_reason": "Merged (67b5a89e). E3 graph-checked work-spec planning: lib/planning/ with cycle detection, graph dependency-resolution, spike-C independence check — reuses lib/graph/relational/queries. Verified: 25 unit + 12 graph-backed decomposition + 7 functional tests pass. 5295 integrated tests pass.",
+      "labels": [
+        "execution-program",
+        "workspace-control-plane"
+      ],
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.23",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T21:20:23Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.23",
+          "depends_on_id": "construct-b0nny.22",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:15Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 1,
+      "dependent_count": 2,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.24",
+      "title": "Build the runtime-adapter contract, conformance suite, and replacement proof",
+      "description": "## Objective\nBuild directive §17's E4 outcome: a runtime contract (general/Claude/coding/process-or-ACP\nruntimes), a conformance suite, and replacement proof — generalizing spike F's one-adapter proof\ninto the real, multi-runtime contract the rest of the program (M4 org-metaphor, M5a model-loop)\ndepends on.\n\n## Desired outcome\nA documented runtime-adapter contract with a conformance suite any runtime implementation must\npass; at least the general/Claude/coding/process-or-ACP shapes named in the directive have a\nconforming adapter; replacement proof (swap one adapter for another with rollback) is\ndemonstrated in production code, not just spike F's isolated worktree experiment.\n\n## Locked architectural decision\nReuse spike F's proven swap pattern (build-beside, prove equivalence, config-declared rollback\nseam, delete last) as the *process*, not a new one. The contract shape should generalize the\nprovider-adapter interface pattern already retained in disposition-matrix.md D1s\n(`lib/providers/contract/*`), not invent an unrelated abstraction.\n\n## Requirements\n1. Define the runtime contract's interface (what a runtime must implement: invoke, capability\n   query, health/liveness, cancel/interrupt).\n2. Build a conformance suite any runtime adapter must pass (directive §11 F's \"existing runs\n   finish safely\" property is one required conformance case — spike E's recovery findings\n   directly inform this).\n3. Implement conforming adapters for the directive-named runtime shapes.\n4. Prove replacement: swap one adapter for another in a real (not throwaway-worktree) setting\n   with rollback proof, generalizing spike F's result.\n\n## Acceptance criteria\n- The conformance suite exists and at least 2 real adapters pass it.\n- A real (in-repo, not spike-disposable) adapter swap is demonstrated with a passing rollback.\n- `npm run test:unit`, `construct doctor` green.\n\n## Context\nDirective §17 E4. Spike F (construct-b0nny.5.6) already proved the swap pattern works cheaply for\none well-isolated adapter (GitHub provider, gh-CLI→REST) — this bead generalizes that into the\nactual runtime contract the model-loop migration (M5a) and org-metaphor cutover (M4) depend on.\n\n## Source evidence\n[source: docs/notes/research/workspace-control-plane/synthesis/spike-f-runtime-replacement.md];\n[source: docs/notes/research/workspace-control-plane/synthesis/spike-e-recovery.md] (the\nin-flight-safety proof pattern, directly reusable as a conformance case).\n\n## Graph nodes created/modified/deprecated/deleted\nPossibly a `runtime` node type if runtime instances need graph-tracked capability/impact\nanalysis (design decision for this bead).\n\n## Expected edge changes\nNew `implements`/`conforms_to` edges if the graph-node decision above is made.\n\n## Impacted dependents\nM5a (model-loop migration hard-depends on this contract existing); M4 (Worker Profile's\n`model_tier`/runtime selection reads this contract).\n\n## Dependency rationale\nIndependent of M0-M3, E1-E3 — can start immediately, informed by spike F/E's already-gathered\nevidence. M5a blocks on this bead's completion.\n\n## Non-goals\nDoes not migrate `model-router.mjs`'s callers itself (M5a's job) — only builds the contract and\nconformance suite M5a migrates onto.\n\n## Risks\nHigh — this contract becomes load-bearing for the model-loop migration, the single highest-risk\nbead in the program (M5a). A wrong contract shape here compounds downstream. Mitigate with the\nconformance suite as the hard gate any adapter (including the eventual model-loop replacement)\nmust pass before being trusted.\n\n## Security\nRuntime adapters are an authority boundary (what code/tools a runtime is allowed to invoke) —\ndesign the contract with an explicit capability/permission surface, not an implicit one.\n\n## Authority requirements\nNone for this bead itself (design + conformance suite); the runtimes it enables may need their\nown authority scoping, defined as part of the contract.\n\n## Implementation guidance\nStart from spike F's proven pattern and the existing provider-adapter framework\n(`lib/providers/contract/*`, disposition-matrix.md D1s) as the closest existing precedent — do\nnot design from a blank page.\n\n## Required capabilities\nRead/Grep/Edit/Bash; strong architectural reasoning for the contract design.\n\n## Recommended runtime and model capability\nStrongest available reasoning model for the contract design (single lead, no fan-out, mirroring\nWS3b's \"single strong lead\" precedent for graph-schema design); mid-tier for conformance-suite\nimplementation once the contract is locked.\n\n## Parallelization eligibility and rationale\nContract design: no fan-out. Adapter implementations: parallelizable once the contract is locked\n(each adapter is an independent implementation of the same interface).\n\n## Workspace/worktree ownership\nOne worktree for contract design, separate worktrees per adapter implementation.\n\n## File ownership\nNew `lib/runtime/` contract module; individual adapter files under it.\n\n## Inputs\nSpike F/E's proven patterns; the existing provider-adapter framework as precedent.\n\n## Outputs\nA runtime contract; a conformance suite; ≥2 conforming adapters; a real swap-and-rollback proof.\n\n## Integration contract\nM5a and M4 depend on this contract's public shape — define deliberately.\n\n## Validation\nThe conformance suite itself is the validation mechanism; full unit suite; `construct doctor`.\n\n## Graph validation\n`construct graph validate` if a `runtime` node type is added.\n\n## Migration\nNone (new subsystem).\n\n## Rollback\nNew, additive subsystem; the swap-and-rollback proof (Requirements item 4) is itself evidence\nthis bead's own deliverable is safely reversible.\n\n## Deletion/cleanup\nNone.\n\n## Completion evidence\nLink the contract-design commit, conformance-suite results, and the swap/rollback proof.\n",
+      "notes": "Implemented on branch bead/construct-b0nny.24, commit b5eae08202f6fb9024f8e48b1e21c53061dc00de (local only, not pushed/merged, per instructions).\n\nCONTRACT DESIGN (lib/runtime/contract/):\n- interface.mjs: validate()/hasCapability(), mirroring lib/providers/contract/interface.mjs's shape (disposition-matrix D1s precedent). Required surface on every adapter: name, kind, capabilities[], init(config), invoke(request, context), health(), cancel(invocationId). capabilities is drawn from CAPABILITIES=['interrupt','stream','sandbox','concurrent'] and declares OPTIONAL behavior (e.g. 'interrupt' means cancel() can actually stop in-flight work; its absence means cancel() is a documented safe no-op, not a missing method) — this is the explicit capability/permission surface the bead's Security note required.\n- errors.mjs: RuntimeError/RuntimeNotReadyError/InvocationError/InvocationTimeoutError, mirroring providers/contract/errors.mjs.\n- conformance.mjs: runConformanceSuite(fixture) — the shared suite, mirroring contract-tests.mjs. Cases: interface validation, name/kind, known capabilities matching declared interrupt support, invoke() rejects before init(), health() after init(), invoke() well-shaped result, cancel() on unknown id is a safe no-op, and (when the fixture supplies invokeSlow) the REQUIRED \"an in-flight invocation finishes safely despite an unrelated cancel()\" case — generalizing directive Section 11 F / spike E's recovery property into a hard per-adapter gate, plus a case asserting cancel() actually interrupts when 'interrupt' is declared and safely no-ops when it isn't.\n- registry.mjs / default-registry.mjs: createRuntimeRegistry (register/resolve/has/keys) — the swap seam. default-registry.mjs wires 'general' (in-process), 'coding-claude' (CLI subprocess), 'coding-acp' (stdio JSON-RPC) as production defaults.\n\nADAPTERS (4 total, covering the directive's general/Claude/coding/process-or-ACP shapes):\n- adapters/general/inprocess.mjs: in-process handler runtime, cooperative cancel via AbortSignal.\n- adapters/coding/process-transport.mjs + claude-cli.mjs: real async-subprocess transport (node:child_process spawn, not spawnSync so cancel() can truly kill an in-flight call), specialized to shell out to the claude CLI. Generalizes spike F's gh-CLI subprocess shape from a provider transport to a runtime transport.\n- adapters/coding/acp-stdio.mjs: process-or-ACP shape — newline-delimited JSON-RPC over a persistent stdio subprocess. Explicitly documented as demonstrating the transport family, not claiming conformance to a specific published ACP wire spec (no-fabrication).\n- adapters/coding/claude-api.mjs: HTTP Messages-API transport (fetch-based) — the \"after\" side of the replacement proof.\n\nREPLACEMENT PROOF (tests/functional/runtime-adapter-swap.functional.test.mjs):\nA real (not spawnFn-faked) OS-subprocess adapter (node spawning node against a real script in an mkdtemp fixture) is resolved from a live registry, a slow invocation is started on it, the registry entry is swapped mid-flight to the HTTP-transport adapter, and the in-flight subprocess call is confirmed to complete unaffected by the swap (the registry-layer generalization of spike F's ESM in-flight-safety proof). A fresh resolve() after the swap picks up the new adapter; the registry entry is then rolled back and a fresh resolve() confirms the original subprocess behavior is restored exactly — the registry-level equivalent of spike F's git-revert rollback proof, done in this repo's own git history (not a disposable worktree). A second functional test confirms an already-held instance is unaffected by a later re-registration.\n\nTEST RESULTS (real, directly observed, re-run and independently confirmed twice each):\n- npm run test:unit: 574 pass, 0 fail, 73 suites, exit 0 (run twice, identical both times).\n- My new test files run directly (tests/runtime-contract-{inprocess,claude-cli,claude-api,acp-stdio,registry}.test.mjs + tests/functional/runtime-adapter-swap.functional.test.mjs): 53 pass, 0 fail (51 unit + 2 functional).\n- tests/functional/audit-ratchet.functional.test.mjs: verified via git-stash A/B comparison that this test ALREADY fails on the pre-bead base commit (ec050b6d) with 8 findings (postgres-store.mjs dead-code + 7 unnavigated workspace-control-plane doc dirs) unrelated to this work. My change initially added 3 MORE findings (lib/runtime/contract/{conformance,default-registry,adapters/coding/claude-api}.mjs flagged module-test-only, since nothing in production imports them yet — expected, since this bead explicitly does not wire callers, that's M4/M5a's job). Fixed by adding these 3 to scripts/audit/02-deadcode.mjs's ACCEPTED_TEST_ONLY allowlist with documented reasons (same mechanism already used for lib/providers/contract/contract-tests.mjs). Re-verified: only the same 8 pre-existing findings remain, identical to the base-commit run.\n- tests/audit/f12-gates/audit-doc-staleness.test.mjs: this WAS a real regression I introduced (adding 6 new test files drifted tests/AUDIT.md's hard-coded corpus counts, 930 vs 936 files, 274 vs 275 functional files). Fixed by running scripts/generate-test-corpus-inventory.mjs (regenerated tests/AUDIT.md + tests/capabilities/corpus-inventory.json, now committed). Re-verified: 5/5 pass.\n- Full `node scripts/run-tests.mjs` / `npm run test:functional` (~275 functional files): attempted twice in this session; both times the machine was under severe concurrent load from other parallel agent worktree sessions also running full suites simultaneously (uptime showed load average 15-25 with up to 26 concurrent `node --test` processes across worktrees at once) and the run did not reach completion in-session. The completed portion (376 lines / 306 passed / 1 failed, the same known pre-existing audit-ratchet finding above, zero other failures) showed no new regressions in what it covered. Scoped evidence in lieu of a completed full run: my own 2 new functional tests (pass), plus direct targeted runs of the two functional/audit-adjacent tests known to interact with this change (audit-ratchet, audit-doc-staleness), both accounted for above.\n\nconstruct doctor: 55 passed, 8 warnings, 2 failed — same 2 failures before and after this change (\"Git hooks unwired\" and \"Cross-surface adapter parity\"), confirmed unrelated to this work (worktree git-hooks-path config and pre-existing claude/opencode adapter drift, neither touched by this bead).\n\nPre-commit note: beads' own .beads/hooks/pre-commit secret scanner initially flagged fake `apiKey: 'sk-test'`-shaped test literals; fixed by renaming to the scanner's documented placeholder convention (__NAME__), not by bypassing the hook.\n\nDiagnostics check (per lead's mid-task query): unused-variable/deprecated-API diagnostics flagged during this session (env, databaseUrl, daemonId, docText, rootDir, fn, url, deprecated Server API in server.mjs) were checked against every file created/touched here. Only `url` (an unused first fetch/spawnFn-style parameter in 3 places, in tests/runtime-contract-claude-api.test.mjs and tests/functional/runtime-adapter-swap.functional.test.mjs) was mine — fixed by prefixing with underscore per this repo's eslint convention. `env`, `fn`, `databaseUrl`, `daemonId`, `docText`, `rootDir` do not appear anywhere in the files I created, and no server.mjs file was touched by this work — those diagnostics are pre-existing/unrelated to this bead.\n\nContract shape affects .19 (M5a) and .17/.26 downstream per the assignment — leaving this bead open (not closing) for explicit lead review of the contract shape before those beads build on it.",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-18T01:20:26Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T03:29:56Z",
+      "started_at": "2026-07-18T01:34:59Z",
+      "closed_at": "2026-07-18T03:29:56Z",
+      "close_reason": "Runtime-adapter contract, conformance suite, and real in-repo swap+rollback proof built. Merged into feat/workspace-control-plane.",
+      "labels": [
+        "execution-program",
+        "workspace-control-plane"
+      ],
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.24",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T21:20:26Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 0,
+      "dependent_count": 2,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.25",
+      "title": "Build the production sources/directives/workplace loop",
+      "description": "## Objective\nBuild directive §17's E5 outcome — a production sources/directives/workplace loop — generalizing\nspike D's validated detect→normalize→align→filter→gate→simulate→verify→no-fabricate scaffolding\nfrom a fixture-driven proof into a real system that ingests real sources (GitHub/Jira/Slack-class\nproviders, already retained per disposition-matrix.md D1s) and drives real (approval-gated)\nexternal effects through the M2 chokepoint.\n\n## Desired outcome\nA production workplace loop that detects real signals from connected sources, checks them\nagainst real Workspace strategy/objectives (E2), proposes real artifacts, and only acts\nexternally after passing through M2's governed-write chokepoint — with the same no-fabrication\ndiscipline spike D proved (a no-op run reports \"nothing new,\" never invents activity).\n\n## Locked architectural decision\nPer spike D's own honest verdict: the scaffolding is conditionally validated, but detection\nbeing rule-based over an intentionally-legible fixture does NOT prove judgment over messy real\ndata — that gap must be explicitly re-tested against real sources before this bead is called\ndone, not assumed away.\n\n## Requirements\n1. Reuse spike D's proven pipeline shape (detect/normalize/align/filter/gate/simulate/verify/\n   no-fabricate) as the architecture — do not redesign it from scratch.\n2. Replace the fixture sources with real provider adapters (already retained, D1s) for at least\n   one real GitHub/Jira/Slack-class source.\n3. Route all external effects through the M2 governed-write chokepoint (spike D only simulated\n   this; production must actually gate through it).\n4. Re-validate detection quality against real, messy source data (not a fixture built to make\n   gaps legible) — report honestly if quality degrades, per spike D's own caveat.\n5. Provide the equivalence tests M3b needs to retire Oracle's `directive-executor.mjs` onto this\n   loop.\n\n## Acceptance criteria\n- The loop runs against at least one real connected source and produces a correctly-gated,\n  approval-required proposal.\n- A second run against unchanged real source state reports \"nothing new\" (the no-fabrication\n  proof, now against real data).\n- M3b's equivalence-test requirement (directive execution parity with Oracle) passes.\n- `npm run test:unit`, `construct doctor` green.\n\n## Context\nDirective §17 E5. Spike D (construct-b0nny.5.4) proved the pipeline shape end-to-end against a\nfixture and gave a conditional-go/no-go split verdict — this bead is the production\ngeneralization, explicitly re-testing the part spike D flagged as unproven (real-data detection\nquality).\n\n## Source evidence\n[source: docs/notes/research/workspace-control-plane/synthesis/spike-d-daily-workplace-loop.md].\n\n## Graph nodes created/modified/deprecated/deleted\nSignal/proposal-related nodes if the loop's outputs should be graph-tracked for impact analysis\n(design decision for this bead).\n\n## Expected edge changes\nNew edges linking sources to detected signals to proposals, if graph-tracked.\n\n## Impacted dependents\nM3b's Oracle-daemon consolidation hard-depends on this bead's equivalence tests being green.\n\n## Dependency rationale\nDepends on E2 (Workspace domain — strategy/objectives to align against) and M2 (governed-write\nchokepoint to route real effects through). Blocks M3b.\n\n## Non-goals\nDoes not build new provider adapters from scratch — reuses the retained D1s framework. Does not\nreplace the Oracle daemon itself (M3b's job) — only proves it can be replaced.\n\n## Risks\nHigh — spike D's own honest caveat (rule-based detection over a legible fixture doesn't prove\nreal-data judgment) is exactly the risk this bead must resolve, not paper over. Report degraded\nquality honestly if real-data testing reveals it, per no-fabrication discipline.\n\n## Security\nReal external effects (even gated) mean real credential/authority handling — route strictly\nthrough M2's chokepoint, no bypass path.\n\n## Authority requirements\nEvery external effect requires the M2 chokepoint's approval gate — no exceptions for this bead.\n\n## Implementation guidance\nStart from spike D's actual code (`docs/notes/research/workspace-control-plane/spikes/\nd-daily-workplace-loop/loop/run-loop.mjs`) as the architectural reference, replacing fixture I/O\nwith real provider adapters incrementally.\n\n## Required capabilities\nRead/Grep/Edit/Bash; real provider-adapter credentials for at least one connected source\n(sandboxed/test account, not production credentials, for initial validation).\n\n## Recommended runtime and model capability\nStrongest available reasoning model — this is a genuinely novel capability (TPM/PM-shaped\njudgment over real data), the highest-uncertainty bead in the E-outcome set.\n\n## Parallelization eligibility and rationale\nLow for the core loop logic (single coherent pipeline); the provider-adapter integration for\nadditional sources can parallelize once one source is proven.\n\n## Workspace/worktree ownership\nOne worktree off `feat/workspace-control-plane`.\n\n## File ownership\nNew `lib/workplace-loop/` module (or equivalent), generalizing spike D's `run-loop.mjs`.\n\n## Inputs\nSpike D's proven pipeline; E2's Workspace domain model; M2's chokepoint; a real connected source.\n\n## Outputs\nA production workplace loop; equivalence tests for M3b; an honest real-data detection-quality\nreport.\n\n## Integration contract\nDirective-execution semantics equivalent to what Oracle's `directive-executor.mjs` currently\nprovides (M3b's dependency).\n\n## Validation\nThe no-fabrication second-run proof against real data; M3b's equivalence tests; full unit suite;\n`construct doctor`.\n\n## Graph validation\n`construct graph validate` if signal/proposal nodes are added.\n\n## Migration\nNone (new subsystem) — but see M3b for how Oracle's existing directive-execution state\nreconciles onto this loop.\n\n## Rollback\nNew, additive subsystem; can run beside Oracle until M3b's cutover, per the matrix's own\nrollback-seam pattern.\n\n## Deletion/cleanup\nNone for this bead (Oracle's retirement is M3b's job).\n\n## Completion evidence\nLink the merge commit; the real-source run's log; the second no-op run's \"nothing new\" proof;\nthe M3b equivalence-test results.\n",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-18T01:20:30Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T06:27:16Z",
+      "started_at": "2026-07-18T04:27:30Z",
+      "closed_at": "2026-07-18T06:27:16Z",
+      "close_reason": "Merged (3b0d9125). E5 production workplace loop. Directive-executor equivalence gate GREEN — unblocks .17's Oracle deletion. Fixed dead-on-import bug in public barrel. Honest gap: real GitHub source has 0 open issues so detection-quality vs messy real data untested (follow-up candidate). 5295 integrated tests pass.",
+      "labels": [
+        "execution-program",
+        "workspace-control-plane"
+      ],
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.25",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T21:20:29Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.25",
+          "depends_on_id": "construct-b0nny.15",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:19Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.25",
+          "depends_on_id": "construct-b0nny.22",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:17Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 2,
+      "dependent_count": 3,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.26",
+      "title": "Build the shared workspace server (auth, Postgres, concurrency, deployment)",
+      "description": "## Objective\nBuild directive §17's E7 outcome: a shared workspace server (auth, Postgres, shared artifacts,\nworker claims, concurrent users, recovery, deployment image, Docker Compose) — the \"team/\nenterprise mode\" deployment surface layered on top of the local-first product.\n\n## Desired outcome\nMultiple users/workers can share one Workspace's state concurrently via a server, backed by\nPostgres (already partially proven — construct-b0nny.3's structural Postgres backend, hardened\nby the E1-completion bead's live-Postgres proof), with worker-claim semantics preventing\nduplicate/conflicting work, and a real recovery story if a worker crashes mid-claim (directly\nreusing spike E's recovery findings, not re-deriving them).\n\n## Locked architectural decision\nNone yet — largest, least-designed outcome in the program. First deliverable is a design pass\n(single strong lead, no fan-out) before any server code is written, mirroring the\ntarget-model.md/graph-store-design.md precedent.\n\n## Requirements\n1. Design auth (who can join a Workspace, what they're authorized to do — ties into E2's\n   membership fields and M2's authority ledger, not a separate auth system).\n2. Prove the Postgres backend under real concurrent load (builds on the E1-completion bead's\n   single-instance proof).\n3. Define worker-claim semantics (a worker claims a piece of work, another worker must not\n   duplicate it) — reuse spike E's idempotency/stale-claim/supersession findings as the design\n   input, since that spike specifically validated these properties.\n4. Build the recovery story for a worker that crashes mid-claim, reusing spike E's harness\n   pattern rather than inventing new interruption-point testing from scratch.\n5. Produce a deployment image + Docker Compose per directive §17's own explicit requirement.\n\n## Acceptance criteria\n- A design doc reviewed before server implementation starts.\n- Concurrent-user test: two simulated workers claim different work concurrently with zero\n  duplicate execution.\n- Recovery test: a worker killed mid-claim is correctly detected and its work either resumed or\n  released, per spike E's proven properties.\n- A working Docker Compose deployment.\n- `npm run test:unit`, `construct doctor` green.\n\n## Context\nDirective §17 E7. Spike E (construct-b0nny.5.5) already validated recovery/idempotency/\nsupersession properties for a single-workflow harness against the E1 graph store — this bead\nextends those properties to a multi-worker, multi-user server context, reusing the proof\npattern rather than starting from zero.\n\n## Source evidence\n[source: docs/notes/research/workspace-control-plane/synthesis/spike-e-recovery.md];\n[source: docs/notes/research/workspace-control-plane/synthesis/graph-store-design.md] (the\nexisting Postgres DDL this server will use).\n\n## Graph nodes created/modified/deprecated/deleted\nNone new to the dependency graph itself — this is deployment/server infrastructure around\nexisting domain models (E2 Workspace, E1 graph).\n\n## Expected edge changes\nNone.\n\n## Impacted dependents\nNone downstream in this program (E7 is a leaf outcome feeding only E9's final cutover).\n\n## Dependency rationale\nDepends on E2 (Workspace domain model to serve), M1 (run-store rebuild, for a real migration\nstory), and the E1-completion bead (a live-Postgres proof, not just structural mirroring, before\nbuilding a shared server on top of it).\n\n## Non-goals\nDoes not change the local-first, solo-mode product — E7 is strictly additive (team/enterprise\ndeployment mode), per the directive's own \"one product model across embedded and shared\ndeployments\" standard (§18/§19) — solo mode must keep working unchanged.\n\n## Risks\nHigh — largest, least-proven outcome in the program; concurrent-worker correctness bugs are\nexactly the class of bug spike E's harness is designed to catch, so lean on that pattern rather\nthan assuming correctness.\n\n## Security\nThis bead introduces the first genuinely multi-user authorization surface in the product — auth\ndesign deserves the same scrutiny as M2's governance chokepoint.\n\n## Authority requirements\nAuth/membership decisions should route through the same authority model M2 formalizes, not a\nparallel one.\n\n## Implementation guidance\nDesign first (no fan-out), then build incrementally: single-user server → concurrent-worker\nclaims → full auth → deployment image, each step gated on the previous passing its own tests.\n\n## Required capabilities\nRead/Grep/Edit/Bash; Docker for the deployment image; a real Postgres instance for concurrent\ntesting.\n\n## Recommended runtime and model capability\nStrongest available reasoning model for the design phase; mid-to-strong for implementation given\nthe concurrency-correctness stakes.\n\n## Parallelization eligibility and rationale\nDesign: no fan-out. Implementation: auth, worker-claims, and deployment-image work are\nreasonably independent once the design is locked and could parallelize.\n\n## Workspace/worktree ownership\nOne worktree for design; separate worktrees per implementation stream once design is locked.\n\n## File ownership\nNew `lib/server/` module (some of this may already partially exist — audit before assuming a\nblank slate, per the program's own \"verify before building\" discipline that overturned Wave 0's\ntruth-map claims twice already).\n\n## Inputs\nSpike E's recovery proof pattern; E2's Workspace domain model; the existing Postgres DDL.\n\n## Outputs\nA design doc; an auth model; worker-claim semantics; a recovery-tested server; a deployment\nimage.\n\n## Integration contract\nThe server's public API should let the same client code work against local (solo) or shared\n(server) mode transparently, per directive §18's \"one product model\" standard.\n\n## Validation\nConcurrent-user test; recovery test (spike E pattern); full unit suite; `construct doctor`.\n\n## Graph validation\n`construct graph validate` against the shared-mode deployment.\n\n## Migration\nNone yet defined — first output of the design phase.\n\n## Rollback\nNew, additive deployment mode — solo mode is unaffected and remains the rollback target if E7\nproves unready.\n\n## Deletion/cleanup\nNone.\n\n## Completion evidence\nLink the design-doc commit, the concurrent-user and recovery test results, and the deployment\nimage build.\n",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-18T01:20:33Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T06:27:18Z",
+      "started_at": "2026-07-18T04:27:31Z",
+      "closed_at": "2026-07-18T06:27:18Z",
+      "close_reason": "Merged (146c4391). E7 shared workspace server, strictly additive team/enterprise mode. Verified live against real Postgres+Docker (concurrent-claim + SIGKILL recovery). Fixed NaN-port crash on default start. ADR-0093. 5295 integrated tests pass.",
+      "labels": [
+        "execution-program",
+        "workspace-control-plane"
+      ],
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.26",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T21:20:32Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.26",
+          "depends_on_id": "construct-b0nny.14",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:23Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.26",
+          "depends_on_id": "construct-b0nny.21",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:25Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.26",
+          "depends_on_id": "construct-b0nny.22",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:21Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 3,
+      "dependent_count": 1,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.27",
+      "title": "Build Beads tracker projection, field authority, and reconciliation",
+      "description": "## Objective\nBuild directive §17's E8 outcome: Beads projection, field authority, reconciliation, importers,\nand raw-record preservation — making `bd` a *projection* of the graph-informed work model (E1+E3)\nrather than the sole source of truth, while keeping bd fully usable day-to-day (per CLAUDE.md,\nstill mandatory for task tracking).\n\n## Desired outcome\nBeads issues are derivable from (and reconcilable against) the graph-informed Work-spec model\n(E3); field authority is explicit (which fields bd owns vs. which are projected from elsewhere);\nexisting bd data imports cleanly with raw records preserved (no lossy one-way migration).\n\n## Locked architectural decision\nNone yet — design-first, single lead, no fan-out, same discipline as E2/E7. The existing lesson\nalready learned this program (`bd create --graph` is lossy; scripted per-issue create + `bd dep\nadd` is the safe path) is a direct input: whatever projection mechanism this bead builds must not\nrepeat that lossiness.\n\n## Requirements\n1. Define field authority: which bd fields (status, assignee, priority) remain bd-owned vs. which\n   (dependency edges, graph-derived context) are projected FROM the E1/E3 models into bd.\n2. Build a reconciliation mechanism that detects drift between bd and the projected source (not\n   a one-time import — an ongoing sync, since bd is a live, actively-used tracker).\n3. Build importers preserving raw records (every bd issue's full original data survives the\n   projection, even fields the new model doesn't use) — no silent data loss, matching program\n   rule 2.\n4. Validate against this program's OWN bd history (construct-b0nny.1–.12 and this very bead\n   program) as a real, non-trivial test corpus.\n\n## Acceptance criteria\n- A field-authority table (bd-owned vs. projected) reviewed before implementation.\n- A reconciliation test detects an intentionally introduced drift and reports it correctly.\n- Raw-record preservation proven against this program's own real bd issue set with zero data\n  loss.\n- `npm run test:unit`, `construct doctor` green; `bd` itself remains fully functional throughout\n  (this bead must not break the tracker CLAUDE.md mandates for all task tracking).\n\n## Context\nDirective §17 E8. This program's own experience (`bd create --graph` lossiness, discovered and\ndocumented as a standing lesson) is direct evidence for what NOT to repeat.\n\n## Source evidence\n[source: docs/notes/research/workspace-control-plane/synthesis/target-model.md] (concepts\ncovering Work/Plan/Assignment, whatever E3 finalizes as the projection source); this program's\nown `bd` issue history as the validation corpus.\n\n## Graph nodes created/modified/deprecated/deleted\nNone new to the dependency graph.\n\n## Expected edge changes\nNone.\n\n## Impacted dependents\nE9's final cutover depends on this projection being trustworthy before any legacy tracker path\nis removed.\n\n## Dependency rationale\nDepends on E1 (graph, done) and E3 (Work-spec model — the projection source). Independent of\nE4/E5/E7/M0-M5.\n\n## Non-goals\nDoes not replace `bd` itself or its CLI — per CLAUDE.md, bd remains the tracker; this bead makes\nit a *projection*, not a replacement.\n\n## Risks\nMedium — a reconciliation bug could silently drift bd state from the graph-informed model,\nproducing exactly the \"aspirational wiring\" failure mode this whole program has repeatedly found\nand corrected (roles/router, scheduler, legacy `.js` tier). Mitigate with the drift-detection\ntest as a hard gate.\n\n## Security\nNone new.\n\n## Authority requirements\nNone — internal tooling, no external effect.\n\n## Implementation guidance\nValidate against this program's own real bd data first (dogfooding) before generalizing to\narbitrary bd projects — a smaller, real corpus beats a synthetic one, per this program's own\nrepeated lesson about verifying against real data.\n\n## Required capabilities\nRead/Grep/Edit/Bash; `bd` CLI access.\n\n## Recommended runtime and model capability\nStrongest available reasoning model for the field-authority/projection design; mid-tier for\nimporter implementation once the design is locked.\n\n## Parallelization eligibility and rationale\nDesign: no fan-out. Importer/reconciliation implementation: parallelizable once the\nfield-authority table is locked.\n\n## Workspace/worktree ownership\nOne worktree for design; separate worktrees for importer/reconciliation implementation.\n\n## File ownership\nNew `lib/tracker-projection/` module (or equivalent).\n\n## Inputs\nE3's Work-spec model; this program's own bd issue history as the test corpus.\n\n## Outputs\nA field-authority table; a reconciliation mechanism; importers with raw-record preservation.\n\n## Integration contract\nbd remains the CLI surface; this bead's projection layer sits behind it, not replacing any\nexisting `bd` command.\n\n## Validation\nThe drift-detection test; the raw-record-preservation proof against real program history; full\nunit suite; `construct doctor`.\n\n## Graph validation\nNot applicable (bd-side work).\n\n## Migration\nExisting bd issues (this program's own construct-b0nny.* history included) migrate through the\nnew importer with raw records preserved — an explicit test, not an assumption.\n\n## Rollback\nNew, additive layer; bd continues working unmodified if this bead is reverted.\n\n## Deletion/cleanup\nNone.\n\n## Completion evidence\nLink the design-doc commit, the drift-detection test, and the raw-record-preservation proof\nagainst this program's own bd history.\n",
+      "status": "in_progress",
+      "priority": 2,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-18T01:20:36Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T06:31:16Z",
+      "started_at": "2026-07-18T06:31:16Z",
+      "labels": [
+        "execution-program",
+        "workspace-control-plane"
+      ],
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.27",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T21:20:35Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.27",
+          "depends_on_id": "construct-b0nny.23",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:27Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 1,
+      "dependent_count": 1,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.28",
+      "title": "Final cutover: verify all deletions, freeze legacy paths, package, release, prove rollback",
+      "description": "## Objective\nExecute directive §17's E9 outcome — the final capstone: CLI replacement (where superseded),\nlegacy write-freeze, final migration, legacy state removal, flow-engine deletion (done in M0),\nOracle deletion (done in M3b), specialist/persona/team deletion (done in M4), model-provider\nloop deletion (done in M5a), vector-store removal from core (done in M5b), deployment-mode\nremoval (if any prove unneeded), old command removal, packaging, release, rollback proof.\n\n## Desired outcome\nThe program's own stated standard (§18/§19) is met: a workspace-level system with a day-one\ndynamic graph, dependency-checked changes, replaceable runtimes, durable governed outcomes,\nproduct/TPM capacity, safe parallel execution, explicit integration, tracker independence,\nstrong evidence/provenance, one product model, aggressive deletion of superseded architecture —\nverified as delivered, not asserted.\n\n## Locked architectural decision\nThis bead does not make new architectural decisions — it verifies every prior bead's deletion\ncriteria were actually met and executes the remaining sweep (old CLI command audit, packaging,\nrelease) that only makes sense once everything else has landed.\n\n## Requirements\n1. Mechanically verify every prior bead's deletion criteria (M0-M5, E1-completion) are actually\n   satisfied — re-run each bead's own \"Completion evidence\" checks, don't just trust prior\n   sign-off.\n2. Audit CLI commands for ones without a product role (per directive §19's warning) and remove\n   them, disambiguating the `graph`/`matrix`/task-graph overload the disposition matrix flagged\n   (A1).\n3. Freeze legacy write paths that M2-M5 made obsolete; confirm zero remaining callers before\n   freezing.\n4. Package and release, with a rollback proof: demonstrate the release can be rolled back\n   cleanly, exercising every rollback plan the disposition matrix and this program's beads\n   documented.\n5. Confirm no installed trigger (hook, launchd/systemd job) is left without an uninstall path\n   (program rule 2 — \"every replacement carries its deletion\").\n\n## Acceptance criteria\n- Mechanically verifiable acceptance (directive §15's own requirement for this specific final\n  bead, not a narrative \"review everything\" task): a scripted check re-confirms every dependency\n  bead's deletion criteria, with a pass/fail per bead, not a summary paragraph.\n- `construct doctor` fully green (not \"same 2 known pre-existing failures\" — those must be\n  resolved or explicitly re-justified as out of this program's scope by this point).\n- A demonstrated rollback: release, then roll back, then confirm the system is fully functional\n  at the prior version.\n- Full unit + functional test suites green.\n\n## Context\nDirective §17 E9 (the full outcome list) and §18/§19 (the program's own final standard, quoted\nabove). This is the only bead in the entire program explicitly required to have \"mechanically\nverifiable acceptance criteria... no narrative 'review everything' task\" (§15) — take that\nliterally: build the verification script, don't write a review essay.\n\n## Source evidence\n[source: docs/notes/research/workspace-control-plane/directive.md] §17-19;\n[source: docs/notes/research/workspace-control-plane/synthesis/disposition-matrix.md] (every\ndeletion criterion this bead re-verifies).\n\n## Graph nodes created/modified/deprecated/deleted\nFinal deprecation of any node types fully superseded by this point (e.g., confirm `specialist`\nnode type has zero remaining instances if M4's migration is complete).\n\n## Expected edge changes\nFinal orphan/cycle sweep (`construct graph orphans`/`cycles`) should be clean.\n\n## Impacted dependents\nNone downstream — this is the terminal bead of the entire program.\n\n## Dependency rationale\nDepends on ALL other beads in this program: M0, M1, M2, M3a, M3b, M4, M5a, M5b, E1-completion,\nE2, E3, E4, E5, E7, E8. This is intentional — it is the capstone verification + release, and must\nnot start until everything it verifies actually exists.\n\n## Non-goals\nDoes not re-litigate any prior bead's design decisions — it verifies execution against already-\nlocked decisions. Does not add new capability.\n\n## Risks\nThe risk of this bead is entirely in what it might reveal: if any prior bead's deletion criteria\nwere not actually met, this bead's job is to surface that honestly (per the whole program's\nno-fabrication discipline) rather than paper over it to declare victory.\n\n## Security\nFinal security sweep: confirm the M2 governance chokepoint has zero remaining bypass paths\nacross the WHOLE system, not just the subsystems M2 itself touched.\n\n## Authority requirements\nRelease and rollback are exactly the kind of action `rules/common/commit-approval.md` governs —\nexplicit confirmation before any release/rollback action, no exceptions.\n\n## Implementation guidance\nBuild the verification script first, run it, and only proceed to packaging/release once every\ncheck is genuinely green — this bead should not be rushed to \"looks done\" without the mechanical\nproof.\n\n## Required capabilities\nRead/Grep/Edit/Bash; release/packaging tooling; the full test suite.\n\n## Recommended runtime and model capability\nStrongest available reasoning + coding runtime — this is the highest-stakes, most load-bearing\nsingle bead in the program (it gates the release).\n\n## Parallelization eligibility and rationale\nLow — by nature a capstone/integration bead; the verification script can check things in\nparallel internally, but the bead itself is a single sequential gate.\n\n## Workspace/worktree ownership\nOne dedicated worktree off `feat/workspace-control-plane`, merged to `main` only after every\ncheck passes and per CLAUDE.md's commit/push/merge approval discipline.\n\n## File ownership\nTouches whatever remains after all prior beads — primarily `bin/construct` (CLI audit),\npackaging/release scripts, and the verification script itself (new).\n\n## Inputs\nEvery prior bead's \"Completion evidence\" and \"Deletion/cleanup\" sections.\n\n## Outputs\nA verification script (reusable for future audits); a release; a demonstrated rollback.\n\n## Integration contract\nNone new — this bead confirms existing contracts hold end-to-end.\n\n## Validation\nThe scripted mechanical-verification check (Requirements item 1); full unit + functional test\nsuites; `construct doctor` fully green; the rollback demonstration.\n\n## Graph validation\n`construct graph orphans`/`cycles`/`validate` all clean.\n\n## Migration\nFinal migration sweep — confirm nothing from M0-M5/E1-E8's individual migrations was left\nhalf-done.\n\n## Rollback\nThis bead's entire deliverable includes proving rollback works — see Requirements item 4.\n\n## Deletion/cleanup\nFinal legacy-state removal and old-command removal, per Requirements items 2-3.\n\n## Completion evidence\nThe verification script's full pass/fail report, the release artifact, and the rollback\ndemonstration's output.\n",
+      "status": "open",
+      "priority": 2,
+      "issue_type": "task",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-18T01:20:39Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T01:20:39Z",
+      "labels": [
+        "execution-program",
+        "workspace-control-plane"
+      ],
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.28",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-17T21:20:39Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.28",
+          "depends_on_id": "construct-b0nny.13",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:33Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.28",
+          "depends_on_id": "construct-b0nny.14",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:35Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.28",
+          "depends_on_id": "construct-b0nny.15",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:37Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.28",
+          "depends_on_id": "construct-b0nny.16",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:39Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.28",
+          "depends_on_id": "construct-b0nny.17",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:41Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.28",
+          "depends_on_id": "construct-b0nny.18",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:43Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.28",
+          "depends_on_id": "construct-b0nny.19",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:45Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.28",
+          "depends_on_id": "construct-b0nny.20",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:47Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.28",
+          "depends_on_id": "construct-b0nny.21",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:48Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.28",
+          "depends_on_id": "construct-b0nny.22",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:50Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.28",
+          "depends_on_id": "construct-b0nny.23",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:52Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.28",
+          "depends_on_id": "construct-b0nny.24",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:54Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.28",
+          "depends_on_id": "construct-b0nny.25",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:56Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.28",
+          "depends_on_id": "construct-b0nny.26",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:21:58Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.28",
+          "depends_on_id": "construct-b0nny.27",
+          "type": "blocks",
+          "created_at": "2026-07-17T21:22:00Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 15,
+      "dependent_count": 0,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.29",
+      "title": "Rip out legacy daemon auto-spawn + ship legacy process/state cleanup sweeper",
+      "description": "## Objective\nRemove every path that spawns the legacy Oracle and Doctor background daemons, and ship a cleanup sweeper so existing installs (and the new release's postinstall/doctor) kill lingering legacy daemons and purge their stale runtime state. Maintainer directive 2026-07-18: legacy daemons must not run at all — v2 replaces them; nothing keeps them alive in the interim.\n\n## Evidence (observed live, 2026-07-18)\n38 leaked oracle daemon-entry.mjs processes accumulated in ~10 minutes on the maintainer machine during parallel worktree test runs. Root cause chain: functional tests run 'construct init' non-interactively in isolated tmp HOME dirs -> resolveShouldStartServices returns true for non-interactive -> startServices() calls startDoctor()+startOracle() -> heartbeat dedup reads the ISOLATED home (always empty) -> fresh detached daemon every time, outliving the test. Spawn surfaces: lib/service-manager.mjs startServices() (called by init-unified.mjs:1330 and construct dev), lib/oracle/cli.mjs 'construct oracle start', and lib/intake/session-prelude.mjs nagging users to run 'construct oracle start'.\n\n## Deliverables\n1. startServices() no longer starts Doctor or Oracle daemons (remove calls + results wiring).\n2. 'construct oracle start' no longer spawns a daemon — clear removal notice pointing at the v2 replacement path.\n3. session-prelude and doctor/watchers/oracle-liveness stop telling users to start the daemon (liveness watcher deletion itself stays in .17; here it just must not nag).\n4. New legacy-cleanup sweeper: detects construct-owned daemon-entry.mjs / doctor index.mjs processes and stale runtime state (runtime/oracle heartbeat, doctor state, port-ownership records) and kills/purges them; wired into postinstall AND 'construct doctor'.\n5. Functional test proving: (a) non-interactive 'construct init' in an isolated HOME spawns zero daemons; (b) the sweeper kills a planted fake daemon and removes planted stale state.\n\n## Non-goals\nFull Oracle entity deletion (directive-executor re-home, read-model consolidation) stays in construct-b0nny.17, gated on .25 equivalence. This bead only guarantees no legacy daemon ever runs and old machines get cleaned.",
+      "acceptance_criteria": "grep proves startServices has no startDoctor/startOracle call; 'construct oracle start' exits with removal notice and spawns nothing; functional test asserts zero daemon processes after non-interactive init in isolated HOME; sweeper functional test kills planted daemon + purges planted state; full suite green (summed across shards); construct doctor clean of new failures",
+      "status": "closed",
+      "priority": 1,
+      "issue_type": "task",
+      "assignee": "Gerald Dagher",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-18T05:28:24Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T06:27:20Z",
+      "started_at": "2026-07-18T05:29:04Z",
+      "closed_at": "2026-07-18T06:27:20Z",
+      "close_reason": "Merged (b9a5fb19). Legacy daemon auto-spawn ripped out (startServices/oracle-start/session-prelude nag/oracle-liveness watcher gone); lib/legacy-cleanup.mjs sweeper wired into postinstall + doctor. Zero daemon-entry spawn paths remain. doctor now shows a passing legacy-cleanup check. 5295 integrated tests pass.",
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.29",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-18T01:28:24Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 0,
+      "dependent_count": 1,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.30",
+      "title": "Delete dead lib/roles/router.mjs and refine audit legacy-import finder over-match",
+      "description": "Follow-up from the wave-3 landing audit-baseline work (commit 97d7d25a). Two items baselined in scripts/audit/baseline.json that deserve a real fix rather than permanent acceptance:\n\n1. lib/roles/router.mjs has ZERO production importers (only tests) after construct-b0nny.16 consolidated routing into orchestration/routing-tables.mjs (resolveEventOwner). It was kept as a 'compatibility delegator' but has no consumers — genuine dead code. Delete it and its test(s) (tests/roles/*router* and any importers under tests/), verify nothing breaks, then remove its baseline entry '02-deadcode:module-test-only:lib/roles/router.mjs'.\n\n2. scripts/audit/03c-root-layout.mjs LEGACY_IMPORT_RE (/from ['\"][^'\"]*\\/providers\\/(lib|github|jira|slack|confluence|git)\\//) over-matches lib/providers/github/index.mjs — a CURRENT data-source provider (not the retired root providers/ tree) that construct-b0nny.25 deliberately reuses (the D1s-retained adapter). Tighten the finder to distinguish lib/providers/github/ (current) from a root-level providers/github/ (retired), then remove the baseline entry '03c-root-layout:import-legacy-path:lib/workplace-loop/sources/github-source.mjs_21'.\n\nAlso evaluate whether lib/graph/relational/postgres-store.mjs (test-only because Postgres graph is opt-in) belongs in the 02-deadcode allowlist with a justification rather than the ratchet baseline.",
+      "acceptance_criteria": "router.mjs deleted, no production or test references remain, its baseline entry removed; legacy-import finder no longer flags lib/providers/github/ current provider, that baseline entry removed; audit-ratchet still green; full suite green",
+      "status": "open",
+      "priority": 2,
+      "issue_type": "task",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-18T06:29:02Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T06:29:02Z",
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.30",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-18T02:29:02Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 0,
+      "dependent_count": 0,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    },
+    {
+      "id": "construct-b0nny.31",
+      "title": "Validate workplace-loop detection against a real source carrying qualifying signals",
+      "description": "Honest gap from construct-b0nny.25 (E5, closed 3b0d9125): the workplace loop's 'produces an approval-required proposal' acceptance half was proven only against real-SHAPED injected data, because the one live connected source (this checkout's GitHub origin geraldmaron/construct) has 0 open issues. The no-fabrication discipline holds against real data (0 issues -> 0 signals -> NOTHING_NEW), but detection QUALITY against messy real data with genuine qualifying issues (stale, unowned-risk-labeled) is unverified — precisely the risk spike D flagged. Point the loop at a live source that actually carries qualifying issues (a real repo with open stale/risk-labeled issues, or a fixture-backed authenticated replay), confirm it detects + aligns + produces a correctly-gated proposal end to end. This matters for .17 (Oracle deletion) trusting the loop as the directive-execution successor.",
+      "acceptance_criteria": "workplace-loop detect run against a live/replayed source with >=1 qualifying issue produces a correctly-gated, approval-required proposal; documented evidence (source, issue, proposal id); no fabrication",
+      "status": "open",
+      "priority": 2,
+      "issue_type": "task",
+      "owner": "geraldmdagher@outlook.com",
+      "created_at": "2026-07-18T06:29:07Z",
+      "created_by": "Gerald Dagher",
+      "updated_at": "2026-07-18T06:29:07Z",
+      "dependencies": [
+        {
+          "issue_id": "construct-b0nny.31",
+          "depends_on_id": "construct-b0nny",
+          "type": "parent-child",
+          "created_at": "2026-07-18T02:29:07Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        },
+        {
+          "issue_id": "construct-b0nny.31",
+          "depends_on_id": "construct-b0nny.25",
+          "type": "blocks",
+          "created_at": "2026-07-18T02:29:07Z",
+          "created_by": "Gerald Dagher",
+          "metadata": "{}"
+        }
+      ],
+      "dependency_count": 1,
+      "dependent_count": 0,
+      "comment_count": 0,
+      "parent": "construct-b0nny"
+    }
+  ]
+}

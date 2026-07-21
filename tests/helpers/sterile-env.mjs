@@ -3,11 +3,11 @@
  *
  * Test hermeticity was write-guarded (tmpdir roots, HOME redirection) but not
  * read-guarded: building a spawn env from `{ ...process.env, ...overrides }`
- * lets a developer machine's CX_MODEL_*, provider keys, WEB_SEARCH_URL, and
- * CX_USER_ENV_PATH leak into a "sterile" child, and lib/providers/secret-resolver.mjs
+ * lets a developer machine's CONSTRUCT_MODEL_*, provider keys, WEB_SEARCH_URL, and
+ * CONSTRUCT_USER_ENV_PATH leak into a "sterile" child, and lib/providers/secret-resolver.mjs
  * can walk file/rc tiers and fire a real `op read` (a real desktop-app biometric
  * prompt) mid-test. sterileSpawnEnv() builds the env from an explicit allowlist
- * instead: nothing not named here reaches the child, HOME/CX_HOME_OVERRIDE are
+ * instead: nothing not named here reaches the child, HOME/CONSTRUCT_HOME_OVERRIDE are
  * pinned to a fresh mkdtemp root, and provider-key / model-tier / op-adjacent
  * vars are never inherited by construction — a caller must opt them back in
  * through `overrides`.
@@ -38,7 +38,7 @@ export function sterileSpawnEnv(overrides = {}) {
     LANG: process.env.LANG || "en_US.UTF-8",
     HOME: home,
     USERPROFILE: home,
-    CX_HOME_OVERRIDE: home,
+    CONSTRUCT_HOME_OVERRIDE: home,
     XDG_CONFIG_HOME: join(home, ".config"),
     XDG_DATA_HOME: join(home, ".local", "share"),
     XDG_RUNTIME_DIR: join(home, "run"),
@@ -109,8 +109,8 @@ export function createSterileEnv({ prefix = "construct-test-", env = {} } = {}) 
     const sterileEnv = sterileSpawnEnv({
       HOME: root,
       USERPROFILE: root,
-      CX_HOME_OVERRIDE: root,
-      CX_TOOLKIT_DIR: process.cwd(),
+      CONSTRUCT_HOME_OVERRIDE: root,
+      CONSTRUCT_TOOLKIT_DIR: process.cwd(),
       ...env,
     });
 

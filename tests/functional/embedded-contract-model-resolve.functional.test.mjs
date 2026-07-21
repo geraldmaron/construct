@@ -99,7 +99,7 @@ test('models resolve --json honors the precedence chain', () => {
 
   // Tier-default fires when an env override resolves the requested tier.
   assert.equal(
-    resolveModel(['--tier', 'fast'], { CX_MODEL_FAST: 'anthropic/claude-haiku-4-6' }).data.resolutionSource,
+    resolveModel(['--tier', 'fast'], { CONSTRUCT_MODEL_FAST: 'anthropic/claude-haiku-4-6' }).data.resolutionSource,
     'tier-default',
   );
 

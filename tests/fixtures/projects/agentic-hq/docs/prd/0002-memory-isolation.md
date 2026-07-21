@@ -51,5 +51,5 @@ Postgres RLS policies enforce `tenant_id = current_setting('app.current_tenant')
 
 ## Sources
 
-- `security-scan-finding-2026-05-15.json` (test scan, in `.cx/intake/processed/`)
+- `security-scan-finding-2026-05-15.json` (test scan, in `.construct/intake/processed/`)
 - ADR-0002 (embedding model choice — affects index implementation)

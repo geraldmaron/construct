@@ -11,7 +11,7 @@
   "installProbe": {
     "kind": "venv-marker",
     "runtimeDirEnv": "CONSTRUCT_DOCLING_RUNTIME_DIR",
-    "defaultRuntimeDir": ".cx/runtime/docling",
+    "defaultRuntimeDir": ".construct/runtime/docling",
     "markerFile": ".install-marker.json",
     "versionField": "doclingVersion",
     "description": "Presence of <runtimeDir>/.venv/bin/python plus a .install-marker.json recording the installed docling version. Absence of either is treated as not-installed."

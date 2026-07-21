@@ -7,7 +7,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { retrieve, assembleContext } from '../lib/knowledge/rag.mjs';
-import { embedSync as embedText } from '../lib/storage/embeddings-legacy.mjs';
+import { embedSync as embedText } from '../lib/storage/embeddings-hashing.mjs';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 

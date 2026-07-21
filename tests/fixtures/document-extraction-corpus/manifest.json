@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "scripts/generate-document-extraction-corpus.mjs",
+  "fixtures": [
+    {
+      "id": "01-digital-simple",
+      "file": "01-digital-simple.pdf",
+      "format": "pdf",
+      "kind": "digital-text",
+      "pages": 1,
+      "expectedRoutingTier": "lightweight-parser",
+      "structureSignals": {}
+    },
+    {
+      "id": "02-digital-multipage",
+      "file": "02-digital-multipage.pdf",
+      "format": "pdf",
+      "kind": "digital-text",
+      "pages": 2,
+      "expectedRoutingTier": "lightweight-parser",
+      "structureSignals": {}
+    },
+    {
+      "id": "03-digital-sparse",
+      "file": "03-digital-sparse.pdf",
+      "format": "pdf",
+      "kind": "digital-text-low-density",
+      "pages": 4,
+      "expectedRoutingTier": "docling-local",
+      "structureSignals": {}
+    },
+    {
+      "id": "04-scanned-empty",
+      "file": "04-scanned-empty.pdf",
+      "format": "pdf",
+      "kind": "scanned-image",
+      "pages": 1,
+      "expectedRoutingTier": "docling-local",
+      "structureSignals": {}
+    },
+    {
+      "id": "05-docx-simple",
+      "file": "05-docx-simple.docx",
+      "format": "docx",
+      "kind": "plain-text",
+      "expectedRoutingTier": "lightweight-parser",
+      "structureSignals": {}
+    },
+    {
+      "id": "06-docx-table",
+      "file": "06-docx-table.docx",
+      "format": "docx",
+      "kind": "table-structure",
+      "expectedRoutingTier": "docling-local",
+      "structureSignals": {
+        "hasTable": true
+      }
+    },
+    {
+      "id": "07-docx-image",
+      "file": "07-docx-image.docx",
+      "format": "docx",
+      "kind": "embedded-image",
+      "expectedRoutingTier": "docling-local",
+      "structureSignals": {
+        "hasEmbeddedImage": true
+      }
+    }
+  ]
+}

@@ -36,7 +36,7 @@ test('construct db status reports unavailable without database configuration', (
     XDG_CONFIG_HOME: path.join(home, '.config'),
     XDG_STATE_HOME: path.join(home, '.local', 'state'),
     XDG_CACHE_HOME: path.join(home, '.cache'),
-    CX_ASCII: '1',
+    CONSTRUCT_ASCII: '1',
   };
   const result = spawnSync(process.execPath, ['./bin/construct', 'db', 'status', '--json'], {
     cwd: process.cwd(),

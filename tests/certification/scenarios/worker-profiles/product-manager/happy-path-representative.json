@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 2,
+  "workerProfileId": "product-manager",
+  "capabilityId": "worker-profile.prompt",
+  "mode": "normal",
+  "scenarioKind": "happy-path-representative",
+  "representativeTask": {
+    "prompt": "Rank these five roadmap candidates for next quarter — SSO, bulk CSV export, native mobile app, tenant audit log, and public API v2 — and justify the order.",
+    "inputs": { "candidates": ["SSO", "bulk CSV export", "native mobile app", "tenant audit log", "public API v2"], "horizon": "next quarter" }
+  },
+  "expectedBehavior": {
+    "mustContainAny": ["RICE", "WSJF", "confidence", "counterargument", "sensitivity"],
+    "mustNotContain": [],
+    "mustRefuse": false,
+    "mustEscalateTo": [],
+    "mustStateAssumptions": true
+  }
+}

@@ -7,7 +7,7 @@
  * traces / worker logs, soft for intake / task graphs).
  *
  * traces and worker-logs resolve through the machine-scoped state root
- * (ADR-0066), not project-local `.cx/`, so this suite pins CX_HOME_OVERRIDE
+ * (ADR-0066), not project-local `.construct/`, so this suite pins CONSTRUCT_HOME_OVERRIDE
  * to an isolated tmp dir for the whole file — otherwise state-root writes
  * would land on the real developer machine's $HOME.
  */
@@ -29,14 +29,14 @@ import {
 } from '../lib/resources/budget.mjs';
 import { resolveStateDir } from '../lib/state-root.mjs';
 
-const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-budget-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-budget-home-'));
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 
 let projectRoot;
 
 beforeEach(() => {
-  projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-budget-'));
+  projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-budget-'));
   fs.mkdirSync(path.join(projectRoot, '.git'));
 });
 
@@ -46,22 +46,22 @@ afterEach(() => {
 
 after(() => {
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 // traces/.jsonl and runtime/worker/*.log now resolve through the state root;
-// every other `.cx/...` fixture is still project-local. Route each `rel`
+// every other `.construct/...` fixture is still project-local. Route each `rel`
 // through the same resolver production code uses, so a fixture path always
 // matches where the code under test actually looks.
 
 function resolveFixturePath(rel) {
   const normalized = rel.replace(/\\/g, '/');
-  if (normalized.startsWith('.cx/traces/')) {
-    return path.join(resolveStateDir(projectRoot, 'traces'), normalized.slice('.cx/traces/'.length));
+  if (normalized.startsWith('.construct/traces/')) {
+    return path.join(resolveStateDir(projectRoot, 'traces'), normalized.slice('.construct/traces/'.length));
   }
-  if (normalized.startsWith('.cx/runtime/worker/')) {
-    return path.join(resolveStateDir(projectRoot, 'runtime', 'worker'), normalized.slice('.cx/runtime/worker/'.length));
+  if (normalized.startsWith('.construct/runtime/worker/')) {
+    return path.join(resolveStateDir(projectRoot, 'runtime', 'worker'), normalized.slice('.construct/runtime/worker/'.length));
   }
   return path.join(projectRoot, rel);
 }
@@ -85,39 +85,39 @@ function writeConfig(overrides) {
 }
 
 describe('measureUsage', () => {
-  it('reports zero for an empty .cx tree', () => {
+  it('reports zero for an empty .construct tree', () => {
     const u = measureUsage(projectRoot);
-    assert.equal(u.totalCxBytes, 0);
+    assert.equal(u.totalConstructBytes, 0);
     assert.equal(u.categories['traces'].bytes, 0);
   });
 
   it('sums file sizes per category', () => {
-    writeFile('.cx/traces/2026-05-14.jsonl', 'x'.repeat(1024));
+    writeFile('.construct/traces/2026-05-14.jsonl', 'x'.repeat(1024));
     writeFile('.construct/task-graphs/g1.json', '{}');
     const u = measureUsage(projectRoot);
     assert.equal(u.categories['traces'].bytes, 1024);
     assert.equal(u.categories['task-graphs'].bytes, 2);
-    assert.ok(u.totalCxBytes >= 1024 + 2);
+    assert.ok(u.totalConstructBytes >= 1024 + 2);
   });
 
-  it('reads totalCxMaxMb cap from construct.config.json.resources.disk', () => {
-    writeConfig({ resources: { disk: { totalCxMaxMb: 1 } } });
+  it('reads totalConstructMaxMb cap from construct.config.json.resources.disk', () => {
+    writeConfig({ resources: { disk: { totalConstructMaxMb: 1 } } });
     const u = measureUsage(projectRoot);
-    assert.equal(u.totalCxCap, 1 * 1024 * 1024);
+    assert.equal(u.totalConstructCap, 1 * 1024 * 1024);
   });
 });
 
 describe('reserveOrReject', () => {
   it('returns ok when usage is well under the cap', () => {
-    writeConfig({ resources: { disk: { totalCxMaxMb: 100 } } });
+    writeConfig({ resources: { disk: { totalConstructMaxMb: 100 } } });
     const r = reserveOrReject(projectRoot, 'traces', 1024);
     assert.equal(r.ok, true);
     assert.equal(r.warn, undefined);
   });
 
   it('hard-rejects traces when the total cap is exceeded', () => {
-    writeConfig({ resources: { disk: { totalCxMaxMb: 1 } } });
-    writeFile('.cx/traces/today.jsonl', 'x'.repeat(900_000));
+    writeConfig({ resources: { disk: { totalConstructMaxMb: 1 } } });
+    writeFile('.construct/traces/today.jsonl', 'x'.repeat(900_000));
     const r = reserveOrReject(projectRoot, 'traces', 200_000);
     assert.equal(r.ok, false);
     assert.equal(r.reason, 'budget-exceeded');
@@ -125,7 +125,7 @@ describe('reserveOrReject', () => {
   });
 
   it('soft-warns intake-archive when over cap (load-bearing — never rejects)', () => {
-    writeConfig({ resources: { disk: { totalCxMaxMb: 1 } } });
+    writeConfig({ resources: { disk: { totalConstructMaxMb: 1 } } });
     writeFile('.construct/intake/processed/p1.json', 'x'.repeat(900_000));
     const r = reserveOrReject(projectRoot, 'intake-archive', 200_000);
     assert.equal(r.ok, true);
@@ -134,8 +134,8 @@ describe('reserveOrReject', () => {
   });
 
   it('warns at 80% even when not exceeded', () => {
-    writeConfig({ resources: { disk: { totalCxMaxMb: 1 } } });
-    writeFile('.cx/traces/today.jsonl', 'x'.repeat(850_000));
+    writeConfig({ resources: { disk: { totalConstructMaxMb: 1 } } });
+    writeFile('.construct/traces/today.jsonl', 'x'.repeat(850_000));
     const r = reserveOrReject(projectRoot, 'traces', 1024);
     assert.equal(r.ok, true);
     assert.equal(r.warn, true);
@@ -149,9 +149,9 @@ describe('reserveOrReject', () => {
 
 describe('ensureDiskWrite + planEmergencyReclaim', () => {
   it('emergency-reclaims oldest hard-reject files to allow a trace write', () => {
-    writeConfig({ resources: { disk: { totalCxMaxMb: 1 } } });
-    const oldTrace = writeFile('.cx/traces/old.jsonl', 'x'.repeat(520_000), -7 * 24 * 60 * 60 * 1000);
-    writeFile('.cx/traces/new.jsonl', 'x'.repeat(520_000));
+    writeConfig({ resources: { disk: { totalConstructMaxMb: 1 } } });
+    const oldTrace = writeFile('.construct/traces/old.jsonl', 'x'.repeat(520_000), -7 * 24 * 60 * 60 * 1000);
+    writeFile('.construct/traces/new.jsonl', 'x'.repeat(520_000));
     const gate = ensureDiskWrite(projectRoot, 'traces', 200_000);
     assert.equal(gate.ok, true);
     assert.ok((gate.reclaimed?.bytesFreed ?? 0) > 0);
@@ -159,17 +159,17 @@ describe('ensureDiskWrite + planEmergencyReclaim', () => {
   });
 
   it('planEmergencyReclaim targets oldest traces and worker logs first', () => {
-    writeConfig({ resources: { disk: { totalCxMaxMb: 1 } } });
-    writeFile('.cx/traces/a.jsonl', 'a'.repeat(300_000), -3 * 24 * 60 * 60 * 1000);
-    writeFile('.cx/traces/b.jsonl', 'b'.repeat(300_000), -1 * 24 * 60 * 60 * 1000);
-    writeFile('.cx/runtime/worker/job.stdout.log', 'c'.repeat(300_000), -2 * 24 * 60 * 60 * 1000);
+    writeConfig({ resources: { disk: { totalConstructMaxMb: 1 } } });
+    writeFile('.construct/traces/a.jsonl', 'a'.repeat(300_000), -3 * 24 * 60 * 60 * 1000);
+    writeFile('.construct/traces/b.jsonl', 'b'.repeat(300_000), -1 * 24 * 60 * 60 * 1000);
+    writeFile('.construct/runtime/worker/job.stdout.log', 'c'.repeat(300_000), -2 * 24 * 60 * 60 * 1000);
     const actions = planEmergencyReclaim(projectRoot, 500_000);
     assert.ok(actions.length >= 2);
     assert.match(actions[0].path, /a\.jsonl$/);
   });
 
   it('still rejects when emergency reclaim cannot free enough space', () => {
-    writeConfig({ resources: { disk: { totalCxMaxMb: 1 } } });
+    writeConfig({ resources: { disk: { totalConstructMaxMb: 1 } } });
     writeFile('.construct/intake/processed/p1.json', 'x'.repeat(950_000));
     const gate = ensureDiskWrite(projectRoot, 'traces', 200_000);
     assert.equal(gate.ok, false);
@@ -180,8 +180,8 @@ describe('ensureDiskWrite + planEmergencyReclaim', () => {
 describe('planPrune + executePrune', () => {
   it('plans removal of traces older than tracesMaxDays', () => {
     writeConfig({ resources: { disk: { tracesMaxDays: 7 } } });
-    writeFile('.cx/traces/old.jsonl', 'old', -30 * 24 * 60 * 60 * 1000);
-    writeFile('.cx/traces/new.jsonl', 'new');
+    writeFile('.construct/traces/old.jsonl', 'old', -30 * 24 * 60 * 60 * 1000);
+    writeFile('.construct/traces/new.jsonl', 'new');
     const actions = planPrune(projectRoot);
     const tracesActions = actions.filter((a) => a.category === 'traces');
     assert.equal(tracesActions.length, 1);
@@ -210,7 +210,7 @@ describe('planPrune + executePrune', () => {
 
   it('executePrune removes every planned file and returns bytesFreed', () => {
     writeConfig({ resources: { disk: { tracesMaxDays: 1 } } });
-    const oldTrace = writeFile('.cx/traces/old.jsonl', 'x'.repeat(500), -7 * 24 * 60 * 60 * 1000);
+    const oldTrace = writeFile('.construct/traces/old.jsonl', 'x'.repeat(500), -7 * 24 * 60 * 60 * 1000);
     const actions = planPrune(projectRoot);
     const result = executePrune(actions);
     assert.equal(result.removed.length, 1);
@@ -219,7 +219,7 @@ describe('planPrune + executePrune', () => {
   });
 
   it('is a no-op when no files are over caps', () => {
-    writeFile('.cx/traces/fresh.jsonl', 'x');
+    writeFile('.construct/traces/fresh.jsonl', 'x');
     const actions = planPrune(projectRoot);
     assert.deepEqual(actions, []);
   });

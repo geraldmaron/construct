@@ -3,7 +3,7 @@
  *
  * Covers entity CRUD, bidirectional relationship linking, observation
  * association, and the 500-entity cap enforced by the store. Temp-dir
- * fixtures isolate runs from any real ~/.cx state. Run via `npm test`.
+ * fixtures isolate runs from any real ~/.construct state. Run via `npm test`.
  */
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';

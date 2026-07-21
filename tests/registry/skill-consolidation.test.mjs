@@ -1,7 +1,8 @@
 /**
  * tests/registry/skill-consolidation.test.mjs — bound-orphan triage honesty for alignment census.
  *
- * B-composer role flavors are registry orphans by design (prompt-composer reachability).
+ * B-composer perspective flavors are registry orphans by design because they
+ * remain reachable through Worker Profile prompt composition.
  * Only C-merge and D-review rows are actionable true orphans.
  */
 
@@ -17,7 +18,7 @@ const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
 test('triageBoundOrphans separates composer-reachable from true orphans', () => {
   const triage = triageBoundOrphans({ rootDir: root });
   assert.ok(triage.fileCount >= 140, 'expected full skill tree on disk');
-  assert.ok(triage.composerReachableCount >= 40, 'role flavors should classify as B-composer');
+  assert.ok(triage.byCategory['C-merge'].length >= 30, 'Worker Profile perspectives classify as C-merge under 2.0');
   assert.equal(
     triage.boundOrphanCount,
     triage.composerReachableCount + triage.aBindCount + triage.trueOrphanCount,

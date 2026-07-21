@@ -1,0 +1,218 @@
+{
+  "generatedAt": "2026-07-18T00:48:03.616Z",
+  "repoRoot": "/Users/geralddagher/Developer/Projects/construct/.claude/worktrees/workspace-control-plane",
+  "nodeVersion": "v25.9.0",
+  "phases": {
+    "coldBuildAndStorage": {
+      "sandbox": "/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/spikeA-coldbuild-xRDPO1",
+      "coldBuildNoCoChangeMs": 423.4935,
+      "rebuildWithCoChangeMs": 653.987625,
+      "warmRebuildNoCoChangeMs": 426.691333,
+      "nodeCount": 2371,
+      "edgeCount": 6304,
+      "nodesByType": {
+        "capability": 37,
+        "contract": 36,
+        "doc": 382,
+        "embed": 4,
+        "file": 900,
+        "provider": 23,
+        "rule": 2,
+        "skill": 12,
+        "specialist": 13,
+        "surface": 6,
+        "test": 930,
+        "tool": 15,
+        "workflow": 11
+      },
+      "edgesByRel": {
+        "uses": 176,
+        "exposes": 49,
+        "governed_by": 8,
+        "embeds": 11,
+        "documents": 126,
+        "owned_by": 39,
+        "imports": 4297,
+        "realizes": 1464,
+        "requires": 41,
+        "reads": 7,
+        "validates": 60,
+        "secures": 26
+      },
+      "graphDbPath": "/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/spikeA-coldbuild-xRDPO1/.construct/projects/55c8bbda5c860ea9333f2bf8/graph/graph.db",
+      "graphDbBytes": 5611520,
+      "legacyJsonlSnapshotBytes": 1319427
+    },
+    "queryLatency": {
+      "hubId": "file:lib/config-dir.mjs",
+      "cliRoundTrip": {
+        "n": 20,
+        "min": 140.805083,
+        "max": 147.286333,
+        "mean": 143.65094370000003,
+        "p50": 143.817125,
+        "p95": 147.286333
+      },
+      "inProcessQueryUp": {
+        "n": 50,
+        "min": 67.007708,
+        "max": 70.303208,
+        "mean": 68.28763668000002,
+        "p50": 68.240584,
+        "p95": 69.531958
+      },
+      "queryDownDepthProbe": [
+        {
+          "maxDepth": 1,
+          "ms": 71.264625,
+          "rows": 154,
+          "timedOut": false
+        },
+        {
+          "maxDepth": 2,
+          "ms": 493.064417,
+          "rows": 656,
+          "timedOut": false
+        },
+        {
+          "maxDepth": 3,
+          "ms": 2037.620166,
+          "rows": 921,
+          "timedOut": false
+        },
+        {
+          "maxDepth": 5,
+          "ms": null,
+          "rows": null,
+          "timedOut": true
+        },
+        {
+          "maxDepth": 8,
+          "ms": null,
+          "rows": null,
+          "timedOut": true
+        }
+      ],
+      "pathQuery": {
+        "from": "file:bin/construct",
+        "to": "file:lib/graph/store.mjs",
+        "found": true,
+        "depth": 2,
+        "probe": [
+          {
+            "maxDepth": 3,
+            "ms": 4301.596084,
+            "found": true,
+            "depth": 2,
+            "timedOut": false
+          }
+        ]
+      },
+      "cyclesDefaultRelsMs": 65.099,
+      "cyclesDefaultRelsCount": 0,
+      "orphansMs": 18.203125,
+      "orphansCount": 486,
+      "importsCyclesProbe": null,
+      "importsCyclesProbeTimedOut": true
+    },
+    "impactCorrectness": {
+      "perNode": [
+        {
+          "changedId": "file:lib/graph/normalize.mjs",
+          "oracleCount": 72,
+          "storeCount": 72,
+          "match": true,
+          "missingFromStore": [],
+          "extraInStore": [],
+          "ms": 2378.813458,
+          "timedOut": false
+        },
+        {
+          "changedId": "file:lib/graph/relational/schema-version.mjs",
+          "oracleCount": 72,
+          "storeCount": 72,
+          "match": true,
+          "missingFromStore": [],
+          "extraInStore": [],
+          "ms": 1681.523625,
+          "timedOut": false
+        },
+        {
+          "changedId": "file:lib/config-dir.mjs",
+          "oracleCount": 550,
+          "storeCount": null,
+          "match": null,
+          "timedOut": true,
+          "ms": null
+        }
+      ],
+      "allMatch": true,
+      "timedOutCount": 1
+    },
+    "incrementalUpdate": {
+      "updateStats": {
+        "n": 10,
+        "min": 212.48625,
+        "max": 238.314,
+        "mean": 220.69656250000003,
+        "p50": 220.1055,
+        "p95": 238.314
+      },
+      "noopMs": 215.981042,
+      "noopApplied": 0,
+      "noopTrustIncremental": true,
+      "lastNodeFound": true
+    },
+    "cycleDetection": {
+      "detected": true,
+      "totalCycleMembers": 2
+    },
+    "orphanDetection": {
+      "detected": true,
+      "totalOrphanedCapabilities": 12
+    },
+    "reconciliation": {
+      "driftDetected": true,
+      "removedAfterApply": true,
+      "secondReconcileEmpty": true,
+      "reconcileMs": 435.446167,
+      "secondReconcileMs": 348.037125,
+      "driftSummary": {
+        "nodes": {
+          "added": [],
+          "removed": [
+            "capability:spikeA-cycle-a",
+            "capability:spikeA-incremental-0",
+            "capability:spikeA-incremental-1",
+            "capability:spikeA-incremental-2",
+            "capability:spikeA-incremental-3",
+            "capability:spikeA-incremental-4",
+            "capability:spikeA-incremental-5",
+            "capability:spikeA-incremental-6",
+            "capability:spikeA-incremental-7",
+            "capability:spikeA-incremental-8",
+            "capability:spikeA-incremental-9",
+            "capability:spikeA-manual-only",
+            "capability:spikeA-orphan",
+            "workflow:spikeA-cycle-b"
+          ],
+          "changed": []
+        },
+        "edges": {
+          "added": [],
+          "removed": [
+            "capability:spikeA-cycle-a|embeds|workflow:spikeA-cycle-b",
+            "workflow:spikeA-cycle-b|embeds|capability:spikeA-cycle-a"
+          ],
+          "changed": []
+        }
+      }
+    },
+    "jsonlFallback": {
+      "sqliteAvailableOnThisRuntime": true,
+      "nodeVersionsAvailableInEnv": "v22.23.1 (fnm-managed) and v25.9.0 (system) — both >=22.5; no Node <22.5 binary found in this environment",
+      "jsonlFallbackFunctionsExercised": true,
+      "caveat": "This exercises writeGraphJsonl/loadGraphJsonl via the targetId branch (same functions the !sqliteAvailable() branch calls, per lib/graph/store.mjs writeGraph/loadGraph), NOT a live run under an actual Node <22.5 process — no such binary was available to spawn in this environment."
+    }
+  }
+}

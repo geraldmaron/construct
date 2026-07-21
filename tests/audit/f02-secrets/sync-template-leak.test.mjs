@@ -2,7 +2,7 @@
  * tests/audit/f02-secrets/sync-template-leak.test.mjs — F02 regression guard for the
  * OpenCode sync-template secret leak (CX-AUDIT-SECRETS-004).
  *
- * resolveTemplateStrings (scripts/sync-specialists.mjs) must check its secret-suffix
+ * resolveTemplateStrings (scripts/sync-worker-profiles.mjs) must check its secret-suffix
  * guard (TOKEN/SECRET/API_KEY/PUBLIC_KEY/PRIVATE_KEY) before falling back to a raw
  * process.env[name] lookup, so a secret-suffixed placeholder always resolves to
  * OpenCode's `{env:NAME}` reference rather than the live shell value — the same
@@ -18,7 +18,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { resolveTemplateStrings } from '../../../scripts/sync-specialists.mjs';
+import { resolveTemplateStrings } from '../../../scripts/sync-worker-profiles.mjs';
 import { writeOpenCodeConfig } from '../../../lib/opencode-config.mjs';
 
 const POSIX = process.platform !== 'win32';

@@ -1,7 +1,7 @@
 /**
  * tests/providers/fixtures/failing-provider.mjs — plugin provider fixture.
  *
- * Registered via a project `.cx/providers.json` override in
+ * Registered via a project `.construct/providers.json` override in
  * provider-commands.test.mjs to exercise `provider health` against a
  * provider whose health probe always fails, without touching any real
  * built-in provider or its credentials.

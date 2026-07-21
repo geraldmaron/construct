@@ -16,6 +16,7 @@ import { spawnSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 import { parseTapFailedFiles } from '../../scripts/graph-impact-shadow.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';

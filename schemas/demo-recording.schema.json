@@ -13,6 +13,7 @@
     "playwrightConfig": { "type": "string" },
     "baseUrl": { "type": "string", "format": "uri" },
     "project": { "type": "string" },
+    "recordingMode": { "enum": ["video", "screencast"] },
     "skipWebServer": { "type": "boolean" },
     "timeout": { "type": "number" },
     "webServer": {

@@ -40,17 +40,25 @@ Use this skill when conducting a compliance review before shipping features that
 
 ### Accessibility
 
-- [ ] WCAG 2.1 AA compliance for public-facing surfaces
-- [ ] Screen reader and keyboard navigation tested
+- [ ] WCAG 2.2 AA for public-facing surfaces (measure contrast; exercise keyboard + SR)
+- [ ] Contractual Section 508 / EN 301 549 obligations identified or marked N/A
+- [ ] Screen reader and keyboard navigation tested with evidence
+
+## Artifact output
+
+Prefer `templates/docs/compliance-memo.md` for the obligation→control register.
+Prefer `templates/docs/dpia-or-privacy-assessment.md` when personal data processing is novel or high-risk.
+When case law or reporter cites appear, run `skills/compliance/case-law-research.md` (CourtListener citation verify; never invent holdings).
+Call `get_skill("docs/artifact-authorship")` before drafting; follow `rules/common/human-voice.md` for prose (keep legal shall/must and quoted statute exact).
 
 ## Review Process
 
 1. **Inventory**: list all data types collected, stored, or processed by the feature
-2. **Classify**: map each data type to a regulation (GDPR, CCPA, HIPAA, PCI-DSS, etc.)
+2. **Classify**: map each data type to a regulation (GDPR, CCPA, HIPAA, PCI-DSS, etc.) using **primary** regulation text
 3. **Gap analysis**: compare current implementation against regulatory requirements
-4. **Remediation**: fix gaps before shipping, document accepted risks
-5. **Evidence**: collect audit evidence (test results, screenshots, config exports)
-6. **Sign-off**: document the reviewer, date, and scope of the review
+4. **Remediation**: fix gaps before shipping, document accepted risks in Remediation Plan
+5. **Evidence**: collect audit evidence (test results, screenshots, config exports, verified cites)
+6. **Sign-off**: document the reviewer, counsel gate, date, and scope — never claim “compliant” without counsel
 
 ## Common Compliance Gaps
 
@@ -60,3 +68,5 @@ Use this skill when conducting a compliance review before shipping features that
 - Privacy policy silent on AI processing activities
 - Deletion endpoint that soft-deletes but never hard-deletes
 - Backup retention that exceeds the documented data retention period
+- Fabricated or unverified case-law citations in reviews
+- Marketing claims (“GDPR compliant”, “enterprise-ready”) without counsel gate

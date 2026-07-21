@@ -2,7 +2,7 @@
  * tests/telemetry-client.test.mjs — shared telemetry adapter selection and export contracts.
  *
  * Local trace writes resolve through the machine-scoped state root
- * (ADR-0066), so CX_HOME_OVERRIDE is pinned for the whole file to keep them
+ * (ADR-0066), so CONSTRUCT_HOME_OVERRIDE is pinned for the whole file to keep them
  * off the real developer machine's $HOME.
  */
 import assert from 'node:assert/strict';
@@ -15,12 +15,12 @@ import { createTelemetryClient, resolveTraceBackend } from '../lib/telemetry/cli
 import { resolveStateDir } from '../lib/state-root.mjs';
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-telemetry-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 test.after(() => {
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 test('resolveTraceBackend defaults to local and preserves legacy remote alias', () => {

@@ -4,9 +4,9 @@
  *
  * Pandoc copies paragraph and character styles from a --reference-doc when it
  * produces docx, so construct-branded exports render in distribution typography:
- * Space Grotesk for headings and body (the brand sans) and JetBrains Mono for
- * code. The brand is monochrome ink, so typography — not color — carries the
- * branding. Rather than hand-author an opaque binary, this generator starts from
+ * Plus Jakarta Sans for headings and body (the brand sans) and JetBrains Mono for
+ * code. The brand is monochrome ink with a slate-teal evidence accent, so
+ * typography — not decorative color — carries the branding. Rather than hand-author an opaque binary, this generator starts from
  * pandoc's own default reference doc and patches only the theme fonts and the
  * Verbatim code font, so templates/distribution/construct-reference.docx stays
  * reproducible and auditable: rerun this script to refresh it after a pandoc
@@ -26,7 +26,7 @@ import { spawnSync } from 'node:child_process';
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const TARGET = path.join(REPO_ROOT, 'templates', 'distribution', 'construct-reference.docx');
 
-const SANS = 'Space Grotesk';
+const SANS = 'Plus Jakarta Sans';
 const MONO = 'JetBrains Mono';
 
 function run(cmd, args, opts = {}) {

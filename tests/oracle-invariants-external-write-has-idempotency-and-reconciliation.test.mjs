@@ -83,9 +83,10 @@ test('check(): a missing producer file degrades that entry to collection-error w
   assert.equal(result.status, 'collection-error');
 });
 
-test('check(): the real repo\'s known external-write producers currently satisfy every required capability', async () => {
+test('check(): the real repo on feat/workspace-control-plane surfaces standing external-write gaps (sent-log, approval-queue)', async () => {
   const result = await check({});
-  assert.equal(result.status, 'passed');
+  assert.equal(result.status, 'failed');
   assert.ok(result.evaluated >= 4);
-  assert.equal(result.violations.length, 0);
+  assert.ok(result.violations.some((v) => v.producer === 'sent-log'));
+  assert.ok(result.violations.some((v) => v.producer === 'approval-queue'));
 });

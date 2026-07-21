@@ -8,7 +8,7 @@ cx_fixture_source: templates/docs/customer-profile.md
 
 ## Snapshot
 
-This paragraph supports the Snapshot section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Snapshot section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Snapshot section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Snapshot section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Snapshot section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Snapshot section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Active pain points
 
@@ -28,4 +28,4 @@ Fixture content for Evidence links.
 
 ## References
 
-- https://example.com/fixture-source (accessed 2026-06-22)
+- [Example fixture source](https://example.com/fixture-source) (accessed 2026-06-22)

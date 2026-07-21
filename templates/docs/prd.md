@@ -1,215 +1,282 @@
-# PRD: {title}
-
-- **Date**: {YYYY-MM-DD}
-- **Owner**: {name}
-- **Status**: draft | in-review | approved | shipped | deprecated
-
-<!--
-Use this for a product capability, user workflow, or customer-facing requirement set.
-Use meta-prd.md instead when defining the requirements for a product system, agent,
-process, template, evaluation loop, or operating model.
-
-Before drafting, read rules/common/framing.md.
-
-Owning specialist: cx-product-manager (see rules/common/doc-ownership.md).
-Construct must route PRD authoring to cx-product-manager rather than drafting directly.
-doing so is how requirements traceability, user grounding, and external research fire.
-
-Write with a balance of short paragraphs, tables, and bullets. Bullets are for scans,
-not the whole document. Keep em dashes rare; prefer commas, periods, or parentheses.
--->
-
-## Summary
-This PRD defines {title} for {primary user or customer segment}. It explains the current friction, the measurable outcome this work should unlock, and the smallest shippable path to prove the change works. Replace this paragraph with evidence-backed product context before review.
+---
+title: "{title}"
+subtitle: "{one-line outcome or scope}"
+status: draft
+owner: "{name}"
+artifactType: prd
+date: {YYYY-MM-DD}
+version: "0.1"
+doc_id: PRD-{NNN}
+tags: []
+contributors: []
+approvers: []
+---
 
 <!--
-One paragraph (3-5 sentences) that a busy reader can use as the whole PRD.
-What the change is, who it's for, why now, and what changes when it ships.
-No solutions in this section that aren't decided. No ticket IDs. No team names.
+Customer-facing product capability, user workflow, or requirement set.
+Use meta-prd.md for product-system / agent / process requirements.
+Use prd-platform.md for internal platform / API / SDK consumers.
+
+Owning specialist: product-manager (rules/common/doc-ownership.md).
+Before drafting: rules/common/framing.md + get_skill("docs/artifact-authorship")
+  + get_skill("perspectives/product-manager").
+
+HIERARCHY (mandatory; skeleton bullets fail review):
+  Phase → one or more Requirements (FR-<phase>.<n>)
+  Requirement → one or more Acceptance Criteria (AC-<phase>.<n>.<k>) listed
+  under that requirement (not only referenced by id).
+
+PHASE WHY? (mandatory):
+  Every phase needs a human Why?: purpose, who benefits, what risk it reduces.
+  Put Why? in the Phases roadmap table and as **Why?** prose under each
+  ### Phase N heading (before FRs). Name roles/contexts, not a monolithic "user."
+
+LAYOUT (mandatory; walls of tables fail review):
+  Mix prose, short lists, compact tables, and diagrams. Prefer LR Mermaid
+  flowcharts with short labels. Don't restate Phase on every FR; phase is
+  the ### heading under Requirements; area is the #### subsection.
+  Prose must carry real thought. Bullet theater fails review.
+
+INCLUSIVE / HUMAN FRAMING:
+  Write for people in named roles and contexts. Avoid ableist or gendered
+  defaults. Accessibility is product quality (WCAG targets where UI ships),
+  not a footnote. Impact framing: who is helped or harmed if this ships wrong.
+
+VOICE (human, not corporate-LLM) — rules/common/human-voice.md +
+  get_skill("docs/artifact-authorship") Human voice bar:
+  Short beats. Prefer contractions (don't, won't, can't, isn't, we're, it's)
+  except where formal negation is load-bearing (shall not, AC precision).
+  Avoid spaced em dashes; prefer commas, periods, colons, or parentheses.
+  Avoid AI tells: delve, landscape (outside the section title), robust,
+  leverage, "it's important to note", "In today's…", "This ensures that…".
+
+Refuse fabrication. Prefer unknown / [unverified] with owner + decision-by date.
+When ordering Goals or phase priority is contested, use
+strategy/prioritization-methods rather than gut ranking.
+Multi-persona tension (researcher, architect, privacy/legal, a11y, ops/QA,
+engineer, reviewer) belongs in Requirements, Risks, and Open questions, not
+as name-drops in Contributors alone.
 -->
+
+## TL;DR
+
+{3–5 sentence executive brief in human voice: what changes, which named roles
+it serves, why now, what “done” looks like for the decision-maker. No undecided
+solutions. No ticket IDs. No invented team or customer names.}
 
 ## Background
-Today, {current workflow or system} creates avoidable friction for {affected users}. The evidence that matters for this PRD should include observed behavior, quantitative signals, or qualitative research, and the links below should let reviewers verify the claim without relying on memory.
 
-<!--
-Context the reader needs to evaluate this PRD without asking around.
-Include relevant prior work (linked PRDs, ADRs, RFCs), observed signals, and
-the current state of the user experience or system. State what is already
-true today so the reader can compare against the proposed change.
+{1–2 short paragraphs: current workflow, prior decisions, and what evidence exists. Then a compact evidence table, not a dump of process docs.}
 
-Cite evidence: support tickets, interviews, telemetry, sales calls, research.
-Avoid roadmap-speak ("this is a Q3 priority"); state what is happening to users.
--->
+| Evidence | What it shows | Link / id |
+|---|---|---|
+| {interview / ticket / telemetry} | {claim} | {path or URL + access date} |
+| {second independent source} | {claim} | {…} |
+
+If fewer than two sources exist, mark **research-required** and open a research task before locking scope.
 
 ## Problem
-{Affected users} cannot reliably achieve {desired outcome} because {constraint or failure mode}. The problem is important now because the current workaround is costly, error-prone, or blocks adoption for a clearly named segment.
 
-<!--
-The specific user or business outcome that is currently blocked. One or two
-paragraphs. State the pain, not the solution.
+{Affected users} can't reliably achieve {desired outcome} because {constraint or failure mode}.
 
-Must NOT reference:
-- Jira / Linear ticket IDs or "this came from ticket X"
-- Roadmap items, OKR line items, or quarterly goals
-- "The team decided we should build this"
-
-Must reference:
-- Observed user behavior, quantitative signals, or qualitative evidence
-- The specific outcome that is not currently achievable
-- The constraint that makes this non-trivial today
--->
-
-## Goals
-<!--
-What success looks like, in outcome terms. Three to five goals max. Each
-goal is the *change* you want, not the activity. Order by importance — when
-the ordering is contested or drives what ships first, apply an explicit
-method (see the strategy/prioritization-methods skill) rather than ranking
-on gut feel.
-
-Examples:
-- Reduce p95 onboarding time from 12m to under 4m for new accounts.
-- Eliminate the manual reconciliation step our top 20 customers do every Monday.
-- Halve the support volume for "where is my data" questions.
--->
-
-## Outcome
-<!--
-What is concretely different for users, the business, or the system once this
-ships and is adopted. This is the observable end state: written from the
-user's perspective when possible. The acceptance criteria below should be the
-falsifiable evidence that this outcome was achieved.
-
-A reader should be able to compare the current state (Background) to this
-section and see the delta in plain language.
--->
-
-## User flow
+Write pain in prose, not a solution pitch. Cite observed behavior or mark `[unverified]`.
 
 ```mermaid
-flowchart TD
-  A[User starts] --> B{Current friction?}
-  B -->|Yes| C[Proposed path]
-  B -->|No| D[Existing path]
-  C --> E[Success outcome]
+flowchart LR
+  A[Start] --> B{Friction?}
+  B -->|yes| C[Workaround]
+  B -->|no| D[Path]
+  C --> E[Blocked]
   D --> E
 ```
 
-## In scope and out of scope
+*Figure: where the user journey breaks today. Keep labels short; prefer LR layout.*
 
-| | Description |
-|---|---|
-| **In scope** | <what this PRD covers and commits to ship> |
-| **Out of scope** | <related work explicitly deferred: name the reason> |
-| **Adjacent (deferred)** | <work that's a natural follow-up but not in this PRD> |
+## Outcomes - Goals & Non-Goals
 
-<!--
-Be specific. "Authentication" is too vague; "OAuth login for the web dashboard,
-not for the CLI" is right. The Out of scope list is a tool for protecting
-schedule and reviewer attention: use it.
--->
+**Goals** (outcome change, not activity; 3–5 max):
+
+1. {Measurable or observable outcome for a named segment}
+2. {…}
+3. {…}
+
+**Non-goals** (protect schedule):
+
+- {explicitly out of scope}: {one-line why}
+- {adjacent follow-up}: {one-line why}
+
+## Why This Matters Now
+
+<!-- Timing economics: revenue, upside, market, cost of delay, competitive window, compliance. -->
+
+{2–4 sentences: the timing thesis in prose. Name what compounds if we wait.}
+
+Then the compact timing table (do not expand into six separate essays):
+
+| Timing dimension | Estimate / window | Source |
+|---|---|---|
+| Revenue at risk | {ARR/pipeline/$ or unknown} | {URL+date / unknown; owner: {name} by {YYYY-MM-DD}} |
+| Upside / opportunity window | {window end or unknown} | {…} |
+| Market timing | {season / shift or unknown} | {…} |
+| Cost of delay | {$ / compounding harm or unknown} | {…} |
+| Competitive window | {who moves / when or unknown} | {see Competitive} |
+| Compliance / legal deadline | {date / regulation or unknown} | {recruit privacy/legal if yes} |
+
+## Competitive Landscape & Financial Considerations
+
+### Competitive landscape
+
+{2–3 sentences on how alternatives solve (or fail) this job. Then a small matrix.}
+
+| Competitor / alternative | Dimension | Their approach | Our stance | Source |
+|---|---|---|---|---|
+| {name or unknown} | price / workflow / trust | {observed} | match / differentiate / defer | {URL+date or unknown} |
+
+### Financial considerations
+
+{One short paragraph on structural economics. Refuse point ROI.}
+
+| Item | Low | Base | High | Source |
+|---|---|---|---|---|
+| Build / run cost | unknown | unknown | unknown | [unverified]; owner: {name} by {YYYY-MM-DD} |
+| Unit economics | unknown | unknown | unknown | [unverified] |
+| Expected value / ROI | unknown | unknown | unknown | [unverified] until model exists |
 
 ## Phases
 
+<!-- Roadmap only. Don't list every FR id here; that lives under Requirements. -->
+
+| Phase | Name | Why? (human purpose) | Ships when | Status |
+|---|---|---|---|---|
+| 1 | {name} | {who benefits + what risk this phase reduces} | {exit in one line} | not started |
+| 2 | {name} | {…} | {…} | not started |
+| 3 | {name} | {…} | {…} | deferred |
+
+```mermaid
+flowchart LR
+  P1[Phase 1] --> P2[Phase 2]
+  P2 --> P3[Phase 3]
+```
+
+## Requirements
+
 <!--
-Phases are how this work ships, not how it's organized internally. Each phase
-is independently shippable and provides observable user value (or a clearly
-defined platform capability). Avoid "phase 1: backend, phase 2: frontend".
-that's a task list, not a phasing.
-
-Each phase below holds its own goal, status, functional requirements (FR),
-and non-functional requirements (NFR), with acceptance criteria written
-inline next to each requirement. Use `FR-<phase>.<n>` and `NFR-<phase>.<n>`
-so requirements can be referenced from reviews and tests.
-
-Status values: not started | in progress | shipped | deferred.
-
-NFR categories to consider: performance, reliability, security, privacy,
-accessibility, observability, compliance, cost. Numeric targets where possible.
+Nest once: ### Phase N: Name, then #### Area, then ##### FR-n.m.
+Do NOT repeat **Phase**: N on every FR. List Acceptance criteria under each FR.
+Each phase opens with **Why?** (human purpose) before the first FR.
 -->
 
-### Phase 1: <name>
+### Phase 1: {name}
 
-- **Goal**: <what this phase delivers>
-- **Status**: not started
+**Why?** {2–4 sentences: purpose for named roles/contexts, who benefits, what
+risk this phase reduces. Include substantive tension from recruited personas
+(e.g. privacy retention, a11y keyboard path, ops revoke SLO), not name-drops.}
 
-**Functional**
+{One sentence: user-observable value this phase unlocks.}
 
-- **FR-1.1**: <imperative statement of what the system must do>
-  - *Acceptance*: <observable, falsifiable condition a reviewer can check without asking the author>
-- **FR-1.2**: <...>
-  - *Acceptance*: <...>
+#### {Area: e.g. Access control}
 
-**Non-functional**
+##### FR-1.1: {imperative system obligation}
 
-- **NFR-1.1**: <category>: <target with number>
-  - *Acceptance*: <how this is measured and what counts as pass>
+{Paragraph: what the system must do, for whom, under what constraints. Link Background evidence.}
 
-### Phase 2: <name>
+**Acceptance criteria**
 
-- **Goal**: <what this phase delivers>
-- **Status**: not started
+1. **AC-1.1.1**: {stranger-checkable condition}. *Verify:* {manual / automated / review}.
+2. **AC-1.1.2**: {condition}. *Verify:* {…}.
 
-**Functional**
+*NFR:* {privacy / a11y / perf as applicable, or n/a}
 
-- **FR-2.1**: <...>
-  - *Acceptance*: <...>
-- **FR-2.2**: <...>
-  - *Acceptance*: <...>
+##### FR-1.2: {…}
 
-**Non-functional**
+{Paragraph depth.}
 
-- **NFR-2.1**: <category>: <target>
-  - *Acceptance*: <...>
+**Acceptance criteria**
 
-### Phase 3: <name>
+1. **AC-1.2.1**: {condition}. *Verify:* {…}.
 
-- **Goal**: <what this phase delivers>
-- **Status**: not started
+#### {Area: e.g. Audit}
 
-**Functional**
+##### FR-1.3: {…}
 
-- **FR-3.1**: <...>
-  - *Acceptance*: <...>
+{Paragraph depth.}
 
-**Non-functional**
+**Acceptance criteria**
 
-- **NFR-3.1**: <category>: <target>
-  - *Acceptance*: <...>
+1. **AC-1.3.1**: {condition}. *Verify:* {…}.
+2. **AC-1.3.2**: {condition}. *Verify:* {…}.
 
-## Success metrics
-<!--
-How we will know this worked in production over time, beyond the per-requirement
-acceptance criteria. Leading vs. lagging. Avoid vanity metrics.
--->
+### Phase 2: {name}
 
-| Metric | Baseline | Target |
-|---|---|---|
-| {name} | {current} | {goal} |
+**Why?** {Human purpose for this phase: who benefits, what risk it reduces.}
 
-## Constraints
-<!--
-Budget, timeline, platform, team, legal, technical debt: anything that shapes
-the solution and isn't a requirement.
--->
+{One sentence goal.}
 
-## Dependencies
-<!--
-Teams, services, contracts, data sources, vendor timelines. Each dependency
-should name an owner and the date it must be ready by.
--->
+#### {Area}
 
-## Risks and mitigations
+##### FR-2.1: {…}
 
-| Risk | Likelihood | Impact | Mitigation |
+{Paragraph depth.}
+
+**Acceptance criteria**
+
+1. **AC-2.1.1**: {condition}. *Verify:* {…}.
+
+## Acceptance Criteria
+
+<!-- Index of every AC for scanning and release gates. Detail lives under Requirements. -->
+
+| AC id | FR id | Criterion (stranger-checkable) | Verification method |
 |---|---|---|---|
-| <risk> | low / med / high | low / med / high | <how this is reduced or what we accept> |
+| AC-1.1.1 | FR-1.1 | {same text as under FR-1.1} | automated |
+| AC-1.1.2 | FR-1.1 | {…} | … |
+| AC-1.2.1 | FR-1.2 | {…} | … |
+| AC-2.1.1 | FR-2.1 | {…} | … |
 
-## Open questions
+## Success Metrics
 
-| Question | Owner | Decision needed by |
+{One sentence on how you will know the bet worked.}
+
+| Metric | Type | Baseline | Target | Owner | Source |
+|---|---|---|---|---|---|
+| {name} | leading / lagging | {or unknown} | {or unknown} | {name} | {path/URL or [unverified]} |
+
+## Risks
+
+### Delivery and product risks
+
+{Short prose on the top delivery risks, then the table.}
+
+| Risk | L | I | Mitigation or accept-with-rationale |
+|---|---|---|---|
+| {risk} | low / med / high | low / med / high | {action} |
+
+### Legal, privacy, and compliance triggers
+
+Complete even if the requester never mentioned legal. Route fired rows to
+`security.privacy` / `security.legal-compliance` before approval.
+
+| Trigger | Present? | Data / activity | Specialist | Gate before ship |
+|---|---|---|---|---|
+| PII / accounts / identity | yes / no / unknown | {what} | security.privacy | retention + deletion path named |
+| Payments / money movement | yes / no / unknown | {what} | security.legal-compliance | PCI/contract controls or N/A |
+| Contracts / ToS / licenses | yes / no / unknown | {what} | security.legal-compliance | counsel or policy owner named |
+| Minors / sensitive categories | yes / no / unknown | {what} | privacy + legal-compliance | explicit block or approved design |
+| AI processing / model training | yes / no / unknown | {what} | security.ai + privacy | in-product disclosure plan |
+| Cross-border transfer | yes / no / unknown | {what} | security.legal-compliance | transfer mechanism or unknown |
+
+### Adversarial challenge (FMEA)
+
+| Failure mode | Effect | Cause | S×O×D | Mitigation or accept-with-rationale |
+|---|---|---|---|---|
+| {highest-cost wrongness} | {who hurts} | {why} | {product} | {action} |
+
+### Open questions
+
+| Question | Owner | Needed by |
 |---|---|---|
-| <unknown> | <name> | <YYYY-MM-DD> |
+| {unknown} | {role} | {YYYY-MM-DD} |
 
 ## References
-<!-- Linked research, prior PRDs, ADRs, tickets, designs. -->
+
+- {path / URL + access date / bead id / intake id}

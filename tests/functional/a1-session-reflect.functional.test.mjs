@@ -2,7 +2,7 @@
  * tests/functional/a1-session-reflect.functional.test.mjs
  *
  * The hook writes observations through the machine-scoped state root
- * (ADR-0066), keyed by a hash of cwd — so CX_HOME_OVERRIDE is pinned for the
+ * (ADR-0066), keyed by a hash of cwd — so CONSTRUCT_HOME_OVERRIDE is pinned for the
  * whole file (and threaded into the hook's spawn env) to keep that write off
  * the real developer machine's $HOME.
  */
@@ -22,14 +22,14 @@ let prevHomeOverride;
 
 before(() => {
   homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-a1-reflect-home-'));
-  prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = homeOverride;
+  prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 });
 
 after(() => {
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch { /* best-effort cleanup */ }
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 function buildTranscript(turns) {
@@ -46,11 +46,11 @@ test('A1 end-to-end: hook writes searchable observation, accumulation works', as
   fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
 
   // listObservations/searchObservations below resolve the machine-scoped
-  // state root (ADR-0066) via CX_HOME_OVERRIDE read in-process, not via any
+  // state root (ADR-0066) via CONSTRUCT_HOME_OVERRIDE read in-process, not via any
   // rootDir option — pin it or they write into the real developer machine's
   // ~/.construct/projects.
-  const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = cwd;
+  const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = cwd;
 
   // Session 1: realistic multi-tool session
   const t1 = path.join(cwd, 'transcript-1.jsonl');
@@ -73,7 +73,7 @@ test('A1 end-to-end: hook writes searchable observation, accumulation works', as
     input: JSON.stringify({ cwd, transcript_path: t1, session_id: 'func-1', session_duration_ms: 8500 }),
     encoding: 'utf8',
     timeout: 15_000,
-    env: { ...process.env, CONSTRUCT_EMBEDDING_MODEL: 'hashing', CONSTRUCT_REFLECT_BUDGET_MS: '15000', HOME: cwd, CX_HOME_OVERRIDE: cwd }
+    env: { ...process.env, CONSTRUCT_EMBEDDING_MODEL: 'hashing', CONSTRUCT_REFLECT_BUDGET_MS: '15000', HOME: cwd, CONSTRUCT_HOME_OVERRIDE: cwd }
   });
   assert.equal(r1.status, 0, `hook failed: ${r1.stderr}`);
 
@@ -116,15 +116,15 @@ test('A1 end-to-end: hook writes searchable observation, accumulation works', as
     input: JSON.stringify({ cwd, transcript_path: t2, session_id: 'func-2', session_duration_ms: 3000 }),
     encoding: 'utf8',
     timeout: 15_000,
-    env: { ...process.env, CONSTRUCT_EMBEDDING_MODEL: 'hashing', CONSTRUCT_REFLECT_BUDGET_MS: '15000', HOME: cwd, CX_HOME_OVERRIDE: cwd }
+    env: { ...process.env, CONSTRUCT_EMBEDDING_MODEL: 'hashing', CONSTRUCT_REFLECT_BUDGET_MS: '15000', HOME: cwd, CONSTRUCT_HOME_OVERRIDE: cwd }
   });
   assert.equal(r2.status, 0);
   const index2 = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
   assert.equal(index2.length, 2);
   assert.match(index2[0].summary, /git remote set-url|homebrew/i);
 
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 
   rmTmpDir(cwd);
 });

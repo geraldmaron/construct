@@ -4,8 +4,8 @@
  * Sterile, no-LLM emulation of how a host (Claude Code, VS Code, Codex, OpenCode,
  * Cursor) actually drives Construct: connect to the real construct MCP server
  * (lib/mcp/server.mjs) over stdio as an MCP client and call the contract tools,
- * proving skills/templates/specialist-routing/the loop machinery are exercised —
- * the deterministic half of "are skills and specialists being used?". Specialist
+ * proving skills/templates/Assignment routing/the loop machinery are exercised —
+ * the deterministic half of "are skills and Worker Profiles being used?". Worker Profile
  * prompts (which need a real model) are out of scope here; the gated real-LLM
  * layer covers artifact quality.
  *
@@ -13,13 +13,13 @@
  * skill-calls.jsonl (under the isolated HOME), so the suite proves a skill was
  * loaded, not just returned.
  *
- * Isolation: own HOME + CX_HOME_OVERRIDE + project tmpdir; the server resolves
+ * Isolation: own HOME + CONSTRUCT_HOME_OVERRIDE + project tmpdir; the server resolves
  * skills/templates from the repo (ROOT_DIR) and writes telemetry into the sandbox.
  *
  * @capability orchestration.routing
  * @capability mcp.broker.connection
- * @capability skill.roles-engineer
- * @capability skill.roles-architect-ai-systems
+ * @capability skill.perspectives-engineer
+ * @capability skill.perspectives-architect-ai-systems
  */
 
 import assert from 'node:assert/strict';
@@ -43,13 +43,13 @@ function sandbox() {
   const root = mkdtempSync(join(tmpdir(), 'host-mcp-'));
   const HOME = join(root, 'HOME');
   const project = join(root, 'project');
-  mkdirSync(join(HOME, '.cx'), { recursive: true });
-  mkdirSync(join(project, '.cx'), { recursive: true });
+  mkdirSync(join(HOME, '.construct'), { recursive: true });
+  mkdirSync(join(project, '.construct'), { recursive: true });
   return { root, HOME, project, cleanup() { rmTmpDir(root); } };
 }
 
 // The host spawns the server as a subprocess and speaks MCP over its stdio. The
-// sandbox HOME/CX_HOME_OVERRIDE route telemetry into the tmpdir; cwd is the
+// sandbox HOME/CONSTRUCT_HOME_OVERRIDE route telemetry into the tmpdir; cwd is the
 // project so project-scoped resolution matches a real session.
 async function connect(env) {
   const transport = new StdioClientTransport({
@@ -59,7 +59,7 @@ async function connect(env) {
     env: sterileSpawnEnv({
       HOME: env.HOME,
       USERPROFILE: env.HOME,
-      CX_HOME_OVERRIDE: env.HOME,
+      CONSTRUCT_HOME_OVERRIDE: env.HOME,
       XDG_CONFIG_HOME: join(env.HOME, '.config'),
       XDG_DATA_HOME: join(env.HOME, '.local', 'share'),
       XDG_RUNTIME_DIR: join(env.HOME, 'run'),
@@ -67,9 +67,9 @@ async function connect(env) {
       CONSTRUCT_ORCHESTRATION_URL: '',
       OPENROUTER_API_KEY: '',
       ANTHROPIC_API_KEY: '',
-      CX_MODEL_REASONING: MODEL,
-      CX_MODEL_STANDARD: MODEL,
-      CX_MODEL_FAST: MODEL,
+      CONSTRUCT_MODEL_REASONING: MODEL,
+      CONSTRUCT_MODEL_STANDARD: MODEL,
+      CONSTRUCT_MODEL_FAST: MODEL,
     }),
   });
   const client = new Client({ name: 'host-emulation-test', version: '1.0.0' }, { capabilities: {} });
@@ -84,7 +84,7 @@ function payload(result) {
   try { return JSON.parse(text); } catch { return text; }
 }
 
-test('a host drives construct over MCP: skills, templates, and specialist routing', async (t) => {
+test('a host drives Construct over MCP: skills, templates, and worker-profile assignments', async (t) => {
   const env = sandbox();
   t.after(() => env.cleanup());
   const client = await connect(env);
@@ -101,7 +101,7 @@ test('a host drives construct over MCP: skills, templates, and specialist routin
     assert.ok(names.has(core), `MCP server must expose core tool ${core} flat`);
   }
   assert.ok(names.has('get_template'), 'get_template is a flat core tool');
-  for (const deferred of ['list_skills', 'agent_contract']) {
+  for (const deferred of ['list_skills', 'list_worker_profiles']) {
     assert.ok(reachable.has(deferred), `MCP server must keep ${deferred} reachable via the call gateway`);
   }
 
@@ -109,24 +109,24 @@ test('a host drives construct over MCP: skills, templates, and specialist routin
   const skills = payload(await client.callTool({ name: 'list_skills', arguments: {} }));
   assert.ok(JSON.stringify(skills).length > 2, 'list_skills returns a non-empty catalog');
 
-  const skill = payload(await client.callTool({ name: 'get_skill', arguments: { path: 'roles/architect' } }));
+  const skill = payload(await client.callTool({ name: 'get_skill', arguments: { path: 'perspectives/architect' } }));
   assert.ok(skill.content && skill.content.length > 0, 'get_skill returns content');
   assert.ok(skill.content.trimStart().startsWith('---'), 'skill carries frontmatter');
-  const onDisk = readFileSync(join(REPO_ROOT, 'skills', 'roles', 'architect.md'), 'utf8');
+  const onDisk = readFileSync(join(REPO_ROOT, 'skills', 'perspectives', 'architect.md'), 'utf8');
   assert.equal(skill.content, onDisk, 'loaded skill matches the file on disk');
 
   // Audit: the skill load is recorded under the isolated HOME (proves "used").
   const skillLog = join(doctorRoot(env.HOME), 'skill-calls.jsonl');
   assert.ok(existsSync(skillLog), 'skill load is recorded in the doctor-root skill-calls.jsonl');
-  assert.match(readFileSync(skillLog, 'utf8'), /roles\/architect/, 'the loaded skill id appears in the audit log');
+  assert.match(readFileSync(skillLog, 'utf8'), /perspectives\/architect/, 'the loaded skill id appears in the audit log');
 
   // Templates are resolvable by name (the skeleton a PRD/ADR is authored from).
   const tmpl = payload(await client.callTool({ name: 'get_template', arguments: { name: 'prd' } }));
   assert.ok(tmpl.content && tmpl.content.length > 0, 'get_template returns the prd skeleton');
   assert.ok(/project-override|shipped-default/.test(tmpl.source || ''), 'template reports its source');
 
-  // Specialist routing: a substantial, contract-introducing PRD request must
-  // classify as orchestrated and name a specialist chain — proof the loop is
+  // Assignment routing: a substantial, contract-introducing PRD request must
+  // classify as orchestrated and name worker profiles — proof the loop is
   // wired even without running a model.
   const policy = payload(await client.callTool({
     name: 'orchestration_policy',
@@ -134,8 +134,7 @@ test('a host drives construct over MCP: skills, templates, and specialist routin
   }));
   const track = policy.track || policy.intent?.track;
   assert.ok(typeof track === 'string' && track.length > 0, 'orchestration_policy returns a track');
-  const specialists = policy.specialists || policy.specialistSequence || policy.dispatch || [];
-  assert.ok(JSON.stringify(specialists).length > 2, 'orchestration_policy names a specialist sequence');
+  assert.ok(Array.isArray(policy.assignments) && policy.assignments.length > 0, 'orchestration_policy returns worker-profile assignments');
 
   const readiness = payload(await client.callTool({
     name: 'orchestration_readiness',
@@ -190,7 +189,7 @@ test('a host can execute a research-shaped request through orchestration_run aft
   assert.equal(run.degraded, false, 'the spawned-server happy path must not be degraded');
   assert.equal(run.track, 'focused');
   assert.equal(run.suggestedWorkflowType, 'research-synthesis');
-  assert.deepEqual(run.specialists, ['cx-researcher']);
+  assert.deepEqual(run.assignments.map((assignment) => assignment.workerProfileId), ['researcher']);
   assert.equal(run.researchExecutionPolicy?.mode, 'evidence-first');
   assert.ok(Array.isArray(run.tasks) && run.tasks.length >= 1, 'the spawned-server run must return a non-empty executed task list');
   assert.ok(run.tasks.every((task) => task.status === 'prepared'), 'inline host-emulation tasks stay prepared on the happy path');

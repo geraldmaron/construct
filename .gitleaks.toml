@@ -17,6 +17,7 @@ paths = [
   '''.*\.test\.mjs''',
   '''.*\.red\.mjs''',
   '''examples/.*''',
+  '''docs/notes/research/.*/synthesis/.*\.md''',
 ]
 
 # Per-rule allowlist: the `atlassian-api-token` rule over-triggers on routine

@@ -20,7 +20,7 @@ User-scope files follow the [XDG Base Directory specification](https://specifica
 | **state** | `$XDG_STATE_HOME` | `~/.local/state/construct` | `vector/lancedb`, `doctor.json`, `dashboard.json`, `workspace/`, `runtime/`, `bin/`, `intake-daemon.heartbeat`, `.cleanup-stamp` |
 | **cache** | `$XDG_CACHE_HOME` | `~/.cache/construct` | `cache/embeddings`, `.runtime`, regenerable transients |
 
-> **Upgrade — clean break.** There is no read or migration of a legacy `~/.construct/*` tree. After upgrading, run `construct install --scope=user` once to repopulate the user-scope files at the XDG paths. `construct doctor` flags a missing user config until you do.
+Construct stores user configuration at the XDG paths below. Run `construct install --footprint=user` to create them.
 
 ## Config tiers and precedence
 
@@ -79,8 +79,8 @@ The `construct.config.json` file is scaffolded with a `"$schema"` property. In s
 | `PORT` | `4242` | Dashboard HTTP port |
 | `BIND_HOST` | `127.0.0.1` | Dashboard bind address |
 | `NODE_ENV` | `development` | `production` disables stack traces in responses |
-| `HOME` | system | Base for the XDG user dirs (`~/.config/construct`, `~/.local/state/construct`, `~/.cache/construct`) and `~/.cx/` |
-| `CX_DATA_DIR` | `$HOME` | Override root for `.cx/` data directories |
+| `HOME` | system | Base for the XDG user dirs (`~/.config/construct`, `~/.local/state/construct`, `~/.cache/construct`) and `~/.construct/` |
+| `CONSTRUCT_DATA_DIR` | `$HOME` | Override root for Construct data directories |
 
 ## Deployment mode
 
@@ -88,20 +88,28 @@ The `construct.config.json` file is scaffolded with a `"$schema"` property. In s
 |---|---|---|
 | `CONSTRUCT_DEPLOYMENT_MODE` | `solo` | `solo` \| `team` \| `enterprise`: selects backends for the intake queue, memory, workers, and MCP broker. Read at runtime by `lib/deployment-mode.mjs`. Set via `construct config mode <m>`. |
 
+### Project identity
+
+Every subsystem that keys state by "which project is this" (`~/.construct/projects/<key>/`, Postgres run/trace/memory rows) resolves the same id via `lib/state-root.mjs`'s `deriveProjectKey`: a hash of the git origin remote, or a hash of the canonical project path when there is no remote (ADR-0092).
+
+| Key | Default | Description |
+|---|---|---|
+| `deployment.projectKey` (`construct.config.json`) | `null` | Explicit override for the project identity key. Wins over the computed derivation everywhere state is keyed — use it for a monorepo's sub-projects sharing one git remote, a fork that should not inherit the origin's accumulated history, or a remote-URL migration where continuity with the old key matters. Distinct from `deployment.projectName`, which is a display name only and is never used to derive identity. |
+
 ## Orchestration
 
 Keys under `orchestration` in `construct.config.json`. Read at runtime by `lib/orchestration/runtime.mjs`.
 
 | Key | Default | Description |
 |---|---|---|
-| `orchestration.workerBackend` | `inline` (CLI) / `host` (MCP, when unset) | `inline` (plan and prepare specialist tasks, no model call) \| `provider` (execute each task against a configured provider model — real API spend) \| `host` (materialize each task's prompt for the calling MCP host to execute in its own model session — no API spend; the host submits results via `orchestration_task_result`). An MCP-originated `orchestration_run` call defaults to `host` when neither the tool's `worker_backend` arg nor this key is set; the CLI's own default stays `inline` regardless. `host` over the bare CLI (no attached MCP session) fails loud rather than producing an abandoned run — see ADR-0063. |
+| `orchestration.workerBackend` | `inline` (CLI) / `host` (MCP, when unset) | `inline` (plan and prepare Worker Profile Assignments, no model call) \| `provider` (execute each task against a configured provider model — real API spend) \| `host` (materialize each task's prompt for the calling MCP host to execute in its own model session — no API spend; the host submits results via `orchestration_task_result`). An MCP-originated `orchestration_run` call defaults to `host` when neither the tool's `worker_backend` arg nor this key is set; the CLI's own default stays `inline` regardless. `host` over the bare CLI (no attached MCP session) fails loud rather than producing an abandoned run — see ADR-0063. |
 | `orchestration.store` | `filesystem` | `filesystem` \| `sqlite` \| `postgres`, or a registered `kind:"storage"` extension manifest whose `operations.runStore` maps to one of those implementations. Explicit missing backends degrade visibly to filesystem with `requestedBackend`/`degradedReason`; they are not silently ignored. |
-| `orchestration.chainOfThought` | `hidden` | Disclosure of a provider-executed specialist's reasoning. `hidden`: reasoning is not requested or shown. `surface`: reasoning is requested (Anthropic extended thinking / OpenRouter `reasoning`) and attached to each task, so `construct orchestrate run`/`status`, the `orchestration_run` MCP tool, and the dashboard event stream display it. `telemetry_only`: reasoning is requested and written to the run trace (`.construct/traces/*.jsonl` `worker.completed` metadata) but never displayed. Inline runs never produce reasoning. See ADR-0030. |
+| `orchestration.chainOfThought` | `hidden` | Disclosure of a provider-executed Worker Profile's reasoning. `hidden`: reasoning is not requested or shown. `surface`: reasoning is requested (Anthropic extended thinking / OpenRouter `reasoning`) and attached to each task, so `construct orchestrate run`/`status`, the `orchestration_run` MCP tool, and the dashboard event stream display it. `telemetry_only`: reasoning is requested and written to the run trace (`.construct/traces/*.jsonl` `worker.completed` metadata) but never displayed. Inline runs never produce reasoning. See ADR-0030. |
 | `orchestration.hostExecution` | `auto` | Only meaningful when `workerBackend` resolves to `host`. `auto`: construct-mcp drives the awaiting-host loop itself via MCP sampling (`sampling/createMessage`) when the connected client declared the `sampling` capability at initialize time, otherwise the calling host executes each prompt manually and submits it back (`pickup`). `pickup`: always leave every task for manual pickup, even if the client supports sampling. `sampling`: prefer sampling, falling back to `pickup` if the client never declared the capability. See ADR-0063. |
 
 ## Models (catalog visibility)
 
-Keys under `models` in `construct.config.json`. Consumed by `lib/models/catalog.mjs` and `getProviderModelCatalog()` in `lib/model-router.mjs`. Tier **assignments** (reasoning/standard/fast primaries) remain in `specialists/org` and emergency overrides in `CX_MODEL_*` env vars — highest precedence unchanged.
+Keys under `models` in `construct.config.json`. Consumed by `lib/models/catalog.mjs` and `getProviderModelCatalog()` in `lib/model-router.mjs`. Tier **assignments** (reasoning/standard/fast primaries) remain in `registry` and emergency overrides in `CONSTRUCT_MODEL_*` env vars — highest precedence unchanged.
 
 | Key | Default | Description |
 |---|---|---|
@@ -109,7 +117,7 @@ Keys under `models` in `construct.config.json`. Consumed by `lib/models/catalog.
 | `models.visibility.include` | `[]` | Model ids shown when `mode` is `explicit`. |
 | `models.visibility.exclude` | `[]` | Hidden from pickers; pinned model outside visibility shows a warning. |
 | `models.visibility.providers` | `{}` | Per provider-family toggles (`openrouter`, `github-copilot`, …); `false` hides the family. |
-| `models.catalog.liveOpenRouter` | `true` | Merge cached live OpenRouter free models into the catalog (`~/.cx/model-catalog-cache.json`, 10 min TTL). |
+| `models.catalog.liveOpenRouter` | `true` | Merge cached live OpenRouter free models into the catalog (`~/.construct/model-catalog-cache.json`, 10 min TTL). |
 | `models.catalog.maxLiveFree` | `24` | Cap on live free models merged from cache. |
 
 CLI:
@@ -121,20 +129,20 @@ construct models list
 construct models list --json
 ```
 
-### Tier-default registry (`specialists/org/models.json`)
+### Tier-default registry (`registry/models.json`)
 
-Operators may bind tier defaults in an optional `specialists/org/models.json` under the toolkit dir (`CX_TOOLKIT_DIR`, else the installed package root). Each of `reasoning`/`standard`/`fast` is a bare model-id string or `{ "primary": id, "fallback": [ids] }` (resolution uses the primary). The embedded resolver (`resolveEmbeddedModel`) reads it automatically — no config flag.
+Operators may bind tier defaults in an optional `registry/models.json` under the toolkit dir (`CONSTRUCT_TOOLKIT_DIR`, else the installed package root). Each of `reasoning`/`standard`/`fast` is a bare model-id string or `{ "primary": id, "fallback": [ids] }` (resolution uses the primary). The embedded resolver (`resolveEmbeddedModel`) reads it automatically — no config flag.
 
 Resolution precedence for a tier, most-specific first:
 
-1. `CX_MODEL_<TIER>` / `CONSTRUCT_MODEL_<TIER>` env pin — **always wins**.
-2. `specialists/org/models.json` registry tier — fills only tiers no env pin sets (`resolutionSource: tier-default`, `tierSource: registry`).
+1. `CONSTRUCT_MODEL_<TIER>` / `CONSTRUCT_MODEL_<TIER>` env pin — **always wins**.
+2. `registry/models.json` registry tier — fills only tiers no env pin sets (`resolutionSource: tier-default`, `tierSource: registry`).
 3. Credential-derived provider-family default — see AP3 credential fallback.
 4. `config-error` — no implicit defaults (ADR-0027): an unconfigured machine degrades honestly rather than resolving a model whose credentials may be absent.
 
-Construct ships **no active** `models.json`; copy the shipped `specialists/org/models.json.example` to activate it.
+Construct ships **no active** `models.json`; copy the shipped `registry/models.json.example` to activate it.
 
-Deprecated: `CONSTRUCT_MODEL_*` env vars — use `CX_MODEL_*` (alias still honored for one release cycle).
+Deprecated: `CONSTRUCT_MODEL_*` env vars — use `CONSTRUCT_MODEL_*` (alias still honored for one release cycle).
 
 Typed integration selectors under `sources.targets`. Consumed by embed auto-discovery (when `embed.yaml` is absent), `provider_fetch`, and session-start source hints. Legacy env lists merge additively; an explicit `embed.yaml` in the XDG config dir remains a complete override.
 
@@ -162,7 +170,7 @@ CLI: `construct sources list`, `construct sources add <provider> <id> '<selector
 
 ## Intake policy (`construct.config.json`)
 
-Filesystem inbox watcher depth and extra directories under `intakePolicy`. A legacy `.cx/intake-config.json` is read as a warned fallback for `maxDepth` and `additionalDirs` only.
+Filesystem inbox watcher depth and extra directories under `intakePolicy`.
 
 The single canonical drop zone is `inbox/` at the project root (ADR-0045 §C) — always watched. There are no other zones: `.construct/inbox/` and `docs/intake/` are not watched and not scaffolded. Machine/runtime intake state (pending, processed, skipped, quarantine, dead-letter) stays under the gitignored `.construct/intake/`.
 
@@ -173,7 +181,7 @@ The single canonical drop zone is `inbox/` at the project root (ADR-0045 §C) �
 
 **Drop convention (atomic handoff).** Writers assemble a file under `inbox/.staging/` (gitignored) and then atomically `rename` it into `inbox/`. The watcher enqueues only complete top-level files: it ignores dotfiles and `inbox/.staging/`, and skips any file whose size is still changing between two stats, so a partially-written drop is never consumed. Processed items move to `.construct/intake/processed/`.
 
-Env overrides: `CX_INBOX_DIRS` (colon-separated paths), `CX_INTAKE_MAX_DEPTH`.
+Env overrides: `CONSTRUCT_INBOX_DIRS` (colon-separated paths), `CONSTRUCT_INTAKE_MAX_DEPTH`.
 
 ## Intake queue
 
@@ -304,7 +312,7 @@ When `op run` injects materialized keys into `process.env`, Construct keeps thos
 | Variable | Default | Description |
 |---|---|---|
 | `CONSTRUCT_DROP_DIRS` | `~/Downloads:~/Desktop:~/Documents` | Colon-separated dirs watched by `construct drop` |
-| `CONSTRUCT_HOOK_OUTPUT_MODE` | `auto` | SessionStart context routing: `auto` \| `silent` \| `stderr` \| `stdout`. `auto` keeps the rich payload on stdout for interactive sessions and suppresses it (to `~/.cx/session-start-last.log`) for non-interactive ones. Mirrors `hooks.outputMode` in `construct.config.json` (env wins). Set to `silent`/`stderr` from SDK / `claude -p` / automation callers so a one-shot command's stdout stays reserved for its own output. |
+| `CONSTRUCT_HOOK_OUTPUT_MODE` | `auto` | SessionStart context routing: `auto` \| `silent` \| `stderr` \| `stdout`. `auto` keeps the rich payload on stdout for interactive sessions and suppresses it (to `~/.construct/session-start-last.log`) for non-interactive ones. Mirrors `hooks.outputMode` in `construct.config.json` (env wins). Set to `silent`/`stderr` from SDK / `claude -p` / automation callers so a one-shot command's stdout stays reserved for its own output. |
 | `CONSTRUCT_NONINTERACTIVE` | : | Set truthy (`1`) by an SDK / automation caller to mark the invocation non-interactive, so `CONSTRUCT_HOOK_OUTPUT_MODE=auto` resolves to suppressed. Claude Code exposes no reliable in-hook interactive/print signal, so this flag (or `CI=true` / `NODE_ENV=test`) is how `auto` detects non-interactive mode. |
 
 ## Model router
@@ -316,9 +324,9 @@ When `op run` injects materialized keys into `process.env`, Construct keeps thos
 | `OPENAI_API_KEY` | OpenAI key: used for OpenAI model tier or openai embedding model |
 | `GITHUB_TOKEN` | GitHub PAT for integrations; may be a plain value or `op://` reference |
 | `CONSTRUCT_OP_ENV_FILE` | Override path for the 1Password env file used by a local `op run` wrapper (default on this machine: `~/.config/claude/.env.op`) |
-| `CX_MODEL_REASONING` | Override the reasoning-tier model id |
-| `CX_MODEL_STANDARD` | Override the standard-tier model id |
-| `CX_MODEL_FAST` | Override the fast-tier model id |
+| `CONSTRUCT_MODEL_REASONING` | Override the reasoning-tier model id |
+| `CONSTRUCT_MODEL_STANDARD` | Override the standard-tier model id |
+| `CONSTRUCT_MODEL_FAST` | Override the fast-tier model id |
 | `CONSTRUCT_MODEL_PROFILE` | Optional runtime profile. `small` enables tighter prompt budgets, compressed overlays, and retrieval-first prompt shaping for smaller local or cost-constrained models; `balanced` keeps the default posture. |
 | `OLLAMA_BASE_URL` | Base URL for the Ollama HTTP API. `OLLAMA_HOST` remains accepted as a legacy alias. |
 
@@ -328,9 +336,9 @@ When `op run` injects materialized keys into `process.env`, Construct keeps thos
 |---|---|
 | `CONSTRUCT_DEPRECATIONS` | `error` to throw instead of warn on deprecated API usage (useful in CI) |
 | `CONSTRUCT_DEV_PATH` | Absolute path to a Construct checkout; `.construct/launcher/run.mjs` resolves this first |
-| `CX_AUTO_EMBED` | `1` to auto-start the embed daemon when provider credentials are present. `construct.config.json` `autoEmbed: true` is an equivalent project-committed fallback (env wins); read at runtime by `autoStartEmbedIfNeeded()` in `lib/embed/cli.mjs`. |
-| `CX_WORKSPACE` | Override working directory for embed mode |
-| `CX_TOOLKIT_DIR` | Override the path where Construct looks for its own toolkit (skills, agents, templates) |
+| `CONSTRUCT_AUTO_EMBED` | `1` to auto-start the embed daemon when provider credentials are present. `construct.config.json` `autoEmbed: true` is an equivalent project-committed fallback (env wins); read at runtime by `autoStartEmbedIfNeeded()` in `lib/embed/cli.mjs`. |
+| `CONSTRUCT_WORKSPACE` | Override working directory for embed mode |
+| `CONSTRUCT_TOOLKIT_DIR` | Override the path where Construct looks for its own toolkit (skills, agents, templates) |
 
 ## Bootstrap resource consent
 

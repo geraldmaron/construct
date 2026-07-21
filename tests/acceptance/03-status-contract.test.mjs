@@ -23,7 +23,7 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 const CONSTRUCT_BIN = new URL('../../bin/construct', import.meta.url).pathname;
 
 // lib/paths.mjs resolves the ADR-0066 state root from process.env.HOME /
-// CX_HOME_OVERRIDE in the CHILD's own env, not the test process's env — so
+// CONSTRUCT_HOME_OVERRIDE in the CHILD's own env, not the test process's env — so
 // every spawned `construct` call must be pinned to a throwaway sandbox home
 // or it leaks project-key directories into the real developer machine's
 // ~/.construct/projects/.
@@ -40,7 +40,7 @@ function runConstruct(args, cwd) {
       ...process.env,
       CONSTRUCT_DEPLOYMENT_MODE: 'solo',
       HOME: SANDBOX_HOME,
-      CX_HOME_OVERRIDE: SANDBOX_HOME,
+      CONSTRUCT_HOME_OVERRIDE: SANDBOX_HOME,
     },
   });
 }

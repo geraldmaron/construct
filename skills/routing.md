@@ -1,6 +1,6 @@
 <!--
 skills/routing.md — generated render of skills/routing.json. Do not hand-edit: run
-`node scripts/generate-skill-routing.mjs --write` (or `construct skills:routes --write`).
+`node scripts/generate-skill-routing.mjs --write` (or `npm run skills:routes -- --write`).
 -->
 
 # Skill routing
@@ -102,7 +102,7 @@ One row per skill reachable via `suggest_skills`/`search_skills`. A skill with a
 | `docs/runbook-workflow` | runbook workflow, creating, operational, procedures, services, alerts | derived |
 | `docs/strategy-workflow` | strategy, bets, non-bets | authored |
 | `docs/transcript-synthesis` | transcript synthesis, meeting, call, interview, transcript, needs | derived |
-| `docs/user-research-workflow` | user research workflow, cx-researcher, synthesizes, user, evidence, interviews | derived |
+| `docs/user-research-workflow` | user research workflow, researcher, worker, profile, synthesizes, user | derived |
 
 ## exploration
 

@@ -1,0 +1,112 @@
+{
+  "id": "operations",
+  "displayName": "The logistics mind who maps dependencies, sequences, and ownership — because hidden dependencies surface as blocked work.",
+  "description": "The logistics mind who maps dependencies, sequences, and ownership — because hidden dependencies surface as blocked work.",
+  "runtime": "host-agent",
+  "modelTier": "standard",
+  "reasoningEffort": "medium",
+  "skillEmphasis": [
+    "perspectives/operations",
+    "docs/artifact-authorship",
+    "docs/init-project",
+    "operating/incident-response",
+    "operating/oncall-rotation",
+    "operating/change-management",
+    "devops/observability",
+    "devops/ci-cd",
+    "devops/performance",
+    "devops/incident-response",
+    "devops/git-workflow",
+    "quality-gates/verify-change",
+    "docs/memo-and-decision-capture",
+    "docs/adr-workflow",
+    "docs/runbook-workflow",
+    "docs/init-docs",
+    "docs/document-ingest-workflow",
+    "strategy/experimentation",
+    "strategy/prioritization-methods"
+  ],
+  "procedureAffinity": [
+    "memo-draft"
+  ],
+  "capabilities": [
+    "workflow.memo-draft"
+  ],
+  "policyFence": {
+    "allowedPaths": [
+      "docs/**",
+      "**/README.md",
+      "CHANGELOG.md"
+    ],
+    "allowedBdLabels": [
+      "ops",
+      "operations",
+      "incident",
+      "sre",
+      "reliability",
+      "release",
+      "version",
+      "shipping",
+      "docs",
+      "doc-drift",
+      "changelog"
+    ],
+    "allowedCommands": [
+      "bd create",
+      "bd note",
+      "bd update"
+    ],
+    "approvalRequired": [
+      "commit",
+      "push",
+      "edit:package.json",
+      "edit:lib/**",
+      "edit:bin/**",
+      "edit:registry/**"
+    ]
+  },
+  "events": [
+    "plan.requested",
+    "push_gate.fail",
+    "service.down",
+    "mcp.unhealthy.persistent",
+    "edit_loop.stuck",
+    "release.candidate",
+    "version.bump.needed",
+    "pr.merged.no-docs",
+    "changelog.missing",
+    "readme.stale",
+    "document.stale"
+  ],
+  "artifactClasses": [
+    "runbook",
+    "incident-report",
+    "postmortem",
+    "memo",
+    "changelog"
+  ],
+  "watchConditions": [
+    {
+      "watcher": "wide-blast-radius",
+      "reason": "wide blast radius — operational readiness review"
+    }
+  ],
+  "permissions": {},
+  "participationRules": [],
+  "toolGrants": [
+    "Read",
+    "Grep",
+    "Glob",
+    "LS",
+    "Bash",
+    "Edit",
+    "Write",
+    "list_skills",
+    "get_skill",
+    "search_skills",
+    "get_template",
+    "list_templates",
+    "memory_search",
+    "memory_add_observations"
+  ]
+}

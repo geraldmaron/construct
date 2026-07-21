@@ -1,18 +1,17 @@
 {
-  "type": "diagram-card",
-  "id": "diagram-card:docs/architecture.md#system-overview",
-  "source": "flowchart TD\n  A[Client] --> B[API]\n  B --> C[(Store)]",
-  "engine": "mermaid-source-only",
+  "id": "missing-accessibility",
+  "source": ".construct/diagrams/example.dot",
+  "engine": "dot",
   "engineVersion": null,
-  "theme": "construct",
+  "theme": null,
   "seed": null,
-  "securityProfile": "browser-innerHTML-loose",
+  "securityProfile": "sandboxed-subprocess",
+  "accessibilityDescription": "",
   "provenance": {
     "module": "lib/diagram.mjs",
-    "command": "renderDiagram(sourceOnly=true)",
-    "generatedAt": "2026-07-17T00:00:00.000Z"
+    "command": "construct diagram example",
+    "generatedAt": "2026-07-20T20:00:00.000Z"
   },
-  "degraded": false,
-  "reason": null,
-  "renderedOutput": null
+  "degraded": true,
+  "reason": "d2 not found, using dot fallback"
 }

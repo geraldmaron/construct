@@ -21,23 +21,23 @@ import { planRun, executeRun } from '../../lib/orchestration/runtime.mjs';
 import { tempDir } from '../helpers.mjs';
 
 // executeRun resolves trace/state paths through the machine-scoped state root
-// (ADR-0066) — CX_HOME_OVERRIDE keeps that off the real developer machine's
+// (ADR-0066) — CONSTRUCT_HOME_OVERRIDE keeps that off the real developer machine's
 // $HOME for the whole file (same isolation as tests/orchestration/provenance.test.mjs).
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-write-proposal-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 test.after(() => {
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 const MODEL = 'anthropic/claude-sonnet-4-6';
-const ENV = { CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL, ANTHROPIC_API_KEY: 'sk-test' };
+const ENV = { CONSTRUCT_MODEL_REASONING: MODEL, CONSTRUCT_MODEL_STANDARD: MODEL, CONSTRUCT_MODEL_FAST: MODEL, ANTHROPIC_API_KEY: 'sk-test' };
 
 test('runTaskViaProvider surfaces a fenced write-proposal block as writeProposals', async () => {
-  const task = { role: 'cx-product-manager', reason: 'draft the PRD update', handoffContract: null };
+  const task = { role: 'product-manager', reason: 'draft the PRD update', handoffContract: null };
   const run = { request: { summary: 'update the checkout PRD' } };
   const specialistText = [
     'Drafted the update. Recommending a tracking PR:',
@@ -53,11 +53,11 @@ test('runTaskViaProvider surfaces a fenced write-proposal block as writeProposal
   assert.equal(result.writeProposals.length, 1);
   assert.equal(result.writeProposals[0].providerId, 'github');
   assert.equal(result.writeProposals[0].writeKind, 'pr');
-  assert.equal(result.writeProposals[0].requestedBy.specialistId, result.specialistId);
+  assert.equal(result.writeProposals[0].requestedBy.workerProfileId, result.workerProfileId);
 });
 
 test('runTaskViaProvider omits writeProposals entirely when the specialist recommended none', async () => {
-  const task = { role: 'cx-engineer', reason: 'implement the change', handoffContract: null };
+  const task = { role: 'engineer', reason: 'implement the change', handoffContract: null };
   const run = { request: { summary: 'refactor the auth module' } };
   const fetchImpl = async () => ({ ok: true, json: async () => ({ content: [{ type: 'text', text: 'plain answer, no writes' }] }) });
 
@@ -68,7 +68,7 @@ test('runTaskViaProvider omits writeProposals entirely when the specialist recom
 
 test('executeRun (provider backend) threads writeProposals onto every persisted task that recommended one', async () => {
   const cwd = tempDir('cx-write-proposal-run-', test);
-  const specialistText = '```write-proposal\n{"providerId": "atlassian-jira", "writeKind": "comment", "payload": {"issueKey": "OPS-1", "body": "status"}}\n```';
+  const specialistText = '```write-proposal\n{"providerId": "jira", "writeKind": "comment", "payload": {"issueKey": "OPS-1", "body": "status"}}\n```';
   const fetchImpl = async () => ({ ok: true, json: async () => ({ content: [{ type: 'text', text: specialistText }] }) });
 
   const planned = await planRun(
@@ -82,7 +82,7 @@ test('executeRun (provider backend) threads writeProposals onto every persisted 
 
   for (const task of executed.tasks) {
     assert.equal(task.writeProposals?.length, 1, `task for role ${task.role} should carry the recommended write`);
-    assert.equal(task.writeProposals[0].providerId, 'atlassian-jira');
-    assert.equal(task.writeProposals[0].requestedBy.specialistId, task.specialistId);
+    assert.equal(task.writeProposals[0].providerId, 'jira');
+    assert.equal(task.writeProposals[0].requestedBy.workerProfileId, task.workerProfileId);
   }
 });

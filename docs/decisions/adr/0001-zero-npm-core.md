@@ -56,8 +56,10 @@ they are buildable surfaces, not the installed runtime spine:
 - **`apps/`** — buildable front-end surfaces that compile to an artifact the
   core loads or serves, never imported into the zero-dep core.
 
-## Exception path (amended 2026-07-17, ADR-0097)
+## Exception path
 
-To add a new core dependency, write a new ADR in this directory answering the three questions in `docs/guides/reference/dependencies.md`. Do not add the dep without a merged ADR.
+To add a new core dependency, write a new ADR in this directory answering the three questions in `docs/dependencies.md`. Do not add the dep without a merged ADR.
 
-ADR-0097 (`docs/decisions/adr/0097-capability-delegation-rubric.md`) supersedes the bare instruction above with a named lifecycle-cost rubric (install footprint, maintenance burden transferred, security surface, replaceability, evidence bar) and four pre-evaluated delegation classes (markdown/HTML parsing, MIME/RFC message parsing, schema validation, graph/diagram rendering). The zero-supply-chain-risk goal for the core zone is unchanged; the candidate ADR now applies ADR-0097's rubric explicitly rather than starting from a blank page.
+## Status update (amended, ADR-0081)
+
+The `@lancedb/lancedb` and `apache-arrow` exceptions declared above no longer hold: [ADR-0081](0081-lancedb-optional-retrieval-adapter.md) moves both packages to `optionalDependencies`, behind a retrieval-adapter contract (`lib/storage/retrieval-adapter.mjs`) with a dependency-free keyword/BM25 fallback (`lib/storage/adapters/keyword-adapter.mjs`). The sanctioned exception set for runtime `dependencies` is now `@modelcontextprotocol/sdk` and `js-yaml` only (`tests/core-dependency-policy.test.mjs`).

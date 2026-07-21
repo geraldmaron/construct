@@ -11,6 +11,6 @@ Method:
 - Extract only the passages needed to answer the question.
 - Keep citations attached to each confirmed fact.
 - If the docs do not fully answer the question, state that the evidence is partial or insufficient.
-- If a domain overlay exists in `.cx/domain-overlays/`, treat it as temporary scope guidance only, not a permanent source of truth.
+- If a domain overlay exists in `.construct/domain-overlays/`, treat it as temporary scope guidance only, not a permanent source of truth.
 
 Separate: confirmed facts | inferences | assumptions. Flag contradictory or missing docs.

@@ -20,7 +20,7 @@
  * recording -> observation write) without needing a live Jira instance or a
  * successful write.
  *
- * Reads CX_ROOT_DIR (project root) and TICK_TIMEOUT_MS from env. Prints one
+ * Reads CONSTRUCT_ROOT_DIR (project root) and TICK_TIMEOUT_MS from env. Prints one
  * JSON line to stdout on success or failure and exits 0/1 accordingly.
  */
 
@@ -31,8 +31,8 @@ import { EmbedDaemon } from '../../../lib/embed/daemon.mjs';
 import { EMPTY_CONFIG } from '../../../lib/embed/config.mjs';
 import { ApprovalQueue } from '../../../lib/embed/approval-queue.mjs';
 
-const rootDir = process.env.CX_ROOT_DIR;
-const persistPath = process.env.CX_APPROVAL_QUEUE_PATH;
+const rootDir = process.env.CONSTRUCT_ROOT_DIR;
+const persistPath = process.env.CONSTRUCT_APPROVAL_QUEUE_PATH;
 const timeoutMs = Number(process.env.TICK_TIMEOUT_MS || 15_000);
 const pollIntervalMs = 150;
 

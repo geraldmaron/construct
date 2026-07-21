@@ -2,7 +2,7 @@
  * tests/functional/a2-research-persistence.functional.test.mjs — A2 end-to-end.
  *
  * Verifies the full research persistence path: CLI args parse, schema validates,
- * frontmatter stamps the active profile, the file lands at the expected path,
+ * frontmatter stamps the active Workspace Preset, the file lands at the expected path,
  * and the bytes are countable.
  */
 import assert from 'node:assert/strict';
@@ -17,8 +17,8 @@ const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..',
 const BIN = path.join(REPO, 'bin', 'construct');
 
 // Each spawn gets a private HOME so construct's startup side effects (embed
-// daemon, telemetry, session state under ~/.cx and ~/.claude) can never race
-// or bleed across the test files the runner executes in parallel. CX_TOOLKIT_DIR
+// daemon, telemetry, session state under ~/.construct and ~/.claude) can never race
+// or bleed across the test files the runner executes in parallel. CONSTRUCT_TOOLKIT_DIR
 // is dropped so an operator's non-default install layout can't leak in either.
 // BOOTSTRAP_CHECKED + CONSTRUCT_DISABLE_AUTO_CLEANUP keep the fresh HOME from
 // triggering first-run bootstrap and upgrade-cleanup on every spawn — without
@@ -28,7 +28,7 @@ const BIN = path.join(REPO, 'bin', 'construct');
 
 function isolatedEnv(home) {
   const env = { ...process.env, HOME: home, BOOTSTRAP_CHECKED: '1', CONSTRUCT_DISABLE_AUTO_CLEANUP: '1' };
-  delete env.CX_TOOLKIT_DIR;
+  delete env.CONSTRUCT_TOOLKIT_DIR;
   return env;
 }
 
@@ -71,7 +71,7 @@ test('A2 end-to-end: construct knowledge add writes a frontmatter-stamped resear
   assert.match(content, /kind: research-finding/);
   assert.match(content, /confidence: confirmed/);
   assert.match(content, /npm CLI 11\.5\.1/);
-  assert.match(content, /profile: rnd/);
+  assert.match(content, /workspacePreset: rnd/);
   assert.match(content, /expiresAt: \d{4}-\d{2}-\d{2}/);
 
   rmTmpDir(cwd);

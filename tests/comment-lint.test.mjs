@@ -134,7 +134,7 @@ test('lintFile: .md under tests/ uses markdown header rule (regression for tests
 });
 
 test('lintFile: .md without markdown header still reports the error', () => {
-  const { dir, full } = makeTempFile('skills/roles/example.md', '# No header\n\nbody');
+  const { dir, full } = makeTempFile('skills/perspectives/example.md', '# No header\n\nbody');
   const result = lintFile(full, { rootDir: dir });
   assert.ok(result.errors.some((e) => e.label.includes('missing file header')));
 });

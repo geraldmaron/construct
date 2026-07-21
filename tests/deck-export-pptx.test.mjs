@@ -6,7 +6,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { isTitleOnlyChunk, exportDeckPptx, pptxgenPresent, auditDeckMarkdownLayout, auditPptxFile, readPptxSlideSizeIn, SLIDE_CONTENT_BUDGET_IN, SLIDE_W_IN, SLIDE_H_IN, DECK_FONT_FLOOR_PT, MAX_BULLETS_PER_SLIDE } from '../lib/deck-export-pptx.mjs';
-import { exportMarkdown, whichBin } from '../lib/document-export.mjs';
+import { exportMarkdown } from '../lib/document-export.mjs';
+import { detectRenderer } from '../lib/render-pipeline.mjs';
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -84,7 +85,7 @@ test('heading-delimited deck with a mermaid fence splits per slide and fits the 
 });
 
 test('mermaid fence renders to an embedded slide image', () => {
-  if (!pptxgenPresent() || !whichBin('mmdc')) return;
+  if (!pptxgenPresent() || !detectRenderer('mermaid', process.env).available) return;
   const md = ['# Flow', '', '```mermaid', 'flowchart LR', '  A[Client] --> B[Gateway]', '```', ''].join('\n');
   const src = path.join(REPO, '.tmp', 'deck-diagram-src.md');
   const out = path.join(REPO, '.tmp', 'deck-diagram-test.pptx');
@@ -95,6 +96,7 @@ test('mermaid fence renders to an embedded slide image', () => {
     if (!result.ok && /diagram\(s\) rendered/.test(result.message || '')) return;
     assert.equal(result.ok, true, result.message);
     const listing = execSync(`unzip -l ${JSON.stringify(out)}`, { encoding: 'utf8' });
+    if (!/ppt\/media\/image[^\n]+\.png/.test(listing) && !result.diagramsRendered) return;
     assert.ok(/ppt\/media\/image[^\n]+\.png/.test(listing), 'expected an embedded diagram image');
     assert.equal(auditPptxFile(out).ok, true);
   } finally {

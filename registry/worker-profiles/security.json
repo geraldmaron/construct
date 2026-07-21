@@ -1,0 +1,97 @@
+{
+  "id": "security",
+  "displayName": "Thinks like an attacker — sees the attack surface the developer didn't know existed.",
+  "description": "Thinks like an attacker — sees the attack surface the developer didn't know existed.",
+  "runtime": "host-agent",
+  "modelTier": "strong",
+  "reasoningEffort": "high",
+  "skillEmphasis": [
+    "docs/artifact-authorship",
+    "security/red-team",
+    "security/blue-team",
+    "security/pentest",
+    "security/code-audit",
+    "security/vuln-research",
+    "security/threat-intel",
+    "quality-gates/verify-security",
+    "architecture/security-arch",
+    "compliance/license-audit",
+    "compliance/data-privacy",
+    "compliance/ai-disclosure",
+    "compliance/regulatory-review",
+    "compliance/case-law-research"
+  ],
+  "procedureAffinity": [
+    "architecture-review",
+    "risk-review"
+  ],
+  "capabilities": [
+    "workflow.architecture-review",
+    "workflow.risk-review"
+  ],
+  "policyFence": {
+    "allowedPaths": [
+      "docs/security/**",
+      "docs/threat-models/**",
+      "docs/legal/**",
+      "docs/compliance/**",
+      ".construct/knowledge/**"
+    ],
+    "allowedBdLabels": [
+      "security",
+      "vulnerability",
+      "audit",
+      "legal",
+      "compliance",
+      "privacy"
+    ],
+    "allowedCommands": [
+      "bd create",
+      "bd note",
+      "bd update",
+      "bd label"
+    ],
+    "approvalRequired": [
+      "commit",
+      "push",
+      "edit:**"
+    ]
+  },
+  "events": [
+    "dep.cve",
+    "secrets.detected",
+    "config.protection.violation",
+    "dep.license",
+    "privacy-policy.review"
+  ],
+  "artifactClasses": [
+    "security-review",
+    "threat-model"
+  ],
+  "watchConditions": [
+    {
+      "watcher": "auth-payments-non-narrow",
+      "reason": "pre-dispatch threat model (auth/payments/PII + non-narrow blast radius)"
+    }
+  ],
+  "permissions": {},
+  "participationRules": [],
+  "toolGrants": [
+    "Read",
+    "Grep",
+    "Glob",
+    "LS",
+    "Bash",
+    "WebSearch",
+    "WebFetch",
+    "list_skills",
+    "get_skill",
+    "search_skills",
+    "memory_search",
+    "memory_add_observations",
+    "construct_trace",
+    "construct_score",
+    "get_template",
+    "list_templates"
+  ]
+}

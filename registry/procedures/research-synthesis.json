@@ -1,0 +1,23 @@
+{
+  "id": "research-synthesis",
+  "version": "1.0.0",
+  "type": "linear",
+  "workerProfiles": [
+    "researcher",
+    "data-analyst",
+    "reviewer"
+  ],
+  "approvalMode": "proposal-only",
+  "modelTier": "strong",
+  "state": "active",
+  "modes": [
+    "solo",
+    "team"
+  ],
+  "surfaces": [
+    "mcp",
+    "cli"
+  ],
+  "description": "Synthesize multiple sources into a cited, evidence-graded research summary.",
+  "durableStateModel": "none"
+}

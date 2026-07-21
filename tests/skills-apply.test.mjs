@@ -15,7 +15,7 @@ test('writeOpenCodeHostConfig writes a sidecar instead of project-root opencode.
   const cwd = tempDir('construct-skills-apply-');
   const sidecarPath = writeOpenCodeHostConfig(cwd, {
     irrelevant: ['frontend-patterns', 'python-testing'],
-    protected: ['cx-engineer'],
+    protected: ['engineer'],
   });
 
   assert.equal(sidecarPath, path.join(cwd, '.opencode', 'construct-skills.json'));
@@ -23,9 +23,9 @@ test('writeOpenCodeHostConfig writes a sidecar instead of project-root opencode.
 
   const sidecar = JSON.parse(fs.readFileSync(sidecarPath, 'utf8'));
   assert.equal(sidecar.version, 1);
-  assert.equal(sidecar.source, '.cx/skills-profile.json');
+  assert.equal(sidecar.source, '.construct/skills-profile.json');
   assert.deepEqual(sidecar.disabledSkills, ['frontend-patterns', 'python-testing']);
-  assert.deepEqual(sidecar.protected, ['cx-engineer']);
+  assert.deepEqual(sidecar.protected, ['engineer']);
   assert.match(sidecar.generatedAt, /^\d{4}-\d{2}-\d{2}T/);
 });
 

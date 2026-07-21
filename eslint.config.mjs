@@ -31,7 +31,7 @@ export default [
       'packages/**/dist/**',
       'dist/**',
       'coverage/**',
-      '.cx/**',
+      '.construct/**',
       'db/**',
     ],
   },

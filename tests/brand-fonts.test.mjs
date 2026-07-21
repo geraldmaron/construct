@@ -17,18 +17,19 @@ import {
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-test('BRAND_SANS_FAMILY is Space Grotesk', () => {
-  assert.equal(BRAND_SANS_FAMILY, 'Space Grotesk');
+test('BRAND_SANS_FAMILY is Plus Jakarta Sans', () => {
+  assert.equal(BRAND_SANS_FAMILY, 'Plus Jakarta Sans');
 });
 
 test('BRAND_MONO_FAMILY is JetBrains Mono', () => {
   assert.equal(BRAND_MONO_FAMILY, 'JetBrains Mono');
 });
 
-test('bundledSansFontPaths returns the Space Grotesk variable TTF', () => {
+test('bundledSansFontPaths returns Plus Jakarta Sans TTF cuts', () => {
   const paths = bundledSansFontPaths(REPO);
-  assert.equal(paths.length, 1);
+  assert.equal(paths.length, 4);
   assert.ok(paths.every((p) => p.endsWith('.ttf')));
+  assert.ok(paths.some((p) => p.includes('PlusJakartaSans')));
 });
 
 test('bundledMonoFontPaths returns three JetBrains Mono TTF cuts', () => {

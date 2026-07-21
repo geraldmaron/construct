@@ -31,8 +31,8 @@ function sandbox() {
   const HOME = join(root, 'HOME');
   const project = join(root, 'project');
   const doctorRoot = join(root, 'doctor');
-  mkdirSync(join(HOME, '.cx'), { recursive: true });
-  mkdirSync(join(project, '.cx'), { recursive: true });
+  mkdirSync(join(HOME, '.construct'), { recursive: true });
+  mkdirSync(join(project, '.construct'), { recursive: true });
   mkdirSync(doctorRoot, { recursive: true });
   return {
     root, HOME, project, doctorRoot,
@@ -49,7 +49,7 @@ async function connect(env, extraEnv = {}) {
     env: {
       ...process.env,
       HOME: env.HOME,
-      CX_HOME_OVERRIDE: env.HOME,
+      CONSTRUCT_HOME_OVERRIDE: env.HOME,
       CONSTRUCT_DEV_PATH: REPO_ROOT,
       CONSTRUCT_DOCTOR_ROOT: env.doctorRoot,
       ...extraEnv,
@@ -78,7 +78,7 @@ test('CallTool logs a value-free audit record and never leaks call arguments', a
   const client = await connect(env);
   t.after(() => client.close());
 
-  const SENTINEL_PATH = 'roles/engineer';
+  const SENTINEL_PATH = 'perspectives/engineer';
   await client.callTool({ name: 'get_skill', arguments: { path: SENTINEL_PATH } });
 
   const rows = readAuditRows(env);

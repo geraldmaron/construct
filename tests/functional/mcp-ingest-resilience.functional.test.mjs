@@ -6,8 +6,9 @@
  * stalled docling extractor. Spawns the REAL MCP server over stdio in a sterile
  * sandbox whose docling venv is a stub (a python that exits non-zero), recorded
  * via the install marker so provisioning never runs and the network is never
- * touched. The tool must return a clean, bounded result — the node-native
- * fallback — never hang the server and never surface an undefined-property crash.
+ * touched. The tool must return a clean, bounded result — recoverable unsupported
+ * when docling cannot run — never hang the server and never surface an undefined-
+ * property crash.
  *
  * @capability ingest.docling
  *
@@ -43,11 +44,12 @@ function makeSandbox() {
     join(runtimeDir, ".install-marker.json"),
     JSON.stringify({ doclingVersion: DOCLING_PIN, pythonBin: py }),
   );
-  // A docling-format input (.rtf is routed to docling, and the legacy extractor
-  // also handles it) so the fallback produces real text.
-  const rtf = join(root, "sample.rtf");
-  writeFileSync(rtf, "{\\rtf1\\ansi Hello from a sterile RTF document.}");
-  return { root, rtf };
+  // Office formats with no lightweight parser route through docling-local when the
+  // install marker is present; a broken venv must fail closed with a recoverable
+  // result instead of hanging or surfacing an undefined-property crash.
+  const pptx = join(root, "sample.pptx");
+  writeFileSync(pptx, "fake pptx bytes");
+  return { root, pptx };
 }
 
 async function withClient(root, fn) {
@@ -69,31 +71,35 @@ async function withClient(root, fn) {
   try { return await fn(client); } finally { await client.close(); }
 }
 
-test("ingest_document with a broken docling extractor returns the node-native fallback, never hangs or crashes on 'invoke'", async () => {
-  const { root, rtf } = makeSandbox();
+test("ingest_document with a broken docling extractor returns a bounded recoverable result, never hangs or crashes on 'invoke'", async () => {
+  const { root, pptx } = makeSandbox();
   try {
     const parsed = await withClient(root, async (client) => {
-      const res = await client.callTool({ name: "ingest_document", arguments: { file_path: rtf, cwd: root } });
+      const res = await client.callTool({ name: "ingest_document", arguments: { file_path: pptx, cwd: root } });
       const text = res?.content?.[0]?.text ?? "";
       assert.ok(text, "tool returned content");
       assert.doesNotMatch(text, /reading 'invoke'|Cannot read properties of undefined/, "no undefined-property crash");
       return JSON.parse(text);
     });
 
-    assert.equal(parsed.status, "ok", `ingest should complete via fallback, got: ${JSON.stringify(parsed).slice(0, 300)}`);
+    assert.equal(parsed.status, "ok", `ingest should complete with a bounded result, got: ${JSON.stringify(parsed).slice(0, 300)}`);
     const file = parsed.files?.[0];
     assert.ok(file, "a file result is present");
-    assert.ok(file.droppedInfo.some((d) => d.kind === "docling-fallback"), "fallback to the node-native extractor is recorded");
+    assert.equal(file.unsupported, true, "docling failure surfaces as recoverable unsupported, not a hang");
+    assert.ok(
+      file.droppedInfo.some((d) => d.recoverable && /docling|Docling|lightweight parser/i.test(d.reason)),
+      "recoverable docling-unavailable drop is recorded",
+    );
   } finally {
     rmTmpDir(root);
   }
 });
 
 test("server stays responsive after the failing ingest (tools/list still answers)", async () => {
-  const { root, rtf } = makeSandbox();
+  const { root, pptx } = makeSandbox();
   try {
     await withClient(root, async (client) => {
-      await client.callTool({ name: "ingest_document", arguments: { file_path: rtf, cwd: root } });
+      await client.callTool({ name: "ingest_document", arguments: { file_path: pptx, cwd: root } });
       const tools = await client.listTools();
       // ingest_document is now reachable via the construct_call gateway, not the
       // flat surface; assert tools/list still answers with the exposed core.

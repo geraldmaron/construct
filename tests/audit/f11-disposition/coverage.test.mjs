@@ -7,7 +7,7 @@
  * `lib/host-disposition.mjs` (`IGNORED_PATTERNS` + `ADAPTER_DIRS`), which
  * enumerates only the ignored subset — and not even all of that.
  *
- * Proof of a created-but-undispositioned file: `scripts/sync-specialists.mjs`
+ * Proof of a created-but-undispositioned file: `scripts/sync-worker-profiles.mjs`
  * (syncCopilot) writes VS Code custom-agent files to
  * `.github/agents/<name>.agent.md`. That path is created by Construct yet has no
  * disposition entry: it is not in IGNORED_PATTERNS (only `.github/prompts/` and
@@ -37,12 +37,12 @@ import {
 // resolve to exactly one disposition the taxonomy can name.
 
 const CREATED_PATHS = [
-  // scripts/sync-specialists.mjs syncCopilot — VS Code custom agents.
-  { path: '.github/agents/', generator: 'scripts/sync-specialists.mjs:syncCopilot (agentsDir)' },
-  // scripts/sync-specialists.mjs syncCopilot — Copilot prompt profiles.
-  { path: '.github/prompts/', generator: 'scripts/sync-specialists.mjs:syncCopilot (promptsDir)' },
-  // scripts/sync-specialists.mjs syncCopilot — Copilot repo instructions.
-  { path: '.github/copilot-instructions.md', generator: 'scripts/sync-specialists.mjs:syncCopilot (instructionsPath)' },
+  // scripts/sync-worker-profiles.mjs syncCopilot — VS Code custom agents.
+  { path: '.github/agents/', generator: 'scripts/sync-worker-profiles.mjs:syncCopilot (agentsDir)' },
+  // scripts/sync-worker-profiles.mjs syncCopilot — Copilot prompt profiles.
+  { path: '.github/prompts/', generator: 'scripts/sync-worker-profiles.mjs:syncCopilot (promptsDir)' },
+  // scripts/sync-worker-profiles.mjs syncCopilot — Copilot repo instructions.
+  { path: '.github/copilot-instructions.md', generator: 'scripts/sync-worker-profiles.mjs:syncCopilot (instructionsPath)' },
   // lib/init-unified.mjs writeStampedIfMissing — working plan.
   { path: 'plan.md', generator: 'lib/init-unified.mjs (writeStampedIfMissing)' },
 ];
@@ -78,6 +78,6 @@ test('every file Construct creates has an explicit disposition entry', () => {
 test('.github/agents custom-agent files have an explicit disposition', () => {
   assert.ok(
     hasExplicitDisposition('.github/agents/'),
-    '.github/agents/ is created by sync-specialists.mjs (VS Code custom agents) but carries no disposition entry.',
+    '.github/agents/ is created by sync-worker-profiles.mjs (VS Code custom agents) but carries no disposition entry.',
   );
 });

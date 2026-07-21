@@ -7,7 +7,7 @@
  *
  * observation-store/entity-store resolve project state through the
  * machine-scoped state root (ADR-0066), keyed by a hash of tmpDir — so
- * CX_HOME_OVERRIDE is pinned for the whole file to keep that write off the
+ * CONSTRUCT_HOME_OVERRIDE is pinned for the whole file to keep that write off the
  * real developer machine's $HOME.
  */
 import { describe, it, beforeEach, after, afterEach } from 'node:test';
@@ -21,16 +21,16 @@ import { listEntities } from '../lib/entity-store.mjs';
 
 // captureSessionArtifacts writes observations through the machine-scoped state
 // root (ADR-0066, lib/observation-store.mjs -> resolveStateDir), so
-// CX_HOME_OVERRIDE is pinned for the whole file to keep those writes off the
+// CONSTRUCT_HOME_OVERRIDE is pinned for the whole file to keep those writes off the
 // real developer machine's ~/.construct/projects.
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-capture-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 after(() => {
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 let tmpDir;

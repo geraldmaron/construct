@@ -26,9 +26,9 @@ test('PACK_OPTIONAL_FIELDS', async (t) => {
     assert.ok(PACK_OPTIONAL_FIELDS.length > 0);
   });
 
-  await t.test('includes teams, specialists, prompts, deprecation', () => {
+  await t.test('includes teams, Worker Profiles, prompts, and deprecation', () => {
     assert.ok(PACK_OPTIONAL_FIELDS.includes('teams'));
-    assert.ok(PACK_OPTIONAL_FIELDS.includes('specialists'));
+    assert.ok(PACK_OPTIONAL_FIELDS.includes('workerProfiles'));
     assert.ok(PACK_OPTIONAL_FIELDS.includes('prompts'));
     assert.ok(PACK_OPTIONAL_FIELDS.includes('deprecation'));
   });

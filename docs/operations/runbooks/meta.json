@@ -1,9 +1,11 @@
 {
   "title": "Runbooks",
   "pages": [
+    "acp-host-matrix",
     "day-2-operations",
     "host-adapter-certification",
     "m1-self-host-sre",
+    "orchestration-startup-to-invocation",
     "surface-smoke-matrix"
   ]
 }

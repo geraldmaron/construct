@@ -8,8 +8,9 @@ import { routeRequest } from '../../../lib/orchestration-policy.mjs';
 
 test('PRD request routes through product and architecture chain', () => {
   const result = routeRequest({ request: 'Draft a PRD for the customer portal login flow' });
-  assert.ok(result.specialists?.length > 0, 'expected specialist chain');
-  assert.ok(result.specialists.some((n) => String(n).includes('product-manager')), `expected product-manager in ${result.specialists.join(', ')}`);
+  const workerProfiles = (result.assignments || []).map((assignment) => assignment.workerProfileId);
+  assert.ok(workerProfiles.length > 0, 'expected Assignment chain');
+  assert.ok(workerProfiles.includes('product-manager'), `expected product-manager in ${workerProfiles.join(', ')}`);
 });
 
 test('contract chain is present for orchestrated work', () => {

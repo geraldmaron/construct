@@ -1,7 +1,7 @@
 # QA Report: {feature-or-bd-id}
 
 - **Date**: {YYYY-MM-DD}
-- **QA**: cx-qa (or named human)
+- **QA**: qa (or named human)
 - **Scope**: {feature / PR / bd-id / acceptance-criteria source}
 - **Verdict**: PASS | FAIL | BLOCKED
 - **Status**: draft | final
@@ -43,6 +43,6 @@ available, the verdict is `unknown` — not an estimate.
 
 ## Handoff
 
-- test failures to fix → `next:cx-engineer`
-- root cause investigation → `next:cx-debugger`
+- test failures to fix → `next:engineer`
+- root cause investigation → `next:debugger`
 - flaky tests to stabilize → `next:cx-test-automation`

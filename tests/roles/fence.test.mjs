@@ -14,61 +14,60 @@ test('globMatch handles ** and *', () => {
 });
 
 test('operations may edit runbooks (in-fence)', () => {
-  const r = checkAction({ personaId: 'operations', action: 'edit', target: 'docs/operations/runbooks/postgres.md' });
+  const r = checkAction({ workerProfileId: 'operations', action: 'edit', target: 'docs/operations/runbooks/postgres.md' });
   assert.equal(r.allowed, true);
 });
 
 test('operations editing lib/ needs approval', () => {
-  const r = checkAction({ personaId: 'operations', action: 'edit', target: 'lib/foo.mjs' });
+  const r = checkAction({ workerProfileId: 'operations', action: 'edit', target: 'lib/foo.mjs' });
   assert.equal(r.allowed, false);
   assert.equal(r.approval, true);
 });
 
 test('security may edit security docs but not code', () => {
   assert.equal(
-    checkAction({ personaId: 'security', action: 'edit', target: 'docs/security/threat.md' }).allowed,
+    checkAction({ workerProfileId: 'security', action: 'edit', target: 'docs/security/threat.md' }).allowed,
     true
   );
-  const codeAttempt = checkAction({ personaId: 'security', action: 'edit', target: 'lib/foo.mjs' });
+  const codeAttempt = checkAction({ workerProfileId: 'security', action: 'edit', target: 'lib/foo.mjs' });
   assert.equal(codeAttempt.allowed, false);
   assert.equal(codeAttempt.approval, true);
 });
 
 test('operations may edit README and CHANGELOG', () => {
-  assert.equal(checkAction({ personaId: 'operations', action: 'edit', target: 'README.md' }).allowed, true);
-  assert.equal(checkAction({ personaId: 'operations', action: 'edit', target: 'sub/README.md' }).allowed, true);
-  assert.equal(checkAction({ personaId: 'operations', action: 'edit', target: 'CHANGELOG.md' }).allowed, true);
+  assert.equal(checkAction({ workerProfileId: 'operations', action: 'edit', target: 'README.md' }).allowed, true);
+  assert.equal(checkAction({ workerProfileId: 'operations', action: 'edit', target: 'sub/README.md' }).allowed, true);
+  assert.equal(checkAction({ workerProfileId: 'operations', action: 'edit', target: 'CHANGELOG.md' }).allowed, true);
 });
 
-test('every onboarded persona requires approval for commit and push', () => {
+test('every onboarded worker profile requires approval for commit and push', () => {
   for (const id of ['operations', 'qa', 'security']) {
-    assert.equal(checkAction({ personaId: id, action: 'commit', target: '' }).approval, true, `${id} commit`);
-    assert.equal(checkAction({ personaId: id, action: 'push', target: '' }).approval, true, `${id} push`);
+    assert.equal(checkAction({ workerProfileId: id, action: 'commit', target: '' }).approval, true, `${id} commit`);
+    assert.equal(checkAction({ workerProfileId: id, action: 'push', target: '' }).approval, true, `${id} push`);
   }
 });
 
 test('bash fence uses prefix match against allowedCommands', () => {
-  assert.equal(checkAction({ personaId: 'operations', action: 'bash', target: 'bd note construct-abc some-note' }).allowed, true);
-  assert.equal(checkAction({ personaId: 'operations', action: 'bash', target: 'bd create incident-x -t bug' }).allowed, true);
-  const denied = checkAction({ personaId: 'operations', action: 'bash', target: 'npm install lodash' });
+  assert.equal(checkAction({ workerProfileId: 'operations', action: 'bash', target: 'bd note construct-abc some-note' }).allowed, true);
+  assert.equal(checkAction({ workerProfileId: 'operations', action: 'bash', target: 'bd create incident-x -t bug' }).allowed, true);
+  const denied = checkAction({ workerProfileId: 'operations', action: 'bash', target: 'npm install lodash' });
   assert.equal(denied.allowed, false);
   assert.equal(denied.reason, 'outside-fence');
 });
 
 test('bd-label inside allowed list is permitted; outside is denied', () => {
-  assert.equal(checkAction({ personaId: 'operations', action: 'bd-label', target: 'incident,sre' }).allowed, true);
-  assert.equal(checkAction({ personaId: 'operations', action: 'bd-label', target: 'incident,next:cx-engineer' }).allowed, true);
-  assert.equal(checkAction({ personaId: 'operations', action: 'bd-label', target: 'random' }).allowed, false);
+  assert.equal(checkAction({ workerProfileId: 'operations', action: 'bd-label', target: 'incident,sre' }).allowed, true);
+  assert.equal(checkAction({ workerProfileId: 'operations', action: 'bd-label', target: 'incident,next:engineer' }).allowed, true);
+  assert.equal(checkAction({ workerProfileId: 'operations', action: 'bd-label', target: 'random' }).allowed, false);
 });
 
-test('unknown persona is rejected', () => {
-  const r = checkAction({ personaId: 'made-up', action: 'edit', target: 'anything' });
+test('unknown worker profile is rejected', () => {
+  const r = checkAction({ workerProfileId: 'made-up', action: 'edit', target: 'anything' });
   assert.equal(r.allowed, false);
-  assert.equal(r.reason, 'persona-not-onboarded');
+  assert.equal(r.reason, 'worker-profile-not-onboarded');
 });
 
-test('computeEffectiveFence: team fence bounds specialist fence', () => {
-  // Engineer fence is narrower than any team allows; effective fence should be engineer's own fence
+test('computeEffectiveFence: without registry returns profile fence as-is', () => {
   const engineerFence = {
     allowedPaths: ['lib/**', 'tests/**'],
     allowedCommands: ['npm test', 'npm run build'],
@@ -76,20 +75,34 @@ test('computeEffectiveFence: team fence bounds specialist fence', () => {
     approvalRequired: ['commit', 'push'],
   };
   const effective = computeEffectiveFence('engineer', engineerFence);
-  assert.ok(effective, 'should return an effective fence');
-  // Denied actions should include team's forbidden decisions
-  assert.ok(Array.isArray(effective.deniedActions), 'deniedActions should be an array');
+  assert.deepEqual(effective, engineerFence);
+});
+
+test('computeEffectiveFence: live-shaped registry without teams leaves fence unchanged', () => {
+  const fence = {
+    allowedPaths: ['lib/**'],
+    allowedCommands: ['npm test'],
+    deniedActions: [],
+    approvalRequired: ['commit'],
+  };
+  const liveShaped = {
+    workspacePresets: {},
+    workerProfiles: {},
+    procedures: {},
+    capabilities: {},
+    policies: {},
+  };
+  const effective = computeEffectiveFence('engineer', fence, liveShaped);
+  assert.deepEqual(effective, fence);
 });
 
 test('computeEffectiveFence: specialist cannot exceed team authority', () => {
-  // Create a specialist fence that tries to allow something the team forbids
   const overreachingFence = {
-    allowedPaths: ['lib/**', 'tests/**', 'specialists/**'],
+    allowedPaths: ['lib/**', 'tests/**', 'registry/worker-profiles/**'],
     allowedCommands: ['npm', 'git'],
     deniedActions: [],
     approvalRequired: [],
   };
-  // Mock registry with engineering-group team that forbids certain decisions
   const mockRegistry = {
     teams: {
       'engineering-group': {
@@ -101,18 +114,14 @@ test('computeEffectiveFence: specialist cannot exceed team authority', () => {
     },
   };
   const effective = computeEffectiveFence('engineer', overreachingFence, mockRegistry);
-  // Effective fence should add team's forbidden decisions to deniedActions
   assert.ok(Array.isArray(effective.deniedActions), 'deniedActions should include team forbiddens');
-  // team forbids: product-scope, user-research, deployment-timing
-  // so these should appear as denied patterns
-  const hasForbidden = effective.deniedActions.some(d =>
+  const hasForbidden = effective.deniedActions.some((d) =>
     d.includes('product-scope') || d.includes('user-research') || d.includes('deployment-timing')
   );
   assert.ok(hasForbidden, 'effective fence should block team-forbidden decisions');
 });
 
 test('computeEffectiveFence: gracefully handles missing team', () => {
-  // A persona with no team should get the specialist fence as-is
   const specialistFence = {
     allowedPaths: ['docs/**'],
     allowedCommands: [],
@@ -120,6 +129,5 @@ test('computeEffectiveFence: gracefully handles missing team', () => {
     approvalRequired: ['commit'],
   };
   const effective = computeEffectiveFence('unknown-persona', specialistFence);
-  // Should return something reasonable even if persona is not found
-  assert.ok(effective, 'should handle missing team gracefully');
+  assert.deepEqual(effective, specialistFence);
 });

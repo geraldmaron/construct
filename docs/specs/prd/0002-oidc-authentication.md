@@ -123,8 +123,8 @@ D --> E[Write auth log with actor_type machine and client_id]
 | C-3 | `GET /api/auth/callback` | Receives the auth code from the IdP, performs token exchange, and sets the session cookie. |
 | C-4 | `POST /api/auth/logout` | Clears the session cookie and optionally revokes the token at the IdP revocation endpoint. |
 | C-5 | `cx/auth.yaml` | Admin config file with `discovery_url`, `client_id`, `client_secret` (or `client_secret_ref` for `op://` resolution per FR-14), `allowed_domains`, and `session_ttl_seconds`. |
-| C-6 | `.cx/logs/auth-events.jsonl` | Append-only auth event log with `event`, `timestamp`, `sub`, `iss`, `session_id`, and `actor_type`. Raw token bytes are never written. |
-| C-7 | `construct/auth/<issuer>` | OS keychain entry that stores access and refresh tokens, with no plaintext copy in `.cx/`. |
+| C-6 | `.construct/logs/auth-events.jsonl` | Append-only auth event log with `event`, `timestamp`, `sub`, `iss`, `session_id`, and `actor_type`. Raw token bytes are never written. |
+| C-7 | `construct/auth/<issuer>` | OS keychain entry that stores access and refresh tokens, with no plaintext copy in `.construct/`. |
 
 ---
 
@@ -140,15 +140,15 @@ D --> E[Write auth log with actor_type machine and client_id]
   Acceptance: Pointing `discovery_url` at a mock OIDC server routes auth correctly without code changes.
 - **FR-1.4**: Session tokens must be short-lived (default: 1 hour) and stored in an HttpOnly, Secure, SameSite=Strict cookie.
   Acceptance: Cookie is absent from `document.cookie`. A token past TTL triggers re-auth.
-- **FR-1.5**: Auth events (login, validation failure, logout) must be appended to C-6 (`.cx/logs/auth-events.jsonl`).
+- **FR-1.5**: Auth events (login, validation failure, logout) must be appended to C-6 (`.construct/logs/auth-events.jsonl`).
   Acceptance: Successful login writes `{ event: "login", sub, iss, session_id, timestamp }`. No `id_token` bytes present.
 
 ### Phase 2 — CLI Device Authorization Grant
 
 - **FR-2.1**: `construct auth login` must initiate RFC 8628: print `verification_uri` and `user_code`; poll the token endpoint until authorised or expired.
   Acceptance: Against a mock IdP, displays URL+code and resolves to a stored token on approval.
-- **FR-2.2**: Resulting tokens must be stored in the OS keychain (C-7), absent from any `.cx/` plaintext file.
-  Acceptance: `grep -r "access_token" .cx/` returns empty after `construct auth login`.
+- **FR-2.2**: Resulting tokens must be stored in the OS keychain (C-7), absent from any `.construct/` plaintext file.
+  Acceptance: `grep -r "access_token" .construct/` returns empty after `construct auth login`.
 - **FR-2.3**: `construct auth logout` must delete the keychain entry and call the IdP revocation endpoint if advertised.
   Acceptance: Keychain entry gone; revocation request logged by mock IdP.
 - **FR-2.4**: `construct auth status` must print `sub`, `email` (if present), `expires_at`, and `iss`; no raw token bytes.
@@ -176,7 +176,7 @@ D --> E[Write auth log with actor_type machine and client_id]
 | NFR-3 | JWKS key rotation resilience | One background refresh on validation failure before hard-reject; no user-visible error |
 | NFR-4 | Device flow polling interval | `max(interval_from_server, 5s)`; no faster polling |
 | NFR-5 | Device flow timeout | 5 minutes; clear expiry message |
-| NFR-6 | Client-secret confidentiality | Never in argv, structured logs, or `.cx/` files; static-analysis gate in CI |
+| NFR-6 | Client-secret confidentiality | Never in argv, structured logs, or `.construct/` files; static-analysis gate in CI |
 | NFR-7 | Token refresh retry | Exponential backoff; max 3 attempts before session invalid |
 | NFR-8 | Zero new core CLI npm dependencies | Node built-in `crypto` + `https` for the validation path; keychain library permitted in bounded `auth` module only |
 | NFR-9 | Auth event log immutability | Append-only; no edit or delete surface exposed by any CLI command |
@@ -189,14 +189,14 @@ This is a **new contract** — no existing authenticated surface exists. The `/a
 
 `cx/auth.yaml` is a new file. Deployments without it remain in the current unauthenticated state for Phase 1 (fail-open for solo mode; fail-closed once `auth.yaml` is present). This preserves the local-first solo developer path described in `STRATEGY.md` Bet 2.
 
-CLI token storage moves from plaintext `.cx/` config to OS keychain in Phase 2. Existing plaintext tokens are not migrated automatically; users must run `construct auth login` after the upgrade.
+CLI token storage moves from plaintext `.construct/` config to OS keychain in Phase 2. Existing plaintext tokens are not migrated automatically; users must run `construct auth login` after the upgrade.
 
 ---
 
 ## Migration and rollout
 
 1. **Phase 1 (dashboard)**: Administrator creates `cx/auth.yaml` pointing at their IdP. Existing unauthenticated sessions are terminated on next request. No data migration required.
-2. **Phase 2 (CLI)**: Users run `construct auth login` once. Old plaintext token files in `.cx/` can be deleted; `construct auth login` will print a notice if a legacy credential file is detected.
+2. **Phase 2 (CLI)**: Users run `construct auth login` once. Old plaintext token files in `.construct/` can be deleted; `construct auth login` will print a notice if a legacy credential file is detected.
 3. **Phase 3 (CI)**: CI pipelines replace long-lived static tokens with `CX_CLIENT_ID` + `CX_CLIENT_SECRET` env vars (resolvable via `op://`). Oracle daemon config updated to include a `client_credentials` stanza.
 
 Coordination required: dashboard team (Phase 1 middleware), platform engineer (Phase 2 keychain library selection), CI/Oracle owner (Phase 3 interface contract).
@@ -205,9 +205,9 @@ Coordination required: dashboard team (Phase 1 middleware), platform engineer (P
 
 ## Operational requirements
 
-The auth event log at `.cx/logs/auth-events.jsonl` must stay structured, append-only, and queryable via `construct logs auth` if that command lands in Phase 1.
+The auth event log at `.construct/logs/auth-events.jsonl` must stay structured, append-only, and queryable via `construct logs auth` if that command lands in Phase 1.
 
-The JWKS cache persists at `.cx/auth-cache.json`, refreshes on validation failure, and defaults to a one-hour TTL.
+The JWKS cache persists at `.construct/auth-cache.json`, refreshes on validation failure, and defaults to a one-hour TTL.
 
 Failure handling follows three explicit branches:
 
@@ -224,7 +224,7 @@ Phase 2 admin controls include `construct auth revoke --sub <sub>` to invalidate
 1. An unauthenticated `GET /` to the dashboard returns HTTP 302 to the configured IdP (Phase 1).
 2. A forged or expired `id_token` is rejected with a 401 and an auth-event log entry (Phase 1).
 3. `construct auth login` completes the device flow against a mock IdP and stores a token in the OS keychain (Phase 2).
-4. `grep -r "access_token" .cx/` returns empty after `construct auth login` (Phase 2).
+4. `grep -r "access_token" .construct/` returns empty after `construct auth login` (Phase 2).
 5. A CI job with `CX_CLIENT_ID` + `CX_CLIENT_SECRET` runs `construct publish` without a device-flow prompt (Phase 3).
 6. Every approval-queue action taken post-Phase 1 has a `sub` claim (human) or `client_id` (machine) in the auth event log (Phase 1 + 3).
 7. Rotating IdP JWKS keys mid-session does not cause a user-visible auth failure (NFR-3).
@@ -249,7 +249,7 @@ Phase 2 admin controls include `construct auth revoke --sub <sub>` to invalidate
 
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
-| IdP discovery document unavailable at startup | low | high | Cache to `.cx/auth-cache.json`; fail open on read, closed on write |
+| IdP discovery document unavailable at startup | low | high | Cache to `.construct/auth-cache.json`; fail open on read, closed on write |
 | JWKS key rotation causes mass re-auth | low | med | Silent background JWKS refresh on validation failure (NFR-3) |
 | Client secret leaks via debug logging | med | high | Static-analysis gate in CI; structured log schema enforces `redacted` for credential fields (NFR-6) |
 | Device flow user ignores verification prompt | med | med | CLI polls for full `expires_in` window; reminder printed every 30 s |
@@ -264,7 +264,7 @@ Phase 2 admin controls include `construct auth revoke --sub <sub>` to invalidate
 - **Solo developers** (no `cx/auth.yaml`): no change. Auth is opt-in until `cx/auth.yaml` is present.
 - **Team deployments**: existing unauthenticated dashboard sessions end on Phase 1 rollout. Users must log in via IdP.
 - **CI pipelines**: must replace static tokens with Client Credentials in Phase 3. Long-lived static tokens will stop working once `cx/auth.yaml` is active.
-- **Existing `.cx/` credential files**: not migrated; users re-authenticate via `construct auth login`.
+- **Existing `.construct/` credential files**: not migrated; users re-authenticate via `construct auth login`.
 
 ---
 
@@ -302,7 +302,7 @@ Phase 2 admin controls include `construct auth revoke --sub <sub>` to invalidate
 4. `README.md` — Enterprise tier: RBAC/ABAC scaffolding, signed MCP allowlists, mandatory audit
 5. `Dockerfile` — existing `/api/auth/status` health-check stub
 6. `specialists/prompts/cx-security.md` — auth/JWT/session audit checklist
-7. `skills/roles/architect.enterprise.md` — SSO, RBAC, audit, tenant isolation checklist
+7. `skills/perspectives/architect.enterprise.md` — SSO, RBAC, audit, tenant isolation checklist
 8. OpenID Connect Core 1.0 — https://openid.net/specs/openid-connect-core-1_0.html
 9. RFC 7636: PKCE — https://datatracker.ietf.org/doc/html/rfc7636
 10. RFC 8628: Device Authorization Grant — https://datatracker.ietf.org/doc/html/rfc8628
