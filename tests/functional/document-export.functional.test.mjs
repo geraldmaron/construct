@@ -290,3 +290,41 @@ test('exportMarkdown soft-degrades figures:unresolved when figuresStrict is fals
   assert.equal(result.figuresUnresolved, true);
   assert.match(result.message, /figures:unresolved/);
 });
+
+test('typst PDF export passes --extract-media so hashed diagram SVGs resolve', () => {
+  const dir = tmpDir('cx-export-extract-media-');
+  const { dir: stubDir } = stubPandocPath('cx-export-extract-media-stub-');
+  stubFigureBins(stubDir);
+  const inputPath = path.join(dir, 'diagrams.md');
+  const outputPath = path.join(dir, 'diagrams.pdf');
+  fs.writeFileSync(inputPath, '## Flow\n\n```d2\na -> b\n```\n');
+  fs.writeFileSync(outputPath, '%PDF-1.4 stub');
+  const env = { ...process.env, PATH: `${stubDir}:${process.env.PATH || ''}` };
+  let capturedArgs = null;
+  const spawnFn = (_cmd, args) => {
+    capturedArgs = args;
+    const oIdx = args.indexOf('-o');
+    if (oIdx >= 0 && args[oIdx + 1]) {
+      fs.copyFileSync(outputPath, args[oIdx + 1]);
+    }
+    return { status: 0, stdout: '', stderr: '' };
+  };
+  const result = exportMarkdown({
+    inputPath,
+    outputPath,
+    format: 'pdf',
+    figures: true,
+    figuresStrict: false,
+    env,
+    spawnFn,
+    repoRoot: REPO,
+    cwd: dir,
+    branding: 'construct',
+  });
+  assert.equal(result.ok, true, result.message);
+  assert.ok(capturedArgs, 'pandoc spawn was not observed');
+  const extractArg = capturedArgs.find((arg) => String(arg).startsWith('--extract-media='));
+  assert.ok(extractArg, `expected --extract-media=… in ${JSON.stringify(capturedArgs)}`);
+  assert.match(extractArg, /construct-export-media-/);
+  assert.ok(capturedArgs.includes('--lua-filter') || capturedArgs.some((arg) => String(arg).includes('diagram.lua')));
+});
