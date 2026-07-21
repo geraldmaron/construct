@@ -71,7 +71,7 @@ test('construct init writes each footprint layer exactly: pinned .construct/ tre
   t.after(cleanup);
 
   const env = isolationEnv(home, { CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1', BOOTSTRAP_CHECKED: '1' });
-  const result = spawnSync(process.execPath, [BIN, 'init', '--yes', '--no-start'], {
+  const result = spawnSync(process.execPath, [BIN, 'init', '--yes', '--no-start', '--with-claude'], {
     cwd: project,
     encoding: 'utf8',
     timeout: 120_000,

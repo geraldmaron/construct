@@ -87,6 +87,7 @@
         "Alternatives rejected",
         "What must be true",
         "Competitive analysis",
+        "Financial frame",
         "Kill criteria",
         "Risks",
         "References"
@@ -111,6 +112,7 @@
         "Background",
         "Problem",
         "Outcomes - Goals & Non-Goals",
+        "Timing & stakes",
         "Principles",
         "Inputs and evidence",
         "Phases",
@@ -139,6 +141,7 @@
         "Rejected alternatives",
         "Consequences",
         "Reversibility",
+        "Legal, privacy, and security triggers",
         "Adversarial challenge",
         "References"
       ],
@@ -566,6 +569,7 @@
       "structureRequirements": [
         "Executive summary",
         "Findings",
+        "Compliance",
         "Remediation priority"
       ],
       "visualRequirements": [],
@@ -575,6 +579,55 @@
         "proseMinimum": 2,
         "requiredReviewers": [
           "reviewer"
+        ],
+        "optionalReviewers": []
+      }
+    },
+    {
+      "type": "compliance-memo",
+      "structureRequirements": [
+        "TL;DR",
+        "Scope and activity",
+        "Obligation → control register",
+        "Regulatory Citations",
+        "Remediation Plan",
+        "Residual risk and counsel gate",
+        "Adversarial challenge",
+        "References"
+      ],
+      "visualRequirements": [],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": true,
+        "proseMinimum": 3,
+        "requiredReviewers": [
+          "reviewer",
+          "security"
+        ],
+        "optionalReviewers": []
+      }
+    },
+    {
+      "type": "dpia-or-privacy-assessment",
+      "structureRequirements": [
+        "Purpose of processing",
+        "Data map",
+        "Necessity and proportionality",
+        "Risks to individuals",
+        "Lawful basis (counsel)",
+        "Cross-border / subprocessors",
+        "Deletion and subject rights",
+        "Decision and residual risk",
+        "References"
+      ],
+      "visualRequirements": [],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": true,
+        "proseMinimum": 3,
+        "requiredReviewers": [
+          "reviewer",
+          "security"
         ],
         "optionalReviewers": []
       }

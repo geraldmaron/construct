@@ -8,15 +8,18 @@ cx_fixture_source: templates/docs/research-brief.md
 
 ## Question
 
-This paragraph supports the Question section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Question section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Question section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Question section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Question section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Question section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Method
 
-This paragraph supports the Method section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Method section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Method section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Method section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Method section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Method section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Sources
 
-Fixture content for Sources.
+| Source | Type | Accessed | Link |
+|---|---|---|---|
+| Fixture corpus | internal | 2026-06-22 | [fixture source](https://example.com/fixture) |
+
 
 ## Findings
 
@@ -25,7 +28,7 @@ Fixture content for Sources.
 **Observation**: Sources state X.
 **Inference**: Therefore Y - labeled as inference.
 **Confidence**: medium: limited sample
-**Sources**: Fixture source
+**Sources**: [fixture source](https://example.com/fixture)
 
 
 ## Counter-evidence
@@ -42,4 +45,4 @@ Fixture content for Recommendation.
 
 ## References
 
-Fixture content for References.
+- [Fixture source](https://example.com/fixture) (accessed 2026-06-22)

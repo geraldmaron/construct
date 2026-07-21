@@ -8,19 +8,31 @@ cx_fixture_source: templates/docs/meta-prd.md
 
 ## TL;DR
 
-This paragraph supports the TL;DR section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the TL;DR section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the TL;DR section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the TL;DR section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the TL;DR section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the TL;DR section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Background
 
-This paragraph supports the Background section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Background section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Background section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Background section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Background section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Background section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Problem
 
-This paragraph supports the Problem section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Problem section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Problem section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Problem section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Problem section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Problem section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Outcomes - Goals & Non-Goals
 
 Fixture content for Outcomes - Goals & Non-Goals.
+
+## Timing & stakes
+
+Revenue at risk compounds if we defer the evidence gate; cost of delay includes reviewer toil.
+
+| Stake | Estimate | Source |
+|---|---|---|
+| Revenue at risk | unknown | [unverified] |
+| Cost of delay | reviewer toil compounds | playbook |
+| Competitive window | rivals ship ungoverned exports | observed |
+| Compliance / legal deadline | citation policy audit | compliance |
+
 
 ## Principles
 
@@ -34,7 +46,6 @@ Fixture content for Inputs and evidence.
 
 ### Phase 1: Evidence gate
 
-- **Why?**: Authors and reviewers need cited sources before review so fabricated claims cannot pass as research-grade.
 - **Goal**: Require cited sources before review.
 - **Status**: not started
 - **Requirements**: MR-1.1, DR-1.1

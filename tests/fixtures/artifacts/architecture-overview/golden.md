@@ -8,11 +8,11 @@ cx_fixture_source: templates/docs/adr.md
 
 ## Problem
 
-This paragraph supports the Problem section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Problem section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Problem section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Problem section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Problem section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Problem section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Decision
 
-This paragraph supports the Decision section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Decision section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Decision section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Decision section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Decision section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Decision section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Consequences
 
@@ -20,4 +20,4 @@ Fixture content for Consequences.
 
 ## References
 
-- https://example.com/fixture-source (accessed 2026-06-22)
+- [Example fixture source](https://example.com/fixture-source) (accessed 2026-06-22)

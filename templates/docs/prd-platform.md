@@ -156,7 +156,7 @@ Prefer unknown / [unverified] over fabrication.
 
 ## Acceptance Criteria
 
-| AC id | FR | Criterion | Verify |
+| AC id | FR id | Criterion (stranger-checkable) | Verification method |
 |---|---|---|---|
 | AC-1.1.1 | FR-1.1 | {same as under FR} | contract test |
 | AC-2.1.1 | FR-2.1 | {…} | … |

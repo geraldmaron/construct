@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-20T23:26:50.093Z",
+  "generatedAt": "2026-07-21T06:12:51.448Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 1073,
-    "topLevelTestFiles": 410,
-    "nestedTestFiles": 663,
+    "testFiles": 1078,
+    "topLevelTestFiles": 414,
+    "nestedTestFiles": 664,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
-      "unit": 713,
-      "functional": 303,
+      "unit": 717,
+      "functional": 304,
       "visual": 13,
       "integration": 42,
       "live-provider": 2
     },
     "byCategory": {
-      "unit": 634,
-      "functional": 303,
+      "unit": 638,
+      "functional": 304,
       "visual": 13,
       "structural-guard": 21,
       "contract-subsystem": 59,
@@ -197,6 +197,14 @@
       "maintainerNotes": "tests/artifact-lifecycle.test.mjs — lifecycle handoff object shape and state mapping."
     },
     {
+      "path": "tests/artifact-link-validate.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/artifact-link-validate.test.mjs — citation URL extraction, inline-link"
+    },
+    {
       "path": "tests/artifact-manifest.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -221,6 +229,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/artifact-reviewers.test.mjs — manifest reviewer resolution and bypass markers."
+    },
+    {
+      "path": "tests/artifact-structure-contract.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/artifact-structure-contract.test.mjs — PRD-variant + major non-PRD depth contracts."
     },
     {
       "path": "tests/artifact-workflow.test.mjs",
@@ -1455,6 +1471,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/cli-surface.test.mjs — validates public CLI behavior against the current project cwd."
+    },
+    {
+      "path": "tests/cli-ux-isolation-gaps.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/cli-ux-isolation-gaps.test.mjs — CLI UX fixes from the isolated"
     },
     {
       "path": "tests/cli/directives-cli.test.mjs",
@@ -3804,6 +3828,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/ingest-tooling.functional.test.mjs — ingest pipeline detect contract."
+    },
+    {
+      "path": "tests/functional/init-all-hosts-cursor.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/init-all-hosts-cursor.functional.test.mjs"
     },
     {
       "path": "tests/functional/init-beads-fail-closed.functional.test.mjs",
@@ -7061,6 +7093,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/postconditions.test.mjs — hard binary postconditions per producer."
+    },
+    {
+      "path": "tests/prd-structure-contract.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/prd-structure-contract.test.mjs — customer PRD 12-section + Phase→FR→AC contract."
     },
     {
       "path": "tests/pre-compact-context-merge.test.mjs",

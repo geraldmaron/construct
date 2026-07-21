@@ -226,7 +226,7 @@ risk this phase reduces. Include substantive tension from recruited personas
 
 <!-- Index of every AC for scanning and release gates. Detail lives under Requirements. -->
 
-| AC id | FR | Criterion | Verify |
+| AC id | FR id | Criterion (stranger-checkable) | Verification method |
 |---|---|---|---|
 | AC-1.1.1 | FR-1.1 | {same text as under FR-1.1} | automated |
 | AC-1.1.2 | FR-1.1 | {…} | … |

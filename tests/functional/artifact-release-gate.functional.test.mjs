@@ -70,9 +70,15 @@ flowchart LR
 
 Adopt event sourcing for the audit log with a single writer per aggregate.
 
+## Rationale
+
+Event sourcing preserves ordering, enables point-in-time replay, and aligns the audit log with downstream projection rebuilds without full-table scans.
+
 ## Rejected alternatives
 
-Keeping the mutable row model was rejected because backfills corrupt historical reads.
+| Alternative | What it is | Why rejected | Reconsider if |
+|---|---|---|---|
+| Mutable row model | Update-in-place audit rows | Backfills corrupt historical reads and break point-in-time replay | Isolation and immutability are proven on the row model |
 
 ## Consequences
 
@@ -82,7 +88,23 @@ Replay tooling becomes mandatory; migrations must be versioned.
 
 Reversible within one quarter if projection lag exceeds SLO.
 
-[source: docs/decisions/adr/prior-art.md]
+## Legal, privacy, and security triggers
+
+| Trigger | Present? | Notes |
+|---|---|---|
+| PII in audit events | yes | Redact before export; auth boundary on replay API |
+| Threat model | yes | Single-writer per aggregate limits tampering |
+| Compliance | yes | SOC2 change record requires cited decision |
+
+## Adversarial challenge
+
+| Challenge | Severity | Response |
+|---|---|---|
+| Projection lag exceeds SLO under load | high | Revisit within one quarter; keep mutable fallback path |
+
+## References
+
+- [Prior art decision record](docs/decisions/adr/prior-art.md) (accessed 2026-06-22)
 `,
     );
     const r = validateArtifactRelease({ filePath: f, type: 'adr', rootDir: REPO, cwd: dir });
