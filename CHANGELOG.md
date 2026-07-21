@@ -6,6 +6,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Fixed
 
+- Typst PDF figure staging (PR 419): branded PDF export spawns pandoc with cwd `templates/distribution/`, and the diagram filter puts content-hashed SVG/PNG into the mediabag. Without `--extract-media`, pandoc's typst writer emits relative `#image("<hash>.svg")` paths that never land on disk there (pandoc exit 43 / file not found on Ubuntu). `exportMarkdown` now extracts mediabag assets to a temp dir so Typst receives absolute paths (works with existing `--root=/`). Covered by `tests/functional/document-export.functional.test.mjs`.
+
 - CI figure toolchain for `figures: true` gates (PR 419): pin sha256-verified `d2` in `scripts/ci/setup-toolchain.sh`, install `@mermaid-js/mermaid-cli` via `scripts/ci/setup-mermaid-cli.sh` after `npm ci` (ci.yml, release.yml, ci-repro job), and trim `skills/perspectives/orchestrator.md` under the 450-word compact cap while keeping Symptom/Counter-move structure.
 
 - Brand alignment ratchet: backtick `construct publish` in `construct tools detect` CLI catalog prose (`lib/cli-commands.mjs` → `docs/guides/reference/cli/work.md`).
