@@ -21,6 +21,8 @@
   footer: construct-running-footer(
     "Research brief",
     classification: "$if(classification)$$classification$$endif$",
+    doc-id: "$if(docId)$$docId$$endif$",
+    version: "$if(version)$$version$$endif$",
   ),
 )
 

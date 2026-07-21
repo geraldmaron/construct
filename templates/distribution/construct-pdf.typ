@@ -25,6 +25,8 @@
   footer: construct-running-footer(
     "Document",
     classification: "$if(classification)$$classification$$endif$",
+    doc-id: "$if(docId)$$docId$$endif$",
+    version: "$if(version)$$version$$endif$",
   ),
 )
 

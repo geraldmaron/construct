@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Changed
+
+- PDF distribution templates: replaced the compact editorial layout (dot-separated kicker chips, status pills, left-margin tick, grey left-bar callouts, centered footer stamp) with a Construct 2.0 folio system in `templates/distribution/construct-brand.typ`: inverted cover band, 28pt display title, metadata grid, bracket status labels, numbered section heads with dotted rules, outlined callouts, inverted table headers with zebra rows, asymmetric margins, and folio page numbers. Layout wrappers pass doc-id and version to the running footer. Typography tokens in `lib/brand-tokens.mjs` updated to match. Covered by refreshed assertions in `tests/functional/publish-template.functional.test.mjs`.
+
 ### Fixed
 
 - PDF publish templates (`construct-tsyfe.8` legacy cutover follow-up): restored de-branded running footers in `templates/distribution/construct-brand.typ` (the compact-rhythm pass had reintroduced a `CONSTRUCT` wordmark), removed pre-2.0 compat color token shims (`brand-warm`, `brand-violet-soft`, …), and aligned publish guidance in `skills/docs/prd-workflow.md`, `templates/docs/README.md`, and `templates/docs/construct_guide.md` with Construct 2.0 Worker Profile / monochrome Space Grotesk vocabulary. Covered by new assertions in `tests/functional/publish-template.functional.test.mjs`.
