@@ -48,9 +48,18 @@ jobs:
       workflow: ${{ steps.filter.outputs.workflow }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          # Full history so paths-filter can diff via git when the GitHub
+          # Files Changed API is unreliable (large staging→main promote PRs).
+          fetch-depth: 0
       - uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706
         id: filter
         with:
+          # Empty token forces git-based change detection instead of the
+          # GitHub REST Files Changed API. Promote PRs (staging→main) can
+          # exceed ~2k–3k files; API fetches then fail with connection
+          # resets ("other side closed") or truncate at 3000 files.
+          token: ''
           # `code` is the widest filter — any change to source / tests /
           # bin / package.json triggers the full unit-test matrix. The
           # narrower filters (retrieval, …) trigger jobs that
