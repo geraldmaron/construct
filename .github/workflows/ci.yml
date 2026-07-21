@@ -444,7 +444,7 @@ jobs:
           path: .construct/shadow-history
           key: shadow-history-store-v1
       - name: download current shadow artifact
-        uses: actions/download-artifact@7a9775516c08852142e88030e7588e5a381a2e35 # v4.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v4.0.0
         continue-on-error: true
         with:
           name: shadow-impact-${{ github.run_id }}
