@@ -98,6 +98,9 @@ function resolveBaseRef() {
 }
 
 function getRange() {
+  const pinnedBase = process.env.PR_BASE_SHA?.trim();
+  if (pinnedBase) return `${pinnedBase}..HEAD`;
+
   const baseRef = resolveBaseRef();
   const remoteBase = `origin/${baseRef}`;
 

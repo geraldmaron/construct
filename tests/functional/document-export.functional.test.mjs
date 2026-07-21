@@ -51,6 +51,21 @@ function writeMarkdown(dir, name = 'doc.md') {
 // writes a recognisable byte sequence to the -o target, so happy-path tests
 // don't need real pandoc and don't depend on system state.
 
+
+function stubFigureBin(dir, name) {
+  const binPath = path.join(dir, name);
+  const script = [
+    '#!/usr/bin/env node',
+    'process.exit(0);',
+  ].join('\n');
+  fs.writeFileSync(binPath, script);
+  fs.chmodSync(binPath, 0o755);
+}
+
+function stubFigureBins(dir) {
+  for (const name of ['d2', 'mmdc', 'dot']) stubFigureBin(dir, name);
+}
+
 function stubPandocPath(prefix = 'cx-export-stub-') {
   const dir = tmpDir(prefix);
   const pandocPath = path.join(dir, process.platform === 'win32' ? 'pandoc.cmd' : 'pandoc');
@@ -246,6 +261,7 @@ test('assessFigureResolution reports figures:unresolved when HTML keeps diagram 
 test('exportMarkdown soft-degrades figures:unresolved when figuresStrict is false', () => {
   const dir = tmpDir('cx-export-soft-figures-');
   const { dir: stubDir } = stubPandocPath('cx-export-soft-');
+  stubFigureBins(stubDir);
   const inputPath = path.join(dir, 'diagrams.md');
   const outputPath = path.join(dir, 'diagrams.html');
   fs.writeFileSync(inputPath, '## Flow\n\n```mermaid\nflowchart TD\nA --> B\n```\n');
