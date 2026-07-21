@@ -26,10 +26,22 @@
 # Mermaid-cli (mmdc) needs npm, so it lives in scripts/ci/setup-mermaid-cli.sh
 # and runs after `npm ci` (the Docker replica installs Node after this script).
 #
+# Network bounds: apt uses Acquire::{http,https}::Timeout=30 and Retries=3 so a
+# dead Ubuntu mirror fails in minutes instead of hanging; curl uses
+# --connect-timeout 15 --max-time 180 for pinned release downloads (typst/bd/d2
+# archives are small; 180s is generous headroom without unbounded waits).
+#
 # Callers must put ~/.local/bin on PATH (ci.yml appends it to $GITHUB_PATH;
 # the Docker replica sets ENV PATH).
 
 set -euo pipefail
+
+APT_OPTS=(
+  -o Acquire::http::Timeout=30
+  -o Acquire::https::Timeout=30
+  -o Acquire::Retries=3
+)
+CURL_OPTS=(--connect-timeout 15 --max-time 180 --retry 3)
 
 TYPST_VERSION="0.15.0"
 TYPST_SHA256_LINUX_X86_64="59b207df01be2dab9f13e80f73d04d7ff8273ffd46b3dd1b9eef5c60f3eeabea"
@@ -77,7 +89,7 @@ install_typst() {
   esac
   local tmp
   tmp="$(mktemp -d)"
-  curl -fsSL --retry 3 -o "$tmp/typst.tar.xz" \
+  curl -fsSL "${CURL_OPTS[@]}" -o "$tmp/typst.tar.xz" \
     "https://github.com/typst/typst/releases/download/v${TYPST_VERSION}/typst-${target}.tar.xz"
   sha256_check "$tmp/typst.tar.xz" "$sha"
   tar -xJf "$tmp/typst.tar.xz" -C "$tmp" "typst-${target}/typst"
@@ -100,7 +112,7 @@ install_bd() {
   esac
   local tmp
   tmp="$(mktemp -d)"
-  curl -fsSL --retry 3 -o "$tmp/bd.tar.gz" \
+  curl -fsSL "${CURL_OPTS[@]}" -o "$tmp/bd.tar.gz" \
     "https://github.com/steveyegge/beads/releases/download/v${BD_VERSION}/beads_${BD_VERSION}_${target}.tar.gz"
   sha256_check "$tmp/bd.tar.gz" "$sha"
   tar -xzf "$tmp/bd.tar.gz" -C "$tmp" bd
@@ -123,7 +135,7 @@ install_d2() {
   esac
   local tmp
   tmp="$(mktemp -d)"
-  curl -fsSL --retry 3 -o "$tmp/d2.tar.gz" \
+  curl -fsSL "${CURL_OPTS[@]}" -o "$tmp/d2.tar.gz" \
     "https://github.com/terrastruct/d2/releases/download/v${D2_VERSION}/${asset}"
   sha256_check "$tmp/d2.tar.gz" "$sha"
   tar -xzf "$tmp/d2.tar.gz" -C "$tmp" "d2-v${D2_VERSION}/bin/d2"
@@ -141,9 +153,9 @@ install_doc_toolchain_linux() {
     echo "doc toolchain already installed, skipping"
     return
   fi
-  sudo apt-get update
+  sudo apt-get "${APT_OPTS[@]}" update
   # shellcheck disable=SC2086
-  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $missing
+  sudo DEBIAN_FRONTEND=noninteractive apt-get "${APT_OPTS[@]}" install -y --no-install-recommends $missing
 }
 
 install_doc_toolchain_darwin() {
