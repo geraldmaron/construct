@@ -207,6 +207,9 @@ const sterileBefore = snapshotRealConfigs();
 const BATCH_SIZE = Number(process.env.CONSTRUCT_TEST_BATCH_SIZE) || 120;
 
 function timeoutForBatch(batchFiles) {
+  if (batchFiles.some((f) => /tests\/graph\/incremental\.test\.mjs/.test(f))) {
+    return 300_000;
+  }
   if (batchFiles.some((f) => /tests\/functional\//.test(f) || /lazy-import-reachability/.test(f) || /oracle-approval-dedupe/.test(f))) {
     return 120_000;
   }

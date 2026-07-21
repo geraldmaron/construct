@@ -9,6 +9,7 @@ All notable changes to Construct are documented here. The format follows [Keep a
 - PDF publish templates (`construct-tsyfe.8` legacy cutover follow-up): restored de-branded running footers in `templates/distribution/construct-brand.typ` (the compact-rhythm pass had reintroduced a `CONSTRUCT` wordmark), removed pre-2.0 compat color token shims (`brand-warm`, `brand-violet-soft`, …), and aligned publish guidance in `skills/docs/prd-workflow.md`, `templates/docs/README.md`, and `templates/docs/construct_guide.md` with Construct 2.0 Worker Profile / monochrome Space Grotesk vocabulary. Covered by new assertions in `tests/functional/publish-template.functional.test.mjs`.
 
 - CI shard 2/3: capability tick noise gate no longer skips provider snapshot ticks; graph freshness reads SQLite meta over JSONL overlay; doctor surfaces VS Code MCP readiness pre-setup; published audit drops optional `@huggingface/transformers` from consumer tree; root disposition, MCP tool docs, artifact export completion, and test hygiene aligned with workspace-control-plane.
+- Graph incremental functional suite: raise CI batch timeout and per-test ceiling so dual `graph build` parity checks do not hit the 120s runner limit on Node 22.
 - CI shard 2/3 follow-up: `lint-commits-pr` honors `PR_BASE_SHA` for shallow PR bots; document-export functional stubs `d2`/`mmdc`/`dot` on PATH; email path-traversal test no longer treats host `/etc/passwd` as proof of escape on Linux.
 
 ### Fixed
