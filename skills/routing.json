@@ -642,6 +642,19 @@
     {
       "domain": "docs",
       "keywords": [
+        "artifact authorship",
+        "typed artifact",
+        "anti-fabrication",
+        "cross-persona",
+        "adversarial review",
+        "author requirements"
+      ],
+      "path": "docs/artifact-authorship",
+      "priority": 8
+    },
+    {
+      "domain": "docs",
+      "keywords": [
         "prd",
         "product requirements",
         "write a prd"

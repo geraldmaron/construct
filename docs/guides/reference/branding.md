@@ -11,9 +11,9 @@ Single index for maintainers and agents. Generated surfaces (init scaffolding, p
 
 | Element | Value | Source |
 |---------|-------|--------|
-| Sans / display | Space Grotesk (weights 400–700) | [`lib/brand-tokens.mjs`](../../lib/brand-tokens.mjs) |
+| Sans / display | Plus Jakarta Sans (weights 400–700) | [`lib/brand-tokens.mjs`](../../lib/brand-tokens.mjs) |
 | Monospace | JetBrains Mono | [`lib/brand-fonts.mjs`](../../lib/brand-fonts.mjs) |
-| Color | Monochrome ink ramp; white accent | [`templates/distribution/construct-brand.typ`](../../templates/distribution/construct-brand.typ) |
+| Color | Field-notebook ink ramp with slate-teal evidence accent (`#1f5c61`) | [`templates/distribution/construct-brand.typ`](../../templates/distribution/construct-brand.typ) |
 | Published artifact tokens | Same ink + typography via templates and CSS vars | [`lib/brand-tokens.mjs`](../../lib/brand-tokens.mjs), [`packages/construct-ui/styles/theme.css`](../../packages/construct-ui/styles/theme.css) |
 
 Bundled fonts for offline export: [`templates/distribution/fonts/`](../../templates/distribution/fonts/). Typst export passes `--font-path`, `--ignore-system-fonts`, and `--ignore-embedded-fonts` so system fallbacks (Libertinus, DejaVu) never replace the brand faces.
@@ -22,7 +22,7 @@ Bundled fonts for offline export: [`templates/distribution/fonts/`](../../templa
 
 These families are retired from active brand surfaces. References in docs, templates, or app source are drift:
 
-- Plus Jakarta Sans
+- Space Grotesk (retired Construct 2.0 folio sans)
 - Geist / Geist Mono
 - IBM Plex (sans or mono as brand body)
 - Inter as primary UI font

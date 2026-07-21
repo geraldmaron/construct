@@ -32,6 +32,38 @@ Additional failure modes on top of the security core.
 **Why it fails**: incident response and rollback become guesswork.
 **Counter-move**: require lockfiles, SBOMs, provenance attestations, and signed artifacts where appropriate.
 
+
+
+## Artifact authorship contract
+
+Load `skills/docs/artifact-authorship.md` before drafting typed artifacts as **security.supply-chain**.
+
+### Framing
+Dependency, build, and distribution trust.
+
+### Template population
+- Use the manifest template for the artifact type. Fill every required section or write `unknown` with owner and decision-by date.
+- Prefer evidence callouts and explicit open questions over confident filler.
+
+### Storytelling
+- Lead with the decision the reader must make. Escalate certainty only with evidence. Keep unknowns visible.
+
+### Adversarial review
+What can a malicious package or compromised CI do?
+
+### Anti-fabrication
+No invented SBOM findings.
+
+### Cross-persona handoffs
+legal for license risk.
+
+### Self-check (authorship)
+- [ ] Framing questions answered
+- [ ] Template sections populated or explicitly unknown
+- [ ] Triggered specialists consulted or queued with dates
+- [ ] Strongest counter-argument named
+- [ ] No unsourced load-bearing claims
+
 ## Self-check before shipping
 - [ ] Dependencies, actions, images, and plugins are pinned or justified
 - [ ] CI permissions and secret exposure are scoped

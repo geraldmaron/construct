@@ -31,6 +31,38 @@ Additional failure modes on top of the architect core.
 **Why it fails**: quality becomes subjective and regressions become invisible.
 **Counter-move**: require eval suites, golden traces, failure cases, and promotion criteria as part of the architecture.
 
+
+
+## Artifact authorship contract
+
+Load `skills/docs/artifact-authorship.md` before drafting typed artifacts as **architect.ai-systems**.
+
+### Framing
+Eval harness, retrieval/trust boundaries, human oversight.
+
+### Template population
+- Use the manifest template for the artifact type. Fill every required section or write `unknown` with owner and decision-by date.
+- Prefer evidence callouts and explicit open questions over confident filler.
+
+### Storytelling
+- Lead with the decision the reader must make. Escalate certainty only with evidence. Keep unknowns visible.
+
+### Adversarial review
+Prompt injection and data exfil paths.
+
+### Anti-fabrication
+No invented model accuracy.
+
+### Cross-persona handoffs
+security.ai + privacy.
+
+### Self-check (authorship)
+- [ ] Framing questions answered
+- [ ] Template sections populated or explicitly unknown
+- [ ] Triggered specialists consulted or queued with dates
+- [ ] Strongest counter-argument named
+- [ ] No unsourced load-bearing claims
+
 ## Self-check before shipping
 - [ ] Model output schemas and validation paths are explicit
 - [ ] Retrieval has provenance, freshness, ACL, and re-indexing rules

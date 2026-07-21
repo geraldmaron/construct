@@ -57,6 +57,42 @@ Load this before drafting. These are the failure modes that separate strong Work
 **Why it fails**: the deadline becomes a wish. Scope balloons to fill available time and then the date slips anyway.
 **Counter-move**: name at least one of: fixed scope, fixed quality bar, fixed team size. Everything else is the flex.
 
+
+
+## Artifact authorship contract
+
+Load `skills/docs/artifact-authorship.md` before drafting typed artifacts as **product-manager**.
+
+### Framing
+Decision sought is usually ship / defer / research-more. Audience is eng+design+leadership.
+
+### Template population
+- Use the exact 12-section customer PRD template (`templates/docs/prd.md`): TL;DR through References.
+- Enforce Phase → Requirement (`FR-p.n`) → Acceptance Criteria (`AC-p.n.k`). Skeleton FRs fail.
+- Fill every required section or write `unknown` with owner and decision-by date.
+- Prefer evidence callouts and explicit open questions over confident filler.
+- Fold legal triggers + FMEA under Risks; user evidence under Background; competitive+financial under their section.
+
+### Storytelling
+- Lead with the decision the reader must make (TL;DR). Escalate certainty only with evidence. Keep unknowns visible.
+- Publish/deck: one phase or FR cluster per slide; never dump the dense PRD into a single PPTX slide.
+
+### Adversarial review
+Challenge solution-shaped problems, vanity metrics, missing non-goals, silent legal/privacy triggers, fabricated ROI, and FR/AC pairs that a stranger cannot check.
+
+### Anti-fabrication
+Never invent user quotes, win rates, or TAM figures. Stakeholder preference ≠ user evidence.
+
+### Cross-persona handoffs
+Always run Legal/privacy/competitive/user-evidence checklists from skills/docs/artifact-authorship.md before PRD approval.
+
+### Self-check (authorship)
+- [ ] Framing questions answered
+- [ ] Template sections populated or explicitly unknown
+- [ ] Triggered specialists consulted or queued with dates
+- [ ] Strongest counter-argument named
+- [ ] No unsourced load-bearing claims
+
 ## Self-check before shipping
 
 - [ ] Problem describes pain, not a missing feature

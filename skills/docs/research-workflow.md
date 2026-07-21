@@ -5,7 +5,7 @@ inputs: [research-question]
 artifactType: research-brief
 toneDefault: direct
 toneAllowed: [direct]
-verificationBar: "Every load-bearing claim cites a verifiable primary source; label inference confidence; satisfy template structure requirements."
+verificationBar: "Question→Method→Sources→Findings(Observation≠Inference)→Counter-evidence→Recommendation; every load-bearing claim cites a verifiable primary source or [unverified]."
 triggers: ["research brief", "user research"]
 ---
 # External Research Workflow
@@ -13,6 +13,13 @@ triggers: ["research brief", "user research"]
 Use when: cx-researcher investigates **external** facts — not user interviews or codebase exploration. For user evidence use `docs/user-research-workflow`; for repo exploration use `docs/codebase-research-workflow`.
 
 Follow [rules/common/research.md](../../rules/common/research.md) as the default policy.
+
+## Native spine (blocking)
+
+Question → Method → Sources → Findings → Counter-evidence → Confidence summary → Gaps → Implications → Recommendation → Open questions → References.
+
+- Findings must separate **Observation** from **Inference**.
+- `construct artifact validate --type=research-brief` runs `lintResearchBriefDeliveryDepth`.
 
 ## Steps
 
@@ -79,3 +86,7 @@ Do **not** claim PDF/demo done until `construct tools detect` reports ready or `
 - Two independent sources per load-bearing claim unless one authoritative primary suffices.
 - Admiralty grades on every source. Counter-evidence named when it exists.
 - cx-researcher must **not** answer UX preference questions or infer codebase behavior without reading code.
+
+## Shared authorship contract
+
+Before drafting or reviewing, call `get_skill("docs/artifact-authorship")` for framing, template population, storytelling, adversarial review, anti-fabrication, and cross-persona triggers. Persona overlays under `skills/perspectives/` add failure modes; they do not waive that contract.

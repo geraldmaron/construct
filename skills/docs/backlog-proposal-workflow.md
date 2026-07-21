@@ -24,3 +24,7 @@ Never write externally from weak evidence without making the risk explicit. Neve
 ## Release gate
 
 Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.
+
+## Shared authorship contract
+
+Before drafting or reviewing, call `get_skill("docs/artifact-authorship")` for framing, template population, storytelling, adversarial review, anti-fabrication, and cross-persona triggers. Persona overlays under `skills/perspectives/` add failure modes; they do not waive that contract.

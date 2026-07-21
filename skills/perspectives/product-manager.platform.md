@@ -31,6 +31,38 @@ Additional failure modes on top of the product-manager core.
 **Why it fails**: platform capabilities become toil generators after launch.
 **Counter-move**: add observability, auditability, rate limits, fallback behavior, and support diagnostics as product requirements.
 
+
+
+## Artifact authorship contract
+
+Load `skills/docs/artifact-authorship.md` before drafting typed artifacts as **product-manager.platform**.
+
+### Framing
+Internal developer/operator audience; decision is adopt/migrate/keep.
+
+### Template population
+- Use the manifest template for the artifact type. Fill every required section or write `unknown` with owner and decision-by date.
+- Prefer evidence callouts and explicit open questions over confident filler.
+
+### Storytelling
+- Lead with the decision the reader must make. Escalate certainty only with evidence. Keep unknowns visible.
+
+### Adversarial review
+Does this create a platform tax without a measured adopter benefit?
+
+### Anti-fabrication
+No invented adoption counts or API call volumes.
+
+### Cross-persona handoffs
+Ops + security for multi-tenant or shared-service changes.
+
+### Self-check (authorship)
+- [ ] Framing questions answered
+- [ ] Template sections populated or explicitly unknown
+- [ ] Triggered specialists consulted or queued with dates
+- [ ] Strongest counter-argument named
+- [ ] No unsourced load-bearing claims
+
 ## Self-check before shipping
 - [ ] Platform actor and owned boundary are explicit
 - [ ] Compatibility, migration, and deprecation are covered

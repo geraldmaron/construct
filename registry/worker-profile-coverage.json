@@ -322,8 +322,9 @@
     {
       "workerProfileId": "product-manager",
       "skills": {
-        "count": 15,
+        "count": 16,
         "entitled": [
+          "docs/artifact-authorship",
           "docs/product-intelligence-workflow",
           "docs/evidence-ingest-workflow",
           "docs/product-signal-workflow",

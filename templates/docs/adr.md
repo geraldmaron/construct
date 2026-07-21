@@ -6,36 +6,40 @@
 - **Supersedes**: {ADR-NNN or none}
 
 <!--
-Before drafting, read rules/common/framing.md.
+Architectural decision record. Records a decision already made (or proposed
+for acceptance). Use rfc.md when the proposal still needs structured review
+before a decision.
 
-Required framing rule: every section below must describe the domain
-problem and the decision. Not the ticket. Not the PRD filename. Not the
-meeting that prompted the ADR. A principal engineer who has never seen
-the triggering inputs should be able to read this doc and understand the
-decision and why it was made.
+Owning specialist: architect (rules/common/doc-ownership.md).
+Before drafting: rules/common/framing.md + get_skill("docs/artifact-authorship")
+  + get_skill("perspectives/architect").
 
-Owning specialist: architect (see rules/common/doc-ownership.md).
+NATIVE SPINE:
+  Problem → Context → Decision → Rationale → Rejected alternatives
+  → Consequences → Reversibility → Adversarial challenge → Open questions
+  → References
+
+Depth means: domain problem (not ticket IDs), ≥1 concrete rejected alternative
+with a specific rejection reason, and consequences that name what is locked in.
+An ADR without rejected alternatives is a proposal, not a decision.
+Prefer unknown / [unverified] with owner + decision-by date over fabrication.
 -->
 
 ## Problem
-<!--
-The decision-forcing tension in the domain. State what is currently
-true and what pressure makes a choice unavoidable.
 
-Must NOT reference:
-- Jira/Linear ticket IDs or titles
-- PRD filenames or document structure
-- Chat transcripts or meeting notes
-- Process-level framing ("we need to decide how to document X")
+{The decision-forcing tension in the domain. What is currently true and what pressure makes a choice unavoidable.}
 
-Should reference:
-- The constraint that makes this non-trivial
-- The cost of not deciding
-- What is observably broken, ambiguous, or at risk
--->
+Must NOT reference ticket IDs, PRD filenames, chat transcripts, or process framing ("we need to decide how to document X").
+
+Should reference the constraint that makes this non-trivial, the cost of not deciding, and what is observably broken, ambiguous, or at risk.
 
 ## Context
-<!-- Forces at play beyond the core problem. What else is true today that bounds the decision space? Prior ADRs, architectural constraints, external commitments. -->
+
+{Forces beyond the core problem. Prior ADRs, architectural constraints, external commitments.}
+
+| Force | Type | Implication | Source |
+|---|---|---|---|
+| {constraint / prior ADR / commitment} | hard / soft | {how it bounds the decision} | {path / ADR / unknown} |
 
 ```mermaid
 flowchart LR
@@ -45,26 +49,60 @@ flowchart LR
 ```
 
 ## Decision
-<!-- The position taken, in one or two sentences. State it as a commitment, not a proposal. -->
+
+{The position taken, in one or two sentences. State it as a commitment, not a proposal.}
 
 ## Rationale
-<!-- Why this decision over the alternatives. The load-bearing reasons, cited to the evidence. If the rationale leans on external references (standards, prior art, vendor behavior), cite them. -->
+
+{Why this decision over the alternatives. Load-bearing reasons, cited to evidence. If rationale leans on external references (standards, prior art, vendor behavior), cite them.}
+
+| Reason | Observation vs inference | Source |
+|---|---|---|
+| {load-bearing reason} | observation / inference | {path / URL+date / unknown} |
 
 ## Rejected alternatives
-<!--
-For each alternative considered, one paragraph covering:
-- What the alternative was (concretely enough to be evaluated)
-- The specific reason it was rejected (not "we preferred the chosen option")
-- What evidence or constraint made it inferior
 
-An ADR without rejected alternatives is a proposal, not a decision.
--->
+For each alternative considered:
+
+| Alternative | What it is | Why rejected | Reconsider if |
+|---|---|---|---|
+| {option A} | {concrete enough to evaluate} | {specific reason — not "we preferred the chosen option"} | {trigger} |
+| {option B} | {…} | {…} | {…} |
+
+An empty table fails review.
 
 ## Consequences
-<!-- What becomes easier, what becomes harder, what is now locked in. Include second-order effects and the new constraints this decision imposes. -->
+
+| Dimension | Easier | Harder | Locked in |
+|---|---|---|---|
+| {ops / security / DX / cost / …} | {…} | {…} | {new constraint this decision imposes} |
+
+Include second-order effects. Mark unverified second-order claims as `[unverified]`.
 
 ## Reversibility
-<!-- Is this a one-way or two-way door? What would it take to reverse? Under what conditions would we revisit? -->
+
+| Field | Value |
+|---|---|
+| Door type | one-way / two-way |
+| Cost to reverse | {or unknown} |
+| Revisit triggers | {conditions that force reconsideration} |
+
+## Adversarial challenge
+
+Strongest case that this decision is premature or wrong:
+
+| Challenge | Severity | Response |
+|---|---|---|
+| {strongest counter-argument} | high / med / low | {mitigation, accept-with-rationale, or defer decision} |
+
+## Open questions
+
+| Question | Owner | Decision needed by |
+|---|---|---|
+| {unknown that could change the decision} | {role} | {YYYY-MM-DD} |
 
 ## References
-<!-- Primary sources, prior ADRs, research briefs, standards. Execution artifacts (tickets, chat) may be listed for traceability but never as load-bearing reasoning. -->
+
+Primary sources, prior ADRs, research briefs, standards. Execution artifacts (tickets, chat) may be listed for traceability but never as load-bearing reasoning.
+
+- {path / URL + access date / ADR id / bead id}

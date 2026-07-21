@@ -24,7 +24,15 @@ Fixture content for Severity and response.
 
 ## Diagnostic steps
 
-Fixture content for Diagnostic steps.
+| Step | Check | How | Expected if healthy | If unhealthy → |
+|---|---|---|---|---|
+| D-1 | Error rate | Dashboard | <1% | Remediation R-1 |
+
+```mermaid
+flowchart LR
+  A[Alert] --> B[Diagnose]
+```
+
 
 ## Remediation
 
@@ -32,11 +40,25 @@ Fixture content for Remediation.
 
 ## Rollback
 
-Fixture content for Rollback.
+| Step | Action | Expected output | Last tested |
+|---|---|---|---|
+| RB-1 | Revert flag | Prior healthy rate | 2026-06-22 |
+
 
 ## Escalation
 
 Fixture content for Escalation.
+
+## Adversarial challenge
+
+| Failure mode | Effect | Mitigation |
+|---|---|---|
+| Stale credentials | Operator stranded | Break-glass account |
+
+
+## References
+
+Fixture content for References.
 
 ```mermaid
 flowchart LR

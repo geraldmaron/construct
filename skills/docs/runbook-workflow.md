@@ -3,11 +3,23 @@ name: docs-runbook-workflow
 description: "Use when: creating operational procedures for services, alerts, or recurring operations."
 inputs: [service, incident]
 artifactType: runbook
-verificationBar: "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
+verificationBar: "Alert→Diagnostic(D-*)→Remediation(R-*)→Rollback(RB-* with last tested)→Escalation→Adversarial challenge; operator-runnable steps only."
 ---
 # Runbook Workflow
 
 Use when: creating operational procedures for services, alerts, or recurring operations.
+
+## Native spine (blocking)
+
+Alert trigger → Symptoms → Impact → Severity and response → Diagnostic steps → Remediation → Rollback → Escalation → Post-incident → Adversarial challenge → References.
+
+```text
+Diagnostic D-*  →  expected signal  →  next action
+Remediation R-*  →  expected output  →  failure branch
+Rollback RB-*  →  last tested date (or [unverified])
+```
+
+- `construct artifact validate --type=runbook` runs `lintRunbookDeliveryDepth`.
 
 ## Steps
 
@@ -25,7 +37,11 @@ The steps above are the baseline, not the final roster. Authoring through `autho
 
 ## Review cadence
 - Runbooks should be tested (table-top or live) at least quarterly
-- Update `Last updated` field after each use or review
+- Update `Last tested` field after each use or review
 ## Release gate
 
 Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.
+
+## Shared authorship contract
+
+Before drafting or reviewing, call `get_skill("docs/artifact-authorship")` for framing, template population, storytelling, adversarial review, anti-fabrication, and cross-persona triggers. Persona overlays under `skills/perspectives/` add failure modes; they do not waive that contract.

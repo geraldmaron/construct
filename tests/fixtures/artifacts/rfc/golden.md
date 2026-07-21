@@ -14,24 +14,41 @@ This paragraph supports the Summary section with observable evidence. Source: ht
 
 This paragraph supports the Motivation section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Motivation section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Motivation section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
 
+## Goals & Non-Goals
+
+This paragraph supports the Goals & Non-Goals section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Goals & Non-Goals section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Goals & Non-Goals section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+
 ## Proposed design
 
-This paragraph supports the Proposed design section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Proposed design section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Proposed design section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+Fixture content for Proposed design.
+
+## Tradeoffs and alternatives
+
+Fixture content for Tradeoffs and alternatives.
 
 ## Risks
 
-Fixture content for Risks.
+### Adversarial challenge (FMEA)
+
+| Failure mode | Effect | Cause | S×O×D (1–10) | Mitigation or accept-with-rationale |
+|---|---|---|---|---|
+| Migration stalls | Dual-write forever | Weak consumer plan | 7×5×3 | Kill switch in rollout |
+
 
 ## Verification
 
 Fixture content for Verification.
+
+## Unresolved questions
+
+Fixture content for Unresolved questions.
+
+## References
+
+Fixture content for References.
 
 ```mermaid
 sequenceDiagram
   Client->>Service: request
   Service-->>Client: response
 ```
-
-## References
-
-- https://example.com/fixture-source (accessed 2026-06-22)

@@ -3,7 +3,7 @@ name: docs-prd-workflow
 description: "Use when: the user asks to create a PRD, platform spec, business case, RFC, or requirements document."
 inputs: [research-question, evidence-brief]
 artifactType: prd
-verificationBar: "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
+verificationBar: "Exact 12-section PRD structure; Phase→Requirement→AC hierarchy with depth; every load-bearing claim cites a verifiable source or unknown/[unverified]; adversarial + legal/privacy/user/competitive/financial discovery complete."
 triggers: ["prd", "product requirements", "write a prd"]
 ---
 # PRD Workflow
@@ -25,11 +25,66 @@ Resolve tone from `specialists/tone-profiles.json` and optional `.construct/bran
 
 Style constraint: do not produce a wall of bullets. Use paragraphs for reasoning and narrative, tables for comparison, and bullets only where scanability helps. Keep em dashes rare.
 
+## Canonical PRD structure (customer `prd` template — exact)
+
+1. TL;DR
+2. Background
+3. Problem
+4. Outcomes - Goals & Non-Goals
+5. Why This Matters Now
+6. Competitive Landscape & Financial Considerations
+7. Phases
+8. Requirements
+9. Acceptance Criteria
+10. Success Metrics
+11. Risks
+12. References
+
+Do not invent alternate top-level headings. Fold legal triggers, FMEA, and open questions under **Risks**. Fold user-evidence tables under **Background**.
+
+## Hierarchy contract (blocking)
+
+```text
+Phase  →  one or more Requirements (FR-<phase>.<n>)
+Requirement  →  one or more Acceptance Criteria (AC-<phase>.<n>.<k>)
+```
+
+- Skeleton one-line FRs fail review. Each FR needs prose (what/why/constraint) plus linked AC ids.
+- Each AC is stranger-checkable. Ban “intuitive / fast / robust / delightful” without thresholds.
+- `construct artifact validate` runs `lintPrdDeliveryDepth` for type `prd` and `prd-platform`: missing sections, missing Phase headings, orphan AC ids, or FRs without a Phase all fail.
+
+## Variant spines (same depth bar, native headings)
+
+### `prd-business`
+
+The bet → Market thesis → Problem and opportunity → Strategic goals → Alternatives rejected → What must be true → Competitive analysis → Make vs. buy vs. partner → Go-to-market → Financial frame → Kill criteria → Risks (legal + FMEA) → Constraints → Open questions → References.
+
+`lintPrdBusinessDeliveryDepth` requires kill criteria and adversarial FMEA. No Phase→FR→AC (this is a bet doc, not a feature spec).
+
+### `meta-prd`
+
+TL;DR → Background → Problem → Outcomes - Goals & Non-Goals → Principles → Inputs and evidence → Phases → Human approval gates → Failure modes (legal + FMEA) → Rollout → Open questions → References.
+
+```text
+Phase  →  MR-<phase>.<n> (workflow) and/or DR-<phase>.<n> (document + evaluation)
+Requirement  →  *Acceptance* (or AC-* markers)
+```
+
+`lintMetaPrdDeliveryDepth` enforces Phase + MR/DR + Acceptance markers.
+
 ## Steps
 
-The numbered chain below is the manifest baseline, not the final roster. `construct procedure invoke` and `author_artifact` evaluate the request's content signals and append condition-recruited participants after the baseline chain (ADR-0070): the invoke result carries `recruitment: {recruited, addedRoles, rationale}`, and `author_artifact` returns `recruited: [{specialist, reason, role, gate, source}]`. Honor the recruited set — run those participants at their stated role and gate alongside the baseline; do not substitute a memorized roster. Override only on explicit request: `recruitment: "off"` skips recruitment for the run; on `author_artifact`, an explicit list of cx- ids replaces the signal-derived set.
+Call `get_skill("docs/artifact-authorship")` and `get_skill("perspectives/product-manager")` before drafting. The numbered chain below is the manifest baseline, not the final roster. `construct procedure invoke` and `author_artifact` evaluate the request's content signals and append condition-recruited participants after the baseline chain (ADR-0070): the invoke result carries `recruitment: {recruited, addedRoles, rationale}`, and `author_artifact` returns `recruited: [{specialist, reason, role, gate, source}]`. Honor the recruited set — run those participants at their stated role and gate alongside the baseline; do not substitute a memorized roster. Override only on explicit request: `recruitment: "off"` skips recruitment for the run; on `author_artifact`, an explicit list of cx- ids replaces the signal-derived set.
 
-1. **cx-product-manager** produces the requirements package
+**Discovery the author must force (even if the user never mentioned them):**
+
+1. **Legal & compliance triggers** — complete the Risks → Legal table; recruit `security.legal-compliance` / `security.privacy` when any row is yes/unknown with risk.
+2. **User advocacy** — ≥2 independent evidence rows in Background, or **research-required** + owned research task.
+3. **Competitive + financial honesty** — named alternatives with sources or `unknown`; ROI/cost rows may be `unknown` / `[unverified]` with owners — never fabricated.
+4. **Adversarial FMEA** — at least one high-cost failure mode with S×O×D and mitigation or accept-with-rationale.
+5. **Security / a11y / ops** — fire from the authorship trigger matrix when signals appear.
+
+1. **cx-product-manager** produces the requirements package (full 12 sections + hierarchy)
 2. **cx-researcher** grounds requirements in user behavior and fills evidence gaps (invoke in parallel for new features)
 3. **Write to the appropriate `docs/` subdirectory** using the selected template. Each `get_template()` call resolves `.construct/templates/docs/` first, then the Construct default.
 
@@ -41,7 +96,7 @@ The numbered chain below is the manifest baseline, not the final roster. `constr
    | `meta-prd` | `docs/meta-prd/{YYYY-MM-DD}-{slug}.md` |
    | `rfc` | `docs/decisions/rfc/{YYYY-MM-DD}-{slug}.md` |
    | `rfc-platform` | `docs/decisions/rfc/{YYYY-MM-DD}-{slug}.md` |
-4. **cx-reviewer** runs the FMEA challenge pass (`perspectives/devil-advocate`) on the draft; highest-RPN failure modes need a mitigation or explicit accept-with-rationale before ship. Their specialist id must appear in `.construct/agent-log.jsonl` (manifest `releaseGate.requiredReviewers` for PRD-family types).
+4. **cx-reviewer** runs the FMEA challenge pass (`perspectives/devil-advocate`) on the draft; highest-RPN failure modes need a mitigation or explicit accept-with-rationale before ship. Their specialist id must appear in `.construct/agent-log.jsonl` (manifest `releaseGate.requiredReviewers` for PRD-family types). Reviewer also verifies legal/privacy/user-evidence/financial honesty and Phase→FR→AC nesting.
 5. **cx-operations** updates `.construct/context.md` with a link to the PRD
 
 Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.
@@ -72,12 +127,16 @@ Authoring and publish surfaces return a **lifecycle handoff** object (`lifecycle
 Before distribution:
 
 ```bash
-node bin/construct artifact validate docs/prd-platform/<slug>.md --type=prd-platform
-node bin/construct publish docs/prd-platform/<slug>.md --strict --figures
+node bin/construct artifact validate docs/specs/prd/<slug>.md --type=prd
+node bin/construct publish docs/specs/prd/<slug>.md --strict --figures
 ```
 
 `construct publish` runs the artifact release gate by default. Thin or unscaffolded docs **exit 2** with remediation hints. Do not use `--no-gate` or `--no-strict` in demos or ship paths.
 
-**Presentation is part of done.** Published PDFs use type-specific Typst templates (`construct-prd.typ`, `construct-research.typ`, `construct-decision.typ`) with monochrome Space Grotesk typography and an ink-only page ramp (see `templates/distribution/construct-brand.typ`). Lead with an `::: executive-summary` narrative paragraph, not a bullet wall. Diagrams on the publish path use D2 `--sketch` and Mermaid `handDrawn` styling with the same near-black ink accent (`#0a0c10`).
+**Presentation is part of done.** Published PDFs use type-specific Typst templates (`construct-prd.typ`, `construct-research.typ`, `construct-decision.typ`) with the field-notebook brand: Plus Jakarta Sans, cool stone paper, slate-teal evidence accent, dashed sketch chrome (see `templates/distribution/construct-brand.typ`). Lead with a filled **TL;DR**, not a bullet wall. Deck/PPTX exports require `---` slide separators and must pass the PPTX layout audit. Diagrams on the publish path use D2 `--sketch` and Mermaid `handDrawn` styling with charcoal ink (`#1a1d24`) and the same accent family.
 
 `--strict` means **toolchain and release gate** both pass. Invoke alone is not "done."
+
+## Shared authorship contract
+
+Before drafting or reviewing, call `get_skill("docs/artifact-authorship")` for framing, template population, storytelling, adversarial review, anti-fabrication, and cross-persona triggers. Persona overlays under `skills/perspectives/` add failure modes; they do not waive that contract.

@@ -23,3 +23,7 @@ Score each dimension as pass, warning, or fail:
 ## Output
 
 Return findings first, ordered by severity. Include concrete fixes and cite section names or file paths.
+
+## Shared authorship contract
+
+Before drafting or reviewing, call `get_skill("docs/artifact-authorship")` for framing, template population, storytelling, adversarial review, anti-fabrication, and cross-persona triggers. Persona overlays under `skills/perspectives/` add failure modes; they do not waive that contract.

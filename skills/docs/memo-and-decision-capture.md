@@ -43,3 +43,7 @@ _<date> · <author>_
 - Rationale references only alternatives actually considered — no invented options.
 - The memo is dated and attributed.
 - Nothing load-bearing is asserted that the source context does not support; unknowns are written as `unknown`.
+
+## Shared authorship contract
+
+Before drafting or reviewing, call `get_skill("docs/artifact-authorship")` for framing, template population, storytelling, adversarial review, anti-fabrication, and cross-persona triggers. Persona overlays under `skills/perspectives/` add failure modes; they do not waive that contract.

@@ -6,17 +6,29 @@ cx_fixture_source: templates/docs/prd.md
 
 # Golden fixture: prd
 
+## TL;DR
+
+This paragraph supports the TL;DR section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the TL;DR section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the TL;DR section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+
+## Background
+
+This paragraph supports the Background section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Background section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Background section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+
 ## Problem
 
 This paragraph supports the Problem section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Problem section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Problem section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
 
-## Goals
+## Outcomes - Goals & Non-Goals
 
-This paragraph supports the Goals section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Goals section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Goals section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+Fixture content for Outcomes - Goals & Non-Goals.
 
-## Success metrics
+## Why This Matters Now
 
-This paragraph supports the Success metrics section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Success metrics section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Success metrics section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+Fixture content for Why This Matters Now.
+
+## Competitive Landscape & Financial Considerations
+
+Fixture content for Competitive Landscape & Financial Considerations.
 
 ## Phases
 
@@ -24,26 +36,49 @@ This paragraph supports the Success metrics section with observable evidence. So
 
 - **Goal**: Ship an isolated billing ledger per tenant.
 - **Status**: not started
-
-**Functional**
-
-- **FR-1.1**: Each tenant invoice derives only from that tenant ledger events.
-  - *Acceptance*: Reconciliation test passes without cross-tenant reads.
+- **Requirements**: FR-1.1
 
 
-## Risks and mitigations
+## Requirements
 
-Fixture content for Risks and mitigations.
+### Phase 1 requirements
+
+#### FR-1.1: Isolate tenant ledger
+
+Each tenant invoice derives only from that tenant ledger events.
+
+- **Phase**: 1
+- **Acceptance criteria**: AC-1.1.1
+
+
+## Acceptance Criteria
+
+| AC id | FR id | Criterion (stranger-checkable) | Verification method |
+|---|---|---|---|
+| AC-1.1.1 | FR-1.1 | Reconciliation test passes without cross-tenant reads | automated |
+
+
+## Success Metrics
+
+Fixture content for Success Metrics.
+
+## Risks
+
+Fixture content for Risks.
+
+## References
+
+Fixture content for References.
 
 ```mermaid
 flowchart LR
   A[Start] --> B[End]
 ```
 
-| Metric | Baseline | Target |
-| --- | --- | --- |
-| Metric value | Baseline value | Target value |
+| Metric | Type | Baseline | Target | Owner | Source |
+| --- | --- | --- | --- | --- | --- |
+| Metric value | Type value | Baseline value | Target value | Owner value | Source value |
 
-## References
-
-- https://example.com/fixture-source (accessed 2026-06-22)
+| AC id | FR id | Criterion (stranger-checkable) | Verification method |
+| --- | --- | --- | --- |
+| AC id value | FR id value | Criterion (stranger-checkable) value | Verification method value |

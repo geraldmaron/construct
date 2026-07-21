@@ -26,6 +26,32 @@ Fixture content for Strategic goals.
 
 Fixture content for Alternatives rejected.
 
+## What must be true
+
+Fixture content for What must be true.
+
+## Competitive analysis
+
+Fixture content for Competitive analysis.
+
+## Kill criteria
+
+| Leading indicator | Threshold | Action when crossed | Owner |
+|---|---|---|---|
+| Pilot conversion | below 5% after 90 days | abandon | pm |
+
+Kill criteria must be monitorable.
+
+
+## Risks
+
+### Adversarial challenge (FMEA)
+
+| Failure mode | Effect | Cause | S×O×D (1–10) | Mitigation or accept-with-rationale |
+|---|---|---|---|---|
+| Wrong market segment | Burned runway | Weak thesis | 8×6×4 | Kill criteria above |
+
+
 ## References
 
-- https://example.com/fixture-source (accessed 2026-06-22)
+Fixture content for References.

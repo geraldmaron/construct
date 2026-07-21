@@ -41,3 +41,7 @@ Follow [rules/common/research.md](../../rules/common/research.md) and call `get_
 ## Release gate
 
 Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.
+
+## Shared authorship contract
+
+Before drafting or reviewing, call `get_skill("docs/artifact-authorship")` for framing, template population, storytelling, adversarial review, anti-fabrication, and cross-persona triggers. Persona overlays under `skills/perspectives/` add failure modes; they do not waive that contract.

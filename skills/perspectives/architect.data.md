@@ -31,6 +31,38 @@ Additional failure modes on top of the architect core.
 **Why it fails**: bad data silently becomes product behavior.
 **Counter-move**: include data contracts, quality checks, lineage, and incident response ownership.
 
+
+
+## Artifact authorship contract
+
+Load `skills/docs/artifact-authorship.md` before drafting typed artifacts as **architect.data**.
+
+### Framing
+Data contracts, lineage, retention, and quality SLAs.
+
+### Template population
+- Use the manifest template for the artifact type. Fill every required section or write `unknown` with owner and decision-by date.
+- Prefer evidence callouts and explicit open questions over confident filler.
+
+### Storytelling
+- Lead with the decision the reader must make. Escalate certainty only with evidence. Keep unknowns visible.
+
+### Adversarial review
+What happens when late/duplicate/poisoned data arrives?
+
+### Anti-fabrication
+No invented row counts or freshness SLAs.
+
+### Cross-persona handoffs
+privacy + legal for PII datasets.
+
+### Self-check (authorship)
+- [ ] Framing questions answered
+- [ ] Template sections populated or explicitly unknown
+- [ ] Triggered specialists consulted or queued with dates
+- [ ] Strongest counter-argument named
+- [ ] No unsourced load-bearing claims
+
 ## Self-check before shipping
 - [ ] Schema evolution, migrations, and backfills are covered
 - [ ] Cardinality, indexing, retention, and latency assumptions are explicit

@@ -15,14 +15,22 @@
     {
       "type": "prd",
       "structureRequirements": [
+        "TL;DR",
+        "Background",
         "Problem",
-        "Goals",
-        "Success metrics",
+        "Outcomes - Goals & Non-Goals",
+        "Why This Matters Now",
+        "Competitive Landscape & Financial Considerations",
         "Phases",
-        "Risks and mitigations"
+        "Requirements",
+        "Acceptance Criteria",
+        "Success Metrics",
+        "Risks",
+        "References"
       ],
       "visualRequirements": [
         "artifact-has-mermaid",
+        "artifact-table-has-columns",
         "artifact-table-has-columns"
       ],
       "releaseGate": {
@@ -40,13 +48,22 @@
     {
       "type": "prd-platform",
       "structureRequirements": [
+        "TL;DR",
+        "Background",
         "Problem",
-        "Goals and non-goals",
-        "Success metrics",
-        "Risks and mitigations"
+        "Outcomes - Goals & Non-Goals",
+        "Why This Matters Now",
+        "Competitive Landscape & Financial Considerations",
+        "Phases",
+        "Requirements",
+        "Acceptance Criteria",
+        "Success Metrics",
+        "Risks",
+        "References"
       ],
       "visualRequirements": [
         "artifact-has-mermaid",
+        "artifact-table-has-columns",
         "artifact-table-has-columns"
       ],
       "releaseGate": {
@@ -67,7 +84,12 @@
         "Market thesis",
         "Problem and opportunity",
         "Strategic goals",
-        "Alternatives rejected"
+        "Alternatives rejected",
+        "What must be true",
+        "Competitive analysis",
+        "Kill criteria",
+        "Risks",
+        "References"
       ],
       "visualRequirements": [],
       "releaseGate": {
@@ -85,11 +107,16 @@
     {
       "type": "meta-prd",
       "structureRequirements": [
+        "TL;DR",
+        "Background",
         "Problem",
-        "Goals",
+        "Outcomes - Goals & Non-Goals",
         "Principles",
+        "Inputs and evidence",
+        "Phases",
         "Failure modes and mitigations",
-        "Rollout"
+        "Rollout",
+        "References"
       ],
       "visualRequirements": [],
       "releaseGate": {
@@ -106,10 +133,14 @@
       "type": "adr",
       "structureRequirements": [
         "Problem",
+        "Context",
         "Decision",
+        "Rationale",
         "Rejected alternatives",
         "Consequences",
-        "Reversibility"
+        "Reversibility",
+        "Adversarial challenge",
+        "References"
       ],
       "visualRequirements": [
         "artifact-has-mermaid"
@@ -131,9 +162,13 @@
       "structureRequirements": [
         "Summary",
         "Motivation",
+        "Goals & Non-Goals",
         "Proposed design",
+        "Tradeoffs and alternatives",
         "Risks",
-        "Verification"
+        "Verification",
+        "Unresolved questions",
+        "References"
       ],
       "visualRequirements": [
         "artifact-has-mermaid"
@@ -153,9 +188,13 @@
       "structureRequirements": [
         "Summary",
         "Motivation",
+        "Breaking change declaration",
         "Proposed contract",
+        "Tradeoffs and alternatives",
         "Risks",
-        "Verification"
+        "Verification",
+        "Unresolved questions",
+        "References"
       ],
       "visualRequirements": [
         "artifact-has-mermaid"
@@ -173,10 +212,14 @@
     {
       "type": "research-brief",
       "structureRequirements": [
+        "Question",
+        "Method",
         "Sources",
         "Findings",
+        "Counter-evidence",
         "Confidence summary",
-        "Recommendation"
+        "Recommendation",
+        "References"
       ],
       "visualRequirements": [],
       "releaseGate": {
@@ -235,7 +278,9 @@
         "Diagnostic steps",
         "Remediation",
         "Rollback",
-        "Escalation"
+        "Escalation",
+        "Adversarial challenge",
+        "References"
       ],
       "visualRequirements": [
         "artifact-has-mermaid"
@@ -307,7 +352,9 @@
         "North Star Metric",
         "Metrics",
         "Milestones",
-        "Risks"
+        "Competitive Positioning",
+        "Risks",
+        "References"
       ],
       "visualRequirements": [
         "artifact-table-has-columns"

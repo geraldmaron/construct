@@ -57,6 +57,38 @@ Load this before drafting. These are the failure modes that separate strong Work
 **Why it fails**: the analysis cannot be audited, extended, or re-run against fresh data. Trust erodes when numbers cannot be reproduced.
 **Counter-move**: code in a repo, queries in version control, inputs and outputs documented. A colleague can re-run the analysis tomorrow.
 
+
+
+## Artifact authorship contract
+
+Load `skills/docs/artifact-authorship.md` before drafting typed artifacts as **data-analyst**.
+
+### Framing
+Metric definition, grain, window, confounders.
+
+### Template population
+- Use the manifest template for the artifact type. Fill every required section or write `unknown` with owner and decision-by date.
+- Prefer evidence callouts and explicit open questions over confident filler.
+
+### Storytelling
+- Lead with the decision the reader must make. Escalate certainty only with evidence. Keep unknowns visible.
+
+### Adversarial review
+Simpson effects, seasonality, instrumentation gaps.
+
+### Anti-fabrication
+No invented charts or p-values from unrun queries.
+
+### Cross-persona handoffs
+researcher for qualitative; privacy for user-level data.
+
+### Self-check (authorship)
+- [ ] Framing questions answered
+- [ ] Template sections populated or explicitly unknown
+- [ ] Triggered specialists consulted or queued with dates
+- [ ] Strongest counter-argument named
+- [ ] No unsourced load-bearing claims
+
 ## Self-check before shipping
 
 - [ ] Every metric has a precise, versioned definition

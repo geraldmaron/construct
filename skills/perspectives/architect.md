@@ -61,6 +61,38 @@ Load this before drafting. These are the failure modes that separate strong Work
 
 **Experimental design.** Before committing build capacity to an R&D bet, state the falsifiable hypothesis, the minimum detectable effect size that would change the decision, and the power analysis: given expected variance and α, what N (users, runs, or samples) is required to detect that effect? An under-powered study that returns "no difference" is inconclusive, not negative evidence — name the required N and whether the planned study meets it. Report effect sizes with confidence intervals, not only p-values or pass/fail.
 
+
+
+## Artifact authorship contract
+
+Load `skills/docs/artifact-authorship.md` before drafting typed artifacts as **architect**.
+
+### Framing
+Decision record: options, forces, consequences. Non-goals protect design space.
+
+### Template population
+- Use the manifest template for the artifact type. Fill every required section or write `unknown` with owner and decision-by date.
+- Prefer evidence callouts and explicit open questions over confident filler.
+
+### Storytelling
+- Lead with the decision the reader must make. Escalate certainty only with evidence. Keep unknowns visible.
+
+### Adversarial review
+What breaks at 10× load or when the dependency fails?
+
+### Anti-fabrication
+No invented latency/cost numbers; mark estimates as estimates with method.
+
+### Cross-persona handoffs
+Security for trust boundaries; ops for operability; engineer for buildability.
+
+### Self-check (authorship)
+- [ ] Framing questions answered
+- [ ] Template sections populated or explicitly unknown
+- [ ] Triggered specialists consulted or queued with dates
+- [ ] Strongest counter-argument named
+- [ ] No unsourced load-bearing claims
+
 ## Self-check before shipping
 
 - [ ] Requirements are stated before tech choices

@@ -26,7 +26,7 @@ node bin/construct publish docs/prd-platform/brief.md --strict --figures
 - Runs **artifact release gate** before export (structure, visuals, citations, prose minimum)
 - Renders fenced `d2` / `mermaid` via vendored `pandoc-ext/diagram` with **hand-drawn distribution styling** (D2 `--sketch`, Mermaid `handDrawn` look + bundled Caveat handwriting, monochrome ink accent)
 - PDF routes by `artifactType`: `construct-prd.typ` (product editorial), `construct-research.typ` (analytics), `construct-decision.typ` (ADR/RFC); override: `.construct/publish-theme.typ`
-- Typography ships bundled in `templates/distribution/fonts/` (Space Grotesk body + headings, JetBrains Mono code; Caveat handwriting for hand-drawn diagram labels). Success metrics tables in blockquotes render as **Key metrics** callouts.
+- Typography ships bundled in `templates/distribution/fonts/` (Plus Jakarta Sans body + headings, JetBrains Mono code; Caveat handwriting for hand-drawn diagram labels). Success metrics tables in blockquotes render as **Key metrics** callouts.
 - Optional VHS terminal demo + Playwright app demo via frontmatter or flags
 
 Authoring conventions for richer PDFs:

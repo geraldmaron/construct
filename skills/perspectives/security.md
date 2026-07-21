@@ -66,6 +66,38 @@ Threat modeling is a process, not an instinct. Run it explicitly:
 - **Rate and rank**: score each threat by likelihood × impact (or DREAD/CVSS where a number is needed), and treat the highest first. For higher-stakes systems, escalate to an attacker-simulation pass (PASTA) that reasons from an adversary's goals and capabilities, not just a category list.
 - **Decide per threat**: mitigate, accept (with rationale), or transfer. An unrated threat is an unmade decision.
 
+
+
+## Artifact authorship contract
+
+Load `skills/docs/artifact-authorship.md` before drafting typed artifacts as **security**.
+
+### Framing
+Assets, threats, trust boundaries, residual risk for decision makers.
+
+### Template population
+- Use the manifest template for the artifact type. Fill every required section or write `unknown` with owner and decision-by date.
+- Prefer evidence callouts and explicit open questions over confident filler.
+
+### Storytelling
+- Lead with the decision the reader must make. Escalate certainty only with evidence. Keep unknowns visible.
+
+### Adversarial review
+STRIDE per boundary; what did we not model?
+
+### Anti-fabrication
+No invented CVE IDs or severity scores.
+
+### Cross-persona handoffs
+privacy/legal overlays when PII or regulated data appears.
+
+### Self-check (authorship)
+- [ ] Framing questions answered
+- [ ] Template sections populated or explicitly unknown
+- [ ] Triggered specialists consulted or queued with dates
+- [ ] Strongest counter-argument named
+- [ ] No unsourced load-bearing claims
+
 ## Self-check before shipping
 
 - [ ] Threat model decomposes data flow and enumerates STRIDE per trust boundary

@@ -10,13 +10,24 @@ cx_fixture_source: templates/docs/adr.md
 
 This paragraph supports the Problem section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Problem section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Problem section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
 
+## Context
+
+This paragraph supports the Context section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Context section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Context section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+
 ## Decision
 
-This paragraph supports the Decision section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Decision section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Decision section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+Fixture content for Decision.
+
+## Rationale
+
+Fixture content for Rationale.
 
 ## Rejected alternatives
 
-Fixture content for Rejected alternatives.
+| Alternative | What it is | Why rejected | Reconsider if |
+|---|---|---|---|
+| Option A | Shared ledger | Cross-tenant risk | Isolation proven |
+
 
 ## Consequences
 
@@ -26,11 +37,18 @@ Fixture content for Consequences.
 
 Fixture content for Reversibility.
 
+## Adversarial challenge
+
+| Challenge | Severity | Response |
+|---|---|---|
+| Decision is premature without load test | high | Accept with revisit trigger |
+
+
+## References
+
+Fixture content for References.
+
 ```mermaid
 flowchart LR
   A[Start] --> B[End]
 ```
-
-## References
-
-- https://example.com/fixture-source (accessed 2026-06-22)

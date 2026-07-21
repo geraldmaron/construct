@@ -41,3 +41,7 @@ A raw transcript is a low-signal artifact: speaker turns, filler, and tangents b
 - Every decision and action item traces to an actual statement in the transcript — no invented commitments or owners.
 - Tentative language stays tentative; do not sharpen "maybe" into "will".
 - Unresolved or inaudible content is surfaced, not silently dropped.
+
+## Shared authorship contract
+
+Before drafting or reviewing, call `get_skill("docs/artifact-authorship")` for framing, template population, storytelling, adversarial review, anti-fabrication, and cross-persona triggers. Persona overlays under `skills/perspectives/` add failure modes; they do not waive that contract.

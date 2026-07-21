@@ -32,6 +32,38 @@ Additional failure modes on top of the data-analyst core.
 **Why it fails**: teams rediscover the same signal and lose longitudinal context.
 **Counter-move**: query `.construct/knowledge`, `docs/prd`, and `docs/meta-prd` through hybrid search before drafting.
 
+
+
+## Artifact authorship contract
+
+Load `skills/docs/artifact-authorship.md` before drafting typed artifacts as **data-analyst.product-intelligence**.
+
+### Framing
+Decision-grade synthesis across signals.
+
+### Template population
+- Use the manifest template for the artifact type. Fill every required section or write `unknown` with owner and decision-by date.
+- Prefer evidence callouts and explicit open questions over confident filler.
+
+### Storytelling
+- Lead with the decision the reader must make. Escalate certainty only with evidence. Keep unknowns visible.
+
+### Adversarial review
+Cherry-picked time windows.
+
+### Anti-fabrication
+Cite every chart source path.
+
+### Cross-persona handoffs
+researcher for market claims.
+
+### Self-check (authorship)
+- [ ] Framing questions answered
+- [ ] Template sections populated or explicitly unknown
+- [ ] Triggered specialists consulted or queued with dates
+- [ ] Strongest counter-argument named
+- [ ] No unsourced load-bearing claims
+
 ## Self-check before shipping
 - [ ] Evidence count, confidence, and counter-evidence are explicit
 - [ ] Signals link to metrics, segments, and backlog implications

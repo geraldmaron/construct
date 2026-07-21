@@ -23,10 +23,24 @@
       "workflowSkill": "docs/prd-workflow",
       "toneDefault": "decision-forcing-direct",
       "toneAllowed": ["decision-forcing-direct", "executive-concise"],
-      "structureRequirements": ["Problem", "Goals", "Success metrics", "Phases", "Risks and mitigations"],
+      "structureRequirements": [
+        "TL;DR",
+        "Background",
+        "Problem",
+        "Outcomes - Goals & Non-Goals",
+        "Why This Matters Now",
+        "Competitive Landscape & Financial Considerations",
+        "Phases",
+        "Requirements",
+        "Acceptance Criteria",
+        "Success Metrics",
+        "Risks",
+        "References"
+      ],
       "visualRequirements": [
         { "id": "prd-user-flow", "check": "artifact-has-mermaid", "diagram": "flowchart" },
-        { "id": "prd-metrics-table", "check": "artifact-table-has-columns", "columns": ["Metric", "Baseline", "Target"] }
+        { "id": "prd-metrics-table", "check": "artifact-table-has-columns", "columns": ["Metric", "Type", "Baseline", "Target", "Owner", "Source"] },
+        { "id": "prd-acceptance-table", "check": "artifact-table-has-columns", "columns": ["AC id", "FR id", "Criterion (stranger-checkable)", "Verification method"] }
       ],
       "researchProfile": "user",
       "releaseGate": {
@@ -50,10 +64,24 @@
       "workflowSkill": "docs/prd-workflow",
       "toneDefault": "decision-forcing-direct",
       "toneAllowed": ["decision-forcing-direct", "executive-concise"],
-      "structureRequirements": ["Problem", "Goals and non-goals", "Success metrics", "Risks and mitigations"],
+      "structureRequirements": [
+        "TL;DR",
+        "Background",
+        "Problem",
+        "Outcomes - Goals & Non-Goals",
+        "Why This Matters Now",
+        "Competitive Landscape & Financial Considerations",
+        "Phases",
+        "Requirements",
+        "Acceptance Criteria",
+        "Success Metrics",
+        "Risks",
+        "References"
+      ],
       "visualRequirements": [
         { "id": "prd-platform-flow", "check": "artifact-has-mermaid", "diagram": "flowchart" },
-        { "id": "prd-platform-metrics", "check": "artifact-table-has-columns", "columns": ["Metric", "Baseline", "Target"] }
+        { "id": "prd-platform-metrics", "check": "artifact-table-has-columns", "columns": ["Metric", "Type", "Baseline", "Target", "Owner", "Source"] },
+        { "id": "prd-platform-acceptance", "check": "artifact-table-has-columns", "columns": ["AC id", "FR id", "Criterion (stranger-checkable)", "Verification method"] }
       ],
       "researchProfile": "external",
       "releaseGate": {
@@ -70,7 +98,18 @@
       "workflowSkill": "docs/prd-workflow",
       "toneDefault": "executive-concise",
       "toneAllowed": ["executive-concise", "decision-forcing-direct"],
-      "structureRequirements": ["The bet", "Market thesis", "Problem and opportunity", "Strategic goals", "Alternatives rejected"],
+      "structureRequirements": [
+        "The bet",
+        "Market thesis",
+        "Problem and opportunity",
+        "Strategic goals",
+        "Alternatives rejected",
+        "What must be true",
+        "Competitive analysis",
+        "Kill criteria",
+        "Risks",
+        "References"
+      ],
       "researchProfile": "market",
       "releaseGate": {
         "structuralLint": true,
@@ -86,7 +125,18 @@
       "workflowSkill": "docs/prd-workflow",
       "toneDefault": "decision-forcing-direct",
       "toneAllowed": ["decision-forcing-direct"],
-      "structureRequirements": ["Problem", "Goals", "Principles", "Failure modes and mitigations", "Rollout"],
+      "structureRequirements": [
+        "TL;DR",
+        "Background",
+        "Problem",
+        "Outcomes - Goals & Non-Goals",
+        "Principles",
+        "Inputs and evidence",
+        "Phases",
+        "Failure modes and mitigations",
+        "Rollout",
+        "References"
+      ],
       "researchProfile": "external",
       "releaseGate": {
         "structuralLint": true,
@@ -102,7 +152,17 @@
       "workflowSkill": "docs/adr-workflow",
       "toneDefault": "decision-forcing-direct",
       "toneAllowed": ["decision-forcing-direct"],
-      "structureRequirements": ["Problem", "Decision", "Rejected alternatives", "Consequences", "Reversibility"],
+      "structureRequirements": [
+        "Problem",
+        "Context",
+        "Decision",
+        "Rationale",
+        "Rejected alternatives",
+        "Consequences",
+        "Reversibility",
+        "Adversarial challenge",
+        "References"
+      ],
       "visualRequirements": [
         { "id": "adr-context-diagram", "check": "artifact-has-mermaid", "diagram": "flowchart" }
       ],
@@ -121,7 +181,17 @@
       "workflowSkill": "docs/prd-workflow",
       "toneDefault": "decision-forcing-direct",
       "toneAllowed": ["decision-forcing-direct"],
-      "structureRequirements": ["Summary", "Motivation", "Proposed design", "Risks", "Verification"],
+      "structureRequirements": [
+        "Summary",
+        "Motivation",
+        "Goals & Non-Goals",
+        "Proposed design",
+        "Tradeoffs and alternatives",
+        "Risks",
+        "Verification",
+        "Unresolved questions",
+        "References"
+      ],
       "visualRequirements": [
         { "id": "rfc-sequence-diagram", "check": "artifact-has-mermaid", "diagram": "sequenceDiagram" }
       ],
@@ -140,7 +210,17 @@
       "workflowSkill": "docs/prd-workflow",
       "toneDefault": "decision-forcing-direct",
       "toneAllowed": ["decision-forcing-direct"],
-      "structureRequirements": ["Summary", "Motivation", "Proposed contract", "Risks", "Verification"],
+      "structureRequirements": [
+        "Summary",
+        "Motivation",
+        "Breaking change declaration",
+        "Proposed contract",
+        "Tradeoffs and alternatives",
+        "Risks",
+        "Verification",
+        "Unresolved questions",
+        "References"
+      ],
       "visualRequirements": [
         { "id": "rfc-platform-sequence", "check": "artifact-has-mermaid", "diagram": "sequenceDiagram" }
       ],
@@ -159,7 +239,16 @@
       "workflowSkill": "docs/research-workflow",
       "toneDefault": "direct",
       "toneAllowed": ["direct", "pedagogical"],
-      "structureRequirements": ["Sources", "Findings", "Confidence summary", "Recommendation"],
+      "structureRequirements": [
+        "Question",
+        "Method",
+        "Sources",
+        "Findings",
+        "Counter-evidence",
+        "Confidence summary",
+        "Recommendation",
+        "References"
+      ],
       "researchProfile": "external",
       "releaseGate": {
         "structuralLint": true,
@@ -207,7 +296,18 @@
       "workflowSkill": "docs/runbook-workflow",
       "toneDefault": "blameless",
       "toneAllowed": ["blameless", "direct"],
-      "structureRequirements": ["Alert trigger", "Symptoms", "Impact", "Severity and response", "Diagnostic steps", "Remediation", "Rollback", "Escalation"],
+      "structureRequirements": [
+        "Alert trigger",
+        "Symptoms",
+        "Impact",
+        "Severity and response",
+        "Diagnostic steps",
+        "Remediation",
+        "Rollback",
+        "Escalation",
+        "Adversarial challenge",
+        "References"
+      ],
       "visualRequirements": [
         { "id": "runbook-diagnostic-flowchart", "check": "artifact-has-mermaid", "diagram": "flowchart" }
       ],
@@ -264,7 +364,17 @@
       "workflowSkill": "docs/strategy-workflow",
       "toneDefault": "executive-concise",
       "toneAllowed": ["executive-concise", "decision-forcing-direct"],
-      "structureRequirements": ["Vision", "Bets", "Non-bets", "North Star Metric", "Metrics", "Milestones", "Risks"],
+      "structureRequirements": [
+        "Vision",
+        "Bets",
+        "Non-bets",
+        "North Star Metric",
+        "Metrics",
+        "Milestones",
+        "Competitive Positioning",
+        "Risks",
+        "References"
+      ],
       "visualRequirements": [
         { "id": "strategy-bet-matrix", "check": "artifact-table-has-columns", "columns": ["Metric", "Type (leading/lagging)", "Baseline", "Target", "Owner"] }
       ],

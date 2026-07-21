@@ -196,3 +196,7 @@ After completing the docs init:
 - If the user wants to add API docs → `@cx-docs-keeper` to generate stubs from code
 - If the user wants to file an incident report → use `docs/postmortems/` with the incident-report template
 - If the user wants to document a release → use `docs/changelogs/` with the changelog-entry template
+
+## Shared authorship contract
+
+Before drafting or reviewing, call `get_skill("docs/artifact-authorship")` for framing, template population, storytelling, adversarial review, anti-fabrication, and cross-persona triggers. Persona overlays under `skills/perspectives/` add failure modes; they do not waive that contract.

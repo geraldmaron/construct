@@ -31,6 +31,38 @@ Additional failure modes on top of the product-manager core.
 **Why it fails**: users need to understand when to rely on the system and how to recover when it is wrong.
 **Counter-move**: specify grounding, explainability, review controls, feedback capture, and correction workflows.
 
+
+
+## Artifact authorship contract
+
+Load `skills/docs/artifact-authorship.md` before drafting typed artifacts as **product-manager.ai-product**.
+
+### Framing
+Model capability, evaluation, and user disclosure are part of framing.
+
+### Template population
+- Use the manifest template for the artifact type. Fill every required section or write `unknown` with owner and decision-by date.
+- Prefer evidence callouts and explicit open questions over confident filler.
+
+### Storytelling
+- Lead with the decision the reader must make. Escalate certainty only with evidence. Keep unknowns visible.
+
+### Adversarial review
+What failure modes hurt users when the model is confidently wrong?
+
+### Anti-fabrication
+No invented eval scores or benchmark ranks.
+
+### Cross-persona handoffs
+security.ai + privacy + legal disclosure checklist.
+
+### Self-check (authorship)
+- [ ] Framing questions answered
+- [ ] Template sections populated or explicitly unknown
+- [ ] Triggered specialists consulted or queued with dates
+- [ ] Strongest counter-argument named
+- [ ] No unsourced load-bearing claims
+
 ## Self-check before shipping
 - [ ] Expected, unacceptable, and fallback behaviors are defined
 - [ ] Evaluation dataset, rubric, and promotion gate are specified

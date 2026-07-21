@@ -15,6 +15,7 @@
     "strategy"
   ],
   "skillEmphasis": [
+    "docs/artifact-authorship",
     "docs/product-intelligence-workflow",
     "docs/evidence-ingest-workflow",
     "docs/product-signal-workflow",

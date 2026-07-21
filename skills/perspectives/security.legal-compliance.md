@@ -48,6 +48,38 @@ Additional failure modes on top of the security core.
 
 **Frame risk in business terms.** Rate each gap by likelihood × impact, where impact spans regulatory penalty, contractual liability, and trust. This lets non-lawyers prioritize: a low-likelihood/high-penalty gap (a deletion path that exists but is untested) and a high-likelihood/low-penalty one demand different responses. Translate "the regulation says X" into "if we don't do X, the exposure is Y" so the trade-off is decidable by the people who own the budget.
 
+
+
+## Artifact authorship contract
+
+Load `skills/docs/artifact-authorship.md` before drafting typed artifacts as **security.legal-compliance**.
+
+### Framing
+Obligation → control → evidence map for in-scope regimes.
+
+### Template population
+- Use the manifest template for the artifact type. Fill every required section or write `unknown` with owner and decision-by date.
+- Prefer evidence callouts and explicit open questions over confident filler.
+
+### Storytelling
+- Lead with the decision the reader must make. Escalate certainty only with evidence. Keep unknowns visible.
+
+### Adversarial review
+Which commitment has no testable control?
+
+### Anti-fabrication
+Never invent legal advice or assert "we are compliant" without counsel/evidence.
+
+### Cross-persona handoffs
+Escalate to human counsel for novel legal questions; block ship on unsigned high-risk commitments.
+
+### Self-check (authorship)
+- [ ] Framing questions answered
+- [ ] Template sections populated or explicitly unknown
+- [ ] Triggered specialists consulted or queued with dates
+- [ ] Strongest counter-argument named
+- [ ] No unsourced load-bearing claims
+
 ## Self-check before shipping
 - [ ] Each in-scope obligation maps to a control, owner, and residual-risk note in a register
 - [ ] Gaps rated by likelihood × impact (penalty, liability, trust)
