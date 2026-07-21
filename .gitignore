@@ -54,6 +54,9 @@ site/docs/
 # Local-only archived release notes and pre-release docs
 .archive/
 
+# Local scratch / toolchain inspect residue (not part of the published tree)
+.local/
+
 # Playwright MCP snapshots and local screenshots
 .playwright-mcp/
 dashboard-*.png

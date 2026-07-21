@@ -16,8 +16,8 @@ This page reconciles three sources:
 | Surface | Status | Replacement | Record |
 | --- | --- | --- | --- |
 | `construct matrix <subcommand>` | removed | `construct graph <subcommand>` | ADR-0053: Removed after ADR-0053 two-release-cycle deprecation window (alias shipped v1.5.0; removed construct-b0nny.28 / workspace-control-plane E9). |
-| `construct up` | removed | `construct dev` | Legacy alias of construct dev removed; handler no longer present in bin/construct. |
-| `construct down` | removed | `construct stop` | Legacy alias of construct stop removed; handler no longer present in bin/construct. |
+| `up (removed alias)` | removed | `construct dev` | Legacy alias of construct dev removed; handler no longer present in bin/construct. |
+| `down (removed alias)` | removed | `construct stop` | Legacy alias of construct stop removed; handler no longer present in bin/construct. |
 | `construct install --scope=<project|user|both>` | removed | `construct install --footprint=<project|user|both>` | ADR-0071: Retired in Construct 2.0 cleanup; canonical install-write-target flag is --footprint per ADR-0071. |
 | `construct models --reset` | removed | `construct models reset` | Retired top-level flag form; canonical subcommand is construct models reset. |
 | `construct models --tier=<t> --set=<model>` | removed | `construct models set --tier=<reasoning|standard|fast> --model=<provider/model-id>` | Retired top-level flag form; canonical subcommand is construct models set --tier=<t> --model=<id>. |

@@ -14,6 +14,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Fixed
 
+- Alignment census ratchet: sunset tombstones for retired `up`/`down` aliases in `lib/cli-compat-catalog.mjs` / generated `command-catalog.md` no longer spell the banned `construct up` / `construct down` invocation forms (status remains removed → `construct dev` / `construct stop`); classify `.local/` as ignored local scratch so root-layout audit stays clean.
+
 - Architecture and root/prompt-surface docs no longer claim missing modules (`lib/workspaces/`, `lib/persona.mjs`, `lib/persona-sections.mjs`, full Objective/Work stores) as present; intake/triage and related guides drop live specialist/persona roster teaching and the dead persona-research link (`construct-5ir13`).
 
 - DOCX d2 figures without Playwright (PR 419): office-format diagram negotiation preferred PNG, so `d2` PNG export pulled playwright-go's retired `playwright.azureedge.net` driver (404) and left `figures:unresolved 0/3`. Prefer SVG for DOCX/ODT (pandoc embeds it), honor `CONSTRUCT_D2_MIME=image/svg+xml` from `buildDistributionDiagramEnv`, and assert the Chrome-merged mermaid puppeteer temp config (not only the repo-relative template path).
