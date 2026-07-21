@@ -30,6 +30,7 @@ test.after(() => {
   else process.env.CONSTRUCT_HOME_OVERRIDE = constructGraphTestPrevHomeOverride;
 });
 
+const { sqliteAvailable } = await import('../../lib/graph/relational/sqlite-db.mjs');
 const { writeGraph } = await import('../../lib/graph/store.mjs');
 const { enqueueOutboxEvent, outboxState } = await import('../../lib/graph/relational/outbox.mjs');
 const watcher = await import('../../lib/doctor/watchers/graph-staleness.mjs');
@@ -46,7 +47,7 @@ function freshProject() {
   return root;
 }
 
-test('tick() drains a pending outbox event before checking staleness', async () => {
+test('tick() drains a pending outbox event before checking staleness', { skip: !sqliteAvailable() ? 'node:sqlite unavailable' : false }, async () => {
   const root = freshProject();
   writeGraph(root, { nodes: [{ id: 'capability:a', type: 'capability', name: 'A', attrs: {} }], edges: [], generatedAt: new Date().toISOString(), sourceHashes: {} });
   enqueueOutboxEvent(root, {
@@ -70,7 +71,7 @@ test('tick() drains a pending outbox event before checking staleness', async () 
   assert.equal(after.applied, 1);
 });
 
-test('a dead-lettered event records a graph-incremental-untrusted action', async () => {
+test('a dead-lettered event records a graph-incremental-untrusted action', { skip: !sqliteAvailable() ? 'node:sqlite unavailable' : false }, async () => {
   const root = freshProject();
   writeGraph(root, { nodes: [], edges: [], generatedAt: new Date().toISOString(), sourceHashes: {} });
   // node_delete on an id that produces no node row is a harmless no-op for

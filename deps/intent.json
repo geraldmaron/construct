@@ -217,15 +217,15 @@
   },
   {
     "id": "@huggingface/transformers",
-    "kind": "npm-optional",
+    "kind": "npm-dev",
     "purpose": "Local embedding model execution for vector search without requiring an external API (offline/privacy mode)",
     "owningWorkflow": "knowledge-search, evidence-ingest (local embedding path)",
     "modeRequirement": "solo",
     "healthCheck": "require('@huggingface/transformers') \u2014 absent means local embedding unavailable; hashing fallback activates automatically",
     "degradationBehavior": "graceful-skip",
     "securityConcerns": "Downloads model weights from HuggingFace Hub on first use \u2014 network access required; model files are untrusted binary artifacts; supply-chain risk if model is swapped; users should pin specific model revisions",
-    "removalCriteria": "Local embedding is handled by a different mechanism (e.g. llama.cpp bindings) or removed from the feature set",
-    "disposition": "optional"
+    "removalCriteria": "Consumer-perspective CVE audit (scripts/audit-published-artifact.mjs): optionalDependencies ship to every npm install and inherit @huggingface/transformers \u2192 onnxruntime-node \u2192 adm-zip. Repo devs install via devDependencies; runtime degrades to hashing embedder when absent.",
+    "disposition": "remove"
   },
   {
     "id": "@cyclonedx/cyclonedx-npm",
