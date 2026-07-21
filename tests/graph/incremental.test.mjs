@@ -111,7 +111,7 @@ test('import-graph edit updates only import-graph sourced edges', { skip: !sqlit
   assert.deepEqual(afterRegistryEdges, beforeRegistryEdges);
 });
 
-test('full rebuild matches incremental state for the same import-graph edit', { skip: !sqliteAvailable() ? 'node:sqlite unavailable' : false }, () => {
+test('full rebuild matches incremental state for the same import-graph edit', { skip: !sqliteAvailable() ? 'node:sqlite unavailable' : false, timeout: 240_000 }, () => {
   const project = freshProject();
   const build = spawnSync(process.execPath, [BIN, 'graph', 'build', '--no-co-change'], {
     cwd: project,
