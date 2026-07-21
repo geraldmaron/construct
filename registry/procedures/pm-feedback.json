@@ -1,0 +1,19 @@
+{
+  "id": "pm-feedback",
+  "version": "1.0.0",
+  "type": "embed",
+  "workerProfiles": [],
+  "approvalMode": "proposal-only",
+  "modelTier": "standard",
+  "state": "active",
+  "description": "Synthesize customer feedback and product requirements into governed requirement candidates.",
+  "embed": {
+    "workerProfileId": "product-manager",
+    "providerBindings": ["feedback", "atlassian-confluence"],
+    "framework": "product-value-tradeoff",
+    "outputContract": "pm-requirements-candidates",
+    "proposalAuthority": "propose-only",
+    "runtime": "auto",
+    "cadence": { "every": "PT24H" }
+  }
+}

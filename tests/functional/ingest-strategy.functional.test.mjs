@@ -70,7 +70,7 @@ test('provider strategy with fallback=none fails explicitly, no silent adapter u
     version: 1,
     ingest: { strategy: 'provider', fallback: 'none' },
   }, null, 2));
-  const result = runIngest(cwd, [doc], { CX_MODEL_FAST: 'test-fast-model' });
+  const result = runIngest(cwd, [doc], { CONSTRUCT_MODEL_FAST: 'test-fast-model' });
   assert.notEqual(result.status, 0, 'provider+fallback=none should fail explicitly');
   assert.match(result.stderr, /provider/i);
   rmTmpDir(cwd);
@@ -82,7 +82,7 @@ test('provider strategy with fallback=adapter records model and the fallback tha
     version: 1,
     ingest: { strategy: 'provider', fallback: 'adapter' },
   }, null, 2));
-  const result = runIngest(cwd, [doc], { CX_MODEL_FAST: 'test-fast-model' });
+  const result = runIngest(cwd, [doc], { CONSTRUCT_MODEL_FAST: 'test-fast-model' });
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.ingestion.strategy, 'provider');

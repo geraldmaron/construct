@@ -10,7 +10,7 @@
  * ledger entry for the invalid one. The job is registered with
  * `runImmediately: true`, so it fires on the same tick as `.start()`.
  *
- * Reads CX_ROOT_DIR and TICK_TIMEOUT_MS from env.
+ * Reads CONSTRUCT_ROOT_DIR and TICK_TIMEOUT_MS from env.
  */
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
@@ -21,7 +21,7 @@ import { EMPTY_CONFIG } from '../../../lib/embed/config.mjs';
 import { readDirectiveState } from '../../../lib/directives/due-tracker.mjs';
 import { listDegradations } from '../../../lib/embed/degradation.mjs';
 
-const rootDir = process.env.CX_ROOT_DIR;
+const rootDir = process.env.CONSTRUCT_ROOT_DIR;
 const timeoutMs = Number(process.env.TICK_TIMEOUT_MS || 15_000);
 const pollIntervalMs = 150;
 

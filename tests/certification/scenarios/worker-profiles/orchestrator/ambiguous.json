@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 2,
+  "workerProfileId": "orchestrator",
+  "capabilityId": "worker-profile.prompt",
+  "mode": "normal",
+  "scenarioKind": "ambiguous",
+  "representativeTask": {
+    "prompt": "Coordinate the team on the checkout revamp and get it moving.",
+    "inputs": {}
+  },
+  "expectedBehavior": {
+    "mustContainAny": ["clarify", "scope", "acceptance criteria", "single-session", "multi-session", "who owns"],
+    "mustNotContain": [],
+    "mustRefuse": false,
+    "mustEscalateTo": [],
+    "mustStateAssumptions": true
+  }
+}

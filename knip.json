@@ -1,0 +1,40 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "bin/construct",
+    "bin/construct-postinstall.mjs",
+    "lib/mcp/server.mjs",
+    "scripts/run-tests.mjs",
+    "scripts/run-graph-gate.mjs",
+    "scripts/sync-worker-profiles.mjs",
+    "apps/docs/next.config.mjs",
+    "apps/docs/app/layout.tsx",
+    "apps/docs/app/page.tsx",
+    "apps/docs/app/[...slug]/page.tsx"
+  ],
+  "project": [
+    "bin/**/*.{js,mjs}",
+    "lib/**/*.{js,mjs}",
+    "scripts/**/*.{js,mjs}",
+    "tests/**/*.{js,mjs}",
+    "apps/**/*.{js,mjs,ts,tsx}",
+    "packages/**/*.{js,mjs,ts,tsx}"
+  ],
+  "ignore": [
+    "coverage/**",
+    ".construct/**",
+    "dist/**",
+    "node_modules/**",
+    "apps/docs/.next/**"
+  ],
+  "ignoreDependencies": [
+    "@next/swc-darwin-arm64",
+    "@next/swc-darwin-x64",
+    "@next/swc-linux-arm64-gnu",
+    "@next/swc-linux-x64-gnu",
+    "@tailwindcss/oxide-darwin-arm64",
+    "@tailwindcss/oxide-darwin-x64",
+    "@tailwindcss/oxide-linux-arm64-gnu",
+    "@tailwindcss/oxide-linux-x64-gnu"
+  ]
+}

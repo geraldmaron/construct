@@ -72,19 +72,19 @@ function readMarkers(markerPath) {
 }
 
 // loadCheckpoint resolves the machine-scoped state root (ADR-0066) via
-// CX_HOME_OVERRIDE on process.env directly; this process must pin the same
+// CONSTRUCT_HOME_OVERRIDE on process.env directly; this process must pin the same
 // override the spawned CLI saw, or it reads the real developer machine's
 // state root instead (mirrors getRunInSandbox in
 // tests/functional/host-execution-pickup.functional.test.mjs).
 
 function loadCheckpointInSandbox(env, runId) {
-  const prev = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = env.HOME;
+  const prev = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = env.HOME;
   try {
     return loadCheckpoint(env.project, runId);
   } finally {
-    if (prev === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prev;
+    if (prev === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prev;
   }
 }
 
@@ -98,8 +98,8 @@ test('a flow killed mid-run resumes via the real CLI to completion without re-en
   // Simulate the process that ran step "a" and checkpointed it, then died —
   // driven in-process here, exactly as ADR-0067's Run shape is meant to allow
   // a caller to do (createRun/advanceRun "one tick at a time").
-  const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = env.HOME;
+  const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = env.HOME;
   let killedRun;
   try {
     const flow = defineFlow((await import(flowPath)).default);
@@ -107,8 +107,8 @@ test('a flow killed mid-run resumes via the real CLI to completion without re-en
     killedRun = await advanceRun(killedRun);
     checkpointRun(env.project, 'crash-run-1', flow, killedRun);
   } finally {
-    if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+    if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
   }
 
   assert.equal(killedRun.status, 'running', 'the simulated crash happens mid-flow, not after completion');
@@ -118,7 +118,7 @@ test('a flow killed mid-run resumes via the real CLI to completion without re-en
   // memory with the run driven above, resumes purely from the checkpoint file.
   const result = spawnSync(process.execPath, [CLI, 'flow', 'resume', 'crash-run-1', `--flow=${flowPath}`], {
     cwd: env.project,
-    env: sterileSpawnEnv({ HOME: env.HOME, CX_HOME_OVERRIDE: env.HOME }),
+    env: sterileSpawnEnv({ HOME: env.HOME, CONSTRUCT_HOME_OVERRIDE: env.HOME }),
     encoding: 'utf8',
   });
 
@@ -142,14 +142,14 @@ test('construct flow status reports a checkpoint\'s persisted state without driv
 
   const startResult = spawnSync(process.execPath, [CLI, 'flow', 'resume', 'status-run-1', `--flow=${flowPath}`, '--state={"count":0}'], {
     cwd: env.project,
-    env: sterileSpawnEnv({ HOME: env.HOME, CX_HOME_OVERRIDE: env.HOME }),
+    env: sterileSpawnEnv({ HOME: env.HOME, CONSTRUCT_HOME_OVERRIDE: env.HOME }),
     encoding: 'utf8',
   });
   assert.equal(startResult.status, 0);
 
   const statusResult = spawnSync(process.execPath, [CLI, 'flow', 'status', 'status-run-1'], {
     cwd: env.project,
-    env: sterileSpawnEnv({ HOME: env.HOME, CX_HOME_OVERRIDE: env.HOME }),
+    env: sterileSpawnEnv({ HOME: env.HOME, CONSTRUCT_HOME_OVERRIDE: env.HOME }),
     encoding: 'utf8',
   });
   assert.equal(statusResult.status, 0);

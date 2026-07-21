@@ -1,0 +1,87 @@
+{
+  "id": "rnd",
+  "displayName": "Software R&D",
+  "skills": [
+    "docs/prd-workflow",
+    "docs/adr-workflow",
+    "docs/research-workflow",
+    "quality-gates/verify-change",
+    "operating/incident-response"
+  ],
+  "procedures": [],
+  "intake": {
+    "types": [
+      "user-signal",
+      "bug",
+      "requirement",
+      "research",
+      "experiment",
+      "eval-finding",
+      "architecture",
+      "incident",
+      "launch-asset",
+      "ops",
+      "security",
+      "legal-compliance"
+    ],
+    "stages": [
+      "signal",
+      "framing",
+      "hypothesis",
+      "design",
+      "implementation",
+      "evaluation",
+      "release",
+      "operations"
+    ],
+    "classificationTable": "lib/intake/tables/rnd.mjs"
+  },
+  "artifactClasses": [
+    "prd",
+    "prd-platform",
+    "prd-business",
+    "rfc",
+    "rfc-platform",
+    "adr",
+    "prfaq",
+    "research-brief",
+    "evidence-brief",
+    "signal-brief",
+    "customer-profile",
+    "runbook",
+    "incident-report",
+    "memo",
+    "strategy",
+    "one-pager",
+    "changelog-entry"
+  ],
+  "tagline": "The default. Product, engineering, governance, operations under one Worker Profile.",
+  "hooks": {
+    "sessionReflect": "on",
+    "sessionOptimize": "on"
+  },
+  "toneDefaults": {
+    "prd": "decision-forcing-direct",
+    "prfaq": "friendly",
+    "memo": "executive-concise",
+    "runbook": "blameless"
+  },
+  "researchProfiles": {
+    "feature": "user",
+    "bug": "codebase",
+    "research": "external",
+    "strategy": "market",
+    "incident": "codebase"
+  },
+  "rebrand": {
+    "intakeQueueLabel": "R&D intake queue",
+    "signalNoun": "signal"
+  },
+  "capabilities": {
+    "intake": {
+      "inbox": true,
+      "dedup": "sha256",
+      "attribution": true
+    }
+  }
+}

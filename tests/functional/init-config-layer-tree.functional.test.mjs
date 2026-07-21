@@ -8,7 +8,7 @@
  * The existing tests assert properties (no heavy dirs, text-sized files, guide
  * placement); none pins the tree itself, so a new init-time write landing in
  * the wrong layer passes them all. One real init against an isolated
- * HOME/CX_HOME_OVERRIDE, then three layer assertions on durable artifacts:
+ * HOME/CONSTRUCT_HOME_OVERRIDE, then three layer assertions on durable artifacts:
  *   - config layer (.construct/): the exact entry set, nothing more — a new entry
  *     here must be a deliberate, reviewed footprint change;
  *   - machine layer (<home>/.construct): does not exist at all after init —
@@ -71,7 +71,7 @@ test('construct init writes each footprint layer exactly: pinned .construct/ tre
   t.after(cleanup);
 
   const env = isolationEnv(home, { CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1', BOOTSTRAP_CHECKED: '1' });
-  const result = spawnSync(process.execPath, [BIN, 'init', '--yes', '--no-start'], {
+  const result = spawnSync(process.execPath, [BIN, 'init', '--yes', '--no-start', '--with-claude'], {
     cwd: project,
     encoding: 'utf8',
     timeout: 120_000,
@@ -107,10 +107,10 @@ test('construct init writes each footprint layer exactly: pinned .construct/ tre
 
   // Machine layer: strictly lazy. Not "no heavy subdirectory" (the existing
   // pin) but no <home>/.construct at all — init performs zero machine-scoped
-  // writes, and no legacy <home>/.cx root reappears either.
+  // writes, and no legacy <home>/.construct root reappears either.
 
   assert.equal(existsSync(join(home, '.construct')), false, 'init must not create <home>/.construct — the machine layer materializes on first durable write, not at init');
-  assert.equal(existsSync(join(home, '.cx')), false, 'init must not create a legacy <home>/.cx root');
+  assert.equal(existsSync(join(home, '.construct')), false, 'init must not create a legacy <home>/.construct root');
 
   // Project config files: parseable and declarative.
 

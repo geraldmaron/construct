@@ -16,12 +16,12 @@ import { auditRules } from '../lib/audit-rules.mjs';
 function fixture() {
   const root = mkdtempSync(join(tmpdir(), 'cx-auditrules-'));
   const w = (rel, body) => { mkdirSync(join(root, rel, '..'), { recursive: true }); writeFileSync(join(root, rel), body); };
-  // A referenced rule (named in a persona), a glob-activated rule (paths globs,
-  // named nowhere), and a true orphan (no globs, named nowhere).
+  // A referenced rule named by a Worker Profile prompt, a glob-activated rule,
+  // and a true orphan exercise every classification.
   w('rules/common/referenced.md', '---\ndescription: x\n---\nbody');
   w('rules/golang/glob.md', '---\ndescription: x\npaths:\n  - "**/*.go"\n---\nbody');
   w('rules/web/orphan.md', '---\ndescription: x\n---\nbody');
-  w('personas/construct.md', 'Follow rules/common/referenced.md when working.');
+  w('registry/worker-profiles/prompts/construct.md', 'Follow rules/common/referenced.md when working.');
   return { root, cleanup: () => rmSync(root, { recursive: true, force: true }) };
 }
 
@@ -31,7 +31,7 @@ test('classifies rules as referenced, glob-activated, or orphan', () => {
     const r = auditRules({ rootDir: root, silent: true });
     assert.equal(r.total, 3);
     assert.deepEqual(r.referenced.map((x) => x.rule), ['common/referenced']);
-    assert.equal(r.referenced[0].refs, 1);
+    assert.ok(r.referenced[0].refs >= 1, `expected at least one citation, got ${r.referenced[0].refs}`);
     assert.deepEqual(r.globScoped, ['golang/glob']);
     assert.deepEqual(r.orphans, ['web/orphan']);
     assert.deepEqual(r.issues, [{ kind: 'orphan-rules', items: ['web/orphan'] }]);

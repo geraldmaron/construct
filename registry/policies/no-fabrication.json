@@ -1,0 +1,14 @@
+{
+  "id": "no-fabrication",
+  "ownerWorkerProfile": "orchestrator",
+  "description": "Detects fabrication-risk patterns (manufactured confidence, uncited claims, hand-wave percentages) in artifact prose.",
+  "enforcement": "lib/comment-lint.mjs",
+  "mode": "deterministic-85",
+  "approvalWorkerProfiles": [],
+  "requiredPolicies": [],
+  "vetoWorkerProfiles": [],
+  "escalationWorkerProfiles": [],
+  "governs": [],
+  "conditions": [],
+  "evidence": []
+}

@@ -19,9 +19,10 @@ import path from 'node:path';
 
 import {
   makeRichDocument, makeSection, makeHeadingBlock, makeParagraphBlock, makeRun,
-  makeListBlock, makeTableBlock, makeCell, makeFigureBlock, makeMediaRef, makeCodeBlock, makeCalloutBlock,
+  makeListBlock, makeTableBlock, makeCell, makeFigureBlock, makeMediaRef, makeCodeBlock, makeCalloutBlock, makeDiagramBlock,
 } from '../../lib/rich-document.mjs';
 import { exportRichDocument, richDocumentToMarkdown, RICH_EXPORT_FORMATS } from '../../lib/rich-document-export.mjs';
+import { countPdfEmbeddedImages, pdfRenderedDiagrams } from '../../lib/document-export.mjs';
 import { validatePdf, validateArchive, validateHtml } from '../../lib/export-validate.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
@@ -116,4 +117,55 @@ test('an invalid RichDocument is rejected before any engine runs', () => {
   const result = exportRichDocument({ doc: { metadata: {}, sections: 'nope' }, format: 'md', outputPath: path.join(tmpDir(), 'x.md') });
   assert.equal(result.ok, false);
   assert.match(result.message, /invalid/i);
+});
+
+test('RichDocument PDF export with figures renders diagram blocks via markdown pivot', (t) => {
+  const doc = makeRichDocument(
+    { title: 'Diagram pivot', artifactType: 'prd-platform' },
+    [makeSection({
+      blocks: [
+        makeParagraphBlock({ runs: [makeRun({ text: 'Intro' })] }),
+        makeDiagramBlock({ lang: 'd2', source: 'a -> b\n' }),
+      ],
+    })],
+  );
+  const dir = tmpDir();
+  const mdPath = path.join(dir, 'source.md');
+  fs.writeFileSync(mdPath, '# Diagram pivot\n\n```d2\na -> b\n```\n', 'utf8');
+  const target = path.join(dir, 'diagram.pdf');
+  const result = exportRichDocument({
+    doc,
+    format: 'pdf',
+    outputPath: target,
+    inputPath: mdPath,
+    figures: true,
+    figuresStrict: true,
+    repoRoot: path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..'),
+  });
+  if (!result.ok && /install|missing|Chrome|d2|mmdc/i.test(result.message || '')) {
+    t.skip(result.message);
+    return;
+  }
+  assert.equal(result.ok, true, result.message);
+  const source = fs.readFileSync(mdPath, 'utf8');
+  assert.ok(countPdfEmbeddedImages(target) > 0, 'diagram should embed in PDF');
+  assert.equal(pdfRenderedDiagrams(target, source), true);
+});
+
+test('RichDocument PDF export without figures fails closed when strict', () => {
+  const doc = makeRichDocument(
+    { title: 'Diagram block' },
+    [makeSection({ blocks: [makeDiagramBlock({ lang: 'd2', source: 'x -> y\n' })] })],
+  );
+  const result = exportRichDocument({
+    doc,
+    format: 'pdf',
+    outputPath: path.join(tmpDir(), 'blocked.pdf'),
+    figures: false,
+    figuresStrict: true,
+    repoRoot: path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..'),
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.figuresUnresolved, true);
+  assert.match(result.message, /diagram block/i);
 });

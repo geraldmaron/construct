@@ -10,7 +10,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { applyFreePreferenceToTierSet, applyFreeSameFamilyPreferenceToTierSet, classifyProviderFailure, getProviderModelCatalog, inferTierModelsFromSelection, isProviderOnCooldown, readCurrentModels, readProviderCooldowns, resolveExecutionContractModelMetadata, resolveFallbackAction, resolveModelOperatingProfile, selectFallbackModel, selectModelTierForWorkCategory, setModelWithTierInference, writeProviderCooldown } from '../lib/model-router.mjs';
+import { applyFreePreferenceToTierSet, applyFreeSameFamilyPreferenceToTierSet, capabilityClassSupportsOperatingProfileMapping, classifyProviderFailure, getProviderModelCatalog, inferTierModelsFromSelection, isProviderOnCooldown, readCurrentModels, readProviderCooldowns, resolveExecutionContractModelMetadata, resolveFallbackAction, resolveModelOperatingProfile, resolveOperatingProfileIdFromCapabilityClass, selectFallbackModel, selectModelTierForWorkCategory, setModelWithTierInference, writeProviderCooldown } from '../lib/model-router.mjs';
 
 function tempFile(prefix, t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
@@ -33,14 +33,14 @@ test('setModelWithTierInference writes sibling tiers for same provider family', 
   assert.equal(resolved.fast, 'openrouter/anthropic/claude-haiku-4-5-20251001');
 
   const text = fs.readFileSync(envPath, 'utf8');
-  assert.match(text, /CX_MODEL_REASONING=openrouter\/anthropic\/claude-opus-4-6/);
-  assert.match(text, /CX_MODEL_STANDARD=openrouter\/anthropic\/claude-sonnet-4-6/);
-  assert.match(text, /CX_MODEL_FAST=openrouter\/anthropic\/claude-haiku-4-5-20251001/);
+  assert.match(text, /CONSTRUCT_MODEL_REASONING=openrouter\/anthropic\/claude-opus-4-6/);
+  assert.match(text, /CONSTRUCT_MODEL_STANDARD=openrouter\/anthropic\/claude-sonnet-4-6/);
+  assert.match(text, /CONSTRUCT_MODEL_FAST=openrouter\/anthropic\/claude-haiku-4-5-20251001/);
 });
 
 test('readCurrentModels still respects explicit env overrides first', (t) => {
   const envPath = tempFile('construct-model-router-read-', t);
-  fs.writeFileSync(envPath, 'CX_MODEL_REASONING=custom/reasoning\nCX_MODEL_STANDARD=custom/standard\n');
+  fs.writeFileSync(envPath, 'CONSTRUCT_MODEL_REASONING=custom/reasoning\nCONSTRUCT_MODEL_STANDARD=custom/standard\n');
 
   const models = readCurrentModels(envPath, {
     reasoning: { primary: 'registry/reasoning' },
@@ -57,15 +57,15 @@ test('readCurrentModels still respects explicit env overrides first', (t) => {
 
 test('readCurrentModels accepts process-style overrides in addition to env file values', (t) => {
   const envPath = tempFile('construct-model-router-process-', t);
-  fs.writeFileSync(envPath, 'CX_MODEL_REASONING=file/reasoning\n');
+  fs.writeFileSync(envPath, 'CONSTRUCT_MODEL_REASONING=file/reasoning\n');
 
   const models = readCurrentModels(envPath, {
     reasoning: { primary: 'registry/reasoning' },
     standard: { primary: 'registry/standard' },
     fast: { primary: 'registry/fast' },
   }, {
-    CX_MODEL_STANDARD: 'process/standard',
-    CX_MODEL_FAST: 'process/fast',
+    CONSTRUCT_MODEL_STANDARD: 'process/standard',
+    CONSTRUCT_MODEL_FAST: 'process/fast',
   });
 
   assert.equal(models.reasoning, 'file/reasoning');
@@ -142,7 +142,7 @@ test('selectModelTierForWorkCategory maps work categories to canonical model tie
 test('resolveExecutionContractModelMetadata exposes selected tier and tier sources', () => {
   const metadata = resolveExecutionContractModelMetadata({
     envValues: {
-      CX_MODEL_STANDARD: 'custom/standard',
+      CONSTRUCT_MODEL_STANDARD: 'custom/standard',
     },
     registryModels: {
       reasoning: { primary: 'registry/reasoning' },
@@ -176,10 +176,50 @@ test('resolveModelOperatingProfile accepts explicit small-model override', () =>
   assert.equal(profile.retrievalFirst, true);
 });
 
+test('resolveModelOperatingProfile maps capability classes per ADR-0038', () => {
+  assert.equal(resolveOperatingProfileIdFromCapabilityClass('local-constrained'), 'small');
+  assert.equal(resolveOperatingProfileIdFromCapabilityClass('local-capable'), 'balanced');
+  assert.equal(resolveOperatingProfileIdFromCapabilityClass('hosted-direct'), 'balanced');
+  assert.equal(resolveOperatingProfileIdFromCapabilityClass('hosted-routed'), 'balanced');
+  assert.equal(
+    resolveModelOperatingProfile({
+      selectedModel: 'anthropic/claude-opus-4-6',
+      capabilityClass: 'hosted-direct',
+    }).id,
+    'balanced',
+  );
+  assert.equal(
+    resolveModelOperatingProfile({
+      selectedModel: 'openrouter/qwen/qwen3-coder:free',
+      capabilityClass: 'hosted-routed',
+    }).id,
+    'balanced',
+  );
+  assert.equal(
+    resolveModelOperatingProfile({
+      selectedModel: 'ollama/qwen2.5-coder:7b-cx32k',
+      capabilityClass: 'local-constrained',
+    }).id,
+    'small',
+  );
+  assert.equal(
+    resolveModelOperatingProfile({
+      selectedModel: 'ollama/devstral:24b-cx32k',
+      capabilityClass: 'local-capable',
+    }).id,
+    'balanced',
+  );
+});
+
+test('capabilityClassSupportsOperatingProfileMapping excludes unknown class', () => {
+  assert.equal(capabilityClassSupportsOperatingProfileMapping('unknown'), false);
+  assert.equal(capabilityClassSupportsOperatingProfileMapping('hosted-direct'), true);
+});
+
 test('resolveExecutionContractModelMetadata infers small-model posture for local small checkpoints', () => {
   const metadata = resolveExecutionContractModelMetadata({
     envValues: {
-      CX_MODEL_STANDARD: 'ollama/llama3.1:8b',
+      CONSTRUCT_MODEL_STANDARD: 'ollama/llama3.1:8b',
     },
     registryModels: {
       standard: { primary: 'ollama/llama3.1:8b' },
@@ -268,7 +308,7 @@ test('selectFallbackModel resolves candidate and skips cooldown-blocked provider
   const cooldownPath = path.join(dir, 'provider-cooldowns.json');
   const now = Date.now();
 
-  fs.writeFileSync(envPath, 'CX_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n');
+  fs.writeFileSync(envPath, 'CONSTRUCT_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n');
 
   const registryModels = {
     standard: { primary: 'anthropic/claude-sonnet-4-6', fallback: ['openrouter/qwen/qwen3-coder:free'] },
@@ -290,7 +330,7 @@ test('selectFallbackModel returns null when failing provider is on cooldown', (t
   const cooldownPath = path.join(dir, 'provider-cooldowns.json');
   const now = Date.now();
 
-  fs.writeFileSync(envPath, 'CX_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n');
+  fs.writeFileSync(envPath, 'CONSTRUCT_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n');
   writeProviderCooldown(cooldownPath, 'anthropic', now);
 
   const hookInput = { error: { message: '429 rate limit', provider: 'anthropic' } };
@@ -304,7 +344,7 @@ test('selectFallbackModel returns null for non-retryable failures', (t) => {
   const envPath = path.join(dir, '.env');
   const cooldownPath = path.join(dir, 'provider-cooldowns.json');
 
-  fs.writeFileSync(envPath, 'CX_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n');
+  fs.writeFileSync(envPath, 'CONSTRUCT_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n');
 
   const hookInput = { error: { message: 'invalid api key' } };
   const result = selectFallbackModel({ hookInput, envPath, cooldownPath });

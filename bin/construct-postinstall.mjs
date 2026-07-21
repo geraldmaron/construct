@@ -26,6 +26,7 @@ import { fileURLToPath } from 'node:url';
 import { stageProjectAdapters } from '../lib/install/stage-project.mjs';
 import { syncProjectAdapters } from '../lib/adapters-sync.mjs';
 import { missingIgnorePatterns, isConstructPackageRepo } from '../lib/host-disposition.mjs';
+import { printFirstRunChecklist } from '../lib/install/first-run-checklist.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = path.resolve(HERE, '..');
@@ -83,14 +84,11 @@ try {
 // `~/.claude/settings.json`, and `~/.construct/*` land only when the user runs
 // `construct install --footprint=user` (ADR-0071 renamed --scope to
 // --footprint; --scope keeps working as a deprecated alias), so the consent
-// point is visible.
+// point is visible. Compat surface (owner: construct-tsyfe.8.18, expires: 2026-12-31).
 
 if (process.env.npm_config_global === 'true' || process.env.npm_config_global === true) {
   log('global install detected; machine-scope setup is opt-in (ADR-0029)');
-  log('to wire ~/.construct/* and the front-door agent, run:');
-  log('  construct install --footprint=user');
-  log('to set up a project, cd into it and run:');
-  log('  construct init');
+  printFirstRunChecklist('global-postinstall', log);
   process.exit(0);
 }
 
@@ -158,6 +156,8 @@ try {
     );
     log('wrote .construct/install-manifest.json');
   } catch { /* manifest write must not fail the install */ }
+
+  printFirstRunChecklist('project-postinstall', log);
 } catch (err) {
   fail(`Adapter staging failed: ${err.message}`, 'The package is installed; run `npx construct init` in this project to complete setup.');
   // Intentionally exit 0: staging is best-effort completion, and a non-zero exit

@@ -3,8 +3,8 @@
  *
  * Guards construct-neq9.4: proves sterileSpawnEnv() (tests/helpers/sterile-env.mjs)
  * builds spawn/process envs from an explicit allowlist, not `{ ...process.env }`,
- * so a poisoned parent shell (CX_MODEL_STANDARD, OPENROUTER_API_KEY, WEB_SEARCH_URL,
- * CX_USER_ENV_PATH) can never reach a hermetic child, HOME is pinned away from the
+ * so a poisoned parent shell (CONSTRUCT_MODEL_STANDARD, OPENROUTER_API_KEY, WEB_SEARCH_URL,
+ * CONSTRUCT_USER_ENV_PATH) can never reach a hermetic child, HOME is pinned away from the
  * real developer home, and a hermetic secret-resolver call never shells out to a
  * real `op` even when a logging `op` stub sits first on PATH.
  */
@@ -21,13 +21,13 @@ import { __resetOpLocateCache } from '../../lib/providers/op-locate.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const POISON = {
-  CX_MODEL_STANDARD: 'poison',
-  CX_MODEL_REASONING: 'poison',
-  CX_MODEL_FAST: 'poison',
+  CONSTRUCT_MODEL_STANDARD: 'poison',
+  CONSTRUCT_MODEL_REASONING: 'poison',
+  CONSTRUCT_MODEL_FAST: 'poison',
   OPENROUTER_API_KEY: 'sk-poison',
   ANTHROPIC_API_KEY: 'sk-ant-poison',
   WEB_SEARCH_URL: 'http://poison.invalid',
-  CX_USER_ENV_PATH: '/poison/path',
+  CONSTRUCT_USER_ENV_PATH: '/poison/path',
   CONSTRUCT_PROVIDER_TIMEOUT_MS: '999999',
 };
 
@@ -63,14 +63,14 @@ test('sterileSpawnEnv builds a spawn env from an allowlist: a poisoned parent sh
   }
   assert.ok(childEnv.PATH, 'PATH must still pass through so subprocess binaries resolve');
   assert.notEqual(childEnv.HOME, process.env.HOME, 'HOME must be pinned to a fresh mkdtemp root, not the real developer HOME');
-  assert.ok(childEnv.CX_HOME_OVERRIDE, 'CX_HOME_OVERRIDE must be set alongside HOME');
+  assert.ok(childEnv.CONSTRUCT_HOME_OVERRIDE, 'CONSTRUCT_HOME_OVERRIDE must be set alongside HOME');
 });
 
 test('sterileSpawnEnv overrides win over the allowlist defaults without reopening it', async (t) => {
   withPoisonedParentEnv(t);
 
-  const env = sterileSpawnEnv({ CX_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6' });
-  assert.equal(env.CX_MODEL_STANDARD, 'anthropic/claude-sonnet-4-6', 'an explicit override is honored');
+  const env = sterileSpawnEnv({ CONSTRUCT_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6' });
+  assert.equal(env.CONSTRUCT_MODEL_STANDARD, 'anthropic/claude-sonnet-4-6', 'an explicit override is honored');
   assert.equal(env.OPENROUTER_API_KEY, undefined, 'a var not named in overrides stays excluded even when the parent is poisoned');
 });
 

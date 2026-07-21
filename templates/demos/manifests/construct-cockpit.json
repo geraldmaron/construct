@@ -1,0 +1,15 @@
+{
+  "schema": "construct/demo-manifest/1",
+  "name": "construct-cockpit",
+  "title": "Resource guard rails — disk budget walkthrough",
+  "summary": "Terminal walkthrough of doctor disk usage, prune dry-run, resource budget test, and cleanup.",
+  "status": "declared",
+  "tape": "templates/demos/tapes/resource-guard-rails.tape",
+  "fallbackSurface": "tape",
+  "commands": [
+    "node bin/construct doctor",
+    "node bin/construct prune --dry-run",
+    "node --test tests/functional/resource-write-guard.functional.test.mjs",
+    "node bin/construct cleanup --disk-only --dry-run"
+  ]
+}

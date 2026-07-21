@@ -1,0 +1,2465 @@
+#!/usr/bin/env node
+/**
+ * sync-worker-profiles.mjs — regenerate host adapters from canonical Worker Profiles.
+ *
+ * Two scopes, modelled on every host's own convention (global = personal default,
+ * project = team-shared):
+ *
+ *   Global / user scope (`~/.claude/`, `~/.codex/`, `~/.github/`, …)
+ *     - Only the `construct` front-door agent (the registry's top-level
+ *       `orchestrator` entry). Specialists, slash commands, and skills do NOT
+ *       land at global scope — they are project content.
+ *     - Plus the hook installer in `~/.claude/settings.json`, which has to be
+ *       global so hooks fire in every Claude Code session. MCP server
+ *       definitions are a separate file: Claude Code reads user-scope MCP
+ *       servers from the top-level `mcpServers` object in `~/.claude.json`,
+ *       not from settings.json (construct-ranh).
+ *
+ *   Project scope (`<project>/.claude/`, `<project>/.codex/`, `<project>/.github/`, …)
+ *     - `construct` front door only (Single Front Door), slash commands, skills, MCP
+ *       wiring. Specialists dispatch internally via orchestration MCP tools.
+ *       MCP server definitions land in `<project>/.mcp.json` (Claude Code's
+ *       documented project scope), not `.claude/settings.json`.
+ *
+ * Flags:
+ *   --dry-run             Print a diff of what would change without writing anything.
+ *   --force               Bypass prompt word-cap hard stop (still warns).
+ *   --project             Write only the project tier (cwd's `.claude/`, `.codex/`, etc.).
+ *   --global              Write only the global tier (orchestrator + hooks at `~/`).
+ *   (no scope flag)       Write the global tier. If cwd is inside a Construct
+ *                         project, also write the project tier.
+ *   --all-hosts           Write every host adapter set (claude|codex|opencode|vscode|cursor|copilot).
+ *   --with-<host>         Force-include one host; unions with detection (or with --hosts=).
+ *   --hosts=<list>|all    Restrict to a comma-separated list (or all). Env: CONSTRUCT_SYNC_HOSTS.
+ *   --compress-worker-profiles  Compress Worker Profile prompts before writing
+ *                         platform adapters. The canonical source
+ *                         file is unchanged; only the runtime adapter is shorter.
+ *                         Lossy by definition — opt-in only.
+ */
+import fs from "node:fs";
+import path from "node:path";
+import os from "node:os";
+import { fileURLToPath } from "node:url";
+import { generateCompletions } from "../lib/completions.mjs";
+import {
+  buildCodexMcpEntry,
+  getCodexConfigPath,
+  readCodexConfig,
+  removeDanglingConstructMcpMarkers,
+  removeDanglingConstructMcpTimeouts,
+  removeTomlTables,
+  serializeCodexMcpTable,
+  tomlString,
+  writeCodexConfig,
+} from "../lib/codex-config.mjs";
+import { findOpenCodeConfigPath, readOpenCodeConfig, writeOpenCodeConfig, ensureOpenRouterProviderAuth } from "../lib/opencode-config.mjs";
+import { HEAVY_EXTERNAL_MCP_IDS, LOCAL_SURFACE_MODES, decideTrim, isLocalModel } from "../lib/mcp/tool-budget.mjs";
+import { emitCursorRules } from "../lib/rules-delivery.mjs";
+import { memoryPort } from "../lib/home-namespace.mjs";
+import { resolvePromptContract, readPromptBody } from "../lib/prompt-composer.mjs";
+import { renderPromptForTier } from "../lib/prompt-sections.mjs";
+import { getModelVerdict } from "../lib/ollama/capability-store.mjs";
+import {
+  buildClaudeMcpEntry,
+  buildOpenCodeMcpEntry,
+  getOpenCodeMcpId,
+} from "../lib/mcp-platform-config.mjs";
+import { loadConstructEnv } from "../lib/env-config.mjs";
+import { configDir } from "../lib/config/xdg.mjs";
+import { inlinePerspectiveAntiPatterns, PROMPT_WORD_CAP } from "../lib/perspective-preload.mjs";
+import { inlineValidationContract } from "../lib/prompt-validation-contract.mjs";
+import { resolveTiersForPrimary, resolveCapabilityTier, selectLocalEditorModel } from "../lib/model-router.mjs";
+import { stampFrontmatter } from "../lib/doc-stamp.mjs";
+import { buildSkillFrontmatter, stripLeadingFrontmatter } from "../lib/sync/skill-frontmatter.mjs";
+import { loadRegistry, clearCache } from "../lib/registry/loader.mjs";
+import { resolveWorkerProfilePromptPath } from "../lib/prompt-metadata.mjs";
+import { loadPluginRegistry } from "../lib/plugin-registry.mjs";
+import { PROJECT_MARKERS, LAUNCHER_REL_PATH, CONFIG_DIR_NAME } from "../lib/config-dir.mjs";
+import { getVSCodeUserDirs as sharedGetVSCodeUserDirs } from "../lib/vscode-paths.mjs";
+
+const home = os.homedir();
+const root = path.resolve(import.meta.dirname, "..");
+const isMain = process.argv[1] ? path.resolve(process.argv[1]) === fileURLToPath(import.meta.url) : false;
+
+const mergedEnv = loadConstructEnv({ rootDir: root, homeDir: home, env: process.env });
+for (const [key, value] of Object.entries(mergedEnv)) {
+  if (!(key in process.env)) process.env[key] = value;
+}
+if (!process.env.CONSTRUCT_TOOLKIT_DIR) process.env.CONSTRUCT_TOOLKIT_DIR = root;
+
+clearCache();
+const registry = loadRegistry({ rootDir: root });
+
+function validateRegistry(registry) {
+  const errors = [];
+  if (registry.schemaVersion !== 1) errors.push("Registry schemaVersion must be 1");
+  const profiles = Object.values(registry.workerProfiles ?? {});
+  if (profiles.length === 0) errors.push("Registry has no Worker Profiles");
+  const validTiers = new Set(["strong", "standard", "cheap"]);
+  const ids = new Set();
+  for (const profile of profiles) {
+    if (!profile.id) { errors.push("Worker Profile missing 'id'"); continue; }
+    if (ids.has(profile.id)) errors.push(`Duplicate Worker Profile id: ${profile.id}`);
+    ids.add(profile.id);
+    if (!profile.description) errors.push(`${profile.id}: missing 'description'`);
+    if (!profile.displayName) errors.push(`${profile.id}: missing 'displayName'`);
+    if (!validTiers.has(profile.modelTier)) errors.push(`${profile.id}: invalid modelTier '${profile.modelTier}'`);
+    if (!resolveWorkerProfilePromptPath(profile.id, { rootDir: root, registry })) {
+      errors.push(`${profile.id}: canonical prompt path cannot be resolved`);
+    }
+  }
+
+  return errors;
+}
+
+const validationErrors = validateRegistry(registry);
+if (validationErrors.length > 0) {
+  console.error("Registry validation failed:");
+  for (const err of validationErrors) console.error(`  - ${err}`);
+  process.exit(1);
+}
+
+{
+  const { validatePromptFiles } = await import("../lib/worker-profiles/prompt-schema.mjs");
+  const promptResult = validatePromptFiles({ rootDir: root, registry });
+  if (promptResult.errors.length > 0) {
+    console.error("Worker Profile prompt validation failed:");
+    for (const err of promptResult.errors) console.error(`  - ${err}`);
+    process.exit(1);
+  }
+}
+
+// --- Dry-run + lockfile + two-phase write infrastructure ---
+
+const DRY_RUN = process.argv.includes("--dry-run");
+const COMPRESS_WORKER_PROFILES = process.argv.includes("--compress-worker-profiles");
+const PROJECT_FLAG = process.argv.includes("--project");
+const GLOBAL_FLAG = process.argv.includes("--global");
+
+// --local-surface=on|off|auto controls whether the heavy external MCP servers are
+// disabled to fit a small local-model window. `auto` (default) trims only when the
+// config's own default model is local — so a cloud session keeps context7/github
+// even on a machine that also has Ollama. `on` forces the trim (the lever for users
+// who pick a local model at runtime, leaving the config default unset); `off` keeps
+// every server. CONSTRUCT_LOCAL_SURFACE is the env equivalent.
+
+const LOCAL_SURFACE = (() => {
+  const arg = process.argv.find((a) => a.startsWith("--local-surface="));
+  const raw = (arg ? arg.slice("--local-surface=".length) : process.env.CONSTRUCT_LOCAL_SURFACE || "auto").trim().toLowerCase();
+  return LOCAL_SURFACE_MODES.includes(raw) ? raw : "auto";
+})();
+
+// --quiet suppresses only the closing one-line summary, not the work or any
+// warning. `construct install` runs the global tier twice (plain `sync` then
+// `sync --global`); in a non-project cwd both land in the same global branch and
+// print the identical "Synced … to global scope" + "Completions updated" lines.
+// Passing --quiet to the first call lets the canonical summary print exactly once
+// from `sync --global`, with no change to what either call writes.
+
+const QUIET = process.argv.includes("--quiet") || process.argv.includes("-q");
+const summary = (msg) => { if (!QUIET) console.log(msg); };
+
+// Project-tier host selection. `--hosts=claude,codex,…` (or CONSTRUCT_SYNC_HOSTS)
+// restricts which adapter sets the project tier writes, so `construct init` can
+// scaffold only the hosts the user actually has (construct-4xy6 / ADR-0027 §1).
+// Absent → detect installed hosts (plus config-dir fallbacks). `--all-hosts` /
+// `CONSTRUCT_SYNC_HOSTS=all` writes every HOST_KEYS entry. `--with-<host>` always
+// unions into the selection (with detection when --hosts= is omitted, or with an
+// explicit --hosts= list) so force-including Cursor never prunes other hosts.
+
+import { detectHostCapabilities } from "../lib/host-capabilities.mjs";
+import {
+  HOST_KEYS,
+  displayNameToKey,
+  hasNativeSubagents as hostHasNativeSubagents,
+  globalHookAllowlist,
+  globalMcpAllowlist,
+} from "../lib/platforms/capabilities.mjs";
+
+function parseHostSelection() {
+  if (process.argv.includes("--all-hosts")) {
+    return new Set(HOST_KEYS);
+  }
+
+  const withFlags = HOST_KEYS.filter((k) => process.argv.includes(`--with-${k}`));
+  const hostsArg = process.argv.find((a) => a.startsWith("--hosts="));
+  const fromCli = hostsArg ? hostsArg.slice("--hosts=".length) : null;
+  const fromEnv = process.env.CONSTRUCT_SYNC_HOSTS || null;
+  const raw = fromCli != null ? fromCli : fromEnv;
+
+  if (raw != null) {
+    if (String(raw).trim().toLowerCase() === "all") return new Set(HOST_KEYS);
+    const wanted = new Set(String(raw).split(",").map((s) => s.trim().toLowerCase()).filter(Boolean));
+    for (const k of withFlags) wanted.add(k);
+    return new Set(HOST_KEYS.filter((k) => wanted.has(k)));
+  }
+
+  // Default to detected hosts if none are explicitly requested via --hosts=.
+  const detected = new Set();
+  const nameToKey = displayNameToKey();
+  try {
+    for (const cap of detectHostCapabilities()) {
+      if (cap.availability === "installed" && nameToKey[cap.host]) {
+        detected.add(nameToKey[cap.host]);
+      }
+    }
+  } catch { /* detection is advisory */ }
+
+  // Config file present means the user has (or had) OpenCode — include it
+  // so the sync writes to the existing config rather than pruning it.
+  // Binary-based detection misses non-PATH installs and CI-runner setups.
+  if (!detected.has("opencode")) {
+    try {
+      if (fs.existsSync(findOpenCodeConfigPath())) detected.add("opencode");
+    } catch { /* advisory */ }
+  }
+
+  // Same rationale for Codex: an existing `~/.codex/agents/` dir means the
+  // user has it even when the `codex` binary is not on PATH — the same dir
+  // doctor's parity check reads, so both sides agree on "installed". A
+  // detection miss without this fallback prunes the managed adapter and
+  // config.toml block, and doctor then reports permanent drift with no
+  // self-heal short of putting `codex` on PATH.
+  if (!detected.has("codex")) {
+    try {
+      if (fs.existsSync(path.join(home, ".codex", "agents"))) detected.add("codex");
+    } catch { /* advisory */ }
+  }
+
+  // Cursor GUI installs often lack a PATH binary; an existing mcp.json is enough.
+  if (!detected.has("cursor")) {
+    try {
+      if (fs.existsSync(path.join(home, ".cursor", "mcp.json"))) detected.add("cursor");
+    } catch { /* advisory */ }
+  }
+
+  for (const k of withFlags) detected.add(k);
+
+  // Always include Claude as the baseline if nothing else is detected.
+  if (detected.size === 0) detected.add("claude");
+  return detected;
+}
+
+const HOST_SELECTION = parseHostSelection();
+const wantsHost = (key) => HOST_SELECTION.has(key);
+
+/**
+ * A Construct project carries `.construct/` — the launcher staged by
+ * `stage-project.mjs` under `.construct/launcher/`, plus project state.
+ * When `construct sync` runs inside
+ * one without an explicit scope flag, default to project mode so Worker Profiles
+ * land with the repo rather than leaking into the user's home directory.
+ * `--global` overrides this for the front-door refresh path.
+ */
+function detectConstructProject(cwd) {
+  if (PROJECT_MARKERS.some((m) => fs.existsSync(path.join(cwd, m)))) {
+    return cwd;
+  }
+  return null;
+}
+
+const detectedProject = (!PROJECT_FLAG && !GLOBAL_FLAG) ? detectConstructProject(process.cwd()) : null;
+const projectDir = PROJECT_FLAG ? process.cwd() : detectedProject;
+
+// Lock and staging are scoped to the tier we actually mutate: a project dir for
+// project-tier writes, the user's HOME for global-tier writes (which land in
+// ~/.claude, ~/.codex, …). Keying the global tier to HOME — not the repo root —
+// means two --global syncs against different HOMEs (e.g. parallel test files in
+// isolated sandboxes) never collide on a shared repo-root lock, and staging
+// renames stay on the same filesystem as their destinations.
+
+const stateBase = projectDir || home;
+const lockPath = path.join(stateBase, CONFIG_DIR_NAME, "sync.lock");
+const stagingDir = path.join(stateBase, CONFIG_DIR_NAME, "sync-staging");
+
+// Project-tier writes carry every registry entry. Global-tier writes carry only
+// the `construct` front-door agent — Worker Profiles live with the project, not the
+// user's home directory, per each host's documented best-practice scope.
+
+function globalEntries(allEntries) {
+  return allEntries.filter((e) => e.isOrchestrator);
+}
+
+/** Acquire an exclusive lockfile. Aborts if already held by a live process. */
+function acquireLock() {
+  if (DRY_RUN) return;
+  try {
+    fs.mkdirSync(path.dirname(lockPath), { recursive: true });
+    fs.writeFileSync(lockPath, String(process.pid), { flag: "wx" });
+  } catch (err) {
+    if (err.code === "EEXIST") {
+      const holder = fs.readFileSync(lockPath, "utf8").trim();
+      // Check whether the holding process is still alive
+      let holderAlive = false;
+      try { process.kill(Number(holder), 0); holderAlive = true; } catch { /* dead */ }
+      if (holderAlive) {
+        console.error(`[sync] Another sync is already running (pid ${holder}). Aborting.`);
+        console.error(`[sync] If this is stale, remove ${CONFIG_DIR_NAME}/sync.lock and retry.`);
+        process.exit(1);
+      }
+      // Stale lock — steal it
+      fs.writeFileSync(lockPath, String(process.pid), { flag: "w" });
+      return;
+    }
+    throw err;
+  }
+}
+
+/** Release the lockfile. Called in a finally block. */
+function releaseLock() {
+  if (DRY_RUN) return;
+  try { fs.unlinkSync(lockPath); } catch { /* already gone */ }
+}
+
+/**
+ * Staging-aware write. In dry-run mode, writes to the staging dir instead of the
+ * real destination and records the path pair for diff output. In normal mode,
+ * writes to staging first, then the real path is swapped in by commitStaging().
+ */
+const _stagedPairs = []; // [{ staging, real, content }]
+
+function writeFile(file, content, { stamp = true } = {}) {
+  mkdirp(path.dirname(file));
+  // Doc-stamp wraps content with cx_doc_id + body_hash YAML frontmatter for
+  // tamper detection. That's right for content artifacts (research findings,
+  // knowledge files), wrong for host-platform adapter files that have their
+  // own frontmatter contract (Claude Code agents, Copilot prompts, Anthropic
+  // Agent Skills) or are user-managed (CLAUDE.md, copilot-instructions.md).
+  // Stamping those produces double-frontmatter that breaks the host loader.
+  // Callers writing those files pass { stamp: false }.
+
+  const shouldStamp = stamp && file.endsWith('.md');
+  const stamped = shouldStamp ? stampFrontmatter(content, { generator: 'construct/sync-worker-profiles' }) : content;
+
+  if (DRY_RUN) {
+    // Stage in memory only — compare against current on-disk content.
+    let current = "";
+    try { current = fs.readFileSync(file, "utf8"); } catch { /* new file */ }
+    if (current !== stamped) _stagedPairs.push({ real: file, staging: null, content: stamped, current });
+    return;
+  }
+
+  // Two-phase: write to staging, commit later.
+  const rel = path.relative(stateBase, file);
+  const stagingPath = path.join(stagingDir, rel);
+  mkdirp(path.dirname(stagingPath));
+  fs.writeFileSync(stagingPath, stamped);
+  _stagedPairs.push({ real: file, staging: stagingPath, content: stamped });
+}
+
+/**
+ * Rename every staged file into its real destination. Each rename is
+ * individually atomic, but the batch is not: a failure partway (a
+ * destination directory that turned unwritable mid-run) must not stop the
+ * rest of the batch from committing, or leave the caller unaware of which
+ * files actually landed. Returns the committed and failed sets so the driver
+ * can report per-host outcomes rather than a single opaque success/failure.
+ */
+function commitStaging() {
+  const committed = [];
+  const failed = [];
+  for (const { real, staging } of _stagedPairs) {
+    if (!staging) continue;
+    try {
+      mkdirp(path.dirname(real));
+      fs.renameSync(staging, real);
+      committed.push(real);
+    } catch (err) {
+      failed.push({ real, staging, error: err });
+    }
+  }
+  // Clean up staging dir — only the entries that failed to commit remain in
+  // it, so a full success removes it entirely and a partial failure leaves
+  // just the uncommitted files behind for inspection.
+  if (failed.length === 0) {
+    try { fs.rmSync(stagingDir, { recursive: true, force: true }); } catch { /* ok */ }
+  }
+  return { committed, failed };
+}
+
+/** Print a human-readable diff summary for --dry-run mode. */
+function printDryRunDiff() {
+  if (_stagedPairs.length === 0) {
+    console.log("[sync --dry-run] No changes — all outputs are already up to date.");
+    return;
+  }
+  console.log(`[sync --dry-run] ${_stagedPairs.length} file(s) would change:\n`);
+  for (const { real } of _stagedPairs) {
+    console.log(`  ~ ${path.relative(root, real)}`);
+  }
+  console.log("\nRe-run without --dry-run to apply.");
+}
+
+const systemName = "construct";
+const sharedGuidance = [];
+const platformGuidance = {};
+const globalModelGuidance = {};
+
+const generatedHeader = `# Generated by ${systemName}/sync-worker-profiles.mjs. Edit registry/worker-profiles instead.`;
+const generatedMarkdownNote = [
+  '<!--',
+  `Generated by construct sync from registry/worker-profiles.`,
+  'Do not edit this file directly — changes will be overwritten on next sync.',
+  'Regenerate: construct sync',
+  '-->',
+  '',
+  '> Generated from `registry/worker-profiles`. Edit the registry, then run `construct sync`.',
+].join('\n');
+
+const standardConstructTools = [
+  "list_skills",
+  "get_skill",
+  "search_skills",
+  "workflow_status",
+  "workflow_update_task",
+  "workflow_needs_main_input",
+  "memory_search",
+  "memory_add_observations",
+  "construct_trace",
+  "construct_score",
+].join(",");
+
+// The orchestrator's atomic contract is classify-then-dispatch: orchestration_policy
+// then orchestration_run. On allowlist hosts (Claude) these must be named in the
+// agent's tools list or the call is blocked, leaving the orchestrator unable to route.
+// Single source of truth so every host's orchestrator grant stays in parity.
+
+const ORCHESTRATOR_DISPATCH_TOOLS = ["orchestration_policy", "orchestration_run"];
+const managedStart = `# BEGIN ${systemName.toUpperCase()} AGENTS`;
+const managedEnd = `# END ${systemName.toUpperCase()} AGENTS`;
+const mdManagedStart = `<!-- BEGIN ${systemName.toUpperCase()} AGENTS -->`;
+const mdManagedEnd = `<!-- END ${systemName.toUpperCase()} AGENTS -->`;
+
+const registryModels = {};
+
+const envPrefix = "CONSTRUCT";
+
+// Substitute __VAR_NAME__ placeholders with actual env vars.
+// Falls back to the placeholder string if the env var is not set.
+function resolveEnvBlock(envObj) {
+  if (!envObj) return undefined;
+  const result = {};
+  for (const [k, v] of Object.entries(envObj)) {
+    if (typeof v === "string") {
+      result[k] = v.replace(/__([A-Z0-9_]+)__/g, (_, name) => process.env[name] ?? v);
+    } else {
+      result[k] = v;
+    }
+  }
+  return result;
+}
+
+function resolveArgs(args) {
+  if (!Array.isArray(args)) return args;
+  return args.map((a) => (typeof a === "string"
+    ? a.replace(/__([A-Z0-9_]+)__/g, (_, name) => process.env[name] ?? `__${name}__`)
+    : a));
+}
+
+// A secret-suffixed placeholder (TOKEN/SECRET/API_KEY/PUBLIC_KEY/PRIVATE_KEY) always
+// resolves to OpenCode's `{env:NAME}` reference form, even when the named var is set
+// in process.env, so a live credential never lands in a generated config file. This
+// guard runs before the general env lookup below, mirroring the buildLocalEnvironment
+// value->ref flip in lib/mcp-platform-config.mjs. GITHUB_TOKEN is an intentional alias
+// that still materializes GITHUB_PERSONAL_ACCESS_TOKEN's value: that branch stays ahead
+// of the suffix guard since it targets a different source var, not GITHUB_TOKEN itself.
+
+export function resolveTemplateStrings(value) {
+  if (typeof value === "string") {
+    return value.replace(/__([A-Z0-9_]+)__/g, (_, name) => {
+      if (name === "CONSTRUCT_TOOLKIT_DIR") return root;
+      if (name === "MEMORY_PORT") return process.env.MEMORY_PORT || "8765";
+      if (name === "CONSTRUCT_MEMORY_BRIDGE_URL") {
+        return process.env.CONSTRUCT_MEMORY_BRIDGE_URL || "http://127.0.0.1:8765/";
+      }
+      if (name === "GITHUB_TOKEN" && process.env.GITHUB_PERSONAL_ACCESS_TOKEN) {
+        return process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
+      }
+      if (/(?:TOKEN|SECRET|API_KEY|PUBLIC_KEY|PRIVATE_KEY)$/.test(name)) {
+        return `{env:${name}}`;
+      }
+      if (process.env[name] !== undefined && process.env[name] !== "") return process.env[name];
+      return `__${name}__`;
+    });
+  }
+  if (Array.isArray(value)) return value.map((item) => resolveTemplateStrings(item));
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, resolveTemplateStrings(item)]));
+  }
+  return value;
+}
+
+function constructMcpDefinition() {
+  return {
+    id: "construct-mcp",
+    name: "Construct MCP",
+    category: "core",
+    description: "Construct stdio MCP server for orchestration, skills, templates, and project context.",
+    command: "node",
+    args: ["__CONSTRUCT_TOOLKIT_DIR__/lib/mcp/server.mjs"],
+    env: {
+      CONSTRUCT_TRACE_BACKEND: "__CONSTRUCT_TRACE_BACKEND__",
+      CONSTRUCT_TELEMETRY_URL: "__CONSTRUCT_TELEMETRY_URL__",
+      CONSTRUCT_TELEMETRY_PUBLIC_KEY: "__CONSTRUCT_TELEMETRY_PUBLIC_KEY__",
+      CONSTRUCT_TELEMETRY_SECRET_KEY: "__CONSTRUCT_TELEMETRY_SECRET_KEY__",
+    },
+    requiredEnv: [],
+    setupModes: ["auto"],
+    hostSupport: {
+      claude: { mode: "managed" },
+      opencode: { mode: "managed" },
+      codex: { mode: "managed" },
+    },
+    usedBy: ["construct"],
+  };
+}
+
+function managedMcpDefs() {
+  const pluginRegistry = loadPluginRegistry({ cwd: root, homeDir: home, rootDir: root, env: process.env });
+  const defs = Object.fromEntries(
+    (pluginRegistry.mcps ?? []).map((mcp) => [mcp.id, {
+      type: mcp.type,
+      url: mcp.url,
+      command: mcp.command,
+      args: mcp.args,
+      env: mcp.env,
+      headers: mcp.headers,
+      hostSupport: mcp.hostSupport,
+      category: mcp.category,
+    }]),
+  );
+  defs["construct-mcp"] = constructMcpDefinition();
+  return defs;
+}
+
+function scopedManagedMcpDefs({ projectScope = false } = {}) {
+  const defs = managedMcpDefs();
+  return Object.fromEntries(
+    Object.entries(defs).filter(([id]) => DEFAULT_MANAGED_MCP_IDS.has(id)),
+  );
+}
+
+function mergeMissingObjectDefaults(current, defaults) {
+  if (Array.isArray(defaults)) {
+    return current === undefined ? [...defaults] : current;
+  }
+  if (!defaults || typeof defaults !== "object") {
+    return current === undefined ? defaults : current;
+  }
+  const next = current && typeof current === "object" && !Array.isArray(current) ? { ...current } : {};
+  for (const [key, value] of Object.entries(defaults)) {
+    next[key] = mergeMissingObjectDefaults(next[key], value);
+  }
+  return next;
+}
+
+function extractFallbackChain(tierDef) {
+  if (typeof tierDef === "string") return [tierDef];
+  if (tierDef && typeof tierDef === "object") {
+    const chain = [];
+    if (tierDef.primary) chain.push(tierDef.primary);
+    if (Array.isArray(tierDef.fallback)) chain.push(...tierDef.fallback);
+    return chain;
+  }
+  return [];
+}
+
+// Primary model auto-detection: if the user picked a model in OpenCode config,
+// preserve that user-owned choice as the standard tier only. Explicit CONSTRUCT_MODEL_*
+// env and registry tier config still win. Sync must not invent sibling models.
+const primaryFromOpenCode = (() => {
+  try {
+    const cfg = readOpenCodeConfig().config ?? {};
+    return cfg.model || cfg.defaultModel || null;
+  } catch { return null; }
+})();
+const familyTiers = primaryFromOpenCode ? (resolveTiersForPrimary(primaryFromOpenCode) || {}) : {};
+
+const resolvedModels = {
+  reasoning: process.env[`${envPrefix}_MODEL_REASONING`]
+    || familyTiers.reasoning
+    || extractFallbackChain(registryModels.reasoning)[0]
+    || null,
+  standard: process.env[`${envPrefix}_MODEL_STANDARD`]
+    || familyTiers.standard
+    || extractFallbackChain(registryModels.standard)[0]
+    || null,
+  fast: process.env[`${envPrefix}_MODEL_FAST`]
+    || familyTiers.fast
+    || extractFallbackChain(registryModels.fast)[0]
+    || null,
+};
+if (primaryFromOpenCode && (familyTiers.reasoning || familyTiers.standard || familyTiers.fast)) {
+  console.log(`[sync] Tier models derived from primary '${primaryFromOpenCode}': reasoning=${resolvedModels.reasoning} standard=${resolvedModels.standard} fast=${resolvedModels.fast}`);
+}
+
+// Full ordered fallback chains per tier (env override → user-selected family tier → registry chain).
+const resolvedFallbackChains = {
+  reasoning: [
+    ...(process.env[`${envPrefix}_MODEL_REASONING`] ? [process.env[`${envPrefix}_MODEL_REASONING`]] : []),
+    ...(familyTiers.reasoning ? [familyTiers.reasoning] : []),
+    ...extractFallbackChain(registryModels.reasoning),
+  ].filter((v, i, a) => v && a.indexOf(v) === i),
+  standard: [
+    ...(process.env[`${envPrefix}_MODEL_STANDARD`] ? [process.env[`${envPrefix}_MODEL_STANDARD`]] : []),
+    ...(familyTiers.standard ? [familyTiers.standard] : []),
+    ...extractFallbackChain(registryModels.standard),
+  ].filter((v, i, a) => v && a.indexOf(v) === i),
+  fast: [
+    ...(process.env[`${envPrefix}_MODEL_FAST`] ? [process.env[`${envPrefix}_MODEL_FAST`]] : []),
+    ...(familyTiers.fast ? [familyTiers.fast] : []),
+    ...extractFallbackChain(registryModels.fast),
+  ].filter((v, i, a) => v && a.indexOf(v) === i),
+};
+
+function resolveModel(entry) {
+  if (entry.model) return entry.model;
+  const tier = ({ strong: "reasoning", standard: "standard", cheap: "fast" })[entry.modelTier] ?? "standard";
+  return resolvedModels[tier] || null;
+}
+
+function resolveModelChain(entry) {
+  if (entry.model) return [entry.model];
+  const tier = ({ strong: "reasoning", standard: "standard", cheap: "fast" })[entry.modelTier] ?? "standard";
+  return resolvedFallbackChains[tier];
+}
+
+function mkdirp(dir) { fs.mkdirSync(dir, { recursive: true }); }
+
+function adapterName(entry) {
+  return entry.isOrchestrator ? "construct" : entry.id;
+}
+
+function loadWorkerProfilePrompt(profile) {
+  const fallback = `Use the ${profile.displayName} Worker Profile. ${profile.description}`;
+  const { prompt } = resolvePromptContract(profile.id, {
+    rootDir: root,
+    registry,
+    fallback,
+  });
+  if (!prompt) {
+    console.warn(`Warning: canonical prompt not found for Worker Profile ${profile.id}`);
+    return fallback;
+  }
+  return prompt;
+}
+
+function buildModelGuidanceBlock(entry) {
+  const merged = { ...globalModelGuidance, ...(entry.modelGuidance ?? {}) };
+  const families = Object.keys(merged);
+  if (families.length === 0) return "";
+  const lines = families.map((family) => `- ${merged[family]}`).join("\n");
+  return `\n\nModel-specific guidance (apply only the section that matches your model family):\n${lines}`;
+}
+
+function buildRoleFooter(entry) {
+  const lines = [];
+  if (entry.isOrchestrator !== true && entry.canEdit === false) {
+    lines.push("Do not implement code or edit source files.");
+  }
+  if (entry.returnsStructured !== false) {
+    lines.push("Return exactly one terminal state per task: DONE (with evidence) | BLOCKED (with concrete blocker) | NEEDS_MAIN_INPUT (with question + safe default).");
+  }
+  if (lines.length === 0) return "";
+  return `\n\n${lines.join("\n")}`;
+}
+
+// The Worker Profile record owns its policy fence, events, and artifact classes.
+
+export function renderWorkerProfilePolicySection(entry) {
+  if (!entry?.id) return "";
+  const events = Array.isArray(entry.events) ? entry.events : [];
+  const fence = entry.policyFence || {};
+  const allowedPaths = Array.isArray(fence.allowedPaths) ? fence.allowedPaths : [];
+  const allowedBdLabels = Array.isArray(fence.allowedBdLabels) ? fence.allowedBdLabels : [];
+  const approvalRequired = Array.isArray(fence.approvalRequired) ? fence.approvalRequired : [];
+  const artifactClasses = Array.isArray(entry.artifactClasses) ? entry.artifactClasses : [];
+
+  // Empty fence + empty events means the profile has no policy block to emit.
+  // no section to render rather than emit a misleading stub.
+
+  if (!events.length && !allowedPaths.length) return "";
+
+  const fmt = (xs) => xs.map((x) => `\`${x}\``).join(", ");
+  const eventList = events.length ? fmt(events) : "_handoff events_";
+  const pathList = allowedPaths.length ? fmt(allowedPaths) : "_none declared_";
+  const labelList = allowedBdLabels.length ? fmt(allowedBdLabels) : "_none declared_";
+  const approvalList = approvalRequired.length ? fmt(approvalRequired) : "_no approval gate declared_";
+  const artifactList = artifactClasses.length ? fmt(artifactClasses) : "profile-specific artifacts";
+
+  const lines = [
+    "",
+    "## Worker Profile policy",
+    "",
+    `Construct may dispatch you in response to ${eventList} events. A bd issue with the event payload exists when dispatched: read it first via \`bd show <id>\`.`,
+    "",
+    `**Policy fence** (source of truth: \`registry/worker-profiles/${entry.id}.json\`):`,
+    `- Allowed paths: ${pathList}`,
+    `- Allowed bd labels: ${labelList}`,
+    `- Approval required: ${approvalList}`,
+    "",
+    `You may create, edit, and verify within the policy fence. You produce ${artifactList}. You **must not** commit, push, or operate outside the fence without explicit user approval.`,
+  ];
+  return `\n\n${lines.join("\n")}`;
+}
+
+// The native-subagent orchestration micro-prompt. A worked tool-call example lifts
+// small local models' tool-use reliability sharply (bead construct-c16l). Shared by the
+// full path and the capability-tiered local path so both stay in sync.
+
+function orchestrationToolName(platform, toolName) {
+  if (platform === "opencode") return `construct-mcp_${toolName}`;
+  return toolName;
+}
+
+function orchestrationMicroPrompt(platform) {
+  const policyTool = orchestrationToolName(platform, "orchestration_policy");
+  const runTool = orchestrationToolName(platform, "orchestration_run");
+  return (
+    `You are the primary orchestrator. Before any non-trivial answer, call \`${policyTool}\` with the user's \`request\`. Do not guess agent names or workflow types.\n\n` +
+    `Example — the user says "add rate limiting to the API". Your first action is a tool call, not prose:\n` +
+    `  call ${policyTool} { "request": "add rate limiting to the API" }\n` +
+    `If the route requires focused or coordinated Worker Profile execution, call \`${runTool}\` with the same request. If the route suggests a Procedure such as \`research-synthesis\`, pass it as \`workflow_type\`. Do not narrate completed research unless \`${runTool}\` or evidence tools actually ran.\n\n` +
+    `If a request needs a capability you lack — live web access, external data, or code execution — route it via \`${runTool}\` to the Worker Profile that holds it. If \`${runTool}\` reports the capability unavailable, say so plainly and return an insufficient-evidence result. Never fabricate URLs, dates, quotes, or citations.`
+  );
+}
+
+// Directive for the local editor agent (construct-local). It executes bounded work on
+// the cheap local model and hands planning/reasoning back to the construct architect —
+// a cheap-editor/capable-architect split. Kept short: a small model must actually obey it.
+
+const LOCAL_EDITOR_DIRECTIVE =
+  `You are a focused execution agent running on a local model, dispatched by construct to do one bounded job. Do well-scoped edits for the current task and verify them; make the smallest correct change, never a broad rewrite.\n` +
+  `You do NOT plan, classify, orchestrate, or spawn other agents. For anything needing multi-file design, architecture or security judgment, dependency or contract changes, or research, STOP and return control to construct — report what needs deeper work and why, rather than attempting it yourself.`;
+
+// Warn-and-emit capability advisory. Sizing already consumes the probe verdict
+// (COLLAPSED → floor tier via resolveCapabilityTier); this only nudges the user toward a
+// measured verdict and never suppresses emission. Notice-only, so it auto-suppresses in
+// CI / test / non-TTY per the repo's wrong-context rule — no skip env var.
+
+const localAdvisorySeen = new Set();
+function adviseLocalModelCapability(model) {
+  if (!model || !isLocalModel(model)) return;
+  if (process.env.CI === "true" || process.env.NODE_ENV === "test" || !process.stderr.isTTY) return;
+  if (localAdvisorySeen.has(model)) return;
+  localAdvisorySeen.add(model);
+  const verdict = getModelVerdict(model)?.verdict ?? null;
+  if (verdict === "COLLAPSED") {
+    console.warn(`[sync] ${model} probed COLLAPSED — emitting at the floor tier with escalation to construct. Re-probe after a Modelfile change: construct doctor --probe-local`);
+  } else if (!verdict) {
+    console.warn(`[sync] ${model} is local with no coherence verdict — tier inferred from parameter count. For a measured tier: construct doctor --probe-local`);
+  }
+}
+
+function enforcePromptWordCap(prompt, entry) {
+  const wordCount = prompt.split(/\s+/).filter(Boolean).length;
+  const effectiveCap = Number(entry.wordCapOverride) > 0 ? entry.wordCapOverride : PROMPT_WORD_CAP;
+  if (wordCount > effectiveCap) {
+    const msg = `[sync] ${entry.id}: prompt is ${wordCount} words (cap ${effectiveCap})`;
+    if (process.env.CONSTRUCT_SYNC_FORCE === '1' || process.argv.includes('--force')) {
+      console.warn(`${msg} — proceeding due to --force / CONSTRUCT_SYNC_FORCE=1.`);
+    } else {
+      console.error(`${msg}`);
+      console.error(
+        `[sync] Hard cap exceeded. Options:\n` +
+        `   - trim the prompt body or move detail to a skill (preferred)\n` +
+        `   - re-run with --force or CONSTRUCT_SYNC_FORCE=1 as a temporary escape hatch\n` +
+        `Prompt budget is a hard contract because every over-cap agent degrades every session that dispatches it.`,
+      );
+      process.exit(1);
+    }
+  }
+  return prompt;
+}
+
+function buildPrompt(entry, allEntries, platform, { capabilityTier = 'full' } = {}) {
+  const capabilities = { hasNativeSubagents: HOST_KEYS.includes(platform) ? hostHasNativeSubagents(platform) : false };
+
+  // Capability-tiered local path. A small local model follows a long multi-instruction
+  // profile poorly (instruction-following degrades before the window fills), so emit
+  // only the profile sections at/below its tier plus the orchestration micro-prompt, and
+  // skip the role footer, role-framework, operating-guidance, and model-family blocks —
+  // those add instruction load the model cannot track. Cloud models resolve to 'full'
+  // and take the unchanged path below, so cloud configs are never slimmed.
+
+  const promptPath = resolveWorkerProfilePromptPath(entry.id, { rootDir: root, registry });
+  if (capabilityTier && capabilityTier !== 'full' && promptPath) {
+    let slim = renderPromptForTier(readPromptBody(promptPath, root), capabilityTier);
+    if (entry.injectAgentRoster) {
+      slim = `${orchestrationMicroPrompt(platform)}\n\n${slim}`;
+    }
+    return enforcePromptWordCap(slim, entry);
+  }
+
+  let prompt = resolvePromptContract(entry, {
+    rootDir: root,
+    registry,
+    fallback: entry.prompt || '',
+  }).prompt;
+
+  prompt = inlinePerspectiveAntiPatterns(prompt, root, entry.id, console.warn, { preload: entry.preloadRoleGuidance === true });
+  prompt = inlineValidationContract(prompt, root, entry.id);
+
+  // Platform-Native Orchestration Alignment (ADR-0002). All hosts receive the
+  // tool-bound micro-prompt when injectAgentRoster is set; the static 29-line
+  // roster was removed (construct-ymp5). Specialists resolve at runtime via
+  // orchestration_policy, which returns the routed Worker Profiles.
+
+  // Single Front Door: all hosts resolve Worker Profiles at runtime via
+  // orchestration_policy / orchestration_run — never inject the static roster.
+
+  if (entry.injectAgentRoster) {
+    prompt = `${orchestrationMicroPrompt(platform)}\n\n${prompt}`;
+  }
+
+  prompt += buildRoleFooter(entry);
+
+  prompt += renderWorkerProfilePolicySection(entry);
+
+  const platformItems = platformGuidance[platform] ?? [];
+  const allGuidance = [...sharedGuidance, ...platformItems];
+  if (allGuidance.length > 0) {
+    const guidance = allGuidance.map((item) => `- ${item}`).join("\n");
+    prompt = `${prompt}\n\nOperating guidance:\n${guidance}`;
+  }
+
+  prompt += buildModelGuidanceBlock(entry);
+
+  return enforcePromptWordCap(prompt, entry);
+}
+
+function escapeRegExp(value) { return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+
+function replaceManagedBlock(text, block, start = managedStart, end = managedEnd) {
+  const pattern = new RegExp(`\\n?${escapeRegExp(start)}[\\s\\S]*?${escapeRegExp(end)}\\n?`, "m");
+  const normalizedBlock = `${start}\n${block.trimEnd()}\n${end}\n`;
+  if (pattern.test(text)) return text.replace(pattern, `\n${normalizedBlock}`);
+  return `${text.trimEnd()}\n\n${normalizedBlock}`;
+}
+
+const MANIFEST_FILE = ".construct-manifest";
+
+function readManifest(dir) {
+  const p = path.join(dir, MANIFEST_FILE);
+  if (!fs.existsSync(p)) return new Set();
+  return new Set(fs.readFileSync(p, "utf8").split("\n").filter(Boolean));
+}
+
+function writeManifest(dir, files) {
+  if (DRY_RUN) return;
+  fs.writeFileSync(path.join(dir, MANIFEST_FILE), [...files].sort().join("\n") + "\n");
+}
+
+function removeStaleAdapters(dir, ext, entries) {
+  if (!fs.existsSync(dir)) return;
+
+  const expected = new Set();
+  for (const e of entries) {
+    expected.add(`${adapterName(e)}${ext}`);
+  }
+
+  // Stale manifest entries — delete files not in the current expected set.
+
+  const previouslyWritten = readManifest(dir);
+  for (const file of previouslyWritten) {
+    if (!expected.has(file) && fs.existsSync(path.join(dir, file))) {
+      fs.unlinkSync(path.join(dir, file));
+    }
+  }
+
+  writeManifest(dir, expected);
+}
+
+// --- Canonical Worker Profile entries ---
+
+function buildEntries() {
+  const entries = [];
+
+  const orchestrator = registry.workerProfiles?.orchestrator;
+  if (orchestrator) {
+    const orchestratorCanEdit = orchestrator.permissions?.edit === "allow";
+    entries.push({
+      ...orchestrator,
+      isOrchestrator: true,
+      injectAgentRoster: true,
+      prompt: loadWorkerProfilePrompt(orchestrator),
+      codexSandbox: orchestrator.codexSandbox ?? (orchestratorCanEdit ? "workspace-write" : "read-only"),
+      reasoningEffort: orchestrator.reasoningEffort ?? "high",
+    });
+  }
+
+  for (const profile of Object.values(registry.workerProfiles ?? {})) {
+    if (profile.id === "orchestrator") continue;
+    entries.push({
+      ...profile,
+      isWorkerProfile: true,
+    });
+  }
+
+  return entries;
+}
+
+// --- Claude Code adapter ---
+
+function claudeAgentMarkdown(entry, allEntries) {
+  const name = adapterName(entry);
+  const baseTools = Array.isArray(entry.toolGrants) ? entry.toolGrants : ["Read", "Grep", "Glob", "LS"];
+  // Merge base tools with standard construct tools, ensuring no duplicates
+  const toolSet = new Set([
+    ...baseTools,
+    ...standardConstructTools.split(","),
+  ]);
+
+  // Claude's tools list is a hard allowlist; the orchestrator can only route if its
+  // dispatch tools are named here.
+
+  if (entry.isOrchestrator) {
+    for (const tool of ORCHESTRATOR_DISPATCH_TOOLS) toolSet.add(tool);
+  }
+  const tools = Array.from(toolSet).filter(Boolean).join(",");
+
+  return `---
+name: ${name}
+description: ${entry.description}
+tools: ${tools}
+---
+
+${generatedMarkdownNote}
+
+${buildPrompt(entry, allEntries, "claude")}
+`;
+}
+
+/**
+ * Rewrite the home-mode hook command pattern
+ *   node "$HOME/.config/construct/lib/hooks/<name>.mjs"
+ * into the project-portable form
+ *   node "${CLAUDE_PROJECT_DIR:-<absRoot>}/.construct/run.mjs" hook <name>
+ * so the resulting settings.json works on any clone where the project ships
+ * the .construct/ launcher (committed by `npm install`'s postinstall or by
+ * `construct init`). The launcher resolves Construct via node_modules → npx
+ * → globally-installed CLI → cached binary → docker, in that order, so it
+ * works for non-Node ecosystems too. Other commands (inline node -e
+ * snippets, npx block-no-verify@…) are left untouched.
+ *
+ * The `${CLAUDE_PROJECT_DIR:-<absRoot>}` anchor matters: hosts invoke hooks with
+ * a working directory that is not guaranteed to be the project root (observed:
+ * $HOME, a `cd`-ed scratch dir), and a bare relative `.construct/run.mjs` then
+ * fails with MODULE_NOT_FOUND at node:internal/modules/cjs/loader — before any
+ * code in run.mjs can execute, so the shim cannot self-correct. CLAUDE_PROJECT_DIR
+ * is the project root Claude Code exports to every hook (same var lib/hooks/*.mjs
+ * already read) and stays correct if the checkout moves; the fallback is the
+ * absolute project root baked at sync time, so tools that do not export
+ * CLAUDE_PROJECT_DIR (or any host with a drifted cwd) still resolve the launcher.
+ * `.claude/settings.json` is gitignored and regenerated per machine by
+ * `construct sync`, so an absolute fallback is machine-correct without leaking a
+ * shared path. The prior `:-.` fallback was cwd-relative and broke on any drift.
+ */
+function makeHooksPortable(hooksJson, projectRoot) {
+  const anchor = `\${CLAUDE_PROJECT_DIR:-${path.resolve(projectRoot)}}`;
+
+  // Operate on the in-memory object so we don't fight JSON string escaping.
+  const replaceCommand = (cmd) => {
+    if (typeof cmd !== 'string') return cmd;
+    const m = cmd.match(/^node\s+"?\$HOME\/\.config\/construct\/lib\/hooks\/([a-z0-9-]+)\.mjs"?\s*(.*)$/);
+    if (!m) return cmd;
+    const [, name, rest] = m;
+    return `node "${anchor}/${LAUNCHER_REL_PATH}/run.mjs" hook ${name}${rest ? ' ' + rest.trim() : ''}`;
+  };
+
+  const walk = (node) => {
+    if (Array.isArray(node)) return node.map(walk);
+    if (node && typeof node === 'object') {
+      const out = {};
+      for (const [k, v] of Object.entries(node)) {
+        out[k] = k === 'command' ? replaceCommand(v) : walk(v);
+      }
+      return out;
+    }
+    return node;
+  };
+
+  return JSON.stringify(walk(hooksJson));
+}
+
+const GLOBAL_CLAUDE_HOOK_IDS = globalHookAllowlist('claude');
+
+const GLOBAL_CLAUDE_MCP_IDS = globalMcpAllowlist('claude');
+
+// Sync only materializes Construct's own MCP server. Catalog/plugin MCP entries
+// are available through `construct mcp add`, but authentication or catalog
+// presence alone is not setup intent and must not create host warnings.
+const DEFAULT_MANAGED_MCP_IDS = new Set(["construct-mcp"]);
+
+function filterGlobalClaudeHooks(hooksJson) {
+  const filtered = {};
+  for (const [event, groups] of Object.entries(hooksJson ?? {})) {
+    const kept = groups.filter((group) => GLOBAL_CLAUDE_HOOK_IDS.has(group.id));
+    if (kept.length > 0) filtered[event] = kept;
+  }
+  return filtered;
+}
+
+function syncGlobalClaudeMcpServers(settings, registryMcp) {
+  settings.mcpServers ??= {};
+  for (const [id, mcpDef] of Object.entries(registryMcp)) {
+    if (!GLOBAL_CLAUDE_MCP_IDS.has(id)) continue;
+    const existingEntry = settings.mcpServers[id];
+    const desiredEntry = buildClaudeMcpEntry(id, mcpDef, process.env);
+    if (!needsRefresh(existingEntry, desiredEntry, { root })) continue;
+    settings.mcpServers[id] = desiredEntry;
+  }
+}
+
+/**
+ * Materialise a project-local `.claude/settings.json` from the home template,
+ * with hook commands rewritten to be path-relative to whatever Construct
+ * install the project carries. Merges into an existing settings.json
+ * if one is already in the project; otherwise creates a fresh one.
+ *
+ * Carries hooks and permissions only — Claude Code does not read MCP server
+ * definitions from settings.json at any scope (confirmed against
+ * code.claude.com/docs/en/mcp's installation-scopes table and live `claude
+ * mcp list` repro, construct-ranh). Project-scope MCP wiring is
+ * writeProjectMcpJson's job, targeting `.mcp.json`.
+ */
+function writeProjectClaudeSettings(targetDir) {
+  const settingsPath = path.join(targetDir, ".claude", "settings.json");
+  const templatePath = path.join(root, "platforms", "claude", "settings.template.json");
+  if (!fs.existsSync(templatePath)) return;
+
+  const template = JSON.parse(fs.readFileSync(templatePath, "utf8"));
+
+  const existing = fs.existsSync(settingsPath)
+    ? JSON.parse(fs.readFileSync(settingsPath, "utf8"))
+    : {};
+
+  if (template.hooks) {
+    existing.hooks = JSON.parse(makeHooksPortable(template.hooks, targetDir));
+  }
+  if (template.permissions) {
+    existing.permissions ??= template.permissions;
+  }
+
+  if (DRY_RUN) return;
+  mkdirp(path.dirname(settingsPath));
+  writeFile(settingsPath, JSON.stringify(existing, null, 2) + "\n");
+}
+
+/**
+ * Materialise project-scope MCP wiring at `.mcp.json` in the project root —
+ * the scope Claude Code documents for team-shared, version-controlled MCP
+ * server definitions (settings.json only carries policy keys and hooks).
+ * Merges into an existing `.mcp.json` if the project already has one;
+ * existing entries win so manual edits or a prior `claude mcp add --scope
+ * project` stick.
+ */
+function writeProjectMcpJson(targetDir) {
+  const mcpJsonPath = path.join(targetDir, ".mcp.json");
+  const templatePath = path.join(root, "platforms", "claude", "settings.template.json");
+
+  const existing = fs.existsSync(mcpJsonPath)
+    ? JSON.parse(fs.readFileSync(mcpJsonPath, "utf8"))
+    : {};
+  existing.mcpServers ??= {};
+
+  if (fs.existsSync(templatePath)) {
+    const template = JSON.parse(fs.readFileSync(templatePath, "utf8"));
+    if (template.mcpServers) {
+      for (const [id, mcpDef] of Object.entries(template.mcpServers)) {
+        if (existing.mcpServers[id]) continue;
+        if (!DEFAULT_MANAGED_MCP_IDS.has(id)) continue;
+        existing.mcpServers[id] = mcpDef;
+      }
+    }
+  }
+
+  // The registry is the single source of truth for MCP servers; VS Code, Codex,
+  // and OpenCode all wire it. Project Claude must match — above all `construct-mcp`,
+  // the server exposing project_context/get_skill/get_template/orchestration_policy
+  // that the work loop depends on. The curated template omits it, which left
+  // Claude Code as the only selected tool without the construct config. Merge the
+  // registry on top of the template seed via needsRefresh(): an existing entry
+  // wins as long as it still matches the registry (env keys, pinned version,
+  // transport, toolkit path), so a manual opt-in sticks but drift — a missing
+  // registry env key, a stale pinned version — gets corrected.
+  const registryMcp = scopedManagedMcpDefs({ projectScope: true });
+  for (const [id, mcpDef] of Object.entries(registryMcp)) {
+    const existingEntry = existing.mcpServers[id];
+    const desiredEntry = buildClaudeMcpEntry(id, mcpDef, process.env);
+    if (!needsRefresh(existingEntry, desiredEntry, { root })) continue;
+    existing.mcpServers[id] = desiredEntry;
+  }
+  reconcileStaleManagedEntries(existing.mcpServers, { registryMcp, rebuildEntry: (id, def) => buildClaudeMcpEntry(id, def, process.env) });
+
+  if (DRY_RUN) return;
+  mkdirp(path.dirname(mcpJsonPath));
+  writeFile(mcpJsonPath, JSON.stringify(existing, null, 2) + "\n");
+}
+
+function syncClaude(entries, targetDir = null, wants = true) {
+  const claudeAgentsDir = targetDir
+    ? path.join(targetDir, ".claude", "agents")
+    : path.join(home, ".claude", "agents");
+  if (!DRY_RUN && wants) mkdirp(claudeAgentsDir);
+
+  // Claude Code and VS Code both read the user-scope `~/.claude/agents/`, so a
+  // global front-door agent duplicates the project orchestrator in any editor
+  // that reads both scopes (the construct ×2 in the VS Code picker). Global
+  // scope therefore writes NO agent file — the project's own
+  // `.claude/agents/construct.md` is the front door; global hooks (settings.json)
+  // and CLAUDE.md still install. An empty write set sweeps any global agent.
+  // Both global and project scope now emit only the front door (Single Front Door).
+
+  const writeEntries = (targetDir && wants) ? globalEntries(entries) : [];
+
+  for (const entry of writeEntries) {
+    const name = adapterName(entry);
+    const md = claudeAgentMarkdown(entry, entries);
+    writeFile(path.join(claudeAgentsDir, `${name}.md`), md, { stamp: false });
+  }
+  // A project sync with Claude deselected or undetected must not delete the
+  // project's existing front-door agent — pruning on `!wants` turns a
+  // detection miss into data loss (construct-lqp4c's copilot precedent).
+  // Global scope keeps its unconditional sweep: it never writes an agent
+  // file by design, so `wants` does not change what belongs there.
+
+  if (!(targetDir && !wants)) {
+    removeStaleAdapters(claudeAgentsDir, ".md", writeEntries);
+  }
+  if (targetDir) {
+    writeProjectClaudeSettings(targetDir);
+    writeProjectMcpJson(targetDir);
+    return;
+  }
+
+  if (!targetDir) {
+    const claudeMdPath = path.join(home, ".claude", "CLAUDE.md");
+    const existing = fs.existsSync(claudeMdPath) ? fs.readFileSync(claudeMdPath, "utf8") : "# Claude Global Instructions\n";
+    const profileList = entries.filter((e) => e.isOrchestrator).map((e) => `- \`${adapterName(e)}\`: ${e.displayName} — ${e.description}`).join("\n");
+    const note = `## ${systemName.charAt(0).toUpperCase() + systemName.slice(1)} Personas
+
+${profileList}
+
+## Internal Specialists
+
+(Worker Profiles are internal and routed through Construct)`;
+    // User-managed file with our managed-block carved out — never doc-stamp.
+    writeFile(claudeMdPath, replaceManagedBlock(existing, note, mdManagedStart, mdManagedEnd), { stamp: false });
+
+    // Sync hooks into ~/.claude/settings.json if it exists
+    const claudeSettingsPath = path.join(home, ".claude", "settings.json");
+    if (fs.existsSync(claudeSettingsPath)) {
+      const settings = JSON.parse(fs.readFileSync(claudeSettingsPath, "utf8"));
+      const templatePath = path.join(root, "platforms", "claude", "settings.template.json");
+      if (fs.existsSync(templatePath)) {
+        const template = JSON.parse(fs.readFileSync(templatePath, "utf8"));
+        if (template.hooks) {
+          // Resolve the $HOME/.config/construct token to the real config dir so
+          // hook commands survive symlink traversal inside Claude Code's hook
+          // runner environment, and honor a custom XDG_CONFIG_HOME at sync time.
+          const configReal = (() => {
+            const dir = configDir(home);
+            try { return fs.realpathSync(dir); } catch { return dir; }
+          })();
+          const hookStr = JSON.stringify(filterGlobalClaudeHooks(template.hooks))
+            .replace(/\$HOME\/\.config\/construct/g, configReal.replace(/\\/g, "/"));
+          settings.hooks = JSON.parse(hookStr);
+        }
+      }
+      if (!DRY_RUN) fs.writeFileSync(claudeSettingsPath, JSON.stringify(settings, null, 2) + "\n");
+    }
+
+    // Sync user-scope MCP servers into ~/.claude.json's top-level `mcpServers`
+    // — Claude Code does not read MCP server definitions from settings.json at
+    // any scope (confirmed against code.claude.com/docs/en/mcp and live `claude
+    // mcp list` repro, construct-ranh). Gated on the file already existing, same
+    // as the hooks sync above: only write into Claude Code's own state file for
+    // a user who has actually run the CLI at least once.
+    const claudeUserConfigPath = path.join(home, ".claude.json");
+    if (fs.existsSync(claudeUserConfigPath)) {
+      const claudeUserConfig = JSON.parse(fs.readFileSync(claudeUserConfigPath, "utf8"));
+      const registryMcp = scopedManagedMcpDefs({ projectScope: false });
+      syncGlobalClaudeMcpServers(claudeUserConfig, registryMcp);
+      if (!DRY_RUN) fs.writeFileSync(claudeUserConfigPath, JSON.stringify(claudeUserConfig, null, 2) + "\n");
+    }
+  }
+}
+
+// --- Codex adapter ---
+
+function codexAgentToml(entry, allEntries) {
+  const name = adapterName(entry);
+  const model = resolveModel(entry);
+  const modelLine = model ? `model = ${tomlString(model)}\n` : "";
+  return `${generatedHeader}
+name = ${tomlString(name)}
+description = ${tomlString(entry.description)}
+${modelLine}model_reasoning_effort = ${tomlString(entry.reasoningEffort ?? "medium")}
+sandbox_mode = ${tomlString(entry.codexSandbox ?? "read-only")}
+
+developer_instructions = ${tomlString(buildPrompt(entry, allEntries, "codex"))}
+`;
+}
+
+function removeCodexAgentTables(text, names) {
+  let next = text
+    .replace(/\n?# BEGIN GLOBAL AI AGENTS\n[\s\S]*?# END GLOBAL AI AGENTS\n?/m, "\n")
+    .replace(new RegExp(`\\n?${escapeRegExp(managedStart)}\\n[\\s\\S]*?${escapeRegExp(managedEnd)}\\n?`), "\n");
+  for (const name of names) {
+    const pattern = new RegExp(`\\n?\\[agents\\.${escapeRegExp(name)}\\]\\n[\\s\\S]*?(?=\\n\\[|\\n?${escapeRegExp(managedStart)}|(?![\\s\\S]))`);
+    next = next.replace(pattern, "\n");
+  }
+  return next.replace(/\n{3,}/g, "\n\n");
+}
+
+function hasCodexMcpTable(text, id) {
+  return new RegExp(`^\\[mcp_servers\\.(?:${escapeRegExp(id)}|${escapeRegExp(tomlString(id))})\\]`, "m").test(text);
+}
+
+function isCodexMcpSupported() {
+  return true;
+}
+
+// Codex aborts at startup when an MCP server's bearer_token_env_var names an env
+// var that is unset ("Environment variable GITHUB_TOKEN for MCP server github is
+// not set"). Unlike OpenCode — which keeps the `{env:VAR}` ref and resolves it at
+// runtime — Codex must have the credential at sync time, so an entry whose token
+// env var is unresolved is omitted from the Codex config (construct-n6h7).
+// Entries with no credential requirement always pass.
+
+function codexMcpEnvResolves(id, def, env = process.env) {
+  const entry = buildCodexMcpEntry(id, def, env);
+  const tokenVar = entry?.bearer_token_env_var;
+  if (!tokenVar) return true;
+  const val = env[tokenVar];
+  return val !== undefined && val !== "";
+}
+
+function syncCodex(entries, targetDir = null, wants = true) {
+  // Deselected or undetected host: leave prior Codex outputs untouched. An
+  // empty writeEntries set would otherwise prune every managed
+  // `agents/*.toml` file and strip the managed config.toml block on a plain
+  // detection miss (construct-lqp4c's copilot precedent, generalized here).
+
+  if (!wants) return;
+
+  const codexDir = targetDir
+    ? path.join(targetDir, ".codex")
+    : path.join(home, ".codex");
+  const codexAgentsDir = path.join(codexDir, "agents");
+  if (!DRY_RUN) mkdirp(codexAgentsDir);
+
+  const writeEntries = globalEntries(entries);
+
+  for (const entry of writeEntries) {
+    writeFile(path.join(codexAgentsDir, `${adapterName(entry)}.toml`), codexAgentToml(entry, entries));
+  }
+  removeStaleAdapters(codexAgentsDir, ".toml", writeEntries);
+  const configPath = targetDir
+    ? path.join(codexDir, "config.toml")
+    : getCodexConfigPath(home);
+  const existing = removeDanglingConstructMcpMarkers(removeDanglingConstructMcpTimeouts(readCodexConfig(configPath)));
+  const entryNames = writeEntries.map(adapterName);
+  const registryMcp = scopedManagedMcpDefs({ projectScope: Boolean(targetDir) });
+  // Seed every supported MCP server (parity with Claude/OpenCode/VS Code/Cursor),
+  // not just tables already present — otherwise Codex never receives `construct-mcp`
+  // and the orchestration tool is unreachable there. existingMcpIds still drives
+  // cleanup of any pre-existing standalone tables so the managed block stays canonical.
+  const mcpIds = Object.keys(registryMcp).filter((id) => isCodexMcpSupported() && codexMcpEnvResolves(id, registryMcp[id], process.env));
+  const existingMcpIds = Object.keys(registryMcp).filter((id) => hasCodexMcpTable(existing, id));
+  const withoutManagedTables = removeDanglingConstructMcpMarkers(removeTomlTables(
+    removeCodexAgentTables(existing, entryNames),
+    existingMcpIds.flatMap((id) => [`mcp_servers.${id}`, `mcp_servers.${tomlString(id)}`]),
+  ));
+  const hasAgentsRoot = /^\[agents\]\s*$/m.test(withoutManagedTables);
+  const rootBlock = hasAgentsRoot ? "" : "[agents]\nmax_threads = 6\nmax_depth = 1\n\n";
+
+  // Workspace-write agents need network
+  // access for WebFetch/context7 — Codex's workspace-write sandbox blocks the
+  // network unless this is set. Skip when the user already manages the table so
+  // their own sandbox settings (e.g. writable_roots) are not clobbered.
+
+  const hasSandboxConfig = /^\[sandbox_workspace_write\]/m.test(withoutManagedTables);
+  const sandboxBlock = hasSandboxConfig ? "" : "[sandbox_workspace_write]\nnetwork_access = true\n\n";
+
+  // In project scope every entry is reachable from the user (Construct dispatches
+  // internal Worker Profiles itself, while project users may address them).
+  // In global scope only the `construct` front-door agent is registered.
+
+  const exposed = targetDir ? writeEntries : writeEntries.filter((e) => !e.internal);
+  const blocks = exposed.map((e) => `[agents.${adapterName(e)}]
+description = ${tomlString(e.description)}
+config_file = ${tomlString(`agents/${adapterName(e)}.toml`)}
+`).join("\n");
+
+  const mcpBlock = mcpIds
+    .map((id) => serializeCodexMcpTable(id, buildCodexMcpEntry(id, registryMcp[id], process.env)))
+    .join("\n\n");
+  const withAgents = replaceManagedBlock(withoutManagedTables, `${sandboxBlock}${rootBlock}${blocks}`);
+  writeCodexConfig(replaceManagedBlock(
+    withAgents,
+    mcpBlock,
+    `# BEGIN ${systemName.toUpperCase()} MCP SERVERS`,
+    `# END ${systemName.toUpperCase()} MCP SERVERS`,
+  ), configPath);
+}
+
+// --- Copilot adapter ---
+
+function copilotPrompt(entry, allEntries) {
+  const name = adapterName(entry);
+  return `---
+mode: agent
+description: ${entry.description}
+---
+
+${generatedMarkdownNote}
+
+# ${name}
+
+${buildPrompt(entry, allEntries, "copilot")}
+
+When using this prompt, stay within the role above and adapt to the current repository instructions.
+`;
+}
+
+// VS Code reads custom agents (the renamed successor to chat modes) from
+// .github/agents/<name>.agent.md, and tool grants must use its namespaced ids:
+// <server>/* for an MCP server's tools, web/fetch for outbound web, search/read
+// for repo awareness. The Claude-format tools in .claude/agents/*.md are not
+// recognized here, so the orchestrator needs its own VS Code agent or it lists
+// in the picker with no usable tools.
+
+export const COPILOT_AGENT_TOOLS = [
+  "construct-mcp/orchestration_policy",
+  "construct-mcp/orchestration_run",
+  "construct-mcp/orchestration_readiness",
+  "search/codebase",
+  "search/usages",
+  "search/fileSearch",
+  "read/problems",
+];
+
+function copilotAgentFile(entry, allEntries) {
+  const name = adapterName(entry);
+  return `---
+description: ${entry.description}
+name: ${name}
+tools: ${JSON.stringify(COPILOT_AGENT_TOOLS)}
+---
+
+${generatedMarkdownNote}
+
+# ${name}
+
+${buildPrompt(entry, allEntries, "copilot")}
+`;
+}
+
+function syncCopilot(entries, targetDir = null, wants = true) {
+  // Deselected host: leave prior Copilot outputs untouched. Adapter pruning is
+  // explicit-consent-only and `.github` is out of adapter-prune's scope
+  // (lib/reconcile/adapter-prune.mjs), so a sync that did not select copilot
+  // must never delete or degrade another run's files — the old empty-writeEntries
+  // fall-through pruned .github/prompts and .github/agents and blanked the
+  // instructions block on every copilot-less sync (construct-lqp4c).
+
+  if (!wants) return;
+
+  const promptsDir = targetDir
+    ? path.join(targetDir, ".github", "prompts")
+    : path.join(home, ".github", "prompts");
+  if (!DRY_RUN) mkdirp(promptsDir);
+
+  const writeEntries = globalEntries(entries);
+
+  for (const entry of writeEntries) {
+    writeFile(path.join(promptsDir, `${adapterName(entry)}.prompt.md`), copilotPrompt(entry, entries), { stamp: false });
+  }
+  removeStaleAdapters(promptsDir, ".prompt.md", writeEntries);
+  // VS Code reads custom agents from `.github/agents/*.agent.md`. The Claude
+  // tool names in `.claude/agents/*.md` are not recognized there, so the front
+  // door ships as a VS Code agent with namespaced tool grants (construct-mcp/*,
+  // web/fetch, search/read) — selecting it in the dropdown then scopes those
+  // tools in. The Claude-format set stays for Claude Code.
+
+  const agentsDir = targetDir
+    ? path.join(targetDir, ".github", "agents")
+    : path.join(home, ".github", "agents");
+  if (!DRY_RUN) mkdirp(agentsDir);
+  for (const entry of writeEntries) {
+    writeFile(path.join(agentsDir, `${adapterName(entry)}.agent.md`), copilotAgentFile(entry, entries), { stamp: false });
+  }
+  if (fs.existsSync(agentsDir)) removeStaleAdapters(agentsDir, ".agent.md", writeEntries);
+
+  const instructionsPath = targetDir
+    ? path.join(targetDir, ".github", "copilot-instructions.md")
+    : path.join(home, ".github", "copilot-instructions.md");
+  const existing = fs.existsSync(instructionsPath)
+    ? fs.readFileSync(instructionsPath, "utf8")
+    : "# GitHub Copilot Instructions\n";
+
+  // Project-scope instructions list every entry; global instructions list only
+  // `construct` so user-scope Copilot exposes a single front door.
+
+  const listEntries = targetDir ? entries.filter((e) => !e.internal) : writeEntries;
+  const promptPathPrefix = targetDir ? ".github/prompts" : "~/.github/prompts";
+  const list = listEntries.map((e) => `- \`${adapterName(e)}\`: use \`${promptPathPrefix}/${adapterName(e)}.prompt.md\`.`).join("\n");
+  const note = `## ${systemName.charAt(0).toUpperCase() + systemName.slice(1)} Agent Prompts
+
+Select \`${systemName}\` from the chat mode dropdown to enter the orchestrator: describe an outcome and it classifies the request and dispatches the required Worker Profiles through the \`construct-mcp\` tools (\`orchestration_policy\` then \`orchestration_run\`). You ask for outcomes; Construct routes internally. Requires the \`construct-mcp\` server (wired in \`.vscode/mcp.json\`); if its tools are unavailable, the mode cannot route and will say so rather than guess.
+
+${list || "(no front-door prompts to surface)"}`;
+
+  // User-managed file with the managed block carved out — never doc-stamp.
+
+  writeFile(instructionsPath, replaceManagedBlock(existing, note, mdManagedStart, mdManagedEnd), { stamp: false });
+}
+
+// --- VS Code adapter ---
+
+function getVSCodeUserMcpPaths() {
+  // VS Code's "MCP: Open User Configuration" edits `<User>/mcp.json` (top-level
+  // `servers`). Global sync returns only files that already exist — per-window
+  // MCP config is never seeded, mirroring the non-polluting Cursor/OpenCode
+  // global behavior.
+
+  return sharedGetVSCodeUserDirs(home)
+    .map((dir) => path.join(dir, "mcp.json"))
+    .filter((file) => fs.existsSync(file));
+}
+
+// One comparator every host dialect (global Claude, project Claude, VS Code,
+// Cursor, OpenCode) calls instead of a bespoke preserve/refresh predicate per
+// surface — so the construct-mcp telemetry env passthrough and a pinned package
+// version converge identically everywhere rather than drifting per host.
+// needsRefresh() is the one question every dialect asks: does this host's
+// existing entry still match what the registry wants, across placeholder
+// resolution, transport, registry-declared env keys, pinned package versions,
+// and toolkit path. Callers
+// build the desired entry with their own host-specific builder (buildClaudeMcpEntry
+// / buildOpenCodeMcpEntry) first — both a Claude-shape entry (`args`/`env`) and an
+// OpenCode-shape entry (`command` array with the binary as element 0 / `environment`)
+// are normalized here so one comparator serves both shapes.
+
+function entryArgs(entry) {
+  if (Array.isArray(entry?.args)) return entry.args;
+  if (Array.isArray(entry?.command)) return entry.command;
+  return [];
+}
+
+function entryEnv(entry) {
+  return entry?.env ?? entry?.environment ?? {};
+}
+
+function entryIsRemote(entry) {
+  return entry?.type === "http" || entry?.type === "remote";
+}
+
+// A registry env block that declares a key (e.g. the construct-mcp telemetry
+// passthrough) must be present on the host entry by name; the host-resolved
+// value differs per host (a literal, a `${VAR}`, a `{env:VAR}`) so only key
+// presence is compared. Absence — including "no env block at all" — means stale.
+
+function envKeysMissing(existingEnv, desiredEnv) {
+  const desiredKeys = Object.keys(desiredEnv ?? {});
+  if (desiredKeys.length === 0) return false;
+  const existingKeys = new Set(Object.keys(existingEnv ?? {}));
+  return desiredKeys.some((key) => !existingKeys.has(key));
+}
+
+// A version-pinned package arg (`@scope/name@version`, including the `@latest`
+// anti-pin) is compared as an exact string: if the registry's desired pin string
+// is not present verbatim anywhere in the existing args/command, the host is
+// carrying a different (or floating) version and must be refreshed. Unversioned
+// packages are not compared — pinning is opt-in per package via the catalog.
+
+function argsVersionDiffers(existingArgs, desiredArgs) {
+  const isPinned = (arg) => typeof arg === "string" && /^@[^/]+\/[^@]+@[\w.-]+$/.test(arg);
+  const desiredPins = (desiredArgs ?? []).filter(isPinned);
+  if (desiredPins.length === 0) return false;
+  const existingPins = new Set((existingArgs ?? []).filter(isPinned));
+  return desiredPins.some((pin) => !existingPins.has(pin));
+}
+
+export function needsRefresh(existingEntry, desiredEntry, { root } = {}) {
+  if (!existingEntry) return true;
+  if (JSON.stringify(existingEntry).includes("__")) return true;
+  if (!entryIsRemote(desiredEntry) && entryIsRemote(existingEntry)) return true;
+  if (envKeysMissing(entryEnv(existingEntry), entryEnv(desiredEntry))) return true;
+  if (argsVersionDiffers(entryArgs(existingEntry), entryArgs(desiredEntry))) return true;
+  if (root && mcpEntryPointsOutsideToolkit({ args: entryArgs(existingEntry) }, root)) return true;
+  if (desiredEntry?.cwd !== undefined && existingEntry.cwd !== desiredEntry.cwd) return true;
+  return false;
+}
+
+// VS Code's orchestration tools default their working directory to the SERVER
+// process's cwd, which is host-launch-dependent (construct-6y6w.9) — the same
+// tool call can read/write a different project depending on which host
+// launched the server and from where. VS Code resolves `${workspaceFolder}`
+// against the workspace that owns the `.vscode/mcp.json` the entry lives in,
+// so pinning it there removes the ambiguity for exactly the host that has a
+// single fixed workspace folder per config file. A remote/http entry has no
+// process cwd to pin and is left untouched.
+
+const VSCODE_WORKSPACE_CWD = "${workspaceFolder}";
+
+function withVscodeWorkspaceCwd(entry) {
+  if (!entry || entry.type === "http" || entry.type === "remote") return entry;
+  return { ...entry, cwd: VSCODE_WORKSPACE_CWD };
+}
+
+// A merged mcp.json preserves existing entries so user customizations survive a
+// re-sync. A construct-owned server path is a fully-resolved, non-placeholder
+// path, so the preserve rule keeps it even when it points at a different toolkit
+// root than the current one — and VS Code then launches a server that may not
+// exist. Treat a construct toolkit path outside the current root as stale so the
+// sync refreshes it; user-owned servers carry no lib/mcp toolkit path and stay.
+
+// Claude/VS Code/Cursor entries carry the script path in `args`; OpenCode's local
+// entry shape (buildOpenCodeMcpEntry) instead carries `command: [bin, ...args]`.
+// Falling back to `command` when `args` is absent lets this one predicate serve
+// both shapes without OpenCode's caller having to reshape the entry first.
+
+export function mcpEntryPointsOutsideToolkit(entry, root) {
+  const args = Array.isArray(entry?.args) ? entry.args : (Array.isArray(entry?.command) ? entry.command : []);
+  return args.some((arg) => {
+    if (typeof arg !== "string") return false;
+    const normalArg = arg.replace(/\\/g, "/");
+    const normalRoot = root.replace(/\\/g, "/");
+    return /\/lib\/mcp\/[a-z0-9-]+\.mjs$/i.test(normalArg)
+      && !normalArg.startsWith(`${normalRoot}/`);
+  });
+}
+
+// The desired-set loop only visits registryMcp ids, so a construct-managed entry
+// present in the host config but OUTSIDE the current sync set (an optional server
+// like `memory` the user opted into) is never revisited — a stale toolkit path in it
+// becomes immortal. This second pass rewrites those in place: the double guard (id is
+// construct-managed AND its path points outside the toolkit) never touches an
+// unmanaged/user entry, and rewriting to a path under root makes it idempotent (a
+// second run finds nothing stale). Rewrite, never delete, never seed — opt-in sticks.
+
+// A memory entry can be stale without pointing outside the toolkit: pinned to the dead
+// legacy port, to a port other than the one currently allocated, or to a bridge script
+// path that does not exist (an old checkout). Any of these means the entry cannot reach
+// the running memory server — the split-brain — so it must be rewritten to the current
+// port and path.
+
+function memoryEntryIsStale(entry) {
+  if (!entry) return false;
+  const want = String(memoryPort(process.env));
+  const portOf = (s) => String(s || "").match(/:(\d+)\/?$/)?.[1];
+  const bridgeUrlEnv = entry.env?.CONSTRUCT_MEMORY_BRIDGE_URL ?? entry.environment?.CONSTRUCT_MEMORY_BRIDGE_URL;
+  const ports = [portOf(entry.url), portOf(bridgeUrlEnv)];
+  const portStale = ports.some((p) => p && p !== want);
+  const commandArgs = Array.isArray(entry.args) ? entry.args : (Array.isArray(entry.command) ? entry.command : []);
+  const scriptArg = commandArgs.find((a) => typeof a === "string" && a.endsWith("memory-bridge.mjs"));
+  const pathMissing = scriptArg ? !fs.existsSync(scriptArg) : false;
+  return portStale || pathMissing;
+}
+
+// OpenCode keys config.mcp by getOpenCodeMcpId(id), not the catalog id (identity
+// today, but the indirection exists for a future per-host rename) — so the host
+// config key this loop sees is not always the id `registryMcp`/`managedMcpDefs()`
+// know. `mapId` translates the host key back to the catalog id for the ownership
+// and sync-set checks; the write-back stays keyed on the original host key so no
+// entry is renamed, only rewritten in place.
+
+export function reconcileStaleManagedEntries(configMap, { registryMcp, rebuildEntry, mapId = (key) => key }) {
+  if (!configMap) return false;
+  const managed = managedMcpDefs();
+  let changed = false;
+  for (const [key, entry] of Object.entries(configMap)) {
+    const catalogId = mapId(key);
+    if (catalogId in registryMcp) continue;
+    const mcpDef = managed[catalogId];
+    if (!mcpDef) continue;
+    const stale = mcpEntryPointsOutsideToolkit(entry, root) || (catalogId === "memory" && memoryEntryIsStale(entry));
+    if (!stale) continue;
+    configMap[key] = rebuildEntry(catalogId, mcpDef);
+    changed = true;
+  }
+  return changed;
+}
+
+// Workspace defaults Construct manages for VS Code chat. `chat.agentFilesLocations`
+// pins the agent scan to `.github/agents` so the orchestrator does not list twice
+// (VS Code also scans `.claude/agents`, whose Claude tool names it ignores); its
+// power over that built-in compatibility scan is version-dependent, so it is a
+// best-effort hint. `chat.mcp.autostart` (VS Code ≥1.105, string enum) set to
+// `always` eager-starts MCP servers so `construct-mcp` is live without a manual
+// Start each session — the orchestrator's first move is an MCP call, so a dormant
+// server otherwise reads as "enable the MCP server". Neither removes the one-time
+// per-developer MCP trust grant, which VS Code stores locally, not in committed
+// config. `files.associations` marks the JSONC config files (construct-d1r7.4 made
+// them commented JSONC) as `jsonc` so VS Code stops flagging their `//` comments as
+// invalid JSON. Scalar keys are applied only when unset; object-valued keys deep-merge
+// their missing sub-keys so a user's own associations/locations survive. A settings.json
+// that is not strict JSON (commented/JSONC or user-customized) is left untouched.
+
+const VSCODE_MANAGED_SETTINGS = {
+  "chat.agentFilesLocations": { ".github/agents": true, ".claude/agents": false },
+  "chat.mcp.autoStart": "always",
+  "files.associations": { "construct.config.json": "jsonc", "construct.config.local.json": "jsonc" },
+};
+
+// Strip full-line JSONC comments (`// …`) and trailing commas before JSON.parse.
+// Handles the common VS Code settings.json patterns (line comments, trailing commas);
+// does not attempt to handle inline comments after values.
+
+function parseJsoncContent(text) {
+  const stripped = text
+    .split('\n')
+    .map((line) => {
+      const t = line.trimStart();
+      return t.startsWith('//') ? '' : line;
+    })
+    .join('\n')
+    .replace(/,(\s*[}\]])/g, '$1');
+  return JSON.parse(stripped);
+}
+
+export function pinVscodeChatSettings(targetDir) {
+  if (DRY_RUN) return;
+  const settingsPath = path.join(targetDir, ".vscode", "settings.json");
+  let settings = {};
+  if (fs.existsSync(settingsPath)) {
+    try { settings = parseJsoncContent(fs.readFileSync(settingsPath, "utf8")) || {}; }
+    catch { return; }
+  }
+  // files.associations is the one managed key we deep-merge (add our JSONC mappings without dropping
+  // a user's own associations); every other key stays whole-key-when-unset so a user who customized
+  // chat.agentFilesLocations keeps their exact map rather than having our defaults folded in.
+
+  const DEEP_MERGE_KEYS = new Set(['files.associations']);
+  let changed = false;
+  for (const [key, value] of Object.entries(VSCODE_MANAGED_SETTINGS)) {
+    if (DEEP_MERGE_KEYS.has(key) && value && typeof value === 'object') {
+      const existing = (settings[key] && typeof settings[key] === 'object' && !Array.isArray(settings[key])) ? settings[key] : {};
+      let subChanged = false;
+      for (const [subKey, subValue] of Object.entries(value)) {
+        if (existing[subKey] === undefined) { existing[subKey] = subValue; subChanged = true; }
+      }
+      if (subChanged) { settings[key] = existing; changed = true; }
+    } else if (settings[key] === undefined) {
+      settings[key] = value; changed = true;
+    }
+  }
+  if (!changed) return;
+  mkdirp(path.dirname(settingsPath));
+  fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + "\n");
+}
+
+function syncVSCode(targetDir = null, wants = true) {
+  const registryMcp = scopedManagedMcpDefs({ projectScope: Boolean(targetDir) });
+  if (Object.keys(registryMcp).length === 0) return false;
+
+  // Project scope writes a dedicated `.vscode/mcp.json` (VS Code's documented
+  // workspace MCP config, top-level `servers`). Global scope merges into the
+  // user-profile `mcp.json` (the file "MCP: Open User Configuration" edits), and
+  // only when it already exists — global sync never seeds per-window MCP config.
+
+  if (targetDir) {
+    const mcpPath = path.join(targetDir, ".vscode", "mcp.json");
+
+    // Deselected or undetected host: leave prior output untouched. An
+    // "every key is managed" check looks safe but is a near-no-op in the
+    // common case — a project's mcp.json is almost always 100% Construct-
+    // managed — so it still deleted the file on a plain detection miss
+    // (construct-lqp4c's copilot precedent, generalized here).
+
+    if (!wants) return false;
+
+    let config = { servers: {} };
+    if (fs.existsSync(mcpPath)) {
+      try { config = JSON.parse(fs.readFileSync(mcpPath, "utf8")) || { servers: {} }; }
+      catch { config = { servers: {} }; }
+    }
+    if (!config.servers) config.servers = {};
+    for (const [id, mcpDef] of Object.entries(registryMcp)) {
+      const existingEntry = config.servers[id];
+      const desiredEntry = withVscodeWorkspaceCwd(buildClaudeMcpEntry(id, mcpDef, process.env, { host: "vscode" }));
+      if (!needsRefresh(existingEntry, desiredEntry, { root })) continue;
+      config.servers[id] = desiredEntry;
+    }
+    reconcileStaleManagedEntries(config.servers, { registryMcp, rebuildEntry: (id, def) => withVscodeWorkspaceCwd(buildClaudeMcpEntry(id, def, process.env, { host: "vscode" })) });
+    if (!DRY_RUN) {
+      mkdirp(path.dirname(mcpPath));
+      fs.writeFileSync(mcpPath, JSON.stringify(config, null, 2) + "\n");
+    }
+    pinVscodeChatSettings(targetDir);
+    return true;
+  }
+
+  const mcpPaths = getVSCodeUserMcpPaths();
+  if (mcpPaths.length === 0) return false;
+  let synced = false;
+  for (const mcpPath of mcpPaths) {
+    try {
+      const config = JSON.parse(fs.readFileSync(mcpPath, "utf8")) || {};
+      if (!config.servers) config.servers = {};
+      for (const [id, mcpDef] of Object.entries(registryMcp)) {
+        const existingEntry = config.servers[id];
+        const desiredEntry = buildClaudeMcpEntry(id, mcpDef, process.env, { host: "vscode" });
+        if (!needsRefresh(existingEntry, desiredEntry, { root })) continue;
+        config.servers[id] = desiredEntry;
+      }
+      if (!DRY_RUN) fs.writeFileSync(mcpPath, JSON.stringify(config, null, 2) + "\n");
+      synced = true;
+    } catch { /* unreadable mcp.json */ }
+  }
+  return synced;
+}
+
+// --- Cursor adapter ---
+
+function syncCursor(targetDir = null, wants = true) {
+  const registryMcp = scopedManagedMcpDefs({ projectScope: Boolean(targetDir) });
+  if (Object.keys(registryMcp).length === 0) return false;
+
+  const cursorDir = targetDir
+    ? path.join(targetDir, ".cursor")
+    : path.join(home, ".cursor");
+  const cursorMcpPath = path.join(cursorDir, "mcp.json");
+
+  // Global scope only updates Cursor's MCP config when the user has already
+  // initialized `~/.cursor/mcp.json`; we don't conjure user-scope config out
+  // of thin air. Project scope always writes — `.cursor/mcp.json` is the
+  // documented per-project mechanism and travels with the repo.
+
+  if (!targetDir && !fs.existsSync(cursorMcpPath)) return false;
+
+  // Deselected or undetected host: leave prior output untouched. An "every
+  // key is managed" check looks safe but is a near-no-op in the common case
+  // — a project's mcp.json is almost always 100% Construct-managed — so it
+  // still deleted the file and its rules on a plain detection miss
+  // (construct-lqp4c's copilot precedent, generalized here).
+
+  if (!wants) return false;
+
+  let config = { mcpServers: {} };
+  if (fs.existsSync(cursorMcpPath)) {
+    try { config = JSON.parse(fs.readFileSync(cursorMcpPath, "utf8")) || { mcpServers: {} }; }
+    catch { return false; }
+  }
+  if (!config.mcpServers) config.mcpServers = {};
+  for (const [id, mcpDef] of Object.entries(registryMcp)) {
+    const existingEntry = config.mcpServers[id];
+    const desiredEntry = buildClaudeMcpEntry(id, mcpDef, process.env, { host: "vscode" });
+    if (!needsRefresh(existingEntry, desiredEntry, { root })) continue;
+    config.mcpServers[id] = desiredEntry;
+  }
+  reconcileStaleManagedEntries(config.mcpServers, { registryMcp, rebuildEntry: (id, def) => buildClaudeMcpEntry(id, def, process.env, { host: "vscode" }) });
+  if (!DRY_RUN) {
+    mkdirp(path.dirname(cursorMcpPath));
+    fs.writeFileSync(cursorMcpPath, JSON.stringify(config, null, 2) + "\n");
+  }
+
+  // Project scope also emits a minimal `.cursor/rules/construct.mdc` so Cursor
+  // surfaces a rules entry describing Construct without polluting global rules
+  // (Cursor rules are always per-project by design).
+
+  if (targetDir) {
+    const rulesPath = path.join(targetDir, ".cursor", "rules", "construct.mdc");
+    const body = `---\ndescription: Construct front-door — invoke \`construct\` for orchestration\nalwaysApply: false\n---\n\n<!-- Generated by construct sync — do not edit; re-run \`construct sync\` -->\n\nThis project uses Construct (\`@geraldmaron/construct\`) as the single agent\nentry point. Route work through \`construct\`; Worker Profiles are internal and\ndispatched via MCP \`orchestration_run\`.\n\nSkills load via MCP \`get_skill\`; see \`.claude/skills/\` for synced playbooks.\n`;
+    if (!DRY_RUN) {
+      mkdirp(path.dirname(rulesPath));
+      fs.writeFileSync(rulesPath, body);
+    }
+
+    // Glob-scoped language rules land as managed per-rule .mdc files only when
+    // the project's own files match their globs — Cursor's native auto-attach
+    // convention. See docs/guides/concepts/rules-delivery.md.
+    try {
+      emitCursorRules({ rulesDir: path.join(root, "rules"), targetDir, dryRun: DRY_RUN });
+    } catch (err) {
+      console.warn(`[sync] cursor rules delivery skipped: ${err.message}`);
+    }
+  }
+  return true;
+}
+
+// --- OpenCode adapter ---
+
+function opencodePermissions(entry) {
+  // Explicit Worker Profile permissions override host defaults.
+
+  const perms = entry.permissions
+    ? Object.fromEntries(Object.entries(entry.permissions).map(([k, v]) => [k, v]))
+    : { edit: entry.canEdit === false ? "deny" : "allow", bash: "allow" };
+
+  // Agentic Scope Reduction (ADR-0002). Serializing 100+ MCP tool schemas into a
+  // small local model's prompt overruns its context window and dilutes attention,
+  // collapsing output. OpenCode's per-agent permission map prunes the surface: the
+  // orchestrator keeps only orchestration + core tools and hands execution to
+  // subagents; subagents keep execution tools but not orchestration.
+
+  if (entry.isOrchestrator) {
+    if (perms.bash === "allow") {
+      perms.bash = {
+        "*": "allow",
+        "rm -rf *": "deny",
+        "git push *": "ask",
+        "git push --force*": "ask",
+        "git reset --hard *": "ask",
+      };
+    }
+    // Heavy execution and external-knowledge tools are denied to the orchestrator so
+    // its serialized tool schema stays small; orchestration_policy drives the handoff.
+
+    perms["mcp__construct-mcp__extract_document_text"] = "deny";
+    perms["mcp__construct-mcp__ingest_document"] = "deny";
+    perms["mcp__construct-mcp__scan_file"] = "deny";
+    perms["mcp__github__*"] = "deny";
+    perms["mcp__context7__*"] = "deny";
+    perms["mcp__sequential-thinking__*"] = "deny";
+    perms["mcp__memory__*"] = "deny";
+  } else {
+    // Subagents shouldn't be orchestrating
+    perms["mcp__construct-mcp__orchestration_policy"] = "deny";
+    perms["mcp__construct-mcp__agent_contract"] = "deny";
+    perms["mcp__construct-mcp__broker_check"] = "deny";
+  }
+
+  return perms;
+}
+
+function opencodeTaskPermissions(entry) {
+  if (entry.permissions?.task) return entry.permissions.task;
+  return {
+    "*": "allow",
+  };
+}
+
+function syncOpencode(entries, targetDir = null, wants = true) {
+  // OpenCode's resolver reads `<project>/opencode.json`, `opencode.jsonc`, or
+  // `<project>/.opencode/opencode.json` — never `.opencode/config.json`. Write the
+  // namespaced `.opencode/opencode.json` so project agents + MCP actually load; a
+  // prior `.opencode/config.json` was silently ignored by the host. Global scope
+  // writes the user-level config and only when it already exists.
+
+  const configPath = targetDir
+    ? path.join(targetDir, ".opencode", "opencode.json")
+    : findOpenCodeConfigPath();
+
+  if (!targetDir && !fs.existsSync(configPath)) return false;
+
+  // Deselected or undetected host: leave prior output untouched. An "every
+  // agent key is managed" check looks safe but depends on an exact registry
+  // name match that can silently miss, and even when it works it is a
+  // near-no-op in the common case — a project's config is almost always
+  // 100% Construct-managed — so it still deleted the file and its plugins on
+  // a plain detection miss (construct-lqp4c's copilot precedent, generalized
+  // here).
+
+  if (!wants) return false;
+
+  if (targetDir) {
+    mkdirp(path.dirname(configPath));
+    // Converge a stale `.opencode/config.json` (a path OpenCode never read) onto
+    // the canonical name — rename to preserve content, or drop it if both exist.
+    const legacyPath = path.join(targetDir, ".opencode", "config.json");
+    if (!DRY_RUN && fs.existsSync(legacyPath)) {
+      if (!fs.existsSync(configPath)) fs.renameSync(legacyPath, configPath);
+      else fs.rmSync(legacyPath);
+    }
+  }
+
+  const pluginsDir = targetDir
+    ? path.join(targetDir, ".opencode", "plugins")
+    : path.join(home, ".config", "opencode", "plugins");
+  const managedPluginPath = path.join(pluginsDir, "construct-fallback.js");
+  const toolkitPluginPath = path.join(root, "platforms", "opencode", "plugins", "construct-fallback.js");
+
+  const writeEntries = globalEntries(entries);
+
+  const hadExistingConfig = fs.existsSync(configPath);
+  const { config } = targetDir
+    ? { config: hadExistingConfig ? JSON.parse(fs.readFileSync(configPath, "utf8")) : {} }
+    : readOpenCodeConfig();
+  const opencodeTemplatePath = path.join(root, "platforms", "opencode", "config.template.json");
+  const opencodeTemplate = fs.existsSync(opencodeTemplatePath)
+    ? JSON.parse(fs.readFileSync(opencodeTemplatePath, "utf8"))
+    : {};
+  if (!config.agent) config.agent = {};
+  if (!config.mcp) config.mcp = {};
+  if (!Array.isArray(config.plugin)) config.plugin = [];
+  config.plugin = config.plugin.filter((entry) => {
+    if (typeof entry !== "string") return true;
+    return entry !== managedPluginPath && entry !== toolkitPluginPath;
+  });
+
+  if (opencodeTemplate.$schema && !config.$schema) config.$schema = opencodeTemplate.$schema;
+  if (Array.isArray(opencodeTemplate.enabled_providers) && !Array.isArray(config.enabled_providers)) {
+    config.enabled_providers = [...opencodeTemplate.enabled_providers];
+  }
+  if (opencodeTemplate.provider && typeof opencodeTemplate.provider === "object") {
+    config.provider ??= {};
+    for (const [id, providerDef] of Object.entries(opencodeTemplate.provider)) {
+      config.provider[id] = mergeMissingObjectDefaults(config.provider[id], resolveTemplateStrings(providerDef));
+    }
+  }
+  if (config.provider?.ollama?.options?.headers?.Authorization === "Bearer ollama") {
+    delete config.provider.ollama.options.headers.Authorization;
+    if (Object.keys(config.provider.ollama.options.headers).length === 0) {
+      delete config.provider.ollama.options.headers;
+    }
+  }
+
+  const templateMcp = opencodeTemplate.mcp && typeof opencodeTemplate.mcp === "object"
+    ? resolveTemplateStrings(opencodeTemplate.mcp)
+    : {};
+  for (const [id, entry] of Object.entries(templateMcp)) {
+    if (!DEFAULT_MANAGED_MCP_IDS.has(id)) continue;
+    if (!config.mcp[id]) config.mcp[id] = entry;
+  }
+  if (config.mcp["construct-mcp"]) {
+    config.mcp["construct-mcp"] = templateMcp["construct-mcp"] ?? config.mcp["construct-mcp"];
+  }
+
+  // The bridge URL is a concrete loopback address derived from the allocated
+  // MEMORY_PORT, not a credential — use the port-templated form so it materializes
+  // to a literal (http://127.0.0.1:<port>/). The whole-value `__NAME__` form flips
+  // to OpenCode's `{env:NAME}` secret reference (buildLocalEnvironment), which left a
+  // non-secret URL as an unresolvable env ref that only looked right when
+  // process.env.CONSTRUCT_MEMORY_BRIDGE_URL happened to be set.
+
+  const memoryBridgeEntry = buildOpenCodeMcpEntry("memory", {
+    command: "node",
+    args: ["__CONSTRUCT_TOOLKIT_DIR__/lib/mcp/memory-bridge.mjs"],
+    env: { CONSTRUCT_MEMORY_BRIDGE_URL: "http://127.0.0.1:__MEMORY_PORT__/" },
+  }, {
+    ...process.env,
+    MEMORY_PORT: process.env.MEMORY_PORT || String(memoryPort()),
+  }).entry;
+  const staleMemoryRemote = config.mcp.memory && (config.mcp.memory.type === "remote" || config.mcp.memory.type === "http");
+  const staleCassRemote = config.mcp.cass && (config.mcp.cass.type === "remote" || config.mcp.cass.type === "http");
+  if (staleMemoryRemote || staleCassRemote) {
+    config.mcp.memory = memoryBridgeEntry;
+    delete config.mcp.cass;
+  }
+
+  // Sync providers
+  const registryProviders = {};
+  if (Object.keys(registryProviders).length > 0) {
+    if (!config.provider) config.provider = {};
+    for (const [id, providerDef] of Object.entries(registryProviders)) {
+      const existing = config.provider[id] ?? {};
+      const existingAuth = existing.options?.headers?.Authorization;
+      const existingModels = existing.models ?? {};
+      config.provider[id] = {
+        ...providerDef,
+        options: {
+          ...providerDef.options,
+          ...existing.options,
+          headers: {
+            ...providerDef.options?.headers,
+            ...existing.options?.headers,
+            ...(existingAuth ? { Authorization: existingAuth } : {}),
+          },
+        },
+        models: Object.fromEntries(
+          Object.entries({ ...(providerDef.models ?? {}), ...existingModels })
+            .sort((a, b) => (a[1].name ?? a[0]).localeCompare(b[1].name ?? b[0]))
+        ),
+      };
+    }
+  }
+
+  ensureOpenRouterProviderAuth(config);
+
+  // Derive anthropic models from registry tier definitions
+  const tierModels = Object.values(registryModels).flatMap((t) =>
+    [t.primary, ...(t.fallback ?? [])].filter((m) => m?.startsWith('anthropic/'))
+  );
+  if (tierModels.length > 0) {
+    if (!config.provider) config.provider = {};
+    if (!config.provider.anthropic) config.provider.anthropic = {};
+    const existing = config.provider.anthropic.models ?? {};
+    const derived = {};
+    for (const full of [...new Set(tierModels)]) {
+      const id = full.replace(/^anthropic\//, '');
+      if (!existing[id]) {
+        const parts = id.replace(/^claude-/, '').split('-');
+        const family = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+        const version = parts.slice(1).filter((p) => !/^\d{8,}$/.test(p)).join('.');
+        derived[id] = { name: `Claude ${family} ${version}`.trim() };
+      }
+    }
+    config.provider.anthropic.models = Object.fromEntries(
+      Object.entries({ ...derived, ...existing })
+        .sort((a, b) => (a[1].name ?? a[0]).localeCompare(b[1].name ?? b[0]))
+    );
+  }
+
+  // Sync MCP servers
+  const registryMcp = scopedManagedMcpDefs({ projectScope: Boolean(targetDir) });
+  if (Object.keys(registryMcp).length > 0) {
+    if (!config.mcp) config.mcp = {};
+    for (const [id, mcpDef] of Object.entries(registryMcp)) {
+      const openCodeId = getOpenCodeMcpId(id);
+      if (openCodeId !== id) delete config.mcp[id];
+      if (id === 'memory') delete config.mcp.cass;
+
+      // Migrate the legacy cass-memory HTTP entry to the stdio bridge. cm v0.2.x
+      // rejects the MCP handshake (OpenCode surfaces 405 on the SSE GET), so
+      // any remote/http memory entry must be rewritten when the registry
+      // defines a command-based bridge.
+      const existingEntry = config.mcp[openCodeId];
+      const desiredEntry = buildOpenCodeMcpEntry(id, mcpDef, process.env).entry;
+
+      // The registry's own args can carry an unresolved `__NAME__` template (a
+      // secret var not yet set in this environment); needsRefresh only inspects
+      // built entries, so a still-templated registry def is checked separately
+      // and always wins a refresh once the var resolves.
+      const argsHaveTemplates = (mcpDef.args ?? []).some((a) => typeof a === 'string' && a.includes('__'));
+      if (argsHaveTemplates || needsRefresh(existingEntry, desiredEntry, { root })) {
+        config.mcp[openCodeId] = desiredEntry;
+      }
+    }
+
+    // The sync-set loop above only visits `registryMcp` ids, so a managed-but-optional
+    // entry (e.g. `memory` in project scope) with a stale toolkit path is never
+    // revisited here either — the same immortal-entry gap fixed for VS Code/Cursor/
+    // Claude project (construct-6y6w.1). `getOpenCodeMcpId` keys config.mcp by the
+    // host id rather than the catalog id, so map it back before checking ownership.
+    const catalogIdForOpenCodeKey = new Map(
+      Object.keys(managedMcpDefs()).map((catalogId) => [getOpenCodeMcpId(catalogId), catalogId]),
+    );
+    reconcileStaleManagedEntries(config.mcp, {
+      registryMcp,
+      mapId: (key) => catalogIdForOpenCodeKey.get(key) ?? key,
+      rebuildEntry: (catalogId, def) => buildOpenCodeMcpEntry(catalogId, def, process.env).entry,
+    });
+
+    // Heavy external MCP servers serialize a measured ~37k tokens of tool schema
+    // into EVERY agent's request — github ~30k alone (fixtures 2026-06-22) —
+    // agent's request — including the built-in Build/Plan agents the per-agent
+    // permission prune cannot reach. OpenCode 1.15.4 has no per-session tool
+    // filter (OpenCode chat.params carries no tool list), so disabling the whole server in
+    // opencode.json is the only lever. The decision is INTENT-driven: trim only
+    // when this config's own default model is local (or a local Ollama provider is
+    // registered in it), so a cloud session on a machine that merely also has
+    // Ollama keeps context7/github. decideTrim centralizes the policy; a manual
+    // enabled:true is preserved so a user can re-enable a server they need.
+
+    // A set default model is explicit intent and wins (local → trim, cloud → keep).
+    // Only when no default is chosen does a registered Ollama provider stand in as
+    // soft local intent — so a cloud-default config is never trimmed for merely
+    // listing local models alongside.
+    const configDefaultModel = config.model || config.defaultModel || "";
+    const registersOllamaProvider = Object.keys(config.provider?.ollama?.models || {}).length > 0;
+    const intentModel = configDefaultModel || (registersOllamaProvider ? "ollama" : "");
+    const trimHeavyServers = decideTrim({ surface: LOCAL_SURFACE, defaultModel: intentModel });
+    for (const id of HEAVY_EXTERNAL_MCP_IDS) {
+      const ocId = getOpenCodeMcpId(id);
+      if (!config.mcp[ocId]) continue;
+      if (trimHeavyServers) {
+        if (config.mcp[ocId].enabled !== true) config.mcp[ocId].enabled = false;
+      } else {
+        delete config.mcp[ocId].enabled;
+      }
+    }
+  }
+
+  // Write agents — no model/modelFallback set; agents inherit the global model.
+  //
+  // Capability tier for the orchestrator prompt. Keyed ONLY to an EXPLICIT local default
+  // model — that is a clear intent signal we can size against at sync time. With no
+  // explicit default (the orchestrator runs whatever model the user picks at runtime) or
+  // a cloud default, resolveCapabilityTier returns 'full', so cloud configs and unknown
+  // selections are never slimmed. Per-model slimming of a known pinned model lands on the
+  // construct-local editor agent.
+
+  const orchestratorDefaultModel = config.model || config.defaultModel || "";
+  adviseLocalModelCapability(orchestratorDefaultModel);
+  const orchestratorTier = resolveCapabilityTier({
+    model: orchestratorDefaultModel,
+    verdict: orchestratorDefaultModel ? (getModelVerdict(orchestratorDefaultModel)?.verdict ?? null) : null,
+  });
+
+  for (const entry of writeEntries) {
+    const name = adapterName(entry);
+    const perms = opencodePermissions(entry);
+    config.agent[name] = {
+      description: entry.isOrchestrator
+        ? `${entry.displayName} — ${entry.description}`
+        : entry.description,
+      mode: entry.isOrchestrator ? "all" : "subagent",
+      prompt: buildPrompt(entry, entries, "opencode", {
+        capabilityTier: entry.isOrchestrator ? orchestratorTier : "full",
+      }),
+      permission: {
+        ...perms,
+        task: opencodeTaskPermissions(entry),
+      },
+    };
+  }
+
+  // Hybrid split (cheap local editor, capable architect). When the fast tier is a LOCAL model, emit a
+  // narrow `construct-local` editor: it does bounded edits on a cheap local model and hands
+  // planning/reasoning back to `construct` (the architect, which stays on the user's chosen
+  // model — we never pin it). The editor's model is NOT the generic fast-tier default
+  // (which for an Ollama family resolves to a non-code generalist); it is the best-installed
+  // CODE model from this config's DECLARED local inventory (OpenCode only uses declared
+  // models), excluding probe-COLLAPSED ones, with the fast tier as a last resort. Its prompt
+  // is sized to the chosen model's capability tier. Deterministic name, so manage it
+  // explicitly: emit when fast is local, delete otherwise, so switching to cloud cleans up.
+
+  const orchestratorEntry = writeEntries.find((e) => e.isOrchestrator) || registry.workerProfiles?.orchestrator;
+  const orchestratorName = orchestratorEntry ? adapterName(orchestratorEntry) : "construct";
+  const localEditorName = `${orchestratorName}-local`;
+  const localEditorSeedModel = resolvedModels.fast && isLocalModel(resolvedModels.fast)
+    ? resolvedModels.fast
+    : (primaryFromOpenCode && isLocalModel(primaryFromOpenCode) ? primaryFromOpenCode : null);
+  const orchestratorPromptPath = orchestratorEntry
+    ? resolveWorkerProfilePromptPath(orchestratorEntry.id, { rootDir: root, registry })
+    : null;
+  if (orchestratorPromptPath && localEditorSeedModel) {
+    const declaredLocal = Object.entries(config.provider || {})
+      .flatMap(([pid, pv]) => Object.keys(pv?.models || {}).map((mk) => `${pid}/${mk}`))
+      .filter((id) => isLocalModel(id) && getModelVerdict(id)?.verdict !== "COLLAPSED");
+    const editorModel = selectLocalEditorModel(declaredLocal) || localEditorSeedModel;
+    adviseLocalModelCapability(editorModel);
+    const editorVerdict = getModelVerdict(editorModel)?.verdict ?? null;
+    const editorTier = resolveCapabilityTier({ model: editorModel, verdict: editorVerdict });
+    const editorBody = renderPromptForTier(readPromptBody(orchestratorPromptPath, root), editorTier);
+    config.agent[localEditorName] = {
+      description: "Local execution agent — bounded edits on the local model; escalates planning and reasoning to construct.",
+      mode: "subagent",
+      model: editorModel,
+      prompt: `${LOCAL_EDITOR_DIRECTIVE}\n\n${editorBody}`,
+      permission: {
+        edit: "allow",
+        bash: { "*": "allow", "rm -rf *": "deny", "git push *": "ask", "git push --force*": "ask", "git reset --hard *": "ask" },
+        "mcp__construct-mcp__orchestration_policy": "deny",
+        "mcp__construct-mcp__agent_contract": "deny",
+        "mcp__construct-mcp__broker_check": "deny",
+        "mcp__github__*": "deny",
+        "mcp__context7__*": "deny",
+        "mcp__sequential-thinking__*": "deny",
+        "mcp__memory__*": "deny",
+        // OpenCode 1.15.4 disables the `task` tool entirely for any restrictive task map
+        // (verified in a sterile run). For an editor that is exactly right: it spawns no
+        // subagents and escalates by RETURNING to the construct agent that dispatched it,
+        // not by dispatching. Deny-all states that intent directly.
+        task: { "*": "deny" },
+      },
+    };
+  } else {
+    delete config.agent[localEditorName];
+  }
+
+  // Pass only explicitly/user-derived Construct model tiers to OpenCode config
+  // for native routing. Do not backfill unconfigured tiers with provider IDs.
+  config.construct = config.construct || {};
+  const configuredResolvedModels = Object.fromEntries(
+    Object.entries(resolvedModels).filter(([, value]) => typeof value === "string" && value.length > 0),
+  );
+  if (Object.keys(configuredResolvedModels).length > 0) {
+    config.construct.models = configuredResolvedModels;
+  } else {
+    delete config.construct.models;
+  }
+  if (Object.keys(config.construct).length === 0) delete config.construct;
+
+  // OpenCode's primary `model` is user-owned. Remove the legacy Construct seed
+  // when we find it so the app can fall back to its own remembered selection
+  // instead of a stale pin. New syncs never write this key back.
+  const legacyPinnedModels = new Set([
+    opencodeTemplate.model,
+    "openrouter/openrouter/free",
+    "openrouter/qwen/qwen3-coder:free",
+  ].filter(Boolean));
+  if (!targetDir && legacyPinnedModels.has(config.model)) {
+    delete config.model;
+  }
+
+  // OpenCode's built-in helper agents (session naming, summaries, compaction)
+  // must follow the host's live routing — an absolute model pin here made
+  // compaction call a provider the user had no key/credits for, failing hard
+  // even though a working model was selected for the session. Keep the entries
+  // present (hosts and tests rely on them existing) but strip any model pin a
+  // previous sync wrote, whether the old weak coder default or a strong tier
+  // pin, so OpenCode falls back to its own session-model/small_model routing.
+  for (const key of ["title", "summary", "compaction"]) {
+    const existing = config.agent[key] && typeof config.agent[key] === "object" ? config.agent[key] : {};
+    delete existing.model;
+    config.agent[key] = existing;
+  }
+
+  writeOpenCodeConfig(config, configPath);
+
+  const sourcePluginsDir = path.join(root, "platforms", "opencode", "plugins");
+  if (fs.existsSync(sourcePluginsDir) && !DRY_RUN) {
+    mkdirp(pluginsDir);
+    for (const file of fs.readdirSync(sourcePluginsDir)) {
+      if (!file.endsWith(".js") && !file.endsWith(".ts")) continue;
+      const source = path.join(sourcePluginsDir, file);
+      const target = path.join(pluginsDir, file);
+      const content = fs.readFileSync(source, "utf8").replaceAll("__CONSTRUCT_TOOLKIT_DIR__", root);
+      fs.writeFileSync(target, content);
+    }
+  }
+
+  config.plugin = [...config.plugin, managedPluginPath];
+  if (!DRY_RUN) writeOpenCodeConfig(config, configPath);
+
+  return true;
+}
+
+// --- Slash commands adapter ---
+
+function syncCommands(targetDir = null) {
+  // Slash commands describe project-shaped workflows (release, init, sync …)
+  // and belong with the repo so teammates pick them up via git. Project scope
+  // only — global scope is a no-op.
+
+  if (!targetDir) return 0;
+
+  const sourceCommandsDir = path.join(root, "commands");
+  if (!fs.existsSync(sourceCommandsDir)) return 0;
+
+  const claudeCommandsDir = path.join(targetDir, ".claude", "commands");
+
+  let count = 0;
+  for (const domain of fs.readdirSync(sourceCommandsDir, { withFileTypes: true })) {
+    if (!domain.isDirectory()) continue;
+    const domainDir = path.join(sourceCommandsDir, domain.name);
+    const targetDomainDir = path.join(claudeCommandsDir, domain.name);
+    if (!DRY_RUN) mkdirp(targetDomainDir);
+
+    for (const file of fs.readdirSync(domainDir)) {
+      if (!file.endsWith(".md")) continue;
+      count++;
+      if (DRY_RUN) continue;
+      const source = path.join(domainDir, file);
+      const target = path.join(targetDomainDir, file);
+      fs.copyFileSync(source, target);
+    }
+  }
+
+  // Clean up stale command files not in source
+  if (!DRY_RUN && fs.existsSync(claudeCommandsDir)) {
+    for (const domain of fs.readdirSync(claudeCommandsDir, { withFileTypes: true })) {
+      if (!domain.isDirectory()) continue;
+      const sourceDomainDir = path.join(sourceCommandsDir, domain.name);
+      if (!fs.existsSync(sourceDomainDir)) {
+        fs.rmSync(path.join(claudeCommandsDir, domain.name), { recursive: true });
+        continue;
+      }
+      const sourceFiles = new Set(fs.readdirSync(sourceDomainDir).filter((f) => f.endsWith(".md")));
+      for (const file of fs.readdirSync(path.join(claudeCommandsDir, domain.name))) {
+        if (file.endsWith(".md") && !sourceFiles.has(file)) {
+          fs.unlinkSync(path.join(claudeCommandsDir, domain.name, file));
+        }
+      }
+    }
+  }
+
+  return count;
+}
+
+// --- Skills sync ---
+
+/**
+ * Walk skills/ recursively and collect every .md file (flat) and every
+ * <name>/SKILL.md directory entry. Returns [{ name, content }] where name
+ * is the slash-relative path without extension, e.g. "strategy/narrative-arc".
+ */
+function collectSkills() {
+  const skillsDir = path.join(root, "skills");
+  const results = [];
+
+  function walk(dir, prefix) {
+    if (!fs.existsSync(dir)) return;
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+
+      if (entry.isDirectory()) {
+        // Check if this is a SKILL.md directory form: <name>/SKILL.md
+        const skillMdPath = path.join(full, "SKILL.md");
+        if (fs.existsSync(skillMdPath)) {
+          // Avoid double-walking; record this skill and do not descend further.
+          const name = rel;
+          results.push({ name, content: fs.readFileSync(skillMdPath, "utf8") });
+        } else {
+          walk(full, rel);
+        }
+      } else if (entry.name.endsWith(".md") && entry.name !== "routing.md" && entry.name !== "SKILL.md") {
+        const name = rel.replace(/\.md$/, "");
+        results.push({ name, content: fs.readFileSync(full, "utf8") });
+      }
+    }
+  }
+
+  walk(skillsDir, "");
+  return results;
+}
+
+/**
+ * Write collected skills to both .claude/skills/ and .agents/skills/ in
+ * SKILL.md directory format. Each file gets Anthropic Agent Skills frontmatter
+ * (name + description) so the loader can index it. Doc-stamping is opted out
+ * — a doc-stamp YAML block before the real frontmatter produces double-
+ * frontmatter the loader can't parse.
+ */
+function syncSkills(targetDir = null) {
+  // Skills are project content — they describe domain knowledge a team shares,
+  // not a user's personal default. Global scope writes nothing; project scope
+  // writes to `<project>/.claude/skills/` (the documented Anthropic Agent
+  // Skills path).
+
+  if (!targetDir) return 0;
+
+  const skills = collectSkills();
+  if (skills.length === 0) return 0;
+
+  const claudeSkillsDir = path.join(targetDir, ".claude", "skills");
+
+  for (const { name, content } of skills) {
+    const frontmatter = buildSkillFrontmatter(name, content);
+
+    // Strip any existing frontmatter from the source body so we don't emit two
+    // blocks if a hand-authored skill already carries one.
+
+    const body = stripLeadingFrontmatter(content);
+    const generated = `${frontmatter}\n${body}`;
+    writeFile(path.join(claudeSkillsDir, name, "SKILL.md"), generated, { stamp: false });
+  }
+
+  return skills.length;
+}
+
+// --- Main ---
+
+if (isMain) {
+const entries = buildEntries();
+
+if (COMPRESS_WORKER_PROFILES) {
+  // Compress the front-door Worker Profile prompt for constrained hosts. The source
+  // file stays unchanged so authors keep editing the readable version.
+  const { getEngine } = await import('./lib/engine/index.mjs');
+  const engine = await getEngine({ rootDir: root });
+  const compressor = engine.layers.compressor;
+  let totalIn = 0;
+  let totalOut = 0;
+  for (const entry of entries) {
+    if (!entry.isOrchestrator || !entry.prompt) continue;
+    const before = entry.prompt;
+    try {
+      const after = await compressor.compress(before, { ratio: 0.6 });
+      if (typeof after === 'string' && after.length > 0) {
+        entry.prompt = after;
+        totalIn += before.length;
+        totalOut += after.length;
+      }
+    } catch (err) {
+      console.warn(`compress-worker-profiles: skipping ${entry.id}: ${err.message}`);
+    }
+  }
+  if (totalIn > 0) {
+    const ratio = ((totalOut / totalIn) * 100).toFixed(0);
+    console.log(`compress-worker-profiles: ${totalIn} → ${totalOut} chars (${ratio}%) across ${entries.filter((e) => e.isOrchestrator).length} front-door profiles`);
+  }
+}
+
+// One host throwing (an unwritable directory, a malformed existing config)
+// must not prevent the others from running or from having their already-
+// staged files committed — the previous shape was a single try/finally
+// around every host, so the first throw aborted the rest mid-sequence
+// while leaving whatever had already run partially applied.
+
+function runHostSync(label, fn) {
+  try {
+    return { label, ok: true, result: fn() };
+  } catch (err) {
+    console.error(`[sync] ${label} failed: ${err.message}`);
+    return { label, ok: false, result: undefined, error: err };
+  }
+}
+
+// A run with any host failure (or a staged file that failed to commit) must
+// exit nonzero even though the successfully-synced hosts still get their
+// normal summary line — silently reporting "Synced …" when part of the run
+// actually failed is the stage-project.mjs "clean state" claim this same
+// gap produces one layer up.
+
+function reportSyncFailures(hostResults, commitFailed) {
+  const failedHosts = hostResults.filter((r) => !r.ok);
+  if (failedHosts.length === 0 && commitFailed.length === 0) return;
+  console.error(`[sync] ${failedHosts.length} host(s) failed, ${commitFailed.length} staged file(s) could not commit:`);
+  for (const { label, error } of failedHosts) console.error(`  ✗ ${label}: ${error.message}`);
+  for (const { real, error } of commitFailed) console.error(`  ✗ commit ${real}: ${error.message}`);
+  process.exitCode = 1;
+}
+
+acquireLock();
+try {
+  if (projectDir) {
+    const claude = runHostSync("Claude Code", () => syncClaude(entries, projectDir, wantsHost("claude")));
+    const codex = runHostSync("Codex", () => syncCodex(entries, projectDir, wantsHost("codex")));
+    const copilot = runHostSync("Copilot", () => syncCopilot(entries, projectDir, wantsHost("copilot")));
+    const opencode = runHostSync("OpenCode", () => syncOpencode(entries, projectDir, wantsHost("opencode")));
+    const vscode = runHostSync("VS Code", () => syncVSCode(projectDir, wantsHost("vscode")));
+    const cursor = runHostSync("Cursor", () => syncCursor(projectDir, wantsHost("cursor")));
+    const commands = runHostSync("Commands", () => (wantsHost("claude") ? syncCommands(projectDir) : 0));
+    const skills = runHostSync("Skills", () => (wantsHost("claude") ? syncSkills(projectDir) : 0));
+    const cmdCount = commands.ok ? commands.result : 0;
+    const skillCount = skills.ok ? skills.result : 0;
+
+    if (DRY_RUN) {
+      printDryRunDiff();
+    } else {
+      const { failed: commitFailed } = commitStaging();
+      const targets = [
+        claude.ok && wantsHost("claude") && "Claude Code",
+        codex.ok && wantsHost("codex") && "Codex",
+        copilot.ok && wantsHost("copilot") && "Copilot",
+        opencode.ok && opencode.result && "OpenCode",
+        vscode.ok && vscode.result && "VS Code",
+        cursor.ok && cursor.result && "Cursor",
+      ].filter(Boolean).join(", ");
+      summary(`Synced ${entries.length} agents + ${cmdCount} commands + ${skillCount} skills to ${path.relative(process.cwd(), projectDir) || "."} (project mode → ${targets}).`);
+      reportSyncFailures([claude, codex, copilot, opencode, vscode, cursor, commands, skills], commitFailed);
+    }
+  } else {
+    const frontDoorCount = entries.filter((e) => e.isOrchestrator).length;
+
+    const codex = runHostSync("Codex", () => syncCodex(entries, null, wantsHost("codex")));
+    const claude = runHostSync("Claude Code", () => syncClaude(entries, null, wantsHost("claude")));
+    const copilot = runHostSync("Copilot", () => syncCopilot(entries, null, wantsHost("copilot")));
+    const opencode = runHostSync("OpenCode", () => syncOpencode(entries, null, wantsHost("opencode")));
+    const vscode = runHostSync("VS Code", () => syncVSCode(null, wantsHost("vscode")));
+    const cursor = runHostSync("Cursor", () => syncCursor(null, wantsHost("cursor")));
+    const commands = runHostSync("Commands", () => syncCommands());
+    const skills = runHostSync("Skills", () => syncSkills());
+
+    if (DRY_RUN) {
+      printDryRunDiff();
+    } else {
+      const { failed: commitFailed } = commitStaging();
+      const targets = [
+        codex.ok && wantsHost("codex") && "Codex",
+        claude.ok && wantsHost("claude") && "Claude Code",
+        copilot.ok && wantsHost("copilot") && "Copilot",
+        opencode.ok && opencode.result && "OpenCode",
+        vscode.ok && vscode.result && "VS Code",
+        cursor.ok && cursor.result && "Cursor",
+      ].filter(Boolean).join(", ");
+      summary(`Synced ${frontDoorCount} front-door agent to global scope (${targets}). Commands and skills are project-only — run \`construct init\` inside a project to scaffold them.`);
+      reportSyncFailures([codex, claude, copilot, opencode, vscode, cursor, commands, skills], commitFailed);
+
+      const completionsDir = generateCompletions();
+      if (completionsDir) {
+        summary(`Completions updated → ${completionsDir}`);
+      }
+    }
+  }
+} finally {
+  releaseLock();
+}
+}

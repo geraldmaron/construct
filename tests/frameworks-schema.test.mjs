@@ -18,21 +18,13 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { validateFrameworkFrontmatter, parseFrameworkFile, knownRolesFromSpecialists } from '../lib/frameworks/schema.mjs';
+import { validateFrameworkFrontmatter, parseFrameworkFile, knownRolesFromWorkerProfiles } from '../lib/frameworks/schema.mjs';
 import { resolveFramework, validatePackFrameworks, listPackFrameworks } from '../lib/frameworks/loader.mjs';
 import { loadCorePack } from '../lib/packs/core-pack.mjs';
 import { loadAllPacks } from '../lib/packs/loader.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(__dirname, '..');
-
-const CORE_FRAMEWORK_IDS = [
-  'cx-pm-value-tradeoff',
-  'cx-ops-dependency-sequencing',
-  'cx-engineer-feasibility-blast-radius',
-  'cx-qa-risk-based-coverage',
-  'cx-architect-constraint-option-failure',
-];
 
 const KNOWN_ROLES = new Set([
   'product-manager', 'operations', 'engineer', 'qa', 'architect',
@@ -241,55 +233,21 @@ test('parseFrameworkFile', async (t) => {
   });
 });
 
-test('knownRolesFromSpecialists', async (t) => {
-  await t.test('collects unique role fields', () => {
-    const roles = knownRolesFromSpecialists([
-      { role: 'engineer' }, { role: 'qa' }, { role: 'engineer' }, {},
+test('knownRolesFromWorkerProfiles', async (t) => {
+  await t.test('collects unique Worker Profile ids', () => {
+    const roles = knownRolesFromWorkerProfiles([
+      { id: 'engineer' }, { id: 'qa' }, { id: 'engineer' }, {},
     ]);
     assert.deepEqual([...roles].sort(), ['engineer', 'qa']);
   });
 });
 
-test('core pack frameworks (LMCP-F7)', async (t) => {
-  await t.test('loadCorePack declares all 5 shipped frameworks by frontmatter id', () => {
+test('core pack framework boundary', async (t) => {
+  await t.test('the core pack exposes Worker Profiles without retired framework records', () => {
     const pack = loadCorePack(PACKAGE_ROOT);
-    for (const id of CORE_FRAMEWORK_IDS) {
-      assert.ok(id in pack.frameworks, `expected core pack to declare framework '${id}'`);
-    }
-  });
-
-  await t.test('every declared core framework file validates against the ADR-0062 schema', () => {
-    const pack = loadCorePack(PACKAGE_ROOT);
-    const specialistDir = path.join(PACKAGE_ROOT, 'specialists', 'org', 'specialists');
-    const specialists = fs.readdirSync(specialistDir)
-      .filter((f) => f.endsWith('.json'))
-      .map((f) => JSON.parse(fs.readFileSync(path.join(specialistDir, f), 'utf8')));
-    const knownRoles = knownRolesFromSpecialists(specialists);
-
-    const result = validatePackFrameworks(pack, { packageRoot: PACKAGE_ROOT, knownRoles });
-    assert.deepEqual(result.errors, []);
-    assert.equal(result.valid, true);
-  });
-
-  await t.test('each of the 5 role frameworks parses individually with 3-6 unique-emits steps', () => {
-    const pack = loadCorePack(PACKAGE_ROOT);
-    for (const id of CORE_FRAMEWORK_IDS) {
-      const relPath = pack.frameworks[id];
-      const result = parseFrameworkFile(path.join(PACKAGE_ROOT, relPath));
-      assert.equal(result.valid, true, `${id}: ${JSON.stringify(result.errors)}`);
-      assert.ok(result.frontmatter.steps.length >= 3 && result.frontmatter.steps.length <= 6);
-      const emits = result.frontmatter.steps.map((s) => s.emits);
-      assert.equal(new Set(emits).size, emits.length, `${id}: emits tokens must be unique`);
-    }
-  });
-
-  await t.test('resolveFramework finds each core framework through loadAllPacks', () => {
-    const { packs } = loadAllPacks({ deploymentMode: 'solo', rootDir: tmpRoot('cx-fw-resolve-') });
-    for (const id of CORE_FRAMEWORK_IDS) {
-      const result = resolveFramework(id, { packs, packageRoot: PACKAGE_ROOT });
-      assert.equal(result.found, true, `expected to resolve framework '${id}'`);
-      assert.equal(result.packId, '@construct/core');
-    }
+    assert.ok(pack.workerProfiles.includes('engineer'));
+    assert.ok(pack.prompts.engineer);
+    assert.deepEqual(pack.frameworks, {});
   });
 });
 
@@ -339,10 +297,9 @@ test('resolveFramework E1 pack precedence (ADR-0055/ADR-0062 §1)', async (t) =>
     assert.match(result.body, /Project override body/);
   });
 
-  await t.test('listPackFrameworks lists ids without loading file contents', () => {
-    const pack = loadCorePack(PACKAGE_ROOT);
-    const ids = listPackFrameworks(pack);
-    for (const id of CORE_FRAMEWORK_IDS) assert.ok(ids.includes(id));
+  await t.test('listPackFrameworks lists project framework ids without loading contents', () => {
+    const ids = listPackFrameworks({ frameworks: { 'project-framework': 'frameworks/project.md' } });
+    assert.deepEqual(ids, ['project-framework']);
   });
 
   await t.test('validatePackFrameworks names the missing file when a declared framework does not exist', () => {

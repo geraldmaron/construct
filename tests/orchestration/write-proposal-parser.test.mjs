@@ -22,19 +22,19 @@ test('extracts a single valid proposal block', () => {
   const text = [
     'Here is my recommendation:',
     '```write-proposal',
-    '{"providerId": "atlassian-jira", "writeKind": "comment", "payload": {"issueKey": "OPS-1", "body": "status update"}}',
+    '{"providerId": "jira", "writeKind": "comment", "payload": {"issueKey": "OPS-1", "body": "status update"}}',
     '```',
     'Let me know if that looks right.',
   ].join('\n');
 
-  const proposals = parseWriteProposals(text, { requestedBy: { specialistId: 'cx-operations' } });
+  const proposals = parseWriteProposals(text, { requestedBy: { workerProfileId: 'operations' } });
 
   assert.equal(proposals.length, 1);
-  assert.equal(proposals[0].providerId, 'atlassian-jira');
+  assert.equal(proposals[0].providerId, 'jira');
   assert.equal(proposals[0].writeKind, 'comment');
   assert.deepEqual(proposals[0].payload, { issueKey: 'OPS-1', body: 'status update' });
-  assert.equal(proposals[0].tool, 'atlassian-jira.comment');
-  assert.equal(proposals[0].requestedBy.specialistId, 'cx-operations');
+  assert.equal(proposals[0].tool, 'jira.comment');
+  assert.equal(proposals[0].requestedBy.workerProfileId, 'operations');
 });
 
 test('extracts multiple proposal blocks in one answer', () => {
@@ -70,17 +70,17 @@ test('a valid block alongside a malformed one still yields the valid proposal', 
     '{broken',
     '```',
     '```write-proposal',
-    '{"providerId": "atlassian-jira", "writeKind": "issue", "payload": {"project": "OPS", "summary": "s"}}',
+    '{"providerId": "jira", "writeKind": "issue", "payload": {"project": "OPS", "summary": "s"}}',
     '```',
   ].join('\n');
 
   const proposals = parseWriteProposals(text);
   assert.equal(proposals.length, 1);
-  assert.equal(proposals[0].providerId, 'atlassian-jira');
+  assert.equal(proposals[0].providerId, 'jira');
 });
 
 test('defaults surface to specialist-recommendation when unset', () => {
-  const text = '```write-proposal\n{"providerId": "atlassian-jira", "writeKind": "comment", "payload": {"issueKey": "X-1", "body": "b"}}\n```';
+  const text = '```write-proposal\n{"providerId": "jira", "writeKind": "comment", "payload": {"issueKey": "X-1", "body": "b"}}\n```';
   const [proposal] = parseWriteProposals(text);
   assert.equal(proposal.surface, 'specialist-recommendation');
 });

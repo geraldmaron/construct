@@ -1,0 +1,66 @@
+{
+  "$comment": "Human-equivalent metadata for construct audit worker-profiles, merged with registry and certification evidence by lib/audit-worker-profiles.mjs.",
+  "version": 2,
+  "workerProfiles": {
+    "orchestrator": {
+      "humanEquivalent": "Engineering program manager",
+      "researchProfile": null,
+      "toneProfile": "direct"
+    },
+    "product-manager": {
+      "humanEquivalent": "Senior product manager",
+      "researchProfile": "user",
+      "toneProfile": "decision-forcing-direct"
+    },
+    "operations": {
+      "humanEquivalent": "Technical program manager",
+      "researchProfile": null,
+      "toneProfile": "direct"
+    },
+    "researcher": {
+      "humanEquivalent": "Research analyst",
+      "researchProfile": "external",
+      "toneProfile": "direct"
+    },
+    "data-analyst": {
+      "humanEquivalent": "Product data analyst",
+      "researchProfile": "external",
+      "toneProfile": "direct"
+    },
+    "architect": {
+      "humanEquivalent": "Staff software architect",
+      "researchProfile": "external",
+      "toneProfile": "decision-forcing-direct"
+    },
+    "engineer": {
+      "humanEquivalent": "Senior software engineer",
+      "researchProfile": "codebase",
+      "toneProfile": "direct"
+    },
+    "reviewer": {
+      "humanEquivalent": "Staff engineer reviewer",
+      "researchProfile": "codebase",
+      "toneProfile": "direct"
+    },
+    "security": {
+      "humanEquivalent": "Application security engineer",
+      "researchProfile": "compliance",
+      "toneProfile": "direct"
+    },
+    "qa": {
+      "humanEquivalent": "QA lead",
+      "researchProfile": "codebase",
+      "toneProfile": "direct"
+    },
+    "debugger": {
+      "humanEquivalent": "Senior debugger / SRE investigator",
+      "researchProfile": "codebase",
+      "toneProfile": "direct"
+    },
+    "designer": {
+      "humanEquivalent": "Product designer",
+      "researchProfile": "user",
+      "toneProfile": "friendly"
+    }
+  }
+}

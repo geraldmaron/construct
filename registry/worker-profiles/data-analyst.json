@@ -1,0 +1,92 @@
+{
+  "id": "data-analyst",
+  "displayName": "Measures carefully because measurement shapes behavior — suspicious of metrics that can be hit without solving the problem.",
+  "description": "Measures carefully because measurement shapes behavior — suspicious of metrics that can be hit without solving the problem.",
+  "runtime": "host-agent",
+  "modelTier": "standard",
+  "reasoningEffort": "medium",
+  "skillEmphasis": [
+    "docs/artifact-authorship",
+    "devops/observability",
+    "devops/database",
+    "operating/raw-data-structuring",
+    "strategy/market-research-methods",
+    "devops/data-engineering",
+    "strategy/experimentation"
+  ],
+  "procedureAffinity": [
+    "data-structure",
+    "evidence-ingest",
+    "research-synthesis",
+    "transcript-process"
+  ],
+  "capabilities": [
+    "workflow.evidence-ingest",
+    "workflow.research-synthesis",
+    "workflow.transcript-process",
+    "workflow.data-structure"
+  ],
+  "policyFence": {
+    "allowedPaths": [
+      "docs/analytics/**",
+      ".construct/analytics/**"
+    ],
+    "allowedBdLabels": [
+      "analytics",
+      "metrics"
+    ],
+    "allowedCommands": [
+      "bd create",
+      "bd note",
+      "bd update"
+    ],
+    "approvalRequired": [
+      "commit",
+      "push",
+      "edit:lib/**",
+      "edit:bin/**"
+    ]
+  },
+  "events": [],
+  "artifactClasses": [],
+  "watchConditions": [],
+  "permissions": {},
+  "participationRules": [
+    {
+      "id": "cost-quant-review",
+      "when": {
+        "signalExpr": "cost"
+      },
+      "workerProfiles": [
+        "data-analyst"
+      ],
+      "assignmentRole": "reviewer",
+      "gate": "advisory",
+      "reason": "cost/quant"
+    },
+    {
+      "id": "data-quality-review",
+      "when": {
+        "signalExpr": "data"
+      },
+      "workerProfiles": [
+        "data-analyst"
+      ],
+      "assignmentRole": "reviewer",
+      "gate": "advisory",
+      "reason": "data/quant"
+    }
+  ],
+  "toolGrants": [
+    "Read",
+    "Grep",
+    "Glob",
+    "LS",
+    "Bash",
+    "list_skills",
+    "get_skill",
+    "search_skills",
+    "memory_search",
+    "memory_add_observations"
+  ]
+}

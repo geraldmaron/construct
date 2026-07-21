@@ -38,7 +38,7 @@ docs/
 ├── README.md                  # Required docs contract and navigation index
 └── architecture.md            # Canonical architecture and invariants
 
-.cx/
+.construct/
 ├── context.md                 # Human-readable resumable context
 ├── context.json               # Machine-readable resumable context
 └── workflow.json              # Canonical workflow/task state
@@ -46,17 +46,21 @@ docs/
 
 ## Interactive UX (TTY)
 
-When run interactively, `construct init --docs-preset=*` renders a keyboard-driven **full-screen checkbox picker**: all available lanes listed with the default set pre-checked and context-suggested lanes highlighted in the UI. No typing required.
+When run interactively on a real TTY, `construct init` renders keyboard-driven
+menus for documentation setup: **Packs**, **Individual docs**, or **Skip (docs
+folder only)**. Follow-up pack and lane pickers use the same menu pattern.
 
 - **↑ / ↓**: move cursor (details shown in a dedicated panel)
-- **Space**: toggle lane on/off
-- **a**: toggle all on/off
-- **Enter**: confirm and scaffold
-- Follow-up choices use the same menu pattern instead of free-text answers
+- **Space**: toggle lane on/off (individual lane picker)
+- **Enter**: confirm selection
+- **Q / Esc**: cancel
 
-The single canonical drop zone for ingestable files is `inbox/` at the project root (ADR-0045 §C); `construct init` scaffolds it with a gitignored `inbox/.staging/` for atomic handoff. The `intake` docs lane (`docs/intake/`) is a separate, optional durable paper-trail lane for intake batch records — it is not a watched drop zone.
+CI and non-TTY runs cannot exercise raw keyboard menus reliably. Automated
+coverage uses `CONSTRUCT_PROMPT_SCRIPT_FILE` (see
+`tests/functional/init-docs-menu.functional.test.mjs` and
+`lib/prompt-harness.mjs`) to queue scripted answers without manual input.
 
-When run non-interactively (`--yes` or piped stdin), the lean default set is used unless `--docs=` is supplied. `--docs=lean|product|full` or `--docs=adrs,prds,rfcs` both work.
+When run non-interactively (`--yes` or piped stdin), the default is **docs/ only** — no lane templates unless you pass `--docs-preset=lean|product|full`, `--docs=adrs,prds,rfcs`, or `--docs=all of them` (lean pack).
 
 ---
 
@@ -87,7 +91,7 @@ When run non-interactively (`--yes` or piped stdin), the lean default set is use
 | Has meeting minutes, agendas, retros, or standups | meetings |
 | Has `src/`, `lib/`, `api/`, or `services/` | rfcs |
 | Has research, customer, or market files | briefs |
-| Any project with decisions and requirements | adrs, prds (always lean default) |
+| Any project with decisions and requirements | adrs, prds (suggest when context warrants; not auto-scaffolded) |
 
 ---
 
@@ -95,9 +99,9 @@ When run non-interactively (`--yes` or piped stdin), the lean default set is use
 
 The required core documents are the operational state surface for the repo. All LLMs working here should read and maintain them:
 
-- `.cx/context.md`
-- `.cx/context.json`
-- `.cx/workflow.json`
+- `.construct/context.md`
+- `.construct/context.json`
+- `.construct/workflow.json`
 - `docs/README.md`
 - `docs/architecture.md`
 
@@ -161,9 +165,9 @@ Link to `docs/decisions/adr/` or the canonical project decision log used in this
 
 After creating the files, instruct the user:
 
-> After init, all LLMs working in this repo should read `.cx/context.md`, `.cx/context.json`, `.cx/workflow.json`, `docs/README.md`, and `docs/architecture.md` as project state. When work changes project reality, update the affected file before calling the work done.
+> After init, all LLMs working in this repo should read `.construct/context.md`, `.construct/context.json`, `.construct/workflow.json`, `docs/README.md`, and `docs/architecture.md` as project state. When work changes project reality, update the affected file before calling the work done.
 
-Also create or update `.cx/context.md` with a summary of what was just set up:
+Also create or update `.construct/context.md` with a summary of what was just set up:
 
 ```markdown
 # Project Context
@@ -173,7 +177,7 @@ Updated: [date]
 ## Documentation structure initialized
 
 Created docs/ with: [list created dirs]
-Core docs: .cx/context.md, .cx/context.json, .cx/workflow.json, docs/README.md, docs/architecture.md
+Core docs: .construct/context.md, .construct/context.json, .construct/workflow.json, docs/README.md, docs/architecture.md
 Project type: [type]
 Stack: [stack]
 
@@ -187,8 +191,14 @@ Stack: [stack]
 ## Routing
 
 After completing the docs init:
-- If the user has architecture questions → `@cx-explorer` or `@cx-docs-keeper` to explore and update `docs/architecture/`
+- If the user has architecture questions → Worker Profile `researcher` (codebase exploration) or `architect` to explore and update `docs/architecture/`; `operations` owns durable doc currency
 - If the user wants to document a decision → record it in `docs/decisions/adr/` using the ADR template
-- If the user wants to add API docs → `@cx-docs-keeper` to generate stubs from code
+- If the user wants to add API docs → `operations` (docs overlay) to generate stubs from code
 - If the user wants to file an incident report → use `docs/postmortems/` with the incident-report template
 - If the user wants to document a release → use `docs/changelogs/` with the changelog-entry template
+
+## Shared authorship contract
+
+Before drafting or reviewing, call `get_skill("docs/artifact-authorship")` for framing, template population, storytelling, human voice, adversarial review, anti-fabrication, and cross-persona triggers. Persona overlays under `skills/perspectives/` add failure modes; they do not waive that contract.
+
+**Before you write (voice):** prefer contractions (`don't`/`won't`/`can't`); avoid spaced em dashes (` — `); refuse AI tells (delve, leverage, robust as filler, "it's important to note", "In today's…", "This ensures that…", empty tricolons); sound like a careful colleague. Exceptions: ACs, legal shall/must not, quoted statute, exact required section titles. See `rules/common/human-voice.md`.

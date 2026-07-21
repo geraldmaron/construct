@@ -24,21 +24,21 @@ import { tempDir } from '../helpers.mjs';
 
 // Every runOrchestration/planRun/executeRun/saveRun call resolves its run
 // store through the machine-scoped state root (ADR-0066), which reads
-// CX_HOME_OVERRIDE/os.homedir() directly rather than the `env` option bag
+// CONSTRUCT_HOME_OVERRIDE/os.homedir() directly rather than the `env` option bag
 // passed to these calls. Pin it for the whole file so these runs never write
 // into the real developer machine's ~/.construct/projects/.
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-exec-state-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 test.after(() => {
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 const MODEL = 'anthropic/claude-sonnet-4-6';
-const ENV = { CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL };
+const ENV = { CONSTRUCT_MODEL_REASONING: MODEL, CONSTRUCT_MODEL_STANDARD: MODEL, CONSTRUCT_MODEL_FAST: MODEL };
 
 // ── inline backend: prepare-only run ────────────────────────────────────────
 
@@ -50,7 +50,7 @@ test('a prepare-only run reports executionState=prepared at task AND run level',
   );
   assert.equal(run.workerBackend, 'inline');
   assert.equal(run.status, 'completed-prepare-only');
-  assert.ok(run.tasks.length >= 2, 'multiple specialists sequenced');
+  assert.ok(run.tasks.length >= 2, 'multiple Worker Profiles sequenced');
   assert.ok(run.tasks.every((t) => t.executionState === 'prepared'), 'every task carries executionState=prepared');
   assert.equal(run.executionState, 'prepared', 'the run-level aggregate is prepared');
 });
@@ -59,7 +59,7 @@ test('a prepare-only run reports executionState=prepared at task AND run level',
 
 test('an all-succeeding provider run aggregates to executionState=executed at run level', async () => {
   const cwd = tempDir('cx-exec-state-executed-', test);
-  const fetchImpl = async () => ({ ok: true, json: async () => ({ content: [{ type: 'text', text: 'specialist output' }] }) });
+  const fetchImpl = async () => ({ ok: true, json: async () => ({ content: [{ type: 'text', text: 'Worker Profile output' }] }) });
   const run = await runOrchestration(
     { request: 'refactor the auth module and review for security', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 4, moduleCount: 2 },
     { env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test' }, cwd, workerBackend: 'provider', fetchImpl },
@@ -69,19 +69,37 @@ test('an all-succeeding provider run aggregates to executionState=executed at ru
   assert.equal(run.executionState, 'executed');
 });
 
+test('a quality-gate hard failure degrades the run and host metadata', async () => {
+  const cwd = tempDir('cx-exec-state-quality-gate-', test);
+  const fetchImpl = async () => ({ ok: true, json: async () => ({ content: [{ type: 'text', text: 'See https://example.com/invented for details.' }] }) });
+  const run = await runOrchestration(
+    { request: 'Implement the API. Do not invent URLs.', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 4, moduleCount: 2 },
+    { env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test' }, cwd, workerBackend: 'provider', fetchImpl },
+  );
+  run.tasks[0].evidenceGate = { ok: false, kind: 'external', citationCount: 0, reason: 'missing citation' };
+  const metadata = hostAdapterMetadata(run);
+
+  assert.equal(run.status, 'degraded');
+  assert.equal(run.executionState, 'degraded-executed');
+  assert.equal(run.degradationReason, 'quality-gate-hard-fail');
+  assert.ok(run.tasks.every((task) => task.qualityGate?.hardFail));
+  assert.ok(metadata.tasks.every((task) => task.qualityGate?.hardFail));
+  assert.deepEqual(metadata.tasks[0].evidenceGate, run.tasks[0].evidenceGate);
+});
+
 // ── provider backend: failure precedence ────────────────────────────────────
 
 test('any failed task makes the run-level executionState=failed, even alongside executed tasks', async () => {
   const cwd = tempDir('cx-exec-state-failed-', test);
-  // Fail every attempt for the first distinct persona (system prompt) seen —
-  // that specialist's provider is down for the whole task, not just one
-  // attempt — while every other specialist succeeds on its first call.
+  // Fail every attempt for the first distinct Worker Profile prompt seen; that
+  // provider is down for the whole task while every other Worker Profile
+  // succeeds on its first call.
   let downSystem = null;
   const fetchImpl = async (url, opts) => {
     const { system } = JSON.parse(opts.body);
     if (downSystem === null) downSystem = system;
     if (system === downSystem) return { ok: false, status: 500, text: async () => 'boom' };
-    return { ok: true, json: async () => ({ content: [{ type: 'text', text: 'specialist output' }] }) };
+    return { ok: true, json: async () => ({ content: [{ type: 'text', text: 'Worker Profile output' }] }) };
   };
   const planned = await planRun(
     { request: 'refactor the auth module and review for security', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 4, moduleCount: 2 },
@@ -101,22 +119,21 @@ test('any failed task makes the run-level executionState=failed, even alongside 
 
 // ── provider backend: degraded-executed precedence ──────────────────────────
 
-test('a solo-mode persona fallback aggregates the run to executionState=degraded-executed', async () => {
+test('a solo-mode Worker Profile fallback aggregates the run to executionState=degraded-executed', async () => {
   const cwd = tempDir('cx-exec-state-degraded-', test);
-  const fetchImpl = async () => ({ ok: true, json: async () => ({ content: [{ type: 'text', text: 'specialist output' }] }) });
+  const fetchImpl = async () => ({ ok: true, json: async () => ({ content: [{ type: 'text', text: 'Worker Profile output' }] }) });
   const planned = await planRun(
-    { request: 'do something with an unregistered specialist role', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 4 },
+    { request: 'do something with an unregistered Worker Profile', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 4 },
     { env: ENV, cwd },
   );
-  // Force a persona-fallback task deterministically: swap in a role the pack
-  // registry does not declare a prompt for, rather than relying on the
-  // request text to route to an unknown specialist. executeRun reloads the
-  // run from the store, so the mutated task must be persisted first.
-  planned.tasks[0].role = 'cx-totally-unknown-specialist';
+  // Force a Worker Profile fallback deterministically by assigning an unknown
+  // profile instead of relying on request routing. executeRun reloads the run
+  // from the store, so the mutated task must be persisted first.
+  planned.tasks[0].workerProfileId = 'cx-totally-unknown-worker-profile';
   saveRun(cwd, planned);
   const run = await executeRun(cwd, planned.runId, { env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test' }, workerBackend: 'provider', fetchImpl });
 
-  assert.ok(run.tasks.some((t) => t.executionState === 'degraded-executed'), 'at least one task fell back to the solo-mode persona');
+  assert.ok(run.tasks.some((t) => t.executionState === 'degraded-executed'), 'at least one task fell back to the solo-mode Worker Profile');
   assert.equal(run.executionState, 'degraded-executed');
 });
 
@@ -154,7 +171,7 @@ test('hostAdapterMetadata re-derives executionState for a pre-F4 legacy run reco
     executionSemantics: 'legacy',
     // Pre-F1 tasks: no executionState field at all.
     tasks: [
-      { id: 't1', role: 'cx-engineer', status: 'prepared', executor: 'inline:prepared' },
+      { id: 't1', workerProfileId: 'engineer', status: 'prepared', executor: 'inline:prepared' },
     ],
   };
   const meta = hostAdapterMetadata(legacyRun);

@@ -51,8 +51,8 @@ test('evidence-brief sources table carries Reliability and Credibility columns',
   assert.deepEqual(errors, []);
 });
 
-test('cx-researcher prompt teaches claim-relative classing and the grade', () => {
-  const prompt = read('specialists/prompts/cx-researcher.md');
+test('researcher prompt teaches claim-relative classing and the grade', () => {
+  const prompt = read('registry/worker-profiles/prompts/researcher.md');
   assert.match(prompt, /relative to the claim/);
   assert.match(prompt, /Admiralty/);
   assert.match(prompt, /research-sources\.md/);

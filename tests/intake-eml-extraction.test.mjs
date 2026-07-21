@@ -62,10 +62,10 @@ test('plain-text RFC 5322 email produces Subject + From + Date + body', (t) => {
 
   const result = extractDocumentText(file);
   assert.equal(result.extension, '.eml');
-  assert.equal(result.extractionMethod, 'eml');
+  assert.equal(result.extractionMethod, 'eml-mailparser');
   assert.match(result.text, /Subject: Checkout is broken on Safari/);
-  assert.match(result.text, /From: Alice <alice@example.com>/);
-  assert.match(result.text, /Date: Mon, 19 May 2025 14:22:11 \+0000/);
+  assert.match(result.text, /From: .*alice@example.com/);
+  assert.match(result.text, /Date: .*2025/);
   assert.match(result.text, /Cart fails to load after the last deploy\./);
   assert.deepEqual(result.attachments, []);
 });
@@ -224,4 +224,17 @@ test('AC3: an attachment at/over the zip-bomb ratio threshold is refused, not si
   assert.deepEqual(result.attachments, []);
   assert.equal(result.attachmentProvenance[0].disposition, 'quarantined');
   assert.match(result.attachmentProvenance[0].quarantineReason, /zip-bomb threshold/);
+});
+
+test('construct-tsyfe.2.8: hand-rolled MIME helpers are absent from document-extract.mjs', () => {
+  const src = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'lib', 'document-extract.mjs'), 'utf8');
+  for (const name of [
+    'parseRfc5322Headers',
+    'parseContentType',
+    'splitMultipart',
+    'decodeTransferEncoded',
+    'walkMimeForPlainText',
+  ]) {
+    assert.doesNotMatch(src, new RegExp(`function ${name}\\b`), `${name} should be removed`);
+  }
 });

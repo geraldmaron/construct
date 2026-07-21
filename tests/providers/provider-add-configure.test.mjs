@@ -3,7 +3,7 @@
  *
  * Spawns the real `bin/construct` binary against an isolated tmpdir project
  * so `provider add` and `provider configure` are exercised end to end: real
- * process spawn, real exit codes, real `.cx/providers/<id>.json` persistence.
+ * process spawn, real exit codes, real `.construct/providers/<id>.json` persistence.
  * Covers jira, github, and slack manifests, the ADR-0060 filter block
  * (valid + invalid), and the configure → status round-trip.
  */
@@ -21,7 +21,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(ROOT, 'bin', 'construct');
 
 // The spawned `construct` binary resolves the machine-scoped state root
-// (ADR-0066) from process.env.CX_HOME_OVERRIDE / HOME in its own process, so
+// (ADR-0066) from process.env.CONSTRUCT_HOME_OVERRIDE / HOME in its own process, so
 // every spawn below must be pinned to a throwaway home or it leaks a
 // project-key directory into the real developer machine's ~/.construct/projects/.
 const HOME_DIR = mkdtempSync(join(tmpdir(), 'construct-provider-configure-home-'));
@@ -31,7 +31,7 @@ function run(args, { cwd = ROOT } = {}) {
   return spawnSync(process.execPath, [BIN, ...args], {
     cwd,
     encoding: 'utf8',
-    env: { ...process.env, HOME: HOME_DIR, CX_HOME_OVERRIDE: HOME_DIR },
+    env: { ...process.env, HOME: HOME_DIR, CONSTRUCT_HOME_OVERRIDE: HOME_DIR },
   });
 }
 

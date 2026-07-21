@@ -79,7 +79,7 @@ function assertFlowStateSmoke(command) {
   try {
     const markerPath = join(env.project, 'steps.log');
     const flowPath = writeFlowModule(env.project, markerPath);
-    const spawnEnv = sterileSpawnEnv({ HOME: env.HOME, CX_HOME_OVERRIDE: env.HOME });
+    const spawnEnv = sterileSpawnEnv({ HOME: env.HOME, CONSTRUCT_HOME_OVERRIDE: env.HOME });
 
     const resume = spawnSync(command[0], [...command.slice(1), 'flow', 'resume', 'smoke-run-1', `--flow=${flowPath}`, '--state={"count":0}'], {
       cwd: env.project,
@@ -108,7 +108,7 @@ function assertFlowStateSmoke(command) {
     assert.equal(checkpoint.run.status, 'completed');
     assert.deepEqual(checkpoint.run.completed, ['a', 'b']);
 
-    assert.equal(existsSync(join(env.project, '.cx')), false, 'the flow engine writes nothing into the project tree');
+    assert.equal(existsSync(join(env.project, '.construct')), false, 'the flow engine writes nothing into the project tree');
 
     const status = spawnSync(command[0], [...command.slice(1), 'flow', 'status', 'smoke-run-1'], {
       cwd: env.project,

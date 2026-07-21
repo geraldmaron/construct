@@ -36,7 +36,7 @@ function run(cwd, args, env = {}) {
   return spawnSync('node', [BIN, 'orchestrate', ...args], {
     cwd,
     encoding: 'utf8',
-    env: { ...process.env, HOME: cwd, USERPROFILE: cwd, OPENROUTER_API_KEY: '', ANTHROPIC_API_KEY: '', CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL, ...env },
+    env: { ...process.env, HOME: cwd, USERPROFILE: cwd, OPENROUTER_API_KEY: '', ANTHROPIC_API_KEY: '', CONSTRUCT_MODEL_REASONING: MODEL, CONSTRUCT_MODEL_STANDARD: MODEL, CONSTRUCT_MODEL_FAST: MODEL, ...env },
   });
 }
 

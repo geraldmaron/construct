@@ -18,7 +18,7 @@ sources:
 
 outputs:
   - type: markdown
-    path: .cx/snapshot.md
+    path: .construct/snapshot.md
 
 snapshot:
   intervalMs: 120000

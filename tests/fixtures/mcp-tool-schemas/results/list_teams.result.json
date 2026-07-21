@@ -60,9 +60,9 @@
             ],
             "specialists": [
               "cx-ai-engineer",
-              "cx-architect",
-              "cx-engineer",
-              "cx-debugger",
+              "architect",
+              "engineer",
+              "debugger",
               "cx-platform-engineer",
               "cx-data-engineer"
             ],
@@ -142,7 +142,7 @@
               "legal-compliance"
             ],
             "specialists": [
-              "cx-security",
+              "security",
               "cx-legal-compliance"
             ],
             "collaborators": [],
@@ -225,7 +225,7 @@
               "docs-keeper"
             ],
             "specialists": [
-              "cx-operations",
+              "operations",
               "cx-sre",
               "cx-release-manager",
               "cx-docs-keeper"
@@ -353,7 +353,7 @@
               "accessibility-team"
             ],
             "specialists": [
-              "cx-designer"
+              "designer"
             ],
             "decisionRights": [
               "intake-triage",
@@ -398,7 +398,7 @@
               "research-team"
             ],
             "specialists": [
-              "cx-product-manager"
+              "product-manager"
             ],
             "decisionRights": [
               "intake-triage",
@@ -437,7 +437,7 @@
               "ux-research-team"
             ],
             "specialists": [
-              "cx-researcher"
+              "researcher"
             ],
             "decisionRights": [
               "intake-triage",
@@ -559,8 +559,8 @@
             "specialists": [
               "cx-evaluator",
               "cx-devil-advocate",
-              "cx-reviewer",
-              "cx-qa",
+              "reviewer",
+              "qa",
               "cx-trace-reviewer",
               "cx-test-automation"
             ],
@@ -645,11 +645,11 @@
               "orchestrator"
             ],
             "specialists": [
-              "cx-orchestrator",
+              "orchestrator",
               "cx-oracle",
               "cx-rd-lead",
               "cx-business-strategist",
-              "cx-data-analyst",
+              "data-analyst",
               "cx-explorer"
             ],
             "collaborators": [],
@@ -988,7 +988,7 @@
           "accessibility-team"
         ],
         "specialists": [
-          "cx-designer"
+          "designer"
         ],
         "decisionRights": [
           "intake-triage",
@@ -1029,9 +1029,9 @@
         ],
         "specialists": [
           "cx-ai-engineer",
-          "cx-architect",
-          "cx-engineer",
-          "cx-debugger",
+          "architect",
+          "engineer",
+          "debugger",
           "cx-platform-engineer",
           "cx-data-engineer"
         ],
@@ -1074,7 +1074,7 @@
           "legal-compliance"
         ],
         "specialists": [
-          "cx-security",
+          "security",
           "cx-legal-compliance"
         ],
         "collaborators": [],
@@ -1117,7 +1117,7 @@
           "docs-keeper"
         ],
         "specialists": [
-          "cx-operations",
+          "operations",
           "cx-sre",
           "cx-release-manager",
           "cx-docs-keeper"
@@ -1170,7 +1170,7 @@
           "research-team"
         ],
         "specialists": [
-          "cx-product-manager"
+          "product-manager"
         ],
         "decisionRights": [
           "intake-triage",
@@ -1212,8 +1212,8 @@
         "specialists": [
           "cx-evaluator",
           "cx-devil-advocate",
-          "cx-reviewer",
-          "cx-qa",
+          "reviewer",
+          "qa",
           "cx-trace-reviewer",
           "cx-test-automation"
         ],
@@ -1258,7 +1258,7 @@
           "ux-research-team"
         ],
         "specialists": [
-          "cx-researcher"
+          "researcher"
         ],
         "decisionRights": [
           "intake-triage",
@@ -1297,11 +1297,11 @@
           "orchestrator"
         ],
         "specialists": [
-          "cx-orchestrator",
+          "orchestrator",
           "cx-oracle",
           "cx-rd-lead",
           "cx-business-strategist",
-          "cx-data-analyst",
+          "data-analyst",
           "cx-explorer"
         ],
         "collaborators": [],

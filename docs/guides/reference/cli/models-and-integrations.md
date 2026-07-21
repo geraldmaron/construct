@@ -8,10 +8,10 @@ description: Models & Integrations commands for Construct.
 | Command | What it does |
 |---|---|
 | `construct acp` | Run Construct as an Agent Client Protocol (ACP) server over stdio for Zed/JetBrains/VS Code ACP clients |
-| `construct capability` | Describe what this Construct install can do (embedded contract; read-only, secret-free) |
+| `construct capability` | Inspect typed operations the system can perform |
 | `construct claude:allow` | Manage Claude Code `permissions.allow` from the outside (auto-classifier blocks the agent from editing it) |
 | `construct db` | Inspect and migrate the optional Postgres backend |
-| `construct execution` | Resolve the execution-capability contract for an embedded workflow (orchestrated vs prompt-only; descriptive, not enforced) |
+| `construct execution` | Resolve the execution-capability contract for an embedded procedure (orchestrated vs prompt-only; descriptive, not enforced) |
 | `construct flow` | Deterministic flow-engine runs: start or resume a checkpointed flow, or inspect its status |
 | `construct hosts` | Show host support for Construct orchestration |
 | `construct mcp` | Manage MCP integrations |
@@ -32,17 +32,19 @@ construct acp
 
 ## construct capability
 
-Describe what this Construct install can do (embedded contract; read-only, secret-free)
+Inspect typed operations the system can perform
 
 **Usage**
 
 ```bash
-construct capability describe --json
+construct capability list|show|describe
 ```
 
 **Subcommands**
 
-- `describe --json` — Emit versions, interfaces, roles, skills, workflows, schemas, models, policies, telemetry, plugins
+- `list` — List capabilities
+- `show <id>` — Show one capability
+- `describe` — Emit the read-only capability contract for this install (--json)
 
 ## construct claude:allow
 
@@ -71,7 +73,7 @@ construct db <status|migrate> [--json]
 
 ## construct execution
 
-Resolve the execution-capability contract for an embedded workflow (orchestrated vs prompt-only; descriptive, not enforced)
+Resolve the execution-capability contract for an embedded procedure (orchestrated vs prompt-only; descriptive, not enforced)
 
 **Usage**
 
@@ -141,10 +143,10 @@ construct models <list|set|free|reset|resolve|policy|explain>
 - `set --tier=<reasoning|standard|fast> --model=<model>` — Set a model for a tier
 - `free` — List available free models
 - `reset` — Reset all tier assignments
-- `resolve --json` — Resolve the model for an embedded workflow given host context
+- `resolve --json` — Resolve the model for an embedded procedure given host context
 - `policy show` — Show the effective policy: winning source per tier + work-category map
-- `policy set <budget|free|frontier|local>` — Compute a preset and persist it to specialists/org/models.json
-- `explain --role <specialist>` — Per-specialist model resolution trace
+- `policy set <budget|free|frontier|local>` — Compute a preset and persist it to registry/models.json
+- `explain --worker-profile <id>` — Per-worker-profile model resolution trace
 
 ## construct orchestrate
 
@@ -158,7 +160,7 @@ construct orchestrate <run|status|preflight> [options] [--remote]
 
 **Subcommands**
 
-- `run "<request>" [--strategy S] [--host H] [--worker-backend provider] [--no-construct] [--no-execute] [--json] [--remote]` — Plan and run a request through a Construct-owned specialist chain; --remote drives the local daemon over HTTP
+- `run "<request>" [--strategy S] [--host H] [--worker-backend provider] [--no-construct] [--no-execute] [--json] [--remote]` — Plan and run a request through Construct-owned worker assignments; --remote drives the local daemon over HTTP
 - `status [run-id] [--json] [--remote]` — Inspect a run, or list recent runs (locally or from the daemon)
 - `preflight [--host H] [--json] [--no-probe]` — Verify orchestration tool attachment/readiness and return a typed reason plus recovery step
 

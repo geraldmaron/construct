@@ -11,29 +11,35 @@ Set TypingSpeed 42ms
 Type "node bin/construct --demo=profile-doctor-health"
 Sleep 800ms
 Enter
-Sleep 3s
+Wait /[$>%›]|construct|Construct|PASS|FAIL|Step/
+Sleep 400ms
 
 Type "/demo steps"
 Sleep 400ms
 Enter
-Sleep 2s
+Wait /[$>%›]|construct|Construct|PASS|FAIL|Step/
+Sleep 400ms
 
 Type "/demo next"
 Sleep 400ms
 Enter
-Sleep 2s
+Wait /[$>%›]|construct|Construct|PASS|FAIL|Step/
+Sleep 400ms
 
 Type "/demo next"
 Sleep 400ms
 Enter
-Sleep 2s
+Wait /[$>%›]|construct|Construct|PASS|FAIL|Step/
+Sleep 400ms
 
 Type "/demo next"
 Sleep 400ms
 Enter
-Sleep 2s
+Wait /[$>%›]|construct|Construct|PASS|FAIL|Step/
+Sleep 400ms
 
 Type "/exit"
 Sleep 400ms
 Enter
-Sleep 1s
+Wait /[$>%›]|construct|Construct|PASS|FAIL|Step/
+Sleep 400ms

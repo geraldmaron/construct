@@ -14,17 +14,20 @@ import test from 'node:test';
 
 import {
   buildOrchestrationReadiness,
+  formatOrchestrationReadinessGuidance,
+  loadOrchestrationReadinessEvents,
   recordOrchestrationReadinessEvent,
   summarizeOrchestrationReadiness,
+  summarizeOrchestrationReadinessMttr,
 } from '../lib/orchestration/readiness.mjs';
 import { doctorRoot } from '../lib/config/xdg.mjs';
 
 // A resolvable model on the env is required for a PASS verdict: attachment
 // alone does not imply orchestration_run would actually serve on this env.
 const RESOLVABLE_ENV = {
-  CX_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
-  CX_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6',
-  CX_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
+  CONSTRUCT_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
+  CONSTRUCT_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6',
+  CONSTRUCT_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
   ANTHROPIC_API_KEY: 'sk-test-canary',
 };
 
@@ -48,12 +51,31 @@ test('readiness reports tool_unlisted when orchestration_run is not flat or gate
     observedTools: ['orchestration_policy', 'call'],
     reachableTools: ['workflow_invoke'],
     observationScope: 'host-session',
+    host: 'Cursor',
   }, { env: {}, cwd: '/tmp/project' });
 
   assert.equal(readiness.verdict, 'fail');
   assert.equal(readiness.reasonCode, 'tool_unlisted');
+  assert.equal(readiness.expectedUntilHostSync, false);
   assert.deepEqual(readiness.missingTools, ['orchestration_run']);
   assert.match(readiness.nextStep, /construct sync/);
+});
+
+test('tool_unlisted on local-config marks expectedUntilHostSync with teaching guidance', () => {
+  const readiness = buildOrchestrationReadiness({
+    observationScope: 'local-config',
+  }, { env: {}, cwd: '/tmp/fresh-project' });
+
+  assert.equal(readiness.verdict, 'fail');
+  assert.equal(readiness.reasonCode, 'tool_unlisted');
+  assert.equal(readiness.expectedUntilHostSync, true);
+  assert.match(readiness.diagnosticBundle.detail, /expected in a fresh project/);
+  assert.match(readiness.nextStep, /construct sync/);
+  assert.match(summarizeOrchestrationReadiness(readiness), /expected-until-host-sync/);
+  const guidance = formatOrchestrationReadinessGuidance(readiness);
+  assert.match(guidance, /Setup note/);
+  assert.match(guidance, /construct sync/);
+  assert.match(guidance, /not that the Construct install itself failed/);
 });
 
 test('readiness reports host_not_attached for host-session checks with no observed tools', () => {
@@ -107,6 +129,28 @@ test('readiness telemetry writes a redacted local event', () => {
     assert.equal(event.reasonCode, 'attached');
     assert.ok(eventPath.startsWith(doctorRoot(home)));
     assert.match(fs.readFileSync(eventPath, 'utf8'), /orchestration\.readiness/);
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test('readiness MTTR aggregates fail-to-pass recovery intervals', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-readiness-mttr-'));
+  try {
+    const fail = buildOrchestrationReadiness({ observationScope: 'local-config' }, { env: {}, cwd: '/tmp/project' });
+    recordOrchestrationReadinessEvent(fail, { homeDir: home, at: '2026-07-20T10:00:00.000Z' });
+    const pass = buildOrchestrationReadiness({
+      host: 'Cursor',
+      observedTools: ['orchestration_policy'],
+      reachableTools: ['orchestration_run'],
+    }, { env: RESOLVABLE_ENV, cwd: '/tmp/project' });
+    recordOrchestrationReadinessEvent(pass, { homeDir: home, at: '2026-07-20T10:05:00.000Z' });
+    const events = loadOrchestrationReadinessEvents({ homeDir: home });
+    const mttr = summarizeOrchestrationReadinessMttr(events);
+    assert.equal(mttr.sampleCount, 1);
+    assert.equal(mttr.meanRecoveryMs, 5 * 60 * 1000);
+    assert.equal(mttr.recoveries[0].fromReason, 'tool_unlisted');
+    assert.equal(mttr.recoveries[0].toReason, 'attached');
   } finally {
     fs.rmSync(home, { recursive: true, force: true });
   }

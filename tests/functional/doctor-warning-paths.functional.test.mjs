@@ -1,8 +1,8 @@
 /**
  * doctor-warning-paths.functional.test.mjs — doctor messages that reference
  * a path must reference the real one. The original defect: "Contract
- * violations (66 in last 24h — see ~/.cx/contract-violations.jsonl)"
- * pointed at the home dir, but the file moved to .cx/ in the project root.
+ * violations (66 in last 24h — see ~/.construct/contract-violations.jsonl)"
+ * pointed at the home dir, but the file moved to .construct/ in the project root.
  * Users went looking, didn't find it, ignored the warning.
  *
  * Strategy: run `construct doctor` against a fixture project that contains
@@ -25,7 +25,7 @@ test('contract-violations doctor warning prints the real project-scoped path', (
   const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'doctor-home-'));
   try {
     // package.json signals to resolveProjectScopedPath that fakeRoot is a
-    // project root, so the violation log resolves under fakeRoot/.cx/.
+    // project root, so the violation log resolves under fakeRoot/.construct/.
 
     fs.writeFileSync(path.join(fakeRoot, 'package.json'), JSON.stringify({ name: 'fixture' }));
     fs.mkdirSync(path.join(fakeRoot, '.construct'), { recursive: true });
@@ -67,8 +67,8 @@ test('contract-violations doctor warning prints the real project-scoped path', (
 Got: ${violationsLine}`,
     );
     assert.ok(
-      !violationsLine.includes('~/.cx/contract-violations.jsonl'),
-      `Contract violations line should not still reference the stale ~/.cx/ path.
+      !violationsLine.includes('~/.construct/contract-violations.jsonl'),
+      `Contract violations line should not still reference the stale ~/.construct/ path.
 Got: ${violationsLine}`,
     );
   } finally {

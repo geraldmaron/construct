@@ -8,7 +8,7 @@ cx_fixture_source: templates/docs/backlog-proposal.md
 
 ## Source evidence
 
-This paragraph supports the Source evidence section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Source evidence section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Source evidence section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Source evidence section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Source evidence section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Source evidence section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Proposed changes
 
@@ -24,4 +24,4 @@ Fixture content for Approval request.
 
 ## References
 
-- https://example.com/fixture-source (accessed 2026-06-22)
+- [Example fixture source](https://example.com/fixture-source) (accessed 2026-06-22)

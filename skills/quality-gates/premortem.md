@@ -35,3 +35,4 @@ A premortem inverts optimism: instead of asking "will this work?", it asserts "i
 - Failure modes are concrete mechanisms, not vague worries ("it might be hard").
 - Each fatal mode names the specific assumption it rests on.
 - Likelihoods are stated as judgments, labeled as such — not presented as data.
+- When the plan is an artifact (PRD, ADR, strategy), also check fabrication risk: invented metrics, unsourced legal claims, missing Phase Why?, skipped cross-persona triggers. See `rules/common/no-fabrication.md` and `skills/docs/artifact-authorship.md`. Flag AI-voice / em-dash theater against `rules/common/human-voice.md`.

@@ -14,6 +14,11 @@
 
 - [_template.md](./templates/_template.md)
 
+## Host certification
+
+- [host-adapter-certification.md](./host-adapter-certification.md)
+- [orchestration-startup-to-invocation.md](./orchestration-startup-to-invocation.md)
+
 ## Immediate operator checks
 
 - `construct status`

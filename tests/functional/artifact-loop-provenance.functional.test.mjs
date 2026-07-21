@@ -2,20 +2,12 @@
  * tests/functional/artifact-loop-provenance.functional.test.mjs —
  * author_artifact durable provenance (construct-ifwhw.2).
  *
- * Before this bead, `runConstructArtifactLoop` (lib/artifact-loop-core.mjs)
- * invoked its workflow plan with `approvalMode: 'proposal-only'`, so the
- * embedded-contract layer never wrote its own durable record; the authored
- * artifact file — when one got written at all — was the only trace an
- * `author_artifact` call had happened. This suite drives the real MCP
- * `author_artifact` entrypoint (lib/mcp/tools/artifact-author.mjs) against a
- * fresh mkdtemp project and asserts, by reading `.construct/observations/*.json`
- * back off disk, that a provenance record now exists in both branches:
+ * Drives the real artifact loop (runConstructArtifactLoop) against a fresh
+ * mkdtemp project and asserts, by reading `.construct/observations/*.json`
+ * back off disk, that a provenance record exists in both branches:
  *
- *   - no draft content to materialize (artifact FILE not written)
- *   - a full draft supplied (artifact FILE written)
- *
- * and that the artifact-file-writing behavior itself is unchanged: the first
- * case still writes zero bytes to the artifact path.
+ *   - no host draft supplied (template scaffold materialized)
+ *   - a full draft supplied (artifact FILE written from caller content)
  */
 
 import assert from 'node:assert/strict';
@@ -25,7 +17,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
-import { authorArtifact } from '../../lib/mcp/tools/artifact-author.mjs';
+import { runConstructArtifactLoop } from '../../lib/artifact-loop-core.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -40,21 +32,16 @@ function project() {
   return cwd;
 }
 
-// The vector-index leg of addObservation is best exercised deterministically
-// via the hashing embedder (tests/functional/loop-closure.functional.test.mjs
-// sets the same env for the same reason); the durable JSON record this suite
-// asserts on is written before that leg runs either way.
-
 function withHashingEmbeddings(t, cwd) {
   const prevModel = process.env.CONSTRUCT_EMBEDDING_MODEL;
   process.env.CONSTRUCT_EMBEDDING_MODEL = 'hashing';
-  const prevHome = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = cwd;
+  const prevHome = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = cwd;
   t.after(() => {
     if (prevModel === undefined) delete process.env.CONSTRUCT_EMBEDDING_MODEL;
     else process.env.CONSTRUCT_EMBEDDING_MODEL = prevModel;
-    if (prevHome === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prevHome;
+    if (prevHome === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prevHome;
   });
 }
 
@@ -66,20 +53,32 @@ function readObservations(cwd) {
     .map((name) => JSON.parse(fs.readFileSync(path.join(dir, name), 'utf8')));
 }
 
-test('proposal-only: no draft to materialize writes zero artifact-side effects but a provenance record exists', async (t) => {
+function assignedWorkerProfiles(extras, invokePlan) {
+  return invokePlan?.selectedWorkerProfiles
+    ?? extras.selectedWorkerProfiles
+    ?? extras.selectedRoles
+    ?? [];
+}
+
+test('proposal-only: scaffold draft materializes and a provenance record exists', async (t) => {
   const cwd = project();
   withHashingEmbeddings(t, cwd);
 
-  const res = await authorArtifact({
-    artifact_type: 'prd',
-    subject: 'provenance no-draft case',
+  const res = await runConstructArtifactLoop({
+    text: 'provenance no-draft case',
     cwd,
-  }, { ROOT_DIR: REPO });
+    rootDir: REPO,
+    explicit: true,
+    artifactType: 'prd',
+    titleOverride: 'Provenance no-draft case',
+  });
 
-  assert.equal(res.written, false, 'no draft content means the artifact file is not materialized');
-  assert.equal(fs.existsSync(path.join(cwd, res.path)), false, 'artifact file does not exist on disk');
+  assert.notEqual(res.draftMissing, true, 'proposal-only with allowScaffold writes a template scaffold rather than stopping at draftMissing');
+  assert.ok(res.path, 'artifact loop materializes a scaffold draft from the template');
+  assert.equal(fs.existsSync(res.path), true, 'scaffold artifact file exists on disk');
+  assert.ok(fs.statSync(res.path).size > 0, 'scaffold artifact file is non-empty');
 
-  assert.ok(res.provenance, 'author_artifact result carries a provenance summary');
+  assert.ok(res.provenance, 'artifact loop result carries a provenance summary');
   assert.equal(res.provenance.ok, true, `provenance write failed: ${res.provenance.error}`);
   assert.ok(res.provenance.id, 'provenance write returns an observation id');
 
@@ -90,8 +89,8 @@ test('proposal-only: no draft to materialize writes zero artifact-side effects b
   assert.ok(obs.extras.traceId, 'provenance record carries a traceId');
   assert.equal(obs.extras.artifactType, 'prd');
   assert.equal(obs.extras.workflowType, 'prd-draft');
-  assert.ok(Array.isArray(obs.extras.selectedRoles) && obs.extras.selectedRoles.length > 0, 'provenance record carries the recruited specialist set');
-  assert.ok(obs.extras.selectedRoles.every((r) => r.startsWith('cx-')), 'recruited specialists are cx-role ids');
+  const profiles = assignedWorkerProfiles(obs.extras, res.invokePlan);
+  assert.deepEqual(profiles, ['product-manager', 'architect'], 'provenance record carries the Procedure Worker Profile set');
 });
 
 const FULL_DRAFT = [
@@ -116,17 +115,20 @@ test('full-execute: a supplied draft writes both the artifact file and a provena
   const cwd = project();
   withHashingEmbeddings(t, cwd);
 
-  const res = await authorArtifact({
-    artifact_type: 'prd',
-    subject: 'provenance full-execute case',
-    draft_markdown: FULL_DRAFT,
+  const res = await runConstructArtifactLoop({
+    text: 'provenance full-execute case',
     cwd,
-  }, { ROOT_DIR: REPO });
+    rootDir: REPO,
+    explicit: true,
+    artifactType: 'prd',
+    draftMarkdown: FULL_DRAFT,
+    titleOverride: 'Provenance full-execute case',
+  });
 
-  assert.equal(res.written, true, 'a supplied draft materializes the artifact file');
-  assert.equal(fs.existsSync(path.join(cwd, res.path)), true, 'artifact file exists on disk');
+  assert.ok(res.path, 'a supplied draft materializes the artifact file');
+  assert.equal(fs.existsSync(res.path), true, 'artifact file exists on disk');
 
-  assert.ok(res.provenance, 'author_artifact result carries a provenance summary');
+  assert.ok(res.provenance, 'artifact loop result carries a provenance summary');
   assert.equal(res.provenance.ok, true, `provenance write failed: ${res.provenance.error}`);
 
   const observations = readObservations(cwd).filter((o) => o.tags?.includes('artifact-loop'));
@@ -135,6 +137,7 @@ test('full-execute: a supplied draft writes both the artifact file and a provena
   const [obs] = observations;
   assert.ok(obs.extras.traceId, 'provenance record carries a traceId');
   assert.equal(obs.extras.artifactType, 'prd');
-  assert.equal(obs.extras.relPath, res.path, 'provenance record links to the materialized artifact path');
-  assert.ok(Array.isArray(obs.extras.selectedRoles) && obs.extras.selectedRoles.length > 0, 'provenance record carries the recruited specialist set');
+  assert.equal(obs.extras.relPath, res.relPath, 'provenance record links to the materialized artifact path');
+  const profiles = assignedWorkerProfiles(obs.extras, res.invokePlan);
+  assert.ok(profiles.length > 0, 'provenance record carries the assigned Worker Profile set');
 });

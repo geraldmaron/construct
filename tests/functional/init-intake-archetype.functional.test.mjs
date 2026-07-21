@@ -1,20 +1,20 @@
 /**
  * tests/functional/init-intake-archetype.functional.test.mjs
  *
- * End-to-end coverage for Piece C: when a project initializes with a profile
+ * End-to-end coverage for Piece C: when a project initializes with a Workspace Preset
  * whose capabilities.intake block is on, `construct init` scaffolds the
  * archetype shape (an inbox/ drop zone covered by the host .gitignore, plus
- * .cx/intake/manifest.json) and stamps attribution onto Construct-owned
- * artifacts (plan.md, .cx/context.{md,json}). AGENTS.md/CLAUDE.md are user-owned
+ * .construct/intake/manifest.json) and stamps attribution onto Construct-owned
+ * artifacts (plan.md, .construct/context.{md,json}). AGENTS.md/CLAUDE.md are user-owned
  * (bd-authored skeleton plus the fenced Construct block, ADR-0027 §2) and are
  * not Construct-stamped.
  *
  * Cases:
- *   1. rnd profile (capabilities.intake on) → inbox/ ignored, manifest, attribution
+ *   1. rnd Workspace Preset (capabilities.intake on) → inbox/ ignored, manifest, attribution
  *   2. attribution on → createdBy fields on Construct-owned plan.md
  *   3. attribution.disable env var → no createdBy fields
  *   4. idempotent re-run preserves user content under inbox/
- *   5. .cx/context.json carries createdBy attribution
+ *   5. .construct/context.json carries createdBy attribution
  */
 
 import test from 'node:test';
@@ -45,8 +45,8 @@ function makeProject() {
   };
 }
 
-function runInit(cwd, home, { scope = 'rnd', extraEnv = {} } = {}) {
-  return spawnSync(process.execPath, [BIN, 'init', '--yes', `--scope=${scope}`], {
+function runInit(cwd, home, { workspacePreset = 'rnd', extraEnv = {} } = {}) {
+  return spawnSync(process.execPath, [BIN, 'init', '--yes', `--workspace-preset=${workspacePreset}`], {
     cwd,
     encoding: 'utf8',
     timeout: 120_000,
@@ -56,13 +56,13 @@ function runInit(cwd, home, { scope = 'rnd', extraEnv = {} } = {}) {
       BOOTSTRAP_CHECKED: '1',
       CONSTRUCT_AGENT_ID: 'test-agent',
       HOME: home,
-      CX_HOME_OVERRIDE: home,
+      CONSTRUCT_HOME_OVERRIDE: home,
       ...extraEnv,
     },
   });
 }
 
-test('init with rnd scope scaffolds inbox/, .gitignore, and the dedup manifest', () => {
+test('init with the rnd Workspace Preset scaffolds inbox/, .gitignore, and the dedup manifest', () => {
   const p = makeProject();
   try {
     const result = runInit(p.dir, p.home);
@@ -76,7 +76,7 @@ test('init with rnd scope scaffolds inbox/, .gitignore, and the dedup manifest',
     assert.ok(!existsSync(join(inboxDir, '.gitignore')), 'no local inbox/.gitignore keep-file');
 
     const manifestPath = join(p.dir, '.construct', 'intake', 'manifest.json');
-    assert.ok(existsSync(manifestPath), 'expected .cx/intake/manifest.json');
+    assert.ok(existsSync(manifestPath), 'expected .construct/intake/manifest.json');
     const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
     assert.equal(manifest.version, 1);
     assert.deepEqual(manifest.files, {});
@@ -129,7 +129,7 @@ test('init re-run preserves user content dropped under inbox/', () => {
   }
 });
 
-test('init.cx/context.json carries createdBy attribution when capability is on', () => {
+test('init .construct/context.json carries createdBy attribution when capability is on', () => {
   const p = makeProject();
   try {
     const result = runInit(p.dir, p.home);

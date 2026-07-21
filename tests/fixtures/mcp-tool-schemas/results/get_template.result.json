@@ -7,7 +7,7 @@
   "result": {
     "source": "shipped-default",
     "path": "/Users/geralddagher/Developer/Projects/construct/templates/docs/adr.md",
-    "content": "# ADR-{NNN}: {title}\n\n- **Date**: {YYYY-MM-DD}\n- **Status**: proposed | accepted | superseded | deprecated\n- **Deciders**: {names}\n- **Supersedes**: {ADR-NNN or none}\n\n<!--\nBefore drafting, read rules/common/framing.md.\n\nRequired framing rule: every section below must describe the domain\nproblem and the decision. Not the ticket. Not the PRD filename. Not the\nmeeting that prompted the ADR. A principal engineer who has never seen\nthe triggering inputs should be able to read this doc and understand the\ndecision and why it was made.\n\nOwning specialist: cx-architect (see rules/common/doc-ownership.md).\n-->\n\n## Problem\n<!--\nThe decision-forcing tension in the domain. State what is currently\ntrue and what pressure makes a choice unavoidable.\n\nMust NOT reference:\n- Jira/Linear ticket IDs or titles\n- PRD filenames or document structure\n- Chat transcripts or meeting notes\n- Process-level framing (\"we need to decide how to document X\")\n\nShould reference:\n- The constraint that makes this non-trivial\n- The cost of not deciding\n- What is observably broken, ambiguous, or at risk\n-->\n\n## Context\n<!-- Forces at play beyond the core problem. What else is true today that bounds the decision space? Prior ADRs, architectural constraints, external commitments. -->\n\n```mermaid\nflowchart LR\n  A[Current state] --> B[Decision]\n  B --> C[Target state]\n  D[Rejected alt] -.-> B\n```\n\n## Decision\n<!-- The position taken, in one or two sentences. State it as a commitment, not a proposal. -->\n\n## Rationale\n<!-- Why this decision over the alternatives. The load-bearing reasons, cited to the evidence. If the rationale leans on external references (standards, prior art, vendor behavior), cite them. -->\n\n## Rejected alternatives\n<!--\nFor each alternative considered, one paragraph covering:\n- What the alternative was (concretely enough to be evaluated)\n- The specific reason it was rejected (not \"we preferred the chosen option\")\n- What evidence or constraint made it inferior\n\nAn ADR without rejected alternatives is a proposal, not a decision.\n-->\n\n## Consequences\n<!-- What becomes easier, what becomes harder, what is now locked in. Include second-order effects and the new constraints this decision imposes. -->\n\n## Reversibility\n<!-- Is this a one-way or two-way door? What would it take to reverse? Under what conditions would we revisit? -->\n\n## References\n<!-- Primary sources, prior ADRs, research briefs, standards. Execution artifacts (tickets, chat) may be listed for traceability but never as load-bearing reasoning. -->\n",
+    "content": "# ADR-{NNN}: {title}\n\n- **Date**: {YYYY-MM-DD}\n- **Status**: proposed | accepted | superseded | deprecated\n- **Deciders**: {names}\n- **Supersedes**: {ADR-NNN or none}\n\n<!--\nBefore drafting, read rules/common/framing.md.\n\nRequired framing rule: every section below must describe the domain\nproblem and the decision. Not the ticket. Not the PRD filename. Not the\nmeeting that prompted the ADR. A principal engineer who has never seen\nthe triggering inputs should be able to read this doc and understand the\ndecision and why it was made.\n\nOwning specialist: architect (see rules/common/doc-ownership.md).\n-->\n\n## Problem\n<!--\nThe decision-forcing tension in the domain. State what is currently\ntrue and what pressure makes a choice unavoidable.\n\nMust NOT reference:\n- Jira/Linear ticket IDs or titles\n- PRD filenames or document structure\n- Chat transcripts or meeting notes\n- Process-level framing (\"we need to decide how to document X\")\n\nShould reference:\n- The constraint that makes this non-trivial\n- The cost of not deciding\n- What is observably broken, ambiguous, or at risk\n-->\n\n## Context\n<!-- Forces at play beyond the core problem. What else is true today that bounds the decision space? Prior ADRs, architectural constraints, external commitments. -->\n\n```mermaid\nflowchart LR\n  A[Current state] --> B[Decision]\n  B --> C[Target state]\n  D[Rejected alt] -.-> B\n```\n\n## Decision\n<!-- The position taken, in one or two sentences. State it as a commitment, not a proposal. -->\n\n## Rationale\n<!-- Why this decision over the alternatives. The load-bearing reasons, cited to the evidence. If the rationale leans on external references (standards, prior art, vendor behavior), cite them. -->\n\n## Rejected alternatives\n<!--\nFor each alternative considered, one paragraph covering:\n- What the alternative was (concretely enough to be evaluated)\n- The specific reason it was rejected (not \"we preferred the chosen option\")\n- What evidence or constraint made it inferior\n\nAn ADR without rejected alternatives is a proposal, not a decision.\n-->\n\n## Consequences\n<!-- What becomes easier, what becomes harder, what is now locked in. Include second-order effects and the new constraints this decision imposes. -->\n\n## Reversibility\n<!-- Is this a one-way or two-way door? What would it take to reverse? Under what conditions would we revisit? -->\n\n## References\n<!-- Primary sources, prior ADRs, research briefs, standards. Execution artifacts (tickets, chat) may be listed for traceability but never as load-bearing reasoning. -->\n",
     "metadata": {
       "type": "adr",
       "documentClass": "adr",
@@ -30,7 +30,7 @@
         }
       ],
       "primaryOwners": [
-        "cx-architect",
+        "architect",
         "cx-rd-lead"
       ],
       "workflowSkill": "docs/adr-workflow",
@@ -40,20 +40,20 @@
         "proseMinimum": 2,
         "requiredReviewers": [
           "cx-devil-advocate",
-          "cx-reviewer"
+          "reviewer"
         ],
         "optionalReviewers": [
-          "cx-architect"
+          "architect"
         ]
       },
       "authorChain": [
-        "cx-architect",
+        "architect",
         "cx-rd-lead"
       ],
       "reviewerChain": [
         "cx-devil-advocate",
-        "cx-reviewer",
-        "cx-architect"
+        "reviewer",
+        "architect"
       ],
       "validation": {
         "releaseGate": true

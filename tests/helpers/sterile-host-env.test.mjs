@@ -13,7 +13,7 @@ import { readFileSync, mkdtempSync, mkdirSync, writeFileSync, appendFileSync, rm
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
-import { createHostSandbox, fingerprintRealConfigs, assertRealConfigsUnchanged, snapshotRealConfigs, diffRealConfigs } from "./sterile-host-env.mjs";
+import { createHostSandbox, fingerprintRealConfigs, assertRealConfigsUnchanged, snapshotRealConfigs, diffRealConfigs, STERILE_TEST_LEAK_MARKER } from "./sterile-host-env.mjs";
 import { rmTmpDir } from "./cleanup.mjs";
 import { doctorRoot } from "../../lib/config/xdg.mjs";
 
@@ -193,87 +193,111 @@ test("an unparseable ~/.claude.json still trips the guard on content change", ()
   }
 });
 
-// ADR-0084: approvals/queue.jsonl is the bead's named priority target — the audit's
-// truth-matrix (row 42) names it as the one real-state-file class with a claimed
-// historical contamination incident. Like audit-trail.jsonl, it is append-only real
-// session state, so a whole-content hash would flap on legitimate concurrent approval
-// activity; the guard instead counts records tagged via ApprovalQueue's one caller-
-// controlled passthrough field, requestedBy.role, exactly as countAuditTrailTestLeaks
-// counts audit-trail's `"source":"test"` records.
-
-test("real approval-queue records unrelated to tests are not reported as a leak", () => {
-  const home = mkdtempSync(join(tmpdir(), "sterile-approvals-home-"));
+test("hook scratch churn without the sterile test marker is not reported as a leak", () => {
+  const home = mkdtempSync(join(tmpdir(), "sterile-hook-home-"));
   try {
     const stateDir = doctorRoot(home);
-    const approvalsDir = join(stateDir, "approvals");
-    mkdirSync(approvalsDir, { recursive: true });
-    const queuePath = join(approvalsDir, "queue.jsonl");
-    writeFileSync(queuePath, "");
+    mkdirSync(stateDir, { recursive: true });
+    writeFileSync(join(stateDir, "warn-flags.txt"), "readme-age: stale\n");
 
     const before = snapshotRealConfigs(home);
-    appendFileSync(queuePath, JSON.stringify({
-      approvalId: "appr-real-1",
-      toolCall: { tool: "github.pr.merge", args: { number: 42 }, surface: "mcp", argsHash: "deadbeef" },
-      requestedBy: { userId: null, serviceId: null, tenantId: null, sessionId: null, role: "engineer" },
-      state: "awaiting_approval",
-    }) + "\n");
+    appendFileSync(join(stateDir, "warn-flags.txt"), "pending-typecheck: failed\n");
     const drift = diffRealConfigs(before, home);
 
-    assert.equal(drift.approvalQueueLeaks, 0, "a real (non-test-tagged) approval record must not count as a leak");
+    assert.equal(drift.hookScratchLeaks, 0, "real hook scratch churn must not count as a test leak");
   } finally {
     rmTmpDir(home);
   }
 });
 
-test("a test-tagged record appended to the real approval queue is detected as a leak", () => {
-  const home = mkdtempSync(join(tmpdir(), "sterile-approvals-home-"));
+test("a hook scratch marker in real doctorRoot state is detected as a leak", () => {
+  const home = mkdtempSync(join(tmpdir(), "sterile-hook-home-"));
   try {
     const stateDir = doctorRoot(home);
-    const approvalsDir = join(stateDir, "approvals");
-    mkdirSync(approvalsDir, { recursive: true });
-    const queuePath = join(approvalsDir, "queue.jsonl");
-    writeFileSync(queuePath, "");
+    mkdirSync(stateDir, { recursive: true });
+    writeFileSync(join(stateDir, "last-agent.json"), JSON.stringify({ agent: "engineer" }));
 
     const before = snapshotRealConfigs(home);
-    // Same shape ApprovalQueue.enqueue() persists (lib/embed/approval-queue.mjs:83-100):
-    // requestedBy.role is the one caller-controlled field that survives the whitelist.
-    appendFileSync(queuePath, JSON.stringify({
-      approvalId: "appr-test-1",
-      toolCall: { tool: "test", args: {}, surface: "mcp", argsHash: "deadbeef" },
-      requestedBy: { userId: null, serviceId: null, tenantId: null, sessionId: null, role: "__sterile_test__" },
-      state: "awaiting_approval",
-    }) + "\n");
-    appendFileSync(queuePath, JSON.stringify({
-      approvalId: "appr-test-2",
-      toolCall: { tool: "test", args: {}, surface: "mcp", argsHash: "beadfeed" },
-      requestedBy: { userId: null, serviceId: null, tenantId: null, sessionId: null, role: "__sterile_test__" },
-      state: "awaiting_approval",
-    }) + "\n");
+    writeFileSync(
+      join(stateDir, "last-agent.json"),
+      JSON.stringify({ agent: "engineer", note: STERILE_TEST_LEAK_MARKER }),
+    );
     const drift = diffRealConfigs(before, home);
 
-    assert.equal(drift.approvalQueueLeaks, 2, "both test-tagged approval records must be counted as leaks");
+    assert.equal(drift.hookScratchLeaks, 1, "hook scratch marker must be counted as a leak");
   } finally {
     rmTmpDir(home);
   }
 });
 
-// The dir-entry-set classes (sandboxes, performance-reviews, scheduler/logs, runtime,
-// runtime/oracle — ADR-0084) generalize realConstructProjectKeys()'s pattern: a file
-// appearing under a real doctorRoot()-scoped directory a hermetically-isolated test
-// should never touch must show up as fingerprint drift on that class's own key, without
-// requiring a content-level test marker.
-
-test("a new file under a doctorRoot() dir-entry class is reported as fingerprint drift", () => {
-  const home = mkdtempSync(join(tmpdir(), "sterile-sandboxes-home-"));
+test("telemetry log appends unrelated to tests are not reported as a leak", () => {
+  const home = mkdtempSync(join(tmpdir(), "sterile-telemetry-home-"));
   try {
-    const sandboxesDir = join(doctorRoot(home), "sandboxes");
-    mkdirSync(sandboxesDir, { recursive: true });
+    const stateDir = doctorRoot(home);
+    mkdirSync(stateDir, { recursive: true });
+    const logPath = join(stateDir, "session-cost.jsonl");
+    writeFileSync(logPath, "");
 
-    const before = fingerprintRealConfigs(home);
-    mkdirSync(join(sandboxesDir, "leaked-sandbox-id"), { recursive: true });
-    const after = fingerprintRealConfigs(home);
+    const before = snapshotRealConfigs(home);
+    appendFileSync(logPath, JSON.stringify({ agent: "engineer", source: "policy-engine", cost: 0.01 }) + "\n");
+    const drift = diffRealConfigs(before, home);
 
-    assert.notEqual(before["doctorRoot:sandboxes"], after["doctorRoot:sandboxes"], "a new sandbox dir entry must change the fingerprint");
+    assert.equal(drift.telemetryLeaks, 0, "real telemetry appends must not count as a leak");
+  } finally {
+    rmTmpDir(home);
+  }
+});
+
+test("a test-tagged telemetry record appended to real doctorRoot logs is detected as a leak", () => {
+  const home = mkdtempSync(join(tmpdir(), "sterile-telemetry-home-"));
+  try {
+    const stateDir = doctorRoot(home);
+    mkdirSync(stateDir, { recursive: true });
+    const logPath = join(stateDir, "doctor-log.jsonl");
+    writeFileSync(logPath, "");
+
+    const before = snapshotRealConfigs(home);
+    appendFileSync(logPath, JSON.stringify({ agent: "engineer", source: "test", event: "doctor" }) + "\n");
+    const drift = diffRealConfigs(before, home);
+
+    assert.equal(drift.telemetryLeaks, 1, "test-tagged telemetry append must be counted as a leak");
+  } finally {
+    rmTmpDir(home);
+  }
+});
+
+test("session/status churn without the sterile test marker is not reported as a leak", () => {
+  const home = mkdtempSync(join(tmpdir(), "sterile-session-home-"));
+  try {
+    const stateDir = doctorRoot(home);
+    mkdirSync(stateDir, { recursive: true });
+    writeFileSync(join(stateDir, "session-efficiency.json"), JSON.stringify({ turns: 1 }));
+
+    const before = snapshotRealConfigs(home);
+    writeFileSync(join(stateDir, "session-efficiency.json"), JSON.stringify({ turns: 2, tokens: 100 }));
+    const drift = diffRealConfigs(before, home);
+
+    assert.equal(drift.sessionStatusLeaks, 0, "real session/status churn must not count as a leak");
+  } finally {
+    rmTmpDir(home);
+  }
+});
+
+test("a session/status marker in real doctorRoot state is detected as a leak", () => {
+  const home = mkdtempSync(join(tmpdir(), "sterile-session-home-"));
+  try {
+    const stateDir = doctorRoot(home);
+    mkdirSync(stateDir, { recursive: true });
+    writeFileSync(join(stateDir, "session-efficiency.json"), JSON.stringify({ turns: 1 }));
+
+    const before = snapshotRealConfigs(home);
+    writeFileSync(
+      join(stateDir, "session-efficiency.json"),
+      JSON.stringify({ turns: 1, marker: STERILE_TEST_LEAK_MARKER }),
+    );
+    const drift = diffRealConfigs(before, home);
+
+    assert.equal(drift.sessionStatusLeaks, 1, "session/status marker must be counted as a leak");
   } finally {
     rmTmpDir(home);
   }

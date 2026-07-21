@@ -73,10 +73,16 @@ test('AC3: an unknown model compiles to conservative defaults with degraded=true
   assert.equal(p.capabilities.cacheControl.value, false);
 });
 
-test('AC4: tier and operating profile are tagged compatibility_fallback when unmeasured', () => {
+test('AC4: tier and operating profile are tagged compatibility_fallback when unmeasured local', () => {
   const p = resolveExecutionCapabilityProfile({ model: 'ollama/llama3.1:8b', overrides: {}, now: NOW });
   assert.equal(p.capabilities.capabilityTier.source, 'compatibility_fallback');
   assert.equal(p.capabilities.operatingProfileId.source, 'compatibility_fallback');
+});
+
+test('AC4: hosted vendor models tag operating profile provider_metadata', () => {
+  const p = resolveExecutionCapabilityProfile({ model: 'anthropic/claude-opus-4-6', overrides: {}, now: NOW });
+  assert.equal(p.capabilities.operatingProfileId.source, 'provider_metadata');
+  assert.equal(p.capabilities.operatingProfileId.value, 'balanced');
 });
 
 test('AC5: chat and specialist composition derive the same values the heuristics produced', () => {
@@ -95,7 +101,7 @@ test('AC5: chat and specialist composition derive the same values the heuristics
   }
 });
 
-test('AC5: env operating-profile override flows through the profile', () => {
+test('AC5: env operating-profile override is tagged operator_override', () => {
   const p = resolveExecutionCapabilityProfile({
     model: 'anthropic/claude-opus-4-6',
     envValues: { CONSTRUCT_MODEL_PROFILE: 'small' },
@@ -103,6 +109,7 @@ test('AC5: env operating-profile override flows through the profile', () => {
     now: NOW,
   });
   assert.equal(operatingProfileIdFromProfile(p), 'small');
+  assert.equal(p.capabilities.operatingProfileId.source, 'operator_override');
 });
 
 test('vendor adapters tag caps provider_metadata; non-vendor tag compatibility_fallback', () => {

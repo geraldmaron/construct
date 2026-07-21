@@ -1,0 +1,14 @@
+{
+  "id": "release-gates",
+  "ownerWorkerProfile": "orchestrator",
+  "description": "Enforces test + build + lint gates before any push reaches the remote.",
+  "enforcement": "lib/hooks/pre-push-gate.mjs",
+  "mode": "deterministic",
+  "approvalWorkerProfiles": [],
+  "requiredPolicies": [],
+  "vetoWorkerProfiles": [],
+  "escalationWorkerProfiles": [],
+  "governs": [],
+  "conditions": [],
+  "evidence": []
+}

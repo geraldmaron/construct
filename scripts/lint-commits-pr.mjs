@@ -9,11 +9,6 @@
  *
  * Exit 0 on pass, 1 on any violation. Runs as the ci.yml `template policy`
  * job and is also runnable locally before push.
- *
- * `lintCommits`/`lintPrBody`/`getRange`/`isBotAuthor`/`reportTemplatePolicy` are
- * exported for reuse by `construct lint:pr` (lib/lint-pr-cli.mjs). The checks
- * only run as a side effect when this file executes as the CLI entry point
- * (`node scripts/lint-commits-pr.mjs`) — importing it never calls process.exit.
  */
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -56,7 +51,7 @@ const LEGACY_EXEMPT_SHAS = new Set([
   "142bc943466a6d2cc8b2cb9d1690fadcb5b839c6", // "Expose routePath across CLI, MCP, traces, and handoffs" (2026-07-07)
   "2999a7b18afb28c45fbebc39982248ff83847911", // "Implement lib/registry/org-api.mjs core module per ADR-0072" (2026-07-07)
   "e02a880b523ffb66c917a12f238ef38c01287a1b", // "ADR-0071 + ADR-0072: RichDocument IR and no-code org authoring API" (2026-07-07)
-  "7c2c1c6b247ce4c3a0ec73928687f37694dd56a0", // "Sterilize host-config leaks in 10 test files via per-test CX_HOME_OVERRIDE" (2026-07-07)
+  "7c2c1c6b247ce4c3a0ec73928687f37694dd56a0", // Historical commit predating the current machine-state override contract.
   "69ea7853568b7c6c9a66a32f3a646b64b15cfa85", // "Expose routePath across CLI, MCP, traces, and handoffs" (2026-07-07)
   "a29cde850f422878b92462d07819d1b602b16651", // "Implement lib/registry/org-api.mjs core module per ADR-0072" (2026-07-07)
   "c79336e774029d9bc3533f6d873a5072073286b3", // "Implement RichDocument core module (schema, markdown reader, HTML serializer) per ADR-0071" (2026-07-07)
@@ -79,6 +74,8 @@ const LEGACY_EXEMPT_SHAS = new Set([
   "68cb664af8369d5e3e6834ebe95d7d07b19c3d14", // "docs+tests: changelog and corpus inventory for construct-jvjow.4 merge" (2026-07-09)
   "bfe20bf86d455fc09f4ab25374750f12c65a139f", // "Release 1.5.4-alpha.2 (alpha, off staging — doc-io cert + version-regex fixed)" (2026-07-10, already tagged+published to npm)
   "6342a737e6bf38612edb937d5432ff6067b5fe96", // "Release 1.5.4-alpha.1 (alpha, off staging for tester validation)" (2026-07-10, already tagged+published to npm)
+  "e2fb90a49b0c5e7152389abebb55bdcea5b3c454", // feat/workspace-control-plane rollup commit predating enforced conventional subjects (2026-07)
+  "38cff0dddc7fc10720ff8362a8b2cfe3779259ca", // tsyfe.8 epic close commit predating enforced conventional subjects (2026-07)
 ]);
 
 const REQUIRED_PR_HEADINGS = [
@@ -95,54 +92,65 @@ const REQUIRED_GATE_GROUPS = [
   { label: "Local gates", marker: "## Local gates" },
 ];
 
-export function getRange() {
+function resolveBaseRef() {
+  const raw = process.env.PR_BASE_REF || process.env.GITHUB_BASE_REF || "main";
+  return raw.replace(/^origin\//, "");
+}
+
+function getRange() {
+  const pinnedBase = process.env.PR_BASE_SHA?.trim();
+  if (pinnedBase) return `${pinnedBase}..HEAD`;
+
+  const baseRef = resolveBaseRef();
+  const remoteBase = `origin/${baseRef}`;
+
+  try {
+    execSync(`git fetch --no-tags --depth=500 origin ${baseRef}`, { stdio: "pipe" });
+  } catch { /* may already be present or offline */ }
+
+  try {
+    execSync(`git rev-parse --verify ${remoteBase}^{commit}`, { stdio: "pipe" });
+    const mergeBase = execSync(`git merge-base ${remoteBase} HEAD`, {
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+    if (mergeBase) return `${mergeBase}..HEAD`;
+  } catch { /* fall through */ }
+
   const currentBranch = process.env.GIT_BRANCH;
-  const upstreamRef = process.env.GIT_UPSTREAM_REF;
-  const baseSha = process.env.PR_BASE_SHA;
-  const baseRef = process.env.PR_BASE_REF || process.env.GITHUB_BASE_REF;
-
-  if (baseSha && /^[0-9a-f]{7,40}$/i.test(baseSha)) {
-    try {
-      execSync(`git fetch --no-tags --depth=200 origin ${baseSha}`, { stdio: "pipe" });
-    } catch { /* may already be present */ }
-    try {
-      execSync(`git rev-parse --verify ${baseSha}^{commit}`, { stdio: "pipe" });
-      return `${baseSha}..HEAD`;
-    } catch { /* fall through */ }
-  }
-
-  if (baseRef) {
-    try {
-      execSync(`git fetch --no-tags --depth=200 origin ${baseRef}`, { stdio: "pipe" });
-      return `origin/${baseRef}..HEAD`;
-    } catch { /* fall through */ }
-  }
-
-  if (!baseSha && !baseRef) {
+  if (!process.env.PR_BASE_REF && !process.env.GITHUB_BASE_REF) {
     try {
       const branch = currentBranch || execSync('git branch --show-current', { stdio: 'pipe', encoding: 'utf8' }).trim();
-      const upstream = upstreamRef || execSync(`git rev-parse --abbrev-ref ${branch}@{upstream}`, {
+      const upstream = process.env.GIT_UPSTREAM_REF || execSync(`git rev-parse --abbrev-ref ${branch}@{upstream}`, {
         stdio: 'pipe',
         encoding: 'utf8',
       }).trim();
       if (upstream) {
         try {
-          execSync(`git fetch --no-tags --depth=200 ${upstream.split('/')[0]} ${upstream.split('/').slice(1).join('/')}`, { stdio: 'pipe' });
+          execSync(`git fetch --no-tags --depth=500 ${upstream.split('/')[0]} ${upstream.split('/').slice(1).join('/')}`, { stdio: 'pipe' });
         } catch { /* already available or offline */ }
-        return `${upstream}..HEAD`;
+        const mergeBase = execSync(`git merge-base ${upstream} HEAD`, {
+          encoding: 'utf8',
+          stdio: ['pipe', 'pipe', 'pipe'],
+        }).trim();
+        if (mergeBase) return `${mergeBase}..HEAD`;
       }
     } catch { /* no upstream configured */ }
   }
 
   try {
     execSync("git rev-parse --verify origin/main", { stdio: "pipe" });
-    return "origin/main..HEAD";
+    const mergeBase = execSync("git merge-base origin/main HEAD", {
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+    return mergeBase ? `${mergeBase}..HEAD` : "origin/main..HEAD";
   } catch {
     return "HEAD~10..HEAD";
   }
 }
 
-export function lintCommits() {
+function lintCommits() {
   const range = getRange();
   let log;
   try {
@@ -159,7 +167,7 @@ export function lintCommits() {
   const records = log.split("\x1e").map((r) => r.trim()).filter(Boolean);
   for (const record of records) {
     const [sha, subject, body] = record.split("\t");
-    const merge = subject?.startsWith("Merge ") || subject?.startsWith("Revert ");
+    const merge = subject?.startsWith("Merge ") || subject?.startsWith("Revert ") || /^merge:/i.test(subject ?? "");
     if (merge || LEGACY_EXEMPT_SHAS.has(sha)) continue;
     if (!COMMIT_SUBJECT_RE.test(subject ?? "")) {
       violations.push(`${sha.slice(0, 9)}: subject does not match \`type(scope): subject\` (≤140 chars, no leading space): ${JSON.stringify(subject)}`);
@@ -176,12 +184,12 @@ export function lintCommits() {
 // heading policy does not apply to a bot author. The gate stays blocking for
 // human PRs — the exemption is by author, not by soft-failing the CI step.
 
-export function isBotAuthor(author) {
+function isBotAuthor(author) {
   const a = String(author || "").toLowerCase();
   return a.endsWith("[bot]") || a === "dependabot" || a === "renovate";
 }
 
-export function lintPrBody() {
+function lintPrBody() {
   if (isBotAuthor(process.env.PR_AUTHOR)) return [];
 
   const path = process.env.PR_BODY_FILE;
@@ -218,33 +226,16 @@ export function lintPrBody() {
   return violations;
 }
 
-// Shared by the raw CI invocation (`npm run lint:templates`) and by
-// `construct lint:pr` (lib/lint-pr-cli.mjs), which imports this module as a
-// library — both must print byte-identical violation output so they never
-// drift apart on format.
+const commitViolations = lintCommits();
+const prViolations = lintPrBody();
+const all = [...commitViolations, ...prViolations];
 
-export function printTemplatePolicyViolations(violations) {
+if (all.length > 0) {
   console.error("\nTemplate policy violations:\n");
-  for (const v of violations) console.error(`  - ${v}`);
+  for (const v of all) console.error(`  - ${v}`);
   console.error("\nSee .gitmessage and .github/pull_request_template.md for the required shape.");
   console.error("Run `git config commit.template .gitmessage` once per clone to load the commit template.\n");
+  process.exit(1);
 }
 
-export function reportTemplatePolicy(violations) {
-  if (violations.length > 0) {
-    printTemplatePolicyViolations(violations);
-    return 1;
-  }
-  console.log("Template policy: clean.");
-  return 0;
-}
-
-// Importing this module (e.g. from construct lint:pr) must not trigger the
-// checks or call process.exit — only running it directly as a script does.
-
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const commitViolations = lintCommits();
-  const prViolations = lintPrBody();
-  const exitCode = reportTemplatePolicy([...commitViolations, ...prViolations]);
-  if (exitCode !== 0) process.exit(exitCode);
-}
+console.log("Template policy: clean.");

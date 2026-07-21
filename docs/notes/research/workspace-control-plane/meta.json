@@ -1,0 +1,10 @@
+{
+  "title": "Workspace Control Plane Program",
+  "pages": [
+    "program",
+    "baseline",
+    "directive",
+    "subagents",
+    "synthesis"
+  ]
+}

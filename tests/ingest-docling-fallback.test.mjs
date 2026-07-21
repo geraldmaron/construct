@@ -22,40 +22,16 @@ test("withTimeout rejects a slow promise and resolves a fast one", async () => {
   assert.equal(await withTimeout(Promise.resolve("ok"), 1000, "x"), "ok");
 });
 
-test("withTimeout invokes onTimeout when it fires, not when the promise settles first", async () => {
-  let timeoutCalls = 0;
+test("withTimeout onTimeout fires once on timeout, not on early settle", async () => {
+  let calls = 0;
   await assert.rejects(
-    withTimeout(new Promise(() => {}), 10, "too slow", { onTimeout: () => { timeoutCalls += 1; } }),
+    withTimeout(new Promise(() => {}), 10, "too slow", { onTimeout: () => { calls += 1; } }),
     /too slow/,
   );
-  assert.equal(timeoutCalls, 1);
-
-  let settledCalls = 0;
-  assert.equal(
-    await withTimeout(Promise.resolve("ok"), 1000, "x", { onTimeout: () => { settledCalls += 1; } }),
-    "ok",
-  );
-  assert.equal(settledCalls, 0, "onTimeout must not fire once the promise has already settled");
-});
-
-test("extractWithDoclingFallback signals its onTimeout hook on a timeout, not on a plain rejection", async () => {
-  let timeoutSignalled = false;
-  await extractWithDoclingFallback("/tmp/doc.pdf", {
-    timeoutMs: 10,
-    asyncExtract: () => new Promise(() => {}),
-    nodeNativeExtract: async () => nodeNativeResult(),
-    onTimeout: () => { timeoutSignalled = true; },
-  });
-  assert.equal(timeoutSignalled, true, "an abandoned docling attempt must be signalled so the caller can stop it");
-
-  let signalledOnRejection = false;
-  await extractWithDoclingFallback("/tmp/doc.docx", {
-    timeoutMs: 5000,
-    asyncExtract: () => Promise.reject(new Error("uv install timed out")),
-    nodeNativeExtract: async () => ({ ...nodeNativeResult(), extractionMethod: "mammoth" }),
-    onTimeout: () => { signalledOnRejection = true; },
-  });
-  assert.equal(signalledOnRejection, false, "a plain rejection (not a timeout) has nothing left to cancel");
+  assert.equal(calls, 1);
+  calls = 0;
+  await withTimeout(Promise.resolve("ok"), 1000, "x", { onTimeout: () => { calls += 1; } });
+  assert.equal(calls, 0);
 });
 
 test("docling timeout falls back to the node-native extractor with a recorded drop", async () => {

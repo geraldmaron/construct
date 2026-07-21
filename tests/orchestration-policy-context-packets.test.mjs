@@ -1,9 +1,9 @@
 /**
  * tests/orchestration-policy-context-packets.test.mjs
  *
- * Pins Tier 1 sub-bead 1 wiring: orchestration_policy MCP tool now returns
- * per-specialist context packets when the caller supplies a candidate
- * artifact list. Each packet carries the role-filtered bundle plus the
+ * Pins Tier 1 sub-bead 1 wiring: orchestration_policy MCP tool returns
+ * per-Assignment context packets when the caller supplies a candidate
+ * artifact list. Each packet carries the Worker Profile-filtered bundle plus the
  * explicit omitted list with reasons — no caller has to assemble the
  * context manually anymore.
  */
@@ -23,15 +23,14 @@ function candidates() {
 }
 
 describe('orchestrationPolicy contextPackets surface', () => {
-  it('omits contextPackets when no candidates are supplied (back-compat)', async () => {
+  it('omits contextPackets when no candidates are supplied', async () => {
     const result = await orchestrationPolicy({ request: 'fix login redirect' });
     assert.equal(result.contextPackets, undefined);
-    // Existing fields still present
-    assert.ok(Array.isArray(result.specialists));
+    assert.ok(Array.isArray(result.assignments));
     assert.ok(result.intent);
   });
 
-  it('returns a per-specialist context packet when candidates are supplied', async () => {
+  it('returns a per-Assignment context packet when candidates are supplied', async () => {
     const result = await orchestrationPolicy({
       request: 'implement a new login feature across the auth subsystem',
       fileCount: 5,
@@ -39,21 +38,22 @@ describe('orchestrationPolicy contextPackets surface', () => {
       candidates: candidates(),
     });
     assert.ok(result.contextPackets, 'contextPackets present');
-    for (const specialist of result.specialists) {
-      assert.ok(result.contextPackets[specialist], `packet for ${specialist}`);
-      assert.ok('contextPacket' in result.contextPackets[specialist]);
-      assert.ok(Array.isArray(result.contextPackets[specialist].omitted));
+    for (const assignment of result.assignments) {
+      const workerProfileId = assignment.workerProfileId;
+      assert.ok(result.contextPackets[workerProfileId], `packet for ${workerProfileId}`);
+      assert.ok('contextPacket' in result.contextPackets[workerProfileId]);
+      assert.ok(Array.isArray(result.contextPackets[workerProfileId].omitted));
     }
   });
 
-  it('each packet honors the role policy — product-manager avoids runbook', async () => {
+  it('each packet honors the Worker Profile policy — product-manager avoids runbook', async () => {
     const result = await orchestrationPolicy({
       request: 'frame the customer feedback into a PRD for notifications feature',
       fileCount: 3,
       moduleCount: 2,
       candidates: candidates(),
     });
-    const pmPacket = result.contextPackets?.['cx-product-manager'];
+    const pmPacket = result.contextPackets?.['product-manager'];
     if (!pmPacket) return; // pm not always in the chain for every request
     const kinds = pmPacket.contextPacket.relatedArtifacts.map((a) => a.kind);
     assert.ok(!kinds.includes('runbook'), 'PM packet must not include runbook');
@@ -67,7 +67,7 @@ describe('orchestrationPolicy contextPackets surface', () => {
       moduleCount: 2,
       candidates: candidates(),
     });
-    const engPacket = result.contextPackets?.['cx-engineer'];
+    const engPacket = result.contextPackets?.['engineer'];
     if (!engPacket) return;
     // engineer prefers target-file > test ranks ahead of prd despite lower score
     assert.equal(engPacket.contextPacket.relatedArtifacts[0].kind, 'target-file');

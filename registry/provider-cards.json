@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-17T15:22:26.703Z",
+  "generatedAt": "2026-07-20T19:51:27.851Z",
   "providers": [
     {
       "id": "@ai-sdk/anthropic",
@@ -15,7 +15,7 @@
       },
       "healthCheck": {
         "kind": "import-check",
-        "detail": "require('@ai-sdk/anthropic') — present when user has installed the package; construct doctor warns if absent and ANTHROPIC_API_KEY is set"
+        "detail": "require('@ai-sdk/anthropic') \u2014 present when user has installed the package; construct doctor warns if absent and ANTHROPIC_API_KEY is set"
       },
       "fallback": {
         "behavior": "graceful-skip"
@@ -36,7 +36,7 @@
       },
       "healthCheck": {
         "kind": "import-check",
-        "detail": "require('@ai-sdk/openai') — present when user has installed the package; construct doctor warns if absent and OPENAI_API_KEY is set"
+        "detail": "require('@ai-sdk/openai') \u2014 present when user has installed the package; construct doctor warns if absent and OPENAI_API_KEY is set"
       },
       "fallback": {
         "behavior": "graceful-skip"
@@ -57,7 +57,7 @@
       },
       "healthCheck": {
         "kind": "import-check",
-        "detail": "require('@ai-sdk/openai-compatible') — present when user configures a custom base URL provider"
+        "detail": "require('@ai-sdk/openai-compatible') \u2014 present when user configures a custom base URL provider"
       },
       "fallback": {
         "behavior": "graceful-skip"
@@ -71,14 +71,14 @@
       "purpose": "Local embedding model execution for vector search without requiring an external API (offline/privacy mode)",
       "owningWorkflow": "knowledge-search, evidence-ingest (local embedding path)",
       "modeRequirement": "solo",
-      "securityConcerns": "Downloads model weights from HuggingFace Hub on first use — network access required; model files are untrusted binary artifacts; supply-chain risk if model is swapped; users should pin specific model revisions",
+      "securityConcerns": "Downloads model weights from HuggingFace Hub on first use \u2014 network access required; model files are untrusted binary artifacts; supply-chain risk if model is swapped; users should pin specific model revisions",
       "versionPolicy": {
         "type": "npm-semver",
         "range": "^4.2.0"
       },
       "healthCheck": {
         "kind": "import-check",
-        "detail": "require('@huggingface/transformers') — absent means local embedding unavailable; hashing fallback activates automatically"
+        "detail": "require('@huggingface/transformers') \u2014 absent means local embedding unavailable; hashing fallback activates automatically"
       },
       "fallback": {
         "behavior": "graceful-skip"
@@ -88,8 +88,8 @@
     },
     {
       "id": "@lancedb/lancedb",
-      "kind": "npm-dep",
-      "purpose": "Vector store for semantic search, embedding storage, and retrieval-augmented generation (RAG) pipelines",
+      "kind": "npm-optional",
+      "purpose": "Vector store for semantic search, embedding storage, and retrieval-augmented generation (RAG) pipelines \u2014 the LanceDB adapter behind the retrieval-adapter contract (lib/storage/retrieval-adapter.mjs)",
       "owningWorkflow": "knowledge-search, evidence-ingest, session-storage, embed-observations",
       "modeRequirement": "all",
       "securityConcerns": "Native binary bundled per-platform via optional deps; supply-chain risk on binary download at install time",
@@ -99,10 +99,10 @@
       },
       "healthCheck": {
         "kind": "import-check",
-        "detail": "require('@lancedb/lancedb') — verified at import time; no CLI binary"
+        "detail": "require('@lancedb/lancedb') \u2014 verified at import time; absent or unhealthy means the keyword/BM25 retrieval adapter activates automatically"
       },
       "fallback": {
-        "behavior": "error"
+        "behavior": "graceful-skip"
       },
       "owner": "construct-core",
       "removalCriteria": "Replaced by a different vector store (e.g. sqlite-vec, hnswlib-node) and all RAG pipelines migrated"
@@ -120,7 +120,7 @@
       },
       "healthCheck": {
         "kind": "import-check",
-        "detail": "require('@modelcontextprotocol/sdk') — verified at import time; MCP server startup fails if absent"
+        "detail": "require('@modelcontextprotocol/sdk') \u2014 verified at import time; MCP server startup fails if absent"
       },
       "fallback": {
         "behavior": "error"
@@ -141,7 +141,7 @@
       },
       "healthCheck": {
         "kind": "import-check",
-        "detail": "require('@opentelemetry/api') — absent means tracing is silently skipped; no doctor check required"
+        "detail": "require('@opentelemetry/api') \u2014 absent means tracing is silently skipped; no doctor check required"
       },
       "fallback": {
         "behavior": "graceful-skip"
@@ -152,7 +152,7 @@
     {
       "id": "ai",
       "kind": "npm-optional",
-      "purpose": "Vercel AI SDK core — unified interface for streaming LLM calls, tool use, and structured output across all provider adapters",
+      "purpose": "Vercel AI SDK core \u2014 unified interface for streaming LLM calls, tool use, and structured output across all provider adapters",
       "owningWorkflow": "orchestration-run, specialist dispatch (provider backend)",
       "modeRequirement": "all",
       "securityConcerns": "Streams model output; ensure tool-call deserialization is sandboxed and does not allow arbitrary code execution",
@@ -162,7 +162,7 @@
       },
       "healthCheck": {
         "kind": "import-check",
-        "detail": "require('ai') — absent when no provider backend is configured; construct doctor warns"
+        "detail": "require('ai') \u2014 absent when no provider backend is configured; construct doctor warns"
       },
       "fallback": {
         "behavior": "graceful-skip"
@@ -172,7 +172,7 @@
     },
     {
       "id": "apache-arrow",
-      "kind": "npm-dep",
+      "kind": "npm-optional",
       "purpose": "IPC and data serialization layer required by @lancedb/lancedb for query results and batch operations",
       "owningWorkflow": "knowledge-search, evidence-ingest, session-storage",
       "modeRequirement": "all",
@@ -183,58 +183,13 @@
       },
       "healthCheck": {
         "kind": "import-check",
-        "detail": "require('apache-arrow') — verified at import time alongside lancedb"
+        "detail": "require('apache-arrow') \u2014 verified at import time alongside lancedb"
       },
       "fallback": {
-        "behavior": "error"
+        "behavior": "graceful-skip"
       },
       "owner": "construct-core",
       "removalCriteria": "Removed when @lancedb/lancedb no longer depends on apache-arrow or is itself removed"
-    },
-    {
-      "id": "d2",
-      "kind": "binary",
-      "purpose": "Primary diagram-from-code renderer for `construct diagram` and for diagram fences in exported decks/PDFs/HTML",
-      "owningWorkflow": "construct diagram; document-export/deck-export-pptx diagram-fence rendering",
-      "modeRequirement": "all",
-      "securityConcerns": null,
-      "versionPolicy": {
-        "type": "external-pinned",
-        "expectedVersion": "0.7.1",
-        "notes": "Reference version verified via `d2 --version` on the authoring machine (macOS/Homebrew) on 2026-07-17. User-installed, not Construct-bundled — the health check warns rather than hard-fails when a different version is installed."
-      },
-      "healthCheck": {
-        "kind": "subprocess-version",
-        "detail": "Runs `d2 --version`; stdout is a bare version string (no \"d2\" prefix).",
-        "command": "d2",
-        "args": [
-          "--version"
-        ],
-        "timeoutMs": 10000
-      },
-      "fallback": {
-        "behavior": "degraded-chain",
-        "chain": [
-          {
-            "id": "d2",
-            "mode": "binary",
-            "description": "Primary renderer (lib/diagram.mjs locateRenderer()); distinctive theme, --sketch hand-drawn mode for deck export (lib/deck-export-pptx.mjs:1080)."
-          },
-          {
-            "id": "dot",
-            "mode": "binary",
-            "description": "Graphviz fallback for `construct diagram` only (lib/diagram.mjs); ubiquitous, headless `dot -Tsvg|-Tpng`."
-          },
-          {
-            "id": "mermaid-source",
-            "mode": "source-only",
-            "description": "`construct diagram` still exits 0, writing Mermaid/D2 SOURCE plus an install hint, no rendered image. deck-export-pptx.mjs instead skips the diagram with a placeholder shape (renderCtx.skipped), not counted as a failed render."
-          }
-        ],
-        "terminal": "mermaid-source"
-      },
-      "owner": "construct-core",
-      "removalCriteria": "D2 is replaced as the primary diagram renderer by a different code-driven diagramming tool"
     },
     {
       "id": "docling",
@@ -243,9 +198,8 @@
       "owningWorkflow": "document-extraction",
       "securityConcerns": "installSource='uv-venv', securityClassification='trusted' per lib/extensions/manifests/docling.manifest.json",
       "versionPolicy": {
-        "type": "external-pinned",
-        "expectedVersion": "2.45.0",
-        "notes": "Pinned via the committed lib/runtime/docling-runtime/pyproject.toml + uv.lock (construct-tsyfe.10.3); `uv sync --frozen` installs this exact, checksummed dependency graph rather than resolving fresh. DOCLING_PIN in lib/runtime/uv-bootstrap.mjs and the lockfile's docling== pin must match — tests/functional/docling-venv-pin.functional.test.mjs asserts they do."
+        "type": "unmanaged",
+        "notes": "Provisioned via uv-venv; no enforced version pin, version (if any) is reported by the health-check subprocess only."
       },
       "healthCheck": {
         "kind": "subprocess-version",
@@ -267,7 +221,7 @@
           {
             "id": "node-native",
             "mode": "adapter",
-            "description": "unpdf (PDF) or mammoth (DOCX) — pure-JS, lower fidelity, no OCR, no XLSX/PPTX/ODT/ODS support."
+            "description": "unpdf (PDF) or mammoth (DOCX) \u2014 pure-JS, lower fidelity, no OCR, no XLSX/PPTX/ODT/ODS support."
           },
           {
             "id": "refuse",
@@ -281,116 +235,31 @@
       "removalCriteria": "unknown (not recorded in lib/extensions/manifests/docling.manifest.json)"
     },
     {
-      "id": "docling-models",
-      "kind": "model",
-      "purpose": "Layout/OCR/table-structure ML models docling downloads from the Hugging Face Hub on first sidecar run",
-      "owningWorkflow": "document-extraction (docling sidecar)",
+      "id": "d2",
+      "kind": "binary",
+      "purpose": "Primary diagram rendering engine for construct diagram, publish distribution, and PPTX diagram rasterization",
+      "owningWorkflow": "diagram (construct diagram), document-export (publish distribution), deck-export-pptx (diagram fences)",
       "modeRequirement": "all",
-      "securityConcerns": "Model weights are fetched from the Hugging Face Hub over the network on first use by the docling package itself, not by Construct code; a compromised or swapped model artifact at that point is a supply-chain vector Construct cannot currently detect independently of pinning docling itself",
+      "securityConcerns": "Executes as a subprocess with user-supplied D2 source under repo/user control; same trust boundary as before consolidation",
       "versionPolicy": {
         "type": "unmanaged",
-        "notes": "Model weights are downloaded by the pinned docling==2.45.0 package (lib/runtime/docling-runtime/pyproject.toml, construct-tsyfe.10.3) at first sidecar run; docling's own release pins its default model revision(s) internally. Construct does not independently record or verify a specific Hugging Face model revision/commit SHA for these weights — pinning the docling package itself is the closest available control today. Recording the exact internal model revision(s) would require inspecting the installed docling package's own model-download manifest; documented here as a known gap rather than an invented value (construct-tsyfe.10.3 non-goal: does not vendor or independently pin these weights)."
-      },
-      "healthCheck": {
-        "kind": "manual",
-        "detail": "No automated version-identity check exists for the downloaded model weights themselves; the \"docling\" Provider Card's subprocess-version health check verifies the docling package version, which transitively determines which model revision(s) it requests."
-      },
-      "fallback": {
-        "behavior": "degraded-chain",
-        "chain": [
-          {
-            "id": "docling-models",
-            "mode": "sidecar",
-            "description": "Layout-aware extraction models bundled with the pinned docling release."
-          },
-          {
-            "id": "node-native",
-            "mode": "adapter",
-            "description": "unpdf (PDF) or mammoth (DOCX) pure-JS fallback — the same chain the \"docling\" sidecar Provider Card declares; this card documents the model layer of that same chain, not a separate one."
-          },
-          {
-            "id": "refuse",
-            "mode": "error",
-            "description": "No extractor available for this format; ingest fails loud with an actionable install hint."
-          }
-        ],
-        "terminal": "refuse"
-      },
-      "owner": "construct-core",
-      "removalCriteria": "unknown (not independently tracked; follows the docling sidecar's own removal criteria)"
-    },
-    {
-      "id": "dot",
-      "kind": "binary",
-      "purpose": "Graphviz fallback diagram renderer for `construct diagram` when d2 is absent",
-      "owningWorkflow": "construct diagram (fallback engine)",
-      "modeRequirement": "all",
-      "securityConcerns": null,
-      "versionPolicy": {
-        "type": "external-pinned",
-        "expectedVersion": "15.0.0",
-        "notes": "Reference version verified via `dot -V` on the authoring machine (macOS/Homebrew) on 2026-07-17. User-installed, not Construct-bundled — the health check warns rather than hard-fails when a different version is installed."
+        "notes": "Resolved via PATH at render time; no enforced version pin (pinning/checksums are construct-tsyfe.10.3's scope). Version (if any) is reported by the health-check subprocess only."
       },
       "healthCheck": {
         "kind": "subprocess-version",
-        "detail": "Graphviz writes its version to stderr for `dot -V`: `dot - graphviz version <version> (<build>)`.",
-        "command": "dot",
-        "args": [
-          "-V"
-        ],
-        "timeoutMs": 10000
-      },
-      "fallback": {
-        "behavior": "degraded-chain",
-        "chain": [
-          {
-            "id": "d2",
-            "mode": "binary",
-            "description": "Primary renderer; see the \"d2\" Provider Card."
-          },
-          {
-            "id": "dot",
-            "mode": "binary",
-            "description": "This provider: ubiquitous fallback, headless `dot -Tsvg|-Tpng` (lib/diagram.mjs locateRenderer())."
-          },
-          {
-            "id": "mermaid-source",
-            "mode": "source-only",
-            "description": "Neither renderer present: `construct diagram` still exits 0, writing Mermaid/D2 SOURCE plus an install hint."
-          }
-        ],
-        "terminal": "mermaid-source"
-      },
-      "owner": "construct-core",
-      "removalCriteria": "Graphviz dot is dropped as the diagram-render fallback (e.g. if D2 becomes a hard requirement)"
-    },
-    {
-      "id": "ffmpeg",
-      "kind": "binary",
-      "purpose": "webm-to-mp4 transcoding for Playwright-recorded demo videos",
-      "owningWorkflow": "construct demo --surface=playwright (mp4 output format)",
-      "modeRequirement": "all",
-      "securityConcerns": null,
-      "versionPolicy": {
-        "type": "external-pinned",
-        "expectedVersion": "8.1.2",
-        "notes": "Reference version verified via `ffmpeg --version` on the authoring machine (macOS/Homebrew) on 2026-07-17. User-installed, not Construct-bundled — the health check warns rather than hard-fails when a different version is installed."
-      },
-      "healthCheck": {
-        "kind": "subprocess-version",
-        "detail": "Runs `ffmpeg --version`; first stdout line is `ffmpeg version <version> Copyright ...`.",
-        "command": "ffmpeg",
+        "detail": "Runs `d2 --version`; matches lib/providers/d2.mjs resolveD2Provider().",
+        "command": "d2",
         "args": [
           "--version"
         ],
         "timeoutMs": 10000
       },
       "fallback": {
-        "behavior": "error",
-        "description": "lib/playwright-demo.mjs's transcodeWebmToMp4 returns ok:false (\"ffmpeg not on PATH\") when mp4 output is requested and ffmpeg is absent; finalizeDemoVideo surfaces that failure directly. The underlying .webm recording remains on disk and unaffected — requesting format=\"webm\" sidesteps the dependency entirely."
+        "behavior": "degraded-chain",
+        "description": "Install d2 for diagram rendering (e.g. `brew install d2` on macOS, https://d2lang.com/tour/install). When absent, construct diagram degrades to Graphviz dot or Mermaid source-only output."
       },
       "owner": "construct-core",
-      "removalCriteria": "Playwright demo recordings drop mp4 transcoding, or ffmpeg is replaced by a different transcoder"
+      "removalCriteria": "D2 is replaced as the primary diagram engine or diagram rendering moves to a pure-JS solution"
     },
     {
       "id": "ink",
@@ -405,7 +274,7 @@
       },
       "healthCheck": {
         "kind": "import-check",
-        "detail": "require('ink') — absent means interactive TUI falls back to plain text output"
+        "detail": "require('ink') \u2014 absent means interactive TUI falls back to plain text output"
       },
       "fallback": {
         "behavior": "graceful-skip"
@@ -426,7 +295,7 @@
       },
       "healthCheck": {
         "kind": "import-check",
-        "detail": "require('js-yaml') — verified at import time"
+        "detail": "require('js-yaml') \u2014 verified at import time"
       },
       "fallback": {
         "behavior": "error"
@@ -435,26 +304,34 @@
       "removalCriteria": "YAML is replaced with TOML or JSON frontmatter across all documents and manifests"
     },
     {
-      "id": "local-embedding-model",
-      "kind": "model",
-      "purpose": "Xenova/all-MiniLM-L6-v2 ONNX sentence-embedding model for offline/local vector search (lib/storage/embeddings-local.mjs)",
-      "owningWorkflow": "knowledge-search, evidence-ingest (local embedding path)",
-      "modeRequirement": "solo",
-      "securityConcerns": "Model weights are fetched from the Hugging Face Hub on first use (@huggingface/transformers pipeline()); a swapped/compromised model artifact at that revision is a supply-chain vector. allowRemoteModels=false after the first fetch means subsequent runs never re-fetch, but the first fetch is unauthenticated network content.",
+      "id": "libreoffice",
+      "kind": "binary",
+      "purpose": "Legacy Office format conversion (DOC, ODT) for document export workflows",
+      "owningWorkflow": "document-export (doc, odt formats)",
+      "modeRequirement": "all",
+      "securityConcerns": "Full office suite executing as a subprocess; macro execution must be disabled (--headless --norestore); large attack surface",
       "versionPolicy": {
         "type": "unmanaged",
-        "notes": "lib/storage/embeddings-local.mjs's pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', ...) requests an explicit, overridable revision (CONSTRUCT_EMBEDDING_MODEL_REVISION env var, default 'main' — construct-tsyfe.10.3) so a specific commit SHA can be pinned without a code change once one is verified against a live Hugging Face Hub query. This session could not fabricate that commit SHA without network-verifying it against the live Hub API at record time, so 'main' remains the recorded default rather than an invented pin — a follow-up should resolve and pin the exact revision."
+        "notes": "Resolved via PATH at export time; no enforced version pin (pinning/checksums are construct-tsyfe.10.3's scope). Version (if any) is reported by the health-check subprocess only."
       },
       "healthCheck": {
-        "kind": "import-check",
-        "detail": "Verified indirectly via the \"@huggingface/transformers\" npm-optional Provider Card's import-check; no separate subprocess exists for the model artifact itself. getModelInfo() in lib/storage/embeddings-local.mjs reports the loaded model id/dimensions at runtime."
+        "kind": "subprocess-version",
+        "detail": "Runs `soffice --headless --norestore --version`; matches lib/providers/libreoffice-export-provider.mjs headless usability probe.",
+        "command": "soffice",
+        "args": [
+          "--headless",
+          "--norestore",
+          "--version"
+        ],
+        "timeoutMs": 5000
       },
       "fallback": {
         "behavior": "graceful-skip",
-        "description": "embed()/embedBatch() in lib/storage/embeddings-local.mjs fall back to hashing-bow-v1 (lib/storage/embeddings-legacy.mjs) and mark the result degraded:true with fallbackReason set, whenever the model fails to load — never throws."
+        "description": "Install LibreOffice to enable legacy .doc export (e.g. `brew install --cask libreoffice` on macOS, `apt install libreoffice` on Debian/Ubuntu, or https://www.libreoffice.org/download/). Override with CONSTRUCT_LIBREOFFICE_BIN."
       },
       "owner": "construct-core",
-      "removalCriteria": "Local embedding is handled by a different mechanism (e.g. llama.cpp bindings) or removed from the feature set"
+      "removalCriteria": "Remove when Pandoc ships a native .doc writer, .doc/.odp export is dropped from Construct, or PPTX diagram rasterization no longer requires LibreOffice.",
+      "legacy": true
     },
     {
       "id": "mammoth",
@@ -462,14 +339,14 @@
       "purpose": "DOCX document reading and conversion to HTML/markdown for document ingestion workflows",
       "owningWorkflow": "docs-document-ingest-workflow, extract-document-text",
       "modeRequirement": "all",
-      "securityConcerns": "Parses untrusted DOCX files; DOCX is a ZIP-based format with macro and OLE object risks — mammoth does not execute macros but malformed XML could trigger parse errors",
+      "securityConcerns": "Parses untrusted DOCX files; DOCX is a ZIP-based format with macro and OLE object risks \u2014 mammoth does not execute macros but malformed XML could trigger parse errors",
       "versionPolicy": {
         "type": "npm-semver",
         "range": "^1.12.0"
       },
       "healthCheck": {
         "kind": "import-check",
-        "detail": "require('mammoth') — absent means DOCX ingestion is unavailable; construct doctor warns"
+        "detail": "require('mammoth') \u2014 absent means DOCX ingestion is unavailable; construct doctor warns"
       },
       "fallback": {
         "behavior": "graceful-skip"
@@ -480,30 +357,28 @@
     {
       "id": "pandoc",
       "kind": "binary",
-      "purpose": "Universal document converter — primary engine for markdown-to-DOCX/PDF/HTML/RTF/ODT/EPUB/LaTeX/TXT export",
-      "owningWorkflow": "document-export (pdf, docx, doc, deck, html, rtf, odt, epub, tex, txt formats per lib/registry/manifests/format-engines.default.json)",
+      "purpose": "Document conversion engine for PDF, DOCX, HTML, RTF, EPUB, and other export formats via the document-export workflow",
+      "owningWorkflow": "document-export (pdf, docx, html, rtf, odt, epub, tex, txt formats)",
       "modeRequirement": "all",
-      "securityConcerns": "Runs an external binary over Construct-authored markdown via a Lua filter (vendor/pandoc-ext/diagram.lua); input is Construct's own content rather than third-party untrusted input, so the primary risk is a supply-chain-substituted binary rather than input-driven exploitation",
+      "securityConcerns": "Executes as a subprocess with user-supplied input; pandoc has had CVEs related to Lua filter execution \u2014 do not allow user-supplied Lua filters",
       "versionPolicy": {
-        "type": "external-pinned",
-        "expectedVersion": "3.10",
-        "notes": "Reference version verified via `pandoc --version` on the authoring machine (macOS/Homebrew) on 2026-07-17. User-installed, not Construct-bundled — the health check warns rather than hard-fails when a different version is installed."
+        "type": "unmanaged",
+        "notes": "Resolved via PATH at export time; no enforced version pin (pinning/checksums are construct-tsyfe.10.3's scope). Version (if any) is reported by the health-check subprocess only."
       },
       "healthCheck": {
         "kind": "subprocess-version",
-        "detail": "Runs `pandoc --version`; first stdout line is `pandoc <version>`. A missing binary is separately reported by lib/document-export.mjs's detect() as ok:false with installHint('pandoc') — this Provider Card's health check layers a version-identity warning on top of that existing presence check, it does not replace it.",
+        "detail": "Runs `pandoc --version`; matches lib/document-export.mjs's binVersion() helper used by detect().",
         "command": "pandoc",
         "args": [
           "--version"
-        ],
-        "timeoutMs": 10000
+        ]
       },
       "fallback": {
-        "behavior": "error",
-        "description": "No fallback renderer: pandoc is the sole engine for pdf/docx/doc/deck/html/rtf/odt/epub/tex/txt export. Absence makes detect() return ok:false with installHint('pandoc') (`Install pandoc ... brew install pandoc`); pptx export is unaffected (pptxgenjs-based, no pandoc dependency)."
+        "behavior": "graceful-skip",
+        "description": "Install pandoc to enable document export (e.g. `brew install pandoc` on macOS, `apt install pandoc` on Debian/Ubuntu, or https://pandoc.org/installing.html)."
       },
       "owner": "construct-core",
-      "removalCriteria": "Pandoc is replaced as the document-export engine by a different converter (e.g. a native Node-based typesetting pipeline)"
+      "removalCriteria": "Document export is replaced with a pure-JS solution for all formats"
     },
     {
       "id": "postgres",
@@ -539,7 +414,7 @@
       },
       "healthCheck": {
         "kind": "import-check",
-        "detail": "require('pptx-embed-fonts') — absent means fonts are not embedded in PPTX output"
+        "detail": "require('pptx-embed-fonts') \u2014 absent means fonts are not embedded in PPTX output"
       },
       "fallback": {
         "behavior": "graceful-skip"
@@ -560,7 +435,7 @@
       },
       "healthCheck": {
         "kind": "import-check",
-        "detail": "require('pptxgenjs') — absent means PPTX export is unavailable; construct doctor warns when PPTX export is attempted"
+        "detail": "require('pptxgenjs') \u2014 absent means PPTX export is unavailable; construct doctor warns when PPTX export is attempted"
       },
       "fallback": {
         "behavior": "graceful-skip"
@@ -581,7 +456,7 @@
       },
       "healthCheck": {
         "kind": "import-check",
-        "detail": "require('react') — co-required with ink; absent when ink is absent"
+        "detail": "require('react') \u2014 co-required with ink; absent when ink is absent"
       },
       "fallback": {
         "behavior": "graceful-skip"
@@ -590,60 +465,135 @@
       "removalCriteria": "Removed when ink is removed"
     },
     {
-      "id": "soffice",
-      "kind": "binary",
-      "purpose": "LibreOffice headless conversion for formats pandoc cannot write (legacy .doc) and for PPTX preview-PNG rendering",
-      "owningWorkflow": "document-export (doc format, via lib/libreoffice-export.mjs); render-pipeline.mjs pptx preview rendering",
+      "id": "rehype-parse",
+      "kind": "npm-dep",
+      "purpose": "HTML parser for RichDocument htmlToRichDocument adapter (inverts richDocumentToHtml output)",
+      "owningWorkflow": "document-ingest, richdocument-ir",
       "modeRequirement": "all",
-      "securityConcerns": null,
+      "securityConcerns": "Parses HTML that may originate from external sources once ingest is wired; must stay paired with rehype-sanitize",
       "versionPolicy": {
-        "type": "external-pinned",
-        "expectedVersion": "26.2.4.2",
-        "notes": "Reference version verified via `soffice --version` on the authoring machine (macOS/Homebrew) on 2026-07-17. User-installed, not Construct-bundled — the health check warns rather than hard-fails when a different version is installed."
+        "type": "npm-semver",
+        "range": "^9.0.1"
       },
       "healthCheck": {
-        "kind": "subprocess-version",
-        "detail": "Runs `soffice --version`; stdout is `LibreOffice <version> <build-hash>`.",
-        "command": "soffice",
-        "args": [
-          "--version"
-        ],
-        "timeoutMs": 15000
+        "kind": "import-check",
+        "detail": "require('rehype-parse') \u2014 verified at import time via HTML adapter"
       },
       "fallback": {
-        "behavior": "error",
-        "description": "Two distinct call sites, different consequences on absence: (1) lib/libreoffice-export.mjs's convertDocxToDoc — the sole path for legacy .doc export (ADR-0024) — returns ok:false with libreOfficeInstallHint() (`Install LibreOffice ... brew install --cask libreoffice`); pdf/docx/html/rtf/odt/epub/tex/txt/pptx export are unaffected. (2) lib/render-pipeline.mjs's pptx preview renderer degrades gracefully instead — a typed degradation reason, not a hard failure — since it only produces an inspectable preview image, not the export artifact itself."
+        "behavior": "error"
       },
       "owner": "construct-core",
-      "removalCriteria": "Legacy .doc export is dropped entirely, or LibreOffice is replaced by a different down-converter for both use sites"
+      "removalCriteria": "Removed when RichDocument HTML parsing no longer uses rehype"
+    },
+    {
+      "id": "rehype-sanitize",
+      "kind": "npm-dep",
+      "purpose": "HTML sanitization schema for RichDocument htmlToRichDocument (blocks javascript: href, script tags, event handlers)",
+      "owningWorkflow": "document-ingest, richdocument-ir",
+      "modeRequirement": "all",
+      "securityConcerns": "Load-bearing security control on the HTML ingest path; schema must allow data-cx-* attributes for ADR-0073 round-trip",
+      "versionPolicy": {
+        "type": "npm-semver",
+        "range": "^6.0.0"
+      },
+      "healthCheck": {
+        "kind": "import-check",
+        "detail": "require('rehype-sanitize') \u2014 verified at import time via HTML adapter"
+      },
+      "fallback": {
+        "behavior": "error"
+      },
+      "owner": "construct-core",
+      "removalCriteria": "Removed only if RichDocument HTML parsing is dropped or replaced with an equivalent sanitization layer"
+    },
+    {
+      "id": "remark-gfm",
+      "kind": "npm-dep",
+      "purpose": "GFM extensions (tables, task lists, strikethrough) for RichDocument markdown adapter",
+      "owningWorkflow": "document-ingest, richdocument-ir",
+      "modeRequirement": "all",
+      "securityConcerns": "Extends markdown parse surface; same untrusted-input class as remark-parse",
+      "versionPolicy": {
+        "type": "npm-semver",
+        "range": "^4.0.1"
+      },
+      "healthCheck": {
+        "kind": "import-check",
+        "detail": "require('remark-gfm') \u2014 verified at import time via markdown adapter"
+      },
+      "fallback": {
+        "behavior": "error"
+      },
+      "owner": "construct-core",
+      "removalCriteria": "Removed when RichDocument markdown parsing no longer uses remark-gfm"
+    },
+    {
+      "id": "remark-parse",
+      "kind": "npm-dep",
+      "purpose": "CommonMark markdown parser for RichDocument markdownToRichDocument adapter",
+      "owningWorkflow": "document-ingest, richdocument-ir",
+      "modeRequirement": "all",
+      "securityConcerns": "Parses untrusted markdown input; no arbitrary code execution in remark-parse itself",
+      "versionPolicy": {
+        "type": "npm-semver",
+        "range": "^11.0.0"
+      },
+      "healthCheck": {
+        "kind": "import-check",
+        "detail": "require('remark-parse') \u2014 verified at import time via markdown adapter"
+      },
+      "fallback": {
+        "behavior": "error"
+      },
+      "owner": "construct-core",
+      "removalCriteria": "Removed when RichDocument markdown parsing no longer uses remark"
     },
     {
       "id": "typst",
       "kind": "binary",
-      "purpose": "PDF typesetting engine invoked by pandoc (--pdf-engine=typst) for all PDF export",
-      "owningWorkflow": "document-export (pdf format — lib/registry/manifests/format-engines.default.json always sets pdfEngine: \"typst\")",
+      "purpose": "PDF rendering engine used alongside pandoc for high-quality PDF output",
+      "owningWorkflow": "document-export (pdf format)",
       "modeRequirement": "all",
-      "securityConcerns": null,
+      "securityConcerns": "Executes as a subprocess; typst scripts can import files from the filesystem \u2014 ensure input is sandboxed",
       "versionPolicy": {
-        "type": "external-pinned",
-        "expectedVersion": "0.15.0",
-        "notes": "Reference version verified via `typst --version` on the authoring machine (macOS/Homebrew) on 2026-07-17. User-installed, not Construct-bundled — the health check warns rather than hard-fails when a different version is installed."
+        "type": "unmanaged",
+        "notes": "Resolved via PATH at export time; no enforced version pin (pinning/checksums are construct-tsyfe.10.3's scope). Version (if any) is reported by the health-check subprocess only."
       },
       "healthCheck": {
         "kind": "subprocess-version",
-        "detail": "Runs `typst --version`; stdout is `typst <version> (<commit>)`.",
+        "detail": "Runs `typst --version`; matches lib/document-export.mjs's binVersion() helper used by detect().",
         "command": "typst",
         "args": [
           "--version"
-        ],
-        "timeoutMs": 10000
+        ]
       },
       "fallback": {
-        "behavior": "error",
-        "description": "Every PDF export routes through pandoc --pdf-engine=typst (lib/document-export.mjs:482,491); there is no alternate pdfEngine in format-engines.default.json. Absence surfaces installHint('typst') (`Install typst ... brew install typst`) and PDF export fails; docx/html/rtf/odt/epub/tex/txt export are unaffected (no pdfEngine dependency)."
+        "behavior": "graceful-skip",
+        "description": "Install typst to enable PDF export via Pandoc (`brew install typst` on macOS, https://github.com/typst/typst/releases for binaries)."
       },
       "owner": "construct-core",
-      "removalCriteria": "PDF export is retargeted to a different pdf-engine (e.g. wkhtmltopdf, weasyprint, or a native Node PDF renderer)"
+      "removalCriteria": "PDF export moves to a different engine (e.g. WeasyPrint) or pandoc's built-in PDF engine is sufficient"
+    },
+    {
+      "id": "unified",
+      "kind": "npm-dep",
+      "purpose": "Core processor interface for RichDocument markdown/HTML parsing adapters (remark/rehype pipelines in lib/rich-document-adapters/)",
+      "owningWorkflow": "document-ingest, document-export, richdocument-ir",
+      "modeRequirement": "all",
+      "securityConcerns": "Parses untrusted markdown/HTML during document ingest; paired with rehype-sanitize on the HTML path",
+      "versionPolicy": {
+        "type": "npm-semver",
+        "range": "^11.0.5"
+      },
+      "healthCheck": {
+        "kind": "import-check",
+        "detail": "require('unified') \u2014 verified at import time when RichDocument parsers load"
+      },
+      "fallback": {
+        "behavior": "error"
+      },
+      "owner": "construct-core",
+      "removalCriteria": "RichDocument parsers revert to in-tree hand-rolled implementation with passing fidelity corpus"
     },
     {
       "id": "unpdf",
@@ -658,7 +608,7 @@
       },
       "healthCheck": {
         "kind": "import-check",
-        "detail": "require('unpdf') — absent means PDF ingestion falls back to docling or is unavailable"
+        "detail": "require('unpdf') \u2014 absent means PDF ingestion falls back to docling or is unavailable"
       },
       "fallback": {
         "behavior": "graceful-skip"
@@ -669,52 +619,33 @@
     {
       "id": "vhs",
       "kind": "binary",
-      "purpose": "Terminal-recording engine driving .tape scripts for `construct demo` GIF/MP4/WebM output",
-      "owningWorkflow": "construct demo (terminal recordings)",
+      "purpose": "Terminal demo recording via charmbracelet/vhs .tape scripts",
+      "owningWorkflow": "demo recording (construct demo, publish --demo)",
       "modeRequirement": "all",
-      "securityConcerns": null,
+      "securityConcerns": "Executes shell commands from repo-controlled .tape files via subprocess; same trust boundary as today",
       "versionPolicy": {
-        "type": "external-pinned",
-        "expectedVersion": "0.11.0",
-        "notes": "Reference version verified via `vhs --version` on the authoring machine (macOS/Homebrew) on 2026-07-17. User-installed, not Construct-bundled — the health check warns rather than hard-fails when a different version is installed."
+        "type": "unmanaged",
+        "notes": "Resolved via PATH at record time; version reported by vhs --version when present."
       },
       "healthCheck": {
         "kind": "subprocess-version",
-        "detail": "Runs `vhs --version`; stdout is `vhs version <version>`.",
+        "detail": "Runs `vhs --version`; matches lib/providers/vhs.mjs resolveVhsProvider().",
         "command": "vhs",
         "args": [
           "--version"
-        ],
-        "timeoutMs": 10000
+        ]
       },
       "fallback": {
-        "behavior": "degraded-chain",
-        "chain": [
-          {
-            "id": "vhs",
-            "mode": "binary",
-            "description": "Primary terminal recorder driving .tape scripts (lib/demo.mjs locateRecorder())."
-          },
-          {
-            "id": "asciinema",
-            "mode": "binary",
-            "description": "Alternate terminal recorder; a different capture format/workflow, not a drop-in .tape interpreter."
-          },
-          {
-            "id": "refuse",
-            "mode": "error",
-            "description": "Neither vhs nor asciinema present: `construct demo` reports the missing-tool install hint and does not record."
-          }
-        ],
-        "terminal": "refuse"
+        "behavior": "graceful-skip",
+        "description": "Install VHS for terminal demo recording (https://github.com/charmbracelet/vhs#installation). Override with CONSTRUCT_VHS_BIN."
       },
       "owner": "construct-core",
-      "removalCriteria": "VHS is replaced as the terminal-recording engine, or `construct demo` drops terminal recordings entirely"
+      "removalCriteria": "Terminal demo recording moves to a different provider with parity evidence"
     },
     {
       "id": "whisper",
       "kind": "sidecar",
-      "purpose": "Local audio/video transcription via whisper.cpp (Metal-accelerated on macOS). No npm dependency — the binary and model weights are provisioned outside npm and probed, not assumed.",
+      "purpose": "Local audio/video transcription via whisper.cpp (Metal-accelerated on macOS). No npm dependency \u2014 the binary and model weights are provisioned outside npm and probed, not assumed.",
       "owningWorkflow": "audio-transcription",
       "securityConcerns": "installSource='system-binary', securityClassification='trusted' per lib/extensions/manifests/whisper.manifest.json",
       "versionPolicy": {
@@ -748,27 +679,6 @@
       },
       "owner": "construct-core",
       "removalCriteria": "unknown (not recorded in lib/extensions/manifests/whisper.manifest.json)"
-    },
-    {
-      "id": "zod",
-      "kind": "npm-optional",
-      "purpose": "Declared for future schema validation and type-safe parsing; as of 2026-07-17 it has zero load-bearing imports anywhere in the repo — MCP tool inputs, config files, and artifact manifests are all validated by hand-rolled checks per ADR-0001 (lib/config/schema.mjs, lib/flows/schema.mjs, lib/platforms/capabilities.mjs each explicitly avoid it)",
-      "owningWorkflow": "none (unused)",
-      "modeRequirement": "all",
-      "securityConcerns": null,
-      "versionPolicy": {
-        "type": "npm-semver",
-        "range": "^4.4.3"
-      },
-      "healthCheck": {
-        "kind": "import-check",
-        "detail": "require('zod') always resolves to a no-op for this repo's current code paths — no consumer calls it, so presence or absence has no runtime effect today"
-      },
-      "fallback": {
-        "behavior": "graceful-skip"
-      },
-      "owner": "construct-core",
-      "removalCriteria": "Schema validation is replaced by a different library (e.g. valibot) or inlined"
     }
   ]
 }

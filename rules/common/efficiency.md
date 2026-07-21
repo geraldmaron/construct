@@ -40,7 +40,7 @@ in the same batch.
 
 ## Bash output
 
-Long Bash outputs are automatically persisted to `~/.cx/bash-logs/` by
+Long Bash outputs are automatically persisted to `~/.construct/bash-logs/` by
 `bash-output-logger.mjs`. Reference the log path in subsequent turns rather than
 re-running the command.
 

@@ -1,0 +1,59 @@
+{
+  "id": "creative",
+  "displayName": "Creative",
+  "skills": [
+    "docs/user-research-workflow",
+    "strategy/narrative-arc",
+    "docs/memo-and-decision-capture",
+    "quality-gates/review-work"
+  ],
+  "procedures": [],
+  "intake": {
+    "types": [
+      "brief",
+      "content-request",
+      "asset",
+      "experiment",
+      "report",
+      "legal-compliance",
+      "ops",
+      "unknown"
+    ],
+    "stages": [
+      "brief",
+      "research",
+      "draft",
+      "review",
+      "publish",
+      "measure"
+    ],
+    "classificationTable": "lib/intake/tables/creative.mjs"
+  },
+  "artifactClasses": [
+    "one-pager",
+    "memo",
+    "strategy",
+    "changelog-entry"
+  ],
+  "tagline": "Brief, research, draft, review, publish, measure. Make and ship content.",
+  "hooks": {
+    "sessionReflect": "on",
+    "sessionOptimize": "on"
+  },
+  "toneDefaults": {
+    "one-pager": "friendly",
+    "memo": "friendly",
+    "prfaq": "friendly"
+  },
+  "researchProfiles": {
+    "brief": "user",
+    "research": "user",
+    "draft": "user",
+    "measure": "external"
+  },
+  "rebrand": {
+    "intakeQueueLabel": "Creative queue",
+    "signalNoun": "brief"
+  },
+  "experimental": true
+}

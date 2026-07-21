@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "description": "Named, dated OSV/license exceptions. Each entry must include reason and expires (YYYY-MM-DD). Expired entries fail scripts/check-supply-chain-exceptions.mjs.",
+  "exceptions": []
+}

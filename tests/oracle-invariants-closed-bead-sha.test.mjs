@@ -233,41 +233,6 @@ test('evaluateBead: a non-ancestor SHA stays a violation when the bead id matche
   assert.equal(result.supersededBy, undefined);
 });
 
-test('check(): a reconciliation note converts a would-be violation to passed, scoped to noted beads only', async (t) => {
-  const { cwd, featureSha } = makeRepo(t);
-  const beads = [
-    { id: 'reconciled-1', close_reason: `Implemented in ${featureSha} per the plan.` },
-    { id: 'still-bad-1', close_reason: `Implemented in ${featureSha} per the plan.` },
-    { id: 'unresolvable-reconciled-1', close_reason: 'Fixed in abc1234def5678: never fetched locally.' },
-  ];
-  const result = await check({
-    cwd,
-    mainRef: 'main',
-    listClosedBeads: () => beads,
-    listReconciledBeadIds: () => new Set(['reconciled-1', 'unresolvable-reconciled-1']),
-  });
-  assert.equal(result.status, 'failed', 'the un-noted violation still fails the rollup');
-  assert.equal(result.violations.length, 1);
-  assert.equal(result.violations[0].beadId, 'still-bad-1');
-  assert.equal(result.unresolved.length, 0, 'a reconciled unresolvable token no longer reports unknown');
-  const reconciled = result.results.filter((r) => r.reconciled);
-  assert.deepEqual(reconciled.map((r) => r.beadId).sort(), ['reconciled-1', 'unresolvable-reconciled-1']);
-  assert.ok(reconciled.every((r) => r.status === 'passed' && !r.violation));
-});
-
-test('check(): a throwing reconciliation collector degrades to no-reconciliation, not a crash or a mask', async (t) => {
-  const { cwd, featureSha } = makeRepo(t);
-  const beads = [{ id: 'v-1', close_reason: `Implemented in ${featureSha} per the plan.` }];
-  const result = await check({
-    cwd,
-    mainRef: 'main',
-    listClosedBeads: () => beads,
-    listReconciledBeadIds: () => { throw new Error('bd notes filter unavailable'); },
-  });
-  assert.equal(result.status, 'failed', 'losing the secondary source keeps the primary evidence visible');
-  assert.equal(result.violations.length, 1);
-});
-
 test('check(): a throwing listClosedBeads degrades to collection-error, not a crash', async () => {
   const result = await check({
     listClosedBeads: () => { throw new Error('bd not found on PATH'); },

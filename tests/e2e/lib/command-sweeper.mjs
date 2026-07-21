@@ -87,7 +87,7 @@ export function planInvocation(cmd) {
 
 // A tree snapshot is a flat map of repo-relative path -> mtimeMs, the basis for
 // detecting which files a command creates or modifies. Bounded to the scenario
-// project dir so a command touching ~/.cx is not mis-attributed.
+// project dir so a command touching ~/.construct is not mis-attributed.
 
 export function snapshotTree(rootDir) {
   const out = new Map();

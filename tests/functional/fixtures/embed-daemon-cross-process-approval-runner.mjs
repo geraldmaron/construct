@@ -18,7 +18,7 @@
  * a durable, deterministic failure outcome that still proves the record was
  * seen and an execution attempt was made.
  *
- * Reads CX_ROOT_DIR and TICK_TIMEOUT_MS from env. Prints one JSON line to
+ * Reads CONSTRUCT_ROOT_DIR and TICK_TIMEOUT_MS from env. Prints one JSON line to
  * stdout on success or failure and exits 0/1 accordingly.
  */
 
@@ -30,7 +30,7 @@ import { EMPTY_CONFIG } from '../../../lib/embed/config.mjs';
 import { ApprovalQueue } from '../../../lib/embed/approval-queue.mjs';
 import { getDeploymentMode } from '../../../lib/deployment-mode.mjs';
 
-const rootDir = process.env.CX_ROOT_DIR;
+const rootDir = process.env.CONSTRUCT_ROOT_DIR;
 const timeoutMs = Number(process.env.TICK_TIMEOUT_MS || 15_000);
 const pollIntervalMs = 100;
 

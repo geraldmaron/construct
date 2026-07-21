@@ -39,11 +39,11 @@ function evalReport() {
 function traceFixture() {
   return {
     schemaVersion: 1, id: 'st-surface-1',
-    specialist: { role: 'engineer', profileId: 'balanced', capabilityClass: 'hosted-direct' },
+    workerProfile: { id: 'engineer', profileId: 'balanced', capabilityClass: 'hosted-direct' },
     versions: { prompt: 'p1' },
     upstream: { evidenceComplete: true, inputsPresent: true },
     provider: { executionError: false, degraded: false },
-    specialistOutput: { evidenceVerdict: 'fail' },
+    workerProfileOutput: { evidenceVerdict: 'fail' },
     handoff: { inputValid: true, schemaValid: true, output: {} },
     downstream: { consumerError: false, outcome: 'accepted' },
     evaluator: { abstained: false, confidence: 0.9 },

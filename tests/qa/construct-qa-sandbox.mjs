@@ -7,7 +7,7 @@
  *   node tests/qa/construct-qa-sandbox.mjs
  *
  * Environment:
- *   CX_TOOLKIT_DIR       Override the construct toolkit root (default: repo root)
+ *   CONSTRUCT_TOOLKIT_DIR       Override the construct toolkit root (default: repo root)
  */
 import fs from 'node:fs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
@@ -16,7 +16,7 @@ import os from 'node:os';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 
-const ROOT = process.env.CX_TOOLKIT_DIR || path.resolve(import.meta.dirname, '../..');
+const ROOT = process.env.CONSTRUCT_TOOLKIT_DIR || path.resolve(import.meta.dirname, '../..');
 const CONSTRUCT_BIN = path.join(ROOT, 'bin', 'construct');
 const RUNNER = 'node';
 
@@ -27,7 +27,7 @@ function rmrf(p) { rmTmpDir(p); }
 function mkdirp(p) { fs.mkdirSync(p, { recursive: true }); }
 
 function tmpdir() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-qa-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qa-'));
   return dir;
 }
 
@@ -68,13 +68,13 @@ function before() {
   sandboxDir = tmpdir();
   originalCwd = process.cwd();
   process.chdir(sandboxDir);
-  // Create .cx scaffolding so construct commands see a valid project
-  mkdirp(path.join(sandboxDir, '.cx', 'intake', 'pending'));
-  mkdirp(path.join(sandboxDir, '.cx', 'intake', 'processed'));
-  mkdirp(path.join(sandboxDir, '.cx', 'inbox'));
-  mkdirp(path.join(sandboxDir, '.cx', 'task-graphs'));
+  // Create .construct scaffolding so construct commands see a valid project
+  mkdirp(path.join(sandboxDir, '.construct', 'intake', 'pending'));
+  mkdirp(path.join(sandboxDir, '.construct', 'intake', 'processed'));
+  mkdirp(path.join(sandboxDir, '.construct', 'inbox'));
+  mkdirp(path.join(sandboxDir, '.construct', 'task-graphs'));
   // Minimal context.md to make docs:verify happy
-  fs.writeFileSync(path.join(sandboxDir, '.cx', 'context.md'),
+  fs.writeFileSync(path.join(sandboxDir, '.construct', 'context.md'),
     `# ${sandboxDir}\n\n## What was in progress\nQA sandbox testing.\n`, 'utf8');
   // README.md for docs:verify
   fs.writeFileSync(path.join(sandboxDir, 'README.md'), `# QA Sandbox\n`, 'utf8');
@@ -264,12 +264,12 @@ async function enqueuePacket(opts) {
 
   for (const key of keys) {
     const s = intakeSignals[key];
-    const triage = classifyRdIntake({ sourcePath: `.cx/inbox/${s.filename}`, extractedText: s.content });
+    const triage = classifyRdIntake({ sourcePath: `.construct/inbox/${s.filename}`, extractedText: s.content });
     const id = `${key}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     await queue.enqueue({
       id,
       status: 'pending',
-      intake: { sourcePath: `.cx/inbox/${s.filename}`, outputPath: `.cx/intake/pending/${id}.json`, characters: s.content.length },
+      intake: { sourcePath: `.construct/inbox/${s.filename}`, outputPath: `.construct/intake/pending/${id}.json`, characters: s.content.length },
       triage,
       excerpt: s.content.substring(0, 800),
       createdAt: new Date().toISOString(),
@@ -287,7 +287,7 @@ async function runClassificationTests() {
     await test('customer feedback classifies as user-signal with PM owner', async () => {
       const { classifyRdIntake } = await import(path.join(ROOT, 'lib/intake/classify.mjs'));
       const s = intakeSignals.customerFeedback;
-      const triage = classifyRdIntake({ sourcePath: `.cx/inbox/${s.filename}`, extractedText: s.content });
+      const triage = classifyRdIntake({ sourcePath: `.construct/inbox/${s.filename}`, extractedText: s.content });
       assert.equal(triage.intakeType, 'user-signal');
       assert.equal(triage.primaryOwner, 'product-manager');
       assert.equal(triage.recommendedAction, 'clarify');
@@ -297,7 +297,7 @@ async function runClassificationTests() {
     await test('bug report classifies as bug with debugger owner', async () => {
       const { classifyRdIntake } = await import(path.join(ROOT, 'lib/intake/classify.mjs'));
       const s = intakeSignals.bugReport;
-      const triage = classifyRdIntake({ sourcePath: `.cx/inbox/${s.filename}`, extractedText: s.content });
+      const triage = classifyRdIntake({ sourcePath: `.construct/inbox/${s.filename}`, extractedText: s.content });
       assert.equal(triage.intakeType, 'bug');
       assert.equal(triage.primaryOwner, 'debugger');
       assert.equal(triage.recommendedAction, 'diagnose');
@@ -307,7 +307,7 @@ async function runClassificationTests() {
     await test('security finding classifies as security with high risk', async () => {
       const { classifyRdIntake } = await import(path.join(ROOT, 'lib/intake/classify.mjs'));
       const s = intakeSignals.securityFinding;
-      const triage = classifyRdIntake({ sourcePath: `.cx/inbox/${s.filename}`, extractedText: s.content });
+      const triage = classifyRdIntake({ sourcePath: `.construct/inbox/${s.filename}`, extractedText: s.content });
       assert.equal(triage.intakeType, 'security');
       assert.equal(triage.primaryOwner, 'security');
       assert.equal(triage.risk, 'high');
@@ -317,7 +317,7 @@ async function runClassificationTests() {
     await test('ADR title-lock gives high confidence (≥0.80)', async () => {
       const { classifyRdIntake } = await import(path.join(ROOT, 'lib/intake/classify.mjs'));
       const s = intakeSignals.architectureADR;
-      const triage = classifyRdIntake({ sourcePath: `.cx/inbox/${s.filename}`, extractedText: s.content });
+      const triage = classifyRdIntake({ sourcePath: `.construct/inbox/${s.filename}`, extractedText: s.content });
       assert.equal(triage.intakeType, 'architecture');
       assert.equal(triage.primaryOwner, 'architect');
       assert.ok(triage.confidence >= 0.80, `expected ≥0.80 confidence for ADR title-lock, got ${triage.confidence}`);
@@ -326,7 +326,7 @@ async function runClassificationTests() {
     await test('unstructured rough notes classify as user-signal', async () => {
       const { classifyRdIntake } = await import(path.join(ROOT, 'lib/intake/classify.mjs'));
       const s = intakeSignals.roughNotes;
-      const triage = classifyRdIntake({ sourcePath: `.cx/inbox/${s.filename}`, extractedText: s.content });
+      const triage = classifyRdIntake({ sourcePath: `.construct/inbox/${s.filename}`, extractedText: s.content });
       assert.equal(triage.intakeType, 'user-signal');
       assert.equal(triage.primaryOwner, 'product-manager');
     });
@@ -334,7 +334,7 @@ async function runClassificationTests() {
     await test('incident postmortem classifies as incident', async () => {
       const { classifyRdIntake } = await import(path.join(ROOT, 'lib/intake/classify.mjs'));
       const s = intakeSignals.incidentPostmortem;
-      const triage = classifyRdIntake({ sourcePath: `.cx/inbox/${s.filename}`, extractedText: s.content });
+      const triage = classifyRdIntake({ sourcePath: `.construct/inbox/${s.filename}`, extractedText: s.content });
       assert.equal(triage.intakeType, 'incident');
       assert.equal(triage.primaryOwner, 'sre');
       assert.equal(triage.recommendedAction, 'create-runbook');
@@ -343,7 +343,7 @@ async function runClassificationTests() {
     await test('compliance finding classifies as legal-compliance', async () => {
       const { classifyRdIntake } = await import(path.join(ROOT, 'lib/intake/classify.mjs'));
       const s = intakeSignals.complianceFinding;
-      const triage = classifyRdIntake({ sourcePath: `.cx/inbox/${s.filename}`, extractedText: s.content });
+      const triage = classifyRdIntake({ sourcePath: `.construct/inbox/${s.filename}`, extractedText: s.content });
       assert.equal(triage.intakeType, 'legal-compliance');
       assert.equal(triage.primaryOwner, 'legal-compliance');
     });
@@ -351,7 +351,7 @@ async function runClassificationTests() {
     await test('competitive research classifies as research', async () => {
       const { classifyRdIntake } = await import(path.join(ROOT, 'lib/intake/classify.mjs'));
       const s = intakeSignals.competitiveResearch;
-      const triage = classifyRdIntake({ sourcePath: `.cx/inbox/${s.filename}`, extractedText: s.content });
+      const triage = classifyRdIntake({ sourcePath: `.construct/inbox/${s.filename}`, extractedText: s.content });
       assert.equal(triage.intakeType, 'research');
       assert.equal(triage.primaryOwner, 'business-strategist');
     });
@@ -359,7 +359,7 @@ async function runClassificationTests() {
     await test('ops runbook classifies as ops', async () => {
       const { classifyRdIntake } = await import(path.join(ROOT, 'lib/intake/classify.mjs'));
       const s = intakeSignals.runbookOps;
-      const triage = classifyRdIntake({ sourcePath: `.cx/inbox/${s.filename}`, extractedText: s.content });
+      const triage = classifyRdIntake({ sourcePath: `.construct/inbox/${s.filename}`, extractedText: s.content });
       assert.equal(triage.intakeType, 'ops');
       assert.equal(triage.primaryOwner, 'operations');
     });
@@ -367,7 +367,7 @@ async function runClassificationTests() {
     await test('eval finding classifies as eval-finding', async () => {
       const { classifyRdIntake } = await import(path.join(ROOT, 'lib/intake/classify.mjs'));
       const s = intakeSignals.evalFinding;
-      const triage = classifyRdIntake({ sourcePath: `.cx/inbox/${s.filename}`, extractedText: s.content });
+      const triage = classifyRdIntake({ sourcePath: `.construct/inbox/${s.filename}`, extractedText: s.content });
       assert.equal(triage.intakeType, 'eval-finding');
       assert.equal(triage.primaryOwner, 'evaluator');
     });
@@ -375,8 +375,8 @@ async function runClassificationTests() {
     await test('classification is deterministic', async () => {
       const { classifyRdIntake } = await import(path.join(ROOT, 'lib/intake/classify.mjs'));
       const s = intakeSignals.bugReport;
-      const t1 = classifyRdIntake({ sourcePath: `.cx/inbox/${s.filename}`, extractedText: s.content });
-      const t2 = classifyRdIntake({ sourcePath: `.cx/inbox/${s.filename}`, extractedText: s.content });
+      const t1 = classifyRdIntake({ sourcePath: `.construct/inbox/${s.filename}`, extractedText: s.content });
+      const t2 = classifyRdIntake({ sourcePath: `.construct/inbox/${s.filename}`, extractedText: s.content });
       assert.deepEqual(t1, t2);
     });
   });
@@ -393,9 +393,9 @@ async function runIntakeQueueTests() {
       const results = [];
       for (const key of keys) {
         const s = intakeSignals[key];
-        const triage = classifyRdIntake({ sourcePath: `.cx/inbox/${s.filename}`, extractedText: s.content });
+        const triage = classifyRdIntake({ sourcePath: `.construct/inbox/${s.filename}`, extractedText: s.content });
         const res = await queue.enqueue({
-          intake: { sourcePath: `.cx/inbox/${s.filename}`, outputPath: `.cx/intake/pending/${s.filename}.json`, characters: s.content.length },
+          intake: { sourcePath: `.construct/inbox/${s.filename}`, outputPath: `.construct/intake/pending/${s.filename}.json`, characters: s.content.length },
           triage, excerpt: s.content.substring(0, 800),
         });
         results.push(res);
@@ -417,7 +417,7 @@ async function runIntakeQueueTests() {
       const { FilesystemIntakeQueue } = await import(path.join(ROOT, 'lib/intake/queue.mjs'));
       const queue = new FilesystemIntakeQueue(sandboxDir);
       const result = await queue.enqueue({
-        intake: { sourcePath: 'inbox/r-test.md', outputPath: '.cx/intake/pending/r-test.json', characters: 50 },
+        intake: { sourcePath: 'inbox/r-test.md', outputPath: '.construct/intake/pending/r-test.json', characters: 50 },
         triage: { intakeType: 'bug', primaryOwner: 'debugger', rdStage: 'implementation' },
         excerpt: 'read test',
       });
@@ -432,7 +432,7 @@ async function runIntakeQueueTests() {
       const { FilesystemIntakeQueue } = await import(path.join(ROOT, 'lib/intake/queue.mjs'));
       const queue = new FilesystemIntakeQueue(sandboxDir);
       const result = await queue.enqueue({
-        intake: { sourcePath: 'inbox/m-test.md', outputPath: '.cx/intake/pending/m-test.json', characters: 50 },
+        intake: { sourcePath: 'inbox/m-test.md', outputPath: '.construct/intake/pending/m-test.json', characters: 50 },
         triage: { intakeType: 'bug', primaryOwner: 'debugger', rdStage: 'implementation' },
         excerpt: 'mark test',
       });
@@ -447,14 +447,14 @@ async function runIntakeQueueTests() {
       const { FilesystemIntakeQueue } = await import(path.join(ROOT, 'lib/intake/queue.mjs'));
       const queue = new FilesystemIntakeQueue(sandboxDir);
       await queue.enqueue({
-        intake: { sourcePath: 'inbox/cli-test.md', outputPath: '.cx/intake/pending/cli-test.json', characters: 50 },
+        intake: { sourcePath: 'inbox/cli-test.md', outputPath: '.construct/intake/pending/cli-test.json', characters: 50 },
         triage: { intakeType: 'bug', primaryOwner: 'debugger', rdStage: 'implementation' },
         excerpt: 'CLI test entry',
       });
 
       const list = spawnSync(RUNNER, [CONSTRUCT_BIN, 'intake', 'list'], {
         cwd: sandboxDir, encoding: 'utf8',
-        env: { ...process.env, CX_TOOLKIT_DIR: ROOT },
+        env: { ...process.env, CONSTRUCT_TOOLKIT_DIR: ROOT },
       });
       assert.equal(list.status, 0, `intake list failed: ${list.stderr}`);
       assert.ok(list.stdout.includes('bug'), `list should show bug type, got: ${list.stdout.substring(0, 200)}`);
@@ -469,7 +469,7 @@ async function runTaskGraphTests() {
       const { generateTaskGraphFromTriage } = await import(path.join(ROOT, 'lib/task-graph/generate.mjs'));
 
       const s = intakeSignals.bugReport;
-      const triage = classifyRdIntake({ sourcePath: `.cx/inbox/${s.filename}`, extractedText: s.content });
+      const triage = classifyRdIntake({ sourcePath: `.construct/inbox/${s.filename}`, extractedText: s.content });
 
       const graph = generateTaskGraphFromTriage({ triage, project: 'qa-sandbox', request: s.content });
       assert.ok(graph.id, 'graph must have an id');
@@ -486,7 +486,7 @@ async function runTaskGraphTests() {
       const { generateTaskGraphFromTriage } = await import(path.join(ROOT, 'lib/task-graph/generate.mjs'));
 
       const s = intakeSignals.architectureADR;
-      const triage = classifyRdIntake({ sourcePath: `.cx/inbox/${s.filename}`, extractedText: s.content });
+      const triage = classifyRdIntake({ sourcePath: `.construct/inbox/${s.filename}`, extractedText: s.content });
 
       const graph = generateTaskGraphFromTriage({ triage, project: 'qa-sandbox', request: s.content });
       assert.ok(graph.nodes.length >= 1, 'architecture graph should have nodes');
@@ -499,7 +499,7 @@ async function runTaskGraphTests() {
       const { generateTaskGraphFromTriage } = await import(path.join(ROOT, 'lib/task-graph/generate.mjs'));
 
       const s = intakeSignals.securityFinding;
-      const triage = classifyRdIntake({ sourcePath: `.cx/inbox/${s.filename}`, extractedText: s.content });
+      const triage = classifyRdIntake({ sourcePath: `.construct/inbox/${s.filename}`, extractedText: s.content });
 
       const graph = generateTaskGraphFromTriage({ triage, project: 'qa-sandbox', request: s.content });
       const securityNode = graph.nodes.find(n => n.owner === 'security');
@@ -512,7 +512,7 @@ async function runTaskGraphTests() {
       const { FilesystemTaskGraphStore } = await import(path.join(ROOT, 'lib/task-graph/store.mjs'));
 
       const s = intakeSignals.bugReport;
-      const triage = classifyRdIntake({ sourcePath: `.cx/inbox/${s.filename}`, extractedText: s.content });
+      const triage = classifyRdIntake({ sourcePath: `.construct/inbox/${s.filename}`, extractedText: s.content });
       const graph = generateTaskGraphFromTriage({ triage, project: 'qa-sandbox', request: s.content });
 
       const store = new FilesystemTaskGraphStore(sandboxDir);

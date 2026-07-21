@@ -1,0 +1,14 @@
+{
+  "id": "research-evidence",
+  "ownerWorkerProfile": "orchestrator",
+  "description": "Enforces evidence hierarchy and citation discipline in research and analysis artifacts.",
+  "enforcement": "(worker-profile prompt)",
+  "mode": "honor-system",
+  "approvalWorkerProfiles": [],
+  "requiredPolicies": [],
+  "vetoWorkerProfiles": [],
+  "escalationWorkerProfiles": [],
+  "governs": [],
+  "conditions": [],
+  "evidence": []
+}

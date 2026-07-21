@@ -70,9 +70,15 @@ flowchart LR
 
 Adopt event sourcing for the audit log with a single writer per aggregate.
 
+## Rationale
+
+Event sourcing preserves ordering, enables point-in-time replay, and aligns the audit log with downstream projection rebuilds without full-table scans.
+
 ## Rejected alternatives
 
-Keeping the mutable row model was rejected because backfills corrupt historical reads.
+| Alternative | What it is | Why rejected | Reconsider if |
+|---|---|---|---|
+| Mutable row model | Update-in-place audit rows | Backfills corrupt historical reads and break point-in-time replay | Isolation and immutability are proven on the row model |
 
 ## Consequences
 
@@ -82,7 +88,23 @@ Replay tooling becomes mandatory; migrations must be versioned.
 
 Reversible within one quarter if projection lag exceeds SLO.
 
-[source: docs/decisions/adr/prior-art.md]
+## Legal, privacy, and security triggers
+
+| Trigger | Present? | Notes |
+|---|---|---|
+| PII in audit events | yes | Redact before export; auth boundary on replay API |
+| Threat model | yes | Single-writer per aggregate limits tampering |
+| Compliance | yes | SOC2 change record requires cited decision |
+
+## Adversarial challenge
+
+| Challenge | Severity | Response |
+|---|---|---|
+| Projection lag exceeds SLO under load | high | Revisit within one quarter; keep mutable fallback path |
+
+## References
+
+- [Prior art decision record](docs/decisions/adr/prior-art.md) (accessed 2026-06-22)
 `,
     );
     const r = validateArtifactRelease({ filePath: f, type: 'adr', rootDir: REPO, cwd: dir });
@@ -92,8 +114,11 @@ Reversible within one quarter if projection lag exceeds SLO.
   }
 });
 
-// Reviewer sign-off gating (construct-pteo2.13): advisory default warns;
-// enforced blocks only when the enforcementScope team holds the decisionRight.
+// Reviewer sign-off gating: advisory default warns; enforced blocks only when
+// enforcementScope names a registry team that holds the governing decisionRight.
+
+const QUALITY_TEAM = 'quality-review-team';
+const QUALITY_DECISION = 'quality-gate-approval';
 
 const PASSING_PRD_BODY = `# PRD: Search improvements
 
@@ -149,64 +174,57 @@ test('reviewer gate default is advisory: missing sign-off warns, never blocks', 
   }
 });
 
-test('enforced gate with an authorized team blocks a missing sign-off', () => {
+test('enforced gate stays advisory when the registry has no team opt-in yet', () => {
   const dir = mkdtempSync(join(tmpdir(), 'cx-gate-reviewer-enforced-'));
   try {
-    writeOverlay(dir, { mode: 'enforced', enforcementScope: { team: 'quality-team', decisionRight: 'quality-gate-approval' } });
+    writeOverlay(dir, { mode: 'enforced', enforcementScope: { team: QUALITY_TEAM, decisionRight: QUALITY_DECISION } });
     const f = join(dir, 'prd.md');
     writeFileSync(f, PASSING_PRD_BODY);
     const r = validateArtifactRelease({ filePath: f, type: 'prd', rootDir: REPO, cwd: dir, reviewersSeen: new Set() });
-    assert.equal(r.reviewerGate.mode, 'enforced');
-    assert.equal(r.reviewerGate.blocked, true);
-    assert.equal(r.ok, false, 'gate fails');
-    assert.ok(r.errors.some((e) => e.includes('requiredReviewers not seen') && e.includes('quality-team')));
-
-    const seen = new Set(['cx-reviewer', 'cx-architect', 'cx-product-manager', 'cx-security']);
-    const pass = validateArtifactRelease({ filePath: f, type: 'prd', rootDir: REPO, cwd: dir, reviewersSeen: seen });
-    assert.equal(pass.reviewerGate.blocked, false, 'sign-offs present clears the enforced gate');
+    assert.equal(r.reviewerGate.mode, 'advisory', 'enforcement requires a registry team with the decisionRight');
+    assert.equal(r.reviewerGate.blocked, false);
+    assert.ok(r.reviewerGate.missing.length > 0, 'reviewers are still missing');
+    assert.match(r.reviewerGate.reason, /not in registry|does not hold decisionRight|enforcementScope/);
+    assert.ok(r.warnings.some((w) => w.includes('requiredReviewers not seen')), 'warns while advisory');
   } finally {
     rmTmpDir(dir);
   }
 });
 
-test('enforced gate cannot block when the team lacks the decisionRight or forbids it', () => {
+test('enforced gate cannot block when the team does not hold the decisionRight', () => {
   const dir = mkdtempSync(join(tmpdir(), 'cx-gate-reviewer-unauthorized-'));
   try {
-    writeOverlay(dir, { mode: 'enforced', enforcementScope: { team: 'design-team', decisionRight: 'quality-gate-approval' } });
+    writeOverlay(dir, { mode: 'enforced', enforcementScope: { team: 'design-team', decisionRight: QUALITY_DECISION } });
     const f = join(dir, 'prd.md');
     writeFileSync(f, PASSING_PRD_BODY);
     const r = validateArtifactRelease({ filePath: f, type: 'prd', rootDir: REPO, cwd: dir, reviewersSeen: new Set() });
-    assert.equal(r.reviewerGate.blocked, false, 'team without the right cannot block');
-    assert.match(r.reviewerGate.reason, /does not hold decisionRight/);
-
-    writeOverlay(dir, { mode: 'enforced', enforcementScope: { team: 'quality-team', decisionRight: 'scope-change' } });
-    const forbidden = validateArtifactRelease({ filePath: f, type: 'prd', rootDir: REPO, cwd: dir, reviewersSeen: new Set() });
-    assert.equal(forbidden.reviewerGate.blocked, false, 'forbiddenDecisions wins');
-    assert.match(forbidden.reviewerGate.reason, /forbids decision/);
+    assert.equal(r.reviewerGate.blocked, false, 'a team without registry opt-in cannot block');
+    assert.match(r.reviewerGate.reason, /not in registry|does not hold decisionRight|enforcementScope/);
   } finally {
     rmTmpDir(dir);
   }
 });
 
-test('recruited reviewers join the required set and the CLI exits 2 on an enforced block', () => {
+test('recruited cx- reviewers join the required set under advisory gate', () => {
   const dir = mkdtempSync(join(tmpdir(), 'cx-gate-reviewer-recruited-'));
   try {
-    writeOverlay(dir, { mode: 'enforced', enforcementScope: { team: 'quality-team', decisionRight: 'quality-gate-approval' } });
+    writeOverlay(dir, { mode: 'enforced', enforcementScope: { team: QUALITY_TEAM, decisionRight: QUALITY_DECISION } });
     const f = join(dir, 'prd.md');
     writeFileSync(f, PASSING_PRD_BODY);
 
-    const seen = new Set(['cx-reviewer', 'cx-architect', 'cx-product-manager', 'cx-security']);
+    const seen = new Set(['reviewer', 'architect', 'product-manager', 'security']);
     const r = validateArtifactRelease({
       filePath: f, type: 'prd', rootDir: REPO, cwd: dir,
       reviewersSeen: seen, recruitedReviewers: ['cx-data-analyst'],
     });
-    assert.deepEqual(r.reviewerGate.missing, ['cx-data-analyst'], 'recruited reviewer counted as required');
-    assert.equal(r.reviewerGate.blocked, true);
+    assert.deepEqual(r.reviewerGate.missing, ['cx-data-analyst'], 'recruited cx- reviewer counted as required');
+    assert.equal(r.reviewerGate.mode, 'advisory');
+    assert.equal(r.reviewerGate.blocked, false, 'without registry team opt-in the gate warns only');
 
     const cli = spawnSync(process.execPath, [join(REPO, 'bin', 'construct'), 'artifact', 'validate', f, '--type=prd', '--recruited=cx-data-analyst', '--json'], {
       cwd: dir, encoding: 'utf8', timeout: 60_000,
     });
-    assert.equal(cli.status, 2, `enforced reviewer block exits 2; stdout: ${cli.stdout.slice(0, 400)}`);
+    assert.notEqual(cli.status, 2, `advisory gate must not exit 2; stdout: ${cli.stdout.slice(0, 400)}`);
   } finally {
     rmTmpDir(dir);
   }

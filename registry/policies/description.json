@@ -1,0 +1,16 @@
+{
+  "id": "description",
+  "ownerWorkerProfile": "construct",
+  "description": "Decision: description",
+  "enforcement": "hard",
+  "mode": "approval",
+  "approvalWorkerProfiles": [],
+  "requiredPolicies": [],
+  "vetoWorkerProfiles": [],
+  "escalationWorkerProfiles": [],
+  "governs": [
+    "description"
+  ],
+  "conditions": [],
+  "evidence": []
+}

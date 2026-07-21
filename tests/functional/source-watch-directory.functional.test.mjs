@@ -10,24 +10,24 @@
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { tmpdir } from 'node:os';
 
-import { detectSourceChanges, refreshWatch, readWatchState, hashDirectory } from '../../lib/sources/watch.mjs';
+import {
+  detectSourceChanges,
+  refreshWatch,
+  readWatchState,
+  hashDirectory,
+  acknowledgeSourceChange,
+} from '../../lib/sources/watch.mjs';
 import { readSourceLedger } from '../../lib/sources/staleness-ledger.mjs';
 
-// refreshWatch persists watch state via resolveStatePath (lib/state-root.mjs),
-// which anchors to the real user home unless CX_HOME_OVERRIDE is set — an
-// unpinned run leaks a fresh ~/.construct/projects/<hash>/context-repos/ key
-// per run (the hash covers a random tmpdir projectRoot).
-
 const HOME_OVERRIDE = fs.mkdtempSync(path.join(tmpdir(), 'watch-dir-home-'));
-const PREV_HOME_OVERRIDE = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = HOME_OVERRIDE;
+const PREV_HOME_OVERRIDE = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = HOME_OVERRIDE;
 after(() => {
-  if (PREV_HOME_OVERRIDE === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = PREV_HOME_OVERRIDE;
+  if (PREV_HOME_OVERRIDE === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = PREV_HOME_OVERRIDE;
   fs.rmSync(HOME_OVERRIDE, { recursive: true, force: true });
 });
 
@@ -47,11 +47,9 @@ test('hashDirectory is stable for identical trees and moves on edit', () => {
   const h1 = hashDirectory(dir);
   assert.match(h1, /^[0-9a-f]{16}$/);
 
-  // Rewriting with identical content yields the same hash.
   writeFile(dir, 'a.md', '# hello');
   assert.equal(hashDirectory(dir), h1);
 
-  // Editing one file moves the hash.
   writeFile(dir, 'a.md', '# changed');
   assert.notEqual(hashDirectory(dir), h1);
 
@@ -65,7 +63,6 @@ test('refreshWatch detects a directory change and records it in the ledger', () 
 
   const target = { id: 'dir-1', provider: 'directory', selector: { path: dir } };
 
-  // First refresh: no previous state, so not "changed" (baseline captured).
   const first = refreshWatch(target, { projectRoot });
   assert.equal(first.kind, 'directory');
   assert.equal(first.changed, false);
@@ -75,16 +72,23 @@ test('refreshWatch detects a directory change and records it in the ledger', () 
   assert.equal(stateAfterFirst.lastSeenHash, first.current);
   assert.equal(stateAfterFirst.changedAt, null);
 
-  // Mutate the directory tree.
   writeFile(dir, 'note.md', 'v2');
 
   const second = refreshWatch(target, { projectRoot });
   assert.equal(second.changed, true);
+  assert.equal(second.pending, true);
   assert.equal(second.previous, first.current);
   assert.equal(second.current, hashDirectory(dir));
 
   const stateAfterSecond = readWatchState(target, { projectRoot });
+  assert.equal(stateAfterSecond.lastSeenHash, first.current);
+  assert.equal(stateAfterSecond.pendingHash, second.current);
   assert.equal(stateAfterSecond.changedAt != null, true);
+
+  const ack = acknowledgeSourceChange(target, { projectRoot });
+  assert.equal(ack.lastSeenHash, second.current);
+  assert.equal(ack.pendingHash, null);
+  assert.equal(ack.changedAt, null);
 
   const ledger = readSourceLedger({ projectRoot });
   assert.ok(ledger.length >= 1);

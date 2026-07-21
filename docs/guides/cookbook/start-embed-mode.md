@@ -35,7 +35,7 @@ roles:
   secondary: product-manager     # secondary orientation (optional)
 ```
 
-Available role names match the specialist agents in the registry (e.g. `architect`, `product-manager`, `engineer`, `sre`, `security`). You can also set roles from the **Config** section in the dashboard.
+Available role names match the 12 Worker Profiles in `registry/worker-profiles/` (e.g. `architect`, `product-manager`, `engineer`, `operations`, `security`). You can also set roles from the **Config** section in the dashboard.
 
 **Targets** tell embed where to route artifacts. Remote-only targets (no local `path`) receive docs via provider APIs. Local targets get direct filesystem writes.
 
@@ -51,7 +51,7 @@ The daemon runs ten scheduled jobs:
 
 | Job | What it does | Interval |
 |-----|-------------|----------|
-| snapshot | Polls all providers, writes `.cx/snapshot.md` | Per config (default: 5 min) |
+| snapshot | Polls all providers, writes `.construct/snapshot.md` | Per config (default: 5 min) |
 | provider-health | Logs degraded providers, backs off failing ones | 5 min |
 | session-distill | Extracts session summaries into the observation store | 10 min |
 | self-repair | Removes stale locks, heals broken state files | 15 min |
@@ -104,17 +104,17 @@ construct embed stop
 ## View the latest snapshot
 
 ```sh
-cat ~/.cx/snapshot.md
+cat ~/.construct/snapshot.md
 ```
 
 Or open the dashboard at `http://localhost:4242` and go to the **Snapshot** tab.
 
 ## Change the storage root
 
-By default all data is stored under `~/.cx/`. To use a different location:
+By default all data is stored under `~/.construct/`. To use a different location:
 
 ```sh
-export CX_DATA_DIR=/mnt/construct-data
+export CONSTRUCT_DATA_DIR=/mnt/construct-data
 construct embed start
 ```
 

@@ -1,6 +1,6 @@
 # Construct
 
-**One AI interface. A team of specialists behind it. Hard gates. Runs locally, or deploys for teams.**
+**One governed AI interface. Canonical Worker Profiles, Procedures, Capabilities, and hard gates.**
 
 📖 **[Read the docs →](https://geraldmaron.github.io/construct/)** · 🚀 **[5-minute quickstart →](https://geraldmaron.github.io/construct/start)** · 📦 `npm install -g @geraldmaron/construct`
 
@@ -8,9 +8,9 @@
 
 > Heads up. I'm not a developer. Construct is a side project I'm vibe-coding to learn in public. There will be bugs, rough edges, and things that change without warning. The code is open source, the issues queue is real, and contributions are welcome. If you need production-grade tooling today, this isn't it yet.
 
-Construct sits on top of Claude Code, OpenCode, Codex, Cursor, and Copilot. You talk to one persona called `construct`. Behind it is a team of specialists shaped by your **org profile**: software R&D by default, with curated profiles for operations, creative, and research orgs, plus a schema-validated escape hatch for custom profiles. Each profile organizes its specialists by department (Product, Engineering, Operations, etc.) and carries its own intake taxonomy, doc templates, and role set. Sessions survive boundary changes via durable state in `.cx/`, beads, and a local vector index. Solo by default. Can deploy centrally for teams that want shared memory, telemetry, queues, and policy.
+Construct sits on top of Claude Code, OpenCode, Codex, Cursor, and Copilot. The current product surface is defined by the canonical registry: Workspace Presets select configuration, Worker Profiles provide bounded execution identity, Procedures describe reusable sequences, and Assignments connect work to Capabilities and Policies. Sessions persist in `.construct/`, Beads, and optional local retrieval state.
 
-`construct scope show|list|set <id>` to switch org-scope/profile. See [Profile lifecycle](https://geraldmaron.github.io/construct/concepts/scope-lifecycle) for how new profiles are built (it's a research process, not a JSON exercise). This is unrelated to the `--footprint` flag on `construct install` below (install-write-target vs. org profile) — see [ADR-0071](docs/decisions/adr/0071-install-footprint-vs-org-scope-naming.md), which records the decision to rename that install flag from `--scope` to `--footprint` (`--scope` still works as a deprecated alias).
+`construct workspace-preset list|show <id>` inspects the curated workspace-wide defaults (`rnd`, `operations`, `creative`, `research`). Set the active preset with `workspacePreset` in `construct.config.json`. See [Workspace Preset lifecycle](https://geraldmaron.github.io/construct/concepts/workspace-preset-lifecycle) for how new presets are researched and promoted.
 
 The team and enterprise modes exist because I wanted to learn what shipping a real multi-tenant tool would look like. The project is still open source, the code is still public, and the bar is still "does this help me learn." Run it solo if that's all you need.
 
@@ -31,7 +31,7 @@ Bootstrap local services (once per machine, opt-in to machine-scope writes):
 construct install --footprint=user --yes
 ```
 
-`construct install` requires an explicit `--footprint` — a bare invocation hard-errors naming the flag rather than silently writing nothing. `--footprint=project` prints footprint guidance without writing anything (see the [footprint contract](#footprint-contract) below or [ADR 0029](docs/decisions/adr/0029-install-scopes-and-hook-budgets.md)); use `--footprint=user` for machine setup, `--footprint=both` for both. (`--footprint` here means "where Construct writes on this machine," not the `construct scope` org-profile command above — [ADR-0071](docs/decisions/adr/0071-install-footprint-vs-org-scope-naming.md) renamed this flag from `--scope`; `--scope=<value>` still works as a deprecated alias.)
+`construct install` requires an explicit `--footprint` — a bare invocation hard-errors naming the flag rather than silently writing nothing. `--footprint=project` prints footprint guidance without writing anything (see the [footprint contract](#footprint-contract) below or [ADR 0029](docs/decisions/adr/0029-install-scopes-and-hook-budgets.md)); use `--footprint=user` for machine setup, `--footprint=both` for both.
 
 Initialize a project:
 
@@ -40,9 +40,9 @@ cd ~/your-project
 construct init --yes
 ```
 
-`construct init` scaffolds the project (`.cx/`, `AGENTS.md`, `plan.md`, adapters) and starts the local services by default. Pass `--no-start` to skip service startup, or `--interactive` for the guided flow.
+`construct init` scaffolds the project (`.construct/`, `AGENTS.md`, `plan.md`, adapters) and starts the local services by default. Pass `--no-start` to skip service startup, or `--interactive` for the guided flow.
 
-Open your editor and talk to `@construct`. A walkthrough lives in `.cx/construct_guide.md` (gitignored — local reference only).
+Open your editor and talk to `@construct`. A walkthrough lives in `.construct/construct_guide.md` (gitignored — local reference only).
 
 No Node? Try `brew install geraldmaron/construct/construct`. Cloning a project that already uses Construct? `npx -y @geraldmaron/construct init` wires it up.
 
@@ -59,7 +59,7 @@ construct intake list     # review new signals, if your project uses the inbox
 construct doctor          # diagnose install, service, MCP, and adapter drift
 ```
 
-In your editor, start with `@construct`. Ask for the outcome, not the specialist. Construct routes to the right specialist chain, keeps durable state in `.cx/` and Beads, and blocks risky mutations until the configured gates pass.
+In your editor, start with `@construct`. Ask for the outcome, not a Worker Profile name. Construct routes to the right Assignment chain, keeps durable state in `.construct/` and Beads, and blocks risky mutations until the configured gates pass.
 
 ## What you can do
 
@@ -69,7 +69,7 @@ In your editor, start with `@construct`. Ask for the outcome, not the specialist
 | Understand how it works | [Architecture](https://geraldmaron.github.io/construct/concepts/architecture) |
 | Pick a deployment mode | [Deployment model](https://geraldmaron.github.io/construct/concepts/deployment-model) |
 | Drop a signal and triage it | [Intake and triage](https://geraldmaron.github.io/construct/concepts/intake-and-triage) |
-| Add a custom specialist | [Add a custom specialist](https://geraldmaron.github.io/construct/cookbook/add-a-custom-agent) |
+| Add a custom Worker Profile | [Worker Profiles reference](https://geraldmaron.github.io/construct/reference/worker-profiles) and [Workspace Preset lifecycle](https://geraldmaron.github.io/construct/concepts/workspace-preset-lifecycle) |
 | Fix a blocked commit or red CI | [Fix a policy violation](https://geraldmaron.github.io/construct/cookbook/fix-a-policy-violation) |
 | Plug in your own LLM | [Plug in your own LLM](https://geraldmaron.github.io/construct/cookbook/plug-in-your-own-llm) |
 | Use Construct conversationally | [Connect your editor](https://geraldmaron.github.io/construct/start/connect-your-editor) |
@@ -82,7 +82,7 @@ Works with Anthropic, OpenRouter, Ollama, and other OpenAI-compatible providers.
 
 Three modes are defined. Only `solo` is fully implemented today.
 
-**`solo`** (default and fully supported) — runs entirely on the local machine. Filesystem task queue, local repo state, embedded LanceDB vector store, direct MCP dispatch, local JSONL traces. If every cloud service goes down, you still work from `plan.md`, `.cx/context.md`, beads, git, and the local vector index.
+**`solo`** (default and fully supported) — runs entirely on the local machine. Filesystem task queue, local repo state, embedded LanceDB vector store, direct MCP dispatch, local JSONL traces. If every cloud service goes down, you still work from `plan.md`, `.construct/context.md`, beads, git, and the local vector index.
 
 **`team`** (planned — partially implemented) — the architecture is defined: shared run storage, Postgres queue with row-locked worker claims, shared memory store, Docker worker pool, centralized telemetry, MCP through a broker. The SQL client, migrations, Postgres run store, Postgres queue provider, team-mode queue default, and worker registry heartbeat now exist. A missing database is a configuration error unless `CONSTRUCT_DEGRADED_OK=postgres-queue` is set, which visibly falls back to the git queue. Do not run `team` mode expecting full distributed execution yet.
 
@@ -124,7 +124,7 @@ Each signal gets a primary owner and a recommended handoff chain. Inspect with `
 
 `construct ingest <file>` extracts text from PDF, DOCX, XLSX, PPTX, HTML, plain text, email, and audio/video. High-fidelity extraction is the default and routes through a [docling](https://github.com/docling-project/docling) Python sidecar (MIT, IBM, donated to LF AI & Data) provisioned via [`uv`](https://github.com/astral-sh/uv); audio and video route through [`whisper.cpp`](https://github.com/ggml-org/whisper.cpp) (Metal-accelerated on macOS).
 
-First run downloads `uv` and creates `.cx/runtime/docling/.venv` (~1.5 GB including PyTorch). Audio requires a system `whisper-cli` binary — `brew install whisper-cpp` on macOS. Pass `--strict` to fail on any extraction info loss; pass `--legacy-extractor` to use the pre-docling regex path. Any silent drops (image-heavy PDFs, scanned pages with low OCR yield) are surfaced as `droppedInfo` in the CLI output.
+First run downloads `uv` and creates `~/.construct/runtime/docling/.venv` (~1.5 GB including PyTorch, shared across every project on the machine). Audio requires a system `whisper-cli` binary — `brew install whisper-cpp` on macOS. Pass `--strict` to fail on any extraction info loss; pass `--legacy-extractor` to use the pre-docling regex path. Any silent drops (image-heavy PDFs, scanned pages with low OCR yield) are surfaced as `droppedInfo` in the CLI output.
 
 ## Hard gates
 
@@ -136,21 +136,23 @@ Construct's writes are scoped and disclosed up front. The default `construct ins
 
 | Footprint | Trigger | Paths |
 |---|---|---|
-| Project | `construct init` | `.construct/`, `.cx/`, `.claude/` adapter tree, host adapters (`.codex/`, `.opencode/`, `.cursor/`, `.vscode/`), `construct.config.json`, marker block in `CLAUDE.md` / `AGENTS.md`, `.gitignore` append, `.beads/` |
-| Machine | `construct install --footprint=user` | `~/.construct/config.env`, `~/.construct/lib` (symlink), `~/.construct/services/`, `~/Library/LaunchAgents/` (macOS), MCP entries in `~/.config/opencode/opencode.json` and `~/.codex/config.toml`, marker block in `~/.claude/CLAUDE.md`, hook injection in `~/.claude/settings.json` (last two require interactive consent or `--yes`) |
+| Project | `construct init` | `.construct/` (config layer + nested `.construct/launcher/`), `.claude/` adapter tree, host adapters (`.codex/`, `.opencode/`, `.cursor/`, `.vscode/`), `construct.config.json`, marker block in `CLAUDE.md` / `AGENTS.md`, `.gitignore` append, `.beads/` |
+| Machine | `construct install --footprint=user` | `~/.config/construct/config.env`, `~/.config/construct/lib` (symlink), `~/.config/construct/services/` (e.g. `postgres/` compose files), `~/.local/state/construct/` (daemon state, workspace scaffold, vector-index fallback), `~/.cache/construct/embeddings`, `~/Library/LaunchAgents/` (macOS), MCP entries in `~/.config/opencode/opencode.json` and `~/.codex/config.toml`, marker block in `~/.claude/CLAUDE.md`, hook injection in `~/.claude/settings.json` (last two require interactive consent or `--yes`) |
 | Never touched | — | Shell rc files (`~/.bashrc`, `~/.zshrc`), npm global config, `git config --global` |
 
 Full table with file:line citations and the per-hook performance budget contract: [Architecture — Footprint contract](https://geraldmaron.github.io/construct/concepts/architecture#footprint-contract) and [ADR 0029](docs/decisions/adr/0029-install-scopes-and-hook-budgets.md).
 
 ## Learning loops
 
-Construct gets smarter on its own. Every session ends with an automatic capture: tools used, files touched, what the final reply said. That goes into `.cx/observations/` and is searchable from the next session. See [`docs/guides/concepts/learning-loops.mdx`](./docs/guides/concepts/learning-loops.mdx) for what's wired, what's coming, and how to turn pieces off.
+Construct gets smarter on its own. Every session ends with an automatic capture: tools used, files touched, what the final reply said. That goes into `.construct/observations/` and is searchable from the next session. See [`docs/guides/concepts/learning-loops.mdx`](./docs/guides/concepts/learning-loops.mdx) for what's wired, what's coming, and how to turn pieces off.
 
-## `.cx/` is local-only runtime state
+## `.construct/` is local-only runtime state
 
-`construct init` writes a runtime state tree at `.cx/` inside the project root: observations, sessions, vector index, intake packets, task graphs, and traces. **It's local-only and must never be committed.** `construct init` adds `.cx/` to your project's `.gitignore` automatically (idempotent: it won't double-add if you already have it). Daily trace shards (`.cx/traces/<date>.jsonl`) cap at 100 MB and rotate to `<date>.<n>.jsonl` so a stray commit never crosses GitHub's single-file limit. Override the cap with `CONSTRUCT_TRACE_MAX_MB`.
+`construct init` writes a runtime-marker tree at `.construct/` inside the project root: context, observations, sessions, intake packets, and task graphs, alongside the config layer. **It is local-only and must never be committed.** See [Project scopes](docs/guides/concepts/project-scopes.md) for the full directory breakdown.
 
-The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon.log`. That log rotates every minute at 50 MB and keeps 5 gzipped segments by default; override via `CONSTRUCT_EMBED_LOG_MAX_MB` and `CONSTRUCT_EMBED_LOG_MAX_SEGMENTS`.
+Heavier, regenerable state — traces and the LanceDB vector index — lives outside the project entirely, at the machine-scoped `~/.construct/projects/<key>/` (keyed by git remote so every clone/worktree of the same repo shares it; ADR-0066), not under the project's own `.construct/`. Trace shards (`~/.construct/projects/<key>/traces/<date>.jsonl`) cap at 100 MB and rotate to `<date>.<n>.jsonl` so a stray commit never crosses GitHub's single-file limit. Override the cap with `CONSTRUCT_TRACE_MAX_MB`.
+
+The embed daemon writes its supervisor stdout log to the machine's XDG state directory — `~/.local/state/construct/runtime/embed-daemon.log` by default (override the root with `CONSTRUCT_DOCTOR_ROOT`). That log rotates every minute at 50 MB and keeps 5 gzipped segments by default; override via `CONSTRUCT_EMBED_LOG_MAX_MB` and `CONSTRUCT_EMBED_LOG_MAX_SEGMENTS`.
 
 ## Core commands
 
@@ -168,21 +170,19 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct install` | Machine setup (footprint per ADR-0029/ADR-0071): --footprint=project\|user\|both, default project |
 | `construct intake` | View and process the active profile's intake queue (queue label varies by profile) |
 | `construct oracle` | Oracle meta-controller — fleet health review and bounded-auto maintenance |
-| `construct participation` | Author and inspect ADR-0070 participation rules (condition → recruit with role/gate) over org-api — same writer and validation as Org Studio and the participation_rules MCP tool |
 | `construct recommendations` | View and manage artifact recommendations |
-| `construct sandbox` | Isolated tmpdir-based environment for QA / specialist dry-runs |
-| `construct scope` | Manage the active org scope and its lifecycle (draft, promote, archive, health) |
+| `construct sandbox` | Isolated tmpdir-based environment for QA and worker dry-runs |
 | `construct status` | Show system health and credentials |
 | `construct stop` | Stop all running services |
-| `construct studio` | Org Studio — local, zero-dependency web app for authoring specialists, teams, relationships, fences, and participation rules over org-api (loopback-only) |
 | `construct sync` | Sync agent adapters to AI tools |
-| `construct workers` | List registered team workers and heartbeat freshness |
+| `construct workers` | List shared-deployment worker heartbeats (requires DATABASE_URL; optional for solo) |
+| `construct workspace-preset` | Inspect and apply workspace-wide defaults |
 
 ### Work
 
 | Command | What it does |
 |---|---|
-| `construct artifact` | Plan or locally execute manifest-backed artifact workflows with execution provenance |
+| `construct artifact` | Plan or locally execute manifest-backed artifact procedures with execution provenance |
 | `construct ask` | One-shot ask against the active knowledge index |
 | `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
 | `construct customer` | Manage customer profiles for product intelligence |
@@ -199,28 +199,32 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct integrations` | Check and manage external system connections |
 | `construct knowledge` | Query, index, or add to the project knowledge base |
 | `construct memory` | Inspect memory layer |
-| `construct pack` | Specialist/team/profile pack enable/disable lifecycle (LMCP-E3) |
+| `construct pack` | Worker profile and workspace preset pack lifecycle |
+| `construct procedure` | Inspect and invoke reusable deterministic procedures |
 | `construct publish` | Publish typed artifacts: release gate + export PDF with figures + optional demos |
 | `construct reflect` | Capture improvement feedback and update Construct core |
 | `construct search` | Hybrid search across project state |
 | `construct storage` | Manage storage backend |
 | `construct synthesize` | Cross-project synthesis: map each registered project, reduce to an origin-cited answer |
 | `construct tags` | Manage the controlled tag vocabulary (propose, add, deprecate, audit) |
-| `construct team` | Team review, template listing, and custom team authoring (`team:add` / `team:remove` are internal registry editors) |
 | `construct tools` | Detect optional publish pipeline binaries (Pandoc, D2, VHS, Playwright) |
+| `construct tracker-projection` | Beads projection, field authority, and reconciliation (construct-b0nny.27, target-model.md concept 16) — treats bd as a projection of the graph-informed Work model with explicit per-field authority, detect-and-report drift, and read-only raw-record-preserving import. Sits behind bd; issues no bd write. |
 | `construct wireframe` | Generate wireframes from description |
-| `construct workflow` | Instantiate workflow templates (PRD-to-review chains, onboarding, handoffs) |
+| `construct work-spec` | Work spec schema + graph-informed decomposition check (construct-b0nny.23, target-model.md concepts 6/7/9) — cycle detection, declared-dependency graph resolution, and independence-claim verification over a Work spec's decomposition. |
+| `construct worker-profile` | Inspect assignable worker configurations |
+| `construct workplace-loop` | Production sources/directives/workplace loop (construct-b0nny.25) — detects real signals from a connected source, checks them against Workspace strategy, and routes any proposed external effect through the governed-write chokepoint. |
 | `construct workspace` | Manage PM workspaces for multi-PM signal routing |
+| `construct workspace-domain` | Workspace domain model (construct-b0nny.22, target-model.md concept 1) — owner, membership, settings, lifecycle. Distinct from `construct workspace` above, which is the unrelated multi-PM signal-routing command. |
 
 ### Models & Integrations
 
 | Command | What it does |
 |---|---|
 | `construct acp` | Run Construct as an Agent Client Protocol (ACP) server over stdio for Zed/JetBrains/VS Code ACP clients |
-| `construct capability` | Describe what this Construct install can do (embedded contract; read-only, secret-free) |
+| `construct capability` | Inspect typed operations the system can perform |
 | `construct claude:allow` | Manage Claude Code `permissions.allow` from the outside (auto-classifier blocks the agent from editing it) |
 | `construct db` | Inspect and migrate the optional Postgres backend |
-| `construct execution` | Resolve the execution-capability contract for an embedded workflow (orchestrated vs prompt-only; descriptive, not enforced) |
+| `construct execution` | Resolve the execution-capability contract for an embedded procedure (orchestrated vs prompt-only; descriptive, not enforced) |
 | `construct flow` | Deterministic flow-engine runs: start or resume a checkpointed flow, or inspect its status |
 | `construct hosts` | Show host support for Construct orchestration |
 | `construct mcp` | Manage MCP integrations |
@@ -245,7 +249,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct eval-datasets` | Sync scored traces from the telemetry backend into eval datasets for prompt regression testing |
 | `construct evals` | Show evaluator catalog for prompt and agent experiments |
 | `construct feedback:history` | Show recorded outcome ratings |
-| `construct feedback:record` | Record an outcome rating for a recent specialist invocation |
+| `construct feedback:record` | Record an outcome rating for a recent worker invocation |
 | `construct improvement` | Governed improvement loop — review, approve, and record apply/rollback for proposals |
 | `construct llm-judge` | Run LLM-as-a-judge evaluations on unscored traces for continuous quality feedback |
 | `construct optimize` | Prompt optimization using telemetry trace quality scores |
@@ -267,7 +271,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct docs:site` | Regenerate generated reference pages under docs/guides/reference/ |
 | `construct docs:update` | Regenerate AUTO-managed doc regions (alias for `docs update`) |
 | `construct docs:verify` | Validate documentation quality (alias for `docs verify`) |
-| `construct impact` | Change-impact analysis — map changed files to affected tests, capabilities, and workflows |
+| `construct impact` | Change-impact analysis — map changed files to affected tests, capabilities, and procedures |
 | `construct rules` | Rule and hook reference telemetry rollup |
 
 ### Advanced
@@ -287,14 +291,15 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct embed` | Embed mode management |
 | `construct gates:audit` | Audit policy gates |
 | `construct hooks:health` | Check hook health |
-| `construct list` | List all agents |
+| `construct list` | List worker profiles (shortcut for worker-profile list); shows active Workspace Preset |
 | `construct monitor` | One-command setup for continuous monitoring-as-a-role: sources.targets + embed.yaml roles + capability enable + daemon start |
-| `construct policy` | Show active policy gates with enforcement details |
+| `construct policy` | Inspect rules governing authority, approval, and external effects |
 | `construct provider` | Provider management |
-| `construct role` | Role framework management |
+| `construct role` | Worker Profile invocation queue (event-driven dispatch) |
 | `construct roles:list` | List installed role contracts |
 | `construct roles:set` | Activate a role contract |
 | `construct scheduler` | Manage scheduled background jobs (tag-mining, doc-hygiene, skill-rollup) |
+| `construct server` | Shared workspace server with authentication, a Postgres-backed Workspace store, and a worker-claim queue for multi-user deployments. |
 | `construct skills` | Skill relevance detection |
 | `construct sources` | Manage typed integration source targets in construct.config.json |
 | `construct templates` | List doc templates and register custom document classes (project-tier overlay; builtin manifest untouched) |
@@ -327,17 +332,14 @@ construct/
 ├── dev
 ├── docs             Architecture notes, runbooks, and documentation contract
 ├── examples         Example projects and persona fixtures
-├── Formula
 ├── lib              Core runtime: CLI, hooks, MCP, providers, oracle, sync
-├── packages         Shared workspace packages (e.g. cx-ui)
-├── personas         Persona prompt definitions
+├── packages         Shared workspace packages
 ├── platforms        Host adapter capability configs
 ├── registry         Product capability registry
 ├── rules            Coding and quality standards
 ├── schemas          Registry and config JSON Schema
 ├── scripts          Audit, alignment, release, and sync scripts
 ├── skills           Reusable domain knowledge files
-├── specialists      Org registry, contracts, and specialist prompts
 ├── templates        Doc and workflow templates
 ├── tests            Test suite
 ├── vendor
@@ -353,7 +355,7 @@ construct uninstall          # interactive; pick what to remove
 npm uninstall @geraldmaron/construct
 ```
 
-`construct uninstall` finds both project state (`.construct/`, the Construct-owned files under `.claude/agents/` and `.claude/commands/`, hooks and mcpServers Construct added to `.claude/settings.json`) and machine state (`~/.cx/`, `~/.local/state/construct/`, the embedding model cache). Auto-risk items go by default. Ask-risk items (API keys, files you may have edited) are skipped unless you opt in.
+`construct uninstall` finds both project state (`.construct/`, the Construct-owned files under `.claude/agents/` and `.claude/commands/`, hooks and mcpServers Construct added to `.claude/settings.json`) and machine state (`~/.local/state/construct/` for daemon state/logs plus the workspace dir and vector-index fallback, `~/.cache/construct/embeddings` for the embedding model cache, `~/.config/construct/config.env` for saved API keys). Auto-risk items go by default. Ask-risk items (API keys, files you may have edited) are skipped unless you opt in.
 
 It will not touch Homebrew CLIs like `cm` and `cass`, or anything you added to `.claude/settings.json` by hand. Those appear in the final summary as follow-ups.
 
@@ -363,8 +365,8 @@ Useful flags:
 construct uninstall --dry-run            # show the plan, change nothing
 construct uninstall --yes                # non-interactive, auto-risk only
 construct uninstall --yes --all          # non-interactive, everything
-construct uninstall --scope=project      # only this project, leave ~/.construct alone
-construct uninstall --keep-state         # only .construct/ and .claude/, keep .cx/ and ~/.local/state/construct/
+construct uninstall --scope=project      # only this project, leave machine state (~/.config/construct, ~/.local/state/construct, ~/.cache/construct) alone
+construct uninstall --keep-state         # remove only the launcher + .claude adapters; keep .construct/ (config + session state) and all machine state
 ```
 
 ## License

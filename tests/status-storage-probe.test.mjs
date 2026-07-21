@@ -10,7 +10,7 @@
  *
  * The opener is injected so no real LanceDB files are required. The lancedb
  * fixture lands at the machine-scoped state root (ADR-0066), matching where
- * probeStorageHealth actually resolves it, so CX_HOME_OVERRIDE is pinned for
+ * probeStorageHealth actually resolves it, so CONSTRUCT_HOME_OVERRIDE is pinned for
  * the whole file to keep that write off the real developer machine's $HOME.
  *
  * Bead: construct-9oi4.13.1 — LMCP-M1
@@ -27,16 +27,16 @@ import { resolveStateDir } from '../lib/state-root.mjs';
 import { tempDir } from './helpers.mjs';
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-storage-probe-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 test.after(() => {
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 // Create a minimal fake directory structure with the lancedb store present at
-// its machine-scoped state root (ADR-0066), plus the project-local `.cx/`
+// its machine-scoped state root (ADR-0066), plus the project-local `.construct/`
 // marker probeStorageHealth checks first.
 function makeLancedbFixture() {
   const cwd = tempDir('construct-storage-probe-');
@@ -145,9 +145,9 @@ test('probeStorageHealth caching: repeated calls within TTL skip the opener', as
   assert.equal(openerCallCount, 1, 'opener should only be called once; subsequent calls should use cache');
 });
 
-test('probeStorageHealth absent .cx/: returns unavailable without calling opener', async () => {
+test('probeStorageHealth absent .construct/: returns unavailable without calling opener', async () => {
   const cwd = tempDir('construct-storage-probe-nocx-');
-  // No .cx dir created.
+  // No .construct dir created.
 
   let openerCalled = false;
   const result = await probeStorageHealth(cwd, {
@@ -155,14 +155,14 @@ test('probeStorageHealth absent .cx/: returns unavailable without calling opener
     now: () => Date.now(),
   });
 
-  assert.equal(result.sqlHealth.status, 'unavailable', 'should be unavailable when .cx/ is absent');
-  assert.equal(openerCalled, false, 'opener should not be called when .cx/ is absent');
+  assert.equal(result.sqlHealth.status, 'unavailable', 'should be unavailable when .construct/ is absent');
+  assert.equal(openerCalled, false, 'opener should not be called when .construct/ is absent');
 });
 
-test('probeStorageHealth absent .cx/lancedb: returns degraded without calling opener', async () => {
+test('probeStorageHealth absent machine-scoped lancedb: returns degraded without calling opener', async () => {
   const cwd = tempDir('construct-storage-probe-nolancedb-');
   fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
-  // .cx/ exists but .cx/lancedb does not.
+  // .construct/ exists but the machine-scoped lancedb store does not.
 
   let openerCalled = false;
   const result = await probeStorageHealth(cwd, {
@@ -170,7 +170,7 @@ test('probeStorageHealth absent .cx/lancedb: returns degraded without calling op
     now: () => Date.now(),
   });
 
-  assert.equal(result.sqlHealth.status, 'degraded', 'should be degraded when .cx/lancedb is absent');
+  assert.equal(result.sqlHealth.status, 'degraded', 'should be degraded when the lancedb store is absent');
   assert.equal(openerCalled, false, 'opener should not be called when lancedb dir is absent');
 });
 

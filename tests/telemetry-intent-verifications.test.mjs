@@ -31,7 +31,7 @@ describe('logIntentVerification', () => {
   it('writes the full schema needed for offline disagreement analysis', () => {
     logIntentVerification({
       request: 'design the platform infrastructure',
-      specialist: 'cx-architect',
+      specialist: 'architect',
       flavor: 'platform',
       keywordVerdict: true,
       llmVerdict: true,
@@ -43,7 +43,7 @@ describe('logIntentVerification', () => {
     }, { logPath });
 
     const entry = JSON.parse(fs.readFileSync(logPath, 'utf8').trim());
-    assert.equal(entry.specialist, 'cx-architect');
+    assert.equal(entry.specialist, 'architect');
     assert.equal(entry.flavor, 'platform');
     assert.equal(entry.keywordVerdict, true);
     assert.equal(entry.llmVerdict, true);
@@ -94,14 +94,14 @@ describe('summarizeIntentVerifications', () => {
   it('rolls up agreement stats per (specialist, flavor)', () => {
     for (const verdict of [true, true, false]) {
       logIntentVerification({
-        request: 'r', specialist: 'cx-architect', flavor: 'platform',
+        request: 'r', specialist: 'architect', flavor: 'platform',
         keywordVerdict: true, llmVerdict: verdict, agreed: verdict,
         confidence: 0.9, source: 'llm', latencyMs: 100,
       }, { logPath });
     }
     const summary = summarizeIntentVerifications({ logPath });
     assert.equal(summary.totalEvents, 3);
-    const slot = summary.byFlavor['cx-architect/platform'];
+    const slot = summary.byFlavor['architect/platform'];
     assert.equal(slot.matches, 3);
     assert.equal(slot.agreed, 2);
     assert.equal(slot.disagreed, 1);

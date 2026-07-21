@@ -28,11 +28,13 @@ import {
 import { routeRequest } from "../lib/orchestration-policy.mjs";
 import { loadRegistry } from "../lib/registry/loader.mjs";
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+function assignmentWorkerProfileIds(route) {
+  return (route.assignments || []).map((assignment) => assignment.workerProfileId);
+}
 
 function tmpRoot() {
   const dir = mkdtempSync(join(tmpdir(), "cx-routing-"));
-  mkdirSync(join(dir, ".cx"), { recursive: true });
+  mkdirSync(join(dir, ".construct"), { recursive: true });
   return dir;
 }
 
@@ -54,7 +56,7 @@ describe("done-gate: implement-phase tasks", () => {
     addTask(root, {
       title: "Build auth flow",
       phase: "implement",
-      owner: "cx-engineer",
+      owner: "engineer",
       acceptanceCriteria: ["login works"],
     });
     const wf = loadWorkflow(root);
@@ -71,7 +73,7 @@ describe("done-gate: implement-phase tasks", () => {
     addTask(root, {
       title: "Build auth flow",
       phase: "implement",
-      owner: "cx-engineer",
+      owner: "engineer",
       acceptanceCriteria: ["login works"],
     });
     const wf = loadWorkflow(root);
@@ -80,7 +82,7 @@ describe("done-gate: implement-phase tasks", () => {
     assert.doesNotThrow(() =>
       updateTask(root, key, {
         status: "done",
-        verification: ["cx-reviewer: APPROVED — no CRITICAL or HIGH findings", "cx-qa: 42 tests passing"],
+        verification: ["reviewer: APPROVED — no CRITICAL or HIGH findings", "qa: 42 tests passing"],
       })
     );
 
@@ -90,11 +92,11 @@ describe("done-gate: implement-phase tasks", () => {
 
   it("allows marking implement task done when verification was set previously", () => {
     withWorkflow(root);
-    addTask(root, { title: "Fix bug", phase: "implement", owner: "cx-engineer", acceptanceCriteria: ["bug gone"] });
+    addTask(root, { title: "Fix bug", phase: "implement", owner: "engineer", acceptanceCriteria: ["bug gone"] });
     const wf = loadWorkflow(root);
     const key = wf.tasks[0].key;
 
-    updateTask(root, key, { verification: ["cx-reviewer: APPROVED"] });
+    updateTask(root, key, { verification: ["reviewer: APPROVED"] });
     assert.doesNotThrow(() => updateTask(root, key, { status: "done" }));
   });
 
@@ -112,7 +114,7 @@ describe("done-gate: implement-phase tasks", () => {
     const base = defaultWorkflow(root, "test");
     base.alignment.verificationRequiredBeforeDone = false;
     saveWorkflow(base, root);
-    addTask(root, { title: "Quick fix", phase: "implement", owner: "cx-engineer", acceptanceCriteria: ["fixed"] });
+    addTask(root, { title: "Quick fix", phase: "implement", owner: "engineer", acceptanceCriteria: ["fixed"] });
     const wf = loadWorkflow(root);
     const key = wf.tasks[0].key;
 
@@ -129,13 +131,13 @@ describe("alignment findings: verification evidence", () => {
 
   it("done implement task with verification has no HIGH finding", () => {
     withWorkflow(root);
-    addTask(root, { title: "Ship feature", phase: "implement", owner: "cx-engineer", acceptanceCriteria: ["works"] });
+    addTask(root, { title: "Ship feature", phase: "implement", owner: "engineer", acceptanceCriteria: ["works"] });
     const wf = loadWorkflow(root);
     const key = wf.tasks[0].key;
 
     updateTask(root, key, {
       status: "done",
-      verification: ["cx-reviewer: APPROVED", "cx-qa: PASS — 80% coverage"],
+      verification: ["reviewer: APPROVED", "qa: PASS — 80% coverage"],
     });
 
     const updated = loadWorkflow(root);
@@ -154,35 +156,30 @@ describe("dispatch plan persistence", () => {
 
   it("dispatchPlan field round-trips through workflow state", () => {
     const wf = defaultWorkflow(root, "auth feature");
-    wf.dispatchPlan = "Plan: cx-architect → cx-engineer → cx-reviewer + cx-qa";
+    wf.dispatchPlan = "Plan: architect → engineer → reviewer + qa";
     saveWorkflow(wf, root);
 
     const loaded = loadWorkflow(root);
-    assert.equal(loaded.dispatchPlan, "Plan: cx-architect → cx-engineer → cx-reviewer + cx-qa");
+    assert.equal(loaded.dispatchPlan, "Plan: architect → engineer → reviewer + qa");
   });
 });
 
 // ── Internal agent isolation ──────────────────────────────────────────────────
 
-describe("registry: internal agent isolation", () => {
-  it("all agents in registry have internal:true", async () => {
-     const registry = loadRegistry({ rootDir: join(import.meta.dirname, "..") });
-
-     const exposed = Object.values(registry.specialists).filter((a) => a.role !== "orchestrator" && !a.internal);
-     assert.deepEqual(
-       exposed,
-       [],
-       `These agents are not marked internal and will be visible in user-facing adapters: ${exposed.map((a) => a.name).join(", ")}`
-     );
-   });
-
-  it("only construct persona exists and is not internal", async () => {
+describe("registry: worker profile catalog", () => {
+  it("worker profiles are keyed by canonical id", () => {
     const registry = loadRegistry({ rootDir: join(import.meta.dirname, "..") });
 
-    const orch = Object.values(registry.specialists || {}).find((s) => s.role === "orchestrator");
-    assert.ok(orch, "Expected specialist with role=orchestrator");
-    assert.equal(orch.name, "orchestrator");
-    assert.equal(orch.internal, undefined, "Construct orchestrator must not be marked internal");
+    for (const [id, profile] of Object.entries(registry.workerProfiles)) {
+      assert.equal(profile.id, id);
+    }
+  });
+
+  it("orchestrator worker profile exists", () => {
+    const registry = loadRegistry({ rootDir: join(import.meta.dirname, "..") });
+
+    assert.ok(registry.workerProfiles.orchestrator);
+    assert.equal(registry.workerProfiles.orchestrator.id, "orchestrator");
   });
 });
 
@@ -191,28 +188,28 @@ describe("registry: internal agent isolation", () => {
 
 describe("routing contract: expected dispatch per request type", () => {
   const routingTable = [
-    { request: "build this feature end to end", fileCount: 4, moduleCount: 2, track: "orchestrated", specialists: ["cx-architect", "cx-engineer", "cx-reviewer", "cx-qa"] },
-    { request: "fix this bug", fileCount: 2, moduleCount: 1, track: "focused", specialists: ["cx-debugger", "cx-engineer"] },
-    { request: "review my changes", fileCount: 2, moduleCount: 1, track: "focused", specialists: ["cx-reviewer"] },
-    { request: "scan for security issues", fileCount: 2, moduleCount: 1, track: "orchestrated", specialists: ["cx-architect", "cx-engineer", "cx-reviewer", "cx-qa", "cx-security"] },
+    { request: "build this feature end to end", fileCount: 4, moduleCount: 2, track: "orchestrated", specialists: ["architect", "engineer", "reviewer", "qa"] },
+    { request: "fix this bug", fileCount: 2, moduleCount: 1, track: "focused", specialists: ["debugger", "engineer"] },
+    { request: "review my changes", fileCount: 2, moduleCount: 1, track: "focused", specialists: ["reviewer"] },
+    { request: "scan for security issues", fileCount: 2, moduleCount: 1, track: "orchestrated", specialists: ["architect", "engineer", "reviewer", "qa", "security"] },
     { request: "what does this function do", fileCount: 1, moduleCount: 1, track: "immediate", specialists: [] },
     { request: "explore the auth module", fileCount: 1, moduleCount: 1, track: "immediate", specialists: [] },
-    { request: "design the onboarding UI", fileCount: 2, moduleCount: 1, track: "focused", specialists: ["cx-designer"] },
-    { request: "create a sequence diagram for the oauth handshake", fileCount: 1, moduleCount: 1, track: "focused", specialists: ["cx-designer"] },
-    { request: "make a slide deck for the onboarding walkthrough", fileCount: 1, moduleCount: 1, track: "focused", specialists: ["cx-designer"] },
-    { request: "write requirements for checkout", fileCount: 2, moduleCount: 1, track: "focused", specialists: ["cx-product-manager"] },
-    { request: "write a platform PRD for API migration controls", fileCount: 2, moduleCount: 1, track: "orchestrated", specialists: ["cx-product-manager"], productFlavor: "platform" },
-    { request: "write a Meta PRD for the agent evaluation loop", fileCount: 2, moduleCount: 1, track: "orchestrated", specialists: ["cx-product-manager"], productFlavor: "ai-product" },
-    { request: "create a backlog proposal from these customer notes", fileCount: 2, moduleCount: 1, track: "focused", specialists: ["cx-product-manager"], productFlavor: "product" },
-    { request: "analyze retention funnel metrics by account segment", fileCount: 2, moduleCount: 1, track: "focused", specialists: ["cx-data-analyst"], roleFlavors: { dataAnalyst: "product" } },
-    { request: "design vector retrieval indexing for product intelligence artifacts", fileCount: 2, moduleCount: 1, track: "orchestrated", specialists: ["cx-architect", "cx-engineer"], roleFlavors: { architect: "ai-systems", dataEngineer: "vector-retrieval" } },
-    { request: "security audit prompt injection and retrieval access controls", fileCount: 2, moduleCount: 1, track: "orchestrated", specialists: ["cx-security"], roleFlavors: { security: "ai", qa: "ai-eval" } },
-    { request: "is this ready to ship", fileCount: 2, moduleCount: 1, track: "focused", specialists: ["cx-reviewer"] },
-    { request: "run full autonomous build", fileCount: 4, moduleCount: 2, explicitDrive: true, track: "orchestrated", specialists: ["cx-architect", "cx-engineer", "cx-reviewer", "cx-qa"] },
+    { request: "design the onboarding UI", fileCount: 2, moduleCount: 1, track: "focused", specialists: ["designer"] },
+    { request: "create a sequence diagram for the oauth handshake", fileCount: 1, moduleCount: 1, track: "focused", specialists: ["designer"] },
+    { request: "make a slide deck for the onboarding walkthrough", fileCount: 1, moduleCount: 1, track: "focused", specialists: ["designer"] },
+    { request: "write requirements for checkout", fileCount: 2, moduleCount: 1, track: "focused", specialists: ["product-manager"] },
+    { request: "write a platform PRD for API migration controls", fileCount: 2, moduleCount: 1, track: "orchestrated", specialists: ["product-manager"], productFlavor: "platform" },
+    { request: "write a Meta PRD for the agent evaluation loop", fileCount: 2, moduleCount: 1, track: "orchestrated", specialists: ["product-manager"], productFlavor: "ai-product" },
+    { request: "create a backlog proposal from these customer notes", fileCount: 2, moduleCount: 1, track: "focused", specialists: ["product-manager"], productFlavor: "product" },
+    { request: "analyze retention funnel metrics by account segment", fileCount: 2, moduleCount: 1, track: "focused", specialists: ["data-analyst"], roleFlavors: { dataAnalyst: "product" } },
+    { request: "design vector retrieval indexing for product intelligence artifacts", fileCount: 2, moduleCount: 1, track: "orchestrated", specialists: ["architect", "engineer"], roleFlavors: { architect: "ai-systems", dataEngineer: "vector-retrieval" } },
+    { request: "security audit prompt injection and retrieval access controls", fileCount: 2, moduleCount: 1, track: "orchestrated", specialists: ["security"], roleFlavors: { security: "ai", qa: "ai-eval" } },
+    { request: "is this ready to ship", fileCount: 2, moduleCount: 1, track: "focused", specialists: ["reviewer"] },
+    { request: "run full autonomous build", fileCount: 4, moduleCount: 2, explicitDrive: true, track: "orchestrated", specialists: ["architect", "engineer", "reviewer", "qa"] },
   ];
 
-  for (const { request, fileCount, moduleCount, explicitDrive, track, specialists, productFlavor, roleFlavors } of routingTable) {
-    it(`"${request}" → ${track}${specialists.length ? ` via ${specialists.join(" + ")}` : ""}`, () => {
+  for (const { request, fileCount, moduleCount, explicitDrive, track, specialists: workerProfiles, productFlavor, roleFlavors } of routingTable) {
+    it(`"${request}" → ${track}${workerProfiles.length ? ` via ${workerProfiles.join(" + ")}` : ""}`, () => {
       const route = routeRequest({ request, fileCount, moduleCount, explicitDrive });
       assert.equal(route.track, track);
       if (productFlavor) assert.equal(route.productFlavor, productFlavor);
@@ -221,8 +218,9 @@ describe("routing contract: expected dispatch per request type", () => {
           assert.equal(route.roleFlavors[role], flavor);
         }
       }
-      for (const specialist of specialists) {
-        assert.ok(route.specialists.includes(specialist), `${request} missing specialist ${specialist}`);
+      const routed = assignmentWorkerProfileIds(route);
+      for (const workerProfileId of workerProfiles) {
+        assert.ok(routed.includes(workerProfileId), `${request} missing worker profile ${workerProfileId}`);
       }
     });
   }

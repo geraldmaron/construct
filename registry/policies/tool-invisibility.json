@@ -1,0 +1,14 @@
+{
+  "id": "tool-invisibility",
+  "ownerWorkerProfile": "orchestrator",
+  "description": "Deliverable artifacts are about the user's project; the comment linter flags internal worker-profile id leaks in a consuming project's deliverables (skipped on the Construct repo itself).",
+  "enforcement": "(worker-profile prompt + shared guidance) + lib/comment-lint.mjs",
+  "mode": "deterministic-85",
+  "approvalWorkerProfiles": [],
+  "requiredPolicies": [],
+  "vetoWorkerProfiles": [],
+  "escalationWorkerProfiles": [],
+  "governs": [],
+  "conditions": [],
+  "evidence": []
+}

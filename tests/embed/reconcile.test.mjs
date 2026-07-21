@@ -12,10 +12,10 @@ import { addObservation } from '../../lib/observation-store.mjs';
 test("reconcile is idempotent on a healthy index", async (t) => {
   const tmpDir = mkdtempSync(join(tmpdir(), 'cx-reconcile-test-'));
   t.after(() => rmSync(tmpDir, { recursive: true, force: true }));
-  mkdirSync(join(tmpDir, '.cx'), { recursive: true });
+  mkdirSync(join(tmpDir, '.construct'), { recursive: true });
 
   process.env.CONSTRUCT_EMBEDDING_MODEL = 'hashing';
-  process.env.CONSTRUCT_LANCEDB_PATH = join(tmpDir, '.cx', 'lancedb');
+  process.env.CONSTRUCT_LANCEDB_PATH = join(tmpDir, '.construct', 'lancedb');
 
   await addObservation(tmpDir, { summary: 'test 1', project: 'p' });
   

@@ -1,0 +1,32 @@
+# Dockerfile.server — shared workspace server deployment image
+# (construct-b0nny.26, E7; design doc docs/notes/research/workspace-control-
+# plane/synthesis/shared-server-design.md §9). Distinct from the pre-existing
+# deploy/terraform/ ECS scaffold's assumed root Dockerfile (a separate,
+# broader "cloud instance of Construct" surface with webhooks/dashboard,
+# unrelated to this bead) — this image runs exactly one process,
+# `construct server`, the additive shared/team deployment mode over the
+# local-first product.
+#
+# Multi-stage: dependencies installed once with --ignore-scripts (the
+# postinstall step syncs project adapters for local dogfooding — irrelevant
+# and potentially failing with no .git present in a container) and
+# --workspaces=false (apps/docs, packages/construct-ui are unrelated build tooling,
+# not part of this runtime). Runs as a non-root user.
+
+FROM node:22-alpine AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts --workspaces=false
+
+FROM node:22-alpine AS runtime
+WORKDIR /app
+ENV NODE_ENV=production
+RUN addgroup -S construct && adduser -S construct -G construct
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+USER construct
+EXPOSE 4780
+HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=5 \
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.CONSTRUCT_SERVER_PORT||4780)+'/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+ENTRYPOINT ["node", "bin/construct", "server"]
+CMD ["start"]

@@ -9,7 +9,7 @@ SDK import:
 
 ```js
 import {
-  describeCapabilities, recommendPlan, resolveEmbeddedModel, resolveExecution, invokeWorkflow,
+  describeCapabilities, recommendPlan, resolveEmbeddedModel, resolveExecution, invokeProcedure,
 } from '@geraldmaron/construct/embedded-contract';
 ```
 
@@ -25,7 +25,7 @@ CLI `construct intake classify --json` (alias `construct graph recommend --json`
 
 Request: `input` (artifact text) **or** `file_path`/`--file` (CLI/MCP) — a file path is extracted through Construct's pipeline (PDF/Office via docling, audio/video via whisper, transcripts, plain text incl. CSV); SDK callers use `extractFileForContract({ filePath })` then pass `{ input, ingestion }`. Plus `sourcePath?`, `artifactType?`, `domain?`, `desiredOutcome?`, `constraints?`, `availableRoles?`.
 
-Response `data`: `classification` (`{ intakeType, rdStage }`), `ingestion` (`{ extractionMethod, characters, truncated, droppedInfo[], note?, error? }` when a file was resolved, else `null`), `confidenceKind: "classification"`, `classificationConfidence`, `primaryOwner`, `recommendedAction`, `recommendedChain`, `suggestedWorkflowType` (bridges to invocation; may be `null`), `roleRationale[]`, `suggestedSkills`, `evidenceRequirements`, `expectedOutputs`, `approvalRequirements`, `risks` (`{ level, factors }`), `nextStepOptions[]`, `canExecute`, `canExecuteReason`, `rationale`, `candidates[]`, `execution` (a planned execution-mode preview for `suggestedWorkflowType`; populated only when host context — `hostModel`/`hostProvider`/`constructStrategy` — is supplied, else `null`).
+Response `data`: `classification` (`{ intakeType, rdStage }`), `ingestion` (`{ extractionMethod, characters, truncated, droppedInfo[], note?, error? }` when a file was resolved, else `null`), `confidenceKind: "classification"`, `classificationConfidence`, `primaryOwner`, `recommendedAction`, `recommendedChain`, `suggestedProcedureType` (bridges to invocation; may be `null`), `roleRationale[]`, `suggestedSkills`, `evidenceRequirements`, `expectedOutputs`, `approvalRequirements`, `risks` (`{ level, factors }`), `nextStepOptions[]`, `canExecute`, `canExecuteReason`, `rationale`, `candidates[]`, `execution` (a planned execution-mode preview for `suggestedProcedureType`; populated only when host context — `hostModel`/`hostProvider`/`constructStrategy` — is supplied, else `null`).
 
 ## Model resolution
 
@@ -43,11 +43,11 @@ Request: `workflowType?`, `requestedStrategy?` (`orchestrated|prompt-only|auto`,
 
 Response `data`: `executionMode` (`construct-orchestrated|construct-prompt-only|host-direct|same-family-fallback`), `constructCapabilitiesActive` (subset of `personas|skills|workflow-routing|prompt-envelope`), `degraded`, `degradationReason` (machine-readable or `null`), `requestedStrategy`, `effectiveStrategy`, `selectedProvider`, `selectedModel`, `resolutionSource`, `orchestrationPlanned`, `orchestrationAvailable`, `deploymentMode`, `modelResolution` (nested), `semantics` (the descriptive-boundary disclaimer).
 
-## Workflow invocation
+## Procedure invocation
 
-CLI `construct workflow invoke --json --workflow-type <t>` · MCP `workflow_invoke` · SDK `invokeWorkflow(request)`. Async.
+CLI `construct procedure invoke --json --workflow-type <t>` · MCP `procedure_invoke` · SDK `invokeProcedure(request)`. Async.
 
-Workflow types: `evidence-ingest`, `proposal-review`, `prd-draft`, `architecture-review`, `risk-review`, `research-synthesis`.
+Procedure types: `evidence-ingest`, `proposal-review`, `prd-draft`, `architecture-review`, `risk-review`, `research-synthesis`.
 
 Request: `workflowType` (required), `input?` **or** `file_path`/`--file` (extracted through the same pipeline as triage), `context?`, `roleStrategy?` (`auto|explicit|constrained`), `requestedRoles?`, `approvalMode?` (`proposal-only|requires-human-approval|allow-durable-write`; default per workflow type), `trace?` (default `true`), `host?`, `hostModel?`, `hostProvider?`.
 
@@ -57,14 +57,14 @@ Response `data`: `workflowId`, `workflowType`, `status` (`proposed|awaiting-appr
 
 ## Orchestration over HTTP + SSE (opt-in remote service)
 
-The orchestration runtime runs **in-process** by default — solo runs need no daemon, no port, no token (the MCP `orchestration_run` tool and the `construct orchestrate run` CLI execute the engine directly, storing runs in the current project's `.construct/`). For a shared team/enterprise deployment, set `CONSTRUCT_ORCHESTRATION_URL` so thin clients (a VS Code/Copilot extension, OpenCode, CI, the `construct orchestrate … --remote` CLI) proxy the same call over HTTP and stream real multi-specialist runs — the engine owns orchestration; the host is a client (ADR-0022). A remote service implements the contract below; requests authenticate with `Authorization: Bearer <CONSTRUCT_ORCHESTRATION_TOKEN>` (falling back to `CONSTRUCT_DASHBOARD_TOKEN`). Responses use the standard versioned, secret-free envelope (`data` payload).
+The orchestration runtime runs **in-process** by default — solo runs need no daemon, no port, no token (the MCP `orchestration_run` tool and the `construct orchestrate run` CLI execute the engine directly, storing runs in the current project's `.construct/`). For a shared team/enterprise deployment, set `CONSTRUCT_ORCHESTRATION_URL` so thin clients (a VS Code/Copilot extension, OpenCode, CI, the `construct orchestrate … --remote` CLI) proxy the same call over HTTP and stream real multi-profile runs — the engine owns orchestration; the host is a client (ADR-0022). A remote service implements the contract below; requests authenticate with `Authorization: Bearer <CONSTRUCT_ORCHESTRATION_TOKEN>` (falling back to `CONSTRUCT_DASHBOARD_TOKEN`). Responses use the standard versioned, secret-free envelope (`data` payload).
 
 | Method · Path | Purpose |
 |---|---|
-| `POST /api/orchestration/runs` | Start a run in the **background**; returns **202** with the planned run (`runId`, `status`, `execution`, `plan`, `tasks`). Body: `{ request (required), workflowType?, requestedStrategy?, workerBackend?, host?, hostModel?, hostProvider?, fileCount?, moduleCount? }`. Use `workerBackend:"provider"` (+ a provider key) to execute specialists and get real `task.output`; `inline` (default) prepares only. |
+| `POST /api/orchestration/runs` | Start a run in the **background**; returns **202** with the planned run (`runId`, `status`, `execution`, `plan`, `tasks`). Body: `{ request (required), workflowType?, requestedStrategy?, workerBackend?, host?, hostModel?, hostProvider?, fileCount?, moduleCount? }`. Use `workerBackend:"provider"` (+ a provider key) to execute Worker Profiles and get real `task.output`; `inline` (default) prepares only. |
 | `GET /api/orchestration/runs/:id` | The full run record — `status`, `tasks[]` with per-task `status`/`executor`/`output`/`error`, `execution`, `plan`. |
 | `GET /api/orchestration/runs?limit=N` | Recent runs (summaries). |
 | `GET /api/orchestration/runs/:id/events` | **SSE** lifecycle stream: a `snapshot` event, then deltas (`running`, per-task `task`, `completed`/`error`). Lightweight status only — fetch the run record for outputs. |
 | `POST /api/orchestration/runs/:id/cancel` | Request a cooperative between-task stop (cannot abort an in-flight model call). |
 
-MCP hosts (VS Code/Copilot, Cursor) reach the same outcome through two tools instead of raw HTTP: **`orchestration_run`** executes a run and returns per-specialist output (the executing counterpart to `workflow_invoke`, which only plans), and **`orchestration_status`** inspects runs. They run in-process by default; when `CONSTRUCT_ORCHESTRATION_URL` is set they proxy to the remote service with the token from `~/.config/construct/config.env`, and an unreachable service fails fast with how to recover. See [connect your editor → orchestrated outcomes in VS Code](/guides/start/connect-your-editor).
+MCP hosts (VS Code/Copilot, Cursor) reach the same outcome through two tools instead of raw HTTP: **`orchestration_run`** executes a run and returns per-profile output (the executing counterpart to `procedure_invoke`, which only plans), and **`orchestration_status`** inspects runs. They run in-process by default; when `CONSTRUCT_ORCHESTRATION_URL` is set they proxy to the remote service with the token from `~/.config/construct/config.env`, and an unreachable service fails fast with how to recover. See [connect your editor → orchestrated outcomes in VS Code](/guides/start/connect-your-editor).

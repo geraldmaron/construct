@@ -65,7 +65,7 @@
       "id": "rnd-005-postmortem-title-lock",
       "name": "postmortem with H1 — title-lock returns incident",
       "input": {
-        "sourcePath": ".cx/inbox/postmortem-pg-restart-2026-05-26.md",
+        "sourcePath": ".construct/inbox/postmortem-pg-restart-2026-05-26.md",
         "extractedText": "# Postmortem: Postgres restart loop, 2026-05-26\n\nAt 14:02 UTC the primary Postgres pod entered a crashloop after a config-map rollout flipped shared_buffers to 8GB on a 4GB node. P1 incident."
       },
       "expect": {
@@ -81,7 +81,7 @@
       "id": "rnd-006-adr-title-lock",
       "name": "ADR with H1 — title-lock returns architecture",
       "input": {
-        "sourcePath": ".cx/inbox/adr-0023-switch-vector-store.md",
+        "sourcePath": ".construct/inbox/adr-0023-switch-vector-store.md",
         "extractedText": "# ADR-0023: Switch from JSON vector index to pgvector\n\n## Status\nProposed\n\n## Decision\nAdopt pgvector on the existing Postgres instance."
       },
       "expect": {
@@ -96,7 +96,7 @@
       "id": "rnd-007-regression-research-not-security",
       "name": "REGRESSION — research note must not route to security (was 1.00 wrong)",
       "input": {
-        "sourcePath": ".cx/inbox/research-2026-q2-multitenant-embedding-isolation.md",
+        "sourcePath": ".construct/inbox/research-2026-q2-multitenant-embedding-isolation.md",
         "extractedText": "# Research: multitenant embedding isolation strategies\n\nGoal: survey how peer products isolate embedding indices across tenants without requiring per-tenant Postgres clusters. Three candidates emerged from the literature:\n\n1. Schema-per-tenant in shared cluster — Pinecone-style. Cheap to add tenants, expensive to enforce row-level security at the index layer.\n2. Logical isolation via metadata filter — Weaviate-style. Single index, filter at query time. Cheap, but a bad filter expression leaks across.\n3. Per-tenant index inside shared cluster — pgvector with table partitioning. Strong isolation, linear index management cost.\n\nRecommendation pending eval benchmark."
       },
       "expect": {
@@ -111,7 +111,7 @@
       "id": "rnd-008-regression-eval-not-bug",
       "name": "REGRESSION — eval finding must not route to bug (was 0.80 wrong)",
       "input": {
-        "sourcePath": ".cx/inbox/eval-classifier-precision-2026-05-25.md",
+        "sourcePath": ".construct/inbox/eval-classifier-precision-2026-05-25.md",
         "extractedText": "# Eval finding: intake classifier precision regression\n\nRan the golden-rnd fixture (24 cases) against HEAD and main. HEAD shows 1 misclassification (a research note routing to bug) vs 0 on main. Precision dropped from 1.00 to 0.96 on the bug type; recall unchanged.\n\nSuspect cause: the new filename-hint table over-weights '-bug' substring in unrelated paths. Recommend tightening to word boundaries on both sides."
       },
       "expect": {
@@ -126,7 +126,7 @@
       "id": "rnd-009-substring-rce-no-false-security",
       "name": "REGRESSION — substring 'rce' inside 'enforce' must not match security",
       "input": {
-        "sourcePath": ".cx/inbox/general-note.md",
+        "sourcePath": ".construct/inbox/general-note.md",
         "extractedText": "Discussing how to enforce row-level access and how to reinforce the boundary between services."
       },
       "expect": {
@@ -137,7 +137,7 @@
       "id": "rnd-010-substring-leak-no-false-security",
       "name": "REGRESSION — 'leaks' (plural) must not match security keyword 'leak'",
       "input": {
-        "sourcePath": ".cx/inbox/general-note-2.md",
+        "sourcePath": ".construct/inbox/general-note-2.md",
         "extractedText": "When the cache invalidation leaks across processes the test sometimes flakes."
       },
       "expect": {
@@ -148,7 +148,7 @@
       "id": "rnd-011-prd-title-lock",
       "name": "PRD with H1 — title-lock returns requirement",
       "input": {
-        "sourcePath": ".cx/inbox/prd-005-customer-portal.md",
+        "sourcePath": ".construct/inbox/prd-005-customer-portal.md",
         "extractedText": "# PRD-005: Customer portal v2\n\n## Acceptance criteria\n- Must support OAuth\n- Should support SAML\n\n## Use case\nReturning customers manage subscription."
       },
       "expect": {
@@ -163,7 +163,7 @@
       "id": "rnd-012-runbook-title-lock",
       "name": "Runbook with H1 — title-lock returns ops",
       "input": {
-        "sourcePath": ".cx/inbox/runbook-pg-failover.md",
+        "sourcePath": ".construct/inbox/runbook-pg-failover.md",
         "extractedText": "# Runbook: Postgres failover procedure\n\nUse when the primary is unreachable. Steps:\n1. Confirm primary down\n2. Promote replica\n3. Update DNS"
       },
       "expect": {

@@ -41,7 +41,7 @@ function initProject() {
         CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
         BOOTSTRAP_CHECKED: '1',
         HOME: home,
-        CX_HOME_OVERRIDE: home,
+        CONSTRUCT_HOME_OVERRIDE: home,
       },
     },
   );

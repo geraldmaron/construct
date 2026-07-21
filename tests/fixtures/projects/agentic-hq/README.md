@@ -31,4 +31,4 @@ A multi-tenant agent runtime platform: customers point our SDK at their LLM prov
 
 ## Inbox
 
-Signals (customer emails, postmortems, exec asks, security findings, eval results) land in `.cx/inbox/`. Construct classifies them and routes to the right specialist chain.
+Signals (customer emails, postmortems, exec asks, security findings, eval results) land in `.construct/inbox/`. Construct classifies them and routes to the right Worker Profile chain.

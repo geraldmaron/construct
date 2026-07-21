@@ -7,7 +7,7 @@ verdict: fail
 summary: Recommends a clever architecture without exposing contracts or rejected alternatives.
 references:
   - skills/roles/architect.md
-  - specialists/prompts/cx-architect.md
+  - registry/worker-profiles/prompts/architect.md
 tags:
   - missing-contracts
   - hidden-dependencies

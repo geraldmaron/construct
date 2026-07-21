@@ -1,11 +1,8 @@
 /**
  * tests/functional/install-scope.functional.test.mjs
  *
- * ADR-0029: `construct install` is scoped. ADR-0071 renamed the flag from
- * `--scope` to `--footprint` (same values, same semantics); `--scope` keeps
- * working as a deprecated alias that prints a one-line deprecation notice.
- * A bare invocation with no `--footprint`/`--scope` hard-errors naming the
- * flag (construct-vzg2i.3) rather than silently exiting 0 having written
+ * `construct install` requires an explicit footprint. A bare invocation with
+ * no `--footprint` hard-errors naming the flag rather than silently exiting
  * nothing; `--footprint=project` remains an explicit, documented no-op that
  * prints guidance and exits 0. `~/.construct/config.env` and `~/.claude/*`
  * must remain untouched in every non-writing path. Invalid footprints fail
@@ -103,56 +100,20 @@ test('--footprint=user --dry-run previews the plan and writes nothing', () => {
   assert.equal(fs.existsSync(path.join(home, 'Library', 'LaunchAgents', 'dev.construct.pressure-release.plist')), false, 'dry-run must not register the LaunchAgent');
 });
 
-test('--help still works, documents --footprint as primary and --scope as deprecated alias', () => {
+test('--help documents the footprint flag', () => {
   const home = freshHome();
   const res = runInstall(['--help'], { HOME: home });
   assert.equal(res.status, 0);
   assert.match(res.stdout, /--footprint=<f>/);
   assert.match(res.stdout, /project\|user\|both/);
-  assert.match(res.stdout, /--scope=<s>\s+deprecated alias for --footprint/);
+  assert.doesNotMatch(res.stdout, /--scope/);
 });
 
-test('--scope=user is a deprecated alias for --footprint=user: identical dry-run plan plus a deprecation notice', () => {
+test('retired install scope flag fails without writing state', () => {
   const home = freshHome();
-  const footprintRes = runInstall(['--footprint=user', '--dry-run', '--yes'], { HOME: home });
-  const scopeRes = runInstall(['--scope=user', '--dry-run', '--yes'], { HOME: home });
-  assert.equal(scopeRes.status, 0, `expected exit 0, got ${scopeRes.status} — stderr: ${scopeRes.stderr}`);
-  assert.equal(footprintRes.stdout, scopeRes.stdout, '--scope=user and --footprint=user must render the identical dry-run plan');
-  assert.match(scopeRes.stderr, /Deprecation notice: --scope is deprecated/);
-  assert.doesNotMatch(footprintRes.stderr, /Deprecation notice/, '--footprint must not print the deprecation notice');
-});
-
-test('--scope=project still works as an alias and prints the deprecation notice', () => {
-  const home = freshHome();
-  const res = runInstall(['--scope=project'], { HOME: home });
-  assert.equal(res.status, 0);
-  assert.match(res.stdout, /footprint: project/i);
-  assert.match(res.stderr, /Deprecation notice: --scope is deprecated for `construct install`; use --footprint instead/);
-  assert.equal(fs.existsSync(path.join(configDir(home), 'config.env')), false, 'must not write user-scope config.env');
-  assert.equal(fs.existsSync(path.join(home, '.claude')), false, 'must not touch ~/.claude/');
-});
-
-test('--scope=bogus still fails fast with exit 1, same as --footprint=bogus', () => {
-  const home = freshHome();
-  const res = runInstall(['--scope=bogus'], { HOME: home });
+  const res = runInstall(['--scope=user'], { HOME: home });
   assert.equal(res.status, 1, `expected exit 1, got ${res.status} — stderr: ${res.stderr}`);
-  assert.match(`${res.stdout}${res.stderr}`, /--scope=bogus/);
+  assert.match(`${res.stdout}${res.stderr}`, /Unknown flag/);
+  assert.match(`${res.stdout}${res.stderr}`, /--scope=user/);
   assert.equal(fs.existsSync(path.join(configDir(home), 'config.env')), false, 'must not write config before validating footprint');
-});
-
-test('--scope (no value) still fails fast with exit 1', () => {
-  const home = freshHome();
-  const res = runInstall(['--scope'], { HOME: home });
-  assert.equal(res.status, 1, `expected exit 1, got ${res.status} — stderr: ${res.stderr}`);
-  assert.match(`${res.stdout}${res.stderr}`, /--scope/);
-  assert.equal(fs.existsSync(path.join(configDir(home), 'config.env')), false);
-});
-
-test('--footprint takes precedence when both --footprint and --scope are passed, no deprecation notice', () => {
-  const home = freshHome();
-  const res = runInstall(['--footprint=project', '--scope=user'], { HOME: home });
-  assert.equal(res.status, 0, `expected exit 0, got ${res.status} — stderr: ${res.stderr}`);
-  assert.match(res.stdout, /footprint: project/i);
-  assert.doesNotMatch(res.stderr, /Deprecation notice/, 'explicit --footprint wins and is not an alias use');
-  assert.equal(fs.existsSync(path.join(home, '.claude')), false, 'must not touch ~/.claude/');
 });

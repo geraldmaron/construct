@@ -1,7 +1,7 @@
 /**
  * 06-audit.mjs — Phase 6: is the experience actually auditable?
  *
- * The audit trail is a SHA-256 hash chain in .cx/audit-trail.jsonl, populated by the
+ * The audit trail is a SHA-256 hash chain in .construct/audit-trail.jsonl, populated by the
  * audit-trail hook on tool use (not by commands calling an append API — there is none).
  * Two things make it trustworthy: the chain verifies, and the hook is registered so
  * mutations are captured. This phase checks both against the real artifacts, no assumptions.
@@ -43,7 +43,7 @@ function toFindings(report) {
   const rows = [];
   if (!report.chain.ok) {
     rows.push({
-      type: 'audit-chain-broken', target: '.cx/audit-trail.jsonl',
+      type: 'audit-chain-broken', target: '.construct/audit-trail.jsonl',
       severity: report.chain.brokenRatio > 0.5 ? 'high' : 'medium', tier: 'judgment',
       evidence: `verifyChain ok=false: ${report.chain.broken}/${report.chain.verified} links broken (${Math.round(report.chain.brokenRatio * 100)}%), first break at line ${report.chain.firstBreak}. Signature of concurrent appends to a serial hash chain (hook + daemons + commands share one writer).`,
       recommendation: 'Make the chain concurrency-safe (single-writer queue, or per-writer segments each independently chained), or document a reset/migration boundary so verifyChain can validate per-segment.',

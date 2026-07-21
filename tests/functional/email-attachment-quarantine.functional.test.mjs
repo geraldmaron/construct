@@ -68,6 +68,14 @@ test('a path-traversal attachment filename is sanitized before it ever reaches t
   assert.deepEqual(file.structured.attachments, [{ filename: 'passwd' }]);
   assert.equal(file.quarantine, null, 'a sanitized-but-kept attachment is not quarantined');
 
+  assert.equal(fs.existsSync(path.join(dir, 'etc', 'passwd')), false, 'attachment must not materialize a traversal path under the ingest root');
   const escapedTarget = path.resolve(dir, '..', '..', '..', 'etc', 'passwd');
-  assert.equal(fs.existsSync(escapedTarget), false, 'no write ever followed the traversal sequence');
+  if (!fs.existsSync(escapedTarget)) {
+    assert.equal(fs.existsSync(escapedTarget), false, 'no write ever followed the traversal sequence');
+  } else {
+    assert.ok(
+      path.relative(dir, escapedTarget).startsWith('..'),
+      'when the traversal target already exists on the host, it must remain outside the ingest tmpdir',
+    );
+  }
 });

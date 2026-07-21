@@ -22,9 +22,9 @@
       "maxLength": 120,
       "default": "Construct"
     },
-    "scope": {
+    "workspacePreset": {
       "type": "string",
-      "description": "The active organizational scope ID. Determines which specialists and capabilities are available.",
+      "description": "The active Workspace Preset ID. Determines the workspace's skills, procedures, intake, artifacts, and capabilities.",
       "enum": ["rnd", "operations", "creative", "research"],
       "default": "rnd"
     },
@@ -47,6 +47,10 @@
         "projectName": {
           "type": ["string", "null"],
           "description": "The unique name of the project. Used for multi-project telemetry and storage."
+        },
+        "projectKey": {
+          "type": ["string", "null"],
+          "description": "Explicit override for the project's identity key, otherwise derived from the git origin remote (or the project path when there is no remote). Wins over the computed derivation everywhere state is keyed."
         },
         "tenantId": {
           "type": ["string", "null"],
@@ -263,7 +267,7 @@
         "disk": {
           "type": "object",
           "properties": {
-            "totalCxMaxMb": { "type": "number", "description": "Maximum disk usage for the .cx/ directory (MB).", "default": 2000 }
+            "totalConstructMaxMb": { "type": "number", "description": "Maximum combined disk usage for generated Construct state across project-local and machine-scoped roots (MB).", "default": 2000 }
           }
         }
       }

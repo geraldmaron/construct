@@ -26,16 +26,17 @@ import { sterileSpawnEnv } from '../helpers/sterile-env.mjs';
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = path.join(REPO_ROOT, 'bin', 'construct');
 
-const PLAN_LINE = 'specialists will only PLAN (fix: set orchestration.workerBackend=provider + a key)';
-const EXECUTE_LINE = 'specialists will EXECUTE (provider anthropic + key found)';
+const PLAN_LINE = 'Worker Profiles will only PLAN (fix: set orchestration.workerBackend=provider + a key)';
+const EXECUTE_LINE = 'Worker Profiles will EXECUTE (provider anthropic + key found)';
 
 const dirs = [];
 function freshProject() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-firstrun-readiness-'));
   dirs.push(dir);
-  spawnSync('git', ['init', '--quiet', '--initial-branch=main'], { cwd: dir });
-  spawnSync('git', ['config', 'user.email', 'firstrun@example.com'], { cwd: dir });
-  spawnSync('git', ['config', 'user.name', 'Firstrun Test'], { cwd: dir });
+  const env = baseEnv(dir);
+  spawnSync('git', ['init', '--quiet', '--initial-branch=main'], { cwd: dir, env });
+  spawnSync('git', ['config', 'user.email', 'firstrun@example.com'], { cwd: dir, env });
+  spawnSync('git', ['config', 'user.name', 'Firstrun Test'], { cwd: dir, env });
   return dir;
 }
 test.after(() => { for (const d of dirs) { try { rmTmpDir(d); } catch {} } });
@@ -43,7 +44,7 @@ test.after(() => { for (const d of dirs) { try { rmTmpDir(d); } catch {} } });
 function baseEnv(dir, overrides = {}) {
   return sterileSpawnEnv({
     HOME: dir,
-    CX_HOME_OVERRIDE: dir,
+    CONSTRUCT_HOME_OVERRIDE: dir,
     CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
     BOOTSTRAP_CHECKED: '1',
     ...overrides,

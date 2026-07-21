@@ -60,7 +60,7 @@ test('A3 production trigger: agent-tracker writes outcome JSONL on a Task Subage
 
   const payload = {
     tool_name: 'Task',
-    tool_input: { subagent_type: 'cx-engineer', description: 'refactor the auth module to use OIDC' },
+    tool_input: { subagent_type: 'engineer', description: 'refactor the auth module to use OIDC' },
     tool_result: { result: 'Refactor completed. All tests pass. ✅' },
     cwd,
   };

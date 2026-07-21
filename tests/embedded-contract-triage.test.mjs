@@ -22,15 +22,15 @@ test('classifies a bug and returns an executable role-aware plan', () => {
   assert.ok(r.recommendedChain.includes('debugger'));
   assert.equal(r.canExecute, true);
   assert.ok(r.roleRationale.length === r.recommendedChain.length);
-  assert.ok(r.roleRationale[0].role.startsWith('cx-'));
+  assert.equal(r.roleRationale[0].workerProfileId, 'debugger');
   assert.ok(r.suggestedSkills.length > 0);
 });
 
-test('evidence requirements and expected outputs come from the owner contract', () => {
+test('evidence requirements surface a warning when the primary owner has no incoming contract', () => {
   const r = recommendPlan({ input: BUG }, { env: {} });
-  assert.ok(r.evidenceRequirements.includes('symptoms'));
-  assert.ok(r.evidenceRequirements.includes('scope'));
-  assert.ok(r.expectedOutputs.includes('rootCause'));
+  assert.deepEqual(r.evidenceRequirements, []);
+  assert.deepEqual(r.expectedOutputs, []);
+  assert.ok(r.warnings.some((w) => w.includes('No declared evidence contract')));
 });
 
 test('classification confidence is labeled and distinct from generation confidence', () => {
@@ -75,18 +75,15 @@ test('recommendPlan is deterministic for the same input', () => {
   assert.deepEqual(a, b);
 });
 
-test('plan carries suggestedWorkflowType bridging triage to workflow invocation', () => {
+test('plan carries suggestedProcedureId bridging triage to Procedure invocation', () => {
   const r = recommendPlan({ input: BUG }, { env: {} });
-  assert.equal('suggestedWorkflowType' in r, true);
+  assert.equal('suggestedProcedureId' in r, true);
 });
 
-test('execution preview is gated on host context', () => {
-  const env = { CX_MODEL_REASONING: 'anthropic/claude-sonnet-4-6', CX_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6', CX_MODEL_FAST: 'anthropic/claude-sonnet-4-6' };
-  // No host context → never a forced model resolution / preview.
+test('execution preview is gated on host context and a mapped Procedure', () => {
+  const env = { CONSTRUCT_MODEL_REASONING: 'anthropic/claude-sonnet-4-6', CONSTRUCT_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6', CONSTRUCT_MODEL_FAST: 'anthropic/claude-sonnet-4-6' };
   assert.equal(recommendPlan({ input: BUG }, { env }).execution, null);
-  // Host context + a suggested workflow (unknown → structure-notes) → preview present.
-  const withHost = recommendPlan({ input: 'zzzz qqqq', constructStrategy: 'orchestrated', hostModel: 'anthropic/claude-sonnet-4-6' }, { env });
-  assert.ok(withHost.suggestedWorkflowType, 'unknown classification maps to a workflow');
-  assert.ok(withHost.execution, 'host context → execution preview');
-  assert.ok(['construct-orchestrated', 'construct-prompt-only', 'same-family-fallback'].includes(withHost.execution.executionMode));
+  const unknown = recommendPlan({ input: 'zzzz qqqq', constructStrategy: 'orchestrated', hostModel: 'anthropic/claude-sonnet-4-6' }, { env });
+  assert.equal(unknown.suggestedProcedureId, null);
+  assert.equal(unknown.execution, null);
 });

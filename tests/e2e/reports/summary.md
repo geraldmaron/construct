@@ -11,7 +11,7 @@ Aggregates per-scenario reports into one owner verdict + bd issue index. See sce
 
 ## Scope executed
 
-- **3 scenarios** (greenfield Next.js · established noisy project · research corpus), each in an isolated tmpdir with its own `HOME` + `CX_HOME_OVERRIDE` and the local build under test.
+- **3 scenarios** (greenfield Next.js · established noisy project · research corpus), each in an isolated tmpdir with its own `HOME` + `CONSTRUCT_HOME_OVERRIDE` and the local build under test.
 - **Command sweep:** 107 commands (92 public + 15 internal); **107/107 `--help` resolve** (Scenario A, catalog-level).
 - **3 quality-bar artifacts via real specialist chains:** an ADR (`cx-architect`→`cx-reviewer`, APPROVED_WITH_WARNINGS), a PRD (`cx-product-manager`, validated), an evidence brief (`cx-researcher`→`cx-evaluator`, **4.8/5 PASS**).
 - **Embedder (Tier 7):** CLI-JSON surface — 4/5 contract verbs emit valid `contractVersion 1.1.0` envelopes. SDK / MCP / HTTP+SSE deferred to a shared step (see Coverage gaps).

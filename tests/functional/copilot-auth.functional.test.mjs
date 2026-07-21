@@ -155,7 +155,7 @@ test('worker routes a github-copilot model through the session token', async () 
       if (u.includes('api.githubcopilot.com/chat/completions')) return jsonResponse({ choices: [{ message: { content: 'copilot output' } }] });
       return jsonResponse({}, 404);
     };
-    const result = await runTaskViaProvider({ task: { role: 'cx-engineer' }, run: { request: { summary: 'do a thing' } }, model: 'github-copilot/gpt-4o', env: {}, fetchImpl });
+    const result = await runTaskViaProvider({ task: { role: 'engineer' }, run: { request: { summary: 'do a thing' } }, model: 'github-copilot/gpt-4o', env: {}, fetchImpl });
     assert.equal(result.provider, 'github-copilot');
     assert.equal(result.output, 'copilot output');
   });

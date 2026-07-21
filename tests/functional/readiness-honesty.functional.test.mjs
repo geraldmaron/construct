@@ -54,9 +54,9 @@ test('CONSTRUCT_ORCHESTRATION_URL with a token configured does not require --aut
       env: {
         CONSTRUCT_ORCHESTRATION_URL: 'https://orch.example',
         CONSTRUCT_ORCHESTRATION_TOKEN: 'token-secret-value',
-        CX_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
-        CX_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6',
-        CX_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
+        CONSTRUCT_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
+        CONSTRUCT_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6',
+        CONSTRUCT_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
         ANTHROPIC_API_KEY: 'sk-test-canary',
       },
       cwd: '/tmp/project',

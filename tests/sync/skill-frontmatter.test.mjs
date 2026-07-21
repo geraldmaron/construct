@@ -1,6 +1,6 @@
 /**
  * tests/sync/skill-frontmatter.test.mjs — Unit coverage for the helpers
- * sync-specialists uses to emit Anthropic Agent Skills SKILL.md files.
+ * sync-worker-profiles uses to emit Anthropic Agent Skills SKILL.md files.
  *
  * After the YAML-frontmatter migration:
  *   - buildSkillFrontmatter reads `name` and `description` from source YAML.
@@ -64,8 +64,8 @@ test('buildSkillFrontmatter emits kebab-case name from source YAML', () => {
 });
 
 test('buildSkillFrontmatter strips construct-internal role keys from shipped output', () => {
-  const content = '---\nname: roles-engineer\ndescription: "Use when an engineer is acting."\nrole: engineer\napplies_to: [cx-engineer]\nversion: 2\nprofiles: [rnd]\ncap: 1\n---\n# Engineer';
-  const fm = buildSkillFrontmatter('roles/engineer', content);
+  const content = '---\nname: roles-engineer\ndescription: "Use when an engineer is acting."\nrole: engineer\napplies_to: [engineer]\nversion: 2\nprofiles: [rnd]\ncap: 1\n---\n# Engineer';
+  const fm = buildSkillFrontmatter('perspectives/engineer', content);
   assert.match(fm, /\nname: roles-engineer\n/);
   assert.match(fm, /\ndescription:/);
   assert.doesNotMatch(fm, /\nrole:/);

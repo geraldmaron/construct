@@ -6,7 +6,7 @@
  * the published tarball unless listed explicitly. A referenced script missing
  * from the whitelist crashes that command with MODULE_NOT_FOUND for every npm
  * consumer while working fine from a git clone (v1.5.2 shipped only
- * sync-specialists.mjs, breaking `review legacy`, `optimize`, the sync-time
+ * sync-worker-profiles.mjs, breaking `review legacy`, `optimize`, the sync-time
  * workflow-defs drift check, seed-traces, and lint:templates). A dispatch can
  * also live in a shipped `lib/**` hook rather than `bin/construct` itself —
  * `lib/hooks/ci-status-check.mjs`'s background CI refresher shipped nowhere

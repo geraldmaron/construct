@@ -176,6 +176,6 @@ test('a demo not present in any search dir fails loudly rather than returning nu
 test('the graph-write helper produces a node whose type is in NODE_TYPES', () => {
   const node = demoManifestGraphNode(wellFormedManifest());
   assert.ok(NODE_TYPES.has(node.type), `expected node.type '${node.type}' to be a valid graph NODE_TYPE`);
-  assert.equal(node.id, `contract:demo-manifest:tour`);
+  assert.equal(node.id, `demo-manifest:tour`);
   assert.equal(node.attrs.status, 'declared');
 });

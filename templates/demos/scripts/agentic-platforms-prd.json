@@ -1,7 +1,7 @@
 {
   "name": "agentic-platforms-prd",
   "title": "Publish guardrails — agentic platforms PRD",
-  "summary": "Prove Construct's path: workflow invoke returns a plan only, validate and publish fail on the thin stub, then pass on the golden fixture with styled PDF export.",
+  "summary": "Prove Construct's path: procedure invoke returns a plan only, validate and publish fail on the thin stub, then pass on the golden fixture with styled PDF export.",
   "systemOverlay": "Demo mode for publish guardrails. Run the exact construct CLI commands from each step using shell or construct_tool. Do not hand-author production PRD markdown in chat — the passing artifact is tests/fixtures/publish/golden-prd-platform.md. The stub is tests/fixtures/publish/agentic-platforms-stub.md.",
   "tape": "agentic-platforms-prd",
   "dashboardDemo": "agentic-platforms-prd",
@@ -16,9 +16,9 @@
   },
   "steps": [
     {
-      "title": "Plan only — workflow invoke",
-      "prompt": "Run construct workflow invoke for prd-draft and show the specialist chain. This is plan-only — it does not draft the PRD.",
-      "command": "node bin/construct workflow invoke --json --workflow-type prd-draft --approval-mode proposal-only --text 'Enterprise agentic platform PRD'"
+      "title": "Plan only — procedure invoke",
+      "prompt": "Run construct procedure invoke for prd-draft and show the specialist chain. This is plan-only — it does not draft the PRD.",
+      "command": "node bin/construct procedure invoke --json --workflow-type prd-draft --approval-mode proposal-only --text 'Enterprise agentic platform PRD'"
     },
     {
       "title": "Release gate FAIL — thin stub",

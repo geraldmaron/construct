@@ -4,7 +4,7 @@
  * Drives resolveExecution through every decision-table row: orchestrated on a
  * recognized host model, same-family fallback (degraded), prompt-only-by-request,
  * orchestrated requested but unresolvable (degraded prompt-only), host-direct,
- * and an unknown workflowType. Pins the mandatory `semantics` disclaimer, that
+ * and an unknown Procedure. Pins the mandatory `semantics` disclaimer, that
  * constructCapabilitiesActive is a subset of the declared set, and that a
  * credential canary in env never reaches the response — the no-fabrication and
  * no-secret guarantees ADR-0019 records.
@@ -26,7 +26,7 @@ import {
 const ANTHROPIC_MODEL = 'anthropic/claude-sonnet-4-6';
 
 function baseEnv(extra = {}) {
-  return { CX_MODEL_REASONING: ANTHROPIC_MODEL, CX_MODEL_STANDARD: ANTHROPIC_MODEL, CX_MODEL_FAST: ANTHROPIC_MODEL, ...extra };
+  return { CONSTRUCT_MODEL_REASONING: ANTHROPIC_MODEL, CONSTRUCT_MODEL_STANDARD: ANTHROPIC_MODEL, CONSTRUCT_MODEL_FAST: ANTHROPIC_MODEL, ...extra };
 }
 
 function assertCommonShape(r) {
@@ -45,7 +45,7 @@ test('exports declare the enums', () => {
 
 test('orchestrated on a recognized host model → construct-orchestrated, not degraded', () => {
   const r = resolveExecution(
-    { workflowType: 'architecture-review', requestedStrategy: 'orchestrated', hostModel: ANTHROPIC_MODEL },
+    { procedureId: 'architecture-review', requestedStrategy: 'orchestrated', hostModel: ANTHROPIC_MODEL },
     { env: baseEnv() },
   );
   assertCommonShape(r);
@@ -53,12 +53,12 @@ test('orchestrated on a recognized host model → construct-orchestrated, not de
   assert.equal(r.effectiveStrategy, 'orchestrated');
   assert.equal(r.degraded, false);
   assert.equal(r.degradationReason, null);
-  assert.deepEqual(r.constructCapabilitiesActive.sort(), ['personas', 'prompt-envelope', 'skills', 'workflow-routing']);
+  assert.deepEqual(r.constructCapabilitiesActive.sort(), ['prompt-envelope', 'skills', 'worker-profiles', 'workflow-routing']);
 });
 
 test('same-family fallback → same-family-fallback mode and degraded=true', () => {
   const r = resolveExecution(
-    { workflowType: 'evidence-ingest', requestedStrategy: 'orchestrated', hostModel: 'ide-builtin-unknown', hostProvider: 'anthropic' },
+    { procedureId: 'evidence-ingest', requestedStrategy: 'orchestrated', hostModel: 'ide-builtin-unknown', hostProvider: 'anthropic' },
     { env: baseEnv() },
   );
   assertCommonShape(r);
@@ -71,7 +71,7 @@ test('same-family fallback → same-family-fallback mode and degraded=true', () 
 
 test('prompt-only by request → construct-prompt-only, not degraded', () => {
   const r = resolveExecution(
-    { workflowType: 'evidence-ingest', requestedStrategy: 'prompt-only', hostModel: ANTHROPIC_MODEL },
+    { procedureId: 'evidence-ingest', requestedStrategy: 'prompt-only', hostModel: ANTHROPIC_MODEL },
     { env: baseEnv() },
   );
   assertCommonShape(r);
@@ -83,7 +83,7 @@ test('prompt-only by request → construct-prompt-only, not degraded', () => {
 
 test('orchestrated requested but model unresolvable → degraded prompt-only with reason', () => {
   const r = resolveExecution(
-    { workflowType: 'architecture-review', requestedStrategy: 'orchestrated', hostModel: 'mystery/unknown', hostProvider: 'mystery' },
+    { procedureId: 'architecture-review', requestedStrategy: 'orchestrated', hostModel: 'mystery/unknown', hostProvider: 'mystery' },
     { env: {} },
   );
   assertCommonShape(r);
@@ -105,29 +105,30 @@ test('useConstruct=false → host-direct with no Construct capabilities', () => 
   assert.equal(r.degraded, false);
 });
 
-test('auto on a resolvable known workflow orchestrates', () => {
+test('auto on a resolvable known Procedure orchestrates', () => {
   const r = resolveExecution(
-    { workflowType: 'prd-draft', requestedStrategy: 'auto', hostModel: ANTHROPIC_MODEL },
+    { procedureId: 'prd-draft', requestedStrategy: 'auto', hostModel: ANTHROPIC_MODEL },
     { env: baseEnv() },
   );
   assert.equal(r.executionMode, 'construct-orchestrated');
   assert.equal(r.effectiveStrategy, 'orchestrated');
 });
 
-test('unknown workflowType warns and reports no orchestration plan', () => {
+test('unknown Procedure warns and reports no orchestration plan', () => {
   const r = resolveExecution(
-    { workflowType: 'not-a-real-workflow', requestedStrategy: 'orchestrated', hostModel: ANTHROPIC_MODEL },
+    { procedureId: 'not-a-real-procedure', requestedStrategy: 'orchestrated', hostModel: ANTHROPIC_MODEL },
     { env: baseEnv() },
   );
   assert.equal(r.orchestrationPlanned, false);
   assert.equal(r.executionMode, 'construct-prompt-only');
   assert.equal(r.degraded, true);
-  assert.ok(r.warnings.some((w) => /not-a-real-workflow/.test(w)));
+  assert.ok(r.warnings.some((w) => /not-a-real-procedure/.test(w)));
+  assert.match(r.degradationReason || '', /not-a-real-procedure|no orchestration plan/i);
 });
 
 test('invalid requestedStrategy defaults to auto with a warning', () => {
   const r = resolveExecution(
-    { workflowType: 'evidence-ingest', requestedStrategy: 'bogus', hostModel: ANTHROPIC_MODEL },
+    { procedureId: 'evidence-ingest', requestedStrategy: 'bogus', hostModel: ANTHROPIC_MODEL },
     { env: baseEnv() },
   );
   assert.equal(r.requestedStrategy, 'auto');
@@ -137,7 +138,7 @@ test('invalid requestedStrategy defaults to auto with a warning', () => {
 test('a credential value in env never appears in the response', () => {
   const canary = 'sk-secret-CANARY-do-not-leak-9876';
   const r = resolveExecution(
-    { workflowType: 'evidence-ingest', requestedStrategy: 'orchestrated', hostModel: ANTHROPIC_MODEL },
+    { procedureId: 'evidence-ingest', requestedStrategy: 'orchestrated', hostModel: ANTHROPIC_MODEL },
     { env: baseEnv({ ANTHROPIC_API_KEY: canary, OPENROUTER_API_KEY: canary }) },
   );
   assert.ok(!JSON.stringify(r).includes(canary), 'no credential value leaks into the contract');

@@ -9,7 +9,7 @@
  * of installing a real launchd/systemd unit (supervision install is
  * interactive-only). On no, the enable commands are printed so the user can
  * turn it on later. Spawns the real `construct init` binary against an
- * isolated HOME/CX_HOME_OVERRIDE (sterileSpawnEnv) and asserts on the
+ * isolated HOME/CONSTRUCT_HOME_OVERRIDE (sterileSpawnEnv) and asserts on the
  * durable construct.config.json artifact, not just stdout.
  */
 
@@ -51,7 +51,7 @@ function runInit(env, extraArgs) {
       env: sterileSpawnEnv({
         HOME: env.HOME,
         USERPROFILE: env.HOME,
-        CX_HOME_OVERRIDE: env.HOME,
+        CONSTRUCT_HOME_OVERRIDE: env.HOME,
         XDG_CONFIG_HOME: join(env.HOME, '.config'),
         XDG_DATA_HOME: join(env.HOME, '.local', 'share'),
         XDG_CACHE_HOME: join(env.HOME, '.cache'),

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 2,
+  "workerProfileId": "reviewer",
+  "capabilityId": "worker-profile.prompt",
+  "mode": "normal",
+  "scenarioKind": "ambiguous",
+  "representativeTask": {
+    "prompt": "Take a look at the auth changes and let me know if they're okay.",
+    "inputs": {}
+  },
+  "expectedBehavior": {
+    "mustContainAny": ["which file", "diff", "what changed", "scope", "clarify"],
+    "mustNotContain": [],
+    "mustRefuse": false,
+    "mustEscalateTo": [],
+    "mustStateAssumptions": true
+  }
+}

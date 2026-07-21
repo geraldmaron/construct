@@ -16,10 +16,11 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import os from "node:os";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { loadConstructEnv } from "../lib/env-config.mjs";
+import { doctorRoot } from "../lib/config/xdg.mjs";
+import { homeDir } from "../lib/paths.mjs";
 
 // Apply config.env so its credentials win over stale shell env values
 const _confEnv = loadConstructEnv({ warn: false });
@@ -41,7 +42,7 @@ const agentFilter = args.agent ?? null;
 const jsonOnly = args["json-only"] === true || args["json-only"] === "true";
 const outDir = (args.out && typeof args.out === "string")
   ? path.resolve(args.out)
-  : path.join(os.homedir(), ".cx", "performance-reviews");
+  : path.join(doctorRoot(homeDir()), "performance-reviews");
 
 fs.mkdirSync(outDir, { recursive: true });
 
@@ -59,7 +60,7 @@ function telemetryHeaders() {
 }
 
 function readSessionEfficiency() {
-  const efficiencyPath = path.join(os.homedir(), ".cx", "session-efficiency.json");
+  const efficiencyPath = path.join(doctorRoot(homeDir()), "session-efficiency.json");
   try {
     const stats = JSON.parse(fs.readFileSync(efficiencyPath, "utf8"));
     const readCount = Number(stats.readCount || 0);
@@ -368,7 +369,7 @@ function buildMarkdownReport(metrics, fromDate, toDate, dateStr, efficiencyStats
       lines.push(`${i++}. Review traces for \`${a.name}\` in telemetry (${TELEMETRY_BASEURL}).`);
     }
   } else if (noData.length > 0) {
-    lines.push("1. Ensure validation is scoring agent outputs — call `cx_score` after verification passes.");
+    lines.push("1. Ensure validation is scoring agent outputs — call `construct_score` after verification passes.");
   } else {
     lines.push("1. No immediate action required. Continue monitoring.");
   }

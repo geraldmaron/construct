@@ -70,3 +70,16 @@ test('flushReadTrackerDeltas compacts appended deltas into session-efficiency.js
 
   fs.rmSync(home, { recursive: true, force: true });
 });
+
+test('readTrackerPaths honors CONSTRUCT_HOME_OVERRIDE for machine state', () => {
+  const constructHome = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-read-tracker-home-'));
+  const otherHome = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-read-tracker-other-'));
+  try {
+    const paths = readTrackerPaths({ CONSTRUCT_HOME_OVERRIDE: constructHome, HOME: otherHome });
+    assert.equal(paths.constructDir, path.join(constructHome, '.local', 'state', 'construct'));
+    assert.equal(paths.efficiencyStore, path.join(paths.constructDir, 'session-efficiency.json'));
+  } finally {
+    fs.rmSync(constructHome, { recursive: true, force: true });
+    fs.rmSync(otherHome, { recursive: true, force: true });
+  }
+});

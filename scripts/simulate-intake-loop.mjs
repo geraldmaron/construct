@@ -63,9 +63,9 @@ for (const file of inboxFiles) {
   };
   
   // Write to intake queue
-  const intakePath = path.join(ROOT_DIR, '.cx/intake/pending', `${intakeId}.json`);
+  const intakePath = path.join(ROOT_DIR, '.construct/intake/pending', `${intakeId}.json`);
   fs.writeFileSync(intakePath, JSON.stringify(intakePacket, null, 2));
-  console.log(`\n✅ Intake packet created: .cx/intake/pending/${intakeId}.json`);
+  console.log(`\n✅ Intake packet created: .construct/intake/pending/${intakeId}.json`);
 }
 
 // Step 2: Knowledge Retrieval
@@ -81,7 +81,7 @@ console.log(`Query: "${queryText}"`);
 // For simulation, we'll show what documents would be retrieved
 const relatedDocs = [
   {
-    path: '.cx/knowledge/internal/adr-session-management.md',
+    path: '.construct/knowledge/internal/adr-session-management.md',
     title: 'Architecture Decision: Session Management Strategy',
     score: 0.89,
     relevance: 'Directly addresses session timeout architecture',
@@ -93,7 +93,7 @@ const relatedDocs = [
     relevance: 'Related product requirements for auth flow',
   },
   {
-    path: '.cx/observations/obs-pattern-login-friction.json',
+    path: '.construct/observations/obs-pattern-login-friction.json',
     title: 'Pattern: Login friction correlates with support volume',
     score: 0.65,
     relevance: 'Historical pattern from past incidents',
@@ -152,7 +152,7 @@ console.log('After specialists complete their work, observations are stored:\n')
 const observations = [
   {
     id: 'obs-1',
-    role: 'cx-product-manager',
+    role: 'product-manager',
     category: 'pattern',
     summary: 'Login friction increases support volume by 40% when session timeout < 20 min',
     tags: ['authentication', 'support', 'session-management'],
@@ -160,7 +160,7 @@ const observations = [
   },
   {
     id: 'obs-2',
-    role: 'cx-engineer',
+    role: 'engineer',
     category: 'decision',
     summary: 'Implement sliding session with 5-min warning + auto-save hook',
     tags: ['session', 'implementation', 'user-experience'],
@@ -168,7 +168,7 @@ const observations = [
   },
   {
     id: 'obs-3',
-    role: 'cx-qa',
+    role: 'qa',
     category: 'anti-pattern',
     summary: 'Fixed TTL sessions without warning cause data loss',
     tags: ['testing', 'session', 'data-loss'],
@@ -225,7 +225,7 @@ const entities = [
     name: 'session-management',
     type: 'component',
     connectedDocs: [
-      '.cx/knowledge/internal/adr-session-management.md',
+      '.construct/knowledge/internal/adr-session-management.md',
       'inbox/session-timeout-bug-20260517.md',
       'inbox/login-feedback-20260518.md',
     ],
