@@ -29,28 +29,6 @@
 #let surface-alt = rgb("#f3f4f6")
 #let paper = rgb("#ffffff")
 
-// Back-compatible token names kept for any external reference, remapped onto the
-// monochrome ramp so legacy callers inherit the new palette automatically.
-
-#let brand-accent = ink
-#let brand-accent-deep = ink
-#let brand-violet-soft = ink-muted
-#let brand-warm = ink
-#let brand-warm-deep = ink-strong
-#let brand-info = ink-muted
-#let brand-success = ink
-#let brand-navy = rgb("#0c1018")
-#let brand-ink = ink-strong
-#let brand-ink-soft = ink-body
-#let brand-muted = ink-muted
-#let brand-faint = ink-faint
-#let brand-surface = surface
-#let brand-surface-alt = surface-alt
-#let brand-surface-warm = surface
-#let brand-surface-info = surface-alt
-#let brand-hairline = hairline
-#let brand-rule = hairline-strong
-
 #let construct-font-sans = ("Space Grotesk",)
 #let construct-font-display = ("Space Grotesk",)
 #let construct-font-mono = ("JetBrains Mono",)
@@ -301,9 +279,8 @@
   ]
 }
 
-// Running footer: a quiet wordmark line, not a second headline. The header
-// already carries the strong ink; the footer stays in the muted register so
-// page chrome frames the content instead of competing with it.
+// Running footer: document class label and optional classification only.
+// Generated artifacts are the user's documents; do not stamp the product name.
 
 #let construct-running-footer(footer-label, classification: "") = context {
   if counter(page).get().first() > 1 [
@@ -312,10 +289,8 @@
     #v(0.32em)
     #set text(font: construct-font-sans, size: fs-micro, fill: ink-faint)
     #align(center)[
-      #text(weight: wt-semibold, fill: ink-muted, tracking: 0.16em)[CONSTRUCT]
-      #text(fill: ink-faint)[ #sym.dot.c ]
-      #text(fill: ink-muted)[#footer-label]
-      #if classification != "" [ #text(fill: ink-faint)[ #sym.dot.c ] #upper(classification)]
+      #text(weight: wt-bold, fill: ink-muted, tracking: 0.04em)[#footer-label]
+      #if classification != "" [ #sym.dot.c #upper(classification)]
     ]
   ]
 }
