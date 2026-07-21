@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-21T02:56:08.036Z",
+  "generatedAt": "2026-07-21T06:22:15.498Z",
   "generator": "lib/certification/skill-inventory.mjs",
-  "skillCount": 141,
+  "skillCount": 145,
   "skills": [
     {
       "id": "ai/agent-dev",
@@ -281,6 +281,24 @@
       "workflowSkill": false
     },
     {
+      "id": "compliance/case-law-research",
+      "owners": [
+        "worker-profile:security"
+      ],
+      "activationTriggers": [
+        "Use when verifying case law, reporter citations, or holdings for compliance-memo and legal-compliance reviews. Not legal advice."
+      ],
+      "inputs": [
+        "[artifact, citation]"
+      ],
+      "outputs": {
+        "artifactType": "compliance-memo",
+        "name": "compliance-case-law-research"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
       "id": "compliance/data-privacy",
       "owners": [
         "worker-profile:security"
@@ -296,7 +314,7 @@
         "name": "compliance-data-privacy"
       },
       "verificationHooks": [],
-      "workflowSkill": false
+      "workflowSkill": true
     },
     {
       "id": "compliance/license-audit",
@@ -332,7 +350,7 @@
         "name": "compliance-regulatory-review"
       },
       "verificationHooks": [],
-      "workflowSkill": false
+      "workflowSkill": true
     },
     {
       "id": "development/cpp",
@@ -776,7 +794,7 @@
       "verificationHooks": [
         {
           "kind": "verificationBar",
-          "value": "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
+          "value": "Problem→Decision→Rejected alternatives→Consequences→Reversibility→Adversarial challenge; every load-bearing claim cites a verifiable source or unknown/[unverified]."
         },
         {
           "kind": "cli",
@@ -792,7 +810,18 @@
     {
       "id": "docs/artifact-authorship",
       "owners": [
-        "worker-profile:product-manager"
+        "worker-profile:architect",
+        "worker-profile:data-analyst",
+        "worker-profile:debugger",
+        "worker-profile:designer",
+        "worker-profile:engineer",
+        "worker-profile:operations",
+        "worker-profile:orchestrator",
+        "worker-profile:product-manager",
+        "worker-profile:qa",
+        "worker-profile:researcher",
+        "worker-profile:reviewer",
+        "worker-profile:security"
       ],
       "activationTriggers": [
         "Use when: drafting or reviewing any Construct typed artifact (PRD, ADR, research, runbook, strategy, security review, QA plan, etc.). Canonical framing, population, storytelling, adversarial, anti-fabrication, and cross-persona trigger contract."
@@ -871,7 +900,7 @@
       "verificationHooks": [
         {
           "kind": "verificationBar",
-          "value": "Every load-bearing claim cites a verifiable primary source; label inference confidence; satisfy template structure requirements."
+          "value": "Question→Method→Sources→Findings(Observation≠Inference)→Counter-evidence→Recommendation; every load-bearing claim cites a verifiable primary source or [unverified]."
         },
         {
           "kind": "cli",
@@ -1051,7 +1080,7 @@
       "verificationHooks": [
         {
           "kind": "verificationBar",
-          "value": "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
+          "value": "Exact 12-section PRD structure; Phase→Requirement→AC hierarchy with depth; every load-bearing claim cites a verifiable source or unknown/[unverified]; adversarial + legal/privacy/user/competitive/financial discovery complete."
         },
         {
           "kind": "cli",
@@ -1191,7 +1220,7 @@
       "verificationHooks": [
         {
           "kind": "verificationBar",
-          "value": "Every load-bearing claim cites a verifiable primary source; label inference confidence; satisfy template structure requirements."
+          "value": "Question→Method→Sources→Findings(Observation≠Inference)→Counter-evidence→Recommendation; every load-bearing claim cites a verifiable primary source or [unverified]."
         },
         {
           "kind": "cli",
@@ -1223,7 +1252,7 @@
       "verificationHooks": [
         {
           "kind": "verificationBar",
-          "value": "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
+          "value": "Alert→Diagnostic(D-*)→Remediation(R-*)→Rollback(RB-* with last tested)→Escalation→Adversarial challenge; operator-runnable steps only."
         },
         {
           "kind": "cli",
@@ -1255,7 +1284,7 @@
       "verificationHooks": [
         {
           "kind": "verificationBar",
-          "value": "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
+          "value": "Vision→Bets(with kill criteria)→Non-bets→Metrics→Competitive Positioning→Risks; baselines/targets may be unknown but never fabricated."
         },
         {
           "kind": "cli",
@@ -1972,6 +2001,24 @@
       "workflowSkill": false
     },
     {
+      "id": "perspectives/devil-advocate",
+      "owners": [
+        "worker-profile:reviewer"
+      ],
+      "activationTriggers": [
+        "FMEA / plan-challenge overlay for reviewer. Use when challenging framing, PRDs, ADRs, or plans before approval (perspectives/devil-advocate)."
+      ],
+      "inputs": [
+        "[plan-or-artifact]"
+      ],
+      "outputs": {
+        "artifactType": "perspective-guidance",
+        "name": "perspectives-devil-advocate"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
       "id": "perspectives/engineer",
       "owners": [
         "worker-profile:engineer"
@@ -2238,7 +2285,12 @@
         "artifactType": "guidance",
         "name": "perspectives-researcher"
       },
-      "verificationHooks": [],
+      "verificationHooks": [
+        {
+          "kind": "cli",
+          "value": "construct artifact validate"
+        }
+      ],
       "workflowSkill": false
     },
     {
@@ -2627,6 +2679,24 @@
       "workflowSkill": false
     },
     {
+      "id": "strategy/competitive-intel",
+      "owners": [
+        "worker-profile:product-manager"
+      ],
+      "activationTriggers": [
+        "Use when populating Competitive landscape tables from primary sources without fabricating market share or pricing."
+      ],
+      "inputs": [
+        "[competitors, artifact]"
+      ],
+      "outputs": {
+        "artifactType": "research-brief",
+        "name": "strategy-competitive-intel"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
       "id": "strategy/competitive-landscape",
       "owners": [
         "worker-profile:product-manager"
@@ -2661,6 +2731,24 @@
       "outputs": {
         "artifactType": "experiment-plan",
         "name": "strategy-experimentation"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "strategy/financial-model",
+      "owners": [
+        "worker-profile:product-manager"
+      ],
+      "activationTriggers": [
+        "Use when Why Now or Competitive/Financial sections make revenue, cost, or ROI claims. Prefer ranges; refuse fabricated point estimates."
+      ],
+      "inputs": [
+        "[assumptions, artifact]"
+      ],
+      "outputs": {
+        "artifactType": "prd",
+        "name": "strategy-financial-model"
       },
       "verificationHooks": [],
       "workflowSkill": false
@@ -2780,5 +2868,5 @@
   ],
   "blockingFindings": [],
   "effectivenessFindings": [],
-  "digest": "854596a5c03e83078e441dd659788b0411707594a4ee636327ba9bbe131daeca"
+  "digest": "2ddb731ff6aa16e6cfd33db6de5700211d11b503746a8d1a89f6e6db6d9c6888"
 }

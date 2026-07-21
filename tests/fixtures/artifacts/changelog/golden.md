@@ -6,4 +6,4 @@ cx_fixture_source: templates/docs/changelog-entry.md
 
 # Golden fixture: changelog
 
-This paragraph supports the supplemental section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the supplemental section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the supplemental section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the supplemental section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the supplemental section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the supplemental section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).

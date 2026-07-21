@@ -8,15 +8,15 @@ cx_fixture_source: templates/docs/compliance-memo.md
 
 ## TL;DR
 
-This paragraph supports the TL;DR section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the TL;DR section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the TL;DR section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the TL;DR section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the TL;DR section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the TL;DR section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Scope and activity
 
-This paragraph supports the Scope and activity section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Scope and activity section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Scope and activity section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Scope and activity section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Scope and activity section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Scope and activity section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Obligation → control register
 
-This paragraph supports the Obligation → control register section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Obligation → control register section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Obligation → control register section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Obligation → control register section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Obligation → control register section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Obligation → control register section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Regulatory Citations
 

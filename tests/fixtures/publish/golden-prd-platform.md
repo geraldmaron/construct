@@ -110,17 +110,35 @@ gate -> export
 
 Without a shared gate, distribution drift and unprovenanced artifacts compound across IDE hosts. Timing is driven by platform review failure modes above; quantified incident rate remains `unknown`.
 
+| Timing dimension | Estimate / window | Source |
+|---|---|---|
+| Revenue at risk | unknown | [unverified] — owner: product-manager by 2026-08-15 |
+| Upside / opportunity window | governed exports unlock enterprise pilots | internal review |
+| Market timing | IDE host consolidation wave | observed |
+| Cost of delay | unprovenanced PDFs compound each release | this fixture Background |
+| Competitive window | host-default styling ships first | see Competitive |
+| Compliance / legal deadline | citation policy audit | security.privacy |
+
 ## Competitive Landscape & Financial Considerations
 
-| Alternative | Dimension | Approach | Our stance | Source |
+### Competitive landscape
+
+Host-default PDF styling and ad hoc prompt conventions solve export without governance; Construct differentiates on validate-before-export and branded figures.
+
+| Competitor / alternative | Dimension | Their approach | Our stance | Source |
 |---|---|---|---|---|
 | Host-default PDF styling | brand fidelity | Unbranded exports | Differentiate | observed in prior Construct 2.0 cutover notes |
 | Ad hoc prompt conventions | governance | No release gate | Differentiate | this fixture Background |
 
-| Cost / value item | Estimate | Confidence | Source |
-|---|---|---|---|
-| Build / run cost | unknown | low | [unverified] |
-| Export p95 target | ≤10s with figures | med | Success Metrics |
+### Financial considerations
+
+Structural economics favor bundling typography and local figure rendering over cloud export services.
+
+| Item | Low | Base | High | Source |
+|---|---|---|---|---|
+| Build / run cost | unknown | unknown | unknown | [unverified] — owner: ops by 2026-08-15 |
+| Unit economics | unknown | unknown | unknown | [unverified] |
+| Expected value / ROI | unknown | unknown | unknown | [unverified] until measured |
 
 ## Phases
 
@@ -243,6 +261,13 @@ Ops can detect missing figure toolchain; CI uses detect or committed demo MP4s a
 | Measured PDF export p95 on CI runners | ops | unknown |
 
 ## Platform flow
+
+Publish turns a validated typed artifact into a branded deliverable. The happy
+path below is the same sequence every platform PRD must keep: invoke the
+workflow, land a typed artifact, validate structure and citations, then publish
+with figures so diagrams survive PDF and DOCX. Operators who skip validate or
+publish without `--figures` produce the blank-page and missing-diagram failures
+this golden fixture is meant to catch.
 
 ```mermaid
 flowchart TD

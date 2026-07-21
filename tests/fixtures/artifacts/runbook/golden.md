@@ -8,11 +8,11 @@ cx_fixture_source: templates/docs/runbook.md
 
 ## Alert trigger
 
-This paragraph supports the Alert trigger section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Alert trigger section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Alert trigger section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Alert trigger section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Alert trigger section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Alert trigger section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Symptoms
 
-This paragraph supports the Symptoms section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Symptoms section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Symptoms section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Symptoms section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Symptoms section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Symptoms section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Impact
 

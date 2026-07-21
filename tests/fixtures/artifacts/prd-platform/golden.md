@@ -8,15 +8,15 @@ cx_fixture_source: templates/docs/prd-platform.md
 
 ## TL;DR
 
-This paragraph supports the TL;DR section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the TL;DR section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the TL;DR section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the TL;DR section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the TL;DR section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the TL;DR section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Background
 
-This paragraph supports the Background section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Background section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Background section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Background section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Background section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Background section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Problem
 
-This paragraph supports the Problem section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Problem section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Problem section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Problem section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Problem section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Problem section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Outcomes - Goals & Non-Goals
 
@@ -24,28 +24,31 @@ Fixture content for Outcomes - Goals & Non-Goals.
 
 ## Why This Matters Now
 
-Timing thesis for the fixture: revenue and compliance windows force a decision now.
+Timing thesis with financially meaningful pressure.
 
 | Timing dimension | Estimate / window | Source |
 |---|---|---|
-| Revenue at risk | unknown $ | https://example.com/fixture (accessed 2026-06-22) |
-| Upside / opportunity window | unknown | [unverified] — owner: pm by 2026-08-15 |
+| Revenue at risk | unknown | [unverified] — owner: pm by 2026-08-15 |
+| Upside / opportunity window | unknown | [unverified] |
 | Market timing | unknown | [unverified] |
-| Cost of delay | toil compounds | https://example.com/fixture (accessed 2026-06-22) |
-| Competitive window | unknown | [unverified] |
-| Compliance / legal deadline | PII in scope | https://example.com/fixture (accessed 2026-06-22) |
+| Cost of delay | support toil compounds | playbook |
+| Competitive window | unknown | see Competitive |
+| Compliance / legal deadline | PII on share grant | privacy |
+
 
 ## Competitive Landscape & Financial Considerations
 
 ### Competitive landscape
 
-Prose on status quo, then matrix.
+Prose on alternatives, then a small matrix.
 
-| Alternative | Dimension | Approach | Our stance | Source |
+| Competitor / alternative | Dimension | Their approach | Our stance | Source |
 |---|---|---|---|---|
-| Status quo | workflow | manual | differentiate | https://example.com/fixture (accessed 2026-06-22) |
+| Email | workflow | forks | differentiate | observed |
 
 ### Financial considerations
+
+One short paragraph on structural economics.
 
 | Item | Low | Base | High | Source |
 |---|---|---|---|---|
@@ -55,33 +58,34 @@ Prose on status quo, then matrix.
 
 ## Phases
 
-| Phase | Name | Why? (human purpose) | Ships when | Status |
-|---|---|---|---|---|
-| 1 | Fixture delivery | Platform consumers need tenant-isolated ledgers so reconciliation cannot leak across accounts | AC-1.1.1 green | not started |
+### Phase 1: Fixture delivery
+
+- **Why?**: Tenant billing owners need isolated ledgers so reconciliation stops cross-reading neighbor data.
+- **Goal**: Ship an isolated billing ledger per tenant.
+- **Status**: not started
+- **Requirements**: FR-1.1
+
 
 ## Requirements
 
 ### Phase 1 — Fixture delivery
 
-**Why?** App developers and billing operators need a hard tenant boundary for ledger events. This phase reduces cross-tenant read risk before broader platform migration work.
+**Why?** Billing operators need per-tenant isolation so invoices derive from one ledger.
 
-Ship an isolated billing ledger per tenant.
-
-#### Isolation
-
-##### FR-1.1: Isolate tenant ledger
+#### FR-1.1: Isolate tenant ledger
 
 Each tenant invoice derives only from that tenant ledger events.
 
-**Acceptance criteria**
+- **Phase**: 1
+- **Acceptance criteria**: AC-1.1.1
 
-1. **AC-1.1.1** — Reconciliation test passes without cross-tenant reads. *Verify:* automated.
 
 ## Acceptance Criteria
 
-| AC id | FR | Criterion | Verify |
+| AC id | FR id | Criterion (stranger-checkable) | Verification method |
 |---|---|---|---|
 | AC-1.1.1 | FR-1.1 | Reconciliation test passes without cross-tenant reads | automated |
+
 
 ## Success Metrics
 
@@ -104,6 +108,6 @@ flowchart LR
 | --- | --- | --- | --- | --- | --- |
 | Metric value | Type value | Baseline value | Target value | Owner value | Source value |
 
-| AC id | FR | Criterion | Verify |
+| AC id | FR id | Criterion (stranger-checkable) | Verification method |
 | --- | --- | --- | --- |
-| AC id value | FR id value | Criterion value | Verify value |
+| AC id value | FR id value | Criterion (stranger-checkable) value | Verification method value |

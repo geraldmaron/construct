@@ -8,15 +8,15 @@ cx_fixture_source: templates/docs/dpia-or-privacy-assessment.md
 
 ## Purpose of processing
 
-This paragraph supports the Purpose of processing section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Purpose of processing section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Purpose of processing section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Purpose of processing section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Purpose of processing section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Purpose of processing section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Data map
 
-This paragraph supports the Data map section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Data map section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Data map section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Data map section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Data map section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Data map section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Necessity and proportionality
 
-This paragraph supports the Necessity and proportionality section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Necessity and proportionality section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Necessity and proportionality section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Necessity and proportionality section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Necessity and proportionality section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Necessity and proportionality section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Risks to individuals
 

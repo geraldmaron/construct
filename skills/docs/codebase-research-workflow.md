@@ -5,7 +5,7 @@ inputs: [repository-path]
 artifactType: research-brief
 toneDefault: pedagogical
 toneAllowed: [pedagogical, direct]
-verificationBar: "Every load-bearing claim cites a verifiable primary source; label inference confidence; satisfy template structure requirements."
+verificationBar: "Question→Method→Sources→Findings(Observation≠Inference)→Counter-evidence→Recommendation; every load-bearing claim cites a verifiable primary source or [unverified]."
 ---
 # Codebase Research Workflow
 

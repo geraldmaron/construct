@@ -8,15 +8,15 @@ cx_fixture_source: templates/docs/rfc.md
 
 ## Summary
 
-This paragraph supports the Summary section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Summary section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Summary section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Summary section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Summary section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Summary section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Motivation
 
-This paragraph supports the Motivation section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Motivation section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Motivation section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Motivation section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Motivation section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Motivation section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Goals & Non-Goals
 
-This paragraph supports the Goals & Non-Goals section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Goals & Non-Goals section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Goals & Non-Goals section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Goals & Non-Goals section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Goals & Non-Goals section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Goals & Non-Goals section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Proposed design
 

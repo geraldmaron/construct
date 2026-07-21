@@ -8,15 +8,15 @@ cx_fixture_source: templates/docs/prd-business.md
 
 ## The bet
 
-This paragraph supports the The bet section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the The bet section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the The bet section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the The bet section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the The bet section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the The bet section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Market thesis
 
-This paragraph supports the Market thesis section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Market thesis section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Market thesis section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Market thesis section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Market thesis section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Market thesis section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Problem and opportunity
 
-This paragraph supports the Problem and opportunity section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Problem and opportunity section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Problem and opportunity section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Problem and opportunity section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Problem and opportunity section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Problem and opportunity section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Strategic goals
 
@@ -33,6 +33,17 @@ Fixture content for What must be true.
 ## Competitive analysis
 
 Fixture content for Competitive analysis.
+
+## Financial frame
+
+Low / Base / High ranges for structural economics.
+
+| Item | Low | Base | High | Source |
+|---|---|---|---|---|
+| Build / run cost | unknown | unknown | unknown | [unverified] |
+| Unit economics | unknown | unknown | unknown | [unverified] |
+| Revenue model | unknown | unknown | unknown | [unverified] |
+
 
 ## Kill criteria
 
