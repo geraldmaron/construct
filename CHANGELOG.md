@@ -6,6 +6,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Fixed
 
+- Alignment census / certify gate (PR 419): brand prose lint no longer flags meta-guidance that bans marketing tokens (`robust` in AI/LLM-tells lists); backtick `construct publish` naming hits; remove accidental repo-root `~/Downloads` residue; add golden fixtures for `compliance-memo` and `dpia-or-privacy-assessment` so hermetic `artifact.provenance` passes. Tightens brand ratchet by clearing the `product-manager.md` marketing-voice baseline entry.
+
 - Isolation UX pass: `construct init --all-hosts` now passes an explicit host list (including Cursor) instead of `null` (which meant “detected only”); empty host selection skips adapter sync; `construct sync` gains `--all-hosts` / `--with-<host>` / `CONSTRUCT_SYNC_HOSTS=all` with `--with-<host>` unioning into detection (not replacing). `artifact validate` help lists valid types and prints them on unknown `--type=`; bare `construct tools` shows `Next: detect`; fresh-machine `status` collapses optional “not configured” integrations and missing-credentials embed providers into summary lines.
 
 ### Changed

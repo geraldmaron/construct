@@ -27,7 +27,7 @@ node bin/construct publish docs/prd-platform/brief.md --strict --figures
 - Renders fenced `d2` / `mermaid` via vendored `pandoc-ext/diagram` with **crisp field-notebook distribution styling** (D2 without `--sketch`, Mermaid classic look + Plus Jakarta Sans labels, charcoal ink + slate-teal accent)
 - PDF routes by `artifactType`: `construct-prd.typ` (product editorial), `construct-research.typ` (analytics), `construct-decision.typ` (ADR/RFC); override: `.construct/publish-theme.typ`
 - Typography ships bundled in `templates/distribution/fonts/` (Plus Jakarta Sans body + headings, JetBrains Mono code). Success metrics tables in blockquotes render as **Key metrics** callouts.
-- Optional interactive whiteboarding (Excalidraw, etc.) stays at the agent/tool layer — Construct publish remains Mermaid/D2 diagram-as-code.
+- Optional interactive whiteboarding (Excalidraw, etc.) stays at the agent/tool layer — `construct publish` remains Mermaid/D2 diagram-as-code.
 - Optional VHS terminal demo + Playwright app demo via frontmatter or flags
 
 Authoring conventions for richer PDFs:

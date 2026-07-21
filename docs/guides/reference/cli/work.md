@@ -415,7 +415,7 @@ construct tools detect [--json] [--figures] [--demo=NAME]
 
 **Subcommands**
 
-- `detect` — Probe Pandoc/Typst/D2/Mermaid/VHS readiness for construct publish
+- `detect` — Probe Pandoc/Typst/D2/Mermaid/VHS readiness for `construct publish`
 
 **Options**
 
