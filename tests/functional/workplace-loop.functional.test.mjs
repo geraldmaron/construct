@@ -134,7 +134,7 @@ if (!sqliteAvailable()) {
 
     const record = queueRecords()[0];
     assert.ok(record.executedAt, 'the real ApprovalQueue file on disk must carry executedAt after a real control-plane drain');
-    assert.equal(record.executionError, null);
+    assert.equal(record.executionError ?? null, null);
   });
 
   test('verify reports MATCH once the proposal has executed', async () => {

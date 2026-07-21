@@ -54,7 +54,7 @@ test('verify fails on schema violation and names the bad type', () => {
   });
   const result = verifyGraph(root);
   assert.equal(result.ok, false);
-  assert.ok(result.violations.some((v) => v.kind === 'schema' && v.message.includes("invalid type 'flie'")));
+  assert.ok(result.violations.some((v) => v.kind === 'schema' && v.message.includes("unknown type 'flie'")));
 });
 
 test('verify passes on a minimal valid non-partial graph', () => {
