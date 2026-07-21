@@ -172,6 +172,18 @@ test('buildDistributionDiagramEnv sets CONSTRUCT_D2_THEME and sketch flag', () =
   assert.match(env.CONSTRUCT_MERMAID_PPTR_CONFIG || '', /templates\/distribution\/mermaid-puppeteer\.json$/);
 });
 
+test('construct-brand.typ de-brands the PDF running footer', () => {
+  const brand = fs.readFileSync(path.join(REPO, 'templates', 'distribution', 'construct-brand.typ'), 'utf8');
+  assert.match(brand, /#footer-label/);
+  assert.doesNotMatch(brand, /\[CONSTRUCT\]/);
+  assert.doesNotMatch(brand, /Construct brief/);
+});
+
+test('construct-brand.typ omits pre-2.0 compat color token shims', () => {
+  const brand = fs.readFileSync(path.join(REPO, 'templates', 'distribution', 'construct-brand.typ'), 'utf8');
+  assert.doesNotMatch(brand, /brand-warm|brand-violet|brand-accent-deep|brand-surface-warm/);
+});
+
 test('construct-brand.typ uses Space Grotesk family names for body prose', () => {
   const brand = fs.readFileSync(path.join(REPO, 'templates', 'distribution', 'construct-brand.typ'), 'utf8');
   assert.match(brand, /construct-font-sans = \("Space Grotesk",\)/);
