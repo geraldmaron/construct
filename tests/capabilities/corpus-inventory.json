@@ -1,24 +1,24 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-21T06:12:51.448Z",
+  "generatedAt": "2026-07-21T16:47:26.260Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 1078,
-    "topLevelTestFiles": 414,
+    "testFiles": 1079,
+    "topLevelTestFiles": 415,
     "nestedTestFiles": 664,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 50,
     "byLayer": {
       "unit": 717,
       "functional": 304,
-      "visual": 13,
+      "visual": 14,
       "integration": 42,
       "live-provider": 2
     },
     "byCategory": {
       "unit": 638,
       "functional": 304,
-      "visual": 13,
+      "visual": 14,
       "structural-guard": 21,
       "contract-subsystem": 59,
       "integration": 31,
@@ -1786,11 +1786,11 @@
     },
     {
       "path": "tests/diagram-export.test.mjs",
-      "layer": "unit",
-      "category": "unit",
+      "layer": "visual",
+      "category": "visual",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/diagram-export.test.mjs — headless Chrome probe arg contract."
+      "maintainerNotes": "tests/diagram-export.test.mjs — headless Chrome probe + browser resolution."
     },
     {
       "path": "tests/directives/directive-config.test.mjs",
@@ -8268,7 +8268,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/teams.test.mjs — Unit tests for team model, decision rights, forbidden decisions, and escalation paths."
+      "maintainerNotes": "tests/teams.test.mjs — Unit tests for injected-registry team helpers and"
     },
     {
       "path": "tests/telemetry-backfill.test.mjs",
@@ -8455,6 +8455,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/vector-client.test.mjs — tests for lib/storage/vector-client.mjs"
+    },
+    {
+      "path": "tests/verify-cutover-graph-sweep.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/verify-cutover-graph-sweep.test.mjs — pins E1 cycle/orphan sweep"
     },
     {
       "path": "tests/visual/rendered-artifact.test.mjs",
