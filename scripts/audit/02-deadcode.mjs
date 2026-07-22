@@ -74,6 +74,7 @@ const ACCEPTED_TEST_ONLY = {
   'lib/certification/richdocument-production.mjs': 'certification harness (construct-tsyfe.3.7): production RichDocument path evidence; asserted from tests/certification/richdocument-production.test.mjs',
   'lib/export/html-provider.mjs': 'sanitized direct-HTML export provider (construct-tsyfe.6.6): staged export surface; contract asserted from tests/export/html-provider.test.mjs',
   'lib/orchestration/guidance-capability-drift.mjs': 'CI gate (construct-0h5r0): static lint for bare non-core MCP tool references in Worker Profile prompts; asserted from tests/orchestration/guidance-capability-drift.test.mjs',
+  'lib/figure-layout.mjs': 'publish figure proof helper (construct-fgeat): SVG label-overlap checks asserted from tests/figure-layout.test.mjs; authors run via construct publish --preview, not a static production import',
 };
 
 function walk(dir, exts) {

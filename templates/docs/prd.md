@@ -52,9 +52,10 @@ VOICE (human, not corporate-LLM) — rules/common/human-voice.md +
   Prefer longer connected sentences with natural contractions (it's, don't,
   we're) except where formal negation is load-bearing (shall not, AC precision).
   Avoid spaced em dashes; prefer commas, periods, colons, or parentheses.
-  Avoid staccato keynote / Disney uplift and AI tells: delve, landscape
-  (outside the section title), robust, leverage, "it's important to note",
-  "In today's…", "This ensures that…".
+  Avoid staccato keynote / Disney uplift and AI tells (see
+  rules/common/human-voice.md). Ban filler adjectives such as "robust" and
+  "leverage", plus "it's important to note", "In today's…", "This ensures that…".
+  Keep "landscape" only as a section title, never as uplift filler.
 
 Refuse fabrication. Prefer unknown / [unverified] with owner + decision-by date.
 When ordering Goals or phase priority is contested, use
