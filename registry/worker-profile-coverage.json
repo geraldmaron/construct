@@ -10,8 +10,9 @@
     {
       "workerProfileId": "architect",
       "skills": {
-        "count": 10,
+        "count": 11,
         "entitled": [
+          "docs/artifact-authorship",
           "architecture/api-design",
           "architecture/caching",
           "architecture/cloud-native",
@@ -55,8 +56,9 @@
     {
       "workerProfileId": "data-analyst",
       "skills": {
-        "count": 6,
+        "count": 7,
         "entitled": [
+          "docs/artifact-authorship",
           "devops/observability",
           "devops/database",
           "operating/raw-data-structuring",
@@ -95,8 +97,9 @@
     {
       "workerProfileId": "debugger",
       "skills": {
-        "count": 6,
+        "count": 7,
         "entitled": [
+          "docs/artifact-authorship",
           "quality-gates/verify-change",
           "devops/observability",
           "devops/performance",
@@ -131,8 +134,9 @@
     {
       "workerProfileId": "designer",
       "skills": {
-        "count": 8,
+        "count": 9,
         "entitled": [
+          "docs/artifact-authorship",
           "frontend-design/ui-aesthetics",
           "frontend-design/ux-principles",
           "frontend-design/component-patterns",
@@ -170,8 +174,9 @@
     {
       "workerProfileId": "engineer",
       "skills": {
-        "count": 36,
+        "count": 37,
         "entitled": [
+          "docs/artifact-authorship",
           "development/typescript",
           "development/python",
           "development/go",
@@ -236,9 +241,10 @@
     {
       "workerProfileId": "operations",
       "skills": {
-        "count": 18,
+        "count": 19,
         "entitled": [
           "perspectives/operations",
+          "docs/artifact-authorship",
           "docs/init-project",
           "operating/incident-response",
           "operating/oncall-rotation",
@@ -284,8 +290,9 @@
     {
       "workerProfileId": "orchestrator",
       "skills": {
-        "count": 8,
+        "count": 9,
         "entitled": [
+          "docs/artifact-authorship",
           "ai/orchestration-workflow",
           "operating/orchestration-reference",
           "operating/change-management",
@@ -322,7 +329,7 @@
     {
       "workerProfileId": "product-manager",
       "skills": {
-        "count": 16,
+        "count": 18,
         "entitled": [
           "docs/artifact-authorship",
           "docs/product-intelligence-workflow",
@@ -375,8 +382,9 @@
     {
       "workerProfileId": "qa",
       "skills": {
-        "count": 6,
+        "count": 7,
         "entitled": [
+          "docs/artifact-authorship",
           "devops/testing",
           "quality-gates/verify-change",
           "quality-gates/verify-module",
@@ -415,8 +423,9 @@
     {
       "workerProfileId": "researcher",
       "skills": {
-        "count": 12,
+        "count": 13,
         "entitled": [
+          "docs/artifact-authorship",
           "docs/research-workflow",
           "devops/dependency-management",
           "docs/transcript-synthesis",
@@ -457,8 +466,9 @@
     {
       "workerProfileId": "reviewer",
       "skills": {
-        "count": 7,
+        "count": 8,
         "entitled": [
+          "docs/artifact-authorship",
           "quality-gates/verify-quality",
           "quality-gates/review-work",
           "quality-gates/verify-module",
@@ -494,8 +504,9 @@
     {
       "workerProfileId": "security",
       "skills": {
-        "count": 12,
+        "count": 14,
         "entitled": [
+          "docs/artifact-authorship",
           "security/red-team",
           "security/blue-team",
           "security/pentest",
@@ -507,7 +518,8 @@
           "compliance/license-audit",
           "compliance/data-privacy",
           "compliance/ai-disclosure",
-          "compliance/regulatory-review"
+          "compliance/regulatory-review",
+          "compliance/case-law-research"
         ],
         "unresolved": []
       },

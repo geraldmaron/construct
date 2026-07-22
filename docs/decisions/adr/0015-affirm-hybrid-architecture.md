@@ -4,12 +4,14 @@ omitted here because this draft has not been committed.
 -->
 # ADR-0015: Affirm the hybrid markdown + deterministic-enforcement architecture
 
+> **Current surface (Construct 2.0):** Soft-layer units are **Worker Profiles** + `skills/**` / `skills/perspectives/` (not a 28-specialist / persona corpus under `specialists/`). Org-shape audit portions of this ADR are superseded by ADR-0065; the hybrid soft/hard affirmation stands. Body below is the original assessment. See `docs/obsolete/legacy-surface-register.md`.
+
 - **Date**: 2026-06-03
 - **Status**: proposed
 - **Deciders**: Gerald Dagher (owner)
 - **Supersedes**: none
 
-<!-- Owning specialist: cx-architect. This ADR records an assessment-driven architecture decision and carries its supporting completeness audit so a reader can re-verify every load-bearing claim against the tree. -->
+<!-- Owning Worker Profile: architect (historical stamp: cx-architect). This ADR records an assessment-driven architecture decision and carries its supporting completeness audit so a reader can re-verify every load-bearing claim against the tree. Steward bead construct-7d4vl. -->
 
 ## Problem
 

@@ -12,7 +12,7 @@ description: How .construct/, beads, the vector index, and SQL fit together to m
 | Layer | Dirs | Purpose |
 |---|---|---|
 | **Knowledge** | `.construct/knowledge/` | Typed, persistent, human-curated or inbox-ingested documents |
-| **R&D loop** | `inbox/` (drop zone), `.construct/intake/{pending,processed,skipped}/`, `.construct/task-graphs/`, `.construct/traces/` | Per-signal drop zone + triage queue, per-signal execution plans, append-only trace event log |
+| **R&D loop** | `inbox/` (drop zone), `.construct/intake/{pending,processed,skipped}/`, `.construct/task-graphs/`; traces at `~/.construct/projects/<key>/traces/` | Per-signal drop zone + triage queue, per-signal execution plans, append-only trace event log (machine-scoped) |
 | **Runtime** | `.construct/observations/`, `.construct/sessions/`, `.construct/runtime/` | Machine-written, high-churn, agent working memory |
 
 Runtime dirs are **never** hand-edited. Knowledge dirs **are** hand-editable — but like the rest of `.construct/` they are local-only: `construct init` gitignores `.construct/` in full, so knowledge persists on the machine across sessions and is never committed to the repo. R&D-loop dirs are written by the daemon and the CLI; agents update them via `construct intake` / `construct graph`, not by editing files.

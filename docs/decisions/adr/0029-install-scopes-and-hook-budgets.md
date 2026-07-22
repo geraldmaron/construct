@@ -7,6 +7,8 @@ verified_by: construct · install-scope + init-no-project-secrets functional tes
 
 # ADR 0029: Install scopes and per-hook performance budgets
 
+> **Current surface (Construct 2.0):** install write-target flag is `--footprint=project|user|both` (ADR-0071; `--scope=` retired). Prefer default `construct sync` for global+project tiers; public `construct sync --help` documents `--project`, not `--global`. Body below is the original decision record.
+
 - **Date**: 2026-06-05
 - **Status**: accepted
 - **Deciders**: Construct·Architect

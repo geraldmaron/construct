@@ -196,6 +196,19 @@
     {
       "domain": "compliance",
       "keywords": [
+        "case law research",
+        "verifying",
+        "case",
+        "reporter",
+        "citations",
+        "holdings"
+      ],
+      "path": "compliance/case-law-research",
+      "priority": 5
+    },
+    {
+      "domain": "compliance",
+      "keywords": [
         "data privacy",
         "reviewing",
         "data",
@@ -230,18 +243,6 @@
         "features"
       ],
       "path": "compliance/regulatory-review",
-      "priority": 5
-    },
-    {
-      "domain": "compliance",
-      "keywords": [
-        "case law",
-        "courtlistener",
-        "citation",
-        "precedent",
-        "legal research"
-      ],
-      "path": "compliance/case-law-research",
       "priority": 5
     },
     {
@@ -550,6 +551,19 @@
     {
       "domain": "docs",
       "keywords": [
+        "artifact",
+        "prd",
+        "requirements",
+        "draft",
+        "author",
+        "anti-fabrication"
+      ],
+      "path": "docs/artifact-authorship",
+      "priority": 10
+    },
+    {
+      "domain": "docs",
+      "keywords": [
         "backlog proposal workflow",
         "product",
         "evidence",
@@ -650,19 +664,6 @@
       ],
       "path": "docs/memo-and-decision-capture",
       "priority": 5
-    },
-    {
-      "domain": "docs",
-      "keywords": [
-        "artifact authorship",
-        "typed artifact",
-        "anti-fabrication",
-        "cross-persona",
-        "adversarial review",
-        "author requirements"
-      ],
-      "path": "docs/artifact-authorship",
-      "priority": 8
     },
     {
       "domain": "docs",
@@ -1218,6 +1219,19 @@
     {
       "domain": "strategy",
       "keywords": [
+        "competitive intel",
+        "populating",
+        "competitive",
+        "landscape",
+        "tables",
+        "primary"
+      ],
+      "path": "strategy/competitive-intel",
+      "priority": 5
+    },
+    {
+      "domain": "strategy",
+      "keywords": [
         "competitive landscape",
         "team",
         "needs",
@@ -1226,30 +1240,6 @@
         "market"
       ],
       "path": "strategy/competitive-landscape",
-      "priority": 5
-    },
-    {
-      "domain": "strategy",
-      "keywords": [
-        "competitive intel",
-        "competitor pricing",
-        "sec edgar",
-        "win loss",
-        "market share"
-      ],
-      "path": "strategy/competitive-intel",
-      "priority": 5
-    },
-    {
-      "domain": "strategy",
-      "keywords": [
-        "financial model",
-        "unit economics",
-        "roi ranges",
-        "cost of delay",
-        "low base high"
-      ],
-      "path": "strategy/financial-model",
       "priority": 5
     },
     {
@@ -1268,6 +1258,19 @@
       ],
       "path": "strategy/experimentation",
       "priority": 10
+    },
+    {
+      "domain": "strategy",
+      "keywords": [
+        "financial model",
+        "competitive",
+        "financial",
+        "sections",
+        "make",
+        "revenue"
+      ],
+      "path": "strategy/financial-model",
+      "priority": 5
     },
     {
       "domain": "strategy",

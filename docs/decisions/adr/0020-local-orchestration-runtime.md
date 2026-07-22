@@ -3,6 +3,8 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 -->
 # ADR-0020: Construct owns a local orchestration runtime; the Mode-A backend prepares, it does not fake, specialist execution
 
+> **Current surface (Construct 2.0):** Durable project state is `.construct/` (not `.cx/`). Dispatch targets are **Worker Profiles**, not specialists. Runtime modules cited in status notes (`lib/orchestration/runtime.mjs`, MCP `orchestration_run`) remain live. Body below is the original decision record.
+
 - **Date**: 2026-06-03
 - **Status**: accepted
 - **Deciders**: Gerald Dagher (owner)
@@ -11,7 +13,7 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 - **Status note (2026-07-02, construct-fbxv.1)**: extended with honest terminal state taxonomy — runs that resolve no model, prepare zero tasks, and set `degraded:true` now persist and report an explicit `degraded` terminal status instead of bare `completed`.
 - **Status note (2026-07-02, construct-fbxv AP5 validation)**: the `degraded` terminal state was widened to any degraded run that is not prepare-only — a run that executed with a capability gap (e.g. `webUnavailable`) reports `degraded`, not bare `completed`. The runtime and the MCP `shapeRun` read-model now derive identical terminal statuses, the remote poll-loop `TERMINAL` set recognizes `degraded`/`completed-prepare-only`, and the ACP/CLI/`hostAdapterMetadata` surfaces reflect the shaped status and top-level `run.degraded`.
 
-<!-- Owning specialist: cx-architect. Part of the host-independent local orchestration runtime (epic construct-d6pf). -->
+<!-- Owning Worker Profile: architect (historical stamp: cx-architect). Part of the host-independent local orchestration runtime (epic construct-d6pf). Steward bead construct-7d4vl. -->
 
 ## Problem
 

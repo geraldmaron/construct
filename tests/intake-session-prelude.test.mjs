@@ -46,7 +46,7 @@ describe('buildIntakePrelude', () => {
     }
   });
 
-  it('renders count + last 3 triage lines + processing instructions when packets exist', () => {
+  it('renders count + last 3 triage lines + opt-in processing copy when packets exist', () => {
     writePacket('p1', {
       id: 'p1',
       status: 'pending',
@@ -63,7 +63,10 @@ describe('buildIntakePrelude', () => {
     assert.match(out, /## Pending R&D intake \(2\)/);
     assert.match(out, /note-1\.md/);
     assert.match(out, /note-2\.md/);
+    assert.match(out, /Optional — not a coding blocker/);
+    assert.match(out, /construct intake show <id>/);
     assert.match(out, /construct intake done <id>/);
+    assert.doesNotMatch(out, /Process via the recommended chain/);
   });
 
   it('returns empty string and never throws when the queue cannot be read', () => {

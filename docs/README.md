@@ -83,7 +83,7 @@ Step-by-step operator guides for common tasks:
 Use the generated [CLI reference](./guides/reference/cli/) for exact flags and subcommands. The docs index intentionally points advanced commands to the reference when a dedicated tutorial would add little beyond the command help.
 
 - Core: `construct docs`, `construct recommendations`, `construct sandbox`
-- Workflows and knowledge: `construct customer`, `construct graph`, `construct integrations`, `construct reflect`, `construct tags`, `construct workflow`, `construct workspace`
+- Workflows and knowledge: `construct customer`, `construct graph`, `construct integrations`, `construct procedure`, `construct reflect`, `construct tags`, `construct workspace`
 - Models and integrations: `construct claude:allow`, `construct creds`, `construct ollama`
 - Observability and diagnostics: `construct audit`, `construct llm-judge`, `construct telemetry`, `construct cleanup`
 - Administration: `construct auth:status`, `construct backup`, `construct beads`, `construct completions`, `construct gates:audit`, `construct hooks:health`, `construct role`, `construct scheduler`, `construct uninstall`, `construct upgrade`
@@ -105,7 +105,7 @@ Shipped prompt example fixtures live under `examples/`.
 
 They are the canonical place for:
 
-- Construct public persona fixtures under `examples/worker-profile-examples/construct/**`
+- Construct public Worker Profile fixtures under `examples/worker-profile-examples/construct/**`
 - internal role fixtures under `examples/internal/roles/**`
 - labeled bad, boundary, and adversarial cases without bloating runtime prompts
 

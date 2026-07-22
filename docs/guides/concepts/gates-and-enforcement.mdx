@@ -75,6 +75,12 @@ Catches escapees from Layers 1 and 2.
 
 **Self-validation:** `construct gates:audit` walks all four enforcement surfaces (CI workflows, pre-push, pre-commit, branch protection) and reports gaps. Runs in CI on every PR; failures block merge.
 
+## Host coverage (Layer 1 is Claude-only)
+
+Construct installs the real-time hook suite only for **Claude Code**. Cursor documents its own Agent hooks ([docs](https://cursor.com/docs/hooks), [third-party Claude compatibility](https://cursor.com/docs/reference/third-party-hooks)), but Construct **does not** ship `.cursor/hooks.json` or claim suite parity — tool-name mismatches, fail-open hook errors, and incomplete event coverage make a mirrored port unsafe. Codex, OpenCode, VS Code, and Copilot remain `hooks.supported=false` in `platforms/capabilities.json`.
+
+On non-Claude hosts, Layers 2–4 are the fail-closed path: git `.beads/hooks` (doctor verifies wiring when those adapters are present), `construct doctor` / `npm run release:check`, CI required checks, and the MCP broker in team/enterprise. See [Concepts → Hooks](/guides/concepts/hooks) and `lib/hooks/_lib/host-coverage.mjs`.
+
 ## Layer 4: Brokered tool calls (team / enterprise)
 
 In team and enterprise deployments, MCP tool calls run through `lib/mcp/broker.mjs`. The broker consults `lib/policy/engine.mjs`, which reads per-profile permissions from `registry/worker-profiles/*.json` (`policyFence.deniedActions`, `policyFence.approvalRequired`, glob-suffix support for `edit:lib/**` style patterns), and returns a typed decision.

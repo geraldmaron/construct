@@ -61,7 +61,7 @@ The agent loop (front door, Worker Profiles, contracts, gates) is the same acros
 
 ### Solo
 
-For individual work. State lives in the user's repo and `~/.construct/`. Queue is the filesystem under `.construct/intake/`. Postgres and Docker are optional accelerators. Trace capture is local JSONL by default under `.construct/traces/`; remote telemetry export is opt-in.
+For individual work. State lives in the user's repo and `~/.construct/`. Queue is the filesystem under `.construct/intake/`. Postgres and Docker are optional accelerators. Trace capture is local JSONL by default under `~/.construct/projects/<key>/traces/`; remote telemetry export is opt-in.
 
 ### Team
 
@@ -76,12 +76,12 @@ Team mode plus tenant isolation, signed MCP allowlists, RBAC/ABAC-ready auth, is
 ## Picking and changing modes
 
 ```bash
-construct config              # show the active mode and resource topology
-construct config mode         # print just the active mode
-construct config mode team    # set the mode (writes ~/.config/construct/config.env)
+construct config                          # show the active mode and resource topology
+construct config mode                     # print just the active mode
+construct config set deployment.mode team # persist mode in construct.config.json
 ```
 
-The mode is persisted as `CONSTRUCT_DEPLOYMENT_MODE` in `~/.config/construct/config.env`. `construct status` shows the active mode and resource topology at the top of its output.
+The durable setter is `construct config set deployment.mode <solo|team|enterprise>` (writes `construct.config.json`). `construct config mode <value>` is no longer a setter — it redirects to that path. For a one-off override, export `CONSTRUCT_DEPLOYMENT_MODE`. `construct status` shows the active mode and resource topology at the top of its output.
 
 ## What runs in each mode (capability matrix)
 
@@ -90,7 +90,7 @@ The mode is persisted as `CONSTRUCT_DEPLOYMENT_MODE` in `~/.config/construct/con
 | LLM inference | local server (Ollama, llama.cpp, any OpenAI-compatible) or hosted provider | hosted provider; local fallback configurable |
 | Embedding model | `@huggingface/transformers` ONNX in-process | shared embedding service or hosted |
 | Vector retrieval | Postgres + pgvector when present; `.construct/observations/` JSON index otherwise | shared Postgres + pgvector |
-| Trace observability | local `.construct/traces/*.jsonl`; optional Langfuse/HTTP/OTLP export | central Langfuse-compatible backend, HTTP ingestion endpoint, or OTel collector |
+| Trace observability | local `~/.construct/projects/<key>/traces/*.jsonl`; optional Langfuse/HTTP/OTLP export | central Langfuse-compatible backend, HTTP ingestion endpoint, or OTel collector |
 | Issue tracking | `bd` (beads), Dolt-backed | `bd` against shared Dolt remote |
 | Dashboard | `construct dev` starts the local dashboard | dashboard server in the shared deployment |
 | MCP | local processes | brokered through `mcp-broker` (staged/experimental — not yet active in built-in deployments) |
@@ -101,7 +101,7 @@ The mode is persisted as `CONSTRUCT_DEPLOYMENT_MODE` in `~/.config/construct/con
 
 Construct degrades gracefully when an optional resource is unreachable and reports the degradation explicitly rather than silently masking it.
 
-- **No Docker:** managed Postgres is skipped; vector retrieval falls back to the JSON index. Local trace capture still writes `.construct/traces/*.jsonl`. `construct doctor` reports which capabilities are degraded.
+- **No Docker:** managed Postgres is skipped; vector retrieval falls back to the JSON index. Local trace capture still writes `~/.construct/projects/<key>/traces/*.jsonl`. `construct doctor` reports which capabilities are degraded.
 - **No `cm` (memory CLI):** the memory MCP server doesn't start; observations still write to `.construct/observations/` and remain retrievable from there.
 - **No `OPENAI_API_KEY`:** if `CONSTRUCT_EMBEDDING_MODEL=openai`, the command exits with the env var name and an alternative. Opt into automatic fallback with `CONSTRUCT_EMBEDDING_FALLBACK=1`.
 - **No internet:** Construct refuses to fetch external resources. `construct evals retrieval` runs against the local fixture and works offline.

@@ -38,7 +38,7 @@ Construct keeps project-local configuration and runtime markers in `.construct/`
 |---|---|---|
 | `.construct/context.md` / `.construct/context.json` | Session handoff context | Yes |
 | `.construct/org/` | Retired v1 org overlay path | Do not author here in Construct 2.0; use `.construct/packs/` |
-| `.construct/workflow.json` | Workflow/task state (`lib/workflow-state.mjs`) | Via CLI/MCP workflow tools |
+| `.construct/workflow.json` | Workflow/task state (`lib/workflow-state.mjs`) | Via CLI/MCP procedure and orchestration tools |
 | `.construct/intake/` | Intake triage queue (`pending/`, `processed/`, `skipped/`, `quarantine/`, `dead-letter/`) | Via `construct intake` CLI |
 | `.construct/knowledge/` | Ingested / curated knowledge | Yes (see [knowledge layout](/guides/concepts/knowledge-layout)) |
 | `.construct/research/` | Project research briefs (working) | Yes |

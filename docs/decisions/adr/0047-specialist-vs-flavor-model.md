@@ -1,5 +1,7 @@
 # ADR-0047: Specialist vs flavor taxonomy
 
+> **Obsolete vocabulary (Construct 2.0):** "Specialist" / `cx-*` / `specialists/org/**` are retired. Live units are **Worker Profiles** (`registry/worker-profiles/`) and perspective overlays (`skills/perspectives/`). Body below is the original taxonomy decision — do not treat `cx-*` examples as current dispatch targets. See `docs/obsolete/legacy-surface-register.md`.
+
 - **Date**: 2026-06-26
 - **Status**: accepted
 - **Deciders**: Gerald Dagher (owner), cx-architect

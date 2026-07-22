@@ -75,6 +75,22 @@ describe('construct intake list', () => {
     assert.match(r.stdout, /No pending signals\./);
   });
 
+  it('hints at quarantine when pending is empty but quarantine is not', async () => {
+    const { writeQuarantinePacket } = await import('../lib/intake/quarantine.mjs');
+    writeQuarantinePacket(projectRoot, {
+      id: 'q-hint-1',
+      triage: { intakeType: 'bug', confidence: 0.5, primaryOwner: 'debugger', recommendedChain: ['debugger'] },
+      excerpt: 'ambiguous bug',
+    }, 'confidence 0.50 < 0.6');
+    const r = runCli(['list']);
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /No pending signals\./);
+    assert.match(r.stdout, /1 quarantined/);
+    assert.match(r.stdout, /intake quarantine list/);
+  });
+});
+
+describe('construct intake list (pending columns)', () => {
   it('shows ID, type, stage, owner, action columns for pending packets', () => {
     seedEntry();
     const r = runCli(['list']);
@@ -126,7 +142,29 @@ describe('construct intake done', () => {
   it('exits non-zero on unknown id', () => {
     const r = runCli(['done', 'bogus']);
     assert.notEqual(r.status, 0);
-    assert.match(r.stderr, /no pending entry/);
+    assert.match(r.stderr, /No intake packet found/);
+  });
+
+  it('refuses done on quarantined packets and does not stamp output', async () => {
+    const { writeQuarantinePacket } = await import('../lib/intake/quarantine.mjs');
+    const written = writeQuarantinePacket(projectRoot, {
+      id: 'q-low-conf-1',
+      triage: {
+        intakeType: 'bug',
+        confidence: 0.5,
+        rationale: 'ambiguous',
+        primaryOwner: 'debugger',
+        recommendedChain: ['debugger'],
+      },
+      excerpt: 'Bug: login 500',
+    }, 'confidence 0.50 < 0.6');
+    const outPath = path.join(projectRoot, 'out.md');
+    fs.writeFileSync(outPath, '# Out\n', 'utf8');
+    const r = runCli(['done', written.id, `--output=${outPath}`]);
+    assert.notEqual(r.status, 0);
+    assert.match(r.stderr, /quarantined/i);
+    assert.match(r.stderr, /reroute/);
+    assert.equal(fs.readFileSync(outPath, 'utf8'), '# Out\n');
   });
 });
 
