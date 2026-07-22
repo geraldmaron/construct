@@ -4,6 +4,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-07-22
+
 ### Fixed
 
 - Lean project sync no longer leaves refused skills mirrors under `.agents/skills` (or `.cursor` / `.codex` / `.opencode` skills trees). After committing Claude skills, `sync-worker-profiles` removes those mirrors so the Claude-only skills contract holds on CI (PR #415 shard 2 / construct-d23f3). `tests/functional/skills-surface.functional.test.mjs` now uses a sterile PATH, `--no-beads`, `--hosts=claude`, plants a fake `.agents/skills` tree to prove prune, and lists mirror contents on assertion failure.
