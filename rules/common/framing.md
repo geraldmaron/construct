@@ -69,3 +69,7 @@ Before any artifact is considered framed, it must pass:
 *"A principal engineer reading only this document, with no access to any tickets or prior context, would understand what problem is being solved and why it matters."*
 
 If the document fails that test, it is not framed. It is a changelog entry wearing a different costume.
+
+## 7. Present the frame for a human reader
+
+Stating the problem is not the same as dumping a form. Prefer prose that embeds who, decision, and non-goals, then a compact decision card table if bounds must be scannable. Avoid stacked `Audience:` / `Decision sought:` / `Out of scope:` colon walls. When the frame involves a layered reading model or multi-step path, draw it. Full vessel rules: `skills/docs/artifact-authorship.md` → **Layout by intent**.

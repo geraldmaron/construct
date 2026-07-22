@@ -57,7 +57,7 @@ No fabricated NPS, conversion, or churn deltas.
 User research + competitive landscape required when claiming differentiation.
 
 ### Human voice
-Follow `rules/common/human-voice.md` and the Human voice bar in `skills/docs/artifact-authorship.md`: prefer contractions; avoid spaced em dashes; refuse LLM tells; careful colleague tone. Exceptions: ACs, legal shall/must, quotes, exact section titles.
+Follow `rules/common/human-voice.md` and the Human voice bar in `skills/docs/artifact-authorship.md`: prefer contractions (`it's`, not `it is` when natural); prefer longer connected sentences over staccato fragments; avoid spaced em dashes; refuse LLM tells and keynote/Disney uplift; careful colleague tone with mild warmth only when earned. Exceptions: ACs, legal shall/must, quotes, exact section titles. Treat attention and trust as craft inputs, not inspirational set pieces.
 
 ### Self-check (authorship)
 - [ ] Framing questions answered
