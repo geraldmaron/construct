@@ -8,6 +8,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Fixed
 
+- Release `publish` job no longer fails `npm ci` under Node 24 / npm 11. The OIDC-required npm 11 resolved the `apps/docs` Next.js workspace tree (`next` → `postcss`/`nanoid`) to versions the npm-10-built lockfile does not carry, erroring `EUSAGE … missing from lock file` after the gate and binaries had already passed. The job publishes prebuilt `files` and runs SBOM `--package-lock-only`, needing neither devDeps nor the docs workspace, so its install is now scoped to `npm ci --omit=dev --workspaces=false` — matching the audit step in the same workflow.
+
 - Lean project sync no longer leaves refused skills mirrors under `.agents/skills` (or `.cursor` / `.codex` / `.opencode` skills trees). After committing Claude skills, `sync-worker-profiles` removes those mirrors so the Claude-only skills contract holds on CI (PR #415 shard 2 / construct-d23f3). `tests/functional/skills-surface.functional.test.mjs` now uses a sterile PATH, `--no-beads`, `--hosts=claude`, plants a fake `.agents/skills` tree to prove prune, and lists mirror contents on assertion failure.
 
 - PR #415 CI on `981540a9`: regenerate stale skill/corpus inventories (`tests/certification/skills/inventory.json`, `tests/capabilities/corpus-inventory.json`, `tests/AUDIT.md`); pin legacy `cx-researcher` / `cx-orchestrator` route keywords for the prompts/skills retain contract; document runnable `construct embed` subcommands (`supervise`, `unsupervise`, `snapshot`, `migrate-model`, `assignments`) in `lib/cli-commands.mjs` + regenerated CLI reference; stop advertising non-existent `construct skills:routes` in generated `skills/routing.md`.
