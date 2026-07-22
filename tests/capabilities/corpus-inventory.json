@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-21T20:40:38.815Z",
+  "generatedAt": "2026-07-22T02:24:08.045Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 1116,
+    "testFiles": 1117,
     "topLevelTestFiles": 422,
-    "nestedTestFiles": 694,
+    "nestedTestFiles": 695,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 52,
     "byLayer": {
-      "unit": 736,
+      "unit": 737,
       "functional": 321,
       "visual": 14,
       "integration": 43,
       "live-provider": 2
     },
     "byCategory": {
-      "unit": 654,
+      "unit": 655,
       "functional": 321,
       "visual": 14,
       "structural-guard": 21,
@@ -8859,6 +8859,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "workflow-runtime.test.mjs — Integration tests for workflow state read/write and phase transitions."
+    },
+    {
+      "path": "tests/workflows/supply-chain-workflow.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/workflows/supply-chain-workflow.test.mjs — supply-chain.yml shape"
     },
     {
       "path": "tests/workplace-loop/align.test.mjs",

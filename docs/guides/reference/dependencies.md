@@ -65,10 +65,12 @@ A repo-local `overrides` pin is acceptable as defense-in-depth for this repo's o
 
 Supply-chain scanning runs in `.github/workflows/supply-chain.yml`:
 
-- **OSV scan** (`google/osv-scanner-action`) against `package-lock.json`
+- **OSV scan** (`google/osv-scanner-action`) against `package-lock.json` with `--config=osv-scanner.toml`
 - **Dependency review** (`actions/dependency-review-action`) on pull requests, using allow/deny lists from `.github/license-allowlist.json`
 
-Both jobs are **warn-first** until the initial finding set is triaged. Promotion to blocking: flip `continue-on-error` to `false` once every remaining finding has a dated entry in `.github/supply-chain-exceptions.json` or is fixed. The OSV job uses the docker `osv-scanner-action` (not a reusable-workflow `uses:` call) so warn-first `continue-on-error` remains valid YAML. Dependency review passes `allow-licenses` only — the action rejects pairing allow and deny lists.
+OSV is **blocking** once findings are fixed or covered by dated `IgnoredVulns` in `osv-scanner.toml`. Prefer real upgrades/overrides first; use ignores only when an upstream pin or major-break blocks the fix. Each ignore must also appear in `.github/supply-chain-exceptions.json` so expiration fails CI via `scripts/check-supply-chain-exceptions.mjs`.
+
+**Dependency review** needs GitHub Dependency graph. The workflow probes `GET /repos/.../dependency-graph/compare/...` first; when that API returns non-200 (graph disabled / unsupported), the review job is **skipped** (not soft-failed with a red X). Enable Dependency graph (and Prefer Dependabot alerts) under [Settings → Code security and analysis](https://github.com/geraldmaron/construct/settings/security_analysis). Dependency review passes `allow-licenses` only — the action rejects pairing allow and deny lists.
 
 **Exceptions** mirror the `LEGACY_EXEMPT_SHAS` pattern in `scripts/lint-commits-pr.mjs`: each entry requires `id`, `reason`, and `expires` (`YYYY-MM-DD`). Expired entries fail `npm run supply-chain:exceptions` (also runs in CI before scans).
 
@@ -76,6 +78,7 @@ Local checks:
 
 ```bash
 npm run supply-chain:exceptions
+osv-scanner --lockfile=package-lock.json --config=osv-scanner.toml
 npm run supply-chain:gate    # composed release go/no-go (construct-tsyfe.10.7)
 ```
 
