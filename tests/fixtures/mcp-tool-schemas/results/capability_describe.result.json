@@ -30,7 +30,7 @@
             "construct execution resolve --json",
             "construct intake classify --json",
             "construct graph recommend --json",
-            "construct workflow invoke --json"
+            "construct procedure invoke --json"
           ]
         },
         {
@@ -41,7 +41,7 @@
             "model_resolve",
             "construct_execution_resolve",
             "triage_recommend",
-            "workflow_invoke"
+            "procedure_invoke"
           ]
         },
         {

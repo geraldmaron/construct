@@ -55,7 +55,7 @@
         "Duplicate eslint security incident beads can close when current diff and doctor show no active eslint.config.mjs violation.",
         "display-width stays in-tree rather than adding a new core runtime dependency; the width primitive now owns ANSI/OSC-8 transparent clipping and padding.",
         "OpenCode session naming now routes helper agents through a stronger auxiliary model while the primary `model` is no longer pinned by Construct.",
-        "The front-door host prompt must treat `workflow_invoke` as a planning contract and `orchestration_run` as the execution path for substantive research.",
+        "The front-door host prompt must treat `procedure_invoke` as a planning contract and `orchestration_run` as the execution path for substantive research.",
         "OpenCode prompt examples must use host-visible MCP tool ids (`construct-mcp_*`) because bare tool names fail host-side validation before Construct can recover them.",
         "The shared Typst theme must not wrap `enum.item` in a block because that breaks ordered-list numbering in PDF output; list spacing belongs on the container, not the item wrapper.",
         "Artifact polish belongs in the shared distribution theme so PRD, decision, research, and generic PDF exports improve together and can be regression-tested through the normal publish path.",
