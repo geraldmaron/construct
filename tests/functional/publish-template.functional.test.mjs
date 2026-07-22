@@ -185,28 +185,30 @@ test('pandocMetadataArgs forwards non-empty metadata', () => {
   ]);
 });
 
-test('distribution diagram defaults use compact notebook-ink sizing', () => {
+test('distribution diagram defaults use classic Mermaid + D2 sketch', () => {
   const defaults = distributionDiagramDefaults();
   assert.equal(defaults.d2Theme, 'neutral');
   assert.equal(defaults.d2Sketch, true);
   assert.equal(defaults.d2Scale, 0.9);
   assert.equal(defaults.d2FontSize, 12);
   assert.equal(defaults.figureMaxWidth, '72%');
-  assert.equal(defaults.mermaidLook, 'handDrawn');
+  assert.equal(defaults.mermaidLook, 'classic');
   assert.equal(defaults.mermaidWidth, 1600);
   assert.equal(defaults.mermaidScale, 2);
   assert.equal(defaults.accent, '#1f5c61');
 });
 
-test('injectMermaidBrandTheme adds compact handDrawn init with notebook ink', () => {
+test('injectMermaidBrandTheme adds classic Plus Jakarta init with notebook ink', () => {
   const out = injectMermaidBrandTheme('flowchart TD\n  A --> B');
   assert.match(out, /%%\{init:/);
-  assert.match(out, /handDrawn/);
-  assert.match(out, /Caveat/);
-  assert.match(out, /nodeSpacing': 24/);
+  assert.match(out, /classic/);
+  assert.match(out, /Plus Jakarta Sans/);
+  assert.match(out, /nodeSpacing': 36/);
   assert.match(out, /htmlLabels/);
   assert.match(out, /1f5c61/);
   assert.match(out, /1a1d24/);
+  assert.doesNotMatch(out, /handDrawn/);
+  assert.doesNotMatch(out, /Caveat/);
   assert.doesNotMatch(out, /8b5cf6/);
 });
 

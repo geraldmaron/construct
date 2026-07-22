@@ -1,0 +1,23 @@
+/**
+ * tests/fixtures/figure-layout/vessel.d2 — compact decision-vessel sketch for layout proof.
+ *
+ * Render with d2 --sketch; paired vessel.svg is the checked-in export for unit tests.
+ */
+direction: right
+
+orient: Orient
+ask: Prose
+card: Card
+model: Model
+fig: Figure
+verify: Verify
+checks: Checks
+
+orient -> ask
+orient -> card
+ask -> model
+card -> model
+model -> fig
+fig -> verify
+verify -> checks
+checks -> orient

@@ -15,7 +15,7 @@ Single index for maintainers and agents. Generated surfaces (init scaffolding, p
 | Monospace | JetBrains Mono | [`lib/brand-fonts.mjs`](../../lib/brand-fonts.mjs) |
 | Color | Field-notebook ink ramp with slate-teal evidence accent (`#1f5c61`) | [`templates/distribution/construct-brand.typ`](../../templates/distribution/construct-brand.typ) |
 | Published artifact tokens | Same ink + typography via templates and CSS vars | [`lib/brand-tokens.mjs`](../../lib/brand-tokens.mjs), [`packages/construct-ui/styles/theme.css`](../../packages/construct-ui/styles/theme.css) |
-| Diagrams (publish) | Compact notebook-ink: Mermaid handDrawn + Caveat, tight spacing, slate-teal accent; D2 light sketch dense pad | [`lib/diagram-export.mjs`](../../lib/diagram-export.mjs) |
+| Diagrams (publish) | D2 `--sketch` for structural hand-drawn figures; Mermaid classic + Plus Jakarta (handDrawn/Caveat retired); proof non-overlap | [`lib/diagram-export.mjs`](../../lib/diagram-export.mjs), [`lib/figure-layout.mjs`](../../lib/figure-layout.mjs) |
 | Optional whiteboard | Excalidraw / host MCP — agent canvas only, not publish | Leave to the tool; do not bolt into pandoc |
 
 Bundled fonts for offline export: [`templates/distribution/fonts/`](../../templates/distribution/fonts/). Typst export passes `--font-path`, `--ignore-system-fonts`, and `--ignore-embedded-fonts` so system fallbacks (Libertinus, DejaVu) never replace the brand faces.
