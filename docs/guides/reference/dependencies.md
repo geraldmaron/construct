@@ -66,7 +66,7 @@ Supply-chain scanning runs in `.github/workflows/supply-chain.yml`:
 - **OSV scan** (`google/osv-scanner-action`) against `package-lock.json`
 - **Dependency review** (`actions/dependency-review-action`) on pull requests, using allow/deny lists from `.github/license-allowlist.json`
 
-Both jobs are **warn-first** until the initial finding set is triaged. Promotion to blocking: flip `continue-on-error` to `false` once every remaining finding has a dated entry in `.github/supply-chain-exceptions.json` or is fixed.
+Both jobs are **warn-first** until the initial finding set is triaged. Promotion to blocking: flip `continue-on-error` to `false` once every remaining finding has a dated entry in `.github/supply-chain-exceptions.json` or is fixed. The OSV job uses the docker `osv-scanner-action` (not a reusable-workflow `uses:` call) so warn-first `continue-on-error` remains valid YAML. Dependency review passes `allow-licenses` only — the action rejects pairing allow and deny lists.
 
 **Exceptions** mirror the `LEGACY_EXEMPT_SHAS` pattern in `scripts/lint-commits-pr.mjs`: each entry requires `id`, `reason`, and `expires` (`YYYY-MM-DD`). Expired entries fail `npm run supply-chain:exceptions` (also runs in CI before scans).
 
