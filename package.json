@@ -145,7 +145,9 @@
     "unpdf": "^1.6.2"
   },
   "devDependencies": {
+    "@cyclonedx/cyclonedx-npm": "5.0.0",
     "@eslint/js": "^9.39.4",
+    "@huggingface/transformers": "^4.2.0",
     "@playwright/test": "^1.61.1",
     "c8": "^11.0.0",
     "dependency-cruiser": "^17.4.3",
@@ -155,9 +157,7 @@
     "ink-testing-library": "^4.0.0",
     "knip": "^6.27.0",
     "playwright": "^1.61.1",
-    "postject": "1.0.0-alpha.6",
-    "@huggingface/transformers": "^4.2.0",
-    "@cyclonedx/cyclonedx-npm": "4.1.2"
+    "postject": "1.0.0-alpha.6"
   },
   "main": "index.js",
   "directories": {
@@ -169,6 +169,10 @@
   "keywords": [],
   "author": "",
   "overrides": {
-    "adm-zip": "0.6.0"
+    "adm-zip": "0.6.0",
+    "lodash-es": "4.18.1",
+    "postcss": "8.5.10",
+    "nanoid@3": "3.3.8",
+    "nanoid@4": "5.0.9"
   }
 }
