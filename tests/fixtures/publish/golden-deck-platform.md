@@ -28,7 +28,7 @@ Platform teams orchestrating AI agents lack a **governed operational layer**.
 
 ## What Construct provides
 
-1. **Routing** — specialist chains with intent, track, and gates
+1. **Routing** — Worker Profile chains with intent, track, and gates
 2. **Validation** — manifest-enforced structure before distribution
 3. **Document I/O** — many formats in; branded PDF, HTML, deck, PPTX out
 
@@ -52,7 +52,7 @@ One token set across all distributable formats:
 
 - Ink ramp `#1a1d24` → `#eef1f3`
 - **Plus Jakarta Sans** body · **JetBrains Mono** code
-- Hand-drawn diagrams in PDF/HTML (D2 sketch + Mermaid)
+- Hand-drawn structural diagrams in PDF/HTML via D2 sketch; Mermaid classic for simple flows
 
 ---
 

@@ -16,7 +16,7 @@ status: draft
 
 ## Summary
 
-Platform teams need a single operational layer that routes work across specialist agents, grounds every artifact in verifiable evidence, and gates high-risk writes behind human approval. Construct already implements the core primitives (specialist registry, embedded workflow invoke, intake traceability, release gates, and publish-to-PDF distribution) per PRD-0001 (verified 2026-06-19). This PRD defines the **agentic platform** product surface: how enterprises adopt those primitives as a governed multi-agent system rather than a collection of disconnected assistant sessions.
+Platform teams need a single operational layer that routes work across specialist agents, grounds every artifact in verifiable evidence, and gates high-risk writes behind human approval. Construct already implements the core primitives (specialist registry, embedded procedure invoke, intake traceability, release gates, and publish-to-PDF distribution) per PRD-0001 (verified 2026-06-19). This PRD defines the **agentic platform** product surface: how enterprises adopt those primitives as a governed multi-agent system rather than a collection of disconnected assistant sessions.
 
 ## Problem
 
@@ -32,7 +32,7 @@ The human remains the integrator. An agentic platform must make routing, evidenc
 
 | ID | Goal | Construct anchor |
 |---|---|---|
-| G1 | Route requests to specialist chains with provenance | `construct workflow invoke --workflow-type prd-draft` |
+| G1 | Route requests to Worker Profile chains with provenance | `construct procedure invoke --procedure-id prd-draft` |
 | G2 | Ground requirements in cited evidence | `skills/docs/prd-workflow.md`, no-fabrication rule |
 | G3 | Block unreviewed doc ship | `construct artifact validate --type=prd` |
 | G4 | Distribute briefs as styled PDF with rendered diagrams | `construct publish --figures` (Pandoc + Typst) |
@@ -68,7 +68,7 @@ pdf: Styled PDF\n(Pandoc + Typst) {
 }
 
 user -> cli: "Draft agentic platform PRD"
-cli -> router: workflow invoke
+cli -> router: procedure invoke
 router -> pm: requirements package
 router -> arch: feasibility + trade-offs
 pm -> prd: write
@@ -82,7 +82,7 @@ pdf -> user: distribution
 
 | ID | Requirement |
 |---|---|
-| FR-1 | `construct workflow invoke` returns selected roles, applied skills, model resolution, and approval mode without executing specialist LLM calls in the host (embedded contract, verified 2026-06-19). |
+| FR-1 | `construct procedure invoke` returns selected roles, applied skills, model resolution, and approval mode without executing specialist LLM calls in the host (embedded contract, verified 2026-06-19). |
 | FR-2 | Workflow types include `prd-draft`, `architecture-review`, and `research-synthesis` (`lib/embedded-contract/workflow-defs.mjs`). |
 | FR-3 | Published PDFs render fenced `d2` and `mermaid` blocks via vendored `pandoc-ext/diagram` at export time. |
 | FR-4 | High-risk durable writes require explicit approval mode; default for `prd-draft` is `proposal-only`. |
@@ -94,7 +94,7 @@ pdf -> user: distribution
 
 ## Acceptance criteria
 
-- AC-1: `construct workflow invoke --workflow-type prd-draft` selects `product-manager` and `architect` with `docs/prd-workflow` in applied skills.
+- AC-1: `construct procedure invoke --procedure-id prd-draft` selects `product-manager` and `architect` with `docs/prd-workflow` in applied skills.
 - AC-2: `construct publish <this-file> --figures` writes a PDF under `.construct/publish/` with the architecture diagram rendered (not raw code).
 - AC-3: `construct artifact validate` reports structure and citation gaps on draft PRDs before approval.
 

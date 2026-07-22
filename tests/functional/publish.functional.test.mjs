@@ -167,11 +167,11 @@ test('runPublish blocks agentic-platforms stub at release gate', () => {
   assert.match(result.message, /Remediation/);
 });
 
-test('formatGateFailureMessage includes validate and workflow hints', () => {
+test('formatGateFailureMessage includes validate and procedure hints', () => {
   const gate = validateArtifactRelease({ filePath: STUB, type: 'prd-platform', cwd: REPO, rootDir: REPO });
   const msg = formatGateFailureMessage(gate, { inputPath: STUB, cwd: REPO });
   assert.match(msg, /artifact validate/);
-  assert.match(msg, /workflow invoke/);
+  assert.match(msg, /procedure invoke/);
   assert.match(msg, /prd-workflow/);
 });
 
