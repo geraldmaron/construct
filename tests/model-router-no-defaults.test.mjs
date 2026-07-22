@@ -62,7 +62,7 @@ test('applyFreePreferenceToTierSet does not invent a model when neither tierSet 
   assert.equal(resolved.fast, null);
 });
 
-test('shipped specialists/org has no preselected primaries', () => {
+test('shipped registry has no preselected primaries', () => {
   const registry = loadRegistry({ rootDir: process.cwd() });
   for (const tier of ['reasoning', 'standard', 'fast']) {
     assert.equal(registry.models?.[tier]?.primary ?? null, null, `tier ${tier} ships with a primary — should be null`);

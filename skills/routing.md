@@ -1,6 +1,6 @@
 <!--
 skills/routing.md — generated render of skills/routing.json. Do not hand-edit: run
-`node scripts/generate-skill-routing.mjs --write` (or `construct skills:routes --write`).
+`node scripts/generate-skill-routing.mjs --write` (or `npm run skills:routes -- --write`).
 -->
 
 # Skill routing
@@ -43,6 +43,7 @@ One row per skill reachable via `suggest_skills`/`search_skills`. A skill with a
 | Skill | Keywords | Source |
 |---|---|---|
 | `compliance/ai-disclosure` | ai disclosure, reviewing, features, disclosure, requirements, transparency | derived |
+| `compliance/case-law-research` | case law research, verifying, case, reporter, citations, holdings | derived |
 | `compliance/data-privacy` | data privacy, reviewing, data, collection, storage, processing | derived |
 | `compliance/license-audit` | license audit, auditing, dependency, licenses, evaluating, compliance | derived |
 | `compliance/regulatory-review` | regulatory review, conducting, compliance, review, shipping, features | derived |
@@ -85,8 +86,9 @@ One row per skill reachable via `suggest_skills`/`search_skills`. A skill with a
 | Skill | Keywords | Source |
 |---|---|---|
 | `docs/adr-workflow` | adr, architecture decision | authored |
+| `docs/artifact-authorship` | artifact, prd, requirements, draft, author, anti-fabrication | authored |
 | `docs/backlog-proposal-workflow` | backlog proposal workflow, product, evidence, create, update, jira | derived |
-| `docs/codebase-research-workflow` | codebase research workflow, cx-researcher, maps, repo, entry, points | derived |
+| `docs/codebase-research-workflow` | codebase research workflow, researcher, maps, repo, entry, points, cx-researcher | derived |
 | `docs/customer-profile-workflow` | customer profile workflow, customer, evidence, update, durable, product | derived |
 | `docs/document-ingest-workflow` | document ingest workflow, user, points, word, spreadsheet, slide | derived |
 | `docs/evidence-ingest-workflow` | evidence ingest workflow, user, pastes, customer, notes, slack | derived |
@@ -102,7 +104,7 @@ One row per skill reachable via `suggest_skills`/`search_skills`. A skill with a
 | `docs/runbook-workflow` | runbook workflow, creating, operational, procedures, services, alerts | derived |
 | `docs/strategy-workflow` | strategy, bets, non-bets | authored |
 | `docs/transcript-synthesis` | transcript synthesis, meeting, call, interview, transcript, needs | derived |
-| `docs/user-research-workflow` | user research workflow, cx-researcher, synthesizes, user, evidence, interviews | derived |
+| `docs/user-research-workflow` | user research workflow, researcher, worker, profile, synthesizes, user | derived |
 
 ## exploration
 
@@ -139,7 +141,7 @@ One row per skill reachable via `suggest_skills`/`search_skills`. A skill with a
 | Skill | Keywords | Source |
 |---|---|---|
 | `operating/change-management` | change management, change, needs, categorized, reversibility, designing | derived |
-| `operating/fleet-health-routing` | fleet health routing, fleet-level, routing, bounded-auto, policy, cx-orchestrator | derived |
+| `operating/fleet-health-routing` | fleet health routing, fleet-level, routing, bounded-auto, policy, orchestrator, cx-orchestrator | derived |
 | `operating/incident-response` | incident response, issue, active, production, building, incident | derived |
 | `operating/oncall-rotation` | oncall rotation, setting, on-call, reviewing, health, handling | derived |
 | `operating/orchestration-reference` | orchestration reference, detailed, orchestration, reference, loaded, demand | derived |
@@ -172,8 +174,10 @@ One row per skill reachable via `suggest_skills`/`search_skills`. A skill with a
 
 | Skill | Keywords | Source |
 |---|---|---|
+| `strategy/competitive-intel` | competitive intel, populating, competitive, landscape, tables, primary | derived |
 | `strategy/competitive-landscape` | competitive landscape, team, needs, structured, read, market | derived |
 | `strategy/experimentation` | experiment, a/b test, ab test, split test, feature flag rollout, canary, holdout, sample size, statistical power, minimum detectable effect | authored |
+| `strategy/financial-model` | financial model, competitive, financial, sections, make, revenue | derived |
 | `strategy/jobs-to-be-done` | jobs to be done, user, research, needs, uncover, hiring | derived |
 | `strategy/market-research-methods` | market research methods, team, needs, validate, assumptions, committing | derived |
 | `strategy/narrative-arc` | narrative arc, argument, must, move, people, just | derived |

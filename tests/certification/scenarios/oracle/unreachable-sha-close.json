@@ -1,0 +1,4 @@
+{
+  "beadId": "fixture-cert-unreachable-sha",
+  "closeReason": "Fixed in {{SHA}}: certification fixture cites off-main commit without landing on main."
+}

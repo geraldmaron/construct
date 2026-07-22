@@ -1,6 +1,6 @@
 ---
 description: deliverable artifacts are about the user's project, never about Construct or its internal machinery.
-enforced_by: (persona prompt), lib/comment-lint.mjs
+enforced_by: (Worker Profile prompt), lib/comment-lint.mjs
 precedence_tier: correctness
 ---
 # Tool Invisibility
@@ -18,18 +18,18 @@ A deliverable is about the project it concerns. Do not make Construct — or the
 In the body of any deliverable artifact, do not write:
 
 - **`Construct`** as the product/company/subject (when the subject is not Construct).
-- **`cx-*` specialist role ids** (`cx-business-strategist`, `cx-product-manager`, `cx-researcher`, …). These are internal routing detail — the persona already states that "internal routing and specialist dispatch are implementation detail." A metric owner is a real role on the user's team (e.g. "Product", "Eng lead"), never a `cx-*` id.
+- **Retired `cx-*` Worker Profile ids** (`cx-business-strategist`, `cx-product-manager`, `cx-researcher`, …). These are internal routing detail — the Construct front door already states that "internal routing and Worker Profile dispatch are implementation detail." A metric owner is a real role on the user's team (e.g. "Product", "Eng lead"), never a `cx-*` id.
 - **Internal orchestration mechanics** — task-packets, `orchestration_run`, dispatch chains, handoff contracts — as if they were part of the user's product.
 
 Provenance belongs in a comment or a separate handoff, not in the deliverable's prose.
 
 ## 3. The one exception: when the subject *is* Construct
 
-When the project being worked on is Construct itself (this repo, package `@geraldmaron/construct`), naming Construct and its specialists is correct and required — the artifact is genuinely about them. The deterministic check below is disabled for the Construct repo for exactly this reason.
+When the project being worked on is Construct itself (this repo, package `@geraldmaron/construct`), naming Construct and its Worker Profiles is correct and required — the artifact is genuinely about them. The deterministic check below is disabled for the Construct repo for exactly this reason.
 
 ## Enforcement
 
-- **Prevention (persona + shared guidance):** every specialist and the Construct persona carry the invisibility directive, so the leak is avoided at generation time. This is the primary control; framing ("don't make the doc about Construct") is a judgment call the prompt owns.
+- **Prevention (Worker Profile + shared guidance):** every Worker Profile and the Construct front door carry the invisibility directive, so the leak is avoided at generation time. This is the primary control; framing ("don't make the doc about Construct") is a judgment call the prompt owns.
 - **Backstop (deterministic):** `lib/comment-lint.mjs` flags `cx-*` internal role-id tokens that appear in a *consuming project's* deliverable markdown — an unambiguous leak with near-zero false positives. The check is skipped when the working repo is Construct itself (package name `@geraldmaron/construct`). Severity follows `CONSTRUCT_ARTIFACT_LINT_MODE` (warn by default; block in the release gate).
 
 ## Bypass

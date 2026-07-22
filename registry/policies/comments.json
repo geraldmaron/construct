@@ -1,0 +1,14 @@
+{
+  "id": "comments",
+  "ownerWorkerProfile": "orchestrator",
+  "description": "Enforces the two-form comment policy (file header + section context block). Blocks inline narration.",
+  "enforcement": "lib/comment-lint.mjs",
+  "mode": "deterministic",
+  "approvalWorkerProfiles": [],
+  "requiredPolicies": [],
+  "vetoWorkerProfiles": [],
+  "escalationWorkerProfiles": [],
+  "governs": [],
+  "conditions": [],
+  "evidence": []
+}

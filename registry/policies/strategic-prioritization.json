@@ -1,0 +1,18 @@
+{
+  "id": "strategic-prioritization",
+  "ownerWorkerProfile": "orchestrator",
+  "description": "Strategy group sets R&D direction and priorities.",
+  "enforcement": "hard",
+  "mode": "approval",
+  "approvalWorkerProfiles": [],
+  "requiredPolicies": [],
+  "vetoWorkerProfiles": [],
+  "escalationWorkerProfiles": [
+    "orchestrator"
+  ],
+  "governs": [
+    "strategic-prioritization"
+  ],
+  "conditions": [],
+  "evidence": []
+}

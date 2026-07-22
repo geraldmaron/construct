@@ -41,7 +41,7 @@ Every cell spawns its entrypoint through `sterileSpawnEnv()`
 fresh `mkdtempSync` root and nothing outside an explicit allowlist is
 inherited from the runner's ambient env. The final test in the file
 (`a poisoned parent env cannot mask a degraded cell`) poisons
-`CX_MODEL_REASONING/STANDARD/FAST` in the real parent process and re-runs the
+`CONSTRUCT_MODEL_REASONING/STANDARD/FAST` in the real parent process and re-runs the
 CLI cell, asserting the result is unchanged — proving the allowlist is
 actually applied here, not just documented.
 

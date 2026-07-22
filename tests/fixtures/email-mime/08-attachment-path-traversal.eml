@@ -1,0 +1,17 @@
+From: Mallory <mallory@example.com>
+To: Bob Boone <bob@example.com>
+Subject: Invoice attached
+Date: Fri, 17 Jul 2026 09:20:00 -0400
+Content-Type: multipart/mixed; boundary="traversal-boundary-1a2b"
+
+--traversal-boundary-1a2b
+Content-Type: text/plain; charset=utf-8
+
+Please review the attached invoice.
+--traversal-boundary-1a2b
+Content-Type: application/octet-stream; name="../../../../etc/passwd"
+Content-Disposition: attachment; filename="../../../../etc/passwd"
+Content-Transfer-Encoding: base64
+
+aW52b2ljZSBjb250ZW50IHBheWxvYWQ=
+--traversal-boundary-1a2b--

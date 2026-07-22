@@ -23,7 +23,7 @@ const BIN = join(ROOT, 'bin', 'construct');
 const FIXTURE_PROVIDER = join(ROOT, 'tests', 'providers', 'fixtures', 'failing-provider.mjs');
 
 // The spawned `construct` binary resolves the machine-scoped state root
-// (ADR-0066) from process.env.CX_HOME_OVERRIDE / HOME in its own process, so
+// (ADR-0066) from process.env.CONSTRUCT_HOME_OVERRIDE / HOME in its own process, so
 // every spawn below must be pinned to a throwaway home or it leaks a
 // project-key directory into the real developer machine's ~/.construct/projects/.
 const HOME_DIR = mkdtempSync(join(tmpdir(), 'construct-provider-cli-home-'));
@@ -32,7 +32,7 @@ after(() => { rmTmpDir(HOME_DIR); });
 function run(args, { cwd = ROOT, env = {} } = {}) {
   return spawnSync(process.execPath, [BIN, ...args], {
     cwd,
-    env: { ...process.env, HOME: HOME_DIR, CX_HOME_OVERRIDE: HOME_DIR, ...env },
+    env: { ...process.env, HOME: HOME_DIR, CONSTRUCT_HOME_OVERRIDE: HOME_DIR, ...env },
     encoding: 'utf8',
   });
 }

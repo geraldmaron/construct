@@ -22,9 +22,9 @@
       "maxLength": 120,
       "default": "Construct"
     },
-    "scope": {
+    "workspacePreset": {
       "type": "string",
-      "description": "The active organizational scope ID. Determines which specialists and capabilities are available.",
+      "description": "The active Workspace Preset ID. Determines the workspace's skills, procedures, intake, artifacts, and capabilities.",
       "enum": ["rnd", "operations", "creative", "research"],
       "default": "rnd"
     },
@@ -47,6 +47,10 @@
         "projectName": {
           "type": ["string", "null"],
           "description": "The unique name of the project. Used for multi-project telemetry and storage."
+        },
+        "projectKey": {
+          "type": ["string", "null"],
+          "description": "Explicit override for the project's identity key, otherwise derived from the git origin remote (or the project path when there is no remote). Wins over the computed derivation everywhere state is keyed."
         },
         "tenantId": {
           "type": ["string", "null"],
@@ -136,8 +140,19 @@
             "required": ["id", "provider", "selector"],
             "properties": {
               "id": { "type": "string" },
-              "provider": { "type": "string", "enum": ["github", "jira", "linear", "slack"] },
-              "selector": { "type": "object" }
+              "provider": {
+                "type": "string",
+                "description": "A manifest-declared sourceTarget provider id (lib/config/source-target-registry.mjs SOURCE_TARGET_PROVIDERS) — not enumerated here since the real, authoritative set is derived from installed extension manifests, not fixed at schema-authoring time."
+              },
+              "selector": { "type": "object" },
+              "watch": {
+                "type": "object",
+                "description": "Opt this target into the embed daemon's source-refresh polling.",
+                "properties": {
+                  "enabled": { "type": "boolean", "default": false },
+                  "intervalMinutes": { "type": "number", "description": "Per-target minimum interval; the daemon's own tick cadence still applies as a floor." }
+                }
+              }
             }
           }
         }
@@ -149,7 +164,7 @@
       "properties": {
         "policy": {
           "type": "object",
-          "description": "Per governed write kind (\"<provider>.<writeKind>\", e.g. \"jira.comment\"), which disposition the write-intent-drain daemon job applies to a pending approval before a human ever sees it: 'auto' grants it immediately, 'deny' rejects it immediately, 'approval' (the default for anything unlisted) leaves it queued for a human.",
+          "description": "Per governed write kind (\"<provider>.<writeKind>\", e.g. \"atlassian-jira.comment\"), which disposition the write-intent-drain daemon job applies to a pending approval before a human ever sees it: 'auto' grants it immediately, 'deny' rejects it immediately, 'approval' (the default for anything unlisted) leaves it queued for a human.",
           "additionalProperties": { "type": "string", "enum": ["auto", "approval", "deny"] }
         }
       }
@@ -252,7 +267,7 @@
         "disk": {
           "type": "object",
           "properties": {
-            "totalCxMaxMb": { "type": "number", "description": "Maximum disk usage for the .cx/ directory (MB).", "default": 2000 }
+            "totalConstructMaxMb": { "type": "number", "description": "Maximum combined disk usage for generated Construct state across project-local and machine-scoped roots (MB).", "default": 2000 }
           }
         }
       }

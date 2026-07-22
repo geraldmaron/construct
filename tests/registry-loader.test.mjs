@@ -1,123 +1,98 @@
 /**
- * tests/registry-loader.test.mjs — Test the unified registry loader.
+ * tests/registry-loader.test.mjs — Canonical registry loader contract.
  */
 
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import path from 'node:path';
-import { describe, it, beforeEach, afterEach } from 'node:test';
-import { loadRegistry, getTeam, getSpecialist, getContract, getPolicy, listTeams, listSpecialists, clearCache } from '../lib/registry/loader.mjs';
+import { afterEach, beforeEach, describe, it } from 'node:test';
+import {
+  clearCache,
+  getCapability,
+  getPolicy,
+  getProcedure,
+  getWorkerProfile,
+  getWorkspacePreset,
+  listCapabilities,
+  listProcedures,
+  listWorkerProfiles,
+  listWorkspacePresets,
+  loadRegistry,
+} from '../lib/registry/loader.mjs';
+import * as registryLoader from '../lib/registry/loader.mjs';
 
-const ROOT_DIR = path.resolve(import.meta.dirname, '..');
+const RETIRED_FIELDS = ['teams', 'groups', 'specialists', 'contracts', 'roles', 'personas', 'scopes', 'workflows'];
 
-describe('registry loader', () => {
-  beforeEach(() => clearCache());
-  afterEach(() => clearCache());
+describe('canonical registry loader', () => {
+  beforeEach(clearCache);
+  afterEach(clearCache);
 
-  it('loads the canonical registry successfully', () => {
+  it('loads only canonical peer fields', () => {
     const registry = loadRegistry();
-    assert.ok(registry);
-    assert.equal(registry.version, 3);
-    assert.ok(registry.teams);
-    assert.ok(registry.specialists);
-    assert.ok(registry.contracts);
-    assert.ok(registry.policies);
+    assert.deepEqual(Object.keys(registry), [
+      'schemaVersion',
+      'workspacePresets',
+      'workerProfiles',
+      'procedures',
+      'capabilities',
+      'policies',
+    ]);
+    for (const field of RETIRED_FIELDS) assert.equal(field in registry, false, field);
   });
 
-  it('getTeam returns the correct team', () => {
-    const team = getTeam('product-group');
-    assert.ok(team);
-    assert.equal(team.id, 'product-group');
-    assert.equal(team.owner, 'product-manager');
-  });
-
-  it('getTeam returns null for unknown team', () => {
-    const team = getTeam('unknown-team');
-    assert.equal(team, null);
-  });
-
-  it('getSpecialist returns the correct specialist', () => {
-    const spec = getSpecialist('engineer');
-    assert.ok(spec);
-    assert.equal(spec.name, 'engineer');
-  });
-
-  it('getSpecialist handles both cx- and non-cx- prefixes', () => {
-    const spec1 = getSpecialist('cx-engineer');
-    const spec2 = getSpecialist('engineer');
-    assert.equal(spec1, spec2);
-  });
-
-  it('getSpecialist returns null for unknown specialist', () => {
-    const spec = getSpecialist('unknown-specialist');
-    assert.equal(spec, null);
-  });
-
-  it('getContract returns the correct contract', () => {
-    const contract = getContract('user', 'construct');
-    assert.ok(contract);
-    assert.equal(contract.producer, 'user');
-    assert.equal(contract.consumer, 'construct');
-  });
-
-  it('getContract returns null for unknown contract', () => {
-    const contract = getContract('user', 'unknown-specialist');
-    assert.equal(contract, null);
-  });
-
-  it('getPolicy returns the correct policy', () => {
-    const policy = getPolicy('intake-triage');
-    assert.ok(policy);
-    assert.equal(policy.id, 'intake-triage');
-  });
-
-  it('getPolicy returns null for unknown policy', () => {
-    const policy = getPolicy('unknown-policy');
-    assert.equal(policy, null);
-  });
-
-  it('listTeams returns all teams', () => {
-    const teams = listTeams();
-    assert.ok(Array.isArray(teams));
-    assert.ok(teams.length > 0);
-    const teamIds = teams.map(t => t.id);
-    assert.ok(teamIds.includes('product-group'));
-    assert.ok(teamIds.includes('engineering-group'));
-  });
-
-  it('listSpecialists returns all specialists when no filter', () => {
-    const specs = listSpecialists();
-    assert.ok(Array.isArray(specs));
-    assert.ok(specs.length > 0);
-  });
-
-  it('listSpecialists filters by team', () => {
-    const productSpecs = listSpecialists('product-group');
-    assert.ok(Array.isArray(productSpecs));
-    for (const spec of productSpecs) {
-      assert.equal(spec.team, 'product-group');
+  it('does not export retired loader aliases', () => {
+    for (const name of ['getTeam', 'getSpecialist', 'getContract', 'listTeams', 'listSpecialists', 'listGroupsHierarchical']) {
+      assert.equal(name in registryLoader, false, name);
     }
   });
 
-  it('caches the registry and avoids re-reading on subsequent calls', () => {
-    const registry1 = loadRegistry();
-    const registry2 = loadRegistry();
-    assert.equal(registry1, registry2); // Same object reference
+  it('distinguishes Workspace Presets from assignable Worker Profiles', () => {
+    const preset = getWorkspacePreset('rnd');
+    const profile = getWorkerProfile('engineer');
+    assert.ok(preset);
+    assert.ok(profile);
+    assert.ok(preset.intake);
+    assert.ok(Array.isArray(preset.artifactClasses));
+    assert.equal('runtime' in preset, false);
+    assert.equal(profile.runtime, 'host-agent');
+    assert.equal(profile.modelTier, 'standard');
+    assert.ok(Array.isArray(profile.skillEmphasis));
+    assert.equal(getWorkerProfile(`${'cx'}-engineer`), null);
   });
 
-  it('clearCache clears the cache', () => {
-    loadRegistry();
-    clearCache();
-    // After clearing, the next call should re-read from disk
-    const registry1 = loadRegistry();
-    clearCache();
-    const registry2 = loadRegistry();
-    assert.notEqual(registry1, registry2); // Different object references
+  it('nests handoff contracts below Capabilities', () => {
+    const capability = getCapability('orchestration.routing');
+    assert.ok(capability);
+    assert.ok(capability.contracts['user-to-construct']);
+    assert.equal(capability.contracts['user-to-construct'].producer, 'user');
+    assert.equal(capability.contracts['user-to-construct'].consumer, 'construct');
   });
 
-  it('validates the registry on load', () => {
-    // loadRegistry throws on invalid registry; reaching the assertion confirms validation passed
-    const registry = loadRegistry();
-    assert.ok(registry);
+  it('loads Procedures and canonicalizes worker references', () => {
+    const procedure = getProcedure('architecture-review');
+    assert.ok(procedure);
+    assert.deepEqual(procedure.workerProfiles, ['architect', 'security', 'reviewer']);
+    assert.equal(procedure.modelTier, 'strong');
+  });
+
+  it('loads Policies without execution-structure references', () => {
+    const policy = getPolicy('intake-triage');
+    assert.ok(policy);
+    assert.equal(policy.ownerWorkerProfile, 'product-manager');
+    assert.equal('owner' in policy, false);
+    assert.equal('requiresApprovalFrom' in policy, false);
+  });
+
+  it('lists each canonical catalog', () => {
+    assert.ok(listWorkspacePresets().length > 0);
+    assert.ok(listWorkerProfiles().length > 0);
+    assert.ok(listProcedures().length > 0);
+    assert.ok(listCapabilities().length > 0);
+  });
+
+  it('caches by root and catalog mtime', () => {
+    const first = loadRegistry();
+    const second = loadRegistry();
+    assert.equal(first, second);
+    clearCache();
+    assert.notEqual(loadRegistry(), first);
   });
 });

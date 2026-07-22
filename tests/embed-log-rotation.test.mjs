@@ -1,7 +1,7 @@
 /**
  * tests/embed-log-rotation.test.mjs — log rotation at daemon spawn time.
  *
- * The embed daemon writes stdout/stderr to ~/.cx/runtime/embed-daemon.log
+ * The embed daemon writes stdout/stderr to ~/.construct/runtime/embed-daemon.log
  * via a parent-opened file descriptor. Rotation must happen BEFORE the
  * spawn opens the FD, otherwise the daemon writes into the rotated file.
  * These tests cover the rotation primitive directly so the spawn callers

@@ -55,10 +55,10 @@ function runInit(extraEnv = {}) {
     env: {
       ...process.env,
       HOME: homeDir,
-      CX_HOME_OVERRIDE: homeDir,
+      CONSTRUCT_HOME_OVERRIDE: homeDir,
       ...extraEnv,
-      CX_AUTO_EMBED: '0',
-      CX_DATA_DIR: tmpDir,
+      CONSTRUCT_AUTO_EMBED: '0',
+      CONSTRUCT_DATA_DIR: tmpDir,
     },
     encoding: 'utf8',
     timeout: 60_000,
@@ -93,7 +93,7 @@ describe('construct init --yes intake defaults', () => {
     const cfg = readIntakePolicy();
     assert.equal('zones' in cfg, false, 'no zones object — inbox/ is unconditional');
     assert.ok(fs.existsSync(path.join(tmpDir, 'inbox')), 'inbox/ is scaffolded at the project root');
-    assert.ok(!fs.existsSync(path.join(tmpDir, '.cx', 'inbox')), '.cx/inbox/ is never scaffolded');
+    assert.ok(!fs.existsSync(path.join(tmpDir, '.construct', 'inbox')), '.construct/inbox/ is never scaffolded');
   });
 
   it('writes no additionalDirs even when many preset directories exist', () => {

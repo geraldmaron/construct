@@ -41,7 +41,7 @@
   "mcp": {
     "construct-mcp": {
       "type": "local",
-      "command": ["node", "__CX_TOOLKIT_DIR__/lib/mcp/server.mjs"],
+      "command": ["node", "__CONSTRUCT_TOOLKIT_DIR__/lib/mcp/server.mjs"],
       "environment": {
         "CONSTRUCT_TRACE_BACKEND": "__CONSTRUCT_TRACE_BACKEND__",
         "CONSTRUCT_TELEMETRY_URL": "__CONSTRUCT_TELEMETRY_URL__",

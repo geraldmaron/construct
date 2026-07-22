@@ -187,7 +187,7 @@
           }
         ],
         "id": "post:edit:artifact-release-gate",
-        "description": "Advisory: surface manifest structure/visual gaps on typed docs under docs/** and .cx/research/**"
+        "description": "Advisory: surface manifest structure/visual gaps on typed docs under docs/** and .construct/research/**"
       },
       {
         "matcher": "Write|Edit|MultiEdit",
@@ -275,7 +275,7 @@
           }
         ],
         "id": "post:mcp-audit",
-        "description": "Audit every MCP tool call with task attribution to .cx/mcp-audit.json"
+        "description": "Audit every MCP tool call with task attribution to .construct/mcp-audit.json"
       },
       {
         "matcher": "Task",
@@ -288,7 +288,7 @@
           }
         ],
         "id": "post:agent-tracker",
-        "description": "Record dispatched cx-* agent name for per-agent cost attribution"
+        "description": "Record dispatched Worker Profile id for per-profile cost attribution"
       },
       {
         "matcher": "Bash",
@@ -300,7 +300,7 @@
           }
         ],
         "id": "post:bash:output-logger",
-        "description": "Persist long Bash outputs to ~/.cx/bash-logs/ and nudge toward referencing the log"
+        "description": "Persist long Bash outputs to the Construct XDG state directory (default ~/.local/state/construct/bash-logs/) and nudge toward referencing the log"
       },
       {
         "matcher": "Bash",
@@ -339,7 +339,7 @@
           }
         ],
         "id": "post:bash:post-merge-tracking",
-        "description": "After `gh pr merge` succeeds, parse the PR body's Refs/Closes/Fixes lines and close every referenced construct-XXX bead so plan.md and .cx/context.md don't drift behind merged work"
+        "description": "After `gh pr merge` succeeds, parse the PR body's Refs/Closes/Fixes lines and close every referenced construct-XXX bead so plan.md and .construct/context.md don't drift behind merged work"
       },
       {
         "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
@@ -430,7 +430,7 @@
           }
         ],
         "id": "pre:compact",
-        "description": "Save session state to .cx/context.md before context compaction"
+        "description": "Save session state to .construct/context.md before context compaction"
       }
     ],
     "Stop": [
@@ -457,7 +457,7 @@
           }
         ],
         "id": "stop:typecheck",
-        "description": "Batch TypeScript typecheck of edited files at end of response (async: writes ~/.cx/pending-typecheck.txt for the next session-start to surface; does not gate the current turn)"
+        "description": "Batch TypeScript typecheck of edited files at end of response (async: writes pending-typecheck.txt in the Construct XDG state directory, default ~/.local/state/construct/, for the next session-start to surface; does not gate the current turn)"
       },
       {
         "matcher": "*",
@@ -496,7 +496,7 @@
           }
         ],
         "id": "stop:snapshot",
-        "description": "Snapshot .cx/context.md at session end so resume has real progress (async: written for the NEXT session to read; does not gate the current turn)"
+        "description": "Snapshot .construct/context.md at session end so resume has real progress (async: written for the NEXT session to read; does not gate the current turn)"
       },
       {
         "matcher": "*",
@@ -522,7 +522,7 @@
           }
         ],
         "id": "stop:auto-reflect",
-        "description": "Deterministic session-end reflect: extracts a transcript summary into .cx/observations (500ms hard budget; CONSTRUCT_REFLECT_AUTO=off to disable)"
+        "description": "Deterministic session-end reflect: extracts a transcript summary into .construct/observations (500ms hard budget; CONSTRUCT_REFLECT_AUTO=off to disable)"
       },
       {
         "matcher": "*",
@@ -535,7 +535,7 @@
           }
         ],
         "id": "stop:tracking-refresh",
-        "description": "Auto-refresh .cx/context.{md,json} from recent observations + commits + closed beads; sync plan.md bead-status table; archive plan.md to .cx/handoffs/ when all referenced beads are closed"
+        "description": "Auto-refresh .construct/context.{md,json} from recent observations + commits + closed beads; sync plan.md bead-status table; archive plan.md to .construct/handoffs/ when all referenced beads are closed"
       }
     ],
     "UserPromptSubmit": [

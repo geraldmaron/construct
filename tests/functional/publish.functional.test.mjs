@@ -12,6 +12,7 @@ import { spawnSync } from 'node:child_process';
 import { detectPublishPipeline } from '../../lib/publish-tooling.mjs';
 import { runPublish, formatGateFailureMessage } from '../../lib/publish.mjs';
 import { validateArtifactRelease } from '../../lib/artifact-release-gate.mjs';
+import { countPdfEmbeddedImages, pdfRenderedDiagrams } from '../../lib/document-export.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
@@ -33,7 +34,7 @@ function run(args, cwd, env = {}) {
       BOOTSTRAP_CHECKED: '1',
       CONSTRUCT_DISABLE_AUTO_CLEANUP: '1',
       HOME: SANDBOX_HOME,
-      CX_HOME_OVERRIDE: SANDBOX_HOME,
+      CONSTRUCT_HOME_OVERRIDE: SANDBOX_HOME,
       ...env,
     },
   });
@@ -166,11 +167,11 @@ test('runPublish blocks agentic-platforms stub at release gate', () => {
   assert.match(result.message, /Remediation/);
 });
 
-test('formatGateFailureMessage includes validate and workflow hints', () => {
+test('formatGateFailureMessage includes validate and procedure hints', () => {
   const gate = validateArtifactRelease({ filePath: STUB, type: 'prd-platform', cwd: REPO, rootDir: REPO });
   const msg = formatGateFailureMessage(gate, { inputPath: STUB, cwd: REPO });
   assert.match(msg, /artifact validate/);
-  assert.match(msg, /workflow invoke/);
+  assert.match(msg, /procedure invoke/);
   assert.match(msg, /prd-workflow/);
 });
 
@@ -214,6 +215,10 @@ test('runPublish exports golden fixture when toolchain present', () => {
     assert.equal(result.ok, true, result.message);
     assert.ok(fs.existsSync(out));
     assert.ok(fs.statSync(out).size > 1000);
+    assert.equal(result.ledger.export.exportPath, 'richdocument');
+    const source = fs.readFileSync(GOLDEN, 'utf8');
+    assert.ok(countPdfEmbeddedImages(out) > 0, 'golden PDF should embed rendered diagrams');
+    assert.equal(pdfRenderedDiagrams(out, source), true, 'diagram fences should not remain as raw source');
   } finally {
     rmTmpDir(dir);
   }
@@ -235,7 +240,7 @@ test('published PDFs preserve ordered-list numbering and render figures', (t) =>
 title: Ordered list regression
 artifactType: prd-platform
 status: draft
-owner: cx-product-manager
+owner: product-manager
 last_verified_at: 2026-06-28
 ---
 

@@ -2,13 +2,13 @@
  * tests/functional/opencode-config-ownership.functional.test.mjs
  *
  * Asserts the ownership boundary between Construct-managed and user-personal
- * keys in the GLOBAL opencode config. Spawns the real sync-specialists.mjs into
+ * keys in the GLOBAL opencode config. Spawns the real sync-worker-profiles.mjs into
  * an isolated tmp HOME seeded with a user-personal global config, runs
  * `--global`, and verifies that Construct-managed keys are emitted correctly
- * (scoped bash permission and real attribution headers with no `__placeholder__`)
- * while every user-personal
- * key (share, autoupdate, a user agent, user openrouter models) survives
- * byte-for-byte. The host binary is never executed.
+ * (an orchestration-only front door and real attribution headers with no
+ * `__placeholder__`) while every user-personal key (share, autoupdate, a user
+ * agent, user openrouter models) survives byte-for-byte. The host binary is
+ * never executed, and every spawn uses a sterile HOME/XDG/state root.
  * See docs/guides/concepts/opencode-config-ownership.md.
  */
 
@@ -20,9 +20,10 @@ import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { rmTmpDir } from '../helpers/cleanup.mjs';
+import { sterileSpawnEnv } from '../helpers/sterile-env.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const SYNC_SCRIPT = join(REPO_ROOT, "scripts", "sync-specialists.mjs");
+const SYNC_SCRIPT = join(REPO_ROOT, "scripts", "sync-worker-profiles.mjs");
 
 const SEED = {
   $schema: "https://opencode.ai/config.json",
@@ -50,8 +51,11 @@ function seededHome(seedConfig = SEED) {
 }
 
 function runGlobalSync(home) {
-  const env = { ...process.env, HOME: home, CONSTRUCT_SKIP_POSTINSTALL: "1" };
-  delete env.GITHUB_TOKEN;
+  const env = sterileSpawnEnv({
+    HOME: home,
+    CONSTRUCT_HOME_OVERRIDE: home,
+    CONSTRUCT_SKIP_POSTINSTALL: "1",
+  });
   const res = spawnSync(process.execPath, [SYNC_SCRIPT, "--global"], {
     cwd: REPO_ROOT, encoding: "utf8", timeout: 90_000, env,
   });
@@ -67,11 +71,11 @@ test("global sync emits Construct-managed keys correctly and preserves user-pers
     assert.equal(res.status, 0, `sync failed: ${(res.stderr || "").slice(-400)}`);
     const out = readJson(env.cfgPath);
 
-    const bash = out.agent?.construct?.permission?.bash;
-    assert.equal(typeof bash, "object", "construct bash permission must be a scoped map");
-    assert.equal(bash["rm -rf *"], "deny");
-    assert.equal(bash["git push *"], "ask");
-    assert.equal(bash["*"], "allow");
+    const permission = out.agent?.construct?.permission ?? {};
+    assert.equal(permission.bash, undefined, "orchestration-only front door must not gain an ambient bash grant");
+    assert.equal(permission.task?.["*"], "allow", "front door must retain Worker Profile dispatch");
+    assert.notEqual(permission["mcp__construct-mcp__orchestration_policy"], "deny");
+    assert.notEqual(permission["mcp__construct-mcp__orchestration_run"], "deny");
 
     const headers = out.provider?.openrouter?.options?.headers ?? {};
     assert.equal(headers["HTTP-Referer"], "https://github.com/geraldmaron/construct");

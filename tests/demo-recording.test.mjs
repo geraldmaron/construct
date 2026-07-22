@@ -36,7 +36,7 @@ test('loadDemoRecording loads shipped manifest with artifactReveal', () => {
 test('loadDemoRecordingValidated rejects invalid JSON', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'demo-rec-'));
   try {
-    const badPath = path.join(dir, '.cx', 'demos', 'recordings', 'broken.json');
+    const badPath = path.join(dir, '.construct', 'demos', 'recordings', 'broken.json');
     fs.mkdirSync(path.dirname(badPath), { recursive: true });
     fs.writeFileSync(badPath, '{ not json', 'utf8');
     const result = loadDemoRecordingValidated('broken', { cwd: dir, repoRoot: REPO });
@@ -45,6 +45,13 @@ test('loadDemoRecordingValidated rejects invalid JSON', () => {
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test('loadDemoRecordingValidated loads shipped manifest recording', () => {
+  const result = loadDemoRecordingValidated('agentic-platforms-prd', { cwd: REPO, repoRoot: REPO });
+  assert.equal(result.ok, true);
+  assert.equal(result.recording.engine, 'playwright');
+  assert.match(result.recording.sourcePath, /templates\/demos\/manifests\//);
 });
 
 test('normalizeArtifactReveal accepts legacy path field', () => {

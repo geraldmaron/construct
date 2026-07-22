@@ -3,11 +3,11 @@
  *
  * Drives `construct embed list|enable|disable|status|dry-run` against the
  * real binary in an isolated tmpdir cwd, proving the ADR-0061 (LMCP-P2)
- * lifecycle end to end: an invalid manifest fails enable with a JSON-schema
+ * lifecycle end to end: an invalid Procedure fails enable with a JSON-schema
  * path and writes nothing; enable/disable round-trips through the durable
- * `.cx/embed/<id>.manifest.json` project-tier file; status and dry-run
- * surface the resolved binding chain; the EmbedDaemon registers exactly the
- * enabled set of capabilities as scheduled jobs.
+ * `.construct/procedures/<id>.manifest.json` project-tier file; status and dry-run
+ * surface the resolved Worker Profile binding chain; the EmbedDaemon registers
+ * exactly the enabled set of capabilities as scheduled jobs.
  */
 
 import assert from 'node:assert/strict';
@@ -41,12 +41,15 @@ function validManifest(id = 'operations') {
     id,
     type: 'embed',
     version: '1.0.0',
-    defaultApprovalMode: 'proposal-only',
+    workerProfiles: [],
+    approvalMode: 'proposal-only',
+    modelTier: 'standard',
+    state: 'active',
     embed: {
-      specialist: 'cx-operations',
-      providerBindings: ['github', 'jira'],
-      framework: 'cx-ops-triage',
-      outputContract: 'proposal.v1',
+      workerProfileId: 'operations',
+      providerBindings: ['atlassian-jira'],
+      framework: 'operations-dependency-sequencing',
+      outputContract: 'operations-tpm-briefing',
       proposalAuthority: 'propose-only',
       cadence: { every: 'PT15M' },
       runtime: 'auto',
@@ -55,7 +58,7 @@ function validManifest(id = 'operations') {
 }
 
 function writeProjectManifest(cwd, id, manifest) {
-  const dir = path.join(cwd, '.construct', 'embed');
+  const dir = path.join(cwd, '.construct', 'procedures');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, `${id}.manifest.json`), JSON.stringify(manifest));
 }
@@ -69,8 +72,8 @@ test('embed list --json reports all shipped builtin capabilities in a project wi
   const res = runCli(['list', '--json'], cwd);
   assert.equal(res.status, 0, `exit 0 — stderr: ${res.stderr}`);
   const out = JSON.parse(res.stdout);
-  // The core pack ships three builtin embed capabilities (the operations TPM
-  // preset, the operations-triage preset, and the pm-feedback preset), each
+  // The core pack ships four builtin embed capabilities (the operations TPM
+  // preset, operations-triage, pm-feedback, and pm-repos), each
   // available-but-not-enabled in a project that has enabled none. Sort first
   // — discovery order is not a contract.
   assert.deepEqual(out.capabilities.map((c) => c.id).sort(), ['operations', 'operations-triage', 'pm-feedback', 'pm-repos']);
@@ -92,18 +95,18 @@ test('embed enable fails closed on an invalid manifest with a JSON-schema path, 
 
   // The pre-existing project-tier file is untouched (still the invalid one,
   // not overwritten with an "enabled: true" stamp) — enable failed closed.
-  const onDisk = JSON.parse(fs.readFileSync(path.join(cwd, '.construct', 'embed', 'broken.manifest.json'), 'utf8'));
+  const onDisk = JSON.parse(fs.readFileSync(path.join(cwd, '.construct', 'procedures', 'broken.manifest.json'), 'utf8'));
   assert.equal(onDisk.embed.enabled, undefined, 'invalid manifest must not be stamped enabled');
 });
 
-test('enable/disable round-trips through .cx/embed/<id>.manifest.json', () => {
+test('enable/disable round-trips through .construct/procedures/<id>.manifest.json', () => {
   const cwd = freshCwd();
   writeProjectManifest(cwd, 'operations', validManifest('operations'));
 
   const enableRes = runCli(['enable', 'operations'], cwd);
   assert.equal(enableRes.status, 0, `enable exit 0 — stderr: ${enableRes.stderr}`);
 
-  const manifestPath = path.join(cwd, '.construct', 'embed', 'operations.manifest.json');
+  const manifestPath = path.join(cwd, '.construct', 'procedures', 'operations.manifest.json');
   assert.ok(fs.existsSync(manifestPath), 'project-tier manifest exists after enable');
   let onDisk = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   assert.equal(onDisk.embed.enabled, true);
@@ -131,7 +134,7 @@ test('embed status <id> --json surfaces bindings, filter, runtime, and last-tick
   const cwd = freshCwd();
   const manifest = validManifest('operations');
   manifest.embed.filter = { scope: { projects: ['PLATFORM'] } };
-  manifest.embed.providerBindings = ['jira'];
+  manifest.embed.providerBindings = ['atlassian-jira'];
   writeProjectManifest(cwd, 'operations', manifest);
   runCli(['enable', 'operations'], cwd);
 
@@ -140,9 +143,9 @@ test('embed status <id> --json surfaces bindings, filter, runtime, and last-tick
   const status = JSON.parse(res.stdout);
   assert.equal(status.ok, true);
   assert.equal(status.enabled, true);
-  assert.deepEqual(status.chain.providerBindings, ['jira']);
+  assert.deepEqual(status.chain.providerBindings, ['atlassian-jira']);
   assert.deepEqual(status.chain.filter, { scope: { projects: ['PLATFORM'] } });
-  assert.equal(status.chain.framework, 'cx-ops-triage');
+  assert.equal(status.chain.framework, 'operations-dependency-sequencing');
   assert.equal(status.chain.proposalAuthority, 'propose-only');
   assert.ok(['in-process', 'external', 'none'].includes(status.chain.runtime.resolved));
   assert.equal(status.lastTick, null, 'no daemon has ticked yet in this project');
@@ -152,20 +155,28 @@ test('embed dry-run <id> --json resolves the full chain without writing a last-t
   const cwd = freshCwd();
   writeProjectManifest(cwd, 'operations', validManifest('operations'));
   runCli(['enable', 'operations'], cwd);
+  const manifestPath = path.join(cwd, '.construct', 'procedures', 'operations.manifest.json');
+  const manifestBefore = fs.readFileSync(manifestPath, 'utf8');
 
   const res = runCli(['dry-run', 'operations', '--json'], cwd);
   assert.equal(res.status, 0, `exit 0 — stderr: ${res.stderr}`);
   const result = JSON.parse(res.stdout);
   assert.equal(result.ok, true);
-  assert.equal(result.chain.specialist, 'cx-operations');
-  assert.deepEqual(result.chain.providerBindings, ['github', 'jira']);
-  assert.equal(result.chain.framework, 'cx-ops-triage');
-  assert.equal(result.chain.outputContract, 'proposal.v1');
+  assert.equal(result.chain.workerProfileId, 'operations');
+  assert.deepEqual(result.chain.providerBindings, ['atlassian-jira']);
+  assert.equal(result.chain.framework, 'operations-dependency-sequencing');
+  assert.equal(result.chain.outputContract, 'operations-tpm-briefing');
   assert.equal(result.chain.proposalAuthority, 'propose-only');
   assert.ok(result.chain.runtime.declared === 'auto');
 
   const tickPath = path.join(cwd, '.construct', 'runtime', 'embed-capabilities', 'operations.json');
   assert.equal(fs.existsSync(tickPath), false, 'dry-run must not write a last-tick record');
+  assert.equal(fs.readFileSync(manifestPath, 'utf8'), manifestBefore, 'dry-run must not modify the enabled Procedure');
+  assert.equal(
+    fs.existsSync(path.join(cwd, '.construct', 'runtime', 'embed-daemon.json')),
+    false,
+    'dry-run must not write daemon state',
+  );
 });
 
 test('EmbedDaemon registers exactly the enabled set of capabilities as scheduled jobs', async () => {

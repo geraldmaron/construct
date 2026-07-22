@@ -3,11 +3,13 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 -->
 # ADR-0071: Rename install "scope" to "footprint"; keep org-scope vocabulary as-is
 
+> **Current surface (Construct 2.0):** `construct install` accepts only `--footprint=project|user|both`. A bare install hard-errors naming the flag. `--scope=` is no longer accepted (retired after the deprecation window this ADR planned). Org/Workspace Preset vocabulary remains separate from install footprint.
+
 - **Date**: 2026-07-09
 - **Status**: accepted
 - **Deciders**: Gerald Dagher (owner)
 - **Extends**: ADR-0029 (install scopes and hook budgets — introduced the `--scope=project|user|both` flag this ADR renames), ADR-0027 (host-project footprint and non-destructive scaffolding — the "footprint" vocabulary this ADR adopts for the flag)
-- **Relates to**: `docs/guides/concepts/profile-lifecycle.md` and CLAUDE.md's "Profiles are research artifacts" section (org-scope/profile vocabulary, left unchanged by this ADR)
+- **Relates to**: `docs/guides/concepts/workspace-preset-lifecycle.md` (Workspace Presets; formerly profile-lifecycle) and CLAUDE.md's "Profiles are research artifacts" section (org-scope/profile vocabulary, left unchanged by this ADR)
 
 ## Problem
 
@@ -23,7 +25,7 @@ Two unrelated concepts in Construct are both named "scope," and they collide in 
 
 - ADR-0029 established `--scope=project|user|both` as the install-write-target axis and is still `Status: accepted` — this ADR extends it rather than reopening its substance (the project/user/both semantics are correct and unchanged; only the flag's name changes).
 - ADR-0027 already introduced "footprint" as this repo's vocabulary for "where Construct writes on disk" — its own title is "host-project footprint and non-destructive scaffolding," and README.md's existing `#footprint-contract` section (referenced at README.md:34, :143) already documents the install-write-target axis under the word "footprint," not "scope." The rename this ADR makes is Construct catching its own flag name up to vocabulary the docs already settled on.
-- `lib/scopes/lifecycle.mjs` and its `construct scope` subcommand are the *older*, more load-bearing usage: `specialists/org/scopes/<id>.json`, `schemas/scope.schema.json`, `docs/guides/concepts/profile-lifecycle.md`, and CLAUDE.md's protected-file guidance all use "scope" to mean the org profile. Renaming this side would touch a curated JSON schema, on-disk directory names (`specialists/org/scopes/`), and CLAUDE.md itself — a much larger and riskier surface than renaming one CLI flag family.
+- `lib/scopes/lifecycle.mjs` and its `construct scope` subcommand are the *older*, more load-bearing usage: `specialists/org/scopes/<id>.json`, `schemas/scope.schema.json`, `docs/guides/concepts/workspace-preset-lifecycle.md` (Workspace Presets; formerly profile-lifecycle), and CLAUDE.md's protected-file guidance all use "scope" to mean the org profile. Renaming this side would touch a curated JSON schema, on-disk directory names (`specialists/org/scopes/`), and CLAUDE.md itself — a much larger and riskier surface than renaming one CLI flag family.
 - Usage count (grepped 2026-07-09, this worktree): `--scope=` appears across 36 files (`.mjs`/`.md`/`.mdx`, excluding `node_modules`); `construct scope ` (the org-profile subcommand) appears across 19 files. Both are real surfaces; neither is trivially small, but install-scope's occurrences are concentrated in one flag family (`--scope=<value>`) versus org-scope's occurrences spanning a subcommand, a schema, a directory name, and CLAUDE.md's own text — install-scope is the cheaper and lower-risk side to rename.
 - `docs/guides/start/connect-your-editor.mdx`'s "sync scope" (`--global` vs project-sync) is a third, distinct axis not covered by this ADR's flag rename (it's not a `lib/setup.mjs` flag) — flagged here as a follow-up doc-wording concern, not resolved by this decision.
 
@@ -39,7 +41,7 @@ Two unrelated concepts in Construct are both named "scope," and they collide in 
 
 ## Rationale
 
-- **Cheaper side wins.** Install-scope's surface (one flag family, one module) is smaller and lower-risk to rename than org-scope's (schema + directory + CLAUDE.md-level vocabulary + external profile authors following `docs/guides/concepts/profile-lifecycle.md`).
+- **Cheaper side wins.** Install-scope's surface (one flag family, one module) is smaller and lower-risk to rename than org-scope's (schema + directory + CLAUDE.md-level vocabulary + external profile authors following `docs/guides/concepts/workspace-preset-lifecycle.md` (Workspace Presets; formerly profile-lifecycle)).
 - **Vocabulary already exists.** "Footprint" is not a new coinage — ADR-0027 and README's footprint-contract section already name this exact axis. Renaming to `--footprint` removes a synonym-drift problem (the flag says "scope," the docs describing the same thing say "footprint") rather than adding one.
 - **Org-scope is the more correct use of the word.** "Scope" more naturally describes "the boundary of what a profile covers" (an org's roster/taxonomy scope) than "which machine tier gets written to." Keeping the more semantically apt usage and renaming the less apt one is the smaller net vocabulary distortion.
 
@@ -66,3 +68,7 @@ Two-way door. `--footprint` and `--scope` coexisting as aliases costs nothing to
 - ADR-0027 (host-project footprint — origin of "footprint" vocabulary this ADR adopts for the renamed flag)
 - ADR-0029 (install scopes and hook budgets — the flag this ADR renames; semantics unchanged)
 - CLAUDE.md, "Profiles are research artifacts, not JSON exercises" (org-scope/profile vocabulary, confirmed as the more deeply embedded usage this ADR leaves untouched)
+
+## Amendment (2026-07-22) — `--scope=` install alias fully retired
+
+Steward pass (`construct-7d4vl`). Verified live: `construct install --help` documents only `--footprint=project|user|both`; bare install hard-errors naming `--footprint`. The Decision's "keep `--scope` as a deprecated alias for at least one release" window is **closed** — `--scope=` is no longer accepted. Org/Workspace Preset vocabulary remains separate (live: Workspace Presets under `registry/workspace-presets/`; historical `specialists/org/scopes/` path retired). Decision text above is retained as the rename rationale.

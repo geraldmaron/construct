@@ -65,7 +65,7 @@ test('setup-credentials runs op item list exactly once per invocation', (t) => {
   const env = { ...process.env };
   for (const key of [
     'ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'OPENROUTER_API_KEY', 'OPEN_ROUTER_API_KEY',
-    'GITHUB_TOKEN', 'GH_TOKEN', 'CX_USER_ENV_PATH', 'XDG_CONFIG_HOME', 'CONSTRUCT_OP_ENV_FILE',
+    'GITHUB_TOKEN', 'GH_TOKEN', 'CONSTRUCT_USER_ENV_PATH', 'XDG_CONFIG_HOME', 'CONSTRUCT_OP_ENV_FILE',
     'NODE_ENV', 'CI',
   ]) {
     delete env[key];

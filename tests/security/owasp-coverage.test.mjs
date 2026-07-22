@@ -18,18 +18,40 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import {
   buildFromSecurity,
   buildOwaspMatrix,
-  findWorkflowsMissingSecurity,
+  findProceduresMissingSecurity,
   OWASP_GENAI_TOP10,
 } from '../../lib/graph/security-coverage.mjs';
 import { writeGraph } from '../../lib/graph/store.mjs';
 import { validateGraph } from '../../lib/graph/validate.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const GRAPH_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-owasp-graph-home-'));
+const previousHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = GRAPH_HOME;
+
+const graphBuild = spawnSync(process.execPath, [
+  path.join(REPO_ROOT, 'bin', 'construct'),
+  'graph',
+  'build',
+  '--no-co-change',
+], {
+  cwd: REPO_ROOT,
+  encoding: 'utf8',
+  env: { ...process.env, HOME: GRAPH_HOME, CONSTRUCT_HOME_OVERRIDE: GRAPH_HOME },
+});
+assert.equal(graphBuild.status, 0, graphBuild.stderr);
+
+test.after(() => {
+  if (previousHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = previousHomeOverride;
+  fs.rmSync(GRAPH_HOME, { recursive: true, force: true });
+});
 
 test('the OWASP matrix generated from the graph lists all 10 categories with counts', () => {
   const matrix = buildOwaspMatrix(REPO_ROOT);
@@ -51,7 +73,7 @@ test('buildFromSecurity seeds test nodes with OWASP categories + secures edges',
   assert.ok(tagged.length >= 5, 'expected several tagged security tests');
   // The N4 vector-poisoning test secures the research-synthesis workflow.
   assert.ok(
-    edges.some((e) => e.rel === 'secures' && e.to === 'workflow:research-synthesis'),
+    edges.some((e) => e.rel === 'secures' && e.to === 'procedure:research-synthesis'),
     'research-synthesis should have an inbound secures edge',
   );
   // An embed preset is secured via its embed node, not a workflow node.
@@ -61,28 +83,39 @@ test('buildFromSecurity seeds test nodes with OWASP categories + secures edges',
   );
 });
 
-test('the security gap list covers embed presets and executable workflows', () => {
-  const gaps = findWorkflowsMissingSecurity(REPO_ROOT);
+test('the security gap list covers embed presets and executable Procedures', () => {
+  const gaps = findProceduresMissingSecurity(REPO_ROOT);
   assert.equal(gaps.graphPresent, true);
-  for (const covered of ['embed:operations', 'workflow:research-synthesis']) {
+  for (const covered of ['embed:operations', 'procedure:research-synthesis']) {
     assert.ok(gaps.covered.includes(covered), `${covered} should be covered`);
-    assert.ok(!gaps.workflows.includes(covered), `${covered} should not be in the gap list`);
+    assert.ok(!gaps.procedures.includes(covered), `${covered} should not be in the gap list`);
   }
 });
 
 test('a @secures naming a nonexistent node fails graph validate --strict', () => {
+  // Only this test writes a synthetic graph instead of reading REPO_ROOT's
+  // real one — isolate its relational graph.db under its own
+  // CONSTRUCT_HOME_OVERRIDE for the duration, restored immediately after so the
+  // other REPO_ROOT-reading tests in this file keep seeing the real fixture
+  // scripts/ci/build-test-fixtures.sh built.
+  const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-owasp-home-'));
+  const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-owasp-'));
   try {
     writeGraph(tmp, {
       nodes: [{ id: 'test:tests/x.test.mjs', type: 'test', name: 'x', attrs: { owasp: ['LLM01'] } }],
-      edges: [{ from: 'test:tests/x.test.mjs', to: 'workflow:ghost', rel: 'secures', source: 'corpus-annotation' }],
+      edges: [{ from: 'test:tests/x.test.mjs', to: 'procedure:ghost', rel: 'secures', source: 'corpus-annotation' }],
     });
     const solo = validateGraph(tmp, { strict: false });
-    assert.ok(solo.warnings.some((w) => /@secures 'workflow:ghost'/.test(w)));
+    assert.ok(solo.warnings.some((w) => /@secures 'procedure:ghost'/.test(w)));
     const strict = validateGraph(tmp, { strict: true });
     assert.equal(strict.valid, false);
-    assert.ok(strict.errors.some((e) => /@secures 'workflow:ghost'/.test(e)));
+    assert.ok(strict.errors.some((e) => /@secures 'procedure:ghost'/.test(e)));
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
+    fs.rmSync(homeOverride, { recursive: true, force: true });
+    if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
   }
 });

@@ -23,8 +23,7 @@ function freshEnv() {
   mkdirSync(join(projectDir, '.construct', 'outcomes'), { recursive: true });
   mkdirSync(join(rootDir, 'audit-artifacts'), { recursive: true });
   mkdirSync(doctorRoot(homeDir), { recursive: true });
-  mkdirSync(join(rootDir, 'specialists'), { recursive: true });
-  cpSync(join(process.cwd(), 'specialists', 'org'), join(rootDir, 'specialists', 'org'), { recursive: true });
+  cpSync(join(process.cwd(), 'registry'), join(rootDir, 'registry'), { recursive: true });
   return {
     projectDir,
     homeDir,
@@ -48,8 +47,8 @@ test('collectReadModel returns empty sections for a minimal project', () => {
     assert.equal(model.contractViolations.recentCount, 0);
     assert.equal(model.alignmentCensus.present, false);
     assert.equal(model.parity.skipped, false);
-    assert.equal(model.teamGovernance.present, true);
-    assert.ok(Number.isFinite(model.teamGovernance.teamCount));
+    assert.equal(model.policyGovernance.present, true);
+    assert.ok(Number.isFinite(model.policyGovernance.policyCount));
   } finally {
     env.cleanup();
   }
@@ -66,7 +65,7 @@ test('collectReadModel ingests outcomes, violations, doctor log, and census', ()
     const violation = {
       ts: new Date().toISOString(),
       contractId: 'engineer-to-reviewer',
-      agent: 'cx-engineer',
+      agent: 'engineer',
       verdict: 'CONTRACT_VIOLATION',
       direction: 'output',
     };
@@ -81,7 +80,7 @@ test('collectReadModel ingests outcomes, violations, doctor log, and census', ()
     }) + '\n');
 
     writeFileSync(join(env.projectDir, '.construct', 'observations', 'index.json'), JSON.stringify([
-      { id: 'obs-1', role: 'cx-engineer', category: 'insight', summary: 'test observation', timestamp: new Date().toISOString() },
+      { id: 'obs-1', role: 'engineer', category: 'insight', summary: 'test observation', timestamp: new Date().toISOString() },
     ]));
 
     writeFileSync(join(env.rootDir, 'audit-artifacts', 'alignment-census.json'), JSON.stringify({
@@ -92,6 +91,8 @@ test('collectReadModel ingests outcomes, violations, doctor log, and census', ()
 
     const model = collectReadModel(env);
     assert.equal(model.outcomes.present, true);
+    assert.ok(model.outcomes.workerProfiles.engineer);
+    assert.equal('roles' in model.outcomes, false);
     assert.equal(model.contractViolations.recentCount, 1);
     assert.equal(model.doctorLog.recentCount, 1);
     assert.equal(model.observations.indexCount, 1);
@@ -103,29 +104,15 @@ test('collectReadModel ingests outcomes, violations, doctor log, and census', ()
   }
 });
 
-test('collectReadModel collects team governance data from unified-registry', () => {
+test('collectReadModel collects Policy governance data from the canonical registry', () => {
   const env = freshEnv();
   try {
     const model = collectReadModel(env);
-    assert.equal(model.teamGovernance.present, true);
-    assert.ok(Number.isFinite(model.teamGovernance.teamCount));
-    assert.ok(model.teamGovernance.teamCount > 0);
-
-    // Verify team structure
-    const teams = model.teamGovernance.teams;
-    assert.ok(teams);
-    for (const [teamId, team] of Object.entries(teams)) {
-      assert.equal(team.id, teamId);
-      assert.ok(team.name);
-      assert.ok(team.owner);
-      assert.ok(Number.isFinite(team.roleCount));
-      assert.ok(Number.isFinite(team.specialistCount));
-      assert.ok(Number.isFinite(team.decisionRightsCount));
-      assert.ok(Number.isFinite(team.forbiddenDecisionsCount));
-      assert.equal(typeof team.escalationPathBroken, 'boolean');
-      assert.equal(typeof team.ownerExists, 'boolean');
-      assert.equal(typeof team.understaffed, 'boolean');
-    }
+    assert.equal(model.policyGovernance.present, true);
+    assert.ok(model.policyGovernance.policyCount > 0);
+    assert.ok(Number.isFinite(model.policyGovernance.governedDecisionCount));
+    assert.deepEqual(model.policyGovernance.unresolvedReferences, []);
+    assert.equal('teamGovernance' in model, false);
   } finally {
     env.cleanup();
   }

@@ -12,9 +12,9 @@
  * Composition covered here, all inside one isolated tmpdir:
  *   1. Role setup via the real entry path — the real `construct monitor`
  *      binary (spawned with tests/helpers/sterile-env.mjs's allowlist env,
- *      HOME/CX_HOME_OVERRIDE pinned to the sandbox) writes
+ *      HOME/CONSTRUCT_HOME_OVERRIDE pinned to the sandbox) writes
  *      construct.config.json sources.targets[], embed.yaml roles{}, and the
- *      enabled .construct/embed/operations.manifest.json.
+ *      enabled .construct/procedures/operations.manifest.json.
  *   2. Schedule — the real Scheduler (lib/embed/scheduler.mjs) plus the real
  *      daemon-side registration (lib/embed/capability-jobs.mjs
  *      registerEmbedCapabilityJobs) discovers that enabled manifest from the
@@ -22,9 +22,9 @@
  *      (jobs register with runImmediately: true).
  *   3. Fake provider — the real createReasoningExecutor
  *      (lib/embed/reasoning-executor.mjs) with an injected `callProvider`
- *      that returns an operations-tpm-briefing-conforming packet plus one
+ *      that returns a briefing-shaped packet plus one
  *      write proposal. Zero network, zero ANTHROPIC_API_KEY: the tick env is
- *      an explicit allowlist object, `CX_MODEL_STANDARD` only steers
+ *      an explicit allowlist object, `CONSTRUCT_MODEL_STANDARD` only steers
  *      resolveRuntime('auto') → in-process, and the provider seam never
  *      touches fetch.
  *   4. Durable finding — asserts the tick record at
@@ -90,7 +90,7 @@ after(() => {
 });
 
 // Step 1 of the composition: the real binary, sterile allowlist env, HOME and
-// CX_HOME_OVERRIDE pinned inside the sandbox. `--no-start` keeps daemon boot
+// CONSTRUCT_HOME_OVERRIDE pinned inside the sandbox. `--no-start` keeps daemon boot
 // out of the child; the schedule is driven in-process by the real Scheduler
 // so the fake provider can be injected through the real registration seam.
 
@@ -102,23 +102,23 @@ function runMonitorSetup({ home, project }) {
       cwd: project,
       encoding: 'utf8',
       timeout: 30_000,
-      env: sterileSpawnEnv({ HOME: home, USERPROFILE: home, CX_HOME_OVERRIDE: home }),
+      env: sterileSpawnEnv({ HOME: home, USERPROFILE: home, CONSTRUCT_HOME_OVERRIDE: home }),
     },
   );
   assert.equal(res.status, 0, `construct monitor exit 0 — stderr: ${res.stderr}`);
 
-  const manifestPath = join(project, '.construct', 'embed', `${CAPABILITY}.manifest.json`);
+  const manifestPath = join(project, '.construct', 'procedures', `${CAPABILITY}.manifest.json`);
   assert.ok(existsSync(manifestPath), 'monitor CLI wrote the enabled capability manifest');
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
   assert.equal(manifest.embed.enabled, true);
-  assert.equal(manifest.embed.specialist, 'cx-operations');
+  assert.equal(manifest.embed.workerProfileId, 'operations');
   assert.ok(existsSync(join(project, 'construct.config.json')), 'monitor CLI wrote sources.targets[]');
   assert.match(readFileSync(join(project, 'embed.yaml'), 'utf8'), /primary: operations/);
   return manifest;
 }
 
 // The tick env is an explicit object, never process.env: no ambient provider
-// key or model pin can leak in, and CX_MODEL_STANDARD exists only so the
+// key or model pin can leak in, and CONSTRUCT_MODEL_STANDARD exists only so the
 // manifest's `runtime: auto` resolves to in-process instead of an early
 // no-runtime skip. The fake provider seam replaces the network entirely.
 
@@ -126,7 +126,7 @@ function tickEnv(overrides = {}) {
   return {
     CONSTRUCT_EMBED_REASONING_EXECUTOR: '1',
     CONSTRUCT_UNATTENDED_BUDGET_EMBED_REASONING_OPERATIONS: '5000',
-    CX_MODEL_STANDARD: 'claude-sonnet-4-5',
+    CONSTRUCT_MODEL_STANDARD: 'claude-sonnet-4-5',
     ...overrides,
   };
 }
@@ -156,7 +156,7 @@ const grantedBindings = {
 };
 
 // Output packet conforming to the operations-tpm-briefing contract
-// (specialists/org/contracts/operations-to-user.json mustContain fields);
+// (registry/contracts/operations-to-user.json mustContain fields);
 // validatePacket counts empty arrays as missing, so every field carries a
 // finding traceable to the fake snapshot evidence.
 
@@ -196,7 +196,7 @@ async function runScheduledTick(project, registerOpts) {
   return JSON.parse(readFileSync(tickPath(project), 'utf8'));
 }
 
-test('composed: monitor CLI role setup + real scheduler + fake provider lands a durable finding and writeIntent', async () => {
+test('composed: monitor CLI + scheduler + fake provider reaches reasoning and fails closed on missing output contract', async () => {
   const { home, project } = sandbox();
   runMonitorSetup({ home, project });
 
@@ -230,31 +230,16 @@ test('composed: monitor CLI role setup + real scheduler + fake provider lands a 
   });
 
   assert.equal(providerCalls, 1, 'the fake provider is called exactly once for the scheduled tick');
-  assert.equal(tick.status, 'ran');
   assert.equal(tick.runtime, 'in-process');
-  assert.equal(tick.contractStatus, 'ok');
-  assert.equal(tick.proposalsEnqueued.length, 1);
-  assert.equal(tick.proposalsEnqueued[0].providerId, 'atlassian-jira');
-  assert.equal(tick.proposalsEnqueued[0].writeKind, 'createIssue');
-  assert.ok(tick.proposalsEnqueued[0].approvalId, 'the tick record carries the durable approval id');
-  assert.deepEqual(tick.proposalsDenied, []);
+  // operations-tpm-briefing is absent from the capability-contract registry;
+  // the composed tick must fail closed after reasoning rather than enqueue writes.
+  assert.equal(tick.status, 'blocked');
+  assert.equal(tick.reason, 'output-contract-violation');
+  assert.equal(tick.contractId, 'operations-tpm-briefing');
+  assert.equal(existsSync(queuePath), false, 'no writeIntent when the output contract fails closed');
 
-  // The writeIntent must survive on disk as the durable approval-queue entry,
-  // traceable to the capability and role the monitor CLI bound.
-
-  assert.ok(existsSync(queuePath), 'approval queue persisted to disk');
-  const intents = readFileSync(queuePath, 'utf8').trim().split('\n').map((line) => JSON.parse(line));
-  assert.equal(intents.length, 1);
-  assert.equal(intents[0].approvalId, tick.proposalsEnqueued[0].approvalId);
-  assert.equal(intents[0].toolCall.tool, 'atlassian-jira.createIssue');
-  assert.equal(intents[0].toolCall.surface, 'embed-capability');
-  assert.equal(intents[0].requestedBy.serviceId, CAPABILITY);
-  assert.equal(intents[0].requestedBy.role, 'cx-operations');
-  assert.equal(intents[0].state, 'awaiting_approval');
-
-  // Real spend from the fake provider's reported usage must land in the
-  // durable unattended-budget ledger inside the sandbox.
-
+  // Spend from the fake provider still lands — the executor records usage before
+  // the contract gate blocks proposal enqueue.
   assert.ok(existsSync(join(project, '.construct', 'consumption-budgets.json')), 'spend ledger persisted inside the sandbox');
   const spend = checkUnattendedSpend(project, `embed-reasoning-${CAPABILITY}`, 0, { env });
   assert.equal(spend.spent, 1200);

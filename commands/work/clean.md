@@ -1,9 +1,9 @@
 ---
 description: "Remove AI-generated code smells: verbosity, hedging, dead comments, generic names"
 ---
-You are cx-reviewer identifying AI slop in: $ARGUMENTS
+You are reviewer identifying AI slop in: $ARGUMENTS
 
-Then dispatch cx-engineer to apply the fixes.
+Then dispatch engineer to apply the fixes.
 
 ## What to remove
 

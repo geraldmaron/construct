@@ -45,9 +45,9 @@ construct models list --json
 For a temporary swap (single session), set the env var instead — edit `~/.config/construct/config.env` (preferred env keys — `CONSTRUCT_MODEL_*` is deprecated but still honored):
 
 ```bash
-CX_MODEL_REASONING=openrouter/anthropic/claude-opus-4
-CX_MODEL_STANDARD=openrouter/anthropic/claude-sonnet-4-5
-CX_MODEL_FAST=openrouter/google/gemini-flash-2-0
+CONSTRUCT_MODEL_REASONING=openrouter/anthropic/claude-opus-4
+CONSTRUCT_MODEL_STANDARD=openrouter/anthropic/claude-sonnet-4-5
+CONSTRUCT_MODEL_FAST=openrouter/google/gemini-flash-2-0
 ```
 
 ## Subscription Bridges (Host-Native Models)
@@ -146,7 +146,7 @@ Shows each agent's average quality score and trace count: useful for deciding wh
 ## Dry-run prompt optimization
 
 ```bash
-construct optimize cx-engineer --dry-run
+construct optimize engineer --dry-run
 ```
 
 Previews prompt changes inferred from low-quality traces without applying them.
@@ -154,7 +154,7 @@ Previews prompt changes inferred from low-quality traces without applying them.
 ## Apply prompt optimization
 
 ```bash
-construct optimize cx-engineer
+construct optimize engineer
 ```
 
 Rewrites the agent's system prompt slice in `registry.json` based on recurring failure patterns in telemetry traces. Requires `CONSTRUCT_TELEMETRY_PUBLIC_KEY` and `CONSTRUCT_TELEMETRY_SECRET_KEY` to be set.

@@ -1,7 +1,7 @@
 /**
  * tests/orchestration-worker-web.test.mjs — worker web-capable execution (ADR-0050).
  *
- * Proves runTaskViaProvider actually reaches the web for a web-capable specialist through
+ * Proves runTaskViaProvider actually reaches the web for a web-capable Worker Profile through
  * every WebGrant mode, with F08 governance (trust:'untrusted' + Admiralty) on every result,
  * and honestly refuses when no path resolves. All provider calls are mocked via fetchImpl so
  * the mechanism is deterministic without network or keys; governed tests set WEB_SEARCH_URL,
@@ -46,7 +46,7 @@ test('[governed] Anthropic tool-use loop executes Construct web_search; F08 on e
     { match: 'search.example', reply: () => ({ results: [{ url: 'https://example.com/a', title: 'A', snippet: 's' }] }) },
   ]);
   const env = { ...BASE_ENV, ANTHROPIC_API_KEY: 'k', WEB_SEARCH_URL: 'https://search.example/api' };
-  const res = await runTaskViaProvider({ task: { role: 'researcher' }, run: RUN, model: 'claude-opus-4-8', provider: 'anthropic', env, fetchImpl });
+  const res = await runTaskViaProvider({ task: { workerProfileId: 'researcher' }, run: RUN, model: 'claude-opus-4-8', provider: 'anthropic', env, fetchImpl });
 
   assert.equal(res.webCapability, 'governed');
   assert.equal(res.output, 'Final answer with sources.');
@@ -74,7 +74,7 @@ test('[governed] OpenRouter tool_calls loop resends tools[] and feeds role:tool 
     { match: 'search.example', reply: () => ({ results: [{ url: 'https://ex.com/b', title: 'B' }] }) },
   ]);
   const env = { ...BASE_ENV, OPENROUTER_API_KEY: 'k', WEB_SEARCH_URL: 'https://search.example/api' };
-  const res = await runTaskViaProvider({ task: { role: 'researcher' }, run: RUN, model: 'openrouter/qwen/qwen3-coder:free', provider: 'openrouter', env, fetchImpl });
+  const res = await runTaskViaProvider({ task: { workerProfileId: 'researcher' }, run: RUN, model: 'openrouter/qwen/qwen3-coder:free', provider: 'openrouter', env, fetchImpl });
 
   assert.equal(res.webCapability, 'governed');
   assert.equal(res.output, 'Done.');
@@ -84,7 +84,7 @@ test('[governed] OpenRouter tool_calls loop resends tools[] and feeds role:tool 
   assert.ok(second.body.messages.some((m) => m.role === 'tool' && m.tool_call_id === 'call_1'), 'role:tool result fed back');
 });
 
-test('[provider-native] Anthropic web_search_20250305; citations re-graded to trust:untrusted; only for web-capable role', async () => {
+test('[provider-native] Anthropic web_search_20250305; citations re-graded to trust:untrusted; only for web-capable Worker Profile', async () => {
   const nativeReply = {
     stop_reason: 'end_turn',
     content: [
@@ -97,7 +97,7 @@ test('[provider-native] Anthropic web_search_20250305; citations re-graded to tr
   };
   const fetchImpl = mockFetch([{ match: 'api.anthropic.com', reply: () => nativeReply }]);
   const env = { ...BASE_ENV, ANTHROPIC_API_KEY: 'k' }; // NO WEB_SEARCH_URL
-  const res = await runTaskViaProvider({ task: { role: 'researcher' }, run: RUN, model: 'claude-opus-4-8', provider: 'anthropic', env, fetchImpl });
+  const res = await runTaskViaProvider({ task: { workerProfileId: 'researcher' }, run: RUN, model: 'claude-opus-4-8', provider: 'anthropic', env, fetchImpl });
 
   assert.equal(res.webCapability, 'provider-native');
   assert.equal(res.webSearchRequests, 1);
@@ -107,9 +107,9 @@ test('[provider-native] Anthropic web_search_20250305; citations re-graded to tr
   const body = fetchImpl.calls[0].body;
   assert.deepEqual(body.tools, [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }]);
 
-  // A non-web-capable specialist gets NO web tool (single-shot).
+  // A non-web-capable Worker Profile gets no web tool.
   const plain = mockFetch([{ match: 'api.anthropic.com', reply: () => ({ stop_reason: 'end_turn', content: [{ type: 'text', text: 'code' }] }) }]);
-  const eng = await runTaskViaProvider({ task: { role: 'engineer' }, run: RUN, model: 'claude-opus-4-8', provider: 'anthropic', env, fetchImpl: plain });
+  const eng = await runTaskViaProvider({ task: { workerProfileId: 'engineer' }, run: RUN, model: 'claude-opus-4-8', provider: 'anthropic', env, fetchImpl: plain });
   assert.equal(eng.webCapability, undefined);
   assert.equal(plain.calls[0].body.tools, undefined);
 });
@@ -121,7 +121,7 @@ test('[provider-native] OpenRouter openrouter:web_search; url_citation governed;
   ] } }] };
   const fetchImpl = mockFetch([{ match: 'openrouter.ai', reply: () => reply }]);
   const env = { ...BASE_ENV, OPENROUTER_API_KEY: 'k' }; // NO WEB_SEARCH_URL
-  const res = await runTaskViaProvider({ task: { role: 'researcher' }, run: RUN, model: 'openrouter/qwen/qwen3-coder:free', provider: 'openrouter', env, fetchImpl });
+  const res = await runTaskViaProvider({ task: { workerProfileId: 'researcher' }, run: RUN, model: 'openrouter/qwen/qwen3-coder:free', provider: 'openrouter', env, fetchImpl });
 
   assert.equal(res.webCapability, 'provider-native');
   assert.equal(res.output, 'Answer.');
@@ -134,7 +134,7 @@ test('[provider-native] OpenRouter openrouter:web_search; url_citation governed;
 test('[honesty guard] web-capable + no web path → capability-unavailable, no web tool, no-fabrication clause', async () => {
   const fetchImpl = mockFetch([{ match: 'api.openai.com', reply: () => ({ choices: [{ message: { content: 'I cannot reach the web here.' } }] }) }]);
   const env = { ...BASE_ENV, OPENAI_API_KEY: 'k' }; // openai + no WEB_SEARCH_URL → unavailable
-  const res = await runTaskViaProvider({ task: { role: 'researcher' }, run: RUN, model: 'openai/gpt-4o-mini', provider: 'openai', env, fetchImpl });
+  const res = await runTaskViaProvider({ task: { workerProfileId: 'researcher' }, run: RUN, model: 'openai/gpt-4o-mini', provider: 'openai', env, fetchImpl });
 
   assert.equal(res.webCapability, 'unavailable');
   const body = fetchImpl.calls[0].body;
@@ -154,13 +154,13 @@ test('[round cap] governed loop terminates at the cap with a tools-less final an
     { match: 'search.example', reply: () => ({ results: [{ url: 'https://ex.com/c', title: 'C' }] }) },
   ]);
   const env = { ...BASE_ENV, ANTHROPIC_API_KEY: 'k', WEB_SEARCH_URL: 'https://search.example/api', CONSTRUCT_WORKER_TOOL_ROUNDS: '2' };
-  const res = await runTaskViaProvider({ task: { role: 'researcher' }, run: RUN, model: 'claude-opus-4-8', provider: 'anthropic', env, fetchImpl });
+  const res = await runTaskViaProvider({ task: { workerProfileId: 'researcher' }, run: RUN, model: 'claude-opus-4-8', provider: 'anthropic', env, fetchImpl });
 
   assert.equal(res.output, 'Capped answer.');
   assert.equal(res.webCalls, 2, 'exactly the capped number of tool executions');
 });
 
-// construct-5wkl AC#5/AC#7: a citation the specialist writes into its final
+// construct-5wkl AC#5/AC#7: a citation the Worker Profile writes into its final
 // answer that never appeared in its own governed webEvidence is unverified —
 // fabricated, or drawn from ungoverned model memory rather than the retrieval
 // Construct actually observed and trust-labeled.
@@ -174,7 +174,7 @@ test('[evidence grounding] a citation absent from governed webEvidence is downgr
     { match: 'search.example', reply: () => ({ results: [{ url: 'https://ex.com/b', title: 'B' }] }) },
   ]);
   const env = { ...BASE_ENV, OPENROUTER_API_KEY: 'k', WEB_SEARCH_URL: 'https://search.example/api' };
-  const res = await runTaskViaProvider({ task: { role: 'researcher' }, run: RUN, model: 'openrouter/qwen/qwen3-coder:free', provider: 'openrouter', env, fetchImpl });
+  const res = await runTaskViaProvider({ task: { workerProfileId: 'researcher' }, run: RUN, model: 'openrouter/qwen/qwen3-coder:free', provider: 'openrouter', env, fetchImpl });
 
   assert.equal(res.evidenceStatus, 'unverified-citations');
   assert.deepEqual(res.unverifiedCitations, ['https://fabricated-source.example/nope']);
@@ -189,7 +189,7 @@ test('[evidence grounding] every citation tracing to governed webEvidence carrie
     { match: 'search.example', reply: () => ({ results: [{ url: 'https://ex.com/b', title: 'B' }] }) },
   ]);
   const env = { ...BASE_ENV, OPENROUTER_API_KEY: 'k', WEB_SEARCH_URL: 'https://search.example/api' };
-  const res = await runTaskViaProvider({ task: { role: 'researcher' }, run: RUN, model: 'openrouter/qwen/qwen3-coder:free', provider: 'openrouter', env, fetchImpl });
+  const res = await runTaskViaProvider({ task: { workerProfileId: 'researcher' }, run: RUN, model: 'openrouter/qwen/qwen3-coder:free', provider: 'openrouter', env, fetchImpl });
 
   assert.equal(res.evidenceStatus, undefined);
   assert.equal(res.unverifiedCitations, undefined);

@@ -1,0 +1,14 @@
+{
+  "id": "commit-approval",
+  "ownerWorkerProfile": "orchestrator",
+  "description": "Requires explicit user confirmation before any git commit or push. Enforced at the conversation level.",
+  "enforcement": "(worker-profile prompt)",
+  "mode": "honor-system",
+  "approvalWorkerProfiles": [],
+  "requiredPolicies": [],
+  "vetoWorkerProfiles": [],
+  "escalationWorkerProfiles": [],
+  "governs": [],
+  "conditions": [],
+  "evidence": []
+}

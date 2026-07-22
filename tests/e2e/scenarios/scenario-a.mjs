@@ -9,7 +9,7 @@
  * and `construct ask` is RAG over the knowledge corpus, not persona dispatch.
  * With no Construct-managed model credential in the env, the executor does not
  * fabricate an artifact — it records the dispatch mechanism and leaves the ADR
- * body to be produced by the host driving real cx-architect / cx-reviewer
+ * body to be produced by the host driving real architect / reviewer
  * subagents, then validates whatever artifact lands. The tier result carries a
  * `requiresHostDispatch` flag so the runner reports the mechanism honestly.
  */

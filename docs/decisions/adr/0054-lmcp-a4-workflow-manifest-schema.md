@@ -3,6 +3,8 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 -->
 # ADR-0054: LMCP-A4 — Workflow manifest schema and workflow-defs normalization
 
+> **Current surface (Construct 2.0):** Operator-facing "workflows" are **Procedures** under `registry/procedures/`, invoked via `construct procedure` / MCP `procedure_invoke`. Paths `.cx/workflows/`, CLI `construct workflow`, and MCP `workflow_invoke` are retired. This ADR's manifest-schema decision remains historical/architectural context for catalog shape — not a runbook for `workflow-defs.mjs` hand-edits. See `docs/obsolete/legacy-surface-register.md`.
+
 - **Date**: 2026-07-03
 - **Status**: accepted
 - **Deciders**: Gerald Dagher (owner), Construct maintainers (cx-architect)

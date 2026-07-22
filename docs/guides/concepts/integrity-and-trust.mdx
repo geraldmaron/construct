@@ -11,12 +11,12 @@ This page explains the four-layer system that enforces it.
   { label: 'Canonical rule', badge: 'Layer 1', sub: 'rules/common/no-fabrication.md' },
   { label: 'Artifact-prose lint', badge: 'Layer 2', sub: 'lib/comment-lint.mjs' },
   { label: 'Intake traceability', badge: 'Layer 3', sub: 'intake_id in frontmatter' },
-  { label: 'Contract postconditions', badge: 'Layer 4', sub: 'specialists/contracts.json' },
+  { label: 'Capability postconditions', badge: 'Layer 4', sub: 'registry/capabilities.json postconditions' },
 ]} />
 
 ## Layer 1: The canonical rule
 
-`rules/common/no-fabrication.md` is the policy every specialist reads. The short version:
+`rules/common/no-fabrication.md` is the policy every Worker Profile reads. The short version:
 
 - Every load-bearing claim traces to a source. Cite with `[source: path#anchor]`, `[source: intake-<id>]`, or a fetched URL.
 - When a fact isn't in the source, write `unknown` or `[unverified]`. Don't paper over a gap with confident prose.
@@ -70,7 +70,7 @@ intake: none
 
 ## Layer 4: Contract postconditions
 
-`specialists/contracts.json` carries machine-checkable postconditions on the researcher-to-product-manager and product-manager-to-architect handoffs. These are the highest-leverage points: they're where intake-derived signals become committed artifacts.
+`registry/capabilities.json` carries machine-checkable postconditions on high-leverage Assignment handoffs (for example researcher→product-manager and product-manager→architect). These are where intake-derived signals become committed artifacts.
 
 Three check kinds:
 
@@ -87,7 +87,7 @@ Three check kinds:
 Fabrication in an agent system is insidious because it compounds. A fabricated customer quote in an intake summary becomes an assumed requirement in a PRD, becomes a design constraint in an ADR, becomes shipped behavior. The four layers above are designed to break that chain early:
 
 - The rule sets expectations before the work starts.
-- Lint catches violations in real time, while the specialist is still writing.
+- Lint catches violations in real time, while the Worker Profile is still writing.
 - Traceability makes every artifact's origin queryable.
 - Postconditions verify structure before a handoff crosses a phase boundary.
 

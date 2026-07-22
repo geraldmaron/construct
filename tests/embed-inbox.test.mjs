@@ -2,7 +2,7 @@
  * tests/embed-inbox.test.mjs — InboxWatcher unit tests.
  *
  * Single-zone model (ADR-0045 §C): the only drop zone is the project-root
- * `inbox/`, always watched. There is no `.cx/inbox/` or `docs/intake/` zone.
+ * `inbox/`, always watched. There is no `.construct/inbox/` or `docs/intake/` zone.
  * The `inbox/.staging/` assembly dir and dotfiles are never consumed, so a
  * half-written drop stays invisible until it lands at a top-level name.
  */
@@ -15,19 +15,19 @@ import { tmpdir } from 'node:os';
 import { InboxWatcher, resolveInboxDirs } from '../lib/embed/inbox.mjs';
 
 // InboxWatcher.poll() resolves its state file through the machine-scoped
-// state root (ADR-0066), which reads CX_HOME_OVERRIDE from real process.env
+// state root (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE from real process.env
 // directly — the `env` constructor option above is a plain options bag, not
 // process.env, so it never isolates that write. Pin it for the whole file so
 // polling never writes into the real developer machine's ~/.construct/projects/.
 
 const homeOverride = join(tmpdir(), `construct-inbox-home-${Date.now()}-${Math.random().toString(36).slice(2)}`);
 mkdirSync(homeOverride, { recursive: true });
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 after(() => {
   try { rmSync(homeOverride, { recursive: true, force: true }); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 function makeTmpDir() {
@@ -59,13 +59,13 @@ describe('resolveInboxDirs', () => {
     }
   });
 
-  it('never watches .cx/inbox/ even when it holds entries (zone removed)', () => {
+  it('never watches .construct/inbox/ even when it holds entries (zone removed)', () => {
     const root = makeTmpDir();
     try {
-      mkdirSync(join(root, '.cx', 'inbox'), { recursive: true });
-      writeFileSync(join(root, '.cx', 'inbox', 'stranded.md'), '# stranded drop');
+      mkdirSync(join(root, '.construct', 'inbox'), { recursive: true });
+      writeFileSync(join(root, '.construct', 'inbox', 'stranded.md'), '# stranded drop');
       const dirs = resolveInboxDirs(root, {});
-      assert.ok(!dirs.some((d) => d.endsWith(join('.cx', 'inbox'))), '.cx/inbox/ is not a zone');
+      assert.ok(!dirs.some((d) => d.endsWith(join('.construct', 'inbox'))), '.construct/inbox/ is not a zone');
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
@@ -82,11 +82,11 @@ describe('resolveInboxDirs', () => {
     }
   });
 
-  it('includes extra dirs from CX_INBOX_DIRS', () => {
+  it('includes extra dirs from CONSTRUCT_INBOX_DIRS', () => {
     const root = makeTmpDir();
     const extra = makeTmpDir();
     try {
-      const dirs = resolveInboxDirs(root, { CX_INBOX_DIRS: extra });
+      const dirs = resolveInboxDirs(root, { CONSTRUCT_INBOX_DIRS: extra });
       assert.ok(dirs.includes(extra));
     } finally {
       rmSync(root, { recursive: true, force: true });
@@ -94,10 +94,10 @@ describe('resolveInboxDirs', () => {
     }
   });
 
-  it('ignores non-existent paths in CX_INBOX_DIRS', () => {
+  it('ignores non-existent paths in CONSTRUCT_INBOX_DIRS', () => {
     const root = makeTmpDir();
     try {
-      const dirs = resolveInboxDirs(root, { CX_INBOX_DIRS: '/does/not/exist' });
+      const dirs = resolveInboxDirs(root, { CONSTRUCT_INBOX_DIRS: '/does/not/exist' });
       assert.ok(!dirs.includes('/does/not/exist'));
     } finally {
       rmSync(root, { recursive: true, force: true });
@@ -155,13 +155,13 @@ describe('InboxWatcher', () => {
     }
   });
 
-  it('ingests files from CX_INBOX_DIRS extra paths', async () => {
+  it('ingests files from CONSTRUCT_INBOX_DIRS extra paths', async () => {
     const root = makeTmpDir();
     const extra = makeTmpDir();
     try {
       writeFileSync(join(extra, 'adr-001.md'), '# ADR-001\n\nDecision: use event sourcing for audit log.');
 
-      const watcher = new InboxWatcher({ rootDir: root, env: { CX_INBOX_DIRS: extra }, cwd: root });
+      const watcher = new InboxWatcher({ rootDir: root, env: { CONSTRUCT_INBOX_DIRS: extra }, cwd: root });
       const result = await watcher.poll();
 
       assert.equal(result.processed.length, 1);

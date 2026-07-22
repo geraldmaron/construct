@@ -28,22 +28,22 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 // Trace reads resolve through the machine-scoped state root (ADR-0066) via
-// process.env.CX_HOME_OVERRIDE directly, not through the `env` option passed
-// to runOrchestration below, so CX_HOME_OVERRIDE is pinned for the whole file
+// process.env.CONSTRUCT_HOME_OVERRIDE directly, not through the `env` option passed
+// to runOrchestration below, so CONSTRUCT_HOME_OVERRIDE is pinned for the whole file
 // to keep trace writes off the real developer machine's $HOME.
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-run-events-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 test.after(() => {
   try { rmTmpDir(homeOverride); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 function tmpProject() {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-run-events-'));
-  fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
   return cwd;
 }
 
@@ -64,28 +64,28 @@ function readTraceCompletedEvents(cwd) {
 function degradedEnv() {
   return {
     ...process.env,
-    CX_TOOLKIT_DIR: REPO_ROOT,
+    CONSTRUCT_TOOLKIT_DIR: REPO_ROOT,
     HOME: REPO_ROOT,
     USERPROFILE: REPO_ROOT,
     OPENROUTER_API_KEY: '',
     ANTHROPIC_API_KEY: '',
-    CX_MODEL_REASONING: '',
-    CX_MODEL_STANDARD: '',
-    CX_MODEL_FAST: '',
+    CONSTRUCT_MODEL_REASONING: '',
+    CONSTRUCT_MODEL_STANDARD: '',
+    CONSTRUCT_MODEL_FAST: '',
   };
 }
 
 function preparedEnv() {
   return {
     ...process.env,
-    CX_TOOLKIT_DIR: REPO_ROOT,
+    CONSTRUCT_TOOLKIT_DIR: REPO_ROOT,
     HOME: REPO_ROOT,
     USERPROFILE: REPO_ROOT,
     OPENROUTER_API_KEY: '',
     ANTHROPIC_API_KEY: '',
-    CX_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
-    CX_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6',
-    CX_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
+    CONSTRUCT_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
+    CONSTRUCT_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6',
+    CONSTRUCT_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
   };
 }
 

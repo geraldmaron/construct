@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 2,
+  "workerProfileId": "engineer",
+  "capabilityId": "worker-profile.prompt",
+  "mode": "normal",
+  "scenarioKind": "ambiguous",
+  "representativeTask": {
+    "prompt": "Clean up the error handling in the API layer.",
+    "inputs": {}
+  },
+  "expectedBehavior": {
+    "mustContainAny": ["which", "existing pattern", "clarify", "assumption", "scope"],
+    "mustNotContain": [],
+    "mustRefuse": false,
+    "mustEscalateTo": [],
+    "mustStateAssumptions": true
+  }
+}

@@ -4,7 +4,7 @@ description: Create structured documents from templates, stamp intake provenance
 ---
 
 Construct supports every document class registered in
-`specialists/artifact-manifest.json`, including PRDs, ADRs, RFCs, memos,
+`registry/artifact-manifest.json`, including PRDs, ADRs, RFCs, memos,
 runbooks, research briefs, and project-specific registered classes. Use
 `construct artifact workflow` when the request includes review, rewriting,
 validation, branding, or a distribution format; unknown classes ask for
@@ -30,17 +30,17 @@ with `README.md` indices and starter templates under each lane's `templates/` di
 
 ## Generate a class the builtin manifest never registered
 
-The builtin `specialists/artifact-manifest.json` stays the shipped source of truth and is never modified. To generate a document class it doesn't list, either register it or use the sanctioned `adhoc` type.
+The builtin `registry/artifact-manifest.json` stays the shipped source of truth and is never modified. To generate a document class it doesn't list, either register it or use the sanctioned `adhoc` type.
 
 Register a reusable custom class (writes a project template plus a project-tier manifest overlay):
 
 ```bash
 construct templates register convergence-brief \
   --description "Cross-project strategy convergence brief" \
-  [--from .cx/templates/docs/convergence-brief.md]
+  [--from .construct/templates/docs/convergence-brief.md]
 ```
 
-This writes `.cx/templates/docs/convergence-brief.md` and adds the class to `.cx/artifact-manifest.overlay.json`, which merges over the builtin by three tiers (builtin → user → project). Afterward `get_template("convergence-brief")` resolves the project override and `author_artifact {type:"convergence-brief", ...}` drafts from it through the release gate.
+This writes `.construct/templates/docs/convergence-brief.md` and adds the class to `.construct/artifact-manifest.overlay.json`, which merges over the builtin by three tiers (builtin → user → project). Afterward `get_template("convergence-brief")` resolves the project override and `author_artifact {type:"convergence-brief", ...}` drafts from it through the release gate.
 
 For a one-off with no fixed shape, skip registration and author an `adhoc` artifact — it needs an explicit `title` + `instructions`, follows the instructions for structure, and still passes the full gate:
 
@@ -92,7 +92,7 @@ intake: none
 
 ## Publish after validate passes
 
-Distribution is the last step. Specialists author from templates; **`construct workflow invoke` returns a plan only** — it does not draft the document.
+Distribution is the last step. Worker Profiles author from templates; **`construct procedure invoke` returns a plan only** — it does not draft the document.
 
 ```bash
 construct artifact validate docs/specs/prd/my-feature.md --type=prd

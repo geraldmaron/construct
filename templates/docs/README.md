@@ -1,8 +1,8 @@
 # Doc Templates & Role Anti-Patterns
 
-See `../prompt-surfaces.md` for the canonical public-vs-internal prompt surface model. This document covers only templates and internal role overlays.
+See [prompt surfaces](../../docs/guides/concepts/prompt-surfaces.mdx) for the canonical public-vs-internal prompt surface model. This document covers only templates and internal perspectives.
 
-Construct specialists produce standard documents (PRDs, ADRs, runbooks, memos, etc.) from shared templates, and they self-check against shared role anti-patterns. Both can be overridden per-project.
+Construct Worker Profiles produce standard documents (PRDs, ADRs, runbooks, memos, etc.) from shared templates, and they self-check against shared perspective anti-patterns. Both can be overridden per-project.
 
 ## Templates
 
@@ -10,32 +10,34 @@ Shipped templates live in [`templates/docs/`](../../templates/docs/):
 
 | Layer | Path | Purpose |
 |---|---|---|
-| Specialist source | `templates/docs/{name}.md` | Canonical shape for `get_template()` MCP |
+| Shipped default | `templates/docs/{name}.md` | Canonical shape for `get_template()` MCP |
 | Init lane starters | `docs/{lane}/templates/` | Copied into downstream projects by `construct init --docs-preset=*` |
 | Project override | `.construct/templates/docs/{name}.md` | Per-project template override at fetch time |
 
 Do not duplicate starters at `docs/{lane}/_template.md` — lane READMEs link only to `./templates/`.
 
-| Template | Produced by | Purpose |
+| Template | Author Worker Profile | Purpose |
 |---|---|---|
-| `prd.md` | cx-product-manager | Product requirements doc |
-| `meta-prd.md` | cx-product-manager, cx-docs-keeper | Requirements for product operating systems, agent workflows, document standards, and evaluation loops |
-| `prfaq.md` | cx-product-manager, cx-business-strategist | Working-backwards press release and FAQ |
-| `evidence-brief.md` | cx-product-manager, cx-ux-researcher, cx-researcher | Product evidence synthesis before decisions |
-| `signal-brief.md` | cx-product-manager, cx-researcher | Weak or emerging product signal preservation |
-| `customer-profile.md` | cx-product-manager, cx-docs-keeper | Durable customer/account product memory |
-| `product-intelligence-report.md` | cx-product-manager, cx-business-strategist | Cross-source product intelligence synthesis |
-| `backlog-proposal.md` | cx-product-manager | Approval-gated external tracker proposal |
-| `memo.md` | cx-business-strategist | Strategy memo (~1 page) |
-| `one-pager.md` | cx-product-manager, cx-business-strategist | Executive one-pager |
-| `adr.md` | cx-architect, cx-rd-lead | Architecture decision record |
-| `research-brief.md` | cx-researcher, cx-ux-researcher, cx-explorer | Research findings |
-| `runbook.md` | cx-sre, cx-operations | Operational runbook |
-| `incident-report.md` | cx-sre, cx-operations, cx-release-manager | Post-mortem |
+| `prd.md` | product-manager | Product requirements doc |
+| `meta-prd.md` | product-manager, operations | Requirements for product operating systems, agent workflows, document standards, and evaluation loops |
+| `prfaq.md` | product-manager | Working-backwards press release and FAQ |
+| `evidence-brief.md` | product-manager, researcher | Product evidence synthesis before decisions |
+| `signal-brief.md` | researcher, product-manager | Weak or emerging product signal preservation |
+| `customer-profile.md` | product-manager, operations | Durable customer/account product memory |
+| `product-intelligence-report.md` | product-manager | Cross-source product intelligence synthesis |
+| `backlog-proposal.md` | product-manager | Approval-gated external tracker proposal |
+| `memo.md` | operations, product-manager | Strategy memo (~1 page) |
+| `one-pager.md` | product-manager | Executive one-pager |
+| `adr.md` | architect | Architecture decision record |
+| `research-brief.md` | researcher | Research findings |
+| `runbook.md` | operations | Operational runbook |
+| `incident-report.md` | operations | Post-mortem |
 
-### How specialists use them
+Author Worker Profile ids match `registry/worker-profiles/` (12 builtin profiles) and `registry/artifact-manifest.json` `primaryOwners`. Run `construct worker-profile list` to inspect the live roster.
 
-Each specialist prompt points to the template via an MCP call:
+### How Worker Profiles use them
+
+Each Worker Profile prompt points to the template via an MCP call:
 
 ```markdown
 **Template**: call `get_template("prd")` when drafting a product PRD, or `get_template("meta-prd")` when drafting a Meta PRD, ...
@@ -50,7 +52,7 @@ Use `list_templates` to see both shipped and overridden names.
 
 ### Overriding a template
 
-Drop a file at `.construct/templates/docs/{name}.md` inside your project. That's it: next time a specialist drafts that doc type, they'll pick up your version. No sync, no restart.
+Drop a file at `.construct/templates/docs/{name}.md` inside your project. That's it: next time a Worker Profile drafts that doc type, they'll pick up your version. No sync, no restart.
 
 Example: reshape the PRD to lead with success metrics:
 
@@ -64,7 +66,7 @@ Ask Construct for a PRD; it'll follow the new shape.
 
 ### Registering a new document class
 
-Overriding a template reshapes an *existing* class. To generate a class the builtin manifest never registered, register it — this writes the template plus a project-tier manifest overlay, and never touches the builtin `specialists/artifact-manifest.json`:
+Overriding a template reshapes an *existing* class. To generate a class the builtin manifest never registered, register it — this writes the template plus a project-tier manifest overlay, and never touches the builtin `registry/artifact-manifest.json`:
 
 ```bash
 construct templates register convergence-brief \
@@ -86,48 +88,48 @@ author_artifact {type:"adhoc", title:"Q3 strategy convergence", instructions:"..
 
 ## Role Anti-Patterns
 
-Each specialist is cognitively rooted in a **role** (product-manager, engineer, architect, etc.) with a core set of failure modes to avoid. Flavored specialists extend the core with an overlay.
+Each Worker Profile is cognitively rooted in a **perspective core** (`architect`, `engineer`, `operations`, …) with a core set of failure modes to avoid. Flavor overlays extend a core when routing needs extra emphasis.
 
-Core roles live in [`skills/roles/`](../../skills/roles/):
+Core perspectives and flavors live in [`skills/perspectives/`](../../skills/perspectives/). Each of the 12 builtin Worker Profiles in `registry/worker-profiles/` maps to one core perspective; flavors are optional overlays referenced from prompt policy, not separate Worker Profile ids.
 
-| Core role | Flavors | Applied to |
+| Core perspective | Flavors (when present) | Worker Profile ids (`applies_to`) |
 |---|---|---|
-| `engineer` | `engineer.ai`, `engineer.data`, `engineer.platform` | cx-engineer, cx-ai-engineer, cx-data-engineer, cx-platform-engineer |
-| `reviewer` | `reviewer.devil-advocate`, `reviewer.evaluator`, `reviewer.trace` | cx-reviewer, cx-devil-advocate, cx-evaluator, cx-trace-reviewer |
-| `researcher` | `researcher.ux`, `researcher.explorer` | cx-researcher, cx-ux-researcher, cx-explorer |
-| `operator` | `operator.sre`, `operator.release`, `operator.docs` | cx-sre, cx-release-manager, cx-operations, cx-docs-keeper |
-| `product-manager` | `product-manager.product`, `product-manager.platform`, `product-manager.enterprise`, `product-manager.ai-product`, `product-manager.growth`, `product-manager.business-strategy` | cx-product-manager, cx-business-strategist |
-| `designer` | `designer.accessibility` | cx-designer, cx-accessibility |
-| `security` | `security.legal-compliance` | cx-security, cx-legal-compliance |
-| `qa` | `qa.test-automation` | cx-qa, cx-test-automation |
-| `architect` |: | cx-architect, cx-rd-lead |
-| `debugger` |: | cx-debugger |
-| `data-analyst` |: | cx-data-analyst |
-| `orchestrator` |: | cx-orchestrator |
+| `architect` | `architect.ai-systems`, `architect.data`, `architect.enterprise`, `architect.integration`, `architect.platform` | architect |
+| `data-analyst` | `data-analyst.experiment`, `data-analyst.product`, `data-analyst.product-intelligence`, `data-analyst.telemetry` | data-analyst; `product-manager` (`product-intelligence`); `operations` (`telemetry`) |
+| `debugger` | — | debugger |
+| `designer` | `designer.accessibility` | designer |
+| `engineer` | — | engineer |
+| `operations` | — | operations |
+| `orchestrator` | — | orchestrator |
+| `product-manager` | `product-manager.ai-product`, `product-manager.enterprise`, `product-manager.growth`, `product-manager.platform`, `product-manager.product` | product-manager |
+| `qa` | `qa.ai-eval`, `qa.api-contract`, `qa.data-pipeline`, `qa.web-ui` | qa; `reviewer` (`qa.ai-eval`) |
+| `researcher` | — | researcher |
+| `reviewer` | `devil-advocate`, `trace-reviewer` | reviewer |
+| `security` | `security.ai`, `security.appsec`, `security.cloud`, `security.legal-compliance`, `security.privacy`, `security.supply-chain` | security; `engineer` (`security.ai`, `security.supply-chain`) |
 
 ### How they're loaded
 
-Unlike templates, role anti-patterns are **inlined at sync time** (not fetched at runtime). The specialist source prompt carries a marker:
+Unlike templates, perspective anti-patterns are **inlined at sync time** (not fetched at runtime). The Worker Profile source prompt carries a marker:
 
 ```markdown
-**Anti-patterns**: call `get_skill("roles/engineer.ai")` before drafting.
+**Anti-patterns**: call `get_skill("perspectives/architect.platform")` before drafting.
 ```
 
 `construct sync` (via [`lib/role-preload.mjs`](../../lib/role-preload.mjs)) replaces that line with the full core role body + flavor overlay under `## Role anti-patterns`. The content is always present in the final platform prompt: no runtime dependency, no chance for the model to skip the pre-work.
 
 ### Editing or adding roles
 
-- **Edit a role**: change the file under `skills/roles/`, then run `construct sync` to propagate to all platforms.
-- **Add a flavor**: create `skills/roles/{core}.{flavor}.md` with YAML frontmatter:
+- **Edit a role**: change the file under `skills/perspectives/`, then run `construct sync` to propagate to all platforms.
+- **Add a flavor**: create `skills/perspectives/{core}.{flavor}.md` with YAML frontmatter:
   ```yaml
   ---
   role: {core}.{flavor}
-  applies_to: [cx-...]
+  applies_to: [worker-profile-id]
   inherits: {core}
   version: 1
   ---
   ```
-  Update the corresponding `cx-*.md` source prompt to reference the new flavor name, then `construct sync`.
+  Update the corresponding Worker Profile source prompt to reference the new flavor name, then `construct sync`.
 - **No project-level override for roles** today: roles are platform-wide and curated. If you need per-project role overrides, open a request.
 
 ## Verification
@@ -143,5 +145,5 @@ construct doctor         # health check
 Spot-check propagation:
 
 ```bash
-grep -l "## Role anti-patterns" ~/.claude/agents/cx-*.md
+grep -l "## Role anti-patterns" ~/.claude/agents/*.md
 ```

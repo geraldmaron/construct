@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://geraldmaron.github.io/construct/schemas/workspace-preset.schema.json",
+  "title": "Construct Workspace Preset",
+  "description": "Reusable workspace-wide intake, artifact, skill, procedure, tone, and hook defaults.",
+  "type": "object",
+  "required": ["id", "displayName", "skills", "procedures", "intake", "artifactClasses"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,30}$" },
+    "displayName": { "type": "string", "minLength": 1, "maxLength": 60 },
+    "tagline": { "type": "string", "maxLength": 160 },
+    "skills": { "type": "array", "items": { "type": "string" } },
+    "procedures": { "type": "array", "items": { "type": "string" } },
+    "artifactClasses": { "type": "array", "items": { "type": "string" } },
+    "intake": {
+      "type": "object",
+      "required": ["types", "stages"],
+      "additionalProperties": false,
+      "properties": {
+        "types": { "type": "array", "items": { "type": "string" } },
+        "stages": { "type": "array", "items": { "type": "string" } },
+        "classificationTable": { "type": ["string", "null"] }
+      }
+    },
+    "hooks": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sessionReflect": { "type": "string", "enum": ["on", "off"] },
+        "sessionOptimize": { "type": "string", "enum": ["on", "off"] }
+      }
+    },
+    "toneDefaults": { "type": "object", "additionalProperties": { "type": "string" } },
+    "researchProfiles": { "type": "object", "additionalProperties": { "type": "string", "enum": ["external", "user", "codebase", "market", "compliance"] } },
+    "rebrand": { "type": "object", "additionalProperties": true },
+    "capabilities": { "type": "object", "additionalProperties": true },
+    "experimental": { "type": "boolean" }
+  }
+}

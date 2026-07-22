@@ -1,7 +1,7 @@
 # Architecture Review: {system-or-component}
 
 - **Date**: {YYYY-MM-DD}
-- **Reviewer**: cx-architect (or named human)
+- **Reviewer**: architect (or named human)
 - **Subject**: {existing design / proposed change / PR}
 - **Related**: {ADR, RFC, PRD ids — link the design this review evaluates}
 - **Verdict**: APPROVE | APPROVE_WITH_CONDITIONS | REJECT | NEEDS_REVISION
@@ -54,6 +54,6 @@ X and Y in a way that prevents Z" is.
 
 ## Handoff
 
-- changes to implement → `next:cx-engineer` or `next:cx-platform-engineer`
-- ADR follow-up → `next:cx-architect` (capture the decision)
-- security re-review → `next:cx-security`
+- changes to implement → `next:engineer`
+- ADR follow-up → `next:architect` (capture the decision)
+- security re-review → `next:security`

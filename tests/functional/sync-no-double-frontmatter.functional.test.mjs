@@ -2,15 +2,15 @@
  * tests/functional/sync-no-double-frontmatter.functional.test.mjs
  *
  * End-to-end coverage for the sync-frontmatter regression class. Spawns the
- * real `scripts/sync-specialists.mjs` ONCE in --global mode against an
+ * real `scripts/sync-worker-profiles.mjs` ONCE in --global mode against an
  * isolated HOME and ONCE in --project mode against a tmp project root, then
  * runs every assertion against the resulting trees. Asserts:
  *   - Every emitted SKILL.md (under <project>/.claude/skills/) starts with
  *     Anthropic Agent Skills frontmatter (name + description) and carries no
  *     Construct doc-stamp keys.
- *   - Every emitted Claude Code agent (in both ~/.claude/agents/ and
- *     <project>/.claude/agents/) and Copilot prompt has exactly ONE
- *     frontmatter block (was: doc-stamp on top, real frontmatter underneath).
+ *   - Every emitted Claude Code agent and Copilot prompt has exactly one
+ *     leading host-adapter frontmatter block. Construct 2.0 Worker Profile
+ *     metadata embedded later in the prompt remains valid prompt content.
  *   - The user-managed ~/.claude/CLAUDE.md and ~/.github/copilot-instructions.md
  *     do not carry a doc-stamp prefix.
  *   - Codex .toml output is untouched (regression guard — TOML never stamped).
@@ -27,16 +27,17 @@ import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import test, { before, after } from 'node:test';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
+import { sterileSpawnEnv } from '../helpers/sterile-env.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const SYNC_SCRIPT = join(REPO_ROOT, 'scripts', 'sync-specialists.mjs');
+const SYNC_SCRIPT = join(REPO_ROOT, 'scripts', 'sync-worker-profiles.mjs');
 
 // `construct sync` now defaults to detected hosts (ADR-0027 §1); a sterile HOME
 // detects none, so pin the full set to exercise every adapter writer.
 
 const ALL_HOSTS = 'claude,codex,copilot,opencode,vscode,cursor';
 
-const DOC_STAMP_KEYS = ['cx_doc_id', 'body_hash', 'generator: construct/sync-specialists'];
+const DOC_STAMP_KEYS = ['cx_doc_id', 'body_hash', 'generator: construct/sync-worker-profiles'];
 
 let SHARED_HOME;
 let SHARED_PROJECT;
@@ -51,13 +52,21 @@ before(() => {
     cwd: REPO_ROOT,
     encoding: 'utf8',
     timeout: 120_000,
-    env: { ...process.env, HOME: SHARED_HOME, CONSTRUCT_SYNC_HOSTS: ALL_HOSTS },
+    env: sterileSpawnEnv({
+      HOME: SHARED_HOME,
+      CONSTRUCT_HOME_OVERRIDE: SHARED_HOME,
+      CONSTRUCT_SYNC_HOSTS: ALL_HOSTS,
+    }),
   });
   PROJECT_RESULT = spawnSync(process.execPath, [SYNC_SCRIPT, '--project'], {
     cwd: SHARED_PROJECT,
     encoding: 'utf8',
     timeout: 120_000,
-    env: { ...process.env, HOME: SHARED_HOME, CONSTRUCT_SYNC_HOSTS: ALL_HOSTS },
+    env: sterileSpawnEnv({
+      HOME: SHARED_HOME,
+      CONSTRUCT_HOME_OVERRIDE: SHARED_HOME,
+      CONSTRUCT_SYNC_HOSTS: ALL_HOSTS,
+    }),
   });
 });
 
@@ -77,8 +86,12 @@ function walk(dir, predicate) {
   return out;
 }
 
-function countFrontmatterFences(content) {
-  return (content.match(/^---\s*$/gm) || []).length;
+function assertSingleLeadingHostFrontmatter(content, filePath) {
+  const leading = content.match(/^---\n([\s\S]*?)\n---\n/);
+  assert.ok(leading, `${filePath}: must start with host frontmatter`);
+  assert.match(leading[1], /^(?:name:\s*\S+|mode:\s*agent)$/m, `${filePath}: host frontmatter must identify an agent surface`);
+  assert.match(leading[1], /^description:\s*\S+/m, `${filePath}: host frontmatter must describe the adapter`);
+  assert.doesNotMatch(content.slice(leading[0].length), /^---\n/, `${filePath}: must not have a second adjacent leading frontmatter block`);
 }
 
 function assertNoDocStamp(filePath, label) {
@@ -110,7 +123,7 @@ test('sync emits Anthropic Agent Skills frontmatter on every SKILL.md (regressio
   assert.ok(files.length >= 100, `expected ≥100 SKILL.md files in project, got ${files.length}`);
 });
 
-test('sync produces exactly one frontmatter block per Claude Code agent and Copilot prompt (global + project)', () => {
+test('sync produces one leading host frontmatter block per Claude Code agent and Copilot prompt', () => {
   // Global ~/.claude/agents ships no agent (front door is project-scoped), so
   // the Claude agent check runs against the project scope only.
   const agentDirs = [
@@ -121,8 +134,8 @@ test('sync produces exactly one frontmatter block per Claude Code agent and Copi
     assert.ok(agentFiles.length > 0, `expected Claude agent files under ${dir}`);
     for (const file of agentFiles) {
       const content = readFileSync(file, 'utf8');
-      const fences = countFrontmatterFences(content);
-      assert.equal(fences, 2, `${file}: must have exactly one frontmatter block (got ${fences} fences)`);
+      assertSingleLeadingHostFrontmatter(content, file);
+      assert.match(content, /workerProfileId:\s*orchestrator/, `${file}: embedded Worker Profile metadata must survive`);
       assertNoDocStamp(file, 'Claude agent');
     }
   }
@@ -136,8 +149,8 @@ test('sync produces exactly one frontmatter block per Claude Code agent and Copi
     assert.ok(promptFiles.length > 0, `expected Copilot prompt files under ${dir}`);
     for (const file of promptFiles) {
       const content = readFileSync(file, 'utf8');
-      const fences = countFrontmatterFences(content);
-      assert.equal(fences, 2, `${file}: must have exactly one frontmatter block (got ${fences} fences)`);
+      assertSingleLeadingHostFrontmatter(content, file);
+      assert.match(content, /workerProfileId:\s*orchestrator/, `${file}: embedded Worker Profile metadata must survive`);
       assertNoDocStamp(file, 'Copilot prompt');
     }
   }

@@ -70,7 +70,7 @@ describe('collectOracleGaps verdict-only and actionable classification', () => {
       verdict: 'degraded',
       gaps: [
         { id: 'impact-untested', severity: 'high', detail: 'Changed capabilities lack test' },
-        { id: 'specialist-review', severity: 'high', detail: 'Manual review needed' },
+        { id: 'worker-profile-review', severity: 'high', detail: 'Manual review needed' },
       ],
     };
     writeVerdict(projectDir, verdict);
@@ -121,8 +121,8 @@ describe('collectOracleGaps verdict-only and actionable classification', () => {
       gaps: [
         { id: 'beads-hygiene', severity: 'high', detail: 'Verdict-only' },
         { id: 'impact-untested', severity: 'high', detail: 'Actionable' },
-        { id: 'team-understaffed', severity: 'high', detail: 'Verdict-only' },
-        { id: 'specialist-review', severity: 'low', detail: 'Below threshold' },
+        { id: 'workflow-misaligned', severity: 'high', detail: 'Verdict-only' },
+        { id: 'worker-profile-review', severity: 'low', detail: 'Below threshold' },
       ],
     };
     writeVerdict(projectDir, verdict);
@@ -173,7 +173,7 @@ describe('formatOracleGapsReport output formatting', () => {
       verdict: 'degraded',
       gaps: [
         { id: 'impact-untested', severity: 'medium', detail: 'Medium severity' },
-        { id: 'specialist-review', severity: 'low', detail: 'Low severity' },
+        { id: 'worker-profile-review', severity: 'low', detail: 'Low severity' },
       ],
       verdictOnly: [],
       actionable: [],
@@ -236,8 +236,8 @@ describe('collectOracleGaps impact-untested edge cases', () => {
 
   it('treats null/undefined gaps as empty', () => {
     const projectDir = freshProjectDir();
-    fs.mkdirSync(path.join(projectDir, '.cx', 'oracle', 'verdicts'), { recursive: true });
-    const file = path.join(projectDir, '.cx', 'oracle', 'verdicts', '2026-01-01.json');
+    fs.mkdirSync(path.join(projectDir, '.construct', 'oracle', 'verdicts'), { recursive: true });
+    const file = path.join(projectDir, '.construct', 'oracle', 'verdicts', '2026-01-01.json');
     const verdict = { date: '2026-01-01', latest: { at: '2026-01-01T00:00:00Z', verdict: 'healthy', gaps: null } };
     fs.writeFileSync(file, JSON.stringify(verdict));
     const result = collectOracleGaps(projectDir);

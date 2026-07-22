@@ -13,7 +13,7 @@ End-to-end checks that exercise a feature in an isolated filesystem, the same wa
 
 Every change that touches more than one of these surfaces needs a functional test here:
 
-- A hook that writes to `.cx/` or `~/.cx/`
+- A hook that writes to `.construct/` or `~/.construct/`
 - A learning loop (observation capture, research persistence, outcome capture, prompt improvement)
 - A profile or intake table that drives routing
 - A CLI subcommand that reads or writes durable state
@@ -34,13 +34,13 @@ Every functional test:
 ### Isolation contract
 
 Durable writes must stay under the fixture root — never the developer's real `HOME`,
-`~/.cx`, or repo `profiles/`. When a test redirects `process.env.HOME`, it must
+`~/.construct`, or repo `profiles/`. When a test redirects `process.env.HOME`, it must
 restore the prior value in `finally`, `after`, or `t.after` (parallel `node --test`
 shares one process environment).
 
 - Use `tests/helpers/isolation-contract.mjs` (`assertPathUnderRoot`) after APIs that
   resolve project-scoped storage (`exportTurns`, `resolveProjectScopedPath`, etc.).
-- Create a Construct project marker (`.cx/` or `package.json` + `.cx/`) in the
+- Create a Construct project marker (`.construct/` or `package.json` + `.construct/`) in the
   fixture when exercising project-scoped commands.
 - In-process code that writes through the machine-scoped state axis
   (`lib/config/xdg.mjs` `doctorRoot`) — the canonical case is a real `Broker`,
@@ -55,8 +55,8 @@ shares one process environment).
 
 The isolation contract above is write-scoped; a test's *inbound* env must be
 equally deterministic. A spawn/process env built as `{ ...process.env, ...overrides }`
-inherits whatever the developer's shell happens to export — `CX_MODEL_*`,
-provider keys, `WEB_SEARCH_URL`, `CX_USER_ENV_PATH` — and can even reach a real
+inherits whatever the developer's shell happens to export — `CONSTRUCT_MODEL_*`,
+provider keys, `WEB_SEARCH_URL`, `CONSTRUCT_USER_ENV_PATH` — and can even reach a real
 `op` binary through `lib/providers/secret-resolver.mjs`'s file/rc discovery,
 triggering a live 1Password biometric prompt mid-test.
 
@@ -64,7 +64,7 @@ triggering a live 1Password biometric prompt mid-test.
   `StdioClientTransport`) or hands an isolated `env` object to an in-process
   call must build that env with `sterileSpawnEnv()` from
   `tests/helpers/sterile-env.mjs`, not a `{ ...process.env }` spread. The
-  helper allowlists only `PATH`/`TMPDIR`/`LANG` and pins `HOME`/`CX_HOME_OVERRIDE`/
+  helper allowlists only `PATH`/`TMPDIR`/`LANG` and pins `HOME`/`CONSTRUCT_HOME_OVERRIDE`/
   XDG dirs to a fresh `mkdtempSync` root; nothing else is inherited unless named
   in `overrides`.
 - A hermetic `resolveSecret`/`resolveSecretAsync` call must pass
@@ -74,8 +74,24 @@ triggering a live 1Password biometric prompt mid-test.
   on `PATH` and assert its log stays empty after the suite runs. See
   `tests/functional/spawn-env-hermeticity.functional.test.mjs` for the
   reference pattern, including the poisoned-parent-env regression check
-  (`CX_MODEL_STANDARD=poison OPENROUTER_API_KEY=sk-poison ... npm run test:functional`
+  (`CONSTRUCT_MODEL_STANDARD=poison OPENROUTER_API_KEY=sk-poison ... npm run test:functional`
   must produce the same result as a clean env).
+
+## Live LLM agent execution proof (construct-b9n56)
+
+Provider-backed orchestration (real model call per specialist task) is **opt-in only**. Default CI runs skip these tests.
+
+| Harness | Entry |
+|---|---|
+| Library | `lib/certification/real-llm-scenarios.mjs` (`runRealLlmS3`, `runRealLlmS8`) |
+| Functional test | `tests/functional/real-llm-scenarios.functional.test.mjs` |
+| Certification | `construct certify run real-llm.s3` or `real-llm.s8` |
+| Evidence report | `tests/e2e/reports/live-agent-execution-proof-20260720.md` (manual run run-04aa7dcf9331) |
+| Hermetic chain (no live keys) | `tests/functional/prd-request-full-chain-audit-trail.functional.test.mjs` |
+
+Set `CONSTRUCT_CERTIFY_LIVE=1` (or legacy `CONSTRUCT_E2E_REAL_LLM=1`) and a provider key (`OPENROUTER_API_KEY` by default). Without opt-in or credentials the suite records inconclusive/skips; it never fake-greens a provider run.
+
+Research grounding and publish figure fidelity gates (`construct-1iljn.4`) live in `lib/orchestration/research-evidence-gate.mjs`, `lib/orchestration/output-quality-gate.mjs`, and `lib/publish.mjs`.
 
 ## Run
 
@@ -90,6 +106,15 @@ node --test tests/functional/a1-session-reflect.functional.test.mjs
 ```
 
 These run as part of `npm test` so the gate fails the same way locally as in CI.
+
+### Interactive init docs menu (construct-su4dd)
+
+CI has no dependable pseudo-TTY for keyboard menus. Functional coverage for
+`construct init --interactive` docs setup (Packs / Individual / Skip) uses
+`CONSTRUCT_PROMPT_SCRIPT` or `CONSTRUCT_PROMPT_SCRIPT_FILE` — a JSON queue
+consumed by `lib/prompt-harness.mjs` and `lib/tty-prompts.mjs` instead of
+`process.stdin` raw mode. See `tests/functional/init-docs-menu.functional.test.mjs`.
+Menu option stability is pinned in `tests/init-docs-interactive.test.mjs`.
 
 ## Test runner
 

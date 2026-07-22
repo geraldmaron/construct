@@ -9,13 +9,13 @@ verificationBar: "Every load-bearing claim cites a verifiable source; label infe
 
 Use when: the request involves customer evidence, PM synthesis, product requirements, PRDs, PRFAQs, customer profiles, product signals, or backlog proposals.
 
-Follow [rules/common/research.md](../../rules/common/research.md) for source order, verification, confidence, and reproducibility.
+Follow `rules/common/research.md` for source order, verification, confidence, and reproducibility.
 
 ## Operating model
 
 Product Intelligence is a Construct-native loop:
 
-1. Capture evidence into `.cx/knowledge/internal/sources/` or link existing sources.
+1. Capture evidence into `.construct/knowledge/internal/sources/` or link existing sources.
 2. Normalize evidence into field notes, customer profiles, and evidence briefs.
 3. Synthesize themes, asks, pain points, product areas, and confidence.
 4. Select the PM flavor: product, platform, enterprise, ai-product, or growth.
@@ -54,9 +54,9 @@ Load the core product-manager role guidance and the selected overlay before draf
 
 ## Storage
 
-Write working artifacts under `.cx/knowledge/` unless they are docs of record. Approved PRDs live in `docs/specs/prd/`; approved Meta PRDs live in `docs/meta-prd/`.
+Write working artifacts under `.construct/knowledge/` unless they are docs of record. Approved PRDs live in `docs/specs/prd/`; approved Meta PRDs live in `docs/meta-prd/`.
 
-The hybrid storage layer indexes `.cx/knowledge/`, `docs/specs/prd/`, and `docs/meta-prd/`. When Postgres is configured, `construct storage sync` can persist these artifacts into shared SQL rows. The vector layer scores the same documents for local, remote, or file-backed semantic retrieval.
+The hybrid storage layer indexes `.construct/knowledge/`, `docs/specs/prd/`, and `docs/meta-prd/`. When Postgres is configured, `construct storage sync` can persist these artifacts into shared SQL rows. The vector layer scores the same documents for local, remote, or file-backed semantic retrieval.
 
 ## Approval boundaries
 
@@ -70,9 +70,15 @@ Stop and ask the primary persona before:
 
 ## Quality bar
 
-Product Intelligence output must cite evidence, distinguish observation from inference, name confidence, and avoid a wall of bullets. Keep em dashes rare. Use paragraphs for reasoning, tables for comparisons, and bullets for scanability.
+Product Intelligence output must cite evidence, distinguish observation from inference, name confidence, and avoid a wall of bullets. Prefer contractions; avoid spaced em dashes; refuse LLM tells (`rules/common/human-voice.md`). Use paragraphs for reasoning, tables for comparisons, and bullets for scanability.
 
 For time-sensitive or externally sourced claims, include the date basis. For load-bearing claims, prefer two independent sources unless one authoritative primary source is enough.
 ## Release gate
 
 Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.
+
+## Shared authorship contract
+
+Before drafting or reviewing, call `get_skill("docs/artifact-authorship")` for framing, template population, storytelling, human voice, adversarial review, anti-fabrication, and cross-persona triggers. Persona overlays under `skills/perspectives/` add failure modes; they do not waive that contract.
+
+**Before you write (voice):** prefer contractions (`don't`/`won't`/`can't`); avoid spaced em dashes (` — `); refuse AI tells (delve, leverage, robust as filler, "it's important to note", "In today's…", "This ensures that…", empty tricolons); sound like a careful colleague. Exceptions: ACs, legal shall/must not, quoted statute, exact required section titles. See `rules/common/human-voice.md`.

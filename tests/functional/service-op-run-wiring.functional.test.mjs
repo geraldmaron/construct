@@ -91,8 +91,6 @@ test('opted in: opencode / copilot spawns are wrapped in op run; cm is not (cons
     {
       PATH: `${sandbox.binDir}${path.delimiter}${process.env.PATH}`,
       CONSTRUCT_OP_ENV_FILE: sandbox.envFile,
-      CONSTRUCT_DOCTOR: 'off',
-      CONSTRUCT_ORACLE: 'off',
     },
     () => startServices({
       ...runOptions({ homeDir: sandbox.homeDir, spawns, env: { CONSTRUCT_OP_ENV_FILE: sandbox.envFile } }),
@@ -125,8 +123,6 @@ test('parent already resolved: per-service spawns are not wrapped again (single 
       PATH: `${sandbox.binDir}${path.delimiter}${process.env.PATH}`,
       CONSTRUCT_OP_ENV_FILE: sandbox.envFile,
       CONSTRUCT_OP_RUN_ACTIVE: '1',
-      CONSTRUCT_DOCTOR: 'off',
-      CONSTRUCT_ORACLE: 'off',
     },
     () => startServices({
       ...runOptions({
@@ -158,8 +154,6 @@ test('not opted in: spawns are unchanged when CONSTRUCT_OP_ENV_FILE is unset', a
     {
       PATH: `${sandbox.binDir}${path.delimiter}${process.env.PATH}`,
       CONSTRUCT_OP_ENV_FILE: undefined,
-      CONSTRUCT_DOCTOR: 'off',
-      CONSTRUCT_ORACLE: 'off',
     },
     () => startServices({
       ...runOptions({ homeDir: sandbox.homeDir, spawns, env: {} }),
@@ -189,8 +183,6 @@ test('opted in but op absent: spawns are unchanged (never forces 1Password)', as
     {
       PATH: sandbox.binDir,
       CONSTRUCT_OP_ENV_FILE: sandbox.envFile,
-      CONSTRUCT_DOCTOR: 'off',
-      CONSTRUCT_ORACLE: 'off',
     },
     () => startServices({
       ...runOptions({ homeDir: sandbox.homeDir, spawns, env: { CONSTRUCT_OP_ENV_FILE: sandbox.envFile } }),

@@ -53,7 +53,7 @@ function fakeRoot() {
 // Side-effect counter: persisted to a file so it survives across calls.
 class SideEffectCounter {
   constructor(rootDir) {
-    this.filePath = path.join(rootDir, '.cx', 'side-effect-counter.txt');
+    this.filePath = path.join(rootDir, '.construct', 'side-effect-counter.txt');
   }
 
   // Increment and record the side effect. Returns the new count.
@@ -228,7 +228,7 @@ describe('Enforcement proof — Property 2: Approval-required calls pause, then 
   it('approval-required call: execute NOT invoked until approved, side effect ABSENT', async () => {
     const rootDir = fakeRoot();
     const counter = new SideEffectCounter(rootDir);
-    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.cx', 'approvals', 'queue.jsonl') });
+    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.construct', 'approvals', 'queue.jsonl') });
     const broker = makeBroker({ rootDir, policy: approvalPolicy(), approvalQueue: queue });
 
     // First call: requires approval.
@@ -250,7 +250,7 @@ describe('Enforcement proof — Property 2: Approval-required calls pause, then 
   it('approval-required call: durable approval record is created', async () => {
     const rootDir = fakeRoot();
     const counter = new SideEffectCounter(rootDir);
-    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.cx', 'approvals', 'queue.jsonl') });
+    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.construct', 'approvals', 'queue.jsonl') });
     const broker = makeBroker({ rootDir, policy: approvalPolicy(), approvalQueue: queue });
 
     const r1 = await broker.invoke({
@@ -277,7 +277,7 @@ describe('Enforcement proof — Property 2: Approval-required calls pause, then 
   it('approval-required: after approval, retry executes the tool EXACTLY ONCE', async () => {
     const rootDir = fakeRoot();
     const counter = new SideEffectCounter(rootDir);
-    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.cx', 'approvals', 'queue.jsonl') });
+    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.construct', 'approvals', 'queue.jsonl') });
     const broker = makeBroker({ rootDir, policy: approvalPolicy(), approvalQueue: queue });
 
     // First call: requires approval.
@@ -312,7 +312,7 @@ describe('Enforcement proof — Property 2: Approval-required calls pause, then 
   it('approval-required: subsequent retry with SAME args does NOT re-execute (idempotent)', async () => {
     const rootDir = fakeRoot();
     const counter = new SideEffectCounter(rootDir);
-    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.cx', 'approvals', 'queue.jsonl') });
+    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.construct', 'approvals', 'queue.jsonl') });
     const broker = makeBroker({ rootDir, policy: approvalPolicy(), approvalQueue: queue });
 
     // First call: awaiting approval.
@@ -362,7 +362,7 @@ describe('Enforcement proof — Property 2: Approval-required calls pause, then 
   it('approval-required: after denial in queue, side effect never executes', async () => {
     const rootDir = fakeRoot();
     const counter = new SideEffectCounter(rootDir);
-    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.cx', 'approvals', 'queue.jsonl') });
+    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.construct', 'approvals', 'queue.jsonl') });
     const broker = makeBroker({ rootDir, policy: approvalPolicy(), approvalQueue: queue });
 
     // First call: awaiting approval.
@@ -397,7 +397,7 @@ describe('Enforcement proof — Property 2: Approval-required calls pause, then 
   it('approval-required: distinct tool calls get distinct approval records', async () => {
     const rootDir = fakeRoot();
     const counter = new SideEffectCounter(rootDir);
-    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.cx', 'approvals', 'queue.jsonl') });
+    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.construct', 'approvals', 'queue.jsonl') });
     const broker = makeBroker({ rootDir, policy: approvalPolicy(), approvalQueue: queue });
 
     // Two calls with different args.
@@ -466,7 +466,7 @@ describe('Enforcement proof — Property 1 + 2: Mixed deny/approval flows', () =
     assert.equal(counter.getCount(), 0, 'denied call must not execute');
 
     // Broker 2: requires approval.
-    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.cx', 'approvals', 'queue.jsonl') });
+    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.construct', 'approvals', 'queue.jsonl') });
     const broker2 = makeBroker({ rootDir, policy: approvalPolicy(), approvalQueue: queue });
 
     const r1 = await broker2.invoke({
@@ -531,7 +531,7 @@ describe('Enforcement proof — Broker traceability with side effects', () => {
     const rootDir = fakeRoot();
     const counter = new SideEffectCounter(rootDir);
     const auditEvents = [];
-    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.cx', 'approvals', 'queue.jsonl') });
+    const queue = new ApprovalQueue({ persistPath: path.join(rootDir, '.construct', 'approvals', 'queue.jsonl') });
     const broker = new Broker({
       rootDir,
       policy: approvalPolicy(),

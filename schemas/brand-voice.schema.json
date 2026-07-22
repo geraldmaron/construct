@@ -10,7 +10,7 @@
     "formality": { "type": "integer", "minimum": 1, "maximum": 5 },
     "toneOverride": {
       "type": "object",
-      "description": "Maps doc type id to tone profile id from specialists/tone-profiles.json",
+      "description": "Maps doc type id to tone profile id (see registry/worker-profile-audit-enrichments.json)",
       "additionalProperties": { "type": "string" }
     },
     "audienceLexicon": {

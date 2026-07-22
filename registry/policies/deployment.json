@@ -1,0 +1,21 @@
+{
+  "id": "deployment",
+  "ownerWorkerProfile": "operations",
+  "description": "Operations group executes deployments. Requires security and quality approval.",
+  "enforcement": "hard",
+  "mode": "approval",
+  "approvalWorkerProfiles": [],
+  "requiredPolicies": [
+    "quality-gate-approval",
+    "security-approval"
+  ],
+  "vetoWorkerProfiles": [],
+  "escalationWorkerProfiles": [
+    "orchestrator"
+  ],
+  "governs": [
+    "deployment"
+  ],
+  "conditions": [],
+  "evidence": []
+}

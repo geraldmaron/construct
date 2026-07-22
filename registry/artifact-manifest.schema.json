@@ -1,0 +1,127 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://geraldmaron.github.io/construct/registry/artifact-manifest.schema.json",
+  "title": "Construct artifact capability manifest",
+  "type": "object",
+  "required": ["version", "artifacts"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "integer", "minimum": 1 },
+    "description": { "type": "string" },
+    "workflowDefaults": { "$ref": "#/$defs/workflowDefaults" },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/artifactEntry" }
+    }
+  },
+  "$defs": {
+    "visualRequirement": {
+      "type": "object",
+      "required": ["id", "check"],
+      "properties": {
+        "id": { "type": "string" },
+        "check": { "type": "string", "enum": ["artifact-has-mermaid", "artifact-table-has-columns"] },
+        "diagram": { "type": "string" },
+        "columns": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "releaseGate": {
+      "type": "object",
+      "properties": {
+        "structuralLint": { "type": "boolean" },
+        "citationLint": { "type": "boolean" },
+        "proseMinimum": { "type": "integer", "minimum": 0 },
+        "requiredReviewers": { "type": "array", "items": { "type": "string" } },
+        "optionalReviewers": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "workflowDefaults": {
+      "type": "object",
+      "properties": {
+        "authorChain": { "type": "array", "items": { "type": "string" } },
+        "reviewerChain": { "type": "array", "items": { "type": "string" } },
+        "validation": { "$ref": "#/$defs/validation" },
+        "outputs": { "$ref": "#/$defs/outputs" },
+        "qualityContract": { "$ref": "#/$defs/qualityContract" }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "properties": {
+        "releaseGate": { "type": "boolean" },
+        "requiredChecks": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "outputs": {
+      "type": "object",
+      "properties": {
+        "formats": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "branding": { "type": "string", "enum": ["construct", "plain"] }
+      }
+    },
+    "gateLevel": {
+      "type": "string",
+      "enum": ["fast", "standard", "render-smoke", "full-certification", "human-reviewed"]
+    },
+    "completionState": {
+      "type": "string",
+      "enum": [
+        "planned",
+        "authored",
+        "structurally-valid",
+        "source-linted",
+        "exported",
+        "file-valid",
+        "renderable",
+        "screenshot-captured",
+        "visually-reviewed",
+        "accessibility-reviewed",
+        "approved",
+        "completed"
+      ]
+    },
+    "qualityContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "gateLevel": { "$ref": "#/$defs/gateLevel" },
+        "requiredStates": { "type": "array", "items": { "$ref": "#/$defs/completionState" } },
+        "perFormat": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "gateLevel": { "$ref": "#/$defs/gateLevel" },
+              "requiredStates": { "type": "array", "items": { "$ref": "#/$defs/completionState" } },
+              "a11y": { "type": "string" },
+              "fontFloorPt": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    "artifactEntry": {
+      "type": "object",
+      "required": ["template", "primaryOwners", "toneDefault", "releaseGate"],
+      "properties": {
+        "template": { "type": "string" },
+        "primaryOwners": { "type": "array", "items": { "type": "string" } },
+        "workflowSkill": { "type": ["string", "null"] },
+        "toneDefault": { "type": "string" },
+        "toneAllowed": { "type": "array", "items": { "type": "string" } },
+        "structureRequirements": { "type": "array", "items": { "type": "string" } },
+        "visualRequirements": { "type": "array", "items": { "$ref": "#/$defs/visualRequirement" } },
+        "researchProfile": { "type": ["string", "null"] },
+        "releaseGate": { "$ref": "#/$defs/releaseGate" },
+        "documentClass": { "type": "string" },
+        "aliases": { "type": "array", "items": { "type": "string" } },
+        "authorChain": { "type": "array", "items": { "type": "string" } },
+        "reviewerChain": { "type": "array", "items": { "type": "string" } },
+        "validation": { "$ref": "#/$defs/validation" },
+        "outputs": { "$ref": "#/$defs/outputs" },
+        "qualityContract": { "$ref": "#/$defs/qualityContract" }
+      }
+    }
+  }
+}

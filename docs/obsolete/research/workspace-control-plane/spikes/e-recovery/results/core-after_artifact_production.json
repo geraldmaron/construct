@@ -1,0 +1,304 @@
+{
+  "id": "core-after_artifact_production",
+  "description": "Core matrix @ after_artifact_production: idempotent resume, safe cleanup, graph reconciliation",
+  "checks": [
+    {
+      "name": "crash-was-a-real-kill",
+      "pass": true,
+      "detail": {
+        "status": null,
+        "signal": "SIGKILL"
+      }
+    },
+    {
+      "name": "run-reached-done",
+      "pass": true,
+      "detail": {
+        "status": "done"
+      }
+    },
+    {
+      "name": "no-repeat-of-completed-work:dispatch-complete",
+      "pass": true,
+      "detail": {
+        "event": "dispatch-complete",
+        "count": 1,
+        "expected": 1
+      }
+    },
+    {
+      "name": "no-repeat-of-completed-work:execution-complete",
+      "pass": true,
+      "detail": {
+        "event": "execution-complete",
+        "count": 1,
+        "expected": 1
+      }
+    },
+    {
+      "name": "no-repeat-of-completed-work:artifact-content-written",
+      "pass": true,
+      "detail": {
+        "event": "artifact-content-written",
+        "count": 2,
+        "expected": 2
+      }
+    },
+    {
+      "name": "no-repeat-of-completed-work:approval-requested",
+      "pass": true,
+      "detail": {
+        "event": "approval-requested",
+        "count": 1,
+        "expected": 1
+      }
+    },
+    {
+      "name": "no-repeat-of-completed-work:approval-complete",
+      "pass": true,
+      "detail": {
+        "event": "approval-complete",
+        "count": 1,
+        "expected": 1
+      }
+    },
+    {
+      "name": "no-repeat-of-completed-work:external-write-complete",
+      "pass": true,
+      "detail": {
+        "event": "external-write-complete",
+        "count": 1,
+        "expected": 1
+      }
+    },
+    {
+      "name": "no-repeat-of-completed-work:integration-applied",
+      "pass": true,
+      "detail": {
+        "event": "integration-applied",
+        "count": 1,
+        "expected": 1
+      }
+    },
+    {
+      "name": "no-repeat-of-completed-work:graph-update-complete",
+      "pass": true,
+      "detail": {
+        "event": "graph-update-complete",
+        "count": 1,
+        "expected": 1
+      }
+    },
+    {
+      "name": "idempotent-effect-artifact-recompute-same-hash",
+      "pass": true,
+      "detail": {
+        "hashes": [
+          "972d70636f29c6ead442f15af11eac5cd3ca03147cebb47e8a7e8419aec1f356",
+          "972d70636f29c6ead442f15af11eac5cd3ca03147cebb47e8a7e8419aec1f356"
+        ]
+      }
+    },
+    {
+      "name": "stages-before-crash-point-not-repeated",
+      "pass": true,
+      "detail": {
+        "note": "covered by the per-event count===1 checks above; listed here for matrix readability",
+        "stagesAlreadyDoneBeforeCrash": [
+          "dispatch",
+          "execution"
+        ]
+      }
+    },
+    {
+      "name": "no-orphaned-tmp-files",
+      "pass": true,
+      "detail": {
+        "orphans": []
+      }
+    },
+    {
+      "name": "graph-nodes-reconciled",
+      "pass": true,
+      "detail": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      }
+    },
+    {
+      "name": "graph-edges-reconciled",
+      "pass": true,
+      "detail": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      }
+    },
+    {
+      "name": "graph-trust-incremental",
+      "pass": true,
+      "detail": {
+        "trustIncremental": true,
+        "reasons": []
+      }
+    },
+    {
+      "name": "graph-outbox-fully-drained",
+      "pass": true,
+      "detail": {
+        "pending": 0,
+        "applying": 0,
+        "applied": 3,
+        "failed": 0,
+        "deadLetter": 0
+      }
+    },
+    {
+      "name": "graph-has-exactly-one-artifact-node",
+      "pass": true,
+      "detail": {
+        "note": "Map keyed by id — a duplicate upsert cannot produce a second row by construction; this confirms presence, not just absence of a JS-level duplicate."
+      }
+    }
+  ],
+  "evidence": {
+    "crashInvocation": {
+      "status": null,
+      "signal": "SIGKILL"
+    },
+    "preResumeState": {
+      "runId": "run-core-after_artifact_production",
+      "stages": {
+        "dispatch": "complete",
+        "execution": "complete",
+        "artifact": "pending",
+        "approval": "pending",
+        "external_write": "pending",
+        "integration": "pending",
+        "graph_update": "pending"
+      },
+      "status": "running",
+      "updatedAt": "2026-07-18T00:40:29.615Z",
+      "specHash": "4e241d973ea3a0d939e69a6b86d82f15e5244e5551086f29715c64f9e6cb9caf",
+      "planHash": "8a4f291962aabf7c90f1258e7df2aa60badc812fcfc953b6a27e75a0af813a44",
+      "objectiveId": "obj-core-after_artifact_production",
+      "credential": {
+        "token": "tok-run-core-after_artifact_production",
+        "expiresAt": 1784335529560
+      },
+      "artifact": {
+        "hash": "972d70636f29c6ead442f15af11eac5cd3ca03147cebb47e8a7e8419aec1f356",
+        "path": "/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/spike-e-recovery-bsnnuh/core-after_artifact_production/run/artifact/doc.md",
+        "producedAt": "2026-07-18T00:40:29.615Z"
+      }
+    },
+    "resumeInvocations": [
+      {
+        "i": 0,
+        "status": 0,
+        "signal": null,
+        "stderr": ""
+      },
+      {
+        "i": 1,
+        "status": 0,
+        "signal": null,
+        "stderr": ""
+      }
+    ],
+    "finalState": {
+      "runId": "run-core-after_artifact_production",
+      "stages": {
+        "dispatch": "complete",
+        "execution": "complete",
+        "artifact": "complete",
+        "approval": "complete",
+        "external_write": "complete",
+        "integration": "complete",
+        "graph_update": "complete"
+      },
+      "status": "done",
+      "updatedAt": "2026-07-18T00:40:29.934Z",
+      "specHash": "4e241d973ea3a0d939e69a6b86d82f15e5244e5551086f29715c64f9e6cb9caf",
+      "planHash": "8a4f291962aabf7c90f1258e7df2aa60badc812fcfc953b6a27e75a0af813a44",
+      "objectiveId": "obj-core-after_artifact_production",
+      "credential": {
+        "token": "tok-run-core-after_artifact_production",
+        "expiresAt": 1784335529560
+      },
+      "artifact": {
+        "hash": "972d70636f29c6ead442f15af11eac5cd3ca03147cebb47e8a7e8419aec1f356",
+        "path": "/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/spike-e-recovery-bsnnuh/core-after_artifact_production/run/artifact/doc.md",
+        "producedAt": "2026-07-18T00:40:29.680Z"
+      },
+      "approval": {
+        "grantedAt": "2026-07-18T00:40:29.706Z",
+        "token": "auto-grant",
+        "approvedArtifactHash": "972d70636f29c6ead442f15af11eac5cd3ca03147cebb47e8a7e8419aec1f356"
+      },
+      "externalWrite": {
+        "recordId": "run-core-after_artifact_production",
+        "done": true
+      },
+      "graphUpdate": {
+        "done": true,
+        "workId": "work:obj-core-after_artifact_production",
+        "artifactId": "artifact:run-core-after_artifact_production",
+        "drain": {
+          "applied": 3,
+          "failed": 0,
+          "deadLettered": 0,
+          "appliedIds": [
+            1,
+            2,
+            3
+          ]
+        }
+      }
+    },
+    "historyEventCounts": {
+      "dispatch-complete": 1,
+      "execution-complete": 1,
+      "artifact-content-written": 2,
+      "approval-requested": 1,
+      "approval-complete": 1,
+      "external-write-complete": 1,
+      "integration-applied": 1,
+      "graph-update-complete": 1
+    },
+    "stagesAlreadyDoneBeforeCrash": [
+      "dispatch",
+      "execution"
+    ],
+    "tmpOrphans": [],
+    "graph": {
+      "recon": {
+        "empty": true,
+        "nodes": {
+          "added": [],
+          "removed": [],
+          "changed": []
+        },
+        "edges": {
+          "added": [],
+          "removed": [],
+          "changed": []
+        },
+        "applied": false
+      },
+      "trust": {
+        "trustIncremental": true,
+        "reasons": []
+      },
+      "outboxState": {
+        "pending": 0,
+        "applying": 0,
+        "applied": 3,
+        "failed": 0,
+        "deadLetter": 0
+      }
+    },
+    "artifactNodePresent": true
+  }
+}

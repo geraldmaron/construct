@@ -1,8 +1,8 @@
 # M1: 7-day SRE-only self-host test
 
-The first milestone of "Construct runs on Construct." Scoped to reliability: doctor + cx-operations handle infra issues on this repo for 7 days without paging the user. Subsequent milestones add more personas (M2: + QA/Security; M3: + dev loop; ...; Mfinal: full org).
+The first milestone of "Construct runs on Construct." Scoped to reliability: doctor + `operations` handle infra issues on this repo for 7 days without paging the user. Subsequent milestones add more Worker Profiles (M2: + QA/Security; M3: + dev loop; ...; Mfinal: full org).
 
-> Roster note (ADR-0065): the standalone SRE persona this runbook was written around folded into `cx-operations` (reliability + docs-keeping are now its overlays). References below use `cx-operations`; the M2+ persona list maps QA→`cx-qa`, Security→`cx-security`.
+> Roster note (ADR-0065): the standalone SRE Worker Profile this runbook was written around folded into `operations` (reliability + docs-keeping are now its overlays). References below use `operations`; the M2+ roster maps QA→`qa`, Security→`security`.
 
 ## Pre-flight
 
@@ -13,7 +13,7 @@ unset CONSTRUCT_ROLES
 
 # Cost tracking is on by default; enforcement is OFF (advisory-only) unless
 # you set CONSTRUCT_BUDGET_ENFORCE=on. Defaults when enforcement is on:
-# $10/persona/day, $50/total/day. Override via CONSTRUCT_BUDGET_<NAME>=N.
+# $10/Worker Profile/day, $50/total/day. Override via CONSTRUCT_BUDGET_<NAME>=N.
 
 # Start the daemon stack (spawns doctor next to dashboard/cm/opencode).
 node bin/construct dev
@@ -47,21 +47,21 @@ Read sections in this order:
 
 1. **Health verdict** at the bottom: quick green/yellow signal.
 2. **L0 actions**: what the doctor did. Expect mostly disk rotations and occasional process kills.
-3. **L0 → L1 escalations**: should be rare. Each entry corresponds to a bd issue that needs cx-operations dispatch.
+3. **L0 → L1 escalations**: should be rare. Each entry corresponds to a bd issue that needs `operations` dispatch.
 4. **L1 events emitted**: the broader signal stream. High `secrets.detected` count usually means a hook misfire, not real secrets.
-5. **Pending invocations**: anything `unresolved` is waiting for the next session to dispatch cx-operations.
+5. **Pending invocations**: anything `unresolved` is waiting for the next session to dispatch `operations`.
 6. **Cost**: track daily burn against caps.
 
-## When cx-operations gets paged
+## When operations gets paged
 
 Construct surfaces pending role invocations at session-start. You'll see a "Pending role invocations" section listing the bd issues. Dispatch via the existing Task path:
 
 ```
 # In a Claude Code session:
-> Dispatch cx-operations for incident <bd-id> (fingerprint <fp>).
+> Dispatch operations for incident <bd-id> (fingerprint <fp>).
 ```
 
-cx-operations stays inside its fence (`docs/operations/runbooks/**`, `docs/operations/incidents/**`) and writes either a runbook or an incident report, optionally adding `next:cx-engineer` as a bd label for follow-up code fixes. The agent-tracker hook auto-enqueues that handoff for the next session.
+`operations` stays inside its fence (`docs/operations/runbooks/**`, `docs/operations/incidents/**`) and writes either a runbook or an incident report, optionally adding `next:engineer` as a bd label for follow-up code fixes. The agent-tracker hook auto-enqueues that handoff for the next session.
 
 ## Acceptance criteria (binary, end of 7 days)
 
@@ -69,16 +69,16 @@ The test passes if **all** of these hold:
 
 - [ ] Doctor ran the entire 7 days (no manual restart needed). `doctor report --since=7d` shows samples on every day.
 - [ ] All real-world infra issues that occurred during the window were detected by L0 watchers (no silent service deaths).
-- [ ] All cx-operations escalations resolved cleanly: bd issue closed, runbook or incident report filed, fence respected (no commits made by cx-operations).
+- [ ] All `operations` escalations resolved cleanly: bd issue closed, runbook or incident report filed, fence respected (no commits made by `operations`).
 - [ ] No L2 user touches were required for **routine** reliability issues: only for novel ones (where "novel" means: no matching runbook existed before).
-- [ ] Cost stayed within budget (default `$10/persona/day`, `$50/total/day` when `CONSTRUCT_BUDGET_ENFORCE=on`; advisory-only when unset).
+- [ ] Cost stayed within budget (default `$10/Worker Profile/day`, `$50/total/day` when `CONSTRUCT_BUDGET_ENFORCE=on`; advisory-only when unset).
 - [ ] Zero hook regressions: full test suite still passes at end of window.
 
 ## Failure modes: what to do
 
 - **Doctor died unexpectedly**: read `~/.local/state/construct/runtime/doctor.log`. If memory pressure, raise `CONSTRUCT_PRESSURE_GUARD_SWAP_GB`. If exception, file a bd bug + restart with `node bin/construct dev`.
 - **Watcher errors in audit log** (`kind: error`): inspect the watcher source; reproduce with `node bin/construct doctor tick`.
-- **cx-operations dispatch failed**: check `~/.cx/role-pending.jsonl`: entry should have a `bdIssueId`. If null, bd was unreachable when the gateway tried to create the issue; the audit log will say `bd-create-failed`.
+- **Operations dispatch failed**: check `~/.construct/role-pending.jsonl`: entry should have a `bdIssueId`. If null, bd was unreachable when the gateway tried to create the issue; the audit log will say `bd-create-failed`.
 - **Budget exhausted**: increase the relevant `CONSTRUCT_BUDGET_*` env var or wait for the day to roll over. Gateway returns `budget-exhausted` reason but events still record to the bus.
 
 ## Stopping the test
@@ -92,4 +92,4 @@ File the report into `docs/operations/incidents/` as the formal M1 artifact and 
 
 ## What success unlocks
 
-If M1 passes, M2 (+ QA + Security) starts. The cost story scales linearly with persona count, so M2's daily cap should be ~$25/day total to leave headroom.
+If M1 passes, M2 (+ QA + Security) starts. The cost story scales linearly with Worker Profile count, so M2's daily cap should be ~$25/day total to leave headroom.

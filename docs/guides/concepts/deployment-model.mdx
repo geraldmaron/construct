@@ -49,7 +49,7 @@ The deployment posture is explicit. One config field (`CONSTRUCT_DEPLOYMENT_MODE
   },
 ]} />
 
-The agent loop (persona, specialists, contracts, gates) is the same across all three. Only the backend topology changes.
+The agent loop (front door, Worker Profiles, contracts, gates) is the same across all three. Only the backend topology changes.
 
 ## Modes
 
@@ -61,13 +61,13 @@ The agent loop (persona, specialists, contracts, gates) is the same across all t
 
 ### Solo
 
-For individual work. State lives in the user's repo and `~/.construct/`. Queue is the filesystem under `.construct/intake/`. Postgres and Docker are optional accelerators. Trace capture is local JSONL by default under `.construct/traces/`; remote telemetry export is opt-in.
+For individual work. State lives in the user's repo and `~/.construct/`. Queue is the filesystem under `.construct/intake/`. Postgres and Docker are optional accelerators. Trace capture is local JSONL by default under `~/.construct/projects/<key>/traces/`; remote telemetry export is opt-in.
 
 ### Team
 
 For shared usage by a development team. The intake queue is Postgres-backed (with row-locked worker claims). Memory is shared across the team. Workers run in a Docker pool, isolated from the host. Telemetry is centralized via a Langfuse-compatible backend, a generic HTTP ingestion endpoint, or an OpenTelemetry collector. MCP calls go through a broker that applies role-based policy — brokered MCP dispatch is staged/experimental and not yet active in built-in deployments (tracked: construct-9oi4.10).
 
-A reference compose topology ships at [`docker-compose.team.yml`](https://github.com/geraldmaron/construct/blob/main/docker-compose.team.yml): Postgres + a worker pool sized via `CONSTRUCT_WORKER_REPLICAS`, with the worker image built from [`Dockerfile.worker`](https://github.com/geraldmaron/construct/blob/main/Dockerfile.worker). The worker entrypoint (`lib/worker/entrypoint.mjs`) claims pending intake items via `PostgresIntakeQueue.claim()` (`FOR UPDATE SKIP LOCKED`), runs each through `runJob` with `allowedPaths: [/work]` so the bind-mounted workspace is the only writable surface, attaches evidence to the originating task graph node when named in the packet, and exits when the queue stays empty for `--idle-timeout-seconds` (default 300s) so a scheduler can scale workers to zero. Local verification lives at [`dev/team-harness/verify.sh`](https://github.com/geraldmaron/construct/blob/main/dev/team-harness/verify.sh); it expects `DATABASE_URL`/`CONSTRUCT_DATABASE_URL`, applies migrations, reads worker/queue health, and runs the focused team-mode tests.
+**Current state (be honest about this): no `docker-compose.team.yml` or `Dockerfile.worker` exists in the tree yet.** The worker entrypoint (`lib/worker/entrypoint.mjs`) is real code — it claims pending intake items via `PostgresIntakeQueue.claim()` (`FOR UPDATE SKIP LOCKED`), runs each through `runJob` with `allowedPaths: [/work]` so a bind-mounted workspace would be the only writable surface, attaches evidence to the originating task graph node when named in the packet, and exits when the queue stays empty for `--idle-timeout-seconds` (default 300s) — but it has no caller and no container image today; only `tests/worker-entrypoint.test.mjs` invokes it. Local verification of the Postgres-backed pieces that *do* work lives at [`dev/team-harness/verify.sh`](https://github.com/geraldmaron/construct/blob/main/dev/team-harness/verify.sh); it expects `DATABASE_URL`/`CONSTRUCT_DATABASE_URL`, applies migrations, reads worker/queue health, and runs the focused team-mode tests. The compose file, worker Dockerfile, and the wiring that calls the entrypoint are tracked under WS-C (bead construct-2ec1y).
 
 ### Enterprise
 
@@ -76,12 +76,12 @@ Team mode plus tenant isolation, signed MCP allowlists, RBAC/ABAC-ready auth, is
 ## Picking and changing modes
 
 ```bash
-construct config              # show the active mode and resource topology
-construct config mode         # print just the active mode
-construct config mode team    # set the mode (writes ~/.config/construct/config.env)
+construct config                          # show the active mode and resource topology
+construct config mode                     # print just the active mode
+construct config set deployment.mode team # persist mode in construct.config.json
 ```
 
-The mode is persisted as `CONSTRUCT_DEPLOYMENT_MODE` in `~/.config/construct/config.env`. `construct status` shows the active mode and resource topology at the top of its output.
+The durable setter is `construct config set deployment.mode <solo|team|enterprise>` (writes `construct.config.json`). `construct config mode <value>` is no longer a setter — it redirects to that path. For a one-off override, export `CONSTRUCT_DEPLOYMENT_MODE`. `construct status` shows the active mode and resource topology at the top of its output.
 
 ## What runs in each mode (capability matrix)
 
@@ -90,7 +90,7 @@ The mode is persisted as `CONSTRUCT_DEPLOYMENT_MODE` in `~/.config/construct/con
 | LLM inference | local server (Ollama, llama.cpp, any OpenAI-compatible) or hosted provider | hosted provider; local fallback configurable |
 | Embedding model | `@huggingface/transformers` ONNX in-process | shared embedding service or hosted |
 | Vector retrieval | Postgres + pgvector when present; `.construct/observations/` JSON index otherwise | shared Postgres + pgvector |
-| Trace observability | local `.construct/traces/*.jsonl`; optional Langfuse/HTTP/OTLP export | central Langfuse-compatible backend, HTTP ingestion endpoint, or OTel collector |
+| Trace observability | local `~/.construct/projects/<key>/traces/*.jsonl`; optional Langfuse/HTTP/OTLP export | central Langfuse-compatible backend, HTTP ingestion endpoint, or OTel collector |
 | Issue tracking | `bd` (beads), Dolt-backed | `bd` against shared Dolt remote |
 | Dashboard | `construct dev` starts the local dashboard | dashboard server in the shared deployment |
 | MCP | local processes | brokered through `mcp-broker` (staged/experimental — not yet active in built-in deployments) |
@@ -101,7 +101,7 @@ The mode is persisted as `CONSTRUCT_DEPLOYMENT_MODE` in `~/.config/construct/con
 
 Construct degrades gracefully when an optional resource is unreachable and reports the degradation explicitly rather than silently masking it.
 
-- **No Docker:** managed Postgres is skipped; vector retrieval falls back to the JSON index. Local trace capture still writes `.construct/traces/*.jsonl`. `construct doctor` reports which capabilities are degraded.
+- **No Docker:** managed Postgres is skipped; vector retrieval falls back to the JSON index. Local trace capture still writes `~/.construct/projects/<key>/traces/*.jsonl`. `construct doctor` reports which capabilities are degraded.
 - **No `cm` (memory CLI):** the memory MCP server doesn't start; observations still write to `.construct/observations/` and remain retrievable from there.
 - **No `OPENAI_API_KEY`:** if `CONSTRUCT_EMBEDDING_MODEL=openai`, the command exits with the env var name and an alternative. Opt into automatic fallback with `CONSTRUCT_EMBEDDING_FALLBACK=1`.
 - **No internet:** Construct refuses to fetch external resources. `construct evals retrieval` runs against the local fixture and works offline.
@@ -114,9 +114,9 @@ Three concrete cases:
 
 1. **Plane wifi (solo mode).** You can still plan, write code, run tests, and have a coherent agent conversation. The vector index uses whatever you embedded locally; the LLM is whichever local model you wired up.
 2. **A vendor outage (any mode).** Falling back to a local model or to a different OpenAI-compatible endpoint is a config change, not a rewrite.
-3. **A team that needs centralized telemetry and policy.** Team mode promotes the intake queue, memory, and MCP through shared resources without changing the agent loop or the persona contracts.
+3. **A team that needs centralized telemetry and policy.** Team mode promotes the intake queue, memory, and MCP through shared resources without changing the agent loop or the Worker Profile contracts.
 
-The orchestration loop (persona, specialists, contracts, gates, durable state) is the same across modes. What changes is the backend topology that supports it.
+The orchestration loop (front door, Worker Profiles, contracts, gates, durable state) is the same across modes. What changes is the backend topology that supports it.
 
 ## What remains remote even in team mode
 

@@ -1,36 +1,40 @@
 ---
 title: Cross-team handoff
-description: Transfer ownership of in-flight work between teams without losing context, blockers, or open decisions. One template, one tracker chain.
+description: Transfer ownership of in-flight work between teams without losing context, blockers, or open decisions. Template-driven artifacts plus optional procedure plans — no dedicated handoff procedure.
 ---
 
-A handoff fails when the receiving team has to reconstruct context the sending team already had. The `cross-team-handoff` workflow refuses to ship without three things: a current-state summary, a clean blockers list, and an explicit decision log. Everything else (PR links, runbooks, owner) flows from those.
+A handoff fails when the receiving team has to reconstruct context the sending team already had. Construct does not ship a `cross-team-handoff` procedure. Run handoffs as three linked artifacts from shipped templates, each with explicit owners in Beads.
 
-## Run it
+## Discover procedures
 
 ```bash
-construct workflow new cross-team-handoff \
-  --input feature_name="vector-retrieval-v2" \
-  --input from_team="platform" \
-  --input to_team="growth" \
-  --input from_owner="Sam Park" \
-  --input to_owner="Riley Chen"
+construct procedure list
 ```
 
-The CLI prompts for any missing inputs and accepts free-form context inline.
+Procedure definitions live in `registry/procedures/*.json`. For a bounded drafting plan (not auto-generated docs), `memo-draft` fits a status summary; use the templates below for the full handoff pack.
 
-## What it creates
+## Scaffold the artifact pack
 
 | Path | Template | Purpose |
 |---|---|---|
-| `docs/handoffs/<feature>/state.md` | `templates/docs/handoff.md` | Current state: what's shipped, what's behind a flag, what's regressed |
+| `docs/handoffs/<feature>/state.md` | `templates/docs/memo.md` | Current state: what's shipped, what's behind a flag, what's regressed |
 | `docs/handoffs/<feature>/blockers.md` | `templates/docs/runbook.md` | Open blockers, each with owner, last-touched timestamp, escalation path |
 | `docs/handoffs/<feature>/decisions.md` | `templates/docs/adr.md` | Decisions made, alternatives rejected, what's still load-bearing |
 
 The receiving owner reads in this order — state first (what's true now), blockers second (what to clear), decisions third (what not to relitigate).
 
+## Optional procedure plan
+
+```bash
+construct procedure invoke --json --procedure-id memo-draft \
+  --text 'Cross-team handoff state summary for vector-retrieval-v2 from platform to growth'
+```
+
+`construct procedure invoke` returns a **plan only**. Worker Profiles author each artifact from the templates above.
+
 ## Bead chain
 
-The workflow stamps a beads chain at creation:
+Track the handoff in Beads at creation:
 
 ```
 <feature>-handoff-state · in_progress · assignee=<from_owner>
@@ -38,15 +42,7 @@ The workflow stamps a beads chain at creation:
 <feature>-handoff-decisions · in_progress · assignee=<to_owner>
 ```
 
-The sending team closes `state` when the doc is accurate; the receiving team closes `blockers` and `decisions` when they've read and signed off. The doctor's `Handoff hygiene` check refuses to mark the workflow complete until all three close.
-
-## Inspect or modify the template
-
-```bash
-construct workflow show cross-team-handoff
-```
-
-YAML at [`templates/workflows/cross-team-handoff.yml`](https://github.com/geraldmaron/construct/blob/main/templates/workflows/cross-team-handoff.yml). Add inputs (e.g. `slo_target`, `oncall_rotation`) or wire additional artifacts (a service-map snapshot, a customer-impact note) into the artifacts block.
+The sending team closes `state` when the doc is accurate; the receiving team closes `blockers` and `decisions` when they've read and signed off.
 
 ## Pair with
 

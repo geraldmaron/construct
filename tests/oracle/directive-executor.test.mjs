@@ -34,7 +34,7 @@ test('oracleExecuteDirectivesEnabled: env var overrides config either direction'
 
 test('executeDirective is denied by default (unattended budget not configured)', async () => {
   const projectDir = tempDir('cx-directive-exec-budget-', test);
-  const directive = { id: 'demo', specialist: 'cx-operations', instruction: 'summarize the sprint' };
+  const directive = { id: 'demo', workerProfileId: 'operations', instruction: 'summarize the sprint' };
 
   const result = await executeDirective(directive, { projectDir, env: {} });
 
@@ -42,9 +42,9 @@ test('executeDirective is denied by default (unattended budget not configured)',
   assert.equal(result.reason, 'unattended-budget-not-configured');
 });
 
-test('executeDirective runs the specialist and enqueues a recommended write when budget is configured', async () => {
+test('executeDirective runs the assigned Worker Profile and enqueues a recommended write when budget is configured', async () => {
   const projectDir = tempDir('cx-directive-exec-run-', test);
-  const directive = { id: 'demo', specialist: 'cx-operations', instruction: 'post a status update' };
+  const directive = { id: 'demo', workerProfileId: 'operations', instruction: 'post a status update' };
   const env = { CONSTRUCT_UNATTENDED_BUDGET_ORACLE_DIRECTIVE_DEMO: '100000' };
 
   let capturedTask = null;
@@ -54,7 +54,7 @@ test('executeDirective runs the specialist and enqueues a recommended write when
       output: 'done',
       writeProposals: [{
         providerId: 'jira', writeKind: 'comment', payload: { issueKey: 'OPS-1', body: 'status' },
-        requestedBy: { specialistId: 'cx-operations' }, surface: 'orchestration-worker', tool: 'jira.comment',
+        requestedBy: { workerProfileId: 'operations' }, surface: 'orchestration-worker', tool: 'jira.comment',
       }],
     };
   };
@@ -67,7 +67,7 @@ test('executeDirective runs the specialist and enqueues a recommended write when
   assert.equal(result.ok, true);
   assert.equal(result.output, 'done');
   assert.equal(result.writeProposalsQueued, 1);
-  assert.equal(capturedTask.role, 'cx-operations');
+  assert.equal(capturedTask.role, 'operations');
   assert.equal(capturedTask.reason, 'post a status update');
 
   const pending = queue.getPending();
@@ -78,7 +78,7 @@ test('executeDirective runs the specialist and enqueues a recommended write when
 
 test('executeDirective records spend so a second call against a small budget is denied', async () => {
   const projectDir = tempDir('cx-directive-exec-spend-', test);
-  const directive = { id: 'demo', specialist: 'cx-operations', instruction: 'summarize' };
+  const directive = { id: 'demo', workerProfileId: 'operations', instruction: 'summarize' };
   // Pre-call budget checks use the fixed DEFAULT_TOKEN_ESTIMATE (1500), not the
   // eventual actual usage — the cap must clear that first estimate-based check
   // (2000 >= 1500) but be exhausted by the recorded 900 real tokens before the
@@ -96,7 +96,7 @@ test('executeDirective records spend so a second call against a small budget is 
 
 test('executeDirective returns ok:false with the error message when runTask throws', async () => {
   const projectDir = tempDir('cx-directive-exec-error-', test);
-  const directive = { id: 'demo', specialist: 'cx-operations', instruction: 'summarize' };
+  const directive = { id: 'demo', workerProfileId: 'operations', instruction: 'summarize' };
   const env = { CONSTRUCT_UNATTENDED_BUDGET_ORACLE_DIRECTIVE_DEMO: '100000' };
   const failingRunTask = async () => { throw new Error('provider unavailable'); };
 
@@ -106,9 +106,9 @@ test('executeDirective returns ok:false with the error message when runTask thro
   assert.equal(result.error, 'provider unavailable');
 });
 
-test('executeDirective does not touch the queue when the specialist recommends no writes', async () => {
+test('executeDirective does not touch the queue when the Worker Profile recommends no writes', async () => {
   const projectDir = tempDir('cx-directive-exec-nowrite-', test);
-  const directive = { id: 'demo', specialist: 'cx-product-manager', instruction: 'summarize the roadmap' };
+  const directive = { id: 'demo', workerProfileId: 'product-manager', instruction: 'summarize the roadmap' };
   const env = { CONSTRUCT_UNATTENDED_BUDGET_ORACLE_DIRECTIVE_DEMO: '100000' };
   const fakeRunTask = async () => ({ output: 'just a summary, no writes' });
 

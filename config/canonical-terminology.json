@@ -1,0 +1,392 @@
+{
+  "$schema": "../schemas/canonical-terminology.schema.json",
+  "concepts": {
+    "workspace": {
+      "label": "Workspace",
+      "pluralLabel": "Workspaces",
+      "identifier": "workspace-id",
+      "meaning": "The governed project context that owns configuration, state, work, and policy.",
+      "sourceOfTruth": "one workspace record resolved from the project root",
+      "owningModule": "lib/workspaces/",
+      "runtimeRoot": "lib/workspaces/",
+      "dataRoot": ".construct/",
+      "configField": "workspace",
+      "cliNoun": "workspace",
+      "mcpNoun": "workspace",
+      "graphNode": "workspace"
+    },
+    "workspace-preset": {
+      "label": "Workspace Preset",
+      "pluralLabel": "Workspace Presets",
+      "identifier": "workspace-preset-id",
+      "meaning": "A reusable workspace-wide selection of intake taxonomy, artifact defaults, tone, skills, and procedures.",
+      "sourceOfTruth": "registry/workspace-presets/<id>.json",
+      "owningModule": "lib/workspace-presets/",
+      "runtimeRoot": "lib/workspace-presets/",
+      "dataRoot": "registry/workspace-presets/",
+      "configField": "workspacePreset",
+      "cliNoun": "workspace-preset",
+      "mcpNoun": "workspace_preset",
+      "graphNode": "workspace-preset"
+    },
+    "source": {
+      "label": "Source",
+      "pluralLabel": "Sources",
+      "identifier": "source-id",
+      "meaning": "An external or internal signal origin connected to a Workspace through a cursor-based ingestion contract.",
+      "sourceOfTruth": "source records scoped to a Workspace",
+      "owningModule": "lib/sources/",
+      "runtimeRoot": "lib/sources/",
+      "dataRoot": ".construct/sources/",
+      "configField": "sources",
+      "cliNoun": "source",
+      "mcpNoun": "source",
+      "graphNode": "source"
+    },
+    "objective": {
+      "label": "Objective",
+      "pluralLabel": "Objectives",
+      "identifier": "objective-id",
+      "meaning": "A durable desired result and its rationale, advanced by one or more Work records.",
+      "sourceOfTruth": "planned — no Objective domain store yet; do not invent .construct/objectives/ or lib/objectives/ consumers",
+      "implementationStatus": "planned",
+      "owningModule": "none (planned)",
+      "targetOwningModule": "lib/objectives/",
+      "targetRuntimeRoot": "lib/objectives/",
+      "targetDataRoot": ".construct/objectives/",
+      "interimMap": "narrative objective field on Work Specifications (lib/planning/work-spec.mjs); no durable Objective aggregate",
+      "configField": "objectives",
+      "cliNoun": "none (planned)",
+      "mcpNoun": "none (planned)",
+      "graphNode": "objective"
+    },
+    "directive": {
+      "label": "Directive",
+      "pluralLabel": "Directives",
+      "identifier": "directive-id",
+      "meaning": "A standing instruction that generates Objectives or Work until retired.",
+      "sourceOfTruth": "directive records scoped to a Workspace",
+      "owningModule": "lib/directives/",
+      "runtimeRoot": "lib/directives/",
+      "dataRoot": ".construct/directives/",
+      "configField": "directives",
+      "cliNoun": "directive",
+      "mcpNoun": "directive",
+      "graphNode": "directive"
+    },
+    "work": {
+      "label": "Work",
+      "pluralLabel": "Work",
+      "identifier": "work-id",
+      "meaning": "One bounded, owned unit that advances an Objective and is projected to an external tracker when needed.",
+      "sourceOfTruth": "planned — no Construct Work domain store yet; beads issues are the interim execution unit, not a Work aggregate API",
+      "implementationStatus": "planned",
+      "owningModule": "none (planned)",
+      "targetOwningModule": "lib/work/",
+      "targetRuntimeRoot": "lib/work/",
+      "targetDataRoot": ".construct/work/",
+      "interimMap": "bd/beads issues + lib/tracker-projection/ (projection of graph-informed Work-spec fields); no lib/work/ store",
+      "configField": "work",
+      "cliNoun": "none (planned); interim tracker via bd / construct beads",
+      "mcpNoun": "none (planned)",
+      "graphNode": "work"
+    },
+    "work-specification": {
+      "label": "Work Specification",
+      "pluralLabel": "Work Specifications",
+      "identifier": "work-specification-id",
+      "meaning": "The versioned what-and-why agreement for one Work record.",
+      "sourceOfTruth": "interim Work-spec schema and CLI under lib/planning/; not yet immutable versions owned by a Work aggregate",
+      "implementationStatus": "interim",
+      "owningModule": "lib/planning/",
+      "runtimeRoot": "lib/planning/",
+      "targetOwningModule": "lib/work-specifications/",
+      "targetDataRoot": ".construct/work-specifications/",
+      "interimMap": "lib/planning/work-spec.mjs + build-work-spec.mjs; CLI construct work-spec",
+      "configField": "workSpecification",
+      "cliNoun": "work-spec",
+      "mcpNoun": "none (planned)",
+      "graphNode": "work-specification"
+    },
+    "plan": {
+      "label": "Plan",
+      "pluralLabel": "Plans",
+      "identifier": "plan-id",
+      "meaning": "A versioned approach that decomposes one Work Specification into Assignments.",
+      "sourceOfTruth": "interim — decomposition lives on Work-spec + orchestration dispatch; no durable Plan domain store",
+      "implementationStatus": "interim",
+      "owningModule": "lib/planning/",
+      "runtimeRoot": "lib/planning/",
+      "targetOwningModule": "lib/plans/",
+      "targetRuntimeRoot": "lib/plans/",
+      "targetDataRoot": ".construct/plans/",
+      "interimMap": "lib/planning/ decomposition + orchestration Assignment graphs; no lib/plans/ or .construct/plans/",
+      "configField": "plan",
+      "cliNoun": "none (planned); interim via work-spec / orchestration",
+      "mcpNoun": "none (planned)",
+      "graphNode": "plan"
+    },
+    "run": {
+      "label": "Run",
+      "pluralLabel": "Runs",
+      "identifier": "run-id",
+      "meaning": "One execution attempt of a Plan, including checkpoints, Assignment state, approvals, and usage.",
+      "sourceOfTruth": "Run records scoped to a Workspace and Plan",
+      "owningModule": "lib/runs/",
+      "runtimeRoot": "lib/runs/",
+      "dataRoot": ".construct/runs/",
+      "configField": "runs",
+      "cliNoun": "run",
+      "mcpNoun": "run",
+      "graphNode": "run"
+    },
+    "worker-profile": {
+      "label": "Worker Profile",
+      "pluralLabel": "Worker Profiles",
+      "identifier": "worker-profile-id",
+      "meaning": "An assignable worker configuration: runtime, model tier, skill emphasis, procedure affinity, and policy fence.",
+      "sourceOfTruth": "registry/worker-profiles/<id>.json",
+      "owningModule": "lib/worker-profiles/",
+      "runtimeRoot": "lib/worker-profiles/",
+      "dataRoot": "registry/worker-profiles/",
+      "configField": "workerProfile",
+      "cliNoun": "worker-profile",
+      "mcpNoun": "worker_profile",
+      "graphNode": "worker-profile"
+    },
+    "skill": {
+      "label": "Skill",
+      "pluralLabel": "Skills",
+      "identifier": "skill-id",
+      "meaning": "Reusable domain knowledge or operating guidance loaded by a worker.",
+      "sourceOfTruth": "skills/<domain>/<skill>.md",
+      "owningModule": "lib/skills/",
+      "runtimeRoot": "lib/skills/",
+      "dataRoot": "skills/",
+      "configField": "skills",
+      "cliNoun": "skill",
+      "mcpNoun": "skill",
+      "graphNode": "skill"
+    },
+    "procedure": {
+      "label": "Procedure",
+      "pluralLabel": "Procedures",
+      "identifier": "procedure-id",
+      "meaning": "A reusable, named, deterministic sequence that Plans invoke.",
+      "sourceOfTruth": "registry/procedures/<id>.json",
+      "owningModule": "lib/procedures/",
+      "runtimeRoot": "lib/procedures/",
+      "dataRoot": "registry/procedures/",
+      "configField": "procedures",
+      "cliNoun": "procedure",
+      "mcpNoun": "procedure",
+      "graphNode": "procedure"
+    },
+    "assignment": {
+      "label": "Assignment",
+      "pluralLabel": "Assignments",
+      "identifier": "assignment-id",
+      "meaning": "A bounded execution unit from a Plan, owned by one worker and governed by an explicit contract.",
+      "sourceOfTruth": "assignment records owned by the active Plan and Run",
+      "owningModule": "lib/assignments/",
+      "runtimeRoot": "lib/assignments/",
+      "configField": "assignments",
+      "cliNoun": "assignment",
+      "mcpNoun": "assignment",
+      "graphNode": "assignment"
+    },
+    "capability": {
+      "label": "Capability",
+      "pluralLabel": "Capabilities",
+      "identifier": "capability-id",
+      "meaning": "A typed operation the system can perform, with inputs, outputs, preconditions, and postconditions.",
+      "sourceOfTruth": "registry/capabilities.json",
+      "owningModule": "lib/capabilities/",
+      "runtimeRoot": "lib/capabilities/",
+      "dataRoot": "registry/capabilities.json",
+      "configField": "capabilities",
+      "cliNoun": "capability",
+      "mcpNoun": "capability",
+      "graphNode": "capability"
+    },
+    "policy": {
+      "label": "Policy",
+      "pluralLabel": "Policies",
+      "identifier": "policy-id",
+      "meaning": "A rule governing authority, approval, and external effects at the mutation boundary.",
+      "sourceOfTruth": "registry/policies/<id>.json",
+      "owningModule": "lib/policy/",
+      "runtimeRoot": "lib/policy/",
+      "dataRoot": "registry/policies/",
+      "configField": "policies",
+      "cliNoun": "policy",
+      "mcpNoun": "policy",
+      "graphNode": "policy"
+    },
+    "artifact": {
+      "label": "Artifact",
+      "pluralLabel": "Artifacts",
+      "identifier": "artifact-id",
+      "meaning": "A content-identified output produced by a Run or Assignment.",
+      "sourceOfTruth": "Artifact record plus content hash and immutable output location",
+      "owningModule": "lib/artifacts/",
+      "runtimeRoot": "lib/artifacts/",
+      "dataRoot": ".construct/artifacts/",
+      "configField": "artifacts",
+      "cliNoun": "artifact",
+      "mcpNoun": "artifact",
+      "graphNode": "artifact"
+    },
+    "evidence": {
+      "label": "Evidence",
+      "pluralLabel": "Evidence",
+      "identifier": "evidence-edge-id",
+      "meaning": "A typed assertion that an Artifact satisfies a requirement; represented as a relationship, not a standalone domain record.",
+      "sourceOfTruth": "evidenced-by graph edge with requirement, verdict, provenance, and acceptance metadata",
+      "owningModule": "lib/evidence/",
+      "runtimeRoot": "lib/evidence/",
+      "configField": "evidence",
+      "cliNoun": "evidence",
+      "mcpNoun": "evidence",
+      "graphNode": "none; graph edge evidenced-by"
+    },
+    "projection": {
+      "label": "Projection",
+      "pluralLabel": "Projections",
+      "identifier": "projection-id",
+      "meaning": "A derived adapter view of Construct-owned state, such as an external tracker item.",
+      "sourceOfTruth": "the Construct domain record being projected",
+      "owningModule": "lib/projections/",
+      "runtimeRoot": "lib/projections/",
+      "configField": "projections",
+      "cliNoun": "projection",
+      "mcpNoun": "projection",
+      "graphNode": "projection"
+    },
+    "graph-node": {
+      "label": "Graph Node",
+      "pluralLabel": "Graph Nodes",
+      "identifier": "graph-node-id",
+      "meaning": "A non-authoritative graph representation of a domain object or implementation entity.",
+      "sourceOfTruth": "the represented domain store or checked-in implementation file",
+      "owningModule": "lib/graph/",
+      "runtimeRoot": "lib/graph/",
+      "dataRoot": ".construct/graph/",
+      "configField": "graph.nodes",
+      "cliNoun": "graph-node",
+      "mcpNoun": "graph_node",
+      "graphNode": "graph-node"
+    },
+    "graph-edge": {
+      "label": "Graph Edge",
+      "pluralLabel": "Graph Edges",
+      "identifier": "graph-edge-id",
+      "meaning": "A typed, provenance-bearing relationship between Graph Nodes.",
+      "sourceOfTruth": "declared or derived relationship with provenance and confidence",
+      "owningModule": "lib/graph/",
+      "runtimeRoot": "lib/graph/",
+      "dataRoot": ".construct/graph/",
+      "configField": "graph.edges",
+      "cliNoun": "graph-edge",
+      "mcpNoun": "graph_edge",
+      "graphNode": "none; relationship representation"
+    }
+  },
+  "termClassifications": {
+    "persona": { "disposition": "rename", "replacement": "worker-profile" },
+    "role": { "disposition": "rename-when-worker-identity", "replacement": "worker-profile" },
+    "specialist": { "disposition": "rename", "replacement": "worker-profile" },
+    "team": { "disposition": "delete-when-execution-object", "replacement": "plan-assignment-graph" },
+    "group": { "disposition": "delete-when-execution-object", "replacement": "plan-assignment-graph" },
+    "scope": { "disposition": "rename-when-selectable-configuration", "replacement": "workspace-preset" },
+    "workflow": { "disposition": "rename-when-reusable-construct-sequence", "replacement": "procedure" },
+    "contract": { "disposition": "retain-as-subordinate-boundary", "replacement": "capability-contract" },
+    "org": { "disposition": "delete-as-product-namespace", "replacement": "registry" },
+    "cx-": { "disposition": "remove-from-product-identifiers", "replacement": "construct-or-domain-name" },
+    "legacy": { "disposition": "delete-from-live-surface", "replacement": "none" },
+    "deprecated": { "disposition": "delete-for-retired-construct-surfaces", "replacement": "removed" },
+    "version-qualified-product-name": { "disposition": "delete", "replacement": "Construct" }
+  },
+  "ordinaryLanguageExceptions": {
+    "role": [
+      "access-control role",
+      "semantic role in a relationship",
+      "ordinary responsibility in prose"
+    ],
+    "team": [
+      "deployment mode named team",
+      "ordinary group of people in prose"
+    ],
+    "group": [
+      "collection or grouping operation"
+    ],
+    "scope": [
+      "authorization boundary",
+      "configuration precedence",
+      "lexical or package scope"
+    ],
+    "workflow": [
+      "GitHub Actions workflow",
+      "generic human work process when no Construct object is named"
+    ],
+    "contract": [
+      "an executable input/output or provider boundary",
+      "a legal agreement in ordinary prose"
+    ],
+    "org": [
+      "an external organization in ordinary prose"
+    ],
+    "deprecated": [
+      "a third-party API lifecycle state when factually required"
+    ],
+    "legacy": [
+      "a third-party or historical file format when factually required"
+    ]
+  },
+  "historicalExclusions": {
+    "roots": ["docs/decisions/adr/", "docs/notes/research/"],
+    "rule": "Retired identifiers may appear only as evidence of a past decision or observed implementation. They must not be stated as current guidance, copied into examples, or emitted by generators."
+  },
+  "consumerInventory": {
+    "registry-and-schema": ["registry/", "schemas/", "lib/registry/"],
+    "catalog-and-loaders": ["registry/", "lib/workspace-presets/", "lib/worker-profiles/", "lib/skills/"],
+    "executable-surfaces": ["bin/construct", "lib/cli/", "lib/mcp/", "lib/orchestration/"],
+    "documentation-and-assets": ["README.md", "docs/guides/", "examples/", "templates/", "commands/"],
+    "verification-and-generation": ["tests/", "scripts/", "platforms/", ".github/"]
+  },
+  "currentToCanonical": {
+    "lib/scopes/": "lib/workspace-presets/",
+    "lib/roles/": "lib/worker-profiles/ or lib/policy/ according to responsibility",
+    "lib/workflows/": "lib/procedures/",
+    "templates/workflows/": "registry/procedures/",
+    "construct.config.json:scope": "construct.config.json:workspacePreset",
+    "registry.specialists": "registry.workerProfiles",
+    "registry.teams": "remove; Plan owns Assignment relationships",
+    "registry.groups": "remove; Plan owns Assignment relationships",
+    "construct scope": "construct workspace-preset",
+    "construct specialist": "construct worker-profile",
+    "construct team": "remove",
+    "MCP specialist/team/scope nouns": "MCP worker_profile/assignment/workspace_preset nouns",
+    "graph:specialist": "graph:worker-profile",
+    "graph:workflow": "graph:procedure",
+    "lib/objectives/": "planned — no store (construct-smlqu); interim: Work-spec objective field in lib/planning/",
+    "lib/work/": "planned — no store (construct-smlqu); interim: beads + lib/tracker-projection/",
+    "lib/plans/": "interim — use lib/planning/ + orchestration; target lib/plans/ is construct-smlqu",
+    "lib/work-specifications/": "interim — use lib/planning/work-spec.mjs; target lib/work-specifications/ is construct-smlqu",
+    ".construct/objectives/": "planned — do not create; no Objective data root yet",
+    ".construct/work/": "planned — do not create; beads/.beads and tracker-projection are interim",
+    ".construct/plans/": "planned — do not create; Plan records are not a durable project data root yet"
+  },
+  "obsoleteSurfaces": {
+    "roots": ["specialists/", "personas/", ".cx/"],
+    "identifiers": ["cx-*", "CX_*"],
+    "retirementPolicy": "These names may appear only in docs/obsolete/ historical evidence and never in active code, package payloads, generated adapters, or fixtures."
+  },
+  "cutoverOrder": [
+    "registry-and-schema",
+    "catalog-and-loaders",
+    "executable-surfaces",
+    "documentation-and-assets",
+    "verification-and-generation"
+  ]
+}

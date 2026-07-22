@@ -105,7 +105,11 @@ describe('ApprovalQueue', () => {
     assert.equal(reader.getById(rec.approvalId).state, 'awaiting_approval');
 
     writer.approve(rec.approvalId, { decidedBy: { userId: 'someone-else' } });
-    assert.equal(reader.getById(rec.approvalId).state, 'awaiting_approval', 'stale until reloaded');
+
+    // Readers reload per call (construct-4uxq0.9.9), so the sibling's
+    // decision is visible immediately — no explicit reload required — and
+    // an explicit reloadFromDisk() stays valid and idempotent on top.
+    assert.equal(reader.getById(rec.approvalId).state, 'approved');
 
     reader.reloadFromDisk();
     const reloaded = reader.getById(rec.approvalId);

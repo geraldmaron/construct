@@ -49,7 +49,7 @@ function runPostinstallInConsumer({ packageJson = '{"name":"demo-consumer","vers
       npm_config_global: 'false',
       CONSTRUCT_SKIP_POSTINSTALL: '',
       HOME: home,
-      CX_HOME_OVERRIDE: home,
+      CONSTRUCT_HOME_OVERRIDE: home,
     },
   });
   return { projectRoot, home, result };
@@ -71,7 +71,7 @@ function findInstallReceipt(projectRoot) {
     path.join(projectRoot, '.construct', 'install-manifest.json'),
     path.join(projectRoot, '.construct', 'install-receipt.json'),
     path.join(projectRoot, '.construct', 'postinstall-manifest.json'),
-    path.join(projectRoot, '.cx', 'install-manifest.json'),
+    path.join(projectRoot, '.construct', 'install-manifest.json'),
   ];
   const file = candidates.find((p) => fs.existsSync(p));
   return { file, candidates };

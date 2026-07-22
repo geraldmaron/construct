@@ -35,7 +35,6 @@ import { ApprovalQueue } from '../../lib/embed/approval-queue.mjs';
 import { runCapabilityTick } from '../../lib/embed/capability-jobs.mjs';
 import { createTpmReasoningExecutor, analyzeTpm } from '../../lib/embed/presets/tpm.mjs';
 import { writeWithEnvelope } from '../../lib/writes/envelope.mjs';
-import { validatePacket } from '../../lib/specialist-contracts.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const realFetch = globalThis.fetch;
@@ -67,12 +66,14 @@ const OPERATIONS_MANIFEST = {
   id: 'operations',
   version: '1.0.0',
   type: 'embed',
-  defaultApprovalMode: 'proposal-only',
+  workerProfiles: [],
+  approvalMode: 'proposal-only',
+  modelTier: 'standard',
+  state: 'active',
   embed: {
-    specialist: 'cx-operations',
+    workerProfileId: 'operations',
     providerBindings: ['atlassian-jira', 'atlassian-confluence', 'slack'],
-    framework: 'cx-ops-dependency-sequencing',
-    outputContract: 'operations-tpm-briefing',
+    framework: 'operations-dependency-sequencing',
     proposalAuthority: 'propose-only',
     runtime: 'in-process',
     cadence: { every: 'PT4H' },
@@ -126,6 +127,18 @@ function tmpRoot() {
   return mkdtempSync(join(tmpdir(), 'tpm-preset-'));
 }
 
+function assertTpmPacketContract(packet) {
+  assert.deepEqual(
+    Object.keys(packet).sort(),
+    ['briefing', 'coverageMatrix', 'misalignment', 'missingWork', 'proposals', 'provenance', 'timelineRisks'],
+    'Procedure artifact exposes the complete TPM briefing packet',
+  );
+  assert.equal(typeof packet.briefing, 'string');
+  for (const section of ['coverageMatrix', 'missingWork', 'timelineRisks', 'misalignment', 'proposals', 'provenance']) {
+    assert.equal(typeof packet[section].count, 'number', `${section} declares a count`);
+  }
+}
+
 test('seeded PRD/Jira mismatch → missing-work finding + queued draft intent, zero adapter writes', async () => {
   globalThis.fetch = () => { throw new Error('Real network blocked in acceptance test'); };
   const rootDir = tmpRoot();
@@ -144,7 +157,7 @@ test('seeded PRD/Jira mismatch → missing-work finding + queued draft intent, z
     });
 
     assert.equal(tick.status, 'ran', `tick should run, got ${tick.status} (${tick.reason ?? ''})`);
-    assert.equal(tick.contractStatus, 'ok', 'output packet must satisfy its contract');
+    assert.equal(tick.contractStatus, 'unchecked', 'final Procedure artifacts are not Assignment handoffs');
 
     assert.equal(tick.proposalsEnqueued.length, 1, 'exactly one draft ticket enqueued');
     assert.equal(tick.proposalsEnqueued[0].providerId, 'atlassian-jira');
@@ -175,11 +188,10 @@ test('seeded slipping dependency chain → timeline-risk finding citing its evid
   assert.match(slipping.statement, /PAY-2.*PAY-9/, 'the finding cites both issue keys');
 });
 
-test('briefing validates against its output contract; every load-bearing claim carries provenance', () => {
+test('briefing satisfies its Procedure artifact shape; every load-bearing claim carries provenance', () => {
   const { outputPacket, analysis, briefing } = analyzeTpm(buildSeededSnapshot().sections, { now: FIXED_NOW });
 
-  const result = validatePacket('operations-tpm-briefing', outputPacket, 'output');
-  assert.ok(result.ok, `briefing packet must validate; missing: ${result.missing?.join(', ')}`);
+  assertTpmPacketContract(outputPacket);
 
   for (const finding of analysis.missingWork.findings) {
     assert.ok(finding.evidence.requirement, 'missing-work finding cites the requirement provenance');

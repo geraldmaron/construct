@@ -53,7 +53,7 @@ Use this skill to analyze the impact of code changes and verify documentation an
 - [ ] API documentation reflects new or modified endpoints
 - [ ] Inline comments updated if behavior changed
 - [ ] Migration guides written for breaking changes
-- [ ] Core docs updated for user-visible or architectural changes (`.cx/context.*`, `.cx/workflow.json`, `docs/README.md`, `docs/architecture.md`)
+- [ ] Core docs updated for user-visible or architectural changes (`.construct/context.*`, `.construct/workflow.json`, `docs/README.md`, `docs/architecture.md`)
 - [ ] Architecture decision records created for significant shifts
 
 **Severity**: Stale API docs = High. Missing core-doc update for project reality changes = High. Stale comment = Low.

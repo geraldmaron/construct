@@ -6,7 +6,7 @@ version: "0.1"
 doc_id: RFC-PLATFORM-EXAMPLES-001
 classification: internal
 status: proposed
-owner: cx-architect
+owner: architect
 last_verified_at: 2026-06-22
 ---
 
@@ -14,8 +14,8 @@ last_verified_at: 2026-06-22
 
 - **Date**: 2026-06-22
 - **Status**: proposed
-- **Authors**: cx-architect, cx-docs-keeper
-- **Reviewers**: cx-product-manager, cx-sre
+- **Authors**: architect, operations
+- **Reviewers**: product-manager, operations
 
 ## Summary
 

@@ -7,14 +7,14 @@ Construct's observability commands read from two sources:
 - **Trace adapter**: local JSONL by default; Langfuse-compatible, generic HTTP, or OTLP export when configured
 - **Local cost log**: file-backed token ledger read by `cost` and `efficiency` (no external dependency)
 
-R&D-loop trace events (`intake.received`, `intake.triaged`, `task_graph.created`, `worker.started`, `worker.completed`, `evidence.recorded`, `tool.called`, `approval.requested`, …) always write to `.construct/traces/<YYYY-MM-DD>.jsonl` with no credentials. When `CONSTRUCT_TRACE_BACKEND=langfuse|http|otel` is configured, the same events are exported remotely so the intake → graph → worker → evidence chain stays correlated end-to-end. Set `CONSTRUCT_TRACE_BACKEND=none` to suppress remote export while keeping the local JSONL log.
+R&D-loop trace events (`intake.received`, `intake.triaged`, `task_graph.created`, `worker.started`, `worker.completed`, `evidence.recorded`, `tool.called`, `approval.requested`, …) always write to `~/.construct/projects/<key>/traces/<YYYY-MM-DD>.jsonl` with no credentials. When `CONSTRUCT_TRACE_BACKEND=langfuse|http|otel` is configured, the same events are exported remotely so the intake → graph → worker → evidence chain stays correlated end-to-end. Set `CONSTRUCT_TRACE_BACKEND=none` to suppress remote export while keeping the local JSONL log.
 
 ## Review agent performance
 
 ```bash
 construct review
 construct review --days=7
-construct review --agent=cx-engineer
+construct review run --agent=engineer
 ```
 
 Fetches traces from the configured trace source, computes per-agent quality scores, and writes a markdown report to
@@ -33,14 +33,14 @@ patterns.
 
 ```bash
 construct optimize --list
-construct optimize cx-engineer
-construct optimize cx-engineer --apply
+construct optimize engineer
+construct optimize engineer --apply
 ```
 
 `--list` shows every agent with a quality score and trace count. Use it to decide which agent
 to target. The bare command is a dry-run: it prints the failure diagnosis and proposed patch
 without writing anything. `--apply` is the explicit gate that rewrites the agent's role skill
-file (`skills/roles/<role>.md`) — rate-limited to one apply per agent per 7 days, with a `.bak`
+file (`skills/perspectives/<role>.md`) — rate-limited to one apply per agent per 7 days, with a `.bak`
 backup restorable via `--rollback`.
 
 | Flag | Effect |

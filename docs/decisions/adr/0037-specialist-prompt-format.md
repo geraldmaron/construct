@@ -1,4 +1,6 @@
-# ADR-0037: Specialist Prompt Format — Hybrid Markdown + Structured Frontmatter
+# Obsolete: ADR-0037 — Specialist Prompt Format — Hybrid Markdown + Structured Frontmatter
+
+> **Obsolete (Construct 2.0):** Specialist prompts under `specialists/prompts/cx-*.md` and `construct specialist create/edit` are retired. Live prompts are Worker Profile prompts under `registry/worker-profiles/prompts/`. Title `Obsolete:` marker is intentional. Body below is historical. See `docs/obsolete/legacy-surface-register.md`.
 
 - **Date**: 2026-06-17
 - **Status**: proposed

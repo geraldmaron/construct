@@ -1,5 +1,5 @@
 /**
- * tests/intake-queue.test.mjs — `.cx/intake/` storage contract via FilesystemIntakeQueue.
+ * tests/intake-queue.test.mjs — `.construct/intake/` storage contract via FilesystemIntakeQueue.
  *
  * Pins the durable handoff between the embed daemon (which writes pending
  * entries) and the agent in the user's editor (which processes them).

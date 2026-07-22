@@ -47,7 +47,7 @@ function runHook(input, { auditReads = '1' } = {}) {
     // walker stops at $HOME and the writer falls back to the global doctor
     // root — the user-scope path this test asserts against. Without this, the
     // spawned hook inherits the construct repo cwd and routes its audit
-    // record into the construct repo's own .cx/.
+    // record into the construct repo's own .construct/.
 
     cwd: tmpHome,
     encoding: 'utf8',

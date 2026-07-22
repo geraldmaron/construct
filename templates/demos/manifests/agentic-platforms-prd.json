@@ -1,0 +1,37 @@
+{
+  "schema": "construct/demo-manifest/1",
+  "name": "agentic-platforms-prd",
+  "title": "Publish guardrails — agentic platforms PRD",
+  "summary": "Prove Construct's path: procedure invoke returns a plan only, validate and publish fail on the thin stub, then pass on the golden fixture with styled PDF export.",
+  "status": "declared",
+  "script": "templates/demos/scripts/agentic-platforms-prd.json",
+  "tape": "templates/demos/tapes/agentic-platforms-prd.tape",
+  "fallbackSurface": "tape",
+  "recording": {
+    "name": "agentic-platforms-prd",
+    "title": "Publish guardrails — agentic platforms PRD",
+    "engine": "playwright",
+    "workspace": "apps/dashboard",
+    "spec": "apps/dashboard/e2e/demo/agentic-platforms-prd.spec.ts",
+    "baseUrl": "http://127.0.0.1:4242",
+    "project": "demo-recording",
+    "artifactReveal": {
+      "mode": "constructPreview",
+      "staticDir": ".",
+      "file": "prd-platform.pdf",
+      "scroll": true
+    },
+    "output": {
+      "format": "mp4",
+      "path": ".construct/demos/dashboard/agentic-platforms-prd.mp4"
+    }
+  },
+  "commands": [
+    "node bin/construct procedure invoke --json --workflow-type prd-draft --approval-mode proposal-only --text 'Enterprise agentic platform PRD'",
+    "node bin/construct artifact validate tests/fixtures/publish/agentic-platforms-stub.md --type=prd-platform",
+    "node bin/construct publish tests/fixtures/publish/agentic-platforms-stub.md --figures",
+    "node bin/construct artifact validate tests/fixtures/publish/golden-prd-platform.md --type=prd-platform",
+    "node bin/construct publish tests/fixtures/publish/golden-prd-platform.md --type=prd-platform --figures --output .construct/publish/golden-prd-platform.pdf",
+    "node bin/construct demo tour agentic-platforms-prd"
+  ]
+}

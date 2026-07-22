@@ -6,8 +6,8 @@ category: bad
 verdict: fail
 summary: Treats a green suite or coverage number as proof that the behavior is safe.
 references:
-  - skills/roles/qa.md
-  - specialists/prompts/cx-qa.md
+  - skills/perspectives/qa.md
+  - registry/worker-profiles/prompts/qa.md
 tags:
   - coverage-theater
   - false-confidence

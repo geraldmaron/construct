@@ -12,8 +12,26 @@ import os from 'node:os';
 import path from 'node:path';
 
 import {
-  writeGraph, loadGraph, dependenciesOf, dependentsOf, nodesByType, nodeId,
+  writeGraph, loadGraph, dependenciesOf, dependentsOf, nodesByType, nodeId, renameNode,
 } from '../../lib/graph/store.mjs';
+
+// construct-b0nny.3: the relational graph store (lib/graph/relational/)
+// resolves graph.db under the machine-scoped state root (resolveStateDir,
+// ADR-0066) whenever writeGraph/loadGraph touch the host graph on Node
+// >=22.5. Pin CONSTRUCT_HOME_OVERRIDE so this suite never provisions state under
+// the real developer machine's ~/.construct/projects/ (the isolation
+// contract, tests/functional/README.md) — the same pattern
+// tests/orchestration-run-store-sqlite.test.mjs already established.
+
+const constructGraphTestHomeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-graph-test-home-'));
+const constructGraphTestPrevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = constructGraphTestHomeOverride;
+test.after(() => {
+  try { fs.rmSync(constructGraphTestHomeOverride, { recursive: true, force: true }); } catch {}
+  if (constructGraphTestPrevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = constructGraphTestPrevHomeOverride;
+});
+
 
 const tmpDirs = [];
 after(() => {
@@ -200,4 +218,98 @@ test('loadGraph on an empty root reports non-existent without throwing', () => {
   assert.equal(graph.exists, false);
   assert.equal(graph.nodes.size, 0);
   assert.deepEqual(dependenciesOf(graph, 'whatever'), []);
+});
+
+// construct-4uxq0.11.6: writeGraph/loadGraph carry partial/partialReasons so
+// a rebuild that collected fewer than all its seed sources can mark itself
+// as such instead of meta.json silently reporting a full build.
+
+test('writeGraph defaults partial to false when not passed', () => {
+  const root = freshRoot();
+  writeGraph(root, { nodes: [{ id: 'file:a', type: 'file' }], edges: [] });
+  const graph = loadGraph(root);
+  assert.equal(graph.meta.partial, false);
+  assert.deepEqual(graph.meta.partialReasons, []);
+});
+
+test('writeGraph persists partial: true with its reasons', () => {
+  const root = freshRoot();
+  writeGraph(root, {
+    nodes: [{ id: 'file:a', type: 'file' }],
+    edges: [],
+    partial: true,
+    partialReasons: ['buildFromRegistry threw: Modular org not found'],
+  });
+  const graph = loadGraph(root);
+  assert.equal(graph.meta.partial, true);
+  assert.deepEqual(graph.meta.partialReasons, ['buildFromRegistry threw: Modular org not found']);
+});
+
+test('loadGraph treats a meta.json with no partial field as false', () => {
+  const root = freshRoot();
+  writeGraph(root, { nodes: [{ id: 'file:a', type: 'file' }], edges: [] });
+  const metaPath = path.join(root, '.construct', 'graph', 'meta.json');
+  const legacyMeta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+  delete legacyMeta.partial;
+  delete legacyMeta.partialReasons;
+  fs.writeFileSync(metaPath, JSON.stringify(legacyMeta, null, 2));
+
+  const graph = loadGraph(root);
+  assert.equal(graph.meta.partial, false);
+  assert.deepEqual(graph.meta.partialReasons, []);
+});
+
+// construct-4uxq0.11.6: renameNode moves a node to a new id without dropping
+// history — every edge referencing the old id is rewritten, the old id
+// becomes a tombstone (attrs.supersededBy), and dependenciesOf/dependentsOf
+// resolve the old id through the tombstone to the live node's edges.
+
+test('renameNode rewires edges, tombstones the old id, and aliases the new node', () => {
+  const root = freshRoot();
+  const oldId = nodeId('capability', 'old-name');
+  const newId = nodeId('capability', 'new-name');
+  writeGraph(root, {
+    nodes: [
+      { id: oldId, type: 'capability', name: 'old-name' },
+      { id: nodeId('workflow', 'w'), type: 'workflow', name: 'w' },
+      { id: nodeId('test', 't'), type: 'test', name: 't' },
+    ],
+    edges: [
+      { from: oldId, to: nodeId('workflow', 'w'), rel: 'embeds', source: 'registry' },
+      { from: nodeId('test', 't'), to: oldId, rel: 'validates', source: 'registry' },
+    ],
+  });
+
+  const result = renameNode(root, oldId, newId);
+  assert.deepEqual(result, { renamed: true, oldId, newId, tombstoneId: oldId });
+
+  const graph = loadGraph(root);
+  const tombstone = graph.nodes.get(oldId);
+  assert.equal(tombstone.type, 'tombstone');
+  assert.equal(tombstone.attrs.supersededBy, newId);
+
+  const renamed = graph.nodes.get(newId);
+  assert.equal(renamed.type, 'capability');
+  assert.deepEqual(renamed.attrs.aliases, [oldId]);
+
+  assert.deepEqual(dependenciesOf(graph, newId, 'embeds'), [nodeId('workflow', 'w')]);
+  assert.deepEqual(dependentsOf(graph, newId, 'validates'), [nodeId('test', 't')]);
+
+  // The pre-rename id resolves through the tombstone to the same edges,
+  // not an empty result.
+  assert.deepEqual(dependenciesOf(graph, oldId, 'embeds'), [nodeId('workflow', 'w')]);
+  assert.deepEqual(dependentsOf(graph, oldId, 'validates'), [nodeId('test', 't')]);
+});
+
+test('renameNode rejects renaming a nonexistent node or onto an existing id', () => {
+  const root = freshRoot();
+  writeGraph(root, {
+    nodes: [
+      { id: 'capability:a', type: 'capability' },
+      { id: 'capability:b', type: 'capability' },
+    ],
+    edges: [],
+  });
+  assert.throws(() => renameNode(root, 'capability:ghost', 'capability:c'), /node not found/);
+  assert.throws(() => renameNode(root, 'capability:a', 'capability:b'), /target id already exists/);
 });

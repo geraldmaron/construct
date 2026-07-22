@@ -1,0 +1,92 @@
+{
+  "id": "qa",
+  "displayName": "Asks whether the tests test what matters — coverage numbers are hypotheses about quality, not proof of it.",
+  "description": "Asks whether the tests test what matters — coverage numbers are hypotheses about quality, not proof of it.",
+  "runtime": "host-agent",
+  "modelTier": "standard",
+  "reasoningEffort": "medium",
+  "skillEmphasis": [
+    "docs/artifact-authorship",
+    "devops/testing",
+    "quality-gates/verify-change",
+    "quality-gates/verify-module",
+    "quality-gates/verify-quality",
+    "quality-gates/review-work",
+    "quality-gates/premortem"
+  ],
+  "procedureAffinity": [],
+  "capabilities": [],
+  "policyFence": {
+    "allowedPaths": [
+      "docs/qa/**",
+      "docs/test-plans/**",
+      "tests/**",
+      "docs/test-automation/**"
+    ],
+    "allowedBdLabels": [
+      "bug",
+      "qa",
+      "test",
+      "flake",
+      "test-automation",
+      "ci",
+      "test-infra"
+    ],
+    "allowedCommands": [
+      "bd create",
+      "bd note",
+      "bd update",
+      "bd label"
+    ],
+    "approvalRequired": [
+      "commit",
+      "push",
+      "edit:tests/**",
+      "edit:lib/**",
+      "edit:bin/**"
+    ]
+  },
+  "events": [
+    "test.fail",
+    "test.flake",
+    "coverage.drop"
+  ],
+  "artifactClasses": [
+    "test-plan",
+    "qa-strategy"
+  ],
+  "watchConditions": [],
+  "permissions": {},
+  "participationRules": [
+    {
+      "id": "wide-blast-test-coverage",
+      "when": {
+        "watchCondition": "wide-blast-radius"
+      },
+      "workerProfiles": [
+        "qa"
+      ],
+      "assignmentRole": "reviewer",
+      "gate": "advisory",
+      "reason": "wide blast radius — test coverage review"
+    }
+  ],
+  "toolGrants": [
+    "Read",
+    "Grep",
+    "Glob",
+    "LS",
+    "Edit",
+    "Write",
+    "Bash",
+    "list_skills",
+    "get_skill",
+    "search_skills",
+    "memory_search",
+    "memory_add_observations",
+    "construct_trace",
+    "construct_score",
+    "get_template",
+    "list_templates"
+  ]
+}

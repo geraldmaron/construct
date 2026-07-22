@@ -1,6 +1,6 @@
 # Construct docs site
 
-Next.js app (App Router + Tailwind + `@cx/ui`) that publishes the editorial docs
+Next.js app (App Router + Tailwind + `@construct/ui`) that publishes the editorial docs
 experience at `https://geraldmaron.github.io/construct/`.
 
 ## Quick start
@@ -18,10 +18,10 @@ Site runs at http://localhost:3000/ (empty base path). Production build uses
 
 - **Home (`/`)** — hand-authored React in `app/page.tsx`; mirrors README narrative.
 - **All other routes** — rendered from repo-root `docs/**/*.md(x)` via the catch-all
-  `app/[...slug]/page.tsx`. Prose pages use `.md`; pages with `@cx/ui` components use `.mdx`.
+  `app/[...slug]/page.tsx`. Prose pages use `.md`; pages with `@construct/ui` components use `.mdx`.
   Catalog + sidebar come from `lib/docs-source.ts`.
 - **Generated reference** — `construct docs:site` writes `docs/guides/reference/cli/*`,
-  `docs/guides/reference/hooks.md`, and `docs/guides/reference/specialists.md` from live registries.
+  `docs/guides/reference/hooks.md`, and `docs/guides/reference/worker-profiles.md` from live registries.
 - **Build:** `next build` static-exports to `apps/docs/out/`. Deployed by
   `.github/workflows/pages.yml` when `PAGES_ENABLED` is true.
 
@@ -52,5 +52,5 @@ apps/docs/
 
 1. Add or edit a file under repo-root `docs/`.
 2. Update the lane's `meta.json` if ordering matters.
-3. Run `node ./bin/construct docs:site` when CLI/hooks/specialists registries change.
+3. Run `node ./bin/construct docs:site` when CLI/hooks/Worker Profile registries change.
 4. Build: `DOCS_BASE_PATH=/construct npm --prefix apps/docs run build`.

@@ -1,6 +1,6 @@
 # Golden artifact fixtures
 
-Per-type golden markdown fixtures for release-gate certification. Each directory mirrors an entry from `specialists/artifact-manifest.json`.
+Per-type golden markdown fixtures for release-gate certification. Each directory mirrors an entry from `registry/artifact-manifest.json`.
 
 | Type | Fixture | Template source |
 |------|---------|-----------------|

@@ -8,6 +8,11 @@
  * `.claude/agents/` and `.claude/settings.json` from the bundled registry so
  * the project clone is fully runnable without a manual `construct init`.
  *
+ * Lean host default (construct-w4hly): stages Claude adapters (plus any host
+ * already marked in the project). Does not sync every PATH-detected editor.
+ * Override with CONSTRUCT_SYNC_HOSTS=all|<list>, or expand later via
+ * `construct sync --with-<host>` / `--all-hosts`.
+ *
  * The script is a no-op in three cases:
  *
  *   1. The install is happening inside the Construct repo itself.
@@ -24,8 +29,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { stageProjectAdapters } from '../lib/install/stage-project.mjs';
-import { syncProjectAdapters } from '../lib/adapters-sync.mjs';
-import { missingIgnorePatterns, isConstructPackageRepo } from '../lib/host-disposition.mjs';
+import { syncProjectAdapters, resolvePostinstallHosts } from '../lib/adapters-sync.mjs';
+import { missingIgnorePatterns } from '../lib/host-disposition.mjs';
+import { printFirstRunChecklist } from '../lib/install/first-run-checklist.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = path.resolve(HERE, '..');
@@ -83,14 +89,11 @@ try {
 // `~/.claude/settings.json`, and `~/.construct/*` land only when the user runs
 // `construct install --footprint=user` (ADR-0071 renamed --scope to
 // --footprint; --scope keeps working as a deprecated alias), so the consent
-// point is visible.
+// point is visible. Compat surface (owner: construct-tsyfe.8.18, expires: 2026-12-31).
 
 if (process.env.npm_config_global === 'true' || process.env.npm_config_global === true) {
   log('global install detected; machine-scope setup is opt-in (ADR-0029)');
-  log('to wire ~/.construct/* and the front-door agent, run:');
-  log('  construct install --footprint=user');
-  log('to set up a project, cd into it and run:');
-  log('  construct init');
+  printFirstRunChecklist('global-postinstall', log);
   process.exit(0);
 }
 
@@ -117,13 +120,16 @@ if (consumerPkg.name === '@geraldmaron/construct') {
 const mutations = [];
 
 try {
+  const hosts = resolvePostinstallHosts(initCwd);
+  log(`lean bootstrap hosts: ${hosts.join(', ')}`);
   const stageResult = stageProjectAdapters({
     projectRoot: initCwd,
     packageRoot: PKG_ROOT,
     pkgVersion: PKG_VERSION,
     log,
+    hosts,
   });
-  mutations.push({ path: '.construct', type: 'stage', synced: stageResult.synced });
+  mutations.push({ path: '.construct', type: 'stage', synced: stageResult.synced, hosts });
 
   // ADR-0027: Ensure .gitignore covers the newly staged adapters (construct-f6l6).
   // Idempotent: missingIgnorePatterns returns only patterns not already present.
@@ -158,6 +164,8 @@ try {
     );
     log('wrote .construct/install-manifest.json');
   } catch { /* manifest write must not fail the install */ }
+
+  printFirstRunChecklist('project-postinstall', log);
 } catch (err) {
   fail(`Adapter staging failed: ${err.message}`, 'The package is installed; run `npx construct init` in this project to complete setup.');
   // Intentionally exit 0: staging is best-effort completion, and a non-zero exit

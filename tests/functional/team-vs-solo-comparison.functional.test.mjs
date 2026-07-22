@@ -17,7 +17,7 @@ import path from 'node:path';
 import { runTeamVsSoloComparison, scoreRoleConcernCoverage, comparisonsDir } from '../../lib/certification/comparisons.mjs';
 
 const MODEL = 'anthropic/claude-sonnet-4-6';
-const ENV = { CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL, ANTHROPIC_API_KEY: 'sk-test-abcdef0123456789' };
+const ENV = { CONSTRUCT_MODEL_REASONING: MODEL, CONSTRUCT_MODEL_STANDARD: MODEL, CONSTRUCT_MODEL_FAST: MODEL, ANTHROPIC_API_KEY: 'sk-test-abcdef0123456789' };
 
 const dirs = [];
 function project() {
@@ -28,12 +28,12 @@ function project() {
 test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} } });
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-l5-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 test.after(() => {
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 test('scoreRoleConcernCoverage counts distinct role concerns present in text', () => {
@@ -67,7 +67,7 @@ test('the base chain covers more role concerns than a solo call, and the compari
   assert.equal(comparison.solo.coverage.count, 1, 'the solo generalist covers only implementation');
   assert.equal(comparison.deltas.concernCoverage, 3);
   assert.equal(comparison.verdict, 'team-adds-role-concern-coverage');
-  assert.ok(comparison.team.specialists >= 4, 'the base chain ran');
+  assert.ok(comparison.team.workerProfiles >= 4, 'the base chain ran');
 
   // The comparison is durably recorded in the comparisons store.
   assert.ok(file.startsWith(comparisonsDir(rootDir)), 'written under the comparisons store');

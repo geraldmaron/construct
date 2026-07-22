@@ -1,0 +1,15 @@
+{
+  "schema": "construct/demo-manifest/1",
+  "name": "intake-triage",
+  "title": "Intake triage — queue to graph plan",
+  "summary": "Show intake queue listing, triage guidance, and graph planning from a packet.",
+  "status": "declared",
+  "script": "templates/demos/scripts/intake-triage.json",
+  "tape": "templates/demos/tapes/intake-triage.tape",
+  "fallbackSurface": "tape",
+  "commands": [
+    "node bin/construct intake list",
+    "node bin/construct intake show",
+    "node bin/construct graph from-intake"
+  ]
+}

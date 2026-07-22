@@ -41,7 +41,7 @@ function initProject() {
         CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
         BOOTSTRAP_CHECKED: '1',
         HOME: home,
-        CX_HOME_OVERRIDE: home,
+        CONSTRUCT_HOME_OVERRIDE: home,
       },
     },
   );
@@ -59,6 +59,16 @@ test('construct init produces a host footprint that does not conflate Construct 
   // construct_guide.md: dot-scoped, never at the repo root.
   assert.ok(!existsSync(join(dir, 'construct_guide.md')), 'construct_guide.md must not be at the repo root');
   assert.ok(existsSync(join(dir, '.construct', 'construct_guide.md')), 'construct_guide.md belongs in .construct/');
+
+  // construct_guide.md must teach current solo install truth (XDG config + LanceDB),
+  // not retired Docker/Postgres/pgvector or legacy ~/.construct/config.env paths.
+  const guide = readFileSync(join(dir, '.construct', 'construct_guide.md'), 'utf8');
+  assert.match(guide, /~\/\.config\/construct\/config\.env/, 'guide must teach XDG user config path');
+  assert.match(guide, /LanceDB|lancedb/, 'guide must teach embedded LanceDB retrieval');
+  assert.ok(!guide.includes('~/.construct/config.env'), 'guide must not teach legacy config.env path');
+  assert.ok(!/Postgres\s*\+\s*pgvector/i.test(guide), 'guide must not teach Postgres+pgvector as default');
+  assert.ok(!guide.includes('~/.construct/vector/index.json'), 'guide must not teach legacy JSON vector index');
+  assert.ok(!guide.includes('~/.construct/cache/embeddings/'), 'guide must not teach legacy embeddings cache path');
 
   // AGENTS.md: project header + marker blocks, no un-fenced doctrine.
   const agents = readFileSync(join(dir, 'AGENTS.md'), 'utf8');

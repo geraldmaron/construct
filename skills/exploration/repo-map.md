@@ -1,15 +1,15 @@
 ---
 name: exploration-repo-map
-description: Use this skill when entering an unfamiliar codebase, doing deep investigation work, or producing a `.cx/codebase-map.md` artifact for future sessions.
+description: Use this skill when entering an unfamiliar codebase, doing deep investigation work, or producing a `.construct/codebase-map.md` artifact for future sessions.
 inputs: [repo, codebase]
 artifactType: repo-map
 triggers: ["explore repo", "map codebase", "codebase map", "unfamiliar codebase", "how is this structured"]
 ---
 # Repo Exploration: Codebase Mapping Playbook
 
-Use this skill when entering an unfamiliar codebase, doing deep investigation work, or producing a `.cx/codebase-map.md` artifact for future sessions.
+Use this skill when entering an unfamiliar codebase, doing deep investigation work, or producing a `.construct/codebase-map.md` artifact for future sessions.
 
-Agents: `cx-explorer` (primary), `cx-debugger` (tracing failures), `cx-architect` (architecture questions)
+Agents: `researcher` (primary — codebase exploration; retired `cx-explorer` folded here), `debugger` (tracing failures), `architect` (architecture questions)
 
 ---
 
@@ -59,7 +59,7 @@ Classify each top-level directory as one of:
 - **config**: configuration, env templates (.env.example, config/, etc/)
 - **infra**: deployment, CI/CD, Docker (deploy/, k8s/, .github/, terraform/)
 - **test**: test-only code (test/, tests/, __tests__/, spec/)
-- **docs**: documentation (docs/, .cx/)
+- **docs**: documentation (docs/, .construct/)
 - **generated**: auto-generated, do not read (dist/, build/, .next/, vendor/)
 
 ### 2b. Entry points
@@ -192,13 +192,13 @@ go list -m -u all 2>/dev/null | grep '\[' | head -20
 
 ## Phase 6: Produce the Map
 
-Write `.cx/codebase-map.md` in the project root using this template:
+Write `.construct/codebase-map.md` in the project root using this template:
 
 ```markdown
 # Codebase Map — {project-name}
 
 Generated: {date}
-Mapped by: cx-explorer
+Mapped by: researcher
 
 ## Overview
 {1-3 sentences: what this is, what it does, who uses it}
@@ -290,10 +290,10 @@ find . -name "schema.*" -o -name "models.*" -o -name "*.prisma" \
 
 ## Agent Handoffs
 
-After producing `.cx/codebase-map.md`:
+After producing `.construct/codebase-map.md`:
 
-- **Explain architecture decisions** → `cx-architect`
-- **Trace a specific failure** → `cx-debugger` (provide the codebase-map as context)
-- **Check security posture** → `cx-security` (highlight auth files from the map)
-- **Assess test coverage** → `cx-qa` (provide the files-to-know list)
-- **Understand a library used** → `cx-docs-researcher` (provide the dep name)
+- **Explain architecture decisions** → `architect`
+- **Trace a specific failure** → `debugger` (provide the codebase-map as context)
+- **Check security posture** → `security` (highlight auth files from the map)
+- **Assess test coverage** → `qa` (provide the files-to-know list)
+- **Understand a library used** → `researcher` (provide the dep name)

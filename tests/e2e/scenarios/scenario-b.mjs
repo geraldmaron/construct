@@ -11,7 +11,7 @@
  *
  * Generic tiers (install/init UX, command sweep, embedder probes) are reused from
  * scenario-a; this module owns the fixture, the disposition capture, and the
- * Tier-3 PRD (driven by the host cx-product-manager chain, like scenario-a's ADR).
+ * Tier-3 PRD (driven by the host product-manager chain, like scenario-a's ADR).
  */
 
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
@@ -86,6 +86,6 @@ export function captureDisposition({ projectDir, seeded }) {
     fooPreserved: foo.includes('SENTINEL-FOO'),
     cursorPreserved: cursor.includes('SENTINEL-CURSOR'),
     gitignoreExistingPreserved: gitignore.includes('SENTINEL-GITIGNORE') && gitignore.includes('custom-build-dir/'),
-    gitignoreConstructAppended: /\.cx\//.test(gitignore),
+    gitignoreConstructAppended: /\.construct\//.test(gitignore),
   };
 }

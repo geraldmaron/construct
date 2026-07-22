@@ -8,7 +8,7 @@
  * at AUTHORED_PRIORITY. A skill without one gets a lower-priority
  * FALLBACK_PRIORITY entry derived from its own name and description, so
  * every skill is reachable before anyone hand-tunes its triggers.
- * `roles/*` skills are excluded — they load via role-directive preload and
+ * `perspectives/*` skills are excluded — they load through Worker Profile selection and
  * registry entitlement, never via intent-based routing (the same exclusion
  * lib/skills/composition-graph.mjs already applies to reachability checks).
  *
@@ -28,6 +28,15 @@ const ROUTING_MD_PATH = path.join(SKILLS_DIR, 'routing.md');
 const AUTHORED_PRIORITY = 10;
 const FALLBACK_PRIORITY = 5;
 const MAX_FALLBACK_KEYWORDS = 6;
+
+// Pin retired cx-* dispatch tokens on the routes that historically carried them so
+// suggest_skills still matches legacy intents after Worker Profile cutover
+// (lib/audit-prompts-skills.mjs routing-stale-cx-token retain contract).
+
+const LEGACY_CX_KEYWORD_PINS = Object.freeze({
+  'docs/codebase-research-workflow': ['cx-researcher'],
+  'operating/fleet-health-routing': ['cx-orchestrator'],
+});
 
 const STOPWORDS = new Set([
   'the', 'this', 'that', 'with', 'when', 'from', 'into', 'onto', 'over', 'under', 'their', 'about',
@@ -86,13 +95,19 @@ function fallbackKeywords(rel, frontmatter) {
 function buildRoutes() {
   const routes = [];
   for (const { rel, full } of walkSkillFiles(SKILLS_DIR)) {
-    if (rel.startsWith('roles/')) continue;
+    if (rel.startsWith('perspectives/')) continue;
     const frontmatter = parseFrontmatter(fs.readFileSync(full, 'utf8'));
     const domain = rel.includes('/') ? rel.split('/')[0] : 'utility';
     const authored = Array.isArray(frontmatter.triggers) && frontmatter.triggers.length > 0;
+    const baseKeywords = authored ? frontmatter.triggers : fallbackKeywords(rel, frontmatter);
+    const legacyPins = LEGACY_CX_KEYWORD_PINS[rel] ?? [];
+    const keywords = [...baseKeywords];
+    for (const pin of legacyPins) {
+      if (!keywords.includes(pin)) keywords.push(pin);
+    }
     routes.push({
       domain,
-      keywords: authored ? frontmatter.triggers : fallbackKeywords(rel, frontmatter),
+      keywords,
       path: rel,
       priority: authored ? AUTHORED_PRIORITY : FALLBACK_PRIORITY,
     });
@@ -109,7 +124,7 @@ function renderMarkdown(routes) {
   const lines = [
     '<!--',
     'skills/routing.md — generated render of skills/routing.json. Do not hand-edit: run',
-    '`node scripts/generate-skill-routing.mjs --write` (or `construct skills:routes --write`).',
+    '`node scripts/generate-skill-routing.mjs --write` (or `npm run skills:routes -- --write`).',
     '-->',
     '',
     '# Skill routing',

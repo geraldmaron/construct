@@ -13,6 +13,9 @@ jobs:
   gate:
     name: release:check
     runs-on: ubuntu-latest
+    # Same hang bound as ci.yml's test job — stuck apt/curl must fail the
+    # release gate rather than sit until the runner is reclaimed.
+    timeout-minutes: 30
     env:
       CONSTRUCT_EMBEDDING_MODEL: hashing
     steps:
@@ -26,14 +29,20 @@ jobs:
       # typst and reads the living graph + seeded vector index; without these
       # the gate dies on `spawnSync bd ENOENT` (v1.5.0's first run) while the
       # per-PR matrix stays green. scripts/ci/setup-toolchain.sh is the single
-      # source of truth shared with the local Docker replica.
-      - name: cache pinned tool binaries (typst, bd)
+      # source of truth shared with the local Docker replica. mermaid-cli is
+      # installed after npm ci (needs Node; figures:true certify/visual gates).
+      - name: cache pinned tool binaries (typst, bd, d2, mermaid+chrome)
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: ~/.local/bin
-          key: toolbin-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/ci/setup-toolchain.sh') }}
-      - name: install test toolchain (typst, bd, pandoc, poppler, libreoffice)
+          path: |
+            ~/.local/bin
+            ~/.local/mermaid-cli
+          key: toolbin-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/ci/setup-toolchain.sh', 'scripts/ci/setup-mermaid-cli.sh') }}
+      - name: install test toolchain (typst, bd, d2, pandoc, poppler, libreoffice)
+        timeout-minutes: 12
         run: bash scripts/ci/setup-toolchain.sh && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: install mermaid-cli (mmdc) + Chrome for figures:true exports
+        run: bash scripts/ci/setup-mermaid-cli.sh && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: build derived test fixtures (living graph + seeded vector index)
         run: bash scripts/ci/build-test-fixtures.sh
       - name: Full test suite
@@ -60,6 +69,17 @@ jobs:
         # package.json's `overrides` do not apply. Blocks publishing a release
         # whose transitive graph is only clean because of a repo-local override.
         run: npm run audit:published
+      - name: packed consumer install acceptance (npm pack, install, smoke)
+        # LMCP-L2: npm pack into a clean project, smoke version/status/doctor,
+        # and assert removed CLI surfaces (e.g. construct matrix) stay absent.
+        # Slower than unit tests; runs only on the release gate, not every PR.
+        run: node --test --test-timeout=120000 tests/acceptance/packed-install.test.mjs
+
+      - name: supply-chain release go/no-go
+        # construct-tsyfe.10.7: conjunctive gate over OSV/license wiring, SBOM,
+        # provider cards, packed install, binary certification evidence, and
+        # compat-surface expiration. Wired here (tag path) per construct-9tg43.
+        run: node scripts/supply-chain-release-gate.mjs
 
   # ── Build single-file binaries ────────────────────────────────────────────
   build-binary:
@@ -230,6 +250,15 @@ jobs:
         # installing the stable line.
         run: npm publish --provenance --access public --tag ${{ steps.ver.outputs.channel }}
 
+      - name: Generate SBOM (CycloneDX)
+        run: |
+          npm exec -- @cyclonedx/cyclonedx-npm \
+            --package-lock-only \
+            --ignore-npm-errors \
+            --output-file dist/sbom.cyclonedx.json \
+            --output-format JSON
+          node -e "JSON.parse(require('fs').readFileSync('dist/sbom.cyclonedx.json','utf8')); console.log('SBOM parse ok')"
+
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -249,6 +278,7 @@ jobs:
             dist/construct-darwin-arm64.sha256 \
             dist/construct-windows-x64.exe \
             dist/construct-windows-x64.exe.sha256 \
+            dist/sbom.cyclonedx.json \
           || { echo "ERROR: gh release create failed for ${{ github.ref_name }}"; exit 1; }
 
   # ── Homebrew tap formula bump ─────────────────────────────────────────────
@@ -334,7 +364,7 @@ jobs:
 
             def caveats
               <<~EOS
-                Run 'construct install --scope=user' then 'construct init' in your project.
+                Run 'construct install --footprint=user' then 'construct init' in your project.
               EOS
             end
 
@@ -350,7 +380,7 @@ jobs:
           # Validate generated formula has correct license and caveat text
           grep -q "license \"${PKG_LICENSE}\"" /tmp/construct.rb \
             || { echo "ERROR: formula license does not match package.json (expected ${PKG_LICENSE})"; exit 1; }
-          grep -q "construct install --scope=user" /tmp/construct.rb \
+          grep -q "construct install --footprint=user" /tmp/construct.rb \
             || { echo "ERROR: formula caveats missing expected install command"; exit 1; }
 
           # Clone tap, update formula, push

@@ -19,7 +19,7 @@ PRDs follow a consistent template:
 
 ## Template
 
-Use `docs/specs/prd/templates/prd.md` for new PRDs.
+Use `templates/docs/prd.md` for new PRDs.
 
 ## Workflow
 

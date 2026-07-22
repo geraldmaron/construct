@@ -67,7 +67,7 @@ before(() => {
       INIT_CWD: projectDir,
       CONSTRUCT_SKIP_POSTINSTALL: '',
       HOME: projectHome,
-      CX_HOME_OVERRIDE: projectHome,
+      CONSTRUCT_HOME_OVERRIDE: projectHome,
     },
     timeout: 60_000,
   });
@@ -157,7 +157,7 @@ describe('run.mjs resolution', () => {
       {
         encoding: 'utf8',
         cwd: projectDir,
-        env: { ...process.env, CONSTRUCT_DEV_PATH: ROOT, HOME: projectHome, CX_HOME_OVERRIDE: projectHome },
+        env: { ...process.env, CONSTRUCT_DEV_PATH: ROOT, HOME: projectHome, CONSTRUCT_HOME_OVERRIDE: projectHome },
         timeout: 30_000,
       }
     );
@@ -176,7 +176,7 @@ describe('run.mjs resolution', () => {
         env: {
           PATH: '/nonexistent',
           HOME: projectHome,
-          CX_HOME_OVERRIDE: projectHome,
+          CONSTRUCT_HOME_OVERRIDE: projectHome,
           CONSTRUCT_DEV_PATH: '',
           CONSTRUCT_DISABLE_DOCKER: '1',
         },
@@ -198,7 +198,7 @@ describe('run.mjs resolution', () => {
         env: {
           PATH: '/nonexistent',
           HOME: projectHome,
-          CX_HOME_OVERRIDE: projectHome,
+          CONSTRUCT_HOME_OVERRIDE: projectHome,
           CONSTRUCT_DEV_PATH: '',
           CONSTRUCT_DISABLE_DOCKER: '1',
         },
@@ -279,7 +279,7 @@ describe('run.mjs self-repo resolution', () => {
         env: {
           PATH: cleanPath,
           HOME: projectHome,
-          CX_HOME_OVERRIDE: projectHome,
+          CONSTRUCT_HOME_OVERRIDE: projectHome,
           CONSTRUCT_DEV_PATH: '',
           CONSTRUCT_DISABLE_DOCKER: '1',
         },

@@ -6,14 +6,14 @@ version: "0.2"
 doc_id: RESEARCH-AGENT-ORCH-2026
 classification: internal
 status: complete
-owner: cx-researcher
+owner: researcher
 last_verified_at: 2026-06-22
 ---
 
 # Research Brief: Agent orchestration adoption among platform teams
 
 - **Date**: 2026-06-22
-- **Author**: cx-researcher
+- **Author**: researcher
 - **Domain**: developer-tools
 - **Status**: complete
 - **Recency baseline**: Sources from 2024 and later; oldest source used: 2023-08-01

@@ -6,8 +6,8 @@ category: golden
 verdict: pass
 summary: Verifies changed behavior with regression-oriented tests instead of coverage theater.
 references:
-  - skills/roles/qa.md
-  - specialists/prompts/cx-qa.md
+  - skills/perspectives/qa.md
+  - registry/worker-profiles/prompts/qa.md
 tags:
   - regression
   - changed-behavior

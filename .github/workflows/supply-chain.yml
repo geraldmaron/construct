@@ -1,0 +1,111 @@
+name: supply-chain
+
+# OSV findings are fixed via dependency upgrades/overrides where safe; residual
+# findings must carry dated IgnoredVulns in osv-scanner.toml and matching
+# entries in .github/supply-chain-exceptions.json (expiration is blocking via
+# scripts/check-supply-chain-exceptions.mjs).
+#
+# Dependency review requires GitHub Dependency graph. When the compare API
+# reports unsupported/forbidden, the review job is skipped (not soft-failed)
+# so PR checks stay honest. Enable Dependency graph (and Dependabot alerts)
+# under Settings → Code security and analysis:
+# https://github.com/geraldmaron/construct/settings/security_analysis
+#
+# OSV uses the docker scanner action (not the reusable workflow call) so this
+# file stays a valid workflow: reusable `uses:` jobs cannot set runs-on /
+# continue-on-error, and the invalid combo produced GitHub's "workflow file
+# issue" / 0-jobs failure on every push that carried the file.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exceptions:
+    name: supply-chain exceptions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - name: enforce expiring OSV/license exceptions
+        run: node scripts/check-supply-chain-exceptions.mjs
+
+  osv-scan:
+    name: OSV scan (package-lock.json)
+    needs: exceptions
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - name: OSV scanner
+        uses: google/osv-scanner-action/osv-scanner-action@3adb4b14a2b0623876d18d863a498b785fb3752d # v2.3.8
+        with:
+          scan-args: |-
+            --lockfile=package-lock.json
+            --config=osv-scanner.toml
+
+  probe-dependency-review:
+    name: probe dependency review support
+    needs: exceptions
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      supported: ${{ steps.probe.outputs.supported }}
+    steps:
+      - name: probe Dependency graph compare API
+        id: probe
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          url="${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/dependency-graph/compare/${BASE_SHA}...${HEAD_SHA}"
+          code=$(curl -sS -o /tmp/dep-review-probe.json -w '%{http_code}' \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "$url" || true)
+          echo "dependency-graph compare HTTP ${code}"
+          if [ "$code" = "200" ]; then
+            echo "supported=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "supported=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Dependency review unsupported (HTTP ${code}). Enable Dependency graph at Settings → Code security and analysis, then re-run. Skipping review job (not soft-fail)."
+            head -c 500 /tmp/dep-review-probe.json || true
+            echo
+          fi
+
+  dependency-review:
+    name: dependency review (license + vulnerability)
+    needs: [exceptions, probe-dependency-review]
+    if: github.event_name == 'pull_request' && needs.probe-dependency-review.outputs.supported == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - name: read license allowlist
+        id: licenses
+        run: |
+          node -e "const j=require('./.github/license-allowlist.json'); console.log(j.allow.join(', '))" > /tmp/allow-licenses.txt
+          echo "allow=$(cat /tmp/allow-licenses.txt)" >> "$GITHUB_OUTPUT"
+      - name: GitHub dependency review
+        uses: actions/dependency-review-action@fd07d42ce87ab09f10c61a2d1a5e59e6c655620a # v4.1.1
+        with:
+          fail-on-severity: critical
+          # Action accepts allow-licenses XOR deny-licenses (not both).
+          # Allowlist is the enforced policy; deny entries in
+          # license-allowlist.json remain documentation for reviewers.
+          allow-licenses: ${{ steps.licenses.outputs.allow }}
+          comment-summary-in-pr: always

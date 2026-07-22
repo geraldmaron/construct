@@ -6,7 +6,7 @@ category: bad
 verdict: fail
 summary: Treats a simple ask as a full orchestrated workflow.
 references:
-  - skills/roles/orchestrator.md
+  - skills/perspectives/orchestrator.md
 tags:
   - over-orchestration
   - ceremony

@@ -4,7 +4,7 @@
  * A long-running MCP server caches its version at module load; on a
  * dev-checkout-as-live-install topology the code on disk can change under it
  * with no signal (construct-6y6w.6). Drives the real server against an
- * isolated CX_TOOLKIT_DIR whose package.json is mutated mid-run, without
+ * isolated CONSTRUCT_TOOLKIT_DIR whose package.json is mutated mid-run, without
  * restarting the process, and asserts the status resource reports the
  * mismatch.
  */
@@ -32,7 +32,7 @@ test('status resource flips restartRequired when package.json version changes un
   const toolkitDir = makeToolkitDir('9.9.9-a');
   const proc = spawn('node', [SERVER], {
     stdio: ['pipe', 'pipe', 'pipe'],
-    env: { ...process.env, CX_TOOLKIT_DIR: toolkitDir },
+    env: { ...process.env, CONSTRUCT_TOOLKIT_DIR: toolkitDir },
   });
 
   const byId = {};
@@ -90,7 +90,7 @@ test('no behavior change when versions match (idempotent, no restartRequired)', 
   const toolkitDir = makeToolkitDir('1.2.3');
   const proc = spawn('node', [SERVER], {
     stdio: ['pipe', 'pipe', 'pipe'],
-    env: { ...process.env, CX_TOOLKIT_DIR: toolkitDir },
+    env: { ...process.env, CONSTRUCT_TOOLKIT_DIR: toolkitDir },
   });
 
   const byId = {};

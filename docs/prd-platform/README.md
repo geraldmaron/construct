@@ -1,8 +1,9 @@
 # PRD Platform Artifacts
 
-Generated and draft PRD platform artifacts live here while they are being reviewed or certified. Each artifact should remain self-contained and include its own status, evidence, and follow-up sections.
+This lane holds **finished platform PRDs** that have passed review and are ready to cite as canonical product specs.
 
-## Current Artifacts
+Draft and in-progress platform PRDs live under `docs/specs/prd/` until they are promoted here.
 
-- [Draft artifact](./2026-06-26-draft-artifact.md)
-- [OIDC platform PRD](./2026-06-26-oidc-platform-prd.md)
+## Canonical references
+
+- **OIDC authentication** — see [`docs/specs/prd/0002-oidc-authentication.md`](../specs/prd/0002-oidc-authentication.md)

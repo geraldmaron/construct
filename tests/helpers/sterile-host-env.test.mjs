@@ -13,7 +13,7 @@ import { readFileSync, mkdtempSync, mkdirSync, writeFileSync, appendFileSync, rm
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
-import { createHostSandbox, fingerprintRealConfigs, assertRealConfigsUnchanged, snapshotRealConfigs, diffRealConfigs } from "./sterile-host-env.mjs";
+import { createHostSandbox, fingerprintRealConfigs, assertRealConfigsUnchanged, snapshotRealConfigs, diffRealConfigs, STERILE_TEST_LEAK_MARKER } from "./sterile-host-env.mjs";
 import { rmTmpDir } from "./cleanup.mjs";
 import { doctorRoot } from "../../lib/config/xdg.mjs";
 
@@ -190,5 +190,115 @@ test("an unparseable ~/.claude.json still trips the guard on content change", ()
     assert.throws(() => assertRealConfigsUnchanged(before, home), /\.claude\.json/);
   } finally {
     rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("hook scratch churn without the sterile test marker is not reported as a leak", () => {
+  const home = mkdtempSync(join(tmpdir(), "sterile-hook-home-"));
+  try {
+    const stateDir = doctorRoot(home);
+    mkdirSync(stateDir, { recursive: true });
+    writeFileSync(join(stateDir, "warn-flags.txt"), "readme-age: stale\n");
+
+    const before = snapshotRealConfigs(home);
+    appendFileSync(join(stateDir, "warn-flags.txt"), "pending-typecheck: failed\n");
+    const drift = diffRealConfigs(before, home);
+
+    assert.equal(drift.hookScratchLeaks, 0, "real hook scratch churn must not count as a test leak");
+  } finally {
+    rmTmpDir(home);
+  }
+});
+
+test("a hook scratch marker in real doctorRoot state is detected as a leak", () => {
+  const home = mkdtempSync(join(tmpdir(), "sterile-hook-home-"));
+  try {
+    const stateDir = doctorRoot(home);
+    mkdirSync(stateDir, { recursive: true });
+    writeFileSync(join(stateDir, "last-agent.json"), JSON.stringify({ agent: "engineer" }));
+
+    const before = snapshotRealConfigs(home);
+    writeFileSync(
+      join(stateDir, "last-agent.json"),
+      JSON.stringify({ agent: "engineer", note: STERILE_TEST_LEAK_MARKER }),
+    );
+    const drift = diffRealConfigs(before, home);
+
+    assert.equal(drift.hookScratchLeaks, 1, "hook scratch marker must be counted as a leak");
+  } finally {
+    rmTmpDir(home);
+  }
+});
+
+test("telemetry log appends unrelated to tests are not reported as a leak", () => {
+  const home = mkdtempSync(join(tmpdir(), "sterile-telemetry-home-"));
+  try {
+    const stateDir = doctorRoot(home);
+    mkdirSync(stateDir, { recursive: true });
+    const logPath = join(stateDir, "session-cost.jsonl");
+    writeFileSync(logPath, "");
+
+    const before = snapshotRealConfigs(home);
+    appendFileSync(logPath, JSON.stringify({ agent: "engineer", source: "policy-engine", cost: 0.01 }) + "\n");
+    const drift = diffRealConfigs(before, home);
+
+    assert.equal(drift.telemetryLeaks, 0, "real telemetry appends must not count as a leak");
+  } finally {
+    rmTmpDir(home);
+  }
+});
+
+test("a test-tagged telemetry record appended to real doctorRoot logs is detected as a leak", () => {
+  const home = mkdtempSync(join(tmpdir(), "sterile-telemetry-home-"));
+  try {
+    const stateDir = doctorRoot(home);
+    mkdirSync(stateDir, { recursive: true });
+    const logPath = join(stateDir, "doctor-log.jsonl");
+    writeFileSync(logPath, "");
+
+    const before = snapshotRealConfigs(home);
+    appendFileSync(logPath, JSON.stringify({ agent: "engineer", source: "test", event: "doctor" }) + "\n");
+    const drift = diffRealConfigs(before, home);
+
+    assert.equal(drift.telemetryLeaks, 1, "test-tagged telemetry append must be counted as a leak");
+  } finally {
+    rmTmpDir(home);
+  }
+});
+
+test("session/status churn without the sterile test marker is not reported as a leak", () => {
+  const home = mkdtempSync(join(tmpdir(), "sterile-session-home-"));
+  try {
+    const stateDir = doctorRoot(home);
+    mkdirSync(stateDir, { recursive: true });
+    writeFileSync(join(stateDir, "session-efficiency.json"), JSON.stringify({ turns: 1 }));
+
+    const before = snapshotRealConfigs(home);
+    writeFileSync(join(stateDir, "session-efficiency.json"), JSON.stringify({ turns: 2, tokens: 100 }));
+    const drift = diffRealConfigs(before, home);
+
+    assert.equal(drift.sessionStatusLeaks, 0, "real session/status churn must not count as a leak");
+  } finally {
+    rmTmpDir(home);
+  }
+});
+
+test("a session/status marker in real doctorRoot state is detected as a leak", () => {
+  const home = mkdtempSync(join(tmpdir(), "sterile-session-home-"));
+  try {
+    const stateDir = doctorRoot(home);
+    mkdirSync(stateDir, { recursive: true });
+    writeFileSync(join(stateDir, "session-efficiency.json"), JSON.stringify({ turns: 1 }));
+
+    const before = snapshotRealConfigs(home);
+    writeFileSync(
+      join(stateDir, "session-efficiency.json"),
+      JSON.stringify({ turns: 1, marker: STERILE_TEST_LEAK_MARKER }),
+    );
+    const drift = diffRealConfigs(before, home);
+
+    assert.equal(drift.sessionStatusLeaks, 1, "session/status marker must be counted as a leak");
+  } finally {
+    rmTmpDir(home);
   }
 });

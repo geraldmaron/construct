@@ -5,7 +5,7 @@
  * in a tmp project and asserts the state machine: an orchestrated verdict arms
  * the guard, a dispatch disarms it, and a substantial deliverable write is
  * blocked (exit 2) only while armed-and-undispatched. Also pins the fail-open
- * behaviors: no .cx, immediate/focused verdict, code paths, small writes, and
+ * behaviors: no .construct, immediate/focused verdict, code paths, small writes, and
  * stale markers all pass.
  */
 import assert from 'node:assert/strict';
@@ -137,10 +137,10 @@ describe('orchestration-dispatch-guard', () => {
     }
   });
 
-  it('fails open when the project has no .cx', () => {
+  it('fails open when the project has no .construct', () => {
     classify('orchestrated');
     const r = writeDoc('docs/strategy.md', bigDoc());
-    assert.equal(r.status, 0, 'no .cx → never block');
+    assert.equal(r.status, 0, 'no .construct → never block');
   });
 
   it('disarms on a stale marker', () => {

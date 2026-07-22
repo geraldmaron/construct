@@ -1,23 +1,24 @@
 /**
  * tests/functional/init-no-daemons-in-test-context.functional.test.mjs
  *
- * Regression guard for construct-qn6e: without an explicit --no-start,
- * `construct init` auto-starts the doctor + oracle daemons (spawnDetached +
- * unref in lib/service-manager.mjs) any time it runs non-interactively —
- * which includes every CI run and every test-harness invocation. Those
- * daemons outlive the init process and keep writing under HOME long after
- * the triggering process has exited, leaking state and causing flakiness.
+ * Two-layer guard that `construct init` spawns zero background daemons
+ * (construct-qn6e, then construct-b0nny.29 which removed the Doctor/Oracle
+ * daemon spawn paths from lib/service-manager.mjs entirely — the legacy
+ * daemons are retired and must never run).
  *
- * lib/init-unified.mjs exports resolveShouldStartServices(), which
- * defaults to no-start when CI=true or NODE_ENV=test, unless --auto-start is
- * passed explicitly; --no-start still always wins. This file spawns the real
- * `construct init` in a NODE_ENV=test child with an isolated HOME/
- * CX_HOME_OVERRIDE (sterileSpawnEnv) and asserts no doctor/oracle state file
- * appears under that sandbox — proving startServices was never reached, not
- * just that the daemons happened to exit quickly. The --auto-start override
- * and the --no-start floor are covered at the unit level directly against
- * resolveShouldStartServices, since actually spawning the real detached
- * daemons here would leave live background processes outliving the test.
+ * Layer 1 spawns the real `construct init` in a NODE_ENV=test child with an
+ * isolated HOME/CONSTRUCT_HOME_OVERRIDE (sterileSpawnEnv) and asserts no
+ * doctor/oracle state file appears under that sandbox AND that no process in
+ * the live process table references the sandbox root — a real-process proof
+ * scoped to this test's own HOME, so concurrently leaked daemons from other
+ * suites can never flake it. Layer 2 drives the real startServices() with a
+ * hermetic support probe (every optional service absent) and asserts it
+ * reports no Doctor/Oracle service and leaves no daemon log or state behind
+ * — the spawn functions are deleted, so no env-var gate is involved.
+ *
+ * resolveShouldStartServices() still gates which contexts run startServices
+ * at all (CI/NODE_ENV=test default to no-start; --no-start always wins;
+ * --auto-start forces); those unit cases are pinned here too.
  */
 
 import test from 'node:test';
@@ -31,6 +32,7 @@ import { fileURLToPath } from 'node:url';
 import { sterileSpawnEnv } from '../helpers/sterile-env.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 import { resolveShouldStartServices } from '../../lib/init-unified.mjs';
+import { startServices } from '../../lib/service-manager.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
@@ -62,7 +64,7 @@ function runInit(env, extraArgs = []) {
       env: sterileSpawnEnv({
         HOME: env.HOME,
         USERPROFILE: env.HOME,
-        CX_HOME_OVERRIDE: env.HOME,
+        CONSTRUCT_HOME_OVERRIDE: env.HOME,
         XDG_CONFIG_HOME: join(env.HOME, '.config'),
         XDG_DATA_HOME: join(env.HOME, '.local', 'share'),
         XDG_CACHE_HOME: join(env.HOME, '.cache'),
@@ -79,8 +81,8 @@ function runInit(env, extraArgs = []) {
 // Doctor state lives at <XDG state>/construct/doctor.json; oracle's heartbeat at
 // <XDG state>/construct/runtime/oracle/heartbeat.json (lib/config/xdg.mjs,
 // lib/oracle/index.mjs). Both are written by the daemon process itself after it
-// starts, so their absence proves startServices (and therefore spawnDetached)
-// was never reached — not merely that a spawned daemon happened to exit fast.
+// starts, so their absence proves the daemon never ran — not merely that a
+// spawned daemon happened to exit fast.
 
 function daemonStatePaths(HOME) {
   const stateRoot = join(HOME, '.local', 'state', 'construct');
@@ -89,6 +91,17 @@ function daemonStatePaths(HOME) {
     oracleHeartbeat: join(stateRoot, 'runtime', 'oracle', 'heartbeat.json'),
     runtimeLogDir: join(stateRoot, 'runtime'),
   };
+}
+
+// Real-process proof scoped to one sandbox: any detached daemon this test's
+// init spawned would carry the sandbox root in its command line (log fd path,
+// cwd argument, or module path) — matching on the sandbox root means daemons
+// leaked by concurrent suites (other HOMEs) can never flake this assertion.
+
+function processesReferencing(rootPath) {
+  const result = spawnSync('ps', ['-axo', 'pid=,command='], { encoding: 'utf8' });
+  if (result.status !== 0) return [];
+  return (result.stdout || '').split('\n').filter((line) => line.includes(rootPath));
 }
 
 test('construct init does not auto-start daemons by default under NODE_ENV=test', (t) => {
@@ -104,14 +117,49 @@ test('construct init does not auto-start daemons by default under NODE_ENV=test'
 
   // doctor.log / oracle-daemon.log are written by spawnDetached() itself before
   // the child even runs, so their absence is the stronger, earlier proof that
-  // startDoctor/startOracle were never called at all.
+  // no daemon spawn was ever attempted.
   if (existsSync(runtimeLogDir)) {
     const entries = readdirSync(runtimeLogDir);
     assert.ok(!entries.includes('doctor.log'), 'doctor.log must not exist — spawnDetached must never have run for doctor');
     assert.ok(!entries.includes('oracle-daemon.log'), 'oracle-daemon.log must not exist — spawnDetached must never have run for oracle');
   }
 
+  const leaked = processesReferencing(env.root);
+  assert.deepEqual(leaked, [], `no live process may reference the sandbox root after init: ${leaked.join(' | ')}`);
+
   assert.match(result.stdout, /construct dev/, 'suppressed auto-start should point the user at the manual `construct dev` path');
+});
+
+test('startServices spawns no Doctor or Oracle daemon in any context (spawn paths removed)', async (t) => {
+  const env = sandbox();
+  t.after(env.cleanup);
+
+  const { results } = await startServices({
+    rootDir: env.project,
+    homeDir: env.HOME,
+    describeRuntimeSupportFn: async () => ({ tmux: false, cm: false, opencode: false, gh: false }),
+    getRuntimePortsFn: async () => ({ memory: 0, bridge: 0, copilotBridge: 0 }),
+    loadConstructEnvFn: () => ({}),
+    memoryProbeFn: async () => false,
+    openCodeProbeFn: async () => false,
+    runPressureReleaseFn: () => ({ killed: [] }),
+  });
+
+  const names = results.map((r) => r.name);
+  assert.ok(!names.includes('Doctor'), `startServices must not report a Doctor service: ${names.join(', ')}`);
+  assert.ok(!names.includes('Oracle'), `startServices must not report an Oracle service: ${names.join(', ')}`);
+
+  const { doctorState, oracleHeartbeat, runtimeLogDir } = daemonStatePaths(env.HOME);
+  assert.equal(existsSync(doctorState), false, 'startServices must not create doctor.json');
+  assert.equal(existsSync(oracleHeartbeat), false, 'startServices must not create the oracle heartbeat');
+  if (existsSync(runtimeLogDir)) {
+    const entries = readdirSync(runtimeLogDir);
+    assert.ok(!entries.includes('doctor.log'), 'startServices must not open a doctor.log');
+    assert.ok(!entries.includes('oracle-daemon.log'), 'startServices must not open an oracle-daemon.log');
+  }
+
+  const leaked = processesReferencing(env.root);
+  assert.deepEqual(leaked, [], `no live process may reference the sandbox root after startServices: ${leaked.join(' | ')}`);
 });
 
 test('resolveShouldStartServices: --no-start always wins, regardless of context', () => {

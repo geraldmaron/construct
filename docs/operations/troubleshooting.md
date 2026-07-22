@@ -182,7 +182,7 @@ construct provider test <id>
 
 ## `construct sync` fails with registry errors
 
-**Symptoms:** `construct sync` exits non-zero; errors reference `specialists/org`.
+**Symptoms:** `construct sync` exits non-zero; errors reference `registry`.
 
 **Check:**
 
@@ -190,7 +190,7 @@ construct provider test <id>
 construct validate
 ```
 
-This validates `specialists/org` and prints specific field constraint violations. Fix the errors, then re-run `construct sync`.
+This validates `registry` and prints specific field constraint violations. Fix the errors, then re-run `construct sync`.
 
 ## Memory search returns nothing
 

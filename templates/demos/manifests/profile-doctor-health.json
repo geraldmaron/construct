@@ -1,0 +1,15 @@
+{
+  "schema": "construct/demo-manifest/1",
+  "name": "profile-doctor-health",
+  "title": "Profile and health — list, consistency, skills audit",
+  "summary": "Walk the health path: list curated org profiles, run cross-surface consistency checks, then audit skill corpus coverage and metadata.",
+  "status": "declared",
+  "script": "templates/demos/scripts/profile-doctor-health.json",
+  "tape": "templates/demos/tapes/profile-doctor-health.tape",
+  "fallbackSurface": "tape",
+  "commands": [
+    "node bin/construct workspace-preset list",
+    "node bin/construct doctor consistency",
+    "node bin/construct audit skills"
+  ]
+}

@@ -5,7 +5,7 @@
  * sync and doctor read it without re-probing. These tests pin the rules that keep a
  * verdict honest: a transient probe failure never overwrites a real verdict, a
  * digest change marks a verdict stale, and a stale or unknown verdict never strands
- * a model as collapsed. Isolated via CX_HOME_OVERRIDE so no real store is touched.
+ * a model as collapsed. Isolated via CONSTRUCT_HOME_OVERRIDE so no real store is touched.
  */
 import test from "node:test";
 import assert from "node:assert";
@@ -18,15 +18,15 @@ const coherent = { ok: true, coherent: true, calledTool: true, repeatRatio: 0.05
 
 async function withStore(fn) {
   const home = mkdtempSync(join(tmpdir(), "cx-capstore-"));
-  const prev = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = home;
+  const prev = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = home;
   try {
     // Import fresh each time so the module-level cache and path resolve under the
     // overridden home for this case.
     const mod = await import(`../lib/ollama/capability-store.mjs?case=${encodeURIComponent(home)}`);
     await fn(mod);
   } finally {
-    if (prev === undefined) delete process.env.CX_HOME_OVERRIDE; else process.env.CX_HOME_OVERRIDE = prev;
+    if (prev === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE; else process.env.CONSTRUCT_HOME_OVERRIDE = prev;
     rmSync(home, { recursive: true, force: true });
   }
 }

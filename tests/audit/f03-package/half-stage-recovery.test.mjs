@@ -3,7 +3,7 @@
  *
  * Regression guard for CX-AUDIT-PACKAGE-005. lib/install/stage-project.mjs can return
  * { staged:true, synced:false } when it stages the `.construct/` launcher but bails before
- * `sync-specialists.mjs --project` populates `.claude/` (the sync script is missing, or sync
+ * `sync-worker-profiles.mjs --project` populates `.claude/` (the sync script is missing, or sync
  * exits non-zero), leaving the project half-built. stageProjectAdapters now records the outcome
  * in a durable `.construct/stage-state.json` marker and exports repairStagedProject to re-drive
  * a half-staged project to a synced state. Each test forces the half-stage branch in a tmp
@@ -11,7 +11,7 @@
  *
  * Hermetic: every write is under fs.mkdtemp(os.tmpdir()). The sync-missing branch is forced by
  * pointing packageRoot at a tmp dir whose templates/distribution exists but scripts/ does not, so
- * `sync-specialists.mjs` is absent (L28) — no real sync ever runs.
+ * `sync-worker-profiles.mjs` is absent (L28) — no real sync ever runs.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -22,7 +22,7 @@ import test from 'node:test';
 import { stageProjectAdapters } from '../../../lib/install/stage-project.mjs';
 
 // A package root that triggers the synced=false branch: templates/distribution is present so the
-// launcher stages, but scripts/sync-specialists.mjs is absent so the sync step is skipped (L28-31).
+// launcher stages, but scripts/sync-worker-profiles.mjs is absent so the sync step is skipped (L28-31).
 
 function makeSynclessPackageRoot() {
   const pkgRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-f03-pkg-'));
@@ -52,13 +52,13 @@ test('[R4] half-stage (synced=false) must leave a durable marker in the project'
   assert.equal(result.synced, false, 'precondition: sync skipped, so this is the half-stage branch');
 
   // The half-stage must be recoverable without re-deriving it from filesystem heuristics.
-  // A durable marker under .construct/ (or .cx/) is the minimum: a file naming the partial
+  // A durable marker under .construct/ (or .construct/) is the minimum: a file naming the partial
   // state so doctor/init can find and repair it. None is written today.
 
   const markerCandidates = [
     path.join(projectRoot, '.construct', 'launcher', 'stage-state.json'),
     path.join(projectRoot, '.construct', 'half-staged'),
-    path.join(projectRoot, '.cx', 'stage-state.json'),
+    path.join(projectRoot, '.construct', 'stage-state.json'),
   ];
   const found = markerCandidates.find((p) => fs.existsSync(p));
   assert.ok(

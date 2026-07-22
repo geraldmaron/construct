@@ -20,8 +20,8 @@ afterEach(() => {
 });
 
 describe('isConstructSourceCheckout', () => {
-  it('returns true when certification role cards exist', () => {
-    fs.mkdirSync(path.join(tmp, 'tests', 'certification', 'specialists'), { recursive: true });
+  it('returns true when certification Worker Profile scenarios exist', () => {
+    fs.mkdirSync(path.join(tmp, 'tests', 'certification', 'worker-profiles'), { recursive: true });
     assert.equal(isConstructSourceCheckout(tmp), true);
   });
 

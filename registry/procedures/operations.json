@@ -1,0 +1,19 @@
+{
+  "id": "operations",
+  "version": "1.0.0",
+  "type": "embed",
+  "workerProfiles": [],
+  "approvalMode": "proposal-only",
+  "modelTier": "standard",
+  "state": "active",
+  "description": "Produce a recurring operations briefing from governed Jira, Confluence, and Slack sources.",
+  "embed": {
+    "workerProfileId": "operations",
+    "providerBindings": ["atlassian-jira", "atlassian-confluence", "slack"],
+    "framework": "operations-dependency-sequencing",
+    "outputContract": "operations-tpm-briefing",
+    "proposalAuthority": "propose-only",
+    "runtime": "auto",
+    "cadence": { "every": "PT4H" }
+  }
+}

@@ -1,6 +1,6 @@
 ---
 name: docs-user-research-workflow
-description: "Use when: cx-researcher synthesizes user evidence — interviews, support tickets, session replay, surveys, or field notes."
+description: "Use when: the researcher Worker Profile synthesizes user evidence — interviews, support tickets, session replay, surveys, or field notes."
 inputs: [user-research, interview-data]
 artifactType: evidence-brief
 toneDefault: pedagogical
@@ -9,14 +9,14 @@ verificationBar: "Observed behavior weighted over self-report; sample size state
 ---
 # User Research Workflow
 
-Use when: cx-researcher gathers or synthesizes **user** evidence. Do not use for CVE lookups, API version facts, or repo structure — use `docs/research-workflow` or `docs/codebase-research-workflow` (both also cx-researcher, under a different skill overlay) instead.
+Use when: the researcher Worker Profile gathers or synthesizes **user** evidence. Do not use for CVE lookups, API version facts, or repo structure — use `docs/research-workflow` or `docs/codebase-research-workflow` under a different skill overlay instead.
 
-Follow [rules/common/research.md](../../rules/common/research.md) and call `get_skill("roles/ux-researcher")` before drafting.
+Follow `rules/common/research.md` and call `get_skill("perspectives/researcher")` before drafting.
 
 ## Steps
 
 1. **Clarify the user question**: who specifically, what behavior or friction, falsifiable claim.
-2. **Check internal user evidence**: `.cx/knowledge/external/`, customer profiles, evidence briefs, support exports, ingested transcripts.
+2. **Check internal user evidence**: `.construct/knowledge/external/`, customer profiles, evidence briefs, support exports, ingested transcripts.
 3. **Choose source classes** (user-primary):
 
    | Source | Class | Notes |
@@ -28,16 +28,22 @@ Follow [rules/common/research.md](../../rules/common/research.md) and call `get_
    | Sales / CS summary | secondary | Trace to underlying tickets when possible |
 
 4. **Sampling**: state segment, N, recruitment method. Behavioral claims need ≥5 per segment unless exploratory (flag as low confidence).
-5. **Validity**: name the weakest validity threat (internal/external/construct/conclusion) per `roles/ux-researcher` — that threat is where the finding is most likely wrong.
+5. **Validity**: name the weakest validity threat (internal/external/construct/conclusion) per `perspectives/researcher` — that threat is where the finding is most likely wrong.
 6. **Inter-rater reliability**: when themes are coded from qualitative data, two coders code a sample independently; report agreement (or Cohen's κ when N permits). Persistent disagreement means the codebook is unfinished — fix the codebook before shipping themes.
-7. **Tone**: default `pedagogical`; override via `.cx/brand-voice.json` if present.
-8. **Output**: `get_template("evidence-brief")` or `signal-brief` when threshold not met; store under `.cx/knowledge/internal/evidence-briefs/`.
+7. **Tone**: default `pedagogical`; override via `.construct/brand-voice.json` if present.
+8. **Output**: `get_template("evidence-brief")` or `signal-brief` when threshold not met; store under `.construct/knowledge/internal/evidence-briefs/`.
 
 ## Verification bar
 
 - No invented customer names, quotes, or ticket ids.
 - Findings describe problems, not prescribed UI solutions.
-- cx-researcher must **not** cite blog posts for API version or security claims.
+- The researcher Worker Profile must **not** cite blog posts for API version or security claims.
 ## Release gate
 
 Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.
+
+## Shared authorship contract
+
+Before drafting or reviewing, call `get_skill("docs/artifact-authorship")` for framing, template population, storytelling, human voice, adversarial review, anti-fabrication, and cross-persona triggers. Persona overlays under `skills/perspectives/` add failure modes; they do not waive that contract.
+
+**Before you write (voice):** prefer contractions (`don't`/`won't`/`can't`); avoid spaced em dashes (` — `); refuse AI tells (delve, leverage, robust as filler, "it's important to note", "In today's…", "This ensures that…", empty tricolons); sound like a careful colleague. Exceptions: ACs, legal shall/must not, quoted statute, exact required section titles. See `rules/common/human-voice.md`.

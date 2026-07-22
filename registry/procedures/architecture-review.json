@@ -1,0 +1,26 @@
+{
+  "id": "architecture-review",
+  "version": "1.0.0",
+  "type": "linear",
+  "workerProfiles": [
+    "architect",
+    "security",
+    "reviewer"
+  ],
+  "approvalMode": "requires-human-approval",
+  "modelTier": "strong",
+  "state": "active",
+  "modes": [
+    "solo",
+    "team"
+  ],
+  "surfaces": [
+    "mcp",
+    "cli"
+  ],
+  "description": "Review an architecture or design for trade-offs, failure modes, and security exposure.",
+  "outputSchema": {
+    "artifact": "review-report"
+  },
+  "durableStateModel": "none"
+}

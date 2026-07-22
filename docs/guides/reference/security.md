@@ -39,7 +39,7 @@ If `scan-secrets` blocks a write, check whether you are embedding a real credent
 
 ## Audit trail
 
-Every mutation (file edit, write, mutating bash command, git operation) is appended to `~/.cx/audit-trail.jsonl`. Each record includes:
+Every mutation (file edit, write, mutating bash command, git operation) is appended to `~/.construct/audit-trail.jsonl`. Each record includes:
 
 | Field | Description |
 |---|---|
@@ -62,7 +62,7 @@ View recent entries:
 
 ```bash
 construct audit trail
-construct audit trail --agent cx-engineer --since 2026-05-01
+construct audit trail --agent engineer --since 2026-05-01
 construct audit trail --json | jq 'select(.tool == "Bash")'
 ```
 

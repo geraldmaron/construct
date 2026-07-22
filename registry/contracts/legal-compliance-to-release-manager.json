@@ -1,0 +1,34 @@
+{
+  "id": "legal-compliance-to-release-manager",
+  "producer": "security",
+  "consumer": "operations",
+  "trigger": {
+    "artifactType": "compliance-memo",
+    "riskFlags": ["compliance", "privacy", "licensing"]
+  },
+  "input": {
+    "shape": "compliance-memo",
+    "mustContain": ["Regulatory Citations", "Remediation Plan", "residual"]
+  },
+  "output": {
+    "shape": "release-gate-note",
+    "mustContain": ["counsel gate", "ship blocked"]
+  },
+  "preconditions": [
+    "Compliance memo counsel gate is named or explicitly unknown with owner",
+    "No invented citations remain without [unverified] markers"
+  ],
+  "postconditions": [
+    {
+      "id": "legal-to-release-pc-counsel-gate",
+      "description": "Release note records counsel gate status before ship",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "legal-to-release-pc-remediation-tracked",
+      "description": "Open remediation items are tracked with owners and dates",
+      "postconditionType": "advisory"
+    }
+  ],
+  "description": "security compliance-memo chains to operations as a release consideration. Restored under registry/contracts after specialists/org cutover (ADR-0070 integrity fix, construct-pe9sv)."
+}

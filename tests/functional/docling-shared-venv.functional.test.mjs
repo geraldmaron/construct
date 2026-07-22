@@ -3,7 +3,7 @@
  *
  * construct-rf26.16 acceptance: two different projects on one machine resolve
  * to the identical docling venv path and share exactly one provisioned
- * instance — not one venv per project. Pins CX_HOME_OVERRIDE to a single
+ * instance — not one venv per project. Pins CONSTRUCT_HOME_OVERRIDE to a single
  * fake machine home, then drives resolution from two isolated project
  * directories (distinct git remotes, so lib/state-root.mjs's per-project
  * `deriveProjectKey` genuinely differs between them) to prove the docling
@@ -62,8 +62,8 @@ function withCwd(dir, fn) {
 
 test('two isolated projects on one machine resolve to the identical docling venv path', () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-docling-shared-home-'));
-  const prevHome = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = home;
+  const prevHome = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = home;
   const projectA = makeGitProject('git@example.test:org/project-a.git');
   const projectB = makeGitProject('git@example.test:org/project-b.git');
   try {
@@ -79,15 +79,15 @@ test('two isolated projects on one machine resolve to the identical docling venv
     rmTmpDir(projectA);
     rmTmpDir(projectB);
     rmTmpDir(home);
-    if (prevHome === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prevHome;
+    if (prevHome === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prevHome;
   }
 });
 
 test('provisioning from one project is reused, unprovisioned, by a second project on the same machine', async () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-docling-shared-home-'));
-  const prevHome = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = home;
+  const prevHome = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = home;
   const projectA = makeGitProject('git@example.test:org/project-a.git');
   const projectB = makeGitProject('git@example.test:org/project-b.git');
   try {
@@ -106,7 +106,7 @@ test('provisioning from one project is reused, unprovisioned, by a second projec
     rmTmpDir(projectA);
     rmTmpDir(projectB);
     rmTmpDir(home);
-    if (prevHome === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prevHome;
+    if (prevHome === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prevHome;
   }
 });

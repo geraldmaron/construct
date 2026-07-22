@@ -10,7 +10,7 @@ import Link from 'next/link';
 import {
   Section, CodeBlock, Diagram, Callout, FeatureGrid,
   ArrowRight, GitHubIcon, useTheme,
-} from '@cx/ui';
+} from '@construct/ui';
 
 const homeChart = `
 flowchart LR
@@ -123,7 +123,7 @@ export default function HomePage() {
           hatch for custom profiles.
         </p>
         <p>
-          Sessions survive boundary changes via durable state in <code>.cx/</code>, Beads, and a
+          Sessions survive boundary changes via durable state in <code>.construct/</code>, Beads, and a
           local vector index. Solo by default. Can deploy centrally for teams that want shared
           memory, telemetry, queues, and policy.
         </p>
@@ -152,7 +152,7 @@ construct oracle status   # fleet health verdict and pending queue`}
         </CodeBlock>
         <p>
           In your editor, start with <code>@construct</code>. Ask for the outcome, not the
-          specialist. Construct routes to the right chain, keeps durable state in <code>.cx/</code>
+          specialist. Construct routes to the right chain, keeps durable state in <code>.construct/</code>
           and Beads, and blocks risky mutations until the configured gates pass.
         </p>
       </Section>
@@ -166,7 +166,7 @@ construct oracle status   # fleet health verdict and pending queue`}
         <FeatureGrid cells={[
           { num: '01', title: 'One persona, many specialists', body: 'You address @construct. It dispatches to 28 specialists (architect, engineer, reviewer, QA, security, designer, …) under typed contracts.' },
           { num: '02', title: 'Specialists that argue', body: 'Reviewer, security, devil’s advocate, and QA are peers — not rubber stamps. Agreement at every step is treated as a smell.' },
-          { num: '03', title: 'Durable project state', body: <>Beads for work items, <code>.cx/</code> for context + handoffs, git for code, Postgres + pgvector for embeddings. Nothing important lives in only one place.</> },
+          { num: '03', title: 'Durable project state', body: <>Beads for work items, <code>.construct/</code> for context + handoffs, git for code, Postgres + pgvector for embeddings. Nothing important lives in only one place.</> },
           { num: '04', title: 'Health you can see', body: <>A canonical <code>construct status</code> and <code>construct doctor</code> — runtime, providers, telemetry, storage modes, adapter drift.</> },
           { num: '05', title: 'Hybrid retrieval', body: 'File-state, SQL-ready records, and semantic search over a shared corpus. Falls back to a local JSON vector index when Postgres isn’t available.' },
           { num: '06', title: 'Hard gates, not vibes', body: 'Three layers — write-time hooks, commit/push gates, CI safety-net. Quality gates fire unconditionally; notice-only signals auto-suppress in CI and non-TTY contexts. If a gate fires wrong, repair the policy — do not bypass it.' },
@@ -183,7 +183,7 @@ construct oracle status   # fleet health verdict and pending queue`}
         <p>
           <code>solo</code> runs everything locally — filesystem queue, local repo state, optional
           Postgres via Docker, local JSONL traces. If every cloud service goes down, you still work
-          from <code>plan.md</code>, <code>.cx/context.md</code>, beads, git, and the local vector
+          from <code>plan.md</code>, <code>.construct/context.md</code>, beads, git, and the local vector
           index.
         </p>
         <p>

@@ -1,7 +1,7 @@
 /**
  * tests/cost-ledger-config.test.mjs — config-driven cost-budget precedence.
  *
- * Pins env > construct.config.json.costs.budgets > default for personaBudget
+ * Pins env > construct.config.json.costs.budgets > default for workerProfileBudget
  * + totalBudget, and the corresponding enforce-flag precedence (env > config).
  * Tests run in a temp cwd so they don't disturb the real project config.
  */
@@ -37,24 +37,24 @@ function writeCfg(costs) {
   fs.writeFileSync(path.join(projectRoot, 'construct.config.json'), JSON.stringify({ version: 1, costs }));
 }
 
-describe('config-driven persona + total budgets', () => {
-  it('reads persona-specific budget from construct.config.json.costs.budgets', async () => {
+describe('config-driven worker-profile + total budgets', () => {
+  it('reads worker-profile-specific budget from construct.config.json.costs.budgets', async () => {
     writeCfg({ budgets: { construct: { dailyUsd: 25 } } });
-    const { personaBudget } = await import('../lib/cost-ledger.mjs');
-    assert.equal(personaBudget('construct'), 25);
+    const { workerProfileBudget } = await import('../lib/cost-ledger.mjs');
+    assert.equal(workerProfileBudget('construct'), 25);
   });
 
-  it('falls back to budgets.default.dailyUsd when persona has no specific entry', async () => {
+  it('falls back to budgets.default.dailyUsd when worker profile has no specific entry', async () => {
     writeCfg({ budgets: { default: { dailyUsd: 7.5 } } });
-    const { personaBudget } = await import('../lib/cost-ledger.mjs');
-    assert.equal(personaBudget('unknown-persona'), 7.5);
+    const { workerProfileBudget } = await import('../lib/cost-ledger.mjs');
+    assert.equal(workerProfileBudget('unknown-worker-profile'), 7.5);
   });
 
-  it('env wins over config: CONSTRUCT_BUDGET_<PERSONA>', async () => {
+  it('env wins over config: CONSTRUCT_BUDGET_<WORKER_PROFILE>', async () => {
     writeCfg({ budgets: { construct: { dailyUsd: 25 } } });
     process.env.CONSTRUCT_BUDGET_CONSTRUCT = '50';
-    const { personaBudget } = await import('../lib/cost-ledger.mjs');
-    assert.equal(personaBudget('construct'), 50);
+    const { workerProfileBudget } = await import('../lib/cost-ledger.mjs');
+    assert.equal(workerProfileBudget('construct'), 50);
   });
 
   it('reads totalBudget from costs.budgets.total.dailyUsd', async () => {

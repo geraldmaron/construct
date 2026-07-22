@@ -2,11 +2,9 @@
  * tests/writes/import-guard.test.mjs — LMCP-J6 guard: no orchestration or
  * embed module may import a provider write adapter directly.
  *
- * Scans lib/orchestration/**, lib/embed/** (excluding lib/embed/presets,
- * which are declarative capability manifests, not executable orchestration
- * code) and lib/embedded-contract/** for static imports of
- * lib/providers/contract/adapters/*\/governed-write.mjs, index.mjs
- * (the raw CLI-backed github adapter), or any adapters/*\/transport.mjs.
+ * Scans lib/orchestration/**, lib/embed/**, and lib/embedded-contract/** for
+ * static imports of lib/providers/contract/adapters/*\/governed-write.mjs,
+ * index.mjs (the raw CLI-backed github adapter), or any adapters/*\/transport.mjs.
  * lib/writes/** and lib/mcp/tools/provider-write.mjs (the sanctioned I7 MCP
  * face of the same envelope) are the only files permitted that import.
  * A future direct import from a scanned path fails this test, which is the
@@ -34,9 +32,7 @@ const SCANNED_DIRS = [
 ];
 
 /** Sub-paths within a scanned dir that are exempt (declarative, not orchestration code). */
-const EXEMPT_PREFIXES = [
-  'lib/embed/presets',
-];
+const EXEMPT_PREFIXES = [];
 
 /** Import specifiers that resolve to a governed-write adapter or its raw transport. */
 const FORBIDDEN_IMPORT_PATTERN = /providers\/contract\/adapters\/[^'"]*\/(governed-write|transport|index)\.mjs/;

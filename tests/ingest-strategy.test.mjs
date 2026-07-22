@@ -23,7 +23,7 @@ test('default resolution is adapter strategy with none fallback and no model', (
 
 test('config selects provider strategy and resolves a model', () => {
   const config = { ingest: { strategy: 'provider', fallback: 'adapter' } };
-  const r = resolveIngestStrategy({ config, env: { CX_MODEL_FAST: 'test-fast-model' } });
+  const r = resolveIngestStrategy({ config, env: { CONSTRUCT_MODEL_FAST: 'test-fast-model' } });
   assert.equal(r.strategy, 'provider');
   assert.equal(r.fallback, 'adapter');
   assert.equal(r.model, 'test-fast-model');
@@ -50,12 +50,12 @@ test('invalid values fall back to defaults rather than throwing', () => {
 });
 
 test('adapter strategy does not resolve a provider model', () => {
-  const r = resolveIngestStrategy({ config: { ingest: { strategy: 'adapter', fallback: 'none' } }, env: { CX_MODEL_FAST: 'x' } });
+  const r = resolveIngestStrategy({ config: { ingest: { strategy: 'adapter', fallback: 'none' } }, env: { CONSTRUCT_MODEL_FAST: 'x' } });
   assert.equal(r.model, null);
   assert.equal(r.modelResolution, null);
 });
 
-const MODEL_ENV = { CX_MODEL_REASONING: 'anthropic/claude-sonnet-4-6', CX_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6', CX_MODEL_FAST: 'anthropic/claude-sonnet-4-6' };
+const MODEL_ENV = { CONSTRUCT_MODEL_REASONING: 'anthropic/claude-sonnet-4-6', CONSTRUCT_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6', CONSTRUCT_MODEL_FAST: 'anthropic/claude-sonnet-4-6' };
 
 test('orchestration axis defaults to prompt-only and coexists with the extraction axis', () => {
   const r = resolveIngestStrategy({ config: null, env: MODEL_ENV });
@@ -70,7 +70,7 @@ test('config selects orchestrated; execution reports construct-orchestrated', ()
   const r = resolveIngestStrategy({ config: { ingest: { orchestration: 'orchestrated' } }, env: MODEL_ENV });
   assert.equal(r.orchestration, 'orchestrated');
   assert.equal(r.execution.executionMode, 'construct-orchestrated');
-  assert.deepEqual(r.execution.constructCapabilitiesActive.sort(), ['personas', 'prompt-envelope', 'skills', 'workflow-routing']);
+  assert.deepEqual(r.execution.constructCapabilitiesActive.sort(), ['prompt-envelope', 'skills', 'worker-profiles', 'workflow-routing']);
 });
 
 test('env CONSTRUCT_INGEST_ORCHESTRATION overrides config; explicit override beats both', () => {

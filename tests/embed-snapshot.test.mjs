@@ -31,11 +31,11 @@ describe('SnapshotEngine', () => {
   it('includes operating profile and detects missing focal resources', async (t) => {
     const rootDir = mkdtempSync(join(tmpdir(), 'construct-snapshot-profile-'));
     t.after(() => { try { rmSync(rootDir, { recursive: true, force: true }); } catch {} });
-    mkdirSync(join(rootDir, '.cx', 'knowledge'), { recursive: true });
+    mkdirSync(join(rootDir, '.construct', 'knowledge'), { recursive: true });
     writeFileSync(join(rootDir, 'plan.md'), '# Plan\n');
     const engine = new SnapshotEngine(makeRegistry(), {
       sources: [],
-      outputs: [{ type: 'markdown', path: '.cx/snapshot.md' }],
+      outputs: [{ type: 'markdown', path: '.construct/snapshot.md' }],
       snapshot: { maxItems: 10 },
       operatingProfile: DEFAULT_OPERATING_PROFILE,
     }, { rootDir });

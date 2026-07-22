@@ -1,0 +1,35 @@
+# OSV-Scanner config for package-lock.json (passed via --config in supply-chain.yml).
+# Prefer real upgrades/overrides in package.json. Entries here are dated triage for
+# findings that cannot be safely fixed yet; keep in sync with
+# .github/supply-chain-exceptions.json (expiration enforced by
+# scripts/check-supply-chain-exceptions.mjs).
+
+[[IgnoredVulns]]
+id = "GHSA-frvp-7c67-39w9"
+ignoreUntil = 2026-10-21
+reason = "Path traversal in @hono/node-server serve-static on Windows; pulled by @modelcontextprotocol/sdk (^1.19.x). Fixed only in 2.0.5 (major). Construct does not expose untrusted Windows static-file serving via this adapter. Revisit when MCP SDK moves to @hono/node-server ^2."
+
+[[IgnoredVulns]]
+id = "GHSA-f88m-g3jw-g9cj"
+ignoreUntil = 2026-10-21
+reason = "sharp <0.35 via next@16 optionalDependency ^0.34.5. Overriding to 0.35.x breaks the caret. Same class as LanceDB pin note in docs/guides/reference/dependencies.md. Revisit when Next allows sharp >=0.35."
+
+[[IgnoredVulns]]
+id = "GHSA-f23m-r3pf-42rh"
+ignoreUntil = 2026-10-21
+reason = "Nested lodash-es@4.17.21 under chevrotain (mermaid/docs tooling). Root lodash-es already at 4.18.1; nested copies are pinned by chevrotain's own node_modules. Revisit when chevrotain/mermaid bump lodash-es."
+
+[[IgnoredVulns]]
+id = "GHSA-r5fr-rjxr-66jc"
+ignoreUntil = 2026-10-21
+reason = "Nested lodash-es@4.17.21 _.template code-injection under chevrotain (docs tooling). Construct does not evaluate untrusted lodash templates from this path. Revisit with chevrotain/mermaid bump."
+
+[[IgnoredVulns]]
+id = "GHSA-mwcw-c2x4-8c55"
+ignoreUntil = 2026-10-21
+reason = "Nested nanoid@3.3.3 / 4.0.2 under @excalidraw/* (apps/docs). Root nanoid already patched. Revisit when excalidraw packages bump nanoid; 4.x fix is 5.0.9 (major within nest)."
+
+[[IgnoredVulns]]
+id = "GHSA-qx2v-qp2m-jg93"
+ignoreUntil = 2026-10-21
+reason = "Nested postcss@8.4.31 under next@16 (apps/docs). Root postcss already >=8.5.10. Next pins its own nested postcss; revisit when Next bumps."

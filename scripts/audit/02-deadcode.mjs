@@ -64,8 +64,17 @@ const ACCEPTED_TEST_ONLY = {
   'lib/task-graph/schema.mjs': 'task-graph node/edge schema constants with a validation test; retained for the task-graph store',
   'lib/providers/contract/contract-tests.mjs': 'contract harness: imported by tests/provider-*.test.mjs for ADR-0003 provider interface validation',
   'lib/providers/contract/registry.mjs': 'contract harness: ProviderRegistry for embed-snapshot and provider-framework tests',
+  'lib/runtime/contract/conformance.mjs': 'contract harness (construct-b0nny.24): imported by tests/runtime-contract-*.test.mjs for the runtime-adapter conformance suite, mirroring lib/providers/contract/contract-tests.mjs',
+  'lib/runtime/contract/default-registry.mjs': 'staged (construct-b0nny.24): the production runtime registry wiring, consumed once M4/M5a migrate their callers onto it; asserted from tests/runtime-contract-registry.test.mjs in the meantime',
+  'lib/runtime/contract/adapters/coding/claude-api.mjs': 'replacement-proof adapter (construct-b0nny.24): the HTTP-transport "after" side of the swap-and-rollback proof in tests/functional/runtime-adapter-swap.functional.test.mjs; kept out of default-registry.mjs by design until M5a migrates the coding-claude entry off the CLI transport',
   'lib/visual-review.mjs': 'human visual-review verdict recorder for the human-reviewed gate level; its no-forgery contract is asserted from tests, and auto-calling it would forge a verdict, so the interactive review entry is staged (not wired in solo)',
   'lib/pixel-regression.mjs': 'pixel-diff harness for the full-certification gate; gated to that level (never fast/standard) and asserted from tests/certification, with golden regeneration as the only sanctioned writer',
+  'lib/graph/relational/postgres-store.mjs': 'opt-in Postgres graph adapter (construct-b0nny.21): production path when DATABASE_URL is set; no default-path static import by design, exercised by tests/graph/relational-postgres-store.test.mjs',
+  'lib/certification/host-adapter-certification.mjs': 'certification harness (construct-tsyfe.9.4): two-axis host-adapter evidence recorder; runbook entrypoint and tests/certification assert the contract before the gate wires it into default doctor output',
+  'lib/certification/richdocument-production.mjs': 'certification harness (construct-tsyfe.3.7): production RichDocument path evidence; asserted from tests/certification/richdocument-production.test.mjs',
+  'lib/export/html-provider.mjs': 'sanitized direct-HTML export provider (construct-tsyfe.6.6): staged export surface; contract asserted from tests/export/html-provider.test.mjs',
+  'lib/orchestration/guidance-capability-drift.mjs': 'CI gate (construct-0h5r0): static lint for bare non-core MCP tool references in Worker Profile prompts; asserted from tests/orchestration/guidance-capability-drift.test.mjs',
+  'lib/figure-layout.mjs': 'publish figure proof helper (construct-fgeat): SVG label-overlap checks asserted from tests/figure-layout.test.mjs; authors run via construct publish --preview, not a static production import',
 };
 
 function walk(dir, exts) {

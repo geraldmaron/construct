@@ -10,7 +10,7 @@
  *   - `lib/init-unified.mjs` and `lib/reconcile/gitignore-coverage.mjs` call
  *     `missingIgnorePatterns()` and append every result to the host `.gitignore`
  *     (cache disposition: "never source").
- *   - `scripts/sync-specialists.mjs` (syncCopilot) writes the same file via
+ *   - `scripts/sync-worker-profiles.mjs` (syncCopilot) writes the same file via
  *     `replaceManagedBlock(...)`, preserving user content and rewriting only a
  *     fenced managed block (user-owned managed-block disposition). The source
  *     comment on that write reads "User-managed file with the managed block
@@ -49,11 +49,11 @@ function readSource(rel) {
 // user-managed, marker-block file — never a regenerable cache artifact.
 
 test('sync writes copilot-instructions.md as a user-managed managed-block file', () => {
-  const syncSrc = readSource('scripts/sync-specialists.mjs');
+  const syncSrc = readSource('scripts/sync-worker-profiles.mjs');
   assert.match(
     syncSrc,
     /copilot-instructions\.md/,
-    'sync-specialists.mjs no longer references copilot-instructions.md — re-derive the contradiction source.',
+    'sync-worker-profiles.mjs no longer references copilot-instructions.md — re-derive the contradiction source.',
   );
   assert.match(
     syncSrc,

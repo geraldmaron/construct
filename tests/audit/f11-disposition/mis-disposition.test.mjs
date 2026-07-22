@@ -6,7 +6,7 @@
  *
  * Target file: `.github/copilot-instructions.md`. GitHub Copilot loads it
  * automatically as repository context when present (so it functions as durable
- * repo instructions), and `scripts/sync-specialists.mjs` (syncCopilot, the
+ * repo instructions), and `scripts/sync-worker-profiles.mjs` (syncCopilot, the
  * `replaceManagedBlock` write) treats it as a USER-MANAGED file — only a fenced
  * managed block is rewritten, all user content is preserved. ADR-0027 §2 lists
  * `.github/*` among files "Construct does not own", mutated only via marker

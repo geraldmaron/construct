@@ -50,7 +50,10 @@ function seedRow({ id, dedupKey, kind, summary, status, queuedAt, count = 1 }) {
     summary,
     classification: 'approve',
     status,
-    signOff: { gateType: 'human-approval', requiredApprover: 'cx-oracle' },
+    signOff: {
+      policyId: 'action-approval',
+      approverWorkerProfileId: 'orchestrator',
+    },
     context: { kind, summary },
     dedupKey,
     count,
@@ -66,7 +69,7 @@ function seedBacklog(projectDir) {
     rows.push(seedRow({
       id: `oracle-tests-${i}`,
       dedupKey: 'oracle:tests',
-      kind: 'specialist-review',
+      kind: 'worker-profile-review',
       summary: 'Re-run affected tests and refresh lastValidated for capabilities with changed implementation',
       status: 'pending',
       queuedAt: new Date(Date.now() - i * 1000).toISOString(),
@@ -76,8 +79,8 @@ function seedBacklog(projectDir) {
     rows.push(seedRow({
       id: `oracle-violations-${i}`,
       dedupKey: 'oracle:violations',
-      kind: 'specialist-review',
-      summary: 'Review recent contract violations and route remediation to owning specialist',
+      kind: 'worker-profile-review',
+      summary: 'Review recent contract violations and route remediation to the owning Worker Profile',
       status: 'pending',
       queuedAt: new Date(Date.now() - i * 1000).toISOString(),
     }));

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://construct.dev/schemas/knowledge-store.schema.json",
+  "title": "Construct KnowledgeStore Capability Declaration",
+  "description": "A deployment's declared knowledge-storage capability across six axes (metadataStore, keywordSearch, vectorSearch, embedding, reranking, sharedStorage), tagged with one of four named modes (minimal-local, capable-local-semantic, team, remote-where-justified). Reference shape for lib/engine/knowledge-store-contract.mjs (construct-tsyfe.7.1) — hand-validated there, not by this file directly (ADR-0001: no external schema-validation library in core).",
+  "type": "object",
+  "required": ["schemaVersion", "mode", "axes"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "type": "integer", "minimum": 1 },
+    "mode": { "enum": ["minimal-local", "capable-local-semantic", "team", "remote-where-justified"] },
+    "axes": {
+      "type": "object",
+      "required": ["metadataStore", "keywordSearch", "vectorSearch", "embedding", "reranking", "sharedStorage"],
+      "additionalProperties": false,
+      "properties": {
+        "metadataStore": { "$ref": "#/$defs/axis" },
+        "keywordSearch": { "$ref": "#/$defs/axis" },
+        "vectorSearch": { "$ref": "#/$defs/axis" },
+        "embedding": { "$ref": "#/$defs/axis" },
+        "reranking": { "$ref": "#/$defs/axis" },
+        "sharedStorage": { "$ref": "#/$defs/axis" }
+      }
+    },
+    "justification": {
+      "type": ["string", "null"],
+      "description": "Required non-empty when mode is remote-where-justified, or when any axis declares remote:true — documents why a remote-hosted backend is warranted (Security & privacy: audits which backend processes document content off-machine)."
+    }
+  },
+  "$defs": {
+    "axis": {
+      "type": "object",
+      "required": ["present"],
+      "additionalProperties": false,
+      "properties": {
+        "present": { "type": "boolean" },
+        "providerId": {
+          "type": "string",
+          "description": "Required non-empty when present is true — identifies which module/service satisfies this axis (e.g. lib/storage/vector-client.mjs)."
+        },
+        "remote": {
+          "type": "boolean",
+          "description": "True when the provider runs off the local machine (e.g. a hosted embedding API) — forces justification to be declared."
+        }
+      }
+    }
+  }
+}

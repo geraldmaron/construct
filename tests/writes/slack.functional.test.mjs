@@ -1,6 +1,6 @@
 /**
  * tests/writes/slack.functional.test.mjs — Slack writes routed through the
- * governed write envelope (construct-p4cba.2).
+ * governed write envelope.
  *
  * Uses a fake Slack transport (no real network) to validate message posts,
  * thread replies, envelope-level idempotency dedup, and Slack's

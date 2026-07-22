@@ -11,4 +11,4 @@ Every meaningful UI surface needs:
 
 Does it look intentional, or like a default template? Flag experience drift.
 
-For a layout sketch, run `construct wireframe "<screen description>" --type=layout` to produce a committed low-fi HTML/Mermaid artifact under `.cx/wireframes/`, then refine it. Stay text-first (no new diagramming dependency). Valid `--type` values: layout, flow, state, sequence, er, user-journey.
+For a layout sketch, run `construct wireframe "<screen description>" --type=layout` to produce a project-local low-fi HTML/Mermaid artifact under `.construct/wireframes/`, then refine it. Stay text-first (no new diagramming dependency). Valid `--type` values: layout, flow, state, sequence, er, user-journey.

@@ -5,7 +5,7 @@
 .env
 config.env
 .claude
-.cx
+.construct
 deploy/terraform/.terraform
 deploy/terraform/**/*.tfstate
 deploy/terraform/**/*.tfstate.backup

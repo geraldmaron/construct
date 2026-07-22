@@ -36,7 +36,7 @@ test('every manifest entry with template path resolves on disk', () => {
 test('templateMetadata exposes tone and release gate', () => {
   const meta = templateMetadata('prd', { rootDir: REPO });
   assert.equal(meta.tone, 'decision-forcing-direct');
-  assert.ok(meta.releaseGate?.requiredReviewers?.includes('cx-reviewer'));
+  assert.ok(meta.releaseGate?.requiredReviewers?.includes('reviewer'));
 });
 
 test('artifact workflow contract resolves any registered class and explicit override precedence', () => {
@@ -45,7 +45,7 @@ test('artifact workflow contract resolves any registered class and explicit over
     projectConfig: {
       artifactWorkflow: {
         defaults: { outputs: { branding: 'plain' } },
-        types: { runbook: { outputs: { formats: ['html'] }, authorChain: ['cx-operations'] } },
+        types: { runbook: { outputs: { formats: ['html'] }, authorChain: ['operations'] } },
       },
     },
     overrides: { outputs: { branding: 'construct' }, authorChain: ['cx-sre'] },
