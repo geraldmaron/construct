@@ -17,7 +17,17 @@ A hook is a small Node script that Claude Code invokes at a specific point in th
 
 **Project state is per-project.** Hooks that record per-project facts (audit-trail, agent-log, audit-reads, file-hashes) write through `resolveProjectScopedPath('<file>')` so project A's mutations don't mix into project B's chain.
 
-**Hook surface is exclusive to Claude Code.** Codex, OpenCode, Copilot, VS Code, and Cursor sync agents and skills but have no hook layer. A project switching to those hosts loses every gate listed below — that's a known constraint, not an oversight.
+**Construct wires agent lifecycle hooks only for Claude Code** (`platforms/claude/settings.template.json` → `~/.claude/settings.json` / project `.claude/settings.json`). That is intentional stewardship, not unfinished sync.
+
+| Host | Construct wires `lib/hooks`? | Host-native hooks (2025–2026)? | Fail-closed when Layer-1 absent |
+|---|---|---|---|
+| Claude Code | Yes — full suite below | Yes (Claude Code hooks) | Layer-1 + Layer-2/3 |
+| Cursor | **No** — does not ship `.cursor/hooks.json` | Yes — [Cursor Hooks](https://cursor.com/docs/hooks) + [third-party Claude hooks](https://cursor.com/docs/reference/third-party-hooks) | Git `.beads/hooks`, `construct doctor` / `release:check`, CI, MCP broker |
+| Codex · OpenCode · VS Code · Copilot | No | Not Construct-wired; registry `hooks.supported=false` | Same compensating stack |
+
+**Why Construct declines Cursor hook parity.** Cursor can load Claude-shaped hooks, but full suite port is unsafe as a Construct claim: tool names map incompletely (`Bash`→`Shell`, `Edit`→`Write`; Glob/WebFetch/WebSearch unmapped), non-exit-2 hook errors **fail open**, third-party loading needs an explicit Settings opt-in, and forum-confirmed gaps remain (AskQuestion skips tool hooks; WebSearch/WebFetch unreliable under Auto). Faking “hooks on Cursor” would weaken the trust model. Claude Code hooks are not diluted for parity theater.
+
+**Compensating controls (fail closed where possible):** Layer-2 git pre-commit/pre-push, CLI (`construct lint:comments`, `docs:verify`, `doctor`, `npm run release:check`), Layer-3 CI required checks, Layer-4 MCP broker in team/enterprise. Cursor rules (`.cursor/rules/construct.mdc`) are notice-only pointers at those CLI gates — not hard blocks. Source of truth: `lib/hooks/_lib/host-coverage.mjs`; doctor: `lib/doctor/host-hook-coverage.mjs`.
 
 ## Header convention
 

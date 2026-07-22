@@ -353,7 +353,7 @@ construct activation:status
 1. **Daemon never calls LLM**. Classification is deterministic (keyword/heuristic)
 2. **Agent does the analysis**. The LLM in your editor does the real thinking
 3. **Evidence required**. No task transitions to `done` without evidence
-4. **Everything traced**. Audit trail in `.construct/traces/<YYYY-MM-DD>.jsonl`
+4. **Everything traced**. Audit trail in `~/.construct/projects/<key>/traces/<YYYY-MM-DD>.jsonl`
 5. **Degraded gracefully**. Works without Postgres, falls back to local JSON
 6. **Learning loop closed**. Feedback improves classification over time
 

@@ -62,7 +62,7 @@ Two newer surfaces complete the durable substrate, both written by the daemon an
 
 These two are distinct from `bd` issues. Beads is the project-wide task tracker. The intake queue is the inbox; task graphs are the per-signal execution plans. They eventually graduate to beads issues when work crosses session boundaries.
 
-`.construct/traces/<YYYY-MM-DD>.jsonl` is the append-only audit log: every intake.received, task_graph.created, worker.started, evidence.recorded, and tool.called event lands there with a stable traceId / spanId, ready to be ingested into a telemetry backend or an OTel collector.
+`~/.construct/projects/<key>/traces/<YYYY-MM-DD>.jsonl` is the append-only audit log (ADR-0066): every intake.received, task_graph.created, worker.started, evidence.recorded, and tool.called event lands there with a stable traceId / spanId, ready to be ingested into a telemetry backend or an OTel collector. An in-project `.construct/traces/` directory is legacy heavy state flagged by `construct doctor`.
 
 ## What goes where
 
@@ -71,7 +71,7 @@ These two are distinct from `bd` issues. Beads is the project-wide task tracker.
 | Incoming signal | `inbox/<file>` (input), `.construct/intake/pending/<id>.json` (after triage) | session end + clone (intake/) | yes |
 | Per-signal execution plan | `.construct/task-graphs/<id>.json` | session end + clone | yes |
 | Evidence for a task graph node | nested inside `.construct/task-graphs/<id>.json` + linked via traceId | session end + clone | yes |
-| Trace events | `.construct/traces/<YYYY-MM-DD>.jsonl` | session end (rotated) | append-only, audit-grade |
+| Trace events | `~/.construct/projects/<key>/traces/<YYYY-MM-DD>.jsonl` | session end (rotated) | append-only, audit-grade |
 | Work item: "Implement X, blocked on Y" | beads (`.beads/`) | session end + clone | yes |
 | Decision: "We chose Postgres over SQLite because..." | `.construct/context.md` (read), `docs/decisions/adr/` (formal) | session end + clone | yes |
 | Mid-task scratch: "I'm halfway through. Tomorrow I'll do Z" | `.construct/handoffs/{date}.md` | session end (gitignored) | working note only |

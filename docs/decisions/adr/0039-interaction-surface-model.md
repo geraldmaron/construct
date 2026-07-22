@@ -3,14 +3,18 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 -->
 # ADR-0039: Interaction-surface model — CLI as substrate, agent/MCP/TUI as the surfaces that get emphasized
 
+> **Current surface (Construct 2.0):** MCP `workflow_invoke` and CLI `construct workflow` are **retired** (absent from the live catalog). Use MCP `procedure_invoke` (long-tail via `call`) and CLI `construct procedure invoke`. Flat MCP core keeps `artifact_workflow` / `triage_recommend` / `orchestration_run` among others — not `procedure_invoke`. Decider stamp `cx-architect` and `.cx/` paths below are historical. Body sections through References are the original 2026-06-17 decision record plus dated amendments; **do not treat tool/CLI names in those sections as a runbook**. See amendment (2026-07-22) and `docs/obsolete/legacy-surface-register.md`.
+
 - **Date**: 2026-06-17
 - **Status**: accepted
 - **Deciders**: Construct maintainers (cx-architect)
 - **Supersedes**: none
 
-<!-- Owning specialist: cx-architect. Audit epic construct-ij31, bead construct-ij31.18. -->
+<!-- Owning Worker Profile: architect (historical stamp: cx-architect). Audit epic construct-ij31, bead construct-ij31.18. Steward bead construct-7d4vl. -->
 
 ## Problem
+
+> *Historical inventory (decision date).* Tool and CLI names in this section describe the 2026-06-17 surface. Current twins: `procedure` / `procedure_invoke` — see banner and 2026-07-22 amendment.
 
 Construct ships 110 commands behind one flat `construct <verb>` dispatcher — verified by
 `node scripts/audit/00-inventory.mjs` this session: **110 commands, 13 core, 18 internal,
@@ -99,6 +103,10 @@ setup/ops verbs grow the human CLI.
 
 ## Surface map
 
+> **Snapshot note:** This table is the 2026-06-17 classification. Rows naming `workflow` /
+> `workflow_invoke` are **not** current operator instructions — superseded by the 2026-07-22
+> amendment (`procedure` / `procedure_invoke`). Tier (d) Dashboard is retired (2026-06-25 amendment).
+
 Classification of every command group. **Real caller** is derived from the registry
 (`core`/`internal` flags, description, usage), the `bin/construct` handler, and whether an
 equivalent MCP tool exists in `lib/mcp/server.mjs`. **Disposition**: `keep-CLI` (stays primary on
@@ -110,7 +118,7 @@ the human CLI), `promote-MCP` (MCP is/should be canonical, CLI is the `--json` t
 | `install`, `init`, `init:update`, `uninstall`, `update`, `upgrade`, `sync`, `completions`, `backup`, `config` | (b) thin CLI | human, one-shot setup/lifecycle | keep-CLI |
 | `dev`, `stop`, `status`, `doctor`, `cleanup`, `embed`, `scheduler` | (b) thin CLI | human ops | keep-CLI (status/doctor/oracle for observability) |
 | `creds`, `providers`, `provider`, `auth:status`, `mcp`, `ollama`, `integrations`, `hosts`, `models`(set) | (b) thin CLI | human, credential/integration ops | keep-CLI |
-| `intake` (classify), `graph` (recommend), `workflow` (invoke), `capability` (describe), `execution` (resolve), `models` (resolve), `orchestrate` (run/status) | (a) agent/MCP | agent, daily authored work | promote-MCP — MCP tool canonical (`triage_recommend`, `workflow_invoke`, `capability_describe`, `construct_execution_resolve`, `model_resolve`, `orchestration_run/status`), CLI `--json` is the twin |
+| `intake` (classify), `graph` (recommend), `workflow` (invoke), `capability` (describe), `execution` (resolve), `models` (resolve), `orchestrate` (run/status) | (a) agent/MCP | agent, daily authored work | promote-MCP — MCP tool canonical (`triage_recommend`, `workflow_invoke`, `capability_describe`, `construct_execution_resolve`, `model_resolve`, `orchestration_run/status`), CLI `--json` is the twin. **Historical row** — current: `procedure` / `procedure_invoke` (see 2026-07-22 amendment) |
 | `search`, `ask`, `knowledge` (index/add/trends), `memory`, `distill`, `infer`, `ingest`, `drop`, `reflect`, `bootstrap` | (a) agent/MCP | agent + occasional human | promote-MCP where an MCP tool exists (`knowledge_search`, `memory_search`, `ingest_document`, `infer_document_schema`, `knowledge_add`); CLI stays for human one-shots |
 | `export`, `wireframe`, `headhunt` | (a) agent/MCP or (b) CLI | agent-authored, human-runnable | promote-MCP (`document_export` exists); CLI kept as headless twin |
 | `profile` (create/set/show/list/drafts/archive/health), `customer`, `workspace`, `tags`, `team`, `handoffs`, `recommendations` | (c) TUI for interactive, (a) MCP for read | human-interactive + agent-read | emphasize-TUI for create/assign/review; MCP read tools exist (`profile_*`) |
@@ -222,3 +230,17 @@ The tier (a) agent/MCP surface kept only read/think tools flat (`orchestration_p
 ## Amendment (2026-06-25) — tier (d) Dashboard retired
 
 The **(d) Dashboard** tier is retired (`construct-m7k2-web-deprecation`). The HTTP daemon (`lib/server/`) and the Next.js cockpit (`apps/dashboard/`) are deleted. Visual, telemetry, and observability now surface through the thin human CLI (`construct status`, `construct doctor`, `construct oracle`) with `--json` twins for scripting, and through external telemetry backends (OpenTelemetry / Langfuse) configured via `CONSTRUCT_TELEMETRY_URL`. The surviving tiers are **(a) agent / MCP-native**, **(b) thin human CLI**, **(c) OpenCode / supported host UI**, and **(internal)**. The forward rule "new visual capability lands on the dashboard first" no longer applies — visual capability lands on the thin CLI (`--json`) or an external telemetry backend.
+
+## Amendment (2026-07-22) — Construct 2.0: Procedure replaces Workflow; `workflow_invoke` retired
+
+Steward pass (`construct-7d4vl`). ADRs stay immutable decision records; surface renames land as amendments rather than silent rewrites of Decision text (Nygard/Fowler ADR practice: accepted records are not edited into fiction — change is recorded by status/amendment/supersession). Verified on branch `staging` against live CLI/MCP (`construct` v2.0.0):
+
+| Historical name (this ADR's body) | Current surface |
+|---|---|
+| CLI `construct workflow` / `workflow invoke` | `construct procedure` (`list` \| `show` \| `invoke`); unknown-command hint maps `workflow` → `procedure` (`lib/cli-commands.mjs` compat) |
+| MCP `workflow_invoke` | **Absent** from tool catalog and `call` enum. Replacement: `procedure_invoke` (long-tail via `call`) |
+| Flat-core promotion of `workflow_invoke` (2026-06-27 amendment) | Superseded. Live `CORE_TOOL_NAMES` (17 tools) includes `artifact_workflow`, `triage_recommend`, `orchestration_run`, … — **not** `workflow_invoke` or `procedure_invoke` |
+| Decider / ownership stamp `cx-architect` | Historical id; live Worker Profile id is `architect` |
+| Observation path `.cx/observations/…` (2026-06-27 amendment) | Historical; project state is under `.construct/` |
+
+**Operator rule:** Prefer `procedure_invoke` / `construct procedure invoke` for plan-only Procedure runs; use `orchestration_run` / `construct orchestrate` to execute. Do not invent `workflow_invoke` from this ADR's Problem, Surface map, or 2026-06-27 amendment text.

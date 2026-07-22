@@ -1,3 +1,11 @@
+// Construct project config — JSONC: comments and a trailing comma are allowed.
+// Uncomment/edit a value to override its default; commented lines never take effect.
+//
+//   deployment.mode:      "solo" | "team" | "enterprise"
+//   deployment.mcpBroker: "auto" | "on" | "off"
+//   model tiers ("fast" | "standard" | "reasoning") are set via
+//   `construct models set` / CONSTRUCT_MODEL_* env, not in this file.
+
 {
   "version": 1,
   "alias": "Construct",

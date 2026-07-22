@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "catalog": {
-    "generatedAt": "2026-07-20T17:28:23.784Z",
+    "generatedAt": "2026-07-22T14:32:15.962Z",
     "npmScripts": [
       "adapters",
       "audit:published",
@@ -14,6 +14,7 @@
       "certify:document-io",
       "ci:local",
       "clean:artifacts",
+      "compat:check",
       "coverage",
       "deps:check",
       "docs:build",
@@ -31,11 +32,15 @@
       "examples:distribution",
       "gates:audit",
       "graph:gate",
+      "graph:impact-gate",
+      "graph:impact-promotion",
+      "graph:verify",
       "learning:status",
       "lint:agents",
       "lint:comments",
       "lint:contracts",
       "lint:js",
+      "lint:scopes",
       "lint:templates",
       "lint:workspace-presets",
       "mcp",
@@ -49,6 +54,8 @@
       "skills:routes",
       "static:cruise",
       "static:knip",
+      "supply-chain:exceptions",
+      "supply-chain:gate",
       "test",
       "test:functional",
       "test:unit",
@@ -449,6 +456,12 @@
       },
       {
         "name": "lint:comments",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "lint:contracts",
         "category": "Internal",
         "core": false,
         "internal": true

@@ -3,13 +3,15 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 -->
 # ADR-0048: Semantic tool discovery — intent-driven `find_tool` over a static gateway catalog
 
+> **Current surface (Construct 2.0):** `find_tool` remains in the flat MCP core. The ADR-0039 promotion list that included `workflow_invoke` is historical — `workflow_invoke` is retired; Procedure planning is `procedure_invoke` (long-tail via `call`). Decider stamp `cx-architect` is historical. Body below is the original decision record.
+
 - **Date**: 2026-06-27
 - **Status**: accepted
 - **Deciders**: Construct maintainers (cx-architect)
 - **Supersedes**: none
 - **Extends**: ADR-0039 tier (a) — the agent/MCP surface
 
-<!-- Owning specialist: cx-architect. Reviewed by cx-devil-advocate (FMEA, PASS-WITH-CHANGES) + cx-reviewer (BLOCK-resolved); findings addressed, see .cx/agent-log.jsonl. -->
+<!-- Owning Worker Profile: architect (historical stamp: cx-architect). Steward bead construct-7d4vl. -->
 
 ## Problem
 

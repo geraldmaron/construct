@@ -7,7 +7,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, existsSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -145,6 +145,24 @@ test('construct init --yes --docs-preset=lean scaffolds the lean pack', () => {
     assert.ok(existsSync(join(project, 'docs', 'adr')));
     assert.ok(existsSync(join(project, 'docs', 'prds')));
     assert.equal(existsSync(join(project, 'docs', 'rfcs')), false);
+    const readme = readFileSync(join(project, 'README.md'), 'utf8');
+    assert.match(readme, /## Usage/);
+    const verify = spawnSync(
+      process.execPath,
+      [BIN, 'docs:verify'],
+      {
+        cwd: project,
+        encoding: 'utf8',
+        timeout: 60_000,
+        env: {
+          ...process.env,
+          HOME,
+          CONSTRUCT_HOME_OVERRIDE: HOME,
+          NODE_ENV: 'test',
+        },
+      },
+    );
+    assert.equal(verify.status, 0, verify.stderr || verify.stdout);
   } finally {
     rmTmpDir(root);
   }

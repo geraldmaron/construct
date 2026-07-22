@@ -18,40 +18,29 @@ construct --version
 construct doctor
 ```
 
-This adds `construct` to your PATH. The CLI is your single interface for everything.
+This adds `construct` to your PATH. The CLI is your single interface for setup, status, intake, orchestration, and CI/headless contracts. Prefer OpenCode as the conversational surface after adapters are synced.
 
 ---
 
 ## Step 2: Machine Setup (One-Time)
 
-First time on a new machine, bootstrap local services:
+First time on a new machine, bootstrap machine-scoped config (requires an explicit footprint):
 
 ```bash
-construct install --yes
+construct install --footprint=user --yes
 ```
+
+A bare `construct install` with no `--footprint` hard-errors naming the flag rather than writing nothing silently.
 
 **What this does:**
-1. ✅ Checks Docker → offers to install if missing
-2. ✅ Checks `cm` (Memory MCP server) → installs if missing
-3. ✅ Checks Node.js ≥ 20 → shows download link if needed
-4. ✅ Creates `~/.config/construct/config.env`
-5. ✅ Enables local JSONL traces in `.construct/traces`
-6. ✅ Runs `construct doctor` health check
+1. Creates `~/.config/construct/config.env` and seeds default model tier assignments
+2. Configures the embedded LanceDB vector path and pre-warms the embedding model
+3. Generates shell completions (bash + zsh)
+4. Optionally installs helper CLIs (`cm`, `cass`) when Homebrew or cargo is available and you consent
+5. Installs the Pressure Guard LaunchAgent on macOS (skip with `--no-launch-agent`)
+6. Prints a local-services summary (traces + LanceDB path); no host ports are opened
 
-**Output:**
-```
-🔍 Checking prerequisites...
-
-  ✓  Docker                    v24.0.0
-  ✓  cm (Memory Server)        installed
-  ✓  Node.js                   v20.11.0
-
-✅ All prerequisites met!
-
-Local services:
-  ✓  Traces → .construct/traces/*.jsonl (local by default)
-  ✓  Postgres → postgresql://127.0.0.1:54329/construct
-```
+**Traces land at** `~/.construct/projects/<key>/traces/*.jsonl` (ADR-0066). An in-project `.construct/traces/` directory is legacy heavy state flagged by `construct doctor`.
 
 ---
 
@@ -71,41 +60,29 @@ construct init --interactive
 ```
 
 **What this does:**
-1. ✅ Creates `.construct/` directory structure
-2. ✅ Creates `construct.config.json`
-3. ✅ Creates `embed.yaml` (if not exists)
-4. ✅ **Starts local services** (Dashboard, Postgres when configured, Memory, Embed)
-6. ✅ Opens Dashboard in browser
+1. Scaffolds `.construct/`, `AGENTS.md`, `plan.md`, and a minimal `docs/` index
+2. Writes `construct.config.json` when missing
+3. Syncs host adapters for detected editors (Claude Code, OpenCode, Codex, Copilot, Cursor, VS Code when present)
+4. Starts local services by default (dashboard on an auto-selected port, memory MCP, embed daemon when configured)
+5. Pass `--docs-preset=lean|product|full` or `--with-adrs` / `--with-rfcs` when you want curated doc lanes
 
 ---
 
 ## Step 4: Development (Per Session)
 
 ```bash
-# Start services for development
-construct dev
+# Confirm health and refresh adapters after registry/prompt/config changes
+construct status
+construct sync
 
-# Work via Dashboard or your AI tools
-# Dashboard: http://127.0.0.1:4242
+# Start services for development (if you used --no-start at init)
+construct dev
 
 # Stop services when done (optional)
 construct stop
 ```
 
----
-
-## What You Get
-
-```
-╔══════════════════════════════════════════════════════════════════════════╗
-║                    Construct Runtime Started                              ║
-╠══════════════════════════════════════════════════════════════════════════╣
-║  ✓  Dashboard → http://127.0.0.1:4242                                    ║
-║  ✓  Traces → .construct/traces/*.jsonl                                           ║
-║  ✓  Memory (cm) → http://127.0.0.1:8765                                  ║
-║  ✓  Embed daemon started (monitoring git, inbox, CI)                    ║
-╚══════════════════════════════════════════════════════════════════════════╝
-```
+Talk to `@construct` in your editor. Ask for the outcome, not a Worker Profile name.
 
 ---
 
@@ -117,47 +94,30 @@ construct status
 
 # JSON output
 construct status --json
+
+# Health checks across config, services, agents, hooks, and adapters
+construct doctor
 ```
 
-**Output:**
-```
-Construct Services
-══════════════════
-
-  ✓  Dashboard                    http://127.0.0.1:4242 (Dashboard API)
-  ✓  Telemetry                    local://.construct/traces (Local JSONL traces)
-  ✓  Memory (cm)                  http://127.0.0.1:8765 (MCP-managed)
-  ✓  Embed daemon                 Running (watching git, inbox)
-
-Telemetry
-═════════
-  Local traces: .construct/traces/*.jsonl
-  Remote export: optional (`CONSTRUCT_TRACE_BACKEND=langfuse|http|otel`)
-```
+`construct status` reports the active deployment mode, local services, and optional remote telemetry. Local traces resolve under `~/.construct/projects/<key>/traces/`; remote export is opt-in via `CONSTRUCT_TRACE_BACKEND=langfuse|http|otel`.
 
 ---
 
 ## Troubleshooting
 
-### "Docker not available"
+### "construct install requires --footprint"
 
 ```bash
-# Check Docker is running
-docker ps
-
-# If not running, start Docker Desktop or:
-# macOS: open -a Docker
-# Linux: sudo systemctl start docker
-
-# Then retry
-construct install --yes
+construct install --footprint=user --yes
+# or preview without writing:
+construct install --footprint=user --dry-run
 ```
 
 ### "Remote telemetry is unavailable"
 
 ```bash
 # Local traces still work without remote export
-ls .construct/traces
+ls ~/.construct/projects/*/traces 2>/dev/null || true
 
 # Check configured remote export
 construct status --json
@@ -165,14 +125,9 @@ construct status --json
 
 ### "Embed daemon not starting"
 
-Check `embed.yaml` exists and `autoEmbed` is enabled:
-
 ```bash
-# Verify embed.yaml
-ls embed.yaml
-
-# Check config
-cat construct.config.json | grep autoEmbed
+# Verify embed config when you use continuous embed
+ls embed.yaml 2>/dev/null || true
 
 # Start manually
 construct embed start
@@ -181,15 +136,9 @@ construct embed start
 ### "Dashboard won't load"
 
 ```bash
-# Check if dashboard is running
 construct status
-
-# Restart services
 construct stop
 construct dev
-
-# Check for port conflicts
-lsof -i :4242
 ```
 
 ---
@@ -198,18 +147,20 @@ lsof -i :4242
 
 | Command | Description |
 |---------|-------------|
-| `construct install` | Machine setup: Docker, cm, config (one-time) |
+| `construct install --footprint=user` | Machine setup (one-time) |
 | `construct init` | Project initialization (per project) |
+| `construct sync` | Refresh host adapters |
 | `construct dev` | Start services (per session) |
 | `construct stop` | Stop services |
 | `construct status` | System health and credentials |
 | `construct doctor` | Health check |
+| `construct procedure` | List/show/invoke reusable Procedures |
 
 ---
 
 ## Related Documents
 
-- [Embed Mode](/guides/concepts/embed-mode): How embed daemon works
+- [Install](/guides/start/install): Detailed install walkthrough
 - [Deployment Model](/guides/concepts/deployment-model): Solo/team/enterprise modes
-- [Org Chart](/guides/concepts/org-chart): Worker Profile roster
-- [Installation](/guides/reference/cli/install): Detailed install guide
+- [Worker Profile roster](/guides/concepts/org-chart): The 12 assignable profiles
+- [CLI reference](/guides/reference/cli): Full command catalog

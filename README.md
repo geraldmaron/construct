@@ -88,7 +88,7 @@ Three modes are defined. Only `solo` is fully implemented today.
 
 **`enterprise`** (planned — not yet implemented) — would add tenant isolation, RBAC/ABAC scaffolding, isolated worker containers, signed MCP allowlists, and mandatory audit. No implementation exists yet.
 
-Pick or change modes with `construct config mode [solo|team|enterprise]`. [Deployment model](https://geraldmaron.github.io/construct/concepts/deployment-model).
+Inspect the active mode with `construct config` or `construct config mode`. Persist a change with `construct config set deployment.mode solo|team|enterprise` (writes `construct.config.json`). For a one-off override, export `CONSTRUCT_DEPLOYMENT_MODE`. [Deployment model](https://geraldmaron.github.io/construct/concepts/deployment-model).
 
 ### Deployment mode capability status
 

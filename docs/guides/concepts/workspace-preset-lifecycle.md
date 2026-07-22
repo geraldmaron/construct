@@ -113,4 +113,6 @@ Workspaces cannot select a retired Preset, and generated host adapters must not 
 
 The machine-readable ownership and naming contract is
 `config/canonical-terminology.json`; the architecture guide is the human-readable source of
-truth.
+truth. Concepts marked `implementationStatus: planned` (notably Objective and Work) are
+vocabulary only — `targetOwningModule` is not a live import path. Interim Plan / Work
+Specification ownership is `lib/planning/`, not `lib/plans/` or `lib/work-specifications/`.

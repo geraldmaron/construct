@@ -1165,6 +1165,14 @@ async function cmdDoctor() {
     const gitHooks = checkProjectGitHooks(process.cwd(), { inCI });
     if (gitHooks.run) add(gitHooks.label, gitHooks.pass);
 
+    const { checkHostHookCoverage } = await import('../lib/doctor/host-hook-coverage.mjs');
+    const hostHooks = checkHostHookCoverage(process.cwd(), { inCI });
+    if (hostHooks.run) {
+      for (const c of hostHooks.checks) {
+        add(c.label, c.pass, Boolean(c.informational));
+      }
+    }
+
     // Half-initialized Beads: .claude/settings.json references bd but .beads/ is
     // absent or has no database file. A project set up before D3 (fail-closed Beads)
     // fired the hooks without a tracker, so bd exits non-zero with no database to read.
@@ -2445,9 +2453,12 @@ function parseKvFlags(args, keys) {
   return out;
 }
 
-function formatIntakeTable(rows, { intakeQueueLabel, signalNoun } = { intakeQueueLabel: 'Intake queue', signalNoun: 'signal' }) {
+function formatIntakeTable(rows, { intakeQueueLabel, signalNoun } = { intakeQueueLabel: 'Intake queue', signalNoun: 'signal' }, { quarantineCount = 0 } = {}) {
   if (rows.length === 0) {
     println(`No pending ${signalNoun}s.`);
+    if (quarantineCount > 0) {
+      println(`${quarantineCount} quarantined — run \`construct intake quarantine list\` to review.`);
+    }
     return;
   }
   println(`${intakeQueueLabel} (${rows.length} pending):`);
@@ -2457,6 +2468,9 @@ function formatIntakeTable(rows, { intakeQueueLabel, signalNoun } = { intakeQueu
   println(fmt(headers));
   println(widths.map((w) => '─'.repeat(w)).join('  '));
   for (const row of rows) println(fmt(row));
+  if (quarantineCount > 0) {
+    println(`${quarantineCount} quarantined — run \`construct intake quarantine list\` to review.`);
+  }
 }
 
 // Embedded triage/planning surface — classifies an artifact and returns a
@@ -2532,7 +2546,12 @@ async function cmdIntake(args) {
       const t = p.triage || {};
       return [p.id, t.intakeType || 'unknown', t.rdStage || 'unknown', t.primaryOwner || '—', t.recommendedAction || '—'];
     });
-    formatIntakeTable(rows, rebrand);
+    let quarantineCount = 0;
+    try {
+      const { listQuarantine } = await import('../lib/intake/quarantine.mjs');
+      quarantineCount = listQuarantine(cwd).length;
+    } catch { /* quarantine module unavailable */ }
+    formatIntakeTable(rows, rebrand, { quarantineCount });
     return;
   }
 
@@ -2624,12 +2643,18 @@ async function cmdIntake(args) {
 
     println('');
     println('Next steps:');
-    println(`  construct graph from-intake ${entry.id}     Generate task graph from triage`);
-    if (entry.suggestion?.lane) {
-      println(`  Edit docs/${entry.suggestion.lane}/          Review/update the suggested lane`);
+    if (entry.status === 'quarantined') {
+      println(`  construct intake quarantine show ${entry.id}   Review candidates + quarantine reason`);
+      println(`  construct intake reroute ${entry.id} --type=<intakeType>  Promote to pending with a chosen type`);
+      println(`  construct graph from-intake ${entry.id}     Generate task graph from triage`);
+    } else {
+      println(`  construct graph from-intake ${entry.id}     Generate task graph from triage`);
+      if (entry.suggestion?.lane) {
+        println(`  Edit docs/${entry.suggestion.lane}/          Review/update the suggested lane`);
+      }
+      println(`  construct intake done ${entry.id}            Mark as processed`);
+      println(`  construct intake skip ${entry.id}             Mark as skipped`);
     }
-    println(`  construct intake done ${entry.id}            Mark as processed`);
-    println(`  construct intake skip ${entry.id}             Mark as skipped`);
     return;
   }
 
@@ -2651,14 +2676,25 @@ async function cmdIntake(args) {
       process.exit(1);
     }
 
+    const existing = await queue.read(id);
+    if (!existing) {
+      errorln(`No intake packet found: ${id}`);
+      process.exit(1);
+    }
+    if (existing.status === 'quarantined') {
+      errorln(`Packet ${id} is quarantined (confidence too low or close margin).`);
+      errorln(`Promote it first: construct intake reroute ${id} --type=<intakeType>`);
+      errorln(`Review: construct intake quarantine show ${id}`);
+      process.exit(1);
+    }
+    if (existing.status && existing.status !== 'pending') {
+      errorln(`Packet ${id} is ${existing.status}; only pending packets can be marked done.`);
+      process.exit(1);
+    }
+
     let stamped = null;
     if (outputPath) {
-      const packet = await queue.read(id);
-      if (!packet) {
-        errorln(`No intake packet found: ${id}`);
-        process.exit(1);
-      }
-      const triage = packet.triage || {};
+      const triage = existing.triage || {};
       try {
         const { stampIntakeProvenance } = await import('../lib/intake/traceability.mjs');
         const path = (await import('node:path')).default;

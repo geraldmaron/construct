@@ -7,7 +7,7 @@ Construct's observability commands read from two sources:
 - **Trace adapter**: local JSONL by default; Langfuse-compatible, generic HTTP, or OTLP export when configured
 - **Local cost log**: file-backed token ledger read by `cost` and `efficiency` (no external dependency)
 
-R&D-loop trace events (`intake.received`, `intake.triaged`, `task_graph.created`, `worker.started`, `worker.completed`, `evidence.recorded`, `tool.called`, `approval.requested`, …) always write to `.construct/traces/<YYYY-MM-DD>.jsonl` with no credentials. When `CONSTRUCT_TRACE_BACKEND=langfuse|http|otel` is configured, the same events are exported remotely so the intake → graph → worker → evidence chain stays correlated end-to-end. Set `CONSTRUCT_TRACE_BACKEND=none` to suppress remote export while keeping the local JSONL log.
+R&D-loop trace events (`intake.received`, `intake.triaged`, `task_graph.created`, `worker.started`, `worker.completed`, `evidence.recorded`, `tool.called`, `approval.requested`, …) always write to `~/.construct/projects/<key>/traces/<YYYY-MM-DD>.jsonl` with no credentials. When `CONSTRUCT_TRACE_BACKEND=langfuse|http|otel` is configured, the same events are exported remotely so the intake → graph → worker → evidence chain stays correlated end-to-end. Set `CONSTRUCT_TRACE_BACKEND=none` to suppress remote export while keeping the local JSONL log.
 
 ## Review agent performance
 

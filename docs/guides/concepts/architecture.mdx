@@ -23,20 +23,27 @@ and persisted. The rest of this page is wiring.
 ## Canonical domain language
 
 `config/canonical-terminology.json` is the machine-readable naming and ownership contract. The
-table below separates **target owners** (the names that catalog promises) from **on-disk owners**
-(what this checkout actually has). Do not read a target path as present unless the on-disk column
-says so.
+table below separates **target owners** (catalog *vocabulary* — `targetOwningModule` /
+`targetDataRoot` when present) from **on-disk owners** (what this checkout actually has). Do not
+read a target path as a live module, CLI noun, or MCP API unless the on-disk column says so and
+`implementationStatus` is `shipped` or `interim` with a real `owningModule`. Planned nouns are
+vocabulary only: documenting them as shipped stores is fiction (tech writing should document what
+exists, not vaporware — [McFadden](http://www.williammcfadden.com/2016/03/tech-writing-doesnt-equal-science.html);
+product docs should label lifecycle stages explicitly —
+[Unity Style Guide](https://docs-style-guide.unity.com/style/documenting-unsupported-features/)).
+Empty stub directories for planned stores are worse than honesty — full Objective / Work / Plan
+domain stores are epic `construct-smlqu`, not a path-claim fix (`construct-uhd1a`).
 
 | Concept | Responsibility | Public identifier | On-disk today | Target owner (catalog) |
 |---|---|---|---|---|
 | Workspace | Governed project context and durable state boundary | `workspace` | `lib/workspace/` (CLI `workspace-domain`); project data in `.construct/` | `lib/workspaces/` |
 | Workspace Preset | Workspace-wide intake taxonomy, artifact defaults, tone, Skills, and Procedures | `workspace-preset` | `registry/workspace-presets/`; `lib/workspace-presets/` | same |
 | Source | Cursor-based signal origin connected to a Workspace | `source` | `lib/sources/` (partial; content roots / watch); data under project state | `lib/sources/` + `.construct/sources/` |
-| Objective | Durable desired result and rationale | `objective` | **planned** — no `lib/objectives/` yet | `lib/objectives/`; `.construct/objectives/` |
+| Objective | Durable desired result and rationale | `objective` | **planned** — no store, no CLI/MCP noun; interim narrative on Work-spec only | `lib/objectives/`; `.construct/objectives/` (target only) |
 | Directive | Standing instruction that generates Objectives or Work | `directive` | `lib/directives/` (config / due-tracker; not full domain store) | `lib/directives/`; `.construct/directives/` |
-| Work | Bounded owned unit that advances an Objective | `work` | **planned** — tracker projection + beads interim; no `lib/work/` yet | `lib/work/`; `.construct/work/` |
-| Work Specification | Versioned what-and-why agreement for Work | `work-specification` | `lib/planning/work-spec.mjs` (+ `build-work-spec`, CLI `work-spec`) | `lib/work-specifications/` |
-| Plan | Versioned approach decomposing Work into Assignments | `plan` | interim via `lib/planning/` + orchestration dispatch; no `lib/plans/` yet | `lib/plans/`; `.construct/plans/` |
+| Work | Bounded owned unit that advances an Objective | `work` | **planned** — beads + `lib/tracker-projection/` interim; no `lib/work/` | `lib/work/`; `.construct/work/` (target only) |
+| Work Specification | Versioned what-and-why agreement for Work | `work-specification` | **interim** — `lib/planning/work-spec.mjs` (+ `build-work-spec`, CLI `work-spec`) | `lib/work-specifications/` (target only) |
+| Plan | Versioned approach decomposing Work into Assignments | `plan` | **interim** — `lib/planning/` decomposition + orchestration dispatch; no `lib/plans/` | `lib/plans/`; `.construct/plans/` (target only) |
 | Run | One execution attempt of a Plan | `run` | `lib/orchestration/run-store*.mjs` under machine-scoped runtime state | `lib/runs/`; `.construct/runs/` |
 | Worker Profile | Assignable runtime, model tier, Skill emphasis, Procedure affinity, and Policy fence | `worker-profile` | `registry/worker-profiles/` (unprefixed ids); `lib/worker-profiles/` | same |
 | Skill | Reusable domain knowledge or operating guidance | `skill` | `skills/`; `lib/skills/` | same |
@@ -73,8 +80,9 @@ The cutover is one-way and ordered: registry/schema → catalogs/loaders → CLI
 boundaries → docs, examples, and templates → tests and generated adapters. Producers and
 consumers change together at each boundary; there is no alias or dual-read phase. The complete
 consumer inventory, config fields, CLI/MCP nouns, graph-node names, and current-to-owner mapping
-live in `config/canonical-terminology.json` (target names) — use the on-disk column above when
-asserting what this tree implements today.
+live in `config/canonical-terminology.json`. For each concept, prefer `implementationStatus` +
+`owningModule` / `interimMap` over `targetOwningModule` when deciding what to import or call —
+target paths are not runtime APIs.
 
 ## Intake loop
 
@@ -474,11 +482,14 @@ get/set). `construct workspace-domain init|show|activate|archive|member|settings
 surface (`lib/workspace/cli.mjs`) — named `workspace-domain`, not `workspace`, because `construct
 workspace` already names the pre-existing multi-PM product-intelligence command described above
 under "Product intelligence: customer profiles and multi-PM workspaces," an unrelated concept.
-Full target-model Source / Objective / Directive / Work / Policy *domain stores* with a
+Full target-model Source / Objective / Directive / Work / Plan / Policy *domain stores* with a
 non-null `workspace` scope column (target-model.md concepts 2–7, 13) are not all present yet —
 see the on-disk column in Canonical domain language. Interim modules exist for some
-(`lib/sources/`, `lib/directives/`, `lib/policy/`); Objective and Work remain planned. Each
-missing store is expected to reference this Workspace table when its own epic builds it.
+(`lib/sources/`, `lib/directives/`, `lib/policy/`, `lib/planning/` for Work-spec / Plan
+decomposition). Objective and Work remain **planned** (no `lib/objectives/` / `lib/work/`);
+Plan has **no** `lib/plans/` store — only interim planning + orchestration. Do not stub those
+directories. Epic `construct-smlqu` owns the real domain-store build; each missing store is
+expected to reference this Workspace table when that epic lands it.
 
 ## Work spec and graph-informed planning
 

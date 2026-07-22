@@ -3,6 +3,8 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 -->
 # ADR-0071: Rename install "scope" to "footprint"; keep org-scope vocabulary as-is
 
+> **Current surface (Construct 2.0):** `construct install` accepts only `--footprint=project|user|both`. A bare install hard-errors naming the flag. `--scope=` is no longer accepted (retired after the deprecation window this ADR planned). Org/Workspace Preset vocabulary remains separate from install footprint.
+
 - **Date**: 2026-07-09
 - **Status**: accepted
 - **Deciders**: Gerald Dagher (owner)
@@ -66,3 +68,7 @@ Two-way door. `--footprint` and `--scope` coexisting as aliases costs nothing to
 - ADR-0027 (host-project footprint — origin of "footprint" vocabulary this ADR adopts for the renamed flag)
 - ADR-0029 (install scopes and hook budgets — the flag this ADR renames; semantics unchanged)
 - CLAUDE.md, "Profiles are research artifacts, not JSON exercises" (org-scope/profile vocabulary, confirmed as the more deeply embedded usage this ADR leaves untouched)
+
+## Amendment (2026-07-22) — `--scope=` install alias fully retired
+
+Steward pass (`construct-7d4vl`). Verified live: `construct install --help` documents only `--footprint=project|user|both`; bare install hard-errors naming `--footprint`. The Decision's "keep `--scope` as a deprecated alias for at least one release" window is **closed** — `--scope=` is no longer accepted. Org/Workspace Preset vocabulary remains separate (live: Workspace Presets under `registry/workspace-presets/`; historical `specialists/org/scopes/` path retired). Decision text above is retained as the rename rationale.
