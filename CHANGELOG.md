@@ -286,6 +286,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Fixed
 
+- Promote CI (#415) alignment census ratchet (`construct-d23f3`): `scripts/audit/03-docs.mjs` skips `docs/obsolete/**` for `unnavigated-doc-dir` so quarantined WCP archive dirs no longer fail `scripts/alignment/census.mjs --ratchet` (unblocked all test shards + graph verify). Retarget `tests/audit/workspace-control-plane-nav.test.mjs` to the obsolete path; allowlist `lib/figure-layout.mjs` as intentional test-only publish proof; quote banned voice exemplars in `templates/docs/prd.md` so brand lint does not false-positive.
+
 - ADR body lag steward pass (`construct-7d4vl`): high-traffic ADRs cited from architecture / surface model no longer read as Construct 1.0 runbooks. Pattern: keep historical Decision/Context text; add **Current surface (2.0)** / Obsolete banners; prefer dated **Amendment** blocks over silent Decision rewrites (Nygard/Fowler ADR immutability). Touched: ADR-0039 (Procedure/`procedure_invoke`; `workflow_invoke` retired), ADR-0065 + appendix-0065, ADR-0054, ADR-0048/0047/0046, ADR-0037, ADR-0022/0020, ADR-0015, ADR-0071 (`--scope=` closed), ADR README stewardship note. Verified against live CLI/MCP on `staging`.
 
 - Skills relative markdown links that broke under synced `.claude/skills/<id>/SKILL.md` (`construct-p79ms`): replace `../../rules/common/{citation,research}.md` climb links in five `skills/docs/*` files with backtick repo paths (`rules/common/…`) so references stay valid in source and after sync (extra nesting; sync copies bodies as-is). Guards: `tests/skills-relative-links.test.mjs`, climb-link scan in `tests/functional/skills-surface.functional.test.mjs`.

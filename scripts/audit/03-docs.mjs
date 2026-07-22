@@ -36,6 +36,10 @@ function walk(dir, exts) {
 
 const isTemplate = (p) => /(^|\/)(templates?)(\/|$)|_template|\.template\./i.test(p);
 
+// Quarantined archive — deliberately outside site nav (construct-tsyfe.8.17).
+
+const isObsoleteDoc = (p) => /(^|\/)docs\/obsolete(\/|$)/.test(p.replace(/\\/g, '/'));
+
 // Command names retired by the dev/dashboard/stop rename. A doc that still says
 // `construct up` is hard drift, not a placeholder — these gate.
 
@@ -159,7 +163,7 @@ function orphanAlignment(files) {
   const nav_orphans = [];
   const unnavigatedCount = {};
   for (const f of files) {
-    if (isTemplate(f) || reached.has(f)) continue;
+    if (isTemplate(f) || reached.has(f) || isObsoleteDoc(path.relative(REPO_ROOT, f))) continue;
     if (/\/(README|index)\.(md|mdx)$/.test(f)) continue;
     const dir = path.dirname(f);
     if (dirsWithMeta.has(dir)) nav_orphans.push(path.relative(REPO_ROOT, f));
