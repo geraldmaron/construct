@@ -302,7 +302,7 @@ The intake, task-graph, and worker plane are surfaced through the `construct int
 | `lib/mcp/broker.mjs` | `Broker.invoke({role, tool, action, risk, execute})`: policy-gated MCP wrapper for team / enterprise. Throws typed `PolicyDenied`, `ApprovalRequired`, `RateLimited`. |
 | `lib/worker/run.mjs` | `runJob({rootDir, job})`: bounded command execution with path-policy denial, timeout, restricted env, and trace event emission. |
 | `lib/worker/evidence.mjs` | `evidenceFromJobResult`, `recordEvidence`, `blockedPacket`, `needsInputPacket`: typed verification packets gating node transitions. |
-| `lib/worker/trace.mjs` | `emitTraceEvent({rootDir, eventType, traceId, …})`: writes `.construct/traces/<date>.jsonl` and exports remotely when configured. |
+| `lib/worker/trace.mjs` | `emitTraceEvent({rootDir, eventType, traceId, …})`: writes `~/.construct/projects/<key>/traces/<date>.jsonl` and exports remotely when configured. |
 
 ### `suggest_skills`
 Ranks skills from the central catalog for a natural-language intent.
@@ -755,17 +755,18 @@ Classify an artifact and return a role-aware plan (primary owner, role chain wit
 | `available_roles` | array | Restrict the plan to these role ids; dropped roles are reported as warnings. |
 
 ### `procedure_invoke`
-Invoke a named Construct workflow (perspectives/skills) non-interactively and return a provenanced execution plan: selected roles, rationale, applied skills, resolved model, evidence requirements, output contract, risks, and a traceId. Construct returns the orchestration plan; the host runtime performs Worker Profile reasoning. Durable writes occur ONLY when approval_mode is allow-durable-write; proposal-only and requires-human-approval perform no durable writes.
+Invoke a named Construct Procedure non-interactively and return a provenanced execution plan: selected Worker Profiles, rationale, applied Skills, resolved model, evidence requirements, output contract, risks, and a traceId. Construct returns the orchestration plan; the host runtime performs the reasoning. Durable writes occur ONLY when approval_mode is allow-durable-write; proposal-only and requires-human-approval perform no durable writes.
 
 | Parameter | Type | Description |
 |---|---|---|
-| `workflow_type` | string | **required** — One of: evidence-ingest, proposal-review, prd-draft, architecture-review, risk-review, research-synthesis. |
-| `input` | string | Artifact text the workflow operates on. Provide this OR file_path. |
+| `procedure_id` | string | **required** — One of the registered Procedure ids, such as evidence-ingest, proposal-review, prd-draft, architecture-review, risk-review, or research-synthesis. |
+| `workflow_type` | string | Deprecated alias for `procedure_id` (Construct 1.0). Prefer `procedure_id`; accepted for one release when `procedure_id` is absent. |
+| `input` | string | Artifact text the procedure operates on. Provide this OR file_path. |
 | `file_path` | string | Path to a file to extract (docling/whisper/transcript) and operate on, used when input is absent. |
 | `context` | object | Optional structured context; keys matching evidence requirements mark them satisfied. |
-| `role_strategy` | string | auto = default chain; explicit = use requested_roles; constrained = default chain intersected with requested_roles. |
-| `requested_roles` | array | Role ids for explicit/constrained strategies. |
-| `approval_mode` | string | Gate for durable writes (default: the workflow type default). |
+| `worker_profile_strategy` | string | auto = default Assignment set; explicit = use requested_worker_profiles; constrained = default set intersected with requested_worker_profiles. |
+| `requested_worker_profiles` | array | Worker Profile ids for explicit/constrained strategies. |
+| `approval_mode` | string | Gate for durable writes (default: the procedure default). |
 | `trace` | boolean | Emit a traceId for provenance correlation (default true). |
 | `host` | string | Host/IDE identifier (advisory). |
 | `host_model` | string | Model the host uses, for model resolution. |

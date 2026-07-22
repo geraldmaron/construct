@@ -45,15 +45,15 @@ Response `data`: `executionMode` (`construct-orchestrated|construct-prompt-only|
 
 ## Procedure invocation
 
-CLI `construct procedure invoke --json --workflow-type <t>` · MCP `procedure_invoke` · SDK `invokeProcedure(request)`. Async.
+CLI `construct procedure invoke --json --procedure-id <id>` · MCP `procedure_invoke` · SDK `invokeProcedure(request)`. Async.
 
-Procedure types: `evidence-ingest`, `proposal-review`, `prd-draft`, `architecture-review`, `risk-review`, `research-synthesis`.
+Procedure ids: `evidence-ingest`, `proposal-review`, `prd-draft`, `architecture-review`, `risk-review`, `research-synthesis`.
 
-Request: `workflowType` (required), `input?` **or** `file_path`/`--file` (extracted through the same pipeline as triage), `context?`, `roleStrategy?` (`auto|explicit|constrained`), `requestedRoles?`, `approvalMode?` (`proposal-only|requires-human-approval|allow-durable-write`; default per workflow type), `trace?` (default `true`), `host?`, `hostModel?`, `hostProvider?`.
+Request: `procedureId` (required; MCP/CLI snake_case: `procedure_id` / `--procedure-id`; deprecated MCP alias `workflow_type` accepted for one release when `procedure_id` is absent), `input?` **or** `file_path`/`--file` (extracted through the same pipeline as triage), `context?`, `workerProfileStrategy?` (`auto|explicit|constrained`), `requestedWorkerProfiles?`, `approvalMode?` (`proposal-only|requires-human-approval|allow-durable-write`; default per procedure), `trace?` (default `true`), `host?`, `hostModel?`, `hostProvider?`, `recruitment?` (`auto|off`).
 
 Request also accepts `constructStrategy` (`auto`|`orchestrated`|`prompt-only`) to select the execution mode.
 
-Response `data`: `workflowId`, `workflowType`, `status` (`proposed|awaiting-approval|recorded|error`), `ingestion` (as in triage, when a file was resolved), `selectedRoles`, `roleStrategy`, `roleRationale[]`, `skillsApplied`, `modelResolution`, `execution` (the planned execution block — `executionMode`, `effectiveStrategy`, `requestedStrategy`, `constructCapabilitiesActive`, `degraded`, `degradationReason`, `semantics`; descriptive, not enforced — ADR-0019), `outputs` (`{ schema, expected, note }`), `recommendations[]`, `evidence` (`{ requirements, satisfied, missing, traceId }`), `risks`, `requiresApproval`, `approvalMode`, `durableWritesPerformed[]`, `traceId`, `errors[]`.
+Response `data`: `procedureRunId`, `status` (`proposed|awaiting-approval|recorded|error`), `ingestion` (as in triage, when a file was resolved), `selectedWorkerProfiles`, `workerProfileStrategy`, `workerProfileRationale[]`, `skillsApplied`, `modelResolution`, `execution` (the planned execution block — `executionMode`, `effectiveStrategy`, `requestedStrategy`, `constructCapabilitiesActive`, `degraded`, `degradationReason`, `semantics`; descriptive, not enforced — ADR-0019), `outputs` (`{ schema, expected, note }`), `recommendations[]`, `evidence` (`{ requirements, satisfied, missing, traceId }`), `risks`, `requiresApproval`, `approvalMode`, `durableWritesPerformed[]`, `traceId`, `errors[]`.
 
 ## Orchestration over HTTP + SSE (opt-in remote service)
 
