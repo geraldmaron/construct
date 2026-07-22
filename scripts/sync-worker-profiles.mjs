@@ -2331,10 +2331,45 @@ function syncSkills(targetDir = null) {
 
     const body = stripLeadingFrontmatter(content);
     const generated = `${frontmatter}\n${body}`;
-    writeFile(path.join(claudeSkillsDir, name, "SKILL.md"), generated, { stamp: false });
+    const dest = path.join(claudeSkillsDir, name, "SKILL.md");
+    const resolvedClaudeRoot = path.resolve(claudeSkillsDir);
+    const resolvedDest = path.resolve(dest);
+    if (
+      resolvedDest !== resolvedClaudeRoot
+      && !resolvedDest.startsWith(resolvedClaudeRoot + path.sep)
+    ) {
+      throw new Error(`syncSkills refused path-escape skill name: ${name}`);
+    }
+    writeFile(dest, generated, { stamp: false });
   }
 
   return skills.length;
+}
+
+/**
+ * Construct's only project skills tree is `.claude/skills/`. Legacy dual-write
+ * targeted `~/.agents/skills/`; host CLIs and stale syncs have also been
+ * observed leaving project-local `.agents/skills` (and sibling host mirrors).
+ * After staged commits land, remove those mirrors so lean Claude sync cannot
+ * leave a second skills tree behind (construct-d23f3 / CI shard-2 guard).
+ */
+function refuseProjectSkillsMirrors(targetDir) {
+  if (!targetDir || DRY_RUN) return [];
+  const removed = [];
+  for (const rel of [".agents/skills", ".cursor/skills", ".codex/skills", ".opencode/skills"]) {
+    const full = path.join(targetDir, ...rel.split("/"));
+    if (!fs.existsSync(full)) continue;
+    try {
+      fs.rmSync(full, { recursive: true, force: true });
+      removed.push(rel);
+    } catch (err) {
+      console.warn(`[sync] could not remove refused skills mirror ${rel}: ${err.message}`);
+    }
+  }
+  if (removed.length > 0) {
+    console.log(`[sync] removed refused skills mirror(s): ${removed.join(", ")}`);
+  }
+  return removed;
 }
 
 // --- Main ---
@@ -2418,6 +2453,7 @@ try {
       printDryRunDiff();
     } else {
       const { failed: commitFailed } = commitStaging();
+      if (wantsHost("claude") && skills.ok) refuseProjectSkillsMirrors(projectDir);
       const targets = [
         claude.ok && wantsHost("claude") && "Claude Code",
         codex.ok && wantsHost("codex") && "Codex",

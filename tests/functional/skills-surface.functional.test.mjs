@@ -4,7 +4,9 @@
  * Hermetic skills verification (construct-r1u5w): lean init + project sync must
  * install readable Claude skill trees, keep retired Construct 1.0 teaching out
  * of synced SKILL.md bodies, and prove MCP get_skill / search_skills return
- * non-empty usable content (not exit-only sync smoke).
+ * non-empty usable content (not exit-only sync smoke). Also pins the
+ * construct-p2wlb / construct-d23f3 contract: sync writes `.claude/skills/` only
+ * and prunes refused host mirrors (`.agents/skills`, `.cursor/skills`, …).
  */
 
 import assert from 'node:assert/strict';
@@ -53,6 +55,16 @@ function makeProject() {
 }
 
 function spawnEnv(home, overrides = {}) {
+  // Sterile PATH matches init-all-hosts-cursor: host CLIs on a developer
+  // machine must not expand `sync --project` beyond the lean Claude contract
+  // under test (and must not invite host-side skill scaffolding into the
+  // project tmpdir).
+  const sterilePath = [
+    path.dirname(process.execPath),
+    '/usr/bin',
+    '/bin',
+  ].join(path.delimiter);
+
   return sterileSpawnEnv({
     HOME: home,
     CONSTRUCT_HOME_OVERRIDE: home,
@@ -61,8 +73,33 @@ function spawnEnv(home, overrides = {}) {
     CONSTRUCT_SKIP_POSTINSTALL: '1',
     CI: 'true',
     NODE_ENV: 'test',
+    PATH: sterilePath,
     ...overrides,
   });
+}
+
+function listRel(root, max = 40) {
+  if (!fs.existsSync(root)) return '(missing)';
+  const out = [];
+  const walk = (dir, prefix = '') => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+      out.push(entry.isDirectory() ? `${rel}/` : rel);
+      if (out.length >= max) return;
+      if (entry.isDirectory()) walk(path.join(dir, entry.name), rel);
+    }
+  };
+  walk(root);
+  return out.join('\n') || '(empty)';
+}
+
+function assertNoSkillsMirror(project, relDir, label) {
+  const full = path.join(project, ...relDir.split('/'));
+  if (!fs.existsSync(full)) return;
+  const listing = listRel(full);
+  assert.fail(
+    `${label}: refused skills mirror present at ${relDir}\n${listing}`,
+  );
 }
 
 function mcpClient(cwd, home) {
@@ -146,7 +183,7 @@ test('lean init + sync installs Claude skills; MCP get_skill/search_skills retur
 
   const env = spawnEnv(home);
 
-  const init = spawnSync(process.execPath, [BIN, 'init', '--yes', '--no-start'], {
+  const init = spawnSync(process.execPath, [BIN, 'init', '--yes', '--no-start', '--no-beads'], {
     cwd: project,
     encoding: 'utf8',
     timeout: 180_000,
@@ -168,13 +205,30 @@ test('lean init + sync installs Claude skills; MCP get_skill/search_skills retur
     'lean init must not stage Cursor adapters',
   );
 
-  const sync = spawnSync(process.execPath, [BIN, 'sync', '--project'], {
+  // Pin Claude only — bare `sync --project` follows PATH detection and would
+  // re-expand adapters on a loaded machine, fighting the lean-init contract.
+  const sync = spawnSync(process.execPath, [BIN, 'sync', '--project', '--hosts=claude'], {
     cwd: project,
     encoding: 'utf8',
     timeout: 180_000,
     env,
   });
-  assert.equal(sync.status, 0, `sync --project failed: ${sync.stderr}\n${sync.stdout}`);
+  assert.equal(sync.status, 0, `sync --project --hosts=claude failed: ${sync.stderr}\n${sync.stdout}`);
+
+  // Plant a refused mirror before asserting postconditions — sync must leave
+  // none behind even if a host CLI or stale dual-write created one mid-run.
+  const plantedAgents = path.join(project, '.agents', 'skills', 'planted', 'SKILL.md');
+  fs.mkdirSync(path.dirname(plantedAgents), { recursive: true });
+  fs.writeFileSync(plantedAgents, '---\nname: planted\ndescription: should be removed\n---\nplanted\n');
+  const prune = spawnSync(process.execPath, [BIN, 'sync', '--project', '--hosts=claude'], {
+    cwd: project,
+    encoding: 'utf8',
+    timeout: 180_000,
+    env,
+  });
+  assert.equal(prune.status, 0, `prune sync failed: ${prune.stderr}\n${prune.stdout}`);
+  assert.match(prune.stdout, /removed refused skills mirror/, 'sync must report refused-mirror prune');
+  assert.ok(!fs.existsSync(path.join(project, '.agents', 'skills')), 'planted .agents/skills must be removed');
 
   const skillsRoot = path.join(project, '.claude', 'skills');
   const skillFiles = collectSkillMd(skillsRoot);
@@ -209,11 +263,12 @@ test('lean init + sync installs Claude skills; MCP get_skill/search_skills retur
     `synced SKILL.md still has relative climb links (use backtick repo paths):\n${climbHits.join('\n')}`,
   );
 
-  assert.ok(!fs.existsSync(path.join(project, '.codex', 'skills')), 'skills must not land under .codex');
-  assert.ok(!fs.existsSync(path.join(project, '.opencode', 'skills')), 'skills must not land under .opencode');
-  // Cursor loads .claude/skills/ natively — no .cursor/skills or .agents/skills mirror (construct-p2wlb).
-  assert.ok(!fs.existsSync(path.join(project, '.cursor', 'skills')), 'skills must not land under .cursor');
-  assert.ok(!fs.existsSync(path.join(project, '.agents', 'skills')), 'skills must not land under .agents');
+  // Cursor loads .claude/skills/ natively — no host-tree skills mirrors (construct-p2wlb).
+  assertNoSkillsMirror(project, '.codex/skills', 'skills must not land under .codex');
+  assertNoSkillsMirror(project, '.opencode/skills', 'skills must not land under .opencode');
+  assertNoSkillsMirror(project, '.cursor/skills', 'skills must not land under .cursor');
+  assertNoSkillsMirror(project, '.agents/skills', 'skills must not land under .agents');
+  assertNoSkillsMirror(home, '.agents/skills', 'skills must not land under HOME/.agents');
 
   const sample = [
     ...CRITICAL_SKILLS.map((id) => path.join(skillsRoot, id, 'SKILL.md')),
