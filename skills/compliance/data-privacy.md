@@ -41,7 +41,20 @@ Flag these patterns in code:
 
 ## Regulation Quick Reference
 
+These are orientation pointers, not load-bearing cites. Before asserting an article number, retention deadline, or “we are compliant” claim in an artifact, verify against primary text or mark `[unverified]` with counsel owner. See `rules/common/no-fabrication.md` and `skills/compliance/case-law-research.md` for precedent.
+
 - **GDPR**: EU residents. Consent must be freely given, specific, informed, unambiguous. Right to erasure is absolute for consent-based processing.
 - **CCPA/CPRA**: California residents. Right to know, delete, opt-out of sale/sharing. 12-month lookback on data collection.
 - **LGPD**: Brazil. Similar to GDPR. Requires a DPO and legal basis for processing.
 - **PIPEDA**: Canada. Consent required for collection, use, and disclosure. Reasonable purpose test applies.
+
+## Anti-fabrication
+
+- Do not invent statute articles, DPA clauses, or supervisory-authority guidance URLs.
+- Do not assert “GDPR compliant” / “privacy approved” without named counsel + dated evidence.
+- Retention periods, lawful bases, and transfer mechanisms are `unknown` until sourced.
+- Prefer `templates/docs/compliance-memo.md` / `dpia-or-privacy-assessment.md` for structured obligation→control work.
+
+## Authorship / voice
+
+Before drafting typed privacy/compliance artifacts, call `get_skill("docs/artifact-authorship")` and follow `rules/common/human-voice.md` (contractions in prose; no em-dash theater; no LLM tells). Keep legal `shall` / `must not` and quoted statute wording exact.

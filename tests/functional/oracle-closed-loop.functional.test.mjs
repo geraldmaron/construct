@@ -13,6 +13,7 @@ import test from 'node:test';
 
 import { runOracleTick, approvePending } from '../../lib/oracle/actions.mjs';
 import { verdictsDir } from '../../lib/oracle/verdicts.mjs';
+import { VERDICT_STATES } from '../../lib/oracle/synthesize.mjs';
 import { gapFingerprint } from '../../lib/oracle/issues.mjs';
 import { routingDir } from '../../lib/oracle/dispatch.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
@@ -21,7 +22,7 @@ function freshProject() {
   const projectDir = mkdtempSync(join(tmpdir(), 'construct-oracle-loop-'));
   const homeDir = mkdtempSync(join(tmpdir(), 'construct-oracle-loop-home-'));
   mkdirSync(join(projectDir, '.construct'), { recursive: true });
-  mkdirSync(join(homeDir, '.cx'), { recursive: true });
+  mkdirSync(join(homeDir, '.construct'), { recursive: true });
   return {
     projectDir,
     homeDir,
@@ -34,7 +35,7 @@ function freshProject() {
   };
 }
 
-test('runOracleTick writes verdict history under .cx/oracle/verdicts/', async () => {
+test('runOracleTick writes verdict history under .construct/oracle/verdicts/', async () => {
   const env = freshProject();
   try {
     process.env.CONSTRUCT_ORACLE_AUTO_RAISE = 'off';
@@ -44,7 +45,7 @@ test('runOracleTick writes verdict history under .cx/oracle/verdicts/', async ()
     const files = readFileSync(join(dir, `${new Date().toISOString().slice(0, 10)}.json`), 'utf8');
     const parsed = JSON.parse(files);
     assert.ok(parsed.latest);
-    assert.ok(['healthy', 'attention', 'degraded'].includes(parsed.latest.verdict));
+    assert.ok(VERDICT_STATES.includes(parsed.latest.verdict));
   } finally {
     delete process.env.CONSTRUCT_ORACLE_AUTO_RAISE;
     env.cleanup();
@@ -63,7 +64,7 @@ test('raiseIssuesForGaps skips verdict-only hygiene gaps without bd create', asy
     const { raiseIssuesForGaps } = await import('../../lib/oracle/issues.mjs');
     const gaps = [
       { id: 'beads-hygiene', severity: 'high', detail: '2 stuck in_progress, 50 stale-open' },
-      { id: 'workflow-misaligned', severity: 'high', detail: 'No .cx/workflow.json found' },
+      { id: 'workflow-misaligned', severity: 'high', detail: 'No .construct/workflow.json found' },
     ];
     const raised = await raiseIssuesForGaps({ projectDir: env.projectDir, gaps, dryRun: false });
     assert.equal(raised.length, 2);
@@ -99,7 +100,7 @@ test('raiseIssuesForGaps persistent dedup skips when raised-issues record exists
 test('approve executes outcomes-aggregate and creates outcomes summary', async () => {
   const env = freshProject();
   const prevRolesRoot = process.env.CONSTRUCT_ROLES_ROOT;
-  process.env.CONSTRUCT_ROLES_ROOT = join(env.homeDir, '.cx');
+  process.env.CONSTRUCT_ROLES_ROOT = join(env.homeDir, '.construct');
   try {
     process.env.CONSTRUCT_ORACLE_AUTO_RAISE = 'off';
     mkdirSync(join(env.projectDir, '.construct', 'oracle'), { recursive: true });
@@ -130,7 +131,7 @@ test('high-severity tick writes routing artifact when gaps present', async () =>
     writeFileSync(join(env.projectDir, '.construct', 'contract-violations.jsonl'), JSON.stringify({
       ts: new Date().toISOString(),
       contractId: 'test',
-      agent: 'cx-engineer',
+      agent: 'engineer',
     }) + '\n');
     await runOracleTick({ ...env, dryRun: false });
     const dir = routingDir(env.projectDir);

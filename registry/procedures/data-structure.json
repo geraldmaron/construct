@@ -1,0 +1,22 @@
+{
+  "id": "data-structure",
+  "version": "1.0.0",
+  "type": "linear",
+  "workerProfiles": [
+    "data-analyst",
+    "engineer"
+  ],
+  "approvalMode": "proposal-only",
+  "modelTier": "standard",
+  "state": "active",
+  "modes": [
+    "solo",
+    "team"
+  ],
+  "surfaces": [
+    "mcp",
+    "cli"
+  ],
+  "description": "Parse, validate, and profile a raw dataset into a structured, described shape.",
+  "durableStateModel": "none"
+}

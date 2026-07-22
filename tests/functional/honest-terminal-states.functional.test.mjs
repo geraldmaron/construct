@@ -21,24 +21,24 @@ import { shapeRun } from '../../lib/mcp/tools/orchestration-run.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 // runOrchestration/getRun/orchestrationRun resolve the run store through the
-// machine-scoped state root (ADR-0066), which reads CX_HOME_OVERRIDE from
-// real process.env directly — the CX_TOOLKIT_DIR/HOME/USERPROFILE keys below
+// machine-scoped state root (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE from
+// real process.env directly — the CONSTRUCT_TOOLKIT_DIR/HOME/USERPROFILE keys below
 // only reach the in-process `env` option bag runOrchestration threads to
 // model resolution, never process.env, so they never isolated state-root
 // writes. Pin the real var for the whole file instead.
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-honest-term-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 test.after(() => {
   try { rmTmpDir(homeOverride); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 function tmpProject() {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-honest-term-'));
-  fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
   return cwd;
 }
 
@@ -48,9 +48,9 @@ function degradedEnv() {
     ...process.env,
     OPENROUTER_API_KEY: '',
     ANTHROPIC_API_KEY: '',
-    CX_MODEL_REASONING: '',
-    CX_MODEL_STANDARD: '',
-    CX_MODEL_FAST: '',
+    CONSTRUCT_MODEL_REASONING: '',
+    CONSTRUCT_MODEL_STANDARD: '',
+    CONSTRUCT_MODEL_FAST: '',
   };
 }
 
@@ -105,9 +105,9 @@ test('normal in-process run with tasks gets "completed-prepare-only"', async () 
     ...process.env,
     OPENROUTER_API_KEY: '',
     ANTHROPIC_API_KEY: '',
-    CX_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
-    CX_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6',
-    CX_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
+    CONSTRUCT_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
+    CONSTRUCT_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6',
+    CONSTRUCT_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
   };
   try {
     const run = await runOrchestration(
@@ -157,9 +157,9 @@ test('a host-backend run materializing tasks reports shaped status "awaiting-hos
       ...process.env,
       OPENROUTER_API_KEY: '',
       ANTHROPIC_API_KEY: '',
-      CX_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
-      CX_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6',
-      CX_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
+      CONSTRUCT_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
+      CONSTRUCT_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6',
+      CONSTRUCT_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
     };
     const run = await runOrchestration(
       { request: 'design and implement a new authentication architecture', fileCount: 20, moduleCount: 6 },
@@ -190,9 +190,9 @@ test('submitting every task result flips shaped status from awaiting-host to a r
       ...process.env,
       OPENROUTER_API_KEY: '',
       ANTHROPIC_API_KEY: '',
-      CX_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
-      CX_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6',
-      CX_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
+      CONSTRUCT_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
+      CONSTRUCT_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6',
+      CONSTRUCT_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
     };
     const run = await runOrchestration(
       { request: 'design and implement a new authentication architecture', fileCount: 20, moduleCount: 6 },

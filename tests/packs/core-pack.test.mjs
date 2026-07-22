@@ -20,37 +20,29 @@ test('loadCorePack', async (t) => {
     assert.equal(pack._tier, 'builtin');
   });
 
-  await t.test('specialists array contains expected specialists', () => {
+  await t.test('Worker Profile array contains expected profiles', () => {
     const pack = loadCorePack(PACKAGE_ROOT);
-    assert.ok(Array.isArray(pack.specialists));
-    // construct-rf26.11 consolidated the 29-specialist roster to 12 (orchestrator + 11 workers).
-    assert.ok(pack.specialists.length >= 12);
-    assert.ok(pack.specialists.includes('cx-architect'));
-    assert.ok(pack.specialists.includes('cx-engineer'));
-    assert.ok(pack.specialists.includes('cx-orchestrator'));
-  });
-
-  await t.test('teams array contains expected teams', () => {
-    const pack = loadCorePack(PACKAGE_ROOT);
-    assert.ok(Array.isArray(pack.teams));
-    assert.ok(pack.teams.length >= 5);
-    assert.ok(pack.teams.includes('engineering-team'));
+    assert.ok(Array.isArray(pack.workerProfiles));
+    assert.ok(pack.workerProfiles.length >= 12);
+    assert.ok(pack.workerProfiles.includes('architect'));
+    assert.ok(pack.workerProfiles.includes('engineer'));
+    assert.ok(pack.workerProfiles.includes('orchestrator'));
   });
 
   await t.test('prompts map contains entries', () => {
     const pack = loadCorePack(PACKAGE_ROOT);
     assert.ok(typeof pack.prompts === 'object');
     assert.ok(Object.keys(pack.prompts).length >= 5);
-    assert.equal(pack.prompts['cx-architect'], 'specialists/prompts/cx-architect.md');
-    assert.equal(pack.prompts['cx-engineer'], 'specialists/prompts/cx-engineer.md');
+    assert.equal(pack.prompts.architect, 'registry/worker-profiles/prompts/architect.md');
+    assert.equal(pack.prompts.engineer, 'registry/worker-profiles/prompts/engineer.md');
   });
 
   await t.test('embedBindings ships default grants for product-manager, operations, engineer (LMCP-E4)', () => {
     const pack = loadCorePack(PACKAGE_ROOT);
     assert.ok(typeof pack.embedBindings === 'object');
-    assert.ok(pack.embedBindings['cx-product-manager']);
-    assert.ok(pack.embedBindings['cx-operations']);
-    assert.ok(pack.embedBindings['cx-engineer']);
+    assert.ok(pack.embedBindings['product-manager']);
+    assert.ok(pack.embedBindings['operations']);
+    assert.ok(pack.embedBindings['engineer']);
   });
 
   await t.test('every default binding only names capabilities from EMBED_BINDING_CAPABILITIES', () => {
@@ -64,7 +56,7 @@ test('loadCorePack', async (t) => {
     }
   });
 
-  await t.test("every default proposal token references a provider present in that specialist's providers[]", () => {
+  await t.test("every default proposal token references a provider granted to that Worker Profile", () => {
     const pack = loadCorePack(PACKAGE_ROOT);
     for (const binding of Object.values(pack.embedBindings)) {
       const boundIds = new Set((binding.providers || []).map(p => p.id));

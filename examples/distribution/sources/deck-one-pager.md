@@ -6,13 +6,13 @@ version: "0.1"
 doc_id: DECK-PLATFORM-001
 classification: internal
 status: draft
-owner: cx-product-manager
+owner: product-manager
 last_verified_at: 2026-06-20
 ---
 
 # Construct Platform Overview
 
-Monochrome ink · Space Grotesk typography · 16:9 slides
+Field-notebook ink · Plus Jakarta Sans typography · 16:9 slides
 
 ---
 
@@ -28,7 +28,7 @@ Platform teams orchestrating AI agents lack a **governed operational layer**.
 
 ## What Construct provides
 
-1. **Routing** — specialist chains with intent, track, and gates
+1. **Routing** — Worker Profile chains with intent, track, and gates
 2. **Validation** — manifest-enforced structure before distribution
 3. **Document I/O** — many formats in; branded PDF, HTML, deck, PPTX out
 
@@ -50,9 +50,9 @@ High fidelity: **docling** sidecar (local-first). Fast tier: unpdf/mammoth.
 
 One token set across all distributable formats:
 
-- Ink ramp `#0a0c10` → `#fafafa`
-- **Space Grotesk** body · **JetBrains Mono** code
-- Hand-drawn diagrams in PDF/HTML (D2 sketch + Mermaid)
+- Ink ramp `#1a1d24` → `#eef1f3`
+- **Plus Jakarta Sans** body · **JetBrains Mono** code
+- Hand-drawn structural diagrams in PDF/HTML via D2 sketch; Mermaid classic for simple flows
 
 ---
 

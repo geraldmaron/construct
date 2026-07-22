@@ -10,7 +10,7 @@ import { MDXRemote } from 'next-mdx-remote/rsc';
 import remarkGfm from 'remark-gfm';
 import {
   FlowPipeline, RequestFlow, SyncGrid, AgentGrid, DeployModes, Cards, Card, Steps, Step, Callout,
-} from '@cx/ui';
+} from '@construct/ui';
 import { listDocs, getDocBySlug } from '@/lib/docs-source';
 
 const mdxComponents = {

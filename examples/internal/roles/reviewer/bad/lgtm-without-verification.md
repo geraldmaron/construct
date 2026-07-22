@@ -6,7 +6,7 @@ category: bad
 verdict: fail
 summary: Approves based only on reading the diff.
 references:
-  - skills/roles/reviewer.md
+  - skills/perspectives/reviewer.md
 tags:
   - verification-gap
   - false-approval

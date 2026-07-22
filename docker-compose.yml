@@ -1,0 +1,59 @@
+# docker-compose.yml — shared workspace server deployment
+# (construct-b0nny.26, E7; design doc docs/notes/research/workspace-control-
+# plane/synthesis/shared-server-design.md §9). Three services: Postgres, a
+# one-shot migration step, and the server itself. Purely additive — the
+# local-first solo product needs none of this and has no dependency on it.
+#
+# Usage:
+#   CONSTRUCT_SERVER_ADMIN_TOKEN=<operator-secret> docker compose up --build
+#
+# CONSTRUCT_SERVER_ADMIN_TOKEN authorizes POST /workspaces (workspace
+# bootstrap, design doc §2.2) — it is required with no default; compose
+# refuses to start the server service without it.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: construct
+      POSTGRES_USER: construct
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-construct}
+    volumes:
+      - construct-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U construct -d construct"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    command: ["migrate"]
+    environment:
+      DATABASE_URL: postgresql://construct:${POSTGRES_PASSWORD:-construct}@postgres:5432/construct
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    command: ["start"]
+    ports:
+      - "${CONSTRUCT_SERVER_PORT:-4780}:4780"
+    environment:
+      DATABASE_URL: postgresql://construct:${POSTGRES_PASSWORD:-construct}@postgres:5432/construct
+      CONSTRUCT_SERVER_ADMIN_TOKEN: ${CONSTRUCT_SERVER_ADMIN_TOKEN:?set CONSTRUCT_SERVER_ADMIN_TOKEN before starting the server service}
+      CONSTRUCT_SERVER_HOST: 0.0.0.0
+      CONSTRUCT_SERVER_PORT: "4780"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  construct-postgres-data:

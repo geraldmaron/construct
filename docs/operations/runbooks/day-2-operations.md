@@ -107,7 +107,7 @@ run `construct distill` with a focused query and compact context before continui
 construct review --days=7
 ```
 
-Generates a performance report under `~/.cx/performance-reviews/`. Check for agents with quality score < 0.7.
+Generates a performance report under `~/.construct/performance-reviews/`. Check for agents with quality score < 0.7.
 
 If any agent is below threshold:
 
@@ -117,7 +117,7 @@ construct optimize <agent-name> --apply
 ```
 
 The bare command is a dry-run that prints the diagnosis and proposed patch; review it, then
-`--apply` writes the patch to the agent's role skill file (`skills/roles/<role>.md`) and
+`--apply` writes the patch to the agent's perspective skill file (`skills/perspectives/<role>.md`) and
 auto-runs `construct sync`. Revert with `construct optimize <agent-name> --rollback` if the
 agent's scores drop.
 

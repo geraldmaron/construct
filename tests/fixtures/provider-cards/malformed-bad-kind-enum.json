@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "providers": [
+    {
+      "id": "broken-provider",
+      "kind": "totally-not-a-real-kind",
+      "versionPolicy": { "type": "npm-semver", "range": "^1.0.0" },
+      "healthCheck": { "kind": "import-check", "detail": "require('broken-provider')" },
+      "fallback": { "behavior": "error" },
+      "owner": "construct-core",
+      "removalCriteria": "unknown"
+    }
+  ]
+}

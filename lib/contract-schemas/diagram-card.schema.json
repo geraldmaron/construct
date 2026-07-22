@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DiagramCard",
+  "description": "Provenance record for a rendered diagram artifact",
+  "type": "object",
+  "required": [
+    "id",
+    "source",
+    "engine",
+    "engineVersion",
+    "theme",
+    "seed",
+    "securityProfile",
+    "accessibilityDescription",
+    "provenance",
+    "degraded",
+    "reason"
+  ],
+  "properties": {
+    "id": { "type": "string" },
+    "source": { "type": "string" },
+    "engine": {
+      "type": "string",
+      "enum": ["d2", "dot", "mermaid-source-only", "unknown"]
+    },
+    "engineVersion": { "type": ["string", "null"] },
+    "theme": { "type": ["string", "null"] },
+    "seed": { "type": ["string", "null", "number"] },
+    "securityProfile": { "type": "string" },
+    "accessibilityDescription": { "type": "string", "minLength": 1 },
+    "provenance": {
+      "type": "object",
+      "required": ["module", "command", "generatedAt"],
+      "properties": {
+        "module": { "type": "string" },
+        "command": { "type": "string" },
+        "generatedAt": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "degraded": { "type": "boolean" },
+    "reason": { "type": ["string", "null"] },
+    "renderedOutput": {
+      "type": "object",
+      "properties": {
+        "path": { "type": "string" },
+        "sha256": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

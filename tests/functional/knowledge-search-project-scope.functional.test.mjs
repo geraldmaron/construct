@@ -1,6 +1,6 @@
 /**
  * tests/functional/knowledge-search-project-scope.functional.test.mjs —
- * `construct knowledge search` surfaces the cwd project's `.cx/knowledge/**`
+ * `construct knowledge search` surfaces the cwd project's `.construct/knowledge/**`
  *
  * @capability research.project-search
  * alongside (and ahead of) the bundled Construct docs (construct-wxip).
@@ -8,7 +8,7 @@
  * The bug: knowledgeSearch built its source list from the Construct repo only,
  * so a foreign project saw Construct's own docs and never its own freshly added
  * research. Asserts the fix end-to-end:
- *   1. A research file dropped under `.cx/knowledge/external/research/` is in
+ *   1. A research file dropped under `.construct/knowledge/external/research/` is in
  *      the source set.
  *   2. The project hit outranks the bundled Construct doc for the same query.
  *   3. The hit carries a structured `origin` whose `kind` is 'project' so
@@ -56,7 +56,7 @@ test('project knowledge surfaces from a foreign project (construct-wxip core fix
     '',
     `FINDINGS: ${distinctiveTerm} is a project-specific marker that the bundled`,
     'Construct docs cannot possibly contain. Its presence in a hit proves the',
-    "project's own .cx/knowledge tree was searched, not just the bundled docs.",
+    "project's own .construct/knowledge tree was searched, not just the bundled docs.",
     '',
   ].join('\n'));
 
@@ -106,7 +106,7 @@ test('no source-list duplication when projectRoot equals repoRoot or is absent',
   // A foreign project carrying ONE research file. Sweep its source list, then
   // sweep with projectRoot===repoRoot, then with projectRoot absent. The first
   // must include the project research file as origin: project; the others must
-  // not double-add the construct repo's own .cx/knowledge tree (which already
+  // not double-add the construct repo's own .construct/knowledge tree (which already
   // joins the source list as bundled internal knowledge).
 
   const project = makeProject();

@@ -3,12 +3,14 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 -->
 # ADR-0022: Orchestration engine-as-service — a local HTTP+SSE API so any host reaches Construct-equivalent outcomes
 
+> **Current surface (Construct 2.0):** The local HTTP dashboard daemon (`lib/server/`) was **deleted** (ADR-0039 amendment 2026-06-25). Solo default is **in-process** orchestration (`orchestration_run` / `construct orchestrate`); remote remains opt-in via `CONSTRUCT_ORCHESTRATION_URL` / `construct orchestrate … --remote`. Body below describes the 2026-06 daemon proposal — do not treat `lib/server/index.mjs` or dashboard auth as present. See ADR-0039 and `docs/obsolete/legacy-surface-register.md`.
+
 - **Date**: 2026-06-04
 - **Status**: proposed
 - **Deciders**: Gerald Dagher (owner)
 - **Supersedes**: none
 
-<!-- Owning specialist: cx-architect. Part of the host-independent orchestration runtime (epic construct-pdx0). -->
+<!-- Owning Worker Profile: architect (historical stamp: cx-architect). Part of the host-independent orchestration runtime (epic construct-pdx0). Steward bead construct-7d4vl. -->
 
 ## Problem
 

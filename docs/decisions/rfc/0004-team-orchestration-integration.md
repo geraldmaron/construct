@@ -1,3 +1,5 @@
+> **Obsolete (Construct 2.0 vocabulary):** This RFC is `accepted` and largely deployed, but its body still uses retired `cx-*` Worker Profile ids, team/org execution nouns, and pre-2.0 registry paths. Current vocabulary: bare Worker Profile ids (`engineer`, `operations`, `orchestrator`, …), **Workspace Presets**, and `registry/worker-profiles/`. See `docs/obsolete/legacy-surface-register.md`.
+
 # RFC-0004: Team-First Orchestration, Policy, and Handoff Integration
 
 - **Date**: 2026-06-24

@@ -3,11 +3,11 @@ title: Track research findings
 description: Capture a research note with sources, claims, and confidence — then promote it into the knowledge base so the next session can find it.
 ---
 
-Research findings live in three states: as a fresh note in the cookbook intake, as a stamped artifact in `.construct/knowledge/external/research/`, and as a citable source threaded through PRDs and ADRs. The `new-feature` workflow (and any ad-hoc research) wires them through.
+Research findings live in three states: as a fresh note in the cookbook intake, as a stamped artifact in `.construct/knowledge/external/research/`, and as a citable source threaded through PRDs and ADRs. Live procedures are listed in `registry/procedures/*.json` — discover them with `construct procedure list`.
 
 ## Capture as you go
 
-Drop a research note into the inbox; the intake daemon classifies it and routes it through the cx-researcher chain:
+Drop a research note into the inbox; the intake daemon classifies it and routes it through the `researcher` Worker Profile chain:
 
 ```bash
 construct drop ./notes/2026-06-10-otel-genai-survey.md
@@ -38,17 +38,25 @@ Every research artifact carries:
 - `sources[]` — every URL or internal reference with a class tag
 - `intake_id` if it came through the inbox; `intake: none` otherwise
 
-The cx-architect contract requires ADRs to cite the primary sources a research artifact provided; the doctor surfaces any uncited claims in `construct docs:verify`.
+The `architect` contract requires ADRs to cite the primary sources a research artifact provided; the doctor surfaces any uncited claims in `construct docs:verify`.
 
-## Promote to a decision
+## Synthesize or promote
 
-Once the research is solid, hand it to the next step:
+For multi-source synthesis, get an orchestration plan:
 
 ```bash
-construct workflow new new-feature --input feature_name="otel-genai-tracing"
+construct procedure invoke --json --procedure-id research-synthesis \
+  --text 'Synthesize otel-genai-conventions-2026-q2 findings for a PRD decision'
 ```
 
-The `new-feature` template scaffolds a PRD, an ADR, and a review-cycle handoff — each pre-populated with a `research_refs` block pointing at the artifact slug. Architects expand the slug into a full citation; cx-reviewer verifies the citation chain.
+To move from research toward product specs, request a PRD drafting plan:
+
+```bash
+construct procedure invoke --json --procedure-id prd-draft \
+  --text 'feature_name="otel-genai-tracing"'
+```
+
+**`construct procedure invoke` returns a plan only** — it does not scaffold PRDs, ADRs, or handoffs. Run the Worker Profiles the plan returns; cite the research slug in each artifact's sources block. `reviewer` verifies the citation chain.
 
 ## Find it later
 

@@ -34,7 +34,7 @@
         "lineStart": 13
       },
       {
-        "text": "## The public persona\n\n`construct` is defined in [`personas/construct.md`](https://github.com/geraldmaron/construct/blob/main/personas/construct.md). It's the only persona you address.\n\nThe persona's job is to:\n\n- Hold the conversation with you in one consistent voice.\n- Classify intent — is this a quick clarification, an architecture decision, a code change, a security review?\n- Dispatch to specialists according to the orchestration policy.",
+        "text": "## The public persona\n\n`construct` is defined in [`registry/worker-profiles/prompts/construct.md`](https://github.com/geraldmaron/construct/blob/main/registry/worker-profiles/prompts/construct.md). It's the only persona you address.\n\nThe persona's job is to:\n\n- Hold the conversation with you in one consistent voice.\n- Classify intent — is this a quick clarification, an architecture decision, a code change, a security review?\n- Dispatch to specialists according to the orchestration policy.",
         "heading": "The public persona",
         "file": "docs/guides/concepts/agents-and-personas.mdx",
         "origin": "bundled",

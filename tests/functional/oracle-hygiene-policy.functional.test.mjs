@@ -20,8 +20,8 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 function freshProject() {
   const projectDir = mkdtempSync(join(tmpdir(), 'construct-oracle-hygiene-'));
   const homeDir = mkdtempSync(join(tmpdir(), 'construct-oracle-hygiene-home-'));
-  mkdirSync(join(projectDir, '.cx'), { recursive: true });
-  mkdirSync(join(homeDir, '.cx'), { recursive: true });
+  mkdirSync(join(projectDir, '.construct'), { recursive: true });
+  mkdirSync(join(homeDir, '.construct'), { recursive: true });
   return {
     projectDir,
     homeDir,
@@ -39,7 +39,7 @@ test('synthesizeVerdict emits beads-hygiene from stuck counts without auto-raise
     parity: { ok: true, skipped: false },
     contractViolations: { recentCount: 0 },
     doctorLog: { recent: [] },
-    outcomes: { present: true, roles: {} },
+    outcomes: { present: true, workerProfiles: {} },
     alignmentCensus: { present: true, generatedAt: new Date().toISOString(), stale: false, audit: { regressions: [] }, skills: {} },
     registryValidate: { needsRun: false, warningCount: 0 },
     observations: { present: true, count: 1 },
@@ -61,18 +61,18 @@ test('runOracleTick does not write raised-issues for hygiene-only synthesis', as
       parity: { ok: true, skipped: false },
       contractViolations: { recentCount: 0 },
       doctorLog: { recent: [] },
-      outcomes: { present: true, roles: {} },
+      outcomes: { present: true, workerProfiles: {} },
       alignmentCensus: { present: true, generatedAt: new Date().toISOString(), stale: false, audit: { regressions: [] }, skills: {} },
       registryValidate: { needsRun: false, warningCount: 0 },
       observations: { present: true, count: 1 },
-      orgGraph: { workflow: { present: false, findings: [{ severity: 'HIGH', issue: 'No .cx/workflow.json found' }] } },
+      orgGraph: { workflow: { present: false, findings: [{ severity: 'HIGH', issue: 'No .construct/workflow.json found' }] } },
       beads: { stuckInProgress: 1, staleOpen: 10 },
       projectDir: env.projectDir,
     };
     const { gaps } = synthesizeVerdict(readModel);
     const raised = await raiseIssuesForGaps({ projectDir: env.projectDir, gaps, dryRun: false });
     assert.ok(raised.every((r) => r.skipped && r.reason === 'verdict-only'));
-    assert.equal(existsSync(join(env.projectDir, '.cx', 'oracle', 'raised-issues.jsonl')), false);
+    assert.equal(existsSync(join(env.projectDir, '.construct', 'oracle', 'raised-issues.jsonl')), false);
   } finally {
     env.cleanup();
   }

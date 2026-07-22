@@ -11,11 +11,12 @@ The intent: stop re-deriving the release flow on every cycle. If a step is not a
 | Workflow | File | Trigger | Output |
 |---|---|---|---|
 | `ci` | `.github/workflows/ci.yml` | push, PR | Tests on Ubuntu × Node 20/22 (PRs) or Ubuntu/macOS × Node 20/22 (main push/schedule/dispatch), comment + prose + profile lints, docs drift, retrieval evals, dependency CVE audit |
-| `release` | `.github/workflows/release.yml` | tag `v*` | npm publish (OIDC), Docker image (GHCR), SEA binaries (linux/darwin/windows × x64/arm64), Homebrew tap bump, GitHub Release |
+| `release` | `.github/workflows/release.yml` | tag `v*` | npm publish (OIDC), CycloneDX SBOM, SEA binaries (linux/darwin/windows × x64/arm64), Homebrew tap bump, GitHub Release |
 | `pages` | `.github/workflows/pages.yml` | push to main, manual | GitHub Pages docs site |
 | `docs` | `.github/workflows/docs.yml` | push to main affecting docs | Auto-regenerates AUTO doc regions |
 | `deploy` | `.github/workflows/deploy.yml` | push to main | Container deploy (if configured) |
 | `aws-smoke` | `.github/workflows/aws-smoke.yml` | manual | ECS smoke test (gated, optional) |
+| `staging-full-matrix` | `.github/workflows/staging-full-matrix.yml` | daily 09:17 UTC, manual | Full OS×Node matrix + lint suite **on `staging`** — surfaces a red matrix within ~1 day; gates `staging → main` promotion |
 
 ## Pre-release channels
 
@@ -139,6 +140,15 @@ node scripts/release-evidence-gate.mjs --skip-tests # packaging only (fast; step
 
 Blocking step, run by both `npm run release:preflight` and `npm run release:check`: for every capability `lib/mode-capabilities.mjs`'s `CAPABILITY_REGISTRY` marks `'implemented'`, verifies the file(s) that implement it actually landed in the packed artifact (`npm pack --json --dry-run`, no tarball written) and that its registered acceptance test (`tests/acceptance/modes/*.acceptance.test.mjs`, `tests/enterprise/audit-isolation.test.mjs`) passes. A release cannot ship claiming a capability the packed artifact does not actually contain or that has stopped passing its acceptance test. Self-test: `node --test tests/scripts/release-evidence-gate.test.mjs`.
 
+### Protocol surface rollup (`construct-tsyfe.9.7`)
+
+```bash
+node lib/certification/protocol-surface-rollup.mjs             # human-readable pass/fail
+node lib/certification/protocol-surface-rollup.mjs --json      # machine-readable report
+```
+
+Release-blocking step in `release:check` and `scripts/pre-release-check.mjs`: after the LMCP-M5 evidence gate, inspects the npm pack dry-run file list against the union of construct-tsyfe.9 sibling certifications — MCP tool-surface partition, CLI public help corpus (no retired aliases), ECL-only exports (no `./lib/*` wildcard), and presence of `lib/acp/server.mjs`, host-adapter modules, and `bin/construct` in the packed artifact. Functional coverage: `node --test tests/functional/protocol-surface-rollup.functional.test.mjs` (clean HEAD pass plus injected wildcard/CLI/pack regressions).
+
 ## Release gate (in CI)
 
 `release:check` job in `release.yml` re-runs the preflight equivalent before any artifact step:
@@ -150,12 +160,38 @@ Blocking step, run by both `npm run release:preflight` and `npm run release:chec
 - `npm run lint:scopes -- --quiet`
 - `npm run test:functional`
 - `node scripts/release-evidence-gate.mjs --skip-tests` — release evidence gate (above); packaging-only here since `npm test` already ran every capability's acceptance test
+- `node lib/certification/protocol-surface-rollup.mjs` — protocol surface rollup (construct-tsyfe.9.7); packed artifact must match MCP/ACP/host/CLI/ECL certifications
 - `npm audit --audit-level=high`
 - `npm run audit:published` — packs the artifact and audits a clean downstream install with no `overrides` in scope, catching transitive advisories a repo-local override would mask
+- `node --test --test-timeout=120000 tests/acceptance/packed-install.test.mjs` — packed consumer install acceptance (LMCP-L2): `npm pack` into a sterile project, smoke `construct version` / `status --json` / `doctor`, and assert removed CLI surfaces (interim list in `tests/acceptance/packed-install-removed-surfaces.mjs`, starting with the removed `construct matrix` alias) do not dispatch from the installed tarball
+- `node scripts/supply-chain-release-gate.mjs` — composed supply-chain go/no-go (`construct-tsyfe.10.7`): conjunctive check over OSV/license CI wiring, SBOM release asset, provider-card validation, packed-install wiring, compiled-binary certification evidence, and compat-surface expiration. Philosophy mirrors `construct-4uxq0.14.4` (alive is not sufficient). Wired on the tag path here per `construct-9tg43` gate-scope lesson. Self-test: `node --test tests/scripts/supply-chain-release-gate.test.mjs`
 
 If any of these fail, no artifacts ship. The prose lint is enforced at PR time only (changed-files scope) and is intentionally not in the release gate; running it `--all` on the current historical baseline would always fail until the cleanup PR (`construct-fj0`, `construct-ze6`) lands.
 
 `test:functional` includes `tests/functional/release-gate.functional.test.mjs`, which asserts the refit invariants on HEAD (`construct-d1r7.16`): no implicit active model defaults (every tier resolves to `not configured` on a clean install), optional MCP silence (catalog-only and disabled servers raise no diagnostics), and certified document I/O (the `--certified` matrix must pass when every export engine is installed, degrading to the graceful local matrix on a leaner leg).
+
+### Oracle false-success certification gate (`construct-4uxq0.12.11`)
+
+`node bin/construct certify gate` (step 11 of `npm run release:check`) now includes an Oracle false-success sub-gate:
+
+1. Runs four hermetic certification scenarios against real Oracle invariant and synthesis code: unreachable-SHA close, closed-parent with open children, partial graph rendered as clean, and impact context available but untested capabilities ignored.
+2. Each scenario uses fixture-only inputs and asserts Oracle does not return a clean verdict when the false-success condition is present.
+3. **Regression:** when any scenario fails (including a deliberate mutation simulating Oracle returning healthy on a known-bad fixture), the release gate blocks and names the regressed scenario id.
+4. Scenarios register in `tests/certification/scenarios/catalog.json` under `oracle.false-success.*` with gate type `oracle-false-success-audit`.
+
+See `tests/certification/oracle-false-success.test.mjs`.
+
+### Certified prompt versions (`construct-72gqn.40`)
+
+`node bin/construct certify gate` (step 11 of `npm run release:check`) now includes a prompt-version sub-gate:
+
+1. Computes a sha256 hash over static prompt-composer fragments (`core`, `role-flavor`, `model-profile`) for every registry Worker Profile and operating profile tier (`balanced`, `small`).
+2. Persists the last certified hashes in `.construct/certification/prompt-versions.json`.
+3. **Bootstrap:** first run with no history writes baseline hashes and passes (does not block the release).
+4. **Drift:** when a hash changes, the gate blocks until a passing worker-profile certification run is recorded after the prior certification timestamp (example remediation: `construct certify run worker-profile.happy-path-representative.engineer`).
+5. **Unchanged prompts:** unrelated file edits that do not change composed fragments do not trigger re-certification.
+
+See ADR-0095 and `tests/functional/certified-prompt-versions.functional.test.mjs`.
 
 ## npm publish (OIDC, no stored token)
 
@@ -172,6 +208,17 @@ One-time setup on npmjs.com: package → Settings → Trusted Publishers → add
 - Tag pattern: `ghcr.io/geraldmaron/construct:vX.Y.Z` + `:latest`.
 - Built and pushed from `release.yml` on every tag.
 - Trivy scan in the same workflow fails the release on `CRITICAL` or `HIGH` CVEs.
+
+## SBOM (CycloneDX)
+
+- Generated on every tag release in `release.yml` via `npx @cyclonedx/cyclonedx-npm`.
+- Output: `dist/sbom.cyclonedx.json`, attached to the GitHub Release alongside binaries.
+- npm provenance (`npm publish --provenance`) attests build identity; the SBOM enumerates the dependency graph for vulnerability scanning.
+
+## Compiled binary certification posture
+
+- **Node SEA** (`release.yml`): production release-integrated path; SEA blob build + `postject` seal on every `v*` tag. Evidence artifact: `lib/certification/binary-release-paths.mjs` (`construct-tsyfe.10.5`).
+- **Bun compile** (`bun-binary-smoke.yml`): workflow_dispatch and path-triggered smoke only; must never gate `release.yml` per that workflow's header comment. Same evidence artifact documents the asymmetry explicitly (`parityImplied: false`).
 
 ## SEA binaries (5 platforms)
 
@@ -194,7 +241,7 @@ ADR-0064 affirms `bun build --compile` as the primary distribution path going fo
 
 **Build**: `node scripts/build-binary.mjs [target]` — targets: `darwin-arm64`, `darwin-x64`, `linux-x64`, `linux-arm64`. Requires Bun on PATH (`curl -fsSL https://bun.sh/install | bash`). Compiles from a temporary `.mjs`-suffixed copy of `bin/construct` (Bun's `--compile` bundler only traverses an entry's imports when the entry has a recognized extension) and smoke-tests the result with `construct doctor` when the build host matches the target arch; cross-compiled targets are produced but not executed on a foreign host.
 
-**Two Bun-compile-specific gaps** (construct-qvou, fixed in `lib/roots.mjs`): every bundled module's `import.meta.url`/`process.argv[1]` collapses to the same virtual `/$bunfs/root` path under `--compile`, which broke (a) install-root resolution for every `skills/`/`specialists/`/`templates/`/`config/`/`registry/` read, and (b) the `import.meta.url === file://${argv[1]}` "was I run directly" idiom used by ~19 `lib/*.mjs` files that double as standalone scripts (all evaluated true simultaneously). `resolveInstallRoot()` and `isMainModule()` in `lib/roots.mjs` are the fix; both assume the data directories ship next to the binary (true for `dist/<binary>`, one level below the checkout root).
+**Two Bun-compile-specific gaps** (construct-qvou, fixed in `lib/roots.mjs`): every bundled module's `import.meta.url`/`process.argv[1]` collapses to the same virtual `/$bunfs/root` path under `--compile`, which broke (a) install-root resolution for every `skills/`/`registry/`/`templates/`/`config/` read, and (b) the `import.meta.url === file://${argv[1]}` "was I run directly" idiom used by ~19 `lib/*.mjs` files that double as standalone scripts (all evaluated true simultaneously). `resolveInstallRoot()` and `isMainModule()` in `lib/roots.mjs` are the fix; both assume the data directories ship next to the binary (true for `dist/<binary>`, one level below the checkout root).
 
 **CI smoke**: `.github/workflows/bun-binary-smoke.yml` — `workflow_dispatch` or on changes to the build scripts / `bin/construct` / `lib/roots.mjs`. Builds one target per matrix leg (`linux-x64` on `ubuntu-latest`, `darwin-arm64` on `macos-15`) and asserts real output, not just exit code: `construct doctor` must print a `Results: N passed, N warnings, N failed` line, and a demo-flow step runs `construct sandbox create/list/delete` end to end, asserting on each command's actual stdout text. Kept separate from `ci.yml`/`release.yml` so a regression here never blocks an unrelated release.
 
@@ -202,7 +249,7 @@ ADR-0064 affirms `bun build --compile` as the primary distribution path going fo
 
 **Homebrew formula**: `Formula/construct.rb` — separate from `templates/homebrew/construct.rb` (the live Node-SEA formula); references Bun binary release assets. Not yet pushed to the tap repo or wired into `release.yml`'s Homebrew bump step.
 
-**npm downloader shim**: `bin/construct-shim.mjs` implements the ADR-0064 "npm demoted to downloader shim" design — detect platform/arch, resolve a cached-or-downloaded Bun binary (same URL/checksum scheme as the curl installer, cached under `lib/config/xdg.mjs`'s `cacheDir()` keyed by package version), exec it with argv/exit-code passthrough, and fall back to running the real Node CLI (rather than erroring silently) on an unsupported platform or a failed download/checksum. **Not wired as `package.json`'s published `bin` entry.** Five existing install/acceptance tests (`tests/acceptance/global-install.test.mjs`, `packed-install.test.mjs`, `tests/functional/install-scope.functional.test.mjs`, `install-parity.functional.test.mjs`, `install-legacy-global-cleanup.functional.test.mjs`) spawn `node bin/construct ...` directly and assert on synchronous, network-independent stdout within tight timeouts; flipping the `bin` mapping needs those updated deliberately (mocked binaries or an offline-first fallback) so a real `npm install -g` does not regress into a flaky, network-dependent install. The shim's own logic is covered by `tests/functional/construct-shim.functional.test.mjs` — cache hit/miss, checksum mismatch, network failure, and the `CONSTRUCT_BIN_OVERRIDE` and unsupported-platform fallback paths, the latter proven against the real `bin/construct` CLI, not a stub.
+**npm downloader shim**: `bin/construct-shim.mjs` implements the ADR-0064 "npm demoted to downloader shim" design — detect platform/arch, resolve a cached-or-downloaded Bun binary (same URL/checksum scheme as the curl installer, cached under `lib/config/xdg.mjs`'s `cacheDir()` keyed by package version), exec it with argv/exit-code passthrough, and fall back to running the real Node CLI (rather than erroring silently) on an unsupported platform or a failed download/checksum. **Not wired as `package.json`'s published `bin` entry.** Four existing install/acceptance tests (`tests/acceptance/global-install.test.mjs`, `packed-install.test.mjs`, `tests/functional/install-scope.functional.test.mjs`, and `install-parity.functional.test.mjs`) spawn `node bin/construct ...` directly and assert on synchronous, network-independent stdout within tight timeouts; flipping the `bin` mapping needs those updated deliberately (mocked binaries or an offline-first fallback) so a real `npm install -g` does not regress into a flaky, network-dependent install. The shim's own logic is covered by `tests/functional/construct-shim.functional.test.mjs` — cache hit/miss, checksum mismatch, network failure, and the `CONSTRUCT_BIN_OVERRIDE` and unsupported-platform fallback paths, the latter proven against the real `bin/construct` CLI, not a stub.
 
 **What is genuinely verified vs. what is not (be precise here — do not restate this as "done")**:
 
@@ -234,6 +281,15 @@ work integrates on `staging` (pre-production) and is promoted to `main` (product
    ```
 
 `main` is never targeted by feature PRs directly. A hotfix that must bypass `staging` is an explicit, documented exception (PR straight to `main`), not the default.
+
+### Staging full-matrix gate (construct-wrfcx)
+
+`ci.yml` only runs the full OS×Node matrix on push-to-main / schedule / `workflow_dispatch`; PRs and pushes to `staging` ran a single ubuntu runner + lint, so `staging` could diverge from `main` for days with platform/engine failures uncaught until release (17 days in the incident that opened this bead). Two enforced mechanisms close the gap:
+
+1. **Daily full matrix on `staging`** — `.github/workflows/staging-full-matrix.yml` runs the same `test` legs (ubuntu/macos × Node 20/22 × shards) plus the lint suite against the `staging` ref every day at 09:17 UTC (and on `workflow_dispatch`). A red run notifies repo watchers by default, so a broken matrix on `staging` surfaces within ~1 day, not at release time.
+2. **Promotion guard** — `Promote staging → main` (`.github/workflows/promote-staging-to-main.yml`) will not open or refresh the `staging → main` PR unless the most recent `staging-full-matrix` run concluded `success`. A red staging matrix therefore blocks the promotion before production is at risk.
+
+If promotion fails with `Refusing to promote: staging full matrix is not green`, fix `staging`, wait for the next scheduled run (or trigger `staging full matrix` via `workflow_dispatch`), and re-run the promote workflow once it is green.
 
 ### Staging deploy (follow-up)
 

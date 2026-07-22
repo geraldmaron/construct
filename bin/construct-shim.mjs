@@ -7,8 +7,7 @@
  * still ships as the real Node CLI implementation because five existing
  * install/acceptance tests (tests/acceptance/global-install.test.mjs,
  * packed-install.test.mjs, tests/functional/install-scope.functional.test.mjs,
- * install-parity.functional.test.mjs, install-legacy-global-cleanup.
- * functional.test.mjs) spawn `node bin/construct ...` directly and assert on
+ * install-parity.functional.test.mjs) spawn `node bin/construct ...` directly and assert on
  * synchronous, network-independent stdout within tight timeouts — a
  * networked shim needs those tests updated deliberately (mocked binaries or
  * an offline fallback path) before the cutover. Landing the shim's

@@ -5,10 +5,12 @@
 # the workflow's run: steps.
 #
 # The repo is CLONED from the read-only /src mount, not copied: a clone of
-# HEAD sheds gitignored state (node_modules, .cx derived stores, dist) that a
+# HEAD sheds gitignored state (node_modules, .construct derived stores, dist) that a
 # cp would drag in, which is the whole point of a fresh-checkout replica. The
 # clone lands in /opt — NOT /tmp — because the suite's own cleanup sweeps /tmp.
 # SHARD (i/n), when set by run.sh, forwards to the runner's --shard flag.
+# setup-mermaid-cli.sh runs after npm ci because mermaid-cli needs Node (the
+# image bakes setup-toolchain.sh before Node is installed).
 
 set -euo pipefail
 
@@ -23,6 +25,7 @@ git clone /src /opt/construct
 cd /opt/construct
 
 npm ci --ignore-scripts
+bash scripts/ci/setup-mermaid-cli.sh
 bash scripts/ci/build-test-fixtures.sh
 npm test ${SHARD:+-- --shard="$SHARD"}
 npm run doctor

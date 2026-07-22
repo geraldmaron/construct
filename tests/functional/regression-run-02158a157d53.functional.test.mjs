@@ -2,7 +2,7 @@
  * tests/functional/regression-run-02158a157d53.functional.test.mjs
  *
  * Regression pin for incident run-02158a157d53 (and run-e66e7418e4cb): a
- * machine with provider keys present (op:// refs) but no CX_MODEL_ or
+ * machine with provider keys present (op:// refs) but no CONSTRUCT_MODEL_ or
  * CONSTRUCT_MODEL_ tier vars saw `construct orchestrate preflight` pass while
  * `orchestration_run` silently persisted degraded:true, tasks:[],
  * executionMode:'construct-prompt-only', status:'completed' — a run that
@@ -11,8 +11,8 @@
  * Drives the exact machine state end to end through the real spawned MCP
  * server (StdioClientTransport harness, per tests/functional/
  * host-mcp-emulation.functional.test.mjs) under a sterile mkdtemp HOME/
- * CX_HOME_OVERRIDE with fake-but-present ANTHROPIC_API_KEY/OPENROUTER_API_KEY
- * and zero model-tier vars (sterileSpawnEnv's allowlist omits CX_MODEL_ and
+ * CONSTRUCT_HOME_OVERRIDE with fake-but-present ANTHROPIC_API_KEY/OPENROUTER_API_KEY
+ * and zero model-tier vars (sterileSpawnEnv's allowlist omits CONSTRUCT_MODEL_ and
  * CONSTRUCT_MODEL_ tier vars by construction), then asserts on the durable run file
  * under the sandbox HOME — not just the tool envelope.
  *
@@ -49,19 +49,19 @@ function sandbox() {
   const root = mkdtempSync(join(tmpdir(), 'cx-run-02158a157d53-'));
   const HOME = join(root, 'HOME');
   const project = join(root, 'project');
-  mkdirSync(join(HOME, '.cx'), { recursive: true });
-  mkdirSync(join(project, '.cx'), { recursive: true });
+  mkdirSync(join(HOME, '.construct'), { recursive: true });
+  mkdirSync(join(project, '.construct'), { recursive: true });
   return { root, HOME, project, cleanup() { rmTmpDir(root); } };
 }
 
 // Incident machine state: keys present (fake-but-present), tiers absent.
-// sterileSpawnEnv's allowlist already excludes CX_MODEL_*/CONSTRUCT_MODEL_*
+// sterileSpawnEnv's allowlist already excludes CONSTRUCT_MODEL_*/CONSTRUCT_MODEL_*
 // by construction, so not naming them here IS the fixture.
 function keysNoTiersSpawnEnv(box) {
   return sterileSpawnEnv({
     HOME: box.HOME,
     USERPROFILE: box.HOME,
-    CX_HOME_OVERRIDE: box.HOME,
+    CONSTRUCT_HOME_OVERRIDE: box.HOME,
     XDG_CONFIG_HOME: join(box.HOME, '.config'),
     XDG_DATA_HOME: join(box.HOME, '.local', 'share'),
     XDG_RUNTIME_DIR: join(box.HOME, 'run'),
@@ -90,18 +90,18 @@ function payload(result) {
 }
 
 // The run store resolves the machine-scoped state root (ADR-0066) via
-// CX_HOME_OVERRIDE on process.env directly — the sandboxed HOME the
+// CONSTRUCT_HOME_OVERRIDE on process.env directly — the sandboxed HOME the
 // subprocess sees via sterileSpawnEnv is invisible to this process unless
 // the same override is pinned here around the read.
 
 function runFilePathInSandbox(box, runId) {
-  const prev = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = box.HOME;
+  const prev = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = box.HOME;
   try {
     return resolveStatePath(box.project, 'runtime', 'orchestration', 'runs', `${runId}.json`, { ensureDir: false });
   } finally {
-    if (prev === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prev;
+    if (prev === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prev;
   }
 }
 

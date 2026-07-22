@@ -2,7 +2,7 @@
  * tests/functional/w1-reflect-fallback.functional.test.mjs — Reflect summary fallback.
  *
  * Verifies the W1 behavior of `construct reflect` when --summary is omitted:
- * the CLI derives a summary from .cx/context.md plus any recent
+ * the CLI derives a summary from .construct/context.md plus any recent
  * session-summary observation. Tests run in a tmpdir cwd so they don't touch
  * project state.
  */
@@ -69,7 +69,7 @@ test('deriveSummaryFromContext truncates long input to a paragraph', () => {
   } finally { cleanup(); }
 });
 
-test('reflect CLI auto-derives the summary when .cx/context.md exists and --summary is omitted', async () => {
+test('reflect CLI auto-derives the summary when .construct/context.md exists and --summary is omitted', async () => {
   const { cwd, cleanup } = freshCwd();
   try {
     writeContextState(cwd, {
@@ -91,7 +91,7 @@ test('reflect CLI auto-derives the summary when .cx/context.md exists and --summ
     assert.match(result.stderr || '', /auto-derived/i, 'should announce auto-derived path');
 
     const internalDir = join(cwd, '.construct', 'knowledge', 'internal');
-    assert.ok(existsSync(internalDir), `expected .cx/knowledge/internal/ to be created; stderr: ${result.stderr}`);
+    assert.ok(existsSync(internalDir), `expected .construct/knowledge/internal/ to be created; stderr: ${result.stderr}`);
     const files = readdirSync(internalDir);
     assert.equal(files.length, 1, `expected one file in internal/, got ${files.length}`);
     const body = readFileSync(join(internalDir, files[0]), 'utf8');

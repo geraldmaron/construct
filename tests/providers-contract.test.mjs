@@ -4,7 +4,7 @@
  * Verifies:
  *   - assertProviderContract enforces every required field and capability.
  *   - The registry resolves the five built-in providers.
- *   - Plugin overrides from .cx/providers.json load and validate.
+ *   - Plugin overrides from .construct/providers.json load and validate.
  *   - A plugin that misses a required method fails contract assertion and
  *     is reported in errors[] without breaking the rest of the resolution.
  */
@@ -87,9 +87,9 @@ describe('provider registry', () => {
     }
   });
 
-  it('loads a plugin override from .cx/providers.json', async () => {
-    const cxDir = path.join(tmpRoot, '.construct');
-    fs.mkdirSync(cxDir, { recursive: true });
+  it('loads a plugin override from .construct/providers.json', async () => {
+    const constructDir = path.join(tmpRoot, '.construct');
+    fs.mkdirSync(constructDir, { recursive: true });
     const pluginPath = path.join(tmpRoot, 'fake-provider.mjs');
     fs.writeFileSync(pluginPath, `
       export function create() {
@@ -101,7 +101,7 @@ describe('provider registry', () => {
       }
     `);
     fs.writeFileSync(
-      path.join(cxDir, 'providers.json'),
+      path.join(constructDir, 'providers.json'),
       JSON.stringify({ providers: [{ id: 'fake', package: pluginPath }] })
     );
     const { providers, errors, sources } = await resolveProviders({ rootDir: tmpRoot });
@@ -113,8 +113,8 @@ describe('provider registry', () => {
   });
 
   it('captures a broken plugin in errors[] without breaking other providers', async () => {
-    const cxDir = path.join(tmpRoot, '.construct');
-    fs.mkdirSync(cxDir, { recursive: true });
+    const constructDir = path.join(tmpRoot, '.construct');
+    fs.mkdirSync(constructDir, { recursive: true });
     const brokenPath = path.join(tmpRoot, 'broken-provider.mjs');
     fs.writeFileSync(brokenPath, `
       export function create() {
@@ -125,7 +125,7 @@ describe('provider registry', () => {
       }
     `);
     fs.writeFileSync(
-      path.join(cxDir, 'providers.json'),
+      path.join(constructDir, 'providers.json'),
       JSON.stringify({ providers: [{ id: 'broken', package: brokenPath }] })
     );
     const { providers, errors } = await resolveProviders({ rootDir: tmpRoot });

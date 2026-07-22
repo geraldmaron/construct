@@ -3,13 +3,15 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 -->
 # ADR-0065: Orchestrator-worker consolidation — from a fixed persona org to a thin core roster
 
+> **Current surface (Construct 2.0):** The thin roster landed as **12 Worker Profiles** under `registry/worker-profiles/` (`construct worker-profile list`). Skill overlays live in `skills/perspectives/`. Invocation/planning uses **Procedures** (`registry/procedures/`, `construct procedure invoke`, MCP `procedure_invoke`) and the flow engine (`lib/flows/`). Paths `specialists/org/**`, `cx-*` ids, and CLI `construct specialist create` / `construct team create` are **retired** (unknown-command → `worker-profile`). Body below is the original decision record — "current shape" language in Context is as-of 2026-07-05. See `docs/obsolete/legacy-surface-register.md` and [appendix-0065](./appendix-0065-roster-mapping.md).
+
 - **Date**: 2026-07-05
 - **Status**: accepted
 - **Deciders**: Gerald Dagher (owner)
 - **Supersedes**: none
 - **Relates to**: ADR-0015 (hybrid markdown + enforcement — its core soft/hard split is affirmed and not reopened here; only the org-shape portions it audits, the 29-persona/43-contract org chart, are superseded by this decision), ADR-0043 (oracle meta-controller), ADR-0063 (host-subscription execution, one flow-step execution backend)
 
-<!-- Owning specialist: cx-architect. -->
+<!-- Owning Worker Profile: architect (historical stamp: cx-architect). Steward bead construct-7d4vl. -->
 
 ## Problem
 
@@ -68,3 +70,14 @@ One-way-leaning. The 29-specialist/43-contract org chart is not preserved anywhe
 - docs.crewai.com/en/quickstart and CrewAI 1.14.5 release notes (Flows-first production guidance, crew→flow migration path)
 - ADR-0015 (hybrid architecture, core affirmed; org-shape audit superseded here), ADR-0043 (oracle meta-controller), ADR-0063 (host-subscription execution backend)
 - STRATEGY.md Bet 1 ("the product is the loop, not the agents")
+
+## Amendment (2026-07-22) — Construct 2.0 cutover of roster nouns
+
+Steward pass (`construct-7d4vl`). The Decision's org-shape commitment (thin roster + skills as specialization + deterministic sequencing) stands. Operator-facing nouns changed after cutover:
+
+- **Roster unit:** Worker Profiles (`registry/worker-profiles/`, 12 ids) — not `specialists/org/specialists/` or `cx-*` files.
+- **Overlays:** `skills/perspectives/` — not `skills/roles/`.
+- **Custom authoring CLI:** `construct specialist create` / `construct team create` are retired; do not treat the Decision's "custom specialists and teams become first-class" sentence as a live CLI contract. Workspace Presets + Worker Profile overlays are the supported extension path.
+- **Sequencing substrate:** Procedures + `lib/flows/` (ADR-0067) — prose-injected `lib/orchestration-policy.mjs` chain resolution is not the operator runbook.
+
+Historical Decision/Context text above is retained unchanged (Nygard/Fowler: do not rewrite accepted Decision prose into fiction).

@@ -9,5 +9,8 @@
   "securityClassification": "trusted",
   "owner": "construct-core",
   "compatVersion": 1,
-  "installSource": "builtin"
+  "installSource": "builtin",
+  "certification": {
+    "tier": "structurally-validated"
+  }
 }

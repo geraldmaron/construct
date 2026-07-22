@@ -15,7 +15,7 @@ Construct exposes a Model Context Protocol (MCP) server consumed by Claude Code,
 
 ## Tool surface (gateway)
 
-To keep the serialized tool schema small enough for any context window — a flat 77-tool surface (~15k tokens) overran a 32k local-model window — `ListTools` exposes a **curated core** plus the `call` **gateway** and the `find_tool` **discovery** tool. The core front-loads the read/think tools (`orchestration_policy`, `orchestration_run`, `orchestration_readiness`, `get_skill`, `get_template`, `search_skills`, `suggest_skills`, `knowledge_search`, `memory_search`, `project_context`, `summarize_diff`, `find_tool`) **and the high-value action tools agents reach for directly** (`author_artifact`, `document_export`, `publish_run`, `artifact_workflow`, `triage_recommend`), since burying those behind the gateway made the common case the failing case. Every other tool stays reachable through `call`, and `find_tool` ranks the whole catalog by intent so the surface scales without a hand-maintained list (ADR-0048).
+To keep serialized tool schemas from consuming the context window, `ListTools` does not expose the flat 82-tool catalog. It exposes a **curated core** plus the `call` **gateway** and the `find_tool` **discovery** tool. The core front-loads the read/think tools (`orchestration_policy`, `orchestration_run`, `orchestration_readiness`, `get_skill`, `get_template`, `search_skills`, `suggest_skills`, `knowledge_search`, `memory_search`, `project_context`, `summarize_diff`, `find_tool`) **and the high-value action tools agents reach for directly** (`author_artifact`, `document_export`, `publish_run`, `artifact_workflow`, `triage_recommend`), since burying those behind the gateway made the common case the failing case. Every other tool stays reachable through `call`, and `find_tool` ranks the whole catalog by intent so the surface scales without a hand-maintained list (ADR-0048).
 
 ### `find_tool`
 Find Construct tools by intent when you do not know the exact name. Pass a natural-language `query` (and optional `limit`) describing the task; returns the best-matching tools with their full input schemas, ranked by hybrid local-embedding semantic similarity merged with normalized BM25 — degrading to BM25-only when no semantic model is provisioned, so it works offline. Then invoke a result via `call` (or directly when it is a flat tool). E.g. `find_tool({ query: "export a markdown file to pdf" })` → `document_export`.
@@ -25,7 +25,7 @@ Invoke any non-core Construct tool by name. Pass the tool name in `tool` (constr
 
 ## Host wiring policy
 
-The Construct MCP server (`construct-mcp`) is defined once in `specialists/org` (`mcpServers`) and wired into every selected host by `scripts/sync-specialists.mjs` — Claude Code (project scope: `.mcp.json` → `mcpServers`; global scope: `~/.claude.json` → top-level `mcpServers` — settings.json carries hooks/permissions only, never MCP server definitions), OpenCode (`.opencode/opencode.json`), VS Code (`.vscode/mcp.json` → `servers`), Cursor (`.cursor/mcp.json` → `mcpServers`), and Codex (`.codex/config.toml` → `mcp_servers`). The `host-config-parity` functional test fails if any selected host drops it.
+The Construct MCP server (`construct-mcp`) is defined once in `registry` (`mcpServers`) and wired into every selected host by `scripts/sync-specialists.mjs` — Claude Code (project scope: `.mcp.json` → `mcpServers`; global scope: `~/.claude.json` → top-level `mcpServers` — settings.json carries hooks/permissions only, never MCP server definitions), OpenCode (`.opencode/opencode.json`), VS Code (`.vscode/mcp.json` → `servers`), Cursor (`.cursor/mcp.json` → `mcpServers`), and Codex (`.codex/config.toml` → `mcp_servers`). The `host-config-parity` functional test fails if any selected host drops it.
 
 Credential handling diverges because hosts resolve env references at different times:
 
@@ -201,13 +201,26 @@ Deletes ingested markdown artifacts. Requires explicit `confirm: true`.
 ### `list_skills`
 Lists all available categories and playbooks in the Construct knowledge base.
 
+
+### `graph_query`
+
+Query the living dependency graph: lookup one node by id (dependencies and dependents) or list all nodes of a type. Read-only; matches `construct graph query --json`.
+
+### `graph_impacted`
+
+Traverse from changed repo-relative files to impacted workflows, tests, docs, and capabilities. Read-only; matches `construct graph impacted --changed <files> --json`.
+
+### `graph_explain`
+
+Full ownership picture for one procedure or workflow: EDGE_RELS sections, roleChain, execution evidence. Read-only; matches `construct graph explain <id> --json`.
+
 ### `get_skill`
-Reads a specific skill playbook from the knowledge base. Pass `specialistId` when reading on a specialist's behalf: if that specialist has a non-empty entitlement list and the skill is not on it, the response carries an entitlement warning (or, under `CONSTRUCT_STRICT_SKILLS=1`, an error instead of the content) — entitlement is advisory by default, since a bare MCP call carries no authenticated specialist identity to enforce against.
+Reads a specific skill playbook from the knowledge base. Pass `specialistId` when reading on a Worker Profile's behalf: if that profile has a non-empty entitlement list and the skill is not on it, the response carries an entitlement warning (or, under `CONSTRUCT_STRICT_SKILLS=1`, an error instead of the content) — entitlement is advisory by default, since a bare MCP call carries no authenticated Worker Profile identity to enforce against.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `path` | string | Yes | Relative path to the skill (without `.md` extension, e.g. `security/security-arch`) |
-| `specialistId` | string | No | The specialist this read is on behalf of (e.g. `cx-reviewer` or `reviewer`), for entitlement checking. Accepts either the specialistId or `agentId` name. |
+| `specialistId` | string | No | The Worker Profile this read is on behalf of (e.g. `reviewer`), for entitlement checking. Accepts the profile id or `agentId` name. |
 | `agentId` | string | No | Alias for `specialistId`. |
 
 ### `search_skills`
@@ -226,15 +239,6 @@ Reads a doc template by name. Resolves `.construct/templates/docs/{name}.md` fir
 
 ### `list_templates`
 Lists shipped and project-override doc templates.
-
-### `agent_contract`
-Looks up agent-to-agent service contracts from `specialists/contracts.json`.
-
-| Parameter | Type | Description |
-|---|---|---|
-| `id` | string (optional) | Exact contract id (e.g. `architect-to-engineer`) |
-| `producer` | string (optional) | Producer agent name: returns outgoing contracts |
-| `consumer` | string (optional) | Consumer agent name: returns incoming contracts |
 
 ### `worker_run`
 Runs a bounded shell command via the worker plane and optionally records evidence on a named task graph node. Wraps `lib/worker/run.mjs:runJob`.
@@ -261,7 +265,7 @@ Queries the MCP broker's policy gate for a pending action without executing it. 
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `role` | string | Yes | Persona name (e.g. `engineer`, `security`): must match a key in `specialists/role-manifests.json` for team / enterprise mode |
+| `role` | string | Yes | Worker Profile id (e.g. `engineer`, `security`): must match a profile in `registry/worker-profiles/*.json` for team / enterprise mode |
 | `tool` | string | Yes | Tool the agent wants to invoke (e.g. `github`, `fs`) |
 | `action` | string | Yes | Action on that tool (e.g. `create_pr`, `edit:lib/foo.mjs`) |
 | `project` | string (optional) | | Project scope for the decision |
@@ -271,7 +275,7 @@ Queries the MCP broker's policy gate for a pending action without executing it. 
 Returns `{ allowed, reason, approvalRequired, source, brokerActive }`. Solo mode returns `brokerActive: false` with `allowed: true` so agents skip the prompt overhead when the broker is inactive. Always emits a `tool.called` trace event for audit-trail parity.
 
 ### `orchestration_policy`
-Classifies a request into intent, execution track, specialists, and approval boundaries.
+Classifies a request into intent, execution track, Worker Profiles, and approval boundaries.
 
 For research-shaped requests, the response also carries `researchExecutionPolicy`: a surface-agnostic evidence ladder that says when to use local evidence, `knowledge_search`, Context7, direct official-doc web fetches, or other domain-primary sources. Hosts should follow that policy instead of assuming Context7 exists.
 
@@ -298,10 +302,7 @@ The intake, task-graph, and worker plane are surfaced through the `construct int
 | `lib/mcp/broker.mjs` | `Broker.invoke({role, tool, action, risk, execute})`: policy-gated MCP wrapper for team / enterprise. Throws typed `PolicyDenied`, `ApprovalRequired`, `RateLimited`. |
 | `lib/worker/run.mjs` | `runJob({rootDir, job})`: bounded command execution with path-policy denial, timeout, restricted env, and trace event emission. |
 | `lib/worker/evidence.mjs` | `evidenceFromJobResult`, `recordEvidence`, `blockedPacket`, `needsInputPacket`: typed verification packets gating node transitions. |
-| `lib/worker/trace.mjs` | `emitTraceEvent({rootDir, eventType, traceId, …})`: writes `.construct/traces/<date>.jsonl` and exports remotely when configured. |
-
-### `list_teams`
-Lists all available team templates with members, focus, and promotion gates.
+| `lib/worker/trace.mjs` | `emitTraceEvent({rootDir, eventType, traceId, …})`: writes `~/.construct/projects/<key>/traces/<date>.jsonl` and exports remotely when configured. |
 
 ### `suggest_skills`
 Ranks skills from the central catalog for a natural-language intent.
@@ -309,28 +310,28 @@ Ranks skills from the central catalog for a natural-language intent.
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `intent` | string | Yes | Task description or keywords |
-| `specialistId` | string | No | Optional cx-* id for entitlement hints |
+| `specialistId` | string | No | Optional Worker Profile id for entitlement hints (e.g. `reviewer`) |
 | `limit` | number | No | Max suggestions |
 
 ---
 
 ## Telemetry tools
 
-### `cx_trace`
-Records an agent trace through the shared telemetry adapter. Local JSONL capture is always available; remote export is optional.
+### `construct_trace`
+Records a Construct execution trace through the shared telemetry adapter.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `name` | string | Yes | Agent name (e.g. `cx-engineer`) |
+| `name` | string | Yes | Worker Profile or workflow name |
 | `id` | string | No | Trace UUID (auto-generated if omitted) |
 | `session_id` | string | No | Session ID to group related spans |
 | `metadata` | object | No | Extra metadata |
 | `input` | string or object | No | Agent goal or user request |
 | `output` | string or object | No | Agent deliverable or response |
 
-Returns: `{ trace_id }`: pass to `cx_score` and `cx_trace_update`.
+Returns: `{ trace_id }`: pass to `construct_score` and `construct_trace_update`.
 
-### `cx_trace_update`
+### `construct_trace_update`
 Updates an existing telemetry trace with output and metadata.
 
 | Parameter | Type | Required | Description |
@@ -339,7 +340,7 @@ Updates an existing telemetry trace with output and metadata.
 | `output` | string or object | No | Final output |
 | `metadata` | object | No | Additional metadata to merge |
 
-### `cx_score`
+### `construct_score`
 Attaches a quality score to a trace through the shared telemetry adapter.
 
 | Parameter | Type | Required | Description |
@@ -374,7 +375,7 @@ Searches the observation store for patterns, decisions, and insights across sess
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `query` | string | Yes | Semantic search query |
-| `role` | string | No | Filter by specialist role |
+| `role` | string | No | Filter by Worker Profile id |
 | `category` | string | No | Filter by category: `pattern`, `anti-pattern`, `dependency`, `decision`, `insight` |
 | `project` | string | No | Filter by project name |
 | `limit` | number | No | Max results (default: 10) |
@@ -472,14 +473,14 @@ Looks up current data for a configured repo, project, or team. Resolves the righ
 | `root_dir` | string | No | Data root override |
 
 ### `provider_write`
-Destructive. Governed external write to a contract-adapter provider (`jira`, `confluence`, `github`). `dry_run` defaults to `true` and only renders the would-write diff from the adapter's validation path (`renderDryRun`) — no network call, no side effect. Executing (`dry_run: false`) requires the out-of-band destructive-gate `approval_token`; the write then dispatches through the J2 envelope (`lib/writes/envelope.mjs`) — idempotency key, sent-log dedup, retry, audit — to the governed-write adapter. The adapter's `write()` is never called directly by this tool. When `specialist_id` names an embedded specialist, the proposed `<provider>.<item.type>` token is checked against that specialist's LMCP-E4 `embedBindings` grant before either mode proceeds.
+Destructive. Governed external write to a contract-adapter provider (`jira`, `confluence`, `github`). `dry_run` defaults to `true` and only renders the would-write diff from the adapter's validation path (`renderDryRun`) — no network call, no side effect. Executing (`dry_run: false`) requires the out-of-band destructive-gate `approval_token`; the write then dispatches through the J2 envelope (`lib/writes/envelope.mjs`) — idempotency key, sent-log dedup, retry, audit — to the governed-write adapter. The adapter's `write()` is never called directly by this tool. When `specialist_id` names an embedded Worker Profile, the proposed `<provider>.<item.type>` token is checked against that profile's LMCP-E4 `embedBindings` grant before either mode proceeds.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `provider` | string | Yes | `jira` \| `confluence` \| `github` |
 | `item` | object | Yes | Write payload; shape depends on provider (e.g. `{ type: 'issue', project, summary }` for jira) |
 | `dry_run` | boolean | No | Default `true`. When `true`, returns the validated diff only. |
-| `specialist_id` | string | No | Embedded-specialist caller id; enforces that specialist's embedBindings grant. |
+| `specialist_id` | string | No | Embedded Worker Profile caller id; enforces that profile's embedBindings grant. |
 | `idempotency_key` | string | No | Explicit idempotency key forwarded to the J2 envelope. |
 | `approval_token` | string | Required to execute | Out-of-band destructive-gate token. |
 
@@ -495,7 +496,7 @@ Initialize a new workflow for the current project. Creates plan.md state if not 
 | `spec_ref` | string | Optional reference to a spec/PRD/ADR id this workflow implements. |
 
 ### `workflow_add_task`
-Add a task to the current workflow. Pass `request` for intent-based routing (the classifier picks track + specialist) or pass explicit task fields (`key`, `title`, etc.) for manual entry.
+Add a task to the current workflow. Pass `request` for intent-based routing (the classifier picks track + Worker Profile) or pass explicit task fields (`key`, `title`, etc.) for manual entry.
 
 | Parameter | Type | Description |
 |---|---|---|
@@ -504,15 +505,15 @@ Add a task to the current workflow. Pass `request` for intent-based routing (the
 | `key` | string | Stable task key (e.g. T-001). Generated when omitted. |
 | `title` | string | Short task title. |
 | `phase` | string | Phase bucket (plan, build, validate, ship, etc.). |
-| `owner` | string | Specialist or persona that owns the task. |
+| `owner` | string | Worker Profile that owns the task. |
 | `files` | array | File paths this task touches. |
 | `readFirst` | array | Files the owner should read before editing. |
 | `doNotChange` | array | Files/regions the owner must not modify. |
 | `acceptanceCriteria` | array | Acceptance criteria as a checklist. |
 | `verification` | string | Command(s) or description of how to verify the task is done. |
 | `dependsOn` | array | Task keys this task depends on. |
-| `overlays` | array | Role flavors that augment the owner persona for this task. |
-| `challengeRequired` | boolean | Force a cx-reviewer challenge (devil's-advocate overlay) before the task can complete. |
+| `overlays` | array | Role flavors that augment the owner Worker Profile for this task. |
+| `challengeRequired` | boolean | Force a `reviewer` challenge (devil's-advocate overlay) before the task can complete. |
 | `challengeStatus` | string | Initial challenge status when seeded. |
 | `tokenBudget` | number | Per-task token budget for cost tracking. |
 | `status` | string | Initial status override. |
@@ -525,7 +526,7 @@ Update fields on an existing workflow task. Requires the task `key`. Only fields
 | `cwd` | string | Project root (default: server cwd). |
 | `key` | string | **required** — Task key to update. |
 | `status` | string | New status (pending, in_progress, blocked_needs_user, blocked_by_dep, done, etc.). |
-| `owner` | string | New owner persona. |
+| `owner` | string | New owner Worker Profile. |
 | `phase` | string | New phase bucket. |
 | `note` | string | Append-only progress note. |
 | `verification` | string | Updated verification description. |
@@ -540,24 +541,24 @@ Mark a workflow task as blocked pending user input. Sets status to blocked_needs
 |---|---|---|
 | `cwd` | string | Project root (default: server cwd). |
 | `taskKey` | string | **required** — Task key to mark blocked. |
-| `worker` | string | Specialist that needs input (default: current owner). |
+| `worker` | string | Worker Profile that needs input (default: current owner). |
 | `blocker` | string | **required** — One-line description of what is blocking progress. |
 | `question` | string | **required** — The specific question to put to the user. |
 
 ### `workflow_validate`
-Validate the current workflow state against the schema and run consistency checks (no orphan tasks, no circular dependencies, every owner resolves to a known persona).
+Validate the current workflow state against the schema and run consistency checks (no orphan tasks, no circular dependencies, every owner resolves to a known Worker Profile).
 
 | Parameter | Type | Description |
 |---|---|---|
 | `cwd` | string | Project root (default: server cwd). |
 
 ### `workflow_contract_validate`
-Validate a producer→consumer handoff against specialists/contracts.json. Required when a specialist hands off to another role: enforces input.mustContain, output schema, disk-artifact postconditions, and binary postconditions per producer (rubber-stamp prevention, post-hoc threat-model prevention, etc.). Self-enforcing: a producer with binary rules MUST pass `packet`, or the call itself is a contract violation.
+Validate a producer→consumer handoff against Capability postconditions in `registry/capabilities.json`. Required when one Worker Profile hands off to another: enforces input.mustContain, output schema, disk-artifact postconditions, and binary postconditions per producer (rubber-stamp prevention, post-hoc threat-model prevention, etc.). Self-enforcing: a producer with binary rules MUST pass `packet`, or the call itself is a contract violation.
 
 | Parameter | Type | Description |
 |---|---|---|
-| `producer` | string | **required** — Producer agent or persona name (e.g. cx-reviewer, cx-security). |
-| `consumer` | string | **required** — Consumer agent or persona name receiving the handoff. |
+| `producer` | string | **required** — Producer Worker Profile id (e.g. `reviewer`, `security`). |
+| `consumer` | string | **required** — Consumer Worker Profile id receiving the handoff. |
 | `id` | string | Optional contract id; overrides producer/consumer lookup. |
 | `artifact` | object | The handoff payload to validate against the contract schema and disk-artifact postconditions. |
 | `packet` | object | The producer's in-memory output packet. REQUIRED when the producer has binary postconditions; omitting it is itself a contract violation. |
@@ -578,51 +579,49 @@ Bulk-add tasks from a markdown plan to the current workflow. Parses headings and
 | `title` | string | Workflow title to set if the workflow is newly created. |
 | `spec_ref` | string | Spec reference to associate with the workflow. |
 
-## Profile, outcomes & learning tools
+## Workspace Preset, outcomes, and learning tools
 
-### `scope_show`
-Return the active Construct org profile (id, displayName, roles, departments, intake taxonomy, doc templates). Use when a specialist needs to know which role set, classification taxonomy, or doc templates apply before drafting work.
+### `workspace_preset_show`
+Return a Workspace Preset with its skills, procedures, artifact classes, intake taxonomy, hooks, and display settings.
 
 | Parameter | Type | Description |
 |---|---|---|
 | `cwd` | string | Project root (default: server cwd). |
-| `id` | string | Force a specific profile id instead of resolving from config. |
+| `id` | string | Resolve a specific Workspace Preset instead of the configured preset. |
 
-### `scope_list`
-List the curated org profile catalog (rnd, operations, creative, research) with role/department counts. Use to discover which profiles are available before suggesting `construct scope set`.
+### `workspace_preset_list`
+List the canonical Workspace Preset catalog with Skill and Procedure counts.
 
 _No parameters._
 
-### `scope_drafts`
-List in-progress draft profiles under `.construct/profiles/draft-*` and any user-defined custom profile at `.construct/scope.json`. Use to see what profile work is pending before scaffolding another draft.
+### `workspace_preset_drafts`
+List draft Workspace Presets under `.construct/workspace-presets/draft-*`.
 
 | Parameter | Type | Description |
 |---|---|---|
 | `cwd` | string | Project root (default: server cwd). |
 
-### `scope_health`
-Per-profile health rollup over a window: observation count, per-role outcome runs and success rates. Use to check whether a profile is producing data before recommending changes or archive.
+### `workspace_preset_health`
+Return outcome runs and success rates for a Workspace Preset over a time window.
 
 | Parameter | Type | Description |
 |---|---|---|
 | `cwd` | string | Project root (default: server cwd). |
-| `id` | string | Profile id (default: active profile). |
+| `id` | string | Workspace Preset id (default: active preset). |
 | `window_days` | number | Window in days (default 30). |
 
-### `scope_create`
-Scaffold a draft org profile under `.construct/profiles/draft-<id>/` (requirements.md + profile.json + persona stubs + department charters). Writes durable state — requires `confirm=true`. For curated catalog work, follow `docs/guides/concepts/profile-lifecycle.md` after creation.
+### `workspace_preset_create`
+Scaffold a draft Workspace Preset under `.construct/workspace-presets/draft-<id>/`. Requires `confirm=true`.
 
 | Parameter | Type | Description |
 |---|---|---|
 | `confirm` | boolean | **required** — Must be true. |
 | `cwd` | string |  |
-| `id` | string | **required** — Profile id (^[a-z][a-z0-9-]{1,30}$). |
+| `id` | string | **required** — Workspace Preset id (^[a-z][a-z0-9-]{1,30}$). |
 | `display_name` | string |  |
-| `seed_roles` | array | Role ids to scaffold persona files for (cap 80). |
-| `seed_departments` | array | Departments to scaffold charters for (cap 12). |
 
-### `scope_archive`
-Archive a curated profile: moves `profiles/<id>.json` and its intake table into `archive/profiles/<id>/` with an archive note. Destructive — requires `confirm=true` and a substantive `reason` (>=8 chars). Observations and outcomes are preserved.
+### `workspace_preset_archive`
+Archive a canonical Workspace Preset under `archive/workspace-presets/<id>/`. Destructive; requires `confirm=true` and a substantive reason.
 
 | Parameter | Type | Description |
 |---|---|---|
@@ -631,7 +630,7 @@ Archive a curated profile: moves `profiles/<id>.json` and its intake table into 
 | `reason` | string | **required** — Substantive reason (>= 8 chars). |
 
 ### `outcomes_summary`
-Read `.construct/outcomes/_summary.json` (per-role success rate, 30-day trend). Pass `aggregate=true` to rebuild the summary from JSONL outcome files first. Use to ground tiebreakers and improvement suggestions in real specialist performance.
+Read `.construct/outcomes/_summary.json` (per-role success rate, 30-day trend). Pass `aggregate=true` to rebuild the summary from JSONL outcome files first. Use to ground tiebreakers and improvement suggestions in real Worker Profile performance.
 
 | Parameter | Type | Description |
 |---|---|---|
@@ -639,13 +638,13 @@ Read `.construct/outcomes/_summary.json` (per-role success rate, 30-day trend). 
 | `aggregate` | boolean | Rebuild `_summary.json` before reading (default false). |
 
 ### `outcomes_record`
-Append a specialist outcome line to `.construct/outcomes/<role>.jsonl` (writes durable state — requires `confirm=true`). Use when a specialist wants to self-report success/failure outside the automatic agent-tracker path.
+Append a Worker Profile outcome line to `.construct/outcomes/<role>.jsonl` (writes durable state — requires `confirm=true`). Use when a Worker Profile wants to self-report success/failure outside the automatic agent-tracker path.
 
 | Parameter | Type | Description |
 |---|---|---|
 | `confirm` | boolean | **required** — Must be true. |
 | `cwd` | string |  |
-| `role` | string | **required** — Specialist id (e.g. cx-engineer, product-manager). |
+| `role` | string | **required** — Worker Profile id (e.g. `engineer`, `product-manager`). |
 | `success` | boolean | **required** —  |
 | `intake_id` | string |  |
 | `profile` | string | Override active profile id stamp. |
@@ -688,7 +687,7 @@ One-shot mirror of `npm run learning:status`: active profile, observation counts
 | `cwd` | string | Project root (default: server cwd). |
 
 ### `sandbox_list`
-List Construct sandboxes under `~/.cx/sandboxes/` (id, path, createdAt). Use to find an isolated environment for QA or dry-runs without polluting the active project.
+List Construct sandboxes under `~/.construct/sandboxes/` (id, path, createdAt). Use to find an isolated environment for QA or dry-runs without polluting the active project.
 
 _No parameters._
 
@@ -714,7 +713,7 @@ reach this contract through the synced Construct MCP server.
 Plans a manifest-backed artifact workflow, or performs only locally observable
 validation/export after `approval_mode: allow-durable-write`. The response
 separates planned, executed, and skipped steps; it never presents a planned
-specialist review or rewrite as completed execution.
+Worker Profile review or rewrite as completed execution.
 
 Every artifact-workflow run reports a **completion ledger** — a chronological record of evidence backing each state advancement. An artifact's completionState is the highest rung of the 12-state ladder (planned → authored → structurally-valid → source-linted → exported → file-valid → renderable → screenshot-captured → visually-reviewed → accessibility-reviewed → approved → completed) for which it holds re-verifiable evidence. A state advances only with an explicit evidence object; missing tools are recorded as typed degradations (missing-dependency, unavailable-renderer, etc.) without advancing the ladder. See **[Artifact Completion States](artifact-completion-states.md)** for the full ladder and no-forgery invariant.
 
@@ -755,23 +754,24 @@ Classify an artifact and return a role-aware plan (primary owner, role chain wit
 | `constraints` | array | Optional constraints (advisory). |
 | `available_roles` | array | Restrict the plan to these role ids; dropped roles are reported as warnings. |
 
-### `workflow_invoke`
-Invoke a named Construct workflow (roles/skills) non-interactively and return a provenanced execution plan: selected roles, rationale, applied skills, resolved model, evidence requirements, output contract, risks, and a traceId. Construct returns the orchestration plan; the host runtime performs specialist reasoning. Durable writes occur ONLY when approval_mode is allow-durable-write; proposal-only and requires-human-approval perform no durable writes.
+### `procedure_invoke`
+Invoke a named Construct Procedure non-interactively and return a provenanced execution plan: selected Worker Profiles, rationale, applied Skills, resolved model, evidence requirements, output contract, risks, and a traceId. Construct returns the orchestration plan; the host runtime performs the reasoning. Durable writes occur ONLY when approval_mode is allow-durable-write; proposal-only and requires-human-approval perform no durable writes.
 
 | Parameter | Type | Description |
 |---|---|---|
-| `workflow_type` | string | **required** — One of: evidence-ingest, proposal-review, prd-draft, architecture-review, risk-review, research-synthesis. |
-| `input` | string | Artifact text the workflow operates on. Provide this OR file_path. |
+| `procedure_id` | string | **required** — One of the registered Procedure ids, such as evidence-ingest, proposal-review, prd-draft, architecture-review, risk-review, or research-synthesis. |
+| `workflow_type` | string | Deprecated alias for `procedure_id` (Construct 1.0). Prefer `procedure_id`; accepted for one release when `procedure_id` is absent. |
+| `input` | string | Artifact text the procedure operates on. Provide this OR file_path. |
 | `file_path` | string | Path to a file to extract (docling/whisper/transcript) and operate on, used when input is absent. |
 | `context` | object | Optional structured context; keys matching evidence requirements mark them satisfied. |
-| `role_strategy` | string | auto = default chain; explicit = use requested_roles; constrained = default chain intersected with requested_roles. |
-| `requested_roles` | array | Role ids for explicit/constrained strategies. |
-| `approval_mode` | string | Gate for durable writes (default: the workflow type default). |
+| `worker_profile_strategy` | string | auto = default Assignment set; explicit = use requested_worker_profiles; constrained = default set intersected with requested_worker_profiles. |
+| `requested_worker_profiles` | array | Worker Profile ids for explicit/constrained strategies. |
+| `approval_mode` | string | Gate for durable writes (default: the procedure default). |
 | `trace` | boolean | Emit a traceId for provenance correlation (default true). |
 | `host` | string | Host/IDE identifier (advisory). |
 | `host_model` | string | Model the host uses, for model resolution. |
 | `host_provider` | string | Provider family the host uses, for model resolution. |
-| `recruitment` | string | Signal-driven recruitment onto the manifest chain (construct-pteo2.9): `auto` (default) appends recruits, `off` disables. Recruits and their reasons return in `recruitment`; under `allow-durable-write` they are also recorded in the `.cx/observations` decision trace (construct-pteo2.18). |
+| `recruitment` | string | Signal-driven recruitment onto the manifest chain: `auto` (default) appends recruits, `off` disables. Recruits and their reasons return in `recruitment`; under `allow-durable-write` they are also recorded in the `.construct/observations` decision trace. |
 
 ### `capability_describe`
 Describe what this Construct install can do: versions, contract interfaces (CLI/MCP/SDK), roles, skills, workflows, schemas, models/providers, policies, telemetry posture, and plugins. Read-only and secret-free — provider entries carry env-key names and a configured boolean only, never credential values. Reads live registries so the published contract cannot drift from reality.
@@ -781,7 +781,7 @@ Describe what this Construct install can do: versions, contract interfaces (CLI/
 | `root_dir` | string | Optional Construct install root (default: server toolkit dir). |
 
 ### `construct_execution_resolve`
-Resolve the execution-capability contract for an embedded workflow before/at workflow start: `executionMode` (construct-orchestrated | construct-prompt-only | host-direct | same-family-fallback), `constructCapabilitiesActive` (subset of personas/skills/workflow-routing/prompt-envelope), `degraded` + machine-readable `degradationReason`, `requestedStrategy` vs `effectiveStrategy`, and the resolved provider/model. Descriptive, not enforced (ADR-0019): reports what Construct planned and can resolve a model for, never an observation that the host ran personas (see the `semantics` field). Read-only and secret-free.
+Resolve the execution-capability contract for an embedded workflow before/at workflow start: `executionMode` (construct-orchestrated | construct-prompt-only | host-direct | same-family-fallback), `constructCapabilitiesActive` (subset of Worker Profiles/skills/procedure-routing/prompt-envelope), `degraded` + machine-readable `degradationReason`, `requestedStrategy` vs `effectiveStrategy`, and the resolved provider/model. Descriptive, not enforced (ADR-0019): reports what Construct planned and can resolve a model for, never an observation that the host ran internal profiles (see the `semantics` field). Read-only and secret-free.
 
 | Parameter | Type | Description |
 |---|---|---|
@@ -805,15 +805,15 @@ Search the public web and return CITED results — the only search surface that 
 | `recency` | string | Optional freshness window hint (e.g. `30d`). |
 
 ### `orchestration_run`
-Execute a real multi-specialist orchestration run and return per-specialist output — the executing counterpart to `workflow_invoke` (which only plans). For MCP hosts with no subagent primitive (VS Code/Copilot, Cursor), this is how a specialist chain actually runs: the engine owns orchestration, the tool is the thin client (ADR-0022). Solo runs execute in-process — no daemon, no port, no token; a remote/team orchestration service is opt-in via `CONSTRUCT_ORCHESTRATION_URL`.
+Execute a real multi-profile orchestration run and return per-Assignment output — the executing counterpart to `procedure_invoke` (which only plans). For MCP hosts with no subagent primitive (VS Code/Copilot, Cursor), this is how a Worker Profile chain actually runs: the engine owns orchestration, the tool is the thin client (ADR-0022). Solo runs execute in-process — no daemon, no port, no token; a remote/team orchestration service is opt-in via `CONSTRUCT_ORCHESTRATION_URL`.
 
-Three worker backends. `host` (the default for MCP-originated runs when neither `worker_backend` nor `construct.config.json`'s `orchestration.workerBackend` is set) materializes each specialist's prompt without spending any provider API credits — the calling host executes it in its own model session (the subscription it is already running under) and submits the result via `orchestration_task_result`; when the connected client declares the MCP `sampling` capability, construct-mcp instead drives that same loop itself (ADR-0063) and the run can complete in this same call. `provider` executes specialists against a configured provider key (real API spend). `inline` only prepares tasks — no execution at all (this stays the CLI's own default; the CLI has no attached host session to execute a `host`-backend run against).
+Three worker backends. `host` (the default for MCP-originated runs when neither `worker_backend` nor `construct.config.json`'s `orchestration.workerBackend` is set) materializes each Worker Profile's prompt without spending any provider API credits — the calling host executes it in its own model session (the subscription it is already running under) and submits the result via `orchestration_task_result`; when the connected client declares the MCP `sampling` capability, construct-mcp instead drives that same loop itself (ADR-0063) and the run can complete in this same call. `provider` executes Worker Profiles against a configured provider key (real API spend). `inline` only prepares tasks — no execution at all (this stays the CLI's own default; the CLI has no attached host session to execute a `host`-backend run against).
 
 A `host`-backend run whose materialization completes returns `status: 'awaiting-host'` — a real, non-terminal standing state (never rendered as `completed` or `degraded`) — plus every task's materialized `system`/`user` prompt and a `hostInstructions` string describing exactly what to do next.
 
-The response's `specialists` field is the real, dispatched role list — authoritative. `routePath.specialistSequence` can be non-empty even when `specialists`/`tasks` are empty: a short request with no scope signal (no `file_count`/`module_count`, no "end to end"/"ship"/"full" keyword) can classify as trivial and dispatch zero specialists even with `requested_strategy: "orchestrated"`, while `routePath` still shows the specialist a *focused* classification would have picked, for display purposes. Read `specialists`/`tasks`, not `routePath`, to know what actually ran.
+The response's `assignments` field is the real, dispatched role list — authoritative. `routePath.assignmentSequence` can be non-empty even when `assignments`/`tasks` are empty: a short request with no scope signal (no `file_count`/`module_count`, no "end to end"/"ship"/"full" keyword) can classify as trivial and dispatch zero Worker Profiles even with `requested_strategy: "orchestrated"`, while `routePath` still shows the profile a *focused* classification would have picked, for display purposes. Read `assignments`/`tasks`, not `routePath`, to know what actually ran.
 
-Pass `candidates` to route pre-retrieved artifacts to specialists as role-aware context (D3). The caller does retrieval up front; each dispatched specialist's prompt then carries a trust-wrapped `## Role context` section holding only the artifact kinds its role policy prefers, within a token budget — a `target-file` reaches the engineer, a `prd` the product-manager, and a kind on a role's avoid list never reaches it. A `kind: "skill"` candidate is dropped for any role not entitled to that skill. The candidate list is snapshotted on the run, so a `provider`-executed and a `host`-executed task materialize the same context bytes. Omit `candidates` for no injected context (byte-identical to a pre-D3 prompt).
+Pass `candidates` to route pre-retrieved artifacts to Worker Profiles as role-aware context (D3). The caller does retrieval up front; each dispatched profile's prompt then carries a trust-wrapped `## Role context` section holding only the artifact kinds its role policy prefers, within a token budget — a `target-file` reaches the engineer, a `prd` the product-manager, and a kind on a role's avoid list never reaches it. A `kind: "skill"` candidate is dropped for any role not entitled to that skill. The candidate list is snapshotted on the run, so a `provider`-executed and a `host`-executed task materialize the same context bytes. Omit `candidates` for no injected context (byte-identical to a pre-D3 prompt).
 
 | Parameter | Type | Description |
 |---|---|---|
@@ -824,37 +824,25 @@ Pass `candidates` to route pre-retrieved artifacts to specialists as role-aware 
 | `host` | string | Host/IDE identifier (advisory). |
 | `host_model` | string | Model the host uses, for model resolution. |
 | `host_provider` | string | Provider family the host uses, for model resolution. |
-| `file_count` | number | Optional planning hint: number of files in scope. Pass this (or `module_count`) when the work has real scope — see the specialists/routePath note above. |
+| `file_count` | number | Optional planning hint: number of files in the work boundary. Pass this (or `module_count`) when the Assignment has real breadth — see the routePath note above. |
 | `module_count` | number | Optional planning hint: number of modules in scope. |
 | `context_targets` | array | Optional registered source targets to bind for context (`[{id, role?}]`); an unknown id is rejected at plan time. |
-| `candidates` | array | Optional pre-retrieved artifacts routed to specialists as role-aware context (`[{path, title, kind, summary, score?, skillId?}]`). Filtered per role by the context policy; a `kind: "skill"` entry is dropped for any role not entitled to it. |
-| `context_budget` | object | Optional `{maxTokens}` cap for the injected role context (default ~6000 tokens per specialist). |
+| `candidates` | array | Optional pre-retrieved artifacts routed to Worker Profiles as role-aware context (`[{path, title, kind, summary, score?, skillId?}]`). Filtered per role by the context policy; a `kind: "skill"` entry is dropped for any role not entitled to it. |
+| `context_budget` | object | Optional `{maxTokens}` cap for the injected role context (default ~6000 tokens per profile). |
 | `wait` | boolean | Wait for a terminal state and return task output (default true); `false` returns the runId to poll. |
 | `timeout_ms` | number | Max wait when `wait=true` (default 120000); on timeout the runId is returned to poll. |
 
 ### `orchestration_task_result`
-Submit one host-executed specialist task result for a run planned with `worker_backend=host` (Phase 1 of the host worker backend, ADR-0063). `orchestration_run` returns each task's materialized prompt without executing it; execute that prompt as the named specialist role, then call this tool with the output. The response carries `next_task` (the next awaiting prompt) or `null` once the run is terminal — loop until `null`. Reachable via the `call` gateway (self-registered, non-core tool). Recorded fields are host-reported (`provenanceSource: 'host-reported'`) — self-reported, never independently verified, and never rendered identically to a `provider`-executed task's shape.
+Submit one host-executed Worker Profile task result for a run planned with `worker_backend=host` (Phase 1 of the host worker backend, ADR-0063). `orchestration_run` returns each task's materialized prompt without executing it; execute that prompt as the named Worker Profile, then call this tool with the output. The response carries `next_task` (the next awaiting prompt) or `null` once the run is terminal — loop until `null`. Reachable via the `call` gateway (self-registered, non-core tool). Recorded fields are host-reported (`provenanceSource: 'host-reported'`) — self-reported, never independently verified, and never rendered identically to a `provider`-executed task's shape.
 
 | Parameter | Type | Description |
 |---|---|---|
 | `run_id` | string | **required** — The run id from `orchestration_run`. |
 | `task_id` | string | **required** — The task id this result answers (e.g. `t1`). |
-| `output` | string | **required** — The specialist output produced. Must be non-empty. |
+| `output` | string | **required** — The Worker Profile output produced. Must be non-empty. |
 | `model` | string | Optional: the model used to execute this task (self-reported). |
 | `provider` | string | Optional: the provider/vendor family used (self-reported). |
 | `reasoning` | string | Optional: reasoning/thinking for this task, if disclosed. |
-
-### `participation_rules`
-Author and inspect ADR-0070 participation rules — condition-driven `when(signals) → recruit(specialists|teams)` declarations with role and gate semantics (construct-pteo2.16). Every action is a thin envelope over `lib/registry/org-api.mjs`, the same writer `construct participation` and Org Studio's participation canvas wrap, so all three surfaces produce identical config writes and identical validation errors. Writes land in the project or user tier only; the builtin tier is refused at the shared org-api layer.
-
-| Parameter | Type | Description |
-|---|---|---|
-| `action` | string | **required** — One of `list`, `show`, `add`, `validate`, `remove`, `preview`, `meta`. |
-| `owner` | string | Owning specialist or team id the rule attaches to (`show`/`add`/`validate`/`remove`). |
-| `rule_id` | string | Rule id (`show`/`remove`). |
-| `rule` | object | The participation rule (`add`/`validate`), `schemas/participation-rules.schema.json` shape. |
-| `request` | string | Sample request text (`preview` — recruited set via the live `requestSignals` + recruiter path). |
-| `scope` | string | Write tier for `add`/`remove`: `project` (default) or `user`. |
 
 ### `orchestration_readiness`
 Report whether this MCP session has Construct orchestration tools attached and reachable now. Returns a pass/fail verdict, typed `reasonCode`, one deterministic `nextStep`, required/observed/missing tools, and a redacted diagnostic bundle. This is an observed attachment check, unlike `construct_execution_resolve`, which remains a descriptive planning/model-resolution contract.
@@ -887,14 +875,46 @@ Request cancellation of an in-progress orchestration run by `run_id`. A soft, co
 | Parameter | Type | Description |
 |---|---|---|
 | `run_id` | string | **required** — Run id to cancel. |
+### `list_worker_profiles`
 
-## Telemetry (additional)
+Lists canonical Worker Profiles available from the registry.
 
-### `cx_trace_telemetry`
-Record a single CX telemetry trace for an agent invocation. Use to log start/end, model used, token cost, and outcome verdict for performance review.
+### `get_worker_profile`
 
-| Parameter | Type | Description |
-|---|---|---|
-| `agent` | string | **required** — Agent or persona name being traced. |
-| `trace` | object | **required** — Trace record: start_ts, end_ts, model, tokens, verdict, notes, etc. |
-| `cwd` | string | Project root (default: server cwd). |
+Reads one canonical Worker Profile by id.
+
+### `list_procedures`
+
+Lists canonical Procedures available from the registry.
+
+### `get_procedure`
+
+Reads one canonical Procedure by id.
+
+### `list_capabilities`
+
+Lists canonical capabilities available from the registry.
+
+### `get_capability`
+
+Reads one canonical capability by id.
+
+### `list_policies`
+
+Lists canonical policies available from the registry.
+
+### `get_policy`
+
+Reads one canonical policy by id.
+
+### `construct_trace`
+
+Reads Construct execution trace records.
+
+### `construct_score`
+
+Reads Construct outcome scores.
+
+### `construct_trace_update`
+
+Appends an update to a Construct trace record.

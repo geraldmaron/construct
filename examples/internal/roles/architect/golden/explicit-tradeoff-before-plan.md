@@ -6,8 +6,8 @@ category: golden
 verdict: pass
 summary: Makes interface and dependency tradeoffs explicit before locking in a plan.
 references:
-  - skills/roles/architect.md
-  - specialists/prompts/cx-architect.md
+  - skills/perspectives/architect.md
+  - registry/worker-profiles/prompts/architect.md
 tags:
   - tradeoffs
   - contracts

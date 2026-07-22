@@ -1,3 +1,11 @@
+// Construct project config — JSONC: comments and a trailing comma are allowed.
+// Uncomment/edit a value to override its default; commented lines never take effect.
+//
+//   deployment.mode:      "solo" | "team" | "enterprise"
+//   deployment.mcpBroker: "auto" | "on" | "off"
+//   model tiers ("fast" | "standard" | "reasoning") are set via
+//   `construct models set` / CONSTRUCT_MODEL_* env, not in this file.
+
 {
   "version": 1,
   "alias": "Construct",
@@ -5,13 +13,69 @@
     "mode": "solo",
     "mcpBroker": "auto",
     "projectName": null,
+    "projectKey": null,
     "tenantId": null
   },
   "providers": {},
-  "scope": "rnd",
+  "sources": {
+    "targets": [
+      {
+        "id": "monitor-github-acme-api",
+        "provider": "github",
+        "selector": {
+          "repo": "acme/api"
+        },
+        "provenance": "monitor:github:acme/api"
+      },
+      {
+        "id": "monitor-jira-plat",
+        "provider": "jira",
+        "selector": {
+          "project": "PLAT"
+        },
+        "provenance": "monitor:jira:PLAT"
+      }
+    ]
+  },
+  "intakePolicy": {
+    "maxDepth": 4,
+    "additionalDirs": []
+  },
+  "artifactWorkflow": {
+    "defaults": {},
+    "types": {}
+  },
+  "workspacePreset": "rnd",
   "autoEmbed": true,
+  "ingest": {
+    "strategy": "adapter",
+    "fallback": "none",
+    "orchestration": "prompt-only"
+  },
+  "orchestration": {
+    "workerBackend": "provider",
+    "store": "filesystem",
+    "chainOfThought": "hidden",
+    "hostExecution": "auto",
+    "outcomeRouting": "on"
+  },
   "telemetry": {
     "enabled": true
+  },
+  "hooks": {
+    "outputMode": "auto"
+  },
+  "models": {
+    "visibility": {
+      "mode": "tier_defaults",
+      "include": [],
+      "exclude": [],
+      "providers": {}
+    },
+    "catalog": {
+      "liveOpenRouter": true,
+      "maxLiveFree": 24
+    }
   },
   "resources": {
     "disk": {
@@ -26,7 +90,9 @@
       "backupsMaxDays": 60,
       "handoffsMaxDays": 30,
       "handoffsMaxItems": 50,
-      "totalCxMaxMb": 2000
+      "totalConstructMaxMb": 2000,
+      "observationsMaxDays": 90,
+      "observationsMaxRows": 5000
     },
     "process": {
       "embedDaemonMaxRssMb": 800,

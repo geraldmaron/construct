@@ -4,7 +4,7 @@
  * Regression guard for construct-ia8b. `construct doctor` is a health *check*
  * and must be side-effect-free on tracked repo source: it must never delete or
  * modify committed files (lib/, bin/, tests/, docs/, apps/, scripts/,
- * templates/, skills/, rules/, schemas/, registry/, specialists/). The ia8b
+ * templates/, skills/, rules/, schemas/, registry/). The ia8b
  * report turned out to be a misattribution of concurrent agent edits in a shared
  * tree, but this test locks the invariant so any future doctor change that
  * mutates source is caught.
@@ -29,7 +29,7 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
 
-const SOURCE_DIRS = ['lib/', 'bin/', 'tests/', 'docs/', 'apps/', 'scripts/', 'templates/', 'skills/', 'rules/', 'schemas/', 'registry/', 'specialists/'];
+const SOURCE_DIRS = ['lib/', 'bin/', 'tests/', 'docs/', 'apps/', 'scripts/', 'templates/', 'skills/', 'rules/', 'schemas/', 'registry/'];
 
 const SENTINELS = [
   'bin/construct-postinstall.mjs',

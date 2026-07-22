@@ -1,0 +1,7 @@
+From: Notifications <notify@example.com>
+To: Bob Boone <bob@example.com>
+Subject: Your weekly digest
+Date: Fri, 17 Jul 2026 09:05:00 -0400
+Content-Type: text/html; charset=utf-8
+
+<html><body><p>Hello <b>Bob</b>,</p><p>Here is your <a href="https://example.com/digest">weekly digest</a>.</p></body></html>

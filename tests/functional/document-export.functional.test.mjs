@@ -24,8 +24,10 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-import { detect, exportMarkdown, EXPORT_FORMATS, docxRenderedDiagrams, htmlRenderedDiagrams } from '../../lib/document-export.mjs';
+import { detect, exportMarkdown, EXPORT_FORMATS, docxRenderedDiagrams, htmlRenderedDiagrams, assessFigureResolution } from '../../lib/document-export.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
+
+const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 
 const tmpDirs = [];
 
@@ -48,6 +50,21 @@ function writeMarkdown(dir, name = 'doc.md') {
 // Stub pandoc: a tiny node script on a tmpdir PATH that captures its args and
 // writes a recognisable byte sequence to the -o target, so happy-path tests
 // don't need real pandoc and don't depend on system state.
+
+
+function stubFigureBin(dir, name) {
+  const binPath = path.join(dir, name);
+  const script = [
+    '#!/usr/bin/env node',
+    'process.exit(0);',
+  ].join('\n');
+  fs.writeFileSync(binPath, script);
+  fs.chmodSync(binPath, 0o755);
+}
+
+function stubFigureBins(dir) {
+  for (const name of ['d2', 'mmdc', 'dot']) stubFigureBin(dir, name);
+}
 
 function stubPandocPath(prefix = 'cx-export-stub-') {
   const dir = tmpDir(prefix);
@@ -227,4 +244,87 @@ test('htmlRenderedDiagrams rejects raw source and accepts rendered tags', () => 
   fs.writeFileSync(resolved, '<html><body><img src="data:image/png;base64,abc" alt="diagram"></body></html>');
   assert.equal(htmlRenderedDiagrams(unresolved, src), false);
   assert.equal(htmlRenderedDiagrams(resolved, src), true);
+});
+
+test('assessFigureResolution reports figures:unresolved when HTML keeps diagram source', () => {
+  const dir = tmpDir('cx-figure-assess-');
+  const src = '## Flow\n\n```mermaid\nflowchart TD\nA --> B\n```\n';
+  const htmlPath = path.join(dir, 'unresolved.html');
+  fs.writeFileSync(htmlPath, '<html><body><pre>flowchart TD A --> B</pre></body></html>');
+  const assessment = assessFigureResolution('html', htmlPath, src);
+  assert.equal(assessment.resolved, false);
+  assert.equal(assessment.figuresUnresolved, true);
+  assert.equal(assessment.figuresExpected, 1);
+  assert.equal(assessment.figuresRendered, 0);
+});
+
+test('exportMarkdown soft-degrades figures:unresolved when figuresStrict is false', () => {
+  const dir = tmpDir('cx-export-soft-figures-');
+  const { dir: stubDir } = stubPandocPath('cx-export-soft-');
+  stubFigureBins(stubDir);
+  const inputPath = path.join(dir, 'diagrams.md');
+  const outputPath = path.join(dir, 'diagrams.html');
+  fs.writeFileSync(inputPath, '## Flow\n\n```mermaid\nflowchart TD\nA --> B\n```\n');
+  fs.writeFileSync(outputPath, '<html><body><pre>flowchart TD A --> B</pre></body></html>');
+  const env = { ...process.env, PATH: `${stubDir}:${process.env.PATH || ''}` };
+  const spawnFn = (_cmd, args, opts) => {
+    const oIdx = args.indexOf('-o');
+    if (oIdx >= 0 && args[oIdx + 1]) {
+      fs.copyFileSync(outputPath, args[oIdx + 1]);
+    }
+    return { status: 0, stdout: '', stderr: '' };
+  };
+  const result = exportMarkdown({
+    inputPath,
+    outputPath,
+    format: 'html',
+    figures: true,
+    figuresStrict: false,
+    env,
+    spawnFn,
+    repoRoot: REPO,
+    cwd: dir,
+    branding: 'plain',
+  });
+  assert.equal(result.ok, true, result.message);
+  assert.equal(result.figuresUnresolved, true);
+  assert.match(result.message, /figures:unresolved/);
+});
+
+test('typst PDF export passes --extract-media so hashed diagram SVGs resolve', () => {
+  const dir = tmpDir('cx-export-extract-media-');
+  const { dir: stubDir } = stubPandocPath('cx-export-extract-media-stub-');
+  stubFigureBins(stubDir);
+  const inputPath = path.join(dir, 'diagrams.md');
+  const outputPath = path.join(dir, 'diagrams.pdf');
+  fs.writeFileSync(inputPath, '## Flow\n\n```d2\na -> b\n```\n');
+  fs.writeFileSync(outputPath, '%PDF-1.4 stub');
+  const env = { ...process.env, PATH: `${stubDir}:${process.env.PATH || ''}` };
+  let capturedArgs = null;
+  const spawnFn = (_cmd, args) => {
+    capturedArgs = args;
+    const oIdx = args.indexOf('-o');
+    if (oIdx >= 0 && args[oIdx + 1]) {
+      fs.copyFileSync(outputPath, args[oIdx + 1]);
+    }
+    return { status: 0, stdout: '', stderr: '' };
+  };
+  const result = exportMarkdown({
+    inputPath,
+    outputPath,
+    format: 'pdf',
+    figures: true,
+    figuresStrict: false,
+    env,
+    spawnFn,
+    repoRoot: REPO,
+    cwd: dir,
+    branding: 'construct',
+  });
+  assert.equal(result.ok, true, result.message);
+  assert.ok(capturedArgs, 'pandoc spawn was not observed');
+  const extractArg = capturedArgs.find((arg) => String(arg).startsWith('--extract-media='));
+  assert.ok(extractArg, `expected --extract-media=… in ${JSON.stringify(capturedArgs)}`);
+  assert.match(extractArg, /construct-export-media-/);
+  assert.ok(capturedArgs.includes('--lua-filter') || capturedArgs.some((arg) => String(arg).includes('diagram.lua')));
 });

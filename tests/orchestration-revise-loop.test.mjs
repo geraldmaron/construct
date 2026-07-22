@@ -38,8 +38,8 @@ test('critiqueRequestsRevision recognizes the vocabulary real structured reviews
   assert.equal(critiqueRequestsRevision('No high-severity issues; APPROVED.'), false);
 });
 
-const engineerTask = (output) => ({ role: 'cx-engineer', status: 'done', output });
-const reviewerTask = (output) => ({ role: 'cx-reviewer', status: 'done', output });
+const engineerTask = (output) => ({ role: 'engineer', status: 'done', output });
+const reviewerTask = (output) => ({ role: 'reviewer', status: 'done', output });
 
 test('scoreReviseLoop adopts the loop only when the revised artifact covers more role concerns', () => {
   const baseRun = { tasks: [engineerTask('Implemented the login function.')] };

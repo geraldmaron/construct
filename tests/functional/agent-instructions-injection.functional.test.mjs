@@ -74,6 +74,8 @@ test('dedups against a sibling Beads Integration block', () => {
   const without = buildConstructIntegrationBody({ hasBeadsBlock: false });
   assert.match(withBeads, /see the Beads Integration block below/);
   assert.match(without, /run `bd prime`/);
+  assert.doesNotMatch(without, /use Beads \(`bd`\) for all task tracking/i);
+  assert.match(without, /File signals \(opt-in\)/);
 });
 
 test('injectIntoAgentFile preserves an existing file with a beads block', () => {

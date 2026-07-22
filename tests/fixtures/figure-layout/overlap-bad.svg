@@ -1,0 +1,9 @@
+/**
+ * tests/fixtures/figure-layout/overlap-bad.svg — colliding label pair for overlap assessor.
+ *
+ * Intentionally overlapping SVG text labels so assessSvgTextOverlap fails closed.
+ */
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="80">
+  <text x="10" y="30" font-size="16">CollidingLabelA</text>
+  <text x="20" y="32" font-size="16">CollidingLabelB</text>
+</svg>

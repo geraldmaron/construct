@@ -44,8 +44,8 @@ jobs:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
           git fetch origin "$BASE_REF"
-          mkdir -p .cx
-          node ./bin/construct review pr --base="origin/$BASE_REF" --output=.cx/pr-review.json
+          mkdir -p .construct
+          node ./bin/construct review pr --base="origin/$BASE_REF" --output=.construct/pr-review.json
 
       # Fork PRs run with a read-only GITHUB_TOKEN (pull-requests: write is not
       # granted to workflows triggered from forks), so `gh pr comment` fails with
@@ -64,7 +64,7 @@ jobs:
             (if (.findings // []) | length == 0 then "No findings."
              else "### Findings\n\n" + ((.findings | map("- **" + (.severity // "info") + "**: " + (.message // .summary // "(no message)"))) | join("\n"))
              end)
-          ' .cx/pr-review.json)"
+          ' .construct/pr-review.json)"
           if [ "$IS_FORK" = "true" ]; then
             printf '%s\n' "$BODY" >> "$GITHUB_STEP_SUMMARY"
           else

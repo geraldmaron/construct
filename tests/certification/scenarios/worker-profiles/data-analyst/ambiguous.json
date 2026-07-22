@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 2,
+  "workerProfileId": "data-analyst",
+  "capabilityId": "worker-profile.prompt",
+  "mode": "normal",
+  "scenarioKind": "ambiguous",
+  "representativeTask": {
+    "prompt": "Set up tracking for the new referral feature and tell me if it's working.",
+    "inputs": {}
+  },
+  "expectedBehavior": {
+    "mustContainAny": ["which", "define", "behavior change", "success metric", "baseline", "clarify", "assumption"],
+    "mustNotContain": [],
+    "mustRefuse": false,
+    "mustEscalateTo": [],
+    "mustStateAssumptions": true
+  }
+}

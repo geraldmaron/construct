@@ -1,5 +1,7 @@
 # ADR-0046: Modular org layout with runtime registry merge
 
+> **Obsolete paths (Construct 2.0):** `specialists/org/**`, `specialists/unified-registry.json`, and `.cx/org/` overlays are retired. Live registry roots are `registry/worker-profiles/`, `registry/workspace-presets/`, and project state under `.construct/`. Body below is the original modular-layout decision. See `docs/obsolete/legacy-surface-register.md`.
+
 - **Date**: 2026-06-26
 - **Status**: accepted
 - **Deciders**: Gerald Dagher (owner), cx-architect

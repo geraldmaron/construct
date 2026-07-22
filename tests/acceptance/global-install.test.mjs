@@ -124,7 +124,7 @@ test('global install + project init (npm pack -> global install -> 2 projects)',
   });
 
   // lib/paths.mjs resolves the ADR-0066 state root from process.env.HOME /
-  // CX_HOME_OVERRIDE in the CHILD's own env, not this test process's env —
+  // CONSTRUCT_HOME_OVERRIDE in the CHILD's own env, not this test process's env —
   // every spawned `construct` call below (for either project) must be
   // pinned to a throwaway sandbox home or it leaks project-key directories
   // into the real developer machine's ~/.construct/projects/.
@@ -136,7 +136,7 @@ test('global install + project init (npm pack -> global install -> 2 projects)',
     CONSTRUCT_DEPLOYMENT_MODE: 'solo',
     PATH: join(globalPrefix, 'bin') + delimiter + (process.env.PATH || ''),
     HOME: sandboxHome,
-    CX_HOME_OVERRIDE: sandboxHome,
+    CONSTRUCT_HOME_OVERRIDE: sandboxHome,
   };
 
   // ── Step 4: create two independent project dirs ──────────────────────
@@ -177,8 +177,8 @@ test('global install + project init (npm pack -> global install -> 2 projects)',
     assertNoModuleNotFound(output, 'project A init');
     assert.equal(result.status, 0, `project A init exited ${result.status}\n${output}`);
 
-    const cxDir = join(projectA, '.construct');
-    assert.ok(existsSync(cxDir), `.construct/ should exist in project A at ${cxDir}`);
+    const constructDir = join(projectA, '.construct');
+    assert.ok(existsSync(constructDir), `.construct/ should exist in project A at ${constructDir}`);
   });
 
   // ── Step 7: Project B init ───────────────────────────────────────────
@@ -193,8 +193,8 @@ test('global install + project init (npm pack -> global install -> 2 projects)',
     assertNoModuleNotFound(output, 'project B init');
     assert.equal(result.status, 0, `project B init exited ${result.status}\n${output}`);
 
-    const cxDir = join(projectB, '.construct');
-    assert.ok(existsSync(cxDir), `.construct/ should exist in project B at ${cxDir}`);
+    const constructDir = join(projectB, '.construct');
+    assert.ok(existsSync(constructDir), `.construct/ should exist in project B at ${constructDir}`);
   });
 
   // ── Step 8: Status check in both projects ────────────────────────────

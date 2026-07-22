@@ -1,0 +1,70 @@
+{
+  "schema": "construct/certification/extraction-ladder/1",
+  "generatedAt": "2026-07-21T03:26:16.332Z",
+  "pass": true,
+  "fixtures": [
+    {
+      "id": "01-digital-simple",
+      "expectedRoutingTier": "lightweight-parser",
+      "routingTier": "lightweight-parser",
+      "routingOk": true,
+      "contractOk": true,
+      "extractionMethod": "unpdf"
+    },
+    {
+      "id": "02-digital-multipage",
+      "expectedRoutingTier": "lightweight-parser",
+      "routingTier": "lightweight-parser",
+      "routingOk": true,
+      "contractOk": true,
+      "extractionMethod": "unpdf"
+    },
+    {
+      "id": "03-digital-sparse",
+      "expectedRoutingTier": "docling-local",
+      "routingTier": "docling-local",
+      "routingOk": true,
+      "contractOk": true,
+      "extractionMethod": "docling"
+    },
+    {
+      "id": "04-scanned-empty",
+      "expectedRoutingTier": "docling-local",
+      "routingTier": "docling-local",
+      "routingOk": true,
+      "contractOk": true,
+      "extractionMethod": "docling"
+    },
+    {
+      "id": "05-docx-simple",
+      "expectedRoutingTier": "lightweight-parser",
+      "routingTier": "lightweight-parser",
+      "routingOk": true,
+      "contractOk": true,
+      "extractionMethod": "mammoth"
+    },
+    {
+      "id": "06-docx-table",
+      "expectedRoutingTier": "docling-local",
+      "routingTier": "docling-local",
+      "routingOk": true,
+      "contractOk": true,
+      "extractionMethod": "docling"
+    },
+    {
+      "id": "07-docx-image",
+      "expectedRoutingTier": "docling-local",
+      "routingTier": "docling-local",
+      "routingOk": true,
+      "contractOk": true,
+      "extractionMethod": "docling"
+    }
+  ],
+  "emailFixtures": [
+    "tests/fixtures/email-mime/01-plain-text.eml",
+    "tests/fixtures/email-mime/04-multipart-attachment.eml",
+    "tests/fixtures/email-mime/08-attachment-path-traversal.eml",
+    "tests/fixtures/email-mime/09-zip-bomb-suspect.eml"
+  ],
+  "errors": []
+}

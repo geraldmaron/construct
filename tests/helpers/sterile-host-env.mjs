@@ -14,7 +14,7 @@
  * diff — the standard lightweight alternative to a full VM/container for config tests.
  *
  * ADR-0066 moved heavy per-project state (traces, observations, the vector index,
- * runtime bootstrap dirs) out of a project's `.cx/` and into `~/.construct/projects/<key>/`
+ * runtime bootstrap dirs) out of a project's `.construct/` and into `~/.construct/projects/<key>/`
  * — a real host path most tests never touch on purpose. A test that spins up a project
  * in a tmp dir but forgets to override HOME now has a second way to leak into the real
  * machine, so the fingerprint also covers the real `~/.construct/projects/` entry set.
@@ -26,6 +26,32 @@ import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { doctorRoot } from "../../lib/config/xdg.mjs";
+
+export const STERILE_TEST_LEAK_MARKER = "construct-sterile-test-leak";
+
+const HOOK_SCRATCH_FILES = [
+  "warn-flags.txt",
+  "files-changed-count.txt",
+  "pending-typecheck.txt",
+  "provider-cooldowns.json",
+  "doc-coupling.json",
+  "context-recovery.json",
+  "file-hashes.json",
+  "last-agent.json",
+  "ci-status-cache.json",
+  "readme-age-state.json",
+  "bootstrap-state.json",
+];
+
+const TELEMETRY_JSONL = [
+  "session-cost.jsonl",
+  "doctor-log.jsonl",
+  "events.jsonl",
+];
+
+const SESSION_STATUS_FILES = [
+  "session-efficiency.json",
+];
 
 // Real host paths a host-config test must never mutate. The guard fingerprints
 // these before and after; any change fails the test loudly.
@@ -65,6 +91,78 @@ function realConstructProjectKeys(home) {
 // literal every test-fixture policy decision in tests/mcp-broker*.test.mjs
 // uses and no real policy engine ever emits; a leak shows up as a delta,
 // legitimate real usage never moves this count.
+
+function countMarkerOccurrences(contents) {
+  if (!contents) return 0;
+  let count = 0;
+  let idx = 0;
+  while ((idx = contents.indexOf(STERILE_TEST_LEAK_MARKER, idx)) !== -1) {
+    count++;
+    idx += STERILE_TEST_LEAK_MARKER.length;
+  }
+  return count;
+}
+
+function countFileMarkerLeaks(filePath) {
+  try {
+    if (!existsSync(filePath)) return 0;
+    return countMarkerOccurrences(readFileSync(filePath, "utf8"));
+  } catch {
+    return 0;
+  }
+}
+
+function countJsonlTestLeaks(filePath) {
+  try {
+    if (!existsSync(filePath)) return 0;
+    const contents = readFileSync(filePath, "utf8");
+    let count = 0;
+    for (const line of contents.split("\n")) {
+      if (line.includes('"source":"test"') || line.includes(STERILE_TEST_LEAK_MARKER)) count++;
+    }
+    return count;
+  } catch {
+    return 0;
+  }
+}
+
+function countHookScratchTestLeaks(home) {
+  const root = doctorRoot(home);
+  let count = 0;
+  for (const name of HOOK_SCRATCH_FILES) {
+    count += countFileMarkerLeaks(join(root, name));
+  }
+  const bashLogs = join(root, "bash-logs");
+  try {
+    if (existsSync(bashLogs)) {
+      for (const name of readdirSync(bashLogs)) {
+        if (name.includes(STERILE_TEST_LEAK_MARKER)) count++;
+        else count += countFileMarkerLeaks(join(bashLogs, name));
+      }
+    }
+  } catch {
+    /* unreadable bash-logs dir */
+  }
+  return count;
+}
+
+function countTelemetryTestLeaks(home) {
+  const root = doctorRoot(home);
+  let count = 0;
+  for (const name of TELEMETRY_JSONL) {
+    count += countJsonlTestLeaks(join(root, name));
+  }
+  return count;
+}
+
+function countSessionStatusTestLeaks(home) {
+  const root = doctorRoot(home);
+  let count = 0;
+  for (const name of SESSION_STATUS_FILES) {
+    count += countFileMarkerLeaks(join(root, name));
+  }
+  return count;
+}
 
 function countAuditTrailTestLeaks(home) {
   const file = doctorRoot(home);
@@ -166,6 +264,9 @@ export function snapshotRealConfigs(home = homedir()) {
     fingerprint: fingerprintRealConfigs(home),
     projectKeys: realConstructProjectKeys(home).split(",").filter(Boolean),
     auditTrailTestLeaks: countAuditTrailTestLeaks(home),
+    hookScratchTestLeaks: countHookScratchTestLeaks(home),
+    telemetryTestLeaks: countTelemetryTestLeaks(home),
+    sessionStatusTestLeaks: countSessionStatusTestLeaks(home),
   };
 }
 
@@ -181,6 +282,9 @@ export function diffRealConfigs(beforeSnapshot, home = homedir()) {
     addedProjectKeys: [...afterKeys].filter((k) => !beforeKeys.has(k)),
     removedProjectKeys: [...beforeKeys].filter((k) => !afterKeys.has(k)),
     auditTrailLeaks: after.auditTrailTestLeaks - (beforeSnapshot.auditTrailTestLeaks ?? 0),
+    hookScratchLeaks: after.hookScratchTestLeaks - (beforeSnapshot.hookScratchTestLeaks ?? 0),
+    telemetryLeaks: after.telemetryTestLeaks - (beforeSnapshot.telemetryTestLeaks ?? 0),
+    sessionStatusLeaks: after.sessionStatusTestLeaks - (beforeSnapshot.sessionStatusTestLeaks ?? 0),
   };
 }
 

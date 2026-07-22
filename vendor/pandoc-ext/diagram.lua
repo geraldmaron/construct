@@ -315,7 +315,11 @@ local d2 = {
     return with_temporary_directory('diagram', function (tmpdir)
       return with_working_directory(tmpdir, function ()
         -- D2 format identifiers correspond to common file extensions.
-        local mime_type = self.mime_type or 'image/svg+xml'
+        -- Prefer SVG by default: d2 PNG/PDF export shells into playwright-go,
+        -- which downloads a pinned driver from the retired azureedge CDN (404).
+        -- CONSTRUCT_D2_MIME overrides negotiated mime (mirrors mermaid).
+        local override = os.getenv('CONSTRUCT_D2_MIME')
+        local mime_type = (override and override ~= '') and override or (self.mime_type or 'image/svg+xml')
         local file_extension = extension_for_mimetype[mime_type]
         local infile = 'diagram.d2'
         local outfile = 'diagram.' .. file_extension
@@ -374,14 +378,13 @@ local default_engines = {
 local function format_options (name)
   local pdf2svg = name ~= 'latex' and name ~= 'context'
   local is_office_format = name == 'docx' or name == 'odt'
-  -- Office formats seem to work better with PNG than with SVG.
+  -- Prefer SVG for office formats too: pandoc embeds SVG in DOCX/ODT, and d2's
+  -- native SVG path needs no browser. Preferring PNG first forced d2 through
+  -- playwright-go's retired azureedge driver download (404 on CI).
   local preferred_mime_types = is_office_format
-    and pandoc.List{'image/png', 'application/pdf'}
+    and pandoc.List{'image/svg+xml', 'image/png', 'application/pdf'}
     or  pandoc.List{'application/pdf', 'image/png'}
-  -- Prefer SVG for non-PDF output formats, except for Office formats
-  if is_office_format then
-    preferred_mime_types:insert('image/svg+xml')
-  elseif pdf2svg then
+  if not is_office_format and pdf2svg then
     preferred_mime_types:insert(1, 'image/svg+xml')
   end
   return {

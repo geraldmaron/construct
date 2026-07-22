@@ -13,7 +13,7 @@ Tiers 1, 3, 6, 7 executed; Tiers 2, 4, 5 are catalog-level and validated in Scen
 
 - **Profile:** `rnd`
 - **Fixture:** `git clone --depth 1` of **honojs/hono** (MIT, ~284 TS files in `src/`, real `.vscode/`), then **pre-seeded host noise committed before init**: a non-Construct `AGENTS.md`, `.cursor/rules/legacy.mdc`, a stub `.claude/agents/foo.md`, and polluted `.gitignore` entries — each carrying a `SENTINEL-*` line so preservation is provable.
-- **Sterile env:** dedicated tmpdir, isolated `HOME` + `CX_HOME_OVERRIDE`, `CONSTRUCT_DEV_PATH` → repo under test. Root: `/var/folders/.../cx-e2e-b-NooKw3`.
+- **Sterile env:** dedicated tmpdir, isolated `HOME` + `CONSTRUCT_HOME_OVERRIDE`, `CONSTRUCT_DEV_PATH` → repo under test. Root: `/var/folders/.../cx-e2e-b-NooKw3`.
 - **Harness nit:** the fixture recorded `.git/HEAD` as a ref (`refs/heads/main`) rather than the resolved commit SHA — a reproducibility-capture gap in `scenario-b.mjs`, not a Construct defect. hono main at run time was `c78932d`.
 
 ---
@@ -31,7 +31,7 @@ Tiers 1, 3, 6, 7 executed; Tiers 2, 4, 5 are catalog-level and validated in Scen
 | Foreign `.claude/agents/foo.md` preserved | **✓** | `SENTINEL-FOO` intact |
 | `.cursor/rules/legacy.mdc` preserved | **✓** | `SENTINEL-CURSOR` intact |
 | Polluted `.gitignore` entries preserved | **✓** | `custom-build-dir/` + `SENTINEL-GITIGNORE` intact |
-| Construct `.gitignore` patterns appended | **✓** | `.cx/` present |
+| Construct `.gitignore` patterns appended | **✓** | `.construct/` present |
 
 **Construct injects what it owns without clobbering what it doesn't.** The marker-block injection added its `CONSTRUCT INTEGRATION` block to a pre-existing, non-Construct `AGENTS.md` while leaving the original content byte-intact; the `.gitignore` was appended, not rewritten; foreign adapter files (`.claude/agents/foo.md`, `.cursor/`) were untouched. This is the central promise of Scenario B, and it holds.
 

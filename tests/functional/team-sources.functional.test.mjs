@@ -8,7 +8,7 @@
  * the team with a typed OUT_OF_SCOPE error rather than a silent wrong-source fetch.
  *
  * demandFetch writes observations through the machine-scoped state root
- * (ADR-0066), keyed by a hash of the tmp rootDir — so CX_HOME_OVERRIDE is
+ * (ADR-0066), keyed by a hash of the tmp rootDir — so CONSTRUCT_HOME_OVERRIDE is
  * pinned for the whole file to keep that write off the real developer
  * machine's $HOME.
  */
@@ -22,9 +22,8 @@ import test, { before, after } from 'node:test';
 import {
   resolveTeamSources,
   targetsToEmbedSourcesWithFilters,
+  validateSourceTarget,
 } from '../../lib/config/source-targets.mjs';
-import { validate } from '../../lib/registry/validator.mjs';
-import { loadRegistry } from '../../lib/registry/loader.mjs';
 import { demandFetch } from '../../lib/embed/demand-fetch.mjs';
 import { listObservations, getObservation } from '../../lib/observation-store.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
@@ -34,14 +33,14 @@ let prevHomeOverride;
 
 before(() => {
   homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-team-sources-home-'));
-  prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = homeOverride;
+  prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 });
 
 after(() => {
   try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch { /* best-effort cleanup */ }
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 const REGISTRY = {
@@ -70,38 +69,36 @@ test('a team resolves its declared sources and threads filters into tagged embed
   assert.equal(jira.jql, 'status != Done');
 });
 
-test('the unified-registry schema accepts a team with typed sources', () => {
-  const base = loadRegistry({ skipValidation: true });
-  const clone = JSON.parse(JSON.stringify(base));
-  const firstTeam = Object.keys(clone.teams)[0];
-  clone.teams[firstTeam].sources = [
-    { id: 'main-repo', provider: 'github', selector: { repo: 'anthropic/construct' }, filters: { refs: ['prs'] } },
-  ];
-  const result = validate(clone);
-  assert.equal(result.ok, true, `team-with-sources should validate: ${JSON.stringify(result.errors || [])}`);
+test('typed integration source targets validate as standalone config records', () => {
+  const errors = validateSourceTarget({
+    id: 'main-repo',
+    provider: 'github',
+    selector: { repo: 'anthropic/construct' },
+    filters: { refs: ['prs'] },
+  });
+  assert.equal(errors.length, 0, `typed source target should validate: ${JSON.stringify(errors)}`);
 });
 
 test('provider_fetch rejects a target outside the team with a typed OUT_OF_SCOPE error', async () => {
-  // product-group exists in the real registry but declares no sources, so any
-  // requested target id is out of scope — must be a typed refusal, not a fetch.
   const result = await demandFetch({
     query: 'anything',
-    teamId: 'product-group',
+    teamId: 'empty-group',
     targetIds: ['some-other-teams-repo'],
     rootDir: process.cwd(),
+    registry: { teams: { 'empty-group': { sources: [] } } },
   });
   assert.equal(result.ok, false);
   assert.equal(result.reason, 'OUT_OF_SCOPE');
-  assert.equal(result.teamId, 'product-group');
+  assert.equal(result.teamId, 'empty-group');
 });
 
 test('demandFetch drives reads from the team\'s sources and tags observations team:/target:', async () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'team-fetch-'));
   // listObservations/getObservation below resolve the machine-scoped state
-  // root (ADR-0066) via CX_HOME_OVERRIDE read in-process, not via the rootDir
+  // root (ADR-0066) via CONSTRUCT_HOME_OVERRIDE read in-process, not via the rootDir
   // argument — pin it or they write into the real developer machine's home.
-  const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = tmp;
+  const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = tmp;
   try {
     // Injected mock provider returns one item per requested ref; injected
     // registry supplies the team — fully hermetic, no real credentials/CLI.
@@ -126,8 +123,8 @@ test('demandFetch drives reads from the team\'s sources and tags observations te
     assert.ok(tagged, 'an observation is tagged team:engineering-group');
     assert.ok((tagged.tags || []).includes('target:main-repo'), 'and tagged target:main-repo');
   } finally {
-    if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+    if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
     rmTmpDir(tmp);
   }
 });

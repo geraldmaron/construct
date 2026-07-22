@@ -7,6 +7,7 @@
  * once each, and stays silent for healthy state.
  */
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import test from 'node:test';
 
 import { tempDir } from '../helpers.mjs';
@@ -16,8 +17,23 @@ let audit;
 let ApprovalQueue;
 let WriteSentLog;
 let projectRoot;
+let prevDoctorRoot;
+let prevProjectRoot;
+
+const createdDirs = [];
+test.after(() => {
+  for (const dir of createdDirs) {
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* best effort */ }
+  }
+  if (prevDoctorRoot === undefined) delete process.env.CONSTRUCT_DOCTOR_ROOT;
+  else process.env.CONSTRUCT_DOCTOR_ROOT = prevDoctorRoot;
+  if (prevProjectRoot === undefined) delete process.env.CONSTRUCT_PROJECT_ROOT;
+  else process.env.CONSTRUCT_PROJECT_ROOT = prevProjectRoot;
+});
 
 test.before(async () => {
+  prevDoctorRoot = process.env.CONSTRUCT_DOCTOR_ROOT;
+  prevProjectRoot = process.env.CONSTRUCT_PROJECT_ROOT;
   audit = await import('../../lib/doctor/audit.mjs');
   watcher = await import('../../lib/doctor/watchers/write-pipeline.mjs');
   ({ ApprovalQueue } = await import('../../lib/embed/approval-queue.mjs'));
@@ -29,8 +45,10 @@ test.before(async () => {
 // while WriteSentLog.resolvePersistPath is project-root-scoped — both must
 // rotate per test or persisted state from one test leaks into the next tick().
 test.beforeEach(() => {
-  process.env.CONSTRUCT_DOCTOR_ROOT = tempDir('construct-doctor-write-pipeline-');
+  const doctorRoot = tempDir('construct-doctor-write-pipeline-');
   projectRoot = tempDir('construct-write-pipeline-project-');
+  createdDirs.push(doctorRoot, projectRoot);
+  process.env.CONSTRUCT_DOCTOR_ROOT = doctorRoot;
   process.env.CONSTRUCT_PROJECT_ROOT = projectRoot;
   watcher.__resetWritePipelineWatcherState();
 });
@@ -61,32 +79,6 @@ test('an awaiting_approval record past its expiry escalates exactly once', async
 
   const recorded = audit.recent({ watcher: 'write-pipeline', kind: 'sample' });
   assert.ok(recorded.some((r) => r.target === record.approvalId && r.result === 'stale'));
-});
-
-test('an approved record that has exhausted its execution-retry budget escalates exactly once', async () => {
-  const queue = new ApprovalQueue({ persistPath: ApprovalQueue.resolvePersistPath(projectRoot) });
-  const record = queue.enqueue({ tool: 'jira.issue', args: { summary: 'permanently broken target' } });
-  queue.approve(record.approvalId);
-  for (let i = 0; i < 5; i++) {
-    queue.recordExecutionOutcome(record.approvalId, { ok: false, error: 'ECONNREFUSED' });
-  }
-
-  const first = await watcher.tick();
-  assert.equal(first.escalations.filter((e) => e.eventType === 'write.execution_exhausted').length, 1);
-  assert.equal(first.escalations.find((e) => e.eventType === 'write.execution_exhausted').approvalId, record.approvalId);
-
-  const second = await watcher.tick();
-  assert.equal(second.escalations.filter((e) => e.eventType === 'write.execution_exhausted').length, 0, 'must not re-escalate the same exhausted record');
-});
-
-test('an approved record still within its retry budget does not escalate as exhausted', async () => {
-  const queue = new ApprovalQueue({ persistPath: ApprovalQueue.resolvePersistPath(projectRoot) });
-  const record = queue.enqueue({ tool: 'jira.issue', args: { summary: 'transient failure' } });
-  queue.approve(record.approvalId);
-  queue.recordExecutionOutcome(record.approvalId, { ok: false, error: 'HTTP 503' });
-
-  const result = await watcher.tick();
-  assert.equal(result.escalations.filter((e) => e.eventType === 'write.execution_exhausted').length, 0);
 });
 
 test('a sent-log entry with status error escalates exactly once', async () => {

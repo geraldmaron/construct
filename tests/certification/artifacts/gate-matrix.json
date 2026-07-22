@@ -15,14 +15,22 @@
     {
       "type": "prd",
       "structureRequirements": [
+        "TL;DR",
+        "Background",
         "Problem",
-        "Goals",
-        "Success metrics",
+        "Outcomes - Goals & Non-Goals",
+        "Why This Matters Now",
+        "Competitive Landscape & Financial Considerations",
         "Phases",
-        "Risks and mitigations"
+        "Requirements",
+        "Acceptance Criteria",
+        "Success Metrics",
+        "Risks",
+        "References"
       ],
       "visualRequirements": [
         "artifact-has-mermaid",
+        "artifact-table-has-columns",
         "artifact-table-has-columns"
       ],
       "releaseGate": {
@@ -30,23 +38,32 @@
         "citationLint": true,
         "proseMinimum": 3,
         "requiredReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ],
         "optionalReviewers": [
-          "cx-researcher"
+          "researcher"
         ]
       }
     },
     {
       "type": "prd-platform",
       "structureRequirements": [
+        "TL;DR",
+        "Background",
         "Problem",
-        "Goals and non-goals",
-        "Success metrics",
-        "Risks and mitigations"
+        "Outcomes - Goals & Non-Goals",
+        "Why This Matters Now",
+        "Competitive Landscape & Financial Considerations",
+        "Phases",
+        "Requirements",
+        "Acceptance Criteria",
+        "Success Metrics",
+        "Risks",
+        "References"
       ],
       "visualRequirements": [
         "artifact-has-mermaid",
+        "artifact-table-has-columns",
         "artifact-table-has-columns"
       ],
       "releaseGate": {
@@ -54,8 +71,8 @@
         "citationLint": true,
         "proseMinimum": 3,
         "requiredReviewers": [
-          "cx-reviewer",
-          "cx-architect"
+          "reviewer",
+          "architect"
         ],
         "optionalReviewers": []
       }
@@ -67,7 +84,13 @@
         "Market thesis",
         "Problem and opportunity",
         "Strategic goals",
-        "Alternatives rejected"
+        "Alternatives rejected",
+        "What must be true",
+        "Competitive analysis",
+        "Financial frame",
+        "Kill criteria",
+        "Risks",
+        "References"
       ],
       "visualRequirements": [],
       "releaseGate": {
@@ -75,21 +98,27 @@
         "citationLint": true,
         "proseMinimum": 3,
         "requiredReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ],
         "optionalReviewers": [
-          "cx-product-manager"
+          "product-manager"
         ]
       }
     },
     {
       "type": "meta-prd",
       "structureRequirements": [
+        "TL;DR",
+        "Background",
         "Problem",
-        "Goals",
+        "Outcomes - Goals & Non-Goals",
+        "Timing & stakes",
         "Principles",
+        "Inputs and evidence",
+        "Phases",
         "Failure modes and mitigations",
-        "Rollout"
+        "Rollout",
+        "References"
       ],
       "visualRequirements": [],
       "releaseGate": {
@@ -97,7 +126,7 @@
         "citationLint": true,
         "proseMinimum": 3,
         "requiredReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ],
         "optionalReviewers": []
       }
@@ -106,10 +135,15 @@
       "type": "adr",
       "structureRequirements": [
         "Problem",
+        "Context",
         "Decision",
+        "Rationale",
         "Rejected alternatives",
         "Consequences",
-        "Reversibility"
+        "Reversibility",
+        "Legal, privacy, and security triggers",
+        "Adversarial challenge",
+        "References"
       ],
       "visualRequirements": [
         "artifact-has-mermaid"
@@ -119,10 +153,10 @@
         "citationLint": true,
         "proseMinimum": 2,
         "requiredReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ],
         "optionalReviewers": [
-          "cx-architect"
+          "architect"
         ]
       }
     },
@@ -131,9 +165,13 @@
       "structureRequirements": [
         "Summary",
         "Motivation",
+        "Goals & Non-Goals",
         "Proposed design",
+        "Tradeoffs and alternatives",
         "Risks",
-        "Verification"
+        "Verification",
+        "Unresolved questions",
+        "References"
       ],
       "visualRequirements": [
         "artifact-has-mermaid"
@@ -143,7 +181,7 @@
         "citationLint": true,
         "proseMinimum": 3,
         "requiredReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ],
         "optionalReviewers": []
       }
@@ -153,9 +191,13 @@
       "structureRequirements": [
         "Summary",
         "Motivation",
+        "Breaking change declaration",
         "Proposed contract",
+        "Tradeoffs and alternatives",
         "Risks",
-        "Verification"
+        "Verification",
+        "Unresolved questions",
+        "References"
       ],
       "visualRequirements": [
         "artifact-has-mermaid"
@@ -165,7 +207,7 @@
         "citationLint": true,
         "proseMinimum": 3,
         "requiredReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ],
         "optionalReviewers": []
       }
@@ -173,10 +215,14 @@
     {
       "type": "research-brief",
       "structureRequirements": [
+        "Question",
+        "Method",
         "Sources",
         "Findings",
+        "Counter-evidence",
         "Confidence summary",
-        "Recommendation"
+        "Recommendation",
+        "References"
       ],
       "visualRequirements": [],
       "releaseGate": {
@@ -185,7 +231,7 @@
         "proseMinimum": 2,
         "requiredReviewers": [],
         "optionalReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ]
       }
     },
@@ -204,7 +250,7 @@
         "proseMinimum": 2,
         "requiredReviewers": [],
         "optionalReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ]
       }
     },
@@ -235,7 +281,9 @@
         "Diagnostic steps",
         "Remediation",
         "Rollback",
-        "Escalation"
+        "Escalation",
+        "Adversarial challenge",
+        "References"
       ],
       "visualRequirements": [
         "artifact-has-mermaid"
@@ -246,7 +294,7 @@
         "proseMinimum": 2,
         "requiredReviewers": [],
         "optionalReviewers": [
-          "cx-operations"
+          "operations"
         ]
       }
     },
@@ -271,7 +319,7 @@
         "proseMinimum": 2,
         "requiredReviewers": [],
         "optionalReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ]
       }
     },
@@ -307,7 +355,9 @@
         "North Star Metric",
         "Metrics",
         "Milestones",
-        "Risks"
+        "Competitive Positioning",
+        "Risks",
+        "References"
       ],
       "visualRequirements": [
         "artifact-table-has-columns"
@@ -317,10 +367,10 @@
         "citationLint": true,
         "proseMinimum": 2,
         "requiredReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ],
         "optionalReviewers": [
-          "cx-product-manager"
+          "product-manager"
         ]
       }
     },
@@ -360,10 +410,10 @@
         "citationLint": true,
         "proseMinimum": 3,
         "requiredReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ],
         "optionalReviewers": [
-          "cx-researcher"
+          "researcher"
         ]
       }
     },
@@ -385,7 +435,7 @@
         "citationLint": true,
         "proseMinimum": 2,
         "requiredReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ],
         "optionalReviewers": []
       }
@@ -444,7 +494,7 @@
         "proseMinimum": 2,
         "requiredReviewers": [],
         "optionalReviewers": [
-          "cx-qa"
+          "qa"
         ]
       }
     },
@@ -491,7 +541,7 @@
         "citationLint": true,
         "proseMinimum": 2,
         "requiredReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ],
         "optionalReviewers": []
       }
@@ -509,7 +559,7 @@
         "citationLint": true,
         "proseMinimum": 2,
         "requiredReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ],
         "optionalReviewers": []
       }
@@ -519,6 +569,7 @@
       "structureRequirements": [
         "Executive summary",
         "Findings",
+        "Compliance",
         "Remediation priority"
       ],
       "visualRequirements": [],
@@ -527,7 +578,56 @@
         "citationLint": true,
         "proseMinimum": 2,
         "requiredReviewers": [
-          "cx-reviewer"
+          "reviewer"
+        ],
+        "optionalReviewers": []
+      }
+    },
+    {
+      "type": "compliance-memo",
+      "structureRequirements": [
+        "TL;DR",
+        "Scope and activity",
+        "Obligation → control register",
+        "Regulatory Citations",
+        "Remediation Plan",
+        "Residual risk and counsel gate",
+        "Adversarial challenge",
+        "References"
+      ],
+      "visualRequirements": [],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": true,
+        "proseMinimum": 3,
+        "requiredReviewers": [
+          "reviewer",
+          "security"
+        ],
+        "optionalReviewers": []
+      }
+    },
+    {
+      "type": "dpia-or-privacy-assessment",
+      "structureRequirements": [
+        "Purpose of processing",
+        "Data map",
+        "Necessity and proportionality",
+        "Risks to individuals",
+        "Lawful basis (counsel)",
+        "Cross-border / subprocessors",
+        "Deletion and subject rights",
+        "Decision and residual risk",
+        "References"
+      ],
+      "visualRequirements": [],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": true,
+        "proseMinimum": 3,
+        "requiredReviewers": [
+          "reviewer",
+          "security"
         ],
         "optionalReviewers": []
       }
@@ -545,7 +645,7 @@
         "citationLint": true,
         "proseMinimum": 2,
         "requiredReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ],
         "optionalReviewers": []
       }
@@ -568,7 +668,7 @@
         "proseMinimum": 3,
         "requiredReviewers": [],
         "optionalReviewers": [
-          "cx-reviewer"
+          "reviewer"
         ]
       }
     }

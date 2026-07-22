@@ -8,7 +8,7 @@ This file is the authoritative ledger; do not infer hook history from git blame 
 # Deprecated Hooks
 
 Hooks are removed when their behavior is absorbed into a consolidated hook, moved into
-declarative rules, or expressed as persona/skill guidance. Removal without an entry here
+declarative rules, or expressed as Worker Profile / skill guidance. Removal without an entry here
 is a policy violation: `construct doctor` checks this ledger against the hooks manifest.
 
 ## Consolidation into `lib/hooks/policy-engine.mjs`
@@ -22,12 +22,12 @@ is a policy violation: `construct doctor` checks this ledger against the hooks m
 ### bootstrap-guard.mjs
 - **Original event:** PreToolUse
 - **Original behavior:** Blocked Write/Edit/Bash mutations until the session was grounded: either via `project_context` + `memory_search` MCP calls or 3+ exploratory reads.
-- **Now:** `lib/hooks/policy-engine.mjs` PreToolUse handler. State persisted at `~/.cx/bootstrap-state.json`, scoped per-session, 24h TTL.
+- **Now:** `lib/hooks/policy-engine.mjs` PreToolUse handler. State persisted at `~/.construct/bootstrap-state.json`, scoped per-session, 24h TTL.
 
 ### drive-guard.mjs
 - **Original event:** Stop
 - **Original behavior:** Blocked Stop when drive mode was active and acceptance criteria lacked evidence.
-- **Now:** `lib/hooks/policy-engine.mjs` Stop handler: drive section. Reads `.construct/drive-state.json` (per-project) and `~/.cx/drive-session.json` (global advisory).
+- **Now:** `lib/hooks/policy-engine.mjs` Stop handler: drive section. Reads `.construct/drive-state.json` (per-project) and `~/.construct/drive-session.json` (global advisory).
 
 ### continuation-enforcer.mjs
 - **Original event:** PostToolUse (TodoWrite)
@@ -43,7 +43,7 @@ is a policy violation: `construct doctor` checks this ledger against the hooks m
 
 ### read-tracker.mjs
 - **Original event:** PostToolUse (Read)
-- **Original behavior:** SHA-16 file-hash store at `~/.cx/file-hashes.json` for edit-guard staleness detection; recorded read deltas via `lib/read-tracker-store.mjs`.
+- **Original behavior:** SHA-16 file-hash store at `~/.construct/file-hashes.json` for edit-guard staleness detection; recorded read deltas via `lib/read-tracker-store.mjs`.
 - **Now:** `lib/hooks/audit-reads.mjs` stage 1 (always-on, runs regardless of `CONSTRUCT_AUDIT_READS`): same hash-store upsert + read-tracker delta + retention pruning. Folding into audit-reads fixed a quiet correctness bug: the prior split meant edit-guard's staleness check broke when audit-reads was off, because nothing else maintained the hash store.
 
 ### env-check.mjs
@@ -84,4 +84,4 @@ These behaviors were never separate hooks but are new to `policy-engine.mjs` Sto
 
 - **red-CI block**: queries `gh run list --branch=<current> --limit=1`; exits 2 if last run failed and the agent edited code this session. Bypass: `CONSTRUCT_STOP_OK_RED_CI=1`.
 - **open-bd block**: queries `bd list --status in_progress --json`; exits 2 if any issues are open. Bypass: `CONSTRUCT_STOP_OK_OPEN_BD=1`.
-- **drive-session advisory**: reads `~/.cx/drive-session.json`; emits stderr advisory if `open: true`. Non-blocking.
+- **drive-session advisory**: reads `~/.construct/drive-session.json`; emits stderr advisory if `open: true`. Non-blocking.

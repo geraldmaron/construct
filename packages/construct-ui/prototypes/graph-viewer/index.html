@@ -1,0 +1,39 @@
+<!doctype html>
+<!--
+  packages/construct-ui/prototypes/graph-viewer/index.html — Cytoscape.js graph
+  viewer prototype (construct-tsyfe.4.5). PROTOTYPE ONLY: served locally by
+  dev-server.mjs for manual inspection, not built by apps/docs, not linked
+  from any production nav. Loads cytoscape via entry.mjs's dynamic import
+  only, fetches only same-origin ./fixtures/*.json (no remote CDN, no eval).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Cytoscape prototype (construct-tsyfe.4.5) — PROTOTYPE, not production</title>
+<style>
+  /* `vh` units don't resolve reliably in every embedding context (observed
+     empty-canvas symptom: documentElement.clientHeight reporting 0) — an
+     explicit html/body height:100% + flex column keeps #cy's size derived
+     from the actual layout box instead. */
+  html, body { height: 100%; margin: 0; }
+  body { display: flex; flex-direction: column; font-family: system-ui, sans-serif; background: #0a0a0a; color: #eee; }
+  header { flex: 0 0 auto; padding: 0.75rem 1rem; background: #161616; border-bottom: 1px solid #2a2a2a; display: flex; gap: 0.75rem; align-items: center; }
+  header strong { color: #ff8a4f; }
+  button { background: #1e1e1e; color: #eee; border: 1px solid #333; border-radius: 4px; padding: 0.4rem 0.8rem; cursor: pointer; }
+  button:hover { background: #2a2a2a; }
+  #status { margin-left: auto; font-size: 0.85rem; color: #999; }
+  #cy { flex: 1 1 auto; width: 100%; min-height: 0; }
+</style>
+</head>
+<body>
+<header>
+  <strong>PROTOTYPE</strong>
+  <button id="view-application">Application view</button>
+  <button id="view-dependency">Dependency view</button>
+  <span id="status">idle</span>
+</header>
+<div id="cy"></div>
+<script type="importmap">{ "imports": { "cytoscape": "/vendor/cytoscape.esm.min.mjs" } }</script>
+<script type="module" src="./entry.mjs"></script>
+</body>
+</html>

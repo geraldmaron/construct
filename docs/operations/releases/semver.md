@@ -6,7 +6,7 @@ are tagged `vMAJOR.MINOR.PATCH` and published to npm under
 
 ## What counts as a breaking change (MAJOR bump)
 
-- A change to the schema of `specialists/org`. Adding optional fields
+- A change to the schema of `registry`. Adding optional fields
   is non-breaking; removing fields, renaming fields, or changing the
   meaning of existing fields is.
 - Removing or renaming any CLI subcommand or flag (`construct foo`,
@@ -16,8 +16,8 @@ are tagged `vMAJOR.MINOR.PATCH` and published to npm under
 - Removing or renaming any MCP tool surface.
 - A change to the plugin contracts (Engine, Provider) that requires plugin
   authors to modify their factory signature or returned shape.
-- Any change to the on-disk paths Construct writes to under `~/.cx/`,
-  `.cx/`, or `.construct/`.
+- Any change to the on-disk paths Construct writes to under `~/.construct/`
+  or `.construct/`.
 - A bump to the minimum supported Node version above the previously
   declared `engines.node` floor.
 

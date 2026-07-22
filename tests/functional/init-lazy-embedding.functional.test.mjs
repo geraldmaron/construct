@@ -5,7 +5,7 @@
  * work — no ONNX/transformers model cache populated, no LanceDB vector
  * index directory created — since a project that never runs semantic
  * search should never pay for either. Spawns the real `construct init`
- * against an isolated HOME/CX_HOME_OVERRIDE (sterileSpawnEnv) so the
+ * against an isolated HOME/CONSTRUCT_HOME_OVERRIDE (sterileSpawnEnv) so the
  * assertions read the same machine-scoped roots ADR-0066 resolves at
  * runtime, never the developer machine's real ~/.construct or ~/.cache.
  */
@@ -47,7 +47,7 @@ function runInit(env) {
       env: sterileSpawnEnv({
         HOME: env.HOME,
         USERPROFILE: env.HOME,
-        CX_HOME_OVERRIDE: env.HOME,
+        CONSTRUCT_HOME_OVERRIDE: env.HOME,
         XDG_CONFIG_HOME: join(env.HOME, '.config'),
         XDG_DATA_HOME: join(env.HOME, '.local', 'share'),
         XDG_CACHE_HOME: join(env.HOME, '.cache'),
@@ -103,7 +103,7 @@ test('construct init with --seed-index still opts into vector-index seeding (reg
       env: sterileSpawnEnv({
         HOME: env.HOME,
         USERPROFILE: env.HOME,
-        CX_HOME_OVERRIDE: env.HOME,
+        CONSTRUCT_HOME_OVERRIDE: env.HOME,
         XDG_CONFIG_HOME: join(env.HOME, '.config'),
         XDG_DATA_HOME: join(env.HOME, '.local', 'share'),
         XDG_CACHE_HOME: join(env.HOME, '.cache'),
@@ -146,7 +146,7 @@ test('construct init with --seed-index and the default (local ONNX) embedding mo
       env: sterileSpawnEnv({
         HOME: env.HOME,
         USERPROFILE: env.HOME,
-        CX_HOME_OVERRIDE: env.HOME,
+        CONSTRUCT_HOME_OVERRIDE: env.HOME,
         XDG_CONFIG_HOME: join(env.HOME, '.config'),
         XDG_DATA_HOME: join(env.HOME, '.local', 'share'),
         XDG_CACHE_HOME: join(env.HOME, '.cache'),

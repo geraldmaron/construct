@@ -79,7 +79,7 @@ test('AC2: a near-duplicate proposal is suppressed and reported with its matchin
 test('AC3: --apply without approval is dry-run only — zero non-dry writes', async () => {
   const { cwd } = project();
   await analyzeAndPropose({ target: 'jira-core', against: 'proj-app', cwd, deps: { fetchIssues: async () => [], now: () => '2026-07-08T00:00:00.000Z' } });
-  const proposalId = fs.readdirSync(path.join(cwd, '.cx', 'tracker', 'proposals')).find((f) => f.endsWith('.json')).replace('.json', '');
+  const proposalId = fs.readdirSync(path.join(cwd, '.construct', 'tracker', 'proposals')).find((f) => f.endsWith('.json')).replace('.json', '');
 
   const writes = [];
   const providerWrite = async (args) => { writes.push(args); return { status: 'dry-run', dryRun: true }; };
@@ -92,7 +92,7 @@ test('AC3: --apply without approval is dry-run only — zero non-dry writes', as
 test('AC4/AC5: approval writes the correct payload + idempotency, and re-apply is a no-op', async () => {
   const { cwd } = project();
   await analyzeAndPropose({ target: 'jira-core', against: 'proj-app', cwd, deps: { fetchIssues: async () => [], now: () => '2026-07-08T00:00:00.000Z' } });
-  const proposalId = fs.readdirSync(path.join(cwd, '.cx', 'tracker', 'proposals')).find((f) => f.endsWith('.json')).replace('.json', '');
+  const proposalId = fs.readdirSync(path.join(cwd, '.construct', 'tracker', 'proposals')).find((f) => f.endsWith('.json')).replace('.json', '');
 
   let created = 0;
   const writes = [];

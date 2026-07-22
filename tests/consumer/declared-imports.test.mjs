@@ -30,6 +30,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 const SCAFFOLD_ALLOWLIST = new Map([
   ['lib/demo.mjs', new Set(['@playwright/test'])],
+  ['lib/playwright-demo.mjs', new Set(['${baseImport}'])],
 ]);
 
 const STATIC_IMPORT_RES = [

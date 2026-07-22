@@ -13,7 +13,7 @@ Tiers 1, 2, 3, 7 executed; Tiers 4, 5, 6 partial — status noted per section. E
 
 - **Profile:** `rnd` (default)
 - **Fixture:** `npx create-next-app@latest` — TypeScript, Tailwind, ESLint, App Router, `src/` dir, npm. Resolved **create-next-app 16.2.7**, **next 16.2.7**, **react / react-dom 19.2.4**.
-- **Sterile env:** dedicated tmpdir, isolated `HOME` + `CX_HOME_OVERRIDE`, `CONSTRUCT_DEV_PATH` → repo under test, own `git init`. Root: `/var/folders/.../cx-e2e-a-pGFKS0`.
+- **Sterile env:** dedicated tmpdir, isolated `HOME` + `CONSTRUCT_HOME_OVERRIDE`, `CONSTRUCT_DEV_PATH` → repo under test, own `git init`. Root: `/var/folders/.../cx-e2e-a-pGFKS0`.
 - **Verified inputs:** 92 public + 15 internal commands (`lib/cli-commands.mjs`); embedded contract **1.1.0**.
 
 ---
@@ -100,11 +100,11 @@ Every command in the catalog invoked in the sterile env with the safe-invocation
 
 | Class | Skill | Loaded | Frontmatter | Matches disk |
 |---|---|---|---|---|
-| role | `roles/architect` | ✓ | ✓ | ✓ (4116 ch) |
+| role | `perspectives/architect` | ✓ | ✓ | ✓ (4116 ch) |
 | topical | `architecture/api-design` | ✓ | ✓ | ✓ (3234 ch) |
 | utility | `utility/clean-code` | ✓ | ✓ | ✓ (4138 ch) |
 
-> Note: the plan named `skills/roles/cx-architect.md` and `skills/architecture/adr-writing.md`; the actual files are `skills/roles/architect.md` and `skills/architecture/api-design.md` (role skills are unprefixed; no `adr-writing` skill exists). Verified against the real tree.
+> Note: the plan named `skills/perspectives/cx-architect.md` and `skills/architecture/adr-writing.md`; the actual files are `skills/perspectives/architect.md` and `skills/architecture/api-design.md` (role skills are unprefixed; no `adr-writing` skill exists). Verified against the real tree.
 
 **Templates (executed):** the Tier-3 ADR matched `templates/docs/adr.md` structure (all 5 required sections) — verified in Tier 3.
 

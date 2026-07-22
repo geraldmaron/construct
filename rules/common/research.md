@@ -45,10 +45,10 @@ Classify by the claim. For sentiment, demand, adoption-experience, and friction 
 Start with the narrowest authoritative source that can answer the question:
 
 1. **Local project evidence first**
-   - `.cx/research/`
-   - `.cx/knowledge/`
+   - `.construct/research/`
+   - `.construct/knowledge/`
    - `docs/specs/prd/`, `docs/meta-prd/`, `docs/decisions/adr/`, `docs/operations/runbooks/`
-   - ingested markdown artifacts under `.cx/knowledge/`
+   - ingested markdown artifacts under `.construct/knowledge/`
    - repo code, tests, configs, and existing decisions
 2. **Primary external sources second**
    - official docs for the exact version in use
@@ -73,9 +73,10 @@ Record:
 
 ## 5. URL verification
 
-Every URL cited in a committed document must be verified before the document is published.
+Every URL cited in a committed document must be verified before the document is published. See [`citation.md`](citation.md) for the inline citation forms.
 
-- Fetch the URL. Confirm it resolves and the content matches the cited claim.
+- Fetch the URL (`construct artifact validate … --check-links`). Confirm it resolves and the content matches the cited claim.
+- Cite inline with a markdown link at the claim, not only in a Sources table.
 - Do not cite aggregate or index pages (e.g., arxiv.org search results, Google Scholar listings) for quantitative claims: cite the specific paper or article URL.
 - If a URL returns a 404, paywall, or redirect loop, find the canonical source or replace the citation.
 - Unverified URLs must be marked `[unverified]` until confirmed.

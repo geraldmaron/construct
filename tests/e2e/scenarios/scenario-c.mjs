@@ -4,7 +4,7 @@
  * Builds a sterile env on the `research` profile, seeds a real primary-source
  * corpus into inbox/ (three arXiv PDFs on retrieval/embeddings plus five
  * markdown notes representing prior internal thinking), drives the intake loop,
- * and sets up the Tier-3 evidence brief produced by the host cx-researcher →
+ * and sets up the Tier-3 evidence brief produced by the host researcher →
  * cx-evaluator chain.
  *
  * The PDFs are downloaded at run time from their canonical arXiv URLs rather

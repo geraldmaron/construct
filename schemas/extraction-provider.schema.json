@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://construct.dev/schemas/extraction-provider.schema.json",
+  "title": "Construct Extraction Provider Identity",
+  "description": "Identity and declared capabilities of a document extraction provider (construct-tsyfe.2.1). Extraction today is dispatched purely on file extension (lib/document-extract.mjs) and each backend (node-native, the docling sidecar, Docling Serve) returns a slightly different ad hoc shape. This schema is the registration surface a provider ladder can certify against: who the provider is, and what it promises before a single extraction call is made. What one call actually returns is schemas/extraction-result.schema.json. Net-new contract definition: no extractor is migrated to this schema here, no routing logic changes.",
+  "type": "object",
+  "required": ["name", "version", "configFingerprint", "losslessWhereAvailable", "supportsRichDocument"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Stable provider identifier, e.g. 'node-native', 'docling-sidecar', 'docling-serve'."
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Provider or backing-library version string (e.g. docling package version)."
+    },
+    "configFingerprint": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Stable summary/hash of the provider configuration that affects output determinism (model version, OCR settings, remote endpoint) so two runs can be compared for parity."
+    },
+    "losslessWhereAvailable": {
+      "type": "boolean",
+      "description": "Declared capability: whether this provider CAN preserve source structure losslessly when the source format supports it. The actual per-call outcome (and reason when not achieved) is reported on the extraction-result contract, not here."
+    },
+    "supportsRichDocument": {
+      "type": "boolean",
+      "description": "Whether this provider normalizes its output into RichDocument-shaped structure (ADR-0073, lib/rich-document.mjs) rather than flat text only."
+    }
+  }
+}

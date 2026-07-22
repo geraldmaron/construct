@@ -4,6 +4,7 @@
 - **Status**: accepted
 - **Deciders**: Construct maintainers (cx-architect)
 - **Supersedes**: none
+- **Status note (2026-07-20, construct-72gqn.34)**: Operating-profile tiering decision recorded in [Operating profile tiering](#operating-profile-tiering-construct-72gqn34) below. Axis is measured capability class/tier, not Anthropic model family (Fable/Opus/Sonnet/Haiku). Implementation scope is construct-72gqn.35.
 
 ## Problem
 
@@ -118,10 +119,85 @@ High. Removing the markers makes `renderPersonaForTier` treat every section as p
 near-full); `resolveCapabilityTier` returning `full` everywhere restores the prior behavior; not emitting
 `construct-local` leaves a single agent. No persisted state or migration.
 
+## Operating profile tiering (construct-72gqn.34)
+
+Investigation bead for Fable5 wave 5. Read-only inventory and decision record; implementation is
+construct-72gqn.35 (`slug:model-tier-profiles`).
+
+### Inventory (re-grep 2026-07-20, branch `feat/workspace-control-plane`)
+
+**Prompt-composition layer (model-profile fragment budgets):**
+
+| Location | Finding |
+|---|---|
+| `registry/worker-profiles/prompts/**` | Zero matches for legacy literals (`gpt-3.5`, `gpt-4`, `claude-2`, `claude-instant`, `davinci`, `palm`, `opus-3`, `sonnet-3`, `haiku-3`). |
+| `lib/prompt-composer.mjs` | Zero legacy literals. Consumes `operatingProfileIdFromProfile(resolveExecutionCapabilityProfile(...))` and `MODEL_OPERATING_PROFILES[...]` at lines 25-31, 204-208, 239-270. |
+| `lib/model-router.mjs` | `MODEL_OPERATING_PROFILES` (`balanced`, `small`) at lines 63-88; `inferSmallModelProfile` name/size heuristic at lines 102-115; `resolveModelOperatingProfile` at lines 121-131. Haiku substring at line 112 is selection logic, not prompt scaffolding. |
+| `lib/models/execution-capability-profile.mjs` | Header (lines 1-24) tags router heuristics as `compatibility_fallback`; `operatingProfileId` field at lines 134-135, 151-152. |
+
+**Outside prompt composition (routing, telemetry, pricing; not removable prompt scaffolding):**
+
+| Location | Finding |
+|---|---|
+| `lib/models/provider-poll.mjs:127` | `davinci` in `OPENAI_NON_CHAT` catalog filter (routing). |
+| `lib/provider-capabilities-openai.js:31-34` | `gpt-3.5` / `gpt-4` context-window heuristics (provider metadata). |
+| `lib/model-router.mjs:204-226, 284-285, 580-581` | Tier default catalog ids including `claude-opus`, `claude-sonnet`, `claude-haiku` (model routing, not composition). |
+| `lib/certification/`, `lib/telemetry/`, `lib/orchestration/` | Miscellaneous model-id references for certification fixtures, pricing, and comments; none author prompt fragments. |
+
+**Premise correction:** The org-audit brief assumed stale per-model scaffolding in the prompt/composer layer was harming current models. The 2026-07-20 grep confirms that premise is **not evidenced**. The actual gap is the opposite: only two operating profiles (`balanced`, `small`) with a name/size regex fallback, so every hosted frontier model (Sonnet, Opus, future Fable-tier) shares identical composition budgets.
+
+### Decision: capability class/tier, not model family
+
+**Do not add Fable/Opus/Sonnet/Haiku family-keyed operating profiles.**
+
+Fable, Opus, Sonnet, and Haiku are vendor marketing tiers, not measured execution capability. Distinct profiles keyed to those names would duplicate the anti-pattern this ADR and the construct-6zga program already reject:
+
+- `lib/models/behavior-matrix.mjs:6-9` derives capability class from transport plus measured signals, **not vendor name**.
+- `lib/models/execution-policy.mjs:12-14` (construct-6zga.1.2 AC4) branches only on `capabilityClass`, transport, and capability values, never on a model-name string.
+- ADR-0038 already keys persona section inclusion to `resolveCapabilityTier` (capability), not family.
+
+**Extend `MODEL_OPERATING_PROFILES` selection through `ExecutionCapabilityProfile`, keyed by measured capability class and tier evidence.**
+
+| Capability signal | Operating profile (initial mapping for construct-72gqn.35) |
+|---|---|
+| `capabilityClass` `local-constrained` or `unknown` | `small` |
+| `capabilityClass` `local-capable` | `balanced` (same token fields; persona tier still handled by `resolveCapabilityTier`) |
+| `capabilityClass` `hosted-direct` or `hosted-routed` | `balanced` |
+| Operator override (`CONSTRUCT_MODEL_PROFILE` / `constructModelProfile`) | Explicit profile id (unchanged) |
+| No measured evidence yet | Existing `inferSmallModelProfile` regex remains as `compatibility_fallback` until the capability-adaptive selector covers equivalent cases |
+
+Haiku-like hosted models that need tighter budgets should land in `small` because measured class or probe evidence says constrained, not because the id string contains `haiku`. Future Fable-tier models that share `hosted-direct` class with Sonnet/Opus stay on `balanced` unless live probe or provider metadata proves a different capability envelope.
+
+A third named profile (for example `generous`) is **deferred** until measured evidence shows `balanced` systematically under-serves a capability class. Do not pre-create family slots.
+
+**Profile field shape:** Keep the existing record shape (`maxPromptTokens`, per-fragment token budgets, `retrievalFirst`, `preferCompressedRoleGuidance`). No new fields until a measured gap requires them. Any extension adjusts values per capability class, not per vendor family.
+
+**Retire `inferSmallModelProfile` only in construct-72gqn.35** when `ExecutionCapabilityProfile`-driven selection covers every case the regex currently handles, with equal or better evidence tagging (`compatibility_fallback` replaced by `provider_metadata`, `live_probe`, or `operator_override`). Do not delete the regex in this investigation bead.
+
+### Relationship to construct-6zga.1.2 (capability-adaptive policy)
+
+**Status:** closed (2026-06-22). **Relationship:** orthogonal and complementary, not subsuming.
+
+| Layer | Owner | What it controls |
+|---|---|---|
+| Persona section tier | `resolveCapabilityTier` (`lib/model-router.mjs:144-151`) | Which `##` persona sections emit (`floor` / `mid` / `full`). |
+| Operating profile (this decision) | `resolveModelOperatingProfile` via `ExecutionCapabilityProfile.operatingProfileId` | Prompt-composer fragment token budgets and pruning flags (`lib/prompt-composer.mjs:204-270`). |
+| Per-turn execution policy | `compileExecutionPolicy` (`lib/models/execution-policy.mjs`) | Tool-schema cap, tool iterations, output budget, visible thinking, caching (construct-6zga.1.2). |
+
+construct-6zga.1.2 **does not** replace operating-profile selection. It **reads** `operatingProfileIdFromProfile` (`lib/models/execution-policy.mjs:181-183`) but compiles tool/output controls from `capabilityClass`. Both layers must stay name-driven-free.
+
+`lib/models/execution-capability-profile.mjs:15-22` anticipates construct-6zga.1.2 superseding the **heuristic** for measured fields. construct-72gqn.35 applies the same supersession pattern to `operatingProfileId`, wiring selection off `capabilityClass`, `capabilityTier`, probe verdict, and provider metadata instead of `inferSmallModelProfile` alone.
+
+### Unblocks construct-72gqn.35
+
+Implementation bead scope is fixed: capability-class/tier-keyed operating profiles driving prompt composition; no family-keyed tiers; retire `inferSmallModelProfile` only when the investigation cleared it; functional test plus `construct doctor` as completion gates.
+
 ## References
 
-- `lib/persona-sections.mjs`, `lib/model-router.mjs` (`resolveCapabilityTier`, `inferSmallModelProfile`),
-  `scripts/sync-specialists.mjs` (`buildPrompt`, `syncOpencode`), `lib/prompt-composer.js`.
+- `lib/persona-sections.mjs`, `lib/model-router.mjs` (`resolveCapabilityTier`, `inferSmallModelProfile`,
+  `MODEL_OPERATING_PROFILES`, `resolveModelOperatingProfile`), `lib/models/execution-capability-profile.mjs`,
+  `lib/models/execution-policy.mjs`, `scripts/sync-specialists.mjs` (`buildPrompt`, `syncOpencode`),
+  `lib/prompt-composer.mjs`.
 - ADR-0032 (small-model context methodology), ADR-0034 (local-vs-cloud detected not declared),
   ADR-0037 (static-budget gap recorded for later), ADR-0002 (platform-native orchestration).
 - Liu et al., "Lost in the Middle" (arXiv:2307.03172); aider architect/editor; LMSYS RouteLLM;

@@ -95,7 +95,7 @@ async function scoreRole(name, { classifier, file }) {
     if (!candidate) return null;
     const r = await verifyIntent({
       request: req,
-      specialist: `cx-${name}`,
+      workerProfileId: name,
       flavor: candidate,
     });
     return r.verified && r.confidence >= 0.6 ? candidate : null;

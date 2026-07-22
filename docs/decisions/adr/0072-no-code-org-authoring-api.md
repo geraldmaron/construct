@@ -1,6 +1,9 @@
 <!--
 cx_doc_id and body_hash are stamped by construct on commit; omitted in this draft.
 -->
+
+> **Obsolete (Construct 2.0 vocabulary):** This ADR remains `proposed` for historical traceability but describes retired org authoring paths (`specialists/org/**`, `construct specialist create`, `.cx/org/**`). Current equivalents: **Worker Profiles** in `registry/worker-profiles/`, **Workspace Presets** in `registry/workspace-presets/`, and project overlays under `.construct/`. See `docs/obsolete/legacy-surface-register.md`.
+
 # ADR-0072: No-code org authoring API — a stable CRUD surface for specialists, teams, contracts, relationships, fences, and skills
 
 - **Date**: 2026-07-07

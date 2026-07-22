@@ -174,7 +174,7 @@ describe('FilesystemTaskGraphStore', () => {
     assert.ok(all[0].createdAt <= all[1].createdAt);
   });
 
-  it('writes graphs under .cx/task-graphs/', () => {
+  it('writes graphs under .construct/task-graphs/', () => {
     const graph = generateTaskGraphFromTriage({ triage: bugTriage() });
     store.save(graph);
     const dir = storeDir(projectRoot);

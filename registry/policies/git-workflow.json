@@ -1,0 +1,14 @@
+{
+  "id": "git-workflow",
+  "ownerWorkerProfile": "orchestrator",
+  "description": "Enforces branch naming, commit message style, and push guard (no direct-to-main pushes).",
+  "enforcement": "lib/hooks/pre-push-gate.mjs",
+  "mode": "deterministic",
+  "approvalWorkerProfiles": [],
+  "requiredPolicies": [],
+  "vetoWorkerProfiles": [],
+  "escalationWorkerProfiles": [],
+  "governs": [],
+  "conditions": [],
+  "evidence": []
+}

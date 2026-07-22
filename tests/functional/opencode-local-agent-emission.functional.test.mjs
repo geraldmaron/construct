@@ -1,7 +1,7 @@
 /**
  * tests/functional/opencode-local-agent-emission.functional.test.mjs
  *
- * Asserts the hybrid architect/editor split. Spawns the real sync-specialists.mjs into an
+ * Asserts the hybrid architect/editor split. Spawns the real sync-worker-profiles.mjs into an
  * isolated tmp HOME. When the user-selected OpenCode primary is local, sync emits a
  * `construct-local` editor: mode subagent, pinned to a user-declared local model,
  * escalation directive in the
@@ -20,7 +20,7 @@ import test from "node:test";
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const SYNC_SCRIPT = join(REPO_ROOT, "scripts", "sync-specialists.mjs");
+const SYNC_SCRIPT = join(REPO_ROOT, "scripts", "sync-worker-profiles.mjs");
 
 function seededHome(config) {
   const sandbox = mkdtempSync(join(tmpdir(), "oc-localagent-"));

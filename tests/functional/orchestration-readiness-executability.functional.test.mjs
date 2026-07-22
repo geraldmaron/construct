@@ -29,17 +29,17 @@ function freshCwd() {
 test.after(() => { for (const d of dirs) { try { rmTmpDir(d); } catch {} } });
 
 // planRun resolves the run store through the machine-scoped state root
-// (ADR-0066), which reads CX_HOME_OVERRIDE from real process.env directly.
+// (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE from real process.env directly.
 // Pin it for the whole file so these runs never write into the real
 // developer machine's ~/.construct/projects/.
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-readiness-exec-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 test.after(() => {
   try { rmTmpDir(homeOverride); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
 const ATTACHED_INPUT = { observedTools: ['orchestration_policy', 'orchestration_run'] };
@@ -57,9 +57,9 @@ test('no model resolvable on this env: readiness is non-PASS with a model reason
 test('a fully resolvable env: verdict PASS and includes workerBackend and web mode fields', () => {
   const cwd = freshCwd();
   const env = {
-    CX_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
-    CX_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6',
-    CX_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
+    CONSTRUCT_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
+    CONSTRUCT_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6',
+    CONSTRUCT_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
     ANTHROPIC_API_KEY: 'sk-test-canary',
   };
   const readiness = buildOrchestrationReadiness(ATTACHED_INPUT, { env, cwd });
@@ -82,9 +82,9 @@ test('parity: the readiness verdict on env E predicts whether planRun on env E d
 test('parity holds on a fully resolvable env too (non-degraded control)', async () => {
   const cwd = freshCwd();
   const env = {
-    CX_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
-    CX_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6',
-    CX_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
+    CONSTRUCT_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
+    CONSTRUCT_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6',
+    CONSTRUCT_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
     ANTHROPIC_API_KEY: 'sk-test-canary',
   };
   const readiness = buildOrchestrationReadiness(ATTACHED_INPUT, { env, cwd });
@@ -94,7 +94,7 @@ test('parity holds on a fully resolvable env too (non-degraded control)', async 
 });
 
 // construct-neq9.2/.3: the third fixture cell — a provider key present, no
-// CX_MODEL_REASONING/STANDARD/FAST pin — is the exact incident machine state
+// CONSTRUCT_MODEL_REASONING/STANDARD/FAST pin — is the exact incident machine state
 // (run-02158a157d53). resolveEmbeddedModel resolves it via
 // credential-family-fallback, so it must land in the same non-degraded bucket
 // as the fully-pinned env, not the no-keys-no-tiers bucket above.

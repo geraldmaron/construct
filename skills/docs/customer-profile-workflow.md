@@ -11,7 +11,7 @@ Use when: customer evidence should update durable product memory.
 
 ## Steps
 
-1. Load the existing customer profile from `.cx/knowledge/internal/customer-profiles/` if present.
+1. Load the existing customer profile from `.construct/knowledge/internal/customer-profiles/` if present.
 2. Read the new source evidence.
 3. Add new facts, asks, pain points, contacts, product areas, and evidence links.
 4. Preserve historical entries. Do not delete or rewrite prior history without explicit approval.
@@ -27,3 +27,9 @@ Customer profiles are indexed by hybrid retrieval. Future PRDs, PRFAQs, evidence
 ## Release gate
 
 Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.
+
+## Shared authorship contract
+
+Before drafting or reviewing, call `get_skill("docs/artifact-authorship")` for framing, template population, storytelling, human voice, adversarial review, anti-fabrication, and cross-persona triggers. Persona overlays under `skills/perspectives/` add failure modes; they do not waive that contract.
+
+**Before you write (voice):** prefer contractions (`don't`/`won't`/`can't`); avoid spaced em dashes (` — `); refuse AI tells (delve, leverage, robust as filler, "it's important to note", "In today's…", "This ensures that…", empty tricolons); sound like a careful colleague. Exceptions: ACs, legal shall/must not, quoted statute, exact required section titles. See `rules/common/human-voice.md`.

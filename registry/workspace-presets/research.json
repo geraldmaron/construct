@@ -1,0 +1,65 @@
+{
+  "id": "research",
+  "displayName": "Research",
+  "skills": [
+    "docs/research-workflow",
+    "docs/evidence-ingest-workflow",
+    "docs/transcript-synthesis",
+    "strategy/market-research-methods"
+  ],
+  "procedures": [],
+  "intake": {
+    "types": [
+      "question",
+      "study",
+      "synthesis",
+      "report",
+      "experiment",
+      "ops",
+      "unknown"
+    ],
+    "stages": [
+      "question",
+      "gather",
+      "analyze",
+      "synthesize",
+      "recommend"
+    ],
+    "classificationTable": "lib/intake/tables/research.mjs"
+  },
+  "artifactClasses": [
+    "research-brief",
+    "evidence-brief",
+    "one-pager",
+    "memo",
+    "strategy"
+  ],
+  "tagline": "Question, gather, analyze, synthesize, recommend. Investigate and report.",
+  "hooks": {
+    "sessionReflect": "on",
+    "sessionOptimize": "on"
+  },
+  "toneDefaults": {
+    "research-brief": "direct",
+    "evidence-brief": "direct",
+    "memo": "executive-concise"
+  },
+  "researchProfiles": {
+    "question": "external",
+    "study": "user",
+    "synthesis": "external",
+    "report": "external",
+    "experiment": "external"
+  },
+  "rebrand": {
+    "intakeQueueLabel": "Research queue",
+    "signalNoun": "question"
+  },
+  "capabilities": {
+    "intake": {
+      "inbox": true,
+      "dedup": "sha256",
+      "attribution": true
+    }
+  }
+}

@@ -14,7 +14,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { classifyAction, AUTO_ACTIONS, APPROVE_ACTIONS } from '../../lib/oracle/policy.mjs';
-import { synthesizeVerdict } from '../../lib/oracle/synthesize.mjs';
+import { synthesizeVerdict, VERDICT_STATES } from '../../lib/oracle/synthesize.mjs';
 import { runOracleTick, listPending, approvePending } from '../../lib/oracle/actions.mjs';
 import { createDaemon } from '../../lib/daemons/contract.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
@@ -22,8 +22,8 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 function freshProject() {
   const projectDir = mkdtempSync(join(tmpdir(), 'construct-oracle-tick-'));
   const homeDir = mkdtempSync(join(tmpdir(), 'construct-oracle-tick-home-'));
-  mkdirSync(join(projectDir, '.cx'), { recursive: true });
-  mkdirSync(join(homeDir, '.cx'), { recursive: true });
+  mkdirSync(join(projectDir, '.construct'), { recursive: true });
+  mkdirSync(join(homeDir, '.construct'), { recursive: true });
   return {
     projectDir,
     homeDir,
@@ -57,7 +57,7 @@ test('synthesizeVerdict flags parity drift and missing census', () => {
     observations: { present: false, count: 0 },
   };
   const { verdict, gaps, recommendedActions } = synthesizeVerdict(readModel);
-  assert.equal(verdict, 'degraded');
+  assert.equal(verdict, 'failed');
   assert.ok(gaps.some((g) => g.id === 'parity-drift'));
   assert.ok(gaps.some((g) => g.id === 'census-stale'));
   assert.ok(recommendedActions.some((a) => a.kind === 'adapters-sync'));
@@ -68,10 +68,10 @@ test('runOracleTick dry-run executes auto actions without writing pending queue'
   try {
     process.env.CONSTRUCT_ORACLE_AUTO_RAISE = 'off';
     const result = await runOracleTick({ ...env, dryRun: true });
-    assert.ok(['healthy', 'attention', 'degraded'].includes(result.verdict));
+    assert.ok(VERDICT_STATES.includes(result.verdict));
     const hasRegistryAuto = result.tick.executed.some((e) => e.kind === 'registry-validate');
     assert.equal(hasRegistryAuto, result.recommendedActions.some((a) => a.kind === 'registry-validate'));
-    const pendingFile = join(env.projectDir, '.cx', 'oracle', 'pending.jsonl');
+    const pendingFile = join(env.projectDir, '.construct', 'oracle', 'pending.jsonl');
     assert.equal(existsSync(pendingFile), false);
   } finally {
     delete process.env.CONSTRUCT_ORACLE_AUTO_RAISE;
@@ -82,10 +82,10 @@ test('runOracleTick dry-run executes auto actions without writing pending queue'
 test('runOracleTick queues approve actions to pending.jsonl', async () => {
   const env = freshProject();
   try {
-    writeFileSync(join(env.projectDir, '.cx', 'contract-violations.jsonl'), JSON.stringify({
+    writeFileSync(join(env.projectDir, '.construct', 'contract-violations.jsonl'), JSON.stringify({
       ts: new Date().toISOString(),
       contractId: 'test-contract',
-      agent: 'cx-engineer',
+      agent: 'engineer',
     }) + '\n');
 
     const result = await runOracleTick({ ...env, dryRun: false });

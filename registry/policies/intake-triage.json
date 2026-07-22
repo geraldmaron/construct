@@ -1,0 +1,16 @@
+{
+  "id": "intake-triage",
+  "ownerWorkerProfile": "product-manager",
+  "description": "Product group triages incoming signals and routes them to the appropriate team.",
+  "enforcement": "hard",
+  "mode": "approval",
+  "approvalWorkerProfiles": [],
+  "requiredPolicies": [],
+  "vetoWorkerProfiles": [],
+  "escalationWorkerProfiles": [],
+  "governs": [
+    "intake-triage"
+  ],
+  "conditions": [],
+  "evidence": []
+}

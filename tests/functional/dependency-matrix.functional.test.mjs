@@ -4,7 +4,7 @@
  *
  * Drives the real `construct` binary in an isolated project dir (graph build →
  * impact) and exercises the real Oracle synthesis module, asserting on durable
- * artifacts (.cx/graph/*) and the gap/route signals the overseer emits. Per
+ * artifacts (.construct/graph/*) and the gap/route signals the overseer emits. Per
  * CLAUDE.md, multi-component features (graph builder + CLI + Oracle collector +
  * synthesis) require a functional test that spawns the binary / imports the
  * real module in a tmpdir.
@@ -49,17 +49,17 @@ function runConstruct(args, cwd) {
   return spawnSync(process.execPath, [BIN, ...args], {
     cwd,
     encoding: 'utf8',
-    env: { ...process.env, HOME: SANDBOX_HOME, CX_HOME_OVERRIDE: SANDBOX_HOME },
+    env: { ...process.env, HOME: SANDBOX_HOME, CONSTRUCT_HOME_OVERRIDE: SANDBOX_HOME },
   });
 }
 
-test('construct matrix build writes a durable graph with capability nodes', () => {
+test('construct graph build writes a durable graph with capability nodes', () => {
   const project = tmpProject();
-  const res = runConstruct(['matrix', 'build', '--no-co-change'], project);
+  const res = runConstruct(['graph', 'build', '--no-co-change'], project);
   assert.equal(res.status, 0, res.stderr);
 
   const nodesFile = path.join(project, '.construct', 'graph', 'nodes.jsonl');
-  assert.ok(fs.existsSync(nodesFile), 'nodes.jsonl persisted under the project .cx/graph');
+  assert.ok(fs.existsSync(nodesFile), 'nodes.jsonl persisted under the project .construct/graph');
   const ids = new Set(fs.readFileSync(nodesFile, 'utf8').trim().split('\n').map((l) => JSON.parse(l).id));
   assert.ok(ids.has('capability:oracle.meta-review'), 'capability nodes are present');
   assert.ok([...ids].some((id) => id.startsWith('file:lib/')), 'file nodes from import derivation are present');
@@ -67,7 +67,7 @@ test('construct matrix build writes a durable graph with capability nodes', () =
 
 test('construct impact reverse-traces a changed file to its capability tests', () => {
   const project = tmpProject();
-  assert.equal(runConstruct(['matrix', 'build', '--no-co-change'], project).status, 0);
+  assert.equal(runConstruct(['graph', 'build', '--no-co-change'], project).status, 0);
 
   const res = runConstruct(['impact', 'lib/oracle/synthesize.mjs', '--json'], project);
   assert.equal(res.status, 0, res.stderr);
@@ -98,13 +98,13 @@ test('Oracle synthesis emits and routes the dependency-matrix gaps', () => {
 
   const { gaps } = synthesizeVerdict(readModel);
   const ids = new Set(gaps.map((g) => g.id));
-  assert.ok(ids.has('dependency-graph-stale'), 'stale gap emitted');
+  assert.ok(ids.has('graph-stale'), 'stale gap emitted');
   assert.ok(ids.has('matrix-coverage-gap'), 'coverage gap emitted');
   assert.ok(ids.has('impact-untested'), 'freshness gap emitted');
 
-  assert.equal(routeGap({ id: 'matrix-coverage-gap' }).primary, 'cx-architect');
-  assert.equal(routeGap({ id: 'impact-untested' }).primary, 'cx-qa');
-  assert.equal(routeGap({ id: 'dependency-graph-stale' }).primary, 'cx-engineer');
+  assert.equal(routeGap({ id: 'matrix-coverage-gap' }).workerProfileId, 'architect');
+  assert.equal(routeGap({ id: 'impact-untested' }).workerProfileId, 'qa');
+  assert.equal(routeGap({ id: 'graph-stale' }).workerProfileId, 'engineer');
 
   for (const g of gaps) assert.ok(g.remediationRoute, `gap ${g.id} carries a remediation route`);
 });
@@ -114,5 +114,5 @@ test('absent dependency graph yields no matrix gaps', () => {
   const ids = new Set(gaps.map((g) => g.id));
   assert.ok(!ids.has('matrix-coverage-gap'));
   assert.ok(!ids.has('impact-untested'));
-  assert.ok(!ids.has('dependency-graph-stale'));
+  assert.ok(!ids.has('graph-stale'));
 });

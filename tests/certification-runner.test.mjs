@@ -29,7 +29,7 @@ test('live scenario without opt-in records inconclusive and exits 2', async (t) 
   t.after(() => fs.rmSync(rootDir, { recursive: true, force: true }));
   const env = { ...process.env };
   delete env[LIVE_OPT_IN_ENV];
-  const result = await runCertificationScenario('specialist.prompt.normal', { projectDir: rootDir, repoRoot: process.cwd(), env });
+  const result = await runCertificationScenario('worker-profile.prompt.normal', { projectDir: rootDir, repoRoot: process.cwd(), env });
   assert.equal(result.exitCode, 2);
   assert.equal(result.run.verdict.status, 'inconclusive');
   assert.equal(result.run.verdict.source, 'skipped-provider');

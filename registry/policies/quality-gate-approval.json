@@ -1,0 +1,18 @@
+{
+  "id": "quality-gate-approval",
+  "ownerWorkerProfile": "reviewer",
+  "description": "Quality group approves readiness for release.",
+  "enforcement": "hard",
+  "mode": "approval",
+  "approvalWorkerProfiles": [],
+  "requiredPolicies": [],
+  "vetoWorkerProfiles": [],
+  "escalationWorkerProfiles": [
+    "architect"
+  ],
+  "governs": [
+    "quality-gate-approval"
+  ],
+  "conditions": [],
+  "evidence": []
+}

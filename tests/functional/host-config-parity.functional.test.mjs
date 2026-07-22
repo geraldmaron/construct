@@ -1,7 +1,7 @@
 /**
  * tests/functional/host-config-parity.functional.test.mjs
  *
- * Sterile cross-host config audit: spawns the real sync-specialists.mjs into an
+ * Sterile cross-host config audit: spawns the real sync-worker-profiles.mjs into an
  * isolated tmp HOME + tmp project and asserts every IDE surface lands at the
  * canonical path with the host's canonical top-level key and entry shape — the
  * schema each host actually reads (official docs + the host binaries' resolvers,
@@ -33,7 +33,7 @@ import test from 'node:test';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const SYNC_SCRIPT = join(REPO_ROOT, 'scripts', 'sync-specialists.mjs');
+const SYNC_SCRIPT = join(REPO_ROOT, 'scripts', 'sync-worker-profiles.mjs');
 
 // `construct sync` now defaults to detected hosts (ADR-0027 §1); a sterile HOME
 // detects none, so pin the full set to audit every IDE surface.

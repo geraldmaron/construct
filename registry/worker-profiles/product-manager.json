@@ -1,0 +1,126 @@
+{
+  "id": "product-manager",
+  "displayName": "Translates user reality into technical deliverables — skeptical of any requirement that can't be traced to observed user behavior.",
+  "description": "Translates user reality into technical deliverables — skeptical of any requirement that can't be traced to observed user behavior.",
+  "runtime": "host-agent",
+  "modelTier": "strong",
+  "reasoningEffort": "high",
+  "skillEmphasis": [
+    "docs/artifact-authorship",
+    "docs/product-intelligence-workflow",
+    "docs/evidence-ingest-workflow",
+    "docs/product-signal-workflow",
+    "docs/customer-profile-workflow",
+    "docs/prd-workflow",
+    "docs/prfaq-workflow",
+    "docs/backlog-proposal-workflow",
+    "docs/product-intelligence-review",
+    "docs/strategy-workflow",
+    "strategy/competitive-landscape",
+    "strategy/competitive-intel",
+    "strategy/financial-model",
+    "strategy/market-research-methods",
+    "strategy/pricing-positioning",
+    "strategy/narrative-arc",
+    "strategy/prioritization-methods",
+    "strategy/experimentation"
+  ],
+  "procedureAffinity": [
+    "prd-draft"
+  ],
+  "capabilities": [
+    "workflow.prd-draft",
+    "document-type.evidence-brief",
+    "document-type.prd"
+  ],
+  "policyFence": {
+    "allowedPaths": [
+      "docs/specs/prd/**",
+      "docs/prd/**",
+      "docs/meta-prd/**",
+      "docs/prfaq/**",
+      "docs/one-pager/**",
+      ".construct/knowledge/**",
+      "docs/strategy/**",
+      ".construct/knowledge/decisions/strategy/**"
+    ],
+    "allowedBdLabels": [
+      "product",
+      "prd",
+      "backlog",
+      "feature",
+      "strategy",
+      "business"
+    ],
+    "allowedCommands": [
+      "bd create",
+      "bd note",
+      "bd update",
+      "bd label",
+      "bd priority"
+    ],
+    "approvalRequired": [
+      "commit",
+      "push",
+      "edit:lib/**",
+      "edit:bin/**"
+    ]
+  },
+  "events": [
+    "backlog.stale",
+    "prd.requested",
+    "strategy.required"
+  ],
+  "artifactClasses": [
+    "prd",
+    "meta-prd",
+    "prfaq",
+    "one-pager",
+    "backlog-proposal",
+    "prd-platform",
+    "prd-business",
+    "customer-profile",
+    "strategy"
+  ],
+  "watchConditions": [
+    {
+      "watcher": "high-ambiguity-deep-work",
+      "reason": "clarify acceptance criteria (high ambiguity)"
+    },
+    {
+      "watcher": "named-cost-constraint",
+      "reason": "named budget/cost constraint — financial tradeoff review"
+    }
+  ],
+  "permissions": {},
+  "participationRules": [
+    {
+      "id": "cost-value-tradeoff-review",
+      "when": {
+        "signalExpr": "cost"
+      },
+      "workerProfiles": [
+        "product-manager"
+      ],
+      "assignmentRole": "reviewer",
+      "gate": "advisory",
+      "reason": "cost signal — value-tradeoff framework review ",
+      "dimension": "product"
+    }
+  ],
+  "toolGrants": [
+    "Read",
+    "Grep",
+    "Glob",
+    "LS",
+    "WebSearch",
+    "WebFetch",
+    "list_skills",
+    "get_skill",
+    "search_skills",
+    "get_template",
+    "list_templates",
+    "memory_search",
+    "memory_add_observations"
+  ]
+}

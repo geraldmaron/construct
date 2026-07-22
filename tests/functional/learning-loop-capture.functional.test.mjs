@@ -3,7 +3,7 @@
  *
  * Characterization tests for the learning-loop tool-miss capture (self-audit construct-rr63.9.1,
  * under the tool-contract-gate). Agent I found the capture is write-only: recordToolNameMiss
- * (lib/mcp/tool-recovery.mjs:35) appends to .cx/observations/tool-name-misses.jsonl, but a
+ * (lib/mcp/tool-recovery.mjs:35) appends to .construct/observations/tool-name-misses.jsonl, but a
  * repo-wide search finds no reader/aggregator that surfaces those misses. These tests pin both
  * halves: the producer writes a well-formed, appendable JSONL entry, and the module exposes no
  * consumer API. The Wave-4 follow-on (a doctor watcher / oracle action that reads the file and
@@ -96,7 +96,7 @@ test('failure capture records and aggregates tool failures into a learnable anti
 
 // construct-bh8h4: the Oracle read model / synthesize / policy pipeline, not just
 // learning-status, must surface a tool-discoverability signal. collectReadModel needs a real
-// specialists/org tree to assemble the registry (collectTeamGovernance), so rootDir is a fresh
+// registry tree to assemble the registry (collectTeamGovernance), so rootDir is a fresh
 // copy of it rather than a bare tmpdir — the same fixture shape as
 // tests/functional/oracle-read-model.functional.test.mjs.
 
@@ -107,12 +107,11 @@ function freshOracleEnv() {
   roots.push(homeDir, rootDir);
   fs.mkdirSync(path.join(projectDir, '.construct', 'observations'), { recursive: true });
   fs.mkdirSync(path.join(projectDir, '.construct', 'outcomes'), { recursive: true });
-  fs.mkdirSync(path.join(rootDir, 'audit-artifacts'), { recursive: true });
   fs.mkdirSync(doctorRoot(homeDir), { recursive: true });
-  fs.mkdirSync(path.join(rootDir, 'specialists'), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, 'audit-artifacts'), { recursive: true });
   fs.cpSync(
-    path.join(process.cwd(), 'specialists', 'org'),
-    path.join(rootDir, 'specialists', 'org'),
+    path.join(process.cwd(), 'registry'),
+    path.join(rootDir, 'registry'),
     { recursive: true },
   );
   return { projectDir, homeDir, rootDir };

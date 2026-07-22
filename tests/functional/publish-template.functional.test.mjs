@@ -22,6 +22,7 @@ import {
   injectMermaidBrandTheme,
   preprocessMarkdownDiagrams,
   buildDistributionDiagramEnv,
+  puppeteerExecutableUsable,
   resolvePuppeteerExecutable,
 } from '../../lib/diagram-export.mjs';
 import { pdfEngineFontOpts } from '../../lib/document-export.mjs';
@@ -30,9 +31,10 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const GOLDEN = path.join(REPO, 'tests', 'fixtures', 'publish', 'golden-prd-platform.md');
 
-test('BRAND uses monochrome ink accent', () => {
-  assert.equal(BRAND.accent, '#0a0c10');
+test('BRAND uses field-notebook slate-teal accent', () => {
+  assert.equal(BRAND.accent, '#1f5c61');
   assert.notEqual(BRAND.accent, '#38bdf8');
+  assert.notEqual(BRAND.accent, '#0a0c10');
 });
 
 test('templateForArtifactType routes prd-platform to construct-prd.typ', () => {
@@ -65,7 +67,7 @@ test('parseArtifactMetadata reads golden fixture fields', () => {
   const meta = parseArtifactMetadata(GOLDEN);
   assert.match(meta.title, /Enterprise Agentic Platform/);
   assert.equal(meta.status, 'draft');
-  assert.equal(meta.owner, 'cx-product-manager');
+  assert.equal(meta.owner, 'product-manager');
   assert.equal(meta.artifactType, 'prd-platform');
   assert.equal(meta.date, '2026-06-19');
   assert.match(meta.subtitle, /Governed agentic platform/);
@@ -76,7 +78,10 @@ test('parseArtifactMetadata reads golden fixture fields', () => {
 test('bundled distribution fonts ship with templates', () => {
   const fontDir = path.join(REPO, 'templates', 'distribution', 'fonts');
   for (const file of [
-    'SpaceGrotesk-Variable.ttf',
+    'PlusJakartaSans-Regular.ttf',
+    'PlusJakartaSans-Medium.ttf',
+    'PlusJakartaSans-SemiBold.ttf',
+    'PlusJakartaSans-Bold.ttf',
     'JetBrainsMono-Regular.ttf',
     'JetBrainsMono-Medium.ttf',
     'JetBrainsMono-SemiBold.ttf',
@@ -105,8 +110,55 @@ test('preprocessMarkdownForPdfExport strips duplicate cover title and metadata b
   const out = preprocessMarkdownForPdfExport(raw, meta);
   assert.doesNotMatch(out, /^#\s+Platform PRD/m);
   assert.doesNotMatch(out, /\*\*Owner\*\*:/);
-  assert.match(out, /^>\s+Platform teams need/m);
+  assert.match(out, /Platform teams need a governed layer/);
   assert.match(out, /^## Problem/m);
+});
+
+test('preprocessMarkdownForPdfExport strips prefixed H1 when title lacks artifact prefix', () => {
+  const md = `---
+title: "Team workspace sharing"
+status: draft
+owner: product-manager
+---
+
+# PRD: Team workspace sharing
+
+- **Date**: 2026-07-21
+- **Owner**: product-manager
+- **Status**: draft
+
+## TL;DR
+
+Body starts here.
+`;
+  const meta = { title: 'Team workspace sharing', status: 'draft', owner: 'product-manager' };
+  const out = preprocessMarkdownForPdfExport(md, meta);
+  assert.doesNotMatch(out, /^#\s+PRD:/m);
+  assert.doesNotMatch(out, /\*\*Owner\*\*:/);
+  assert.match(out, /Body starts here/);
+});
+
+test('parseArtifactMetadata reads tags contributors and approvers from frontmatter', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'publish-meta-'));
+  try {
+    const file = path.join(dir, 'meta.md');
+    fs.writeFileSync(file, `---
+title: "Sample"
+tags:
+  - alpha
+  - beta
+contributors: alice, bob
+approvers:
+  - counsel
+---
+`, 'utf8');
+    const meta = parseArtifactMetadata(file);
+    assert.equal(meta.tags, 'alpha · beta');
+    assert.equal(meta.contributors, 'alice · bob');
+    assert.equal(meta.approvers, 'counsel');
+  } finally {
+    rmTmpDir(dir);
+  }
 });
 
 test('pandocMetadataArgs forwards non-empty metadata', () => {
@@ -117,6 +169,9 @@ test('pandocMetadataArgs forwards non-empty metadata', () => {
     artifactType: 'prd-platform',
     version: '0.1',
     docId: 'DOC-1',
+    tags: 'alpha · beta',
+    contributors: 'alice',
+    approvers: 'counsel',
   });
   assert.deepEqual(args, [
     '-M', 'title=T',
@@ -124,97 +179,115 @@ test('pandocMetadataArgs forwards non-empty metadata', () => {
     '-M', 'artifactType=prd-platform',
     '-M', 'version=0.1',
     '-M', 'docId=DOC-1',
+    '-M', 'tags=alpha · beta',
+    '-M', 'contributors=alice',
+    '-M', 'approvers=counsel',
   ]);
 });
 
-test('distribution diagram defaults use compact hand-drawn sizing', () => {
+test('distribution diagram defaults use classic Mermaid + D2 sketch', () => {
   const defaults = distributionDiagramDefaults();
   assert.equal(defaults.d2Theme, 'neutral');
   assert.equal(defaults.d2Sketch, true);
-  assert.equal(defaults.d2Scale, 0.72);
-  assert.equal(defaults.d2FontSize, 14);
-  assert.equal(defaults.figureMaxWidth, '92%');
-  assert.equal(defaults.mermaidLook, 'handDrawn');
-  assert.equal(defaults.mermaidWidth, 2400);
+  assert.equal(defaults.d2Scale, 0.9);
+  assert.equal(defaults.d2FontSize, 12);
+  assert.equal(defaults.figureMaxWidth, '72%');
+  assert.equal(defaults.mermaidLook, 'classic');
+  assert.equal(defaults.mermaidWidth, 1600);
   assert.equal(defaults.mermaidScale, 2);
-  assert.equal(defaults.accent, '#0a0c10');
+  assert.equal(defaults.accent, '#1f5c61');
 });
 
-test('injectMermaidBrandTheme adds handDrawn init with monochrome ink and handwritten font', () => {
+test('injectMermaidBrandTheme adds classic Plus Jakarta init with notebook ink', () => {
   const out = injectMermaidBrandTheme('flowchart TD\n  A --> B');
   assert.match(out, /%%\{init:/);
-  assert.match(out, /handDrawn/);
+  assert.match(out, /classic/);
+  assert.match(out, /Plus Jakarta Sans/);
+  assert.match(out, /nodeSpacing': 36/);
   assert.match(out, /htmlLabels/);
-  assert.match(out, /Caveat/);
-  assert.match(out, /0a0c10/);
+  assert.match(out, /1f5c61/);
+  assert.match(out, /1a1d24/);
+  assert.doesNotMatch(out, /handDrawn/);
+  assert.doesNotMatch(out, /Caveat/);
   assert.doesNotMatch(out, /8b5cf6/);
 });
 
-test('preprocessMarkdownDiagrams brands mermaid and d2 fences monochrome', () => {
+test('preprocessMarkdownDiagrams brands mermaid and d2 fences field-notebook', () => {
   const md = '# Doc\n\n```mermaid\nflowchart TD\n  A --> B\n```\n\n```d2\na -> b\n```\n';
   const out = preprocessMarkdownDiagrams(md);
-  assert.match(out, /0a0c10/);
+  assert.match(out, /1a1d24/);
   assert.doesNotMatch(out, /8b5cf6/);
-  assert.match(out, /style\.font-size: 14/);
+  assert.match(out, /style\.font-size: 12/);
   assert.match(out, /```d2/);
 });
 
-test('buildDistributionDiagramEnv sets CONSTRUCT_D2_THEME and sketch flag', () => {
+test('buildDistributionDiagramEnv sets CONSTRUCT_D2_THEME and compact sketch', () => {
   const env = buildDistributionDiagramEnv({});
   assert.equal(env.CONSTRUCT_D2_THEME, '0');
-  assert.equal(env.CONSTRUCT_D2_SCALE, '0.72');
+  assert.equal(env.CONSTRUCT_D2_SCALE, '0.9');
   assert.equal(env.CONSTRUCT_D2_SKETCH, '1');
+  assert.equal(env.CONSTRUCT_D2_MIME, 'image/svg+xml');
   assert.equal(env.CONSTRUCT_MERMAID_THEME, 'construct');
   assert.equal(env.CONSTRUCT_MERMAID_MIME, 'image/png');
-  assert.equal(env.CONSTRUCT_MERMAID_WIDTH, '2400');
+  assert.equal(env.CONSTRUCT_MERMAID_WIDTH, '1600');
   assert.equal(env.CONSTRUCT_MERMAID_SCALE, '2');
-  assert.match(env.CONSTRUCT_MERMAID_PPTR_CONFIG || '', /templates\/distribution\/mermaid-puppeteer\.json$/);
+  assert.ok(env.CONSTRUCT_MERMAID_PPTR_CONFIG);
+  const cfg = JSON.parse(fs.readFileSync(env.CONSTRUCT_MERMAID_PPTR_CONFIG, 'utf8'));
+  assert.ok(Array.isArray(cfg.args));
+  assert.ok(cfg.args.includes('--no-sandbox'));
 });
 
-test('construct-brand.typ uses Space Grotesk family names for body prose', () => {
+test('construct-brand.typ de-brands the PDF running footer', () => {
   const brand = fs.readFileSync(path.join(REPO, 'templates', 'distribution', 'construct-brand.typ'), 'utf8');
-  assert.match(brand, /construct-font-sans = \("Space Grotesk",\)/);
-  assert.match(brand, /set text\(font: construct-font-sans[\s\S]*justify: false/);
-  assert.doesNotMatch(brand, /Libertinus|SourceSerif|Geist|IBM Plex Sans|"Inter"/);
-  assert.match(brand, /construct-figure-max-width = 92%/);
-  assert.match(brand, /construct-figure-max-height = 3\.4in/);
+  assert.match(brand, /#footer-label/);
+  assert.doesNotMatch(brand, /\[CONSTRUCT\]/);
+  assert.doesNotMatch(brand, /Construct brief/);
+});
 
-  // Figures scale by measured natural size (no reserved-height letterbox):
-  // forcing width+height with fit:contain floated small diagrams in dead space.
+test('construct-brand.typ omits pre-2.0 compat color token shims', () => {
+  const brand = fs.readFileSync(path.join(REPO, 'templates', 'distribution', 'construct-brand.typ'), 'utf8');
+  assert.doesNotMatch(brand, /brand-warm|brand-violet|brand-accent-deep|brand-surface-warm/);
+});
 
+test('construct-brand.typ uses field-notebook hand-drawn visual system', () => {
+  const brand = fs.readFileSync(path.join(REPO, 'templates', 'distribution', 'construct-brand.typ'), 'utf8');
+  assert.match(brand, /construct-font-sans = \("Plus Jakarta Sans",\)/);
+  assert.match(brand, /set par\(justify: false, leading: 1\.02em, spacing: 1\.35em\)/);
+  assert.doesNotMatch(brand, /Libertinus|SourceSerif|Geist|IBM Plex Sans|"Inter"|"Space Grotesk"/);
+  assert.match(brand, /fill: surface/);
+  assert.match(brand, /construct-status-label/);
+  assert.match(brand, /#upper\(status\)/);
+  assert.match(brand, /construct-meta-grid/);
+  assert.match(brand, /section-counter/);
+  assert.match(brand, /stroke: \(paint: accent, thickness: 2\.2pt, dash: "dashed"\)/);
+  assert.doesNotMatch(brand, /construct-status-pill/);
+  assert.doesNotMatch(brand, /construct-meta-chips/);
+  assert.doesNotMatch(brand, /line\(length: 46pt/);
+  assert.doesNotMatch(brand, /line\(length: 26pt, stroke: 1\.5pt \+ ink\)/);
+  assert.match(brand, /construct-figure-max-width = 94%/);
+  assert.match(brand, /construct-figure-max-height = 3\.6in/);
   assert.match(brand, /measure\(it\.body\)/);
   assert.match(brand, /scale\(x: f \* 100%, y: f \* 100%, reflow: true/);
   assert.doesNotMatch(brand, /fit: "contain"/);
-  assert.match(brand, /set par\(justify: false, leading: 0\.9em, spacing: 1\.24em\)/);
   assert.match(brand, /set enum\(numbering: "1\."/);
   assert.match(brand, /#let horizontalrule = block/);
   assert.doesNotMatch(brand, /show enum\.item:/, 'ordered lists must keep native Typst numbering context');
-
-  // Tables must flow across pages: figures stay unbreakable even when a show
-  // rule replaces their body, so the lift needs an explicit breakable block.
-
   assert.match(brand, /show figure\.where\(kind: table\): set block\(breakable: true\)/);
-
-  // Heading boundary spacing must live on block(above/below) — a trailing weak
-  // v() inside the block is trimmed at the boundary and never renders.
-
-  assert.match(brand, /block\(sticky: true, above: 1\.8em, below: 0\.9em/);
+  assert.match(brand, /block\(sticky: true, above: 2em, below: 0\.85em/);
   assert.doesNotMatch(brand, /v\(0\.6em, weak: true\)/);
-
-  // Lists share one em-based text column across bullets and numbers.
-
-  assert.match(brand, /set list\(.*indent: 0\.25em, body-indent: 0\.65em, spacing: 1em\)/);
-  assert.match(brand, /set enum\(numbering: "1\.", indent: 0\.25em, body-indent: 0\.65em, spacing: 1em\)/);
+  assert.match(brand, /set list\(.*indent: 0\.3em, body-indent: 0\.7em, spacing: 1\.05em\)/);
+  assert.match(brand, /set enum\(numbering: "1\.", indent: 0\.3em, body-indent: 0\.7em, spacing: 1\.05em\)/);
   assert.match(brand, /set terms\(/);
+  assert.match(brand, /fill: \(x, y\) => if y == 0 \{ accent-soft \}/);
 });
 
-test('construct-deck.html and construct-web.html use Space Grotesk brand stack', () => {
+test('construct-deck.html and construct-web.html use Plus Jakarta Sans brand stack', () => {
   const dist = path.join(REPO, 'templates', 'distribution');
   for (const file of ['construct-deck.html', 'construct-web.html']) {
     const html = fs.readFileSync(path.join(dist, file), 'utf8');
-    assert.match(html, /Space Grotesk/, `${file} must reference Space Grotesk`);
+    assert.match(html, /Plus Jakarta Sans/, `${file} must reference Plus Jakarta Sans`);
     assert.match(html, /JetBrains Mono/, `${file} must reference JetBrains Mono`);
-    assert.doesNotMatch(html, /Plus Jakarta|Geist|IBM Plex|Libertinus/i, `${file} must not cite retired fonts`);
+    assert.doesNotMatch(html, /Space Grotesk|Geist|IBM Plex|Libertinus/i, `${file} must not cite retired fonts`);
   }
 });
 
@@ -226,21 +299,24 @@ test('pdfEngineFontOpts passes typst font-path and ignore-system-fonts', () => {
 });
 
 test('buildDistributionDiagramEnv sets Chrome path when available', () => {
-  const chrome = resolvePuppeteerExecutable(process.env);
+  const chrome = puppeteerExecutableUsable(process.env)
+    ? resolvePuppeteerExecutable(process.env)
+    : null;
   const env = buildDistributionDiagramEnv({});
   assert.equal(env.CONSTRUCT_D2_SKETCH, '1');
-  if (chrome) assert.equal(env.PUPPETEER_EXECUTABLE_PATH, chrome);
+  assert.equal(env.PUPPETEER_EXECUTABLE_PATH, chrome ?? undefined);
 });
 
 test('all PDF layout wrappers share the brand page-geometry tokens', () => {
   const dist = path.join(REPO, 'templates', 'distribution');
   const brand = fs.readFileSync(path.join(dist, 'construct-brand.typ'), 'utf8');
   assert.match(brand, /#let construct-page-paper = "a4"/);
-  assert.match(brand, /#let construct-page-margin = \(/);
+  assert.match(brand, /#let construct-page-margin = \(left: 2\.4cm/);
   for (const file of ['construct-pdf.typ', 'construct-prd.typ', 'construct-research.typ', 'construct-decision.typ']) {
     const tpl = fs.readFileSync(path.join(dist, file), 'utf8');
     assert.match(tpl, /paper: construct-page-paper/, `${file} must use the shared paper token`);
     assert.match(tpl, /margin: construct-page-margin/, `${file} must use the shared margin token`);
+    assert.match(tpl, /doc-id: "\$if\(docId\)/, `${file} must pass doc-id to running footer`);
     assert.doesNotMatch(tpl, /margin:\s*\(x:\s*\d/, `${file} must not hardcode margins`);
   }
 });

@@ -53,6 +53,20 @@ test('citations inside code fences are ignored', () => {
   assert.equal(findDanglingCitations(md, { rootDir: REPO }).length, 0);
 });
 
+test('a regex character class in a non-markdown file under an artifact path is not a dangling citation', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'cx-cite-'));
+  try {
+    mkdirSync(join(dir, 'docs', 'notes', 'research'), { recursive: true });
+    const f = join(dir, 'docs', 'notes', 'research', 'harness.mjs');
+    writeFileSync(f, "/**\n * harness.mjs\n */\nconst RE = /^[^@/]+@[^:]+:(.+?)$/;\n");
+    const { errors, warnings } = lintFile(f, { rootDir: dir });
+    assert.ok(!errors.some((e) => /dangling footnote/.test(e.label)));
+    assert.ok(!warnings.some((w) => /dangling footnote/.test(w.label)));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('lintFile routes dangling citations to errors in block mode for artifact paths', () => {
   const dir = mkdtempSync(join(tmpdir(), 'cx-cite-'));
   const prev = process.env.CONSTRUCT_ARTIFACT_LINT_MODE;

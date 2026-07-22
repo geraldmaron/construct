@@ -3,7 +3,7 @@
  *
  * RED fixture (must FAIL against current code). pinVscodeChatSettings writes the
  * MCP eager-start key as `chat.mcp.autostart` (all lowercase) —
- * scripts/sync-specialists.mjs L1519, VSCODE_MANAGED_SETTINGS. VS Code setting ids
+ * scripts/sync-worker-profiles.mjs L1519, VSCODE_MANAGED_SETTINGS. VS Code setting ids
  * are case-sensitive; an unrecognized id is silently ignored, so a wrong-case key
  * leaves construct-mcp NOT eager-started even though the file "looks" configured.
  *
@@ -27,7 +27,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { pinVscodeChatSettings } from '../../../scripts/sync-specialists.mjs';
+import { pinVscodeChatSettings } from '../../../scripts/sync-worker-profiles.mjs';
 
 // The setting id as written in the primary VS Code docs page [S1] (case-sensitive).
 

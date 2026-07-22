@@ -8,11 +8,11 @@ cx_fixture_source: templates/docs/incident-report.md
 
 ## Summary
 
-This paragraph supports the Summary section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Summary section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Summary section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Summary section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Summary section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Summary section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Severity rationale
 
-This paragraph supports the Severity rationale section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Severity rationale section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Severity rationale section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Severity rationale section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Severity rationale section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Severity rationale section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Impact
 

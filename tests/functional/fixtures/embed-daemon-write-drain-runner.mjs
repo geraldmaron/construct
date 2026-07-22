@@ -20,7 +20,7 @@
  * recording -> observation write) without needing a live Jira instance or a
  * successful write.
  *
- * Reads CX_ROOT_DIR (project root) and TICK_TIMEOUT_MS from env. Prints one
+ * Reads CONSTRUCT_ROOT_DIR (project root) and TICK_TIMEOUT_MS from env. Prints one
  * JSON line to stdout on success or failure and exits 0/1 accordingly.
  */
 
@@ -31,8 +31,8 @@ import { EmbedDaemon } from '../../../lib/embed/daemon.mjs';
 import { EMPTY_CONFIG } from '../../../lib/embed/config.mjs';
 import { ApprovalQueue } from '../../../lib/embed/approval-queue.mjs';
 
-const rootDir = process.env.CX_ROOT_DIR;
-const persistPath = process.env.CX_APPROVAL_QUEUE_PATH;
+const rootDir = process.env.CONSTRUCT_ROOT_DIR;
+const persistPath = process.env.CONSTRUCT_APPROVAL_QUEUE_PATH;
 const timeoutMs = Number(process.env.TICK_TIMEOUT_MS || 15_000);
 const pollIntervalMs = 150;
 
@@ -66,9 +66,13 @@ async function main() {
 
   await daemon.start();
 
+  // A failed execution under the lease model (ADR-0089) releases the lease
+  // back to 'approved' and stamps lastLeaseFailureReason — that durable
+  // marker, not main's retired executionAttempts counter, is the proof the
+  // drain reached the adapter and recorded the outcome.
   const deadline = Date.now() + timeoutMs;
   let artifacts = findArtifacts();
-  while ((!artifacts.record || artifacts.record.executionAttempts < 1 || artifacts.observations.length === 0) && Date.now() < deadline) {
+  while ((!artifacts.record || !artifacts.record.lastLeaseFailureReason || artifacts.observations.length === 0) && Date.now() < deadline) {
     await sleep(pollIntervalMs);
     artifacts = findArtifacts();
   }
@@ -77,7 +81,7 @@ async function main() {
 
   const ok = !!artifacts.record
     && artifacts.record.state === 'approved'
-    && artifacts.record.executionAttempts >= 1
+    && !!artifacts.record.lastLeaseFailureReason
     && artifacts.observations.length > 0;
 
   process.stdout.write(JSON.stringify({

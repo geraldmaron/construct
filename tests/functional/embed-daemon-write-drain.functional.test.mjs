@@ -13,7 +13,7 @@
  *
  *   - the record moves from 'awaiting_approval' to 'approved' (auto-granted,
  *     not left for a human, per the configured policy)
- *   - executionAttempts is durably incremented (ApprovalQueue.recordExecutionOutcome)
+ *   - the failed lease release durably stamps lastLeaseFailureReason (ADR-0089)
  *   - an observation tagged 'write-intent-drain' is recorded, so "what did the
  *     daemon attempt on my behalf" has an audit trail
  *
@@ -66,12 +66,12 @@ function runDaemonTick(root, { timeoutMs = 15_000 } = {}) {
   const env = sterileSpawnEnv({
     HOME: root,
     USERPROFILE: root,
-    CX_HOME_OVERRIDE: root,
-    CX_ROOT_DIR: root,
-    CX_APPROVAL_QUEUE_PATH: persistPath,
+    CONSTRUCT_HOME_OVERRIDE: root,
+    CONSTRUCT_ROOT_DIR: root,
+    CONSTRUCT_APPROVAL_QUEUE_PATH: persistPath,
     TICK_TIMEOUT_MS: String(timeoutMs),
     CONSTRUCT_EMBEDDING_MODEL: 'hashing',
-    CX_INBOX_LIVE_WATCH: 'off',
+    CONSTRUCT_INBOX_LIVE_WATCH: 'off',
     CONSTRUCT_EMBED_ROADMAP_ENABLED: '0',
   });
   const res = spawnSync(process.execPath, [RUNNER], {
@@ -94,12 +94,12 @@ test('an auto-policy write intent is auto-granted and executed (durably, to a fa
   assert.equal(result.record.approvalId, seededApprovalId);
   assert.equal(result.record.state, 'approved', 'auto-granted per writes.policy, not left awaiting_approval');
   assert.equal(result.record.decidedBy?.serviceId, 'write-policy-auto-grant');
-  assert.ok(result.record.executionAttempts >= 1, 'the drain attempted execution at least once');
-  assert.match(result.record.executionError ?? '', /JIRA_URL|JIRA_EMAIL|JIRA_TOKEN/, 'no Jira configured in the sterile env — failure is expected and durable');
-  assert.equal(result.record.executedAt, null, 'a failed attempt must not be marked executed');
+  assert.ok(result.record.lastLeaseFailureReason, 'the drain attempted execution at least once (lease released with a failure reason)');
+  assert.match(result.record.lastLeaseFailureReason ?? '', /JIRA_URL|JIRA_EMAIL|JIRA_TOKEN/, 'no Jira configured in the sterile env — failure is expected and durable');
+  assert.notEqual(result.record.state, 'executed', 'a failed attempt must not be marked executed');
 
   assert.ok(result.observations.length > 0, 'an audit observation was recorded for the attempt');
-  assert.match(result.observations[0].summary, /write-intent-drain/);
+  assert.match(result.observations[0].summary, /[Ww]rite-intent[- ]drain/);
 });
 
 test('a pending write intent with no writes.policy entry (fail-safe default) is left for a human, not auto-granted', () => {
@@ -117,5 +117,5 @@ test('a pending write intent with no writes.policy entry (fail-safe default) is 
 
   assert.equal(result.record?.approvalId, seededApprovalId);
   assert.equal(result.record?.state, 'awaiting_approval', 'fail-safe default: unconfigured write kinds wait for a human');
-  assert.equal(result.record?.executionAttempts ?? 0, 0, 'never executed while still awaiting approval');
+  assert.ok(!result.record?.lastLeaseFailureReason, 'never executed while still awaiting approval');
 });

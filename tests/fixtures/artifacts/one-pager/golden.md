@@ -8,11 +8,11 @@ cx_fixture_source: templates/docs/one-pager.md
 
 ## Problem
 
-This paragraph supports the Problem section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Problem section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Problem section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Problem section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Problem section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Problem section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Proposal
 
-This paragraph supports the Proposal section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Proposal section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Proposal section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Proposal section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Proposal section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Proposal section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Why now
 
@@ -36,4 +36,4 @@ Fixture content for Asks.
 
 ## References
 
-- https://example.com/fixture-source (accessed 2026-06-22)
+- [Example fixture source](https://example.com/fixture-source) (accessed 2026-06-22)

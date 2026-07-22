@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://construct.dev/schemas/canonical-terminology.schema.json",
+  "title": "Construct canonical terminology",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["concepts", "termClassifications", "ordinaryLanguageExceptions", "historicalExclusions", "consumerInventory", "currentToCanonical", "cutoverOrder"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "concepts": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label", "pluralLabel", "identifier", "meaning", "sourceOfTruth", "owningModule", "configField", "cliNoun", "mcpNoun", "graphNode"],
+        "properties": {
+          "label": { "type": "string", "minLength": 1 },
+          "pluralLabel": { "type": "string", "minLength": 1 },
+          "identifier": { "type": "string", "minLength": 1 },
+          "meaning": { "type": "string", "minLength": 1 },
+          "sourceOfTruth": { "type": "string", "minLength": 1 },
+          "implementationStatus": {
+            "type": "string",
+            "enum": ["shipped", "interim", "planned"],
+            "description": "shipped = owningModule/runtimeRoot/dataRoot exist and are live; interim = real module under another name (maps via interimMap); planned = vocabulary only — no runtime API or store path."
+          },
+          "owningModule": { "type": "string", "minLength": 1 },
+          "runtimeRoot": { "type": "string", "minLength": 1 },
+          "dataRoot": { "type": "string", "minLength": 1 },
+          "targetOwningModule": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Catalog target module path when implementationStatus is planned or interim. Not a claim that the path exists today."
+          },
+          "targetRuntimeRoot": { "type": "string", "minLength": 1 },
+          "targetDataRoot": { "type": "string", "minLength": 1 },
+          "interimMap": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Where reality lives today when the catalog target is not yet the on-disk owner."
+          },
+          "configField": { "type": "string", "minLength": 1 },
+          "cliNoun": { "type": "string", "minLength": 1 },
+          "mcpNoun": { "type": "string", "minLength": 1 },
+          "graphNode": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "termClassifications": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["disposition", "replacement"],
+        "properties": {
+          "disposition": { "type": "string", "minLength": 1 },
+          "replacement": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "ordinaryLanguageExceptions": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string", "minLength": 1 },
+        "minItems": 1,
+        "uniqueItems": true
+      }
+    },
+    "historicalExclusions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["roots", "rule"],
+      "properties": {
+        "roots": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "rule": { "type": "string", "minLength": 1 }
+      }
+    },
+    "consumerInventory": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 1,
+        "items": { "type": "string", "minLength": 1 }
+      }
+    },
+    "currentToCanonical": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "cutoverOrder": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    }
+  }
+}

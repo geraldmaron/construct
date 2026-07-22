@@ -110,11 +110,11 @@ describe('provider_write — with a valid token, exactly one adapter call + enve
     // Mirrors server.mjs's dispatch order: the gate must pass on an
     // out-of-band token before providerWrite() ever runs in execute mode.
 
-    const token = issueApprovalToken('provider_write');
-    const gate = checkDestructiveGate('provider_write', { approval_token: token });
+    const token = issueApprovalToken('provider_write', { rootDir });
+    const gate = checkDestructiveGate('provider_write', { approval_token: token }, { rootDir });
     assert.equal(gate.allowed, true, 'valid token must pass the gate');
 
-    const sentLog = new WriteSentLog({ persistPath: path.join(rootDir, '.cx', 'writes', 'sent-log.jsonl') });
+    const sentLog = new WriteSentLog({ persistPath: path.join(rootDir, '.construct', 'writes', 'sent-log.jsonl') });
     const result = await providerWrite(
       { provider: 'jira', item: ISSUE_ITEM, dry_run: false, approval_token: token },
       { ...makeAdapterDeps(transport), sentLog, rootDir },
@@ -140,7 +140,7 @@ describe('provider_write — with a valid token, exactly one adapter call + enve
     const transport = createFakeJiraTransport({
       projects: { PROJ: { issueTypes: { Task: { requiredFields: ['summary'] } } } },
     });
-    const sentLog = new WriteSentLog({ persistPath: path.join(rootDir, '.cx', 'writes', 'sent-log.jsonl') });
+    const sentLog = new WriteSentLog({ persistPath: path.join(rootDir, '.construct', 'writes', 'sent-log.jsonl') });
     const deps = { ...makeAdapterDeps(transport), sentLog, rootDir };
 
     const first = await providerWrite({ provider: 'jira', item: ISSUE_ITEM, dry_run: false }, deps);
@@ -221,7 +221,7 @@ describe('provider_write — E4 embedBindings enforcement for embedded-specialis
     };
 
     const result = await providerWrite(
-      { provider: 'jira', item: ISSUE_ITEM, dry_run: false, specialist_id: 'writer' },
+      { provider: 'jira', item: ISSUE_ITEM, dry_run: false, worker_profile_id: 'writer' },
       { ...makeAdapterDeps(transport), embedBindings },
     );
 
@@ -233,7 +233,7 @@ describe('provider_write — E4 embedBindings enforcement for embedded-specialis
   it('denies a specialist with no embedBindings entry at all', async () => {
     const transport = createFakeJiraTransport({ projects: { PROJ: { issueTypes: { Task: {} } } } });
     const result = await providerWrite(
-      { provider: 'jira', item: ISSUE_ITEM, dry_run: false, specialist_id: 'unbound-specialist' },
+      { provider: 'jira', item: ISSUE_ITEM, dry_run: false, worker_profile_id: 'unbound-specialist' },
       { ...makeAdapterDeps(transport), embedBindings: {} },
     );
     assert.equal(result.status, 'denied');
@@ -248,7 +248,7 @@ describe('provider_write — E4 embedBindings enforcement for embedded-specialis
     };
 
     const result = await providerWrite(
-      { provider: 'jira', item: ISSUE_ITEM, dry_run: true, specialist_id: 'writer' },
+      { provider: 'jira', item: ISSUE_ITEM, dry_run: true, worker_profile_id: 'writer' },
       { ...makeAdapterDeps(transport), embedBindings },
     );
 
@@ -256,7 +256,7 @@ describe('provider_write — E4 embedBindings enforcement for embedded-specialis
     assert.equal(transport.createIssueCallCount(), 0);
   });
 
-  it('non-embed callers (no specialist_id) are unaffected by embedBindings', async () => {
+  it('non-embed callers (no worker_profile_id) are unaffected by embedBindings', async () => {
     const transport = createFakeJiraTransport({ projects: { PROJ: { issueTypes: { Task: {} } } } });
     const result = await providerWrite(
       { provider: 'jira', item: ISSUE_ITEM, dry_run: true },

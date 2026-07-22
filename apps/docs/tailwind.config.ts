@@ -5,7 +5,7 @@ const config: Config = {
     './app/**/*.{ts,tsx,md,mdx}',
     './components/**/*.{ts,tsx}',
     './content/**/*.{ts,tsx,md,mdx}',
-    '../../packages/cx-ui/**/*.{ts,tsx,css}',
+    '../../packages/construct-ui/**/*.{ts,tsx,css}',
   ],
   darkMode: ['class', '[data-theme="dark"]'],
   theme: {

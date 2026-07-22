@@ -3,6 +3,8 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 -->
 # ADR-0065 Appendix: Legacy specialist → core roster mapping
 
+> **Historical mapping document (Construct 2.0):** Records the 29-specialist → thin-roster proposal for ADR-0065. Live operator roster is **Worker Profiles** (`registry/worker-profiles/`, 12 profiles via `construct worker-profile list`). Overlay files live under `skills/perspectives/` (not `skills/roles/`). Paths `specialists/org/**` and `cx-*` ids are retired. Sections 1–8 below are the original mapping evidence — do not treat them as a current org chart. See `docs/obsolete/legacy-surface-register.md`.
+
 - **Parent decision**: ADR-0065 (orchestrator-worker consolidation)
 - **Status**: applied in a worktree, pending human review of the diff before merge (construct-rf26.11). Sections 1-7 are the original mapping proposal, unmodified. Section 8 is the addendum recording how the 7 ambiguous cases in Section 6 were actually resolved and what execution surfaced that the proposal couldn't have anticipated from static analysis alone.
 - **Purpose**: ADR-0065's Decision section names "construct-rf26.11's appendix to this ADR" as the place the 29-specialist → thin-roster mapping lives. This is that appendix.

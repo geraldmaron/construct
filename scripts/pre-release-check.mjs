@@ -182,6 +182,16 @@ if (targetTag) {
   }
 }
 
+// ── 11b. protocol surface rollup (construct-tsyfe.9.7) ─────────────────────
+{
+  const r = run('node lib/certification/protocol-surface-rollup.mjs 2>&1');
+  if (r.ok) {
+    ok('protocol surface rollup — packed artifact matches certified surfaces');
+  } else {
+    fail('protocol surface rollup', r.stdout.split('\n').slice(-10).join('\n     '));
+  }
+}
+
 // ── 12. npm auth ─────────────────────────────────────────────────────────────
 // In CI, npm uses OIDC Trusted Publishers (no stored secret). Locally, you
 // need to be logged in via `npm login` or have NODE_AUTH_TOKEN set.

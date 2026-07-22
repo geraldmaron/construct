@@ -31,7 +31,6 @@ import { FakeGitHub, FakeJira } from '../fakes/index.mjs';
 import { ApprovalQueue } from '../../lib/embed/approval-queue.mjs';
 import { runCapabilityTick } from '../../lib/embed/capability-jobs.mjs';
 import { createPmReposReasoningExecutor, analyzePmRepos } from '../../lib/embed/presets/pm-repos.mjs';
-import { validatePacket } from '../../lib/specialist-contracts.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const realFetch = globalThis.fetch;
@@ -96,12 +95,14 @@ const PM_REPOS_MANIFEST = {
   id: 'pm-repos',
   version: '1.0.0',
   type: 'embed',
-  defaultApprovalMode: 'proposal-only',
+  workerProfiles: [],
+  approvalMode: 'proposal-only',
+  modelTier: 'standard',
+  state: 'active',
   embed: {
-    specialist: 'cx-product-manager',
+    workerProfileId: 'product-manager',
     providerBindings: ['github', 'atlassian-jira'],
-    framework: 'cx-pm-value-tradeoff',
-    outputContract: 'pm-engineering-signals',
+    framework: 'product-value-tradeoff',
     proposalAuthority: 'propose-only',
     runtime: 'in-process',
     cadence: { every: 'PT24H' },
@@ -120,6 +121,18 @@ const EMBED_BINDINGS = {
 
 function tmpRoot() {
   return mkdtempSync(join(tmpdir(), 'pm-repos-'));
+}
+
+function assertEngineeringSignalsPacketContract(packet) {
+  assert.deepEqual(
+    Object.keys(packet).sort(),
+    ['issues', 'provenance', 'prs', 'stalledPrs', 'summary', 'unlinkedIssues'],
+    'Procedure artifact exposes the complete engineering-signals packet',
+  );
+  assert.equal(typeof packet.summary, 'string');
+  for (const section of ['prs', 'issues', 'stalledPrs', 'unlinkedIssues', 'provenance']) {
+    assert.equal(typeof packet[section].count, 'number', `${section} declares a count`);
+  }
 }
 
 function buildSeededSnapshot() {
@@ -166,7 +179,7 @@ test('stalled PR and unlinked in-progress issue are found; recent PR and linked 
     });
 
     assert.equal(tick.status, 'ran', `tick should run, got ${tick.status} (${tick.reason ?? ''})`);
-    assert.equal(tick.contractStatus, 'ok', 'output packet must satisfy its contract');
+    assert.equal(tick.contractStatus, 'unchecked', 'final Procedure artifacts are not Assignment handoffs');
 
     const { outputPacket } = analyzePmRepos(snapshot.sections, { now: FIXED_NOW });
 
@@ -206,7 +219,7 @@ test('every finding carries provenance to its source PR or issue', () => {
   assert.ok(outputPacket.provenance.sources.includes('ENG-1'), 'provenance includes the unlinked issue key');
 });
 
-test('output packet validates against pm-engineering-signals contract; artifact-only, no writeProposals ever emitted', async () => {
+test('output packet satisfies its Procedure artifact shape; artifact-only, no writeProposals ever emitted', async () => {
   globalThis.fetch = () => { throw new Error('Real network blocked in acceptance test'); };
   const rootDir = tmpRoot();
   try {
@@ -225,13 +238,12 @@ test('output packet validates against pm-engineering-signals contract; artifact-
     });
 
     assert.equal(tick.status, 'ran');
-    assert.equal(tick.contractStatus, 'ok');
+    assert.equal(tick.contractStatus, 'unchecked');
     assert.deepEqual(tick.proposalsEnqueued, [], 'artifact-only preset enqueues zero proposals');
     assert.deepEqual(tick.proposalsDenied, [], 'no proposal is even attempted, so none can be denied');
 
     const { outputPacket } = analyzePmRepos(snapshot.sections, { now: FIXED_NOW });
-    const result = validatePacket('pm-engineering-signals', outputPacket, 'output');
-    assert.ok(result.ok, `packet must validate against its contract; missing: ${result.missing?.join(', ')}`);
+    assertEngineeringSignalsPacketContract(outputPacket);
 
     assert.equal(providers.writeCalls.length, 0, 'zero adapter writes for an artifact-only preset');
   } finally {

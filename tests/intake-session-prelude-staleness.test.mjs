@@ -3,7 +3,7 @@
  * rendering in the shared oracle prelude and dashboard dock.
  *
  * Pins buildOraclePrelude and readOracleDockState against fixture verdict
- * files under .cx/oracle/verdicts/<date>.json: a stale (~5 days old) verdict
+ * files under .construct/oracle/verdicts/<date>.json: a stale (~5 days old) verdict
  * must render a STALE marker and an "as of" date without dropping the gap
  * lines; a fresh (~2 hours old) verdict must render an age without STALE;
  * a missing/malformed `at` must resolve to unknown age, never fresh.

@@ -48,9 +48,18 @@ jobs:
       workflow: ${{ steps.filter.outputs.workflow }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          # Full history so paths-filter can diff via git when the GitHub
+          # Files Changed API is unreliable (large staging→main promote PRs).
+          fetch-depth: 0
       - uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706
         id: filter
         with:
+          # Empty token forces git-based change detection instead of the
+          # GitHub REST Files Changed API. Promote PRs (staging→main) can
+          # exceed ~2k–3k files; API fetches then fail with connection
+          # resets ("other side closed") or truncate at 3000 files.
+          token: ''
           # `code` is the widest filter — any change to source / tests /
           # bin / package.json triggers the full unit-test matrix. The
           # narrower filters (retrieval, …) trigger jobs that
@@ -61,7 +70,7 @@ jobs:
               - 'lib/**'
               - 'tests/**'
               - 'scripts/**'
-              - 'specialists/**'
+              - 'registry/**'
               - 'profiles/**'
               - 'schemas/**'
               - 'package.json'
@@ -71,7 +80,7 @@ jobs:
               - 'lib/storage/**'
               - 'lib/specialist-contracts.mjs'
               - 'lib/contracts/violation-log.mjs'
-              - 'specialists/contracts.json'
+              - 'registry/capabilities.json'
               - 'db/schema/**'
               - 'tests/retrieval*.test.mjs'
               - 'tests/engine-eval-retrieval.test.mjs'
@@ -81,8 +90,8 @@ jobs:
               - 'package.json'
               - 'package-lock.json'
             agents:
-              - 'specialists/**'
-              - 'lib/specialists/**'
+              - 'registry/**'
+              - 'lib/worker-profiles/**'
               - 'skills/**'
               - 'rules/**'
               - 'templates/**'
@@ -101,7 +110,7 @@ jobs:
               - 'scripts/lint-commits-pr.mjs'
             docssite:
               - 'apps/docs/**'
-              - 'packages/cx-ui/**'
+              - 'packages/construct-ui/**'
               - 'docs/**'
               - '.github/workflows/pages.yml'
             workflow:
@@ -123,6 +132,9 @@ jobs:
   test:
     name: test (${{ matrix.os }} / node ${{ matrix.node }} / shard ${{ matrix.shard }})
     runs-on: ${{ matrix.os }}
+    # Bound wall-clock so a stuck apt mirror / download cannot burn a runner for
+    # an hour (observed: LibreOffice apt crawl of azure.archive.ubuntu.com).
+    timeout-minutes: 30
     needs: changes
     if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
     strategy:
@@ -147,17 +159,24 @@ jobs:
       - run: npm ci --ignore-scripts
       # Tool installs live in scripts/ci/setup-toolchain.sh — the single source
       # of truth shared with the local Docker replica (scripts/ci-repro/). It
-      # pins typst + bd as sha256-verified release binaries, so the setup-go
+      # pins typst + bd + d2 as sha256-verified release binaries, so the setup-go
       # step the old inline bd-install needed is gone (the go-install fallback
       # is documented in the script). The pinned binaries land in ~/.local/bin,
       # which is cached; apt/brew packages are cheap enough to install per run.
-      - name: cache pinned tool binaries (typst, bd)
+      # mermaid-cli needs npm, so setup-mermaid-cli.sh runs after npm ci (the
+      # Docker replica installs Node after baking setup-toolchain.sh).
+      - name: cache pinned tool binaries (typst, bd, d2, mermaid+chrome)
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: ~/.local/bin
-          key: toolbin-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/ci/setup-toolchain.sh') }}
-      - name: install test toolchain (typst, bd, pandoc, poppler, libreoffice)
+          path: |
+            ~/.local/bin
+            ~/.local/mermaid-cli
+          key: toolbin-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/ci/setup-toolchain.sh', 'scripts/ci/setup-mermaid-cli.sh') }}
+      - name: install test toolchain (typst, bd, d2, pandoc, poppler, libreoffice)
+        timeout-minutes: 12
         run: bash scripts/ci/setup-toolchain.sh && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: install mermaid-cli (mmdc) + Chrome for figures:true exports
+        run: bash scripts/ci/setup-mermaid-cli.sh && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: build derived test fixtures (living graph + seeded vector index)
         run: bash scripts/ci/build-test-fixtures.sh
       - run: npm test -- --shard=${{ matrix.shard }}/${{ matrix.os == 'macos-latest' && '1' || '3' }}
@@ -165,12 +184,30 @@ jobs:
         if: matrix.shard == 1
       - run: npm run docs:verify
         if: matrix.shard == 1
+      - name: restore shadow history cache
+        if: github.event_name == 'pull_request' && matrix.shard == 1 && matrix.os == 'ubuntu-latest'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .construct/shadow-history
+          key: shadow-history-store-v1
       - name: shadow-mode test-impact analysis (non-blocking)
         if: github.event_name == 'pull_request' && matrix.shard == 1 && matrix.os == 'ubuntu-latest'
         continue-on-error: true
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: node scripts/graph-impact-shadow.mjs
+      - name: archive shadow artifact to history
+        if: github.event_name == 'pull_request' && matrix.shard == 1 && matrix.os == 'ubuntu-latest'
+        run: |
+          mkdir -p .construct/shadow-history
+          cp .construct/shadow-impact.json ".construct/shadow-history/${{ github.run_id }}.json"
+      - name: upload shadow-impact artifact
+        if: github.event_name == 'pull_request' && matrix.shard == 1 && matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4.6.2
+        with:
+          name: shadow-impact-${{ github.run_id }}
+          path: .construct/shadow-impact.json
+          retention-days: 90
       - name: coverage (report-only, main pushes)
         if: matrix.shard == 1 && github.event_name == 'push' && github.ref == 'refs/heads/main'
         continue-on-error: true
@@ -303,6 +340,9 @@ jobs:
       - name: eslint (real-bug rules)
         if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
         run: npm run lint:js
+      - name: dependency intent
+        if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
+        run: npm run deps:check
       - name: profile + flavor schema
         if: needs.changes.outputs.agents == 'true' || needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
         run: npm run lint:scopes -- --quiet
@@ -312,13 +352,16 @@ jobs:
       - name: agent contracts schema
         if: needs.changes.outputs.agents == 'true' || needs.changes.outputs.workflow == 'true'
         run: npm run lint:contracts
+      - name: Workspace Preset schema
+        if: needs.changes.outputs.agents == 'true' || needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
+        run: npm run lint:workspace-presets
       - name: docs drift check
         if: needs.changes.outputs.docs == 'true' || needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
         run: npm run docs:update -- --check
       - name: docs site build
         if: needs.changes.outputs.docssite == 'true' || needs.changes.outputs.workflow == 'true'
         # PR-time guard for the Pages deploy. apps/docs depends on the
-        # workspace package @cx/ui (packages/cx-ui); root `npm ci` resolves
+        # workspace package @construct/ui (packages/construct-ui); root `npm ci` resolves
         # it via the workspaces config. Building from root here matches
         # what pages.yml does on main — catches workspace-resolution drift
         # before the Pages deploy fails post-merge with a 404 from the
@@ -333,6 +376,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run gates:audit
+      - name: static analysis (warn-first)
+        if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
+        run: |
+          npm run static:knip || true
+          npm run static:cruise || true
       - name: certification gate
         if: needs.changes.outputs.code == 'true' || needs.changes.outputs.agents == 'true' || needs.changes.outputs.templates == 'true' || needs.changes.outputs.workflow == 'true'
         run: node ./bin/construct certify gate
@@ -353,19 +401,88 @@ jobs:
             export CHANGED_FILES
           fi
           node scripts/run-graph-gate.mjs
-      # Blocking gate on PR-body shape. It has no local pre-flight (the body does
-      # not exist until `gh pr create` runs), so a human fixes a violation by
-      # editing the body and close+reopening to retrigger CI. Bot PRs (dependabot)
-      # are exempt inside scripts/lint-commits-pr.mjs by author — a bot cannot
-      # fill the human template — so the step stays hard-failing for humans.
+      # Blocking gate on commit-subject convention and PR-body shape. Runs on
+      # every pull_request event unconditionally (not gated by the templates/
+      # workflow change-filter) — a staging-merge PR whose diff happens to
+      # touch neither would otherwise skip commit-subject linting entirely,
+      # the gap that let 26 non-conforming subjects accumulate silently across
+      # staging merges until the next release-promotion PR's much wider commit
+      # range caught them as a batch (construct-9tg43). PR-body-shape checking
+      # has no local pre-flight (the body does not exist until `gh pr create`
+      # runs), so a human fixes a violation by editing the body and
+      # close+reopening to retrigger CI. Bot PRs (dependabot) are exempt
+      # inside scripts/lint-commits-pr.mjs by author — a bot cannot fill the
+      # human template — so the step stays hard-failing for humans. Still
+      # conditioned on the workflow filter for push-to-main runs, where there
+      # is no PR body/commit range to check.
       - name: template policy
-        if: needs.changes.outputs.templates == 'true' || needs.changes.outputs.workflow == 'true'
+        if: github.event_name == 'pull_request' || needs.changes.outputs.templates == 'true' || needs.changes.outputs.workflow == 'true'
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_BASE_REF: ${{ github.event.pull_request.base.ref || github.base_ref }}
           PR_BODY: ${{ github.event.pull_request.body }}
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
         run: npm run lint:templates
+
+  graph-verify:
+    name: graph verify
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version-file: .tool-versions
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: build derived test fixtures (living graph)
+        run: bash scripts/ci/build-test-fixtures.sh
+      - name: graph verify
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ -n "$PR_BASE_SHA" ]; then
+            CHANGED_FILES="$(git diff --name-only "$PR_BASE_SHA"...HEAD || true)"
+            export CHANGED_FILES
+          fi
+          node scripts/run-graph-verify.mjs
+
+  graph-impact-gate:
+    name: graph impact gate
+    runs-on: ubuntu-latest
+    needs: [changes, test]
+    if: github.event_name == 'pull_request' && (needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true')
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version-file: .tool-versions
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: build derived test fixtures (living graph)
+        run: bash scripts/ci/build-test-fixtures.sh
+      - name: restore shadow history cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .construct/shadow-history
+          key: shadow-history-store-v1
+      - name: download current shadow artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v4.0.0
+        continue-on-error: true
+        with:
+          name: shadow-impact-${{ github.run_id }}
+          path: .construct
+      - name: graph impact promotion report
+        run: node scripts/graph-impact-promotion-report.mjs --json > .construct/promotion-report.json
+      - name: graph impact gate
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/graph-impact-gate.mjs
 
   evals:
     name: retrieval evals
@@ -396,7 +513,7 @@ jobs:
           node-version-file: .tool-versions
       - run: npm ci --ignore-scripts
       - name: npm audit (high+ only)
-        # Scope to root deps only. Workspace packages (apps/docs, packages/cx-ui)
+        # Scope to root deps only. Workspace packages (apps/docs, packages/construct-ui)
         # are build-time tooling for the docs site, not runtime deps of the
         # published @geraldmaron/construct CLI. Their
         # advisories are tracked separately; this gate guards the npm-published
@@ -409,6 +526,9 @@ jobs:
         # tree a downstream `npm install` actually resolves — the only check that
         # catches transitive CVEs a repo-local override would otherwise mask.
         run: npm run audit:published
+
+      - name: supply-chain exception expiration
+        run: node scripts/check-supply-chain-exceptions.mjs
 
   secret-scan:
     name: secret scanning
@@ -432,7 +552,7 @@ jobs:
     name: ci-required
     runs-on: ubuntu-latest
     if: always()
-    needs: [changes, test, lint, evals, audit, secret-scan]
+    needs: [changes, test, lint, graph-verify, graph-impact-gate, evals, audit, secret-scan]
     steps:
       - name: Verify required jobs passed or skipped
         env:

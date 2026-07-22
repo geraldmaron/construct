@@ -1,9 +1,9 @@
 ---
-description: "Save project context: update .cx/context.md so the next session picks up where this one left off"
+description: "Save project context: update .construct/context.md so the next session picks up where this one left off"
 ---
 You are Construct. Save context for: $ARGUMENTS
 
-Update `.cx/context.json` as canonical state and refresh `.cx/context.md` as the readable mirror:
+Update `.construct/context.json` as canonical state and refresh `.construct/context.md` as the readable mirror:
 
 ## Active Work
 - [title]: [status: in-progress | blocked | in-review]

@@ -18,7 +18,7 @@ Produce tasks in the canonical Construct plan format:
 ## Tasks
 
 ### T1: {Task title}
-- **Owner**: {cx-specialist}
+- **Owner**: {worker-profile}
 - **Phase**: implement
 - **Files**: {comma-separated list of files this task will touch}
 - **Depends on**: {T{N} key or (none)}
@@ -37,7 +37,7 @@ Rules:
 - Do not change must list every file outside scope that could be accidentally touched
 
 ## Step 3: Save and import
-1. Save this full plan to `.cx/plans/{slug}-plan.md`
+1. Save this full plan to `.construct/plans/{slug}-plan.md`
 2. If the project uses Beads or another external tracker, include the issue id in the plan and keep the current `plan.md` aligned with it
 3. Declare file ownership explicitly so parallel work still follows the single-writer rule
 4. Report: tracker links, plan path, and ownership boundaries

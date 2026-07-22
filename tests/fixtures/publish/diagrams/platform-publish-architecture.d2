@@ -1,7 +1,7 @@
 /**
  * tests/fixtures/publish/diagrams/platform-publish-architecture.d2 — D2 pipeline diagram for golden PRD publish fixture.
  *
- * Render: d2 --sketch; export path uses pandoc-ext/diagram with D2 sketch and violet neutral theme.
+ * Render: d2 --sketch; export path uses pandoc-ext/diagram with D2 sketch and monochrome neutral theme.
  */
 
 direction: right
@@ -10,8 +10,8 @@ host_ide: Host IDE\n(session) {
   shape: person
 }
 
-invoke: construct workflow\ninvoke
-author: Specialist chain\ncx-product-manager
+invoke: construct procedure\ninvoke
+author: Worker Profile chain\nproduct-manager
 artifact: Typed artifact\n.prd-platform.md {
   shape: document
 }

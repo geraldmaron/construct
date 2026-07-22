@@ -1,6 +1,6 @@
 ---
 description: every human-facing Construct output is formatted for neurodivergent readers — without reshaping machine-readable output.
-enforced_by: (persona prompt), tests/term-format.test.mjs
+enforced_by: (Worker Profile prompt), tests/term-format.test.mjs
 precedence_tier: style
 ---
 # Neurodivergent-Friendly Output
@@ -14,7 +14,7 @@ It is a `style` rule by design. The precedence resolver (`rules/common/precedenc
 Two layers, treated differently:
 
 - **Presentation layer (human-facing)** — section titles, prose, help text, report narratives, guidance notes, error wording. This is what the rest of this rule shapes.
-- **Data layer (machine-readable)** — never reshape it for readability. Off-limits: any `--json` / `--plain` output; `specialists/org`, `contracts.json`, `role-manifests.json`; the parsed tokens hooks emit (for example the session-start `## Working branch: **<name>**` line, the efficiency status enum `degraded` / `configured` / `healthy`, commit hashes, counts); auxiliary state JSON; any text one component parses out of another.
+- **Data layer (machine-readable)** — never reshape it for readability. Off-limits: any `--json` / `--plain` output; `registry`, `contracts.json`, `role-manifests.json`; the parsed tokens hooks emit (for example the session-start `## Working branch: **<name>**` line, the efficiency status enum `degraded` / `configured` / `healthy`, commit hashes, counts); auxiliary state JSON; any text one component parses out of another.
 
 When a format choice would change a value, key, ordering, or token that something downstream parses, do not make it. Accessibility is presentation; it never edits the contract.
 
@@ -32,7 +32,9 @@ Short paragraphs with white space between sections; prefer three short lines ove
 
 ## 4. Plain, literal language
 
-Say the thing directly. Avoid idioms, sarcasm, irony, and figurative phrasing that require inference to decode. Define a term on first use or link to where it is defined. One name for one concept — do not alternate synonyms for the same thing.
+Say the thing directly. Avoid idioms, sarcasm, irony, and figurative phrasing that require inference to decode. Define a term on first use or link to where it is defined. One name for one concept; do not alternate synonyms for the same thing.
+
+Do not use the Unicode em dash (U+2014) in human-facing output. Prefer a period, colon, comma, or ASCII hyphen. Em dashes interrupt scanning and are banned by the output quality gate. Typed artifact prose also follows the human voice bar (contractions, no spaced em-dash theater, no LLM tells): `rules/common/human-voice.md`.
 
 ## 5. Consistent structure and terminology
 
@@ -55,7 +57,7 @@ End human-facing output with the current state and the next action in plain word
 
 ## Enforcement
 
-- Persona prompt: `personas/construct.md` carries the output-style directive; specialists inherit the standard through the front-door agent.
+- Persona prompt: `registry/worker-profiles/prompts/construct.md` carries the output-style directive; specialists inherit the standard through the front-door agent.
 - `tests/term-format.test.mjs` asserts the terminal formatter honors `NO_COLOR` / non-TTY and that machine-readable `--json` output is unchanged by presentation changes.
 
 ## Bypass

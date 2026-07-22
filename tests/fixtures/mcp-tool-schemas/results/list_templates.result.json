@@ -68,7 +68,7 @@
           }
         ],
         "primaryOwners": [
-          "cx-architect",
+          "architect",
           "cx-rd-lead"
         ],
         "workflowSkill": "docs/adr-workflow",
@@ -78,20 +78,20 @@
           "proseMinimum": 2,
           "requiredReviewers": [
             "cx-devil-advocate",
-            "cx-reviewer"
+            "reviewer"
           ],
           "optionalReviewers": [
-            "cx-architect"
+            "architect"
           ]
         },
         "authorChain": [
-          "cx-architect",
+          "architect",
           "cx-rd-lead"
         ],
         "reviewerChain": [
           "cx-devil-advocate",
-          "cx-reviewer",
-          "cx-architect"
+          "reviewer",
+          "architect"
         ],
         "validation": {
           "releaseGate": true
@@ -131,7 +131,7 @@
         ],
         "visualRequirements": [],
         "primaryOwners": [
-          "cx-product-manager"
+          "product-manager"
         ],
         "workflowSkill": "docs/backlog-proposal-workflow",
         "releaseGate": {
@@ -142,7 +142,7 @@
           "optionalReviewers": []
         },
         "authorChain": [
-          "cx-product-manager"
+          "product-manager"
         ],
         "reviewerChain": [],
         "validation": {
@@ -196,7 +196,7 @@
           }
         ],
         "primaryOwners": [
-          "cx-product-manager",
+          "product-manager",
           "cx-docs-keeper"
         ],
         "workflowSkill": "docs/customer-profile-workflow",
@@ -208,7 +208,7 @@
           "optionalReviewers": []
         },
         "authorChain": [
-          "cx-product-manager",
+          "product-manager",
           "cx-docs-keeper"
         ],
         "reviewerChain": [],
@@ -251,8 +251,8 @@
         ],
         "visualRequirements": [],
         "primaryOwners": [
-          "cx-product-manager",
-          "cx-researcher",
+          "product-manager",
+          "researcher",
           "cx-ux-researcher"
         ],
         "workflowSkill": "docs/evidence-ingest-workflow",
@@ -266,8 +266,8 @@
           ]
         },
         "authorChain": [
-          "cx-product-manager",
-          "cx-researcher",
+          "product-manager",
+          "researcher",
           "cx-ux-researcher"
         ],
         "reviewerChain": [
@@ -324,7 +324,7 @@
         ],
         "primaryOwners": [
           "cx-sre",
-          "cx-operations"
+          "operations"
         ],
         "workflowSkill": "docs/runbook-workflow",
         "releaseGate": {
@@ -338,7 +338,7 @@
         },
         "authorChain": [
           "cx-sre",
-          "cx-operations"
+          "operations"
         ],
         "reviewerChain": [
           "cx-devil-advocate"
@@ -438,7 +438,7 @@
         ],
         "visualRequirements": [],
         "primaryOwners": [
-          "cx-product-manager",
+          "product-manager",
           "cx-docs-keeper"
         ],
         "workflowSkill": "docs/prd-workflow",
@@ -448,17 +448,17 @@
           "proseMinimum": 3,
           "requiredReviewers": [
             "cx-devil-advocate",
-            "cx-reviewer"
+            "reviewer"
           ],
           "optionalReviewers": []
         },
         "authorChain": [
-          "cx-product-manager",
+          "product-manager",
           "cx-docs-keeper"
         ],
         "reviewerChain": [
           "cx-devil-advocate",
-          "cx-reviewer"
+          "reviewer"
         ],
         "validation": {
           "releaseGate": true
@@ -511,7 +511,7 @@
           }
         ],
         "primaryOwners": [
-          "cx-product-manager",
+          "product-manager",
           "cx-business-strategist"
         ],
         "workflowSkill": "docs/prd-workflow",
@@ -525,7 +525,7 @@
           "optionalReviewers": []
         },
         "authorChain": [
-          "cx-product-manager",
+          "product-manager",
           "cx-business-strategist"
         ],
         "reviewerChain": [
@@ -650,7 +650,7 @@
           }
         ],
         "primaryOwners": [
-          "cx-product-manager"
+          "product-manager"
         ],
         "workflowSkill": "docs/prd-workflow",
         "releaseGate": {
@@ -665,7 +665,7 @@
           ]
         },
         "authorChain": [
-          "cx-product-manager"
+          "product-manager"
         ],
         "reviewerChain": [
           "cx-devil-advocate",
@@ -710,7 +710,7 @@
         ],
         "visualRequirements": [],
         "primaryOwners": [
-          "cx-product-manager",
+          "product-manager",
           "cx-business-strategist"
         ],
         "workflowSkill": "docs/prd-workflow",
@@ -726,7 +726,7 @@
           ]
         },
         "authorChain": [
-          "cx-product-manager",
+          "product-manager",
           "cx-business-strategist"
         ],
         "reviewerChain": [
@@ -786,7 +786,7 @@
           }
         ],
         "primaryOwners": [
-          "cx-product-manager"
+          "product-manager"
         ],
         "workflowSkill": "docs/prd-workflow",
         "releaseGate": {
@@ -795,16 +795,16 @@
           "proseMinimum": 3,
           "requiredReviewers": [
             "cx-devil-advocate",
-            "cx-architect"
+            "architect"
           ],
           "optionalReviewers": []
         },
         "authorChain": [
-          "cx-product-manager"
+          "product-manager"
         ],
         "reviewerChain": [
           "cx-devil-advocate",
-          "cx-architect"
+          "architect"
         ],
         "validation": {
           "releaseGate": true
@@ -851,7 +851,7 @@
           }
         ],
         "primaryOwners": [
-          "cx-product-manager",
+          "product-manager",
           "cx-business-strategist"
         ],
         "workflowSkill": "docs/prfaq-workflow",
@@ -867,7 +867,7 @@
           ]
         },
         "authorChain": [
-          "cx-product-manager",
+          "product-manager",
           "cx-business-strategist"
         ],
         "reviewerChain": [
@@ -915,7 +915,7 @@
         ],
         "visualRequirements": [],
         "primaryOwners": [
-          "cx-product-manager",
+          "product-manager",
           "cx-business-strategist"
         ],
         "workflowSkill": "docs/product-intelligence-workflow",
@@ -929,7 +929,7 @@
           ]
         },
         "authorChain": [
-          "cx-product-manager",
+          "product-manager",
           "cx-business-strategist"
         ],
         "reviewerChain": [
@@ -974,7 +974,7 @@
         ],
         "visualRequirements": [],
         "primaryOwners": [
-          "cx-qa"
+          "qa"
         ],
         "workflowSkill": "devops/testing",
         "releaseGate": {
@@ -985,7 +985,7 @@
           "optionalReviewers": []
         },
         "authorChain": [
-          "cx-qa"
+          "qa"
         ],
         "reviewerChain": [],
         "validation": {
@@ -1026,7 +1026,7 @@
         ],
         "visualRequirements": [],
         "primaryOwners": [
-          "cx-researcher",
+          "researcher",
           "cx-ux-researcher",
           "cx-explorer"
         ],
@@ -1037,16 +1037,16 @@
           "proseMinimum": 2,
           "requiredReviewers": [],
           "optionalReviewers": [
-            "cx-reviewer"
+            "reviewer"
           ]
         },
         "authorChain": [
-          "cx-researcher",
+          "researcher",
           "cx-ux-researcher",
           "cx-explorer"
         ],
         "reviewerChain": [
-          "cx-reviewer"
+          "reviewer"
         ],
         "validation": {
           "releaseGate": true
@@ -1093,7 +1093,7 @@
           }
         ],
         "primaryOwners": [
-          "cx-architect"
+          "architect"
         ],
         "workflowSkill": "docs/prd-workflow",
         "releaseGate": {
@@ -1102,16 +1102,16 @@
           "proseMinimum": 3,
           "requiredReviewers": [
             "cx-devil-advocate",
-            "cx-reviewer"
+            "reviewer"
           ],
           "optionalReviewers": []
         },
         "authorChain": [
-          "cx-architect"
+          "architect"
         ],
         "reviewerChain": [
           "cx-devil-advocate",
-          "cx-reviewer"
+          "reviewer"
         ],
         "validation": {
           "releaseGate": true
@@ -1157,7 +1157,7 @@
           }
         ],
         "primaryOwners": [
-          "cx-architect"
+          "architect"
         ],
         "workflowSkill": "docs/prd-workflow",
         "releaseGate": {
@@ -1166,16 +1166,16 @@
           "proseMinimum": 3,
           "requiredReviewers": [
             "cx-devil-advocate",
-            "cx-reviewer"
+            "reviewer"
           ],
           "optionalReviewers": []
         },
         "authorChain": [
-          "cx-architect"
+          "architect"
         ],
         "reviewerChain": [
           "cx-devil-advocate",
-          "cx-reviewer"
+          "reviewer"
         ],
         "validation": {
           "releaseGate": true
@@ -1226,7 +1226,7 @@
         ],
         "primaryOwners": [
           "cx-sre",
-          "cx-operations"
+          "operations"
         ],
         "workflowSkill": "docs/runbook-workflow",
         "releaseGate": {
@@ -1240,7 +1240,7 @@
         },
         "authorChain": [
           "cx-sre",
-          "cx-operations"
+          "operations"
         ],
         "reviewerChain": [
           "cx-sre"
@@ -1283,8 +1283,8 @@
         ],
         "visualRequirements": [],
         "primaryOwners": [
-          "cx-researcher",
-          "cx-product-manager"
+          "researcher",
+          "product-manager"
         ],
         "workflowSkill": "docs/evidence-ingest-workflow",
         "releaseGate": {
@@ -1295,8 +1295,8 @@
           "optionalReviewers": []
         },
         "authorChain": [
-          "cx-researcher",
-          "cx-product-manager"
+          "researcher",
+          "product-manager"
         ],
         "reviewerChain": [],
         "validation": {
@@ -1354,7 +1354,7 @@
         ],
         "primaryOwners": [
           "cx-business-strategist",
-          "cx-product-manager"
+          "product-manager"
         ],
         "workflowSkill": "docs/strategy-workflow",
         "releaseGate": {
@@ -1370,7 +1370,7 @@
         },
         "authorChain": [
           "cx-business-strategist",
-          "cx-product-manager"
+          "product-manager"
         ],
         "reviewerChain": [
           "cx-devil-advocate",
@@ -1425,7 +1425,7 @@
           }
         ],
         "primaryOwners": [
-          "cx-qa",
+          "qa",
           "cx-test-automation"
         ],
         "workflowSkill": "devops/testing",
@@ -1435,15 +1435,15 @@
           "proseMinimum": 2,
           "requiredReviewers": [],
           "optionalReviewers": [
-            "cx-qa"
+            "qa"
           ]
         },
         "authorChain": [
-          "cx-qa",
+          "qa",
           "cx-test-automation"
         ],
         "reviewerChain": [
-          "cx-qa"
+          "qa"
         ],
         "validation": {
           "releaseGate": true

@@ -19,8 +19,8 @@ Layer 3: Hooks              — enforcement at runtime events
 
 Two files own the behavioral contract:
 
-- **`specialists/org`** — every specialist's allowed tools, skills, model tier, and collaborator set. Consumed by every platform sync (Claude Code, Codex, Copilot, OpenCode).
-- **`specialists/role-manifests.json`** — file-path fences and action allowlists per role. If a specialist is not in the allowlist, the action is blocked.
+- **`registry/worker-profiles/*.json`** — every Worker Profile's allowed tools, Skills, model tier, Policy fence, and handoff candidates. Consumed by every platform sync (Claude Code, Codex, Copilot, OpenCode).
+- **`registry/policies/*.json`** — typed Policies with enforcement bindings. File-path fences and action allowlists resolve through `lib/roles/fence.mjs` against each profile's `policyFence`.
 
 JSON manifests are the single source of truth. When CI runs `construct lint:agents`, it validates the registry against its schema. Platform files are generated from the registry, not the reverse.
 
@@ -30,7 +30,7 @@ Validation runs at known decision points:
 
 | Module | When it runs | What it checks |
 |---|---|---|
-| `lib/roles/fence.mjs` | Every specialist action | Path-fence and action-allowlist compliance |
+| `lib/roles/fence.mjs` | Every Worker Profile action | Path-fence and action-allowlist compliance from `registry/worker-profiles/*.json` |
 | `lib/comment-lint.mjs` | PostToolUse + CI | Comment form, artifact fabrication risk patterns |
 | `lib/contracts/validate.mjs` | lint:contracts, handoff | Contract schema + postconditions + beads close-reason |
 | `lib/docs-verify.mjs` | docs:verify | Docs freshness, context invariant, intake traceability |
@@ -57,25 +57,25 @@ Hooks can only warn (exit 0) or block (exit 2). They never modify the tool's out
 
 | Policy | Source file | Enforcement file | Mode |
 |---|---|---|---|
-| File-path fence | `specialists/role-manifests.json` | `lib/roles/fence.mjs#checkAction` | Deterministic (100%) |
-| Action approval | `specialists/role-manifests.json` | `lib/roles/fence.mjs#checkAction` | Deterministic (100%) |
+| File-path fence | `registry/worker-profiles/*.json` (`policyFence`) | `lib/roles/fence.mjs#checkAction` | Deterministic (100%) |
+| Action approval | `registry/worker-profiles/*.json` (`policyFence`) | `lib/roles/fence.mjs#checkAction` | Deterministic (100%) |
 | Anti-fabrication | `rules/common/no-fabrication.md` | `lib/comment-lint.mjs` | Deterministic (~85%) |
 | Release gates | `rules/common/release-gates.md` | `lib/hooks/pre-push-gate.mjs` | Deterministic (95%) |
-| Contract postconditions | `specialists/contracts.json` | `lib/contracts/validate.mjs` | Deterministic (100%) |
+| Capability postconditions | `registry/capabilities.json` | `lib/contracts/validate.mjs` | Deterministic (100%) |
 | Bash safety | built-in | `lib/hooks/guard-bash.mjs` | Deterministic (100%) |
 | Bootstrap state | built-in | `lib/hooks/policy-engine.mjs` | Deterministic (100%) |
 | Secret scan | built-in | `lib/hooks/scan-secrets.mjs` | Deterministic (100%) |
 | Beads close-reason | `rules/common/beads-hygiene.md` | `lib/contracts/validate.mjs#validateBeadsCloseReason` | Deterministic |
-| Commit approval | `rules/common/commit-approval.md` | (persona prompt) | Honor-system |
-| Framing | `rules/common/framing.md` | (persona prompt) | Honor-system |
-| Research evidence | `rules/common/research.md` | (persona prompt) | Honor-system |
-| Doc ownership | `rules/common/doc-ownership.md` | (persona prompt) | Honor-system |
+| Commit approval | `rules/common/commit-approval.md` | (public Worker Profile prompt) | Honor-system |
+| Framing | `rules/common/framing.md` | (public Worker Profile prompt) | Honor-system |
+| Research evidence | `rules/common/research.md` | (public Worker Profile prompt) | Honor-system |
+| Doc ownership | `rules/common/doc-ownership.md` | (public Worker Profile prompt) | Honor-system |
 
 Full policy list: `construct policy show`
 
 ## Why not OPA or Cedar?
 
-OPA (Open Policy Agent) and Cedar are purpose-built policy engines. For Construct's scale (5-50 specialists), the cost-benefit is negative:
+OPA (Open Policy Agent) and Cedar are purpose-built policy engines. For Construct's scale (12 Worker Profiles), the cost-benefit is negative:
 
 - **Learning curve**: both require a policy language (Rego or Cedar) that no one on a typical product team already knows. Maintenance becomes a specialist task.
 - **Runtime overhead**: an OPA or Cedar evaluation path for every tool call adds latency and a new infrastructure dependency.
@@ -90,6 +90,6 @@ Sources: [Oso: OPA vs Cedar vs Zanzibar](https://www.osohq.com/learn/opa-vs-ceda
 
 - **Deterministic (100%)**: a machine check that cannot be bypassed in normal operation. The action is blocked or the artifact is rejected.
 - **Deterministic (~N%)**: a pattern-based check with known false-negative rate. The patterns cover the most common failure modes; adversarial bypasses exist but require intent.
-- **Honor-system**: enforced at the conversation level by the persona prompt. Relies on the model following its instructions. Not a security boundary; a quality boundary.
+- **Honor-system**: enforced at the conversation level by the front-door / Worker Profile prompt. Relies on the model following its instructions. Not a security boundary; a quality boundary.
 
 The distinction matters when you're deciding where to invest. Converting honor-system rules to deterministic requires either a reliable pattern (cheap) or an LLM call (expensive and introduces the LLM-as-judge circularity problem).

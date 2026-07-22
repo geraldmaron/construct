@@ -1,6 +1,6 @@
 ---
 title: Inspect running agents
-description: Capture session feedback and trace which specialists ran for a task.
+description: Capture session feedback and trace which Worker Profiles ran for a task.
 ---
 
 `construct reflect` captures a session insight or learning and writes it to your knowledge base. Use it after any session where you discovered something worth preserving.
@@ -47,7 +47,7 @@ construct reflect \
 
 1. A timestamped markdown file in the target subdirectory:
    ```
-   ~/.cx/knowledge/internal/reflect-2026-04-29T14-32-00.md
+   ~/.construct/knowledge/internal/reflect-2026-04-29T14-32-00.md
    ```
 
 2. An observation in the observation store with:

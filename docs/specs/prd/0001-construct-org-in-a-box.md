@@ -2,8 +2,10 @@
 intake: none
 intake_rationale: foundational PRD authored before intake traceability was wired; intake-independent by construction.
 last_verified_at: 2026-06-19
-verified_by: cx-docs-keeper · documentation alignment pass
+verified_by: operations · documentation alignment pass
 ---
+
+> **Obsolete (Construct 2.0 vocabulary):** This PRD retains the historical "org-in-a-box" framing from early Construct planning. Current equivalents: **Worker Profiles** under `registry/worker-profiles/`, **Workspace Presets** under `registry/workspace-presets/`, and **Procedures** via `construct procedure invoke`. See `docs/obsolete/legacy-surface-register.md`.
 
 # PRD: Construct: Org-in-a-Box
 
@@ -47,7 +49,7 @@ Individual developers and small teams working with AI coding agents (Claude, Cod
 | ID | Requirement |
 |---|---|
 | FR-1 | **Point-at-things mode**: Accept a target URI (repo, project tracker, messaging channel, document, API endpoint) and produce a structured analysis or artifact (PRD, RFC, ADR, research brief). Target type is resolved by the provider abstraction, not hardcoded. |
-| FR-2 | **Init mode**: `construct init` detects existing agent configs, sets up shared memory, cross-agent config files, and project structure (.cx/). Checks for required dependencies and installs or prompts for missing ones. |
+| FR-2 | **Init mode**: `construct init` detects existing agent configs, sets up shared memory, cross-agent config files, and project structure (.construct/). Checks for required dependencies and installs or prompts for missing ones. |
 | FR-3 | **Embed mode**: Long-running or scheduled process that monitors configured sources through providers, produces periodic snapshots (health, risks, gaps, recommendations), manages work items, proposes doc changes, and posts to configured output channels. |
 | FR-4 | **Provider abstraction**: A typed interface that any external system implements. Providers expose a capability matrix (read, write, search, watch, webhook) and Construct dispatches through the interface. The transport is the provider's choice: MCP server, REST API, GraphQL, SDK, CLI, webhook, or any combination. Initial implementations include project trackers (Jira, Linear), messaging (Slack, Discord), code hosts (GitHub, GitLab), knowledge bases (Confluence, Notion), and git repos, but the system accepts any provider that satisfies the interface. Third-party providers are added without modifying core. |
 | FR-5 | **Docker service management**: `construct dev` spins up required local services Construct needs (database, observability, memory). Checks for Docker availability and installs/prompts if missing. |
@@ -57,7 +59,7 @@ Individual developers and small teams working with AI coding agents (Claude, Cod
 | FR-9 | **Continuous learning**: RAG over accumulated observations, decisions, and artifacts. Trend detection across sessions. Queryable knowledge base ("what do we know about X?"). |
 | FR-10 | **Snapshot generation**: On-demand or scheduled reports summarizing project health, risks, alignment gaps, and actionable recommendations. Output to dashboard, any messaging provider, and/or markdown. |
 | FR-11 | **Hybrid approval model**: Low-risk actions (reading, analysis, draft generation) are autonomous. High-risk actions (work item creation, merge, doc publish, config changes) require human approval via dashboard or configured channel. |
-| FR-12 | **OpenCode-first conversation surface**: Construct syncs specialists, workflows, MCP tools, and artifact contracts into OpenCode while keeping CLI commands focused on bounded operations. |
+| FR-12 | **OpenCode-first conversation surface**: Construct syncs Worker Profiles, workflows, MCP tools, and artifact contracts into OpenCode while keeping CLI commands focused on bounded operations. |
 | FR-13 | **Oracle meta-controller** (ADR-0043): L0.5 daemon collects project health signals, synthesizes gaps, auto-executes safe maintenance, queues consequential remediation for approval. |
 | FR-14 | **Unified credential resolution** (ADR-0042): LLM keys resolve from env, config files, and `op://` 1Password references; GitHub Copilot uses OAuth device flow. |
 
@@ -75,7 +77,7 @@ Individual developers and small teams working with AI coding agents (Claude, Cod
 
 ## Acceptance criteria
 
-- AC-1: `construct init` in a fresh repo produces a working .cx/ structure and agent configs that Claude Code, Codex, and Copilot can use in their next session.
+- AC-1: `construct init` in a fresh repo produces a working .construct/ structure and agent configs that Claude Code, Codex, and Copilot can use in their next session.
 - AC-2: `construct embed --config embed.yaml` runs a monitoring loop that produces at least one snapshot within the configured interval.
 - AC-3: Construct's own PRD (this document) is managed by Construct's artifact system and appears in the dashboard.
 - AC-4: `docker build` produces a runnable image; `docker run` starts dashboard + API with auth.
@@ -118,7 +120,7 @@ Individual developers and small teams working with AI coding agents (Claude, Cod
 
 ## References
 
-- Architecture: `docs/architecture.md`
+- Architecture: `docs/guides/concepts/architecture.mdx`
 - ADR on layered restructure: `docs/decisions/adr/0002-layered-architecture.md`
-- Agent registry: `specialists/registry.json`
+- Agent registry: `registry/worker-profiles/` and Workspace Presets under `registry/workspace-presets/` (see ADR-0046)
 - Orchestration policy: `lib/orchestration-policy.mjs`

@@ -251,7 +251,7 @@ describe('writeProjectConfig + initProjectConfig', () => {
         {
           id: 'watch-jira-roadmap',
           provider: 'jira',
-          specialist: 'cx-researcher',
+          workerProfileId: 'researcher',
           instruction: 'Watch Jira, summarize what the team is working on.',
           trigger: { kind: 'interval', intervalMinutes: 1440 },
           action: 'summarize',

@@ -18,7 +18,7 @@
  * a durable, deterministic failure outcome that still proves the record was
  * seen and an execution attempt was made.
  *
- * Reads CX_ROOT_DIR and TICK_TIMEOUT_MS from env. Prints one JSON line to
+ * Reads CONSTRUCT_ROOT_DIR and TICK_TIMEOUT_MS from env. Prints one JSON line to
  * stdout on success or failure and exits 0/1 accordingly.
  */
 
@@ -30,7 +30,7 @@ import { EMPTY_CONFIG } from '../../../lib/embed/config.mjs';
 import { ApprovalQueue } from '../../../lib/embed/approval-queue.mjs';
 import { getDeploymentMode } from '../../../lib/deployment-mode.mjs';
 
-const rootDir = process.env.CX_ROOT_DIR;
+const rootDir = process.env.CONSTRUCT_ROOT_DIR;
 const timeoutMs = Number(process.env.TICK_TIMEOUT_MS || 15_000);
 const pollIntervalMs = 100;
 
@@ -50,7 +50,7 @@ function readJsonFiles(dir) {
 
 function findArtifacts() {
   const reader = new ApprovalQueue({ persistPath });
-  const record = reader.list().find((r) => r.toolCall?.tool === 'jira.comment') ?? null;
+  const record = reader.list().find((r) => r.toolCall?.tool === 'atlassian-jira.comment') ?? null;
   const observations = readJsonFiles(join(rootDir, '.construct', 'observations'))
     .filter((o) => o.tags?.includes('write-intent-drain'));
   return { record, observations };
@@ -66,7 +66,7 @@ async function main() {
   // yet decided.
   const seedQueue = new ApprovalQueue({ persistPath });
   const seeded = seedQueue.enqueue({
-    tool: 'jira.comment',
+    tool: 'atlassian-jira.comment',
     args: { issueKey: 'OPS-1', body: 'cross-process approval test' },
     surface: 'test',
   });
@@ -90,9 +90,13 @@ async function main() {
   const approverQueue = new ApprovalQueue({ persistPath });
   approverQueue.approve(seeded.approvalId, { decidedBy: { userId: 'test-operator' } });
 
+  // A failed execution under the lease model (ADR-0089) releases the lease
+  // back to 'approved' and stamps lastLeaseFailureReason — that durable
+  // marker, not main's retired executionAttempts counter, is the proof the
+  // drain reached the adapter and recorded the outcome.
   const deadline = Date.now() + timeoutMs;
   let artifacts = findArtifacts();
-  while ((!artifacts.record || artifacts.record.executionAttempts < 1 || artifacts.observations.length === 0) && Date.now() < deadline) {
+  while ((!artifacts.record || !artifacts.record.lastLeaseFailureReason || artifacts.observations.length === 0) && Date.now() < deadline) {
     await sleep(pollIntervalMs);
     artifacts = findArtifacts();
   }
@@ -102,7 +106,7 @@ async function main() {
   const ok = !!artifacts.record
     && artifacts.record.state === 'approved'
     && artifacts.record.decidedBy?.userId === 'test-operator'
-    && artifacts.record.executionAttempts >= 1
+    && !!artifacts.record.lastLeaseFailureReason
     && artifacts.observations.length > 0;
 
   process.stdout.write(JSON.stringify({

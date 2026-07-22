@@ -3,7 +3,7 @@
  *
  * Template-optional generation (bead construct-760c.5). Two ways to author a
  * document class the builtin manifest never registered, with the builtin
- * (specialists/artifact-manifest.json) held byte-identical throughout:
+ * (registry/artifact-manifest.json) held byte-identical throughout:
  *
  *   1. `construct templates register <type>` (real spawned binary) writes a
  *      project template under .construct/templates/docs/<type>.md and a project-tier
@@ -31,7 +31,7 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const BIN = path.join(REPO_ROOT, 'bin', 'construct');
-const BUILTIN_MANIFEST = path.join(REPO_ROOT, 'specialists', 'artifact-manifest.json');
+const BUILTIN_MANIFEST = path.join(REPO_ROOT, 'registry', 'artifact-manifest.json');
 
 const dirs = [];
 function freshProject() {
@@ -42,16 +42,16 @@ function freshProject() {
 
 // In-process artifact-loop calls reach the machine-scoped state root through
 // the real HOME (observation-store vectorClientFor), so the whole process gets
-// a redirected CX_HOME_OVERRIDE or every fixture registers a real
+// a redirected CONSTRUCT_HOME_OVERRIDE or every fixture registers a real
 // ~/.construct/projects key (construct-9y93c).
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-templates-register-home-'));
-const originalHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const originalHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 
 test.after(() => {
-  if (originalHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = originalHomeOverride;
+  if (originalHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = originalHomeOverride;
   try { rmTmpDir(homeOverride); } catch { /* tmpdir teardown is best-effort */ }
   for (const d of dirs) { try { rmTmpDir(d); } catch { /* tmpdir teardown is best-effort */ } }
 });

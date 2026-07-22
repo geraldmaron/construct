@@ -16,6 +16,6 @@
     "inventory lists owners and workflowSkill=true"
   ],
   "owners": [
-    "cx-qa"
+    "qa"
   ]
 }

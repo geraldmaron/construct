@@ -6,7 +6,7 @@ which applies to it (bead construct-bwis; audited in
 
 ## Reference-delivered rules (all hosts)
 
-Rules cited by path in the active surface — personas, the managed AGENTS.md block, skills, other
+Rules cited by path in the active surface — Worker Profiles / `@construct`, the managed AGENTS.md block, skills, other
 rules, the CLI (e.g. `rules/common/no-fabrication.md`, `rules/common/commit-approval.md`) — are
 delivered by **reference**: the agent reads them with its file tools when the citing prose directs
 it to. This works identically on every host and is the only mechanism available on Claude Code,
@@ -20,7 +20,7 @@ convention: `.cursor/rules/*.mdc` with comma-separated `globs` frontmatter, auto
 matching file enters the host context.
 
 Project-scope `construct sync` (`lib/rules-delivery.mjs`, wired from the Cursor adapter in
-`scripts/sync-specialists.mjs`):
+`scripts/sync-worker-profiles.mjs`):
 
 - emits one managed `.mdc` per glob-scoped rule **whose globs match files actually present in the
   project** — the project's own contents are the intent signal, so a Go rule lands only in a repo

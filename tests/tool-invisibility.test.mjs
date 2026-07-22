@@ -1,12 +1,9 @@
 /**
- * tests/tool-invisibility.test.mjs — the tool-invisibility guardrail
- * (rules/common/tool-invisibility.md): deliverable artifacts are about the user's
- * project, never about Construct or its internal cx-* roles.
+ * Verifies the tool-invisibility guardrail for deliverable artifacts.
  *
- * Covers the deterministic backstop in lib/comment-lint.mjs (flags internal cx-* role
- * ids in a consuming project's deliverable, skipped on the Construct repo) and the
- * prevention wiring (rule file, shared guidance, persona, policy inventory) so the
- * guardrail cannot be silently dropped.
+ * Covers deterministic detection of internal cx-* Worker Profile ids in
+ * consuming projects and the canonical rule, prompt, policy, and registry
+ * wiring that prevents the guardrail from being silently dropped.
  */
 
 import { describe, it, after } from 'node:test';
@@ -16,7 +13,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 
-import { lintFile, KNOWN_CX_ROLE_IDS } from '../lib/comment-lint.mjs';
+import { lintFile, KNOWN_WORKER_PROFILE_IDS } from '../lib/comment-lint.mjs';
 import { getRegistry } from './test-registry-fixtures.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -40,12 +37,12 @@ function fixture(pkgName, rel, content) {
 const artifactWarnings = (res) => res.warnings.filter((w) => w.kind === 'artifact');
 
 describe('comment-lint flags tool-identity leaks in consuming-project deliverables', () => {
-  it('flags an internal cx-* role id in deliverable prose', () => {
+  it('flags an internal cx-* Worker Profile id in deliverable prose', () => {
     const { dir, fp } = fixture('my-app', 'docs/strategy.md', '# S\n\nOwner: cx-product-manager runs this.\n');
     assert.ok(artifactWarnings(lintFile(fp, { rootDir: dir })).length >= 1);
   });
 
-  it('flags a cx-* role id inside a markdown table cell (where the real leak occurred)', () => {
+  it('flags a cx-* Worker Profile id inside a markdown table cell', () => {
     const { dir, fp } = fixture('my-app', 'docs/x.md', '# S\n\n| Metric | Owner |\n|---|---|\n| North star | cx-data-analyst |\n');
     assert.ok(artifactWarnings(lintFile(fp, { rootDir: dir })).length >= 1);
   });
@@ -55,7 +52,7 @@ describe('comment-lint flags tool-identity leaks in consuming-project deliverabl
     assert.equal(artifactWarnings(lintFile(fp, { rootDir: dir })).length, 0);
   });
 
-  it('does NOT flag a cx-* id inside an HTML comment (provenance is allowed)', () => {
+  it('does NOT flag a cx-* Worker Profile id inside an HTML comment', () => {
     const { dir, fp } = fixture('my-app', 'docs/strategy.md', '# S\n\n<!-- provenance: via cx-business-strategist -->\nClean prose only.\n');
     assert.equal(artifactWarnings(lintFile(fp, { rootDir: dir })).length, 0);
   });
@@ -75,17 +72,17 @@ describe('comment-lint flags tool-identity leaks in consuming-project deliverabl
     assert.equal(artifactWarnings(lintFile(fp, { rootDir: dir })).length, 0);
   });
 
-  it('still flags a real role id when a lookalike package is on the same line', () => {
+  it('still flags a real Worker Profile id when a lookalike package is on the same line', () => {
     const { dir, fp } = fixture('my-app', 'docs/strategy.md', '# S\n\nUses cx-ray. Owner: cx-product-manager.\n');
     assert.ok(artifactWarnings(lintFile(fp, { rootDir: dir })).length >= 1);
   });
 
-  it('does NOT flag a role id inside a ~~~ tilde fence', () => {
+  it('does NOT flag a Worker Profile id inside a ~~~ tilde fence', () => {
     const { dir, fp } = fixture('my-app', 'docs/strategy.md', '# S\n\n~~~\nrun cx-researcher here\n~~~\nClean prose.\n');
     assert.equal(artifactWarnings(lintFile(fp, { rootDir: dir })).length, 0);
   });
 
-  it('fails closed: a role id after an UNCLOSED fence is still flagged', () => {
+  it('fails closed when a Worker Profile id follows an unclosed fence', () => {
     const { dir, fp } = fixture('my-app', 'docs/strategy.md', '# S\n\n```\nopen fence never closed\n\nOwner: cx-product-manager runs this.\n');
     assert.ok(artifactWarnings(lintFile(fp, { rootDir: dir })).length >= 1);
   });
@@ -112,23 +109,26 @@ describe('tool-invisibility prevention is wired so it cannot be silently dropped
     const registry = getRegistry();
     const policy = registry.policies?.['tool-invisibility'];
     assert.match(`${policy?.id}\n${policy?.description}\n${policy?.enforcement}`, /tool-invisibility|invisibility/i);
-    assert.equal(policy?.source, 'rules/common/tool-invisibility.md');
+    assert.equal(policy?.ownerWorkerProfile, 'orchestrator');
+    assert.match(policy?.enforcement || '', /comment-lint\.mjs/);
   });
 
-  it('the persona references the rule', () => {
-    const persona = fs.readFileSync(path.join(ROOT, 'personas/construct.md'), 'utf8');
-    assert.match(persona, /tool-invisibility\.md/);
+  it('the Construct Worker Profile prompt references the rule', () => {
+    const prompt = fs.readFileSync(path.join(ROOT, 'registry/worker-profiles/prompts/construct.md'), 'utf8');
+    assert.match(prompt, /tool-invisibility\.md/);
   });
 
-  it('the policy inventory registers the rule', () => {
+  it('the policy inventory registers the canonical guardrail', () => {
     const registry = getRegistry();
     const policies = Object.values(registry.policies || {});
-    assert.ok(policies.some((p) => p.id === 'tool-invisibility' && p.source === 'rules/common/tool-invisibility.md'));
+    assert.ok(policies.some((policy) => policy.id === 'tool-invisibility'
+      && policy.ownerWorkerProfile === 'orchestrator'
+      && /worker-profile prompt/i.test(policy.enforcement || '')));
   });
 
-  it('KNOWN_CX_ROLE_IDS matches specialists/org (drift guard for the anchored regex)', () => {
+  it('KNOWN_WORKER_PROFILE_IDS matches registry (drift guard for the anchored regex)', () => {
     const registry = getRegistry();
-    const expected = Object.values(registry.specialists || {}).map((s) => s.name).sort();
-    assert.deepEqual([...KNOWN_CX_ROLE_IDS].sort(), expected);
+    const expected = Object.values(registry.workerProfiles || {}).map((profile) => profile.id).sort();
+    assert.deepEqual([...KNOWN_WORKER_PROFILE_IDS].sort(), expected);
   });
 });

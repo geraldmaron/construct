@@ -4,10 +4,11 @@
  * @enforces ADR-0015
  *
  * The registry is the spine of the enforcement/decision-durability program
- * (bead construct-wvbf.1): it indexes ADRs, contracts, and rules from source and
- * binds each to its enforcement via @enforces markers. These tests pin that the
- * view builds deterministically, parses ADR status/supersede edges, and
- * surfaces the advisory-vs-enforced split downstream gates depend on.
+ * (bead construct-wvbf.1): it indexes ADRs and rules from source and binds each
+ * to its enforcement via @enforces markers. Assignments are runtime records,
+ * not durable decisions. These tests pin that the view builds
+ * deterministically, parses ADR status/supersede edges, and surfaces the
+ * advisory-vs-enforced split downstream gates depend on.
  */
 
 import test from 'node:test';
@@ -30,12 +31,13 @@ test('ADR status parses into the canonical enum', () => {
   assert.ok(DECISION_STATUSES.includes(adr.status), `status "${adr.status}" is canonical`);
 });
 
-test('contracts are indexed with their executable checks as enforcement', () => {
-  const { decisions } = buildRegistry();
-  const contracts = decisions.filter((d) => d.kind === 'contract');
-  assert.ok(contracts.length > 0, 'at least one contract decision');
-  const withChecks = contracts.filter((c) => c.enforcingChecks.length > 0);
-  assert.ok(withChecks.length > 0, 'some contracts carry executable postcondition checks');
+test('deleted legacy assignments are not indexed as durable decisions', () => {
+  const { decisions, byId } = buildRegistry();
+  assert.deepEqual(
+    [...new Set(decisions.map((decision) => decision.kind))].sort(),
+    ['adr', 'rule'],
+  );
+  assert.equal(byId.has('any-to-product-manager'), false);
 });
 
 test('@enforces marker binds a test to a decision', () => {

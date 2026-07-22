@@ -1,0 +1,5 @@
+{
+  "name": "construct-playwright-demo-fixture",
+  "private": true,
+  "type": "module"
+}

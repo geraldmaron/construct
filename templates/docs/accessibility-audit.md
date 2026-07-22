@@ -1,7 +1,7 @@
 # Accessibility Audit: {scope-title}
 
 - **Date**: {YYYY-MM-DD}
-- **Auditor**: cx-accessibility (or named human)
+- **Auditor**: designer (or named human)
 - **Scope**: {pages / flows / components / PR}
 - **Baseline**: WCAG 2.1 AA (unless otherwise specified)
 - **Assistive technology used**: {VoiceOver / NVDA / JAWS / TalkBack / Switch Control / Voice Control / keyboard-only}
@@ -51,6 +51,6 @@ is `unverified` — not a finding.
 
 ## Handoff
 
-- design fixes → `next:cx-designer`
-- code fixes → `next:cx-engineer`
-- review of remediation → `next:cx-reviewer`
+- design fixes → `next:designer`
+- code fixes → `next:engineer`
+- review of remediation → `next:reviewer`

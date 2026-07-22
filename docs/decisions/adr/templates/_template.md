@@ -14,7 +14,7 @@ meeting that prompted the ADR. A principal engineer who has never seen
 the triggering inputs should be able to read this doc and understand the
 decision and why it was made.
 
-Owning specialist: cx-architect (see rules/common/doc-ownership.md).
+Owning Worker Profile: architect (see rules/common/doc-ownership.md).
 -->
 
 ## Problem

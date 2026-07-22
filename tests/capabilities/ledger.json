@@ -51,7 +51,7 @@
     {
       "id": "research.project-search",
       "criticality": "release",
-      "outcome": "A user can search project knowledge and receive hits from the active project's .cx/knowledge before bundled docs.",
+      "outcome": "A user can search project knowledge and receive hits from the active project's .construct/knowledge before bundled docs.",
       "failureModes": ["project research is invisible to construct knowledge search", "bundled docs outrank the user's own research for the same query"],
       "changePaths": ["lib/knowledge/search.mjs", "lib/knowledge/rag.mjs", "bin/construct"],
       "fixtures": ["tests/functional/knowledge-search-project-scope.functional.test.mjs"],

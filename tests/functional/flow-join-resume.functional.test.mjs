@@ -81,25 +81,25 @@ function readMarkers(markerPath) {
 }
 
 // loadCheckpoint and the pre-crash in-process drive resolve the machine-scoped
-// state root (ADR-0066) from process.env.CX_HOME_OVERRIDE directly, so both
+// state root (ADR-0066) from process.env.CONSTRUCT_HOME_OVERRIDE directly, so both
 // must pin the same override the spawned CLI sees (mirrors
 // tests/functional/flow-checkpoint-resume.functional.test.mjs).
 
 async function withHomeOverride(HOME, fn) {
-  const prev = process.env.CX_HOME_OVERRIDE;
-  process.env.CX_HOME_OVERRIDE = HOME;
+  const prev = process.env.CONSTRUCT_HOME_OVERRIDE;
+  process.env.CONSTRUCT_HOME_OVERRIDE = HOME;
   try {
     return await fn();
   } finally {
-    if (prev === undefined) delete process.env.CX_HOME_OVERRIDE;
-    else process.env.CX_HOME_OVERRIDE = prev;
+    if (prev === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+    else process.env.CONSTRUCT_HOME_OVERRIDE = prev;
   }
 }
 
 function spawnFlowCli(env, args) {
   return spawnSync(process.execPath, [CLI, 'flow', ...args], {
     cwd: env.project,
-    env: sterileSpawnEnv({ HOME: env.HOME, CX_HOME_OVERRIDE: env.HOME }),
+    env: sterileSpawnEnv({ HOME: env.HOME, CONSTRUCT_HOME_OVERRIDE: env.HOME }),
     encoding: 'utf8',
     timeout: 60_000,
   });

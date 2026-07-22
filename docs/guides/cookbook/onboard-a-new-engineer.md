@@ -1,40 +1,40 @@
 ---
 title: Onboard a new engineer
-description: Drive day-1 setup through the week-1 checkpoint via the engineering-onboarding workflow. Scaffolds onboarding brief, access checklist, and milestone handoff artifacts in one CLI call.
+description: Scaffold onboarding brief, access checklist, and week-1 checkpoint artifacts from shipped templates. No dedicated onboarding procedure — discover live procedures with construct procedure list.
 ---
 
-The `engineering-onboarding` workflow template runs the new-engineer onboarding ritual end-to-end: the brief, the access checklist, the week-1 milestones, and the handoff at the end. One CLI invocation; every artifact lands under `docs/onboarding/<engineer>/` and is owned by a tracker-backed plan from the moment it's created.
+Construct ships an onboarding template but no `engineering-onboarding` procedure. Onboarding is a template-driven artifact workflow: copy the shipped templates, stamp provenance, and track milestones in Beads.
 
-## Run it
+## Discover procedures
 
 ```bash
-construct workflow new engineering-onboarding \
-  --input engineer_name="Riley Chen" \
-  --input team_name="platform" \
-  --input manager_name="Sam Park" \
-  --input start_date="2026-06-10"
+construct procedure list
 ```
 
-The CLI prompts for any missing inputs. Each prompt carries a default; press Enter to accept.
+Live procedure definitions live in `registry/procedures/*.json`. None of the shipped procedures scaffold a full onboarding pack; use the templates below directly or pair with `memo-draft` when you only need a status memo plan.
 
-## What it creates
+## Scaffold the artifact pack
 
 | Path | Source template | Purpose |
 |---|---|---|
 | `docs/onboarding/<engineer>/brief.md` | `templates/docs/onboarding.md` | Day-1 brief: team, manager, start date, scope of work |
 | `docs/onboarding/<engineer>/access-runbook.md` | `templates/docs/runbook.md` | Access checklist (repos, services, secrets, on-call rotation) |
-| `docs/onboarding/<engineer>/week-1-handoff.md` | `templates/docs/handoff.md` | First checkpoint: what shipped, what's blocked, who to ask |
+| `docs/onboarding/<engineer>/week-1-memo.md` | `templates/docs/memo.md` | First checkpoint: what shipped, what's blocked, who to ask |
 
-Every artifact has a stamped `intake_id` and a `cx_doc_id` so doctor's traceability check sees it from day one.
+Author through your host's artifact workflow (see [Generate artifacts](/guides/cookbook/generate-artifacts)) or copy each template manually, fill placeholders, and run `construct docs:verify` before publishing.
 
-## Inspect or modify the template
+Every artifact should carry a stamped `intake_id` and `cx_doc_id` so doctor's traceability check sees it from day one.
+
+## Optional procedure plan
+
+When you want a bounded orchestration plan (not auto-generated docs):
 
 ```bash
-construct workflow show engineering-onboarding
-construct workflow list
+construct procedure invoke --json --procedure-id memo-draft \
+  --text 'Draft week-1 onboarding checkpoint for Riley Chen on platform team'
 ```
 
-The YAML lives at [`templates/workflows/engineering-onboarding.yml`](https://github.com/geraldmaron/construct/blob/main/templates/workflows/engineering-onboarding.yml). Add or rename input fields, change the artifact list, or swap template paths — `construct workflow` reads it at invocation, no rebuild needed.
+`construct procedure invoke` returns a **plan only** — Worker Profiles still author the memo from `templates/docs/memo.md`.
 
 ## Pair with
 

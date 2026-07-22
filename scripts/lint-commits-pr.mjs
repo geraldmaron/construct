@@ -9,6 +9,11 @@
  *
  * Exit 0 on pass, 1 on any violation. Runs as the ci.yml `template policy`
  * job and is also runnable locally before push.
+ *
+ * `lintCommits`/`lintPrBody`/`getRange`/`isBotAuthor`/`reportTemplatePolicy` are
+ * exported for reuse by `construct lint:pr` (lib/lint-pr-cli.mjs). The checks
+ * only run as a side effect when this file executes as the CLI entry point
+ * (`node scripts/lint-commits-pr.mjs`) — importing it never calls process.exit.
  */
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -74,6 +79,9 @@ const LEGACY_EXEMPT_SHAS = new Set([
   "68cb664af8369d5e3e6834ebe95d7d07b19c3d14", // "docs+tests: changelog and corpus inventory for construct-jvjow.4 merge" (2026-07-09)
   "bfe20bf86d455fc09f4ab25374750f12c65a139f", // "Release 1.5.4-alpha.2 (alpha, off staging — doc-io cert + version-regex fixed)" (2026-07-10, already tagged+published to npm)
   "6342a737e6bf38612edb937d5432ff6067b5fe96", // "Release 1.5.4-alpha.1 (alpha, off staging for tester validation)" (2026-07-10, already tagged+published to npm)
+  "e2fb90a49b0c5e7152389abebb55bdcea5b3c454", // "Improve control-plane UX…" (feat history; already pushed, cannot rewrite for integrate PR)
+  "38cff0dddc7fc10720ff8362a8b2cfe3779259ca", // "Close Construct 2.0 legacy decommission epic…" (feat history; already pushed)
+  "a771b6199d693f54668b92d261784a4b41e1fb70", // "remove unwired deterministic embed-capability presets (construct-4uxq0.10.8)" (already on staging; first covered by staging-to-main promote range)
 ]);
 
 const REQUIRED_PR_HEADINGS = [
@@ -90,7 +98,7 @@ const REQUIRED_GATE_GROUPS = [
   { label: "Local gates", marker: "## Local gates" },
 ];
 
-function getRange() {
+export function getRange() {
   const currentBranch = process.env.GIT_BRANCH;
   const upstreamRef = process.env.GIT_UPSTREAM_REF;
   const baseSha = process.env.PR_BASE_SHA;
@@ -137,7 +145,7 @@ function getRange() {
   }
 }
 
-function lintCommits() {
+export function lintCommits() {
   const range = getRange();
   let log;
   try {
@@ -154,7 +162,7 @@ function lintCommits() {
   const records = log.split("\x1e").map((r) => r.trim()).filter(Boolean);
   for (const record of records) {
     const [sha, subject, body] = record.split("\t");
-    const merge = subject?.startsWith("Merge ") || subject?.startsWith("Revert ");
+    const merge = subject?.startsWith("Merge ") || subject?.startsWith("Revert ") || /^merge:/i.test(subject ?? "");
     if (merge || LEGACY_EXEMPT_SHAS.has(sha)) continue;
     if (!COMMIT_SUBJECT_RE.test(subject ?? "")) {
       violations.push(`${sha.slice(0, 9)}: subject does not match \`type(scope): subject\` (≤140 chars, no leading space): ${JSON.stringify(subject)}`);
@@ -171,12 +179,12 @@ function lintCommits() {
 // heading policy does not apply to a bot author. The gate stays blocking for
 // human PRs — the exemption is by author, not by soft-failing the CI step.
 
-function isBotAuthor(author) {
+export function isBotAuthor(author) {
   const a = String(author || "").toLowerCase();
   return a.endsWith("[bot]") || a === "dependabot" || a === "renovate";
 }
 
-function lintPrBody() {
+export function lintPrBody() {
   if (isBotAuthor(process.env.PR_AUTHOR)) return [];
 
   const path = process.env.PR_BODY_FILE;
@@ -213,16 +221,33 @@ function lintPrBody() {
   return violations;
 }
 
-const commitViolations = lintCommits();
-const prViolations = lintPrBody();
-const all = [...commitViolations, ...prViolations];
+// Shared by the raw CI invocation (`npm run lint:templates`) and by
+// `construct lint:pr` (lib/lint-pr-cli.mjs), which imports this module as a
+// library — both must print byte-identical violation output so they never
+// drift apart on format.
 
-if (all.length > 0) {
+export function printTemplatePolicyViolations(violations) {
   console.error("\nTemplate policy violations:\n");
-  for (const v of all) console.error(`  - ${v}`);
+  for (const v of violations) console.error(`  - ${v}`);
   console.error("\nSee .gitmessage and .github/pull_request_template.md for the required shape.");
   console.error("Run `git config commit.template .gitmessage` once per clone to load the commit template.\n");
-  process.exit(1);
 }
 
-console.log("Template policy: clean.");
+export function reportTemplatePolicy(violations) {
+  if (violations.length > 0) {
+    printTemplatePolicyViolations(violations);
+    return 1;
+  }
+  console.log("Template policy: clean.");
+  return 0;
+}
+
+// Importing this module (e.g. from construct lint:pr) must not trigger the
+// checks or call process.exit — only running it directly as a script does.
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const commitViolations = lintCommits();
+  const prViolations = lintPrBody();
+  const exitCode = reportTemplatePolicy([...commitViolations, ...prViolations]);
+  if (exitCode !== 0) process.exit(exitCode);
+}

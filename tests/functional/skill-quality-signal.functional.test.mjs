@@ -5,7 +5,7 @@
  * Drives the real agent-tracker hook with a Task outcome that carries a
  * session_id, in an isolated CONSTRUCT_DOCTOR_ROOT seeded with
  * skill-calls.jsonl load events. Asserts the durable artifacts: the role
- * outcome in .cx/outcomes/, the attributed lines in skill-outcomes.jsonl
+ * outcome in .construct/outcomes/, the attributed lines in skill-outcomes.jsonl
  * (deduped per skill, joined on sessionId), the `construct skills quality`
  * CLI rendering, and the summary JSON it writes. Also proves the two
  * guard rails: CONSTRUCT_SKILL_TELEMETRY=off suppresses attribution without
@@ -30,7 +30,7 @@ const CLI = join(repoRoot, 'bin', 'construct');
 function makeFixture() {
   const stateRoot = mkdtempSync(join(tmpdir(), 'cx-skill-quality-state-'));
   const projectDir = mkdtempSync(join(tmpdir(), 'cx-skill-quality-proj-'));
-  mkdirSync(join(projectDir, '.cx'), { recursive: true });
+  mkdirSync(join(projectDir, '.construct'), { recursive: true });
   writeFileSync(join(projectDir, 'package.json'), JSON.stringify({ name: 'skill-quality-fixture' }));
 
   const calls = [
@@ -48,7 +48,7 @@ function runHook({ stateRoot, projectDir, sessionId, envExtra = {} }) {
     tool_name: 'Task',
     session_id: sessionId,
     cwd: projectDir,
-    tool_input: { subagent_type: 'cx-engineer', description: 'implement the widget' },
+    tool_input: { subagent_type: 'engineer', description: 'implement the widget' },
     tool_result: { result: 'completed successfully' },
   };
   return spawnSync(process.execPath, [HOOK], {
@@ -67,7 +67,7 @@ test('a Task outcome with a session_id attributes the outcome to every skill loa
     assert.equal(r.status, 0, `agent-tracker should exit 0: ${r.stderr}`);
 
     const roleLog = configPath(projectDir, 'outcomes', 'engineer.jsonl');
-    assert.ok(existsSync(roleLog), 'role outcome JSONL is written under the project .cx');
+    assert.ok(existsSync(roleLog), 'role outcome JSONL is written under the project .construct');
     const roleRows = readFileSync(roleLog, 'utf8').trim().split('\n').map((l) => JSON.parse(l));
     assert.equal(roleRows.length, 1);
     assert.equal(roleRows[0].success, true);

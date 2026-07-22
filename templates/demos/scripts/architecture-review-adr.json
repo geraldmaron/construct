@@ -2,14 +2,14 @@
   "name": "architecture-review-adr",
   "title": "Architecture review — plan-only to enforced decisions",
   "summary": "Invoke the architecture-review workflow as a plan only, then show the load-bearing decision index, fail-on-drift check, and an ADR artifact passing structure validation.",
-  "systemOverlay": "Demo mode for the architecture review path. Run the exact construct CLI commands from each step using shell or construct_tool. The workflow invoke is plan-only — it proposes the specialist chain and does not author the ADR. Do not hand-author decision records or ADR markdown in chat.",
+  "systemOverlay": "Demo mode for the architecture review path. Run the exact construct CLI commands from each step using shell or construct_tool. Procedure invoke is plan-only — it proposes the Worker Profile chain and does not author the ADR. Do not hand-author decision records or ADR markdown in chat.",
   "tape": "architecture-review-adr",
   "fallbackSurface": "tape",
   "steps": [
     {
-      "title": "Plan only — architecture review workflow",
-      "prompt": "Run construct workflow invoke for architecture-review in proposal-only mode and show the specialist chain. This is plan-only — it does not draft the ADR.",
-      "command": "node bin/construct workflow invoke --json --workflow-type architecture-review --approval-mode proposal-only --text 'Review the orchestration runtime boundary for failure modes'"
+      "title": "Plan only — architecture review procedure",
+      "prompt": "Run construct procedure invoke for architecture-review in proposal-only mode and show the Worker Profile chain. This is plan-only — it does not draft the ADR.",
+      "command": "node bin/construct procedure invoke --json --workflow-type architecture-review --approval-mode proposal-only --text 'Review the orchestration runtime boundary for failure modes'"
     },
     {
       "title": "Decision index — load-bearing decisions",

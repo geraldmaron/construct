@@ -21,6 +21,15 @@ Additional runtime dependencies are allowed. Each new dependency requires an ADR
 
 Dependencies are allowed freely. No ADR required. These never ship to end users.
 
+Static analysis (`knip`, `dependency-cruiser`) lives here as `devDependencies`. ADR-0001 restricts the **installed CLI runtime** in `lib/` and `bin/` — its Context section (lines 18–23) frames the restriction around `npm install -g construct` supply-chain risk for end users. `devDependencies` are stripped from consumer installs and are not subject to the ADR-0001 amendment gate. Run them via:
+
+```bash
+npm run static:knip    # unused files/exports/deps (warn-first in CI)
+npm run static:cruise  # dependency direction rules (warn-first in CI)
+```
+
+Both tools use explicit entry-point inventories (`knip.json`, `.dependency-cruiser.cjs`) so findings reflect shipped surfaces rather than orphan false positives.
+
 ## Adding a core dependency
 
 1. Write `docs/decisions/adr/NNNN-<title>.md` using the MADR template (see `docs/decisions/adr/0001-zero-npm-core.md` for format).
@@ -49,6 +58,29 @@ Remediation ladder:
 4. **Accept with a documented ADR** only when no upstream fix exists, recording the residual risk and the revisit condition.
 
 A repo-local `overrides` pin is acceptable as defense-in-depth for this repo's own tree, but it is never the line item that closes a consumer-facing advisory.
+
+**LanceDB pin note (2026-07):** `@lancedb/lancedb` stays in `optionalDependencies` (ADR-0081) and is pinned to `0.30.0` rather than `0.31.x`. `0.31.0` added an unused nested optional `@huggingface/transformers` → `sharp` chain that failed both repo and `audit:published` high audits; Construct never imports that nest (see `docs/notes/research/lancedb-vs-sqlite-vec-benchmark.md`). Revisit when an upstream LanceDB line ships without the vulnerable `sharp` (<0.35) path or with a patched transitive tree.
+
+## OSV scanning, license policy, and exceptions
+
+Supply-chain scanning runs in `.github/workflows/supply-chain.yml`:
+
+- **OSV scan** (`google/osv-scanner-action`) against `package-lock.json` with `--config=osv-scanner.toml`
+- **Dependency review** (`actions/dependency-review-action`) on pull requests, using allow/deny lists from `.github/license-allowlist.json`
+
+OSV is **blocking** once findings are fixed or covered by dated `IgnoredVulns` in `osv-scanner.toml`. Prefer real upgrades/overrides first; use ignores only when an upstream pin or major-break blocks the fix. Each ignore must also appear in `.github/supply-chain-exceptions.json` so expiration fails CI via `scripts/check-supply-chain-exceptions.mjs`.
+
+**Dependency review** needs GitHub Dependency graph. The workflow probes `GET /repos/.../dependency-graph/compare/...` first; when that API returns non-200 (graph disabled / unsupported), the review job is **skipped** (not soft-failed with a red X). Enable Dependency graph (and Prefer Dependabot alerts) under [Settings → Code security and analysis](https://github.com/geraldmaron/construct/settings/security_analysis). Dependency review passes `allow-licenses` only — the action rejects pairing allow and deny lists.
+
+**Exceptions** mirror the `LEGACY_EXEMPT_SHAS` pattern in `scripts/lint-commits-pr.mjs`: each entry requires `id`, `reason`, and `expires` (`YYYY-MM-DD`). Expired entries fail `npm run supply-chain:exceptions` (also runs in CI before scans).
+
+Local checks:
+
+```bash
+npm run supply-chain:exceptions
+osv-scanner --lockfile=package-lock.json --config=osv-scanner.toml
+npm run supply-chain:gate    # composed release go/no-go (construct-tsyfe.10.7)
+```
 
 ## Rationale
 

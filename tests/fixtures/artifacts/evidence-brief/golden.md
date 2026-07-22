@@ -8,11 +8,11 @@ cx_fixture_source: templates/docs/evidence-brief.md
 
 ## Sources
 
-This paragraph supports the Sources section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Sources section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the Sources section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the Sources section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Sources section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the Sources section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## What we observed
 
-This paragraph supports the What we observed section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the What we observed section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22). This paragraph supports the What we observed section with observable evidence. Source: https://example.com/fixture (accessed 2026-06-22).
+This paragraph supports the What we observed section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the What we observed section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22). This paragraph supports the What we observed section with observable evidence. Source: [fixture source](https://example.com/fixture) (accessed 2026-06-22).
 
 ## Confidence
 
@@ -24,4 +24,4 @@ Fixture content for Recommendation.
 
 ## References
 
-- https://example.com/fixture-source (accessed 2026-06-22)
+- [Example fixture source](https://example.com/fixture-source) (accessed 2026-06-22)

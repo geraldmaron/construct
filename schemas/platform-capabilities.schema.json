@@ -63,7 +63,7 @@
           "properties": {
             "supported": {
               "type": "boolean",
-              "description": "True when the host runs lifecycle hooks (Claude Code only today)."
+              "description": "True when Construct installs/wires lib/hooks into this host (Claude Code only). Host-native hook APIs (e.g. Cursor .cursor/hooks.json) do not flip this flag — Construct declines unsafe parity claims."
             },
             "globalAllowlist": {
               "type": "array",

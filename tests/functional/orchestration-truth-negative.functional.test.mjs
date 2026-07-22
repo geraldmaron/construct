@@ -10,13 +10,13 @@
  *     records output, and a planned run has not executed at all;
  *   - the mandatory semantics disclaimer rides on every run, inline and provider;
  *   - chain-of-thought disclosure honors the configured mode — `hidden` keeps
- *     specialist reasoning off both task and trace, `surface` puts it on the task
+ *     Worker Profile reasoning off both task and trace, `surface` puts it on the task
  *     only, `telemetry_only` puts it in the trace only and never on the task;
  *   - the remote (team) HTTP path is opt-in via CONSTRUCT_ORCHESTRATION_URL and
  *     relays the service's run faithfully without fabricating local execution.
  *
  * Trace reads resolve through the machine-scoped state root (ADR-0066), so
- * CX_HOME_OVERRIDE is pinned for the whole file to keep them off the real
+ * CONSTRUCT_HOME_OVERRIDE is pinned for the whole file to keep them off the real
  * developer machine's $HOME.
  */
 
@@ -32,12 +32,12 @@ import { traceDir } from '../../lib/worker/trace.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const MODEL = 'anthropic/claude-sonnet-4-6';
-const ENV = { CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL };
+const ENV = { CONSTRUCT_MODEL_REASONING: MODEL, CONSTRUCT_MODEL_STANDARD: MODEL, CONSTRUCT_MODEL_FAST: MODEL };
 const REQUEST = 'refactor the auth module and review for security';
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-orch-truth-home-'));
-const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = homeOverride;
+const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
 
 const dirs = [];
 function project(config = null) {
@@ -54,17 +54,17 @@ function traceMentions(cwd, needle) {
 test.after(() => {
   for (const d of dirs) { try { rmTmpDir(d); } catch {} }
   try { rmTmpDir(homeOverride); } catch {}
-  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+  if (prevHomeOverride === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = prevHomeOverride;
 });
 
-// A thinking-block response yields both specialist output and a reasoning trace, so
+// A thinking-block response yields both Worker Profile output and a reasoning trace, so
 // the disclosure mode — not the model — decides where the reasoning is allowed to land.
 
 const REASONING = 'THINKING-CANARY-42';
 const providerFetch = async () => ({
   ok: true,
-  json: async () => ({ content: [{ type: 'thinking', thinking: REASONING }, { type: 'text', text: 'specialist-output' }] }),
+  json: async () => ({ content: [{ type: 'thinking', thinking: REASONING }, { type: 'text', text: 'worker-profile-output' }] }),
 });
 
 test('inline backend never claims execution: no done, no inline:executed, no output', async () => {
@@ -92,14 +92,14 @@ test('a planned run has not executed: queued tasks, no executor, no output', asy
 test('the semantics disclaimer rides on every run, inline and provider', async () => {
   const inlineCwd = project();
   const inline = await runOrchestration({ request: REQUEST, requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 4 }, { env: ENV, cwd: inlineCwd });
-  assert.match(hostAdapterMetadata(inline).semantics, /does not perform specialist LLM reasoning/i);
+  assert.match(hostAdapterMetadata(inline).semantics, /does not perform Worker Profile LLM reasoning/i);
 
   const providerCwd = project();
   const provider = await runOrchestration(
     { request: REQUEST, requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 4 },
     { env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test' }, cwd: providerCwd, workerBackend: 'provider', fetchImpl: providerFetch },
   );
-  assert.match(hostAdapterMetadata(provider).semantics, /does not perform specialist LLM reasoning/i);
+  assert.match(hostAdapterMetadata(provider).semantics, /does not perform Worker Profile LLM reasoning/i);
 });
 
 test('chain-of-thought hidden keeps reasoning off both task and trace', async () => {
@@ -142,8 +142,8 @@ test('remote path relays the service run faithfully and fabricates no execution'
   const remoteRun = {
     runId: 'remote-1', status: 'completed',
     execution: { executionMode: 'construct-orchestrated', degraded: false },
-    plan: { intent: 'refactor', specialists: ['cx-architect'] },
-    tasks: [{ id: 't1', role: 'cx-architect', status: 'prepared', executor: 'inline:prepared', output: null, reasoning: null, error: null }],
+    plan: { intent: 'refactor', assignments: [{ id: 'assignment-1', workerProfileId: 'architect', recruited: false }] },
+    tasks: [{ id: 't1', workerProfileId: 'architect', status: 'prepared', executor: 'inline:prepared', output: null, reasoning: null, error: null }],
   };
   let posted = null;
   const fetchImpl = async (url, opts) => { posted = { url, opts }; return { ok: true, status: 200, json: async () => ({ data: remoteRun }) }; };
@@ -162,8 +162,8 @@ test('remote path relays real provider output without rewriting it', async () =>
   const remoteRun = {
     runId: 'remote-2', status: 'completed',
     execution: { executionMode: 'construct-orchestrated', degraded: false },
-    plan: { intent: 'refactor', specialists: ['cx-architect'] },
-    tasks: [{ id: 't1', role: 'cx-architect', status: 'done', executor: 'provider:anthropic:claude-sonnet-4-6', output: 'real-remote-output', reasoning: null, error: null }],
+    plan: { intent: 'refactor', assignments: [{ id: 'assignment-1', workerProfileId: 'architect', recruited: false }] },
+    tasks: [{ id: 't1', workerProfileId: 'architect', status: 'done', executor: 'provider:anthropic:claude-sonnet-4-6', output: 'real-remote-output', reasoning: null, error: null }],
   };
   const fetchImpl = async () => ({ ok: true, status: 200, json: async () => ({ data: remoteRun }) });
   const res = await orchestrationRun(

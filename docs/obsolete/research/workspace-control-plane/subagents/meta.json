@@ -1,0 +1,9 @@
+{
+  "title": "Wave 0 Investigation Reports",
+  "pages": [
+    "routing-plan",
+    "execution-surfaces-truth-map",
+    "graph-and-state-audit",
+    "intent-and-docs-drift"
+  ]
+}

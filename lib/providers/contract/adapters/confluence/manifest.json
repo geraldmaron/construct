@@ -9,9 +9,25 @@
   "owner": "construct-core",
   "compatVersion": 1,
   "installSource": "builtin",
+  "certification": {
+    "tier": "contract-tested"
+  },
   "exposure": "envelope-only",
   "envelopeModule": "lib/writes/envelope.mjs",
   "adapterModule": "lib/providers/contract/adapters/confluence/governed-write.mjs",
   "transportModule": "lib/providers/contract/adapters/confluence/transport.mjs",
-  "notes": "Colocated write-capability manifest for LMCP-J4. Follows the lib/extensions/manifests/*.manifest.json schema (see atlassian-confluence.manifest.json, which declares read/search only). Wiring this into the shared lib/extensions/manifests/ discovery directory is out of scope for this bead; capabilities here are reachable only via writeWithEnvelope(), never a direct provider-registry lookup."
+  "notes": "Colocated write-capability manifest for LMCP-J4. Follows the lib/extensions/manifests/*.manifest.json schema (see atlassian-confluence.manifest.json, which declares read/search only). Wiring this into the shared lib/extensions/manifests/ discovery directory is out of scope for this bead; capabilities here are reachable only via writeWithEnvelope(), never a direct provider-registry lookup.",
+  "certification": {
+    "tier": "contract-tested",
+    "computedAt": "2026-07-16",
+    "computedBy": "lib/certification/provider-evidence-tiers.mjs#auditKnownProviderManifests (construct-4uxq0.13.2)",
+    "reason": "adapter code is exercised against a fake wire boundary, but no test crosses a real subprocess/HTTP boundary",
+    "evidence": {
+      "contractTestFiles": ["tests/provider-confluence.test.mjs", "tests/writes/confluence.functional.test.mjs"]
+    },
+    "manualAttestation": {
+      "liveSandboxTested": { "attested": false, "attestedAt": null, "attestedBy": null, "note": null },
+      "productionProven": { "attested": false, "attestedAt": null, "attestedBy": null, "note": null }
+    }
+  }
 }

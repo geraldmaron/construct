@@ -10,6 +10,9 @@
   "owner": "construct-core",
   "compatVersion": 1,
   "installSource": "builtin",
+  "certification": {
+    "tier": "contract-tested"
+  },
   "sourceTarget": {
     "provider": "slack",
     "selector": {
@@ -54,6 +57,19 @@
       "targetOldestDefault": 86400,
       "targetDefaultLimit": 50,
       "querySupported": false
+    }
+  },
+  "certification": {
+    "tier": "contract-tested",
+    "computedAt": "2026-07-16",
+    "computedBy": "lib/certification/provider-evidence-tiers.mjs#auditKnownProviderManifests (construct-4uxq0.13.2)",
+    "reason": "adapter code is exercised against a fake wire boundary, but no test crosses a real subprocess/HTTP boundary",
+    "evidence": {
+      "contractTestFiles": ["tests/embed-slack-intent.test.mjs", "tests/embed/providers.test.mjs"]
+    },
+    "manualAttestation": {
+      "liveSandboxTested": { "attested": false, "attestedAt": null, "attestedBy": null, "note": null },
+      "productionProven": { "attested": false, "attestedAt": null, "attestedBy": null, "note": null }
     }
   }
 }
