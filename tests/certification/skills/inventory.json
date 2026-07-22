@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-21T06:22:15.498Z",
+  "generatedAt": "2026-07-22T15:06:32.769Z",
   "generator": "lib/certification/skill-inventory.mjs",
   "skillCount": 145,
   "skills": [
@@ -887,8 +887,8 @@
         "worker-profile:researcher"
       ],
       "activationTriggers": [
-        "Use when: cx-researcher maps the repo — entry points, dependencies, hot paths, or unfamiliar subsystems.",
-        "cx-researcher investigates **this repository** — structure, dependencies, behavior. Not for external vendor research or user interviews."
+        "Use when: researcher maps the repo — entry points, dependencies, hot paths, or unfamiliar subsystems.",
+        "researcher investigates **this repository** — structure, dependencies, behavior. Not for external vendor research or user interviews."
       ],
       "inputs": [
         "[repository-path]"
@@ -1207,8 +1207,8 @@
         "worker-profile:researcher"
       ],
       "activationTriggers": [
-        "Use when: cx-researcher must investigate external facts — CVEs, APIs, market data, regulations, or vendor behavior.",
-        "cx-researcher investigates **external** facts — not user interviews or codebase exploration. For user evidence use `docs/user-research-workflow`; for repo exploration use `docs/codebase-research-workflow`."
+        "Use when: researcher must investigate external facts — CVEs, APIs, market data, regulations, or vendor behavior.",
+        "researcher investigates **external** facts — not user interviews or codebase exploration. For user evidence use `docs/user-research-workflow`; for repo exploration use `docs/codebase-research-workflow`."
       ],
       "inputs": [
         "[research-question]"
@@ -1645,7 +1645,7 @@
         "worker-profile:orchestrator"
       ],
       "activationTriggers": [
-        "fleet-level gap routing and bounded-auto policy for cx-orchestrator's absorbed fleet-health synthesis duty (formerly cx-oracle). Use when handling an Oracle synthesis packet or any systemic-gap remediation routing."
+        "fleet-level gap routing and bounded-auto policy for orchestrator's absorbed fleet-health synthesis duty (formerly cx-oracle). Use when handling an Oracle synthesis packet or any systemic-gap remediation routing."
       ],
       "inputs": [
         "[oracle-synthesis-packet]"
@@ -2868,5 +2868,5 @@
   ],
   "blockingFindings": [],
   "effectivenessFindings": [],
-  "digest": "2ddb731ff6aa16e6cfd33db6de5700211d11b503746a8d1a89f6e6db6d9c6888"
+  "digest": "7852c187910a154478f10ab5e7bbe5ced822854ccd03f1758b54b22e3d980c64"
 }

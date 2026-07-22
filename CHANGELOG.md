@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- PR #415 CI on `981540a9`: regenerate stale skill/corpus inventories (`tests/certification/skills/inventory.json`, `tests/capabilities/corpus-inventory.json`, `tests/AUDIT.md`); pin legacy `cx-researcher` / `cx-orchestrator` route keywords for the prompts/skills retain contract; document runnable `construct embed` subcommands (`supervise`, `unsupervise`, `snapshot`, `migrate-model`, `assignments`) in `lib/cli-commands.mjs` + regenerated CLI reference; stop advertising non-existent `construct skills:routes` in generated `skills/routing.md`.
+
 ### Added
 
 - Standing Assignment durable model on WCP branch (`construct-4uxq0.10.3`): restored `lib/embed/standing-assignments.mjs` and capability-job convergence from staging; `registerEmbedCapabilityJobs` materializes `capability:<id>` assignments and wraps ticks in `runAssignmentAttempt` so `lastAttemptAt` advances only after execution. CLI: `construct embed assignments list|status`. Covered by `tests/functional/standing-assignments.functional.test.mjs`.
