@@ -57,6 +57,17 @@ test("displayName-to-key map covers every host", () => {
   });
 });
 
+test("only claude has Construct-wired hooks (hooks.supported=true)", () => {
+  assert.equal(getCapability("claude").hooks.supported, true);
+  for (const key of HOST_KEYS.filter((k) => k !== "claude")) {
+    assert.equal(
+      getCapability(key).hooks.supported,
+      false,
+      `${key} must remain hooks.supported=false — Construct declines unsafe host hook parity`,
+    );
+  }
+});
+
 test("claude carries the safety-only global hook + mcp allowlists; others carry none", () => {
   assert.deepEqual([...globalHookAllowlist("claude")].sort(), [
     "post:edit:json-validate",

@@ -11,7 +11,7 @@ verificationBar: "Observed behavior weighted over self-report; sample size state
 
 Use when: the researcher Worker Profile gathers or synthesizes **user** evidence. Do not use for CVE lookups, API version facts, or repo structure — use `docs/research-workflow` or `docs/codebase-research-workflow` under a different skill overlay instead.
 
-Follow [rules/common/research.md](../../rules/common/research.md) and call `get_skill("perspectives/researcher")` before drafting.
+Follow `rules/common/research.md` and call `get_skill("perspectives/researcher")` before drafting.
 
 ## Steps
 

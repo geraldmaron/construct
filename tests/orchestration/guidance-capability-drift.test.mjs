@@ -16,14 +16,14 @@ test('hostGuaranteedToolNames includes flat core tools and call', () => {
   const names = hostGuaranteedToolNames();
   assert.ok(names.has('orchestration_run'));
   assert.ok(names.has('call'));
-  assert.equal(names.has('workflow_invoke'), false);
+  assert.equal(names.has('procedure_invoke'), false);
 });
 
 test('findBareNonCoreToolReferences flags imperative long-tail tool names', () => {
   const core = new Set(['orchestration_run', 'call']);
-  const hits = findBareNonCoreToolReferences('use `workflow_invoke` for preview only', { coreNames: core });
+  const hits = findBareNonCoreToolReferences('use `procedure_invoke` for preview only', { coreNames: core });
   assert.equal(hits.length, 1);
-  assert.equal(hits[0].tool, 'workflow_invoke');
+  assert.equal(hits[0].tool, 'procedure_invoke');
 });
 
 test('findBareNonCoreToolReferences ignores core tools', () => {
@@ -34,7 +34,7 @@ test('findBareNonCoreToolReferences ignores core tools', () => {
 
 test('findBareNonCoreToolReferences allows long-tail names after call gateway phrasing', () => {
   const core = new Set(['call', 'orchestration_run']);
-  const hits = findBareNonCoreToolReferences('use `call` with tool `workflow_invoke` for preview', { coreNames: core });
+  const hits = findBareNonCoreToolReferences('use `call` with tool `procedure_invoke` for preview', { coreNames: core });
   assert.equal(hits.length, 0);
 });
 

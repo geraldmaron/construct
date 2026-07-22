@@ -17,7 +17,7 @@
   "steps": [
     {
       "title": "Plan only — procedure invoke",
-      "prompt": "Run construct procedure invoke for prd-draft and show the specialist chain. This is plan-only — it does not draft the PRD.",
+      "prompt": "Run construct procedure invoke for prd-draft and show the Worker Profile chain. This is plan-only — it does not draft the PRD.",
       "command": "node bin/construct procedure invoke --json --workflow-type prd-draft --approval-mode proposal-only --text 'Enterprise agentic platform PRD'"
     },
     {

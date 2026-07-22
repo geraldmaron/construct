@@ -3,13 +3,14 @@
  *
  * Spawns the real Construct stdio MCP server (lib/mcp/server.mjs), completes the
  * JSON-RPC initialize handshake, and proves three things with no network:
- *   1. tools/list exposes every CORE_TOOL_NAME plus the construct_call meta-tool
+ *   1. tools/list exposes every CORE_TOOL_NAME plus the `call` gateway
  *      (the collapsed surface a host actually sees).
- *   2. Each core tool round-trips through tools/call — the server dispatches it
- *      and returns a result envelope (a tool-level error is still a valid
- *      round-trip; a wedged tool can't hang the suite because the per-call
- *      timeout is pinned low).
- *   3. construct_call reaches a canonical registry tool by name and returns
+ *   2. Each core tool round-trips through tools/call with schema-aligned SAMPLE_ARGS
+ *      (get_skill.path, search_skills.pattern). get_skill and search_skills must
+ *      return usable payloads — not only a dispatch envelope that embeds an
+ *      INVALID_INPUT / missing-arg error. Per-call timeout is pinned low so a
+ *      wedged tool cannot hang the suite.
+ *   3. `call` reaches a canonical registry tool by name and returns
  *      real worker-profile data from the unified registry.
  *
  * @enforces ADR-0022
@@ -35,8 +36,8 @@ const CORE_TOOLS = [
 
 const SAMPLE_ARGS = {
   orchestration_policy: { request: 'fix a flaky test' },
-  get_skill: { name: 'review:code' },
-  search_skills: { query: 'review' },
+  get_skill: { path: 'docs/artifact-authorship' },
+  search_skills: { pattern: 'artifact authorship' },
   knowledge_search: { query: 'teams' },
   memory_search: { query: 'registry' },
   project_context: {},
@@ -83,7 +84,13 @@ function envelopeText(frame) {
   return frame?.result?.content?.[0]?.text ?? null;
 }
 
-test('Construct MCP stdio server: core surface + per-tool round-trip + construct_call', async () => {
+function envelopePayload(frame) {
+  const text = envelopeText(frame);
+  assert.ok(typeof text === 'string', 'tool result envelope must include text content');
+  return JSON.parse(text);
+}
+
+test('Construct MCP stdio server: core surface + per-tool round-trip + call gateway', async () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-mcp-core-'));
   const c = mcpClient(home);
   let id = 0;
@@ -104,21 +111,40 @@ test('Construct MCP stdio server: core surface + per-tool round-trip + construct
     }
     assert.ok(names.includes('call'), 'construct_call meta-tool must be exposed');
 
+    const getSkillSchema = (listed.result?.tools || []).find((t) => t.name === 'get_skill')?.inputSchema;
+    assert.ok(getSkillSchema?.properties?.path, 'tools/list get_skill schema must declare path');
+    assert.ok(getSkillSchema?.required?.includes('path'), 'tools/list get_skill must require path');
+    assert.equal(getSkillSchema?.properties?.name, undefined, 'tools/list get_skill must not declare name');
+
+    const searchSkillsSchema = (listed.result?.tools || []).find((t) => t.name === 'search_skills')?.inputSchema;
+    assert.ok(searchSkillsSchema?.properties?.pattern, 'tools/list search_skills schema must declare pattern');
+    assert.ok(searchSkillsSchema?.required?.includes('pattern'), 'tools/list search_skills must require pattern');
+    assert.equal(searchSkillsSchema?.properties?.query, undefined, 'tools/list search_skills must not declare query');
+
+    const payloads = {};
     for (const core of CORE_TOOLS) {
       const callId = ++id;
       c.send({ jsonrpc: '2.0', id: callId, method: 'tools/call', params: { name: core, arguments: SAMPLE_ARGS[core] } });
       const frame = await c.waitFor(callId);
       assert.equal(frame.error, undefined, `${core} must not raise a JSON-RPC error (method must dispatch)`);
-      assert.ok(typeof envelopeText(frame) === 'string', `${core} must return a tool result envelope`);
+      payloads[core] = envelopePayload(frame);
     }
 
+    assert.equal(payloads.get_skill.error, undefined, `get_skill must not error: ${JSON.stringify(payloads.get_skill).slice(0, 200)}`);
+    assert.equal(typeof payloads.get_skill.content, 'string', 'get_skill must return skill body content');
+    assert.ok(payloads.get_skill.content.length > 200, `get_skill body too short: ${payloads.get_skill.content.length}`);
+
+    assert.equal(payloads.search_skills.error, undefined, `search_skills must not error: ${JSON.stringify(payloads.search_skills).slice(0, 200)}`);
+    assert.ok(
+      Array.isArray(payloads.search_skills.results) && payloads.search_skills.results.length > 0,
+      `search_skills must return matches: ${JSON.stringify(payloads.search_skills).slice(0, 300)}`,
+    );
+
     const ccId = ++id;
-    c.send({ jsonrpc: '2.0', id: ccId, method: 'tools/call', params: { name: 'construct_call', arguments: { tool: 'list_worker_profiles', args: {} } } });
+    c.send({ jsonrpc: '2.0', id: ccId, method: 'tools/call', params: { name: 'call', arguments: { tool: 'list_worker_profiles', args: {} } } });
     const ccFrame = await c.waitFor(ccId);
-    const ccText = envelopeText(ccFrame);
-    assert.ok(typeof ccText === 'string', 'construct_call must return a result envelope');
-    const ccPayload = JSON.parse(ccText);
-    assert.equal(ccPayload.error, undefined, `construct_call -> list_worker_profiles must not error: ${ccText.slice(0, 200)}`);
+    const ccPayload = envelopePayload(ccFrame);
+    assert.equal(ccPayload.error, undefined, `call -> list_worker_profiles must not error: ${JSON.stringify(ccPayload).slice(0, 200)}`);
     assert.ok(Array.isArray(ccPayload.workerProfiles) && ccPayload.workerProfiles.length > 0, 'list_worker_profiles must return canonical registry data');
   } finally {
     c.kill();

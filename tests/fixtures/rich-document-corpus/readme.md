@@ -59,7 +59,7 @@ construct intake list     # review new signals, if your project uses the inbox
 construct doctor          # diagnose install, service, MCP, and adapter drift
 ```
 
-In your editor, start with `@construct`. Ask for the outcome, not the specialist. Construct routes to the right specialist chain, keeps durable state in `.cx/` and Beads, and blocks risky mutations until the configured gates pass.
+In your editor, start with `@construct`. Ask for the outcome, not the Worker Profile. Construct routes to the right Worker Profile chain, keeps durable state in `.construct/` and Beads, and blocks risky mutations until the configured gates pass.
 
 ## What you can do
 
