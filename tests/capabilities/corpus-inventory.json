@@ -1,27 +1,27 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-22T02:24:08.045Z",
+  "generatedAt": "2026-07-22T15:03:56.730Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 1117,
-    "topLevelTestFiles": 422,
-    "nestedTestFiles": 695,
+    "testFiles": 1126,
+    "topLevelTestFiles": 427,
+    "nestedTestFiles": 699,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 52,
     "byLayer": {
-      "unit": 737,
-      "functional": 321,
+      "unit": 742,
+      "functional": 324,
       "visual": 14,
-      "integration": 43,
+      "integration": 44,
       "live-provider": 2
     },
     "byCategory": {
-      "unit": 655,
-      "functional": 321,
+      "unit": 660,
+      "functional": 324,
       "visual": 14,
       "structural-guard": 21,
       "contract-subsystem": 62,
-      "integration": 32,
+      "integration": 33,
       "live-provider": 2,
       "hook": 10
     }
@@ -155,6 +155,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/acp/conformance.test.mjs — ACP protocol conformance against lib/acp/server.mjs."
+    },
+    {
+      "path": "tests/adapters-lean-bootstrap.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/adapters-lean-bootstrap.test.mjs — lean postinstall/init host selection"
     },
     {
       "path": "tests/adr-stamp-integrity.test.mjs",
@@ -932,7 +940,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "workspace-control-plane-nav.test.mjs — docs nav ratchet for the program archive."
+      "maintainerNotes": "workspace-control-plane-nav.test.mjs — archive + deadcode ratchet after quarantine."
     },
     {
       "path": "tests/auto-docs.test.mjs",
@@ -2747,6 +2755,14 @@
       "maintainerNotes": "tests/fakes/fake-providers.test.mjs — contract + behaviour tests for all fake providers."
     },
     {
+      "path": "tests/figure-layout.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/figure-layout.test.mjs — SVG label overlap proof for publish figures."
+    },
+    {
       "path": "tests/first-invocation-probe.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -4272,6 +4288,14 @@
       "maintainerNotes": "tests/functional/mcp-parity.functional.test.mjs — End-to-end MCP parity."
     },
     {
+      "path": "tests/functional/mcp-procedure-invoke.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/mcp-procedure-invoke.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/mcp-secret-resolution-nonblocking.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -4757,6 +4781,14 @@
       "maintainerNotes": "tests/functional/postinstall-global-scope.functional.test.mjs"
     },
     {
+      "path": "tests/functional/postinstall-lean-hosts.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/postinstall-lean-hosts.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/prd-request-full-chain-audit-trail.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -5069,6 +5101,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "skill-quality-signal.functional.test.mjs — phase 1 of the skill"
+    },
+    {
+      "path": "tests/functional/skills-surface.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/skills-surface.functional.test.mjs"
     },
     {
       "path": "tests/functional/source-links.functional.test.mjs",
@@ -5777,6 +5817,14 @@
       "maintainerNotes": "tests/hooks/guard-bash-role-fence.test.mjs — role-fence actor-identity gate"
     },
     {
+      "path": "tests/hooks/host-coverage.test.mjs",
+      "layer": "integration",
+      "category": "integration",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/hooks/host-coverage.test.mjs — Claude-only Layer-1 hook posture +"
+    },
+    {
       "path": "tests/hooks/mcp-health-check-warn-only.test.mjs",
       "layer": "integration",
       "category": "integration",
@@ -6207,6 +6255,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/knowledge/research-store.test.mjs — A2 research persistence contract."
+    },
+    {
+      "path": "tests/lean-ceremony-teaching.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/lean-ceremony-teaching.test.mjs — fail-closed gate for lean day-1 teaching."
     },
     {
       "path": "tests/libreoffice-export.test.mjs",
@@ -8315,6 +8371,14 @@
       "maintainerNotes": "skills-apply.test.mjs — Regression coverage for per-host skill sidecar writers."
     },
     {
+      "path": "tests/skills-relative-links.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/skills-relative-links.test.mjs"
+    },
+    {
       "path": "tests/skills/experimentation.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -8715,6 +8779,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/user-research-workflow.test.mjs — user-research workflow validity and inter-rater coverage."
+    },
+    {
+      "path": "tests/v1-teaching-surfaces.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/v1-teaching-surfaces.test.mjs — ratchet against Construct 1.0 teaching"
     },
     {
       "path": "tests/validate-dep-intent.test.mjs",

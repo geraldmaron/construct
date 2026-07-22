@@ -29,6 +29,15 @@ const AUTHORED_PRIORITY = 10;
 const FALLBACK_PRIORITY = 5;
 const MAX_FALLBACK_KEYWORDS = 6;
 
+// Pin retired cx-* dispatch tokens on the routes that historically carried them so
+// suggest_skills still matches legacy intents after Worker Profile cutover
+// (lib/audit-prompts-skills.mjs routing-stale-cx-token retain contract).
+
+const LEGACY_CX_KEYWORD_PINS = Object.freeze({
+  'docs/codebase-research-workflow': ['cx-researcher'],
+  'operating/fleet-health-routing': ['cx-orchestrator'],
+});
+
 const STOPWORDS = new Set([
   'the', 'this', 'that', 'with', 'when', 'from', 'into', 'onto', 'over', 'under', 'their', 'about',
   'after', 'before', 'while', 'where', 'which', 'what', 'then', 'than', 'have', 'has', 'had', 'will',
@@ -90,9 +99,15 @@ function buildRoutes() {
     const frontmatter = parseFrontmatter(fs.readFileSync(full, 'utf8'));
     const domain = rel.includes('/') ? rel.split('/')[0] : 'utility';
     const authored = Array.isArray(frontmatter.triggers) && frontmatter.triggers.length > 0;
+    const baseKeywords = authored ? frontmatter.triggers : fallbackKeywords(rel, frontmatter);
+    const legacyPins = LEGACY_CX_KEYWORD_PINS[rel] ?? [];
+    const keywords = [...baseKeywords];
+    for (const pin of legacyPins) {
+      if (!keywords.includes(pin)) keywords.push(pin);
+    }
     routes.push({
       domain,
-      keywords: authored ? frontmatter.triggers : fallbackKeywords(rel, frontmatter),
+      keywords,
       path: rel,
       priority: authored ? AUTHORED_PRIORITY : FALLBACK_PRIORITY,
     });
@@ -109,7 +124,7 @@ function renderMarkdown(routes) {
   const lines = [
     '<!--',
     'skills/routing.md — generated render of skills/routing.json. Do not hand-edit: run',
-    '`node scripts/generate-skill-routing.mjs --write` (or `construct skills:routes --write`).',
+    '`node scripts/generate-skill-routing.mjs --write` (or `npm run skills:routes -- --write`).',
     '-->',
     '',
     '# Skill routing',

@@ -582,7 +582,8 @@
         "maps",
         "repo",
         "entry",
-        "points"
+        "points",
+        "cx-researcher"
       ],
       "path": "docs/codebase-research-workflow",
       "priority": 5
@@ -1000,7 +1001,8 @@
         "routing",
         "bounded-auto",
         "policy",
-        "orchestrator"
+        "orchestrator",
+        "cx-orchestrator"
       ],
       "path": "operating/fleet-health-routing",
       "priority": 5

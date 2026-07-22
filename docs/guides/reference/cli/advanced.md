@@ -171,7 +171,7 @@ Embed mode management
 **Usage**
 
 ```bash
-construct embed start|stop|status|list|enable|disable|dry-run
+construct embed start|stop|status|snapshot|migrate-model|list|enable|disable|dry-run|assignments|supervise|unsupervise
 ```
 
 **Subcommands**
@@ -179,10 +179,15 @@ construct embed start|stop|status|list|enable|disable|dry-run
 - `start` — Fork the detached embed daemon
 - `stop` — Stop the running embed daemon
 - `status [<id>] [--json]` — Daemon status, or per-capability bindings/filter/runtime/last-tick with an id
+- `snapshot` — Write an embed daemon state snapshot
+- `migrate-model` — Reconcile embedding schema/dim after CONSTRUCT_EMBEDDING_MODEL changes
 - `list [--json]` — Available embed capabilities and per-project enabled state (ADR-0061)
 - `enable <id>` — Enable an embed capability: validate and write .construct/embed/<id>.manifest.json
 - `disable <id>` — Disable an embed capability (idempotent)
 - `dry-run <id> [--json]` — Resolve the worker-profile→providers→filter→framework→authority→runtime chain; no side effects
+- `assignments` — List or inspect standing embed assignments
+- `supervise` — Install OS-level supervision (launchd/systemd) for the embed daemon
+- `unsupervise` — Remove OS-level supervision for the embed daemon
 
 ## construct gates:audit
 
