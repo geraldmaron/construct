@@ -14,7 +14,7 @@ const YAML = readFileSync(resolve(ROOT, '.github/workflows/supply-chain.yml'), '
 
 test('OSV scan uses osv-scanner.toml and is not continue-on-error', () => {
   assert.match(YAML, /--config=osv-scanner\.toml/);
-  const osvBlock = YAML.split(/osv-scan:/)[1]?.split(/\n  [a-z]/)[0] || '';
+  const osvBlock = YAML.split(/osv-scan:/)[1]?.split(/\n {2}[a-z]/)[0] || '';
   assert.doesNotMatch(osvBlock, /continue-on-error:\s*true/);
 });
 
