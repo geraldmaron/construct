@@ -52,18 +52,108 @@ Answer before drafting body prose:
 2. Leave placeholders only when the field is truly unknown: replace `{…}` with `unknown` + owner + decision-by date.
 3. Do not delete required sections to hide ignorance. Empty required sections fail review.
 4. Narrative sections use short paragraphs. Tables for comparisons. Bullets for scans only.
-5. Diagrams use Mermaid/D2 with **compact notebook-ink** styling on publish (`--figures`): handDrawn + Caveat labels, tight spacing, slate-teal accent, not the old loose Construct sketch theater. Prefer LR flowcharts with short labels. Caption every figure.
-6. **Hierarchy depth (PRD and phased delivery docs):** Phase → Requirement (`FR-<phase>.<n>`) → Acceptance Criteria (`AC-<phase>.<n>.<k>`). List ACs under each FR; keep ## Acceptance Criteria as an index. Don't restate Phase on every FR; use `### Phase N: Name` then `#### Area` then `##### FR`. Skeleton bullets without nested ACs fail. Why Now must include the timing-economics table; one-line stubs fail lint. Mix prose, short lists, compact tables, and diagrams; walls of tables fail review.
+5. Diagrams on publish (`--figures`): **D2 `--sketch`** for multi-node domains, systems, and component maps (the intentional hand-drawn structural engine); **Mermaid classic** + Plus Jakarta Sans for simple linear or sequence flows only. Mermaid `handDrawn` / Caveat is retired — do not reintroduce it. Short node labels; put path meaning in the caption when edge labels would collide with sketch strokes. Caption every figure. Never ship overlapping nodes, edges, or labels; proof with `construct publish --preview` and SVG label overlap checks (`lib/figure-layout.mjs`) before claiming done. Lean heavily on diagrams for complex concepts; skip only for pure checklists, single-column tables, or legal obligation lists where a drawing adds noise.
+6. **Hierarchy depth (PRD and phased delivery docs):** Phase → Requirement (`FR-<phase>.<n>`) → Acceptance Criteria (`AC-<phase>.<n>.<k>`). List ACs under each FR; keep ## Acceptance Criteria as an index. Don't restate Phase on every FR; use `### Phase N: Name` then `#### Area` then `##### FR`. Skeleton bullets without nested ACs fail. Why Now must include the timing-economics table; one-line stubs fail lint. Mix prose, short lists, compact tables, and diagrams; walls of tables fail review. **How that hierarchy is displayed** is load-bearing: see **Information display for delivery hierarchies** below.
 7. **Phase Why? (phased docs):** Every phase needs a human **Why?**: purpose, who benefits (named roles/contexts), what risk it reduces. Put Why? in the Phases roadmap table and as `**Why?**` prose under each `### Phase N` heading before FRs/MRs. Meta-PRDs use `- **Why?**:` beside Goal. Skeleton phase tables without Why? fail review (`lintPrdDeliveryDepth` checks customer/platform PRDs).
 8. **Inclusive / human framing:** Write for people in named roles and contexts. Avoid ableist or gendered defaults. Name impact: who is helped or harmed if the artifact ships wrong. Accessibility (WCAG) is product quality where UI ships, not a footnote. Sterile body duplicates of masthead (H1 + Date/Owner/Status) are banned when YAML frontmatter already carries those fields.
-9. **Human voice bar (load-bearing):** Sound like a careful colleague, not a corporate LLM. See `rules/common/human-voice.md`.
+9. **Human voice bar (load-bearing):** Sound like a careful colleague, not a corporate LLM and not a staged keynote. See `rules/common/human-voice.md`.
 
-   - **Prefer contractions** in prose: `don't`, `won't`, `can't`, `isn't`, `we're`, `it's`, `that's`.
+   - **Prefer contractions** in prose: `don't`, `won't`, `can't`, `isn't`, `we're`, `it's`, `that's` (prefer `it's` over `it is` unless an exception applies).
+   - **Prefer longer, connected sentences** that carry a stake, constraint, or next action in one pass. Mix short sentences sparingly; stacked fragments feel gimmicky.
    - **Avoid spaced em dashes** (` — `) and Unicode em dash (U+2014). Prefer commas, periods, colons, or parentheses.
+   - **Mild warmth, not performance:** earn attention with clarity; refuse sermon beats, destiny talk, Disney-movie uplift, and celebrity-mimicry checklists.
    - **Refuse LLM tells** (non-exhaustive): `delve`, `landscape` (outside required section titles), `robust`, `leverage` as filler, `it's important to note`, `In today's…`, `This ensures that…`, stacked empty tricolons.
-   - **Tone:** engaging, concrete, skeptical of fluff; still no fabrication and still depth-first.
+   - **Tone:** concrete, slightly encouraging when earned, skeptical of fluff; still no fabrication and still depth-first.
    - **Exceptions:** acceptance-criteria precision; legal `shall` / `must` / `must not`; quoted statute or primary source; validators that require exact section titles.
+   - **Psychology as craft:** product and org artifacts may name attention, trust, and belief-change as decision inputs. Don't turn that into inspirational theater.
 10. **Refusal:** if the user asks for a “quick PRD” that would drop hierarchy, Phase Why?, Why-Now timing economics, competitive/financial honesty, legal triggers, user evidence, or human voice, refuse the thin shape and return the template sections that remain `unknown` with owners.
+
+## Information display for delivery hierarchies
+
+The Phase → FR → AC contract is about **completeness**. Display is about **extraneous cognitive load**: the mental tax of decoding a jumble when the content itself isn't that hard. I-O / instructional design treats that tax as real workplace friction (intrinsic vs extraneous vs germane load; Sweller's cognitive load theory as used in workplace learning design). Progressive disclosure (Nielsen Norman framing for interfaces; the same sequencing idea in technical docs) says: give each audience a complete stop-point before the next layer of detail.
+
+Use density to pick a layout. Don't default to an ID salad (`FR-1.1` then a bullet wall of `AC-1.1.k`) at the same visual weight as the Why.
+
+| Density | What the reader sees first | Detail layer | Avoid |
+|---|---|---|---|
+| Sparse (1–2 FRs, ≤3 ACs each) | Phase heading + **Why?** prose (2–4 sentences) | Each FR as a short titled block; ACs as a compact 2-column table (`AC` / `Check`) under that FR | Orphan AC ids floating above the FR they belong to |
+| Medium (typical phase) | Phases **roadmap table** (outcome, why, exit), then one section per phase | Under each phase: Why → optional one-line "what ships" → FR blocks with AC tables | Nesting FR/AC as undifferentiated bullets |
+| Dense (≥4 FRs or cross-cutting ACs) | Roadmap table + per-phase **summary table** (`ID` / `Requirement` / `Done when`) | Full FR prose + AC tables in an appendix or collapsed "Spec detail" subsection labeled for implementers | Making executives traverse every AC to learn the phase outcome |
+
+**Hard rules**
+
+1. **Signpost layers.** Label the roadmap as the decision layer and the FR/AC blocks as the verification layer so a VP can stop after the table.
+2. **Keep related work adjacent.** Why, FRs, and ACs for one phase stay together (aligning / grouping reduces search cost).
+3. **One visual grammar per layer.** Prose for why; tables for checks; never three competing bullet trees for the same objects.
+4. **Decision-critical facts stay in the open layer.** Risks, cost, and kill criteria are not buried under AC lists.
+5. **IDs are handles, not headings.** Prefer a human title with the id in a table column or quiet suffix (`Retired CLI teaching (FR-1.1)`), not a page of `FR-1.1` / `AC-1.1.1` alone.
+6. **Acceptance Criteria index** (PRD §9) stays an index or traceability table, not a second full dump of every AC in a different order.
+
+**Worked shape (medium density)**
+
+```markdown
+### Phase 1: Baseline honesty
+
+**Why?** Day-one friction trains disbelief before anyone reads a strategy sentence.
+Operators and authors pay that cost; fixing teaching and verify gates restores
+enough trust to judge writing quality at all.
+
+| ID | Requirement | Done when |
+|---|---|---|
+| FR-1.1 | Retired CLI teaching removed from live surfaces | Capability + publish remediation teach procedure invoke |
+| FR-1.2 | Lean init passes docs:verify | Fresh lean README has Usage; verify exits 0 |
+
+#### FR-1.1 Retired CLI teaching removed from live surfaces
+
+Live surfaces must match the Construct 2.0 CLI so first-run sessions don't
+teach a dead path.
+
+| AC | Check |
+|---|---|
+| AC-1.1.1 | `capability describe --json` lists `procedure invoke`, not `workflow invoke` |
+| AC-1.1.2 | Publish gate failure text points at `procedure invoke` |
+```
+
+Sources for the load/disclosure framing (re-verify when citing externally): MATC Group summary of I-O psychology and documentation cognitive load ([matcgroup.com](https://www.matcgroup.com/documentation/reducing-cognitive-load-with-better-documentation-lessons-from-i-o-psychology/); accessed 2026-07-22); HSI overview of cognitive load theory in workplace learning ([hsi.com](https://hsi.com/blog/what-is-cognitive-load-and-why-does-it-matter-for-corporate-training-and-development); accessed 2026-07-22); progressive disclosure as sequencing access so each level is usable alone (NN/g interface framing; technical-doc layering discussions such as [howtothink.ai](https://www.howtothink.ai/learn/progressive-disclosure-through-hierarchy) and executive/technical layering at [soreng.co](https://soreng.co/how-to-align-technical-depth-with-executive-clarity); accessed 2026-07-22). Mark any stronger quantitative claims `[unverified]` until primary studies are attached.
+
+## Layout by intent (choose the vessel, not a default colon stack)
+
+Different intents need different vessels. A wall of `Label: value` lines (Audience:, Decision sought:, Out of scope:, Evidence baseline:) is a common failure: every field gets the same scent, so nothing reads as primary, and the page looks like a form dump. Information scent research (NN/g) is about predictive cues; equal-weight labels predict nothing.
+
+Pick the vessel from intent:
+
+| Intent | What the reader is doing | Prefer | Avoid |
+|---|---|---|---|
+| Orient / decide | Needs the ask in one breath | 1–3 prose sentences that embed who, decision, and non-goals | Four+ `Field:` lines stacked under Framing |
+| Compare options or bounds | Scanning differences | Compact 2–3 column table | Paragraphs of parallel `X: … / Y: …` |
+| Trace a system or domain | Building a mental model | Compact D2 sketch (prefer) or Mermaid classic for simple flows; short labels + caption | Long nested prose that recreates the graph; Mermaid handDrawn |
+| Verify a check | Confirming done/not-done | AC check-table under the FR | Mixing verification into the orientation paragraph |
+| Cite evidence floor | Trusting the claim | Short “Evidence” subsection or footnote-style list with links/dates | Stuffing URLs into the opening decision paragraph |
+| Bind a decision record | Recording commitments | Decision card table with fixed rows (For / Decide / Not now / Evidence) used sparingly | Turning every subsection into a mini decision record |
+
+**Framing sections specifically**
+
+1. Open with prose that states the problem and the decision in plain English (high scent for “what is this doc for?”).
+2. If you still need scannable bounds, use one **decision card** table with human row names (`For`, `Decide`, `Not now`, `Evidence floor`), not a colon list.
+3. Put long source catalogs under References or a short Evidence subsection, not in the opening breath.
+4. If the framing is about a multi-step path or layered reading model, **draw it** (see diagram rule above) instead of enumerating layers as labels.
+
+```markdown
+## Framing
+
+Construct turns messy signals into durable decisions, but the pages we publish
+still lose people when the writing is cold or the phase plan reads like an id
+dump. This note asks product and platform owners to treat voice and delivery
+layout as product surfaces for one cycle, measure whether readers can restate
+the decision after one pass, and keep or kill the bet with evidence.
+
+| | |
+|---|---|
+| For | Product and platform owners |
+| Decide | Adopt refined human-voice + density-based Phase/FR/AC display; measure restatement |
+| Not now | Model fine-tuning, new UI chrome, celebrity mimicry packs, invented testimonials |
+| Evidence floor | Customer sim 2026-07-22; cognitive-load / progressive-disclosure sources in References |
+```
 
 ## PRD section contract (customer `prd`)
 
@@ -128,7 +218,7 @@ High-risk types (PRD family, threat-model, security-review, strategy with regula
 - No "studies show" without a citation the reader can open.
 - No silent promotion of inference to fact.
 - Research evidence gate and output quality gate failures are unfinished work, not warnings to ignore.
-- **Inline citations** per [`rules/common/citation.md`](../../rules/common/citation.md): after each load-bearing claim use `([Short title](https://…); accessed YYYY-MM-DD)`, `[source: path#anchor]`, or a defined `[^n]` footnote. Keep the Sources/References table, but do not rely on title-only cites ("see Architecture") with no link. Verify http(s) URLs with `construct artifact validate … --check-links` before publish.
+- **Inline citations** per `rules/common/citation.md`: after each load-bearing claim use `([Short title](https://…); accessed YYYY-MM-DD)`, `[source: path#anchor]`, or a defined `[^n]` footnote. Keep the Sources/References table, but do not rely on title-only cites ("see Architecture") with no link. Verify http(s) URLs with `construct artifact validate … --check-links` before publish.
 
 ## Cross-persona trigger matrix (authors must fire these)
 

@@ -36,6 +36,11 @@ LAYOUT (mandatory; walls of tables fail review):
   flowcharts with short labels. Don't restate Phase on every FR; phase is
   the ### heading under Requirements; area is the #### subsection.
   Prose must carry real thought. Bullet theater fails review.
+  Delivery hierarchies use progressive disclosure by density (see
+  skills/docs/artifact-authorship.md "Information display for delivery
+  hierarchies"): roadmap table first, then per-phase Why + summary table,
+  then FR blocks with AC check-tables. IDs are handles, not the only headings.
+  Do not dump FR/AC id salads at equal visual weight to the Why.
 
 INCLUSIVE / HUMAN FRAMING:
   Write for people in named roles and contexts. Avoid ableist or gendered
@@ -44,11 +49,12 @@ INCLUSIVE / HUMAN FRAMING:
 
 VOICE (human, not corporate-LLM) — rules/common/human-voice.md +
   get_skill("docs/artifact-authorship") Human voice bar:
-  Short beats. Prefer contractions (don't, won't, can't, isn't, we're, it's)
-  except where formal negation is load-bearing (shall not, AC precision).
+  Prefer longer connected sentences with natural contractions (it's, don't,
+  we're) except where formal negation is load-bearing (shall not, AC precision).
   Avoid spaced em dashes; prefer commas, periods, colons, or parentheses.
-  Avoid AI tells: delve, landscape (outside the section title), robust,
-  leverage, "it's important to note", "In today's…", "This ensures that…".
+  Avoid staccato keynote / Disney uplift and AI tells: delve, landscape
+  (outside the section title), robust, leverage, "it's important to note",
+  "In today's…", "This ensures that…".
 
 Refuse fabrication. Prefer unknown / [unverified] with owner + decision-by date.
 When ordering Goals or phase priority is contested, use

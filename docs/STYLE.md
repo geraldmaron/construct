@@ -6,8 +6,10 @@ Voice, punctuation, and structure rules for everything in this repo.
 
 Construct is an open source project I started to learn. Docs should sound like a person wrote them.
 
-- Short sentences. One idea per sentence.
+- Prefer complete sentences that can carry a clause or two. Mix in a short line when you need a hard stop, but don't default to staccato one-liners or keynote theater.
+- Use natural contractions in prose (`it's`, `don't`, `we're`) unless legal or acceptance-criteria precision forbids them. See `rules/common/human-voice.md`.
 - No marketing voice. No words like "robust", "powerful", "enterprise-grade", "best-in-class".
+- Mild warmth is fine when the content earns it. Destiny language, sermon beats, and Disney-movie uplift aren't.
 - Acknowledge limits. If something is partial, say so. If it might break, say so.
 - Refer to the project as a project, not a product.
 - The README opens with a personal note. Other docs do not need to, but they should not contradict it.
@@ -22,6 +24,7 @@ Construct is an open source project I started to learn. Docs should sound like a
 
 - A doc starts with a one-line description of what it is for.
 - Sections answer questions a reader would ask in order. Avoid headings that exist only because the template demands them.
+- Match the vessel to the intent: prose for orientation, compact tables for comparison, D2 sketch diagrams for structure, Mermaid classic for simple flows, check-tables for verification. Avoid stacked `Label:` walls (`Audience:`, `Decision sought:`) when a short paragraph or decision card would read cleaner. See `skills/docs/artifact-authorship.md` → **Layout by intent**. Never ship overlapping diagram labels — proof with `construct publish --preview`.
 - Auto-generated regions stay inside `<!-- AUTO:... -->` markers and are owned by `lib/auto-docs.mjs`. Do not edit by hand.
 - Cross-link to the canonical doc. Do not paraphrase the canonical content somewhere else.
 

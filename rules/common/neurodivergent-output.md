@@ -1,6 +1,6 @@
 ---
 description: every human-facing Construct output is formatted for neurodivergent readers — without reshaping machine-readable output.
-enforced_by: (persona prompt), tests/term-format.test.mjs
+enforced_by: (Worker Profile prompt), tests/term-format.test.mjs
 precedence_tier: style
 ---
 # Neurodivergent-Friendly Output

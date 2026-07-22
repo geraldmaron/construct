@@ -54,6 +54,7 @@ Requirement  →  one or more Acceptance Criteria (AC-<phase>.<n>.<k>)
 - Inclusive / human framing: avoid ableist or gendered defaults; WCAG targets where UI ships.
 - Each AC is stranger-checkable. Ban “intuitive / fast / robust / delightful” without thresholds.
 - `construct artifact validate` runs `lintPrdDeliveryDepth` for type `prd` and `prd-platform`: missing sections, missing Phase headings, missing Phase Why?, orphan AC ids, or FRs without a Phase all fail.
+- **Display:** follow `skills/docs/artifact-authorship.md` → Information display for delivery hierarchies (roadmap → Why → summary table → FR + AC check-table). Don't present FR/AC ids as an undifferentiated bullet wall. Framing and other orientation blocks follow **Layout by intent** (prose + decision card; diagrams for structure; no `Audience:` colon walls).
 
 ## Variant spines (same depth bar, native headings)
 
@@ -98,7 +99,7 @@ Call `get_skill("docs/artifact-authorship")` and `get_skill("perspectives/produc
    | `meta-prd` | `docs/meta-prd/{YYYY-MM-DD}-{slug}.md` |
    | `rfc` | `docs/decisions/rfc/{YYYY-MM-DD}-{slug}.md` |
    | `rfc-platform` | `docs/decisions/rfc/{YYYY-MM-DD}-{slug}.md` |
-4. **reviewer** runs the FMEA challenge pass (`perspectives/devil-advocate`) on the draft; highest-RPN failure modes need a mitigation or explicit accept-with-rationale before ship. Their specialist id must appear in `.construct/agent-log.jsonl` (manifest `releaseGate.requiredReviewers` for PRD-family types). Reviewer also verifies legal/privacy/user-evidence/financial honesty and Phase→FR→AC nesting.
+4. **reviewer** runs the FMEA challenge pass (`perspectives/devil-advocate`) on the draft; highest-RPN failure modes need a mitigation or explicit accept-with-rationale before ship. Their Worker Profile id must appear in `.construct/agent-log.jsonl` (manifest `releaseGate.requiredReviewers` for PRD-family types). Reviewer also verifies legal/privacy/user-evidence/financial honesty and Phase→FR→AC nesting.
 5. **operations** updates `.construct/context.md` with a link to the PRD
 
 Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.
@@ -122,7 +123,7 @@ Once the PRD is approved, run `/plan feature {feature-slug}` to produce a struct
 
 ## Distribution (publish pipeline)
 
-**`construct procedure invoke` returns a plan only** — it does not draft the PRD. Run the specialists the plan returns — the baseline chain plus every entry in its `recruitment.recruited` block — to author and review the artifact from the template. **Do not hand-write a stub and publish.**
+**`construct procedure invoke` returns a plan only** — it does not draft the PRD. Run the Worker Profiles the plan returns — the baseline chain plus every entry in its `recruitment.recruited` block — to author and review the artifact from the template. **Do not hand-write a stub and publish.**
 
 Authoring and publish surfaces return a **lifecycle handoff** object (`lifecycle: { state, evidence, nextAction, nextCommand? }`) so you can tell plan-only (`planned`), release-gate pass (`validated`), and export complete (`published`) apart. `author_artifact` also mirrors plan-only state on `workflow_lifecycle` / `invokePlan.lifecycle`. Prepared inline runs use `prepared`; they are not authored artifacts.
 
@@ -135,7 +136,7 @@ node bin/construct publish docs/specs/prd/<slug>.md --strict --figures
 
 `construct publish` runs the artifact release gate by default. Thin or unscaffolded docs **exit 2** with remediation hints. Do not use `--no-gate` or `--no-strict` in demos or ship paths.
 
-**Presentation is part of done.** Published PDFs use type-specific Typst templates (`construct-prd.typ`, `construct-research.typ`, `construct-decision.typ`) with the field-notebook brand: Plus Jakarta Sans, cool stone paper, slate-teal evidence accent (see `templates/distribution/construct-brand.typ`). Lead with a filled **TL;DR**, not a bullet wall. Deck/PPTX exports require `---` slide separators and must pass the PPTX layout audit. Diagrams on the publish path use crisp D2 (no `--sketch`) and Mermaid classic styling with charcoal ink (`#1a1d24`) and Plus Jakarta Sans labels.
+**Presentation is part of done.** Published PDFs use type-specific Typst templates (`construct-prd.typ`, `construct-research.typ`, `construct-decision.typ`) with the field-notebook brand: Plus Jakarta Sans, cool stone paper, slate-teal evidence accent (see `templates/distribution/construct-brand.typ`). Lead with a filled **TL;DR**, not a bullet wall. Deck/PPTX exports require `---` slide separators and must pass the PPTX layout audit. Diagrams on the publish path use D2 `--sketch` for structural figures and Mermaid classic + Plus Jakarta for simple flows (Mermaid handDrawn/Caveat retired); proof non-overlap with `--preview`.
 
 `--strict` means **toolchain and release gate** both pass. Invoke alone is not "done."
 
