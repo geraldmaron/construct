@@ -6,6 +6,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Fixed
 
+- Lean project sync no longer leaves refused skills mirrors under `.agents/skills` (or `.cursor` / `.codex` / `.opencode` skills trees). After committing Claude skills, `sync-worker-profiles` removes those mirrors so the Claude-only skills contract holds on CI (PR #415 shard 2 / construct-d23f3). `tests/functional/skills-surface.functional.test.mjs` now uses a sterile PATH, `--no-beads`, `--hosts=claude`, plants a fake `.agents/skills` tree to prove prune, and lists mirror contents on assertion failure.
+
 - PR #415 CI on `981540a9`: regenerate stale skill/corpus inventories (`tests/certification/skills/inventory.json`, `tests/capabilities/corpus-inventory.json`, `tests/AUDIT.md`); pin legacy `cx-researcher` / `cx-orchestrator` route keywords for the prompts/skills retain contract; document runnable `construct embed` subcommands (`supervise`, `unsupervise`, `snapshot`, `migrate-model`, `assignments`) in `lib/cli-commands.mjs` + regenerated CLI reference; stop advertising non-existent `construct skills:routes` in generated `skills/routing.md`.
 
 ### Added
