@@ -165,3 +165,22 @@ construct beads queue        # Show pending requests
   - Are there any edge cases to consider?
   - How should this interact with existing features?
 <!-- END BEADS INTEGRATION -->
+
+<!-- BEGIN CONSTRUCT INTEGRATION v:2 hash:2c3ddf04e8ed -->
+## Construct integration
+
+This project is managed by Construct. Address `@construct` in your editor and ask
+for the outcome, not the specialist — Construct routes to the right Worker Profile chain.
+
+- **Durable state** lives in `.construct/` (context, knowledge, handoffs). Beads and intake
+  are power surfaces — use them when work spans sessions or arrives as files.
+  If services are down, resume from `plan.md`, `.construct/context.md`, the latest
+  `.construct/handoffs/` file, and git.
+- **File signals (opt-in)**: drop a file into `inbox/` and run `construct intake` when you
+  want classification and routing — not required to write code.
+- **Worker Profiles** (architect, reviewer, security, …) are dispatched by Construct — you
+  do not call them directly.
+- **Tracker**: see the Beads Integration block below for `bd` commands (opt-in for multi-session work).
+- **Single-writer rule**: one session owns a file's edits; others review or wait.
+- **Hard gates** stay on (secrets, tests, docs on commit). Run `construct doctor` for health.
+<!-- END CONSTRUCT INTEGRATION -->
