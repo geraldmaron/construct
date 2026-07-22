@@ -117,3 +117,13 @@ bd close <id>         # Complete work
 - NEVER say "ready to push when you are" - YOU must push
 - If push fails, resolve and retry until it succeeds
 <!-- END BEADS INTEGRATION -->
+
+<!-- BEGIN CONSTRUCT INTEGRATION v:2 hash:33a28b14f70b -->
+## Construct integration
+
+@AGENTS.md
+
+The Construct integration guidance for this project lives in `AGENTS.md`, imported
+above so Claude Code loads it at session start. Address `@construct` and ask for the
+outcome — Construct routes to the right Worker Profile chain.
+<!-- END CONSTRUCT INTEGRATION -->
