@@ -2,8 +2,10 @@
 intake: none
 intake_rationale: foundational PRD authored before intake traceability was wired; intake-independent by construction.
 last_verified_at: 2026-06-19
-verified_by: cx-docs-keeper · documentation alignment pass
+verified_by: operations · documentation alignment pass
 ---
+
+> **Obsolete (Construct 2.0 vocabulary):** This PRD retains the historical "org-in-a-box" framing from early Construct planning. Current equivalents: **Worker Profiles** under `registry/worker-profiles/`, **Workspace Presets** under `registry/workspace-presets/`, and **Procedures** via `construct procedure invoke`. See `docs/obsolete/legacy-surface-register.md`.
 
 # PRD: Construct: Org-in-a-Box
 
@@ -57,7 +59,7 @@ Individual developers and small teams working with AI coding agents (Claude, Cod
 | FR-9 | **Continuous learning**: RAG over accumulated observations, decisions, and artifacts. Trend detection across sessions. Queryable knowledge base ("what do we know about X?"). |
 | FR-10 | **Snapshot generation**: On-demand or scheduled reports summarizing project health, risks, alignment gaps, and actionable recommendations. Output to dashboard, any messaging provider, and/or markdown. |
 | FR-11 | **Hybrid approval model**: Low-risk actions (reading, analysis, draft generation) are autonomous. High-risk actions (work item creation, merge, doc publish, config changes) require human approval via dashboard or configured channel. |
-| FR-12 | **OpenCode-first conversation surface**: Construct syncs specialists, workflows, MCP tools, and artifact contracts into OpenCode while keeping CLI commands focused on bounded operations. |
+| FR-12 | **OpenCode-first conversation surface**: Construct syncs Worker Profiles, workflows, MCP tools, and artifact contracts into OpenCode while keeping CLI commands focused on bounded operations. |
 | FR-13 | **Oracle meta-controller** (ADR-0043): L0.5 daemon collects project health signals, synthesizes gaps, auto-executes safe maintenance, queues consequential remediation for approval. |
 | FR-14 | **Unified credential resolution** (ADR-0042): LLM keys resolve from env, config files, and `op://` 1Password references; GitHub Copilot uses OAuth device flow. |
 
@@ -120,5 +122,5 @@ Individual developers and small teams working with AI coding agents (Claude, Cod
 
 - Architecture: `docs/guides/concepts/architecture.mdx`
 - ADR on layered restructure: `docs/decisions/adr/0002-layered-architecture.md`
-- Agent registry: `specialists/org/` (modular org tree; see ADR-0046)
+- Agent registry: `registry/worker-profiles/` and Workspace Presets under `registry/workspace-presets/` (see ADR-0046)
 - Orchestration policy: `lib/orchestration-policy.mjs`

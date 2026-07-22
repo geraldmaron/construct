@@ -56,6 +56,6 @@ Complete when PII, regulated processing, licensing, or contractual a11y appears.
 ## Handoff
 
 - code fix → `next:engineer`
-- platform / infrastructure fix → `next:cx-platform-engineer`
+- platform / infrastructure fix → `next:engineer`
 - compliance memo / counsel → `security.legal-compliance` + `templates/docs/compliance-memo.md`
 - review of remediation → `next:reviewer`

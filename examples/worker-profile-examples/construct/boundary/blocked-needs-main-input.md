@@ -1,6 +1,6 @@
 ---
 id: construct-boundary-blocked-needs-main-input
-surface: persona
+surface: worker-profile
 name: construct
 category: boundary
 verdict: pass

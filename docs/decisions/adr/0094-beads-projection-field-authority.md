@@ -7,7 +7,7 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 - **Status**: accepted
 - **Deciders**: Gerald Dagher (owner)
 - **Supersedes**: none
-- **Relates to**: realizes `docs/notes/research/workspace-control-plane/synthesis/target-model.md` concept 16 ("Projection", the *replace* verdict) and concept 5 ("Work", the projection source of truth); builds on `docs/decisions/adr/0026-beads-git-native-sync.md` (the Dolt-remote-as-source-of-truth constraint this leaves unchanged) and `docs/decisions/adr/0092-single-project-identity-derivation.md` (the one `deriveProjectKey` workspace id the projection store keys against); reuses `lib/planning/` (E3 Work-spec/decomposition) and `lib/graph/` (E1); design doc `docs/notes/research/workspace-control-plane/synthesis/beads-projection-design.md`; bead `construct-b0nny.27`
+- **Relates to**: realizes `docs/obsolete/research/workspace-control-plane/synthesis/target-model.md` concept 16 ("Projection", the *replace* verdict) and concept 5 ("Work", the projection source of truth); builds on `docs/decisions/adr/0026-beads-git-native-sync.md` (the Dolt-remote-as-source-of-truth constraint this leaves unchanged) and `docs/decisions/adr/0092-single-project-identity-derivation.md` (the one `deriveProjectKey` workspace id the projection store keys against); reuses `lib/planning/` (E3 Work-spec/decomposition) and `lib/graph/` (E1); design doc `docs/obsolete/research/workspace-control-plane/synthesis/beads-projection-design.md`; bead `construct-b0nny.27`
 
 <!-- Owning specialist: cx-architect. -->
 

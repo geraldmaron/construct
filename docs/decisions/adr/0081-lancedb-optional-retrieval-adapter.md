@@ -7,7 +7,7 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 - **Status**: accepted
 - **Deciders**: Gerald Dagher (owner)
 - **Supersedes**: none
-- **Relates to**: amends `docs/decisions/adr/0001-zero-npm-core.md`'s LanceDB/apache-arrow exception (see that ADR's status update note) without superseding it wholesale — its `@modelcontextprotocol/sdk`/`js-yaml` exceptions stand; `lib/storage/retrieval-adapter.mjs` (the contract this ADR introduces), `lib/storage/vector-client.mjs` (the LanceDB adapter), `lib/storage/adapters/keyword-adapter.mjs` (the no-vector fallback), `docs/notes/research/workspace-control-plane/synthesis/disposition-matrix.md` Cluster D6s, bead `construct-b0nny.20`
+- **Relates to**: amends `docs/decisions/adr/0001-zero-npm-core.md`'s LanceDB/apache-arrow exception (see that ADR's status update note) without superseding it wholesale — its `@modelcontextprotocol/sdk`/`js-yaml` exceptions stand; `lib/storage/retrieval-adapter.mjs` (the contract this ADR introduces), `lib/storage/vector-client.mjs` (the LanceDB adapter), `lib/storage/adapters/keyword-adapter.mjs` (the no-vector fallback), `docs/obsolete/research/workspace-control-plane/synthesis/disposition-matrix.md` Cluster D6s, bead `construct-b0nny.20`
 
 <!-- Owning specialist: cx-architect. -->
 
@@ -53,5 +53,5 @@ Two-way door. LanceDB remains a fully supported, first-class adapter — pinning
 
 - [ADR-0001: Zero npm dependencies in core](0001-zero-npm-core.md)
 - [ADR-0014: Local ONNX embeddings are an optional capability, not a core dependency](0014-local-embeddings-optional.md)
-- `docs/notes/research/workspace-control-plane/synthesis/disposition-matrix.md` Cluster D6s
+- `docs/obsolete/research/workspace-control-plane/synthesis/disposition-matrix.md` Cluster D6s
 - `lib/storage/retrieval-adapter.mjs`, `lib/storage/adapters/keyword-adapter.mjs`, `lib/storage/vector-client.mjs`, `scripts/reindex-retrieval-adapter.mjs`

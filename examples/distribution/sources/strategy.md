@@ -6,14 +6,14 @@ version: "1.0"
 doc_id: STRATEGY-2026-H1
 classification: internal
 status: draft
-owner: cx-product-manager
+owner: product-manager
 last_verified_at: 2026-06-22
 ---
 
 # Strategy: Governed agentic workflows for IDE-native teams
 
 - **Date**: 2026-06-22
-- **Owner**: cx-product-manager
+- **Owner**: product-manager
 - **Status**: draft
 - **Horizon**: H1 2026 – H1 2027
 

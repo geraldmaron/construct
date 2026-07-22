@@ -362,4 +362,4 @@ construct activation:status
 - [Intake and Triage](/guides/concepts/intake-and-triage). Full taxonomy and classification table
 - [Beads and State](/guides/concepts/beads-and-state). Durable state management
 - [Architecture](/guides/concepts/architecture). System overview
-- [Org Chart](/guides/concepts/org-chart). Specialist roles and departments
+- [Org Chart](/guides/concepts/org-chart). Worker Profile roster

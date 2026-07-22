@@ -6,7 +6,7 @@ version: "1.0"
 doc_id: ADR-BRAND-001
 classification: internal
 status: accepted
-owner: cx-architect
+owner: architect
 last_verified_at: 2026-06-22
 ---
 
@@ -14,7 +14,7 @@ last_verified_at: 2026-06-22
 
 - **Date**: 2026-06-22
 - **Status**: accepted
-- **Deciders**: cx-architect, cx-docs-keeper
+- **Deciders**: architect, operations
 - **Supersedes**: none
 
 ## Problem

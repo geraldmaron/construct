@@ -1,6 +1,6 @@
 ---
 id: construct-golden-branch-approval-before-mutation
-surface: persona
+surface: worker-profile
 name: construct
 category: golden
 verdict: pass

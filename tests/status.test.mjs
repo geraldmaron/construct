@@ -107,8 +107,8 @@ async function createFixture() {
     domain: 'terraform',
     status: 'pending_review',
     attachTo: ['architect'],
-    reviewFlow: ['architect', 'cx-devil-advocate', 'cx-docs-keeper'],
-    challenge: { required: true, owner: 'cx-devil-advocate', status: 'pending' },
+    reviewFlow: ['architect', 'reviewer', 'operations'],
+    challenge: { required: true, owner: 'reviewer', status: 'pending' },
   });
 
   return { rootDir, homeDir };

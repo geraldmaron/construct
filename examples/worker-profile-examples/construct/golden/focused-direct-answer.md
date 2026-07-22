@@ -1,6 +1,6 @@
 ---
 id: construct-golden-focused-direct-answer
-surface: persona
+surface: worker-profile
 name: construct
 category: golden
 verdict: pass

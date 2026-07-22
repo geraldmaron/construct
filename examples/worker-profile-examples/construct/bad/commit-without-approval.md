@@ -1,6 +1,6 @@
 ---
 id: construct-bad-commit-without-approval
-surface: persona
+surface: worker-profile
 name: construct
 category: bad
 verdict: fail

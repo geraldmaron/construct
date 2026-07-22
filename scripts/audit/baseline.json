@@ -1,8 +1,6 @@
 {
   "note": "Accepted open audit findings (ratchet) for gated phases. Tightened as remediation lands.",
   "acceptedIds": [
-    "02-deadcode:dead-module:lib/registry/custom-scaffold.mjs",
-    "02-deadcode:dead-module:lib/telemetry/team-rollup.mjs",
     "02-deadcode:module-test-only:lib/certification/corpus-contract.mjs",
     "02-deadcode:module-test-only:lib/certification/host-adapter-certification.mjs",
     "02-deadcode:module-test-only:lib/certification/provider-evidence-tiers.mjs",
@@ -89,8 +87,8 @@
     "03-docs:stale-doc-reference:serve",
     "03-docs:unnavigated-doc-dir:docs/notes/research/2026-07-continuous-work-audit",
     "03-docs:unnavigated-doc-dir:docs/notes/research/2026-07-mailparser-benchmark",
-    "03-docs:unnavigated-doc-dir:docs/notes/research/workspace-control-plane/spikes/c-parallel-software-change",
-    "03-docs:unnavigated-doc-dir:docs/notes/research/workspace-control-plane/spikes/d-daily-workplace-loop/fixtur",
+    "03-docs:unnavigated-doc-dir:docs/obsolete/research/workspace-control-plane/spikes/c-parallel-software-change",
+    "03-docs:unnavigated-doc-dir:docs/obsolete/research/workspace-control-plane/spikes/d-daily-workplace-loop/fixtur",
     "03-docs:unnavigated-doc-dir:docs/obsolete",
     "03c-root-layout:unclassified-package-file:packages/construct-ui/_"
   ],
@@ -102,8 +100,6 @@
     "03-docs:review-doc-reference:team": "Same \u2014 team/org metaphor references in docs pending .8.15 rewrite.",
     "03-docs:review-doc-reference:workflow": "Same \u2014 workflow command references in docs pending .8.14/.8.15 CLI cutover.",
     "03-docs:review-doc-reference:migrate": "Same \u2014 migrate command was removed; docs still cite it until .8.15 lands.",
-    "02-deadcode:dead-module:lib/registry/custom-scaffold.mjs": "Module flagged dead during clean-slate; deletion owned by lib/registry cutover sibling, not tests.",
-    "02-deadcode:dead-module:lib/telemetry/team-rollup.mjs": "Team-rollup telemetry module is orphaned pending org-metaphor removal in lib/.",
     "02-deadcode:module-test-only:lib/document-extract/audio-provider-benchmark.mjs": "Hermetic extraction benchmark harness (construct-tsyfe.2.10): compares whisper-cli vs Docling on fixtures; intentionally test-only until a scheduled benchmark runner imports it.",
     "02-deadcode:module-test-only:lib/document-extract/docling-serve-parity.mjs": "Docling Serve parity certification harness (construct-tsyfe.2.5): local sidecar vs remote comparison on the extraction corpus; test-only by design."
   },

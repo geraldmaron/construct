@@ -12,12 +12,12 @@ contributors: []
 approvers: []
 ---
 
-- **Author**: security.legal-compliance (cx-security overlay) or named counsel
+- **Author**: security.legal-compliance (security Worker Profile) or named counsel
 - **Related artifacts**: {PRD / ADR / RFC paths}
 - **Not legal advice**: This memo structures obligations for counsel review. It does not assert compliance.
 
 <!--
-Owning specialist: security.legal-compliance (bound to cx-security per ADR-0070).
+Owning specialist: security.legal-compliance (security Worker Profile).
 Before drafting: get_skill("docs/artifact-authorship")
   + get_skill("perspectives/security.legal-compliance")
   + get_skill("compliance/regulatory-review")

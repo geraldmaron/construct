@@ -49,6 +49,9 @@ const SKIP_DIR_BASENAMES = new Set([
 const SKIP_REL_DIRS = new Set([
   'specs',
   'notes',
+  'obsolete',
+  'meta-prd',
+  'prd-business',
   'decisions/rfc',
   'operations/audit',
   'operations/incidents',

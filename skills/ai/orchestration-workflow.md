@@ -15,7 +15,7 @@ Construct is an executive-aligned, control-plane workflow:
 
 - **Universal Orchestrator**: **Construct** is the single point of entry. It owns the outcome from strategy to production, dispatching specialists autonomously.
 - **Executive Checkpoints**: High-gate phases (Planning and Verification) require explicit Customer/Executive sign-off via the dashboard or CLI.
-- **Specialists**: `cx-*` agents own bounded work packages.
+- **Specialists**: Worker Profile agents (`architect`, `engineer`, `reviewer`, …) own bounded work packages.
 - **Skills**: Reusable execution playbooks (searched via `search_skills`).
 - **Hooks**: Enforce continuity and system integrity (e.g. `pre-push-gate`, `dep-audit`).
 - **Resumption Protocol**: Every new session MUST begin with `workflow_status` and `project_context` to prevent "state amnesia."
@@ -30,7 +30,7 @@ For non-trivial work, create or update `.construct/workflow.json` with:
 - `currentTaskKey`: active task
 - `tasks[].key`: stable `todo:N` key
 - `tasks[].phase`: corresponding phase
-- `tasks[].owner`: persona or cx-specialist
+- `tasks[].owner`: persona or worker-profile id
 - `tasks[].status`: todo, in-progress, blocked, blocked_needs_user, blocked_needs_executive, done, or skipped
 - `tasks[].readFirst`: files, docs, or memory queries to inspect first
 - `tasks[].doNotChange`: protected files or surfaces

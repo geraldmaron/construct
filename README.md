@@ -331,7 +331,7 @@ construct/
 ├── deps
 ├── dev
 ├── docs             Architecture notes, runbooks, and documentation contract
-├── examples         Example projects and persona fixtures
+├── examples         Example projects and Worker Profile fixtures
 ├── lib              Core runtime: CLI, hooks, MCP, providers, oracle, sync
 ├── packages         Shared workspace packages
 ├── platforms        Host adapter capability configs

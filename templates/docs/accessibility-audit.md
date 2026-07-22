@@ -1,7 +1,7 @@
 # Accessibility Audit: {scope-title}
 
 - **Date**: {YYYY-MM-DD}
-- **Auditor**: cx-accessibility (or named human)
+- **Auditor**: designer (or named human)
 - **Scope**: {pages / flows / components / PR}
 - **Baseline**: WCAG 2.1 AA (unless otherwise specified)
 - **Assistive technology used**: {VoiceOver / NVDA / JAWS / TalkBack / Switch Control / Voice Control / keyboard-only}

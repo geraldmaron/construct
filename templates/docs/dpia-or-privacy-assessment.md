@@ -1,7 +1,7 @@
 # DPIA / privacy assessment: {title}
 
 - **Date**: {YYYY-MM-DD}
-- **Author**: security.privacy (cx-security overlay)
+- **Author**: security.privacy (security Worker Profile)
 - **Status**: draft | privacy-review | counsel-review | accepted | rejected
 - **Related artifacts**: {PRD / ADR / RFC / compliance-memo}
 - **Not legal advice**: Lawful basis and DPIA necessity are counsel judgments. Mark `[unverified]` until counsel confirms.

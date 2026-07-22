@@ -37,4 +37,4 @@ counter-evidence is not a verdict; it's a vote.
 <!-- The action that follows from the evidence. If CONDITIONAL, name the conditions that flip the verdict. If INSUFFICIENT_EVIDENCE, name the evidence threshold that would change it. -->
 
 ## Handoff
-<!-- Where this verdict goes next. Bare `next:cx-<role>` form so it works across hosts. -->
+<!-- Where this verdict goes next. Bare `next:<worker-profile>` form so it works across hosts. -->

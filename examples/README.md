@@ -41,7 +41,7 @@ Each fixture is markdown with YAML frontmatter.
 Required frontmatter:
 
 - `id`: stable fixture id
-- `surface`: `persona` or `internal-role`
+- `surface`: `worker-profile` (public Construct prompt fixtures) or `internal-role` (routed Worker Profile fixtures). Legacy `persona` is accepted by tests but prefer `worker-profile`.
 - `name`: fixture target name, such as `construct` or `engineer`
 - `category`: `golden`, `bad`, `boundary`, or `adversarial`
 - `verdict`: `pass` or `fail`

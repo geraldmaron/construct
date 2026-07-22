@@ -41,7 +41,7 @@ CLI `construct execution resolve --json` · MCP `construct_execution_resolve` ·
 
 Request: `workflowType?`, `requestedStrategy?` (`orchestrated|prompt-only|auto`, default `auto`), `useConstruct?` (default `true`; `false` ⇒ host-direct), `host?`, `hostModel?`, `hostProvider?`, `requestedTier?`, `capabilities?`, `allowCrossProviderFallback?`.
 
-Response `data`: `executionMode` (`construct-orchestrated|construct-prompt-only|host-direct|same-family-fallback`), `constructCapabilitiesActive` (subset of `personas|skills|workflow-routing|prompt-envelope`), `degraded`, `degradationReason` (machine-readable or `null`), `requestedStrategy`, `effectiveStrategy`, `selectedProvider`, `selectedModel`, `resolutionSource`, `orchestrationPlanned`, `orchestrationAvailable`, `deploymentMode`, `modelResolution` (nested), `semantics` (the descriptive-boundary disclaimer).
+Response `data`: `executionMode` (`construct-orchestrated|construct-prompt-only|host-direct|same-family-fallback`), `constructCapabilitiesActive` (subset of `worker-profiles|skills|workflow-routing|prompt-envelope`), `degraded`, `degradationReason` (machine-readable or `null`), `requestedStrategy`, `effectiveStrategy`, `selectedProvider`, `selectedModel`, `resolutionSource`, `orchestrationPlanned`, `orchestrationAvailable`, `deploymentMode`, `modelResolution` (nested), `semantics` (the descriptive-boundary disclaimer).
 
 ## Procedure invocation
 

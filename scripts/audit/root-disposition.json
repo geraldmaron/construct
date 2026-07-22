@@ -376,11 +376,11 @@
     {
       "path": "compat",
       "owner": "runtime",
-      "class": "product",
+      "class": "development",
       "consumers": [
         "ADR-governed compatibility surface registry"
       ],
-      "published": true,
+      "published": false,
       "action": "retain",
       "replacement": null,
       "evidence": [

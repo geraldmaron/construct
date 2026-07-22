@@ -1,5 +1,8 @@
 # Worker Profile roster
 
+> **Filename note:** `org-chart.md` is a historical path; this page is the Worker Profile roster, not an org chart.
+
+
 > **Execution framing:** Construct is one governed interface. You give outcomes; Construct decomposes work into Assignments and selects Worker Profiles under typed Capability contracts. You talk to `@construct`; internal profiles route behind that front door.
 
 The roster is **12 Worker Profiles**. There is no permanent org chart, team roster, or specialist tree in Construct 2.0 — Plans own Assignment relationships, and a Workspace Preset configures workspace-wide defaults without naming a fixed cast of workers.

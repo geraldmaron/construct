@@ -288,7 +288,7 @@
           }
         ],
         "id": "post:agent-tracker",
-        "description": "Record dispatched cx-* agent name for per-agent cost attribution"
+        "description": "Record dispatched Worker Profile id for per-profile cost attribution"
       },
       {
         "matcher": "Bash",

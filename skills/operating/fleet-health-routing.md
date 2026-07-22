@@ -1,6 +1,6 @@
 ---
 name: operating-fleet-health-routing
-description: fleet-level gap routing and bounded-auto policy for cx-orchestrator's absorbed fleet-health synthesis duty (formerly cx-oracle). Use when handling an Oracle synthesis packet or any systemic-gap remediation routing.
+description: fleet-level gap routing and bounded-auto policy for orchestrator's absorbed fleet-health synthesis duty (formerly cx-oracle). Use when handling an Oracle synthesis packet or any systemic-gap remediation routing.
 inputs: [oracle-synthesis-packet]
 artifactType: guidance
 ---
@@ -8,7 +8,7 @@ artifactType: guidance
 
 Loaded on demand via `get_skill("operating/fleet-health-routing")`.
 
-`cx-oracle` retired as a standalone specialist at construct-rf26.11 (the roster-consolidation pass): it had no footprint of its own in `skills/perspectives/` and its declared skills were already just `ai/orchestration-workflow` (the Orchestrator's own) plus a borrowed reference to what is now the Reviewer role's trace overlay. Its meta-controller function — synthesizing fleet-health gaps from the Oracle read model and routing remediation to the specialists who own it — is folded into `cx-orchestrator`. This skill is the verbatim reference for that duty; do not paraphrase the routing table or bounded-auto policy from memory.
+`cx-oracle` retired as a standalone specialist at construct-rf26.11 (the roster-consolidation pass): it had no footprint of its own in `skills/perspectives/` and its declared skills were already just `ai/orchestration-workflow` (the Orchestrator's own) plus a borrowed reference to what is now the Reviewer role's trace overlay. Its meta-controller function — synthesizing fleet-health gaps from the Oracle read model and routing remediation to the specialists who own it — is folded into `orchestrator`. This skill is the verbatim reference for that duty; do not paraphrase the routing table or bounded-auto policy from memory.
 
 ## Scope boundary
 
@@ -32,18 +32,18 @@ Treat `readModel.parity`, `readModel.contractViolations`, `readModel.doctorLog`,
 
 | Gap signal | Primary specialist | Secondary |
 |---|---|---|
-| `parity-drift` | cx-engineer | cx-operations (if front-door rule stale) |
-| `contract-violations` | owning producer specialist from `contractId` | cx-reviewer |
-| `doctor-escalation` | cx-operations | cx-operations (beads issue) |
-| `outcomes-degradation` | cx-reviewer (fleet-trace triage mode) | specialist named in degraded role |
-| `census-stale` / alignment | cx-architect | cx-operations |
-| `observations-empty` | cx-researcher (explorer mode) | cx-engineer |
-| `team-understaffed` | cx-operations | cx-orchestrator (escalation) |
-| `escalation-path-broken` | cx-operations | cx-architect (registry) |
-| `team-decision-violation` | cx-operations | cx-orchestrator (role assignment) |
-| `cross-team-handoff-blocked` | cx-operations | owning team specialist |
+| `parity-drift` | engineer | operations (if front-door rule stale) |
+| `contract-violations` | owning producer specialist from `contractId` | reviewer |
+| `doctor-escalation` | operations | operations (beads issue) |
+| `outcomes-degradation` | reviewer (fleet-trace triage mode) | specialist named in degraded role |
+| `census-stale` / alignment | architect | operations |
+| `observations-empty` | researcher (explorer mode) | engineer |
+| `team-understaffed` | operations | orchestrator (escalation) |
+| `escalation-path-broken` | operations | architect (registry) |
+| `team-decision-violation` | operations | orchestrator (role assignment) |
+| `cross-team-handoff-blocked` | operations | owning team specialist |
 
-Note on the last four rows: the pre-consolidation routing table sent team-governance signals to `cx-rd-lead` (retired). This skill repoints them to `cx-operations`, which already owns dependency/ownership mapping and delivery logistics — the closer functional match — rather than to `cx-architect` (rd-lead's other absorbed function, pre-architecture framing). This is a construct-rf26.11 judgment call distinct from the rd-lead retirement itself; flag for reviewer override if a different owner is preferred.
+Note on the last four rows: the pre-consolidation routing table sent team-governance signals to `cx-rd-lead` (retired). This skill repoints them to `operations`, which already owns dependency/ownership mapping and delivery logistics — the closer functional match — rather than to `architect` (rd-lead's other absorbed function, pre-architecture framing). This is a construct-rf26.11 judgment call distinct from the rd-lead retirement itself; flag for reviewer override if a different owner is preferred.
 
 ## Bounded-auto policy (do not override)
 
@@ -61,7 +61,7 @@ VERDICT: {verdict}
 GAPS:
   [{severity}] {id} — {detail}
     signal: {signal}
-    route: cx-{specialist}
+    route: {worker-profile}
     handoff: {one-line DONE definition}
 
 AUTO (already executed or skipped):

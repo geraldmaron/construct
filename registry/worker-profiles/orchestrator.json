@@ -1,7 +1,7 @@
 {
   "id": "orchestrator",
-  "displayName": "Sees the whole board — orchestrates by assembling the right perspectives in the right sequence, routing each request to the minds that will see what others miss.",
-  "description": "Sees the whole board — orchestrates by assembling the right perspectives in the right sequence, routing each request to the minds that will see what others miss.",
+  "displayName": "Sees the whole board \u2014 orchestrates by assembling the right perspectives in the right sequence, routing each request to the minds that will see what others miss.",
+  "description": "Sees the whole board \u2014 orchestrates by assembling the right perspectives in the right sequence, routing each request to the minds that will see what others miss.",
   "runtime": "host-agent",
   "modelTier": "standard",
   "reasoningEffort": "medium",
@@ -72,7 +72,6 @@
     "list_skills",
     "get_skill",
     "search_skills",
-    "list_teams",
     "suggest_skills",
     "memory_search",
     "memory_add_observations",

@@ -232,7 +232,7 @@ The foundation. Handles orchestration, Assignment dispatch, memory, sessions, an
 - **Plugin engine**. `lib/engine/` with six contracts (Embedder, Chunker, Indexer, Fuser, Reranker, Compressor). Each layer resolves to a built-in default unless overridden by `~/.config/construct/plugins.json`, `<project>/.construct/plugins.json`, or `CONSTRUCT_PLUGIN_<LAYER>` env. Failed overrides fall back to the default and surface in `construct doctor`. External git projects plug in by exporting a factory that satisfies the contract. `assertContract(layer, plugin)` runs at load time so the failure is loud, not silent.
 - **Tag system**. `config/tag-vocabulary.json` is the repo-wide controlled vocabulary (five orthogonal facets: intake-type, lifecycle, priority, signal-strength, reversibility). Project-local overrides at `.construct/tags/vocabulary-overrides.json`. `lib/tags/vocabulary.mjs` merges both tiers; `lib/tags/lifecycle.mjs` manages the active/deprecated/archived lifecycle with Postgres-backed migration audit at `db/schema/007_tags.sql`. Auto-attribution: `suggestTags(triage, related, vocab)` in `lib/intake/classify.mjs` stamps `intake/<type>` tags from classification confidence; related-doc inheritance at 0.70. Four cross-cutting tags promote to graph entities: `signal/high-customer-interest`, `priority/p0`, `priority/p1`, `reversibility/irreversible`.
 - **OTel telemetry**. `lib/telemetry/otel-tracer.mjs` provides a graceful-degrade facade over `@opentelemetry/api` (optional dep). When `OTEL_EXPORTER_OTLP_ENDPOINT` is set, real GenAI client spans emit `gen_ai.*` attributes per the OpenTelemetry GenAI semconv. W3C traceparent propagates across MCP boundaries via `params._meta` (SEP-414). When the SDK is absent or no endpoint is configured, a no-op path runs with zero overhead. `lib/telemetry/skill-calls.mjs` captures per-skill load events with latency, agent identity, session id, and token size; `construct skills usage|orphans|hot|correlate-quality` surfaces the rollup.
-- **Workflow templates**. `templates/workflows/` YAML templates (new-feature, engineering-onboarding, cross-team-handoff) define inputs, artifact chains, and linked beads items with dependency order. `lib/workflows/instantiate.mjs` renders and creates the chain. `schemas/workflow.schema.json` validates all templates.
+- **Procedures**. `registry/procedures/*.json` (merged with pack and `.construct/procedures/` overlays via `lib/procedures/loader.mjs`) define typed procedure manifests — inputs, artifact chains, and surface parity. Invoke with `construct procedure invoke` / MCP `procedure_invoke` / SDK `invokeProcedure` (`lib/embedded-contract/procedure-invoke.mjs`).
 - **Hooks / enforcement**. `lib/hooks/` (session-start, bash-output-logger, repeated-read-guard, context-watch, audit-trail)
 - **Audit trail**. `lib/audit-trail.mjs`, `~/.construct/audit-trail.jsonl` with tamper-evidence chain
 - **Doc stamps**. UUIDv7 front-matter on all generated `.md` files for identity, provenance, and tamper detection
@@ -321,7 +321,7 @@ Sequencing that used to live as prose injected into an agent's context (`lib/orc
 
 **Checkpoint and resume.** `lib/flows/checkpoint.mjs` persists a run after every completed step to the project's machine-scoped state root (`runtime/flows/runs/<runId>.json`, [ADR-0066](/decisions/adr/0066-config-layer-project-footprint)), atomic write via temp-file-then-rename — the same pattern `lib/orchestration/run-store.mjs` uses for orchestration runs. `resumeRun`/`startRun`/`runCheckpointed` reconstruct a run's state on resume and throw `FlowCheckpointError` rather than silently reinterpreting history if the checkpoint's flow id doesn't match the flow definition it's resumed against. `construct flow resume <run-id> --flow=<path> [--state=<json>]` drives a run (new or resumed) to completion; `construct flow status <run-id>` reads a checkpoint without driving it — this CLI is the engine's only live caller today.
 
-**Delegation port removed (`construct-b0nny.13`, workspace-control-plane M0).** `lib/orchestration/delegation-flow.mjs` — the `construct-rf26.9` additive port of contract-chain dispatch onto the flow engine above — was deleted as dead code: it never gained a live caller beyond its own test suite once the MCP tool that would have exposed it (`orchestration_delegation_next`) was removed under the tool-surface budget, confirmed via the disposition matrix (`docs/notes/research/workspace-control-plane/synthesis/disposition-matrix.md`, Cluster C5). The flow engine itself (`lib/flows/`) remains live for hand-authored flows via `construct flow resume` / `construct flow status`. Contract-chain dispatch (see above) resolves directly from `routeRequest`'s Worker Profile dispatch output, consumed by the orchestrator Worker Profile and `lib/orchestration/runtime.mjs`'s `buildTasks()` — there is no flow-step abstraction in that path.
+**Delegation port removed (`construct-b0nny.13`, workspace-control-plane M0).** `lib/orchestration/delegation-flow.mjs` — the `construct-rf26.9` additive port of contract-chain dispatch onto the flow engine above — was deleted as dead code: it never gained a live caller beyond its own test suite once the MCP tool that would have exposed it (`orchestration_delegation_next`) was removed under the tool-surface budget, confirmed via the disposition matrix (`docs/obsolete/research/workspace-control-plane/synthesis/disposition-matrix.md`, Cluster C5). The flow engine itself (`lib/flows/`) remains live for hand-authored flows via `construct flow resume` / `construct flow status`. Contract-chain dispatch (see above) resolves directly from `routeRequest`'s Worker Profile dispatch output, consumed by the orchestrator Worker Profile and `lib/orchestration/runtime.mjs`'s `buildTasks()` — there is no flow-step abstraction in that path.
 
 ## Construct on Construct
 
@@ -421,7 +421,7 @@ Distinct from Embed *mode* (the daemon above), the **Embedded Contract Layer (EC
 | Triage / planning | What kind of work is this, who should own it? | `triage.mjs` | `construct intake classify --json` / `graph recommend --json` · `triage_recommend` · `recommendPlan` |
 | Model resolution | Which model should an embedded workflow use? | `model-resolve.mjs` | `construct models resolve --json` · `model_resolve` · `resolveEmbeddedModel` |
 | Execution capability | Will this run orchestrate or degrade to prompt-only, and why? | `execution.mjs` | `construct execution resolve --json` · `construct_execution_resolve` · `resolveExecution` |
-| Workflow invocation | Run a role/skill workflow non-interactively | `workflow-invoke.mjs` + `workflow-defs.mjs` | `construct workflow invoke --json` · `workflow_invoke` · `invokeWorkflow` |
+| Procedure invocation | Run a registered procedure non-interactively | `procedure-invoke.mjs` + `procedure-definitions.mjs` | `construct procedure invoke --json` · `procedure_invoke` · `invokeProcedure` |
 
 Invariants that make it safe to embed, especially for teams where auditability is non-negotiable:
 
@@ -458,7 +458,7 @@ Population is hybrid (`construct graph build`): (1) **registry ingest** (`build-
 ## Workspace domain model
 
 `lib/workspace/` (construct-b0nny.22, part of the workspace-control-plane program's E2 outcome —
-see `docs/notes/research/workspace-control-plane/synthesis/target-model.md` concept 1 and
+see `docs/obsolete/research/workspace-control-plane/synthesis/target-model.md` concept 1 and
 `workspace-domain-design.md`) is the first-class, durable, queryable Workspace record: owner,
 membership, settings, and lifecycle, distinct from the identity-*derivation* mechanics below. A
 Workspace's id is always `deriveProjectKey(rootDir)` (`lib/state-root.mjs`, ADR-0092's canonical
@@ -494,7 +494,7 @@ quality-field discipline since a Work spec IS a bead at execution time. `validat
 `lib/directives/directive-config.mjs`'s `validateDirective` convention.
 
 `lib/planning/decomposition-check.mjs` generalizes spike C's proven independence pattern
-(`docs/notes/research/workspace-control-plane/synthesis/spike-c-parallel-software-change.md`)
+(`docs/obsolete/research/workspace-control-plane/synthesis/spike-c-parallel-software-change.md`)
 into a reusable library, reusing — not re-deriving — the relational graph store's existing
 `queryDown`/`queryPath` (`lib/graph/relational/queries.mjs`, construct-b0nny.12/.21): (1)
 `detectDependencyCycles` — pure DFS cycle detection over a decomposition's own declared
@@ -686,7 +686,7 @@ Every authority decision behind this chokepoint — a provider-write approval re
 execution, an MCP destructive-tool approval-token issuance/consumption
 (`lib/mcp/destructive-gate.mjs` + `destructive-approval.mjs`), or a role-fence action that
 needed human visibility (`lib/hooks/edit-guard.mjs`, `guard-bash.mjs`,
-`lib/embedded-contract/workflow-invoke.mjs`) — is appended to one shared JSONL ledger,
+`lib/embedded-contract/procedure-invoke.mjs`) — is appended to one shared JSONL ledger,
 `lib/writes/authority-ledger.mjs`. This formalizes what was previously three separate
 recorders (the ApprovalQueue itself, `mcp/destructive-approval.mjs`'s own token store, and
 `lib/roles/approval-surface.mjs`'s pending-approval log) into a single auditable authority
@@ -696,7 +696,7 @@ store; `roles/approval-surface.mjs` is deleted, its three consumers now call
 ### Sources / directives / workplace loop
 
 `lib/workplace-loop/` (construct-b0nny.25, the workspace-control-plane program's E5 outcome —
-`docs/notes/research/workspace-control-plane/synthesis/target-model.md` concept 4 and spike D,
+`docs/obsolete/research/workspace-control-plane/synthesis/target-model.md` concept 4 and spike D,
 `spike-d-daily-workplace-loop.md`) is the production generalization of spike D's proven
 `detect → normalize → align → filter → gate → verify` pipeline from a fixture-driven proof into a
 loop over a real connected source. `runDetect` (`detect.mjs`) fetches open issues from a real

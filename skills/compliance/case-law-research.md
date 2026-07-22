@@ -8,7 +8,7 @@ artifactType: compliance-memo
 
 When precedent, holdings, or reporter citations are load-bearing for a
 compliance-memo, regulatory review, or legal overlay — use this skill. Bound to
-`cx-security` / `security.legal-compliance`. **Not legal advice.**
+`security` / `security.legal-compliance`. **Not legal advice.**
 
 ## When to invoke
 

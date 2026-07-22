@@ -45,4 +45,4 @@ available, the verdict is `unknown` — not an estimate.
 
 - test failures to fix → `next:engineer`
 - root cause investigation → `next:debugger`
-- flaky tests to stabilize → `next:cx-test-automation`
+- flaky tests to stabilize → `next:qa`

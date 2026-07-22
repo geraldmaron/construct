@@ -76,7 +76,7 @@ Requirement  →  *Acceptance* (or AC-* markers)
 
 ## Steps
 
-Call `get_skill("docs/artifact-authorship")` and `get_skill("perspectives/product-manager")` before drafting. The numbered chain below is the manifest baseline, not the final roster. `construct procedure invoke` and `author_artifact` evaluate the request's content signals and append condition-recruited participants after the baseline chain (ADR-0070): the invoke result carries `recruitment: {recruited, addedRoles, rationale}`, and `author_artifact` returns `recruited: [{specialist, reason, role, gate, source}]`. Honor the recruited set — run those participants at their stated role and gate alongside the baseline; do not substitute a memorized roster. Override only on explicit request: `recruitment: "off"` skips recruitment for the run; on `author_artifact`, an explicit list of cx- ids replaces the signal-derived set.
+Call `get_skill("docs/artifact-authorship")` and `get_skill("perspectives/product-manager")` before drafting. The numbered chain below is the manifest baseline, not the final roster. `construct procedure invoke` and `author_artifact` evaluate the request's content signals and append condition-recruited participants after the baseline chain (ADR-0070): the invoke result carries `recruitment: {recruited, addedRoles, rationale}`, and `author_artifact` returns `recruited: [{specialist, reason, role, gate, source}]`. Honor the recruited set — run those participants at their stated role and gate alongside the baseline; do not substitute a memorized roster. Override only on explicit request: `recruitment: "off"` skips recruitment for the run; on `author_artifact`, an explicit list of Worker Profile ids replaces the signal-derived set.
 
 **Discovery the author must force (even if the user never mentioned them):**
 
@@ -86,8 +86,8 @@ Call `get_skill("docs/artifact-authorship")` and `get_skill("perspectives/produc
 4. **Adversarial FMEA** — at least one high-cost failure mode with S×O×D and mitigation or accept-with-rationale.
 5. **Security / a11y / ops** — fire from the authorship trigger matrix when signals appear.
 
-1. **cx-product-manager** produces the requirements package (full 12 sections + hierarchy)
-2. **cx-researcher** grounds requirements in user behavior and fills evidence gaps (invoke in parallel for new features)
+1. **product-manager** produces the requirements package (full 12 sections + hierarchy)
+2. **researcher** grounds requirements in user behavior and fills evidence gaps (invoke in parallel for new features)
 3. **Write to the appropriate `docs/` subdirectory** using the selected template. Each `get_template()` call resolves `.construct/templates/docs/` first, then the Construct default.
 
    | Template | Output path |
@@ -98,8 +98,8 @@ Call `get_skill("docs/artifact-authorship")` and `get_skill("perspectives/produc
    | `meta-prd` | `docs/meta-prd/{YYYY-MM-DD}-{slug}.md` |
    | `rfc` | `docs/decisions/rfc/{YYYY-MM-DD}-{slug}.md` |
    | `rfc-platform` | `docs/decisions/rfc/{YYYY-MM-DD}-{slug}.md` |
-4. **cx-reviewer** runs the FMEA challenge pass (`perspectives/devil-advocate`) on the draft; highest-RPN failure modes need a mitigation or explicit accept-with-rationale before ship. Their specialist id must appear in `.construct/agent-log.jsonl` (manifest `releaseGate.requiredReviewers` for PRD-family types). Reviewer also verifies legal/privacy/user-evidence/financial honesty and Phase→FR→AC nesting.
-5. **cx-operations** updates `.construct/context.md` with a link to the PRD
+4. **reviewer** runs the FMEA challenge pass (`perspectives/devil-advocate`) on the draft; highest-RPN failure modes need a mitigation or explicit accept-with-rationale before ship. Their specialist id must appear in `.construct/agent-log.jsonl` (manifest `releaseGate.requiredReviewers` for PRD-family types). Reviewer also verifies legal/privacy/user-evidence/financial honesty and Phase→FR→AC nesting.
+5. **operations** updates `.construct/context.md` with a link to the PRD
 
 Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.
 

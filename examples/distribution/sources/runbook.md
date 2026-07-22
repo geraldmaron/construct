@@ -6,7 +6,7 @@ version: "1.1"
 doc_id: RUNBOOK-PUBLISH-001
 classification: internal
 status: accepted
-owner: cx-sre
+owner: operations
 last_verified_at: 2026-06-22
 ---
 
@@ -91,7 +91,7 @@ Not applicable — this runbook restores tooling, not application state. If a ba
 
 ## Escalation
 
-After 30 minutes without restore: page cx-platform-engineer. After 60 minutes with release blocked: page cx-release-manager.
+After 30 minutes without restore: page engineer. After 60 minutes with release blocked: page operations.
 
 ## Post-incident
 
