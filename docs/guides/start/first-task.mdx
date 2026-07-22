@@ -19,9 +19,11 @@ construct init --yes
 
 One command does all of it:
 
-- Scaffolds the project — `.construct/context.md` and `.construct/context.json` (durable per-project state Construct reads at session start), `.construct/handoffs/` (gitignored, session handoffs land here), a minimal `docs/` folder (index only — no guessed doc types), a local issue-tracking directory if your project doesn't already track issues (see [durable state →](/guides/concepts/beads-and-state)).
-- Syncs agent adapters into whichever editor configs it finds on disk — `~/.claude/agents/*.md` for Claude Code, `~/.config/opencode/opencode.json` for OpenCode, `~/.codex/agents/*.toml` for Codex, `~/.github/prompts/*.prompt.md` for Copilot prompt profiles, `~/.cursor/mcp.json` for Cursor MCP registrations if Cursor is already configured, VS Code user `settings.json` for GitHub Copilot MCP registrations if VS Code is already configured.
-- Starts the local runtime by default — local dashboard at `http://localhost:<port>` (port auto-selected), memory MCP server at `127.0.0.1:8765`, local trace capture in `.construct/traces/*.jsonl`. Pass `--no-start` to skip service startup, or `--interactive` for the guided flow.
+- Scaffolds the project — `.construct/context.md` and `.construct/context.json` (durable per-project state Construct reads at session start), `.construct/handoffs/` (gitignored, session handoffs land here), a minimal `docs/` folder (index only — no guessed doc types). Init may also create a local Beads issue-tracker directory for later multi-session work — you do **not** need to file beads, triage intake, or declare graph change-intent before the first coding task (see [durable state →](/guides/concepts/beads-and-state) when you want that depth).
+- Syncs a lean project adapter set — Claude Code under `.claude/` by default (plus any host already configured in the project). It does **not** scaffold every editor CLI on your PATH. Opt into more with `construct init --with-<host>` / `--all-hosts`, or later `construct sync --with-<host>`.
+- Starts the local runtime by default — local dashboard at `http://localhost:<port>` (port auto-selected), memory MCP server at `127.0.0.1:8765`, local trace capture in `~/.construct/projects/<key>/traces/*.jsonl`. Pass `--no-start` to skip service startup, or `--interactive` for the guided flow.
+
+Hard gates (secrets, tests, docs) still apply on commit. Progressive disclosure keeps Beads, intake, and graph as power surfaces — not day-1 ceremony ([NN/g](https://www.nngroup.com/articles/progressive-disclosure/)).
 
 ### Documentation packs (optional)
 
@@ -71,9 +73,18 @@ Worker Profiles will only PLAN (fix: set orchestration.workerBackend=provider + 
 
 If you're in Claude Code or OpenCode, a host session is already attached, so profiles EXECUTE with no extra setup. On any other host (Codex, Copilot, VS Code, Cursor), or if you want Claude Code to use a specific provider model instead of the host's own, set `orchestration.workerBackend: "provider"` in `construct.config.json` and export a materialized provider key (`ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY`, or `OPENAI_API_KEY`). Rerun `construct doctor` and check the last line before trusting profile output. See [install → EXECUTE vs PLAN](/guides/start/install#execute-vs-plan-do-worker-profiles-actually-run-an-llm).
 
-## When you need more: working from files instead of chat
+## When you need more (opt-in)
 
-Everything above assumes you're typing requests directly. For work that arrives as a file instead — a bug report, a customer comment, a competitor scan, a postmortem draft — Construct can pick it up automatically, classify it, and route it to the right Worker Profile without you retyping it as a prompt. See [processing incoming files →](/guides/concepts/intake-and-triage) once you're comfortable with the basics above.
+Everything above is enough to write code with `@construct`. Reach for these only when the work shape needs them:
+
+| Need | Surface | Guide |
+|---|---|---|
+| Work arrives as a file (bug report, paste, dump) | `inbox/` + `construct intake` | [Intake and triage →](/guides/concepts/intake-and-triage) |
+| Multi-session tracking, blockers, audit trail | Beads (`bd` / `construct beads`) | [Beads and state →](/guides/concepts/beads-and-state) |
+| Per-signal execution plan from a triaged packet | `construct graph from-intake <id>` | [Intake and triage →](/guides/concepts/intake-and-triage) |
+| Pre-change impact packet (large refactors / dogfood) | `construct graph intent declare` | [CLI / graph →](/guides/reference/cli) |
+
+None of these are required to clear a pending intake queue or declare graph intent before a normal chat coding task.
 
 ## What just happened
 

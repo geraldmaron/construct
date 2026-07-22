@@ -8,6 +8,11 @@
  * `.claude/agents/` and `.claude/settings.json` from the bundled registry so
  * the project clone is fully runnable without a manual `construct init`.
  *
+ * Lean host default (construct-w4hly): stages Claude adapters (plus any host
+ * already marked in the project). Does not sync every PATH-detected editor.
+ * Override with CONSTRUCT_SYNC_HOSTS=all|<list>, or expand later via
+ * `construct sync --with-<host>` / `--all-hosts`.
+ *
  * The script is a no-op in three cases:
  *
  *   1. The install is happening inside the Construct repo itself.
@@ -24,8 +29,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { stageProjectAdapters } from '../lib/install/stage-project.mjs';
-import { syncProjectAdapters } from '../lib/adapters-sync.mjs';
-import { missingIgnorePatterns, isConstructPackageRepo } from '../lib/host-disposition.mjs';
+import { syncProjectAdapters, resolvePostinstallHosts } from '../lib/adapters-sync.mjs';
+import { missingIgnorePatterns } from '../lib/host-disposition.mjs';
 import { printFirstRunChecklist } from '../lib/install/first-run-checklist.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -115,13 +120,16 @@ if (consumerPkg.name === '@geraldmaron/construct') {
 const mutations = [];
 
 try {
+  const hosts = resolvePostinstallHosts(initCwd);
+  log(`lean bootstrap hosts: ${hosts.join(', ')}`);
   const stageResult = stageProjectAdapters({
     projectRoot: initCwd,
     packageRoot: PKG_ROOT,
     pkgVersion: PKG_VERSION,
     log,
+    hosts,
   });
-  mutations.push({ path: '.construct', type: 'stage', synced: stageResult.synced });
+  mutations.push({ path: '.construct', type: 'stage', synced: stageResult.synced, hosts });
 
   // ADR-0027: Ensure .gitignore covers the newly staged adapters (construct-f6l6).
   // Idempotent: missingIgnorePatterns returns only patterns not already present.

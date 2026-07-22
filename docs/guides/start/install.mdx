@@ -16,7 +16,7 @@ description: Add Construct to your project like any other dev dependency, then r
 
 - Documentation starts minimal: `construct init --yes` creates a `docs/` folder with an index README. It does **not** guess which doc types you need. Opt into curated packs (`--docs-preset=lean|product|full`), individual lanes (`--with-adrs`, `--with-docs=adrs,rfcs`, …), or run `construct init --interactive` for a Packs / Individual docs / Skip menu.
 
-No database or Docker is required. Retrieval runs on an embedded LanceDB index and traces write to `.construct/traces/*.jsonl` — everything is local files.
+No database or Docker is required. Retrieval runs on an embedded LanceDB index and traces write to `~/.construct/projects/<key>/traces/*.jsonl` (ADR-0066) — everything is local files.
 
 ## Install
 
@@ -27,7 +27,7 @@ cd ~/your-project
 npm install -D @geraldmaron/construct
 ```
 
-That's it. The postinstall hook stages `.construct/` (launcher) and `.claude/` (agents, hooks, slash commands) into your project. Peers who clone your repo and run `npm install` get the same setup automatically — Construct travels with your project like Tailwind or ESLint.
+That's it. The postinstall hook stages `.construct/` (launcher) and a lean `.claude/` adapter set (agents, hooks, slash commands) into your project — not every editor CLI on your PATH. Peers who clone your repo and run `npm install` get the same setup automatically — Construct travels with your project like Tailwind or ESLint. Add another host later with `construct sync --with-<host>` or `construct sync --all-hosts` (or set `CONSTRUCT_SYNC_HOSTS` for the next install).
 
 If you want to opt into Construct in a project that doesn't yet pin it:
 
@@ -84,7 +84,7 @@ Everything is local files — setup opens no host ports and stands up no databas
 
 **Traces** — local-first observability
 
-- Local: `.construct/traces/*.jsonl`
+- Local: `~/.construct/projects/<key>/traces/*.jsonl` (machine-scoped; an in-project `.construct/traces/` is legacy heavy state flagged by `construct doctor`)
 - Remote export: optional with `CONSTRUCT_TRACE_BACKEND=langfuse|http|otel`
 
 **Vector storage** — semantic search on embedded LanceDB
@@ -106,7 +106,7 @@ construct doctor
 
 `doctor` runs ~35 health checks across config, services, agents, hooks, and integrations. Anything green is healthy. Warnings explain themselves. Failures point at a fix.
 
-You're installed in `solo` mode — everything runs locally, telemetry is optional. Two other modes (`team` and `enterprise`) promote local state and memory to shared, centrally-routed infrastructure for a whole team. Switch with `construct config mode [solo|team|enterprise]`. See [deployment model](/guides/concepts/deployment-model).
+You're installed in `solo` mode — everything runs locally, telemetry is optional. Two other modes (`team` and `enterprise`) promote local state and memory to shared, centrally-routed infrastructure for a whole team. Inspect with `construct config mode`; persist a change with `construct config set deployment.mode solo|team|enterprise`. See [deployment model](/guides/concepts/deployment-model).
 
 ## EXECUTE vs PLAN: do Worker Profiles actually run an LLM?
 
