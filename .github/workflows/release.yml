@@ -13,9 +13,10 @@ jobs:
   gate:
     name: release:check
     runs-on: ubuntu-latest
-    # Same hang bound as ci.yml's test job — stuck apt/curl must fail the
-    # release gate rather than sit until the runner is reclaimed.
-    timeout-minutes: 30
+    # Release-artifact checks only; no full test re-run means the 30-min bound
+    # of ci.yml's test job no longer applies. A stuck apt/curl must still fail
+    # fast rather than sit until the runner is reclaimed.
+    timeout-minutes: 15
     env:
       CONSTRUCT_EMBEDDING_MODEL: hashing
     steps:
@@ -25,38 +26,26 @@ jobs:
           node-version-file: .tool-versions
           cache: npm
       - run: npm ci
-      # Same test prerequisites as ci.yml's test job — the suite spawns bd and
-      # typst and reads the living graph + seeded vector index; without these
-      # the gate dies on `spawnSync bd ENOENT` (v1.5.0's first run) while the
-      # per-PR matrix stays green. scripts/ci/setup-toolchain.sh is the single
-      # source of truth shared with the local Docker replica. mermaid-cli is
-      # installed after npm ci (needs Node; figures:true certify/visual gates).
-      - name: cache pinned tool binaries (typst, bd, d2, mermaid+chrome)
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            ~/.local/bin
-            ~/.local/mermaid-cli
-          key: toolbin-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/ci/setup-toolchain.sh', 'scripts/ci/setup-mermaid-cli.sh') }}
-      - name: install test toolchain (typst, bd, d2, pandoc, poppler, libreoffice)
-        timeout-minutes: 12
-        run: bash scripts/ci/setup-toolchain.sh && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      - name: install mermaid-cli (mmdc) + Chrome for figures:true exports
-        run: bash scripts/ci/setup-mermaid-cli.sh && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      - name: build derived test fixtures (living graph + seeded vector index)
-        run: bash scripts/ci/build-test-fixtures.sh
-      - name: Full test suite
-        run: npm test
-      - name: System health check
-        run: npm run doctor
+
+      # The tagged commit already cleared the full sharded test matrix: ci.yml
+      # runs the whole suite (unit + functional; ubuntu×macos; node 20/22; 3
+      # shards) as a required promotion-PR check and again on push-to-main.
+      # Re-running it here on one unsharded runner cost ~10 min and the memory
+      # pressure behind intermittent OOM/concurrency failures, for no signal the
+      # matrix had not already produced. Retained below: only checks unique to
+      # the release artifact — packaging, consumer-install smoke, supply-chain
+      # go/no-go — plus cheap doc/comment/scope lints as a final pre-tag sweep.
+      # The heavy toolchain (typst/d2/pandoc/libreoffice/mermaid+Chrome, seeded
+      # fixtures) served that suite and went with it; the retained steps read
+      # committed files and the packed CLI only.
       - name: Check managed doc regions
         run: npm run docs:verify
       - name: Enforce comment policy
         run: npm run lint:comments
       - name: Validate profiles + flavor overlays
         run: npm run lint:scopes -- --quiet
-      - name: Functional tests
-        run: npm run test:functional
+      - name: System health check
+        run: npm run doctor
       - name: npm audit (high+ only, production deps of published package)
         # Scoped to match ci.yml's audit: the published npm package's
         # production graph. `--omit=dev` drops devDependencies; `--workspaces=false`
@@ -205,14 +194,16 @@ jobs:
           node-version: 24
           registry-url: 'https://registry.npmjs.org'
 
-      # Node 24's npm 11 (required above for OIDC) resolves the apps/docs
-      # workspace tree (next → postcss/nanoid) to versions the lockfile — built
-      # under the pipeline's npm 10 — does not carry, so a full `npm ci` fails
-      # EUSAGE "missing from lock file". This job only publishes prebuilt `files`
-      # and runs SBOM `--package-lock-only`; it needs neither devDeps nor the
-      # docs workspace. Scope the install to the published package's production
-      # graph, matching the audit step above.
-      - run: npm ci --omit=dev --workspaces=false
+      # No dependency install: this job publishes the prebuilt `files` glob,
+      # generates the SBOM with `--package-lock-only` (reads package-lock.json,
+      # not node_modules), and cuts the GitHub Release — none of which need an
+      # installed tree. A full `npm ci` here runs under Node 24's npm 11
+      # (required above for OIDC), which validates the entire lockfile against
+      # every workspace package.json and rejects the apps/docs Next.js tree
+      # (next → postcss/nanoid) that the npm-10-built lockfile resolves
+      # differently, failing EUSAGE "missing from lock file". `--omit=dev` /
+      # `--workspaces=false` do not skip that validation — only removing the
+      # install avoids it. `npm exec` fetches cyclonedx-npm on demand.
 
       - name: Verify OIDC token available
         # npm whoami requires classic auth and will always fail for OIDC Trusted

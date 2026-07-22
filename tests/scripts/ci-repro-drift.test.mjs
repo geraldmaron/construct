@@ -104,19 +104,24 @@ test('ci.yml test job declares timeout-minutes so stuck toolchain cannot hang fo
   );
 });
 
-test('release.yml gate declares timeout-minutes around setup-toolchain', () => {
+test('release.yml gate is pared to release-artifact checks with a bounded timeout', () => {
   const minutes = release.jobs?.gate?.['timeout-minutes'];
   assert.equal(typeof minutes, 'number', 'release.yml gate job must set timeout-minutes');
-  assert.ok(minutes > 0, `release.yml gate timeout-minutes must be positive (got ${minutes})`);
+  assert.ok(minutes > 0 && minutes <= 30, `release.yml gate timeout-minutes must be a tight bound (got ${minutes})`);
 
-  const toolchainStep = (release.jobs?.gate?.steps ?? []).find(
-    (s) => typeof s.run === 'string' && s.run.includes('scripts/ci/setup-toolchain.sh'),
+  // The tagged commit already cleared the full sharded matrix; the gate runs
+  // only release-artifact checks and must not re-install the heavy test
+  // toolchain or re-run the dev suite (the pare-down contract).
+  const gateRuns = (release.jobs?.gate?.steps ?? [])
+    .map((s) => (typeof s.run === 'string' ? s.run : ''))
+    .join('\n');
+  assert.ok(
+    !gateRuns.includes('scripts/ci/setup-toolchain.sh'),
+    'release.yml gate must not re-install the test toolchain (pared to release-artifact checks)',
   );
-  assert.ok(toolchainStep, 'release.yml gate must run setup-toolchain.sh');
-  assert.equal(
-    typeof toolchainStep['timeout-minutes'],
-    'number',
-    'release gate toolchain step must set timeout-minutes',
+  assert.ok(
+    !/(^|\n)\s*npm test(\s|$)/.test(gateRuns) && !gateRuns.includes('test:functional'),
+    'release.yml gate must not re-run the full/functional test suite — the matrix already did',
   );
 });
 
