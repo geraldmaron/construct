@@ -56,9 +56,18 @@ export function checkOsvLicenseDependencyReview({
   } else {
     const yaml = read('.github/workflows/supply-chain.yml');
     if (!/osv-scanner-action/.test(yaml)) errors.push('supply-chain.yml missing osv-scanner job');
+    if (!/--config=osv-scanner\.toml/.test(yaml)) errors.push('supply-chain.yml missing osv-scanner.toml config');
     if (!/dependency-review-action/.test(yaml)) errors.push('supply-chain.yml missing dependency-review-action');
+    if (!/probe-dependency-review/.test(yaml)) errors.push('supply-chain.yml missing probe-dependency-review skip-on-unsupported');
     if (!/license-allowlist\.json/.test(yaml)) errors.push('supply-chain.yml missing license-allowlist reference');
+    if (/osv-scan:[\s\S]*?continue-on-error:\s*true/.test(yaml)) {
+      errors.push('supply-chain.yml osv-scan must not use continue-on-error (triaged findings use osv-scanner.toml)');
+    }
     evidence.workflow = '.github/workflows/supply-chain.yml';
+  }
+
+  if (!existsSync(resolve(ROOT, 'osv-scanner.toml'))) {
+    errors.push('missing osv-scanner.toml');
   }
 
   if (!existsSync(resolve(ROOT, '.github/license-allowlist.json'))) {

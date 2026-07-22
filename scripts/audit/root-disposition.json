@@ -517,6 +517,21 @@
       ]
     },
     {
+      "path": "osv-scanner.toml",
+      "owner": "security",
+      "class": "governance",
+      "consumers": [
+        "OSV CI scan ignore triage"
+      ],
+      "published": false,
+      "action": "retain",
+      "replacement": null,
+      "evidence": [
+        ".github/workflows/supply-chain.yml --config=osv-scanner.toml",
+        ".github/supply-chain-exceptions.json"
+      ]
+    },
+    {
       "path": "package-lock.json",
       "owner": "dependency-governance",
       "class": "governance",
