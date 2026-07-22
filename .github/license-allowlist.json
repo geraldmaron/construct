@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "SPDX license identifiers compatible with the Construct npm dependency set. Consumed by .github/workflows/supply-chain.yml dependency-review-action allow-licenses.",
+  "description": "SPDX license identifiers for Construct npm deps. supply-chain.yml passes `allow` to dependency-review-action (allow XOR deny). `deny` is reviewer documentation only until a deny-only policy is chosen.",
   "allow": [
     "Apache-2.0",
     "MIT",
