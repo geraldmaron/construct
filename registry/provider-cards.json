@@ -5,8 +5,8 @@
     {
       "id": "@ai-sdk/anthropic",
       "kind": "npm-optional",
-      "purpose": "Anthropic Claude provider adapter enabling AI-powered specialist execution via the Vercel AI SDK",
-      "owningWorkflow": "orchestration-run, specialist dispatch (provider backend)",
+      "purpose": "Anthropic Claude provider adapter enabling AI-powered Worker Profile execution via the Vercel AI SDK",
+      "owningWorkflow": "orchestration-run, Worker Profile dispatch (provider backend)",
       "modeRequirement": "all",
       "securityConcerns": "Transmits prompts and context to Anthropic API; API key must be stored in environment, not config files",
       "versionPolicy": {
@@ -26,8 +26,8 @@
     {
       "id": "@ai-sdk/openai",
       "kind": "npm-optional",
-      "purpose": "OpenAI provider adapter enabling AI-powered specialist execution via the Vercel AI SDK",
-      "owningWorkflow": "orchestration-run, specialist dispatch (provider backend)",
+      "purpose": "OpenAI provider adapter enabling AI-powered Worker Profile execution via the Vercel AI SDK",
+      "owningWorkflow": "orchestration-run, Worker Profile dispatch (provider backend)",
       "modeRequirement": "all",
       "securityConcerns": "Transmits prompts and context to OpenAI API; API key must be stored in environment, not config files",
       "versionPolicy": {
@@ -48,7 +48,7 @@
       "id": "@ai-sdk/openai-compatible",
       "kind": "npm-optional",
       "purpose": "OpenAI-compatible provider adapter for local models (Ollama, LM Studio, vLLM) via the Vercel AI SDK",
-      "owningWorkflow": "orchestration-run, specialist dispatch (provider backend)",
+      "owningWorkflow": "orchestration-run, Worker Profile dispatch (provider backend)",
       "modeRequirement": "all",
       "securityConcerns": "Transmits prompts to a user-specified endpoint; endpoint is user-controlled so SSRF risk is user-accepted",
       "versionPolicy": {
@@ -131,8 +131,8 @@
     {
       "id": "@opentelemetry/api",
       "kind": "npm-optional",
-      "purpose": "OpenTelemetry instrumentation API for tracing specialist runs, workflow phases, and MCP tool calls",
-      "owningWorkflow": "cx-trace, orchestration telemetry, session tracing",
+      "purpose": "OpenTelemetry instrumentation API for tracing Worker Profile runs, workflow phases, and MCP tool calls",
+      "owningWorkflow": "trace, orchestration telemetry, session tracing",
       "modeRequirement": "team",
       "securityConcerns": "Trace data may include prompt fragments or tool outputs; ensure OTLP endpoints are access-controlled",
       "versionPolicy": {
@@ -153,7 +153,7 @@
       "id": "ai",
       "kind": "npm-optional",
       "purpose": "Vercel AI SDK core \u2014 unified interface for streaming LLM calls, tool use, and structured output across all provider adapters",
-      "owningWorkflow": "orchestration-run, specialist dispatch (provider backend)",
+      "owningWorkflow": "orchestration-run, Worker Profile dispatch (provider backend)",
       "modeRequirement": "all",
       "securityConcerns": "Streams model output; ensure tool-call deserialization is sandboxed and does not allow arbitrary code execution",
       "versionPolicy": {
@@ -286,7 +286,7 @@
     {
       "id": "js-yaml",
       "kind": "npm-dep",
-      "purpose": "YAML parsing for skill frontmatter, specialist manifests, scope configs, and ADR document headers",
+      "purpose": "YAML parsing for skill frontmatter, Worker Profile manifests, scope configs, and ADR document headers",
       "owningWorkflow": "skill-load, scope-management, artifact-workflow, docs-verify",
       "modeRequirement": "all",
       "securityConcerns": "YAML parsing of untrusted input can trigger prototype pollution if safeLoad is not used; all usages must use yaml.load with schema: yaml.DEFAULT_SAFE_SCHEMA or yaml.safeLoad",

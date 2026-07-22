@@ -13,9 +13,9 @@ Use this skill when the request involves agent orchestration, phase transitions,
 
 Construct is an executive-aligned, control-plane workflow:
 
-- **Universal Orchestrator**: **Construct** is the single point of entry. It owns the outcome from strategy to production, dispatching specialists autonomously.
+- **Universal Orchestrator**: **Construct** is the single point of entry. It owns the outcome from strategy to production, dispatching Worker Profiles autonomously.
 - **Executive Checkpoints**: High-gate phases (Planning and Verification) require explicit Customer/Executive sign-off via the dashboard or CLI.
-- **Specialists**: Worker Profile agents (`architect`, `engineer`, `reviewer`, …) own bounded work packages.
+- **Worker Profiles**: Bounded agents (`architect`, `engineer`, `reviewer`, …) own work packages.
 - **Skills**: Reusable execution playbooks (searched via `search_skills`).
 - **Hooks**: Enforce continuity and system integrity (e.g. `pre-push-gate`, `dep-audit`).
 - **Resumption Protocol**: Every new session MUST begin with `workflow_status` and `project_context` to prevent "state amnesia."
@@ -30,7 +30,7 @@ For non-trivial work, create or update `.construct/workflow.json` with:
 - `currentTaskKey`: active task
 - `tasks[].key`: stable `todo:N` key
 - `tasks[].phase`: corresponding phase
-- `tasks[].owner`: persona or worker-profile id
+- `tasks[].owner`: Worker Profile id
 - `tasks[].status`: todo, in-progress, blocked, blocked_needs_user, blocked_needs_executive, done, or skipped
 - `tasks[].readFirst`: files, docs, or memory queries to inspect first
 - `tasks[].doNotChange`: protected files or surfaces
@@ -47,13 +47,13 @@ construct procedure list           # Inspect registered procedures
 
 ## Worker Packets
 
-Specialists do not run open-ended conversations with the user. They return one terminal state:
+Worker Profiles do not run open-ended conversations with the user. They return one terminal state:
 
 - `DONE`: changed files, decisions, verification evidence
 - `BLOCKED`: blocker, attempted steps, safest next action
 - `NEEDS_MAIN_INPUT`: `{ taskKey, worker, blocker, question, safeDefault, context }`
 
-When a worker needs user input, mark the task `blocked_needs_user`, return the `NEEDS_MAIN_INPUT` packet, and let the active persona ask the user in the main session.
+When a worker needs user input, mark the task `blocked_needs_user`, return the `NEEDS_MAIN_INPUT` packet, and let the Construct front door ask the user in the main session.
 
 ## Phase Gates
 

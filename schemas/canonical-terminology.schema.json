@@ -20,9 +20,26 @@
           "identifier": { "type": "string", "minLength": 1 },
           "meaning": { "type": "string", "minLength": 1 },
           "sourceOfTruth": { "type": "string", "minLength": 1 },
+          "implementationStatus": {
+            "type": "string",
+            "enum": ["shipped", "interim", "planned"],
+            "description": "shipped = owningModule/runtimeRoot/dataRoot exist and are live; interim = real module under another name (maps via interimMap); planned = vocabulary only — no runtime API or store path."
+          },
           "owningModule": { "type": "string", "minLength": 1 },
           "runtimeRoot": { "type": "string", "minLength": 1 },
           "dataRoot": { "type": "string", "minLength": 1 },
+          "targetOwningModule": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Catalog target module path when implementationStatus is planned or interim. Not a claim that the path exists today."
+          },
+          "targetRuntimeRoot": { "type": "string", "minLength": 1 },
+          "targetDataRoot": { "type": "string", "minLength": 1 },
+          "interimMap": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Where reality lives today when the catalog target is not yet the on-disk owner."
+          },
           "configField": { "type": "string", "minLength": 1 },
           "cliNoun": { "type": "string", "minLength": 1 },
           "mcpNoun": { "type": "string", "minLength": 1 },

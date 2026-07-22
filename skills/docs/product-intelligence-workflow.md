@@ -9,7 +9,7 @@ verificationBar: "Every load-bearing claim cites a verifiable source; label infe
 
 Use when: the request involves customer evidence, PM synthesis, product requirements, PRDs, PRFAQs, customer profiles, product signals, or backlog proposals.
 
-Follow [rules/common/research.md](../../rules/common/research.md) for source order, verification, confidence, and reproducibility.
+Follow `rules/common/research.md` for source order, verification, confidence, and reproducibility.
 
 ## Operating model
 

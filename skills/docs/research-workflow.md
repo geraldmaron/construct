@@ -12,7 +12,7 @@ triggers: ["research brief", "user research"]
 
 Use when: researcher investigates **external** facts — not user interviews or codebase exploration. For user evidence use `docs/user-research-workflow`; for repo exploration use `docs/codebase-research-workflow`.
 
-Follow [rules/common/research.md](../../rules/common/research.md) as the default policy.
+Follow `rules/common/research.md` as the default policy.
 
 ## Native spine (blocking)
 

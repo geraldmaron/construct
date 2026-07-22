@@ -9,7 +9,7 @@ verificationBar: "Observed behavior weighted over self-report; sample size state
 
 Use when: the user pastes customer notes, Slack threads, support tickets, sales notes, research snippets, RFCs, analytics summaries, or competitor signals.
 
-Follow [rules/common/research.md](../../rules/common/research.md) for source metadata, evidence handling, and confidence labeling.
+Follow `rules/common/research.md` for source metadata, evidence handling, and confidence labeling.
 
 ## Steps
 

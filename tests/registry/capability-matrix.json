@@ -21,7 +21,7 @@
           "quality_score": null
         }
       },
-      "description": "Correctly classifies user intent and dispatches to the right specialist chain."
+      "description": "Correctly classifies user intent and dispatches to the right Worker Profile chain."
     },
     {
       "id": "mcp.broker.connection",

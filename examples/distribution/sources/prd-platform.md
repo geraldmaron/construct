@@ -22,7 +22,7 @@ publish:
 
 ## TL;DR
 
-Platform teams need a governed layer between IDE hosts and specialist-authored artifacts - not another chat wrapper. Construct routes work through provenanced invoke plans, blocks distribution until validate passes, and exports briefs with embedded diagrams. This fixture defines that contract for release-gate and demo tapes; it is not production product docs.
+Platform teams need a governed layer between IDE hosts and Worker Profile-authored artifacts - not another chat wrapper. Construct routes work through provenanced invoke plans, blocks distribution until validate passes, and exports briefs with embedded diagrams. This fixture defines that contract for release-gate and demo tapes; it is not production product docs.
 
 ## Background
 
@@ -39,7 +39,7 @@ Platform teams orchestrating multiple AI agents lack a governed operational laye
 
 Three failure modes recur in internal platform reviews:
 
-1. **Cold start** — specialists re-discover repo context every session because invoke plans are not durable or replayable.
+1. **Cold start** — Worker Profiles re-discover repo context every session because invoke plans are not durable or replayable.
 2. **Unprovenanced artifacts** — PRDs and ADRs reach stakeholders without citation discipline or manifest-enforced structure.
 3. **Distribution drift** — PDF exports use host-default styling; diagrams lack Construct hand-drawn styling and bundled typography.
 
@@ -47,7 +47,7 @@ Three failure modes recur in internal platform reviews:
 
 | Actor | Job | Current workaround | Scale |
 |---|---|---|---|
-| Application developer | Invoke specialist chains from IDE hosts | Ad hoc prompts | unknown |
+| Application developer | Invoke Worker Profile chains from IDE hosts | Ad hoc prompts | unknown |
 | Security admin | Citation + release gates before PDF | Manual review | unknown |
 | Ops engineer | Toolchain detect for Pandoc/Typst/D2/Mermaid | Local checks | unknown |
 
@@ -93,7 +93,7 @@ gate -> export
 
 **Goals:**
 
-1. Route requests through provenanced workflow invoke plans.
+1. Route requests through provenanced procedure invoke plans.
 2. Block publish until artifact validate passes.
 3. Export styled PDFs with Construct-branded D2 and Mermaid figures via `construct publish`.
 4. Ship bundled typography so exports match across machines.
@@ -102,7 +102,7 @@ gate -> export
 
 | Non-goal | Why deferred |
 |---|---|
-| Replacing host LLM execution | Construct returns plans; specialists author content |
+| Replacing host LLM execution | Construct returns plans; Worker Profiles author content |
 | Mandating npm deps in core CLI | ADR-0001 |
 | Cloud rendering | Figures resolve locally via D2 and mermaid-cli |
 
@@ -246,7 +246,7 @@ Ops can detect missing figure toolchain; CI uses detect or committed demo MP4s a
 
 ```mermaid
 flowchart TD
-  A[Host IDE] --> B[construct workflow invoke]
+  A[Host IDE] --> B[construct procedure invoke]
   B --> C[product-manager]
   C --> D[Typed artifact on disk]
   D --> E[construct artifact validate]
@@ -261,8 +261,8 @@ host_ide: Host IDE (session) {
   shape: person
 }
 
-invoke: construct workflow invoke
-author: Specialist chain
+invoke: construct procedure invoke
+author: Worker Profile chain
 artifact: Typed artifact {
   shape: document
 }

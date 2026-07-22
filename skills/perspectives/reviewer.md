@@ -75,7 +75,7 @@ Challenge mission: find the highest-cost wrongness.
 
 ### Adversarial review
 FMEA on unanimous drafts; demand mitigations for top RPN.
-Checklist: Why-Now timing economics present (not one-line theater); Competitive/Financial honesty; legal memo recruited when triggers fire; publish diagrams are crisp (not sketch/handDrawn cargo-cult).
+Checklist: Why-Now timing economics present (not one-line theater); Competitive/Financial honesty; legal memo recruited when triggers fire; publish diagrams use D2 sketch or Mermaid classic with no overlapping labels (Mermaid handDrawn/Caveat is retired cargo).
 
 ### Anti-fabrication
 Do not soften another specialist's unknown into a fact when summarizing.
