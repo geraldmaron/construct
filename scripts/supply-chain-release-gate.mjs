@@ -55,7 +55,7 @@ export function checkOsvLicenseDependencyReview({
     errors.push('missing .github/workflows/supply-chain.yml');
   } else {
     const yaml = read('.github/workflows/supply-chain.yml');
-    if (!/osv-scanner-reusable/.test(yaml)) errors.push('supply-chain.yml missing osv-scanner job');
+    if (!/osv-scanner-action/.test(yaml)) errors.push('supply-chain.yml missing osv-scanner job');
     if (!/dependency-review-action/.test(yaml)) errors.push('supply-chain.yml missing dependency-review-action');
     if (!/license-allowlist\.json/.test(yaml)) errors.push('supply-chain.yml missing license-allowlist reference');
     evidence.workflow = '.github/workflows/supply-chain.yml';

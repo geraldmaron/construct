@@ -7,6 +7,11 @@ name: supply-chain
 # dependency-review once triage is complete. Exception expiration is already
 # blocking via scripts/check-supply-chain-exceptions.mjs (mirrors
 # LEGACY_EXEMPT_SHAS in scripts/lint-commits-pr.mjs).
+#
+# OSV uses the docker scanner action (not the reusable workflow call) so this
+# file stays a valid workflow: reusable `uses:` jobs cannot set runs-on /
+# continue-on-error, and the invalid combo produced GitHub's "workflow file
+# issue" / 0-jobs failure on every push that carried the file.
 on:
   pull_request:
     types: [opened, synchronize, reopened]
@@ -35,10 +40,13 @@ jobs:
       security-events: write
       actions: read
     continue-on-error: true
-    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@3adb4b14a2b0623876d18d863a498b785fb3752d # v2.3.8
-    with:
-      scan-args: |-
-        --lockfile=package-lock.json
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - name: OSV scanner
+        uses: google/osv-scanner-action/osv-scanner-action@3adb4b14a2b0623876d18d863a498b785fb3752d # v2.3.8
+        with:
+          scan-args: |-
+            --lockfile=package-lock.json
 
   dependency-review:
     name: dependency review (license + vulnerability)
@@ -55,13 +63,13 @@ jobs:
         id: licenses
         run: |
           node -e "const j=require('./.github/license-allowlist.json'); console.log(j.allow.join(', '))" > /tmp/allow-licenses.txt
-          node -e "const j=require('./.github/license-allowlist.json'); console.log(j.deny.join(', '))" > /tmp/deny-licenses.txt
           echo "allow=$(cat /tmp/allow-licenses.txt)" >> "$GITHUB_OUTPUT"
-          echo "deny=$(cat /tmp/deny-licenses.txt)" >> "$GITHUB_OUTPUT"
       - name: GitHub dependency review
         uses: actions/dependency-review-action@fd07d42ce87ab09f10c61a2d1a5e59e6c655620a # v4.1.1
         with:
           fail-on-severity: critical
+          # Action accepts allow-licenses XOR deny-licenses (not both).
+          # Allowlist is the enforced policy; deny entries in
+          # license-allowlist.json remain documentation for reviewers.
           allow-licenses: ${{ steps.licenses.outputs.allow }}
-          deny-licenses: ${{ steps.licenses.outputs.deny }}
           comment-summary-in-pr: always
