@@ -4,6 +4,12 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [2.0.1] - 2026-07-22
+
+### Fixed
+
+- `construct uninstall` now removes the ADR-0066 machine state root `~/.construct` (per-project state under `projects/<key>/`, `runtime/`, `observations/`, `hook-calls.jsonl`) and the `~/.local/share/construct` data dir (shell completions). The uninstaller previously resolved only the XDG dirs (`lib/config/xdg.mjs` → `~/.local/state`, `~/.config`, `~/.cache`) and never touched the home-anchored state root that `lib/state-root.mjs`/`lib/paths.mjs` actually write to — leaving ~130 MB+ of state, including the primary root, behind on uninstall. Adds `dataDir()` to `lib/config/xdg.mjs` and `machine-state-root` + `machine-data-completions` categories to `lib/uninstall/uninstall.mjs` (state-root is `--all`/interactive risk since it holds accumulated cross-session data).
+
 ## [2.0.0] - 2026-07-22
 
 ### Fixed
