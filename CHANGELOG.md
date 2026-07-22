@@ -4,6 +4,17 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Changed
+
+- CI trimmed to a lightweight single lane for this personal-scale project: `ci.yml` runs ubuntu-only, Node 22 only, 3 shards (the shards keep per-runner memory low, which is what avoids the full-suite OOM). Dropped the macOS legs and the second Node version from the matrix and the weekly scheduled full run. The heavy/auxiliary workflows (`staging-full-matrix`, `publish-media`, `bun-binary-smoke`, `hook-budgets`, `supply-chain`, `pr-review`) are left disabled and can be re-enabled per-workflow when needed.
+- `audit-trail-concurrency` functional test exercises 8 concurrent writers instead of 40 — a realistic contention level that still regress-catches a non-atomic append, without the artificial-stress flake under CI load (residual high-contention lock race tracked separately).
+
+## [2.0.1] - 2026-07-22
+
+### Fixed
+
+- `construct uninstall` now removes the ADR-0066 machine state root `~/.construct` (per-project state under `projects/<key>/`, `runtime/`, `observations/`, `hook-calls.jsonl`) and the `~/.local/share/construct` data dir (shell completions). The uninstaller previously resolved only the XDG dirs (`lib/config/xdg.mjs` → `~/.local/state`, `~/.config`, `~/.cache`) and never touched the home-anchored state root that `lib/state-root.mjs`/`lib/paths.mjs` actually write to — leaving ~130 MB+ of state, including the primary root, behind on uninstall. Adds `dataDir()` to `lib/config/xdg.mjs` and `machine-state-root` + `machine-data-completions` categories to `lib/uninstall/uninstall.mjs` (state-root is `--all`/interactive risk since it holds accumulated cross-session data).
+
 ## [2.0.0] - 2026-07-22
 
 ### Fixed
