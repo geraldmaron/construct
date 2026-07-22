@@ -81,7 +81,7 @@ const LEGACY_EXEMPT_SHAS = new Set([
   "6342a737e6bf38612edb937d5432ff6067b5fe96", // "Release 1.5.4-alpha.1 (alpha, off staging for tester validation)" (2026-07-10, already tagged+published to npm)
   "e2fb90a49b0c5e7152389abebb55bdcea5b3c454", // "Improve control-plane UX…" (feat history; already pushed, cannot rewrite for integrate PR)
   "38cff0dddc7fc10720ff8362a8b2cfe3779259ca", // "Close Construct 2.0 legacy decommission epic…" (feat history; already pushed)
-  "a771b6199d693f54668b92d261784a4b41e1fb70", // "remove unwired deterministic embed-capability presets (construct-4uxq0.10.8)" (already on staging; first covered by staging→main promote #415 range)
+  "a771b6199d693f54668b92d261784a4b41e1fb70", // "remove unwired deterministic embed-capability presets (construct-4uxq0.10.8)" (already on staging; first covered by staging-to-main promote range)
 ]);
 
 const REQUIRED_PR_HEADINGS = [
