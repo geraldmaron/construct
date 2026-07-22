@@ -18,13 +18,13 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import cytoscape from 'cytoscape';
 
-import { buildViewElements } from '../../packages/cx-ui/prototypes/graph-viewer/transform.mjs';
-import { VIEWS, APPLICATION_NODE_TYPES, APPLICATION_EDGE_RELS, DEPENDENCY_NODE_TYPES, DEPENDENCY_EDGE_RELS } from '../../packages/cx-ui/prototypes/graph-viewer/view-vocab.mjs';
+import { buildViewElements } from '../../packages/construct-ui/prototypes/graph-viewer/transform.mjs';
+import { VIEWS, APPLICATION_NODE_TYPES, APPLICATION_EDGE_RELS, DEPENDENCY_NODE_TYPES, DEPENDENCY_EDGE_RELS } from '../../packages/construct-ui/prototypes/graph-viewer/view-vocab.mjs';
 import { NODE_TYPES, EDGE_RELS } from '../../lib/graph/store.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '../..');
-const fixturesDir = path.join(rootDir, 'packages', 'cx-ui', 'prototypes', 'graph-viewer', 'fixtures');
+const fixturesDir = path.join(rootDir, 'packages', 'construct-ui', 'prototypes', 'graph-viewer', 'fixtures');
 
 const nodes = JSON.parse(readFileSync(path.join(fixturesDir, 'nodes.sample.json'), 'utf8'));
 const edges = JSON.parse(readFileSync(path.join(fixturesDir, 'edges.sample.json'), 'utf8'));

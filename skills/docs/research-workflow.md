@@ -1,6 +1,6 @@
 ---
 name: docs-research-workflow
-description: "Use when: cx-researcher must investigate external facts — CVEs, APIs, market data, regulations, or vendor behavior."
+description: "Use when: researcher must investigate external facts — CVEs, APIs, market data, regulations, or vendor behavior."
 inputs: [research-question]
 artifactType: research-brief
 toneDefault: direct
@@ -10,7 +10,7 @@ triggers: ["research brief", "user research"]
 ---
 # External Research Workflow
 
-Use when: cx-researcher investigates **external** facts — not user interviews or codebase exploration. For user evidence use `docs/user-research-workflow`; for repo exploration use `docs/codebase-research-workflow`.
+Use when: researcher investigates **external** facts — not user interviews or codebase exploration. For user evidence use `docs/user-research-workflow`; for repo exploration use `docs/codebase-research-workflow`.
 
 Follow [rules/common/research.md](../../rules/common/research.md) as the default policy.
 
@@ -85,7 +85,7 @@ Do **not** claim PDF/demo done until `construct tools detect` reports ready or `
 
 - Two independent sources per load-bearing claim unless one authoritative primary suffices.
 - Admiralty grades on every source. Counter-evidence named when it exists.
-- cx-researcher must **not** answer UX preference questions or infer codebase behavior without reading code.
+- researcher must **not** answer UX preference questions or infer codebase behavior without reading code.
 
 ## Shared authorship contract
 

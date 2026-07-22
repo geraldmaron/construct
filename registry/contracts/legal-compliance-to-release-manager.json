@@ -30,5 +30,5 @@
       "postconditionType": "advisory"
     }
   ],
-  "description": "cx-security compliance-memo chains to cx-operations as a release consideration. Restored under registry/contracts after specialists/org cutover (ADR-0070 integrity fix, construct-pe9sv)."
+  "description": "security compliance-memo chains to operations as a release consideration. Restored under registry/contracts after specialists/org cutover (ADR-0070 integrity fix, construct-pe9sv)."
 }

@@ -54,6 +54,6 @@ X and Y in a way that prevents Z" is.
 
 ## Handoff
 
-- changes to implement → `next:engineer` or `next:cx-platform-engineer`
+- changes to implement → `next:engineer`
 - ADR follow-up → `next:architect` (capture the decision)
 - security re-review → `next:security`

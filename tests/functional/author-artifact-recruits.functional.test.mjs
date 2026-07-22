@@ -76,7 +76,7 @@ test('a cost-flagged request recruits with non-null workerProfileId and a cost r
     `cost path recruits data-analyst and/or product-manager; got ${JSON.stringify(res.recruited)}`,
   );
   assert.ok(
-    res.workflow_plan.includes('cx-product-manager') && res.workflow_plan.includes('cx-architect'),
+    res.workflow_plan.includes('product-manager') && res.workflow_plan.includes('architect'),
     `Procedure floor preserved; plan: ${res.workflow_plan.join(',')}`,
   );
   assert.ok(res.summary.includes('Recruited') || res.recruited.length > 0, 'summary surfaces recruitment');

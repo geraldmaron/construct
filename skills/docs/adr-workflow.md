@@ -21,21 +21,21 @@ Problem → Context → Decision → Rationale → Rejected alternatives → Con
 - `construct artifact validate --type=adr` runs `lintAdrDeliveryDepth`.
 
 ## Trigger automatically when
-- cx-architect finalizes a design
+- architect finalizes a design
 - A technology is selected over alternatives
 - A pattern is established that should be followed project-wide
 - A previous decision is reversed or superseded
 
 ## Steps
 
-1. **cx-architect** or **cx-engineer** identifies the decision
+1. **architect** or **engineer** identifies the decision
 2. **Write to `docs/decisions/adr/ADR-{NNN}-{slug}.md`** using the template from `get_template("adr")`: resolves `.construct/templates/docs/adr.md` (override) then `templates/docs/adr.md` (shipped)
    - NNN = next sequential number (check existing files)
 3. **Also write a shorter entry to `.construct/decisions/`** for session context
-4. **cx-reviewer** runs the adversarial challenge pass before status becomes `accepted`
-5. **cx-operations** updates `.construct/context.md` Architecture Notes with a one-line summary and link
+4. **reviewer** runs the adversarial challenge pass before status becomes `accepted`
+5. **operations** updates `.construct/context.md` Architecture Notes with a one-line summary and link
 
-The steps above are the baseline, not the final roster. Authoring through `author_artifact` (type `adr`) recruits additional participants from the request's content signals (ADR-0070) and returns them as `recruited: [{specialist, reason, role, gate, source}]`. Honor that set — run recruited participants at their stated role and gate; do not substitute a memorized roster. Pass `recruitment: "off"` or an explicit cx- id list to override.
+The steps above are the baseline, not the final roster. Authoring through `author_artifact` (type `adr`) recruits additional participants from the request's content signals (ADR-0070) and returns them as `recruited: [{specialist, reason, role, gate, source}]`. Honor that set — run recruited participants at their stated role and gate; do not substitute a memorized roster. Pass `recruitment: "off"` or an explicit Worker Profile id list to override.
 
 ## File naming
 - `docs/decisions/adr/ADR-001-use-postgres-over-mysql.md`

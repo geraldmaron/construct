@@ -62,6 +62,6 @@ const { data: run } = await invokeWorkflow({
 // run.selectedRoles, run.skillsApplied, run.outputs, run.traceId
 ```
 
-To let the workflow persist provenance, pass `approvalMode: 'allow-durable-write'`; to queue a human gate first, pass `requires-human-approval`. Specialist reasoning runs in your host's agent runtime — Construct returns the plan, the output contract, and the provenance trail.
+To let the workflow persist provenance, pass `approvalMode: 'allow-durable-write'`; to queue a human gate first, pass `requires-human-approval`. Worker Profile reasoning runs in your host's agent runtime — Construct returns the plan, the output contract, and the provenance trail.
 
 See [Embedded contract layer](/guides/concepts/embedded-contract) and the [Embedded contract API](/guides/reference/embed-api) for full schemas.

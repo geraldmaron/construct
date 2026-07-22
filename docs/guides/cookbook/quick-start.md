@@ -211,5 +211,5 @@ lsof -i :4242
 
 - [Embed Mode](/guides/concepts/embed-mode): How embed daemon works
 - [Deployment Model](/guides/concepts/deployment-model): Solo/team/enterprise modes
-- [Org Chart](/guides/concepts/org-chart): Specialist roles and departments
+- [Org Chart](/guides/concepts/org-chart): Worker Profile roster
 - [Installation](/guides/reference/cli/install): Detailed install guide

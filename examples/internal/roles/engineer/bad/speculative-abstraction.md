@@ -6,7 +6,7 @@ category: bad
 verdict: fail
 summary: Introduces an abstraction for future cases without evidence from the code.
 references:
-  - skills/roles/engineer.md
+  - skills/perspectives/engineer.md
   - registry/worker-profiles/prompts/engineer.md
 tags:
   - speculative-abstraction

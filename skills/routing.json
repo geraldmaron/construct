@@ -564,7 +564,7 @@
       "domain": "docs",
       "keywords": [
         "codebase research workflow",
-        "cx-researcher",
+        "researcher",
         "maps",
         "repo",
         "entry",
@@ -999,7 +999,7 @@
         "routing",
         "bounded-auto",
         "policy",
-        "cx-orchestrator"
+        "orchestrator"
       ],
       "path": "operating/fleet-health-routing",
       "priority": 5

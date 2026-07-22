@@ -33,5 +33,5 @@
       "section": "Remediation Plan"
     }
   ],
-  "description": "When architecture work trips compliance/privacy/licensing risk flags, cx-architect hands off to cx-security (legal-compliance overlay) for a compliance-memo. Restored under registry/contracts after specialists/org cutover (ADR-0070 integrity fix, construct-pe9sv)."
+  "description": "When architecture work trips compliance/privacy/licensing risk flags, architect hands off to security (legal-compliance overlay) for a compliance-memo. Restored under registry/contracts after specialists/org cutover (ADR-0070 integrity fix, construct-pe9sv)."
 }

@@ -7,7 +7,7 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 - **Status**: accepted
 - **Deciders**: Gerald Dagher (owner)
 - **Supersedes**: none
-- **Relates to**: extends `docs/decisions/adr/0001-zero-npm-core.md` (the `node:http`, no-framework constraint this server obeys); reuses `docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md`'s Postgres worker-claim primitives without modifying them; builds on `docs/decisions/adr/0092-single-project-identity-derivation.md` (the one `deriveProjectKey` id this server stores against, never mints); `lib/server/`, `lib/workspace/postgres-store.mjs`, `lib/db/migrations/008_workspace_foundation.sql`, `lib/db/migrations/009_server_tokens.sql`, `docs/notes/research/workspace-control-plane/synthesis/shared-server-design.md`, bead `construct-b0nny.26`
+- **Relates to**: extends `docs/decisions/adr/0001-zero-npm-core.md` (the `node:http`, no-framework constraint this server obeys); reuses `docs/decisions/adr/0021-provider-worker-backend-and-pluggable-run-stores.md`'s Postgres worker-claim primitives without modifying them; builds on `docs/decisions/adr/0092-single-project-identity-derivation.md` (the one `deriveProjectKey` id this server stores against, never mints); `lib/server/`, `lib/workspace/postgres-store.mjs`, `lib/db/migrations/008_workspace_foundation.sql`, `lib/db/migrations/009_server_tokens.sql`, `docs/obsolete/research/workspace-control-plane/synthesis/shared-server-design.md`, bead `construct-b0nny.26`
 
 <!-- Owning specialist: cx-architect. -->
 
@@ -59,8 +59,8 @@ Two-way door. The server is purely additive: deleting `lib/server/`, the `server
 - [ADR-0001: Zero npm dependencies in core](0001-zero-npm-core.md)
 - [ADR-0021: Provider worker backend and pluggable run stores](0021-provider-worker-backend-and-pluggable-run-stores.md)
 - [ADR-0092: Single project-identity derivation](0092-single-project-identity-derivation.md)
-- `docs/notes/research/workspace-control-plane/synthesis/shared-server-design.md`
-- `docs/notes/research/workspace-control-plane/synthesis/spike-e-recovery.md`
+- `docs/obsolete/research/workspace-control-plane/synthesis/shared-server-design.md`
+- `docs/obsolete/research/workspace-control-plane/synthesis/spike-e-recovery.md`
 - `lib/server/http.mjs`, `lib/server/auth.mjs`, `lib/server/cli.mjs`, `lib/workspace/postgres-store.mjs`
 - `lib/db/migrations/008_workspace_foundation.sql`, `lib/db/migrations/009_server_tokens.sql`
 - `Dockerfile.server`, `docker-compose.yml`

@@ -4,6 +4,14 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Changed
+
+- Construct 1.0 leftover audit on `staging`: stop emitting/persisting `cx-*` Worker Profile ids in role preferences, MCP artifact-author `workflow_plan`, role CLI, and fence hooks; delete dead `lib/policy/engine.mjs.bak`, `lib/telemetry/team-rollup.mjs`, and unused `createCustomTeam`; drop retired `list_teams` from orchestrator tool grants and MCP fixtures; relocate Cytoscape graph-viewer prototype from `packages/cx-ui/` to `packages/construct-ui/prototypes/`; rewrite skills/commands/ops cookbooks to bare Worker Profile ids and `construct procedure`; quarantine workspace-control-plane research under `docs/obsolete/research/` with Obsolete notices; amend obsolete-doc policy for the legacy-surface register + historical research notes.
+
+- Follow-up from leftover audit: fix broken `perspectives/business-strategist` skill path; ECL/architecture procedure vocabulary; examples `skills/roles`→`skills/perspectives`; template handoff owners; delete stale prd-platform stubs; soften cookbooks to live `registry/procedures`; skip `docs/obsolete` on the public site; mark `compat/` unpublished in root disposition.
+
+- Cleanup pass (multithreaded): active guides/ops/README teach Worker Profiles not personas/specialists; runtime drops dead headhunt team templates and `construct team create` teaching; specs drop `cx/auth.yaml`/`cx-*` owners; templates/examples/contracts/platforms align to 12-profile roster; add `docs/prd-business` + `docs/meta-prd` lane stubs (site-skipped).
+
 ### Fixed
 
 - Supply-chain soft checks on staging→main (#415): upgrade `@cyclonedx/cyclonedx-npm` to `5.0.0` (GHSA-v75r-vx73-82pj) and `dompurify` to `3.4.12`; add dated `osv-scanner.toml` IgnoredVulns + `.github/supply-chain-exceptions.json` for remaining nested/transitive findings that cannot be safely overridden yet (`@hono/node-server` major, `sharp` under Next's `^0.34.5`, nested `lodash-es`/`nanoid`/`postcss` under docs tooling). OSV job no longer uses `continue-on-error`. Dependency-review probes Dependency graph first and **skips** when unsupported (avoids red X from "not supported on this repository") instead of soft-failing.

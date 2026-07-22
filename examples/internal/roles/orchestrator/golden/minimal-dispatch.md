@@ -6,7 +6,7 @@ category: golden
 verdict: pass
 summary: Chooses the smallest adequate dispatch path instead of defaulting to ceremony.
 references:
-  - skills/roles/orchestrator.md
+  - skills/perspectives/orchestrator.md
 tags:
   - classification
   - smallest-adequate-path

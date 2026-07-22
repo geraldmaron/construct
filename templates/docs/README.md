@@ -19,19 +19,21 @@ Do not duplicate starters at `docs/{lane}/_template.md` — lane READMEs link on
 | Template | Author Worker Profile | Purpose |
 |---|---|---|
 | `prd.md` | product-manager | Product requirements doc |
-| `meta-prd.md` | product-manager, docs-keeper | Requirements for product operating systems, agent workflows, document standards, and evaluation loops |
-| `prfaq.md` | product-manager, business-strategist | Working-backwards press release and FAQ |
-| `evidence-brief.md` | product-manager, ux-researcher, researcher | Product evidence synthesis before decisions |
-| `signal-brief.md` | product-manager, researcher | Weak or emerging product signal preservation |
-| `customer-profile.md` | product-manager, docs-keeper | Durable customer/account product memory |
-| `product-intelligence-report.md` | product-manager, business-strategist | Cross-source product intelligence synthesis |
+| `meta-prd.md` | product-manager, operations | Requirements for product operating systems, agent workflows, document standards, and evaluation loops |
+| `prfaq.md` | product-manager | Working-backwards press release and FAQ |
+| `evidence-brief.md` | product-manager, researcher | Product evidence synthesis before decisions |
+| `signal-brief.md` | researcher, product-manager | Weak or emerging product signal preservation |
+| `customer-profile.md` | product-manager, operations | Durable customer/account product memory |
+| `product-intelligence-report.md` | product-manager | Cross-source product intelligence synthesis |
 | `backlog-proposal.md` | product-manager | Approval-gated external tracker proposal |
-| `memo.md` | business-strategist | Strategy memo (~1 page) |
-| `one-pager.md` | product-manager, business-strategist | Executive one-pager |
-| `adr.md` | architect, rd-lead | Architecture decision record |
-| `research-brief.md` | researcher, ux-researcher, explorer | Research findings |
-| `runbook.md` | sre, operations | Operational runbook |
-| `incident-report.md` | sre, operations, release-manager | Post-mortem |
+| `memo.md` | operations, product-manager | Strategy memo (~1 page) |
+| `one-pager.md` | product-manager | Executive one-pager |
+| `adr.md` | architect | Architecture decision record |
+| `research-brief.md` | researcher | Research findings |
+| `runbook.md` | operations | Operational runbook |
+| `incident-report.md` | operations | Post-mortem |
+
+Author Worker Profile ids match `registry/worker-profiles/` (12 builtin profiles) and `registry/artifact-manifest.json` `primaryOwners`. Run `construct worker-profile list` to inspect the live roster.
 
 ### How Worker Profiles use them
 
@@ -86,31 +88,31 @@ author_artifact {type:"adhoc", title:"Q3 strategy convergence", instructions:"..
 
 ## Role Anti-Patterns
 
-Each Worker Profile is cognitively rooted in a **role** (product-manager, engineer, architect, etc.) with a core set of failure modes to avoid. Flavored profiles extend the core with an overlay.
+Each Worker Profile is cognitively rooted in a **perspective core** (`architect`, `engineer`, `operations`, …) with a core set of failure modes to avoid. Flavor overlays extend a core when routing needs extra emphasis.
 
-Core roles live in [`skills/perspectives/`](../../skills/perspectives/):
+Core perspectives and flavors live in [`skills/perspectives/`](../../skills/perspectives/). Each of the 12 builtin Worker Profiles in `registry/worker-profiles/` maps to one core perspective; flavors are optional overlays referenced from prompt policy, not separate Worker Profile ids.
 
-| Core role | Flavors | Applied to |
+| Core perspective | Flavors (when present) | Worker Profile ids (`applies_to`) |
 |---|---|---|
-| `engineer` | `engineer.ai`, `engineer.data`, `engineer.platform` | engineer, ai-engineer, data-engineer, platform-engineer |
-| `reviewer` | `reviewer.devil-advocate`, `reviewer.evaluator`, `reviewer.trace` | reviewer, devil-advocate, evaluator, trace-reviewer |
-| `researcher` | `researcher.ux`, `researcher.explorer` | researcher, ux-researcher, explorer |
-| `operator` | `operator.sre`, `operator.release`, `operator.docs` | sre, release-manager, operations, docs-keeper |
-| `product-manager` | `product-manager.product`, `product-manager.platform`, `product-manager.enterprise`, `product-manager.ai-product`, `product-manager.growth`, `product-manager.business-strategy` | product-manager, business-strategist |
-| `designer` | `designer.accessibility` | designer, accessibility |
-| `security` | `security.legal-compliance` | security, legal-compliance |
-| `qa` | `qa.test-automation` | qa, test-automation |
-| `architect` |: | architect, rd-lead |
-| `debugger` |: | debugger |
-| `data-analyst` |: | data-analyst |
-| `orchestrator` |: | orchestrator |
+| `architect` | `architect.ai-systems`, `architect.data`, `architect.enterprise`, `architect.integration`, `architect.platform` | architect |
+| `data-analyst` | `data-analyst.experiment`, `data-analyst.product`, `data-analyst.product-intelligence`, `data-analyst.telemetry` | data-analyst; `product-manager` (`product-intelligence`); `operations` (`telemetry`) |
+| `debugger` | — | debugger |
+| `designer` | `designer.accessibility` | designer |
+| `engineer` | — | engineer |
+| `operations` | — | operations |
+| `orchestrator` | — | orchestrator |
+| `product-manager` | `product-manager.ai-product`, `product-manager.enterprise`, `product-manager.growth`, `product-manager.platform`, `product-manager.product` | product-manager |
+| `qa` | `qa.ai-eval`, `qa.api-contract`, `qa.data-pipeline`, `qa.web-ui` | qa; `reviewer` (`qa.ai-eval`) |
+| `researcher` | — | researcher |
+| `reviewer` | `devil-advocate`, `trace-reviewer` | reviewer |
+| `security` | `security.ai`, `security.appsec`, `security.cloud`, `security.legal-compliance`, `security.privacy`, `security.supply-chain` | security; `engineer` (`security.ai`, `security.supply-chain`) |
 
 ### How they're loaded
 
 Unlike templates, perspective anti-patterns are **inlined at sync time** (not fetched at runtime). The Worker Profile source prompt carries a marker:
 
 ```markdown
-**Anti-patterns**: call `get_skill("perspectives/engineer.ai")` before drafting.
+**Anti-patterns**: call `get_skill("perspectives/architect.platform")` before drafting.
 ```
 
 `construct sync` (via [`lib/role-preload.mjs`](../../lib/role-preload.mjs)) replaces that line with the full core role body + flavor overlay under `## Role anti-patterns`. The content is always present in the final platform prompt: no runtime dependency, no chance for the model to skip the pre-work.

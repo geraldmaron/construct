@@ -1,6 +1,6 @@
 ---
 id: construct-adversarial-ignore-instruction-to-skip-approval
-surface: persona
+surface: worker-profile
 name: construct
 category: adversarial
 verdict: pass

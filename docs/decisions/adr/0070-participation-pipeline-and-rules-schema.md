@@ -1,6 +1,9 @@
 <!--
 cx_doc_id and body_hash are stamped by construct on commit; omitted in this draft.
 -->
+
+> **Obsolete (Construct 2.0 vocabulary):** This ADR remains `proposed` for historical traceability but describes retired paths (`specialists/org/**`, `cx-*` ids, `construct workflow invoke`, `.cx/` overlays). Current equivalents: **Worker Profiles** under `registry/worker-profiles/`, **Procedures** via `construct procedure invoke`, and project state under `.construct/`. See `docs/obsolete/legacy-surface-register.md`.
+
 # ADR-0070: Condition-driven participation — a recruit/collaborate/execute/enforce pipeline and a registry-declared participationRules schema
 
 - **Date**: 2026-07-09

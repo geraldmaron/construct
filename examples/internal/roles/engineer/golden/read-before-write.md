@@ -6,7 +6,7 @@ category: golden
 verdict: pass
 summary: Reads the touched files and surrounding pattern before proposing code changes.
 references:
-  - skills/roles/engineer.md
+  - skills/perspectives/engineer.md
   - registry/worker-profiles/prompts/engineer.md
 tags:
   - read-before-write

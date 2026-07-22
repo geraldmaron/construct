@@ -86,7 +86,7 @@ One row per skill reachable via `suggest_skills`/`search_skills`. A skill with a
 |---|---|---|
 | `docs/adr-workflow` | adr, architecture decision | authored |
 | `docs/backlog-proposal-workflow` | backlog proposal workflow, product, evidence, create, update, jira | derived |
-| `docs/codebase-research-workflow` | codebase research workflow, cx-researcher, maps, repo, entry, points | derived |
+| `docs/codebase-research-workflow` | codebase research workflow, researcher, maps, repo, entry, points | derived |
 | `docs/customer-profile-workflow` | customer profile workflow, customer, evidence, update, durable, product | derived |
 | `docs/document-ingest-workflow` | document ingest workflow, user, points, word, spreadsheet, slide | derived |
 | `docs/evidence-ingest-workflow` | evidence ingest workflow, user, pastes, customer, notes, slack | derived |
@@ -139,7 +139,7 @@ One row per skill reachable via `suggest_skills`/`search_skills`. A skill with a
 | Skill | Keywords | Source |
 |---|---|---|
 | `operating/change-management` | change management, change, needs, categorized, reversibility, designing | derived |
-| `operating/fleet-health-routing` | fleet health routing, fleet-level, routing, bounded-auto, policy, cx-orchestrator | derived |
+| `operating/fleet-health-routing` | fleet health routing, fleet-level, routing, bounded-auto, policy, orchestrator | derived |
 | `operating/incident-response` | incident response, issue, active, production, building, incident | derived |
 | `operating/oncall-rotation` | oncall rotation, setting, on-call, reviewing, health, handling | derived |
 | `operating/orchestration-reference` | orchestration reference, detailed, orchestration, reference, loaded, demand | derived |

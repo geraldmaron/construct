@@ -29,7 +29,6 @@ const CASES = [
   ['list_skills', {}],
   ['list_templates', {}],
   ['get_template', { name: 'adr' }],
-  ['list_teams', {}],
   ['search_skills', { pattern: 'engineer' }],
   ['workspace_preset_list', {}],
   ['orchestration_readiness', {}],

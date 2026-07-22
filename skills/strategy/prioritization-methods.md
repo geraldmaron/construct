@@ -104,7 +104,7 @@ A point-estimate ranking hides how fragile it is.
 
 ## Mandatory counterargument
 
-Before publishing the order, write the strongest case **against** your #1 and **for** your #2. If you cannot make that case honestly, you have not stress-tested the ranking — you have rationalized it. Record the counterargument alongside the rationale so a reviewer inherits the strongest objection, not just the conclusion. Hand a genuinely contested call to cx-reviewer rather than resolving it silently.
+Before publishing the order, write the strongest case **against** your #1 and **for** your #2. If you cannot make that case honestly, you have not stress-tested the ranking — you have rationalized it. Record the counterargument alongside the rationale so a reviewer inherits the strongest objection, not just the conclusion. Hand a genuinely contested call to reviewer rather than resolving it silently.
 
 ## Output
 

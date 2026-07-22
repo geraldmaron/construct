@@ -127,7 +127,7 @@ All mutations (file edits, bash commands, git operations) are recorded to `~/.co
 ```bash
 construct audit trail
 construct audit trail --verify   # verify the tamper-evidence chain
-construct audit trail --since 2026-05-01 --agent cx-engineer
+construct audit trail --since 2026-05-01 --agent engineer
 ```
 
 The chain links each record to the SHA-256 of the previous line. Any deletion, reordering, or edit breaks the chain and is surfaced by `--verify`.

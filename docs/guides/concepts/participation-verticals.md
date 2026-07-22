@@ -50,7 +50,7 @@ For cost, the PM rule's `reason` names a value-tradeoff review. On `prd-draft` t
 
 Recruitment is never silent. Both invocation surfaces carry who joined and why:
 
-- `construct workflow invoke --json` (`lib/embedded-contract/workflow-invoke.mjs`, construct-pteo2.9) appends recruits to the manifest role chain — the chain is a floor, never shrunk — and returns `recruitment: { recruited, addedRoles, rationale }`, where each rationale line reads `<worker-profile> recruited as <role> (<gate>): <reason>`.
+- `construct procedure invoke --json` (`lib/embedded-contract/procedure-invoke.mjs`, construct-pteo2.9) appends recruits to the manifest role chain — the chain is a floor, never shrunk — and returns `recruitment: { recruited, addedRoles, rationale }`, where each rationale line reads `<worker-profile> recruited as <role> (<gate>): <reason>`.
 - The `author_artifact` MCP tool (`lib/mcp/tools/artifact-author.mjs`, construct-pteo2.8) returns `recruited[]` with the same participant shape, evaluated both pre-plan from the request and post-draft from content signals (`lib/artifact-loop-core.mjs`).
 
 ## The worked example: a cost-heavy PRD

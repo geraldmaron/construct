@@ -18,7 +18,7 @@ Produce tasks in the canonical Construct plan format:
 ## Tasks
 
 ### T1: {Task title}
-- **Owner**: {cx-specialist}
+- **Owner**: {worker-profile}
 - **Phase**: implement
 - **Files**: {comma-separated list of files this task will touch}
 - **Depends on**: {T{N} key or (none)}
