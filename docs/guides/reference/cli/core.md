@@ -131,8 +131,8 @@ construct init [path] [options]
 | `--no-beads` | Skip local issue-tracker initialization (CI/ephemeral) |
 | `--commit-bootstrap` | Keep the beads bootstrap commit (default: leave files uncommitted) |
 | `--force` | Scaffold even when content exists or target is a nested subdirectory |
-| `--with-<host>` | Force-include an adapter set (claude|codex|opencode|vscode|cursor|copilot); unions with detection |
-| `--all-hosts` | Write every adapter set regardless of what is installed |
+| `--with-<host>` | Force-include an adapter set (claude|codex|opencode|vscode|cursor|copilot); unions with lean bootstrap (Claude + already-configured project hosts) |
+| `--all-hosts` | Write every host adapter set regardless of PATH detection |
 | `--interactive, -i` | Enable interactive setup (Packs / Individual docs / Skip) |
 | `--quiet, -q` | Minimal output |
 | `--verbose, -v` | Detailed output |
@@ -262,14 +262,15 @@ Sync agent adapters to AI tools
 **Usage**
 
 ```bash
-construct sync [--project] [--dry-run] [--no-docs] [--all-hosts] [--with-<host>] [--hosts=<list>]
+construct sync [--project] [--global] [--dry-run] [--no-docs] [--all-hosts] [--with-<host>] [--hosts=<list>]
 ```
 
 **Options**
 
 | Flag | Description |
 |---|---|
-| `--project` | Write project-local adapters into the current repo only |
+| `--project` | Write only the project tier into the current repo (.claude/, .codex/, …) |
+| `--global` | Write only the global/user tier (front door + hooks under ~/); not needed for ordinary project refresh — default already chooses by cwd |
 | `--dry-run` | Preview adapter changes without writing files |
 | `--no-docs` | Skip AUTO docs regeneration after syncing adapters |
 | `--with-<host>` | Force-include an adapter set (claude|codex|opencode|vscode|cursor|copilot); unions with detection unless --hosts= is set |

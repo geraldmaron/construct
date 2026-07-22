@@ -94,6 +94,15 @@ test('sync --help documents host selection flags', () => {
   assert.match(help, /--hosts=/);
 });
 
+test('sync --help documents --global and default tier selection', () => {
+  const help = formatCommandHelp('sync');
+  assert.match(help, /\[--global\]/);
+  assert.match(help, /--global\s+Write only the global\/user tier/);
+  assert.match(help, /Default: project tier when cwd is a Construct project/);
+  assert.match(help, /not needed for ordinary project refresh/);
+  assert.match(help, /--project\s+Write only the project tier/);
+});
+
 test('artifact --help documents --type and validate usage', () => {
   const help = formatCommandHelp('artifact');
   assert.match(help, /--type=<doc-type>/);
