@@ -59,6 +59,8 @@ Remediation ladder:
 
 A repo-local `overrides` pin is acceptable as defense-in-depth for this repo's own tree, but it is never the line item that closes a consumer-facing advisory.
 
+**LanceDB pin note (2026-07):** `@lancedb/lancedb` stays in `optionalDependencies` (ADR-0081) and is pinned to `0.30.0` rather than `0.31.x`. `0.31.0` added an unused nested optional `@huggingface/transformers` → `sharp` chain that failed both repo and `audit:published` high audits; Construct never imports that nest (see `docs/notes/research/lancedb-vs-sqlite-vec-benchmark.md`). Revisit when an upstream LanceDB line ships without the vulnerable `sharp` (<0.35) path or with a patched transitive tree.
+
 ## OSV scanning, license policy, and exceptions
 
 Supply-chain scanning runs in `.github/workflows/supply-chain.yml`:
