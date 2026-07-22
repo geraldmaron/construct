@@ -205,14 +205,16 @@ jobs:
           node-version: 24
           registry-url: 'https://registry.npmjs.org'
 
-      # Node 24's npm 11 (required above for OIDC) resolves the apps/docs
-      # workspace tree (next → postcss/nanoid) to versions the lockfile — built
-      # under the pipeline's npm 10 — does not carry, so a full `npm ci` fails
-      # EUSAGE "missing from lock file". This job only publishes prebuilt `files`
-      # and runs SBOM `--package-lock-only`; it needs neither devDeps nor the
-      # docs workspace. Scope the install to the published package's production
-      # graph, matching the audit step above.
-      - run: npm ci --omit=dev --workspaces=false
+      # No dependency install: this job publishes the prebuilt `files` glob,
+      # generates the SBOM with `--package-lock-only` (reads package-lock.json,
+      # not node_modules), and cuts the GitHub Release — none of which need an
+      # installed tree. A full `npm ci` here runs under Node 24's npm 11
+      # (required above for OIDC), which validates the entire lockfile against
+      # every workspace package.json and rejects the apps/docs Next.js tree
+      # (next → postcss/nanoid) that the npm-10-built lockfile resolves
+      # differently, failing EUSAGE "missing from lock file". `--omit=dev` /
+      # `--workspaces=false` do not skip that validation — only removing the
+      # install avoids it. `npm exec` fetches cyclonedx-npm on demand.
 
       - name: Verify OIDC token available
         # npm whoami requires classic auth and will always fail for OIDC Trusted
