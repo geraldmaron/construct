@@ -27,6 +27,9 @@ const FULL_ENV = {
   JIRA_BASE_URL: 'https://example.atlassian.net',
   JIRA_EMAIL: 'user@example.com',
   JIRA_API_TOKEN: 'jira_test',
+  CONFLUENCE_BASE_URL: 'https://example.atlassian.net/wiki',
+  CONFLUENCE_EMAIL: 'user@example.com',
+  CONFLUENCE_API_TOKEN: 'confluence_test',
 };
 
 function unifiedDataSourceReadIds(rootDir = process.cwd()) {
@@ -56,7 +59,7 @@ test('embed registry provider set equals the unified registry set filtered by ca
   // adapter for must be registered when its credentials are all present.
   // (atlassian-jira registers under 'jira'/'atlassian' aliases, not its
   // manifest id — assert via alias membership rather than exact id match.)
-  const aliasesById = { github: ['github', 'gh'], slack: ['slack'], linear: ['linear'], 'atlassian-jira': ['jira', 'atlassian'] };
+  const aliasesById = { github: ['github', 'gh'], slack: ['slack'], linear: ['linear'], 'atlassian-jira': ['jira', 'atlassian'], 'atlassian-confluence': ['confluence'] };
   for (const id of unifiedIds) {
     if (!aliasesById[id]) continue; // no embed adapter registered for this manifest id — not this bead's scope
     const aliases = aliasesById[id];
