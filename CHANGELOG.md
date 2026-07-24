@@ -4,6 +4,12 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- OpenCode project sync inherits the global primary `model` (and `small_model` when absent) when the project `.opencode/opencode.json` has no top-level model — so a local global primary (e.g. `ollama/gpt-oss:20b-cx32k`) sizes the orchestrator prompt and session default instead of empty → full tier / Free Models Router fallthrough (`construct-8lwba`).
+- `isLocalModel` / `resolveCapabilityTier` / `decideTrim` treat openai-compatible providers with private or Tailscale CGNAT `options.baseURL` as local (Corsair-over-Tailscale), so `corsair/…` gets the same floor/mid prompt and MCP trim path as `ollama/*` (`construct-8lwba`).
+- OpenCode doctor parity no longer flags sync-emitted `construct-local` as agent-table drift (`construct-8lwba`).
+
 ### Changed
 
 - CI trimmed to a lightweight single lane for this personal-scale project: `ci.yml` runs ubuntu-only, Node 22 only, 3 shards (the shards keep per-runner memory low, which is what avoids the full-suite OOM). Dropped the macOS legs and the second Node version from the matrix and the weekly scheduled full run. The heavy/auxiliary workflows (`staging-full-matrix`, `publish-media`, `bun-binary-smoke`, `hook-budgets`, `supply-chain`, `pr-review`) are left disabled and can be re-enabled per-workflow when needed.
