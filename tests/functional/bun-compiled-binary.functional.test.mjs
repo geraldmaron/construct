@@ -20,6 +20,8 @@ import { mkdirSync, copyFileSync, rmSync, existsSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { sterileSpawnEnv } from '../helpers/sterile-env.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const ENTRY = resolve(ROOT, 'bin', 'construct');
@@ -58,7 +60,11 @@ test('a Bun-compiled binary of bin/construct runs real commands instead of silen
   const distDir = resolve(ROOT, 'dist');
   mkdirSync(distDir, { recursive: true });
   const outfile = resolve(distDir, `construct-test-${randomUUID()}`);
-  t.after(() => { try { rmSync(outfile, { force: true }); } catch {} });
+  const runEnv = sterileSpawnEnv();
+  t.after(() => {
+    try { rmSync(outfile, { force: true }); } catch {}
+    try { rmTmpDir(runEnv.HOME); } catch {}
+  });
 
   // Same extension trick scripts/build-binary.mjs uses: the entry must sit in
   // the real bin/ directory for its ../lib/... imports to resolve, but with a
@@ -77,14 +83,14 @@ test('a Bun-compiled binary of bin/construct runs real commands instead of silen
     // completion (construct-ox25y), so this heavy build-and-run test can execute
     // while the box is still warm, where a tight bound flakes the correctness
     // assertion (a killed subprocess truncates stdout) rather than the behavior.
-    const version = spawnSync(outfile, ['version'], { encoding: 'utf8', timeout: 30_000 });
+    const version = spawnSync(outfile, ['version'], { encoding: 'utf8', timeout: 30_000, env: runEnv });
     assert.equal(version.status, 0, `construct version failed: stdout=${version.stdout} stderr=${version.stderr}`);
     assert.match(version.stdout, /^construct v\d+\.\d+\.\d+/, 'version did not print a real version string');
 
-    const help = spawnSync(outfile, ['--help'], { encoding: 'utf8', timeout: 30_000 });
+    const help = spawnSync(outfile, ['--help'], { encoding: 'utf8', timeout: 30_000, env: runEnv });
     assert.match(help.stdout, /Usage: construct <command>/, '--help did not print real usage text');
 
-    const doctor = spawnSync(outfile, ['doctor'], { encoding: 'utf8', timeout: 60_000 });
+    const doctor = spawnSync(outfile, ['doctor'], { encoding: 'utf8', timeout: 60_000, env: runEnv });
     assert.match(doctor.stdout, /^Results: \d+ passed, \d+ warnings?, \d+ failed/m, 'doctor did not print a real health report');
   } finally {
     rmSync(BUILD_ENTRY, { force: true });
