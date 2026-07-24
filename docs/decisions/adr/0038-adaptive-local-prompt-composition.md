@@ -96,6 +96,9 @@ architect respects the user's model choice while still giving a cheap local exec
 - Cloud and cloud-default configs are byte-unchanged (`construct sync` is a no-op for them; verified).
 - Local-default OpenCode configs get a tier-sized orchestrator prompt and, when the fast tier is local,
   a `construct-local` editor that escalates to the architect.
+- Project-scope sync with no top-level `model` inherits the global OpenCode primary (and `small_model`
+  when absent) so empty project configs do not silently stay on the full persona / host Free Models
+  Router fallthrough while the global primary is local (`construct-8lwba`).
 - Personas now carry section priority markers; the prompt word-cap guard strips them (they are not
   emitted), consistent with how it already strips frontmatter.
 - A sync-time warn-and-emit advisory nudges toward `construct doctor --probe-local` for an unprobed or

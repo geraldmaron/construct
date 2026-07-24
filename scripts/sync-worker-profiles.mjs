@@ -1891,6 +1891,27 @@ function syncOpencode(entries, targetDir = null, wants = true) {
     return entry !== managedPluginPath && entry !== toolkitPluginPath;
   });
 
+  // Project configs often omit top-level `model` while the global OpenCode
+  // primary is a pinned local. Without inheritance, empty → capability tier
+  // `full` and OpenCode falls through to its Free Models Router default.
+
+  if (targetDir) {
+    let globalCfg = null;
+    try {
+      globalCfg = readOpenCodeConfig().config;
+    } catch {
+      globalCfg = null;
+    }
+    const globalPrimary = globalCfg?.model || globalCfg?.defaultModel || null;
+    const globalSmall = globalCfg?.small_model || null;
+    if (!(config.model || config.defaultModel) && globalPrimary) {
+      config.model = globalPrimary;
+    }
+    if (!config.small_model && globalSmall) {
+      config.small_model = globalSmall;
+    }
+  }
+
   if (opencodeTemplate.$schema && !config.$schema) config.$schema = opencodeTemplate.$schema;
   if (Array.isArray(opencodeTemplate.enabled_providers) && !Array.isArray(config.enabled_providers)) {
     config.enabled_providers = [...opencodeTemplate.enabled_providers];
@@ -2048,11 +2069,16 @@ function syncOpencode(entries, targetDir = null, wants = true) {
     // A set default model is explicit intent and wins (local → trim, cloud → keep).
     // Only when no default is chosen does a registered Ollama provider stand in as
     // soft local intent — so a cloud-default config is never trimmed for merely
-    // listing local models alongside.
+    // listing local models alongside. Provider baseURL locality (Corsair/Tailscale)
+    // is consulted via config.provider so openai-compatible private mirrors trim too.
     const configDefaultModel = config.model || config.defaultModel || "";
     const registersOllamaProvider = Object.keys(config.provider?.ollama?.models || {}).length > 0;
     const intentModel = configDefaultModel || (registersOllamaProvider ? "ollama" : "");
-    const trimHeavyServers = decideTrim({ surface: LOCAL_SURFACE, defaultModel: intentModel });
+    const trimHeavyServers = decideTrim({
+      surface: LOCAL_SURFACE,
+      defaultModel: intentModel,
+      providers: config.provider,
+    });
     for (const id of HEAVY_EXTERNAL_MCP_IDS) {
       const ocId = getOpenCodeMcpId(id);
       if (!config.mcp[ocId]) continue;
@@ -2066,18 +2092,21 @@ function syncOpencode(entries, targetDir = null, wants = true) {
 
   // Write agents — no model/modelFallback set; agents inherit the global model.
   //
-  // Capability tier for the orchestrator prompt. Keyed ONLY to an EXPLICIT local default
-  // model — that is a clear intent signal we can size against at sync time. With no
+  // Capability tier for the orchestrator prompt. Keyed to an EXPLICIT local default
+  // model (including one inherited from global OpenCode into a project config) —
+  // that is a clear intent signal we can size against at sync time. With no
   // explicit default (the orchestrator runs whatever model the user picks at runtime) or
   // a cloud default, resolveCapabilityTier returns 'full', so cloud configs and unknown
   // selections are never slimmed. Per-model slimming of a known pinned model lands on the
   // construct-local editor agent.
 
+  const localityProviders = config.provider;
   const orchestratorDefaultModel = config.model || config.defaultModel || "";
   adviseLocalModelCapability(orchestratorDefaultModel);
   const orchestratorTier = resolveCapabilityTier({
     model: orchestratorDefaultModel,
     verdict: orchestratorDefaultModel ? (getModelVerdict(orchestratorDefaultModel)?.verdict ?? null) : null,
+    providers: localityProviders,
   });
 
   for (const entry of writeEntries) {
@@ -2111,20 +2140,24 @@ function syncOpencode(entries, targetDir = null, wants = true) {
   const orchestratorEntry = writeEntries.find((e) => e.isOrchestrator) || registry.workerProfiles?.orchestrator;
   const orchestratorName = orchestratorEntry ? adapterName(orchestratorEntry) : "construct";
   const localEditorName = `${orchestratorName}-local`;
-  const localEditorSeedModel = resolvedModels.fast && isLocalModel(resolvedModels.fast)
+  const localEditorSeedModel = resolvedModels.fast && isLocalModel(resolvedModels.fast, { providers: localityProviders })
     ? resolvedModels.fast
-    : (primaryFromOpenCode && isLocalModel(primaryFromOpenCode) ? primaryFromOpenCode : null);
+    : (primaryFromOpenCode && isLocalModel(primaryFromOpenCode, { providers: localityProviders }) ? primaryFromOpenCode : null);
   const orchestratorPromptPath = orchestratorEntry
     ? resolveWorkerProfilePromptPath(orchestratorEntry.id, { rootDir: root, registry })
     : null;
   if (orchestratorPromptPath && localEditorSeedModel) {
     const declaredLocal = Object.entries(config.provider || {})
       .flatMap(([pid, pv]) => Object.keys(pv?.models || {}).map((mk) => `${pid}/${mk}`))
-      .filter((id) => isLocalModel(id) && getModelVerdict(id)?.verdict !== "COLLAPSED");
+      .filter((id) => isLocalModel(id, { providers: localityProviders }) && getModelVerdict(id)?.verdict !== "COLLAPSED");
     const editorModel = selectLocalEditorModel(declaredLocal) || localEditorSeedModel;
     adviseLocalModelCapability(editorModel);
     const editorVerdict = getModelVerdict(editorModel)?.verdict ?? null;
-    const editorTier = resolveCapabilityTier({ model: editorModel, verdict: editorVerdict });
+    const editorTier = resolveCapabilityTier({
+      model: editorModel,
+      verdict: editorVerdict,
+      providers: localityProviders,
+    });
     const editorBody = renderPromptForTier(readPromptBody(orchestratorPromptPath, root), editorTier);
     config.agent[localEditorName] = {
       description: "Local execution agent — bounded edits on the local model; escalates planning and reasoning to construct.",
