@@ -57,7 +57,13 @@ construct orchestrate preflight --observed-tools=orchestration_policy,call --rea
 
 ### 4. Configure EXECUTE when needed (MCP-only hosts)
 
-On Codex, VS Code/Copilot, and Cursor, set in `construct.config.json`:
+Worker Profiles execute real LLM reasoning only when both conditions are met:
+1. `orchestration.workerBackend` is set to `"provider"`
+2. A valid API key is available for the configured provider
+
+#### 4a. Set the worker backend
+
+In `construct.config.json`, set the orchestration worker backend:
 
 ```json
 {
@@ -67,9 +73,34 @@ On Codex, VS Code/Copilot, and Cursor, set in `construct.config.json`:
 }
 ```
 
-Export a materialized key in the MCP server environment (`ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY`, or `OPENAI_API_KEY`). Re-run preflight until `workerBackend` and credential fields show EXECUTE-capable values.
+Valid values: `"inline"` (planning-only, default), `"provider"` (executes via LLM API), `"host"` (host-managed execution).
 
-Claude Code and OpenCode can EXECUTE through the host session without a provider key.
+#### 4b. Configure the API key
+
+Set the appropriate environment variable for your LLM provider:
+
+- **Anthropic**: `export ANTHROPIC_API_KEY="sk-ant-..."`
+- **OpenRouter**: `export OPENROUTER_API_KEY="sk-or-..."`
+- **OpenAI**: `export OPENAI_API_KEY="sk-..."`
+
+Alternatively, use `construct models --apply` to store and manage credentials securely.
+
+#### 4c. Verify EXECUTE is enabled
+
+Re-run preflight and confirm the status shows EXECUTE-capable values:
+
+```bash
+construct orchestrate preflight --json | grep -E "workerBackend|hasAnthropicKey|hasOpenRouterKey|hasOpenAiKey"
+```
+
+Or check the doctor output:
+```bash
+construct doctor
+```
+
+Should show: `Worker Profiles will EXECUTE (provider <name> + key found)`
+
+**Note**: Claude Code and OpenCode can EXECUTE through the host session without a provider key configured in the project.
 
 ### 5. Classify, then invoke
 
