@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-22T15:03:56.730Z",
+  "generatedAt": "2026-07-24T18:59:34.509Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 1126,
-    "topLevelTestFiles": 427,
-    "nestedTestFiles": 699,
+    "testFiles": 1128,
+    "topLevelTestFiles": 428,
+    "nestedTestFiles": 700,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 52,
     "byLayer": {
-      "unit": 742,
-      "functional": 324,
+      "unit": 743,
+      "functional": 325,
       "visual": 14,
       "integration": 44,
       "live-provider": 2
     },
     "byCategory": {
-      "unit": 660,
-      "functional": 324,
+      "unit": 661,
+      "functional": 325,
       "visual": 14,
       "structural-guard": 21,
       "contract-subsystem": 62,
@@ -4991,6 +4991,14 @@
       "maintainerNotes": "tests/functional/routing-tables.test.mjs — parity guard for declarative routing."
     },
     {
+      "path": "tests/functional/routing-triggers-registry-boundary.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/routing-triggers-registry-boundary.functional.test.mjs —"
+    },
+    {
       "path": "tests/functional/run-events-semantics.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -7057,6 +7065,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/orchestration-route-path.test.mjs — routePath payload end-to-end (construct-d1r7.15)."
+    },
+    {
+      "path": "tests/orchestration-routing-triggers.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration-routing-triggers.test.mjs — registry-driven routing"
     },
     {
       "path": "tests/orchestration-run-store-backend-parity.test.mjs",
