@@ -17,6 +17,9 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Fixed
 
+- OpenCode project sync inherits the global primary `model` (and `small_model` when absent) when the project `.opencode/opencode.json` has no top-level model — so a local global primary (e.g. `ollama/gpt-oss:20b-cx32k`) sizes the orchestrator prompt and session default instead of empty → full tier / Free Models Router fallthrough (`construct-8lwba`).
+- `isLocalModel` / `resolveCapabilityTier` / `decideTrim` treat openai-compatible providers with private or Tailscale CGNAT `options.baseURL` as local (Corsair-over-Tailscale), so `corsair/…` gets the same floor/mid prompt and MCP trim path as `ollama/*` (`construct-8lwba`).
+- OpenCode doctor parity no longer flags sync-emitted `construct-local` as agent-table drift (`construct-8lwba`).
 - `construct providers` crashed (`TypeError: Cannot read properties of null (reading 'state')`) whenever a provider had no entry yet in the circuit-breaker registry; `getState()` returning `null` is now treated as closed.
 - `construct integrations` with no subcommand printed `Unknown subcommand: undefined` instead of showing help.
 - `construct search` crashed on an empty knowledge index — LanceDB's `.nearestTo().toArray()` can't infer a vector column from zero rows; `searchDocuments`/`searchObservations` in `lib/storage/vector-client.mjs` now return `[]` early on an empty table instead of throwing.
