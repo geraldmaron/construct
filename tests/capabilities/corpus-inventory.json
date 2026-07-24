@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-24T18:59:34.509Z",
+  "generatedAt": "2026-07-24T20:52:38.269Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 1128,
+    "testFiles": 1129,
     "topLevelTestFiles": 428,
-    "nestedTestFiles": 700,
+    "nestedTestFiles": 701,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 52,
     "byLayer": {
       "unit": 743,
-      "functional": 325,
+      "functional": 326,
       "visual": 14,
       "integration": 44,
       "live-provider": 2
     },
     "byCategory": {
       "unit": 661,
-      "functional": 325,
+      "functional": 326,
       "visual": 14,
       "structural-guard": 21,
       "contract-subsystem": 62,
@@ -3135,6 +3135,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/config-jsonc.functional.test.mjs — JSONC config loader"
+    },
+    {
+      "path": "tests/functional/confluence-read-index.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/confluence-read-index.functional.test.mjs"
     },
     {
       "path": "tests/functional/construct-not-invoked-is-inert.functional.test.mjs",
