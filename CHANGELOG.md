@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Changed
+
+- GitHub Pages workflow's CVE audit step (`.github/workflows/pages.yml`) is temporarily `continue-on-error` so the docs site can deploy — the only findings are advisories bundled inside `next@16.2.11`'s own internal `postcss`/`sharp` deps, which are already latest stable and unreachable via npm `overrides`. Tracked in `construct-qdc9o`; revert once resolved.
+
 ## [2.0.2] - 2026-07-25
 
 ### Added
