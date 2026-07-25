@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-24T20:52:38.269Z",
+  "generatedAt": "2026-07-25T00:57:22.386Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 1129,
-    "topLevelTestFiles": 428,
+    "testFiles": 1131,
+    "topLevelTestFiles": 430,
     "nestedTestFiles": 701,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 52,
     "byLayer": {
-      "unit": 743,
+      "unit": 745,
       "functional": 326,
       "visual": 14,
       "integration": 44,
       "live-provider": 2
     },
     "byCategory": {
-      "unit": 661,
+      "unit": 663,
       "functional": 326,
       "visual": 14,
       "structural-guard": 21,
@@ -959,6 +959,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/beads-auto-close.test.mjs — closes-on-merge parser + driver."
+    },
+    {
+      "path": "tests/beads-automation-plan-sync.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/beads-automation-plan-sync.test.mjs — lib/beads-automation.mjs's"
     },
     {
       "path": "tests/beads-client.test.mjs",
@@ -8723,6 +8731,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/test-isolation.test.mjs — regression guard for functional test HOME isolation."
+    },
+    {
+      "path": "tests/tool-budget-local-model.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/tool-budget-local-model.test.mjs — isLocalModel + private baseURL locality."
     },
     {
       "path": "tests/tool-invisibility.test.mjs",
