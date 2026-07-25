@@ -97,3 +97,88 @@ test("a stale construct-local is removed when the primary is cloud", () => {
   const out = syncAndRead(stale);
   assert.equal(out.agent?.["construct-local"], undefined, "stale editor must be cleaned up");
 });
+
+test("project sync inherits global local primary when project model is absent", () => {
+  const sandbox = mkdtempSync(join(tmpdir(), "oc-project-inherit-"));
+  const HOME = join(sandbox, "HOME");
+  const project = join(sandbox, "project");
+  try {
+    const globalCfgPath = join(HOME, ".config", "opencode", "opencode.json");
+    mkdirSync(dirname(globalCfgPath), { recursive: true });
+    writeFileSync(globalCfgPath, JSON.stringify(baseCfg({
+      model: "ollama/gpt-oss:20b-cx32k",
+      small_model: "ollama/qwen3.5:4b-cx32k",
+    }), null, 2) + "\n");
+
+    mkdirSync(join(project, ".opencode"), { recursive: true });
+    const projectCfgPath = join(project, ".opencode", "opencode.json");
+    writeFileSync(projectCfgPath, JSON.stringify({
+      $schema: "https://opencode.ai/config.json",
+      autoupdate: false,
+      mcp: {},
+      provider: { ollama: OLLAMA_PROVIDER },
+    }, null, 2) + "\n");
+
+    const res = spawnSync(process.execPath, [SYNC_SCRIPT, "--project"], {
+      cwd: project,
+      encoding: "utf8",
+      timeout: 90_000,
+      env: {
+        ...process.env,
+        HOME,
+        CONSTRUCT_SKIP_POSTINSTALL: "1",
+        CONSTRUCT_SYNC_HOSTS: "opencode",
+      },
+    });
+    assert.equal(res.status, 0, `project sync failed: ${(res.stderr || "").slice(-400)}`);
+
+    const out = JSON.parse(readFileSync(projectCfgPath, "utf8"));
+    assert.equal(out.model, "ollama/gpt-oss:20b-cx32k", "project inherits global primary model");
+    assert.equal(out.small_model, "ollama/qwen3.5:4b-cx32k", "project inherits global small_model when absent");
+    const prompt = out.agent?.construct?.prompt ?? "";
+    assert.match(prompt, /You are orchestrator/, "floor keeps orchestrator identity");
+    assert.doesNotMatch(prompt, /## Anti-fabrication contract/, "inherited 20B local must not emit full mid sections");
+    assert.ok(out.agent?.["construct-local"], "local primary inheritance still emits construct-local editor");
+  } finally {
+    rmTmpDir(sandbox);
+  }
+});
+
+test("project sync does not overwrite an explicit project model", () => {
+  const sandbox = mkdtempSync(join(tmpdir(), "oc-project-keep-"));
+  const HOME = join(sandbox, "HOME");
+  const project = join(sandbox, "project");
+  try {
+    const globalCfgPath = join(HOME, ".config", "opencode", "opencode.json");
+    mkdirSync(dirname(globalCfgPath), { recursive: true });
+    writeFileSync(globalCfgPath, JSON.stringify(baseCfg({
+      model: "ollama/gpt-oss:20b-cx32k",
+    }), null, 2) + "\n");
+
+    mkdirSync(join(project, ".opencode"), { recursive: true });
+    const projectCfgPath = join(project, ".opencode", "opencode.json");
+    writeFileSync(projectCfgPath, JSON.stringify(baseCfg({
+      model: "anthropic/claude-opus-4-6",
+    }), null, 2) + "\n");
+
+    const res = spawnSync(process.execPath, [SYNC_SCRIPT, "--project"], {
+      cwd: project,
+      encoding: "utf8",
+      timeout: 90_000,
+      env: {
+        ...process.env,
+        HOME,
+        CONSTRUCT_SKIP_POSTINSTALL: "1",
+        CONSTRUCT_SYNC_HOSTS: "opencode",
+      },
+    });
+    assert.equal(res.status, 0, `project sync failed: ${(res.stderr || "").slice(-400)}`);
+
+    const out = JSON.parse(readFileSync(projectCfgPath, "utf8"));
+    assert.equal(out.model, "anthropic/claude-opus-4-6", "explicit project model wins over global");
+    const prompt = out.agent?.construct?.prompt ?? "";
+    assert.match(prompt, /## Anti-fabrication contract/, "cloud project primary keeps full orchestrator prompt");
+  } finally {
+    rmTmpDir(sandbox);
+  }
+});

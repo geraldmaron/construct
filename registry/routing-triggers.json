@@ -1,0 +1,20 @@
+{
+  "$comment": "Canonical Construct routing triggers (construct-uizpv.4). Each trigger declares a match (keywords/riskFlags/artifactTypes) and the Worker Profile chain it requires, so a new org rule or persona domain is a data change here, not a lib/ edit. Consumed by lib/orchestration/routing-triggers.mjs.",
+  "schemaVersion": 1,
+  "riskFlagDimensions": [],
+  "triggers": [
+    {
+      "id": "legal-compliance",
+      "match": {
+        "keywords": [
+          "legal review", "compliance review", "regulatory", "gdpr", "ccpa", "hipaa",
+          "soc 2", "soc2", "data processing agreement", "dpa", "terms of service",
+          "license compliance", "open-source license", "attribution requirement",
+          "privacy policy", "consent flow", "data residency", "export control"
+        ]
+      },
+      "chain": ["security"],
+      "position": "prepend"
+    }
+  ]
+}

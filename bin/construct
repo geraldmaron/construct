@@ -3685,7 +3685,7 @@ function printGraphHelp() {
 
 async function cmdIntegrations(args) {
   const sub = args[0];
-  if (sub === '--help' || sub === '-h') {
+  if (!sub || sub === '--help' || sub === '-h') {
     println('construct integrations — check and manage external system integrations.');
     println('');
     println('Usage:');
@@ -6494,7 +6494,7 @@ async function cmdProviders(args) {
     println('Provider status\n');
     for (const entry of desc.summary) {
       const breaker = getState(entry.id);
-      const breakerStatus = breaker.state === 'CLOSED' ? 'closed' : `OPEN (${breaker.failures} failures)`;
+      const breakerStatus = !breaker || breaker.state === 'CLOSED' ? 'closed' : `OPEN (${breaker.failures} failures)`;
       println(`  ${entry.id.padEnd(26)} enabled=${entry.health.ok ? 'yes' : 'no'}  breaker=${breakerStatus}`);
     }
     return;
