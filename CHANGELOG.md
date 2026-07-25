@@ -4,6 +4,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [2.0.2] - 2026-07-25
+
 ### Added
 
 - Confluence read connector (`construct-uizpv.7`): new embed provider (`lib/embed/providers/confluence.mjs`) fetches space/page content via Atlassian REST CQL search, mirroring `jira.mjs`'s shape; registered in the embed provider registry with a `{space}` source-target selector on the existing `atlassian-confluence` manifest. Confluence docs are now indexable and reachable via `knowledge_search` with origin attribution, not just publish-only. Covered by `tests/functional/confluence-read-index.functional.test.mjs` (mocked Atlassian API).
