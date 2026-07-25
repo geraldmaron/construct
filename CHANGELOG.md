@@ -27,6 +27,9 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
   All four found via isolated `construct sandbox` surface testing while validating epic `construct-uizpv`, unrelated to any of its child beads.
 
+- `tests/functional/bun-compiled-binary.functional.test.mjs` spawned its compiled binary with no env isolation, so `doctor`'s state-root machinery wrote real project-key directories into `~/.construct/projects/` on every run where Bun is installed. Now uses `sterileSpawnEnv()`, matching the rest of the suite.
+- `lib/beads-automation.mjs`'s `syncPlanWithBeads` (and `createHandoff`) read `.status`/`.subject` directly off `bd show <id> --json`'s result, which is a top-level array — always `undefined`, so `plan.md` sync rewrote every bead's status to the literal string `"unknown"` on each run; `createHandoff` also read a nonexistent `.subject` field (the real field is `title`). The bead-id regex also excluded `.` from its character class, truncating sub-issue ids like `construct-uizpv.4` to the parent epic id and reporting the epic's status instead. Fixed all three, plus a doubled trailing pipe the table-row rewrite left behind on every update.
+
 - CI trimmed to a lightweight single lane for this personal-scale project: `ci.yml` runs ubuntu-only, Node 22 only, 3 shards (the shards keep per-runner memory low, which is what avoids the full-suite OOM). Dropped the macOS legs and the second Node version from the matrix and the weekly scheduled full run. The heavy/auxiliary workflows (`staging-full-matrix`, `publish-media`, `bun-binary-smoke`, `hook-budgets`, `supply-chain`, `pr-review`) are left disabled and can be re-enabled per-workflow when needed.
 - `audit-trail-concurrency` functional test exercises 8 concurrent writers instead of 40 — a realistic contention level that still regress-catches a non-atomic append, without the artificial-stress flake under CI load (residual high-contention lock race tracked separately).
 
