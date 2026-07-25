@@ -113,6 +113,13 @@ The signal-to-memory path is deterministic where it should be (classification, r
 
 Construct dispatches, gates, and re-runs until verification passes or a real blocker surfaces.
 
+Domain and persona routing rules that used to be hardcoded in the orchestration-policy substrate
+(`lib/orchestration/classification.mjs`, `flow-selection.mjs`) — a keyword list for legal-
+compliance detection, a fixed `['security']` prepend chain, a closed risk-flag enum — are now
+declarative trigger records in `registry/routing-triggers.json`, evaluated by one generic
+evaluator (`lib/orchestration/routing-triggers.mjs`). Adding a routing rule for a new domain or
+persona is a registry-data change; it requires zero edits to `lib/`.
+
 ## Interaction surfaces
 
 The CLI registry is the substrate (~118 commands). OpenCode is the first-class conversational surface; other supported hosts reach the same engine through MCP, ACP, or generated adapter files ([ADR-0039](/decisions/adr/0039-interaction-surface-model)):

@@ -4,13 +4,31 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- Confluence read connector (`construct-uizpv.7`): new embed provider (`lib/embed/providers/confluence.mjs`) fetches space/page content via Atlassian REST CQL search, mirroring `jira.mjs`'s shape; registered in the embed provider registry with a `{space}` source-target selector on the existing `atlassian-confluence` manifest. Confluence docs are now indexable and reachable via `knowledge_search` with origin attribution, not just publish-only. Covered by `tests/functional/confluence-read-index.functional.test.mjs` (mocked Atlassian API).
+- Linear + Slack write integrations (`construct-uizpv.11`): `createLinearIssue` and `postSlackMessage` in `lib/integrations/intake-integrations.mjs`, mirroring the existing `createJiraTicket`/`createGitHubIssue` shape, so intake triage and artifact publish can push back to Linear/Slack. Behind explicit env-flag gates (`CONSTRUCT_LINEAR_WRITES`, `CONSTRUCT_SLACK_WRITES`), default off; same demo/fixture-packet refusal as the GitHub path. Linear auth sends personal API keys bare and OAuth tokens as `Bearer`, per Linear's two token forms.
+
+### Changed
+
+- Persona/domain routing triggers moved from substrate to registry data (`construct-uizpv.4`): `isLegalComplianceRequest()`'s hardcoded keyword list and `flow-selection.mjs`'s hardcoded `['security']` chain are replaced by declarative trigger records in `registry/routing-triggers.json`, evaluated by one generic evaluator (`lib/orchestration/routing-triggers.mjs`). Legal-compliance is now the first data-declared instance rather than a special case; adding a new domain trigger (or persona routing rule) requires zero `lib/` edits. Pre-refactor snapshot tests prove routing output is unchanged; a new boundary test proves the zero-`lib/`-edit claim for an unrelated trigger.
+- `construct doctor`'s worker-execution PLAN-only warning now distinguishes "workerBackend not set to provider" from "workerBackend=provider but no materialized key," naming the exact env var to set in the latter case (`construct-uizpv.1`). Setup steps documented in `docs/operations/runbooks/orchestration-startup-to-invocation.md` and `docs/guides/reference/config.md`.
+- `lib/embed/demand-fetch.mjs` now threads `origin` metadata onto every recorded observation (single-source, universal, and team-target paths); `lib/knowledge/search.mjs`'s `buildObservationChunks` passes it through as `chunk.source.origin`. Previously every observation-backed `knowledge_search` hit was attributed to `provider: 'self'` regardless of its real source (Jira, GitHub, Confluence, …) — found while building the Confluence connector, fixed for all providers.
+
 ### Fixed
 
 - OpenCode project sync inherits the global primary `model` (and `small_model` when absent) when the project `.opencode/opencode.json` has no top-level model — so a local global primary (e.g. `ollama/gpt-oss:20b-cx32k`) sizes the orchestrator prompt and session default instead of empty → full tier / Free Models Router fallthrough (`construct-8lwba`).
 - `isLocalModel` / `resolveCapabilityTier` / `decideTrim` treat openai-compatible providers with private or Tailscale CGNAT `options.baseURL` as local (Corsair-over-Tailscale), so `corsair/…` gets the same floor/mid prompt and MCP trim path as `ollama/*` (`construct-8lwba`).
 - OpenCode doctor parity no longer flags sync-emitted `construct-local` as agent-table drift (`construct-8lwba`).
+- `construct providers` crashed (`TypeError: Cannot read properties of null (reading 'state')`) whenever a provider had no entry yet in the circuit-breaker registry; `getState()` returning `null` is now treated as closed.
+- `construct integrations` with no subcommand printed `Unknown subcommand: undefined` instead of showing help.
+- `construct search` crashed on an empty knowledge index — LanceDB's `.nearestTo().toArray()` can't infer a vector column from zero rows; `searchDocuments`/`searchObservations` in `lib/storage/vector-client.mjs` now return `[]` early on an empty table instead of throwing.
+- `construct search` hardcoded `project: 'construct'` in `buildHybridSearchResultsAsync` while ingest/sync store rows under the real inferred project name, so search could never return results for any project not literally named `construct`; now derives the project name the same way ingest does.
 
-### Changed
+  All four found via isolated `construct sandbox` surface testing while validating epic `construct-uizpv`, unrelated to any of its child beads.
+
+- `tests/functional/bun-compiled-binary.functional.test.mjs` spawned its compiled binary with no env isolation, so `doctor`'s state-root machinery wrote real project-key directories into `~/.construct/projects/` on every run where Bun is installed. Now uses `sterileSpawnEnv()`, matching the rest of the suite.
+- `lib/beads-automation.mjs`'s `syncPlanWithBeads` (and `createHandoff`) read `.status`/`.subject` directly off `bd show <id> --json`'s result, which is a top-level array — always `undefined`, so `plan.md` sync rewrote every bead's status to the literal string `"unknown"` on each run; `createHandoff` also read a nonexistent `.subject` field (the real field is `title`). The bead-id regex also excluded `.` from its character class, truncating sub-issue ids like `construct-uizpv.4` to the parent epic id and reporting the epic's status instead. Fixed all three, plus a doubled trailing pipe the table-row rewrite left behind on every update.
 
 - CI trimmed to a lightweight single lane for this personal-scale project: `ci.yml` runs ubuntu-only, Node 22 only, 3 shards (the shards keep per-runner memory low, which is what avoids the full-suite OOM). Dropped the macOS legs and the second Node version from the matrix and the weekly scheduled full run. The heavy/auxiliary workflows (`staging-full-matrix`, `publish-media`, `bun-binary-smoke`, `hook-budgets`, `supply-chain`, `pr-review`) are left disabled and can be re-enabled per-workflow when needed.
 - `audit-trail-concurrency` functional test exercises 8 concurrent writers instead of 40 — a realistic contention level that still regress-catches a non-atomic append, without the artificial-stress flake under CI load (residual high-contention lock race tracked separately).
