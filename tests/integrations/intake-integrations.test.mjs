@@ -152,6 +152,340 @@ describe('intake integrations', () => {
     });
   });
 
+  describe('createLinearIssue', () => {
+    let prevLinearWrites;
+
+    beforeEach(() => {
+      prevLinearWrites = process.env.CONSTRUCT_LINEAR_WRITES;
+      process.env.CONSTRUCT_LINEAR_WRITES = '1';
+    });
+
+    afterEach(() => {
+      if (prevLinearWrites === undefined) delete process.env.CONSTRUCT_LINEAR_WRITES;
+      else process.env.CONSTRUCT_LINEAR_WRITES = prevLinearWrites;
+    });
+
+    it('returns skipped:disabled when CONSTRUCT_LINEAR_WRITES is not set', async () => {
+      delete process.env.CONSTRUCT_LINEAR_WRITES;
+      const mockFetch = async () => { throw new Error('fetch should not be called'); };
+      const packet = { id: 'test-1', triage: { intakeType: 'bug' }, excerpt: 'Test issue' };
+      const result = await integ.createLinearIssue(packet, {
+        token: 'fake-token',
+        teamId: 'team-123',
+        fetchImpl: mockFetch,
+      });
+      assert.equal(result.ok, false);
+      assert.equal(result.skipped, 'disabled');
+      assert.ok(result.error.includes('CONSTRUCT_LINEAR_WRITES=1'));
+    });
+
+    it('refuses to publish a demo/fixture packet', async () => {
+      const mockFetch = async () => { throw new Error('fetch should not be called'); };
+      const packet = {
+        id: 'demo-1',
+        intake: { sourcePath: '/Users/me/repo/tests/fixtures/intake/sample.md' },
+        triage: { intakeType: 'bug' },
+      };
+      const result = await integ.createLinearIssue(packet, {
+        token: 'fake-token',
+        teamId: 'team-123',
+        fetchImpl: mockFetch,
+      });
+      assert.equal(result.ok, false);
+      assert.equal(result.skipped, 'demo-source');
+      assert.ok(result.error.includes('demo'));
+    });
+
+    it('publishDemo:true overrides the demo-source gate', async () => {
+      const mockFetch = async () => ({
+        ok: true,
+        json: async () => ({
+          data: { issueCreate: { issue: { id: 'i1', identifier: 'TEAM-1', url: 'https://linear.app/team/issue/TEAM-1' } } },
+        }),
+      });
+      const packet = {
+        id: 'demo-2',
+        intake: { sourcePath: '/repo/tests/fixtures/intake/sample.md' },
+        triage: { intakeType: 'bug' },
+        excerpt: 'Demo issue',
+      };
+      const result = await integ.createLinearIssue(packet, {
+        token: 'fake-token',
+        teamId: 'team-123',
+        fetchImpl: mockFetch,
+        publishDemo: true,
+      });
+      assert.equal(result.ok, true);
+    });
+
+    it('returns error when LINEAR_API_TOKEN is not set', async () => {
+      const packet = { id: 'test-1', triage: { intakeType: 'bug' }, excerpt: 'Test issue' };
+      const result = await integ.createLinearIssue(packet, {
+        teamId: 'team-123',
+      });
+      assert.equal(result.ok, false);
+      assert.ok(result.error.includes('LINEAR_API_TOKEN'));
+    });
+
+    it('returns error when LINEAR_TEAM_ID is not set', async () => {
+      const packet = { id: 'test-1', triage: { intakeType: 'bug' }, excerpt: 'Test issue' };
+      const result = await integ.createLinearIssue(packet, {
+        token: 'fake-token',
+      });
+      assert.equal(result.ok, false);
+      assert.ok(result.error.includes('LINEAR_TEAM_ID'));
+    });
+
+    it('handles API errors gracefully', async () => {
+      const mockFetch = async () => ({
+        ok: false,
+        status: 401,
+        text: async () => 'Invalid token',
+      });
+      const packet = { id: 'test-1', triage: { intakeType: 'bug' }, excerpt: 'Test issue' };
+      const result = await integ.createLinearIssue(packet, {
+        token: 'fake-token',
+        teamId: 'team-123',
+        fetchImpl: mockFetch,
+      });
+      assert.equal(result.ok, false);
+      assert.ok(result.error.includes('401'));
+    });
+
+    it('handles GraphQL errors gracefully', async () => {
+      const mockFetch = async () => ({
+        ok: true,
+        json: async () => ({
+          errors: [{ message: 'Invalid team ID' }],
+        }),
+      });
+      const packet = { id: 'test-1', triage: { intakeType: 'bug' }, excerpt: 'Test issue' };
+      const result = await integ.createLinearIssue(packet, {
+        token: 'fake-token',
+        teamId: 'invalid-team',
+        fetchImpl: mockFetch,
+      });
+      assert.equal(result.ok, false);
+      assert.ok(result.error.includes('Invalid team ID'));
+    });
+
+    it('creates a Linear issue and sends the expected GraphQL payload', async () => {
+      let captured;
+      const mockFetch = async (url, init) => {
+        captured = { url, init };
+        return {
+          ok: true,
+          json: async () => ({
+            data: {
+              issueCreate: {
+                issue: {
+                  id: 'issue-123',
+                  identifier: 'TEAM-456',
+                  url: 'https://linear.app/team/issue/TEAM-456',
+                },
+              },
+            },
+          }),
+        };
+      };
+      const packet = {
+        id: 'test-1',
+        triage: { intakeType: 'bug' },
+        excerpt: 'Test issue',
+        intake: { sourcePath: '/work/signal.md' },
+      };
+      const result = await integ.createLinearIssue(packet, {
+        token: 'fake-token',
+        teamId: 'team-123',
+        fetchImpl: mockFetch,
+      });
+      assert.equal(result.ok, true);
+      assert.equal(result.externalId, 'TEAM-456');
+      assert.equal(result.externalUrl, 'https://linear.app/team/issue/TEAM-456');
+
+      assert.equal(captured.url, 'https://api.linear.app/graphql');
+      const body = JSON.parse(captured.init.body);
+      assert.ok(body.query.includes('issueCreate'));
+      assert.equal(body.variables.input.teamId, 'team-123');
+      assert.equal('labelIds' in body.variables.input, false);
+      assert.equal(captured.init.headers.Authorization, 'Bearer fake-token');
+    });
+
+    it('sends a lin_api_ personal API key bare (no Bearer prefix)', async () => {
+      let captured;
+      const mockFetch = async (url, init) => {
+        captured = { url, init };
+        return {
+          ok: true,
+          json: async () => ({
+            data: { issueCreate: { issue: { id: 'i1', identifier: 'TEAM-2', url: 'https://linear.app/team/issue/TEAM-2' } } },
+          }),
+        };
+      };
+      const packet = { id: 'test-1', triage: { intakeType: 'bug' }, excerpt: 'Test issue' };
+      const result = await integ.createLinearIssue(packet, {
+        token: 'lin_api_x',
+        teamId: 'team-123',
+        fetchImpl: mockFetch,
+      });
+      assert.equal(result.ok, true);
+      assert.equal(captured.init.headers.Authorization, 'lin_api_x');
+    });
+  });
+
+  describe('postSlackMessage', () => {
+    let prevSlackWrites;
+
+    beforeEach(() => {
+      prevSlackWrites = process.env.CONSTRUCT_SLACK_WRITES;
+      process.env.CONSTRUCT_SLACK_WRITES = '1';
+    });
+
+    afterEach(() => {
+      if (prevSlackWrites === undefined) delete process.env.CONSTRUCT_SLACK_WRITES;
+      else process.env.CONSTRUCT_SLACK_WRITES = prevSlackWrites;
+    });
+
+    it('returns skipped:disabled when CONSTRUCT_SLACK_WRITES is not set', async () => {
+      delete process.env.CONSTRUCT_SLACK_WRITES;
+      const mockFetch = async () => { throw new Error('fetch should not be called'); };
+      const packet = { id: 'test-1', triage: { intakeType: 'bug' }, excerpt: 'Test message' };
+      const result = await integ.postSlackMessage(packet, {
+        token: 'xoxb-x',
+        channel: 'C1234567',
+        fetchImpl: mockFetch,
+      });
+      assert.equal(result.ok, false);
+      assert.equal(result.skipped, 'disabled');
+      assert.ok(result.error.includes('CONSTRUCT_SLACK_WRITES=1'));
+    });
+
+    it('refuses to publish a demo/fixture packet', async () => {
+      const mockFetch = async () => { throw new Error('fetch should not be called'); };
+      const packet = {
+        id: 'demo-1',
+        intake: { sourcePath: '/Users/me/repo/tests/fixtures/intake/sample.md' },
+        triage: { intakeType: 'bug' },
+      };
+      const result = await integ.postSlackMessage(packet, {
+        token: 'xoxb-x',
+        channel: 'C1234567',
+        fetchImpl: mockFetch,
+      });
+      assert.equal(result.ok, false);
+      assert.equal(result.skipped, 'demo-source');
+      assert.ok(result.error.includes('demo'));
+    });
+
+    it('publishDemo:true overrides the demo-source gate', async () => {
+      const mockFetch = async () => ({
+        ok: true,
+        json: async () => ({ ok: true, channel: 'C1234567', ts: '1.2' }),
+      });
+      const packet = {
+        id: 'demo-2',
+        intake: { sourcePath: '/repo/tests/fixtures/intake/sample.md' },
+        triage: { intakeType: 'bug' },
+        excerpt: 'Demo message',
+      };
+      const result = await integ.postSlackMessage(packet, {
+        token: 'xoxb-x',
+        channel: 'C1234567',
+        fetchImpl: mockFetch,
+        publishDemo: true,
+      });
+      assert.equal(result.ok, true);
+    });
+
+    it('returns error when SLACK_BOT_TOKEN is not set', async () => {
+      const packet = { id: 'test-1', triage: { intakeType: 'bug' }, excerpt: 'Test message' };
+      const result = await integ.postSlackMessage(packet, {
+        channel: 'C1234567',
+      });
+      assert.equal(result.ok, false);
+      assert.ok(result.error.includes('SLACK_BOT_TOKEN'));
+    });
+
+    it('returns error when SLACK_CHANNEL is not set', async () => {
+      const packet = { id: 'test-1', triage: { intakeType: 'bug' }, excerpt: 'Test message' };
+      const result = await integ.postSlackMessage(packet, {
+        token: 'xoxb-x',
+      });
+      assert.equal(result.ok, false);
+      assert.ok(result.error.includes('SLACK_CHANNEL'));
+    });
+
+    it('handles API errors gracefully', async () => {
+      const mockFetch = async () => ({
+        ok: false,
+        status: 401,
+        text: async () => 'Invalid token',
+      });
+      const packet = { id: 'test-1', triage: { intakeType: 'bug' }, excerpt: 'Test message' };
+      const result = await integ.postSlackMessage(packet, {
+        token: 'xoxb-x',
+        channel: 'C1234567',
+        fetchImpl: mockFetch,
+      });
+      assert.equal(result.ok, false);
+      assert.ok(result.error.includes('401'));
+    });
+
+    it('handles Slack API errors gracefully', async () => {
+      const mockFetch = async () => ({
+        ok: true,
+        json: async () => ({
+          ok: false,
+          error: 'channel_not_found',
+        }),
+      });
+      const packet = { id: 'test-1', triage: { intakeType: 'bug' }, excerpt: 'Test message' };
+      const result = await integ.postSlackMessage(packet, {
+        token: 'xoxb-x',
+        channel: 'invalid-channel',
+        fetchImpl: mockFetch,
+      });
+      assert.equal(result.ok, false);
+      assert.ok(result.error.includes('channel_not_found'));
+    });
+
+    it('posts a Slack message with the expected request payload', async () => {
+      let captured;
+      const mockFetch = async (url, init) => {
+        captured = { url, init };
+        return {
+          ok: true,
+          json: async () => ({
+            ok: true,
+            channel: 'C1234567',
+            ts: '1234567890.123456',
+          }),
+        };
+      };
+      const packet = {
+        id: 'test-1',
+        triage: { intakeType: 'bug', primaryOwner: 'alice' },
+        excerpt: 'Test message',
+        intake: { sourcePath: '/work/signal.md' },
+      };
+      const result = await integ.postSlackMessage(packet, {
+        token: 'xoxb-x',
+        channel: 'C1234567',
+        fetchImpl: mockFetch,
+      });
+      assert.equal(result.ok, true);
+      assert.ok(result.externalUrl.includes('C1234567'));
+      assert.equal(result.externalId, '1234567890.123456');
+
+      assert.equal(captured.url, 'https://slack.com/api/chat.postMessage');
+      assert.equal(captured.init.headers.Authorization, 'Bearer xoxb-x');
+      const body = JSON.parse(captured.init.body);
+      assert.equal(body.channel, 'C1234567');
+      assert.ok(body.text);
+      assert.ok(Array.isArray(body.blocks));
+    });
+  });
+
   describe('tagIntakeWithExternalRef', () => {
     const testDir = '/tmp/test-integration-tag';
 

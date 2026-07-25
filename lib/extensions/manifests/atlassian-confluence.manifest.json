@@ -12,5 +12,46 @@
   "installSource": "builtin",
   "certification": {
     "tier": "structurally-validated"
+  },
+  "sourceTarget": {
+    "provider": "confluence",
+    "selector": {
+      "field": "space",
+      "pattern": "^[A-Z][A-Z0-9_]{0,49}$",
+      "patternTransform": "trimUpper",
+      "hint": "required Confluence space key (uppercase letters/digits/underscore)",
+      "normalize": "trimUpper"
+    },
+    "signature": { "template": "confluence:space:{value}", "valueMode": "upperOrEmpty" },
+    "legacyEnv": { "vars": ["CONFLUENCE_SPACES"], "parse": "csv", "valueTransform": "upper" },
+    "aliases": { "strategy": "simple", "displayPrefix": "Confluence", "catchAll": true, "catchAllCredentialEnv": ["CONFLUENCE_BASE_URL"] },
+    "embed": {
+      "mode": "perTarget",
+      "valueField": "space",
+      "valueKind": "scalar",
+      "refs": ["pages"],
+      "limit": 25
+    },
+    "embedFilters": {
+      "valueField": "space",
+      "valueKind": "scalar",
+      "defaultRefs": ["pages"],
+      "extraFilterKeys": ["cql"],
+      "defaultLimit": 25
+    },
+    "demandFetch": {
+      "targetRefs": ["pages"],
+      "targetJqlTemplate": "space = \"{value}\" AND type = page ORDER BY lastmodified DESC",
+      "targetJqlFilterKey": "cql",
+      "targetDefaultLimit": 25,
+      "queryDynamicJql": {
+        "singleTemplate": "space = \"{value}\" AND type = page ORDER BY lastmodified DESC",
+        "broadTemplate": "space IN ({values}) AND type = page ORDER BY lastmodified DESC",
+        "recencyEnvVar": "CONFLUENCE_FETCH_RECENCY_DAYS",
+        "recencyDefaultDays": 30,
+        "legacyProjectsEnvVar": "CONFLUENCE_SPACES"
+      },
+      "queryDefaultLimit": 25
+    }
   }
 }

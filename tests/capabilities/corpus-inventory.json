@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-22T15:03:56.730Z",
+  "generatedAt": "2026-07-25T00:57:22.386Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 1126,
-    "topLevelTestFiles": 427,
-    "nestedTestFiles": 699,
+    "testFiles": 1131,
+    "topLevelTestFiles": 430,
+    "nestedTestFiles": 701,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 52,
     "byLayer": {
-      "unit": 742,
-      "functional": 324,
+      "unit": 745,
+      "functional": 326,
       "visual": 14,
       "integration": 44,
       "live-provider": 2
     },
     "byCategory": {
-      "unit": 660,
-      "functional": 324,
+      "unit": 663,
+      "functional": 326,
       "visual": 14,
       "structural-guard": 21,
       "contract-subsystem": 62,
@@ -959,6 +959,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/beads-auto-close.test.mjs — closes-on-merge parser + driver."
+    },
+    {
+      "path": "tests/beads-automation-plan-sync.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/beads-automation-plan-sync.test.mjs — lib/beads-automation.mjs's"
     },
     {
       "path": "tests/beads-client.test.mjs",
@@ -3137,6 +3145,14 @@
       "maintainerNotes": "tests/functional/config-jsonc.functional.test.mjs — JSONC config loader"
     },
     {
+      "path": "tests/functional/confluence-read-index.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/confluence-read-index.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/construct-not-invoked-is-inert.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -4989,6 +5005,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/routing-tables.test.mjs — parity guard for declarative routing."
+    },
+    {
+      "path": "tests/functional/routing-triggers-registry-boundary.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/routing-triggers-registry-boundary.functional.test.mjs —"
     },
     {
       "path": "tests/functional/run-events-semantics.functional.test.mjs",
@@ -7059,6 +7083,14 @@
       "maintainerNotes": "tests/orchestration-route-path.test.mjs — routePath payload end-to-end (construct-d1r7.15)."
     },
     {
+      "path": "tests/orchestration-routing-triggers.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration-routing-triggers.test.mjs — registry-driven routing"
+    },
+    {
       "path": "tests/orchestration-run-store-backend-parity.test.mjs",
       "layer": "integration",
       "category": "structural-guard",
@@ -8699,6 +8731,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/test-isolation.test.mjs — regression guard for functional test HOME isolation."
+    },
+    {
+      "path": "tests/tool-budget-local-model.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/tool-budget-local-model.test.mjs — isLocalModel + private baseURL locality."
     },
     {
       "path": "tests/tool-invisibility.test.mjs",
