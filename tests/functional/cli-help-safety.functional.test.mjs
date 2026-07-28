@@ -28,6 +28,7 @@ function isolatedEnv() {
     env: {
       ...process.env,
       HOME: fakeHome,
+      CONSTRUCT_HOME_OVERRIDE: fakeHome,
       CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
       BOOTSTRAP_CHECKED: '1',
       CONSTRUCT_DISABLE_AUTO_CLEANUP: '1',
