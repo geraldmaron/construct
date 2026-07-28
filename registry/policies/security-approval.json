@@ -4,7 +4,9 @@
   "description": "Governance group approves security posture. Can block deployments.",
   "enforcement": "hard",
   "mode": "approval",
-  "approvalWorkerProfiles": [],
+  "approvalWorkerProfiles": [
+    "security"
+  ],
   "requiredPolicies": [],
   "vetoWorkerProfiles": [],
   "escalationWorkerProfiles": [
