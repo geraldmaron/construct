@@ -10,6 +10,7 @@ description: Work commands for Construct.
 | `construct artifact` | Plan or locally execute manifest-backed artifact procedures with execution provenance |
 | `construct ask` | One-shot ask against the active knowledge index |
 | `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
+| `construct contract` | Inspect and clear the contract enforcement ladder gating an artifact |
 | `construct customer` | Manage customer profiles for product intelligence |
 | `construct demo` | Run guided tours or record VHS/asciinema tapes |
 | `construct diagram` | Render code-driven diagrams via D2/Graphviz (optional system binaries; ADR-0001) |
@@ -85,6 +86,33 @@ Import seed observation corpus into local memory store for cold-start accelerati
 ```bash
 construct bootstrap
 ```
+
+## construct contract
+
+Inspect and clear the contract enforcement ladder gating an artifact
+
+**Usage**
+
+```bash
+construct contract <status|sign-off|override> ...
+```
+
+**Subcommands**
+
+- `status <artifact> [--type=<t>] [--json]` — Show which contracts gate an artifact and what would clear them
+- `sign-off <contract-id> --as=<worker-profile>` — Record an approval; the only thing that clears a hard rung
+- `override <contract-id> --reason=<text>` — Proceed past a soft rung, recorded in the audit trail
+
+**Options**
+
+| Flag | Description |
+|---|---|
+| `--type=<artifact-type>` | Artifact class used for trigger matching; inferred from the path when omitted |
+| `--as=<worker-profile>` | Approving Worker Profile; must be named in the contract's approvalWorkerProfiles |
+| `--artifact=<path>` | Scope the record to one artifact; omit to record it contract-wide |
+| `--reason=<text>` | Required for override — an unexplained override is indistinguishable from a missing gate |
+| `--actor=<name>` | Human or process recording the decision, carried into the audit entry |
+| `--json` | Emit the gate evaluation as JSON |
 
 ## construct customer
 

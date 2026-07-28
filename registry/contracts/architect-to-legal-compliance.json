@@ -3,16 +3,31 @@
   "producer": "architect",
   "consumer": "security",
   "trigger": {
-    "riskFlags": ["compliance", "privacy", "licensing"]
+    "riskFlags": [
+      "compliance",
+      "privacy",
+      "licensing"
+    ]
   },
   "input": {
     "shape": "adr-or-rfc",
-    "mustContain": ["decision", "risks"]
+    "mustContain": [
+      "decision",
+      "risks"
+    ]
   },
   "output": {
     "shape": "compliance-memo",
-    "mustContain": ["risks", "severity", "remediation"]
+    "mustContain": [
+      "risks",
+      "severity",
+      "remediation"
+    ]
   },
+  "enforcementLevel": "soft",
+  "approvalWorkerProfiles": [
+    "security"
+  ],
   "preconditions": [
     "Risk flags compliance/privacy/licensing are present on the request or draft",
     "Author completed Legal, privacy, and security triggers on the ADR/RFC/PRD"
