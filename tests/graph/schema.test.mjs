@@ -48,10 +48,10 @@ test('invalid edge rel is reported by validateSchema', () => {
   const root = freshRoot();
   writeGraph(root, {
     nodes: [
-      { id: nodeId('workflow', 'w1'), type: 'workflow', name: 'w1' },
+      { id: nodeId('procedure', 'w1'), type: 'procedure', name: 'w1' },
       { id: nodeId('capability', 'c1'), type: 'capability', name: 'c1' },
     ],
-    edges: [{ from: nodeId('capability', 'c1'), to: nodeId('workflow', 'w1'), rel: 'improts' }],
+    edges: [{ from: nodeId('capability', 'c1'), to: nodeId('procedure', 'w1'), rel: 'improts' }],
   });
   const graph = loadGraph(root);
   const result = validateSchema(graph);
@@ -62,10 +62,10 @@ test('edge with empty provenance is reported by validateSchema', () => {
   const root = freshRoot();
   writeGraph(root, {
     nodes: [
-      { id: nodeId('workflow', 'w1'), type: 'workflow', name: 'w1' },
+      { id: nodeId('procedure', 'w1'), type: 'procedure', name: 'w1' },
       { id: nodeId('capability', 'c1'), type: 'capability', name: 'c1' },
     ],
-    edges: [{ from: nodeId('capability', 'c1'), to: nodeId('workflow', 'w1'), rel: 'embeds' }],
+    edges: [{ from: nodeId('capability', 'c1'), to: nodeId('procedure', 'w1'), rel: 'embeds' }],
   });
   const graph = loadGraph(root);
   const result = validateSchema(graph);
@@ -75,7 +75,7 @@ test('edge with empty provenance is reported by validateSchema', () => {
 test('partial meta is preserved by writeGraph', () => {
   const root = freshRoot();
   writeGraph(root, {
-    nodes: [{ id: nodeId('workflow', 'w1'), type: 'workflow', name: 'w1' }],
+    nodes: [{ id: nodeId('procedure', 'w1'), type: 'procedure', name: 'w1' }],
     edges: [],
     partial: true,
     partialReasons: ['fixture: builder stopped early'],

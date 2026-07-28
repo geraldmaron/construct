@@ -53,11 +53,11 @@ test('validate on built graph returns valid', () => {
   const root = freshRoot();
   writeGraph(root, {
     nodes: [
-      { id: nodeId('workflow', 'w1'), type: 'workflow', name: 'w1' },
+      { id: nodeId('procedure', 'w1'), type: 'procedure', name: 'w1' },
       { id: nodeId('capability', 'c1'), type: 'capability', name: 'c1' },
     ],
     edges: [
-      { from: nodeId('capability', 'c1'), to: nodeId('workflow', 'w1'), rel: 'embeds', source: 'registry' },
+      { from: nodeId('capability', 'c1'), to: nodeId('procedure', 'w1'), rel: 'embeds', source: 'registry' },
     ],
   });
   const result = validateGraph(root);

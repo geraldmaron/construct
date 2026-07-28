@@ -37,7 +37,7 @@ test('construct graph verify exits non-zero on partial graph and names the viola
   const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'graph-verify-partial-'));
   fs.mkdirSync(path.join(projectDir, '.construct'), { recursive: true });
   writeGraph(projectDir, {
-    nodes: [{ id: nodeId('workflow', 'w1'), type: 'workflow', name: 'w1' }],
+    nodes: [{ id: nodeId('procedure', 'w1'), type: 'procedure', name: 'w1' }],
     edges: [],
     partial: true,
     partialReasons: ['fixture: partial builder'],
