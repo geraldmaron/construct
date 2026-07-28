@@ -27,7 +27,7 @@ const BIN = path.join(REPO, 'bin', 'construct');
 // toggles the production code already honors, not quality-gate skips.
 
 function isolatedEnv(home) {
-  const env = { ...process.env, HOME: home, BOOTSTRAP_CHECKED: '1', CONSTRUCT_DISABLE_AUTO_CLEANUP: '1' };
+  const env = { ...process.env, HOME: home, CONSTRUCT_HOME_OVERRIDE: home, BOOTSTRAP_CHECKED: '1', CONSTRUCT_DISABLE_AUTO_CLEANUP: '1' };
   delete env.CONSTRUCT_TOOLKIT_DIR;
   return env;
 }
