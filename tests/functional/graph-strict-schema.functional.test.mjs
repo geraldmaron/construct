@@ -163,11 +163,11 @@ test('renameNode preserves history through a real build+rename+query cycle: depe
   writeGraph(project, {
     nodes: [
       { id: nodeId('capability', 'legacy-name'), type: 'capability', name: 'legacy-name' },
-      { id: nodeId('workflow', 'w'), type: 'workflow', name: 'w' },
+      { id: nodeId('procedure', 'w'), type: 'procedure', name: 'w' },
       { id: nodeId('test', 't'), type: 'test', name: 't' },
     ],
     edges: [
-      { from: nodeId('capability', 'legacy-name'), to: nodeId('workflow', 'w'), rel: 'embeds', source: 'registry' },
+      { from: nodeId('capability', 'legacy-name'), to: nodeId('procedure', 'w'), rel: 'embeds', source: 'registry' },
       { from: nodeId('test', 't'), to: nodeId('capability', 'legacy-name'), rel: 'validates', source: 'registry' },
     ],
   });
@@ -183,6 +183,6 @@ test('renameNode preserves history through a real build+rename+query cycle: depe
   assert.equal(graph.nodes.get(oldId).attrs.supersededBy, newId);
   assert.deepEqual(graph.nodes.get(newId).attrs.aliases, [oldId]);
 
-  assert.deepEqual(dependenciesOf(graph, oldId, 'embeds'), [nodeId('workflow', 'w')], 'the pre-rename id still resolves to the live dependency, not an empty result');
+  assert.deepEqual(dependenciesOf(graph, oldId, 'embeds'), [nodeId('procedure', 'w')], 'the pre-rename id still resolves to the live dependency, not an empty result');
   assert.deepEqual(dependentsOf(graph, oldId, 'validates'), [nodeId('test', 't')], 'the pre-rename id still resolves to the live dependent, not a 404');
 });

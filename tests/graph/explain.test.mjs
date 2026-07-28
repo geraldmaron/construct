@@ -69,11 +69,11 @@ test('explain --json renders one section per EDGE_RELS member', () => {
   writeGraph(root, {
     nodes: [
       { id: 'capability:workflow.w', type: 'capability' },
-      { id: 'workflow:w', type: 'workflow' },
+      { id: 'procedure:w', type: 'procedure' },
       { id: 'test:t', type: 'test' },
     ],
     edges: [
-      { from: 'capability:workflow.w', to: 'workflow:w', rel: 'embeds', source: 'registry' },
+      { from: 'capability:workflow.w', to: 'procedure:w', rel: 'embeds', source: 'registry' },
       { from: 'test:t', to: 'capability:workflow.w', rel: 'validates', source: 'registry' },
     ],
   });
@@ -90,10 +90,10 @@ test('explain marks an empty workflow-level relation MISSING, not a structurally
   writeGraph(root, {
     nodes: [
       { id: 'capability:workflow.w', type: 'capability' },
-      { id: 'workflow:w', type: 'workflow' },
+      { id: 'procedure:w', type: 'procedure' },
     ],
     edges: [
-      { from: 'capability:workflow.w', to: 'workflow:w', rel: 'embeds', source: 'registry' },
+      { from: 'capability:workflow.w', to: 'procedure:w', rel: 'embeds', source: 'registry' },
     ],
   });
   const { output } = captureStdout(() => runGraphCli(['explain', 'w', '--json'], { rootDir: root, projectDir: root }));
@@ -123,10 +123,10 @@ test('explain non-JSON output lists MISSING sections by label', () => {
   writeGraph(root, {
     nodes: [
       { id: 'capability:workflow.w', type: 'capability' },
-      { id: 'workflow:w', type: 'workflow' },
+      { id: 'procedure:w', type: 'procedure' },
     ],
     edges: [
-      { from: 'capability:workflow.w', to: 'workflow:w', rel: 'embeds', source: 'registry' },
+      { from: 'capability:workflow.w', to: 'procedure:w', rel: 'embeds', source: 'registry' },
     ],
   });
   const { result: code, output } = captureStdout(() => runGraphCli(['explain', 'w'], { rootDir: root, projectDir: root }));
@@ -138,7 +138,7 @@ test('explain non-JSON output lists MISSING sections by label', () => {
 
 test('explain on an unknown workflow exits 1', () => {
   const root = freshRoot();
-  writeGraph(root, { nodes: [{ id: 'workflow:other', type: 'workflow' }], edges: [] });
+  writeGraph(root, { nodes: [{ id: 'procedure:other', type: 'procedure' }], edges: [] });
   const { result: code } = captureStdout(() => runGraphCli(['explain', 'does-not-exist', '--json'], { rootDir: root, projectDir: root }));
   assert.equal(code, 1);
 });
@@ -150,8 +150,8 @@ test('explain with no graph exits 1', () => {
 });
 
 // Registry seed consistency: every catalog Procedure has a procedure node in
-// buildFromRegistry output (the graph CLI explain command still keys off legacy
-// workflow: ids until the C3 surface catches up).
+// buildFromRegistry output. explainWorkflow still accepts a legacy workflow:
+// prefix on input, but graph nodes are procedure: only.
 
 test('buildFromRegistry emits a procedure node for every catalog Procedure', () => {
   const built = buildFromRegistry({ rootDir: ROOT_DIR });

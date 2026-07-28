@@ -66,7 +66,7 @@ Doc updates are part of the same change, not a follow-up. If runtime shape, cont
 
 - **Embedded dolt lock contention**: Parallel `bd` commands fail because beads uses an embedded dolt database with a single writer lock. Always serialize beads operations.
 - **Use `construct beads`**: Instead of direct `bd` commands, use `construct beads <command>` for lock‑aware serialized execution.
-- **Merge‑slot coordination**: For batch operations like `bd dolt push` that need exclusive database access, check `construct‑6uo` (Merge slot coordination bead) using `bd merge-slot check/acquire/release`.
+- **Merge‑slot coordination**: For batch operations that need exclusive database access, check `construct‑6uo` (Merge slot coordination bead) using `bd merge-slot check/acquire/release`.
 - **Lock visibility**: Run `construct beads status` to see who holds the lock, pending queue, and stale lock cleanup.
 - **Queueing**: If lock is held, requests are queued in `.beads/queue.jsonl` and processed FIFO.
 - **Stale lock cleanup**: Run `construct beads cleanup` to remove locks from dead processes.
@@ -77,7 +77,7 @@ Doc updates are part of the same change, not a follow-up. If runtime shape, cont
 2. **Run commands**: `construct beads ready`, `construct beads show construct-xxx`, `construct beads update construct-xxx --claim`
 3. **Clean up**: `construct beads cleanup` if operations are stuck
 4. **View queue**: `construct beads queue` to see pending requests
-5. **Batch operations**: Before `bd dolt push`, check merge‑slot availability
+5. **Batch operations**: Check merge‑slot availability before anything needing exclusive database access
 
 ## Verification rules
 
@@ -85,7 +85,7 @@ Doc updates are part of the same change, not a follow-up. If runtime shape, cont
 - Record verification evidence in the Beads issue (`bd note <id>`) or `plan.md`, or the relevant durable doc before calling work done.
 - If architecture, contracts, or operating rules change, update the relevant canonical docs in the same change.
 - All local tests must pass (`npm test`) before pushing. CI must be green after pushing before the task is considered done.
-- Push Beads changes alongside code: `bd dolt push` must succeed before the session closes.
+- Beads state is local-only on this machine: no Dolt remote is configured, so `bd dolt push` is a no-op that exits 0 with "No remote is configured — skipping." The `.beads/` Dolt database is the source of truth and is versioned locally. Do not add a Dolt remote to work around a sync question — a push to an unreachable remote holds the embedded single-writer lock with no timeout, which wedges every subsequent `bd` command in the repo.
 
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
 ## Engineering Standards
@@ -114,7 +114,7 @@ construct beads queue        # Show pending requests
 - **IMPORTANT**: For parallel agent safety, prefer `construct beads <command>` over direct `bd` calls
 - Run `bd prime` for detailed command reference and session close protocol
 - Use `bd remember` for persistent knowledge — do NOT use MEMORY.md files
-- Check merge‑slot (`construct‑6uo`) before batch operations like `bd dolt push`
+- Check merge‑slot (`construct‑6uo`) before batch operations needing exclusive database access
 
 ## Session Completion
 
@@ -128,8 +128,6 @@ construct beads queue        # Show pending requests
 4. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
    git pull --rebase
-   # Check merge‑slot before dolt push
-   construct beads dolt push
    git push
    git status  # MUST show "up to date with origin"
    ```
@@ -158,7 +156,7 @@ construct beads queue        # Show pending requests
   - The proposed commit message
   - `git status` or `git diff --stat` of changes
   - Wait for explicit confirmation (accepts positive intent: y, yes, yeah, sure, ok, go, proceed)
-- **USER CONFIRMATION REQUIRED BEFORE PUSH**: You must explicitly ask the human user for confirmation before `git push` or `bd dolt push`. Show what will be pushed.
+- **USER CONFIRMATION REQUIRED BEFORE PUSH**: You must explicitly ask the human user for confirmation before `git push`. Show what will be pushed.
 - **CLARIFY REQUIREMENTS BEFORE IMPLEMENTATION**: If requirements are unclear, ambiguous, or lack specificity, ask the human user clarifying questions before proceeding. Do not make assumptions about what the user wants. Use targeted questions to understand:
   - What is the expected behavior?
   - What are the acceptance criteria?
