@@ -14,6 +14,8 @@
     "shape": "release-gate-note",
     "mustContain": ["counsel gate", "ship blocked"]
   },
+  "enforcementLevel": "hard",
+  "approvalWorkerProfiles": ["security"],
   "preconditions": [
     "Compliance memo counsel gate is named or explicitly unknown with owner",
     "No invented citations remain without [unverified] markers"

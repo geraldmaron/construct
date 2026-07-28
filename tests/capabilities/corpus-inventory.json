@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-28T20:20:44.719Z",
+  "generatedAt": "2026-07-28T23:01:31.159Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 1136,
+    "testFiles": 1138,
     "topLevelTestFiles": 430,
-    "nestedTestFiles": 706,
+    "nestedTestFiles": 708,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 52,
     "byLayer": {
-      "unit": 748,
-      "functional": 328,
+      "unit": 749,
+      "functional": 329,
       "visual": 14,
       "integration": 44,
       "live-provider": 2
     },
     "byCategory": {
-      "unit": 665,
-      "functional": 328,
+      "unit": 666,
+      "functional": 329,
       "visual": 14,
       "structural-guard": 22,
       "contract-subsystem": 62,
@@ -1633,6 +1633,14 @@
       "maintainerNotes": "Verifies contract enforcement at the Worker Profile assignment boundary."
     },
     {
+      "path": "tests/contracts/enforcement.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/contracts/enforcement.test.mjs — the contract enforcement ladder's"
+    },
+    {
       "path": "tests/contracts/extraction-provider.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -3183,6 +3191,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/context-window-recovery.functional.test.mjs — end-to-end"
+    },
+    {
+      "path": "tests/functional/contract-enforcement.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/contract-enforcement.functional.test.mjs — the contract"
     },
     {
       "path": "tests/functional/copilot-auth.functional.test.mjs",
