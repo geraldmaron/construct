@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- Per-run provider budget cap (`construct-u7aku`): provider-backed orchestration runs now carry a per-RUN USD spend ceiling (`lib/orchestration/provider-budget.mjs`). Every provider call's usage tokens are priced at a deliberately conservative flat rate (same upper-bound rates as the live-LLM test harness) into one accumulator shared across all tasks in the run; the dispatch that would exceed the cap throws a typed `ProviderBudgetError` (`PROVIDER_BUDGET_EXCEEDED`) and the run halts before the next call — the failing task records the error honestly, unreached tasks stay queued, and the snapshot rides `run.providerBudget`. Configured via `CONSTRUCT_PROVIDER_BUDGET_USD_CENTS` (default 100 cents; explicit `-1` disables — a spend ceiling, not a gate-skip var). The certification S3 polish call (`lib/certification/real-llm-scenarios.mjs`) carries the same accumulator; the S3/S8 orchestration legs are guarded through the run loop. Remediation mirrors the existing HTTP 402 path: raise the cap, or re-run with `worker_backend "host"` at no API cost. Covered by `tests/orchestration/provider-budget.test.mjs`.
+
 ### Fixed
 
 - `ci.yml`'s `dependency CVE audit` job ran a raw `npm audit --audit-level=high` with no way to see `.github/supply-chain-exceptions.json` — unlike `supply-chain.yml`'s osv-scanner step, an already-accepted, dated exception (e.g. the `construct-h6qjb` sharp/hono findings) permanently failed `ci-required` on any PR that touched dependencies. Added `scripts/npm-audit-with-exceptions.mjs`, which wraps `npm audit --json`, resolves each finding's GHSA ID (including purely-transitive entries whose `via` names another vulnerable package rather than an advisory URL) against the active exceptions, and only fails on genuinely unexcepted high+ advisories. Wired into `ci.yml` in place of the raw `npm audit` call.
