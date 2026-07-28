@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- `npm audit --audit-level=high` drift (`construct-h6qjb`): five newly-surfaced GHSA IDs not previously in `.github/supply-chain-exceptions.json`/`osv-scanner.toml` — two more nested-postcss findings under `next@16` (`GHSA-6g55-p6wh-862q`, `GHSA-r28c-9q8g-f849`), a second nested lodash-es prototype-pollution ID under chevrotain (`GHSA-xxjr-mmjv-4gpg`), and the brace-expansion DoS (`GHSA-mh99-v99m-4gvg`) that npm audit propagates up through cacache/glob/minimatch/make-fetch-happen/node-gyp/libxmljs2 via `@cyclonedx/cyclonedx-npm`'s dev-only SBOM tooling. No upstream fix is available for any of these without a semver-major downgrade or reintroducing a previously-fixed advisory (`@cyclonedx/cyclonedx-npm@6.0.0` still pulls the same libxmljs2/node-gyp chain, so it was not adopted); dated exceptions added to both files, in sync. The prior `js-yaml` finding noted in the bead (`GHSA-pm4m-ph32-ghv5`) no longer reproduces — root `js-yaml` already resolves to `5.2.2`, which is patched. `supply-chain.yml` (previously `disabled_manually` on GitHub) is re-enabled so this drift is caught going forward.
+
 ### Changed
 
 - GitHub Pages workflow's CVE audit step (`.github/workflows/pages.yml`) is temporarily `continue-on-error` so the docs site can deploy — the only findings are advisories bundled inside `next@16.2.11`'s own internal `postcss`/`sharp` deps, which are already latest stable and unreachable via npm `overrides`. Tracked in `construct-qdc9o`; revert once resolved.
