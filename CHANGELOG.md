@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- Live-LLM test harness (`construct-1gcbp`): `tests/functional/_lib/openrouter-llm.mjs` no longer falls back to file-tier/1Password key resolution (`resolveSecret`) unless `CONSTRUCT_CERTIFY_LIVE=1` is set, matching `lib/certification/runner.mjs`'s live opt-in gate. Previously a plain `npm test` could silently resolve `OPENROUTER_API_KEY` from `~/.construct/config.env` and spend real money despite the child-env scrub in `scripts/run-tests.mjs`. An explicitly exported `OPENROUTER_API_KEY` still works without the opt-in.
+
 ### Changed
 
 - GitHub Pages workflow's CVE audit step (`.github/workflows/pages.yml`) is temporarily `continue-on-error` so the docs site can deploy — the only findings are advisories bundled inside `next@16.2.11`'s own internal `postcss`/`sharp` deps, which are already latest stable and unreachable via npm `overrides`. Tracked in `construct-qdc9o`; revert once resolved.
