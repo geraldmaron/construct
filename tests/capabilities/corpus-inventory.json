@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-25T00:57:22.386Z",
+  "generatedAt": "2026-07-28T02:47:42.512Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 1131,
+    "testFiles": 1132,
     "topLevelTestFiles": 430,
-    "nestedTestFiles": 701,
+    "nestedTestFiles": 702,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 52,
     "byLayer": {
       "unit": 745,
-      "functional": 326,
+      "functional": 327,
       "visual": 14,
       "integration": 44,
       "live-provider": 2
     },
     "byCategory": {
       "unit": 663,
-      "functional": 326,
+      "functional": 327,
       "visual": 14,
       "structural-guard": 21,
       "contract-subsystem": 62,
@@ -3950,6 +3950,14 @@
       ],
       "skipped": false,
       "maintainerNotes": "tests/functional/host-mcp-emulation.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/hybrid-query-degraded-embedder.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/hybrid-query-degraded-embedder.functional.test.mjs"
     },
     {
       "path": "tests/functional/improvement-controller.functional.test.mjs",
