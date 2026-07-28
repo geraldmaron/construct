@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-25T00:57:22.386Z",
+  "generatedAt": "2026-07-28T04:05:13.030Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 1131,
+    "testFiles": 1133,
     "topLevelTestFiles": 430,
-    "nestedTestFiles": 701,
+    "nestedTestFiles": 703,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 52,
     "byLayer": {
       "unit": 745,
-      "functional": 326,
+      "functional": 328,
       "visual": 14,
       "integration": 44,
       "live-provider": 2
     },
     "byCategory": {
       "unit": 663,
-      "functional": 326,
+      "functional": 328,
       "visual": 14,
       "structural-guard": 21,
       "contract-subsystem": 62,
@@ -3952,6 +3952,14 @@
       "maintainerNotes": "tests/functional/host-mcp-emulation.functional.test.mjs"
     },
     {
+      "path": "tests/functional/hybrid-query-degraded-embedder.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/hybrid-query-degraded-embedder.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/improvement-controller.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -4539,6 +4547,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/openrouter-key.functional.test.mjs — OpenRouter credential discovery."
+    },
+    {
+      "path": "tests/functional/openrouter-llm-live-gate.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/openrouter-llm-live-gate.functional.test.mjs — file-tier key"
     },
     {
       "path": "tests/functional/operating-profile-capability-class.functional.test.mjs",

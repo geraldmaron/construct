@@ -10,6 +10,7 @@ import {
   stampFrontmatter,
   parseStamp,
   verifyStamp,
+  stripStampBlock,
 } from '../lib/doc-stamp.mjs';
 
 describe('doc-stamp: uuidv7', () => {
@@ -189,6 +190,21 @@ describe('doc-stamp: verifyStamp', () => {
     const withTrailingSpace = stamped.trimEnd() + '\n\n';
     const restamped = stampFrontmatter(withTrailingSpace);
     assert.equal(verifyStamp(restamped).valid, true);
+  });
+});
+
+describe('doc-stamp: stripStampBlock', () => {
+  it('returns the body unchanged for unstamped content', () => {
+    assert.equal(stripStampBlock('# Hello\n\nworld'), '# Hello\n\nworld');
+  });
+
+  it('strips the stamp block, leaving only the prose (construct-blf2r)', () => {
+    const doc = '# Architecture\n\nThe system is composed of three layers.\n';
+    const stamped = stampFrontmatter(doc);
+    const body = stripStampBlock(stamped);
+    assert.equal(body, doc);
+    assert.ok(!body.includes('cx_doc_id:'), 'stripped body must not contain stamp metadata');
+    assert.ok(body.includes('three layers'), 'stripped body must contain the actual prose');
   });
 });
 

@@ -25,6 +25,11 @@ ignoreUntil = 2026-10-21
 reason = "Nested lodash-es@4.17.21 _.template code-injection under chevrotain (docs tooling). Construct does not evaluate untrusted lodash templates from this path. Revisit with chevrotain/mermaid bump."
 
 [[IgnoredVulns]]
+id = "GHSA-xxjr-mmjv-4gpg"
+ignoreUntil = 2026-10-21
+reason = "Nested lodash-es@4.17.21 prototype pollution in _.unset/_.omit under chevrotain (docs tooling), same nested-copy class as GHSA-f23m-r3pf-42rh/GHSA-r5fr-rjxr-66jc. Revisit with chevrotain/mermaid bump; construct-h6qjb."
+
+[[IgnoredVulns]]
 id = "GHSA-mwcw-c2x4-8c55"
 ignoreUntil = 2026-10-21
 reason = "Nested nanoid@3.3.3 / 4.0.2 under @excalidraw/* (apps/docs). Root nanoid already patched. Revisit when excalidraw packages bump nanoid; 4.x fix is 5.0.9 (major within nest)."
@@ -33,3 +38,18 @@ reason = "Nested nanoid@3.3.3 / 4.0.2 under @excalidraw/* (apps/docs). Root nano
 id = "GHSA-qx2v-qp2m-jg93"
 ignoreUntil = 2026-10-21
 reason = "Nested postcss@8.4.31 under next@16 (apps/docs). Root postcss already >=8.5.10. Next pins its own nested postcss; revisit when Next bumps."
+
+[[IgnoredVulns]]
+id = "GHSA-6g55-p6wh-862q"
+ignoreUntil = 2026-10-21
+reason = "Nested postcss@8.4.31 sourceMappingURL file-read via next@16's own pinned postcss (apps/docs). Root postcss already >=8.5.19. No Next release bumps the nested copy yet; construct-h6qjb."
+
+[[IgnoredVulns]]
+id = "GHSA-r28c-9q8g-f849"
+ignoreUntil = 2026-10-21
+reason = "Nested postcss@8.4.31 sourceMappingURL path traversal via next@16's own pinned postcss (apps/docs), same root cause as GHSA-6g55-p6wh-862q and GHSA-qx2v-qp2m-jg93. Revisit when Next bumps nested postcss; construct-h6qjb."
+
+[[IgnoredVulns]]
+id = "GHSA-mh99-v99m-4gvg"
+ignoreUntil = 2026-10-21
+reason = "brace-expansion DoS nested under cacache's minimatch, pulled transitively by node-gyp -> make-fetch-happen -> @cyclonedx/cyclonedx-library (SBOM dev tooling, not shipped). npm audit propagates this single advisory's severity up through minimatch/glob/cacache/make-fetch-happen/node-gyp/libxmljs2 in the same chain. Fix requires a major @cyclonedx/cyclonedx-npm downgrade (4.0.1) that reintroduces GHSA-v75r-vx73-82pj; not a net improvement. Revisit when cyclonedx-library drops the node-gyp/cacache chain; construct-h6qjb."
