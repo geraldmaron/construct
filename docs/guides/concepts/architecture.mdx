@@ -643,7 +643,12 @@ persistence, and observability and prepares each Assignment (`status='prepared'`
 `executeRun({ workerBackend })`) executes each Assignment through the configured provider/model,
 records real output as `task.output`, and records provider failures per Assignment without
 crashing the Run. The prepare-only disclaimer applies only to inline Assignments (ADR-0020,
-ADR-0021).
+ADR-0021). Provider-backed Runs carry a per-run spend ceiling
+(`lib/orchestration/provider-budget.mjs`): one accumulator prices every call's usage tokens at a
+conservative flat rate; `CONSTRUCT_PROVIDER_BUDGET_USD_CENTS` caps estimated spend (default 100
+cents, `-1` disables), and the dispatch that would exceed the cap fails with a typed
+`ProviderBudgetError` (`PROVIDER_BUDGET_EXCEEDED`) that halts the Run before the next call —
+unreached tasks stay queued, and the budget snapshot rides `run.providerBudget`.
 
 **Host execution seat (ADR-0063).** The `host` backend materializes each task's Worker Profile / user prompt (`materializeTaskPrompt`, shared with the `provider` backend so both resolve byte-identical prompts) and stops — no model call runs inside Construct. The run stands at a real, non-terminal `awaiting-host` status until the calling MCP host executes each prompt in its own session (its own subscription, not a separate API credential) and reports the result via the `orchestration_task_result` tool; `submitHostTaskResult` records it tagged `provenanceSource: 'host-reported'` (never conflated with a construct-verified `provider` execution) and finalizes the run through the same terminal-status computation the synchronous path uses. `orchestration_run`, reached only via MCP, defaults `worker_backend` to `host` when neither the call nor `construct.config.json` names one explicitly — the CLI's own default stays `inline` and fails loud on `--worker-backend=host` (no attached host session to execute against). A stale `awaiting-host` run (host disconnected mid-run) is a doctor advisory, not a silent failure. Phase 2 drives the identical loop server-side via MCP sampling when the connected client declares that capability.
 

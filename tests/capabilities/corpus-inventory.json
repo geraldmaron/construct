@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-28T14:57:41.601Z",
+  "generatedAt": "2026-07-28T17:21:27.413Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 1134,
+    "testFiles": 1135,
     "topLevelTestFiles": 430,
-    "nestedTestFiles": 704,
+    "nestedTestFiles": 705,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 52,
     "byLayer": {
-      "unit": 746,
+      "unit": 747,
       "functional": 328,
       "visual": 14,
       "integration": 44,
       "live-provider": 2
     },
     "byCategory": {
-      "unit": 664,
+      "unit": 665,
       "functional": 328,
       "visual": 14,
       "structural-guard": 21,
@@ -7217,6 +7217,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/orchestration/provenance.test.mjs — full execution provenance in traces (LMCP-F1)."
+    },
+    {
+      "path": "tests/orchestration/provider-budget.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration/provider-budget.test.mjs — per-run USD spend ceiling"
     },
     {
       "path": "tests/orchestration/write-proposal-parser.test.mjs",
