@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-28T04:05:13.030Z",
+  "generatedAt": "2026-07-28T14:57:41.601Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 1133,
+    "testFiles": 1134,
     "topLevelTestFiles": 430,
-    "nestedTestFiles": 703,
+    "nestedTestFiles": 704,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 52,
     "byLayer": {
-      "unit": 745,
+      "unit": 746,
       "functional": 328,
       "visual": 14,
       "integration": 44,
       "live-provider": 2
     },
     "byCategory": {
-      "unit": 663,
+      "unit": 664,
       "functional": 328,
       "visual": 14,
       "structural-guard": 21,
@@ -8185,6 +8185,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/scripts/graph-impact-shadow.test.mjs — self-test for TAP failure"
+    },
+    {
+      "path": "tests/scripts/npm-audit-with-exceptions.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/scripts/npm-audit-with-exceptions.test.mjs — exceptions-aware npm"
     },
     {
       "path": "tests/scripts/release-evidence-gate.test.mjs",
