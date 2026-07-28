@@ -18,6 +18,19 @@ import { PassThrough } from 'node:stream';
 import { runAcpServer } from '../../lib/acp/server.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
+// The ACP server harness defaults env to process.env, and the server resolves
+// the machine state root through lib/state-root.mjs — unpinned, a run leaks a
+// real ~/.construct/projects/<hash>/ key for the test cwd.
+
+const HOME_OVERRIDE = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-acp-home-'));
+const PREV_HOME_OVERRIDE = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = HOME_OVERRIDE;
+test.after(() => {
+  if (PREV_HOME_OVERRIDE === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = PREV_HOME_OVERRIDE;
+  fs.rmSync(HOME_OVERRIDE, { recursive: true, force: true });
+});
+
 function createAcpHarness({ cwd, fetchImpl, env = process.env } = {}) {
   const input = new PassThrough();
   const output = new PassThrough();
