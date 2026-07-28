@@ -51,11 +51,11 @@ test('writeGraph + loadGraph round-trips nodes, edges, and meta counts', () => {
   const nodes = [
     { id: nodeId('capability', 'a'), type: 'capability', name: 'A', attrs: { criticality: 'P0' } },
     { id: nodeId('test', 't1'), type: 'test', name: 't1', attrs: {} },
-    { id: nodeId('workflow', 'w'), type: 'workflow', name: 'w', attrs: {} },
+    { id: nodeId('procedure', 'w'), type: 'procedure', name: 'w', attrs: {} },
   ];
   const edges = [
     { from: nodeId('test', 't1'), to: nodeId('capability', 'a'), rel: 'validates', source: 'registry' },
-    { from: nodeId('capability', 'a'), to: nodeId('workflow', 'w'), rel: 'embeds', source: 'registry' },
+    { from: nodeId('capability', 'a'), to: nodeId('procedure', 'w'), rel: 'embeds', source: 'registry' },
   ];
   const res = writeGraph(root, { nodes, edges, generatedAt: '2026-01-01T00:00:00.000Z', sourceHash: 'abc' });
   assert.equal(res.nodeCount, 3);
@@ -271,11 +271,11 @@ test('renameNode rewires edges, tombstones the old id, and aliases the new node'
   writeGraph(root, {
     nodes: [
       { id: oldId, type: 'capability', name: 'old-name' },
-      { id: nodeId('workflow', 'w'), type: 'workflow', name: 'w' },
+      { id: nodeId('procedure', 'w'), type: 'procedure', name: 'w' },
       { id: nodeId('test', 't'), type: 'test', name: 't' },
     ],
     edges: [
-      { from: oldId, to: nodeId('workflow', 'w'), rel: 'embeds', source: 'registry' },
+      { from: oldId, to: nodeId('procedure', 'w'), rel: 'embeds', source: 'registry' },
       { from: nodeId('test', 't'), to: oldId, rel: 'validates', source: 'registry' },
     ],
   });
@@ -292,12 +292,12 @@ test('renameNode rewires edges, tombstones the old id, and aliases the new node'
   assert.equal(renamed.type, 'capability');
   assert.deepEqual(renamed.attrs.aliases, [oldId]);
 
-  assert.deepEqual(dependenciesOf(graph, newId, 'embeds'), [nodeId('workflow', 'w')]);
+  assert.deepEqual(dependenciesOf(graph, newId, 'embeds'), [nodeId('procedure', 'w')]);
   assert.deepEqual(dependentsOf(graph, newId, 'validates'), [nodeId('test', 't')]);
 
   // The pre-rename id resolves through the tombstone to the same edges,
   // not an empty result.
-  assert.deepEqual(dependenciesOf(graph, oldId, 'embeds'), [nodeId('workflow', 'w')]);
+  assert.deepEqual(dependenciesOf(graph, oldId, 'embeds'), [nodeId('procedure', 'w')]);
   assert.deepEqual(dependentsOf(graph, oldId, 'validates'), [nodeId('test', 't')]);
 });
 

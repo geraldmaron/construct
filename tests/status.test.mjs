@@ -808,7 +808,7 @@ test('workflows section classifies a clean workflow node as available', async ()
 
   writeGraph(rootDir, {
     nodes: [
-      { id: nodeId('workflow', realType), type: 'workflow', name: realType },
+      { id: nodeId('procedure', realType), type: 'procedure', name: realType },
     ],
     edges: [],
   });
@@ -852,7 +852,7 @@ test('workflows section classifies a workflow with no graph node as missing', as
 test('workflows section classifies a workflow named in a validation error as degraded', async () => {
   const { rootDir, homeDir } = await createFixture();
   const [realType] = listProcedureDefinitions().map((w) => w.id);
-  const workflowNodeId = nodeId('workflow', realType);
+  const workflowNodeId = nodeId('procedure', realType);
   const capId = nodeId('capability', 'c1');
   const providerId = nodeId('provider', 'missing-provider');
 
@@ -861,7 +861,7 @@ test('workflows section classifies a workflow named in a validation error as deg
   // (lib/graph/validate.mjs) raises a warning naming this exact workflow.
   writeGraph(rootDir, {
     nodes: [
-      { id: workflowNodeId, type: 'workflow', name: realType },
+      { id: workflowNodeId, type: 'procedure', name: realType },
       { id: capId, type: 'capability', name: 'c1' },
       { id: providerId, type: 'provider', name: 'missing-provider', attrs: { id: 'missing-provider' } },
     ],

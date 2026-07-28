@@ -1,15 +1,15 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-28T17:23:51.460Z",
+  "generatedAt": "2026-07-28T20:20:44.719Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 1135,
+    "testFiles": 1136,
     "topLevelTestFiles": 430,
-    "nestedTestFiles": 705,
+    "nestedTestFiles": 706,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 52,
     "byLayer": {
-      "unit": 747,
+      "unit": 748,
       "functional": 328,
       "visual": 14,
       "integration": 44,
@@ -19,7 +19,7 @@
       "unit": 665,
       "functional": 328,
       "visual": 14,
-      "structural-guard": 21,
+      "structural-guard": 22,
       "contract-subsystem": 62,
       "integration": 33,
       "live-provider": 2,
@@ -5671,6 +5671,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/graph/incremental.test.mjs — scoped graph refresh on edit"
+    },
+    {
+      "path": "tests/graph/procedure-node-prefix-parity.test.mjs",
+      "layer": "unit",
+      "category": "structural-guard",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/graph/procedure-node-prefix-parity.test.mjs — the node prefix the"
     },
     {
       "path": "tests/graph/relational-postgres-store.test.mjs",
