@@ -101,7 +101,7 @@ jobs:
           node -e "const j=require('./.github/license-allowlist.json'); console.log(j.allow.join(', '))" > /tmp/allow-licenses.txt
           echo "allow=$(cat /tmp/allow-licenses.txt)" >> "$GITHUB_OUTPUT"
       - name: GitHub dependency review
-        uses: actions/dependency-review-action@fd07d42ce87ab09f10c61a2d1a5e59e6c655620a # v4.1.1
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
           fail-on-severity: critical
           # Action accepts allow-licenses XOR deny-licenses (not both).
