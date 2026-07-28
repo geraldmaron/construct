@@ -504,13 +504,16 @@ jobs:
         with:
           node-version-file: .tool-versions
       - run: npm ci --ignore-scripts
-      - name: npm audit (high+ only)
+      - name: npm audit (high+ only, exceptions-aware)
         # Scope to root deps only. Workspace packages (apps/docs, packages/construct-ui)
         # are build-time tooling for the docs site, not runtime deps of the
         # published @geraldmaron/construct CLI. Their
         # advisories are tracked separately; this gate guards the npm-published
         # surface. Mirrors the pre-push gate in lib/hooks/pre-push-gate.mjs.
-        run: npm audit --omit=dev --audit-level=high --workspaces=false
+        # Wraps npm audit so a finding already accepted in
+        # .github/supply-chain-exceptions.json (dated, reasoned) doesn't
+        # permanently fail every PR that touches dependencies.
+        run: node scripts/npm-audit-with-exceptions.mjs
 
       - name: consumer-perspective audit (packed artifact, no overrides)
         # The repo audit above applies this package.json's `overrides`, which a
