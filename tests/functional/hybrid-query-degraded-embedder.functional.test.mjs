@@ -28,7 +28,10 @@ test('search throws loudly instead of returning [] when the embedder silently de
       // Empty, never-populated cache dir + allowRemoteModels=false (baked into
       // embeddings-local.mjs) forces a real degrade-to-hashing, not a mock.
       CONSTRUCT_EMBEDDING_CACHE_DIR: emptyCacheDir,
-      CONSTRUCT_RETRIEVAL_ADAPTER: 'keyword',
+      // Deliberately not forced to 'keyword': dimension mismatch is only
+      // reachable on the vector-search path, so this must resolve lancedb/auto
+      // to exercise it (matches the real bug — a 384d-indexed table queried
+      // with a degraded 256d vector).
     };
 
     await assert.rejects(
