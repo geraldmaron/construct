@@ -33,6 +33,7 @@ test('construct db status reports unavailable without database configuration', (
   const env = {
     PATH: process.env.PATH,
     HOME: home,
+    CONSTRUCT_HOME_OVERRIDE: home,
     XDG_CONFIG_HOME: path.join(home, '.config'),
     XDG_STATE_HOME: path.join(home, '.local', 'state'),
     XDG_CACHE_HOME: path.join(home, '.cache'),
