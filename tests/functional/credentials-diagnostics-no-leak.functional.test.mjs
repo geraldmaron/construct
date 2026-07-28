@@ -65,6 +65,7 @@ test('construct credentials reports presence without leaking values or invoking 
     delete env[key];
   }
   env.HOME = home;
+  env.CONSTRUCT_HOME_OVERRIDE = home;
   env.OPENROUTER_API_KEY = canary;
   env.OP_CALL_LOG = logPath;
   env.PATH = `${binDir}${path.delimiter}${process.env.PATH || ''}`;

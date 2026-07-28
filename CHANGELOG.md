@@ -40,6 +40,7 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Fixed
 
+- Test-suite isolation leaks (follow-up to `construct-kgn1y`): two additional functional tests spawned `construct` commands without `HOME` or `CONSTRUCT_HOME_OVERRIDE` isolation. Fixed: `tests/functional/opencode-primary-surface.functional.test.mjs` (added CONSTRUCT_HOME_OVERRIDE to both spawn calls), `tests/functional/credentials-diagnostics-no-leak.functional.test.mjs` (added CONSTRUCT_HOME_OVERRIDE to env object). Both now follow the sterile-env pattern used elsewhere in the suite.
 - OpenCode project sync inherits the global primary `model` (and `small_model` when absent) when the project `.opencode/opencode.json` has no top-level model — so a local global primary (e.g. `ollama/gpt-oss:20b-cx32k`) sizes the orchestrator prompt and session default instead of empty → full tier / Free Models Router fallthrough (`construct-8lwba`).
 - `isLocalModel` / `resolveCapabilityTier` / `decideTrim` treat openai-compatible providers with private or Tailscale CGNAT `options.baseURL` as local (Corsair-over-Tailscale), so `corsair/…` gets the same floor/mid prompt and MCP trim path as `ollama/*` (`construct-8lwba`).
 - OpenCode doctor parity no longer flags sync-emitted `construct-local` as agent-table drift (`construct-8lwba`).
