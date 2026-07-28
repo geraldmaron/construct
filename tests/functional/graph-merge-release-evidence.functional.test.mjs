@@ -18,6 +18,20 @@ import {
 } from '../../lib/graph/runtime-evidence.mjs';
 import { nodeId, EDGE_RELS, writeGraph, loadGraph } from '../../lib/graph/store.mjs';
 
+// The sqlite graph store resolves the machine state dir through
+// lib/state-root.mjs, which anchors to the real user home unless
+// CONSTRUCT_HOME_OVERRIDE is pinned — an unpinned run leaks a real
+// ~/.construct/projects/<hash>/ key per tmpdir fixture repo.
+
+const HOME_OVERRIDE = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-graph-merge-home-'));
+const PREV_HOME_OVERRIDE = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = HOME_OVERRIDE;
+test.after(() => {
+  if (PREV_HOME_OVERRIDE === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = PREV_HOME_OVERRIDE;
+  fs.rmSync(HOME_OVERRIDE, { recursive: true, force: true });
+});
+
 function git(cwd, args) {
   const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
   if (result.status !== 0) {

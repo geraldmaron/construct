@@ -45,15 +45,15 @@ const BIN = path.resolve(__dirname, '..', '..', 'bin', 'construct');
 
 // refreshWatch/readWatchState persist watch state via resolveStatePath
 // (lib/state-root.mjs), which anchors to the real user home unless
-// CX_HOME_OVERRIDE is set — an unpinned run leaks a fresh
+// CONSTRUCT_HOME_OVERRIDE is set — an unpinned run leaks a fresh
 // ~/.construct/projects/<hash>/context-repos/ key per tmpdir project root.
 
 const HOME_OVERRIDE = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-standing-assign-home-'));
-const PREV_HOME_OVERRIDE = process.env.CX_HOME_OVERRIDE;
-process.env.CX_HOME_OVERRIDE = HOME_OVERRIDE;
+const PREV_HOME_OVERRIDE = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = HOME_OVERRIDE;
 after(() => {
-  if (PREV_HOME_OVERRIDE === undefined) delete process.env.CX_HOME_OVERRIDE;
-  else process.env.CX_HOME_OVERRIDE = PREV_HOME_OVERRIDE;
+  if (PREV_HOME_OVERRIDE === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = PREV_HOME_OVERRIDE;
   fs.rmSync(HOME_OVERRIDE, { recursive: true, force: true });
 });
 
