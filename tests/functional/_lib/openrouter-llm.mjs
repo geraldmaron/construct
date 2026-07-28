@@ -1,8 +1,13 @@
 /**
  * Live LLM harness for OpenRouter. Wraps fetch with a per-test cost guard
- * and skip-when-no-key behavior. Resolves OPENROUTER_API_KEY from the
- * environment first, then ~/.construct/config.env, so local dev works
- * without exporting the var manually.
+ * and skip-when-no-key behavior.
+ *
+ * Key resolution is opt-in gated: an explicit OPENROUTER_API_KEY env var
+ * (someone exporting it deliberately) is always honored, but file-tier and
+ * 1Password resolution via resolveSecret() only runs when
+ * CONSTRUCT_CERTIFY_LIVE=1 (lib/certification/runner.mjs LIVE_OPT_IN_ENV) is
+ * set. Without that opt-in, a plain `npm test` cannot silently pick up a
+ * live-billing key from ~/.construct/config.env or 1Password.
  *
  * Cost guard: every call accumulates token-based USD into a per-suite
  * counter. The harness throws when the suite exceeds the configured cap so
@@ -10,6 +15,7 @@
  */
 
 import { resolveSecret, extractOpRef } from '../../../lib/providers/secret-resolver.mjs';
+import { LIVE_OPT_IN_ENV } from '../../../lib/certification/runner.mjs';
 
 const OPENROUTER_BASE = 'https://openrouter.ai/api/v1';
 function loadKey() {
@@ -17,6 +23,7 @@ function loadKey() {
   if (direct && !extractOpRef(direct) && !direct.startsWith('op://')) {
     return direct.trim().replace(/^["']|["']$/g, '');
   }
+  if (process.env[LIVE_OPT_IN_ENV] !== '1') return null;
   try {
     return resolveSecret('OPENROUTER_API_KEY', { env: process.env }) || null;
   } catch {
