@@ -28,6 +28,7 @@ function runBin(argv, extraEnv = {}) {
       env: {
         ...process.env,
         HOME: home,
+        CONSTRUCT_HOME_OVERRIDE: home,
         XDG_CONFIG_HOME: path.join(home, '.config'),
         XDG_STATE_HOME: path.join(home, '.local', 'state'),
         CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
@@ -94,6 +95,7 @@ test('OpenCode project sync remains the primary conversation surface wiring', ()
       env: {
         ...process.env,
         HOME: home,
+        CONSTRUCT_HOME_OVERRIDE: home,
         CONSTRUCT_SKIP_POSTINSTALL: '1',
         CONSTRUCT_SYNC_HOSTS: 'opencode',
       },

@@ -221,9 +221,11 @@ test('recruited cx- reviewers join the required set under advisory gate', () => 
     assert.equal(r.reviewerGate.mode, 'advisory');
     assert.equal(r.reviewerGate.blocked, false, 'without registry team opt-in the gate warns only');
 
+    const cliHome = mkdtempSync(join(tmpdir(), 'cx-gate-cli-'));
     const cli = spawnSync(process.execPath, [join(REPO, 'bin', 'construct'), 'artifact', 'validate', f, '--type=prd', '--recruited=cx-data-analyst', '--json'], {
-      cwd: dir, encoding: 'utf8', timeout: 60_000,
+      cwd: dir, encoding: 'utf8', timeout: 60_000, env: { ...process.env, HOME: cliHome, CONSTRUCT_HOME_OVERRIDE: cliHome },
     });
+    rmTmpDir(cliHome);
     assert.notEqual(cli.status, 2, `advisory gate must not exit 2; stdout: ${cli.stdout.slice(0, 400)}`);
   } finally {
     rmTmpDir(dir);
