@@ -185,6 +185,7 @@ The embed daemon writes its supervisor stdout log to the machine's XDG state dir
 | `construct artifact` | Plan or locally execute manifest-backed artifact procedures with execution provenance |
 | `construct ask` | One-shot ask against the active knowledge index |
 | `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
+| `construct contract` | Inspect and clear the contract enforcement ladder gating an artifact |
 | `construct customer` | Manage customer profiles for product intelligence |
 | `construct demo` | Run guided tours or record VHS/asciinema tapes |
 | `construct diagram` | Render code-driven diagrams via D2/Graphviz (optional system binaries; ADR-0001) |

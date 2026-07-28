@@ -9,7 +9,7 @@ Commands are grouped by what they do. Pick a category below.
 
 - [Command catalog](/guides/reference/cli/command-catalog) — documented vs actual CLI surface
 - [Core](/guides/reference/cli/core) — 16 commands
-- [Work](/guides/reference/cli/work) — 33 commands
+- [Work](/guides/reference/cli/work) — 34 commands
 - [Models & Integrations](/guides/reference/cli/models-and-integrations) — 12 commands
 - [Integrations](/guides/reference/cli/integrations) — 3 commands
 - [Observability](/guides/reference/cli/observability) — 12 commands

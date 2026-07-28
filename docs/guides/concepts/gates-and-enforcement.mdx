@@ -92,6 +92,48 @@ In team and enterprise deployments, MCP tool calls run through `lib/mcp/broker.m
 
 Solo mode leaves the broker off by default: set `CONSTRUCT_MCP_BROKER=on` to engage it for testing. Solo's policy posture is "agent decides"; the broker becomes the enforcer when the deployment is shared.
 
+## Layer 5: Contract enforcement ladder
+
+A contract postcondition is classified as executable or advisory (`lib/contracts/validate.mjs`), which answers *can this be checked?* — not *what happens when it fails?* Without the second answer a contract could declare `ship blocked` and halt nothing. The ladder in `lib/contracts/enforcement.mjs` supplies it, as three rungs declared in registry data:
+
+| Level | Blocks release | Cleared by |
+|---|---|---|
+| `advisory` | no | nothing — reported only. The default for an undeclared contract. |
+| `soft` | yes | a sign-off, **or** an override recorded in the audit trail |
+| `hard` | yes | only a sign-off from a Worker Profile named in `approvalWorkerProfiles` |
+
+Both `enforcementLevel` and `approvalWorkerProfiles` live in `registry/contracts/*.json` (or a capability's `contracts` block). No domain name appears in `lib/` — legal sign-off is the first instance, not a special case, and a Workspace Preset can declare a different one without touching the substrate.
+
+**Artifacts opt in by declaring risk flags.** A contract engages only when its `trigger` matches, and risk-flag triggers read from artifact frontmatter:
+
+```markdown
+---
+cx_risk_flags: compliance, privacy
+---
+```
+
+Nothing is blocked until an author states the artifact carries the risk. Inferring risk from prose would make the gate fire on wording.
+
+**Chokepoint.** `validateArtifactRelease` (`lib/artifact-release-gate.mjs`) runs the ladder last, so a hard block reads as the final word rather than competing with structural lint. Blocked contracts become gate errors; overrides and advisory contracts become warnings.
+
+**Recording decisions:**
+
+```bash
+construct contract status docs/memo.md --type=compliance-memo
+```
+
+```bash
+construct contract sign-off legal-compliance-to-release-manager --as=security --artifact=docs/memo.md
+```
+
+```bash
+construct contract override architect-to-legal-compliance --reason="accepted residual risk"
+```
+
+Records append to `<stateRoot>/contracts/sign-offs.jsonl`, scoped to an artifact unless recorded contract-wide. The log is append-only: revoking a sign-off appends a `revoked` decision rather than deleting a line, so who cleared what and when survives. An override writes its audit entry *before* the sign-off record, so the log can never hold a bypass that left no audit evidence. Overriding a `hard` rung is refused outright rather than succeeding as a no-op.
+
+**Fail-closed.** When the contract set or sign-off store cannot be read, the gate blocks instead of passing — mirroring `lib/policy/audit-gate.mjs`. An evaluator that cannot see its rules must not report "no violations found", because that is indistinguishable from a clean run.
+
 ## No-skip-vars principle
 
 A skip env var on a quality gate is an admission that the gate is wrong, the policy is over-scoped, or the team will route around it. Auditing the skip tells you who skipped; it doesn't address why a check fires when it shouldn't. The principle:
