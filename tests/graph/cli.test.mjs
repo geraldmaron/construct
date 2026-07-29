@@ -60,10 +60,10 @@ test('query --missing-tests --json emits capabilities and workflows arrays', () 
   writeGraph(root, {
     nodes: [
       { id: 'capability:untested', type: 'capability' },
-      { id: 'workflow:w', type: 'workflow' },
+      { id: 'procedure:w', type: 'procedure' },
     ],
     edges: [
-      { from: 'capability:untested', to: 'workflow:w', rel: 'embeds', source: 'registry' },
+      { from: 'capability:untested', to: 'procedure:w', rel: 'embeds', source: 'registry' },
     ],
   });
   const { result: code, output } = captureStdout(() => runGraphCli(['query', '--missing-tests', '--json'], { rootDir: root, projectDir: root }));
@@ -71,7 +71,7 @@ test('query --missing-tests --json emits capabilities and workflows arrays', () 
   const parsed = JSON.parse(output);
   assert.equal(parsed.graphPresent, true);
   assert.deepEqual(parsed.capabilities, ['capability:untested']);
-  assert.deepEqual(parsed.workflows, ['workflow:w']);
+  assert.deepEqual(parsed.workflows, ['procedure:w']);
 });
 
 test('query --missing-tests without --json prints human-readable sections', () => {
@@ -110,11 +110,11 @@ test('graph path finds a default-rel (embeds) path without --rel', () => {
   writeGraph(root, {
     nodes: [
       { id: 'capability:a', type: 'capability' },
-      { id: 'workflow:b', type: 'workflow' },
+      { id: 'procedure:b', type: 'procedure' },
     ],
-    edges: [{ from: 'capability:a', to: 'workflow:b', rel: 'embeds', source: 'registry' }],
+    edges: [{ from: 'capability:a', to: 'procedure:b', rel: 'embeds', source: 'registry' }],
   });
-  const { result: code, output } = captureStdout(() => runGraphCli(['path', 'capability:a', 'workflow:b', '--json'], { rootDir: root, projectDir: root }));
+  const { result: code, output } = captureStdout(() => runGraphCli(['path', 'capability:a', 'procedure:b', '--json'], { rootDir: root, projectDir: root }));
   assert.equal(code, 0);
   const parsed = JSON.parse(output);
   assert.equal(parsed.found, true);
@@ -169,12 +169,12 @@ test('graph queryUp lists a node\'s transitive dependencies with depth along the
   writeGraph(root, {
     nodes: [
       { id: 'capability:a', type: 'capability' },
-      { id: 'workflow:b', type: 'workflow' },
-      { id: 'workflow:c', type: 'workflow' },
+      { id: 'procedure:b', type: 'procedure' },
+      { id: 'procedure:c', type: 'procedure' },
     ],
     edges: [
-      { from: 'capability:a', to: 'workflow:b', rel: 'embeds', source: 'registry' },
-      { from: 'workflow:b', to: 'workflow:c', rel: 'embeds', source: 'registry' },
+      { from: 'capability:a', to: 'procedure:b', rel: 'embeds', source: 'registry' },
+      { from: 'procedure:b', to: 'procedure:c', rel: 'embeds', source: 'registry' },
     ],
   });
   const { result: code, output } = captureStdout(() => runGraphCli(['queryUp', 'capability:a', '--json'], { rootDir: root, projectDir: root }));
@@ -182,8 +182,8 @@ test('graph queryUp lists a node\'s transitive dependencies with depth along the
   const parsed = JSON.parse(output);
   assert.equal(parsed.count, 2);
   const byId = Object.fromEntries(parsed.upstream.map((r) => [r.id, r.depth]));
-  assert.equal(byId['workflow:b'], 1);
-  assert.equal(byId['workflow:c'], 2);
+  assert.equal(byId['procedure:b'], 1);
+  assert.equal(byId['procedure:c'], 2);
 });
 
 test('graph queryDown lists a node\'s transitive dependents with depth along the default rels', () => {
@@ -191,11 +191,11 @@ test('graph queryDown lists a node\'s transitive dependents with depth along the
   writeGraph(root, {
     nodes: [
       { id: 'capability:a', type: 'capability' },
-      { id: 'workflow:b', type: 'workflow' },
+      { id: 'procedure:b', type: 'procedure' },
     ],
-    edges: [{ from: 'capability:a', to: 'workflow:b', rel: 'embeds', source: 'registry' }],
+    edges: [{ from: 'capability:a', to: 'procedure:b', rel: 'embeds', source: 'registry' }],
   });
-  const { result: code, output } = captureStdout(() => runGraphCli(['queryDown', 'workflow:b', '--json'], { rootDir: root, projectDir: root }));
+  const { result: code, output } = captureStdout(() => runGraphCli(['queryDown', 'procedure:b', '--json'], { rootDir: root, projectDir: root }));
   assert.equal(code, 0);
   const parsed = JSON.parse(output);
   assert.equal(parsed.count, 1);

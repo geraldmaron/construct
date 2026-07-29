@@ -45,6 +45,7 @@ This page reconciles three sources:
 | `cleanup` | current | Diagnostics | no | Release dev-agent memory pressure by cleaning stale helper and bridge processes |
 | `completions` | current | Advanced | no | Shell completion scripts |
 | `config` | current | Advanced | no | Deployment mode configuration |
+| `contract` | current | Work | no | Inspect and clear the contract enforcement ladder gating an artifact |
 | `creds` | current | Integrations | no | Manage provider credentials (login, set, rotate, revoke, list, test) |
 | `customer` | current | Work | no | Manage customer profiles for product intelligence |
 | `db` | current | Models & Integrations | no | Inspect and migrate the optional Postgres backend |

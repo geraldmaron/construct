@@ -83,31 +83,31 @@ test('a workflow is flagged only when every embedding capability is untested', (
   const root = freshRoot();
   writeGraph(root, {
     nodes: [
-      { id: 'workflow:mixed', type: 'workflow' },
-      { id: 'workflow:fully-untested', type: 'workflow' },
+      { id: 'procedure:mixed', type: 'procedure' },
+      { id: 'procedure:fully-untested', type: 'procedure' },
       { id: 'capability:mixed-a', type: 'capability' },
       { id: 'capability:mixed-b', type: 'capability' },
       { id: 'capability:untested-only', type: 'capability' },
       { id: 'test:tests/mixed-a.test.mjs', type: 'test' },
     ],
     edges: [
-      { from: 'capability:mixed-a', to: 'workflow:mixed', rel: 'embeds', source: 'registry' },
-      { from: 'capability:mixed-b', to: 'workflow:mixed', rel: 'embeds', source: 'registry' },
-      { from: 'capability:untested-only', to: 'workflow:fully-untested', rel: 'embeds', source: 'registry' },
+      { from: 'capability:mixed-a', to: 'procedure:mixed', rel: 'embeds', source: 'registry' },
+      { from: 'capability:mixed-b', to: 'procedure:mixed', rel: 'embeds', source: 'registry' },
+      { from: 'capability:untested-only', to: 'procedure:fully-untested', rel: 'embeds', source: 'registry' },
       { from: 'test:tests/mixed-a.test.mjs', to: 'capability:mixed-a', rel: 'validates', source: 'registry' },
     ],
   });
   const gaps = findMissingTestCapabilities(root);
   assert.ok(gaps.capabilities.includes('capability:mixed-b'));
   assert.ok(gaps.capabilities.includes('capability:untested-only'));
-  assert.ok(!gaps.workflows.includes('workflow:mixed'), 'mixed workflow has at least one tested embedding capability');
-  assert.ok(gaps.workflows.includes('workflow:fully-untested'));
+  assert.ok(!gaps.workflows.includes('procedure:mixed'), 'mixed workflow has at least one tested embedding capability');
+  assert.ok(gaps.workflows.includes('procedure:fully-untested'));
 });
 
 test('a workflow with no embedding capabilities at all is not flagged', () => {
   const root = freshRoot();
   writeGraph(root, {
-    nodes: [{ id: 'workflow:orphan', type: 'workflow' }],
+    nodes: [{ id: 'procedure:orphan', type: 'procedure' }],
     edges: [],
   });
   const gaps = findMissingTestCapabilities(root);

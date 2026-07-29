@@ -62,8 +62,8 @@ function freshRoot() {
 function sampleGraph() {
   return {
     nodes: [
-      { id: 'workflow:documented', type: 'workflow' },
-      { id: 'workflow:undocumented', type: 'workflow' },
+      { id: 'procedure:documented', type: 'procedure' },
+      { id: 'procedure:undocumented', type: 'procedure' },
       { id: 'provider:slack', type: 'provider' },
       { id: 'doc:docs/documented.md', type: 'doc', attrs: { path: 'docs/documented.md' } },
       { id: 'capability:cap-a', type: 'capability' },
@@ -73,8 +73,8 @@ function sampleGraph() {
       { id: 'test:tests/cap-a.test.mjs', type: 'test' },
     ],
     edges: [
-      { from: 'doc:docs/documented.md', to: 'workflow:documented', rel: 'documents', source: 'doc-scan' },
-      { from: 'capability:cap-a', to: 'workflow:documented', rel: 'embeds', source: 'registry' },
+      { from: 'doc:docs/documented.md', to: 'procedure:documented', rel: 'documents', source: 'doc-scan' },
+      { from: 'capability:cap-a', to: 'procedure:documented', rel: 'embeds', source: 'registry' },
       { from: 'capability:cap-a', to: 'contract:c1', rel: 'governed_by', source: 'registry' },
       { from: 'capability:cap-a', to: 'skill:s1', rel: 'uses', source: 'registry' },
       { from: 'capability:cap-a', to: 'surface:cli', rel: 'exposes', source: 'registry' },
@@ -88,7 +88,7 @@ test('findMissingDocs flags a workflow/provider with zero inbound documents edge
   writeGraph(root, sampleGraph());
   const result = findMissingDocs(root);
   assert.equal(result.graphPresent, true);
-  assert.deepEqual(result.workflows, ['workflow:undocumented']);
+  assert.deepEqual(result.workflows, ['procedure:undocumented']);
   assert.deepEqual(result.providers, ['provider:slack']);
 });
 
@@ -113,34 +113,34 @@ test('findDependencies reports contracts/uses per workflow gathered from embeddi
   writeGraph(root, sampleGraph());
   const result = findDependencies(root);
   assert.equal(result.graphPresent, true);
-  assert.deepEqual(result.workflows['workflow:documented'].contracts, ['contract:c1']);
-  assert.deepEqual(result.workflows['workflow:documented'].uses, ['skill:s1']);
-  assert.deepEqual(result.workflows['workflow:undocumented'].contracts, []);
+  assert.deepEqual(result.workflows['procedure:documented'].contracts, ['contract:c1']);
+  assert.deepEqual(result.workflows['procedure:documented'].uses, ['skill:s1']);
+  assert.deepEqual(result.workflows['procedure:undocumented'].contracts, []);
 });
 
 test('findProviders reports provider-typed uses-edges per workflow', () => {
   const root = freshRoot();
   writeGraph(root, {
     nodes: [
-      { id: 'workflow:w', type: 'workflow' },
+      { id: 'procedure:w', type: 'procedure' },
       { id: 'capability:c', type: 'capability' },
       { id: 'provider:slack', type: 'provider' },
     ],
     edges: [
-      { from: 'capability:c', to: 'workflow:w', rel: 'embeds', source: 'registry' },
+      { from: 'capability:c', to: 'procedure:w', rel: 'embeds', source: 'registry' },
       { from: 'capability:c', to: 'provider:slack', rel: 'uses', source: 'registry' },
     ],
   });
   const result = findProviders(root);
-  assert.deepEqual(result.workflows['workflow:w'], ['provider:slack']);
+  assert.deepEqual(result.workflows['procedure:w'], ['provider:slack']);
 });
 
 test('findSurfaces reports exposes-edges per workflow', () => {
   const root = freshRoot();
   writeGraph(root, sampleGraph());
   const result = findSurfaces(root);
-  assert.deepEqual(result.workflows['workflow:documented'], ['surface:cli']);
-  assert.deepEqual(result.workflows['workflow:undocumented'], []);
+  assert.deepEqual(result.workflows['procedure:documented'], ['surface:cli']);
+  assert.deepEqual(result.workflows['procedure:undocumented'], []);
 });
 
 test('acceptance: missing-tests output agrees with graph validate error/warning list', () => {

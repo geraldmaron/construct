@@ -36,7 +36,7 @@ function freshRoot() {
 test('verify fails on partial graph and names the reason', () => {
   const root = freshRoot();
   writeGraph(root, {
-    nodes: [{ id: nodeId('workflow', 'w1'), type: 'workflow', name: 'w1' }],
+    nodes: [{ id: nodeId('procedure', 'w1'), type: 'procedure', name: 'w1' }],
     edges: [],
     partial: true,
     partialReasons: ['buildFromRegistry: modular org not found'],
@@ -61,12 +61,12 @@ test('verify passes on a minimal valid non-partial graph', () => {
   const root = freshRoot();
   writeGraph(root, {
     nodes: [
-      { id: nodeId('workflow', 'demo'), type: 'workflow', name: 'demo' },
+      { id: nodeId('procedure', 'demo'), type: 'procedure', name: 'demo' },
       { id: nodeId('capability', 'demo'), type: 'capability', name: 'demo' },
       { id: nodeId('test', 'demo.test.mjs'), type: 'test', name: 'demo.test.mjs' },
     ],
     edges: [
-      { from: nodeId('capability', 'demo'), to: nodeId('workflow', 'demo'), rel: 'embeds', source: 'registry' },
+      { from: nodeId('capability', 'demo'), to: nodeId('procedure', 'demo'), rel: 'embeds', source: 'registry' },
       { from: nodeId('test', 'demo.test.mjs'), to: nodeId('capability', 'demo'), rel: 'validates', source: 'corpus-annotation' },
     ],
     partial: false,

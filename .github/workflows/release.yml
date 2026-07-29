@@ -20,8 +20,8 @@ jobs:
     env:
       CONSTRUCT_EMBEDDING_MODEL: hashing
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version-file: .tool-versions
           cache: npm
@@ -101,8 +101,8 @@ jobs:
             node_arch: x64
 
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version-file: .tool-versions
           architecture: ${{ matrix.node_arch }}
@@ -182,14 +182,14 @@ jobs:
       contents: write
       id-token: write  # for npm provenance
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       # Node 24 ships with npm 11+. npm CLI 11.5.1+ is required for Trusted
       # Publishers OIDC (https://docs.npmjs.com/trusted-publishers). Node 22
       # ships with npm 10.x which does not support OIDC-first auth and fell back
       # to the github.token injected by setup-node, causing a 404. With npm 11+,
       # OIDC is tried before any token fallback — registry-url is safe to use.
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: 24
           registry-url: 'https://registry.npmjs.org'
@@ -293,7 +293,7 @@ jobs:
     if: ${{ vars.HOMEBREW_TAP_ENABLED == 'true' && !contains(github.ref_name, '-') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Read license from package.json
         id: pkg

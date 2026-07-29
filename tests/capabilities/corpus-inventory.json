@@ -1,25 +1,25 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-25T00:57:22.386Z",
+  "generatedAt": "2026-07-29T00:22:04.492Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 1131,
+    "testFiles": 1139,
     "topLevelTestFiles": 430,
-    "nestedTestFiles": 701,
+    "nestedTestFiles": 709,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 52,
     "byLayer": {
-      "unit": 745,
-      "functional": 326,
+      "unit": 750,
+      "functional": 329,
       "visual": 14,
       "integration": 44,
       "live-provider": 2
     },
     "byCategory": {
-      "unit": 663,
-      "functional": 326,
+      "unit": 667,
+      "functional": 329,
       "visual": 14,
-      "structural-guard": 21,
+      "structural-guard": 22,
       "contract-subsystem": 62,
       "integration": 33,
       "live-provider": 2,
@@ -1633,12 +1633,28 @@
       "maintainerNotes": "Verifies contract enforcement at the Worker Profile assignment boundary."
     },
     {
+      "path": "tests/contracts/enforcement.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/contracts/enforcement.test.mjs — the contract enforcement ladder's"
+    },
+    {
       "path": "tests/contracts/extraction-provider.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/contracts/extraction-provider.test.mjs — schema-validation fixtures for"
+    },
+    {
+      "path": "tests/contracts/gate-cli-list.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/contracts/gate-cli-list.test.mjs — the enforcement inventory surface"
     },
     {
       "path": "tests/core-dependency-policy.test.mjs",
@@ -3185,6 +3201,14 @@
       "maintainerNotes": "tests/functional/context-window-recovery.functional.test.mjs — end-to-end"
     },
     {
+      "path": "tests/functional/contract-enforcement.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/contract-enforcement.functional.test.mjs — the contract"
+    },
+    {
       "path": "tests/functional/copilot-auth.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3952,6 +3976,14 @@
       "maintainerNotes": "tests/functional/host-mcp-emulation.functional.test.mjs"
     },
     {
+      "path": "tests/functional/hybrid-query-degraded-embedder.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/hybrid-query-degraded-embedder.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/improvement-controller.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -4539,6 +4571,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/openrouter-key.functional.test.mjs — OpenRouter credential discovery."
+    },
+    {
+      "path": "tests/functional/openrouter-llm-live-gate.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/openrouter-llm-live-gate.functional.test.mjs — file-tier key"
     },
     {
       "path": "tests/functional/operating-profile-capability-class.functional.test.mjs",
@@ -5655,6 +5695,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/graph/incremental.test.mjs — scoped graph refresh on edit"
+    },
+    {
+      "path": "tests/graph/procedure-node-prefix-parity.test.mjs",
+      "layer": "unit",
+      "category": "structural-guard",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/graph/procedure-node-prefix-parity.test.mjs — the node prefix the"
     },
     {
       "path": "tests/graph/relational-postgres-store.test.mjs",
@@ -7203,6 +7251,14 @@
       "maintainerNotes": "tests/orchestration/provenance.test.mjs — full execution provenance in traces (LMCP-F1)."
     },
     {
+      "path": "tests/orchestration/provider-budget.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration/provider-budget.test.mjs — per-run USD spend ceiling"
+    },
+    {
       "path": "tests/orchestration/write-proposal-parser.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -8169,6 +8225,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/scripts/graph-impact-shadow.test.mjs — self-test for TAP failure"
+    },
+    {
+      "path": "tests/scripts/npm-audit-with-exceptions.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/scripts/npm-audit-with-exceptions.test.mjs — exceptions-aware npm"
     },
     {
       "path": "tests/scripts/release-evidence-gate.test.mjs",
