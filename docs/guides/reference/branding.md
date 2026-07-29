@@ -11,14 +11,14 @@ Single index for maintainers and agents. Generated surfaces (init scaffolding, p
 
 | Element | Value | Source |
 |---------|-------|--------|
-| Sans / display | Plus Jakarta Sans (weights 400–700) | [`lib/brand-tokens.mjs`](../../lib/brand-tokens.mjs) |
-| Monospace | JetBrains Mono | [`lib/brand-fonts.mjs`](../../lib/brand-fonts.mjs) |
-| Color | Field-notebook ink ramp with slate-teal evidence accent (`#1f5c61`) | [`templates/distribution/construct-brand.typ`](../../templates/distribution/construct-brand.typ) |
-| Published artifact tokens | Same ink + typography via templates and CSS vars | [`lib/brand-tokens.mjs`](../../lib/brand-tokens.mjs), [`packages/construct-ui/styles/theme.css`](../../packages/construct-ui/styles/theme.css) |
-| Diagrams (publish) | D2 `--sketch` for structural hand-drawn figures; Mermaid classic + Plus Jakarta (handDrawn/Caveat retired); proof non-overlap | [`lib/diagram-export.mjs`](../../lib/diagram-export.mjs), [`lib/figure-layout.mjs`](../../lib/figure-layout.mjs) |
+| Sans / display | Plus Jakarta Sans (weights 400–700) | [`lib/brand-tokens.mjs`](../../../lib/brand-tokens.mjs) |
+| Monospace | JetBrains Mono | [`lib/brand-fonts.mjs`](../../../lib/brand-fonts.mjs) |
+| Color | Field-notebook ink ramp with slate-teal evidence accent (`#1f5c61`) | [`templates/distribution/construct-brand.typ`](../../../templates/distribution/construct-brand.typ) |
+| Published artifact tokens | Same ink + typography via templates and CSS vars | [`lib/brand-tokens.mjs`](../../../lib/brand-tokens.mjs), [`packages/construct-ui/styles/theme.css`](../../../packages/construct-ui/styles/theme.css) |
+| Diagrams (publish) | D2 `--sketch` for structural hand-drawn figures; Mermaid classic + Plus Jakarta (handDrawn/Caveat retired); proof non-overlap | [`lib/diagram-export.mjs`](../../../lib/diagram-export.mjs), [`lib/figure-layout.mjs`](../../../lib/figure-layout.mjs) |
 | Optional whiteboard | Excalidraw / host MCP — agent canvas only, not publish | Leave to the tool; do not bolt into pandoc |
 
-Bundled fonts for offline export: [`templates/distribution/fonts/`](../../templates/distribution/fonts/). Typst export passes `--font-path`, `--ignore-system-fonts`, and `--ignore-embedded-fonts` so system fallbacks (Libertinus, DejaVu) never replace the brand faces.
+Bundled fonts for offline export: [`templates/distribution/fonts/`](../../../templates/distribution/fonts/). Typst export passes `--font-path`, `--ignore-system-fonts`, and `--ignore-embedded-fonts` so system fallbacks (Libertinus, DejaVu) never replace the brand faces.
 
 ### Retired typography (do not ship)
 
@@ -32,7 +32,7 @@ These families are retired from active brand surfaces. References in docs, templ
 
 ## Naming
 
-See [naming.md](./naming.md) and [prompt surfaces](../concepts/prompt-surfaces.mdx).
+See [prompt surfaces](../concepts/prompt-surfaces.mdx).
 
 | Context | Form |
 |---------|------|
@@ -45,13 +45,13 @@ Users address `@construct` only. Worker Profiles route internally.
 
 ## Voice and tone
 
-Prose rules: [STYLE.md](../STYLE.md). No marketing voice (`robust`, `enterprise-grade`, `best-in-class`, …). Acknowledge limits; refer to Construct as a project, not a product.
+Prose rules: [STYLE.md](../../STYLE.md). No marketing voice (`robust`, `enterprise-grade`, `best-in-class`, …). Acknowledge limits; refer to Construct as a project, not a product.
 
 Typed artifacts resolve tone from:
 
-1. [`registry/artifact-manifest.json`](../../registry/artifact-manifest.json) `toneDefault` / `toneAllowed`
+1. [`registry/artifact-manifest.json`](../../../registry/artifact-manifest.json) `toneDefault` / `toneAllowed`
 2. Workspace Preset tone defaults in `registry/workspace-presets/*.json`
-3. Optional project override [`.construct/brand-voice.json`](../../schemas/brand-voice.schema.json)
+3. Optional project override [`.construct/brand-voice.json`](../../../schemas/brand-voice.schema.json)
 
 Validate before ship: `construct artifact validate <path> --type=<doc-type>`.
 
@@ -100,4 +100,4 @@ Run the brand audit: `node scripts/audit/03d-brand.mjs`.
 ## Related
 
 - [Document I/O](./document-io.md) — export formats and branded PDF/deck/PPTX
-- [Templates](../templates/README.md) — shipped doc shapes and overrides
+- [Templates](../../../templates/docs/README.md) — shipped doc shapes and overrides

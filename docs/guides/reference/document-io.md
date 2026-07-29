@@ -137,7 +137,7 @@ npm run examples:deck
 | Platform PRD demo (cockpit + PDF scroll) | `.tmp/distribution-examples/agentic-platforms-prd.mp4` (Playwright recording `agentic-platforms-prd`) |
 | HTML slide deck | `.tmp/distribution-examples/deck-deck.html` |
 | PowerPoint | `.tmp/distribution-examples/deck.pptx` |
-| Sources | [`examples/distribution/sources/`](../../examples/distribution/sources/) |
+| Sources | [`examples/distribution/sources/`](../../../examples/distribution/sources/) |
 
 ### Publish templates by artifact type
 
@@ -167,9 +167,9 @@ Reports export (Pandoc, Typst, LibreOffice for `.doc`, pptxgenjs, deck template)
 ## Related ADRs
 
 - [ADR-0024](/decisions/adr/0024-document-io-optional-capability) — optional external tooling
-- [ADR-0036](/decisions/adr/0036-document-ingestion-docling-mcp-evaluation.md) — docling sidecar default; remote opt-in
-- [ADR-0001](/decisions/adr/0001-zero-npm-core.md) — no heavy deps in core install
+- [ADR-0036](/decisions/adr/0036-document-ingestion-docling-mcp-evaluation) — docling sidecar default; remote opt-in
+- [ADR-0001](/decisions/adr/0001-zero-npm-core) — no heavy deps in core install
 
 ## Brand consistency
 
-Distribution exports, dashboard, supported hosts, and wireframe scaffolds share the Construct brand contract documented in [branding.md](./branding.md). Visual tokens live in [`lib/brand-tokens.mjs`](../../lib/brand-tokens.mjs) (field-notebook ink ramp with slate-teal accent, Plus Jakarta Sans / JetBrains Mono). PPTX exports embed bundled TTF cuts via [`lib/brand-fonts.mjs`](../../lib/brand-fonts.mjs) when `pptx-embed-fonts` is installed.
+Distribution exports, dashboard, supported hosts, and wireframe scaffolds share the Construct brand contract documented in [branding.md](./branding.md). Visual tokens live in [`lib/brand-tokens.mjs`](../../../lib/brand-tokens.mjs) (field-notebook ink ramp with slate-teal accent, Plus Jakarta Sans / JetBrains Mono). PPTX exports embed bundled TTF cuts via [`lib/brand-fonts.mjs`](../../../lib/brand-fonts.mjs) when `pptx-embed-fonts` is installed.

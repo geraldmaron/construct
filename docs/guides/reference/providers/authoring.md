@@ -1,5 +1,5 @@
 <!--
-docs/providers/authoring.md: Plugin author guide for Construct data-source providers.
+docs/guides/reference/providers/authoring.md: Plugin author guide for Construct data-source providers.
 
 Covers the factory signature, meta object, configSchema, the five optional methods,
 error handling, and registration. Source of truth: lib/providers/contract.mjs.

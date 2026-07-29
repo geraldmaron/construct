@@ -1,5 +1,5 @@
 <!--
-docs/providers/salesforce.md: Salesforce provider setup and usage guide.
+docs/guides/reference/providers/salesforce.md: Salesforce provider setup and usage guide.
 
 Covers credential configuration, capabilities (read/search), and SOQL examples.
 -->

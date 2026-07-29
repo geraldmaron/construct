@@ -1,5 +1,5 @@
 <!--
-docs/providers/overview.md: Capability matrix and plugin model for Construct data-source providers.
+docs/guides/reference/providers/overview.md: Capability matrix and plugin model for Construct data-source providers.
 
 Covers the five built-in providers and how to add custom providers via the plugin contract.
 -->

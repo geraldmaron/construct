@@ -28,7 +28,7 @@ The published CLI keeps a deliberately small runtime dependency surface (see [do
 - `npm audit --omit=dev --audit-level=high` — the repository's own tree.
 - `npm run audit:published` — the **artifact a consumer installs**, packed and audited in a clean project with no `overrides` in scope. This is the gate that catches a transitive advisory a repo-local override would mask.
 
-Remediation follows the ladder in [docs/dependencies.md](docs/dependencies.md#transitive-vulnerability-remediation): bump → replace/remove → demote to optional → ADR-justified accept.
+Remediation follows the ladder in [docs/dependencies.md](docs/guides/reference/dependencies.md#transitive-vulnerability-remediation): bump → replace/remove → demote to optional → ADR-justified accept.
 
 ### Interim mitigation for consumers
 
@@ -46,4 +46,4 @@ To avoid the local ONNX embedding stack entirely, set `CONSTRUCT_EMBEDDING_MODEL
 
 ## Handling of secrets and audit trails
 
-Operational security guidance — credential handling, secret-scanning hooks, the tamper-evident audit trail, and dashboard hardening — lives in [docs/security.md](docs/security.md).
+Operational security guidance — credential handling, secret-scanning hooks, the tamper-evident audit trail, and dashboard hardening — lives in [docs/guides/reference/security.md](docs/guides/reference/security.md).
