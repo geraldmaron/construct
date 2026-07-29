@@ -4,7 +4,7 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
-## [2.1.0] - 2026-07-28
+## [2.1.0] - 2026-07-29
 
 ### Added
 
