@@ -54,7 +54,7 @@ Remediation ladder:
 
 1. **Bump the offending direct dependency** to a release line whose transitive graph is already patched.
 2. **Replace or remove the direct dependency** when the maintained successor resolves a clean tree (e.g. `@xenova/transformers` → `@huggingface/transformers`).
-3. **Demote to `optionalDependencies` or a peer** so a non-essential heavy dependency leaves the default install surface — only when an in-tree or hosted fallback exists (see [ADR 0014](adr/0014-local-embeddings-optional.md)). Optional deps are still installed and audited by default, so this complements but does not substitute for rungs 1–2.
+3. **Demote to `optionalDependencies` or a peer** so a non-essential heavy dependency leaves the default install surface — only when an in-tree or hosted fallback exists (see [ADR 0014](../../decisions/adr/0014-local-embeddings-optional.md)). Optional deps are still installed and audited by default, so this complements but does not substitute for rungs 1–2.
 4. **Accept with a documented ADR** only when no upstream fix exists, recording the residual risk and the revisit condition.
 
 A repo-local `overrides` pin is acceptable as defense-in-depth for this repo's own tree, but it is never the line item that closes a consumer-facing advisory.

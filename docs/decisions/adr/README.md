@@ -52,7 +52,7 @@ Bodies may still contain historical `workflow` / `cx-*` / `specialists/` / dashb
 | [0032](./0032-small-model-context-methodology.md) | Small-model context methodology | accepted | |
 | [0033](./0033-platform-capability-registry.md) | Platform capability registry | accepted | |
 | [0034](./0034-local-vs-cloud-methodology-split.md) | Local-vs-cloud methodology split | accepted | |
-| [0035](./0035-test-strategy-extend-not-rebuild.md) | Test strategy — extend, not rebuild | superseded | ADR-0058 |
+| 0035 | Test strategy — extend, not rebuild | superseded | ADR-0058 |
 | [0036](./0036-document-ingestion-docling-mcp-evaluation.md) | Document ingestion — docling sidecar | accepted | |
 | [0037](./0037-specialist-prompt-format.md) | Specialist prompt format | proposed | Obsolete title + banner; Worker Profile prompts replace specialists |
 | [0038](./0038-adaptive-local-prompt-composition.md) | Adaptive local-model prompt composition | accepted | |

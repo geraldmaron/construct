@@ -1,5 +1,5 @@
 <!--
-docs/providers/atlassian-confluence.md: Confluence provider setup and usage guide.
+docs/guides/reference/providers/atlassian-confluence.md: Confluence provider setup and usage guide.
 
 Covers credential configuration (shared with Jira), capabilities (read/search), and CQL examples.
 -->
