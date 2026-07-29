@@ -104,6 +104,8 @@ A contract postcondition is classified as executable or advisory (`lib/contracts
 
 Both `enforcementLevel` and `approvalWorkerProfiles` live in `registry/contracts/*.json` (or a capability's `contracts` block). No domain name appears in `lib/` — legal sign-off is the first instance, not a special case, and a Workspace Preset can declare a different one without touching the substrate.
 
+**Choosing a rung.** `hard` is right when the decision must carry a named approver and a reason string is not a substitute — `legal-compliance-to-release-manager` sits there because shipping a release with unresolved compliance is exactly that case. `soft` is right when proceeding is a legitimate call the author can make as long as it is explained and audited; `architect-to-legal-compliance` sits there because a design document tripping a risk flag often resolves without counsel. `hard` is safe to declare only because its clearing path is a single command that release-gate coverage exercises end to end — a `hard` rung whose sign-off path is unproven strands authors with no recourse, and the pressure then lands on deleting the gate.
+
 **Artifacts opt in by declaring risk flags.** A contract engages only when its `trigger` matches, and risk-flag triggers read from artifact frontmatter:
 
 ```markdown
@@ -115,6 +117,14 @@ cx_risk_flags: compliance, privacy
 Nothing is blocked until an author states the artifact carries the risk. Inferring risk from prose would make the gate fire on wording.
 
 **Chokepoint.** `validateArtifactRelease` (`lib/artifact-release-gate.mjs`) runs the ladder last, so a hard block reads as the final word rather than competing with structural lint. Blocked contracts become gate errors; overrides and advisory contracts become warnings.
+
+**Knowing what enforces.** A blocking gate you cannot enumerate cannot be operated, so the ladder is inventoriable. `--enforcing` narrows to the rungs that can actually block — the set that needs approvers staffed:
+
+```bash
+construct contract list --enforcing
+```
+
+A contract whose `enforcementLevel` fails to resolve is listed as an `invalid` row and drives a nonzero exit, rather than being dropped from a list that would then read as complete. It also survives the `--enforcing` filter, so a misdeclared rung cannot hide behind the narrower view.
 
 **Recording decisions:**
 

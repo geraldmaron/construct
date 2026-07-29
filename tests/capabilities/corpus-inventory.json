@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-28T23:01:31.159Z",
+  "generatedAt": "2026-07-29T00:22:04.492Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 1138,
+    "testFiles": 1139,
     "topLevelTestFiles": 430,
-    "nestedTestFiles": 708,
+    "nestedTestFiles": 709,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 52,
     "byLayer": {
-      "unit": 749,
+      "unit": 750,
       "functional": 329,
       "visual": 14,
       "integration": 44,
       "live-provider": 2
     },
     "byCategory": {
-      "unit": 666,
+      "unit": 667,
       "functional": 329,
       "visual": 14,
       "structural-guard": 22,
@@ -1647,6 +1647,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/contracts/extraction-provider.test.mjs — schema-validation fixtures for"
+    },
+    {
+      "path": "tests/contracts/gate-cli-list.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/contracts/gate-cli-list.test.mjs — the enforcement inventory surface"
     },
     {
       "path": "tests/core-dependency-policy.test.mjs",
