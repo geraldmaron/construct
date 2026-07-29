@@ -94,11 +94,12 @@ Inspect and clear the contract enforcement ladder gating an artifact
 **Usage**
 
 ```bash
-construct contract <status|sign-off|override> ...
+construct contract <list|status|sign-off|override> ...
 ```
 
 **Subcommands**
 
+- `list [--enforcing] [--json]` — Inventory every contract, its rung, and who can clear it
 - `status <artifact> [--type=<t>] [--json]` — Show which contracts gate an artifact and what would clear them
 - `sign-off <contract-id> --as=<worker-profile>` — Record an approval; the only thing that clears a hard rung
 - `override <contract-id> --reason=<text>` — Proceed past a soft rung, recorded in the audit trail
@@ -112,6 +113,7 @@ construct contract <status|sign-off|override> ...
 | `--artifact=<path>` | Scope the record to one artifact; omit to record it contract-wide |
 | `--reason=<text>` | Required for override — an unexplained override is indistinguishable from a missing gate |
 | `--actor=<name>` | Human or process recording the decision, carried into the audit entry |
+| `--enforcing` | List only rungs that can block (hard, soft, and any that fail to resolve) |
 | `--json` | Emit the gate evaluation as JSON |
 
 ## construct customer

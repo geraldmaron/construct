@@ -8,7 +8,7 @@ import path from 'node:path';
 import test from 'node:test';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
-const RELEASE_VERSION = '2.0.2';
+const RELEASE_VERSION = '2.1.0';
 const readJson = (relativePath) => JSON.parse(fs.readFileSync(path.join(ROOT, relativePath), 'utf8'));
 
 test('package, lockfile root, and launcher pin agree on the release version', () => {
