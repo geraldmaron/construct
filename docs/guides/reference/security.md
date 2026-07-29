@@ -1,5 +1,5 @@
 <!--
-docs/security.md: Security guide for Construct.
+docs/guides/reference/security.md: Security guide for Construct.
 
 Covers credential handling, audit log, CSRF, CORS, rate limiting,
 token rotation, and CONSTRUCT_DEPRECATIONS=error mode.
@@ -7,7 +7,7 @@ token rotation, and CONSTRUCT_DEPRECATIONS=error mode.
 
 # Security
 
-To report a vulnerability, see [SECURITY.md](../SECURITY.md) (private reporting, response targets, and the consumer interim-mitigation guidance). This guide covers operational hardening.
+To report a vulnerability, see [SECURITY.md](../../../SECURITY.md) (private reporting, response targets, and the consumer interim-mitigation guidance). This guide covers operational hardening.
 
 ## Credential handling
 

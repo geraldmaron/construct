@@ -10,8 +10,8 @@ lib/templates/visual-requirements.mjs (STRUCTURE_REQUIREMENTS).
 
 ## Dimensions
 
-1. **Evidence grounding** — every load-bearing claim traces to a verifiable source with a date and an Admiralty grade ([ADR-0017](../../decisions/adr/0017-source-credibility-taxonomy.md)). Cite **inline** with a clickable link or `[source: …]` per [citation.md](../../../rules/common/citation.md); References alone are not enough. No fabrication ([rules/common/no-fabrication.md](../../rules/common/no-fabrication.md)). *Enforced by citation-validity + optional `--check-links` fetch.*
-2. **Methodology / reproducibility** — the document states how it was produced (search terms, sources queried, inclusion decisions) so another person could reproduce it ([research.md §7](../../rules/common/research.md)).
+1. **Evidence grounding** — every load-bearing claim traces to a verifiable source with a date and an Admiralty grade ([ADR-0017](../../decisions/adr/0017-source-credibility-taxonomy.md)). Cite **inline** with a clickable link or `[source: …]` per [citation.md](../../../rules/common/citation.md); References alone are not enough. No fabrication ([rules/common/no-fabrication.md](../../../rules/common/no-fabrication.md)). *Enforced by citation-validity + optional `--check-links` fetch.*
+2. **Methodology / reproducibility** — the document states how it was produced (search terms, sources queried, inclusion decisions) so another person could reproduce it ([research.md §7](../../../rules/common/research.md)).
 3. **Confidence calibration** — confidence is stated and tied to source quality, not authorial conviction; the strongest counter-evidence is named.
 4. **Completeness** — every section a domain expert expects for this doc type is present and non-empty. *Enforced by `STRUCTURE_REQUIREMENTS`.*
 5. **Visual legibility** — the document carries the visual its purpose demands (a runbook a decision flowchart, an incident a timeline, an RFC a sequence diagram), per [doc-visual-matrix.md](doc-visual-matrix.md). Published PDFs use type-specific Typst layouts with bundled product-editorial typography (compact masthead, running header/footer, unnumbered sections, blockquote callouts) and crisp diagram styling with a field-notebook ink accent. Tables use horizontal rules and roomy cell padding so text does not collide with grid lines or figure frames; callout labels sit in-flow (not overdrawn on borders). *Enforced.*
@@ -39,4 +39,4 @@ lib/templates/visual-requirements.mjs (STRUCTURE_REQUIREMENTS).
 
 - [ADR-0018 (document quality standard)](../../decisions/adr/0018-document-quality-standard.md), [ADR-0017 (source taxonomy)](../../decisions/adr/0017-source-credibility-taxonomy.md)
 - [Google SRE: Postmortem Culture](https://sre.google/workbook/postmortem-culture/), [Error Budget Policy](https://sre.google/workbook/error-budget-policy/)
-- [doc-visual-matrix.md](doc-visual-matrix.md), [rules/common/research.md](../../rules/common/research.md)
+- [doc-visual-matrix.md](doc-visual-matrix.md), [rules/common/research.md](../../../rules/common/research.md)

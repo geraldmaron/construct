@@ -44,7 +44,7 @@ Modular files match how skills already live (`skills/**` with inventory snapshot
 1. Run `node scripts/migrate-org-modular.mjs` to emit `specialists/org/**` from the legacy monolith.
 2. Switch `loadRegistry()` to `assembleRegistry()`.
 3. Delete `specialists/unified-registry.json`; retain `scripts/migrate-org-modular.mjs` for reference.
-4. Update [docs/guides/concepts/teams.md](../../guides/concepts/teams.md) and architecture docs.
+4. Update [docs/guides/concepts/org-chart.md](../../guides/concepts/org-chart.md) and architecture docs.
 
 ## Evidence
 

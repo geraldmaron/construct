@@ -1,5 +1,5 @@
 <!--
-docs/providers/atlassian-jira.md: Jira provider setup and usage guide.
+docs/guides/reference/providers/atlassian-jira.md: Jira provider setup and usage guide.
 
 Covers credential configuration, capabilities (read/search), and JQL examples.
 -->

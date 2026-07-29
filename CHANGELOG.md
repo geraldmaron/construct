@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- **Stale cross-references across the published docs and repo markdown**: 36 broken relative links and 9 stale file-header self-paths, nearly all fallout from the docs layout migration into `docs/guides/`. Three classes. (1) Depth-off-by-one: `docs/guides/reference/branding.md`, `document-io.md`, and `docs/guides/concepts/doc-quality-rubric.md` walked `../../` to reach repo-root `lib/`, `packages/`, `templates/`, `registry/`, `schemas/`, and `rules/`, which resolves to `docs/` from three levels deep — corrected to `../../../`. (2) Moved targets: `SECURITY.md` pointed at the pre-migration `docs/security.md` and `docs/dependencies.md`; `STRATEGY.md` referenced `architecture.md` after it became `architecture.mdx`; `examples/provider-plugin/README.md` referenced `docs/providers/authoring.md`; `docs/guides/reference/dependencies.md` referenced ADR 0014 as a sibling; ADRs 0046/0047 referenced `concepts/teams.md`, now `concepts/org-chart.md`; nine doc files carried their pre-migration path in their own header comment. (3) Deleted targets, where the dead link is dropped and the prose kept: audit snapshots, ADR 0035, `rules/common/development-workflow.md`, `rules/common/performance.md`, and `reference/naming.md` were all pruned in earlier cleanups. Two links in `document-io.md` carried a stray `.md` on site-absolute routes and were live 404s on the published site; every other site-absolute route was verified to return 200. `templates/docs/README.md` additionally described perspective anti-patterns as inlined at sync time under a `## Role anti-patterns` heading via `lib/role-preload.mjs` — the module is `lib/perspective-preload.mjs`, the heading is `## Perspective guidance`, and inlining has been opt-in (`opts.preload`) with on-demand `get_skill` as the default.
+
 ## [2.1.0] - 2026-07-29
 
 ### Added

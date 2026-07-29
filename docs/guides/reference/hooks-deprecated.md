@@ -1,5 +1,5 @@
 <!--
-docs/hooks-deprecated.md: record of hooks removed from lib/hooks/ and where their behavior now lives.
+docs/guides/reference/hooks-deprecated.md: record of hooks removed from lib/hooks/ and where their behavior now lives.
 
 Every removed hook must have an entry here before its file is deleted.
 This file is the authoritative ledger; do not infer hook history from git blame alone.

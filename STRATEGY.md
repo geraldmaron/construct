@@ -46,7 +46,7 @@ What is there:
 - **Oracle** L0.5 meta-controller collects signals, auto-executes safe maintenance, queues consequential fixes (`construct oracle`).
 - Doc auditability stamps land on every generated `.md` file.
 - A docs site is published at `geraldmaron.github.io/construct/`.
-- A deterministic flow engine (`lib/flows/`, ADR-0067) sequences work as typed state instead of prose an agent is trusted to follow — checkpoint/resume, effort budgets, and fan-out restricted to read-only work all land. See [Flow engine](./docs/guides/concepts/architecture.md#flow-engine).
+- A deterministic flow engine (`lib/flows/`, ADR-0067) sequences work as typed state instead of prose an agent is trusted to follow — checkpoint/resume, effort budgets, and fan-out restricted to read-only work all land. See [Flow engine](./docs/guides/concepts/architecture.mdx#flow-engine).
 - Heavy per-project state (traces, runs, vector index, docling venv) moved to a machine-scoped root at `~/.construct/projects/<key>/` (ADR-0066); the docling venv is now one shared machine-wide install instead of one per project (ADR-0068).
 - Users can author their own Worker Profiles (`construct worker-profile create`) without editing `registry/`, merging builtin → user → project tiers at load time. The v1 `construct specialist` / `construct team` commands are tombstones that point at Worker Profiles.
 
@@ -76,7 +76,7 @@ A full challenge of the standing architecture, recorded in `plan.md` (epic `cons
 - **D3 — Config-layer project footprint** ([ADR-0066](./docs/decisions/adr/0066-config-layer-project-footprint.md)). A project keeps only committed text (`construct.config.json`, `.construct/context.md`, custom Worker Profiles); all heavy state (traces, vector index, runs, docling venv) moves to a machine-scoped root, shrinking a ~2.5–3 GB per-project footprint toward KB scale.
 - **D4 — Standalone-project comment hygiene.** Code comments may not name another software project by way of comparison; decision documents keep their citations (the no-fabrication rule requires them there).
 
-No backwards compatibility: these are clean breaks, not migration shims. Execution runs in six phases (decide → flow engine → roster → footprint → distribution → docs/verification); as of this writing 12 of the epic's 22 beads are closed. The flow engine, checkpoint/resume, machine-scoped state, shared docling venv, lazy vector index, and the core-roster consolidation (12 Worker Profiles shipped) are landed; the Bun-binary distribution is drafted/in-flight but not yet applied. See the current state notes above, [Flow engine](./docs/guides/concepts/architecture.md#flow-engine) in the architecture doc, and the ADR index for the full supersession record.
+No backwards compatibility: these are clean breaks, not migration shims. Execution runs in six phases (decide → flow engine → roster → footprint → distribution → docs/verification); as of this writing 12 of the epic's 22 beads are closed. The flow engine, checkpoint/resume, machine-scoped state, shared docling venv, lazy vector index, and the core-roster consolidation (12 Worker Profiles shipped) are landed; the Bun-binary distribution is drafted/in-flight but not yet applied. See the current state notes above, [Flow engine](./docs/guides/concepts/architecture.mdx#flow-engine) in the architecture doc, and the ADR index for the full supersession record.
 
 ## Bets
 
@@ -184,7 +184,7 @@ Work: harden the multi-tenant scaffold, exercise RBAC, validate the MCP broker u
 ## Related artifacts
 
 - [`docs/specs/prd/0001-construct-org-in-a-box.md`](./docs/specs/prd/0001-construct-org-in-a-box.md). The spec layer underneath this strategy.
-- [`docs/guides/concepts/architecture.md`](./docs/guides/concepts/architecture.md). Canonical architecture.
+- [`docs/guides/concepts/architecture.mdx`](./docs/guides/concepts/architecture.mdx). Canonical architecture.
 - [`docs/guides/concepts/workspace-preset-lifecycle.md`](./docs/guides/concepts/workspace-preset-lifecycle.md). How Workspace Presets are built.
 - [`templates/docs/strategy.md`](./templates/docs/strategy.md). The template projects use for their own strategies.
 - [`rules/common/review-before-change.md`](./rules/common/review-before-change.md). The audit that ran before this doc was written.

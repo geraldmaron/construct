@@ -1,5 +1,5 @@
 <!--
-docs/providers/slack.md: Slack provider setup and usage guide.
+docs/guides/reference/providers/slack.md: Slack provider setup and usage guide.
 
 Covers token configuration, capabilities (read/search), and example queries.
 -->
