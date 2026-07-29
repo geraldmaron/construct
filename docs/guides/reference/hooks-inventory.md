@@ -1,5 +1,5 @@
 <!--
-docs/hooks-inventory.md: classification of all hooks in lib/hooks/.
+docs/guides/reference/hooks-inventory.md: classification of all hooks in lib/hooks/.
 
 Four buckets: observability, guardrail, keep, and deprecated. Each hook has an
 assigned event, approximate LOC, and a one-line description. Deprecated hooks are

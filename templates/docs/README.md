@@ -109,13 +109,15 @@ Core perspectives and flavors live in [`skills/perspectives/`](../../skills/pers
 
 ### How they're loaded
 
-Unlike templates, perspective anti-patterns are **inlined at sync time** (not fetched at runtime). The Worker Profile source prompt carries a marker:
+Perspective anti-patterns are fetched **on demand** by default. The Worker Profile source prompt carries a directive:
 
 ```markdown
-**Anti-patterns**: call `get_skill("perspectives/architect.platform")` before drafting.
+**Perspective guidance**: call `get_skill("perspectives/architect.platform")` before drafting.
 ```
 
-`construct sync` (via [`lib/role-preload.mjs`](../../lib/role-preload.mjs)) replaces that line with the full core role body + flavor overlay under `## Role anti-patterns`. The content is always present in the final platform prompt: no runtime dependency, no chance for the model to skip the pre-work.
+The directive stays in the prompt verbatim, and the agent calls `get_skill` at runtime through the construct-mcp server. This saves prompt budget by not inlining guidance that may not be needed.
+
+Preloading is opt-in, reserved for hosts without reliable MCP access. When it is enabled, `construct sync` (via [`lib/perspective-preload.mjs`](../../lib/perspective-preload.mjs)) replaces that line with the core perspective body plus any flavor overlay under `## Perspective guidance`.
 
 ### Editing or adding roles
 

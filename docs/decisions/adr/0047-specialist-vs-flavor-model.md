@@ -114,7 +114,7 @@ Two-way door for individual renames; one-way for the binding-table contract once
 
 ## References
 
-- [docs/guides/concepts/teams.md](../../guides/concepts/teams.md) — squad roles and flavor section
+- [docs/guides/concepts/org-chart.md](../../guides/concepts/org-chart.md) — squad roles and flavor section
 - `lib/roles/flavor-bindings.mjs` — binding source
 - `tests/flavor-bindings.test.mjs` — binding + file existence gate
 - ADR-0046 — modular org layout

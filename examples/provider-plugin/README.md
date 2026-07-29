@@ -1,6 +1,6 @@
 # Hello World: Construct provider plugin example
 
-A minimal reference implementation of the [Construct provider contract](../../docs/providers/authoring.md). Returns canned data; no external credentials required.
+A minimal reference implementation of the [Construct provider contract](../../docs/guides/reference/providers/authoring.md). Returns canned data; no external credentials required.
 
 ## Quick start
 
@@ -31,4 +31,4 @@ construct provider test hello-world --query "greet"
 3. Add `watch()` and/or `webhook()` if your source supports push.
 4. Publish as an npm package and register via `construct provider plugins add <package>`.
 
-See [docs/providers/authoring.md](../../docs/providers/authoring.md) for the full contract reference.
+See [docs/guides/reference/providers/authoring.md](../../docs/guides/reference/providers/authoring.md) for the full contract reference.
