@@ -56,14 +56,14 @@ function graphRoot() {
       { id: 'test:tests/b.test.mjs', type: 'test' },
       { id: 'test:tests/cap.test.mjs', type: 'test' },
       { id: 'capability:c', type: 'capability' },
-      { id: 'workflow:w', type: 'workflow' },
+      { id: 'procedure:w', type: 'procedure' },
     ],
     edges: [
       { from: 'file:lib/b.mjs', to: 'file:lib/a.mjs', rel: 'imports', source: 'import-graph' },
       { from: 'test:tests/b.test.mjs', to: 'file:lib/b.mjs', rel: 'imports', source: 'import-graph' },
       { from: 'file:lib/a.mjs', to: 'capability:c', rel: 'realizes', source: 'import-graph' },
       { from: 'test:tests/cap.test.mjs', to: 'capability:c', rel: 'validates', source: 'registry' },
-      { from: 'capability:c', to: 'workflow:w', rel: 'embeds', source: 'registry' },
+      { from: 'capability:c', to: 'procedure:w', rel: 'embeds', source: 'registry' },
     ],
   });
   return root;

@@ -114,7 +114,7 @@ test('a fixture orchestration run produces an evidenced_by edge', () => {
 
   const [edge] = evidence.edges;
   assert.equal(edge.from, nodeId('runtime-evidence', run.runId));
-  assert.equal(edge.to, nodeId('workflow', REAL_PROCEDURE_ID));
+  assert.equal(edge.to, nodeId('procedure', REAL_PROCEDURE_ID));
   assert.equal(edge.rel, 'evidenced_by');
   assert.equal(edge.source, 'runtime-evidence');
 });
@@ -125,14 +125,14 @@ test('the evidenced_by edge round-trips through the persisted graph store', () =
   const evidence = buildRuntimeEvidence({ rootDir: root });
 
   writeGraph(root, {
-    nodes: [{ id: nodeId('workflow', REAL_PROCEDURE_ID), type: 'workflow', name: REAL_PROCEDURE_ID }, ...evidence.nodes],
+    nodes: [{ id: nodeId('procedure', REAL_PROCEDURE_ID), type: 'procedure', name: REAL_PROCEDURE_ID }, ...evidence.nodes],
     edges: evidence.edges,
   });
 
   const graph = loadGraph(root);
   assert.equal(graph.meta.edgesByRel.evidenced_by, 1);
   const evidenceEdges = graph.edges.filter((e) => e.rel === 'evidenced_by');
-  assert.equal(evidenceEdges[0].to, nodeId('workflow', REAL_PROCEDURE_ID));
+  assert.equal(evidenceEdges[0].to, nodeId('procedure', REAL_PROCEDURE_ID));
 });
 
 test('a run with no resolvable workflow type is skipped, not fabricated', () => {
@@ -227,7 +227,7 @@ test('graph explain --json shows last-execution data for an executed workflow', 
   const run = writeFixtureRun(root);
   const evidence = buildRuntimeEvidence({ rootDir: root });
   writeGraph(root, {
-    nodes: [{ id: nodeId('workflow', REAL_PROCEDURE_ID), type: 'workflow', name: REAL_PROCEDURE_ID }, ...evidence.nodes],
+    nodes: [{ id: nodeId('procedure', REAL_PROCEDURE_ID), type: 'procedure', name: REAL_PROCEDURE_ID }, ...evidence.nodes],
     edges: evidence.edges,
   });
 
@@ -235,7 +235,7 @@ test('graph explain --json shows last-execution data for an executed workflow', 
     runGraphCli(['explain', REAL_PROCEDURE_ID, '--json'], { projectDir: root }));
   assert.equal(code, 0);
   const parsed = JSON.parse(output);
-  assert.equal(parsed.id, nodeId('workflow', REAL_PROCEDURE_ID));
+  assert.equal(parsed.id, nodeId('procedure', REAL_PROCEDURE_ID));
   assert.equal(parsed.execution.neverExecuted, false);
   assert.equal(parsed.execution.lastExecution.runId, run.runId);
   assert.equal(parsed.execution.lastExecution.timestamp, run.updatedAt);
@@ -247,7 +247,7 @@ test('graph explain (human output) shows last-execution data', () => {
   const run = writeFixtureRun(root);
   const evidence = buildRuntimeEvidence({ rootDir: root });
   writeGraph(root, {
-    nodes: [{ id: nodeId('workflow', REAL_PROCEDURE_ID), type: 'workflow', name: REAL_PROCEDURE_ID }, ...evidence.nodes],
+    nodes: [{ id: nodeId('procedure', REAL_PROCEDURE_ID), type: 'procedure', name: REAL_PROCEDURE_ID }, ...evidence.nodes],
     edges: evidence.edges,
   });
 
@@ -262,7 +262,7 @@ test('graph explain (human output) shows last-execution data', () => {
 test('graph explain flags a never-executed workflow distinctly, not as stale', () => {
   const root = freshRoot();
   writeGraph(root, {
-    nodes: [{ id: nodeId('workflow', REAL_PROCEDURE_ID), type: 'workflow', name: REAL_PROCEDURE_ID }],
+    nodes: [{ id: nodeId('procedure', REAL_PROCEDURE_ID), type: 'procedure', name: REAL_PROCEDURE_ID }],
     edges: [],
   });
 

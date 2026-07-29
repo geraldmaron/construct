@@ -44,7 +44,7 @@ jobs:
       templates: ${{ steps.filter.outputs.templates }}
       workflow: ${{ steps.filter.outputs.workflow }}
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           # Full history so paths-filter can diff via git when the GitHub
           # Files Changed API is unreliable (large staging→main promote PRs).
@@ -143,8 +143,8 @@ jobs:
     env:
       CONSTRUCT_EMBEDDING_MODEL: hashing
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: ${{ matrix.node }}
           cache: npm
@@ -217,8 +217,8 @@ jobs:
     if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
     continue-on-error: true
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version-file: .tool-versions
           cache: npm
@@ -257,8 +257,8 @@ jobs:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/construct_team_harness
       CONSTRUCT_DEPLOYMENT_MODE: team
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version-file: .tool-versions
           cache: npm
@@ -296,8 +296,8 @@ jobs:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/construct_enterprise_harness
       CONSTRUCT_DEPLOYMENT_MODE: enterprise
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version-file: .tool-versions
           cache: npm
@@ -318,10 +318,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version-file: .tool-versions
           cache: npm
@@ -422,10 +422,10 @@ jobs:
     needs: changes
     if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version-file: .tool-versions
           cache: npm
@@ -448,10 +448,10 @@ jobs:
     needs: [changes, test]
     if: github.event_name == 'pull_request' && (needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true')
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version-file: .tool-versions
           cache: npm
@@ -484,8 +484,8 @@ jobs:
     env:
       CONSTRUCT_EMBEDDING_MODEL: hashing
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version-file: .tool-versions
           cache: npm
@@ -499,18 +499,21 @@ jobs:
     needs: changes
     if: needs.changes.outputs.deps == 'true' || needs.changes.outputs.workflow == 'true'
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version-file: .tool-versions
       - run: npm ci --ignore-scripts
-      - name: npm audit (high+ only)
+      - name: npm audit (high+ only, exceptions-aware)
         # Scope to root deps only. Workspace packages (apps/docs, packages/construct-ui)
         # are build-time tooling for the docs site, not runtime deps of the
         # published @geraldmaron/construct CLI. Their
         # advisories are tracked separately; this gate guards the npm-published
         # surface. Mirrors the pre-push gate in lib/hooks/pre-push-gate.mjs.
-        run: npm audit --omit=dev --audit-level=high --workspaces=false
+        # Wraps npm audit so a finding already accepted in
+        # .github/supply-chain-exceptions.json (dated, reasoned) doesn't
+        # permanently fail every PR that touches dependencies.
+        run: node scripts/npm-audit-with-exceptions.mjs
 
       - name: consumer-perspective audit (packed artifact, no overrides)
         # The repo audit above applies this package.json's `overrides`, which a
@@ -526,7 +529,7 @@ jobs:
     name: secret scanning
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
       - name: gitleaks

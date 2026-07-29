@@ -26,6 +26,20 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 const dirs = [];
 after(() => { for (const d of dirs) { try { rmTmpDir(d); } catch { /* best effort */ } } });
 
+// The daemon's state machinery resolves the machine state root through
+// lib/state-root.mjs, which anchors to the real user home unless
+// CONSTRUCT_HOME_OVERRIDE is pinned — an unpinned run leaks a real
+// ~/.construct/projects/<hash>/ key per tmpdir daemon root.
+
+const HOME_OVERRIDE = mkdtempSync(join(tmpdir(), 'cx-embed-daemon-home-'));
+const PREV_HOME_OVERRIDE = process.env.CONSTRUCT_HOME_OVERRIDE;
+process.env.CONSTRUCT_HOME_OVERRIDE = HOME_OVERRIDE;
+after(() => {
+  if (PREV_HOME_OVERRIDE === undefined) delete process.env.CONSTRUCT_HOME_OVERRIDE;
+  else process.env.CONSTRUCT_HOME_OVERRIDE = PREV_HOME_OVERRIDE;
+  try { rmTmpDir(HOME_OVERRIDE); } catch { /* best effort */ }
+});
+
 function seedAwaitingApprovalRecord(persistPath) {
   const record = {
     approvalId: 'appr-status-test-1',

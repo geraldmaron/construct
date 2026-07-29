@@ -6854,6 +6854,11 @@ const handlers = new Map([
     errorln(`Unknown audit subcommand: ${sub}. Available: skills, worker-profiles, prompts-skills, tests, trail`);
     process.exit(1);
   }],
+  ['contract', async (args) => {
+    const { runContractGateCli } = await import('../lib/contracts/gate-cli.mjs');
+    const code = runContractGateCli(args, { projectRoot: process.cwd(), rootDir: ROOT_DIR, println, errorln });
+    if (code !== 0) process.exit(code);
+  }],
   ['artifact', async (args) => {
     const sub = args[0];
     if (sub === 'validate') return runArtifactValidateCli(args.slice(1));

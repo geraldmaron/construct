@@ -196,10 +196,10 @@ test('construct graph history at queries archived snapshot through CLI', () => {
   const root = freshRoot();
   try {
     const ts = '2026-03-01T12:00:00.000Z';
-    writeBuild(root, ts, [{ id: nodeId('workflow', 'demo'), type: 'workflow', name: 'demo' }]);
+    writeBuild(root, ts, [{ id: nodeId('procedure', 'demo'), type: 'procedure', name: 'demo' }]);
     writeBuild(root, '2026-03-02T12:00:00.000Z', [
-      { id: nodeId('workflow', 'demo'), type: 'workflow', name: 'demo' },
-      { id: nodeId('workflow', 'other'), type: 'workflow', name: 'other' },
+      { id: nodeId('procedure', 'demo'), type: 'procedure', name: 'demo' },
+      { id: nodeId('procedure', 'other'), type: 'procedure', name: 'other' },
     ]);
 
     const result = runConstruct(['graph', 'history', 'at', ts, '--json'], root);
@@ -207,7 +207,7 @@ test('construct graph history at queries archived snapshot through CLI', () => {
     const payload = JSON.parse(result.stdout);
     assert.equal(payload.ok, true);
     assert.equal(payload.nodes.length, 1);
-    assert.equal(payload.nodes[0].id, nodeId('workflow', 'demo'));
+    assert.equal(payload.nodes[0].id, nodeId('procedure', 'demo'));
   } finally {
     rmTmpDir(root);
   }

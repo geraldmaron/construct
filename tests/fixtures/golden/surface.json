@@ -73,6 +73,10 @@
       "core": false
     },
     {
+      "name": "contract",
+      "core": false
+    },
+    {
       "name": "creds",
       "core": false
     },

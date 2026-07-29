@@ -10,9 +10,9 @@
     "./components/*": "./components/*.tsx"
   },
   "peerDependencies": {
-    "next": "^16.2.10",
+    "next": "^16.2.12",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "cytoscape": "^3.34.0"

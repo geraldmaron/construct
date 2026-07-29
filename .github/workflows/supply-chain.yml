@@ -30,7 +30,7 @@ jobs:
     name: supply-chain exceptions
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: enforce expiring OSV/license exceptions
         run: node scripts/check-supply-chain-exceptions.mjs
 
@@ -43,7 +43,7 @@ jobs:
       security-events: write
       actions: read
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: OSV scanner
         uses: google/osv-scanner-action/osv-scanner-action@3adb4b14a2b0623876d18d863a498b785fb3752d # v2.3.8
         with:
@@ -94,14 +94,14 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: read license allowlist
         id: licenses
         run: |
           node -e "const j=require('./.github/license-allowlist.json'); console.log(j.allow.join(', '))" > /tmp/allow-licenses.txt
           echo "allow=$(cat /tmp/allow-licenses.txt)" >> "$GITHUB_OUTPUT"
       - name: GitHub dependency review
-        uses: actions/dependency-review-action@fd07d42ce87ab09f10c61a2d1a5e59e6c655620a # v4.1.1
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
           fail-on-severity: critical
           # Action accepts allow-licenses XOR deny-licenses (not both).
