@@ -428,7 +428,21 @@ test('future-state marker: hyphenated prose is not mistaken for a work-item id',
   assert.equal(futureStateErrors(dir, full).length, 1, 'ordinary hyphenated words must not read as a tracker id');
 });
 
-test('external reference: the linted project\'s own tracker prefix is banned too', () => {
+test('external reference: the linted project\'s own tracker prefix is banned in content Construct wrote', () => {
+  const body = [
+    '/**',
+    ' * lib/fixture.mjs — test.',
+    ' */',
+    '// the queue drains before the lease expires (acme-4821)',
+    'export const x = 1;',
+  ].join('\n');
+  const { dir, full } = makeTempFile('lib/fixture.mjs', body);
+  withTracker(dir, 'acme');
+  const labels = lintFile(full, { rootDir: dir, constructAuthored: true }).warnings.map((w) => w.label);
+  assert.ok(labels.some((l) => l.includes('tracker id')), `a tracker id Construct wrote must be flagged; got ${JSON.stringify(labels)}`);
+});
+
+test('external reference: a person\'s own tracker id in their own repo is left alone', () => {
   const body = [
     '/**',
     ' * lib/fixture.mjs — test.',
@@ -439,7 +453,7 @@ test('external reference: the linted project\'s own tracker prefix is banned too
   const { dir, full } = makeTempFile('lib/fixture.mjs', body);
   withTracker(dir, 'acme');
   const labels = lintFile(full, { rootDir: dir }).warnings.map((w) => w.label);
-  assert.ok(labels.some((l) => l.includes('tracker id')), `a downstream tracker id must be flagged; got ${JSON.stringify(labels)}`);
+  assert.ok(!labels.some((l) => l.includes('tracker id')), `a consuming project's own id is its own call; got ${JSON.stringify(labels)}`);
 });
 
 test('external reference: a project-prefixed word without a work-item shape is not a tracker id', () => {
