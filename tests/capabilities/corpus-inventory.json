@@ -1,25 +1,25 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-30T17:39:04.116Z",
+  "generatedAt": "2026-07-30T23:47:22.127Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 1139,
+    "testFiles": 1140,
     "topLevelTestFiles": 430,
-    "nestedTestFiles": 709,
+    "nestedTestFiles": 710,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 52,
     "byLayer": {
       "unit": 750,
       "functional": 329,
       "visual": 14,
-      "integration": 44,
+      "integration": 45,
       "live-provider": 2
     },
     "byCategory": {
       "unit": 667,
       "functional": 329,
       "visual": 14,
-      "structural-guard": 22,
+      "structural-guard": 23,
       "contract-subsystem": 62,
       "integration": 33,
       "live-provider": 2,
@@ -5863,6 +5863,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/hooks/artifact-release-gate.test.mjs — PostToolUse artifact gate hook."
+    },
+    {
+      "path": "tests/hooks/comment-lint-root.test.mjs",
+      "layer": "integration",
+      "category": "structural-guard",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/hooks/comment-lint-root.test.mjs — the hook lints a file against the"
     },
     {
       "path": "tests/hooks/config-protection.test.mjs",
