@@ -283,10 +283,8 @@ test('artifact lint: construct-lint-ignore marker suppresses the hit on that lin
   );
 });
 
-// --- future-state doc marker check (construct-9oi4.15.3 / LMCP-O3) ---
-//
-// A guide or operations doc claiming staged/not-yet-shipped behavior must
-// cite a construct-* bead id within two lines.
+// A guide or operations doc claiming staged/not-yet-shipped behavior must cite
+// an id from the linted project's own tracker within two lines.
 
 test('future-state marker: flags "staged/experimental" in a guide doc with no bead id nearby', () => {
   const body = '# Guide\n\nBrokered MCP dispatch is staged/experimental in this release.\n';
@@ -382,6 +380,80 @@ test('future-state marker: .mdx guide docs are checked (architecture.mdx / deplo
   } finally {
     delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
   }
+});
+
+// The required id belongs to the project being linted. A downstream repo cites
+// its own tracker, so these fixtures declare a prefix that is not this one's and
+// assert the check follows it.
+
+function withTracker(dir, prefix) {
+  fs.mkdirSync(path.join(dir, '.beads'), { recursive: true });
+  fs.writeFileSync(path.join(dir, '.beads', 'config.yaml'), `issue-prefix: "${prefix}"\n`);
+}
+
+function futureStateErrors(dir, full) {
+  process.env.CONSTRUCT_ARTIFACT_LINT_MODE = 'block';
+  try {
+    return lintFile(full, { rootDir: dir }).errors.filter((e) => e.label.includes('future-state doc marker'));
+  } finally {
+    delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  }
+}
+
+test('future-state marker: a declared tracker prefix is what the doc must cite', () => {
+  const body = '# Guide\n\nBrokered dispatch is staged/experimental (tracked: acme-4821).\n';
+  const { dir, full } = makeTempFile('docs/guides/concepts/fixture.md', body);
+  withTracker(dir, 'acme');
+  assert.equal(futureStateErrors(dir, full).length, 0, 'an id in the project\'s own prefix satisfies the marker');
+});
+
+test('future-state marker: an id from a different tracker does not satisfy the check', () => {
+  const body = '# Guide\n\nBrokered dispatch is staged/experimental (tracked: construct-9oi4.10).\n';
+  const { dir, full } = makeTempFile('docs/guides/concepts/fixture.md', body);
+  withTracker(dir, 'acme');
+  const errors = futureStateErrors(dir, full);
+  assert.equal(errors.length, 1, `a foreign prefix must not satisfy the marker; got ${JSON.stringify(errors)}`);
+  assert.ok(errors[0].label.includes('acme-*'), `the message must name the project's own prefix; got ${errors[0].label}`);
+});
+
+test('future-state marker: with no tracker configured, a citation anchors the claim', () => {
+  const body = '# Guide\n\nBrokered dispatch is staged/experimental.\n\nSee https://example.invalid/roadmap for status.\n';
+  const { dir, full } = makeTempFile('docs/guides/concepts/fixture.md', body);
+  assert.equal(futureStateErrors(dir, full).length, 0, 'a citation is a valid anchor when no tracker exists');
+});
+
+test('future-state marker: hyphenated prose is not mistaken for a work-item id', () => {
+  const body = '# Guide\n\nThe end-to-end path is staged/experimental for now.\n';
+  const { dir, full } = makeTempFile('docs/guides/concepts/fixture.md', body);
+  assert.equal(futureStateErrors(dir, full).length, 1, 'ordinary hyphenated words must not read as a tracker id');
+});
+
+test('external reference: the linted project\'s own tracker prefix is banned too', () => {
+  const body = [
+    '/**',
+    ' * lib/fixture.mjs — test.',
+    ' */',
+    '// the queue drains before the lease expires (acme-4821)',
+    'export const x = 1;',
+  ].join('\n');
+  const { dir, full } = makeTempFile('lib/fixture.mjs', body);
+  withTracker(dir, 'acme');
+  const labels = lintFile(full, { rootDir: dir }).warnings.map((w) => w.label);
+  assert.ok(labels.some((l) => l.includes('tracker id')), `a downstream tracker id must be flagged; got ${JSON.stringify(labels)}`);
+});
+
+test('external reference: a project-prefixed word without a work-item shape is not a tracker id', () => {
+  const body = [
+    '/**',
+    ' * lib/fixture.mjs — test.',
+    ' */',
+    '// the acme-widget cache is invalidated on write',
+    'export const x = 1;',
+  ].join('\n');
+  const { dir, full } = makeTempFile('lib/fixture.mjs', body);
+  withTracker(dir, 'acme');
+  const labels = lintFile(full, { rootDir: dir }).warnings.map((w) => w.label);
+  assert.ok(!labels.some((l) => l.includes('tracker id')), `a hyphenated name is not an id; got ${JSON.stringify(labels)}`);
 });
 
 // --- external project name in a code comment ---

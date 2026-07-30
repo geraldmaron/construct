@@ -48,7 +48,14 @@ Fabrication is the single largest threat to trust in an agent system. A persona 
 - The intake classifier's `rationale` field lists the exact keywords matched. Downstream personas must not embellish the rationale into a richer narrative the classifier did not produce.
 - Session summaries derive from observable session artifacts (context, observations, commits). Do not include events the transcript does not record.
 
-## 8. When in doubt, say less
+## 8. Future-state claims name what a reader can check
+
+- A doc that tells the reader a capability is `staged/experimental`, `not yet implemented`, `not yet active`, `not yet shipped`, `not yet supported`, or `planned — not implemented` is making a claim nobody can falsify unless it says where the work is tracked.
+- Cite a work item from the project's own tracker within two lines of the claim. The prefix is the linted project's, resolved from its beads configuration: a downstream repo cites its own ids, never Construct's.
+- Where no tracker is configured, any work-item id or ordinary citation (a URL, `[source: …]`, or a footnote) satisfies the requirement.
+- Scope is `docs/guides/**`, `docs/operations/**`, and `docs/README.md`, where a reader has the tracker to check against. Decision records carry their own Status convention and research notes are working material, so both are out of scope. Table cells, code fences, and headings are skipped.
+
+## 9. When in doubt, say less
 
 - A shorter, accurate artifact beats a longer artifact padded with unverified plausibility.
 - Sections that lack source material should be omitted, not filled with speculation. An ADR without a "Rejected alternatives" section because no alternatives were considered is better than an ADR with invented alternatives.
