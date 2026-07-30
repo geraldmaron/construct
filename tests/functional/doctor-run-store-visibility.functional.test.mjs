@@ -21,7 +21,7 @@ import { runOrchestration } from '../../lib/orchestration/runtime.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 // runOrchestration resolves its run store through the machine-scoped state
-// root (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE/CONSTRUCT_TOOLKIT_DIR from real
+// root, which reads CONSTRUCT_HOME_OVERRIDE/CONSTRUCT_TOOLKIT_DIR from real
 // process.env directly — the HOME/CONSTRUCT_TOOLKIT_DIR keys below only reach the
 // `env` option bag runOrchestration threads to model resolution, never
 // process.env, so they never isolated state-root writes. Pin the real vars

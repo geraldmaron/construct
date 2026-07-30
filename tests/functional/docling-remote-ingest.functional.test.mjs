@@ -1,5 +1,5 @@
 /**
- * docling-remote-ingest.functional.test.mjs — opt-in remote conversion (ADR-0036, construct-n1f8).
+ * docling-remote-ingest.functional.test.mjs — opt-in remote conversion.
  *
  * Drives the docling-remote extractor against a real local HTTP server stubbing
  * Docling Serve's POST /v1/convert/file contract (multipart `files`, markdown at

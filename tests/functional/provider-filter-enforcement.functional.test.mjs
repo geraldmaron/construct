@@ -1,7 +1,7 @@
 /**
- * tests/functional/provider-filter-enforcement.functional.test.mjs — LMCP-B11.
+ * tests/functional/provider-filter-enforcement.functional.test.mjs.
  *
- * Proves the ADR-0060 filter block is enforced on the real poll path, not
+ * Proves the filter block is enforced on the real poll path, not
  * just validated in isolation:
  *   1. A fake provider returning items both inside and outside a configured
  *      filter produces zero observations for the out-of-filter items after
@@ -36,7 +36,7 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 // resolveDaemonStatePath(env) -> resolveRootDir(env) (lib/embed/daemon.mjs),
 // which walks up from real process.cwd() rather than honoring the
 // constructor's own `rootDir` — and either way, resolveStatePath's
-// machine-scoped state root (ADR-0066) reads CONSTRUCT_HOME_OVERRIDE from real
+// machine-scoped state root reads CONSTRUCT_HOME_OVERRIDE from real
 // process.env directly. Pin it for the whole file so building an EmbedDaemon
 // never writes into the real developer machine's ~/.construct/projects/.
 
@@ -246,7 +246,7 @@ test('construct-737t: demandFetch (team-scoped) drops out-of-scope items via the
   mkdirSync(embedConfigDir, { recursive: true });
 
   // Source declares a broader repo list ([org/a, org/b]) than its
-  // filter.scope narrows to ([org/a]) — the exact gap construct-737t
+  // filter.scope narrows to ([org/a]) — the exact gap this test
   // describes. enforceSectionFilters already drops org/b on the poll path via
   // an identical embed.yaml block; demandFetchTeam's read path is under test.
   writeFileSync(join(embedConfigDir, 'embed.yaml'), [
@@ -286,7 +286,7 @@ test('construct-737t: demandFetch (team-scoped) drops out-of-scope items via the
 
   assert.equal(result.ok, true);
   assert.equal(result.reason, 'team_fetched');
-  // Before construct-737t: both org/a and org/b items would reach
+  // Without plane-side enforcement, both org/a and org/b items would reach
   // addObservation() — demandFetchTeam called provider.read() directly and
   // never applied filter.scope. After: only the item inside filter.scope
   // (org/a) survives, matching what enforceSectionFilters already guarantees

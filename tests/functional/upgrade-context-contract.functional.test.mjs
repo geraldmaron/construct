@@ -1,8 +1,8 @@
 /**
  * tests/functional/upgrade-context-contract.functional.test.mjs
  *
- * Migration-gate contract for the .construct/context.* upgrade decision (self-audit construct-rr63.3.2,
- * owner decision construct-rr63.3.1: CONSENTED RE-CONVERGE — upgrades may re-converge .construct/context.*
+ * Migration-gate contract for the .construct/context.* upgrade decision
+ * (CONSENTED RE-CONVERGE — upgrades may re-converge.construct/context.*
  * only after explicit consent; the default preserves user edits). refreshContextMd
  * (lib/tracking-surfaces.mjs) rewrites only its managed sections and takes no force/consent
  * parameter, so a refresh cannot silently re-converge user-authored content. These tests pin the

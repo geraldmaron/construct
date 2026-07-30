@@ -6,7 +6,6 @@
  * from baseConfig so concurrent writers touching different keys merge cleanly;
  * same-key races surface InstanceConfigWriteConflictError.
  *
- * @bead construct-4uxq0.13.11
  */
 
 import test from 'node:test';

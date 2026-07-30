@@ -1,6 +1,6 @@
 /**
  * tests/evals-dataset.test.mjs — unit coverage for the provenance-backed eval
- * dataset (construct-6zga.1.6).
+ * dataset.
  *
  * Proves the dataset item validator preserves provenance, that split assignment is
  * deterministic and co-locates a source trace, that expiry is honored, and that

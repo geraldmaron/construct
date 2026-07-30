@@ -11,7 +11,7 @@
  * sync preserves a server entry pointing at a deleted/old checkout and VS Code
  * launches a construct-mcp that does not exist — the orchestrator gets no tools.
  *
- * Contract (CX-AUDIT-HOST-004): stale-path detection must normalize separators and
+ * Contract: stale-path detection must normalize separators and
  * compare paths platform-independently. The test asserts a foreign-root Windows path
  * is flagged stale and a current-root Windows path is not. Passes once normalization
  * lands.

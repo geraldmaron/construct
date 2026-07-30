@@ -1,11 +1,11 @@
 /**
  * tests/functional/web-search.functional.test.mjs
  *
- * Contract tests for the governed web_search surface (construct-rr63.5.3). Pins the three
+ * Contract tests for the governed web_search surface. Pins the three
  * invariants from the capability contract: required inputs return a typed INVALID_INPUT error; a
  * missing/unreachable provider returns a typed degradation with zero results (never a faked search,
  * never source/repo results dressed as web results); and every returned result carries a verifiable
- * URL, a claim-relative class, and an Admiralty grade with a derived confidence (ADR-0017) — results
+ * URL, a claim-relative class, and an Admiralty grade with a derived confidence — results
  * without a URL are dropped. Confidence `high` is reserved for A1/A2/B1.
  */
 

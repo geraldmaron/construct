@@ -1,11 +1,11 @@
 /**
  * tests/functional/skills-surface.functional.test.mjs
  *
- * Hermetic skills verification (construct-r1u5w): lean init + project sync must
+ * Hermetic skills verification: lean init + project sync must
  * install readable Claude skill trees, keep retired Construct 1.0 teaching out
  * of synced SKILL.md bodies, and prove MCP get_skill / search_skills return
  * non-empty usable content (not exit-only sync smoke). Also pins the
- * construct-p2wlb / construct-d23f3 contract: sync writes `.claude/skills/` only
+ * Contract: sync writes `.claude/skills/` only
  * and prunes refused host mirrors (`.agents/skills`, `.cursor/skills`, …).
  */
 
@@ -263,7 +263,7 @@ test('lean init + sync installs Claude skills; MCP get_skill/search_skills retur
     `synced SKILL.md still has relative climb links (use backtick repo paths):\n${climbHits.join('\n')}`,
   );
 
-  // Cursor loads .claude/skills/ natively — no host-tree skills mirrors (construct-p2wlb).
+  // Cursor loads.claude/skills/ natively — no host-tree skills mirrors.
   assertNoSkillsMirror(project, '.codex/skills', 'skills must not land under .codex');
   assertNoSkillsMirror(project, '.opencode/skills', 'skills must not land under .opencode');
   assertNoSkillsMirror(project, '.cursor/skills', 'skills must not land under .cursor');

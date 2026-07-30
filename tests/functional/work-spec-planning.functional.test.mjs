@@ -1,6 +1,6 @@
 /**
  * tests/functional/work-spec-planning.functional.test.mjs — day-one proof
- * for the graph-informed Work spec/planning surface (construct-b0nny.23).
+ * for the graph-informed Work spec/planning surface.
  *
  * Drives the real `construct work-spec` CLI against one isolated sandbox
  * (CONSTRUCT_HOME_OVERRIDE redirected to a tmpdir, a real git fixture repo,
@@ -8,8 +8,8 @@
  * functional.test.mjs's and tests/functional/graph-relational-store.
  * functional.test.mjs's isolation pattern. Spans CLI + two durable stores at
  * once (CLAUDE.md's multi-component-feature rule): the Workspace domain
- * store (construct-b0nny.22) and the relational graph store
- * (construct-b0nny.3/.12/.21). The graph fixture is seeded in-process via
+ * store and the relational graph store
+ * (.12/.21). The graph fixture is seeded in-process via
  * the outbox enqueue/drain primitives (same approach graph-relational-store.
  * functional.test.mjs's milestone 3 already established), so the
  * independence/dependency outcomes below are deterministic rather than

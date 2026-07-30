@@ -1,11 +1,11 @@
 /**
- * tests/extensions/manifest-providers.test.mjs — LMCP-B2 provider manifest tests.
+ * tests/extensions/manifest-providers.test.mjs — provider manifest tests.
  *
  * Validates that the built-in provider manifests (github, atlassian-jira,
  * atlassian-confluence, slack, salesforce, directory, feedback) load
  * correctly, have the correct kind, and that resolveProviders() discovers
  * the ones with a unified lib/providers/<id> adapter. Linear (added in
- * LMCP-B3) and git (construct-wjap9.1 — a source-target-only provider with
+ * and git — a source-target-only provider with
  * no unified read/write adapter, only corpus-caching via
  * lib/sources/repo-cache.mjs) have manifests but no unified adapter yet —
  * both are asserted separately from resolveProviders() coverage rather

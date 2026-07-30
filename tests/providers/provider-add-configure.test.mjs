@@ -1,10 +1,10 @@
 /**
- * tests/providers/provider-add-configure.test.mjs — LMCP-B12 CLI tests.
+ * tests/providers/provider-add-configure.test.mjs — CLI tests.
  *
  * Spawns the real `bin/construct` binary against an isolated tmpdir project
  * so `provider add` and `provider configure` are exercised end to end: real
  * process spawn, real exit codes, real `.construct/providers/<id>.json` persistence.
- * Covers jira, github, and slack manifests, the ADR-0060 filter block
+ * Covers jira, github, and slack manifests, the filter block
  * (valid + invalid), and the configure → status round-trip.
  */
 
@@ -21,7 +21,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(ROOT, 'bin', 'construct');
 
 // The spawned `construct` binary resolves the machine-scoped state root
-// (ADR-0066) from process.env.CONSTRUCT_HOME_OVERRIDE / HOME in its own process, so
+// from process.env.CONSTRUCT_HOME_OVERRIDE / HOME in its own process, so
 // every spawn below must be pinned to a throwaway home or it leaks a
 // project-key directory into the real developer machine's ~/.construct/projects/.
 const HOME_DIR = mkdtempSync(join(tmpdir(), 'construct-provider-configure-home-'));

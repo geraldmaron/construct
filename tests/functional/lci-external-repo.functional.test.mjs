@@ -1,6 +1,6 @@
 /**
  * tests/functional/lci-external-repo.functional.test.mjs —
- * construct-4uxq0.11.15 multi-component proof: init → graph build → change-intent
+ * Multi-component proof: init → graph build → change-intent
  * → impact packet → graph verify in a plain non-Construct project directory.
  */
 

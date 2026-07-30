@@ -1,6 +1,6 @@
 /**
  * tests/functional/embed-daemon-write-drain.functional.test.mjs —
- * end-to-end proof of the daemon's "write-intent-drain" job (construct-p4cba.3,
+ * end-to-end proof of the daemon's "write-intent-drain" job
  * WS-B2: the daemon side of `construct approvals approve`).
  *
  * Before this bead, an approved write intent only ever executed via a human
@@ -13,7 +13,7 @@
  *
  *   - the record moves from 'awaiting_approval' to 'approved' (auto-granted,
  *     not left for a human, per the configured policy)
- *   - the failed lease release durably stamps lastLeaseFailureReason (ADR-0089)
+ * - the failed lease release durably stamps lastLeaseFailureReason
  *   - an observation tagged 'write-intent-drain' is recorded, so "what did the
  *     daemon attempt on my behalf" has an audit trail
  *

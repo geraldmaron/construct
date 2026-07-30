@@ -1,6 +1,6 @@
 /**
  * tests/acceptance/tpm-preset.acceptance.test.mjs — golden-fixture acceptance
- * for the `operations` embed preset (the flagship TPM scenario, LMCP-P3).
+ * for the `operations` embed preset (the flagship TPM scenario).
  *
  * @embed operations
  *

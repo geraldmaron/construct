@@ -1,10 +1,10 @@
 /**
  * tests/functional/gate-worker-backend-visibility.functional.test.mjs
  *
- * DEFAULT_WORKER_BACKEND is 'inline' (prepare-only per ADR-0020). Every
+ * DEFAULT_WORKER_BACKEND is 'inline' (prepare-only). Every
  * pre-run gate a user consults — preflight, doctor, and the run completion
  * line — must surface the resolved backend so a green gate never precedes a
- * silently prepare-only run (construct-1yhp.2).
+ * silently prepare-only run.
  */
 
 import assert from 'node:assert/strict';
@@ -22,7 +22,7 @@ const BIN = path.join(REPO, 'bin', 'construct');
 // These gates assert default / no-config behavior, so the spawned CLI must
 // resolve project config from a clean cwd — NOT the repo root, where a
 // developer's gitignored construct.config.local.json (e.g. workerBackend=
-// provider) would be read and flip the resolved backend (construct-1l11).
+// provider) would be read and flip the resolved backend.
 // Isolating HOME alone is not enough: config resolution walks up from cwd.
 
 function env() {

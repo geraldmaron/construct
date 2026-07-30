@@ -1,6 +1,6 @@
 /**
  * tests/embed-daemon-roadmap-not-run.test.mjs — reportRoadmapNotRun()
- * (lib/embed/daemon.mjs, Job 10 "roadmap", construct-4uxq0.9.6).
+ * (lib/embed/daemon.mjs, Job 10 "roadmap").
  *
  * A daemon that stays silent whenever `!this.#lastSnapshot` or
  * generateRoadmap's own `{skipped: true}` result means the analysis did not

@@ -1,6 +1,5 @@
 /**
- * tests/certification/document-io-matrix.test.mjs — certified document I/O matrix contract
- * (construct-d1r7.11).
+ * tests/certification/document-io-matrix.test.mjs — certified document I/O matrix contract.
  *
  * @capability ingest.document-io
  *

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * scripts/prototypes/richdocument-unified/run-fidelity.mjs — DISPOSABLE PROTOTYPE
- * (construct-tsyfe.3.2). Not imported by lib/ or bin/. See this directory's README.md.
+ * scripts/prototypes/richdocument-unified/run-fidelity.mjs — DISPOSABLE PROTOTYPE.
+ * Not imported by lib/ or bin/.
  *
  * Round-trips every fixture in tests/fixtures/rich-document-corpus/ through the hand-rolled
  * lib/rich-document.mjs pipeline and the unified-based prototype pipeline

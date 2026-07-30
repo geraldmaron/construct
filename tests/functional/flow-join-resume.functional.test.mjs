@@ -1,7 +1,7 @@
 /**
  * tests/functional/flow-join-resume.functional.test.mjs — flow-engine fan-out,
  * and-join, and terminal-status semantics across a real CLI resume
- * (construct-rf26.22, extending the linear crash/resume coverage in
+ * (extending the linear crash/resume coverage in
  * tests/functional/flow-checkpoint-resume.functional.test.mjs).
  *
  * Three pins the existing suite leaves open:
@@ -81,7 +81,7 @@ function readMarkers(markerPath) {
 }
 
 // loadCheckpoint and the pre-crash in-process drive resolve the machine-scoped
-// state root (ADR-0066) from process.env.CONSTRUCT_HOME_OVERRIDE directly, so both
+// state root from process.env.CONSTRUCT_HOME_OVERRIDE directly, so both
 // must pin the same override the spawned CLI sees (mirrors
 // tests/functional/flow-checkpoint-resume.functional.test.mjs).
 

@@ -1,5 +1,5 @@
 /**
- * tests/ingest/sidecar-providers.test.mjs — LMCP-K2 governed ingestion providers.
+ * tests/ingest/sidecar-providers.test.mjs — governed ingestion providers.
  *
  * Covers:
  *   1. docling/whisper manifests validate as `ingestion-provider` kind with a
@@ -13,7 +13,7 @@
  *      fallback (docling -> node-native -> refuse) and marks the result
  *      `degraded` when docling is absent, per the acceptance criterion.
  *
- * Bead: construct-9oi4.11.2 — LMCP-K2.
+ * Bead:.
  */
 import assert from 'node:assert/strict';
 import test from 'node:test';

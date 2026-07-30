@@ -2,7 +2,7 @@
  * tests/functional/resource-write-guard.functional.test.mjs — disk budget
  * enforcement on the real trace writer in an isolated project tmpdir.
  *
- * Traces resolve through the machine-scoped state root (ADR-0066), so
+ * Traces resolve through the machine-scoped state root, so
  * CONSTRUCT_HOME_OVERRIDE is pinned for the file to keep measureUsage/emitTraceEvent
  * off the real developer machine's $HOME.
  */

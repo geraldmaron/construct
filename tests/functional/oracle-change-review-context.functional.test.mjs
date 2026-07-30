@@ -1,6 +1,6 @@
 /**
  * tests/functional/oracle-change-review-context.functional.test.mjs —
- * construct-4uxq0.12.7 multi-component proof: Oracle consumes change-intent
+ * Multi-component proof: Oracle consumes change-intent
  * impact packets and card context in review verdicts.
  */
 

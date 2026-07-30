@@ -1,7 +1,7 @@
 /**
  * tests/embed-inbox.test.mjs — InboxWatcher unit tests.
  *
- * Single-zone model (ADR-0045 §C): the only drop zone is the project-root
+ * Single-zone model: the only drop zone is the project-root
  * `inbox/`, always watched. There is no `.construct/inbox/` or `docs/intake/` zone.
  * The `inbox/.staging/` assembly dir and dotfiles are never consumed, so a
  * half-written drop stays invisible until it lands at a top-level name.
@@ -15,7 +15,7 @@ import { tmpdir } from 'node:os';
 import { InboxWatcher, resolveInboxDirs } from '../lib/embed/inbox.mjs';
 
 // InboxWatcher.poll() resolves its state file through the machine-scoped
-// state root (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE from real process.env
+// state root, which reads CONSTRUCT_HOME_OVERRIDE from real process.env
 // directly — the `env` constructor option above is a plain options bag, not
 // process.env, so it never isolates that write. Pin it for the whole file so
 // polling never writes into the real developer machine's ~/.construct/projects/.

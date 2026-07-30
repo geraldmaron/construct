@@ -1,13 +1,13 @@
 /**
  * lazy-import-reachability.test.mjs — static gate for bin/construct lazy imports
- * and construct-jx21v deadcode acceptance for the opt-in Postgres graph adapter.
+ * and deadcode acceptance for the opt-in Postgres graph adapter.
  *
  * construct --help intercepts before dispatch, so a renamed or removed module
  * targeted by await import() in a handler stays invisible to help smoke until
  * invocation. checkLazyImports resolves every literal specifier without spawning
- * the binary. construct-jx21v: flow resume/status depends on lib/flows/checkpoint.mjs
+ * the binary: flow resume/status depends on lib/flows/checkpoint.mjs
  * and lib/flows/define.mjs at call time; lib/graph/relational/postgres-store.mjs is
- * documented in scripts/audit/02-deadcode.mjs ACCEPTED_TEST_ONLY (construct-b0nny.21).
+ * documented in scripts/audit/02-deadcode.mjs ACCEPTED_TEST_ONLY.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';

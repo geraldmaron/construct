@@ -1,6 +1,6 @@
 /**
  * tests/audit/f02-secrets/sync-template-leak.test.mjs — F02 regression guard for the
- * OpenCode sync-template secret leak (CX-AUDIT-SECRETS-004).
+ * OpenCode sync-template secret leak.
  *
  * resolveTemplateStrings (scripts/sync-worker-profiles.mjs) must check its secret-suffix
  * guard (TOKEN/SECRET/API_KEY/PUBLIC_KEY/PRIVATE_KEY) before falling back to a raw

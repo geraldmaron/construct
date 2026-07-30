@@ -21,7 +21,7 @@
  *      catalog tool declares any such field today, so a cluster of >=3 overlapping
  *      retrieval tools with no discriminator is the red.
  *
- * Contract (CX-AUDIT-TOOLS-003/-004): build a realistic tool-use eval corpus +
+ * Contract (004): build a realistic tool-use eval corpus +
  * confusion matrix and remove/hide overlapping long-tail tools behind find_tool,
  * giving the survivors structured disambiguation. Passes once overlapping
  * retrieval tools carry a machine-readable discriminator (or the cluster is
@@ -32,10 +32,10 @@ import test from 'node:test';
 import { RAW_HARDCODED_TOOL_DEFS } from '../../../lib/mcp/tool-definitions.mjs';
 
 // server.mjs composes ALL_TOOL_DEFS as [...HARDCODED_TOOL_DEFS, ...SCANNED_TOOL_DEFS]
-// (LMCP-B5 self-registered tools). HARDCODED_TOOL_DEFS = RAW_HARDCODED_TOOL_DEFS.map(
+// (self-registered tools). HARDCODED_TOOL_DEFS = RAW_HARDCODED_TOOL_DEFS.map(
 // withSafetyEnvelope) and the underlying pure-data literal lives in
 // lib/mcp/tool-definitions.mjs (further split across tool-definitions-{project,
-// skills,memory,workflow}.mjs — construct-rf26.10), so it is imported directly
+// skills,memory,workflow}.mjs), so it is imported directly
 // rather than eval'd out of server.mjs source text.
 
 function readCatalog() {

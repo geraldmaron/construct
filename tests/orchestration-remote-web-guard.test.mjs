@@ -1,5 +1,5 @@
 /**
- * tests/orchestration-remote-web-guard.test.mjs — fail-closed remote ingress guard (ADR-0050).
+ * tests/orchestration-remote-web-guard.test.mjs — fail-closed remote ingress guard.
  *
  * The remote orchestration service is out-of-repo and cannot be trusted to govern web evidence.
  * governRemoteWebEvidence re-runs every task's webEvidence through the single F08 grader so a

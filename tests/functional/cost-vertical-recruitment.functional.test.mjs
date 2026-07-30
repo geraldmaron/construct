@@ -1,6 +1,6 @@
 /**
  * tests/functional/cost-vertical-recruitment.functional.test.mjs — the
- * cost/financial participation reference vertical (construct-pteo2.7, cdsp.22).
+ * cost/financial participation reference vertical (cdsp.22).
  *
  * Drives the embedded Procedure contract in an isolated tmpdir with a
  * redirected HOME (zero network). A cost-heavy PRD request must recruit the

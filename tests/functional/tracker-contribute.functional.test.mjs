@@ -1,6 +1,6 @@
 /**
  * tests/functional/tracker-contribute.functional.test.mjs —
- * Jira contribution workflow: analyze → propose → dedupe → apply (bead construct-760c.6).
+ * Jira contribution workflow: analyze → propose → dedupe → apply.
  *
  * @capability tracker.contribution
  *

@@ -1,5 +1,5 @@
 /**
- * tests/mcp/transport-separation.test.mjs — LMCP-I5 transport separation.
+ * tests/mcp/transport-separation.test.mjs — transport separation.
  *
  * Pins the security contract of stdio/http mode separation:
  *   - transport mode resolves to stdio-local by default; http only on explicit opt-in

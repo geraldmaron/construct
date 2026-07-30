@@ -10,7 +10,7 @@
  * L122) both return `degradation: 'missing-dependency'`, and captureRenderEvidence records it without
  * lifting the state, yet runOutputQuality still reports `ok: true`.
  *
- * Contract (CX-AUDIT-ARTIFACT-001/-002): a minimum quality tier keyed to the REQUESTED output type
+ * Contract (002): a minimum quality tier keyed to the REQUESTED output type
  * must make the render-smoke check a hard requirement for a user-facing deliverable, so a missing
  * REQUIRED renderer fails rather than degrades. This test pins the current soft pass: it asserts the
  * result is NOT ok when a required PDF/PPTX renderer is absent for a render-smoke deliverable. It

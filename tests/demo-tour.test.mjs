@@ -25,7 +25,7 @@ const BIN = path.join(REPO, 'bin', 'construct');
 
 // The `construct demo tour` binary spawns below share one sandboxed HOME so
 // the run never touches the real developer machine's ~/.construct/projects/
-// (ADR-0066 machine-scoped state root).
+// (machine-scoped state root).
 
 let HOME;
 before(() => { HOME = mkdtempSync(path.join(os.tmpdir(), 'demo-tour-home-')); });

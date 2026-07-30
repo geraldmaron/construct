@@ -9,7 +9,7 @@
  * exact tj-actions/changed-files supply-chain class. GitHub and OpenSSF both
  * require third-party actions to be pinned to a full commit SHA.
  *
- * Contract these encode (CX-AUDIT-CI-001): every third-party `uses:` (any owner
+ * Contract these encode: every third-party `uses:` (any owner
  * other than the first-party `actions/*` namespace) MUST be pinned to a
  * 40-hex-char commit SHA, and the audit's stated target pins first-party
  * `actions/*` to SHAs too. The first assertion is the hard gate (third-party

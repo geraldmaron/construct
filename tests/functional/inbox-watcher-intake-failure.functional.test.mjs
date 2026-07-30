@@ -1,7 +1,7 @@
 /**
  * tests/functional/inbox-watcher-intake-failure.functional.test.mjs —
  * The dedup manifest only records a SHA on successful intake-packet creation
- * (construct-k4bg). On packet-creation failure the file stays retriable: a
+ *. On packet-creation failure the file stays retriable: a
  * subsequent explicit `intake process` must not skip-as-duplicate.
  *
  * The bug: InboxWatcher recorded the SHA whether or not the packet was
@@ -27,7 +27,7 @@ after(() => {
 });
 
 // InboxWatcher.poll() resolves its state file through the machine-scoped
-// state root (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE from real process.env
+// state root, which reads CONSTRUCT_HOME_OVERRIDE from real process.env
 // directly, not any constructor `env` options bag. Pin it for the whole file
 // so polling never writes into the real developer machine's
 // ~/.construct/projects/.
@@ -44,7 +44,7 @@ after(() => {
 function makeProject() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-k4bg-'));
   tmpDirs.push(dir);
-  // The canonical project-root inbox/ is always watched (ADR-0045 §C); no
+  // The canonical project-root inbox/ is always watched; no
   // intake-config is needed to enable a scan.
   fs.mkdirSync(path.join(dir, 'inbox'), { recursive: true });
   fs.mkdirSync(path.join(dir, '.construct', 'intake', 'pending'), { recursive: true });

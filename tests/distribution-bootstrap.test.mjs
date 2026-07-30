@@ -226,7 +226,7 @@ describe('run.mjs resolution', () => {
   });
 });
 
-// Under ADR-0069 the construct repo's own .construct/launcher/ is gitignored
+// The construct repo's own .construct/launcher/ is gitignored
 // machine state and init skips staging it for the self-repo, so a fresh CI
 // checkout has no launcher file to inspect. Stage it from the committed
 // template — the exact copy stage-project's ensureProjectLauncher performs — so

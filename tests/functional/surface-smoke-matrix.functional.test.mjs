@@ -1,7 +1,7 @@
 /**
  * tests/functional/surface-smoke-matrix.functional.test.mjs
  *
- * Guards construct-neq9.8: the standing gate that catches incident
+ * The standing gate that catches incident
  * run-02158a157d53 (a run silently degrading to construct-prompt-only with
  * zero tasks while reporting a bare completed status) recurring on any host
  * surface. Each cell drives a real research request through the real
@@ -9,7 +9,7 @@
  * transport both Claude Code and VS Code use; there is no separate per-host
  * server in this codebase, so both host labels exercise the identical
  * surface), and the SessionStart hook chained into the CLI it hands off to —
- * under a hermetic env (tests/helpers/sterile-env.mjs, construct-neq9.4), and
+ * under a hermetic env (tests/helpers/sterile-env.mjs), and
  * asserts on the persisted run record: degraded===false,
  * executionMode==='construct-orchestrated', a non-empty task list, and that
  * the surface's own envelope agrees with the on-disk record (no bare
@@ -62,7 +62,7 @@ function project() {
   return cwd;
 }
 
-// The run store resolves the machine-scoped state root (ADR-0066) via
+// The run store resolves the machine-scoped state root via
 // CONSTRUCT_HOME_OVERRIDE on process.env directly, not through any { env } option
 // threaded through resolveStatePath itself. Each surface's sterile spawn env
 // carries its own mkdtemp HOME/CONSTRUCT_HOME_OVERRIDE; pinning the identical value

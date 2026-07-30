@@ -2,7 +2,7 @@
  * init-update.test.mjs — non-destructive update flow for construct init:update.
  *
  * Construct's AGENTS.md/CLAUDE.md guidance is owned by the versioned CONSTRUCT
- * INTEGRATION marker block (kept current by `construct sync`, ADR-0027 §2/§4).
+ * INTEGRATION marker block (kept current by `construct sync` /§4).
  * init:update leaves AGENTS.md bodies untouched; its scope is opt-in standards a
  * project owner merges by hand: CI checks and template conflicts.
  */

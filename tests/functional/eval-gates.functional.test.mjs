@@ -1,15 +1,15 @@
 /**
  * tests/functional/eval-gates.functional.test.mjs — the independent evaluation
- * gate seam (construct-6zga.1.6).
+ * gate seam.
  *
  * Exercises the real modules end to end (dataset item -> deterministic gates ->
  * promotion decision -> report) and proves the governance invariants:
- *   - a held-out item is selected with the candidate's generating trace removed (AC2).
+ * - a held-out item is selected with the candidate's generating trace removed.
  *   - any deterministic regression — fabricated source, disallowed tool, busted
- *     budget, wrong contract outcome — blocks promotion (AC3).
+ * budget, wrong contract outcome — blocks promotion.
  *   - judges never stand alone: they cannot override a deterministic block and
  *     cannot promote without a passing deterministic result; a fail verdict can
- *     only withhold (AC4).
+ * only withhold.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';

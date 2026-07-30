@@ -1,6 +1,5 @@
 /**
- * tests/workspace/store.test.mjs — unit coverage for lib/workspace/store.mjs
- * (construct-b0nny.22).
+ * tests/workspace/store.test.mjs — unit coverage for lib/workspace/store.mjs.
  *
  * Gates on sqliteAvailable() (node:sqlite, Node >=22.5), matching every other
  * sqlite-backed store's test in this repo. Covers CRUD, lifecycle-transition

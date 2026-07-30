@@ -1,5 +1,5 @@
 /**
- * tests/oracle/read-model-directives.test.mjs — construct-p4cba.6 (WS-B5)
+ * tests/oracle/read-model-directives.test.mjs
  * collectReadModel's `directives` section: which configured directives are
  * due, agreeing with the same due-tracker state
  * lib/embed/daemon.mjs's directive-runner job reads and advances.
@@ -17,7 +17,7 @@ import { doctorRoot } from '../../lib/config/xdg.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 // readDirectiveState (via collectReadModel's directives section) resolves
-// through the machine-scoped state root (ADR-0066, lib/state-root.mjs) —
+// through the machine-scoped state root (lib/state-root.mjs) —
 // CONSTRUCT_HOME_OVERRIDE keeps that off the real developer machine's $HOME for
 // the whole file (same isolation as tests/orchestration/provenance.test.mjs).
 

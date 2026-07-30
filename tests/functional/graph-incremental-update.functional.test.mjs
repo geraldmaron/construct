@@ -1,6 +1,6 @@
 /**
  * tests/functional/graph-incremental-update.functional.test.mjs —
- * construct-4uxq0.11.9 multi-component proof: incremental graph refresh on
+ * Multi-component proof: incremental graph refresh on
  * edit, hook wiring, and store merge behavior.
  */
 

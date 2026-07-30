@@ -9,11 +9,10 @@
  *   5. Completes the healthy path in under 100ms overhead.
  *
  * The opener is injected so no real LanceDB files are required. The lancedb
- * fixture lands at the machine-scoped state root (ADR-0066), matching where
+ * fixture lands at the machine-scoped state root, matching where
  * probeStorageHealth actually resolves it, so CONSTRUCT_HOME_OVERRIDE is pinned for
  * the whole file to keep that write off the real developer machine's $HOME.
  *
- * Bead: construct-9oi4.13.1 — LMCP-M1
  */
 
 import assert from 'node:assert/strict';
@@ -36,7 +35,7 @@ test.after(() => {
 });
 
 // Create a minimal fake directory structure with the lancedb store present at
-// its machine-scoped state root (ADR-0066), plus the project-local `.construct/`
+// its machine-scoped state root, plus the project-local `.construct/`
 // marker probeStorageHealth checks first.
 function makeLancedbFixture() {
   const cwd = tempDir('construct-storage-probe-');

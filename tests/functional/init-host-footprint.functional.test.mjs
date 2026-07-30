@@ -1,7 +1,7 @@
 /**
  * tests/functional/init-host-footprint.functional.test.mjs
  *
- * Regression guard for the ADR-0027 §2 host-footprint contract: a freshly
+ * Regression guard for the host-footprint contract: a freshly
  * `construct init`'d repo must not present Construct-the-tool as project content.
  * One real init, then assertions on the durable artifacts:
  *   - construct_guide.md is in the ignored .construct/ tree, never the repo root

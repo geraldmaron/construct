@@ -1,5 +1,5 @@
 /**
- * tests/functional/team-vs-solo-comparison.functional.test.mjs — construct-72gqn.18 (L5).
+ * tests/functional/team-vs-solo-comparison.functional.test.mjs.
  *
  * Proves the baseline comparison is real: the same request run through the base chain covers
  * every role concern (architecture, implementation, review, testing) while a single solo call

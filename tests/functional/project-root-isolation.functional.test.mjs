@@ -114,8 +114,8 @@ test('buildRuntimeRecoverySummary with rootDir=packageRoot does NOT pick up tmpD
 test('telemetry url from startServices uses the machine-scoped state root, not packageRoot', async () => {
   // Calls the real startServices with an isolated rootDir/homeDir and injected
   // probes/spawners (its designed test seams) so no real process is spawned;
-  // startServices spawns no background daemons (construct-b0nny.29).
-  // Telemetry's url resolves through resolveStateDir (ADR-0066), which reads
+  // startServices spawns no background daemons.
+  // Telemetry's url resolves through resolveStateDir, which reads
   // CONSTRUCT_HOME_OVERRIDE off process.env directly rather than from the homeDir
   // option threaded through startServices — that override is pinned here to
   // an isolated home so the assertion neither depends on nor writes into the

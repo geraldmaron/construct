@@ -1,6 +1,6 @@
 /**
  * tests/sync-copilot-deselect.test.mjs — a sync that does not select the
- * copilot host must not touch prior Copilot outputs (construct-lqp4c).
+ * copilot host must not touch prior Copilot outputs.
  *
  * The old behavior ran syncCopilot with an empty write set on deselect, which
  * pruned every manifest-listed file in .github/prompts and .github/agents and

@@ -1,5 +1,5 @@
 /**
- * tests/providers/breaker-status.test.mjs — LMCP-B9: circuit-breaker state
+ * tests/providers/breaker-status.test.mjs — circuit-breaker state
  * surfaced in construct status. Fixture-forces a provider breaker OPEN and
  * asserts buildStatus()/formatStatusReport() report it; a healthy breaker
  * (or no breaker at all) reports CLOSED with no false alarm.

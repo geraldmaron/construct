@@ -34,7 +34,7 @@ function project() {
 test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} } });
 
 // runOrchestration (driven via executeRun in several tests below) resolves
-// the run store through the machine-scoped state root (ADR-0066), which
+// the run store through the machine-scoped state root, which
 // reads CONSTRUCT_HOME_OVERRIDE from real process.env directly — the ENV bag above
 // only feeds model-tier lookups. Pin it for the whole file so these runs
 // never write into the real developer machine's ~/.construct/projects/.
@@ -235,13 +235,13 @@ test('executeRun with provider backend records a failing task without crashing',
   );
   assert.equal(run.status, 'completed-with-failures');
   assert.ok(run.tasks.every((t) => t.status === 'failed'));
-  // A 429 classifies as PROVIDER_RATE_LIMITED (construct-5wkl AC#1), a stable
+  // A 429 classifies as PROVIDER_RATE_LIMITED, a stable
   // code distinct from a 5xx or an auth failure.
   assert.ok(run.tasks.every((t) => t.error?.code === 'PROVIDER_RATE_LIMITED'));
   assert.ok(run.tasks.every((t) => t.executor === 'provider:error'));
 });
 
-// construct-5wkl: a 2xx transport response is not task success. These pin that
+// a 2xx transport response is not task success. These pin that
 // worker.mjs classifies each unusable-content shape into its own stable code
 // (AC#1/#7) so runtime.mjs's existing catch path records the task 'failed'
 // with that code rather than 'done' with hollow output (AC#2).

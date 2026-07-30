@@ -6,7 +6,7 @@
  * BLOCKED / NEEDS_MAIN_INPUT packets that gate node completion.
  *
  * Trace + worker-artifact writes resolve through the machine-scoped state
- * root (ADR-0066), so CONSTRUCT_HOME_OVERRIDE is pinned for the whole file to keep
+ * root, so CONSTRUCT_HOME_OVERRIDE is pinned for the whole file to keep
  * them off the real developer machine's $HOME.
  */
 

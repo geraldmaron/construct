@@ -12,7 +12,7 @@
  *      the source set.
  *   2. The project hit outranks the bundled Construct doc for the same query.
  *   3. The hit carries a structured `origin` whose `kind` is 'project' so
- *      callers can distinguish (construct-760c.2 widened origin from a bare
+ * callers can distinguish (origin was widened from a bare
  *      string to {targetId, provider, projectKey, relPath, ref, kind}).
  *   4. When projectRoot equals repoRoot or is absent, the project enumeration
  *      is skipped (no double-counting on the Construct repo itself).

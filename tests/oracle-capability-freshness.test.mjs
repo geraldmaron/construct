@@ -1,6 +1,6 @@
 /**
  * tests/oracle-capability-freshness.test.mjs — capability-freshness gate
- * precision (construct-r8wr.6).
+ * precision.
  *
  * Proves two coupled mechanism fixes in lib/oracle/read-model.mjs:
  * (1) a checkout-style mtime bump with unchanged content does not flag a
@@ -23,9 +23,9 @@ import { collectDependencyGraph } from '../lib/oracle/read-model.mjs';
 import { writeGraph } from '../lib/graph/store.mjs';
 import { rmTmpDir } from './helpers/cleanup.mjs';
 
-// construct-b0nny.3: the relational graph store (lib/graph/relational/)
-// resolves graph.db under the machine-scoped state root (resolveStateDir,
-// ADR-0066) whenever writeGraph/loadGraph touch the host graph on Node
+// the relational graph store (lib/graph/relational/)
+// resolves graph.db under the machine-scoped state root (resolveStateDir)
+// whenever writeGraph/loadGraph touch the host graph on Node
 // >=22.5. Pin CONSTRUCT_HOME_OVERRIDE so this suite never provisions state under
 // the real developer machine's ~/.construct/projects/ (the isolation
 // contract, tests/functional/README.md) — the same pattern

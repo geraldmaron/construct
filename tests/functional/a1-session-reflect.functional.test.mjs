@@ -2,7 +2,7 @@
  * tests/functional/a1-session-reflect.functional.test.mjs
  *
  * The hook writes observations through the machine-scoped state root
- * (ADR-0066), keyed by a hash of cwd — so CONSTRUCT_HOME_OVERRIDE is pinned for the
+ * keyed by a hash of cwd — so CONSTRUCT_HOME_OVERRIDE is pinned for the
  * whole file (and threaded into the hook's spawn env) to keep that write off
  * the real developer machine's $HOME.
  */
@@ -46,7 +46,7 @@ test('A1 end-to-end: hook writes searchable observation, accumulation works', as
   fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
 
   // listObservations/searchObservations below resolve the machine-scoped
-  // state root (ADR-0066) via CONSTRUCT_HOME_OVERRIDE read in-process, not via any
+  // state root via CONSTRUCT_HOME_OVERRIDE read in-process, not via any
   // rootDir option — pin it or they write into the real developer machine's
   // ~/.construct/projects.
   const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;

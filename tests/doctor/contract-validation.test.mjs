@@ -2,7 +2,7 @@
  * Tests for a locally defined contract-shape predicate, exercised in isolation
  * against lib/capability-contracts.mjs. This does not call or mirror bin/construct's
  * "Agent contract schema intact" doctor check — that check uses a different
- * predicate (a consumer-naming filter, tracked as broken/vacuous in construct-ik8g)
+ * predicate (a consumer-naming filter, tracked as broken/vacuous)
  * and is not imported here. A regression in the doctor check would not be caught
  * by this suite.
  */

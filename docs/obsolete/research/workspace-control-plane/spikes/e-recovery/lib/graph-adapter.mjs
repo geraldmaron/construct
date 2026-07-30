@@ -1,6 +1,6 @@
 /**
  * lib/graph-adapter.mjs (spike e-recovery) — thin wrapper over the real
- * relational graph store (lib/graph/relational/, construct-b0nny.3) for the
+ * relational graph store (lib/graph/relational) for the
  * harness's graph_update stage and the final reconciliation check.
  *
  * Isolation follows the exact pattern tests/functional/graph-relational-

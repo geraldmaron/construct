@@ -30,7 +30,7 @@ import { runOrchestration } from '../../lib/orchestration/runtime.mjs';
 import { tempDir } from '../helpers.mjs';
 
 // Every runOrchestration call resolves its run store through the
-// machine-scoped state root (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE
+// machine-scoped state root, which reads CONSTRUCT_HOME_OVERRIDE
 // directly rather than the `env` option bag — pin it so these runs never
 // write into the developer machine's real ~/.construct/projects/.
 

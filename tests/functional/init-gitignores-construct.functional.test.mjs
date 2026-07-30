@@ -1,7 +1,7 @@
 /**
  * tests/functional/init-gitignores-construct.functional.test.mjs
  *
- * End-to-end coverage for bead construct-1vv5: `construct init` must add
+ * End-to-end coverage for: `construct init` must add
  * `.construct/` to the project .gitignore so the runtime state tree (observations,
  * sessions, vectors, traces) never lands in a commit. Idempotent — running
  * init twice (or running it on a repo that already ignores `.construct/`) must not
@@ -25,7 +25,7 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
 
-// lib/paths.mjs resolves the machine-scoped state root (ADR-0066) from
+// lib/paths.mjs resolves the machine-scoped state root from
 // process.env directly, so every spawned `construct` needs its own sandboxed
 // HOME to avoid leaking test projects into the real developer machine's
 // ~/.construct/projects/.

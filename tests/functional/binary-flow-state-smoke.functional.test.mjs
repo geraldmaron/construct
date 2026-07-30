@@ -1,7 +1,7 @@
 /**
  * tests/functional/binary-flow-state-smoke.functional.test.mjs — durable-state
- * smoke for the distributed binary (construct-rf26.22, extending
- * construct-rf26.19/construct-qvou coverage).
+ * smoke for the distributed binary (extending
+ * earlier coverage).
  *
  * Coverage already held elsewhere, deliberately not duplicated here:
  * .github/workflows/bun-binary-smoke.yml gates doctor + the sandbox lifecycle

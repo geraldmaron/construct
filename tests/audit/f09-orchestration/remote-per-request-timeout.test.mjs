@@ -10,7 +10,7 @@
  * therefore hangs before the loop is ever entered, so the overall deadline never fires
  * and the call stalls indefinitely (OWASP LLM unbounded consumption, S12).
  *
- * Contract these encode (CX-AUDIT-ORCH-004): EACH remote fetch (POST and every poll GET)
+ * Contract these encode: EACH remote fetch (POST and every poll GET)
  * must be bounded by its own AbortSignal/timeout, so a single hung request cannot stall
  * the run past a deterministic window even when the overall deadline check is unreachable.
  * No real network is touched: fetchImpl is an injected stub that captures options and
@@ -25,7 +25,7 @@ import test from 'node:test';
 import { orchestrationRun } from '../../../lib/mcp/tools/orchestration-run.mjs';
 
 // Pin an explicit small per-request timeout so this proof of the per-request bound is
-// deterministic regardless of the production default (construct-o6t8.2 / construct-neq9.6):
+// deterministic regardless of the production default:
 // the test must not depend on — nor silently re-manufacture — the client's default value.
 
 const REMOTE_ENV = {

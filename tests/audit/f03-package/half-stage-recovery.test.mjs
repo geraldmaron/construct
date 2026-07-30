@@ -1,7 +1,7 @@
 /**
  * tests/audit/f03-package/half-stage-recovery.red.mjs — F03 [R4] half-staged project recovery.
  *
- * Regression guard for CX-AUDIT-PACKAGE-005. lib/install/stage-project.mjs can return
+ * Lib/install/stage-project.mjs can return
  * { staged:true, synced:false } when it stages the `.construct/` launcher but bails before
  * `sync-worker-profiles.mjs --project` populates `.claude/` (the sync script is missing, or sync
  * exits non-zero), leaving the project half-built. stageProjectAdapters now records the outcome

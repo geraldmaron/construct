@@ -1,7 +1,7 @@
 /**
- * run-spike.mjs — construct-b0nny.5.1, directive §11 Spike A ("graph
+ * run-spike.mjs — Spike A ("graph
  * foundation"): independent measurement harness for the relational graph
- * store (lib/graph/relational/, construct-b0nny.3) already built and pinned
+ * store (lib/graph/relational) already built and pinned
  * by tests/functional/graph-relational-store.functional.test.mjs.
  *
  * Scope: independent measurement only, no re-implementation or re-validation

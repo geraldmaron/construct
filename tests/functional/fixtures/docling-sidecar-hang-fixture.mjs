@@ -1,6 +1,6 @@
 /**
  * tests/functional/fixtures/docling-sidecar-hang-fixture.mjs — stub sidecar
- * child for docling-client.mjs's timeout-kill handling (construct-4uxq0.9.13).
+ * child for docling-client.mjs's timeout-kill handling.
  *
  * Answers the spawnSidecar version `ping`, then reads and discards further
  * stdin without responding and keeps its event loop alive so it only exits

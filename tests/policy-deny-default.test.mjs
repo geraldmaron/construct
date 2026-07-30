@@ -2,7 +2,7 @@
  * tests/policy-deny-default.test.mjs
  *
  * Tests for the deny-by-default policy mode introduced for team/enterprise
- * deployments (construct-9oi4.8.3 / LMCP-H3).
+ * deployments.
  */
 
 import { describe, it } from 'node:test';

@@ -1,9 +1,9 @@
 /**
  * workspace-control-plane-nav.test.mjs — archive + deadcode ratchet after quarantine.
  *
- * construct-ok0oo / construct-d23f3: WCP research lives under docs/obsolete/ and must
+ * WCP research lives under docs/obsolete/ and must
  * stay outside live guides nav; postgres-store stays off the deadcode finding set via
- * ACCEPTED_TEST_ONLY (construct-jx21v).
+ * ACCEPTED_TEST_ONLY.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';

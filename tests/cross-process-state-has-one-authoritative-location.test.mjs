@@ -1,11 +1,11 @@
 /**
- * tests/cross-process-state-has-one-authoritative-location.test.mjs — ADR-0092
+ * tests/cross-process-state-has-one-authoritative-location.test.mjs
  * invariant: every project-identity call site resolves the same key.
  *
  * Three call sites answer "which project is this" — `lib/state-root.mjs`'s
  * `deriveProjectKey` (the canonical derivation), `lib/orchestration/store.mjs`'s
  * `projectKey`, and `lib/embed/daemon.mjs`'s `resolveRootDir`/`resolveProjectKey`
- * — and per ADR-0092 they must agree for the same repo, with or without a git
+ * and they must agree for the same repo, with or without a git
  * remote, with or without a `.construct/context.md` marker, and under an
  * explicit `deployment.projectKey` override. Exercises real `git` fixtures
  * rather than stubs, since `deriveProjectKey` shells out to `git remote

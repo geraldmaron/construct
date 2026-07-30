@@ -5,7 +5,7 @@
  * unified audit record. Sibling of
  * tests/functional/prd-request-full-chain-audit-trail.functional.test.mjs
  * (construct-ifwhw.3, the PRD-request shape) — this suite covers the BUILD
- * shape and the construct-pteo2.14 in-run enforcement path that lands the
+ * shape and the in-run enforcement path that lands the
  * verdict as BLOCKED_CONTRACT (not just the observational CONTRACT_VIOLATION
  * that validateOutputPacket records post-hoc).
  *

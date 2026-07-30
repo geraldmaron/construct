@@ -1,6 +1,5 @@
 /**
- * tests/audit/prompts-skills-audit.test.mjs — four-check prompts/skills drift audit
- * (construct-72gqn.41).
+ * tests/audit/prompts-skills-audit.test.mjs — four-check prompts/skills drift audit.
  */
 
 import assert from 'node:assert/strict';

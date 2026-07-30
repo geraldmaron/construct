@@ -2,7 +2,7 @@
  * tests/functional/config-invalid-surfaces-warning.functional.test.mjs
  *
  * lib/config/project-config.mjs reverts the entire construct.config.json to
- * defaults on any validation error (ADR-0021's fail-safe stance), and
+ * defaults on any validation error (the fail-safe stance), and
  * lib/orchestration/runtime.mjs discarded the errors/source that reversion
  * carries. A single typo (e.g. orchestration.store: "sqllite") silently
  * flipped workerBackend back to the "inline" default with zero user-visible
@@ -35,7 +35,7 @@ function project(configObj) {
 test.after(() => { for (const d of dirs) { try { rmTmpDir(d); } catch {} } });
 
 // planRun (called in-process below) resolves the run store through the
-// machine-scoped state root (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE from
+// machine-scoped state root, which reads CONSTRUCT_HOME_OVERRIDE from
 // real process.env directly — the ENV bag below only feeds model-tier
 // lookups. Pin it for the whole file so these runs never write into the
 // real developer machine's ~/.construct/projects/. (The spawned `construct

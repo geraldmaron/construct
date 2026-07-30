@@ -1,5 +1,5 @@
 /**
- * tests/browser/publish-html-artifact.test.mjs — LMCP-L8 Playwright adoption:
+ * tests/browser/publish-html-artifact.test.mjs — Playwright adoption:
  * real headless-Chromium rendering check for the `construct publish` HTML
  * export path (lib/document-export.mjs exportMarkdown({ format: 'html' }), the
  * same branded-template pipeline `construct publish --format html` drives).
@@ -11,7 +11,7 @@
  * case for tests/browser/). .github/workflows/ci.yml runs the real assertions
  * in a dedicated, non-blocking job that does install the browser.
  *
- * Checks the three properties named in the LMCP-L8 spec: fonts render (the
+ * Checks the three properties named in the spec: fonts render (the
  * construct-web.html template embeds fonts as base64 data: URIs via pandoc
  * --embed-resources, a zero-network render), no console errors, and links
  * resolve (rendered <a href> matches the source markdown link target — a

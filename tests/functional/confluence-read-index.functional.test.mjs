@@ -12,7 +12,7 @@
  * through) rather than a parallel Confluence-only indexing path.
  *
  * demandFetch writes observations through the machine-scoped state root
- * (ADR-0066), keyed by a hash of the tmp rootDir — CONSTRUCT_HOME_OVERRIDE is
+ * keyed by a hash of the tmp rootDir — CONSTRUCT_HOME_OVERRIDE is
  * pinned for the whole file to keep that write off the real developer
  * machine's $HOME.
  */

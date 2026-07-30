@@ -1,7 +1,7 @@
 /**
  * tests/assignments/meaningful-change-gate.test.mjs
  *
- * Hermetic unit tests for lib/assignments/meaningful-change-gate.mjs (construct-4uxq0.11.4).
+ * Hermetic unit tests for lib/assignments/meaningful-change-gate.mjs.
  */
 
 import assert from 'node:assert/strict';

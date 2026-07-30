@@ -1,6 +1,5 @@
 /**
- * tests/functional/config-jsonc.functional.test.mjs — JSONC config loader
- * (construct-d1r7.4).
+ * tests/functional/config-jsonc.functional.test.mjs — JSONC config loader.
  *
  * construct.config.json is authored like tsconfig.json: strict-JSON body with
  * `//`/block comments carrying piped option hints and a tolerated trailing

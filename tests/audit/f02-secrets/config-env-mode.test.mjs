@@ -1,7 +1,7 @@
 /**
  * tests/audit/f02-secrets/config-env-mode.red.mjs — F02 [R13] config.env file-mode contract.
  *
- * Regression guard for CX-AUDIT-SECRETS-003. config.env can hold a plaintext API key,
+ * Config.env can hold a plaintext API key,
  * so writeEnvValues (lib/env-config.mjs) creates it with mode 0600 and re-applies 0600
  * on every rewrite — a credential file is never group/world readable, regardless of
  * which caller writes it. Two properties are pinned: a fresh write is 0600, and a

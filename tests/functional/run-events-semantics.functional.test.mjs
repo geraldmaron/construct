@@ -8,7 +8,7 @@
  * order (cancelled > failed > prepare-only > degraded) can collapse a run that
  * is simultaneously e.g. completed-with-failures AND degraded into one string.
  * These tests pin that both emission sites also carry the run-level
- * executionState (LMCP-F4) and an explicit degraded boolean, so a trace/SSE
+ * executionState and an explicit degraded boolean, so a trace/SSE
  * consumer never has to re-read the run store to recover the signal
  * terminalStatus's precedence dropped.
  */
@@ -27,7 +27,7 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
-// Trace reads resolve through the machine-scoped state root (ADR-0066) via
+// Trace reads resolve through the machine-scoped state root via
 // process.env.CONSTRUCT_HOME_OVERRIDE directly, not through the `env` option passed
 // to runOrchestration below, so CONSTRUCT_HOME_OVERRIDE is pinned for the whole file
 // to keep trace writes off the real developer machine's $HOME.

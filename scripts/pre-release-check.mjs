@@ -168,7 +168,7 @@ if (targetTag) {
   }
 }
 
-// ── 11. release evidence gate (LMCP-M5) ─────────────────────────────────────
+// ── 11. release evidence gate ───────────────────────────────────────────────
 // Packaging-only mode (--skip-tests): the full suite (including every
 // capability's acceptance test) already ran in check 8/npm test above;
 // remaining scope here is every mode-capabilities 'implemented' capability's

@@ -1,5 +1,5 @@
 /**
- * tests/functional/orchestration-terminal-contract.functional.test.mjs — construct-72gqn.16 (H9.3).
+ * tests/functional/orchestration-terminal-contract.functional.test.mjs.
  *
  * A permanent tripwire for the bug class where a run rests in a terminal shape that looks
  * done but carries no usable output. Every backend's shaped run must satisfy EXACTLY one of

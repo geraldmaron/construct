@@ -11,7 +11,7 @@
  * from version-pinned dev deps (present in package-lock.json) or a checksummed
  * tool, not a dynamic global/`npx` fetch.
  *
- * Contract these encode (CX-AUDIT-CI-003): release.yml MUST NOT `npm install -g`
+ * Contract these encode: release.yml MUST NOT `npm install -g`
  * or `npx`-fetch build tooling during a release; build tools come from the
  * locked dependency graph. The assertions scan release.yml for both patterns and
  * list every offending `file:line`.

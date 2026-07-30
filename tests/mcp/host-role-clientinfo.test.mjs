@@ -1,6 +1,6 @@
 /**
  * tests/mcp/host-role-clientinfo.test.mjs — orchestration_run host provenance
- * from the MCP initialize handshake (construct-6y6w.7).
+ * from the MCP initialize handshake.
  *
  * Before this bead's fix, lib/mcp/server.mjs's orchestration_run dispatch called
  * orchestrationRun(args) with no handshake context, so every MCP host (VS Code,
@@ -73,7 +73,7 @@ function payload(result) {
   try { return JSON.parse(text); } catch { return text; }
 }
 
-// Any in-process call that resolves the machine-scoped state root (ADR-0066)
+// Any in-process call that resolves the machine-scoped state root
 // needs CONSTRUCT_HOME_OVERRIDE pinned around it — process.env is the only thing
 // homeDir()/constructDir() consult, not the { env } option threaded through a
 // function's own signature. The spawned server sees the sandboxed HOME via

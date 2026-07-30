@@ -1,5 +1,5 @@
 /**
- * tests/functional/orchestration-cancel.functional.test.mjs — construct-72gqn.22 (D2).
+ * tests/functional/orchestration-cancel.functional.test.mjs.
  *
  * Before this, cancellation was a module-level in-memory Set — it never survived a restart
  * or crossed processes, so a cancel requested by an MCP host or the CLI could not reach the

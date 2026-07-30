@@ -19,7 +19,7 @@
  * assertion fails — proving the over-grant.
  *
  * Turns GREEN once the generator scopes the front-door grant to the specific
- * orchestration tools it needs (CX-AUDIT-LLMSEC-003 / cross-ref F04): the agent
+ * orchestration tools it needs (cross-ref F04): the agent
  * file then enumerates concrete tool ids instead of `<server>/*` + broad bundles.
  */
 import assert from 'node:assert/strict';

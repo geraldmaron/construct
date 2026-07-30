@@ -1,5 +1,5 @@
 /**
- * tests/writes/control-plane-execution.functional.test.mjs — LMCP-J6
+ * tests/writes/control-plane-execution.functional.test.mjs
  * functional coverage: control-plane-only write execution.
  *
  * Exercises the full boundary the bead requires: a specialist only ever
@@ -146,7 +146,7 @@ describe('LMCP-J6 — embed-daemon-originated writeIntent executes only post-app
 
     // Step 2: specialist plan — the embed capability's reasoningExecutor
     // output shape (outputPacket + writeProposals), simulating what a real
-    // reasoning engine would return per ADR-0061 §3. This is the specialist
+    // reasoning engine would return. This is the specialist
     // "recommending" — it returns proposals, it does not call an adapter.
     const writeProposals = [
       { providerId: 'jira', writeKind: 'issue', payload: { project: 'OPS', issueType: 'Task', summary: 'Disk usage pager: create ticket' } },
@@ -191,7 +191,7 @@ describe('LMCP-J6 — embed-daemon-originated writeIntent executes only post-app
   });
 });
 
-// ADR-0082 round-trip: DEFAULT_ADAPTER_FACTORIES resolves both the canonical
+// Round-trip: DEFAULT_ADAPTER_FACTORIES resolves both the canonical
 // short IDs (jira, confluence) and the legacy manifest-namespace IDs
 // (atlassian-jira, atlassian-confluence). Credential env vars are cleared so
 // a resolved factory fails fast on AuthError at transport construction — proof
@@ -299,7 +299,7 @@ describe('ADR-0082 — provider-ID namespace canonicalization round-trip (constr
   });
 });
 
-// ADR-0089/ADR-0101 (construct-4uxq0.9.5): drainApprovedWriteIntents must
+// drainApprovedWriteIntents must
 // acquire a durable ApprovalQueue lease per record before executing it, so
 // two callers racing the same 'approved' record (an automated drain tick
 // racing a second drain, or a manual approve) can never both reach the
@@ -358,7 +358,7 @@ describe('ADR-0089/ADR-0101 — drainApprovedWriteIntents lease guarding (constr
       workerId: 'the-drain-job',
     });
 
-    // Since construct-4uxq0.9.9 the queue reloads on read, so the drain's
+    // The queue reloads on read, so the drain's
     // list('approved') already observes the rival's persisted 'executing'
     // state and filters the record out of its work set — no drain outcome is
     // emitted for it. The 'lease-not-acquired' skip path remains for the
@@ -376,7 +376,7 @@ describe('ADR-0089/ADR-0101 — drainApprovedWriteIntents lease guarding (constr
   it('releases the lease back to approved on an execution failure, leaving the record retryable', async () => {
     // A thrown adapter-construction error (the same failure mode the real
     // DEFAULT_ADAPTER_FACTORIES hits on missing credentials, exercised
-    // directly above in the ADR-0082 suite) is what executeApprovedWriteIntent
+    // directly above in the suite) is what executeApprovedWriteIntent
     // actually rejects on — writeWithEnvelope itself catches a provider.write()
     // rejection and returns a structured { status: 'error' } instead of
     // throwing, so that path does not exercise the lease's failure branch.

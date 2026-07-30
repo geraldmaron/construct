@@ -1,7 +1,7 @@
 /**
  * oracle-daemon-retired.functional.test.mjs — a dead oracle daemon is the designed state.
  *
- * The oracle background daemon is retired (construct-b0nny.29): no code path
+ * The oracle background daemon is retired: no code path
  * spawns it and `construct oracle start` prints a removal notice. A stale
  * last-tick with pending approvals is therefore normal operation, never a
  * "producer stalled" failure — session-start surfaces must not nag the user

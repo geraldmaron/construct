@@ -1,6 +1,5 @@
 /**
- * Functional test: cross-source watching for directory targets (bead
- * construct-wjap9.6).
+ * Functional test: cross-source watching for directory targets (bead.
  *
  * Verifies lib/sources/watch.mjs detects a content change inside a watched
  * directory target via its recursive hash map, and that refreshWatch persists

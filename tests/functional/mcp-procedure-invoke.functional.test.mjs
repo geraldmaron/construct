@@ -7,7 +7,7 @@
  *   - schema requires procedure_id (not workflow_type)
  *   - proposal-only invoke with procedure_id round-trips without INVALID_INPUT
  *
- * Guards construct-3os1b P0: schema still required workflow_type while the
+ * P0: schema still required workflow_type while the
  * handler and CLI only accept procedure_id.
  */
 

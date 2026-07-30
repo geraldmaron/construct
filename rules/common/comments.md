@@ -41,8 +41,30 @@ The blank line between the comment and the code is required. It signals "this co
 - **Between-group labels** (`// Language patterns`, `// Dashboard`, `// Step 1:`) delete them
 - **Narrative voice** (`// We weight BM25`, `// Now test the keys`, `// This correctly scores`) delete them
 - **Point-in-time notes** (`// X removed`, `// previously`, `// no longer`) belongs in git log
+- **Dated decisions and observations** (`// decided 2026-05-14`, `// verified live 2026-07-17`, `// as of 2026-06-22`) delete them; a comment states what is true, not when someone last checked
+- **Tracker ids** (`// construct-9oi4.15.3`, `// LMCP-A6`, `// ORCH-004`, `// closes #412`) delete them; the constraint belongs in the comment, the provenance in the commit message
+- **Decision-document ids** (`// ADR-0027 §2`, `// RFC-0004`, `// PRD-0001`) delete them; state the rule the code follows, not the record that set it
+- **Project document citations** (`// see docs/guides/concepts/hooks.md`) delete them; restate the constraint inline. The document moves and the comment does not, so the pointer rots while the reader still trusts it
 - **Noise sentinels** (`// ok`, `// best effort`, `// skip`) delete them; use `/* non-critical */` inline only when the catch clause would otherwise look like a bug
 - **Other-project comparisons** (`// per the LangGraph thread-vs-store split`) delete them; describe the behavior on its own terms. A prior-art comparison belongs in a decision document (`docs/decisions/**`, `docs/notes/**`) where it can carry a citation
+
+## Who the reference rules bind
+
+A person writing in their own codebase may cite whatever they like — their tracker, their ADRs, their internal shorthand. Construct never does. Everything Construct writes into a source file has to stand on its own for a reader who has no access to the tracker, has never opened the decision record, and is reading the file years later.
+
+The test is re-verifiability from the source alone. `(ADR-0027 §2)` tells the reader a rule exists somewhere; `Construct mutates user-owned files only through replaceManagedBlock` tells them the rule. Write the second one.
+
+External standards are not project documents and stay: `RFC 5545`, `RFC 9562`, `SEP-414`, `UTF-8`. Project records are zero-padded four-digit ids (`ADR-0027`, `RFC-0004`, `PRD-0001`), matching their file names under `docs/decisions/` and `docs/specs/`, and are covered by the ban. A three-digit id inside a format example (`ADR-005` in a roadmap-parser sample) is sample data, not a citation, and is left alone.
+
+## Machine-read annotations
+
+`@enforces <decision-id>` is metadata, not prose — `lib/decisions/registry.mjs` parses it to bind a test to the decision it guards, and a dangling marker fails `construct doctor`. It is exempt from the reference rules when it is the entire content of the comment line.
+
+```js
+// @enforces ADR-0015
+```
+
+A decision id anywhere else on the line is prose and is banned.
 
 ## SLA annotations (hooks only)
 

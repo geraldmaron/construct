@@ -1,6 +1,6 @@
 /**
  * tests/writes/confluence.functional.test.mjs — Confluence writes routed
- * through the governed write envelope (LMCP-J4).
+ * through the governed write envelope.
  *
  * Uses tests/fakes/fake-confluence-transport.mjs (no real network) to
  * validate: page create + update via the envelope, title+space duplicate

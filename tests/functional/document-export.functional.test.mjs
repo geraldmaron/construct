@@ -1,9 +1,9 @@
 /**
  * tests/functional/document-export.functional.test.mjs — markdown → PDF/DOCX/HTML
- * (plus DOC/RTF/ODT/EPUB/LaTeX/TXT/MD/MDX) export contract (ADR-0024 / construct-yrdd).
+ * (plus DOC/RTF/ODT/EPUB/LaTeX/TXT/MD/MDX) export contract (construct-yrdd).
  *
  * The export half is bound to external binaries (Pandoc + Typst) discovered at
- * runtime and never bundled (ADR-0001). The tests assert the contract callers
+ * runtime and never bundled. The tests assert the contract callers
  * (CLI, MCP, SDK) depend on:
  *   - detect() reports availability without spawning the engine for real.
  *   - exportMarkdown returns structured errors for bad input / unsupported

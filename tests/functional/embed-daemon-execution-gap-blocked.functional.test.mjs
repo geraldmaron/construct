@@ -1,8 +1,8 @@
 /**
  * tests/functional/embed-daemon-execution-gap-blocked.functional.test.mjs —
  * end-to-end proof that daemon Job 12 ("execution-gap") reports honestly
- * when the Jira provider is not registered at all (construct-4uxq0.9.6, the
- * ADR-0083 truth-status vocabulary generalized to Job 12).
+ * when the Jira provider is not registered at all (the
+ * Truth-status vocabulary generalized to Job 12).
  *
  * Companion to embed-daemon-execution-gap.functional.test.mjs (the success
  * path, one unticketed strategy doc → one proposed Jira issue). Here the

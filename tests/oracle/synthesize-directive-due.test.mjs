@@ -1,5 +1,5 @@
 /**
- * tests/oracle/synthesize-directive-due.test.mjs — construct-p4cba.6 (WS-B5)
+ * tests/oracle/synthesize-directive-due.test.mjs
  * synthesizeVerdict's directive-due gap + recommendedAction generation.
  */
 

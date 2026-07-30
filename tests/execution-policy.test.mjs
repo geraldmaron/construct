@@ -1,13 +1,12 @@
 /**
- * tests/execution-policy.test.mjs — capability-adaptive execution policy compiler
- * (construct-6zga.1.2).
+ * tests/execution-policy.test.mjs — capability-adaptive execution policy compiler.
  *
- * Proves the policy is immutable, traceable, and profile-driven (AC1); the four
+ * Proves the policy is immutable, traceable, and profile-driven; the four
  * named turn intents meet quality/evidence budgets across every capability class
- * (AC2); unknown/missing/degraded profiles compile to the conservative envelope
- * with degraded-mode telemetry (AC3); and no provider/model-name conditional
+ *; unknown/missing/degraded profiles compile to the conservative envelope
+ * with degraded-mode telemetry; and no provider/model-name conditional
  * exists in the compiler — identical capability records yield identical policies
- * regardless of model name (AC4).
+ * regardless of model name.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';

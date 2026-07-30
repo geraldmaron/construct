@@ -1,7 +1,7 @@
 /**
  * tests/functional/opencode-config-path.functional.test.mjs
  *
- * Guards construct-09tf: OpenCode's config resolver reads `<project>/opencode.json`,
+ * OpenCode's config resolver reads `<project>/opencode.json`,
  * `opencode.jsonc`, or `<project>/.opencode/opencode.json` — never `.opencode/config.json`.
  * Project sync must therefore write `.opencode/opencode.json` (with the `agent` and
  * `mcp` keys OpenCode loads), must not leave the silently-ignored `.opencode/config.json`,
@@ -46,8 +46,8 @@ function runSync(env) {
     encoding: 'utf8',
     timeout: 90_000,
     // Pin opencode so the project sync writes its adapter regardless of whether
-    // the runner has the opencode binary — the detected-only default (ADR-0027
-    // §1) would otherwise skip it on a host-less CI runner.
+    // the runner has the opencode binary — the detected-only default
+    // would otherwise skip it on a host-less CI runner.
     env: { ...process.env, HOME: env.HOME, CONSTRUCT_SKIP_POSTINSTALL: '1', CONSTRUCT_SYNC_HOSTS: 'claude,opencode' },
   });
 }

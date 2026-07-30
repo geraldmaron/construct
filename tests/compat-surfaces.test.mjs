@@ -7,7 +7,7 @@
  *      both expiration shapes (date, releaseCount).
  *   2. Every entry in the real compat/surfaces.json is structurally valid.
  *   3. Removed surfaces are honest tombstones (status:removed) and do not
- *      claim live module paths or handlers; the matrix ADR-0053 entry keeps
+ * claim live module paths or handlers; the matrix entry keeps
  *      its documented extension history.
  *
  * @enforces ADR-0053

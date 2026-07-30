@@ -1,7 +1,7 @@
 /**
  * tests/functional/templates-register-adhoc.functional.test.mjs
  *
- * Template-optional generation (bead construct-760c.5). Two ways to author a
+ * Template-optional generation. Two ways to author a
  * document class the builtin manifest never registered, with the builtin
  * (registry/artifact-manifest.json) held byte-identical throughout:
  *
@@ -43,7 +43,7 @@ function freshProject() {
 // In-process artifact-loop calls reach the machine-scoped state root through
 // the real HOME (observation-store vectorClientFor), so the whole process gets
 // a redirected CONSTRUCT_HOME_OVERRIDE or every fixture registers a real
-// ~/.construct/projects key (construct-9y93c).
+// ~/.construct/projects key.
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-templates-register-home-'));
 const originalHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;

@@ -1,6 +1,6 @@
 /**
  * tests/tracker-projection/reconcile.test.mjs — detect-and-report
- * reconciliation (construct-b0nny.27 / E8).
+ * reconciliation.
  *
  * Asserts the field-authority rule: a tracker-owned field changed in bd is
  * absorbed; a domain-owned field changed in bd is a reported conflict, never

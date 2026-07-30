@@ -1,6 +1,6 @@
 /**
  * tests/functional/provider-card-registry.functional.test.mjs — Provider Card
- * registry validation end-to-end (construct-4uxq0.13.7).
+ * registry validation end-to-end.
  *
  * Touches more than one component (schema + registry data + CLI script
  * surface), so per the repo's multi-component rule this lives here rather

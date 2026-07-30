@@ -12,7 +12,6 @@
  *   6. classifyCapability (async) round-trips through the real mode-capabilities
  *      registry for the 'solo' mode.
  *
- * Bead: construct-9oi4.13.4 — LMCP-M4
  */
 
 import assert from 'node:assert/strict';

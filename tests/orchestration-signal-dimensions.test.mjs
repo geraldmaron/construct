@@ -1,6 +1,6 @@
 /**
  * tests/orchestration-signal-dimensions.test.mjs — registry-declared signal
- * dimensions (construct-pteo2.3 / cdsp.10).
+ * dimensions (cdsp.10).
  *
  * Table-driven: one keyword from each dimension in
  * lib/orchestration/signal-dimensions.mjs must flip the matching

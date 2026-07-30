@@ -1,5 +1,5 @@
 /**
- * tests/security/ssrf.test.mjs — LMCP-N7 SSRF / DNS-rebinding egress guard.
+ * tests/security/ssrf.test.mjs — SSRF / DNS-rebinding egress guard.
  *
  * @owasp LLM06
  *

@@ -2,7 +2,7 @@
 /**
  * gen-redirect-stubs.mjs — post-export redirect generator for the docs site.
  *
- * ADR-0045 Phase 1 regrouped repo-root `docs/` into intent-revealing buckets,
+ * Repo-root `docs/` is grouped into intent-revealing buckets,
  * which moved every public docs-site URL under a bucket prefix (`/adr/*` →
  * `/decisions/adr/*`, `/cookbook/*` → `/guides/cookbook/*`, …). The site is a
  * static Next.js export, so `next.config.mjs` `redirects()` never runs; old

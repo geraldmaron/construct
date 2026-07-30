@@ -1,6 +1,5 @@
 /**
- * Unit tests for evidence-cursor semantics in lib/sources/watch.mjs
- * (construct-4uxq0.11.1).
+ * Unit tests for evidence-cursor semantics in lib/sources/watch.mjs.
  */
 
 import test, { after } from 'node:test';

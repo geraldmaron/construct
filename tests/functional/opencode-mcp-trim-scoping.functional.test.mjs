@@ -1,5 +1,5 @@
 /**
- * opencode-mcp-trim-scoping.functional.test.mjs — bead construct-0mnj (WS2).
+ * opencode-mcp-trim-scoping.functional.test.mjs.
  *
  * The heavy external MCP servers are disabled by INTENT — the config's own
  * default model — not by whether the machine happens to have Ollama installed. A
@@ -38,7 +38,7 @@ function seedConfig(home, { model = undefined, ollamaModels = {} } = {}) {
 // self-populates CONSTRUCT_TOOLKIT_DIR from it when unset — it never needs the var
 // supplied externally. Setting it here would also feed lib/paths.mjs's
 // constructDir(), which lib/state-root.mjs's machine-scoped state root
-// (ADR-0066) builds on, redirecting real state into repoRoot instead of the
+// builds on, redirecting real state into repoRoot instead of the
 // sandboxed HOME already in `env`.
 
 function runSync(env, extraArgs = []) {

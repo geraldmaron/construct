@@ -1,5 +1,5 @@
 /**
- * reflect-salience.test.mjs — deterministic session salience (bead construct-k6lr).
+ * reflect-salience.test.mjs — deterministic session salience.
  *
  * Pins the "is this worth remembering" decision: a session that mutated the tree
  * scores high, a read-only/exploratory one scores low (so consolidation's

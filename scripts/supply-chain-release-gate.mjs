@@ -4,8 +4,8 @@
  * (construct-tsyfe.10.7).
  *
  * Conjunctive gate over the six construct-tsyfe.10 sub-checks. Mirrors
- * construct-4uxq0.14.4: a process being alive is not sufficient — each sub-check
- * must report real evidence. Wired onto release.yml's tag path per construct-9tg43
+ * a process being alive is not sufficient — each sub-check
+ * must report real evidence. Wired onto release.yml's tag path
  * gate-scope lesson (existence alone is not enough; the release path must run it).
  */
 
