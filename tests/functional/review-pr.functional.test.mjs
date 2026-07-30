@@ -1,7 +1,7 @@
 /**
  * tests/functional/review-pr.functional.test.mjs — `construct review pr`
- * deterministic diff review through the real binary (bead construct-h7501,
- * ADR-0069). This is the backend of the CI `review` gate, so the assertions
+ * deterministic diff review through the real binary.
+ * The command backs the CI `review` gate, so the assertions
  * mirror the gate's contract: a planted secret in the PR diff surfaces as a
  * high-severity finding, a clean diff reports zero findings with exit 0, and
  * a review that cannot run (missing --base, unknown ref) exits non-zero

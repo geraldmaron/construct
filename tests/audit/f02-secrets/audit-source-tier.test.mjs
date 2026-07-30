@@ -15,7 +15,7 @@
  * tier; (2) that record never contains the materialized value.
  *
  * Turns GREEN once enableSecretAuditTrail also persists a value-free record for
- * `secret.resolve` events (source tier + outcome), per CX-AUDIT-SECRETS-005 / plan Epic 6
+ * `secret.resolve` events (source tier + outcome), / plan Epic 6
  * (docs/notes/research/2026-06-construct-audit/90-credential-handling-remediation-plan.md
  * §"Audited: never ... zero structured audit/observation events on the resolve path").
  *

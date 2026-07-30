@@ -1,7 +1,7 @@
 /**
  * tests/functional/readiness-honesty.functional.test.mjs
  *
- * Locks in three readiness-gate honesty fixes (construct-1yhp.3):
+ * Locks in three readiness-gate honesty fixes:
  *   1. orchestration_readiness over MCP only claims observationScope
  *      'host-session' when the caller actually reported what it observed;
  *      a server-self-report catalog gets its own label and a disclosed

@@ -5,6 +5,7 @@
   "description": "Reads before writing — understanding the existing pattern matters more than having the better one.",
   "artifactClasses": [],
   "skillEmphasis": [
+    "docs/artifact-authorship",
     "development/typescript",
     "development/python",
     "development/go",

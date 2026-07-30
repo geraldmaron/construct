@@ -73,7 +73,7 @@ function payload(result) {
   try { return JSON.parse(text); } catch { return text; }
 }
 
-// getRun resolves the machine-scoped state root (ADR-0066) via CONSTRUCT_HOME_OVERRIDE
+// getRun resolves the machine-scoped state root via CONSTRUCT_HOME_OVERRIDE
 // on process.env directly — the { env } option threaded through getRun's own
 // signature is not consulted by that resolution. The subprocess sees the
 // sandboxed HOME via sterileSpawnEnv; this process must pin the same override

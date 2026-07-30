@@ -1,6 +1,6 @@
 /**
  * tests/workplace-loop/github-source.test.mjs — unit coverage for
- * lib/workplace-loop/sources/github-source.mjs (construct-b0nny.25).
+ * lib/workplace-loop/sources/github-source.mjs.
  *
  * fetchGithubOpenIssues is exercised against an injected fake provider
  * (never a real network call) so the suite stays hermetic; the real

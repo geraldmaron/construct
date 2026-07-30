@@ -1,6 +1,6 @@
 /**
- * scripts/prototypes/richdocument-unified/unified-adapter.mjs — DISPOSABLE PROTOTYPE
- * (construct-tsyfe.3.2). Not imported by lib/ or bin/. See this directory's README.md.
+ * scripts/prototypes/richdocument-unified/unified-adapter.mjs — DISPOSABLE PROTOTYPE.
+ * Not imported by lib/ or bin/.
  *
  * Maps unified's mdast/hast trees onto the *same* RichDocument IR lib/rich-document.mjs
  * defines (reuses its `make*` factories directly) so the hand-rolled pipeline and this
@@ -10,7 +10,7 @@
  * against the *same* cx-specific HTML shape richDocumentToHtml() emits (article/section with
  * data-cx-* attributes) — this is the fair comparison, since a stock mdast->hast pipeline has
  * no concept of Construct's sections/sourceRef/citations/droppedInfo extensions at all (a real
- * finding, not a bug: those stay Construct-owned per ADR-0097's rubric regardless of parser).
+ * finding, not a bug: those stay Construct-owned regardless of parser).
  */
 
 import { unified } from 'unified';

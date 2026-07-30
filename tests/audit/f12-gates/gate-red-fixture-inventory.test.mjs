@@ -115,7 +115,7 @@ describe('R28/R31/R33 — every P0/P1 release gate has a registered red fixture'
 
     // A gate that still points at a *.red.mjs file is in the red phase: the fix
     // has not landed, so the gate is not yet wired into `npm test`. Once green,
-    // the proving fixture is renamed to *.test.mjs (per tests/audit/README.md).
+    // the proving fixture is renamed to *.test.mjs.
 
     const stillRed = found.data.gates
       .filter((g) => typeof g.redFixture === 'string' && g.redFixture.endsWith('.red.mjs'))

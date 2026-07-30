@@ -13,7 +13,7 @@
  * @capability ingest.docling
  *
  * The docling venv resolves through the machine-shared runtime root
- * (ADR-0066/construct-rf26.16), never keyed by project: the sandbox's
+ * never keyed by project: the sandbox's
  * HOME == root, so the stub lands at root/.construct/runtime/docling/ — the
  * same place the running server resolves it to, regardless of its cwd.
  */

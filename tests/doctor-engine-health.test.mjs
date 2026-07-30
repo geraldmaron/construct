@@ -1,6 +1,6 @@
 /**
  * tests/doctor-engine-health.test.mjs — `construct doctor` export-engine health
- * check (LMCP-K3).
+ * check.
  *
  * Covers lib/doctor/engine-health.mjs: an absent pandoc/typst/libreoffice/
  * pptxgenjs reports as a graceful (optional) finding naming the missing binary

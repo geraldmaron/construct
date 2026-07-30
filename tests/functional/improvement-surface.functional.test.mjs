@@ -1,6 +1,6 @@
 /**
  * tests/functional/improvement-surface.functional.test.mjs — the governed
- * improvement operator surface (construct-6zga.1.11).
+ * improvement operator surface.
  *
  * Drives submit → review → approve → apply through the real CLI module and
  * asserts durable artifacts under `.construct/improvement/proposals/`.

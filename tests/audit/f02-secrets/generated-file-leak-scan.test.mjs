@@ -3,7 +3,7 @@
  * leak scan over all generated MCP host-config outputs.
  *
  * Claude and OpenCode local/stdio env emit the host env-reference form instead of the
- * materialized value, per CX-AUDIT-SECRETS-002 / plan Epic 4
+ * materialized value, / plan Epic 4
  * (docs/notes/research/2026-06-construct-audit/90-credential-handling-remediation-plan.md
  * §Epic 4): no SENTINEL value appears in either generated host entry. VS Code is
  * exempted (construct-trxz.12): its own mcp.json reference documents no `${env:VAR}`

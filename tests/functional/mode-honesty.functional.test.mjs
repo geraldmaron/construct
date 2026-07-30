@@ -1,5 +1,5 @@
 /**
- * tests/functional/mode-honesty.functional.test.mjs — LMCP-G8.
+ * tests/functional/mode-honesty.functional.test.mjs.
  *
  * Verifies that team/enterprise mode cannot silently fall back to solo
  * behavior when a required subsystem is unavailable.

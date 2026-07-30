@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * scripts/release-evidence-gate.mjs — release packaging evidence gate (LMCP-M5).
+ * scripts/release-evidence-gate.mjs — release packaging evidence gate.
  *
  * A release can claim a capability in docs, `construct status`, and
  * `construct doctor` while the packed artifact a consumer actually installs

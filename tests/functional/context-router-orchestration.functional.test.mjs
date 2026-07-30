@@ -1,5 +1,5 @@
 /**
- * tests/functional/context-router-orchestration.functional.test.mjs — construct-72gqn.23 (D3).
+ * tests/functional/context-router-orchestration.functional.test.mjs.
  *
  * Before this bead, an orchestration run's specialist prompts got no per-role
  * artifact routing: buildContextPacket (lib/context-router.mjs) shaped role-aware
@@ -32,7 +32,7 @@ function project() {
 test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} } });
 
 // runOrchestration resolves the run store through the machine-scoped state root
-// (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE from real process.env directly.
+// which reads CONSTRUCT_HOME_OVERRIDE from real process.env directly.
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-d3-context-home-'));
 const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;

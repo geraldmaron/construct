@@ -10,7 +10,7 @@
  *   - The real github provider's read()/search() (lib/providers/github/index.mjs)
  *     enforce repoAllowlist/repoAllowGlob end-to-end: a blocked target throws
  *     OUT_OF_SCOPE before any network call, an allowed target proceeds, and an
- *     unconfigured allowlist never blocks (construct-hb9k).
+ * unconfigured allowlist never blocks.
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';

@@ -1,7 +1,7 @@
 /**
  * tests/functional/init-no-project-secrets.functional.test.mjs
  *
- * ADR-0029: construct init must not write user-scope credentials into the
+ * Construct init must not write user-scope credentials into the
  * project tree. Secrets belong under XDG user config, not the scaffolded repo.
  */
 

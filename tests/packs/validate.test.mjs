@@ -2,7 +2,7 @@
  * tests/packs/validate.test.mjs — pack manifest validator unit tests.
  *
  * Packs are third-party distributable bundles (id/version/compatVersion per
- * ADR-0055) that can contribute Worker Profiles, prompts, tools, and provider
+ * a manifest) that can contribute Worker Profiles, prompts, tools, and provider
  * capability grants. Validating a pack's manifest before it is trusted —
  * rejecting unknown fields, incompatible compatVersion, and embedBindings
  * naming providers/capabilities outside the known-provider allowlist — is

@@ -1,13 +1,12 @@
 /**
  * tests/functional/beads-projection.functional.test.mjs — day-one proof for the
- * Beads projection / field authority / reconciliation surface
- * (construct-b0nny.27 / E8).
+ * Beads projection / field authority / reconciliation surface.
  *
  * Spans the importer + reconciliation + durable JSONL store at once (CLAUDE.md's
  * multi-component-feature rule) by importing the real module in an isolated
  * tmpdir and asserting on the persisted artifact — plus one real-binary spawn
  * of `construct tracker-projection` to prove the CLI path. The corpus is this
- * program's OWN bd history (construct-b0nny + .1 … .31, incl. spike sub-beads),
+ * program's own tracker history (including spike sub-beads),
  * frozen at tests/tracker-projection/fixtures/beads-program-corpus.json — a
  * captured snapshot, not a live bd read, so a sibling agent mutating bd cannot
  * make the assertions flap. The three acceptance criteria are each a test here:

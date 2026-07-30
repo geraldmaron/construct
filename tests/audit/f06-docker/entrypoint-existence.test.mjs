@@ -3,7 +3,7 @@
  *
  * RED fixture (must FAIL against the current repo). The Dockerfile's final
  * instruction is `CMD ["node", "lib/server/index.mjs"]`, but the dashboard HTTP
- * daemon (`lib/server/`) was deleted by ADR-0039's 2026-06-25 amendment. The
+ * daemon (`lib/server/`) is deleted. The
  * image copies the whole source tree (`COPY . .`) minus .dockerignore exclusions,
  * yet no lib/server/index.mjs exists anywhere in that tree — so the container
  * builds successfully and then exits immediately with
@@ -14,7 +14,7 @@
  *
  * Turns GREEN once the Dockerfile CMD targets a file that actually ships (a real
  * server entrypoint is restored, or the CMD is repointed at the shipped binary),
- * per CX-AUDIT-DOCKER-002 / -004.
+ * / -004.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -43,7 +43,7 @@ function readCmdArgv(dockerfileText) {
 }
 
 test('[R23] Dockerfile CMD entrypoint must exist in the repo source tree', () => {
-  // ADR-0039 degate: if the Dockerfile was removed (Docker surface degated), the
+  // Degate: if the Dockerfile was removed (Docker surface degated), the
   // entrypoint requirement is satisfied — there is nothing to boot.
   if (!fs.existsSync(dockerfile)) return;
 

@@ -14,7 +14,7 @@ const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 test('validateWorkerProfileCards passes for all registry profiles', () => {
   const result = validateWorkerProfileCards({ rootDir: REPO });
   assert.equal(result.pass, true, result.errors.join('\n'));
-  // construct-rf26.11 consolidated the 29-specialist roster to 12 (orchestrator + 11 workers).
+  // A consolidation reduced the 29-specialist roster to 12 (orchestrator + 11 workers).
   assert.equal(result.count, 12);
 });
 

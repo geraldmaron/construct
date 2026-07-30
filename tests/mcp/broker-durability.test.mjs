@@ -1,5 +1,5 @@
 /**
- * tests/mcp/broker-durability.test.mjs — LMCP-I1.
+ * tests/mcp/broker-durability.test.mjs.
  *
  * Verifies that the Broker's rate-limit state persists across instances
  * pointing at the same rootDir via BrokerStore file-backed storage.

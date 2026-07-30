@@ -13,7 +13,7 @@ import { InboxWatcher } from '../lib/embed/inbox.mjs';
 import { saveIntakeConfig } from '../lib/intake/intake-config.mjs';
 
 // InboxWatcher.poll() resolves its state file through the machine-scoped
-// state root (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE from real process.env
+// state root, which reads CONSTRUCT_HOME_OVERRIDE from real process.env
 // directly — the `env` constructor option below is a plain options bag, not
 // process.env, so it never isolates that write. Pin it for the whole file so
 // polling never writes into the real developer machine's ~/.construct/projects/.

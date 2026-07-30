@@ -1,6 +1,6 @@
 /**
  * tests/doctor/provider-certification-drift.test.mjs — provider certification
- * drift via lib/doctor/watchers/consistency.mjs (construct-4uxq0.13.5).
+ * drift via lib/doctor/watchers/consistency.mjs.
  */
 
 import assert from 'node:assert/strict';

@@ -33,7 +33,7 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
 
 // Both the spawned CLI and the in-process InboxWatcher below resolve through
-// the machine-scoped state root (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE
+// the machine-scoped state root, which reads CONSTRUCT_HOME_OVERRIDE
 // from process.env — the child's own env for a spawn, or this test process's
 // env for an in-process call. cwdHomes maps each project's cwd to its own
 // sandboxed HOME so a spawned `construct` invocation and the in-process

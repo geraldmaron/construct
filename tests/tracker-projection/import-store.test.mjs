@@ -1,6 +1,5 @@
 /**
- * tests/tracker-projection/import-store.test.mjs — importer + durable store
- * (construct-b0nny.27 / E8).
+ * tests/tracker-projection/import-store.test.mjs — importer + durable store.
  *
  * importBeads builds raw-record-preserving projections from a bd snapshot and
  * never touches bd; verifyRawRecords proves zero data loss and catches a

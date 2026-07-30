@@ -1,5 +1,5 @@
 /**
- * tests/skills/experimentation.test.mjs — construct-72gqn.32 (H5-deep).
+ * tests/skills/experimentation.test.mjs.
  *
  * Pins the experimentation skill and the cross-role entitlement broadening: the
  * one overlay-trapped cross-role methodology (perspectives/data-analyst.experiment was

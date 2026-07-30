@@ -1,6 +1,6 @@
 /**
  * tests/security/misinformation-evidence-grounding.test.mjs — citation
- * grounding for web-capable specialists (construct-5wkl AC#5).
+ * grounding for web-capable specialists.
  *
  * @owasp LLM09
  * @secures research-synthesis

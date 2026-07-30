@@ -1,5 +1,5 @@
 /**
- * ollama-capability-store.test.mjs — local-model coherence verdict persistence (WS3).
+ * ollama-capability-store.test.mjs — local-model coherence verdict persistence.
  *
  * The probe writes a COHERENT/COLLAPSED verdict keyed by the model's Ollama digest;
  * sync and doctor read it without re-probing. These tests pin the rules that keep a

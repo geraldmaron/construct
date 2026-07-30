@@ -6,13 +6,13 @@
  * queue in order, passing jobs are markProcessed'd with worker
  * identity, failed/timed-out jobs are markSkipped'd with a structured
  * reason, the idle timeout terminates the loop, and stopAfter stops
- * after N drained items. Also covers the ADR-0089 execution-lease
+ * after N drained items. Also covers the execution-lease
  * heartbeat: a lease-capable queue stub (heartbeat/fail spies) proves
  * heartbeat fires periodically while a job is in flight and stops once it
  * settles; a queue stub without heartbeat/fail proves FilesystemIntakeQueue
  * (solo mode) is unaffected by the wiring.
  *
- * Also covers construct-4uxq0.11.3: FilesystemIntakeQueue has no claim() at
+ * FilesystemIntakeQueue has no claim() at
  * all (solo mode is single-process and never needs concurrent-claim leasing;
  * see lib/intake/filesystem-queue.mjs and lib/intake/queue.mjs#resolveBackend,
  * which resolves the filesystem backend only in solo mode). runWorkerLoop
@@ -21,7 +21,7 @@
  * function" TypeError a misconfigured invocation would otherwise hit.
  *
  * runWorkerLoop writes trace events through the machine-scoped state root
- * (ADR-0066), keyed by a hash of projectRoot — so CONSTRUCT_HOME_OVERRIDE is pinned
+ * keyed by a hash of projectRoot — so CONSTRUCT_HOME_OVERRIDE is pinned
  * per test to keep that write off the real developer machine's $HOME.
  */
 import { describe, it, beforeEach, afterEach } from 'node:test';
@@ -45,7 +45,7 @@ beforeEach(() => {
   prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
   process.env.CONSTRUCT_HOME_OVERRIDE = homeOverride;
   process.chdir(projectRoot);
-  // artifactsDir() resolves the machine-scoped state root (ADR-0066) via
+  // artifactsDir() resolves the machine-scoped state root via
   // CONSTRUCT_HOME_OVERRIDE read in-process, not via rootDir — unpinned, writes
   // land in the real developer machine's ~/.construct/projects.
   prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
@@ -208,7 +208,7 @@ describe('runWorkerLoop', () => {
  * succeeds while the record is pending, or once its lease has genuinely
  * expired (a crashed worker that stopped heartbeating). heartbeat() renews
  * the expiry the same way pg-queue.mjs's real UPDATE ... WHERE lease_expires_at
- * does. This is the fixture construct-4uxq0.11.2 asks for: proof that a
+ * does. The fixture proves that a
  * second worker cannot reclaim a job the first is still heartbeating.
  */
 function buildRacingLeaseQueue({ leaseSeconds }) {

@@ -15,7 +15,7 @@ import { addResearchFinding } from '../../lib/knowledge/research-store.mjs';
 
 // addResearchFinding calls syncFileStateToSql, which builds a VectorClient
 // whose db path falls back to resolveStateDir(process.cwd(), ...) — reading
-// the machine-scoped state root (ADR-0066) via CONSTRUCT_HOME_OVERRIDE in-process,
+// the machine-scoped state root via CONSTRUCT_HOME_OVERRIDE in-process,
 // not via the `cwd` each test passes explicitly. Pin it file-wide or every
 // test below writes into the real developer machine's ~/.construct/projects.
 const HOME_SANDBOX = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-research-home-'));

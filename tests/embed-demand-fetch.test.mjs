@@ -79,7 +79,7 @@ describe('resolveKnownSources', () => {
   });
 });
 
-// The descriptor-driven credential-only fallback (construct-r70rz): a provider
+// The descriptor-driven credential-only fallback: a provider
 // reachable via a bare credential env with no explicit list is advertised as a
 // generic catch-all source, gated on aliases.catchAllCredentialEnv — no provider
 // name, env var, or display prefix hardcoded in demand-fetch.

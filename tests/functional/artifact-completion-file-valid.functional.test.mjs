@@ -1,6 +1,5 @@
 /**
- * tests/functional/artifact-completion-file-valid.functional.test.mjs — export is not completion
- * (construct-d1r7.12).
+ * tests/functional/artifact-completion-file-valid.functional.test.mjs — export is not completion.
  *
  * A standard document workflow advances to file-valid only when the exported file clears integrity,
  * content roundtrip, and reference resolution — not merely by emitting bytes. These exercise the real

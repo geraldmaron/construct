@@ -123,7 +123,7 @@ test('global install + project init (npm pack -> global install -> 2 projects)',
     assert.ok(existsSync(binPath), `Binary should exist at ${binPath}`);
   });
 
-  // lib/paths.mjs resolves the ADR-0066 state root from process.env.HOME /
+  // lib/paths.mjs resolves the state root from process.env.HOME /
   // CONSTRUCT_HOME_OVERRIDE in the CHILD's own env, not this test process's env —
   // every spawned `construct` call below (for either project) must be
   // pinned to a throwaway sandbox home or it leaks project-key directories

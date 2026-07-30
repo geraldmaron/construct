@@ -1,7 +1,6 @@
 /**
  * tests/functional/fixtures/docling-sidecar-orphan-id-fixture.mjs — stub
- * sidecar child for docling-client.mjs's unmatched-response-id handling
- * (construct-4uxq0.9.13).
+ * sidecar child for docling-client.mjs's unmatched-response-id handling.
  *
  * Answers the spawnSidecar version `ping`, then on each later request first
  * writes a well-formed response addressed to an id no caller is waiting on,

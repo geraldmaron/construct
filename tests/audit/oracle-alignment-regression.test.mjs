@@ -1,6 +1,6 @@
 /**
  * oracle-alignment-regression.test.mjs — pins cleared alignment ratchet regressions
- * for construct-4b2bw and duplicate oracle beads on feat/workspace-control-plane.
+ * for duplicate oracle beads on the workspace-control-plane branch.
  *
  * Verifies deadcode allowlist entries and docs nav wiring stay off the finding set.
  */

@@ -1,8 +1,8 @@
 /**
  * tests/functional/wave0-false-success-certification.functional.test.mjs —
  * combined certification that Wave 0's three false-success fixes
- * (construct-4uxq0.9.12 demo, .9.13 Docling, .9.16 graph build) hold
- * together in one run, not just individually (construct-4uxq0.9.18).
+ * (demo.9.13 Docling.9.16 graph build) hold
+ * together in one run, not just individually.
  *
  * Re-runs each dependency bead's own regression suite as a subprocess and
  * additionally exercises all three forced-failure paths in this single
@@ -11,7 +11,7 @@
  * bead rather than patching this file. Scope is limited to the three named
  * false-success surfaces; mermaid/playwright/tracker-integrity fixes are
  * explicitly out of scope (security/supply-chain/data-integrity, not
- * false-success paths) per construct-4uxq0.9.18.
+ * false-success paths).
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

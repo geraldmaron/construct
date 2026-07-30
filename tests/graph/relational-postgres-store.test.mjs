@@ -1,6 +1,6 @@
 /**
  * tests/graph/relational-postgres-store.test.mjs — Postgres graph store
- * (construct-b0nny.3), including construct-b0nny.21's live cross-backend
+ * including the live cross-backend
  * query-template parity proof.
  *
  * bindNamedParams is pure JS and always runs (no network) — it pins the
@@ -11,7 +11,7 @@
  * passing test records the skip, matching tests/orchestration-run-store-
  * postgres.test.mjs's established pattern.
  *
- * construct-b0nny.21 ran this file for real against a live Docker Postgres
+ * Ran this file for real against a live Docker Postgres
  * instance (see the bead's closing report for the run transcript) and added
  * the "query-template parity" suite: the exact recursive-CTE SQL text from
  * queries.mjs (queryUp/queryDown/path/cycles/orphans/orphaned-capabilities/
@@ -112,9 +112,9 @@ if (!sql) {
     await sql`DELETE FROM construct_graph_meta WHERE workspace = ${workspace}`;
   });
 
-  // --- construct-b0nny.21: live query-template parity, SQLite vs Postgres ---
+  // --- Live query-template parity, SQLite vs Postgres ---
 
-  // resolveStateDir (ADR-0066) keys graph.db off HOME — isolate it the same
+  // resolveStateDir keys graph.db off HOME — isolate it the same
   // way tests/graph/relational-query-latency.test.mjs and tests/graph/
   // cli.test.mjs already do, so this suite never touches a real developer
   // machine's ~/.construct/projects/.

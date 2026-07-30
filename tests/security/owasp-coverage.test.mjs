@@ -1,5 +1,5 @@
 /**
- * tests/security/owasp-coverage.test.mjs — LMCP-N8 security corpus wired into
+ * tests/security/owasp-coverage.test.mjs — security corpus wired into
  * the living graph.
  *
  * Pins the acceptance guarantees:

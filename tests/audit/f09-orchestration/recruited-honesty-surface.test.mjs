@@ -1,7 +1,6 @@
 /**
  * tests/audit/f09-orchestration/recruited-honesty-surface.test.mjs —
- * recruited-but-unexecuted reviewers are loud on the shaped surface
- * (construct-pteo2.12).
+ * recruited-but-unexecuted reviewers are loud on the shaped surface.
  *
  * shapeRun is a pure function over a run record, so the mixed silent-no-op
  * case — Assignment tasks executed, a recruited Worker Profile only prepared, run

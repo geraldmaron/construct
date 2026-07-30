@@ -1,5 +1,5 @@
 /**
- * tests/worker-profile-roster.test.mjs — lazy Worker Profile catalog (construct-ymp5).
+ * tests/worker-profile-roster.test.mjs — lazy Worker Profile catalog.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -8,7 +8,7 @@ import { buildWorkerProfileCatalog, formatWorkerProfileRosterText } from '../lib
 
 test('buildWorkerProfileCatalog lists public Worker Profiles with routing hints', () => {
   const catalog = buildWorkerProfileCatalog();
-  // construct-rf26.11 consolidated the 29-Worker Profile roster to 12 (orchestrator + 11 workers).
+  // A consolidation reduced the 29-Worker Profile roster to 12 (orchestrator + 11 workers).
   assert.ok(catalog.length >= 10);
   assert.ok(catalog.every((row) => row.id && row.whenToUse.length > 0));
   assert.equal(catalog.some((row) => row.id === 'engineer'), true);

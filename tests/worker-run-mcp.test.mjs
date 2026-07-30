@@ -7,7 +7,7 @@
  * correlated by traceId.
  *
  * Trace + worker-artifact writes resolve through the machine-scoped state
- * root (ADR-0066), so CONSTRUCT_HOME_OVERRIDE is pinned for the whole file to keep
+ * root, so CONSTRUCT_HOME_OVERRIDE is pinned for the whole file to keep
  * them off the real developer machine's $HOME.
  */
 import { describe, it, beforeEach, afterEach, after } from 'node:test';

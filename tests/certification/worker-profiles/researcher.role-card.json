@@ -10,6 +10,7 @@
     "product-intelligence-report"
   ],
   "skillEmphasis": [
+    "docs/artifact-authorship",
     "docs/research-workflow",
     "devops/dependency-management",
     "docs/transcript-synthesis",

@@ -1,5 +1,5 @@
 /**
- * tests/orchestration-worker-web.test.mjs — worker web-capable execution (ADR-0050).
+ * tests/orchestration-worker-web.test.mjs — worker web-capable execution.
  *
  * Proves runTaskViaProvider actually reaches the web for a web-capable Worker Profile through
  * every WebGrant mode, with F08 governance (trust:'untrusted' + Admiralty) on every result,
@@ -160,7 +160,7 @@ test('[round cap] governed loop terminates at the cap with a tools-less final an
   assert.equal(res.webCalls, 2, 'exactly the capped number of tool executions');
 });
 
-// construct-5wkl AC#5/AC#7: a citation the Worker Profile writes into its final
+// A citation the Worker Profile writes into its final
 // answer that never appeared in its own governed webEvidence is unverified —
 // fabricated, or drawn from ungoverned model memory rather than the retrieval
 // Construct actually observed and trust-labeled.

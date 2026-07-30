@@ -8,7 +8,7 @@
  * `.claude/agents/` and `.claude/settings.json` from the bundled registry so
  * the project clone is fully runnable without a manual `construct init`.
  *
- * Lean host default (construct-w4hly): stages Claude adapters (plus any host
+ * Lean host default: stages Claude adapters (plus any host
  * already marked in the project). Does not sync every PATH-detected editor.
  * Override with CONSTRUCT_SYNC_HOSTS=all|<list>, or expand later via
  * `construct sync --with-<host>` / `--all-hosts`.
@@ -84,11 +84,11 @@ try {
   }
 } catch { /* fall through */ }
 
-// ADR-0029: machine-scope writes are opt-in. The postinstall hook for a global
+// Machine-scope writes are opt-in. The postinstall hook for a global
 // install prints footprint guidance and exits; `~/.claude/CLAUDE.md`,
 // `~/.claude/settings.json`, and `~/.construct/*` land only when the user runs
-// `construct install --footprint=user` (ADR-0071 renamed --scope to
-// --footprint; --scope keeps working as a deprecated alias), so the consent
+// `construct install --footprint=user` (`--scope` keeps working as a
+// deprecated alias), so the consent
 // point is visible. Compat surface (owner: construct-tsyfe.8.18, expires: 2026-12-31).
 
 if (process.env.npm_config_global === 'true' || process.env.npm_config_global === true) {
@@ -116,7 +116,7 @@ if (consumerPkg.name === '@geraldmaron/construct') {
 
 // Track every project mutation for the itemized receipt written at the end.
 // npm has no uninstall lifecycle hook so the manifest is the only machine-readable
-// record of what the hook touched and how to revert it (CX-AUDIT-PACKAGE-004).
+// record of what the hook touched and how to revert it.
 const mutations = [];
 
 try {
@@ -131,7 +131,7 @@ try {
   });
   mutations.push({ path: '.construct', type: 'stage', synced: stageResult.synced, hosts });
 
-  // ADR-0027: Ensure .gitignore covers the newly staged adapters (construct-f6l6).
+  // Ensure.gitignore covers the newly staged adapters.
   // Idempotent: missingIgnorePatterns returns only patterns not already present.
   const giPath = path.join(initCwd, '.gitignore');
   const existing = existsSync(giPath) ? readFileSync(giPath, 'utf8') : '';

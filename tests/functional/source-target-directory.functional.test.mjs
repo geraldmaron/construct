@@ -1,20 +1,19 @@
 /**
  * tests/functional/source-target-directory.functional.test.mjs
  *
- * Bead construct-760c.1 (B1): directory + repo-corpus source targets with a
+ * Directory + repo-corpus source targets with a
  * local content cache. Exercises the real `bin/construct` binary in a mkdtemp
  * project (pattern: doctor-probe-providers.functional.test.mjs) plus the
  * DirectoryProvider read path in-process:
  *
  *   - directory target add/validate/list roundtrip over a fixture doc tree,
- *     and rejection of a nonexistent path (AC1).
+ * and rejection of a nonexistent path.
  *   - a github corpus target (content.mode:"corpus") synced against a local
  *     `file://` bare repo — no network — populating the cache under an
  *     HOME-redirected state root, with the second sync fetching incrementally
- *     rather than re-cloning (AC2).
- *   - DirectoryProvider.read() returning doc records from the registered path
- *     (AC3).
- *   - `sources list` surfacing corpus content mode + cache freshness (AC4).
+ * rather than re-cloning.
+ * - DirectoryProvider.read() returning doc records from the registered path.
+ * - `sources list` surfacing corpus content mode + cache freshness.
  *
  * A fetch-spy preload (injected via `node --import`) intercepts every outbound
  * fetch the spawned CLI makes and records the URLs, so the whole test asserts

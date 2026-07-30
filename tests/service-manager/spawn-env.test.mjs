@@ -1,5 +1,5 @@
 /**
- * tests/service-manager/spawn-env.test.mjs — construct-192h.8 proof.
+ * tests/service-manager/spawn-env.test.mjs — proof.
  *
  * service-manager computed liveEnv (config.env merged over process.env) to decide
  * whether to wrap a service in `op run`, but spawned cm/opencode/copilot WITHOUT it,

@@ -1,7 +1,7 @@
 /**
  * tests/functional/postinstall-lean-hosts.functional.test.mjs
  *
- * construct-w4hly: consumer npm postinstall must not stage every PATH-detected
+ * consumer npm postinstall must not stage every PATH-detected
  * host. With stub claude/codex/opencode/code on PATH, a fresh project still
  * gets only `.claude/` (+ `.construct/`). Re-postinstall preserves an already
  * marked secondary host (Codex).

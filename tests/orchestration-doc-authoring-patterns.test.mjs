@@ -8,7 +8,7 @@
  * so a docType renamed or removed in the registry leaves a stale pattern that
  * resolves to a null owner, silently dropping the request's canonical author.
  * The guard below asserts every authoring-pattern docType is a known registry
- * doc type (construct-v1wk).
+ * doc type.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';

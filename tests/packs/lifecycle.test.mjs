@@ -1,5 +1,5 @@
 /**
- * tests/packs/lifecycle.test.mjs — LMCP-E3 pack enable/disable lifecycle.
+ * tests/packs/lifecycle.test.mjs — pack enable/disable lifecycle.
  *
  * Pins: the durable enable/disable round trip persists to .construct/packs.json and
  * is reflected by isEnabled/loadEnabledPacks (which gates prompt/framework
@@ -38,7 +38,7 @@ function freshRoot() {
 }
 
 // The spawned `construct pack` binary resolves the machine-scoped state root
-// (ADR-0066) from process.env.CONSTRUCT_HOME_OVERRIDE / HOME in its own process, so
+// from process.env.CONSTRUCT_HOME_OVERRIDE / HOME in its own process, so
 // every spawn below must be pinned to a throwaway home or it leaks a project-key
 // directory into the real developer machine's ~/.construct/projects/.
 const HOME_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-pack-lifecycle-home-'));

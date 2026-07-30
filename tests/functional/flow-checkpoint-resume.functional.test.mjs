@@ -1,8 +1,8 @@
 /**
  * tests/functional/flow-checkpoint-resume.functional.test.mjs — flow-engine
- * checkpoint/resume survives a simulated crash (ADR-0067 + ADR-0066).
+ * checkpoint/resume survives a simulated crash.
  *
- * Multi-component (engine + durable state + CLI), per tests/functional/README.md's
+ * Multi-component (engine + durable state + CLI), per the functional-test
  * gate for a CLI subcommand that reads/writes durable state. Drives one tick of
  * a real flow in-process, checkpoints it, then simulates a crash/restart by
  * spawning the real `construct flow resume` binary as a fresh process — a
@@ -71,7 +71,7 @@ function readMarkers(markerPath) {
   return readFileSync(markerPath, 'utf8').trim().split('\n').filter(Boolean);
 }
 
-// loadCheckpoint resolves the machine-scoped state root (ADR-0066) via
+// loadCheckpoint resolves the machine-scoped state root via
 // CONSTRUCT_HOME_OVERRIDE on process.env directly; this process must pin the same
 // override the spawned CLI saw, or it reads the real developer machine's
 // state root instead (mirrors getRunInSandbox in
@@ -96,7 +96,7 @@ test('a flow killed mid-run resumes via the real CLI to completion without re-en
   const flowPath = writeFlowModule(env.project, markerPath);
 
   // Simulate the process that ran step "a" and checkpointed it, then died —
-  // driven in-process here, exactly as ADR-0067's Run shape is meant to allow
+  // driven in-process here, exactly as the Run shape is meant to allow
   // a caller to do (createRun/advanceRun "one tick at a time").
   const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
   process.env.CONSTRUCT_HOME_OVERRIDE = env.HOME;

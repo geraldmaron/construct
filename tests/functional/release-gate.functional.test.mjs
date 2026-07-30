@@ -197,7 +197,7 @@ test('release gate: CHANGELOG.md Unreleased section exists', () => {
 
 test('release gate (d1r7.5): Construct ships no implicit active model defaults', () => {
   // A clean install — no env file, empty registry — must resolve every tier to null with a
-  // `not configured` source, never a silently-baked-in provider default (construct-d1r7.5).
+  // `not configured` source, never a silently-baked-in provider default.
   const models = readCurrentModels(join(tmpdir(), 'release-gate-nodef.env'), {});
   for (const tier of ['reasoning', 'standard', 'fast']) {
     assert.equal(models[tier], null, `${tier} must not resolve to a hardcoded default`);
@@ -207,7 +207,7 @@ test('release gate (d1r7.5): Construct ships no implicit active model defaults',
 
 test('release gate (d1r7.1-.3): optional MCP servers stay silent until the user turns them on', () => {
   // Catalog-only and installed-but-disabled servers are opt-ins the user has not enabled; only an
-  // enabled server with an unresolved required secret is actionable (construct-d1r7.1/.2/.3).
+  // enabled server with an unresolved required secret is actionable (.2/.3).
   assert.equal(classifyMcpState({ installed: false, enabled: false }).class, 'catalog');
   assert.equal(classifyMcpState({ installed: true, enabled: false }).class, 'disabled');
   assert.equal(classifyMcpState({ installed: true, enabled: true, requiredEnv: ['TOKEN'] }, {}).class, 'missing-secret');
@@ -223,7 +223,7 @@ test('release gate (d1r7.1-.3): optional MCP servers stay silent until the user 
 
 test('release gate (d1r7.11): certified document I/O passes when the engines are present', () => {
   // When every export engine is installed, the certified matrix must pass — a format skipped for a
-  // missing tool is a hard failure, not a pass (construct-d1r7.11). Where an engine is absent (e.g.
+  // missing tool is a hard failure, not a pass. Where an engine is absent (e.g.
   // a lean CI leg), the graceful local matrix must still exit clean instead.
   // mermaid is part of the certified matrix and needs a headless browser (mmdc/Puppeteer), not just
   // its binary — a box with pandoc/typst/libreoffice but no browser (release:check, a lean CI leg)

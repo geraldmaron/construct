@@ -1,11 +1,11 @@
 /**
- * tests/mcp-tool-output-schema-guard.test.mjs — LMCP-L10 tool output-schema guard.
+ * tests/mcp-tool-output-schema-guard.test.mjs — tool output-schema guard.
  *
  * Enumerates lib/mcp/tool-safety.mjs's TOOL_SAFETY catalog — the authoritative
  * per-tool name list withSafetyEnvelope (lib/mcp/server.mjs) requires every
  * catalog tool to appear in — and asserts each tool declares an explicit
  * outputSchema in its own HARDCODED_TOOL_DEFS/CONSTRUCT_CALL_TOOL literal, or
- * (for LMCP-B5 self-registered tools under lib/mcp/tools/*.tool.mjs, none
+ * (for self-registered tools under lib/mcp/tools/*.tool.mjs, none
  * exist yet) its real TOOL_DEFS export via lib/mcp/tool-registry.mjs's
  * scanToolModules(). The hardcoded-catalog check reads the pre-envelope
  * literal (not the post-withSafetyEnvelope object), so deleting a tool's
@@ -50,7 +50,7 @@ function extractBalanced(src, openIndex) {
 }
 
 // RAW_HARDCODED_TOOL_DEFS (lib/mcp/tool-definitions.mjs, split further into
-// tool-definitions-{project,skills,memory,workflow}.mjs — construct-rf26.10)
+// tool-definitions-{project,skills,memory,workflow}.mjs)
 // is a pure data array with no function calls, so it is imported directly
 // rather than eval'd out of server.mjs source text: reading the hardcoded
 // literal instead of the ALL_TOOL_DEFS spread expression means a locally

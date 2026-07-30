@@ -11,9 +11,9 @@ import path from 'node:path';
 import { validateGraph, nodeParts } from '../../lib/graph/validate.mjs';
 import { writeGraph, nodeId } from '../../lib/graph/store.mjs';
 
-// construct-b0nny.3: the relational graph store (lib/graph/relational/)
-// resolves graph.db under the machine-scoped state root (resolveStateDir,
-// ADR-0066) whenever writeGraph/loadGraph touch the host graph on Node
+// the relational graph store (lib/graph/relational/)
+// resolves graph.db under the machine-scoped state root (resolveStateDir)
+// whenever writeGraph/loadGraph touch the host graph on Node
 // >=22.5. Pin CONSTRUCT_HOME_OVERRIDE so this suite never provisions state under
 // the real developer machine's ~/.construct/projects/ (the isolation
 // contract, tests/functional/README.md) — the same pattern
@@ -191,7 +191,7 @@ test('deploymentMode option overrides detection', () => {
   assert.ok(strictResult.errors.some(e => e.includes('ghost')));
 });
 
-// Workflow surface parity (LMCP-D4): validateGraph loads the real builtin
+// Workflow surface parity: validateGraph loads the real builtin
 // manifests (loadAllWorkflows has no rootDir-scoped override for the
 // embedded-contract workflows), so these assertions run against the
 // committed lib/embedded-contract/workflows/*.manifest.json fixtures rather

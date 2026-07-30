@@ -1,5 +1,5 @@
 /**
- * tests/writes/import-guard.test.mjs — LMCP-J6 guard: no orchestration or
+ * tests/writes/import-guard.test.mjs — guard: no orchestration or
  * embed module may import a provider write adapter directly.
  *
  * Scans lib/orchestration/**, lib/embed/**, and lib/embedded-contract/** for
@@ -11,7 +11,7 @@
  * guard the bead requires — not an eslint rule, since this repo has no
  * eslint config wired into the release gate.
  *
- * construct-p4cba.2 consolidated what were two separate, duplicated adapter-
+ * Consolidated what were two separate, duplicated adapter-
  * factory maps (in control-plane.mjs and provider-write.mjs) into one shared
  * lib/providers/contract/adapter-factories.mjs — the sanctioned direct
  * importer is now that one file, not its two callers.

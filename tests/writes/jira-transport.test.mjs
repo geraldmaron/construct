@@ -1,6 +1,6 @@
 /**
  * tests/writes/jira-transport.test.mjs — real Jira Cloud REST v3 transport
- * (lib/providers/contract/adapters/jira/transport.mjs), ADR-0095 migration.
+ * (lib/providers/contract/adapters/jira/transport.mjs).
  *
  * Exercises the transport against a local HTTP server (same pattern as
  * tests/security/ssrf.test.mjs) rather than a fake, since the exact

@@ -1,6 +1,6 @@
 /**
  * tests/server/workspace-postgres-store.test.mjs — live Postgres coverage
- * for lib/workspace/postgres-store.mjs (construct-b0nny.26, E7).
+ * for lib/workspace/postgres-store.mjs.
  *
  * Mirrors tests/graph/relational-postgres-store.test.mjs's and tests/
  * functional/pg-queue.functional.test.mjs's skip idiom: with no reachable

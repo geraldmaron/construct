@@ -1,5 +1,5 @@
 /**
- * tests/scripts/graph-gate.test.mjs — LMCP-C8 self-test for the living-graph
+ * tests/scripts/graph-gate.test.mjs — self-test for the living-graph
  * drift gate (scripts/run-graph-gate.mjs).
  *
  * Three acceptance guarantees the bead names:
@@ -22,9 +22,9 @@ import { runGraphGate } from '../../scripts/run-graph-gate.mjs';
 import { writeGraph } from '../../lib/graph/store.mjs';
 import { validateGraph } from '../../lib/graph/validate.mjs';
 
-// construct-b0nny.3: the relational graph store (lib/graph/relational/)
-// resolves graph.db under the machine-scoped state root (resolveStateDir,
-// ADR-0066) whenever writeGraph/loadGraph touch the host graph on Node
+// the relational graph store (lib/graph/relational/)
+// resolves graph.db under the machine-scoped state root (resolveStateDir)
+// whenever writeGraph/loadGraph touch the host graph on Node
 // >=22.5. Pin CONSTRUCT_HOME_OVERRIDE so this suite never provisions state under
 // the real developer machine's ~/.construct/projects/ (the isolation
 // contract, tests/functional/README.md) — the same pattern

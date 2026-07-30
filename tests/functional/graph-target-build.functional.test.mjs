@@ -1,13 +1,13 @@
 /**
  * tests/functional/graph-target-build.functional.test.mjs —
  * import/symbol graph per registered source target, persisted under the
- * project state root and queryable via --projects (construct-1smc4.2).
+ * project state root and queryable via --projects.
  *
  * lib/graph/build-import-graph.mjs and lib/graph/build-from-corpus.mjs only
  * ever built a graph for the host project's own rootDir. This test builds a
  * fixture "repo" as a local tmpdir directory (no git, no network) registered
  * as a `directory` source target — the same target-resolution mechanism
- * construct-1smc4.1 wired into lib/knowledge/search.mjs
+ * Wired into lib/knowledge/search.mjs
  * (lib/sources/content-roots.mjs's resolveContentRoots) — and asserts:
  *
  *   1. `buildTargetGraphs` (lib/graph/build-target-graph.mjs) derives an

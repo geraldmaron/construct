@@ -1,5 +1,5 @@
 /**
- * tests/functional/orchestration-revise-loop.functional.test.mjs — construct-72gqn.30 (D10).
+ * tests/functional/orchestration-revise-loop.functional.test.mjs.
  *
  * Proves the critic/reviser loop end to end on the real provider runtime: when a
  * critic returns actionable changes and reviseLoop is enabled, the runtime

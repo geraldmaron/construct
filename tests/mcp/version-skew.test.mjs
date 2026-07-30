@@ -3,7 +3,7 @@
  *
  * A long-running MCP server caches its version at module load; on a
  * dev-checkout-as-live-install topology the code on disk can change under it
- * with no signal (construct-6y6w.6). Drives the real server against an
+ * with no signal. Drives the real server against an
  * isolated CONSTRUCT_TOOLKIT_DIR whose package.json is mutated mid-run, without
  * restarting the process, and asserts the status resource reports the
  * mismatch.

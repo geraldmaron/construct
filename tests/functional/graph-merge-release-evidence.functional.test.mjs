@@ -1,6 +1,6 @@
 /**
  * tests/functional/graph-merge-release-evidence.functional.test.mjs —
- * construct-4uxq0.11.12 merge/release runtime-evidence edges.
+ * merge/release runtime-evidence edges.
  */
 
 import test from 'node:test';

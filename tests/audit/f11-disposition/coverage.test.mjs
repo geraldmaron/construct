@@ -2,7 +2,7 @@
  * coverage.red.mjs — F11 (durable source vs generated local state).
  *
  * Asserts every file Construct creates in a host project carries an EXPLICIT
- * disposition entry. ADR-0027 §1 requires it ("No artifact has an implicit
+ * disposition entry. The rule: "No artifact has an implicit
  * disposition"), but the only machine-readable disposition surface today is
  * `lib/host-disposition.mjs` (`IGNORED_PATTERNS` + `ADAPTER_DIRS`), which
  * enumerates only the ignored subset — and not even all of that.

@@ -14,7 +14,7 @@
  * from the source-of-truth array literal in the file under audit — deterministic and
  * hermetic, touching only the file being asserted on.
  *
- * Contract (CX-AUDIT-HOST-005): grants must be scoped to the task — explicit
+ * Contract: grants must be scoped to the task — explicit
  * orchestration + read tools, no blanket `construct-mcp/*` wildcard, no edit/web in
  * the default front-door grant. Passes once grants are split by task.
  */

@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 /**
- * bin/construct-shim.mjs — npm downloader shim (ADR-0064 §"npm demoted to
- * downloader shim", construct-rf26.19).
+ * bin/construct-shim.mjs — npm downloader shim.
  *
  * Not wired as package.json's published `bin` entry yet. `bin/construct`
  * still ships as the real Node CLI implementation because five existing

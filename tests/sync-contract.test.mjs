@@ -17,7 +17,7 @@ const ROOT_DIR = path.resolve(import.meta.dirname, '..');
 
 // Pin every host so the contract assertions are deterministic regardless of
 // which host binaries the runner has on PATH. Without this, the detected-only
-// default (ADR-0027 §1) writes just the Claude baseline on a host-less CI
+// default writes just the Claude baseline on a host-less CI
 // runner, so the codex/opencode/project-agent assertions fail.
 const ALL_HOSTS = 'claude,codex,copilot,opencode,vscode,cursor';
 
@@ -136,7 +136,7 @@ describe('sync-worker-profiles contract tests', () => {
       const result = runSync([], { HOME: tmpHome });
       assert.equal(result.status, 0, `sync failed:\n${result.stderr}`);
       assert.ok(!fs.existsSync(lockPath), 'lock file must be removed after successful sync');
-      // ADR-0074 may retain machine-scoped state under ~/.construct; the lock must not linger.
+      // Machine-scoped state may remain under ~/.construct; the lock must not linger.
     });
 
     it('aborts with exit 1 when lock is already held by a live process', () => {
@@ -343,7 +343,7 @@ describe('sync-worker-profiles contract tests', () => {
     });
   });
 
-  // needsRefresh() is the one comparator every host dialect calls (construct-6y6w.4):
+  // needsRefresh() is the one comparator every host dialect calls:
   // an existing MCP entry missing the registry's env block, or carrying a stale
   // pinned version, must reconcile to the registry on the next sync.
   describe('MCP entry refresh parity (needsRefresh)', () => {
@@ -417,7 +417,7 @@ describe('sync-worker-profiles contract tests', () => {
       assert.equal(after, before, 'a second sync must not change an already-converged .mcp.json');
     });
 
-    // construct-6y6w.9: the same orchestration tool call can read/write a
+    // the same orchestration tool call can read/write a
     // different project depending on which host launched the server and from
     // where. VS Code pins cwd to the workspace that owns the config file.
     it('pins cwd to ${workspaceFolder} on generated VS Code mcp.json stdio entries', () => {

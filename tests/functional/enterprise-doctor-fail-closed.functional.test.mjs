@@ -1,7 +1,7 @@
 /**
  * tests/functional/enterprise-doctor-fail-closed.functional.test.mjs
  *
- * ADR-0057's construct-status contract: a FAIL-CLOSED enterprise capability
+ * The construct-status contract: a FAIL-CLOSED enterprise capability
  * (tenant-isolation, isolated-workers) "must not be a warning; it must be a
  * hard error" surfaced "at startup (during construct doctor)". A LATER
  * capability (rbac, signed-mcp-allowlists) has no runtime effect and must
@@ -12,7 +12,6 @@
  * mocked check list — so a future edit that softens the fail-closed gate
  * back into a warning is caught here.
  *
- * Bead: construct-9oi4.8 (LMCP-H, ADR-0057 follow-up)
  */
 
 import assert from 'node:assert/strict';

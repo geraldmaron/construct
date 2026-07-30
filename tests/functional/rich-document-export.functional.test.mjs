@@ -1,10 +1,10 @@
 /**
- * tests/functional/rich-document-export.functional.test.mjs — RichDocument (ADR-0071) export
- * adapters + per-format validation contract (construct-d1r7.9).
+ * tests/functional/rich-document-export.functional.test.mjs — RichDocument export
+ * adapters + per-format validation contract.
  *
  * Exercises the real adapter against a rich fixture document. Engine-backed formats bind to
  * external binaries discovered at runtime (Pandoc/Typst/LibreOffice/pptxgenjs) and never bundled
- * (ADR-0001), so the per-format assertion is the contract, not a fixed pass: an export either
+ * so the per-format assertion is the contract, not a fixed pass: an export either
  * writes a real non-empty file whose matching validator passes, OR returns an actionable
  * diagnostic naming the missing engine — it never claims a spurious pass. Engine-free targets
  * (htmlfrag copy target, md/mdx, the markdown writer, shape validation, missing-engine diagnostics)

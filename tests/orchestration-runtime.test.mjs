@@ -6,8 +6,8 @@
  * advances tasks to `prepared` via the inline backend, and reports honest
  * host-adapter metadata. Prompt-only and host-direct requests own no Assignment
  * sequence — the runtime records that rather than implying orchestration — and
- * the inline backend marks tasks `prepared` (not executed), the boundary ADR-0020
- * makes explicit.
+ * the inline backend marks tasks `prepared` (not executed), a boundary this
+ * suite makes explicit.
  *
  * @enforces ADR-0020
  */
@@ -44,7 +44,7 @@ test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true,
 
 // planRun/executeRun/runOrchestration/startRun/getRun/getRuns/
 // submitHostTaskResult all resolve the run store through the machine-scoped
-// state root (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE from real process.env
+// state root, which reads CONSTRUCT_HOME_OVERRIDE from real process.env
 // directly — the ENV bag above only feeds model-tier lookups. Pin it for the
 // whole file so these runs never write into the real developer machine's
 // ~/.construct/projects/.
@@ -166,7 +166,7 @@ test('provider backend records a failed task and completes-with-failures, no cra
   );
   assert.equal(run.status, 'completed-with-failures');
   assert.ok(run.tasks.every((t) => t.status === 'failed'));
-  // A 500 classifies as PROVIDER_SERVER_ERROR (construct-5wkl AC#1), not the
+  // A 500 classifies as PROVIDER_SERVER_ERROR, not the
   // prior generic PROVIDER_EXECUTION_FAILED — distinct from a 4xx/auth failure.
   assert.ok(run.tasks.every((t) => t.error?.code === 'PROVIDER_SERVER_ERROR'));
 });
@@ -324,7 +324,7 @@ test('submitHostTaskResult rejection matrix: unknown run, unknown task, wrong st
   );
 });
 
-// Recruited-participant execution honesty (construct-pteo2.12): a recruited
+// Recruited-participant execution honesty: a recruited
 // reviewer either executes or the run says, unmistakably, that the review did
 // not happen — never a bare 'completed'.
 

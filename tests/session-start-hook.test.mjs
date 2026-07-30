@@ -71,7 +71,7 @@ test('session-start reads global context from Construct machine state', (t) => {
 
 // The "Provider sources wired" hint is built by iterating the manifest-declared
 // source-target descriptors, not by naming providers inline, so every configured
-// provider_fetch source is surfaced instead of a hardcoded subset (construct-j745).
+// provider_fetch source is surfaced instead of a hardcoded subset.
 // Configuring all four network providers via legacy env must name all four.
 
 test('session-start names every configured provider_fetch source in the wired-sources hint', (t) => {

@@ -2,7 +2,7 @@
  * tests/artifact-structure-contract.test.mjs — PRD-variant + major non-PRD depth contracts.
  *
  * Pins templates/docs spines, manifest structureRequirements, and
- * lintArtifactDeliveryDepth hierarchy rules (construct-9jkma follow-up).
+ * lintArtifactDeliveryDepth hierarchy rules (follow-up).
  */
 
 import test from 'node:test';

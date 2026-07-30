@@ -1,7 +1,7 @@
 /**
  * tests/providers/github-read-search.test.mjs — real read()/search()/health()
  * behavior for lib/providers/github/index.mjs against an injected fetch
- * boundary (construct-4uxq0.13.3, Phase 9 audit checklist items "rate-limit"
+ * boundary (Phase 9 audit checklist items "rate-limit"
  * and "permission-failure" behavior, plus the auth-header path a private-repo
  * request depends on).
  *

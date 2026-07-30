@@ -1,5 +1,5 @@
 /**
- * tests/graph/embed-nodes.test.mjs — LMCP-P6 embed nodes in the living graph.
+ * tests/graph/embed-nodes.test.mjs — embed nodes in the living graph.
  *
  * Pins the four acceptance guarantees:
  *   1. `graph build` seeds an embed node + uses/owned_by/governed_by edges per
@@ -62,7 +62,7 @@ test('each shipped preset has an inbound validates edge from its acceptance test
 test('a broken binding target fails graph validate --strict', () => {
   // Unlike every other test in this file, this one writes a synthetic graph
   // (not REPO_ROOT's real one) — the relational store resolves that write's
-  // graph.db under the machine-scoped state root (ADR-0066), so it needs its
+  // graph.db under the machine-scoped state root, so it needs its
   // own isolated CONSTRUCT_HOME_OVERRIDE for the duration of the write/validate,
   // restored immediately after so the file's other REPO_ROOT-reading tests
   // keep seeing the real fixture `scripts/ci/build-test-fixtures.sh` built.

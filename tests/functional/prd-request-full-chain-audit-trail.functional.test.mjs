@@ -40,8 +40,8 @@
  * the artifact postcondition verdict against the real authored file into one
  * durable, cross-process-readable record.
  *
- * No overlap found with construct-rf26.22 (refit verification suite): that
- * bead's required shape (flow checkpoint/resume, config-layer init tree,
+ * No overlap found with the refit verification suite: its
+ * required shape (flow checkpoint/resume, config-layer init tree,
  * custom Worker Profile authoring, binary smoke, full-gate run) is a distinct set
  * of functional-test additions with no PRD/paper-trail scenario.
  */

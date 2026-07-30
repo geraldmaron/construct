@@ -5,6 +5,7 @@
   "description": "Traces to root cause before proposing a fix — the real bug is always one layer deeper than where it presents.",
   "artifactClasses": [],
   "skillEmphasis": [
+    "docs/artifact-authorship",
     "quality-gates/verify-change",
     "devops/observability",
     "devops/performance",

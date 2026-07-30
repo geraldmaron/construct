@@ -1,7 +1,7 @@
 /**
  * tests/functional/graph-strict-schema.functional.test.mjs —
  * strict node/edge schema validation, identity stability, and partial-graph
- * provenance in the living graph store (construct-4uxq0.11.6).
+ * provenance in the living graph store.
  *
  * Before this fix: lib/graph/store.mjs declared NODE_TYPES/EDGE_RELS but
  * normalizeNodes/normalizeEdges never checked membership against either set,

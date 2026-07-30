@@ -1,6 +1,6 @@
 /**
  * tests/functional/participation-join-leave.functional.test.mjs —
- * evolving-signal join/leave over a live run (construct-pteo2.11).
+ * evolving-signal join/leave over a live run.
  *
  * A provider task's real output is a signal source: a cost table appearing in
  * the first Worker Profile's output recruits the cost reviewers onto the SAME run

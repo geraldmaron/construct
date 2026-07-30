@@ -17,7 +17,7 @@
  * channel). No such field exists today, so the assertion fails — proving the gap.
  *
  * Turns GREEN once the ingest/intake boundary attaches an untrusted-content label
- * to externally-sourced bodies (CX-AUDIT-LLMSEC-001): the packet then exposes a
+ * to externally-sourced bodies: the packet then exposes a
  * machine-checkable trust marker a downstream consumer can act on.
  */
 import assert from 'node:assert/strict';

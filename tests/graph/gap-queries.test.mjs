@@ -1,8 +1,8 @@
 /**
- * tests/graph/gap-queries.test.mjs — the six LMCP-C5 read-only gap queries.
+ * tests/graph/gap-queries.test.mjs — the six read-only gap queries.
  *
  * Pins: missing-docs flags a workflow/provider with zero inbound documents
- * edges; stale reflects lib/graph/staleness.mjs (LMCP-C6); dependencies,
+ * edges; stale reflects lib/graph/staleness.mjs; dependencies,
  * providers, and surfaces report per-workflow requirements gathered from
  * embedding capabilities; every query reports graphPresent=false on a
  * missing graph without throwing. The consistency test is the acceptance
@@ -28,9 +28,9 @@ import {
 } from '../../lib/graph/gap-queries.mjs';
 import { validateGraph } from '../../lib/graph/validate.mjs';
 
-// construct-b0nny.3: the relational graph store (lib/graph/relational/)
-// resolves graph.db under the machine-scoped state root (resolveStateDir,
-// ADR-0066) whenever writeGraph/loadGraph touch the host graph on Node
+// the relational graph store (lib/graph/relational/)
+// resolves graph.db under the machine-scoped state root (resolveStateDir)
+// whenever writeGraph/loadGraph touch the host graph on Node
 // >=22.5. Pin CONSTRUCT_HOME_OVERRIDE so this suite never provisions state under
 // the real developer machine's ~/.construct/projects/ (the isolation
 // contract, tests/functional/README.md) — the same pattern

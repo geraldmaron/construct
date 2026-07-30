@@ -1,12 +1,12 @@
 /**
- * tests/functional/runtime-adapter-swap.functional.test.mjs — construct-b0nny.24
+ * tests/functional/runtime-adapter-swap.functional.test.mjs
  * replacement proof: a real (in-repo, not spike-disposable) runtime-adapter
  * swap with rollback, generalizing spike F's gh-CLI-to-REST provider swap
  * (docs/notes/research/workspace-control-plane/synthesis/spike-f-runtime-replacement.md)
  * to the runtime-adapter layer.
  *
  * Spans multiple components (the registry, a real OS-subprocess adapter, an
- * HTTP-transport adapter, and the shared contract), so per CLAUDE.md's
+ * HTTP-transport adapter, and the shared contract), so by the
  * multi-component rule this lives in tests/functional/, not tests/. The
  * "before" adapter spawns a real node child process (no DI'd fake spawn) so
  * the in-flight-safety assertion below exercises a genuine OS process, the

@@ -8,7 +8,7 @@
  *      (the in-process cache holds), and the durable audit trail records that read.
  *   2. A fresh process re-resolves from a cold cache — so two separate runs spawn
  *      `op` twice total. This is the cross-process re-prompt that the in-process
- *      "auth once" cannot cover and that the op-run wiring (ADR-0049) addresses for
+ *      "auth once" cannot cover and that the op-run wiring addresses for
  *      the service tree; closing it for standalone CLI runs depends on op's own
  *      session and is tracked separately.
  */

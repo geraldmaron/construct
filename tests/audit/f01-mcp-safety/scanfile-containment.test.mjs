@@ -1,7 +1,7 @@
 /**
  * tests/audit/f01-mcp-safety/scanfile-containment.red.mjs — F01 [R10] root-containment proof for scanFile.
  *
- * Regression guard for CX-AUDIT-MCP-SAFETY-003. scanFile resolves a model-supplied
+ * scanFile resolves a model-supplied
  * file_path against a declared root via resolveWithinRoot and returns a typed refusal for
  * a `../` chain, an absolute out-of-root path, a symlink pointing outside the project, or
  * a backslash/UNC variant — never the file's scan result.

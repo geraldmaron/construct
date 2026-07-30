@@ -1,7 +1,7 @@
 /**
  * tests/orchestration/write-proposal-worker-integration.test.mjs —
  * end-to-end wiring of a specialist's fenced write-proposal block through
- * runTaskViaProvider and executeTaskViaProvider (construct-p4cba.5).
+ * runTaskViaProvider and executeTaskViaProvider.
  *
  * Exercises the real code paths with a fake fetchImpl (the established
  * pattern in tests/orchestration-worker.test.mjs) rather than a live
@@ -21,7 +21,7 @@ import { planRun, executeRun } from '../../lib/orchestration/runtime.mjs';
 import { tempDir } from '../helpers.mjs';
 
 // executeRun resolves trace/state paths through the machine-scoped state root
-// (ADR-0066) — CONSTRUCT_HOME_OVERRIDE keeps that off the real developer machine's
+// — CONSTRUCT_HOME_OVERRIDE keeps that off the real developer machine's
 // $HOME for the whole file (same isolation as tests/orchestration/provenance.test.mjs).
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-write-proposal-home-'));

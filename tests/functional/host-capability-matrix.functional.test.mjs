@@ -1,7 +1,7 @@
 /**
  * tests/functional/host-capability-matrix.functional.test.mjs
  *
- * Characterization tests for the host-parity-gate (self-audit construct-rr63.4.1). These PIN the
+ * Characterization tests for the host-parity-gate (self-audit). These PIN the
  * current `checkParity()` behavior so the file-parity-vs-capability-parity gap is a tested fact:
  * today a host is judged by config-file presence and content, never by whether it is installed or
  * able to call its MCP servers, and the result carries no capability dimension at all. When the
