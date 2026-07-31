@@ -4,7 +4,11 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [2.1.1] - 2026-07-30
+
 ### Fixed
+
+- **The release-version test was a fourth copy of the version, so every release failed CI once**: `tests/release-version-metadata.test.mjs` checks that `package.json`, both `package-lock.json` version fields, and the launcher npx pin agree — but compared all four against a hardcoded `RELEASE_VERSION` literal rather than against each other. Bumping the version therefore broke the test by construction, on this release and on every prior one, and the failure said nothing about whether the mirrors that actually ship are consistent. The literal is gone; `package.json` is the source and the other three are asserted against it, with a shape check so the source itself still has to look like a version. Verified to keep its teeth: desyncing the launcher pin fails the test.
 
 - **The comment-lint hook checked consumers' files against the Construct install, disabling most of itself (`construct-8iwgr`)**: `lib/hooks/comment-lint.mjs` is a `PostToolUse` hook shipped to every consumer through `platforms/claude/settings.template.json`, and it passed the Construct install directory as the lint root. Every path-scoped check resolves its glob against that root, so a consumer's file came back as `../../../../../var/folders/…` — a path no glob matches. The missing-header check, the artifact-prose lint, the future-state marker check, the dangling-citation check, and the deliverable tool-identity leak check were all silently inert on consuming projects; only the path-independent banned patterns ever fired. The tracker-prefix lookup failed the same way, reading a `.beads/` config from a package that ships none. The root is now resolved from the file being edited via `resolveProjectRoot`, so all of them run against the project the file belongs to. This is a real widening of what the hook reports on consuming projects — findings that should have been surfacing since the checks were written.
 
