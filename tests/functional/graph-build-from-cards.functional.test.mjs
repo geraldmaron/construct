@@ -1,6 +1,6 @@
 /**
  * tests/functional/graph-build-from-cards.functional.test.mjs —
- * construct-4uxq0.11.7 multi-component proof: card and demo-manifest graph nodes.
+ * Multi-component proof: card and demo-manifest graph nodes.
  */
 
 import test from 'node:test';

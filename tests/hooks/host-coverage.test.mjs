@@ -1,6 +1,6 @@
 /**
  * tests/hooks/host-coverage.test.mjs — Claude-only Layer-1 hook posture +
- * compensating controls catalog (construct-ld777).
+ * compensating controls catalog.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

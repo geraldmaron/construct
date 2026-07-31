@@ -6,7 +6,7 @@
  * dispatch modes and produces the expected Worker Profile assignments. Also covers the
  * orchestrationPolicy MCP tool (auto-workflow-intake: draftTask generation).
  *
- * ADR-0067 / construct-rf26.9: the retired buildDispatchPlan/buildDispatchSummary
+ * The retired buildDispatchPlan/buildDispatchSummary
  * functions and the route.dispatchPlan/route.dispatchSummary fields they
  * populated are gone — sequencing a resolved route is not prose the route
  * object carries for a caller to read and self-sequence. dispatchReasons stays:

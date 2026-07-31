@@ -1,7 +1,6 @@
 /**
  * tests/functional/embed-daemon-directive-runner.functional.test.mjs —
- * end-to-end proof of the daemon's "directive-runner" job
- * (construct-p4cba.4, WS-B3).
+ * end-to-end proof of the daemon's "directive-runner" job.
  *
  * Spawns a real EmbedDaemon (tests/functional/fixtures/
  * embed-daemon-directive-runner-runner.mjs) against a construct.config.json

@@ -1,5 +1,5 @@
 /**
- * tests/doctor-graph-validate.test.mjs — `construct doctor` graph-validate check (LMCP-C7).
+ * tests/doctor-graph-validate.test.mjs — `construct doctor` graph-validate check.
  *
  * Covers lib/doctor/graph-validate.mjs: the check passes on a valid graph,
  * fails on a graph with structural errors, and reports a warning (not a hard
@@ -16,9 +16,9 @@ import path from 'node:path';
 import { checkGraphValidateForDoctor } from '../lib/doctor/graph-validate.mjs';
 import { writeGraph, nodeId } from '../lib/graph/store.mjs';
 
-// construct-b0nny.3: the relational graph store (lib/graph/relational/)
-// resolves graph.db under the machine-scoped state root (resolveStateDir,
-// ADR-0066) whenever writeGraph/loadGraph touch the host graph on Node
+// the relational graph store (lib/graph/relational/)
+// resolves graph.db under the machine-scoped state root (resolveStateDir)
+// whenever writeGraph/loadGraph touch the host graph on Node
 // >=22.5. Pin CONSTRUCT_HOME_OVERRIDE so this suite never provisions state under
 // the real developer machine's ~/.construct/projects/ (the isolation
 // contract, tests/functional/README.md) — the same pattern

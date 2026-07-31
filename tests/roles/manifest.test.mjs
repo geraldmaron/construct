@@ -17,7 +17,7 @@ test('loadManifest returns a manifest for operations', () => {
   assert.ok(m.events.length > 0);
   // operations's fence is the wide docs/** glob, which subsumes narrower
   // per-domain doc paths (runbooks, releases, etc.) rather than enumerating
-  // each one — see the ADR-0065 appendix addendum.
+  // each one — see the appendix addendum.
   assert.ok(m.fence.allowedPaths.includes('docs/**'));
 });
 

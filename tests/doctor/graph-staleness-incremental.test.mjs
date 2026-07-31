@@ -1,5 +1,5 @@
 /**
- * tests/doctor/graph-staleness-incremental.test.mjs — construct-b0nny.3
+ * tests/doctor/graph-staleness-incremental.test.mjs
  * incremental-drain wiring on the doctor graph-staleness watcher.
  *
  * Pins: the watcher drains a pending outbox event on tick() (one of the

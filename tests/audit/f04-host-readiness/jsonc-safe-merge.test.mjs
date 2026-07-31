@@ -11,7 +11,7 @@
  *
  * The existing suite (tests/vscode-mcp-toolkit-path.test.mjs) asserts the OPPOSITE —
  * "commented file left untouched" — baking the silent skip in as intended. This
- * fixture encodes the corrected contract (CX-AUDIT-HOST-002): a JSONC settings.json
+ * fixture encodes the corrected contract: a JSONC settings.json
  * must be parsed JSONC-aware and the managed keys merged in, preserving the user's
  * existing keys and comments-as-content. It passes once a JSONC-safe writer lands.
  */

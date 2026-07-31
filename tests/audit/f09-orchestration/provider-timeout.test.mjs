@@ -10,7 +10,7 @@
  * long as the socket stays open, with no deterministic bound (OWASP LLM unbounded
  * consumption, S12).
  *
- * Contract these encode (CX-AUDIT-ORCH-003): every provider call must be bounded by an
+ * Contract these encode: every provider call must be bounded by an
  * AbortSignal/timeout so a hung provider rejects within a deterministic window instead
  * of hanging the run. Two proofs: (1) white-box — the fetch options must include a
  * `signal`; (2) black-box — against a never-resolving fetch, runTaskViaProvider must
@@ -29,9 +29,9 @@ import { runTaskViaProvider } from '../../../lib/orchestration/worker.mjs';
 const MODEL = 'openai/gpt-4o-mini';
 
 // Pin an explicit small timeout so this proof of boundedness is deterministic
-// regardless of the production default (construct-neq9.6): the test must not
+// regardless of the production default: the test must not
 // depend on — nor silently re-manufacture — worker.mjs's default value. A
-// timeout is retryable (construct-5wkl AC#4), so a hung provider is pinned to
+// timeout is retryable, so a hung provider is pinned to
 // a single attempt here — this proof is about the per-call bound, not the
 // separately-tested retry/backoff policy (tests/orchestration-worker.test.mjs).
 

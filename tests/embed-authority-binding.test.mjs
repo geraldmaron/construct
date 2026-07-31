@@ -1,5 +1,5 @@
 /**
- * tests/embed-authority-binding.test.mjs — AuthorityGuard embedBindings enforcement (LMCP-E4).
+ * tests/embed-authority-binding.test.mjs — AuthorityGuard embedBindings enforcement.
  *
  * Proves the excessive-agency gap is closed: an embed-originated proposal
  * naming a `<providerId>.<writeKind>` token outside the specialist's

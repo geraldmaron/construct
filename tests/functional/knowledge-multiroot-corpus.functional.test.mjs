@@ -1,6 +1,6 @@
 /**
  * tests/functional/knowledge-multiroot-corpus.functional.test.mjs —
- * multi-root knowledge corpus with chunk-level provenance (bead construct-760c.2).
+ * multi-root knowledge corpus with chunk-level provenance.
  *
  * @capability research.multi-project-search
  *

@@ -1,6 +1,6 @@
 /**
  * tests/writes/github.functional.test.mjs — GitHub writes routed through the
- * governed write envelope (LMCP-J5).
+ * governed write envelope.
  *
  * Uses a fake `gh`-shaped adapter (no real network, no real gh CLI spawn) to
  * validate the two acceptance behaviors: cross-run duplicate detection via

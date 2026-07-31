@@ -1,6 +1,6 @@
 /**
  * tests/doctor-embedding-health.test.mjs — `construct doctor` embedding-model
- * health check (LMCP-K4).
+ * health check.
  *
  * Covers lib/doctor/embedding-health.mjs: the active embedding model reports
  * as-is when it is not `local`; when `local` is active, @huggingface/transformers

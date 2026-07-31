@@ -35,7 +35,7 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SYNC_SCRIPT = join(REPO_ROOT, 'scripts', 'sync-worker-profiles.mjs');
 
-// `construct sync` now defaults to detected hosts (ADR-0027 §1); a sterile HOME
+// `construct sync` now defaults to detected hosts; a sterile HOME
 // detects none, so pin the full set to audit every IDE surface.
 
 const ALL_HOSTS = 'claude,codex,copilot,opencode,vscode,cursor';

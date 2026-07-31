@@ -1,7 +1,7 @@
 /**
  * tests/functional/learning-loop-capture.functional.test.mjs
  *
- * Characterization tests for the learning-loop tool-miss capture (self-audit construct-rr63.9.1,
+ * Characterization tests for the learning-loop tool-miss capture (
  * under the tool-contract-gate). Agent I found the capture is write-only: recordToolNameMiss
  * (lib/mcp/tool-recovery.mjs:35) appends to .construct/observations/tool-name-misses.jsonl, but a
  * repo-wide search finds no reader/aggregator that surfaces those misses. These tests pin both
@@ -10,11 +10,11 @@
  * raises beads for repeatedly-misnamed tools, plus the full session->observe->consolidate->inject
  * loop and failure capture) flips the consumer-absence assertion deliberately.
  *
- * construct-bh8h4 closes the remaining gap: the aggregated misses reached learning-status but
+ * Closes the remaining gap: the aggregated misses reached learning-status but
  * never the Oracle gap pipeline. collectReadModel now attaches toolDiscoverability, synthesizeVerdict
  * emits a 'tool-discoverability' gap once unrecovered misses cross the threshold, and the gap is
  * verdict-only (lib/oracle/policy.mjs's VERDICT_ONLY_GAP_IDS) — it surfaces in doctor/prelude/
- * `construct oracle gaps` but can never auto-raise a bead, matching the ADR-0043 auto-envelope.
+ * `construct oracle gaps` but can never auto-raise a bead, matching the auto-envelope.
  */
 
 import test from 'node:test';
@@ -65,7 +65,7 @@ test('misses accumulate as an append-only JSONL log a consumer could aggregate',
   assert.deepEqual(misses.map((m) => m.name), ['construct-mcp_export', 'unknown_tool']);
 });
 
-// The tool-miss capture is consumable (construct-rr63.9.2): summarizeToolNameMisses reads and
+// The tool-miss capture is consumable: summarizeToolNameMisses reads and
 // aggregates the JSONL by name, and learning-status surfaces the top misses. This pins that the
 // consumer exists and aggregates correctly.
 
@@ -94,7 +94,7 @@ test('failure capture records and aggregates tool failures into a learnable anti
   assert.equal(summary.top[0].count, 2);
 });
 
-// construct-bh8h4: the Oracle read model / synthesize / policy pipeline, not just
+// the Oracle read model / synthesize / policy pipeline, not just
 // learning-status, must surface a tool-discoverability signal. collectReadModel needs a real
 // registry tree to assemble the registry (collectTeamGovernance), so rootDir is a fresh
 // copy of it rather than a bare tmpdir — the same fixture shape as

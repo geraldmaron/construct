@@ -8,18 +8,18 @@
  * joined by a literal dot (the common `config?.deployment?.tenantId` /
  * `config.resources.disk.totalConstructMaxMb` access shape, after normalizing away
  * optional-chaining `?.` to `.`) or the last segment alone as a property
- * access / object key. This is the regression guard for construct-9oi4.15.2
- * (LMCP-O2): DATABASE_URL was read and ignored, CONSTRUCT_TENANT_ID/tenantId
+ * access / object key. This is the regression guard for that drift:
+ * DATABASE_URL was read and ignored, CONSTRUCT_TENANT_ID/tenantId
  * was schema-declared but dormant, and the postgres queue backend silently
  * aliased to git — a documented key must either do something or not exist.
  *
  * ALLOWLIST is a deliberate, tracked exception list — not a silent pass.
  * Each entry cites the bead that owns fixing it so this test cannot be used
  * to launder a newly-discovered dead key without a paper trail. Empty as of
- * construct-9oi4.15.9: roleSelection.* and hosts.<surface>.enabled were
+ * roleSelection.* and hosts.<surface>.enabled were
  * removed from the schema (each was already superseded by a separate live
  * mechanism — CONSTRUCT_ROLE_PRIMARY/SECONDARY via `roles:set`, and
- * --hosts=/CONSTRUCT_SYNC_HOSTS via ADR-0027 §1 — so the config-file keys
+ * --hosts=/CONSTRUCT_SYNC_HOSTS — so the config-file keys
  * were never going to be read); deployment.mcpBroker and autoEmbed were
  * wired into isBrokered() (lib/mcp/broker.mjs) and
  * autoStartEmbedIfNeeded() (lib/embed/cli.mjs) respectively, following the

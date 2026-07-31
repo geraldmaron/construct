@@ -29,7 +29,7 @@ function freshCwd() {
 test.after(() => { for (const d of dirs) { try { rmTmpDir(d); } catch {} } });
 
 // planRun resolves the run store through the machine-scoped state root
-// (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE from real process.env directly.
+// which reads CONSTRUCT_HOME_OVERRIDE from real process.env directly.
 // Pin it for the whole file so these runs never write into the real
 // developer machine's ~/.construct/projects/.
 
@@ -93,7 +93,7 @@ test('parity holds on a fully resolvable env too (non-degraded control)', async 
   assert.equal(readiness.reasonCode !== 'attached', run.execution.degraded);
 });
 
-// construct-neq9.2/.3: the third fixture cell — a provider key present, no
+// The third fixture cell — a provider key present, no
 // CONSTRUCT_MODEL_REASONING/STANDARD/FAST pin — is the exact incident machine state
 // (run-02158a157d53). resolveEmbeddedModel resolves it via
 // credential-family-fallback, so it must land in the same non-degraded bucket

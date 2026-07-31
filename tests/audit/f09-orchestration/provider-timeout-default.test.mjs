@@ -1,5 +1,5 @@
 /**
- * tests/audit/f09-orchestration/provider-timeout-default.test.mjs — construct-o6t8.1 proof.
+ * tests/audit/f09-orchestration/provider-timeout-default.test.mjs — proof.
  *
  * The provider worker HTTP timeout defaulted to 200ms (lib/orchestration/worker.mjs),
  * so every real LLM call aborted before the provider could respond and
@@ -7,7 +7,7 @@
  * anthropic-sdk-python both default the overall request timeout to 600000ms; this
  * fix raises Construct's floor to 120000ms (still >= the 60000ms acceptance bar)
  * without implementing the full timeout/connect/retry policy owned by
- * construct-5wkl AC#4.
+ * AC#4.
  *
  * Two proofs: (1) with no override env, the resolved default is minute-scale
  * (>= 60000ms), not the old 200ms; (2) black-box — a fake provider that responds
@@ -28,7 +28,7 @@ const RUN = { request: { summary: 'default the provider timeout to minute-scale'
 
 // A fetch that resolves after ~1s with a minimal OpenRouter-shaped response — the
 // exact shape of a real provider that answers within the "real call responds in
-// ~1s" acceptance bar from construct-o6t8.1.
+// ~1s" acceptance bar.
 
 function delayedFetch(delayMs) {
   return async () => {

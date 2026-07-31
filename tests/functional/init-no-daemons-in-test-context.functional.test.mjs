@@ -2,7 +2,7 @@
  * tests/functional/init-no-daemons-in-test-context.functional.test.mjs
  *
  * Two-layer guard that `construct init` spawns zero background daemons
- * (construct-qn6e, then construct-b0nny.29 which removed the Doctor/Oracle
+ * (the Doctor/Oracle
  * daemon spawn paths from lib/service-manager.mjs entirely — the legacy
  * daemons are retired and must never run).
  *

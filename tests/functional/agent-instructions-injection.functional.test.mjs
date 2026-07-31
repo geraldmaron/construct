@@ -1,7 +1,6 @@
 /**
  * tests/functional/agent-instructions-injection.functional.test.mjs —
- * non-destructive marker-block injection into agent-instruction files (ADR-0027 §2,
- * construct-7e2o).
+ * non-destructive marker-block injection into agent-instruction files.
  *
  * Asserts the injector preserves user content byte-for-byte outside its markers,
  * is idempotent on the same version+hash, replaces (never appends) on a body

@@ -1,7 +1,7 @@
 /**
  * tests/functional/orchestration-worker-latency.functional.test.mjs
  *
- * Guards construct-neq9.5: provider mocks that resolve instantly make any
+ * Provider mocks that resolve instantly make any
  * timeout value pass trivially, so the production `CONSTRUCT_PROVIDER_TIMEOUT_MS`
  * default (`PROVIDER_TIMEOUT_DEFAULT_MS`, lib/orchestration/worker.mjs) was never
  * exercised against a call duration a real provider round-trip would take.

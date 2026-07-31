@@ -1,7 +1,7 @@
 /**
  * tests/health-check-docker-solo.test.mjs
  *
- * Guards construct-fvw5.4: quickHealthCheck() must return ok:true when Docker is
+ * quickHealthCheck() must return ok:true when Docker is
  * absent in solo mode. Docker is only critical for team/enterprise deployments
  * (Docker worker pool). Solo mode uses embedded LanceDB + Git-backed state.
  */

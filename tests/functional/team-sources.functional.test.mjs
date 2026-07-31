@@ -8,7 +8,7 @@
  * the team with a typed OUT_OF_SCOPE error rather than a silent wrong-source fetch.
  *
  * demandFetch writes observations through the machine-scoped state root
- * (ADR-0066), keyed by a hash of the tmp rootDir — so CONSTRUCT_HOME_OVERRIDE is
+ * keyed by a hash of the tmp rootDir — so CONSTRUCT_HOME_OVERRIDE is
  * pinned for the whole file to keep that write off the real developer
  * machine's $HOME.
  */
@@ -95,7 +95,7 @@ test('provider_fetch rejects a target outside the team with a typed OUT_OF_SCOPE
 test('demandFetch drives reads from the team\'s sources and tags observations team:/target:', async () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'team-fetch-'));
   // listObservations/getObservation below resolve the machine-scoped state
-  // root (ADR-0066) via CONSTRUCT_HOME_OVERRIDE read in-process, not via the rootDir
+  // root via CONSTRUCT_HOME_OVERRIDE read in-process, not via the rootDir
   // argument — pin it or they write into the real developer machine's home.
   const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
   process.env.CONSTRUCT_HOME_OVERRIDE = tmp;

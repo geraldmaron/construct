@@ -1,7 +1,7 @@
 /**
  * tests/functional/embed-daemon-execution-gap.functional.test.mjs —
  * end-to-end proof that daemon Job 12 ("execution-gap") is rebound to the
- * governed write tree (construct-p4cba.4, WS-B3).
+ * governed write tree.
  *
  * Before this bead, this job called `jiraProvider.search()`/`.write()` on
  * the embed read-tree provider — methods it never implemented — so every

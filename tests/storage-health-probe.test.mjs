@@ -13,7 +13,7 @@ import { resolveStateDir } from '../lib/state-root.mjs';
 
 const CWD = '/fake/project';
 
-// Matches the machine-scoped state root (ADR-0066) probeStorageHealth actually
+// Matches the machine-scoped state root probeStorageHealth actually
 // resolves the lancedb store against, not a hardcoded `${CWD}/.construct/lancedb`.
 const LANCEDB_STATE_PATH = resolveStateDir(CWD, 'lancedb', { ensureDir: false });
 

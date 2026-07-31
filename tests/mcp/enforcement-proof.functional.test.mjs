@@ -1,5 +1,5 @@
 /**
- * tests/mcp/enforcement-proof.functional.test.mjs — LMCP-I4.
+ * tests/mcp/enforcement-proof.functional.test.mjs.
  *
  * @owasp LLM06
  * @secures operations, operations-triage
@@ -13,7 +13,7 @@
  * based on test setup. Assertions verify the side-effect counter and the durable
  * decision records (denied-store, approval-queue).
  *
- * Broker boundary, not bypass-resistance: ADR-0056 documents that calling a
+ * Broker boundary, not bypass-resistance: calling a
  * tool directly (outside broker.invoke()) is an untrusted path with no audit
  * record — the enforcement guarantee covers callers that go through
  * broker.invoke(), not arbitrary direct function calls. The direct-dispatch
@@ -216,7 +216,7 @@ describe('Enforcement proof — Property 1: Denied calls never execute', () => {
     assert.equal(counter.getCount(), 0, 'broker.invoke denial path must not execute the tool');
 
     // Calling the tool function directly skips broker.invoke() and its policy
-    // check entirely. ADR-0056 names this an untrusted path outside the
+    // check entirely. That is an untrusted path outside the
     // enforcement boundary, not a guarantee the broker provides: policy only
     // gates callers that go through broker.invoke().
     await makeFixtureTool(counter)();

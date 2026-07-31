@@ -11,7 +11,7 @@
  * a cross-view edge (e.g. a `realizes` edge from a `file` to a `capability`)
  * is dropped from both views rather than rendered dangling. This is a known
  * simplification of the prototype, not a claim that cross-view edges don't
- * exist (see DECISION.md).
+ * exist.
  */
 
 export function parseJsonl(text) {

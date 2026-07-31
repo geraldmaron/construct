@@ -1,5 +1,5 @@
 /**
- * tests/packs/prompt-validation.test.mjs — pack prompt-file validation (LMCP-E2).
+ * tests/packs/prompt-validation.test.mjs — pack prompt-file validation.
  *
  * Pins: validatePackPrompts() names the missing file and rejects a manifest
  * with invalid Worker Profile frontmatter; resolveWorkerProfilePrompt() reads

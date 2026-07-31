@@ -1,7 +1,6 @@
 /**
  * tests/functional/fixtures/embed-daemon-write-intent-drain-tick-runner.mjs —
- * child process driver for embed-daemon-write-intent-drain.functional.test.mjs
- * (construct-4uxq0.9.5).
+ * child process driver for embed-daemon-write-intent-drain.functional.test.mjs.
  *
  * Boots the real EmbedDaemon (lib/embed/daemon.mjs), which registers the
  * 'write-intent-drain' job with `runImmediately: true` on start(), and polls

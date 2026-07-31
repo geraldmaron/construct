@@ -1,7 +1,7 @@
 /**
  * tests/approval-queue-team-rootdir.test.mjs — team-mode approval queue path canonicalization.
  *
- * construct-4uxq0.14.7: CLI and daemon must address the same queue file even when
+ * CLI and daemon must address the same queue file even when
  * invoked from divergent cwds under the same project.
  */
 import assert from 'node:assert/strict';

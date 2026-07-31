@@ -276,7 +276,7 @@ test('init-docs scaffolds postmortems, changelogs, and onboarding lanes', () => 
 test('construct package repo keeps lane starters under templates/ only', () => {
   const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 
-  // Lane homes after the docs/ bucket regroup (ADR-0045): record lanes live
+  // Lane homes after the docs/ bucket regroup: record lanes live
   // under their bucket; init-lane template starters live under templates/docs/.
 
   const laneDirs = [

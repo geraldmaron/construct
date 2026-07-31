@@ -1,6 +1,5 @@
 /**
- * Functional test: cross-source watching for git (corpus) targets (bead
- * construct-wjap9.6).
+ * Functional test: cross-source watching for git (corpus) targets (bead.
  *
  * Verifies lib/sources/watch.mjs detects an upstream HEAD change via
  * `git ls-remote` against a local bare remote, and that refreshWatch persists

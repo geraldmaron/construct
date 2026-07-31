@@ -1,6 +1,6 @@
 /**
- * tests/frameworks-schema.test.mjs — ADR-0062 persona reasoning framework
- * schema, loader, and E1 pack-precedence tests (LMCP-F7).
+ * tests/frameworks-schema.test.mjs — persona reasoning framework
+ * schema, loader, and E1 pack-precedence tests.
  *
  * Pins: validateFrameworkFrontmatter() enforces required frontmatter, 3-6
  * step shape, unique emits tokens, cites enum, and known appliesToRole;
@@ -8,7 +8,7 @@
  * frameworks (product-manager, operations, engineer, qa, architect) validate;
  * the core pack's loadCorePack() declares all 5 by frontmatter id; and
  * resolveFramework() honors tier precedence — a project-tier pack overrides
- * the core pack for the same framework id (ADR-0055/ADR-0062 §1).
+ * the core pack for the same framework id.
  */
 
 import test from 'node:test';

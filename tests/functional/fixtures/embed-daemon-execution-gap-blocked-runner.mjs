@@ -1,7 +1,7 @@
 /**
  * tests/functional/fixtures/embed-daemon-execution-gap-blocked-runner.mjs —
  * child process driver for embed-daemon-execution-gap-blocked.functional.test.mjs
- * (construct-4uxq0.9.6: Job 12 "execution-gap" honest-reporting path).
+ * (Job 12 "execution-gap" honest-reporting path).
  *
  * A registry with no 'jira' entry at all means the analysis cannot run.
  * Before this bead, the job's outer branch (`result.gaps.length > 0` vs the

@@ -1,6 +1,6 @@
 /**
  * tests/functional/workplace-loop.functional.test.mjs — day-one proof for
- * the production sources/directives/workplace loop (construct-b0nny.25).
+ * the production sources/directives/workplace loop.
  *
  * Imports the real lib/workplace-loop/cli.mjs dispatch (`runWorkplaceLoopCli`,
  * the exact function bin/construct's `workplace-loop` handler calls) in one

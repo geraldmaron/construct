@@ -22,7 +22,7 @@
  * so the assertion that BITES is a synthetic typo'd core name that must be
  * REJECTED by a real invariant — and no such invariant exists to reject it.
  *
- * Contract (CX-AUDIT-TOOLS-001): generate the tool registry/docs/dispatch from ONE
+ * Contract: generate the tool registry/docs/dispatch from ONE
  * source and enforce the core/long-tail partition automatically. Passes once a
  * runtime parity check rejects a core name that is not a real catalog tool.
  */
@@ -32,7 +32,7 @@ import test from 'node:test';
 import { exposedTools, ALL_TOOL_DEFS } from '../../../lib/mcp/server.mjs';
 
 // ALL_TOOL_DEFS is the real composed catalog — [...HARDCODED_TOOL_DEFS,
-// ...SCANNED_TOOL_DEFS] (LMCP-B5 self-registered `*.tool.mjs` tools). A prior
+//...SCANNED_TOOL_DEFS] (self-registered `*.tool.mjs` tools). A prior
 // version of this file string-eval-parsed only the HARDCODED_TOOL_DEFS object
 // literal out of server.mjs source, which silently excluded every
 // self-registered tool from "the catalog" the moment the first one shipped

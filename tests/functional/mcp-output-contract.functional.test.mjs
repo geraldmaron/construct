@@ -1,14 +1,14 @@
 /**
  * tests/functional/mcp-output-contract.functional.test.mjs
  *
- * Tool-output/error contract for the MCP surface (self-audit construct-rr63.6.1, opens the
+ * Tool-output/error contract for the MCP surface (opens the
  * tool-contract-gate). Two parts:
  *   1. the target contract (schemas/mcp-tool-output.schema.json) is well-formed and defines a typed
  *      error vocabulary plus a typed degradation reason shared with the host-capability matrix;
  *   2. characterization of TODAY's behaviour — long-tail tools return an ad-hoc { error: string }
  *      with no code/details, and registry/capabilities.json declares no public web-search capability.
  * The characterization assertions pin the current gap so the Wave-4 migration that adds structured
- * errors / a governed web/search capability (construct-rr63.5.2) is a deliberate, visible change.
+ * errors / a governed web/search capability is a deliberate, visible change.
  */
 
 import test from 'node:test';

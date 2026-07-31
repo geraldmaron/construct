@@ -1,7 +1,7 @@
 /**
  * tests/functional/operating-profile-capability-class.functional.test.mjs
  *
- * Multi-component gate for construct-72gqn.35: capability-class operating profile
+ * Multi-component gate: capability-class operating profile
  * selection in lib/model-router.mjs flows through ExecutionCapabilityProfile into
  * prompt-composer fragment budgets. Uses real modules and an isolated probe store.
  */

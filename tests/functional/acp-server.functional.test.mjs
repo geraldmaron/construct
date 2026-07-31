@@ -155,7 +155,7 @@ test('ACP server: backend resolution honors config — provider backend shows in
   });
 
   // runAcpServer executes in-process, so lib/paths.mjs's homeDir() resolves the
-  // machine-scoped state root (ADR-0066) from THIS test process's own
+  // machine-scoped state root from THIS test process's own
   // process.env, not from the `env` option object below — pin
   // CONSTRUCT_HOME_OVERRIDE on process.env itself for the duration of the call so the
   // real developer machine's ~/.construct/projects/ is never touched.

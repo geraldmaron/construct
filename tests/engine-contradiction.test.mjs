@@ -1,5 +1,5 @@
 /**
- * tests/engine-contradiction.test.mjs — negation-polarity contradiction detection (construct-wlr7).
+ * tests/engine-contradiction.test.mjs — negation-polarity contradiction detection.
  *
  * Pins the offline heuristic: same claim words with opposite assertion polarity
  * contradict; same words with the same polarity (a restatement) do not; two

@@ -8,7 +8,7 @@
  * release after it exits) can still be materializing a file mid-walk, and
  * rmSync's `maxRetries` only retries the one rmdir that failed — it never
  * re-walks the tree, so a file that appears after the walk passed its directory
- * makes the retry budget useless (bead construct-nl9f).
+ * makes the retry budget useless.
  *
  * By teardown time every assertion has already run, so a leftover directory in
  * the OS tmpdir on an ephemeral CI runner is harmless — the OS or the runner
@@ -30,7 +30,7 @@ import { fileURLToPath } from "node:url";
 // realpath'd because macOS's tmpdir is a symlink (/var/folders →
 // /private/var/folders) and tests pass either form. <repo>/.tmp is a root
 // because distribution/sync-contract sandboxes live there and hit the same
-// spawned-child ENOTEMPTY teardown race (construct-nl9f).
+// spawned-child ENOTEMPTY teardown race.
 
 const REPO_TMP = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", ".tmp");
 

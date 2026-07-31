@@ -3,7 +3,7 @@
  *
  * Spins up two mock backends:
  *  - A "cm-like" HTTP server that returns 405 on GET and "Unsupported method"
- *    for initialize — the exact failure mode behind construct-1qt.
+ * for initialize — the exact failure mode behind.
  *  - A working stdio MCP server (the actual memory bridge).
  * Asserts that probeServer flags the broken endpoint and passes the bridge.
  */

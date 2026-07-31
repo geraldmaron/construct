@@ -1,7 +1,6 @@
 /**
  * tests/functional/embed-daemon-inbox-loop.functional.test.mjs —
- * end-to-end proof of the LIVE continuous-inbox loop (construct-b2t01.3,
- * closing epic construct-b2t01).
+ * end-to-end proof of the LIVE continuous-inbox loop.
  *
  * Before this bead, the embed daemon's Job #9 (lib/embed/daemon.mjs
  * "inbox-watcher", scheduled every 2 minutes on `lib/embed/inbox.mjs`'s

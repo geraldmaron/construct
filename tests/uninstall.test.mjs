@@ -1,7 +1,7 @@
 /**
  * tests/uninstall.test.mjs — coverage for the `construct uninstall` command.
  *
- * Verifies (ADR-0074 consolidated layout: launcher nests at .construct/launcher/,
+ * Verifies (consolidated layout: launcher nests at .construct/launcher/,
  * per-project config + state is the top-level .construct/):
  *   - --dry-run reports the plan and changes nothing on disk.
  *   - --yes (default risk: auto) removes .construct/launcher/, agents listed in

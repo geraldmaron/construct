@@ -20,7 +20,7 @@
  * no separable trust channel to assert against.
  *
  * Turns GREEN once the retrieval boundary labels external snippets untrusted
- * (CX-AUDIT-LLMSEC-001 / -002): the corpus then doubles as the regression suite
+ * (002): the corpus then doubles as the regression suite
  * for the labeling contract.
  */
 import assert from 'node:assert/strict';

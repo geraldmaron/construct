@@ -6,7 +6,7 @@
  * Isolated in a temp dir so real ~/.construct state is untouched.
  *
  * observation-store resolves project state through the machine-scoped state
- * root (ADR-0066), keyed by a hash of tmpDir — so CONSTRUCT_HOME_OVERRIDE is pinned
+ * root, keyed by a hash of tmpDir — so CONSTRUCT_HOME_OVERRIDE is pinned
  * for the whole file to keep that write off the real developer machine's $HOME.
  */
 import { describe, it, beforeEach, after, afterEach } from 'node:test';
@@ -18,7 +18,7 @@ import { runBootstrap } from '../lib/bootstrap.mjs';
 import { listObservations, getObservation } from '../lib/observation-store.mjs';
 
 // runBootstrap writes observations through the machine-scoped state root
-// (ADR-0066, lib/observation-store.mjs -> resolveStateDir), so CONSTRUCT_HOME_OVERRIDE
+// (lib/observation-store.mjs -> resolveStateDir), so CONSTRUCT_HOME_OVERRIDE
 // is pinned for the whole file to keep those writes off the real developer
 // machine's ~/.construct/projects.
 

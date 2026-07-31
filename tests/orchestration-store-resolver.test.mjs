@@ -26,7 +26,7 @@ function project() {
 test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} } });
 
 // resolveRunStore's sqlite branch resolves its db directory through the
-// machine-scoped state root (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE from
+// machine-scoped state root, which reads CONSTRUCT_HOME_OVERRIDE from
 // real process.env directly. Pin it for the whole file so a sqlite-backend
 // resolution never writes into the real developer machine's
 // ~/.construct/projects/.

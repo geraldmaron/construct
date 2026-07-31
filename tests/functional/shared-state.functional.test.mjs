@@ -1,5 +1,5 @@
 /**
- * tests/functional/shared-state.functional.test.mjs — LMCP-G10.
+ * tests/functional/shared-state.functional.test.mjs.
  *
  * Two guarantees: a trace event saved through one store instance is visible
  * through a second, independent store instance backed by the same shared

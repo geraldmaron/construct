@@ -1,6 +1,6 @@
 /**
  * tests/functional/doctor-source-targets.functional.test.mjs —
- * source-target health in `construct doctor` (bead construct-760c.8, epic closer).
+ * source-target health in `construct doctor` (epic closer).
  *
  * @capability sources.doctor-health
  *

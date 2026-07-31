@@ -19,7 +19,7 @@
  *
  * Turns GREEN once the release workflow scans and boot-smokes the image before
  * pushing any mutable tag (or pushes a throwaway quarantine tag, gates on it,
- * and only then promotes :latest), per CX-AUDIT-DOCKER-001 / -003.
+ * and only then promotes:latest).
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -50,7 +50,7 @@ test('[R23/F07] release workflow must scan + boot-smoke the image before pushing
 
   const pushIdx = firstIndexMatching(lines, /^\s*push:\s*true\s*$/);
 
-  // ADR-0039 degate: if release.yml has no docker build-push step, the Docker
+  // Degate: if release.yml has no docker build-push step, the Docker
   // gating requirement is satisfied — the image surface has been removed.
   if (pushIdx === -1) return;
 

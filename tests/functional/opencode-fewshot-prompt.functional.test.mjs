@@ -1,5 +1,5 @@
 /**
- * opencode-fewshot-prompt.functional.test.mjs — bead construct-c16l.
+ * opencode-fewshot-prompt.functional.test.mjs —.
  *
  * The OpenCode construct orchestrator runs on native subagent routing, so it gets
  * the tool-bound micro-prompt (not the static roster). Small local models call
@@ -31,7 +31,7 @@ test("opencode construct micro-prompt carries the few-shot example, within the w
 
     // CONSTRUCT_HOME_OVERRIDE pinned alongside the sandboxed HOME: lib/paths.mjs's
     // homeDir()/constructDir() check CONSTRUCT_HOME_OVERRIDE first, so any state-root
-    // read (ADR-0066: lib/state-root.mjs) inside this subprocess resolves under
+    // read (lib/state-root.mjs) inside this subprocess resolves under
     // the sandbox rather than falling back to a HOME-propagation assumption.
     // No CONSTRUCT_TOOLKIT_DIR: sync-worker-profiles.mjs derives its own root from
     // import.meta.dirname and self-populates CONSTRUCT_TOOLKIT_DIR from it when

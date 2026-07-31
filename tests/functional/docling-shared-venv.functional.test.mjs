@@ -1,7 +1,7 @@
 /**
  * tests/functional/docling-shared-venv.functional.test.mjs — one machine, one docling venv.
  *
- * construct-rf26.16 acceptance: two different projects on one machine resolve
+ * Acceptance: two different projects on one machine resolve
  * to the identical docling venv path and share exactly one provisioned
  * instance — not one venv per project. Pins CONSTRUCT_HOME_OVERRIDE to a single
  * fake machine home, then drives resolution from two isolated project

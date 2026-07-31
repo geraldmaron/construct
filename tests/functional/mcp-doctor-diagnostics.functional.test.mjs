@@ -1,6 +1,6 @@
 /**
  * tests/functional/mcp-doctor-diagnostics.functional.test.mjs — MCP doctor
- * diagnostic classification (construct-d1r7.3).
+ * diagnostic classification.
  *
  * Doctor must stay silent on catalog-only and installed-but-disabled MCP servers
  * (optional integrations the user has not turned on) and only raise an actionable

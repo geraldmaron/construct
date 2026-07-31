@@ -1,5 +1,5 @@
 /**
- * tests/functional/project-dotenv-tier.functional.test.mjs — construct-6y6w.8.
+ * tests/functional/project-dotenv-tier.functional.test.mjs.
  *
  * lib/env-config.mjs's header promises a project `.env` tier (project .env
  * wins over user config.env, which wins over shell exports), but neither

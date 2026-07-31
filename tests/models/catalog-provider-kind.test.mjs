@@ -1,6 +1,6 @@
 /**
  * tests/models/catalog-provider-kind.test.mjs — model catalog bridged onto the
- * unified extension registry (LMCP-B4). Asserts model provider families are
+ * unified extension registry. Asserts model provider families are
  * discoverable as kind='model' manifests and surfaced by describeProviders(),
  * and that existing catalog visibility/cache behavior is untouched.
  */

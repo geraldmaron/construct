@@ -1,9 +1,9 @@
 /**
  * tests/functional/workplace-loop-signal-quality.functional.test.mjs —
  * fixture-backed authenticated replay validating workplace-loop detection
- * quality against messy real-shaped data (construct-b0nny.31).
+ * quality against messy real-shaped data.
  *
- * construct-b0nny.25's honest gap: the one live connected source (this
+ * the honest gap: the one live connected source (this
  * checkout's own GitHub origin) has 0 open issues, so the "produces a
  * correctly-gated proposal" acceptance half was proven only against a
  * single curated fixture (tests/functional/workplace-loop.functional.test.mjs's

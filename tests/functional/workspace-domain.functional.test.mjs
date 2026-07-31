@@ -1,6 +1,6 @@
 /**
  * tests/functional/workspace-domain.functional.test.mjs — day-one proof for
- * the Workspace domain store (construct-b0nny.22, design doc §12).
+ * the Workspace domain store (design doc §12).
  *
  * Drives the real `construct workspace-domain` CLI against one isolated sandbox
  * (CONSTRUCT_HOME_OVERRIDE redirected to a tmpdir, a real git fixture repo,

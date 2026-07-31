@@ -1,7 +1,7 @@
 /**
  * tests/functional/knowledge-search-code-federation.functional.test.mjs —
  * registered directory targets' CODE files (not just markdown) join the
- * knowledge corpus with origin attribution (construct-1smc4.1).
+ * knowledge corpus with origin attribution.
  *
  * Today walkMarkdown()/loadMarkdownChunks() fold only `**\/*.md` from a
  * registered target's content root. Real repos have source code

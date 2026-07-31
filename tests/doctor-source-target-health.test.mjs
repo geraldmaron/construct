@@ -1,6 +1,6 @@
 /**
  * tests/doctor-source-target-health.test.mjs — unit coverage for the
- * source-target health checker (bead construct-760c.8).
+ * source-target health checker.
  *
  * Exercises the pure paths the functional doctor test does not: the zero-target
  * silent pass, a healthy directory, and the credential-presence soft notice.

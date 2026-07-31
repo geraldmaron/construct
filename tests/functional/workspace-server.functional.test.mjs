@@ -1,7 +1,6 @@
 /**
  * tests/functional/workspace-server.functional.test.mjs — day-one proof for
- * the shared workspace server (construct-b0nny.26, E7; design doc
- * synthesis/shared-server-design.md §9).
+ * the shared workspace server.
  *
  * Spans CLI + durable Postgres state at once (CLAUDE.md's multi-component
  * rule): spawns the real `construct server start` binary, drives it over

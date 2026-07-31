@@ -1,6 +1,6 @@
 /**
  * tests/functional/author-artifact-context-targets.functional.test.mjs —
- * author_artifact context_targets binding (bead construct-760c.3 AC4).
+ * author_artifact context_targets binding.
  *
  * @capability research.cross-project-synthesis
  *
@@ -33,7 +33,7 @@ const dirs = [];
 // In-process authorArtifact reaches the machine-scoped state root through the
 // real HOME (observation-store vectorClientFor), so the whole process gets a
 // redirected CONSTRUCT_HOME_OVERRIDE or every tmp fixture registers a real
-// ~/.construct/projects key (construct-9y93c).
+// ~/.construct/projects key.
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-authorctx-home-'));
 const originalHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;

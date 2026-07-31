@@ -1,8 +1,8 @@
 /**
  * tests/functional/document-assets.functional.test.mjs — rich-media asset manifest and preservation
- * pipeline (construct-d1r7.10).
+ * pipeline.
  *
- * The manifest is derived from the RichDocument IR (ADR-0071), generated on import and consumed on
+ * The manifest is derived from the RichDocument IR, generated on import and consumed on
  * export. These assert the four acceptance criteria against real files on disk: a manifest is built
  * from ingested-style markdown (import side), a broken local media ref fails validation and blocks
  * export, captions/alt text survive the serialization a target preserves, and the fixtures cover a

@@ -1,8 +1,8 @@
 /**
  * tests/orchestration/execution-state.test.mjs — run-level executionState
- * aggregation (LMCP-F4).
+ * aggregation.
  *
- * Pins: executeRun aggregates every task's LMCP-F1 executionState
+ * Pins: executeRun aggregates every task's executionState
  * (prepared|executed|degraded-executed|failed) into one `run.executionState`,
  * with `failed` beating `degraded-executed` beating `executed` beating
  * `prepared`, and a zero-task run (prompt-only/host-direct) aggregating to
@@ -23,7 +23,7 @@ import { saveRun } from '../../lib/orchestration/run-store.mjs';
 import { tempDir } from '../helpers.mjs';
 
 // Every runOrchestration/planRun/executeRun/saveRun call resolves its run
-// store through the machine-scoped state root (ADR-0066), which reads
+// store through the machine-scoped state root, which reads
 // CONSTRUCT_HOME_OVERRIDE/os.homedir() directly rather than the `env` option bag
 // passed to these calls. Pin it for the whole file so these runs never write
 // into the real developer machine's ~/.construct/projects/.

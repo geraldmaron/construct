@@ -9,8 +9,8 @@
  * three into one object, and that materializeAuditRecord's write survives a
  * fresh process-equivalent read (loadAuditRecord importing independently).
  *
- * HOME is pinned to the tmpdir so the machine-scoped state root (ADR-0066)
- * resolves inside it, per tests/functional/README.md's isolation contract.
+ * HOME is pinned to the tmpdir so the machine-scoped state root
+ * resolves inside it, per the functional-test isolation contract.
  */
 
 import assert from 'node:assert/strict';

@@ -1,12 +1,12 @@
 /**
  * tests/functional/init-lazy-embedding.functional.test.mjs
  *
- * construct-rf26.17: a fresh `construct init` must perform zero embedding
+ * a fresh `construct init` must perform zero embedding
  * work — no ONNX/transformers model cache populated, no LanceDB vector
  * index directory created — since a project that never runs semantic
  * search should never pay for either. Spawns the real `construct init`
  * against an isolated HOME/CONSTRUCT_HOME_OVERRIDE (sterileSpawnEnv) so the
- * assertions read the same machine-scoped roots ADR-0066 resolves at
+ * assertions read the same machine-scoped roots resolved at
  * runtime, never the developer machine's real ~/.construct or ~/.cache.
  */
 

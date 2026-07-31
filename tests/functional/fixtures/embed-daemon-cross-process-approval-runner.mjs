@@ -90,7 +90,7 @@ async function main() {
   const approverQueue = new ApprovalQueue({ persistPath });
   approverQueue.approve(seeded.approvalId, { decidedBy: { userId: 'test-operator' } });
 
-  // A failed execution under the lease model (ADR-0089) releases the lease
+  // A failed execution under the lease model releases the lease
   // back to 'approved' and stamps lastLeaseFailureReason — that durable
   // marker, not main's retired executionAttempts counter, is the proof the
   // drain reached the adapter and recorded the outcome.

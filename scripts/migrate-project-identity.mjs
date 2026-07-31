@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * scripts/migrate-project-identity.mjs — ADR-0092/0096 identity migration runner.
+ * scripts/migrate-project-identity.mjs — project-identity migration runner.
  *
  * Default mode is dry-run: prints the merge plan without writing. Pass `--apply`
  * to copy legacy path-hash buckets into the canonical remote-hash directory.

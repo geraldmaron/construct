@@ -1,5 +1,5 @@
 /**
- * tests/functional/construct-shim.functional.test.mjs — construct-rf26.19.
+ * tests/functional/construct-shim.functional.test.mjs.
  *
  * Exercises bin/construct-shim.mjs's platform-detection, cache, download,
  * checksum, and exec-decision logic directly — the shim is not yet wired as

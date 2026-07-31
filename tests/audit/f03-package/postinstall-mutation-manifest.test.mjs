@@ -9,7 +9,7 @@
  * no recovery command, and discards the stageProjectAdapters return value (L112) so a half-stage
  * (.gitignore appended but `.claude/` not synced) goes unrecorded.
  *
- * Contract these encode (CX-AUDIT-PACKAGE-004): any install-time project mutation must leave
+ * Contract these encode: any install-time project mutation must leave
  * an itemized, machine-readable manifest of the files it created/appended plus a recovery
  * command, and a failed sync must not leave the project mutated-but-incoherent without a
  * recorded marker. Each test runs the REAL postinstall script against a throwaway consumer

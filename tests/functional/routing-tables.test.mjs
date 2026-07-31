@@ -19,9 +19,9 @@ import {
   knownWatchers,
 } from '../../lib/orchestration/routing-tables.mjs';
 
-// construct-rf26.11 consolidated the 29-specialist roster to 12 (orchestrator
+// A consolidation reduced the 29-specialist roster to 12 (orchestrator
 // + 11 workers); owners below reflect that roster (e.g. sre/release-manager/
-// docs-keeper folded into operations — see the ADR-0065 appendix addendum).
+// docs-keeper folded into operations — see the appendix addendum).
 const EXPECTED_EVENTS = {
   'push_gate.fail': 'operations',
   'service.down': 'operations',

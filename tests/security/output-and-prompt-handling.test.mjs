@@ -1,6 +1,5 @@
 /**
- * tests/security/output-and-prompt-handling.test.mjs — LMCP-N8 gap closure
- * (construct-9oi4.14.9).
+ * tests/security/output-and-prompt-handling.test.mjs — gap closure.
  *
  * @owasp LLM05, LLM07
  * @secures architecture-review, data-structure, memo-draft, prd-draft, proposal-review, risk-review, structure-notes, transcript-process, triage

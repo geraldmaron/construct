@@ -37,7 +37,7 @@ function tmpProject() {
   return dir;
 }
 
-// lib/paths.mjs resolves the machine-scoped state root (ADR-0066) from
+// lib/paths.mjs resolves the machine-scoped state root from
 // process.env directly, so the spawned `construct` needs its own sandboxed
 // HOME to avoid leaking test projects into the real developer machine's
 // ~/.construct/projects/.

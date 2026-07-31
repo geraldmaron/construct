@@ -5,6 +5,7 @@
   "description": "Finds bugs by looking at the conditions the author didn't test for — happy path review is not review.",
   "artifactClasses": [],
   "skillEmphasis": [
+    "docs/artifact-authorship",
     "quality-gates/verify-quality",
     "quality-gates/review-work",
     "quality-gates/verify-module",

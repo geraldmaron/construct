@@ -1,6 +1,6 @@
 /**
  * tests/recruiter.test.mjs — condition-driven participant assembly
- * (lib/orchestration/recruiter.mjs, construct-pteo2.5).
+ * (lib/orchestration/recruiter.mjs).
  *
  * recruit() is exercised against the real assembled registry for the
  * canonical dimension affinities, and against injected registries for
@@ -219,7 +219,7 @@ test('resolveRemediationDispatch creates a canonical Assignment from the routed 
   });
 });
 
-// outcomeBoost tie-breaker (ADR-0076): a bounded ±0.05 nudge between candidates
+// outcomeBoost tie-breaker: a bounded ±0.05 nudge between candidates
 // the specialization signal already ranked equal. Each test gets an isolated
 // tmpdir so outcome history from one case never leaks into another.
 

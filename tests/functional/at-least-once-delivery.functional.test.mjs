@@ -1,5 +1,5 @@
 /**
- * tests/functional/at-least-once-delivery.functional.test.mjs — construct-4uxq0.11.5
+ * tests/functional/at-least-once-delivery.functional.test.mjs
  *
  * Acceptance suite for at-least-once tick/queue delivery semantics: duplicate
  * triggers, duplicate delivery, worker crash, expired leases, daemon restart,

@@ -1,5 +1,5 @@
 /**
- * tests/oracle/synthesize-partial-evidence.test.mjs — construct-4uxq0.12.8
+ * tests/oracle/synthesize-partial-evidence.test.mjs
  * Oracle synthesis refuses clean verdicts on partial or stale living graphs.
  */
 

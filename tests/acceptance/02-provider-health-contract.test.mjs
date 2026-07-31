@@ -1,7 +1,7 @@
 /**
  * tests/acceptance/02-provider-health-contract.test.mjs
  *
- * LMCP-L1 acceptance contract: construct providers status workflow.
+ * Acceptance contract: construct providers status workflow.
  *
  * Verifies that `construct providers status` exits cleanly (exit 0 or a
  * structured non-crash) and emits provider entry lines or a structured
@@ -22,7 +22,7 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const CONSTRUCT_BIN = new URL('../../bin/construct', import.meta.url).pathname;
 
-// lib/paths.mjs resolves the ADR-0066 state root from process.env.HOME /
+// lib/paths.mjs resolves the state root from process.env.HOME /
 // CONSTRUCT_HOME_OVERRIDE in the CHILD's own env, not the test process's env — so
 // every spawned `construct` call must be pinned to a throwaway sandbox home
 // or it leaks project-key directories into the real developer machine's

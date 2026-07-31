@@ -1,7 +1,7 @@
 /**
  * tests/audit/f01-mcp-safety/malicious-ref.red.mjs — F01 [R9] shell-injection proof for summarizeDiff.
  *
- * Regression guard for CX-AUDIT-MCP-SAFETY-002 (promoted from a red fixture). The
+ * (promoted from a red fixture). The
  * earlier summarizeDiff interpolated a model-controlled base_ref into
  * `git diff --stat ${baseRef}` through execSync with a shell, so a base_ref carrying
  * shell metacharacters executed arbitrary commands. The fix runs git via execFile with

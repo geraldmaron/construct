@@ -9,7 +9,7 @@
  *
  * The rule is enforced by static parse. dispatchToolByName's `name === 'x'`
  * branches still live in lib/mcp/server.mjs; the advertised `name: 'x'` tool
- * schema blocks were split out (construct-rf26.10) into
+ * schema blocks were split out into
  * lib/mcp/tool-definitions-{project,skills,memory,workflow}.mjs to keep
  * server.mjs under the house line-count limit. The test reads server.mjs for
  * dispatch names and the concatenated tool-definitions-*.mjs sources for

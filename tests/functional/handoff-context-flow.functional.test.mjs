@@ -1,5 +1,5 @@
 /**
- * tests/functional/handoff-context-flow.functional.test.mjs — construct-72gqn.10 (H6a).
+ * tests/functional/handoff-context-flow.functional.test.mjs.
  *
  * Before this bead, buildUserPrompt (lib/orchestration/worker.mjs) passed a
  * downstream Worker Profile only the contract-id string — no prior Worker Profile's
@@ -33,7 +33,7 @@ function project() {
 test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} } });
 
 // runOrchestration/submitHostTaskResult resolve the run store through the
-// machine-scoped state root (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE from
+// machine-scoped state root, which reads CONSTRUCT_HOME_OVERRIDE from
 // real process.env directly (same posture as tests/orchestration-runtime.test.mjs).
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-handoff-context-home-'));

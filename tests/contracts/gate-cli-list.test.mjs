@@ -1,6 +1,6 @@
 /**
  * tests/contracts/gate-cli-list.test.mjs — the enforcement inventory surface
- * (`construct contract list`, construct-33nds).
+ * (`construct contract list`).
  *
  * The inventory is what an operator trusts when deciding which rungs need
  * staffing, so its failure mode matters more than its formatting: a contract

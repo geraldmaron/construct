@@ -6,7 +6,6 @@
  *   2. buildStatus with no degradation.jsonl → degradationDetails is an empty array.
  *   3. formatStatusReport with degradation details → emits the "Degradation details:" section.
  *
- * Bead: construct-9oi4.13.2 — LMCP-M2
  */
 
 import assert from 'node:assert/strict';

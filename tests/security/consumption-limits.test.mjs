@@ -1,5 +1,5 @@
 /**
- * tests/security/consumption-limits.test.mjs — LMCP-N5: durable consumption
+ * tests/security/consumption-limits.test.mjs — durable consumption
  * limits per actor/run.
  *
  * @owasp LLM10
@@ -13,7 +13,7 @@
  * generic actor/tool dispatch wrapper, not scoped to one workflow type, so
  * the budget-denied guarantee (LLM10 — unbounded consumption) covers every
  * one of the 9 executable workflows named above the same way it covers any
- * other MCP-dispatched tool call (construct-9oi4.14.9 N8 gap-closure).
+ * other MCP-dispatched tool call (N8 gap-closure).
  */
 import { describe, it, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -179,7 +179,7 @@ describe('Broker.invoke consumption budgets', () => {
     const rootDir = fakeRoot();
     // rateBudget raised well past the default 30/window so this exercises
     // only the consumption-budget path, not the pre-existing per-actor/tool
-    // rate limiter (LMCP-I1), which is a separate, already-tested gate.
+    // rate limiter, which is a separate, already-tested gate.
     const broker = new Broker({ rootDir, policy: allowingPolicy(), emit: () => {}, rateBudget: 1000 });
     for (let i = 0; i < 50; i++) {
       const { result } = await broker.invoke({ role: 'engineer', tool: 'fs', action: 'read', execute: async () => i });
