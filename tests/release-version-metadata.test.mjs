@@ -8,18 +8,22 @@ import path from 'node:path';
 import test from 'node:test';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
-const RELEASE_VERSION = '2.1.0';
 const readJson = (relativePath) => JSON.parse(fs.readFileSync(path.join(ROOT, relativePath), 'utf8'));
+
+// The invariant is that the three mirrors agree, so package.json is the one
+// source and the rest are checked against it. Restating the number here would
+// make this a fourth copy — one that fails every release until it is chased,
+// which says nothing about whether the mirrors that ship are consistent.
 
 test('package, lockfile root, and launcher pin agree on the release version', () => {
   const pkg = readJson('package.json');
   const lock = readJson('package-lock.json');
   const launcherVersion = fs.readFileSync(path.join(ROOT, '.construct', 'launcher', 'version'), 'utf8').trim();
 
-  assert.equal(pkg.version, RELEASE_VERSION);
-  assert.equal(lock.version, RELEASE_VERSION);
-  assert.equal(lock.packages[''].version, RELEASE_VERSION);
-  assert.equal(launcherVersion, RELEASE_VERSION);
+  assert.match(pkg.version, /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/);
+  assert.equal(lock.version, pkg.version);
+  assert.equal(lock.packages[''].version, pkg.version);
+  assert.equal(launcherVersion, pkg.version);
 });
 
 test('the executable release workflow generates Homebrew metadata from the tag', () => {
