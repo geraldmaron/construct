@@ -1,8 +1,8 @@
 /**
- * tests/acceptance/k5-ink-react-degradation.functional.test.mjs — LMCP-K5 Ink/React
+ * tests/acceptance/k5-ink-react-degradation.functional.test.mjs — Ink/React
  * degradation test.
  *
- * LMCP-K5: Ink/React optional-dep degradation test.
+ * Ink/React optional-dep degradation test.
  *
  * Unlike the L4 suite (which tests --no-optional at install time), K5
  * specifically targets ink and react — the TUI dependencies that CI preinstalls
@@ -144,7 +144,7 @@ test('LMCP-K5: ink/react degradation', { timeout: 180_000 }, async (t) => {
   const nmRoot = join(tmpDir, 'node_modules');
   const binPath = join(nmRoot, '.bin', 'construct');
 
-  // lib/paths.mjs resolves the ADR-0066 state root from process.env.HOME /
+  // lib/paths.mjs resolves the state root from process.env.HOME /
   // CONSTRUCT_HOME_OVERRIDE in the CHILD's own env, not this test process's env —
   // every spawned `construct` call below must be pinned to a throwaway
   // sandbox home or it leaks project-key directories into the real

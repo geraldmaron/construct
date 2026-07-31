@@ -1,7 +1,7 @@
 /**
  * tests/sources/repo-cache-git-behaviors.test.mjs — real-git contract tests
  * for lib/sources/repo-cache.mjs's syncCorpusTarget(), the generic `git`
- * source-target provider's actual sync implementation (construct-4uxq0.13.3,
+ * source-target provider's actual sync implementation
  * Phase 9 audit checklist: shallow clones, rewritten history / force pushes,
  * deleted branches).
  *
@@ -12,7 +12,7 @@
  * through the CLI. CONSTRUCT_HOME_OVERRIDE isolates the state root per test so the
  * corpus cache never touches the real machine's ~/.construct.
  *
- * Typed error classification (construct-h48jh): sync failures surface as the
+ * Typed error classification: sync failures surface as the
  * shared provider error hierarchy (lib/providers/contract/errors.mjs) — a
  * deleted upstream branch and a nonexistent remote are reproduced against
  * real git and asserted as NotFoundError; auth and rate-limit stderr

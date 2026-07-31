@@ -2,7 +2,7 @@
  * tests/git-queue-disposition.test.mjs
  *
  * Tests for GitIntakeQueue disposition behaviour per the queue provider-kind
- * reframe (construct-9oi4.7.11, supersedes the ADR-0051 / A1 framing):
+ * reframe (supersedes / A1 framing):
  *   - claim() emits a warning when push fails, does NOT throw
  *   - a failed push is reported as a typed NON-DURABLE disposition on the
  *     returned claim — it is never ratified as a durable claim

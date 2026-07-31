@@ -1,5 +1,5 @@
 /**
- * tests/functional/claude-orchestration-prompt.functional.test.mjs — construct-ymp5.
+ * tests/functional/claude-orchestration-prompt.functional.test.mjs.
  *
  * Claude Code receives the orchestration micro-prompt instead of the static
  * 29-line specialist roster. Specialists are lazy-loaded via orchestration_policy.
@@ -26,7 +26,7 @@ test('claude construct agent uses micro-prompt, not the static roster', () => {
     // process.env.CONSTRUCT_TOOLKIT_DIR from that root when unset — it never needs the
     // var supplied externally to find its source files. Setting CONSTRUCT_TOOLKIT_DIR
     // here would also feed lib/paths.mjs's constructDir(), which lib/state-root.mjs
-    // builds the ADR-0066 machine-scoped state root on: any code path in the
+    // builds the machine-scoped state root on: any code path in the
     // child that touched state-root.mjs would redirect real state into repoRoot
     // instead of the sandboxed HOME, an unrelated concern from locating source
     // files.

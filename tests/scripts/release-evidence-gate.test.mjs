@@ -1,5 +1,5 @@
 /**
- * tests/scripts/release-evidence-gate.test.mjs — LMCP-M5 self-test for the
+ * tests/scripts/release-evidence-gate.test.mjs — self-test for the
  * release packaging evidence gate (scripts/release-evidence-gate.mjs).
  *
  * Pins: the gate passes on the committed clean tree (packaging-only, fast);

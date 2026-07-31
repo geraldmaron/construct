@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * run-matrix.mjs (spike e-recovery, construct-b0nny.5.5) — the interruption
+ * run-matrix.mjs (spike e-recovery) — the interruption
  * matrix driver. Spawns harness.mjs as a real child process per scenario,
  * lets it self-SIGKILL at the requested point (harness.mjs decides exactly
  * when; this driver only supplies --crash-at and reads the aftermath),

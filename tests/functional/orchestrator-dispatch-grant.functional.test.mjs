@@ -38,7 +38,7 @@ test('every host grants the orchestrator both dispatch tools', () => {
     // self-populates CONSTRUCT_TOOLKIT_DIR from it when unset — it never needs the
     // var supplied externally. Setting it here would also feed
     // lib/paths.mjs's constructDir(), which lib/state-root.mjs's
-    // machine-scoped state root (ADR-0066) builds on, redirecting real state
+    // machine-scoped state root builds on, redirecting real state
     // into repoRoot instead of the sandboxed HOME.
     const r = spawnSync(process.execPath, [join(repoRoot, 'scripts', 'sync-worker-profiles.mjs'), '--project'], {
       cwd: sandbox.root,

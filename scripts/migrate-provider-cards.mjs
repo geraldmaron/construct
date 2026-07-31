@@ -1,5 +1,5 @@
 /**
- * scripts/migrate-provider-cards.mjs — generate registry/provider-cards.json (construct-4uxq0.13.7).
+ * scripts/migrate-provider-cards.mjs — generate registry/provider-cards.json.
  *
  * Reconciles, without replacing, two prior scattered sources into Provider
  * Card form per schemas/provider-card.schema.json:

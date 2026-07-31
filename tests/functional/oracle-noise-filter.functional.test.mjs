@@ -87,7 +87,7 @@ function countLines(file) {
 }
 
 // Isolates the contract-violations signal from every other verdict input,
-// including the ADR-0091 collection-outcome signals real collectors can
+// including the collection-outcome signals real collectors can
 // surface on a synthetic tmpdir project/root (an empty audit-artifacts or
 // registry directory reads as not-run/collection-error otherwise), so a
 // verdict assertion here only reflects the noise-filtering behavior under

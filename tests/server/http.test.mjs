@@ -1,6 +1,6 @@
 /**
  * tests/server/http.test.mjs — unit coverage for lib/server/http.mjs's pure
- * helpers (construct-b0nny.26, E7). The socket-bound behavior is proven in
+ * helpers. The socket-bound behavior is proven in
  * tests/functional/workspace-server.functional.test.mjs against a real
  * Postgres; this file covers resolveBindTarget, whose Number(undefined)=NaN
  * edge once crashed the default `construct server start` (no port env) with

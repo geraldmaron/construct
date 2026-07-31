@@ -1,12 +1,12 @@
 /**
- * tests/functional/env-shadow-warning-cli.functional.test.mjs — construct-6y6w.3.
+ * tests/functional/env-shadow-warning-cli.functional.test.mjs.
  *
  * bin/construct's fill-missing-only merge loop lets a conflicting shell export
  * win over config.env, the opposite of the MCP server's file-wins merge
  * (lib/mcp/server.mjs). loadConstructEnv's shadow warning names whichever
  * value the caller says wins via `shadowWinner`; bin/construct must pass
  * `shadowWinner: 'shell'` so the printed warning matches its own behavior.
- * That argument shipped in 2284206c (construct-xj96.12) but a later commit
+ * That argument shipped in 2284206c but a later commit
  * (5ad34e0a) dropped it while touching an adjacent line, and
  * tests/env-config/shadow-warning.test.mjs only exercises
  * shadowWarningMessage() directly — it never spawns bin/construct, so the

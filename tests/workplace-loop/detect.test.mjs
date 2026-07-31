@@ -1,6 +1,6 @@
 /**
  * tests/workplace-loop/detect.test.mjs — unit coverage for
- * lib/workplace-loop/detect.mjs (construct-b0nny.25), including the
+ * lib/workplace-loop/detect.mjs, including the
  * no-fabrication proof (requirement: "a no-op run reports 'nothing new,'
  * never invents activity") against an injected, real-shaped fake source —
  * not spike D's static fixture file, a live-call-shaped provider double

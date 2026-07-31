@@ -5,8 +5,7 @@
  * `.cursor/mcp.json` (and rules) even when Cursor is not detected on PATH.
  * Also pins `--with-cursor` as a union with detection (does not replace),
  * and proves Cursor does not get a duplicate `.cursor/skills/` tree —
- * skills stay under `.claude/skills/` (Cursor loads that path natively;
- * construct-p2wlb).
+ * skills stay under `.claude/skills/` (Cursor loads that path natively.
  */
 
 import test from 'node:test';

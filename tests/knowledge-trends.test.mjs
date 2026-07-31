@@ -5,7 +5,7 @@
  * clustering, escalation detection, and hot topic extraction.
  *
  * addObservation resolves project state through the machine-scoped state root
- * (ADR-0066), keyed by a hash of the tmp rootDir — so CONSTRUCT_HOME_OVERRIDE is
+ * keyed by a hash of the tmp rootDir — so CONSTRUCT_HOME_OVERRIDE is
  * pinned for the whole file to keep that write off the real developer
  * machine's $HOME.
  */
@@ -25,7 +25,7 @@ import {
 } from '../lib/knowledge/trends.mjs';
 
 // addObservation and the trend detectors resolve the machine-scoped state
-// root (ADR-0066) via CONSTRUCT_HOME_OVERRIDE read in-process, not via the rootDir
+// root via CONSTRUCT_HOME_OVERRIDE read in-process, not via the rootDir
 // argument each test passes — pin it file-wide or every test below writes
 // into the real developer machine's ~/.construct/projects.
 const HOME_SANDBOX = mkdtempSync(join(tmpdir(), 'construct-trends-home-'));

@@ -4,7 +4,7 @@
  * Guards construct-trxz.2: the `construct doctor credentials` diagnostics are
  * presence-only. They must not print any byte of a secret value and must never
  * RESOLVE a secret — no `op read`/`op run`, which is what would trigger a biometric
- * prompt. A non-prompting `op whoami` auth-mode check (construct-192h.6) is allowed
+ * prompt. A non-prompting `op whoami` auth-mode check is allowed
  * because `whoami` reads no vault item and never prompts.
  *
  * Real-process boundary: spawns the actual binary with a known secret in the env

@@ -1,13 +1,13 @@
 /**
  * tests/functional/model-policy.functional.test.mjs
  *
- * Exercises `construct models policy` (construct-760c.7) end-to-end and asserts
+ * Exercises `construct models policy` end-to-end and asserts
  * THE budget invariant: with only an OpenRouter credential and a budget policy,
  * no frontier model resolves for any tier or work category. Pricing is served
  * through a fetch-spy preload so the run is hermetic; the resolution sweep drives
  * the real binary with PATH stripped so no machine-ambient provider leaks in.
  *
- * Also covers: models.json is the only file mutated (R1), env-pin override
+ * Also covers: models.json is the only file mutated, env-pin override
  * attribution in `policy show` (R2/AC3), and the free-preset "report, do not
  * substitute" contract (AC2) plus the missing-price safety guard.
  */

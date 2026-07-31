@@ -1,6 +1,5 @@
 /**
- * tests/perf/hook-budgets.test.mjs — nightly gate for per-hook p95 budgets
- * (ADR-0029).
+ * tests/perf/hook-budgets.test.mjs — nightly gate for per-hook p95 budgets.
  *
  * Two-layer enforcement:
  *
@@ -11,7 +10,7 @@
  *
  *   2. The benchmark gate is opt-in via `CONSTRUCT_BENCH_HOOKS=1`. When
  *      enabled, the harness runs and any hook whose measured p95 exceeds
- *      its declared budget × tolerance (default 2×, per ADR-0029) fails
+ *      its declared budget × tolerance (default 2×) fails
  *      the test. CI wires this lane via the scheduled job, not per-PR —
  *      hook benchmarking is variance-heavy and would teach the team to
  *      ignore red builds if every PR ran it.

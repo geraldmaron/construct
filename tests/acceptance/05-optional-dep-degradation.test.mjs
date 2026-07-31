@@ -1,7 +1,7 @@
 /**
- * tests/acceptance/05-optional-dep-degradation.test.mjs — LMCP-L4 optional-dep degradation matrix.
+ * tests/acceptance/05-optional-dep-degradation.test.mjs — optional-dep degradation matrix.
  *
- * LMCP-L4: Optional-dependency degradation matrix suite.
+ * Optional-dependency degradation matrix suite.
  *
  * Proves that `construct` gracefully degrades when optional dependencies
  * are absent. Covers:
@@ -193,7 +193,7 @@ test('LMCP-L4: optional-dep degradation matrix', { timeout: 180_000 }, async (t)
 
   const binPath = join(tmpDir, 'node_modules', '.bin', 'construct');
 
-  // lib/paths.mjs resolves the ADR-0066 state root from process.env.HOME /
+  // lib/paths.mjs resolves the state root from process.env.HOME /
   // CONSTRUCT_HOME_OVERRIDE in the CHILD's own env, not this test process's env —
   // every spawned `construct` call below must be pinned to a throwaway
   // sandbox home or it leaks project-key directories into the real

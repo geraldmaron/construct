@@ -1,6 +1,6 @@
 /**
  * tests/fakes/fake-jira-transport.mjs — in-memory fake Jira REST transport
- * for the governed write adapter (LMCP-J3).
+ * for the governed write adapter.
  *
  * Implements the `jiraTransport` shape required by
  * lib/providers/contract/adapters/jira/governed-write.mjs:

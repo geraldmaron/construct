@@ -15,9 +15,9 @@ import {
   writeGraph, loadGraph, dependenciesOf, dependentsOf, nodesByType, nodeId, renameNode,
 } from '../../lib/graph/store.mjs';
 
-// construct-b0nny.3: the relational graph store (lib/graph/relational/)
-// resolves graph.db under the machine-scoped state root (resolveStateDir,
-// ADR-0066) whenever writeGraph/loadGraph touch the host graph on Node
+// the relational graph store (lib/graph/relational/)
+// resolves graph.db under the machine-scoped state root (resolveStateDir)
+// whenever writeGraph/loadGraph touch the host graph on Node
 // >=22.5. Pin CONSTRUCT_HOME_OVERRIDE so this suite never provisions state under
 // the real developer machine's ~/.construct/projects/ (the isolation
 // contract, tests/functional/README.md) — the same pattern
@@ -220,7 +220,7 @@ test('loadGraph on an empty root reports non-existent without throwing', () => {
   assert.deepEqual(dependenciesOf(graph, 'whatever'), []);
 });
 
-// construct-4uxq0.11.6: writeGraph/loadGraph carry partial/partialReasons so
+// writeGraph/loadGraph carry partial/partialReasons so
 // a rebuild that collected fewer than all its seed sources can mark itself
 // as such instead of meta.json silently reporting a full build.
 
@@ -259,7 +259,7 @@ test('loadGraph treats a meta.json with no partial field as false', () => {
   assert.deepEqual(graph.meta.partialReasons, []);
 });
 
-// construct-4uxq0.11.6: renameNode moves a node to a new id without dropping
+// renameNode moves a node to a new id without dropping
 // history — every edge referencing the old id is rewritten, the old id
 // becomes a tombstone (attrs.supersededBy), and dependenciesOf/dependentsOf
 // resolve the old id through the tombstone to the live node's edges.

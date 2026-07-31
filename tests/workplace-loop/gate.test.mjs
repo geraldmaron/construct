@@ -1,6 +1,6 @@
 /**
  * tests/workplace-loop/gate.test.mjs — unit coverage for
- * lib/workplace-loop/gate.mjs (construct-b0nny.25 requirement 3: real M2
+ * lib/workplace-loop/gate.mjs (real governed-write
  * chokepoint routing). Uses the real ApprovalQueue and the real
  * lib/writes/control-plane.mjs drain — only the destination adapter factory
  * is faked (tests/fakes/fake-jira-transport.mjs's precedent), matching

@@ -1,5 +1,5 @@
 /**
- * tests/orchestration-route-path.test.mjs — routePath payload end-to-end (construct-d1r7.15).
+ * tests/orchestration-route-path.test.mjs — routePath payload end-to-end.
  *
  * routeRequest already computed policyRouting, contractChain, dispatchReasons,
  * and proactive triggers separately; routePath packages them into one shared
@@ -41,7 +41,7 @@ function project() {
 test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} } });
 
 // planRun/runOrchestration resolve their state root through CONSTRUCT_HOME_OVERRIDE
-// (ADR-0066), same isolation tests/orchestration-runtime.test.mjs applies —
+// same isolation tests/orchestration-runtime.test.mjs applies —
 // without it these runs would write into the real developer machine's
 // ~/.construct/projects/.
 

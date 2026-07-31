@@ -161,7 +161,7 @@ const summary = (msg) => { if (!QUIET) console.log(msg); };
 
 // Project-tier host selection. `--hosts=claude,codex,…` (or CONSTRUCT_SYNC_HOSTS)
 // restricts which adapter sets the project tier writes, so `construct init` can
-// scaffold only the hosts the user actually has (construct-4xy6 / ADR-0027 §1).
+// scaffold only the hosts the user actually has.
 // Absent → detect installed hosts (plus config-dir fallbacks). `--all-hosts` /
 // `CONSTRUCT_SYNC_HOSTS=all` writes every HOST_KEYS entry. `--with-<host>` always
 // unions into the selection (with detection when --hosts= is omitted, or with an
@@ -704,7 +704,7 @@ export function renderWorkerProfilePolicySection(entry) {
 }
 
 // The native-subagent orchestration micro-prompt. A worked tool-call example lifts
-// small local models' tool-use reliability sharply (bead construct-c16l). Shared by the
+// small local models' tool-use reliability sharply. Shared by the
 // full path and the capability-tiered local path so both stay in sync.
 
 function orchestrationToolName(platform, toolName) {
@@ -800,9 +800,9 @@ function buildPrompt(entry, allEntries, platform, { capabilityTier = 'full' } = 
   prompt = inlinePerspectiveAntiPatterns(prompt, root, entry.id, console.warn, { preload: entry.preloadRoleGuidance === true });
   prompt = inlineValidationContract(prompt, root, entry.id);
 
-  // Platform-Native Orchestration Alignment (ADR-0002). All hosts receive the
+  // Platform-Native Orchestration Alignment. All hosts receive the
   // tool-bound micro-prompt when injectAgentRoster is set; the static 29-line
-  // roster was removed (construct-ymp5). Specialists resolve at runtime via
+  // roster was removed. Specialists resolve at runtime via
   // orchestration_policy, which returns the routed Worker Profiles.
 
   // Single Front Door: all hosts resolve Worker Profiles at runtime via
@@ -1120,7 +1120,7 @@ function syncClaude(entries, targetDir = null, wants = true) {
   }
   // A project sync with Claude deselected or undetected must not delete the
   // project's existing front-door agent — pruning on `!wants` turns a
-  // detection miss into data loss (construct-lqp4c's copilot precedent).
+  // detection miss into data loss (the copilot precedent).
   // Global scope keeps its unconditional sweep: it never writes an agent
   // file by design, so `wants` does not change what belongs there.
 
@@ -1225,7 +1225,7 @@ function isCodexMcpSupported() {
 // var that is unset ("Environment variable GITHUB_TOKEN for MCP server github is
 // not set"). Unlike OpenCode — which keeps the `{env:VAR}` ref and resolves it at
 // runtime — Codex must have the credential at sync time, so an entry whose token
-// env var is unresolved is omitted from the Codex config (construct-n6h7).
+// env var is unresolved is omitted from the Codex config.
 // Entries with no credential requirement always pass.
 
 function codexMcpEnvResolves(id, def, env = process.env) {
@@ -1240,7 +1240,7 @@ function syncCodex(entries, targetDir = null, wants = true) {
   // Deselected or undetected host: leave prior Codex outputs untouched. An
   // empty writeEntries set would otherwise prune every managed
   // `agents/*.toml` file and strip the managed config.toml block on a plain
-  // detection miss (construct-lqp4c's copilot precedent, generalized here).
+  // detection miss (the copilot precedent, generalized here).
 
   if (!wants) return;
 
@@ -1363,7 +1363,7 @@ function syncCopilot(entries, targetDir = null, wants = true) {
   // (lib/reconcile/adapter-prune.mjs), so a sync that did not select copilot
   // must never delete or degrade another run's files — the old empty-writeEntries
   // fall-through pruned .github/prompts and .github/agents and blanked the
-  // instructions block on every copilot-less sync (construct-lqp4c).
+  // instructions block on every copilot-less sync.
 
   if (!wants) return;
 
@@ -1495,7 +1495,7 @@ export function needsRefresh(existingEntry, desiredEntry, { root } = {}) {
 }
 
 // VS Code's orchestration tools default their working directory to the SERVER
-// process's cwd, which is host-launch-dependent (construct-6y6w.9) — the same
+// process's cwd, which is host-launch-dependent — the same
 // tool call can read/write a different project depending on which host
 // launched the server and from where. VS Code resolves `${workspaceFolder}`
 // against the workspace that owns the `.vscode/mcp.json` the entry lives in,
@@ -1593,8 +1593,8 @@ export function reconcileStaleManagedEntries(configMap, { registryMcp, rebuildEn
 // Start each session — the orchestrator's first move is an MCP call, so a dormant
 // server otherwise reads as "enable the MCP server". Neither removes the one-time
 // per-developer MCP trust grant, which VS Code stores locally, not in committed
-// config. `files.associations` marks the JSONC config files (construct-d1r7.4 made
-// them commented JSONC) as `jsonc` so VS Code stops flagging their `//` comments as
+// config. `files.associations` marks the JSONC config files (they are
+// commented JSONC) as `jsonc` so VS Code stops flagging their `//` comments as
 // invalid JSON. Scalar keys are applied only when unset; object-valued keys deep-merge
 // their missing sub-keys so a user's own associations/locations survive. A settings.json
 // that is not strict JSON (commented/JSONC or user-customized) is left untouched.
@@ -1668,7 +1668,7 @@ function syncVSCode(targetDir = null, wants = true) {
     // "every key is managed" check looks safe but is a near-no-op in the
     // common case — a project's mcp.json is almost always 100% Construct-
     // managed — so it still deleted the file on a plain detection miss
-    // (construct-lqp4c's copilot precedent, generalized here).
+    // (the copilot precedent, generalized here).
 
     if (!wants) return false;
 
@@ -1735,7 +1735,7 @@ function syncCursor(targetDir = null, wants = true) {
   // key is managed" check looks safe but is a near-no-op in the common case
   // — a project's mcp.json is almost always 100% Construct-managed — so it
   // still deleted the file and its rules on a plain detection miss
-  // (construct-lqp4c's copilot precedent, generalized here).
+  // (the copilot precedent, generalized here).
 
   if (!wants) return false;
 
@@ -1771,7 +1771,7 @@ function syncCursor(targetDir = null, wants = true) {
 
     // Glob-scoped language rules land as managed per-rule .mdc files only when
     // the project's own files match their globs — Cursor's native auto-attach
-    // convention. See docs/guides/concepts/rules-delivery.md.
+    // convention.
     try {
       emitCursorRules({ rulesDir: path.join(root, "rules"), targetDir, dryRun: DRY_RUN });
     } catch (err) {
@@ -1790,7 +1790,7 @@ function opencodePermissions(entry) {
     ? Object.fromEntries(Object.entries(entry.permissions).map(([k, v]) => [k, v]))
     : { edit: entry.canEdit === false ? "deny" : "allow", bash: "allow" };
 
-  // Agentic Scope Reduction (ADR-0002). Serializing 100+ MCP tool schemas into a
+  // Agentic Scope Reduction. Serializing 100+ MCP tool schemas into a
   // small local model's prompt overruns its context window and dilutes attention,
   // collapsing output. OpenCode's per-agent permission map prunes the surface: the
   // orchestrator keeps only orchestration + core tools and hands execution to
@@ -1851,7 +1851,7 @@ function syncOpencode(entries, targetDir = null, wants = true) {
   // name match that can silently miss, and even when it works it is a
   // near-no-op in the common case — a project's config is almost always
   // 100% Construct-managed — so it still deleted the file and its plugins on
-  // a plain detection miss (construct-lqp4c's copilot precedent, generalized
+  // a plain detection miss (the copilot precedent, generalized
   // here).
 
   if (!wants) return false;
@@ -2044,7 +2044,7 @@ function syncOpencode(entries, targetDir = null, wants = true) {
     // The sync-set loop above only visits `registryMcp` ids, so a managed-but-optional
     // entry (e.g. `memory` in project scope) with a stale toolkit path is never
     // revisited here either — the same immortal-entry gap fixed for VS Code/Cursor/
-    // Claude project (construct-6y6w.1). `getOpenCodeMcpId` keys config.mcp by the
+    // Claude project. `getOpenCodeMcpId` keys config.mcp by the
     // host id rather than the catalog id, so map it back before checking ownership.
     const catalogIdForOpenCodeKey = new Map(
       Object.keys(managedMcpDefs()).map((catalogId) => [getOpenCodeMcpId(catalogId), catalogId]),
@@ -2384,7 +2384,7 @@ function syncSkills(targetDir = null) {
  * targeted `~/.agents/skills/`; host CLIs and stale syncs have also been
  * observed leaving project-local `.agents/skills` (and sibling host mirrors).
  * After staged commits land, remove those mirrors so lean Claude sync cannot
- * leave a second skills tree behind (construct-d23f3 / CI shard-2 guard).
+ * leave a second skills tree behind (CI shard-2 guard).
  */
 function refuseProjectSkillsMirrors(targetDir) {
   if (!targetDir || DRY_RUN) return [];

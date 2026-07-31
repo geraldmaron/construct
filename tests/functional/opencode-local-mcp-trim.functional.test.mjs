@@ -1,5 +1,5 @@
 /**
- * opencode-local-mcp-trim.functional.test.mjs — bead construct-5b6u.
+ * opencode-local-mcp-trim.functional.test.mjs —.
  *
  * OpenCode 1.15.4 has no per-session tool filter, so the heavy external MCP
  * servers (context7/github/memory/sequential-thinking/playwright) can only be
@@ -41,7 +41,7 @@ function seedConfig(home, { model = undefined, ollamaModels = {} } = {}) {
 // self-populates CONSTRUCT_TOOLKIT_DIR from it when unset — it never needs the var
 // supplied externally. Setting it here would also feed lib/paths.mjs's
 // constructDir(), which lib/state-root.mjs's machine-scoped state root
-// (ADR-0066) builds on, redirecting real state into repoRoot instead of the
+// builds on, redirecting real state into repoRoot instead of the
 // sandboxed HOME already in `env`.
 
 function runSync(env) {

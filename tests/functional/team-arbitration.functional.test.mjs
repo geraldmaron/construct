@@ -1,5 +1,5 @@
 /**
- * tests/functional/team-arbitration.functional.test.mjs — construct-72gqn.17 (L4, hermetic).
+ * tests/functional/team-arbitration.functional.test.mjs — (L4, hermetic).
  *
  * The capstone of the specialist thread: proves the base chain actually collaborates, not
  * just runs in sequence. With a scripted provider fetch, the engineer makes a choice, the
@@ -10,7 +10,7 @@
  *
  * Honest scope: this is sequential-chain arbitration (disagreement surfaced and carried
  * forward for reconciliation), not a true critic/reviser loop that sends work back — that
- * topology is deferred to construct-72gqn.30 (D10). The live-model variant is the
+ * topology is deferred. The live-model variant is the
  * team.arbitration.base-chain catalog scenario (opt-in via CONSTRUCT_CERTIFY_LIVE=1).
  */
 

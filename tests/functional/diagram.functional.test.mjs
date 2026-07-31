@@ -6,7 +6,7 @@
  * Contract: source is ALWAYS produced and the command ALWAYS exits 0,
  * whether or not a renderer binary (D2 / Graphviz dot) is present. When a
  * renderer IS present, a rendered SVG must also appear. This asserts the
- * graceful-degradation guarantee from ADR-0001 (zero-npm-core): rendering
+ * graceful-degradation guarantee (zero-npm-core): rendering
  * goes through external system binaries detected at runtime, and absence
  * degrades to source-only output rather than crashing.
  */
@@ -23,7 +23,7 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const BIN = path.join(REPO, 'bin', 'construct');
 
-// lib/paths.mjs resolves the machine-scoped state root (ADR-0066) from
+// lib/paths.mjs resolves the machine-scoped state root from
 // process.env directly, so every spawned `construct` needs its own sandboxed
 // HOME to avoid leaking test projects into the real developer machine's
 // ~/.construct/projects/.

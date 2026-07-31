@@ -1,5 +1,5 @@
 /**
- * tests/registry/surface-map-manifest.test.mjs — LMCP-B7: COMMAND_SURFACE/
+ * tests/registry/surface-map-manifest.test.mjs — COMMAND_SURFACE/
  * SURFACE_TIERS moved from a hardcoded dict to
  * lib/registry/manifests/surface-map.default.json, with
  * `.construct/registry/surface-map.json` project-override support. Asserts the

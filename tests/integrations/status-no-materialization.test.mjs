@@ -1,9 +1,9 @@
 /**
- * tests/integrations/status-no-materialization.test.mjs — construct-192h.7:
+ * tests/integrations/status-no-materialization.test.mjs —
  * `construct integrations status` must never materialize a credential.
  *
  * detectIntegrationConfig backs the read-only `status` subcommand (bin/construct)
- * and must report presence by shape only (ADR-0049 §2: "never to merely list or
+ * and must report presence by shape only (never to merely list or
  * check"). This plants a booby-trapped shell rc file that writes a sentinel only
  * if actually sourced by a shell, and a failing `op` shim on PATH that writes a
  * sentinel only if actually invoked, then asserts detection never trips either —

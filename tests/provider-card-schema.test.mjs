@@ -3,8 +3,7 @@
  *
  * Exercises lib/providers/provider-card.mjs's validateProviderCard and
  * validateProviderCardRegistry against schemas/provider-card.schema.json,
- * using tests/fixtures/provider-cards/ valid/invalid fixtures
- * (construct-4uxq0.13.7).
+ * using tests/fixtures/provider-cards/ valid/invalid fixtures.
  */
 
 import assert from 'node:assert/strict';

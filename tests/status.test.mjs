@@ -20,7 +20,7 @@ import { saveRun } from '../lib/orchestration/run-store.mjs';
 import { tempDir } from './helpers.mjs';
 
 // Orchestration-run reads resolve through the machine-scoped state root
-// (ADR-0066), so CONSTRUCT_HOME_OVERRIDE is pinned for the whole file to keep them
+// so CONSTRUCT_HOME_OVERRIDE is pinned for the whole file to keep them
 // off the real developer machine's $HOME.
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-status-home-'));
@@ -672,11 +672,11 @@ test('buildStatus detects MCP from Claude marketplace plugins', async () => {
   assert.match(linear.message, /Claude Code/);
 });
 
-// ── recentRunExecutionStates: prepared vs executed recent runs (LMCP-F4) ────
+// ── recentRunExecutionStates: prepared vs executed recent runs ────
 
 // Writes through saveRun (lib/orchestration/run-store.mjs) so the fixture
 // lands wherever the real writer resolves it — the machine-scoped state root
-// (ADR-0066), not a hardcoded project-relative path.
+// not a hardcoded project-relative path.
 
 function writeOrchestrationRun(rootDir, run) {
   saveRun(rootDir, run);
@@ -780,7 +780,7 @@ test('recentRunExecutionStates reports zero when no orchestration runs exist', a
   assert.doesNotMatch(report, /Recent runs:/);
 });
 
-// LMCP-C7: workflows section sourced from the living graph (graph validate),
+// Workflows section sourced from the living graph (graph validate),
 // so status can never report a workflow healthy when the graph disagrees.
 
 test('workflows section reports graph-not-built when .construct/graph is absent', async () => {

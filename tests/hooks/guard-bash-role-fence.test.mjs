@@ -1,8 +1,8 @@
 /**
  * tests/hooks/guard-bash-role-fence.test.mjs — role-fence actor-identity gate
- * in isolation (construct-7164), plus a cross-hook check that guard-bash's
+ * in isolation, plus a cross-hook check that guard-bash's
  * CONSTRUCT_AGENT_ID lookup agrees with agent-tracker's real per-agent
- * filename convention (construct-diq1).
+ * filename convention.
  *
  * Drives lib/hooks/guard-bash.mjs directly (spawned as a subprocess against
  * synthetic stdin/env, not via live PreToolUse dispatch) with crafted

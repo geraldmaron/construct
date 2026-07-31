@@ -14,7 +14,7 @@
  * explicitly in t.after. The configured port is set to the child's real listening port,
  * and lsof is faked to report the child's real PID (so the test never shells out).
  *
- * Contract (CX-AUDIT-RUNTIME-003 / -004): an owner lacking Construct ownership markers
+ * Contract (004): an owner lacking Construct ownership markers
  * (PID/command/cwd/env-marker/lock recorded at start) must be REPORTED, not killed.
  * Current stop signals the foreign owner, so the assertion fails — proving the hazard.
  */

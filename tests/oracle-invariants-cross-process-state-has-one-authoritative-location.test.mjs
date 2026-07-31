@@ -27,11 +27,11 @@ function makeFixtureRepo(t) {
 
   fs.writeFileSync(
     path.join(cwd, 'lib', 'state-root.mjs'),
-    "// tracked as construct-36w10\nexport function deriveProjectKey(projectRoot) { return projectRoot; }\n",
+    "// one of several project-identity derivations\nexport function deriveProjectKey(projectRoot) { return projectRoot; }\n",
   );
   fs.writeFileSync(
     path.join(cwd, 'lib', 'orchestration', 'store.mjs'),
-    "// tracked as construct-36w10\nexport function projectKey(config, cwd) { return cwd; }\n",
+    "// one of several project-identity derivations\nexport function projectKey(config, cwd) { return cwd; }\n",
   );
   fs.writeFileSync(
     path.join(cwd, 'lib', 'embed', 'daemon.mjs'),
@@ -52,7 +52,7 @@ test('invariant module exports id/layer per the registry contract', () => {
   assert.equal(layer, 1);
 });
 
-test('KNOWN_DERIVATION_SITES names exactly the three real sites ADR-0092 documents', () => {
+test('KNOWN_DERIVATION_SITES names exactly the three real derivation sites', () => {
   assert.deepEqual(KNOWN_DERIVATION_SITES, [
     { file: 'lib/state-root.mjs', functionName: 'deriveProjectKey' },
     { file: 'lib/orchestration/store.mjs', functionName: 'projectKey' },
@@ -69,18 +69,18 @@ test('scanForDerivationSites finds every allowlisted exported function name acro
   assert.ok(keys.includes('lib/embed/daemon.mjs::resolveRootDir'));
 });
 
-test('check(): all known sites present and tracked rolls up to passed', async (t) => {
+test('check(): all known sites present and documented rolls up to passed', async (t) => {
   const cwd = makeFixtureRepo(t);
   fs.writeFileSync(
     path.join(cwd, 'lib', 'embed', 'daemon.mjs'),
-    "// tracked as construct-36w10\nexport function resolveRootDir(env, cwd) { return cwd; }\n",
+    "// one of several project-identity derivations\nexport function resolveRootDir(env, cwd) { return cwd; }\n",
   );
   const result = await check({ cwd, knownSites: FIXTURE_KNOWN_SITES });
   assert.equal(result.status, 'passed');
   assert.equal(result.violations.length, 0);
 });
 
-test('check(): a previously-tracked known site that loses its tracking-marker reference regresses to a violation', async (t) => {
+test('check(): a known site that stops documenting the divergence regresses to a violation', async (t) => {
   const cwd = makeFixtureRepo(t);
   fs.writeFileSync(
     path.join(cwd, 'lib', 'state-root.mjs'),

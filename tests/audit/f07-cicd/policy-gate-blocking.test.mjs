@@ -7,7 +7,7 @@
  * gate that cannot fail the build is documentation, not a gate — the audit
  * requires policy gates to be blocking.
  *
- * Contract this encodes (CX-AUDIT-CI-003 / template-policy): the template-policy
+ * Contract this encodes (template-policy): the template-policy
  * step (and any step named like a policy/quality gate) MUST NOT carry
  * `continue-on-error: true`. The assertion locates the `template policy` step in
  * ci.yml and asserts the step is not soft-failed.

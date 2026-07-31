@@ -110,7 +110,7 @@ ensureConstructCredentials({ env: process.env, cwd: PROJECT_ROOT, home: HOME });
 // The CLI only fills keys missing from process.env, so a conflicting shell
 // export wins here — the opposite of the MCP server's file-wins merge.
 // shadowWinner: 'shell' keeps the warning honest about which value the CLI
-// actually applies (construct-6y6w.3 / construct-xj96.12).
+// actually applies.
 
 const ENV = loadConstructEnv({ rootDir: PROJECT_ROOT, homeDir: HOME, env: process.env, shadowWinner: 'shell' });
 for (const [key, value] of Object.entries(ENV)) {
@@ -422,7 +422,7 @@ async function cmdSync(args) {
     process.exit(syncStatus);
   }
 
-  // State reconciliation (ADR-0027): bring on-disk state in line with the
+  // State reconciliation: bring on-disk state in line with the
   // current disposition contract. Auto-safety tasks run silently; ask-safety
   // tasks surface via construct doctor instead. --reconcile=<id> runs one task
   // on explicit consent (the path for ask-safety tasks). --no-reconcile
@@ -705,7 +705,7 @@ async function cmdDoctor() {
     }
   }
 
-  // Legacy in-project heavy state (ADR-0066): runtime/traces/lancedb now
+  // Legacy in-project heavy state: runtime/traces/lancedb now
   // resolve through the machine-scoped state root, so a project that still
   // carries these directories is holding pre-refit state at the old
   // project-local path. No auto-fix — the ADR calls for manual deletion, not
@@ -753,8 +753,8 @@ async function cmdDoctor() {
     add(`Models — check failed: ${err.message}`, false, true);
   }
 
-  // Worker-backend and web-capability visibility (construct-1yhp.2,
-  // construct-1yhp.8): reuse buildOrchestrationReadiness — the same
+  // Worker-backend and web-capability visibility: reuse
+  // buildOrchestrationReadiness — the same
   // resolution orchestration_run itself calls — so doctor can never
   // advertise a backend/web mode that diverges from what a run would
   // actually get. Both lines are advisory only; the resolved values never
@@ -777,7 +777,7 @@ async function cmdDoctor() {
     add(`Worker backend / web capability check failed: ${err.message}`, false, true);
   }
 
-  // Provider worker reliability settings (construct-5wkl): the effective
+  // Provider worker reliability settings: the effective
   // per-call timeout and retry policy are resolved the same way the worker
   // itself resolves them (resolveNonNegativeSetting over CONSTRUCT_PROVIDER_*),
   // so this can never drift from what a real provider-backed run applies, and
@@ -794,8 +794,8 @@ async function cmdDoctor() {
   }
 
 
-  // Opt-in deep credential check (construct-1yhp.5). Default doctor stays
-  // presence-first (construct-trxz: a default-on op:// probe would fight the
+  // Opt-in deep credential check. Default doctor stays
+  // presence-first (a default-on op:// probe would fight the
   // prompt-storm mitigation) — `--probe-providers` performs the real network
   // auth probe only for providers already presence-configured.
   if (args.includes('--probe-providers')) {
@@ -923,7 +923,7 @@ async function cmdDoctor() {
   add('performance-reviews/ ready', fs.existsSync(perfReviewsDir));
 
   // Living-graph truth: doctor runs `graph validate` so workflow/manifest drift
-  // surfaces as a health check, not only via the standalone command (LMCP-C7).
+  // surfaces as a health check, not only via the standalone command.
 
   try {
     const { checkGraphValidateForDoctor } = await import('../lib/doctor/graph-validate.mjs');
@@ -1039,7 +1039,7 @@ async function cmdDoctor() {
     add(`Resource budget check failed: ${err.message}`, false, true);
   }
 
-  // construct-95phc.3: cumulative spend must be re-verifiable from the real
+  // Cumulative spend must be re-verifiable from the real
   // ledgers, not a placeholder — cost-ledger.mjs's USD/day figures and
   // unattended-budget.mjs's token/day figures for daemon-originated spend.
   try {
@@ -1119,7 +1119,7 @@ async function cmdDoctor() {
     // isHealthy() connects to LanceDB, which creates the index directory on
     // first touch — checking existence first keeps doctor from provisioning
     // the vector store on a project that has never run semantic search
-    // (construct-rf26.17: lazy provisioning, not "on every project touch").
+    // (lazy provisioning, not "on every project touch").
     const { resolveStateDir } = await import('../lib/state-root.mjs');
     const lancedbPath = process.env.CONSTRUCT_LANCEDB_PATH || resolveStateDir(process.cwd(), 'lancedb', { ensureDir: false });
     if (fs.existsSync(lancedbPath)) {
@@ -1399,7 +1399,7 @@ async function cmdDoctor() {
   // for team/enterprise modes so users know which advertised features are unbuilt.
   // Solo mode is fully-implemented; this check is a no-op there.
   //
-  // Enterprise mode additionally applies ADR-0057's status contract: a
+  // Enterprise mode additionally applies the status contract: a
   // FAIL-CLOSED capability (tenant-isolation, isolated-workers) is architecturally
   // non-trivial and "must not be a warning; it must be a hard error" surfaced
   // "at startup (during construct doctor)". A LATER capability (rbac,
@@ -1456,7 +1456,7 @@ async function cmdDoctor() {
     add(`Team health check failed: ${err.message}`, false);
   }
 
-  // Reconciliation drift (ADR-0027). Any task reporting needsRepair is surfaced
+  // Reconciliation drift. Any task reporting needsRepair is surfaced
   // with its summary and the exact `construct sync --reconcile=<id>` command.
   // Auto tasks that still show drift (e.g. a run with --no-reconcile) and all
   // ask tasks both land here, since ask tasks never run from the auto pass.
@@ -1856,7 +1856,7 @@ async function cmdIngest(args) {
 
 async function cmdExport(args) {
   // construct export <markdown-file> --to=<pdf|docx|html> [--output=<path>]
-  // Optional capability per ADR-0024: requires pandoc on PATH (and typst for PDF).
+  // Optional capability: requires pandoc on PATH (and typst for PDF).
   // Absent tooling returns a structured "install X" error, not a crash.
 
   const positional = args.filter((a) => !a.startsWith('--'));
@@ -2059,7 +2059,7 @@ async function cmdPrune(args) {
   // Vector-indexed observations live in LanceDB, not flat files, so they
   // fall outside planPrune/executePrune's file-list model — purgeExpiredData
   // is a no-op when the index was never provisioned, matching the lazy
-  // vector-index contract (construct-rf26.17).
+  // vector-index contract.
   if (!dryRun) {
     const { purgeExpiredData } = await import('../lib/storage/admin.mjs');
     const purge = await purgeExpiredData(process.cwd(), { env: process.env });
@@ -3224,7 +3224,7 @@ async function cmdIntakeConfig(args) {
 
   const action = args[0];
 
-  // Single-zone model (ADR-0045 §C): the canonical `inbox/` is always watched.
+  // Single-zone model: the canonical `inbox/` is always watched.
   // Only maxDepth and additionalDirs are configurable.
 
   if (!action || action === 'show') {
@@ -4271,7 +4271,7 @@ async function cmdExecution(args) {
   println('Usage: construct execution resolve [--workflow-type T] [--strategy orchestrated|prompt-only|auto] [--host-model M] [--host-provider P] [--tier reasoning|standard|fast] [--no-construct] [--allow-cross-provider] [--json]');
 }
 
-// Human-readable summary of a shaped run's routePath (construct-d1r7.15) —
+// Human-readable summary of a shaped run's routePath —
 // shared by `orchestrate run` and `orchestrate status <id>` so both print the
 // same assignment/rationale line rather than drifting formats.
 
@@ -4342,7 +4342,7 @@ async function cmdOrchestrate(args) {
       mttrSummary = summarizeOrchestrationReadinessMttr(loadOrchestrationReadinessEvents({ homeDir: HOME }));
     } catch { /* telemetry summary must not break preflight */ }
 
-    // Opt-in deep credential check (construct-1yhp.5). Default preflight stays
+    // Opt-in deep credential check. Default preflight stays
     // presence-first — `--deep` performs the real network auth probe, only for
     // providers the presence-based catalog already marks configured.
     let deepProbes = null;
@@ -4497,7 +4497,7 @@ async function cmdOrchestrate(args) {
     };
     // runOrchestration/executeRun resolve the worker backend from opts.workerBackend,
     // not from request — the flag must reach opts explicitly or an override is silently
-    // dropped (construct-1xlz).
+    // dropped.
 
     const runOpts = cliWorkerBackend ? { workerBackend: cliWorkerBackend } : {};
     let run;
@@ -4516,7 +4516,7 @@ async function cmdOrchestrate(args) {
     const shaped = shapeRun(run);
     println(`Run ${run.runId} — ${shaped.status} · executionMode=${shaped.executionMode} · backend=${run.workerBackend} · hostRole=${run.hostRole}`);
     if (shaped.degraded) println(`  degraded: ${shaped.degradationReason}`);
-    // construct-vzg2i.2: shapeRun's message field carries the loud prepare-only
+    // shapeRun's message field carries the loud prepare-only
     // statement + exact next step so it never sits only in run metadata a
     // caller has to know to check.
     if (shaped.message) println(`  ${shaped.message}`);
@@ -7379,7 +7379,7 @@ const handlers = new Map([
      return cmdGraph(args);
    }],
    ['flow', async (args) => cmdFlow(args)],
-   // `workspace-domain` (construct-b0nny.22, target-model.md concept 1), not
+   // `workspace-domain`, not
    // `workspace` — that verb is already the multi-PM product-intelligence
    // command (cmdWorkspace, lib/embed/workspaces.mjs, line ~7051 above), a
    // distinct pre-existing concept. `handlers` is a Map keyed by this string,
@@ -7405,7 +7405,7 @@ const handlers = new Map([
      const code = await runWorkplaceLoopCli(args, { projectDir: process.cwd() });
      if (typeof code === 'number' && code !== 0) process.exit(code);
    }],
-   // Shared workspace server (construct-b0nny.26, E7) — additive team/
+   // Shared workspace server — additive team/
    // enterprise deployment mode over the local-first solo product. Not
    // reachable from any solo-mode command path; requires an explicit
    // `construct server start` invocation and a reachable Postgres.

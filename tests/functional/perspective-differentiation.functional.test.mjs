@@ -1,6 +1,6 @@
 /**
  * tests/functional/perspective-differentiation.functional.test.mjs — regression
- * guard for the Worker Profile/pack pipeline (LMCP-F3).
+ * guard for the Worker Profile/pack pipeline.
  *
  * A broken Worker Profile pipeline can make every worker run under the same
  * system prompt without any loud failure — the provider still returns 200s,
@@ -25,7 +25,8 @@
  *      asserts the convergence (identical fallback-shaped prompts) is
  *      actually detected, not silently accepted.
  *
- * @enforces ADR-0055 ADR-0056
+ * @enforces ADR-0055
+ * @enforces ADR-0056
  */
 
 import test, { after } from 'node:test';
@@ -94,7 +95,7 @@ test('security and product-manager Worker Profiles receive different system prom
 
   // Precondition for a meaningful comparison: both roles must have actually
   // resolved a real Worker Profile through the pack registry, never the generic
-  // solo-mode fallback (LMCP-E2). A test that skipped this check could pass
+  // solo-mode fallback. A test that skipped this check could pass
   // for the wrong reason — two fallback prompts differing only by role name
   // interpolation would look "different" without the pipeline having done
   // anything real.
@@ -133,7 +134,7 @@ test('security and product-manager Worker Profiles receive different system prom
 
 // ── Negative control ─────────────────────────────────────────────────────────
 // Proves the differentiation guard above is not vacuously true. Forcing BOTH
-// roles through the solo-mode Worker Profile fallback path (LMCP-E2) must produce
+// roles through the solo-mode Worker Profile fallback path must produce
 // convergent, near-identical system prompts (the fallback template differs
 // only by the interpolated role slug) — and the test must actively detect
 // that convergence via the workerProfileAvailable/degraded flags, rather than let a
@@ -164,7 +165,7 @@ test('negative control: fallback-mode convergence for both roles is detected via
 
   // Confirm the convergence premise: the fallback template is the same shape
   // for both roles, differing only by the interpolated slug — this is the
-  // silent-failure mode LMCP-E2 exists to make visible.
+  // silent-failure mode this check exists to make visible.
   const systemA = roleA.captured[0];
   const systemB = roleB.captured[0];
   const genericTemplate = /^Use the .+ Worker Profile\. Execute the assigned work within its policy fence and return the result directly\.$/;
@@ -193,7 +194,7 @@ test('negative control: fallback-mode convergence for both roles is detected via
   assert.equal(bothAvailable, false, 'the workerProfileAvailable guard must catch dual Worker Profile fallback convergence');
 });
 
-// ── Framework-attributable differentiation (LMCP-F8, ADR-0062 §3) ──────────
+// ── Framework-attributable differentiation ──────────
 //
 // The tests above prove two Worker Profiles see different SYSTEM PROMPTS. This
 // section proves a distinct, stronger claim about PLAN ASSEMBLY
@@ -203,7 +204,7 @@ test('negative control: fallback-mode convergence for both roles is detected via
 // framework identity, not by incidental prose. A text diff of two prompts
 // can never prove this — two prompts can differ in wording while asking for
 // the same structured output, or share wording while asking for different
-// structured output. The `emits` fingerprint is what ADR-0062 defines as the
+// structured output. The `emits` fingerprint is defined as the
 // framework-attributable signal: it names the reasoning framework's own
 // declared output contract, independent of how any single Worker Profile prompt
 // happens to be worded.

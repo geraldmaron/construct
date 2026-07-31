@@ -1,7 +1,7 @@
 /**
  * tests/registry-characterization.test.mjs
  *
- * Golden characterization of the registry-first extraction targets (self-audit construct-rr63.2.1,
+ * Golden characterization of the registry-first extraction targets (
  * opens the architecture-gate / risk R3). These snapshots pin the EXACT current values of the
  * data-shaped lists that are still hardcoded in code, so a Wave-3 extraction into a registry can
  * re-point the import source and prove byte-for-byte that behaviour did not change. No extraction

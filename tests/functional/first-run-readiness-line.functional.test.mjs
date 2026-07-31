@@ -1,7 +1,7 @@
 /**
  * tests/functional/first-run-readiness-line.functional.test.mjs
  *
- * construct-vzg2i.1: `construct init` and `construct doctor` must print a
+ * `construct init` and `construct doctor` must print a
  * plain first-run honesty line — EXECUTE when the config-resolved worker
  * backend is `provider` and a materialized key is present for the resolved
  * provider family, PLAN otherwise — reusing buildOrchestrationReadiness (the

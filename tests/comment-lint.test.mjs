@@ -283,10 +283,8 @@ test('artifact lint: construct-lint-ignore marker suppresses the hit on that lin
   );
 });
 
-// --- future-state doc marker check (construct-9oi4.15.3 / LMCP-O3) ---
-//
-// A guide or operations doc claiming staged/not-yet-shipped behavior must
-// cite a construct-* bead id within two lines.
+// A guide or operations doc claiming staged/not-yet-shipped behavior must cite
+// an id from the linted project's own tracker within two lines.
 
 test('future-state marker: flags "staged/experimental" in a guide doc with no bead id nearby', () => {
   const body = '# Guide\n\nBrokered MCP dispatch is staged/experimental in this release.\n';
@@ -384,6 +382,94 @@ test('future-state marker: .mdx guide docs are checked (architecture.mdx / deplo
   }
 });
 
+// The required id belongs to the project being linted. A downstream repo cites
+// its own tracker, so these fixtures declare a prefix that is not this one's and
+// assert the check follows it.
+
+function withTracker(dir, prefix) {
+  fs.mkdirSync(path.join(dir, '.beads'), { recursive: true });
+  fs.writeFileSync(path.join(dir, '.beads', 'config.yaml'), `issue-prefix: "${prefix}"\n`);
+}
+
+function futureStateErrors(dir, full) {
+  process.env.CONSTRUCT_ARTIFACT_LINT_MODE = 'block';
+  try {
+    return lintFile(full, { rootDir: dir }).errors.filter((e) => e.label.includes('future-state doc marker'));
+  } finally {
+    delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  }
+}
+
+test('future-state marker: a declared tracker prefix is what the doc must cite', () => {
+  const body = '# Guide\n\nBrokered dispatch is staged/experimental (tracked: acme-4821).\n';
+  const { dir, full } = makeTempFile('docs/guides/concepts/fixture.md', body);
+  withTracker(dir, 'acme');
+  assert.equal(futureStateErrors(dir, full).length, 0, 'an id in the project\'s own prefix satisfies the marker');
+});
+
+test('future-state marker: an id from a different tracker does not satisfy the check', () => {
+  const body = '# Guide\n\nBrokered dispatch is staged/experimental (tracked: construct-9oi4.10).\n';
+  const { dir, full } = makeTempFile('docs/guides/concepts/fixture.md', body);
+  withTracker(dir, 'acme');
+  const errors = futureStateErrors(dir, full);
+  assert.equal(errors.length, 1, `a foreign prefix must not satisfy the marker; got ${JSON.stringify(errors)}`);
+  assert.ok(errors[0].label.includes('acme-*'), `the message must name the project's own prefix; got ${errors[0].label}`);
+});
+
+test('future-state marker: with no tracker configured, a citation anchors the claim', () => {
+  const body = '# Guide\n\nBrokered dispatch is staged/experimental.\n\nSee https://example.invalid/roadmap for status.\n';
+  const { dir, full } = makeTempFile('docs/guides/concepts/fixture.md', body);
+  assert.equal(futureStateErrors(dir, full).length, 0, 'a citation is a valid anchor when no tracker exists');
+});
+
+test('future-state marker: hyphenated prose is not mistaken for a work-item id', () => {
+  const body = '# Guide\n\nThe end-to-end path is staged/experimental for now.\n';
+  const { dir, full } = makeTempFile('docs/guides/concepts/fixture.md', body);
+  assert.equal(futureStateErrors(dir, full).length, 1, 'ordinary hyphenated words must not read as a tracker id');
+});
+
+test('external reference: the linted project\'s own tracker prefix is banned in content Construct wrote', () => {
+  const body = [
+    '/**',
+    ' * lib/fixture.mjs — test.',
+    ' */',
+    '// the queue drains before the lease expires (acme-4821)',
+    'export const x = 1;',
+  ].join('\n');
+  const { dir, full } = makeTempFile('lib/fixture.mjs', body);
+  withTracker(dir, 'acme');
+  const labels = lintFile(full, { rootDir: dir, constructAuthored: true }).warnings.map((w) => w.label);
+  assert.ok(labels.some((l) => l.includes('tracker id')), `a tracker id Construct wrote must be flagged; got ${JSON.stringify(labels)}`);
+});
+
+test('external reference: a person\'s own tracker id in their own repo is left alone', () => {
+  const body = [
+    '/**',
+    ' * lib/fixture.mjs — test.',
+    ' */',
+    '// the queue drains before the lease expires (acme-4821)',
+    'export const x = 1;',
+  ].join('\n');
+  const { dir, full } = makeTempFile('lib/fixture.mjs', body);
+  withTracker(dir, 'acme');
+  const labels = lintFile(full, { rootDir: dir }).warnings.map((w) => w.label);
+  assert.ok(!labels.some((l) => l.includes('tracker id')), `a consuming project's own id is its own call; got ${JSON.stringify(labels)}`);
+});
+
+test('external reference: a project-prefixed word without a work-item shape is not a tracker id', () => {
+  const body = [
+    '/**',
+    ' * lib/fixture.mjs — test.',
+    ' */',
+    '// the acme-widget cache is invalidated on write',
+    'export const x = 1;',
+  ].join('\n');
+  const { dir, full } = makeTempFile('lib/fixture.mjs', body);
+  withTracker(dir, 'acme');
+  const labels = lintFile(full, { rootDir: dir }).warnings.map((w) => w.label);
+  assert.ok(!labels.some((l) => l.includes('tracker id')), `a hyphenated name is not an id; got ${JSON.stringify(labels)}`);
+});
+
 // --- external project name in a code comment ---
 //
 // Comparisons against other software projects belong in decision documents
@@ -450,4 +536,86 @@ test('external project name: docs/decisions/** is exempt (citations are required
   } finally {
     delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
   }
+});
+
+// External-reference bans. Each case is a single comment line inside an
+// otherwise clean file, so any warning that comes back is attributable to it.
+
+function warnsOn(commentLine) {
+  const body = [
+    '/**',
+    ' * lib/fixture.mjs — test.',
+    ' */',
+    commentLine,
+    'export const x = 1;',
+  ].join('\n');
+  const { dir, full } = makeTempFile('lib/fixture.mjs', body);
+  return lintFile(full, { rootDir: dir }).warnings.map((w) => w.label);
+}
+
+test('external reference: bead id in a comment is flagged', () => {
+  assert.ok(warnsOn('// the queue drains before the lease expires (construct-b0nny.25)').some((l) => l.includes('tracker id')));
+});
+
+test('external reference: program work-item ids are flagged', () => {
+  assert.ok(warnsOn('// LMCP-A6: every approval-required call creates a durable record').some((l) => l.includes('tracker id')));
+  assert.ok(warnsOn('// each remote fetch is bounded (ORCH-004)').some((l) => l.includes('tracker id')));
+  assert.ok(warnsOn('// CX-AUDIT-LLMSEC-001 requires the wrapper to strip tool output').some((l) => l.includes('tracker id')));
+});
+
+test('external reference: a module name without a work-item shape is not a tracker id', () => {
+  assert.equal(warnsOn('// construct-postinstall runs on the user machine, never in CI').length, 0);
+});
+
+test('external reference: decision-document ids are flagged', () => {
+  assert.ok(warnsOn('// user-owned files are mutated only through replaceManagedBlock (ADR-0027 §2)').some((l) => l.includes('decision-document id')));
+  assert.ok(warnsOn('// routing metadata carries the team id (RFC-0004 §2)').some((l) => l.includes('decision-document id')));
+  assert.ok(warnsOn('// the acceptance criteria live in PRD-0002').some((l) => l.includes('decision-document id')));
+});
+
+test('external reference: a three-digit sample id in a format example is not a record id', () => {
+  assert.equal(warnsOn(" *   - [x] Target resolver — PROJ-123 · ADR-005").length, 0);
+  assert.equal(warnsOn(" * @property {string[]} docs - linked docs (e.g. 'ADR-005', 'PRD-012')").length, 0);
+});
+
+test('external reference: external standards are not decision documents', () => {
+  assert.equal(warnsOn('// unfold continuation lines per RFC 5545 §3.1').length, 0);
+  assert.equal(warnsOn('// time-ordered identity: UUIDv7, RFC 9562 §5.7').length, 0);
+  assert.equal(warnsOn('// traceparent propagation follows SEP-414').length, 0);
+});
+
+test('external reference: a document citation is flagged, a path the code writes is not', () => {
+  assert.ok(warnsOn('// the scope model is described in docs/guides/concepts/project-scopes.md').some((l) => l.includes('project document citation')));
+  assert.equal(warnsOn('// regenerate the AUTO regions in README.md and docs/README.md').length, 0);
+});
+
+test('external reference: a URL on the line is not read as a comment leader', () => {
+  const body = [
+    '/**',
+    ' * lib/fixture.mjs — test.',
+    ' */',
+    "export const src = 'https://example.com/docs (accessed 2026-06-22, per docs/usage.md)';",
+  ].join('\n');
+  const { dir, full } = makeTempFile('lib/fixture.mjs', body);
+  assert.equal(lintFile(full, { rootDir: dir }).warnings.length, 0);
+});
+
+test('dated claim: a decision or observation stamped with a date is flagged', () => {
+  assert.ok(warnsOn('// override semantics are full file replacement (decided 2026-05-14)').some((l) => l.includes('dated decision')));
+  assert.ok(warnsOn('// no workflow uses that action as of 2026-07-16').some((l) => l.includes('dated decision')));
+  assert.ok(warnsOn('// the 2026-05-13 UX audit covers these producers').some((l) => l.includes('dated decision')));
+});
+
+test('dated claim: a date used as a format example is not flagged', () => {
+  assert.equal(warnsOn('// `2026-05-28.jsonl` splits into base=2026-05-28 and ext=.jsonl').length, 0);
+});
+
+test('@enforces marker alone on a line is machine-read metadata, not prose', () => {
+  assert.equal(warnsOn(' * @enforces ADR-0015').length, 0);
+  assert.equal(warnsOn('// @enforces construct-tsyfe.10.6').length, 0);
+  assert.ok(warnsOn(' * @enforces ADR-0015 because the table shape is load-bearing').some((l) => l.includes('decision-document id')));
+});
+
+test('external reference: construct-lint-ignore suppresses the line', () => {
+  assert.equal(warnsOn('// quoted commit subject: "fix the drain (construct-b0nny.25)" construct-lint-ignore').length, 0);
 });

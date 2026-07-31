@@ -1,7 +1,7 @@
 /**
- * tests/enterprise/tenant.test.mjs — tenant context resolution (LMCP-H1).
+ * tests/enterprise/tenant.test.mjs — tenant context resolution.
  *
- * Pins ADR-0057 (A7) IMPLEMENT-NOW behavior: tenantId is resolved once from
+ * IMPLEMENT-NOW behavior: tenantId is resolved once from
  * config+env, validated against deployment mode, and propagated onto
  * orchestration run/task records and the intake queue factory. Solo/team
  * default to the explicit tenant 'local'; enterprise mode with no resolvable
@@ -38,7 +38,7 @@ function project() {
 test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} } });
 
 // planRun/executeRun resolve the run store through the machine-scoped state
-// root (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE from real process.env — the
+// root, which reads CONSTRUCT_HOME_OVERRIDE from real process.env — the
 // BASE_ENV bag above only feeds model-tier lookups. Pin it for the whole
 // file so these runs never write into the real developer machine's
 // ~/.construct/projects/.

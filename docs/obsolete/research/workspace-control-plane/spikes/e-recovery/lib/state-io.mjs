@@ -1,6 +1,6 @@
 /**
  * lib/state-io.mjs (spike e-recovery) — durable checkpoint primitives for the
- * recovery harness (construct-b0nny.5.5, directive §11 spike E).
+ * recovery harness (directive §11 spike E).
  *
  * A crash (real SIGKILL, in this spike) can land mid-write. Every durable
  * write here goes through writeJsonAtomic (write to a sibling .tmp file,

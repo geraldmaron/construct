@@ -1,5 +1,5 @@
 /**
- * tests/functional/workflow-contribution.functional.test.mjs — LMCP-D3.
+ * tests/functional/workflow-contribution.functional.test.mjs.
  *
  * Drives Procedure contribution in an isolated project (.construct/procedures),
  * proving contributed manifests are live end-to-end: invokeProcedure,

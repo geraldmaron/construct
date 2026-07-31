@@ -1,6 +1,6 @@
 /**
  * tests/fakes/fake-confluence-transport.mjs — in-memory fake Confluence REST
- * transport for the governed write adapter (LMCP-J4).
+ * transport for the governed write adapter.
  *
  * Implements the `confluenceTransport` shape required by
  * lib/providers/contract/adapters/confluence/governed-write.mjs:

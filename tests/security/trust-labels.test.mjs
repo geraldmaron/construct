@@ -8,7 +8,7 @@
  * Promoted from the F08 red fixture (tests/audit/f08-prompt-injection/
  * untrusted-ingest-labeling.red.mjs) which proved the labeling primitives did
  * not exist. This GREEN suite proves they now do, verifying every contract
- * the bead specifies (construct-9oi4.14.1):
+ * the bead specifies:
  *
  *   1. stampTrust — attaches _trust with correct fields.
  *   2. meetsMinTrustLevel — correct boolean across all level pairs.
@@ -20,7 +20,7 @@
  *
  * Run: node --test tests/security/trust-labels.test.mjs
  *
- * References: CX-AUDIT-LLMSEC-001, OWASP LLM01 [S12][S13]
+ * References: OWASP LLM01 [S12][S13]
  */
 
 import assert from 'node:assert/strict';

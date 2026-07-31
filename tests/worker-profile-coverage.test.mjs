@@ -1,5 +1,5 @@
 /**
- * tests/worker-profile-coverage.test.mjs — construct-72gqn.31 (H5-gen).
+ * tests/worker-profile-coverage.test.mjs.
  *
  * Pins the Worker Profile coverage floor: every registry profile must clear a
  * robustness minimum across four axes (skill emphasis, perspective,

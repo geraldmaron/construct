@@ -1,11 +1,11 @@
 /**
  * tests/functional/no-vector-fallback.functional.test.mjs — proves the
  * no-vector (keyword/BM25) retrieval adapter carries the observation memory
- * loop end to end when LanceDB is forced off (construct-b0nny.20 / M5b),
+ * loop end to end when LanceDB is forced off (M5b),
  * and that switching adapters loses no durable data.
  *
  * Isolation: CONSTRUCT_HOME_OVERRIDE redirects the machine-scoped state root
- * (ADR-0066) so the keyword index and LanceDB directory both land under the
+ * so the keyword index and LanceDB directory both land under the
  * tmpdir sandbox, never the developer's real ~/.construct. Global env vars
  * (CONSTRUCT_HOME_OVERRIDE, CONSTRUCT_RETRIEVAL_ADAPTER, CONSTRUCT_EMBEDDING_MODEL)
  * are restored in t.after() per the functional-test isolation contract.

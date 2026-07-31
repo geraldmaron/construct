@@ -1,5 +1,5 @@
 /**
- * tests/security/audit-redaction.test.mjs — construct-9oi4.14.3 (LMCP-N3).
+ * tests/security/audit-redaction.test.mjs.
  *
  * @owasp LLM02
  *

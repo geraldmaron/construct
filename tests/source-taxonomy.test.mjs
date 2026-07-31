@@ -3,7 +3,7 @@
  *
  * @enforces ADR-0017
  *
- * Bead construct-7zrh.1: pins that the research policy carries claim-relative
+ * Pins that the research policy carries claim-relative
  * classing and the Admiralty grade, the community catalog exists, and the
  * research templates' sources tables actually expose the Reliability/Credibility
  * columns the policy requires (reusing artifact-table-has-columns).

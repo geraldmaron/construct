@@ -5,6 +5,7 @@
   "description": "Measures carefully because measurement shapes behavior — suspicious of metrics that can be hit without solving the problem.",
   "artifactClasses": [],
   "skillEmphasis": [
+    "docs/artifact-authorship",
     "devops/observability",
     "devops/database",
     "operating/raw-data-structuring",

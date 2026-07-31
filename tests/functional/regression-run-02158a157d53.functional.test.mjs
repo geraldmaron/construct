@@ -16,7 +16,7 @@
  * CONSTRUCT_MODEL_ tier vars by construction), then asserts on the durable run file
  * under the sandbox HOME — not just the tool envelope.
  *
- * Dependency scope (construct-neq9.2, construct-neq9.3): resolveEmbeddedModel's
+ * Dependency scope: resolveEmbeddedModel's
  * credential-family-fallback (lib/embedded-contract/model-resolve.mjs:210-227)
  * resolves a runnable model straight from a present provider key when no tier
  * is pinned, and readiness.mjs consults resolveExecution so a PASS verdict is
@@ -89,7 +89,7 @@ function payload(result) {
   return text ? JSON.parse(text) : null;
 }
 
-// The run store resolves the machine-scoped state root (ADR-0066) via
+// The run store resolves the machine-scoped state root via
 // CONSTRUCT_HOME_OVERRIDE on process.env directly — the sandboxed HOME the
 // subprocess sees via sterileSpawnEnv is invisible to this process unless
 // the same override is pinned here around the read.

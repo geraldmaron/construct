@@ -1,8 +1,8 @@
 /**
  * tests/graph/relational-query-latency.test.mjs — hub-scale latency
- * regression pin for lib/graph/relational/queries.mjs (construct-b0nny.12).
+ * regression pin for lib/graph/relational/queries.mjs.
  *
- * construct-b0nny.5.1 (spike A, docs/notes/research/workspace-control-plane/
+ * (spike A, docs/notes/research/workspace-control-plane/
  * synthesis/spike-a-graph-foundation.md) found queryDown/queryPath/queryImpact
  * shared one uncapped, no-rel-filter recursive CTE that went from 2s at depth
  * 3 to a 12-30s hard kill at depth 5+ (or at a real 148-importer hub's
@@ -36,8 +36,8 @@ import { sqliteAvailable } from '../../lib/graph/relational/sqlite-db.mjs';
 import { writeGraph } from '../../lib/graph/relational/sqlite-store.mjs';
 import { queryDown, queryUp, queryPath, queryImpact } from '../../lib/graph/relational/queries.mjs';
 
-// construct-b0nny.3: the relational graph store resolves graph.db under the
-// machine-scoped state root (resolveStateDir, ADR-0066). Pin CONSTRUCT_HOME_OVERRIDE
+// the relational graph store resolves graph.db under the
+// machine-scoped state root (resolveStateDir). Pin CONSTRUCT_HOME_OVERRIDE
 // so this suite never provisions state under the real developer machine's
 // ~/.construct/projects/ — the same pattern tests/graph/store.test.mjs and
 // tests/graph/cli.test.mjs already established.

@@ -1,6 +1,6 @@
 /**
  * tests/workplace-loop/fingerprint.test.mjs — unit coverage for
- * lib/workplace-loop/fingerprint.mjs (construct-b0nny.25).
+ * lib/workplace-loop/fingerprint.mjs.
  */
 
 import test from 'node:test';

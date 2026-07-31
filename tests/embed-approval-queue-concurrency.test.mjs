@@ -3,7 +3,7 @@
  * atomic-persist regression coverage for lib/embed/approval-queue.mjs.
  *
  * Two ApprovalQueue instances pointed at the same persistPath stand in for
- * two OS processes sharing one durable queue file (ADR-0056). Covers:
+ * two OS processes sharing one durable queue file. Covers:
  *   1. enqueue() reloads from disk before its dedup check, so a second
  *      "process" enqueuing the same tool+args after the first never creates
  *      a duplicate awaiting_approval record.
@@ -12,7 +12,7 @@
  *      torn/partial line — including when a read is forced to interleave
  *      with an in-flight write.
  *   3. approve()/deny()/expireStale()/reclaimExpiredLeases() reload before
- *      persisting (construct-4uxq0.9.9), so a decider or sweeper holding a
+ * persisting, so a decider or sweeper holding a
  *      stale instance never drops records sibling processes persisted, and
  *      a decision racing a sibling's opposite decision is refused with the
  *      state machine's invalid-transition error instead of clobbering it.

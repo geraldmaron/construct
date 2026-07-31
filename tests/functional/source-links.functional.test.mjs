@@ -1,7 +1,7 @@
 /**
  * tests/functional/source-links.functional.test.mjs
  *
- * construct-wjap9.2: `construct sources link/unlink` writes the durable
+ * `construct sources link/unlink` writes the durable
  * `sources:` frontmatter block onto an artifact; lib/graph/build-source-links.mjs
  * turns it into `doc:<path> --derived_from--> source:<targetId>` graph edges
  * on the next `construct graph build`. Exercises both halves against the

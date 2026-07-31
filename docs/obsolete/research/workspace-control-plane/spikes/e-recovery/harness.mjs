@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * harness.mjs (spike e-recovery, construct-b0nny.5.5) — a real, resumable
+ * harness.mjs (spike e-recovery) — a real, resumable
  * multi-step workflow: dispatch -> execution -> artifact production ->
  * approval -> external write (simulated) -> integration -> graph update.
  *

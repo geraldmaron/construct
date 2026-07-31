@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * scripts/audit-project-identity.mjs — ADR-0092 reconciliation audit.
+ * scripts/audit-project-identity.mjs — project-identity reconciliation audit.
  *
  * Read-only report on project-identity state, run before any manual cleanup
  * of `~/.construct/projects/<key>/` directories left by a non-canonical
- * derivation (disposition-matrix.md D6, ADR-0092's Consequences §5). Never
+ * derivation. Never
  * deletes or merges anything — it only names what a human should review.
  *
  * Checks:
@@ -12,7 +12,7 @@
  *      whether its state directory already exists.
  *   2. The `homedir()`-fallback bucket a project with no `.construct/context.md`
  *      marker, no enclosing git repo, and no `CONSTRUCT_DATA_DIR` override still
- *      resolves to (ADR-0092's "second, independent divergence trigger") —
+ *      resolves to (a second, independent divergence trigger) —
  *      flagged, never merged automatically, since it may mix state from
  *      multiple unrelated local-only projects and cannot be safely
  *      disaggregated by inspection alone.

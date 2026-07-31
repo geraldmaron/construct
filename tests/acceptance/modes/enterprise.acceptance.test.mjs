@@ -1,5 +1,5 @@
 /**
- * tests/acceptance/modes/enterprise.acceptance.test.mjs — LMCP-L6 enterprise-mode
+ * tests/acceptance/modes/enterprise.acceptance.test.mjs — enterprise-mode
  * acceptance leg.
  *
  * Enterprise mode has 6 CAPABILITY_REGISTRY.enterprise entries (lib/mode-capabilities.mjs):
@@ -51,7 +51,7 @@ import { tempDir } from '../../helpers.mjs';
 import { rmTmpDir } from '../../helpers/cleanup.mjs';
 
 // buildStatus's storage/run-store probes resolve through the machine-scoped
-// state root (ADR-0066, lib/state-root.mjs) via the real homeDir() function,
+// state root (lib/state-root.mjs) via the real homeDir() function,
 // not the `homeDir` parameter passed into buildStatus() below — only
 // CONSTRUCT_HOME_OVERRIDE (a real process.env mutation) relocates that. Set for the
 // whole file so no probe here ever touches the real developer machine's $HOME.
@@ -167,7 +167,7 @@ test('[LMCP-L6] enterprise mode: status/doctor renders real capability truth and
     const entry = table.find((c) => c.id === regCap.id);
     assert.ok(entry, `capability ${regCap.id} must be in the rendered table`);
     assert.equal(entry.status, regCap.status, `rendered status for ${regCap.id} must match the registry, not a stale copy`);
-    // ADR-0057 status contract: the table must also carry the four-way category
+    // Status contract: the table must also carry the four-way category
     // (active/fail-closed/later/absent) so callers can't conflate a fail-closed
     // capability with a later one just because both show 'not-implemented'.
     assert.equal(entry.category, categorizeEnterpriseCapability(regCap), `rendered category for ${regCap.id} must follow ADR-0057's partition`);

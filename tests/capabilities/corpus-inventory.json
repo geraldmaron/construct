@@ -1,25 +1,25 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-29T00:22:04.492Z",
+  "generatedAt": "2026-07-30T23:47:22.127Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 1139,
+    "testFiles": 1140,
     "topLevelTestFiles": 430,
-    "nestedTestFiles": 709,
+    "nestedTestFiles": 710,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 52,
     "byLayer": {
       "unit": 750,
       "functional": 329,
       "visual": 14,
-      "integration": 44,
+      "integration": 45,
       "live-provider": 2
     },
     "byCategory": {
       "unit": 667,
       "functional": 329,
       "visual": 14,
-      "structural-guard": 22,
+      "structural-guard": 23,
       "contract-subsystem": 62,
       "integration": 33,
       "live-provider": 2,
@@ -66,7 +66,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/acceptance/05-optional-dep-degradation.test.mjs — LMCP-L4 optional-dep degradation matrix."
+      "maintainerNotes": "tests/acceptance/05-optional-dep-degradation.test.mjs — optional-dep degradation matrix."
     },
     {
       "path": "tests/acceptance/global-install.test.mjs",
@@ -82,7 +82,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/acceptance/k5-ink-react-degradation.functional.test.mjs — LMCP-K5 Ink/React"
+      "maintainerNotes": "tests/acceptance/k5-ink-react-degradation.functional.test.mjs — Ink/React"
     },
     {
       "path": "tests/acceptance/modes/enterprise.acceptance.test.mjs",
@@ -90,7 +90,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/acceptance/modes/enterprise.acceptance.test.mjs — LMCP-L6 enterprise-mode"
+      "maintainerNotes": "tests/acceptance/modes/enterprise.acceptance.test.mjs — enterprise-mode"
     },
     {
       "path": "tests/acceptance/modes/solo.acceptance.test.mjs",
@@ -98,7 +98,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/acceptance/modes/solo.acceptance.test.mjs — LMCP-L6 solo-mode acceptance leg."
+      "maintainerNotes": "tests/acceptance/modes/solo.acceptance.test.mjs — solo-mode acceptance leg."
     },
     {
       "path": "tests/acceptance/modes/team.acceptance.test.mjs",
@@ -106,7 +106,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/acceptance/modes/team.acceptance.test.mjs — LMCP-L6 team-mode acceptance leg."
+      "maintainerNotes": "tests/acceptance/modes/team.acceptance.test.mjs — team-mode acceptance leg."
     },
     {
       "path": "tests/acceptance/ops-triage-preset.acceptance.test.mjs",
@@ -260,7 +260,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/artifacts/format-engines-manifest.test.mjs — LMCP-B7: FORMAT_ENGINES"
+      "maintainerNotes": "tests/artifacts/format-engines-manifest.test.mjs — FORMAT_ENGINES"
     },
     {
       "path": "tests/asset-quality/a11y-audit.test.mjs",
@@ -412,7 +412,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "audit-rules.test.mjs — static rule-reference audit (bead construct-bt9o)."
+      "maintainerNotes": "audit-rules.test.mjs — static rule-reference audit."
     },
     {
       "path": "tests/audit-skills.test.mjs",
@@ -724,7 +724,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/audit/f09-orchestration/provider-timeout-default.test.mjs — construct-o6t8.1 proof."
+      "maintainerNotes": "tests/audit/f09-orchestration/provider-timeout-default.test.mjs — proof."
     },
     {
       "path": "tests/audit/f09-orchestration/provider-timeout.test.mjs",
@@ -756,7 +756,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/audit/f09-orchestration/remote-status-timeout.test.mjs — construct-o6t8.2 proof."
+      "maintainerNotes": "tests/audit/f09-orchestration/remote-status-timeout.test.mjs — proof."
     },
     {
       "path": "tests/audit/f09-orchestration/status-path-truthfulness.test.mjs",
@@ -924,7 +924,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/audit/prompts-skills-audit.test.mjs — four-check prompts/skills drift audit"
+      "maintainerNotes": "tests/audit/prompts-skills-audit.test.mjs — four-check prompts/skills drift audit."
     },
     {
       "path": "tests/audit/root-disposition.test.mjs",
@@ -1038,7 +1038,7 @@
       "category": "visual",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/browser/publish-html-artifact.test.mjs — LMCP-L8 Playwright adoption:"
+      "maintainerNotes": "tests/browser/publish-html-artifact.test.mjs — Playwright adoption:"
     },
     {
       "path": "tests/canonical-registry-cli.test.mjs",
@@ -1234,7 +1234,7 @@
         "ingest.document-io"
       ],
       "skipped": false,
-      "maintainerNotes": "tests/certification/document-io-matrix.test.mjs — certified document I/O matrix contract"
+      "maintainerNotes": "tests/certification/document-io-matrix.test.mjs — certified document I/O matrix contract."
     },
     {
       "path": "tests/certification/document-workflow.test.mjs",
@@ -1702,7 +1702,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/cross-process-state-has-one-authoritative-location.test.mjs — ADR-0092"
+      "maintainerNotes": "tests/cross-process-state-has-one-authoritative-location.test.mjs"
     },
     {
       "path": "tests/db-migrations.test.mjs",
@@ -1934,7 +1934,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/doctor-graph-validate.test.mjs — `construct doctor` graph-validate check (LMCP-C7)."
+      "maintainerNotes": "tests/doctor-graph-validate.test.mjs — `construct doctor` graph-validate check."
     },
     {
       "path": "tests/doctor-source-checkout.test.mjs",
@@ -2046,7 +2046,7 @@
       "category": "contract-subsystem",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/doctor/graph-staleness-incremental.test.mjs — construct-b0nny.3"
+      "maintainerNotes": "tests/doctor/graph-staleness-incremental.test.mjs"
     },
     {
       "path": "tests/doctor/host-config.test.mjs",
@@ -2070,7 +2070,7 @@
       "category": "contract-subsystem",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/doctor/provider-breaker-watcher.test.mjs — LMCP-B9 doctor watcher."
+      "maintainerNotes": "tests/doctor/provider-breaker-watcher.test.mjs — doctor watcher."
     },
     {
       "path": "tests/doctor/provider-certification-drift.test.mjs",
@@ -2224,7 +2224,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/embed-authority-binding.test.mjs — AuthorityGuard embedBindings enforcement (LMCP-E4)."
+      "maintainerNotes": "tests/embed-authority-binding.test.mjs — AuthorityGuard embedBindings enforcement."
     },
     {
       "path": "tests/embed-authority-guard.test.mjs",
@@ -2392,7 +2392,7 @@
       "category": "structural-guard",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/embed/provider-registry-parity.test.mjs — LMCP-B3."
+      "maintainerNotes": "tests/embed/provider-registry-parity.test.mjs."
     },
     {
       "path": "tests/embed/providers.test.mjs",
@@ -2560,7 +2560,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/engine-contradiction-judge.test.mjs — optional LLM judge factory (construct-wlr7 follow-up)."
+      "maintainerNotes": "tests/engine-contradiction-judge.test.mjs — optional LLM judge factory (follow-up)."
     },
     {
       "path": "tests/engine-contradiction.test.mjs",
@@ -2568,7 +2568,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/engine-contradiction.test.mjs — negation-polarity contradiction detection (construct-wlr7)."
+      "maintainerNotes": "tests/engine-contradiction.test.mjs — negation-polarity contradiction detection."
     },
     {
       "path": "tests/engine-eval-retrieval.test.mjs",
@@ -2600,7 +2600,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/enterprise/audit-isolation.test.mjs — LMCP-H5."
+      "maintainerNotes": "tests/enterprise/audit-isolation.test.mjs — enterprise audit isolation."
     },
     {
       "path": "tests/enterprise/tenant-scoping.test.mjs",
@@ -2608,7 +2608,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/enterprise/tenant-scoping.test.mjs — LMCP-H4."
+      "maintainerNotes": "tests/enterprise/tenant-scoping.test.mjs."
     },
     {
       "path": "tests/enterprise/tenant.test.mjs",
@@ -2616,7 +2616,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/enterprise/tenant.test.mjs — tenant context resolution (LMCP-H1)."
+      "maintainerNotes": "tests/enterprise/tenant.test.mjs — tenant context resolution."
     },
     {
       "path": "tests/entity-store.test.mjs",
@@ -2640,7 +2640,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/env-config/shadow-warning.test.mjs — construct-xj96.12 proof."
+      "maintainerNotes": "tests/env-config/shadow-warning.test.mjs — proof."
     },
     {
       "path": "tests/evals-dataset.test.mjs",
@@ -2664,7 +2664,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/execution-capability-profile.test.mjs — unified capability record (construct-6zga.1.8)."
+      "maintainerNotes": "tests/execution-capability-profile.test.mjs — unified capability record."
     },
     {
       "path": "tests/execution-policy.test.mjs",
@@ -2672,7 +2672,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/execution-policy.test.mjs — capability-adaptive execution policy compiler"
+      "maintainerNotes": "tests/execution-policy.test.mjs — capability-adaptive execution policy compiler."
     },
     {
       "path": "tests/export-branding.test.mjs",
@@ -2720,7 +2720,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/extensions/manifest-providers.test.mjs — LMCP-B2 provider manifest tests."
+      "maintainerNotes": "tests/extensions/manifest-providers.test.mjs — provider manifest tests."
     },
     {
       "path": "tests/extensions/manifest-strict.test.mjs",
@@ -2876,7 +2876,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/frameworks-schema.test.mjs — ADR-0062 persona reasoning framework"
+      "maintainerNotes": "tests/frameworks-schema.test.mjs — persona reasoning framework"
     },
     {
       "path": "tests/functional/a1-session-reflect.functional.test.mjs",
@@ -2948,7 +2948,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/artifact-completion-file-valid.functional.test.mjs — export is not completion"
+      "maintainerNotes": "tests/functional/artifact-completion-file-valid.functional.test.mjs — export is not completion."
     },
     {
       "path": "tests/functional/artifact-content-signals.functional.test.mjs",
@@ -2980,7 +2980,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/at-least-once-delivery.functional.test.mjs — construct-4uxq0.11.5"
+      "maintainerNotes": "tests/functional/at-least-once-delivery.functional.test.mjs"
     },
     {
       "path": "tests/functional/audit-ratchet.functional.test.mjs",
@@ -3118,7 +3118,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/claude-orchestration-prompt.functional.test.mjs — construct-ymp5."
+      "maintainerNotes": "tests/functional/claude-orchestration-prompt.functional.test.mjs."
     },
     {
       "path": "tests/functional/cli-catalog-parity.functional.test.mjs",
@@ -3158,7 +3158,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/config-jsonc.functional.test.mjs — JSONC config loader"
+      "maintainerNotes": "tests/functional/config-jsonc.functional.test.mjs — JSONC config loader."
     },
     {
       "path": "tests/functional/confluence-read-index.functional.test.mjs",
@@ -3182,7 +3182,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/construct-shim.functional.test.mjs — construct-rf26.19."
+      "maintainerNotes": "tests/functional/construct-shim.functional.test.mjs."
     },
     {
       "path": "tests/functional/context-router-orchestration.functional.test.mjs",
@@ -3190,7 +3190,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/context-router-orchestration.functional.test.mjs — construct-72gqn.23 (D3)."
+      "maintainerNotes": "tests/functional/context-router-orchestration.functional.test.mjs."
     },
     {
       "path": "tests/functional/context-window-recovery.functional.test.mjs",
@@ -3417,7 +3417,7 @@
         "ingest.docling-remote"
       ],
       "skipped": false,
-      "maintainerNotes": "docling-remote-ingest.functional.test.mjs — opt-in remote conversion (ADR-0036, construct-n1f8)."
+      "maintainerNotes": "docling-remote-ingest.functional.test.mjs — opt-in remote conversion."
     },
     {
       "path": "tests/functional/docling-shared-venv.functional.test.mjs",
@@ -3457,7 +3457,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/docs-redirect-stubs.functional.test.mjs — ADR-0045 legacy URL redirects."
+      "maintainerNotes": "tests/functional/docs-redirect-stubs.functional.test.mjs — legacy URL redirects."
     },
     {
       "path": "tests/functional/docs-site-check.functional.test.mjs",
@@ -3721,7 +3721,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/env-shadow-warning-cli.functional.test.mjs — construct-6y6w.3."
+      "maintainerNotes": "tests/functional/env-shadow-warning-cli.functional.test.mjs."
     },
     {
       "path": "tests/functional/eval-gates.functional.test.mjs",
@@ -3904,7 +3904,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/handoff-context-flow.functional.test.mjs — construct-72gqn.10 (H6a)."
+      "maintainerNotes": "tests/functional/handoff-context-flow.functional.test.mjs."
     },
     {
       "path": "tests/functional/honest-terminal-states.functional.test.mjs",
@@ -4297,7 +4297,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/mcp-dynamic-tool-registration.functional.test.mjs — LMCP-B5."
+      "maintainerNotes": "tests/functional/mcp-dynamic-tool-registration.functional.test.mjs."
     },
     {
       "path": "tests/functional/mcp-graph-tools.functional.test.mjs",
@@ -4389,7 +4389,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/mode-honesty.functional.test.mjs — LMCP-G8."
+      "maintainerNotes": "tests/functional/mode-honesty.functional.test.mjs."
     },
     {
       "path": "tests/functional/model-catalog-visibility.functional.test.mjs",
@@ -4512,7 +4512,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "opencode-fewshot-prompt.functional.test.mjs — bead construct-c16l."
+      "maintainerNotes": "opencode-fewshot-prompt.functional.test.mjs —."
     },
     {
       "path": "tests/functional/opencode-local-agent-emission.functional.test.mjs",
@@ -4528,7 +4528,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "opencode-local-mcp-trim.functional.test.mjs — bead construct-5b6u."
+      "maintainerNotes": "opencode-local-mcp-trim.functional.test.mjs —."
     },
     {
       "path": "tests/functional/opencode-mcp-trim-scoping.functional.test.mjs",
@@ -4536,7 +4536,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "opencode-mcp-trim-scoping.functional.test.mjs — bead construct-0mnj (WS2)."
+      "maintainerNotes": "opencode-mcp-trim-scoping.functional.test.mjs."
     },
     {
       "path": "tests/functional/opencode-primary-surface.functional.test.mjs",
@@ -4678,7 +4678,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/orchestration-cancel.functional.test.mjs — construct-72gqn.22 (D2)."
+      "maintainerNotes": "tests/functional/orchestration-cancel.functional.test.mjs."
     },
     {
       "path": "tests/functional/orchestration-context-bindings.functional.test.mjs",
@@ -4746,7 +4746,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/orchestration-revise-loop.functional.test.mjs — construct-72gqn.30 (D10)."
+      "maintainerNotes": "tests/functional/orchestration-revise-loop.functional.test.mjs."
     },
     {
       "path": "tests/functional/orchestration-terminal-contract.functional.test.mjs",
@@ -4754,7 +4754,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/orchestration-terminal-contract.functional.test.mjs — construct-72gqn.16 (H9.3)."
+      "maintainerNotes": "tests/functional/orchestration-terminal-contract.functional.test.mjs."
     },
     {
       "path": "tests/functional/orchestration-truth-negative.functional.test.mjs",
@@ -4786,7 +4786,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/outcome-routing.functional.test.mjs — ADR-0076 end-to-end."
+      "maintainerNotes": "tests/functional/outcome-routing.functional.test.mjs — end-to-end."
     },
     {
       "path": "tests/functional/participation-join-leave.functional.test.mjs",
@@ -4866,7 +4866,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/project-dotenv-tier.functional.test.mjs — construct-6y6w.8."
+      "maintainerNotes": "tests/functional/project-dotenv-tier.functional.test.mjs."
     },
     {
       "path": "tests/functional/project-parity.functional.test.mjs",
@@ -4922,7 +4922,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/provider-filter-enforcement.functional.test.mjs — LMCP-B11."
+      "maintainerNotes": "tests/functional/provider-filter-enforcement.functional.test.mjs."
     },
     {
       "path": "tests/functional/provider-poll.functional.test.mjs",
@@ -5020,7 +5020,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/rich-document-export.functional.test.mjs — RichDocument (ADR-0071) export"
+      "maintainerNotes": "tests/functional/rich-document-export.functional.test.mjs — RichDocument export"
     },
     {
       "path": "tests/functional/richdoc-ingest-write.functional.test.mjs",
@@ -5076,7 +5076,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/runtime-adapter-swap.functional.test.mjs — construct-b0nny.24"
+      "maintainerNotes": "tests/functional/runtime-adapter-swap.functional.test.mjs"
     },
     {
       "path": "tests/functional/secret-audit-daemon-wiring.functional.test.mjs",
@@ -5156,7 +5156,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/shared-state.functional.test.mjs — LMCP-G10."
+      "maintainerNotes": "tests/functional/shared-state.functional.test.mjs."
     },
     {
       "path": "tests/functional/skill-quality-signal.functional.test.mjs",
@@ -5204,7 +5204,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "Functional test: cross-source watching for directory targets (bead"
+      "maintainerNotes": "Functional test: cross-source watching for directory targets (bead."
     },
     {
       "path": "tests/functional/source-watch-git.functional.test.mjs",
@@ -5212,7 +5212,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "Functional test: cross-source watching for git (corpus) targets (bead"
+      "maintainerNotes": "Functional test: cross-source watching for git (corpus) targets (bead."
     },
     {
       "path": "tests/functional/spawn-env-hermeticity.functional.test.mjs",
@@ -5300,7 +5300,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/team-arbitration.functional.test.mjs — construct-72gqn.17 (L4, hermetic)."
+      "maintainerNotes": "tests/functional/team-arbitration.functional.test.mjs — (L4, hermetic)."
     },
     {
       "path": "tests/functional/team-aware-fence.functional.test.mjs",
@@ -5324,7 +5324,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/team-vs-solo-comparison.functional.test.mjs — construct-72gqn.18 (L5)."
+      "maintainerNotes": "tests/functional/team-vs-solo-comparison.functional.test.mjs."
     },
     {
       "path": "tests/functional/telemetry-backend-agnostic.functional.test.mjs",
@@ -5470,7 +5470,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/workflow-contribution.functional.test.mjs — LMCP-D3."
+      "maintainerNotes": "tests/functional/workflow-contribution.functional.test.mjs."
     },
     {
       "path": "tests/functional/workflow-done-gate-evidence.functional.test.mjs",
@@ -5630,7 +5630,7 @@
       "category": "contract-subsystem",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/graph/embed-nodes.test.mjs — LMCP-P6 embed nodes in the living graph."
+      "maintainerNotes": "tests/graph/embed-nodes.test.mjs — embed nodes in the living graph."
     },
     {
       "path": "tests/graph/evidence.test.mjs",
@@ -5638,7 +5638,7 @@
       "category": "contract-subsystem",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/graph/evidence.test.mjs — runtime-evidence edges: traces linked to workflow nodes (LMCP-C9)."
+      "maintainerNotes": "tests/graph/evidence.test.mjs — runtime-evidence edges: traces linked to workflow nodes."
     },
     {
       "path": "tests/graph/explain.test.mjs",
@@ -5646,7 +5646,7 @@
       "category": "contract-subsystem",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/graph/explain.test.mjs — `construct graph explain <workflow>` (LMCP-C3)."
+      "maintainerNotes": "tests/graph/explain.test.mjs — `construct graph explain <workflow>`."
     },
     {
       "path": "tests/graph/gap-queries.test.mjs",
@@ -5654,7 +5654,7 @@
       "category": "contract-subsystem",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/graph/gap-queries.test.mjs — the six LMCP-C5 read-only gap queries."
+      "maintainerNotes": "tests/graph/gap-queries.test.mjs — the six read-only gap queries."
     },
     {
       "path": "tests/graph/gaps.test.mjs",
@@ -5694,7 +5694,7 @@
       "category": "contract-subsystem",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/graph/incremental.test.mjs — scoped graph refresh on edit"
+      "maintainerNotes": "tests/graph/incremental.test.mjs — scoped graph refresh on edit."
     },
     {
       "path": "tests/graph/procedure-node-prefix-parity.test.mjs",
@@ -5734,7 +5734,7 @@
       "category": "contract-subsystem",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/graph/staleness.test.mjs — per-source graph seed-hash staleness (LMCP-C6)."
+      "maintainerNotes": "tests/graph/staleness.test.mjs — per-source graph seed-hash staleness."
     },
     {
       "path": "tests/graph/store.test.mjs",
@@ -5863,6 +5863,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/hooks/artifact-release-gate.test.mjs — PostToolUse artifact gate hook."
+    },
+    {
+      "path": "tests/hooks/comment-lint-root.test.mjs",
+      "layer": "integration",
+      "category": "structural-guard",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/hooks/comment-lint-root.test.mjs — the hook lints a file against the"
     },
     {
       "path": "tests/hooks/config-protection.test.mjs",
@@ -6038,7 +6046,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/ingest/sidecar-providers.test.mjs — LMCP-K2 governed ingestion providers."
+      "maintainerNotes": "tests/ingest/sidecar-providers.test.mjs — governed ingestion providers."
     },
     {
       "path": "tests/init-docs-default.test.mjs",
@@ -6262,7 +6270,7 @@
       "category": "contract-subsystem",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/integrations/status-no-materialization.test.mjs — construct-192h.7:"
+      "maintainerNotes": "tests/integrations/status-no-materialization.test.mjs —"
     },
     {
       "path": "tests/intent-classifier.test.mjs",
@@ -6494,7 +6502,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/mcp-tool-output-schema-guard.test.mjs — LMCP-L10 tool output-schema guard."
+      "maintainerNotes": "tests/mcp-tool-output-schema-guard.test.mjs — tool output-schema guard."
     },
     {
       "path": "tests/mcp-tool-schema-validate.test.mjs",
@@ -6534,7 +6542,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/mcp/approval-flow.test.mjs — LMCP-I2 durable awaiting_approval state."
+      "maintainerNotes": "tests/mcp/approval-flow.test.mjs — durable awaiting_approval state."
     },
     {
       "path": "tests/mcp/broker-durability.test.mjs",
@@ -6542,7 +6550,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/mcp/broker-durability.test.mjs — LMCP-I1."
+      "maintainerNotes": "tests/mcp/broker-durability.test.mjs."
     },
     {
       "path": "tests/mcp/canonical-registry-tools.test.mjs",
@@ -6558,7 +6566,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/mcp/denial-audit.test.mjs — LMCP-I3."
+      "maintainerNotes": "tests/mcp/denial-audit.test.mjs."
     },
     {
       "path": "tests/mcp/enforcement-proof.functional.test.mjs",
@@ -6566,7 +6574,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/mcp/enforcement-proof.functional.test.mjs — LMCP-I4."
+      "maintainerNotes": "tests/mcp/enforcement-proof.functional.test.mjs."
     },
     {
       "path": "tests/mcp/get-skill-entitlement.test.mjs",
@@ -6590,7 +6598,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/mcp/provider-write-tool.test.mjs — LMCP-I7 provider_write MCP tool."
+      "maintainerNotes": "tests/mcp/provider-write-tool.test.mjs — provider_write MCP tool."
     },
     {
       "path": "tests/mcp/transport-separation.test.mjs",
@@ -6598,7 +6606,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/mcp/transport-separation.test.mjs — LMCP-I5 transport separation."
+      "maintainerNotes": "tests/mcp/transport-separation.test.mjs — transport separation."
     },
     {
       "path": "tests/mcp/version-skew.test.mjs",
@@ -6736,7 +6744,7 @@
       "category": "integration",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "ollama-capability-store.test.mjs — local-model coherence verdict persistence (WS3)."
+      "maintainerNotes": "ollama-capability-store.test.mjs — local-model coherence verdict persistence."
     },
     {
       "path": "tests/ollama-installed-models.test.mjs",
@@ -6944,7 +6952,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/oracle/directive-executor.test.mjs — construct-p4cba.6 (WS-B5)"
+      "maintainerNotes": "tests/oracle/directive-executor.test.mjs"
     },
     {
       "path": "tests/oracle/execute-directive-due.test.mjs",
@@ -6952,7 +6960,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/oracle/execute-directive-due.test.mjs — construct-p4cba.6 (WS-B5)"
+      "maintainerNotes": "tests/oracle/execute-directive-due.test.mjs"
     },
     {
       "path": "tests/oracle/impact-analysis.test.mjs",
@@ -6984,7 +6992,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/oracle/read-model-directives.test.mjs — construct-p4cba.6 (WS-B5)"
+      "maintainerNotes": "tests/oracle/read-model-directives.test.mjs"
     },
     {
       "path": "tests/oracle/semantic-review.test.mjs",
@@ -7000,7 +7008,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/oracle/synthesize-directive-due.test.mjs — construct-p4cba.6 (WS-B5)"
+      "maintainerNotes": "tests/oracle/synthesize-directive-due.test.mjs"
     },
     {
       "path": "tests/oracle/synthesize-partial-evidence.test.mjs",
@@ -7008,7 +7016,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/oracle/synthesize-partial-evidence.test.mjs — construct-4uxq0.12.8"
+      "maintainerNotes": "tests/oracle/synthesize-partial-evidence.test.mjs"
     },
     {
       "path": "tests/orchestration-chain-of-thought.test.mjs",
@@ -7048,7 +7056,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/orchestration-host-contract-revalidation.test.mjs — construct-72gqn.12 (H6c)."
+      "maintainerNotes": "tests/orchestration-host-contract-revalidation.test.mjs."
     },
     {
       "path": "tests/orchestration-policy-context-packets.test.mjs",
@@ -7104,7 +7112,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/orchestration-remote-web-guard.test.mjs — fail-closed remote ingress guard (ADR-0050)."
+      "maintainerNotes": "tests/orchestration-remote-web-guard.test.mjs — fail-closed remote ingress guard."
     },
     {
       "path": "tests/orchestration-research-evidence-gate.test.mjs",
@@ -7120,7 +7128,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/orchestration-revise-loop.test.mjs — construct-72gqn.30 (D10)."
+      "maintainerNotes": "tests/orchestration-revise-loop.test.mjs."
     },
     {
       "path": "tests/orchestration-route-path.test.mjs",
@@ -7128,7 +7136,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/orchestration-route-path.test.mjs — routePath payload end-to-end (construct-d1r7.15)."
+      "maintainerNotes": "tests/orchestration-route-path.test.mjs — routePath payload end-to-end."
     },
     {
       "path": "tests/orchestration-routing-triggers.test.mjs",
@@ -7192,7 +7200,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/orchestration-web-capability.test.mjs — WebGrant resolver priority (ADR-0050)."
+      "maintainerNotes": "tests/orchestration-web-capability.test.mjs — WebGrant resolver priority."
     },
     {
       "path": "tests/orchestration-worker-web.test.mjs",
@@ -7200,7 +7208,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/orchestration-worker-web.test.mjs — worker web-capable execution (ADR-0050)."
+      "maintainerNotes": "tests/orchestration-worker-web.test.mjs — worker web-capable execution."
     },
     {
       "path": "tests/orchestration-worker.test.mjs",
@@ -7248,7 +7256,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/orchestration/provenance.test.mjs — full execution provenance in traces (LMCP-F1)."
+      "maintainerNotes": "tests/orchestration/provenance.test.mjs — full execution provenance in traces."
     },
     {
       "path": "tests/orchestration/provider-budget.test.mjs",
@@ -7312,7 +7320,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/packs/lifecycle.test.mjs — LMCP-E3 pack enable/disable lifecycle."
+      "maintainerNotes": "tests/packs/lifecycle.test.mjs — pack enable/disable lifecycle."
     },
     {
       "path": "tests/packs/loader.test.mjs",
@@ -7336,7 +7344,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/packs/prompt-validation.test.mjs — pack prompt-file validation (LMCP-E2)."
+      "maintainerNotes": "tests/packs/prompt-validation.test.mjs — pack prompt-file validation."
     },
     {
       "path": "tests/packs/validate.test.mjs",
@@ -7360,7 +7368,7 @@
       "category": "hook",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/perf/hook-budgets.test.mjs — nightly gate for per-hook p95 budgets"
+      "maintainerNotes": "tests/perf/hook-budgets.test.mjs — nightly gate for per-hook p95 budgets."
     },
     {
       "path": "tests/pg-queue-reliability.test.mjs",
@@ -7392,7 +7400,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/planning/work-spec.test.mjs — Work spec schema (construct-b0nny.23)."
+      "maintainerNotes": "tests/planning/work-spec.test.mjs — Work spec schema."
     },
     {
       "path": "tests/platforms-claude-md-parity.test.mjs",
@@ -7408,7 +7416,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "capabilities.test.mjs — platform capability registry data contract (ADR-0033)."
+      "maintainerNotes": "capabilities.test.mjs — platform capability registry data contract."
     },
     {
       "path": "tests/playwright-demo-video.test.mjs",
@@ -7456,7 +7464,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/policy/unattended-budget.test.mjs — construct-95phc.3: fail-closed"
+      "maintainerNotes": "tests/policy/unattended-budget.test.mjs — fail-closed"
     },
     {
       "path": "tests/postcondition-checks.test.mjs",
@@ -7624,7 +7632,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/provider-behavior-matrix.test.mjs — behavior matrix producer (construct-6zga.1.4)."
+      "maintainerNotes": "tests/provider-behavior-matrix.test.mjs — behavior matrix producer."
     },
     {
       "path": "tests/provider-card-schema.test.mjs",
@@ -7696,7 +7704,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/providers/breaker-status.test.mjs — LMCP-B9: circuit-breaker state"
+      "maintainerNotes": "tests/providers/breaker-status.test.mjs — circuit-breaker state"
     },
     {
       "path": "tests/providers/connection-probe.test.mjs",
@@ -7744,7 +7752,7 @@
       "category": "structural-guard",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/providers/dotenv-parity.test.mjs — construct-192h.10: dotenv-file value"
+      "maintainerNotes": "tests/providers/dotenv-parity.test.mjs — dotenv-file value"
     },
     {
       "path": "tests/providers/feedback-provider.test.mjs",
@@ -7808,7 +7816,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/providers/provider-add-configure.test.mjs — LMCP-B12 CLI tests."
+      "maintainerNotes": "tests/providers/provider-add-configure.test.mjs — CLI tests."
     },
     {
       "path": "tests/providers/provider-commands.test.mjs",
@@ -7816,7 +7824,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/providers/provider-commands.test.mjs — LMCP-B8 CLI parity tests."
+      "maintainerNotes": "tests/providers/provider-commands.test.mjs — CLI parity tests."
     },
     {
       "path": "tests/providers/scope-validators.test.mjs",
@@ -7848,7 +7856,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/publish/flag-parsing.test.mjs — construct-xj96.11 proof."
+      "maintainerNotes": "tests/publish/flag-parsing.test.mjs — proof."
     },
     {
       "path": "tests/published-scripts.test.mjs",
@@ -7880,7 +7888,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "reflect-salience.test.mjs — deterministic session salience (bead construct-k6lr)."
+      "maintainerNotes": "reflect-salience.test.mjs — deterministic session salience."
     },
     {
       "path": "tests/registration-contract.test.mjs",
@@ -7976,7 +7984,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/registry/surface-map-manifest.test.mjs — LMCP-B7: COMMAND_SURFACE/"
+      "maintainerNotes": "tests/registry/surface-map-manifest.test.mjs — COMMAND_SURFACE/"
     },
     {
       "path": "tests/release-version-metadata.test.mjs",
@@ -8216,7 +8224,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/scripts/graph-gate.test.mjs — LMCP-C8 self-test for the living-graph"
+      "maintainerNotes": "tests/scripts/graph-gate.test.mjs — self-test for the living-graph"
     },
     {
       "path": "tests/scripts/graph-impact-shadow.test.mjs",
@@ -8240,7 +8248,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/scripts/release-evidence-gate.test.mjs — LMCP-M5 self-test for the"
+      "maintainerNotes": "tests/scripts/release-evidence-gate.test.mjs — self-test for the"
     },
     {
       "path": "tests/scripts/run-tests-files-from.test.mjs",
@@ -8304,7 +8312,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/security/audit-redaction.test.mjs — construct-9oi4.14.3 (LMCP-N3)."
+      "maintainerNotes": "tests/security/audit-redaction.test.mjs."
     },
     {
       "path": "tests/security/consumption-limits.test.mjs",
@@ -8312,7 +8320,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/security/consumption-limits.test.mjs — LMCP-N5: durable consumption"
+      "maintainerNotes": "tests/security/consumption-limits.test.mjs — durable consumption"
     },
     {
       "path": "tests/security/destructive-gate.test.mjs",
@@ -8336,7 +8344,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/security/output-and-prompt-handling.test.mjs — LMCP-N8 gap closure"
+      "maintainerNotes": "tests/security/output-and-prompt-handling.test.mjs — gap closure."
     },
     {
       "path": "tests/security/owasp-coverage.test.mjs",
@@ -8344,7 +8352,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/security/owasp-coverage.test.mjs — LMCP-N8 security corpus wired into"
+      "maintainerNotes": "tests/security/owasp-coverage.test.mjs — security corpus wired into"
     },
     {
       "path": "tests/security/ssrf.test.mjs",
@@ -8352,7 +8360,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/security/ssrf.test.mjs — LMCP-N7 SSRF / DNS-rebinding egress guard."
+      "maintainerNotes": "tests/security/ssrf.test.mjs — SSRF / DNS-rebinding egress guard."
     },
     {
       "path": "tests/security/trust-labels.test.mjs",
@@ -8376,7 +8384,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/server/auth.test.mjs — unit coverage for lib/server/auth.mjs"
+      "maintainerNotes": "tests/server/auth.test.mjs — unit coverage for lib/server/auth.mjs."
     },
     {
       "path": "tests/server/http.test.mjs",
@@ -8408,7 +8416,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/service-manager/spawn-env.test.mjs — construct-192h.8 proof."
+      "maintainerNotes": "tests/service-manager/spawn-env.test.mjs — proof."
     },
     {
       "path": "tests/session-start-hook.test.mjs",
@@ -8480,7 +8488,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/skills/experimentation.test.mjs — construct-72gqn.32 (H5-deep)."
+      "maintainerNotes": "tests/skills/experimentation.test.mjs."
     },
     {
       "path": "tests/skills/prioritization-methods.test.mjs",
@@ -8488,7 +8496,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/skills/prioritization-methods.test.mjs — construct-72gqn.15 (H5)."
+      "maintainerNotes": "tests/skills/prioritization-methods.test.mjs."
     },
     {
       "path": "tests/skills/router.test.mjs",
@@ -8536,7 +8544,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "Unit tests for evidence-cursor semantics in lib/sources/watch.mjs"
+      "maintainerNotes": "Unit tests for evidence-cursor semantics in lib/sources/watch.mjs."
     },
     {
       "path": "tests/status-degradation-details.test.mjs",
@@ -8818,7 +8826,7 @@
       "category": "integration",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/tracker-projection/import-store.test.mjs — importer + durable store"
+      "maintainerNotes": "tests/tracker-projection/import-store.test.mjs — importer + durable store."
     },
     {
       "path": "tests/tracker-projection/projection.test.mjs",
@@ -8930,7 +8938,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/visual/rendered-artifact.test.mjs — real rendered-artifact visual gate (LMCP-L5)."
+      "maintainerNotes": "tests/visual/rendered-artifact.test.mjs — real rendered-artifact visual gate."
     },
     {
       "path": "tests/vscode-mcp-toolkit-path.test.mjs",
@@ -8970,7 +8978,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/worker-profile-coverage.test.mjs — construct-72gqn.31 (H5-gen)."
+      "maintainerNotes": "tests/worker-profile-coverage.test.mjs."
     },
     {
       "path": "tests/worker-profile-prompt-format.test.mjs",
@@ -8994,7 +9002,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/worker-profile-roster.test.mjs — lazy Worker Profile catalog (construct-ymp5)."
+      "maintainerNotes": "tests/worker-profile-roster.test.mjs — lazy Worker Profile catalog."
     },
     {
       "path": "tests/worker-run-mcp.test.mjs",
@@ -9146,7 +9154,7 @@
       "category": "integration",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/workspace/store.test.mjs — unit coverage for lib/workspace/store.mjs"
+      "maintainerNotes": "tests/workspace/store.test.mjs — unit coverage for lib/workspace/store.mjs."
     },
     {
       "path": "tests/writes/confluence.functional.test.mjs",
@@ -9162,7 +9170,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/writes/control-plane-execution.functional.test.mjs — LMCP-J6"
+      "maintainerNotes": "tests/writes/control-plane-execution.functional.test.mjs"
     },
     {
       "path": "tests/writes/envelope.test.mjs",
@@ -9186,7 +9194,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/writes/import-guard.test.mjs — LMCP-J6 guard: no orchestration or"
+      "maintainerNotes": "tests/writes/import-guard.test.mjs — guard: no orchestration or"
     },
     {
       "path": "tests/writes/jira-transport.test.mjs",

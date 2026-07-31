@@ -5,6 +5,7 @@
   "description": "Sees the whole board — orchestrates by assembling the right perspectives in the right sequence, routing each request to the minds that will see what others miss.",
   "artifactClasses": [],
   "skillEmphasis": [
+    "docs/artifact-authorship",
     "ai/orchestration-workflow",
     "operating/orchestration-reference",
     "operating/change-management",

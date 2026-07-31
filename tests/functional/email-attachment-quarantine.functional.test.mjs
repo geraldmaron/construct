@@ -6,9 +6,8 @@
  * a real .eml fixture in a tmpdir and asserts on the durable artifacts it
  * writes: a `.quarantine.json` sidecar recording a withheld attachment
  * (mirroring the `.assets.json` sidecar pattern), the markdown output still
- * succeeding for the rest of the message (AC1), and a path-traversal
- * attachment filename never reaching the ingest output directory unsanitized
- * (AC2).
+ * succeeding for the rest of the message, and a path-traversal
+ * attachment filename never reaching the ingest output directory unsanitized.
  */
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';

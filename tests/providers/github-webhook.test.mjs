@@ -1,6 +1,6 @@
 /**
  * tests/providers/github-webhook.test.mjs — real HMAC-SHA256 webhook
- * signature validation for lib/providers/github/index.mjs (construct-4uxq0.13.3,
+ * signature validation for lib/providers/github/index.mjs
  * Phase 9 audit checklist item "webhook signature validation").
  *
  * Calls the real webhook() function with a real crypto.createHmac digest —
@@ -12,7 +12,7 @@
  * trigger — the malformed-length cases below assert a graceful mismatch
  * result, not a thrown RangeError.
  *
- * Delivery dedup/replay protection (construct-h48jh) is exercised against
+ * Delivery dedup/replay protection is exercised against
  * the same real webhook(): a valid delivery id is recorded in a durable
  * JSONL seen-set (lib/providers/github/delivery-log.mjs) and a replay
  * returns a structured duplicate outcome instead of processing again. The

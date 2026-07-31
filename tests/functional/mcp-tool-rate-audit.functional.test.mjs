@@ -1,7 +1,7 @@
 /**
  * tests/functional/mcp-tool-rate-audit.functional.test.mjs
  *
- * Regression guard for CX-AUDIT-MCP-SAFETY-005. Drives the real construct MCP
+ * Drives the real construct MCP
  * server (lib/mcp/server.mjs) as a subprocess over stdio — the same path a real
  * host uses — and proves two properties the CallToolRequestSchema handler adds:
  * every call lands a value-free record in the durable audit trail (tool name and

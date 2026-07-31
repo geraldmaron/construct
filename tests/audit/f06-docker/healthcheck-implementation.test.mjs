@@ -7,7 +7,7 @@
  * ecs/main.tf). But no server in the repo registers that route: the only matches
  * for the path string are in the Dockerfile, Terraform, deploy docs, deploy
  * smoke workflows, and a PRD that explicitly calls it a future "stub" — never a
- * handler. With lib/server/ deleted (ADR-0039, 2026-06-25), nothing serves it,
+ * handler. With lib/server/ deleted (2026-06-25), nothing serves it,
  * so the health check can never return 200 and every task is killed as unhealthy.
  *
  * Extracts the HEALTHCHECK URL path from the real Dockerfile, then scans the
@@ -16,8 +16,7 @@
  * today.
  *
  * Turns GREEN once a real handler implementing the health path ships (or the
- * health check is repointed at an implemented endpoint), per
- * CX-AUDIT-DOCKER-002 / -004.
+ * health check is repointed at an implemented endpoint), per.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -66,7 +65,7 @@ function collectServerFiles(roots) {
 }
 
 test('[R23] Dockerfile HEALTHCHECK path must be implemented by a server in the repo', () => {
-  // ADR-0039 degate: if the Dockerfile was removed, no health check can reference an
+  // Degate: if the Dockerfile was removed, no health check can reference an
   // unimplemented route — the requirement is satisfied.
   if (!fs.existsSync(dockerfile)) return;
 

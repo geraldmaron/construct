@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * scripts/bench-hooks.mjs — measure per-hook p95 wall time against declared
- * `@p95ms` budgets (ADR-0029).
+ * `@p95ms` budgets.
  *
  * For each `lib/hooks/*.mjs` carrying an `@lifecycle <event>` header and a
  * `@p95ms <N>` budget, the harness spawns the hook N times with a synthetic
@@ -14,7 +14,7 @@
  * runner's Node version — Node 20→24 alone pushed every sub-30ms budget red).
  * So the harness first measures a bare Node+stdin baseline and judges each hook
  * on `p95 - baseline`: status is `pass` when that marginal p95 <= budget ×
- * tolerance, else `fail`. Tolerance defaults to 2× per ADR-0029.
+ * tolerance, else `fail`. Tolerance defaults to 2×.
  *
  * Hooks marked `@unwired` are skipped — they are not registered in
  * `platforms/claude/settings.template.json` and would never run in

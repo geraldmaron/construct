@@ -17,7 +17,7 @@
  * process.env value the parity gap actually depends on.
  *
  * Turns GREEN once both readers honor one precedence ladder for the process.env tier,
- * per CX-AUDIT-SECRETS-001 / plan Epic 5
+ * / plan Epic 5
  * (docs/notes/research/2026-06-construct-audit/90-credential-handling-remediation-plan.md
  * §Epic 5): same key resolves identically regardless of code path.
  *

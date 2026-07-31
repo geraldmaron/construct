@@ -6,7 +6,7 @@
  * The canonical file lives at the repo root and is what Claude Code
  * reads when a session opens inside THIS repo. The platforms variant
  * is a project-agnostic reference template that ships in the npm
- * package — users see it as guidance for what their own /CLAUDE.md
+ * package — users see it as guidance for what their own agent-instruction file
  * should look like after `construct init`.
  *
  * The contract: both files reference the same critical rules and have

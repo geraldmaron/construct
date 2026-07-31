@@ -11,6 +11,7 @@
     "system-design"
   ],
   "skillEmphasis": [
+    "docs/artifact-authorship",
     "architecture/api-design",
     "architecture/caching",
     "architecture/cloud-native",

@@ -1,5 +1,5 @@
 /**
- * tests/graph/staleness.test.mjs — per-source graph seed-hash staleness (LMCP-C6).
+ * tests/graph/staleness.test.mjs — per-source graph seed-hash staleness.
  *
  * Pins: GRAPH_SEED_FILES still lists the legacy flat seed set; a missing
  * graph reports present:false without throwing; hashSourceGroup recurses
@@ -24,9 +24,9 @@ import {
 } from '../../lib/graph/staleness.mjs';
 import { writeGraph } from '../../lib/graph/store.mjs';
 
-// construct-b0nny.3: the relational graph store (lib/graph/relational/)
-// resolves graph.db under the machine-scoped state root (resolveStateDir,
-// ADR-0066) whenever writeGraph/loadGraph touch the host graph on Node
+// the relational graph store (lib/graph/relational/)
+// resolves graph.db under the machine-scoped state root (resolveStateDir)
+// whenever writeGraph/loadGraph touch the host graph on Node
 // >=22.5. Pin CONSTRUCT_HOME_OVERRIDE so this suite never provisions state under
 // the real developer machine's ~/.construct/projects/ (the isolation
 // contract, tests/functional/README.md) — the same pattern

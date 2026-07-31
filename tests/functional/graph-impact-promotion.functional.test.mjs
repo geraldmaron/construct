@@ -1,6 +1,6 @@
 /**
  * tests/functional/graph-impact-promotion.functional.test.mjs —
- * construct-4uxq0.11.11 multi-component proof: promotion metrics, aggregation
+ * Multi-component proof: promotion metrics, aggregation
  * report, gating scaffold, and CI wiring.
  */
 

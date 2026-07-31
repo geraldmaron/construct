@@ -15,7 +15,7 @@ import { issueApprovalToken } from '../../lib/mcp/destructive-approval.mjs';
 // process.env at call time, so redirecting CONSTRUCT_DOCTOR_ROOT here keeps
 // every token this file issues off the real machine's XDG state dir. The
 // same tmpdir doubles as `rootDir` for the shared authority ledger
-// (lib/writes/authority-ledger.mjs, construct-b0nny.15) so a successful
+// (lib/writes/authority-ledger.mjs) so a successful
 // issue/consume in this file never appends to the real project's
 // .construct/writes/authority-ledger.jsonl.
 

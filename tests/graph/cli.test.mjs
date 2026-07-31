@@ -16,9 +16,9 @@ import { runGraphCli } from '../../lib/graph/cli.mjs';
 import { sqliteAvailable } from '../../lib/graph/relational/sqlite-db.mjs';
 import { writeGraph } from '../../lib/graph/store.mjs';
 
-// construct-b0nny.3: the relational graph store (lib/graph/relational/)
-// resolves graph.db under the machine-scoped state root (resolveStateDir,
-// ADR-0066) whenever writeGraph/loadGraph touch the host graph on Node
+// the relational graph store (lib/graph/relational/)
+// resolves graph.db under the machine-scoped state root (resolveStateDir)
+// whenever writeGraph/loadGraph touch the host graph on Node
 // >=22.5. Pin CONSTRUCT_HOME_OVERRIDE so this suite never provisions state under
 // the real developer machine's ~/.construct/projects/ (the isolation
 // contract, tests/functional/README.md) — the same pattern
@@ -92,7 +92,7 @@ test('query --missing-tests on a project with no graph exits 1', () => {
   assert.equal(code, 1);
 });
 
-// construct-b0nny.12: `graph path` had zero prior test coverage anywhere in
+// `graph path` had zero prior test coverage anywhere in
 // the suite even though it is a real CLI caller of queryPath, and queryPath's
 // default rel filter now excludes 'imports' (see lib/graph/relational/
 // queries.mjs's header). These pin that the CLI command still finds a
@@ -152,9 +152,8 @@ test('graph path --rel imports finds an imports-only chain when explicitly opted
   assert.equal(parsed.depth, 1);
 });
 
-// construct-b0nny.21: queryUp/queryDown were exported from queries.mjs since
-// construct-b0nny.3 but had no CLI subcommand exposing them (spike A,
-// construct-b0nny.5.1). These pin the same default-rel/--rel-opt-in/depth
+// queryUp/queryDown were exported from queries.mjs but had no CLI
+// subcommand exposing them. These pin the same default-rel/--rel-opt-in/depth
 // behavior `path` already has, on both directions of traversal.
 
 // queryUp(id) walks outgoing edges from id (queries.mjs QUERY_UP joins on

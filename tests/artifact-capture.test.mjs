@@ -6,7 +6,7 @@
  * file-group entity creation from changed-file patterns. Run via `npm test`.
  *
  * observation-store/entity-store resolve project state through the
- * machine-scoped state root (ADR-0066), keyed by a hash of tmpDir — so
+ * machine-scoped state root, keyed by a hash of tmpDir — so
  * CONSTRUCT_HOME_OVERRIDE is pinned for the whole file to keep that write off the
  * real developer machine's $HOME.
  */
@@ -20,7 +20,7 @@ import { listObservations, getObservation } from '../lib/observation-store.mjs';
 import { listEntities } from '../lib/entity-store.mjs';
 
 // captureSessionArtifacts writes observations through the machine-scoped state
-// root (ADR-0066, lib/observation-store.mjs -> resolveStateDir), so
+// root (lib/observation-store.mjs -> resolveStateDir), so
 // CONSTRUCT_HOME_OVERRIDE is pinned for the whole file to keep those writes off the
 // real developer machine's ~/.construct/projects.
 

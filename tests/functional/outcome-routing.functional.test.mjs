@@ -1,5 +1,5 @@
 /**
- * tests/functional/outcome-routing.functional.test.mjs — ADR-0076 end-to-end.
+ * tests/functional/outcome-routing.functional.test.mjs — end-to-end.
  *
  * Closes the loop tests/recruiter.test.mjs exercises at the unit level: a
  * real spawned lib/hooks/agent-tracker.mjs process (not an in-process import)

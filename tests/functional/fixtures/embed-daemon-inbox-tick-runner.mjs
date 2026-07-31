@@ -1,6 +1,6 @@
 /**
  * tests/functional/fixtures/embed-daemon-inbox-tick-runner.mjs — child process
- * driver for embed-daemon-inbox-loop.functional.test.mjs (construct-b2t01.3).
+ * driver for embed-daemon-inbox-loop.functional.test.mjs.
  *
  * Boots the real EmbedDaemon (lib/embed/daemon.mjs), lets its scheduler run,
  * and polls the filesystem for the inbox-watcher Job #9's durable output

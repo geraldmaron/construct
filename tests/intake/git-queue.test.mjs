@@ -1,7 +1,7 @@
 /**
  * tests/intake/git-queue.test.mjs — GitIntakeQueue.read() claimed-directory lookup.
  *
- * construct-9oi4.15.5 (LMCP-O5) evidence claimed read(id) checked
+ * Earlier evidence claimed read(id) checked
  * dir === 'claimed' without ever recursing into the per-worker
  * claimed/<worker>/ subdirectories git-queue actually writes claims into
  * (see claim() in lib/intake/git-queue.mjs), so a claimed item would appear

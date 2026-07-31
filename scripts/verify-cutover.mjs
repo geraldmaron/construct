@@ -2,7 +2,7 @@
  * scripts/verify-cutover.mjs — mechanical re-verification of the
  * workspace-control-plane program's deletion and completion criteria.
  *
- * The terminal bead of the program (construct-b0nny.28) is the only one whose
+ * The terminal bead of the program is the only one whose
  * acceptance is required to be mechanically verifiable rather than narrative:
  * every dependency bead's own deletion criteria are re-asserted here and
  * reported pass/fail per bead. Prior sign-off is not trusted — each criterion

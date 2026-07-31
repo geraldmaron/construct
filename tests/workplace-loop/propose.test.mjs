@@ -1,6 +1,6 @@
 /**
  * tests/workplace-loop/propose.test.mjs — unit coverage for
- * lib/workplace-loop/propose.mjs (construct-b0nny.25).
+ * lib/workplace-loop/propose.mjs.
  */
 
 import test from 'node:test';

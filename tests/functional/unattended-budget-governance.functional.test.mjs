@@ -1,7 +1,7 @@
 /**
  * tests/functional/unattended-budget-governance.functional.test.mjs
  *
- * construct-95phc.3: cost governance for autonomous reasoning. Exercises the
+ * cost governance for autonomous reasoning. Exercises the
  * real daemon-side LLM judge path (lib/telemetry/llm-judge.mjs, the job the
  * embed daemon schedules every 3h) end-to-end in an isolated tmpdir, and the
  * real `construct doctor` binary, to prove:

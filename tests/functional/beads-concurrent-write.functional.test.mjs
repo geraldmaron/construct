@@ -2,7 +2,7 @@
  * beads-concurrent-write.functional.test.mjs — parallel bd writes via optimistic locking.
  *
  * Proves construct beads routing survives concurrent write attempts without the
- * retired exclusive file-lock fallback (bead construct-nhn5 stage 2).
+ * retired exclusive file-lock fallback (stage 2).
  */
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';

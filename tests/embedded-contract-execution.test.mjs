@@ -7,7 +7,7 @@
  * and an unknown Procedure. Pins the mandatory `semantics` disclaimer, that
  * constructCapabilitiesActive is a subset of the declared set, and that a
  * credential canary in env never reaches the response — the no-fabrication and
- * no-secret guarantees ADR-0019 records.
+ * no-secret guarantees.
  *
  * @enforces ADR-0019
  */

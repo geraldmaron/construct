@@ -1,5 +1,5 @@
 /**
- * tests/enterprise/audit-isolation.test.mjs — LMCP-H5.
+ * tests/enterprise/audit-isolation.test.mjs — enterprise audit isolation.
  *
  * Two adversarial guarantees for enterprise mode:
  *
@@ -19,7 +19,7 @@
  *      and fail closed (throw) when either side's tenant is unresolved.
  *
  * The observation/entity store cases resolve project state through the
- * machine-scoped state root (ADR-0066), keyed by a hash of each tmp rootDir —
+ * machine-scoped state root, keyed by a hash of each tmp rootDir —
  * so CONSTRUCT_HOME_OVERRIDE is pinned for the whole file to keep those writes off
  * the real developer machine's $HOME.
  */
@@ -317,7 +317,7 @@ describe('cross-tenant isolation — memory (observation store)', () => {
     const rootB = tmp('cx-mem-tenant-b-');
 
     // addObservation/listObservations resolve the machine-scoped state root
-    // (ADR-0066) via CONSTRUCT_HOME_OVERRIDE read in-process, not via rootA/rootB —
+    // via CONSTRUCT_HOME_OVERRIDE read in-process, not via rootA/rootB —
     // pin it or they write into the real developer machine's home.
     const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
     process.env.CONSTRUCT_HOME_OVERRIDE = rootA;

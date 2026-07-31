@@ -2,7 +2,7 @@
  * tests/functional/prompt-provenance-graph.functional.test.mjs — prompt provenance graph ingestion.
  *
  * Composes a real Worker Profile with provenance, builds graph nodes, and asserts
- * queryable prompt-fragment/composes_into edges (construct-72gqn.36).
+ * queryable prompt-fragment/composes_into edges.
  */
 
 import assert from 'node:assert/strict';

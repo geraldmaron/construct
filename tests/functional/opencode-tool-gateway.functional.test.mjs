@@ -27,11 +27,11 @@ test("construct-mcp exposes a lean surface: core tools + construct_call, long ta
   assert.ok(cc.inputSchema.properties.tool.enum.includes("workflow_status"), "long-tail names are enumerated");
 
   // The `<= 18` count check above is the primary "don't grow the flat core"
-  // guard (ADR-0048). This token ceiling catches description bloat within that
+  // guard. This token ceiling catches description bloat within that
   // fixed count: the exposed surface must stay under a quarter of the 32k
   // local-window baseline the gateway design targets (lib/mcp/server.mjs), so
   // three-quarters of the smallest fully-supported window stays free for the
-  // task. The original 6000 predated the ADR-0039/0048 high-value-action-tool
+  // task. The original 6000 predated the high-value-action-tool
   // promotions and orchestration_run joining the core, and was never re-derived;
   // current usage (~7.1k) is being trimmed back toward that leaner target by
   // construct-pvdns (orchestration_run/author_artifact/orchestration_policy carry

@@ -1,5 +1,5 @@
 /**
- * tests/artifacts/format-engines-manifest.test.mjs — LMCP-B7: FORMAT_ENGINES
+ * tests/artifacts/format-engines-manifest.test.mjs — FORMAT_ENGINES
  * moved from a hardcoded dict to lib/registry/manifests/format-engines.default.json,
  * with `.construct/registry/format-engines.json` project-override support. Asserts the
  * default surface is byte-identical to the prior hardcoded dict, and that a

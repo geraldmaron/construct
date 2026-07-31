@@ -12,7 +12,7 @@
  * Entries excluded from the dead set (reached by mechanism, not by import edge):
  *   - bin/construct and the package `exports` map;
  *   - lib/hooks/** (the dispatcher loads these by constructed path);
- *   - lib/mcp/tools/*.tool.mjs (LMCP-B5: lib/mcp/tool-registry.mjs's scanToolModules
+ * - lib/mcp/tools/*.tool.mjs (lib/mcp/tool-registry.mjs's scanToolModules
  *     discovers every file matching this suffix by directory scan, never by a literal
  *     import path or filename reference — that is the entire point of the convention,
  *     so a self-registered tool can never show a static/dynamic import edge to itself);

@@ -10,7 +10,7 @@
  * The text roundtrip even REWARDS invisible text: the hidden glyphs are still extractable, so the key
  * phrases "survive" and the check passes.
  *
- * Contract (CX-AUDIT-ARTIFACT-003): clipping/overlap/contrast must be caught by a visual-regression
+ * Contract: clipping/overlap/contrast must be caught by a visual-regression
  * gate on the produced artifact. Because pixel rendering is too heavy for a hermetic unit, this test
  * drives an HTML deliverable whose own markup encodes the defect (opacity:0 and a hard overlap of two
  * absolutely-positioned text blocks) and asserts runOutputQuality FAILS. Today it passes — proving the

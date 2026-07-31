@@ -5,7 +5,7 @@
  * the same names lib/extensions/manifests/*.manifest.json declare as
  * secretEnvKeys) with the legacy JIRA_URL/JIRA_TOKEN and
  * CONFLUENCE_URL/CONFLUENCE_TOKEN pair as a fallback, never the reverse.
- * construct-p4cba.2 fixed Jira's split; this closes the identical gap
+ * Fixed Jira's split; this closes the identical gap
  * Confluence had (flagged as a follow-up in that same change).
  */
 

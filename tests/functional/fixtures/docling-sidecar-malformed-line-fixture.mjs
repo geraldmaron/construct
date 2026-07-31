@@ -1,7 +1,6 @@
 /**
  * tests/functional/fixtures/docling-sidecar-malformed-line-fixture.mjs — stub
- * sidecar child for docling-client.mjs's malformed-stdout-line handling
- * (construct-4uxq0.9.13).
+ * sidecar child for docling-client.mjs's malformed-stdout-line handling.
  *
  * Answers the spawnSidecar version `ping` with the pinned Docling version,
  * then on the next stdin request writes one non-JSON stdout line and exits

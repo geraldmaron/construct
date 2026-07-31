@@ -1,5 +1,5 @@
 /**
- * tests/mcp/provider-write-tool.test.mjs — LMCP-I7 provider_write MCP tool.
+ * tests/mcp/provider-write-tool.test.mjs — provider_write MCP tool.
  *
  * Covers the four acceptance criteria: (1) without a destructive-gate token
  * the adapter is never invoked, (2) with a valid token exactly one adapter
@@ -90,7 +90,7 @@ describe('provider_write — destructive gate: without a token the adapter is ne
   it('even if a caller bypassed the gate and called providerWrite directly without dry_run, only one real path exists: writeWithEnvelope, and it still requires no bypass of the gate at the true entrypoint (server.mjs)', async () => {
     // providerWrite() itself has no token check — the token check is
     // server.mjs's dispatch-time responsibility (single choke point,
-    // LMCP-N6). This test documents that boundary: providerWrite() alone,
+    // dispatch-time). This test documents that boundary: providerWrite() alone,
     // called directly in a unit test, is not the security boundary; the gate
     // in front of dispatchToolByName is. See tests/security/destructive-gate.test.mjs
     // for the gate's own unit coverage, and the "exactly one adapter call"

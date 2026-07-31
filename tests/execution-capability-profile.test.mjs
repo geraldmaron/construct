@@ -1,12 +1,12 @@
 /**
- * tests/execution-capability-profile.test.mjs — unified capability record (construct-6zga.1.8).
+ * tests/execution-capability-profile.test.mjs — unified capability record.
  *
- * Proves the profile is keyed and versioned (AC1), every capability carries an
- * evidence source/confidence and honors operator override (AC2), unknown models
- * compile to conservative defaults with a degraded flag (AC3), the name/size
- * heuristic survives only as a tagged compatibility fallback (AC4), and chat and
+ * Proves the profile is keyed and versioned, every capability carries an
+ * evidence source/confidence and honors operator override, unknown models
+ * compile to conservative defaults with a degraded flag, the name/size
+ * heuristic survives only as a tagged compatibility fallback, and chat and
  * specialist composition derive the SAME values the legacy heuristics produced —
- * the single resolved record, behavior preserved (AC5).
+ * the single resolved record, behavior preserved.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';

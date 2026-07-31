@@ -30,7 +30,7 @@ function tmpProject() {
 }
 
 // orchestrationRun/orchestrationStatus resolve the machine-scoped state root
-// (ADR-0066) via CONSTRUCT_HOME_OVERRIDE read from real process.env, not from the
+// via CONSTRUCT_HOME_OVERRIDE read from real process.env, not from the
 // `env` option bag passed to these calls — the ENV/degradedEnv() HOME below
 // is inert for that purpose. Pin the real process env or these leak into the
 // real developer machine's ~/.construct/projects.

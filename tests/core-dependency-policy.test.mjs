@@ -7,7 +7,7 @@
  * deps drift in unnoticed — and a heavy transitive chain can ship a vulnerable
  * package to every consumer.
  *
- * The check is a ratchet. SANCTIONED is the ADR-0001 allowlist. PENDING_ADR
+ * The check is a ratchet. SANCTIONED is the allowlist. PENDING_ADR
  * holds known drift awaiting a replace-or-ADR decision, each entry tied to a
  * tracking bead. A dependency in neither set fails the suite. Entries may only
  * leave PENDING_ADR (promoted to SANCTIONED via ADR, or removed), never join it.
@@ -25,13 +25,13 @@ const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8'));
 
 const SANCTIONED = new Set([
   '@modelcontextprotocol/sdk',
-  // js-yaml: frontmatter parse/emit only (ADR-0028). New YAML use cases need
+  // js-yaml: frontmatter parse/emit only. New YAML use cases need
   // a fresh ADR; the allowlist entry is narrow on purpose.
   'js-yaml',
-  // mailparser: RFC 5322/MIME email parsing only (ADR-0098). Does not cover
+  // mailparser: RFC 5322/MIME email parsing only. Does not cover
   // .msg/OLE parsing — that input fails loud with a typed error instead.
   'mailparser',
-  // RichDocument markdown/HTML adapters (ADR-0073); narrow parse/sanitize surface only.
+  // RichDocument markdown/HTML adapters; narrow parse/sanitize surface only.
   'unified',
   'remark-parse',
   'remark-gfm',
@@ -39,11 +39,11 @@ const SANCTIONED = new Set([
   'rehype-sanitize',
 ]);
 
-// node-webvtt was removed (ADR-0028): zero in-tree usage. New deps may not
+// node-webvtt was removed: zero in-tree usage. New deps may not
 // enter this map — the ratchet only releases via SANCTIONED.
 
 // @lancedb/lancedb and apache-arrow are declared in optionalDependencies, not
-// SANCTIONED (ADR-0081): the retrieval-adapter contract
+// SANCTIONED: the retrieval-adapter contract
 // (lib/storage/retrieval-adapter.mjs) treats LanceDB as one adapter among
 // possible others, with a dependency-free keyword/BM25 fallback, so core does
 // not require a vector database (directive §13). Re-promoting either package

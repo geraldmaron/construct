@@ -1,7 +1,7 @@
 /**
  * tests/functional/doc-intake-approval.functional.test.mjs
  *
- * Characterization tests for the document-intake approval gap (self-audit construct-rr63.8.1, under
+ * Characterization tests for the document-intake approval gap (under
  * the migration-gate / risk R9 — silent restructuring of user docs). The intake promotion path
  * (lib/embed/inbox.mjs:276 + :440) calls maybePromoteToDocs unconditionally: when
  * suggestDocsLaneForFile returns a real lane (anything but `intake`) and the lane dir exists, the
@@ -41,7 +41,7 @@ after(() => {
 });
 
 // InboxWatcher.poll() resolves its state file through the machine-scoped
-// state root (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE from real process.env
+// state root, which reads CONSTRUCT_HOME_OVERRIDE from real process.env
 // directly, not any constructor `env` options bag. Pin it for the whole file
 // so polling never writes into the real developer machine's
 // ~/.construct/projects/.
