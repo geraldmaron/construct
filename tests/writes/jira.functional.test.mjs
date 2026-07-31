@@ -1,6 +1,6 @@
 /**
  * tests/writes/jira.functional.test.mjs — Jira writes routed through the
- * governed write envelope (LMCP-J3).
+ * governed write envelope.
  *
  * Uses tests/fakes/fake-jira-transport.mjs (no real network) to validate:
  * createmeta pre-validation (unknown project, missing required field,

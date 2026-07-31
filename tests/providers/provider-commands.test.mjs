@@ -1,5 +1,5 @@
 /**
- * tests/providers/provider-commands.test.mjs — LMCP-B8 CLI parity tests.
+ * tests/providers/provider-commands.test.mjs — CLI parity tests.
  *
  * Spawns the real `bin/construct` binary against an isolated tmpdir project
  * so `provider health`, `provider status`, and `provider validate` are
@@ -23,7 +23,7 @@ const BIN = join(ROOT, 'bin', 'construct');
 const FIXTURE_PROVIDER = join(ROOT, 'tests', 'providers', 'fixtures', 'failing-provider.mjs');
 
 // The spawned `construct` binary resolves the machine-scoped state root
-// (ADR-0066) from process.env.CONSTRUCT_HOME_OVERRIDE / HOME in its own process, so
+// from process.env.CONSTRUCT_HOME_OVERRIDE / HOME in its own process, so
 // every spawn below must be pinned to a throwaway home or it leaks a
 // project-key directory into the real developer machine's ~/.construct/projects/.
 const HOME_DIR = mkdtempSync(join(tmpdir(), 'construct-provider-cli-home-'));

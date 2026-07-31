@@ -13,7 +13,7 @@
  * Pattern: hermetic env isolation (XDG base-dir spec) + CLI stubbing + a footprint
  * diff — the standard lightweight alternative to a full VM/container for config tests.
  *
- * ADR-0066 moved heavy per-project state (traces, observations, the vector index,
+ * Moved heavy per-project state (traces, observations, the vector index,
  * runtime bootstrap dirs) out of a project's `.construct/` and into `~/.construct/projects/<key>/`
  * — a real host path most tests never touch on purpose. A test that spins up a project
  * in a tmp dir but forgets to override HOME now has a second way to leak into the real

@@ -40,7 +40,7 @@ const RESOLVED_CANARY = 'RESOLVED-CANARY-zz9-not-a-key';
 // is the CLI baseline; the MCP server and embed daemon genuinely resolve provider
 // secrets in their own process; the doctor daemon wires it defensively. The ACP
 // server runs inside `construct acp`, so the CLI wiring already covers it. The
-// oracle daemon-entry is gone (construct-b0nny.17): its directive-execution job
+// oracle daemon-entry is gone: its directive-execution job
 // runs under the embed-owned E5 path, whose secret resolution the embed worker
 // entry above already covers.
 const WIRED_PROCESS_ENTRYPOINTS = [

@@ -10,7 +10,7 @@
  * `construct stop` terminate an unrelated developer process that merely happens to be
  * listening on that port.
  *
- * Contract these encode (CX-AUDIT-RUNTIME-003): stop must verify ownership BEFORE
+ * Contract these encode: stop must verify ownership BEFORE
  * termination. A port owner with no Construct ownership markers must be REPORTED, not
  * killed. `killedUnverifiedPid()` is the post-fix observable — it watches the real kill
  * call. Today stop kills the unverified PID, so the "kill was NOT invoked" assertion

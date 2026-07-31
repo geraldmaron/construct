@@ -1,7 +1,7 @@
 /**
  * tests/functional/graph-build-partial-failures.functional.test.mjs —
  * `construct graph build` surfaces swallowed seeder errors instead of
- * reporting unconditional success (construct-4uxq0.9.16).
+ * reporting unconditional success.
  *
  * Before this fix: buildFromEmbed's validation errors and
  * buildFromRegistry's pack/specialists-org load failures were either

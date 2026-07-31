@@ -9,7 +9,6 @@
  * `__placeholder__`) while every user-personal key (share, autoupdate, a user
  * agent, user openrouter models) survives byte-for-byte. The host binary is
  * never executed, and every spawn uses a sterile HOME/XDG/state root.
- * See docs/guides/concepts/opencode-config-ownership.md.
  */
 
 import { spawnSync } from "node:child_process";

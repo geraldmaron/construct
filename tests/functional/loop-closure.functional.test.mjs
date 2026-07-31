@@ -17,7 +17,7 @@
  *   4. intake classification is deterministic (intake/classify)
  *
  * Stage 1 resolves observation-store state through the machine-scoped state
- * root (ADR-0066), keyed by a hash of the tmp rootDir — so CONSTRUCT_HOME_OVERRIDE
+ * root, keyed by a hash of the tmp rootDir — so CONSTRUCT_HOME_OVERRIDE
  * is pinned for the whole file to keep that write off the real developer
  * machine's $HOME.
  */
@@ -63,7 +63,7 @@ test('loop stage 1 — observation capture, search, and consume close offline', 
   process.env.CONSTRUCT_EMBEDDING_MODEL = 'hashing';
   t.after(() => { delete process.env.CONSTRUCT_EMBEDDING_MODEL; });
 
-  // The observation store resolves the machine-scoped state root (ADR-0066)
+  // The observation store resolves the machine-scoped state root
   // via CONSTRUCT_HOME_OVERRIDE read in-process, not via the `root` argument above —
   // pin it or these calls write into the real developer machine's home.
   const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;

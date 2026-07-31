@@ -1,7 +1,7 @@
 /**
  * tests/functional/spawn-env-hermeticity.functional.test.mjs
  *
- * Guards construct-neq9.4: proves sterileSpawnEnv() (tests/helpers/sterile-env.mjs)
+ * Proves sterileSpawnEnv() (tests/helpers/sterile-env.mjs)
  * builds spawn/process envs from an explicit allowlist, not `{ ...process.env }`,
  * so a poisoned parent shell (CONSTRUCT_MODEL_STANDARD, OPENROUTER_API_KEY, WEB_SEARCH_URL,
  * CONSTRUCT_USER_ENV_PATH) can never reach a hermetic child, HOME is pinned away from the

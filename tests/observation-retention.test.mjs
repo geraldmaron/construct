@@ -1,6 +1,6 @@
 /**
  * tests/observation-retention.test.mjs — TTL/size eviction for the
- * machine-scoped observations_v1 vector table (construct-rf26.17).
+ * machine-scoped observations_v1 vector table.
  *
  * Exercises lib/storage/vector-client.mjs's pruneObservations() and
  * lib/storage/admin.mjs's purgeExpiredData() directly against a real

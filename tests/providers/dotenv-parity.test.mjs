@@ -1,5 +1,5 @@
 /**
- * tests/providers/dotenv-parity.test.mjs — construct-192h.10: dotenv-file value
+ * tests/providers/dotenv-parity.test.mjs — dotenv-file value
  * parity between lib/env-config.mjs's parseEnvFile and lib/providers/secret-resolver.mjs's
  * file tier.
  *

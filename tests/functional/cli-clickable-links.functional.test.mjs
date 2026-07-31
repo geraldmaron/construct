@@ -20,7 +20,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(ROOT, 'bin', 'construct');
 const OSC8_OPEN = '\x1b]8;;';
 
-// lib/paths.mjs resolves the machine-scoped state root (ADR-0066) from
+// lib/paths.mjs resolves the machine-scoped state root from
 // process.env directly, so a spawned `construct` must get its own sandboxed
 // HOME to avoid registering this repo under the real developer machine's
 // ~/.construct/projects/.

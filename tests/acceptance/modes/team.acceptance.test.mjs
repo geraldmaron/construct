@@ -1,5 +1,5 @@
 /**
- * tests/acceptance/modes/team.acceptance.test.mjs — LMCP-L6 team-mode acceptance leg.
+ * tests/acceptance/modes/team.acceptance.test.mjs — team-mode acceptance leg.
  *
  * Proves team mode delivers what lib/mode-capabilities.mjs's CAPABILITY_REGISTRY.team
  * promises, against a real Postgres — not the mocked `sql` clients
@@ -19,7 +19,7 @@
  * are visible in list() at once — the "two workers ... share traces" acceptance
  * language, made concrete as shared registry visibility.
  *
- * Deferred (see LMCP-L6 bead notes): shared-memory / central-telemetry /
+ * Deferred (bead notes): shared-memory / central-telemetry /
  * brokered-mcp are 'stub' and docker-workers is 'not-implemented' in
  * CAPABILITY_REGISTRY.team — no acceptance check is expected for those yet; this
  * suite asserts they have NOT silently flipped to 'implemented' behind this

@@ -22,7 +22,7 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 import { pinDoctorRoot } from '../helpers/doctor-root.mjs';
 
 // Broker trace writes resolve through the machine-scoped state root
-// (ADR-0066) via lib/worker/trace.mjs#traceDir, keyed off process.env.CONSTRUCT_HOME_OVERRIDE
+// via lib/worker/trace.mjs#traceDir, keyed off process.env.CONSTRUCT_HOME_OVERRIDE
 // directly rather than any per-call env option, so CONSTRUCT_HOME_OVERRIDE is pinned
 // for the whole file to keep them off the real developer machine's $HOME.
 // The broker's default auditRecorder writes a second durable artifact — the

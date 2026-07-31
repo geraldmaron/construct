@@ -2,11 +2,11 @@
  * tests/functional/worker-pg-queue-integration.functional.test.mjs — real
  * PostgresIntakeQueue driven through the real runWorkerLoop.
  *
- * construct-4uxq0.13.4: tests/worker-entrypoint.test.mjs and
+ * tests/worker-entrypoint.test.mjs and
  * tests/pg-queue*.test.mjs each cover their own module in isolation — the
  * worker tests hand-roll stub/spy queues, and the pg-queue tests call
  * heartbeat()/fail() directly, never through the worker loop. Neither
- * proves the ADR-0089 wiring (lib/worker/entrypoint.mjs calling
+ * proves the wiring (lib/worker/entrypoint.mjs calling
  * queue.heartbeat() during execution and queue.fail() on error) against the
  * actual PostgresIntakeQueue class. This suite constructs a real
  * PostgresIntakeQueue (lib/queue/pg-queue.mjs) over the same in-memory `sql`
@@ -17,7 +17,7 @@
  * counts.
  *
  * runWorkerLoop writes trace events through the machine-scoped state root
- * (ADR-0066); CONSTRUCT_HOME_OVERRIDE is pinned per test per the same pattern as
+ * CONSTRUCT_HOME_OVERRIDE is pinned per test per the same pattern as
  * tests/worker-entrypoint.test.mjs.
  */
 import { describe, it, beforeEach, afterEach } from 'node:test';

@@ -1,6 +1,6 @@
 /**
  * tests/functional/graph-historical-query.functional.test.mjs —
- * construct-4uxq0.11.16 historical graph snapshots, queries, and compaction.
+ * Historical graph snapshots, queries, and compaction.
  */
 
 import test from 'node:test';

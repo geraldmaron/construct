@@ -1,5 +1,5 @@
 /**
- * tests/provider-behavior-matrix.test.mjs — behavior matrix producer (construct-6zga.1.4).
+ * tests/provider-behavior-matrix.test.mjs — behavior matrix producer.
  *
  * Proves the hermetic fixtures cover every capability class and conform to the
  * schema, that classification is structural (transport + measured signals, never

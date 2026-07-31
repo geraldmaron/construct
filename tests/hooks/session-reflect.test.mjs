@@ -8,7 +8,7 @@
  *   4. Hook is a no-op when CONSTRUCT_REFLECT_AUTO=off
  *
  * The hook writes observations through the machine-scoped state root
- * (ADR-0066), keyed by a hash of cwd — so CONSTRUCT_HOME_OVERRIDE is pinned for the
+ * keyed by a hash of cwd — so CONSTRUCT_HOME_OVERRIDE is pinned for the
  * whole file (inherited by every spawnSync call below via process.env) to
  * keep that write off the real developer machine's $HOME.
  */

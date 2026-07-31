@@ -1,7 +1,7 @@
 /**
  * tests/functional/fixtures/embed-daemon-directive-runner-runner.mjs —
  * child process driver for embed-daemon-directive-runner.functional.test.mjs
- * (construct-p4cba.4, WS-B3: the "directive-runner" job).
+ * (WS-B3: the "directive-runner" job).
  *
  * Boots a real EmbedDaemon against a construct.config.json carrying two
  * directives — one valid and due, one referencing an unknown specialist —

@@ -1,5 +1,5 @@
 /**
- * tests/engine-contradiction-judge.test.mjs — optional LLM judge factory (construct-wlr7 follow-up).
+ * tests/engine-contradiction-judge.test.mjs — optional LLM judge factory (follow-up).
  *
  * Pins the offline-first contract: no local model means no judge (null), so
  * consolidation falls back to the heuristic; when a model is present the factory

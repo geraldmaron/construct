@@ -1,5 +1,5 @@
 /**
- * tests/visual/rendered-artifact.test.mjs — real rendered-artifact visual gate (LMCP-L5).
+ * tests/visual/rendered-artifact.test.mjs — real rendered-artifact visual gate.
  *
  * Replaces the former `test:visual` script, which printed a static string and exited 0 without
  * running anything. This suite exports the golden PRD/deck fixtures through the real document
@@ -8,7 +8,7 @@
  * a blank canvas from a broken template or missing font), and reuses runOutputQuality's
  * text-extraction-parity and reference-integrity checks against the produced file. A required
  * engine that is absent is a hard test failure with a clear, CI-visible reason — never a silent
- * pass or skip — per LMCP-L5 acceptance. On a host without LibreOffice the PPTX test fails loudly
+ * pass or skip —. On a host without LibreOffice the PPTX test fails loudly
  * for exactly this reason; that failure is the gate working as designed, not a defect in it.
  */
 import test from 'node:test';

@@ -1,5 +1,5 @@
 /**
- * tests/functional/docs-redirect-stubs.functional.test.mjs — ADR-0045 legacy URL redirects.
+ * tests/functional/docs-redirect-stubs.functional.test.mjs — legacy URL redirects.
  *
  * The docs site is a static Next export, so pre-taxonomy bookmarks (`/cookbook/*`,
  * `/adr/*`, …) can only be salvaged by stub HTML written into `out/`. This drives

@@ -1,6 +1,6 @@
 /**
  * scripts/run-graph-gate.mjs — CI drift gate for the living workflow/capability
- * graph (LMCP-C8).
+ * graph.
  *
  * The living graph is derived, not committed, so "drift" is not a file-diff: it
  * is a declaration that fails to match reality — a workflow with zero tests,

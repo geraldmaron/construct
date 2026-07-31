@@ -1,10 +1,10 @@
 /**
- * tests/orchestration/provenance.test.mjs — full execution provenance in traces (LMCP-F1).
+ * tests/orchestration/provenance.test.mjs — full execution provenance in traces.
  *
  * Pins: a provider-executed task result and the persisted task record carry
  * workerProfileId, packId, promptVersion (a content fingerprint of the resolved
  * Worker Profile body), model, provider, toolGrants, and executionState, alongside
- * the workerProfileAvailable flag LMCP-E2 already added. The same fields ride the
+ * the workerProfileAvailable flag. The same fields ride the
  * `.construct/traces` worker.completed event unconditionally, independent of
  * chainOfThought mode, so a reader never has to reconstruct provenance from a
  * separate source. Every reader (hostAdapterMetadata here; status/oracle/graph
@@ -27,7 +27,7 @@ import { saveRun } from '../../lib/orchestration/run-store.mjs';
 import { traceDir as resolveTraceDir } from '../../lib/worker/trace.mjs';
 import { tempDir } from '../helpers.mjs';
 
-// Trace reads resolve through the machine-scoped state root (ADR-0066), so
+// Trace reads resolve through the machine-scoped state root, so
 // CONSTRUCT_HOME_OVERRIDE is pinned for the whole file to keep them off the real
 // developer machine's $HOME.
 

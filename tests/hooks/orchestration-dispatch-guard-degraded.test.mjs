@@ -10,7 +10,7 @@
  * envelope) still clear it — guarding against the fix over-tightening into a
  * positive allowlist that would require a clean envelope.
  *
- * Also pinned (H9.1, construct-72gqn.8): the awaiting-host case. The MCP
+ * Also pinned (H9.1): the awaiting-host case. The MCP
  * default backend returns status:"awaiting-host" with materialized prompts
  * and zero executed work, which must leave the guard armed — not treated as
  * a completed dispatch — until the first orchestration_task_result

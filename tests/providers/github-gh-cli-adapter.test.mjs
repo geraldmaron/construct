@@ -1,7 +1,7 @@
 /**
  * tests/providers/github-gh-cli-adapter.test.mjs — real behavior of
  * lib/providers/contract/adapters/github/index.mjs's gh-CLI transport
- * (construct-4uxq0.13.3, Phase 9 audit checklist items "rate-limit" and
+ * (Phase 9 audit checklist items "rate-limit" and
  * "permission-failure" behavior).
  *
  * A stub `gh` executable is placed first on PATH and driven by an env var, so

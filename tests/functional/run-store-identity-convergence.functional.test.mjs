@@ -1,7 +1,6 @@
 /**
  * tests/functional/run-store-identity-convergence.functional.test.mjs —
- * project identity + SQLite run-store migration, end to end (ADR-0092,
- * disposition-matrix.md M1).
+ * project identity + SQLite run-store migration, end to end.
  *
  * Spans two durable-state surfaces at once (project-identity keying +
  * versioned SQLite schema), so a unit test on either module alone could pass

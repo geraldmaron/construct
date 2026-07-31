@@ -96,7 +96,7 @@ test('release gate runs doctor and docs:verify', () => {
 });
 
 test('trivy-action is pinned to a specific release tag, not @master', () => {
-  // If the docker job was removed (ADR-0039 degate), trivy-action is absent — no pin required.
+  // If the docker job was removed (degate), trivy-action is absent — no pin required.
   if (!yaml.includes('trivy-action')) return;
   assert.doesNotMatch(yaml, /trivy-action@master/, 'trivy-action must not float on @master (supply-chain risk)');
   assert.match(yaml, /trivy-action@v?\d+\.\d+\.\d+/, 'trivy-action must be pinned to a specific version tag');
@@ -121,7 +121,7 @@ test('homebrew tap bump is gated on stable tags (no "-" in the ref)', () => {
 });
 
 test('docker image: latest tag is only pushed for stable releases', () => {
-  // If the docker job was removed (ADR-0039 degate), no :latest tag is pushed — requirement satisfied.
+  // If the docker job was removed (degate), no:latest tag is pushed — requirement satisfied.
   const stableBlock = yaml.match(/Build and push \(stable[^\n]*\n[\s\S]*?cache-to: type=gha,mode=max/)?.[0] ?? '';
   if (!stableBlock) return;
   // Two build-and-push steps exist: one for stable (version + latest tags),

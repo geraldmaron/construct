@@ -44,7 +44,7 @@
  *
  * Batched execution: `node --test` accumulates every file's module graph and
  * test state in ONE process, so handing it the whole ~900-file suite at once
- * exhausted memory and the process was SIGKILLed (construct-ox25y) — the run
+ * exhausted memory and the process was SIGKILLed — the run
  * never finished and every release:check step after it never ran. The selected
  * files run in bounded sequential batches of fresh child processes instead
  * (CONSTRUCT_TEST_BATCH_SIZE, default 120); memory is released between batches and the

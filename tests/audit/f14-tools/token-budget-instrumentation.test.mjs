@@ -22,7 +22,7 @@
  *      tell: successful calls, latencies, and errors per tool are not measured, so
  *      the tool surface cannot be evaluated against real usage.
  *
- * Contract (CX-AUDIT-TOOLS-001/-003): keep the documented budget derived from the
+ * Contract (003): keep the documented budget derived from the
  * live catalog and instrument the dispatch path for calls/tokens/errors. Passes
  * once the documented count matches the catalog and the dispatcher actually uses
  * its imported span helper.
@@ -41,10 +41,10 @@ const DISPATCH_ENVELOPE_PATH = join(ROOT, 'lib', 'mcp', 'dispatch-envelope.mjs')
 const DOC_PATH = join(ROOT, 'docs', 'guides', 'reference', 'mcp-tools.md');
 
 // server.mjs composes ALL_TOOL_DEFS as [...HARDCODED_TOOL_DEFS, ...SCANNED_TOOL_DEFS]
-// (LMCP-B5 self-registered tools). HARDCODED_TOOL_DEFS = RAW_HARDCODED_TOOL_DEFS.map(
+// (self-registered tools). HARDCODED_TOOL_DEFS = RAW_HARDCODED_TOOL_DEFS.map(
 // withSafetyEnvelope), and the underlying pure-data literal now lives in
 // lib/mcp/tool-definitions.mjs (further split across tool-definitions-{project,
-// skills,memory,workflow}.mjs — construct-rf26.10), so it is imported directly
+// skills,memory,workflow}.mjs), so it is imported directly
 // rather than eval'd out of server.mjs source text.
 
 function readCatalogNames() {
@@ -77,7 +77,7 @@ test('[S2][S15] the documented flat-surface tool count matches the live catalog'
 test('[S2][S15] the CallTool dispatcher instruments calls via its imported span helper', () => {
   // The CallTool envelope (identity, rate limit, destructive gate, tracing,
   // timeout, audit) was extracted from server.mjs into dispatch-envelope.mjs
-  // (construct-rf26.10); withGenAiSpan and the handler body now live there,
+  // withGenAiSpan and the handler body now live there,
   // wired into server.mjs via createToolCallHandler(). server.mjs itself no
   // longer imports withGenAiSpan directly.
   const src = readFileSync(DISPATCH_ENVELOPE_PATH, 'utf8');

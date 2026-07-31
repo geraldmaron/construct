@@ -3,7 +3,7 @@
  *
  * @enforces rule:common/no-fabrication
  *
- * Closes ADR-0015 gap 1 / bead construct-wvbf.6: a marker near a claim must
+ * Gap 1 / bead construct-wvbf.6: a marker near a claim must
  * resolve, not merely exist. These pin that a footnote reference without a
  * definition, and a [source: repo/path] pointing at a missing file, are
  * flagged — while URLs and free-text sources are left alone.

@@ -1,6 +1,6 @@
 /**
  * tests/scripts/shadow-lib.test.mjs — self-test for graph-impact shadow-mode
- * fail-open behavior (LMCP-C4).
+ * fail-open behavior.
  *
  * Tests fail-open signal when graph is missing/stale, diff touches graph-blind
  * files, or computation errors.

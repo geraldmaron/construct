@@ -11,7 +11,7 @@
  *   - lib/registry/cli.mjs:153  runRegistryValidate returns `report.valid ? 0 : 1`, so the
  *     gate exits 0 with these warnings present.
  *
- * Contract these encode (CX-AUDIT-REGISTRY-002): a P0/P1 capability with missing tests OR a
+ * Contract these encode: a P0/P1 capability with missing tests OR a
  * stale lastValidated must FAIL the registry gate (valid:false / non-zero exit), not merely
  * warn. A safety-critical contract that can rot for 200 days while the gate stays green is
  * fail-open. Each test drives the real validateCapabilityRegistry against a crafted registry

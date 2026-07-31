@@ -1,6 +1,6 @@
 /**
  * tests/functional/graph-change-intent.functional.test.mjs —
- * construct-4uxq0.11.8 multi-component proof: change-intent storage, CLI, and
+ * Multi-component proof: change-intent storage, CLI, and
  * pre-change impact packets seeded from declared graph targets.
  */
 

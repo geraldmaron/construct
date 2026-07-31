@@ -1,6 +1,6 @@
 /**
  * tests/functional/graph-verify.functional.test.mjs —
- * construct-4uxq0.11.10 multi-component proof: graph verify CLI, pre-commit
+ * Multi-component proof: graph verify CLI, pre-commit
  * hook wiring, and CI job registration.
  */
 

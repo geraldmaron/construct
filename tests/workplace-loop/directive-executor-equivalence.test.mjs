@@ -1,6 +1,6 @@
 /**
  * tests/workplace-loop/directive-executor-equivalence.test.mjs —
- * construct-b0nny.25 requirement 5, the equivalence tests construct-b0nny.17
+ * the equivalence tests
  * needs to retire Oracle's directive-executor.mjs onto the E5 workplace loop.
  *
  * Runs the exact same directive/env/injected-runTask inputs through both
@@ -14,7 +14,7 @@
  * `workplace-loop-directive`) — correct provenance for a different module,
  * not a behavior regression.
  *
- * Proves what construct-b0nny.17 needs before deleting
+ * Proves what is needed before deleting
  * lib/oracle/directive-executor.mjs: cutting lib/oracle/execute.mjs's
  * `directive-due` case over to lib/workplace-loop/directive-executor.mjs
  * changes no observable behavior for any existing caller.

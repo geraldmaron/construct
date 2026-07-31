@@ -25,7 +25,7 @@ const BIN = resolve(ROOT, 'bin', 'construct');
 
 // Both subprocess-spawning tests below share this project's own sandboxed HOME
 // so `construct version`/`construct evals` never touch the real developer
-// machine's ~/.construct/projects/ (ADR-0066 machine-scoped state root).
+// machine's ~/.construct/projects/ (machine-scoped state root).
 
 let HOME;
 before(() => { HOME = mkdtempSync(join(tmpdir(), 'optional-deps-absent-home-')); });

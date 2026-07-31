@@ -2,8 +2,8 @@
  * tests/oracle-approval-triage.test.mjs — one-shot flush of the oracle
  * pending.jsonl backlog to one representative row per dedupKey.
  *
- * Covers construct-r8wr.4: a backlog accumulated before enqueue-time dedupe
- * (construct-r8wr.2) landed carries many duplicate rows sharing a dedupKey.
+ * A backlog accumulated before enqueue-time dedupe
+ * landed carries many duplicate rows sharing a dedupKey.
  * triagePending collapses each group to one survivor with an accumulated
  * occurrenceCount, archives the rest to pending-archive.jsonl so the
  * original rows stay recoverable, and never touches already-approved rows.

@@ -1,6 +1,6 @@
 /**
  * tests/embed-approval-queue-lease.test.mjs — durable execution lease
- * coverage for lib/embed/approval-queue.mjs (ADR-0089).
+ * coverage for lib/embed/approval-queue.mjs.
  *
  * Two ApprovalQueue instances pointed at the same persistPath stand in for
  * two OS processes racing acquireLease() on the same 'approved' record

@@ -21,7 +21,7 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
 const DOCS_ROOT = join(REPO_ROOT, 'docs');
 
-// lib/paths.mjs resolves the machine-scoped state root (ADR-0066) from
+// lib/paths.mjs resolves the machine-scoped state root from
 // process.env directly, so the spawned `construct` needs its own sandboxed
 // HOME to avoid registering this repo under the real developer machine's
 // ~/.construct/projects/.
@@ -38,7 +38,7 @@ const MDX_COMPONENT_RE = new RegExp(
 );
 
 // Mirrors apps/docs/lib/docs-source.ts exclusion model after the docs/ bucket
-// regroup (ADR-0045): basename skips for scratch dirs, relative-path skips for
+// regroup: basename skips for scratch dirs, relative-path skips for
 // maintainer lanes now nested under buckets, and bucket-root index drops. A public
 // sibling in an otherwise-excluded bucket still renders (decisions/adr renders;
 // decisions/rfc and the decisions index do not).
@@ -109,7 +109,7 @@ test('docs site catalog excludes maintainer-only lanes', () => {
   }
 });
 
-// The document-intake feature docs are user documentation (ADR-0045 §C): they
+// The document-intake feature docs are user documentation: they
 // live under docs/guides/intake/ and must render on the public site.
 
 test('docs site catalog includes the document-intake guide pages', () => {

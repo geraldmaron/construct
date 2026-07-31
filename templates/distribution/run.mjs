@@ -71,7 +71,7 @@ function sanitizeNpmSpawnEnv(env = process.env) {
   }
   return next;
 }
-// The launcher is staged at <root>/.construct/launcher/ (ADR-0069); the project
+// The launcher is staged at <root>/.construct/launcher/; the project
 // root the self-repo and node_modules resolvers key off is two levels up, not one.
 
 const PROJECT_ROOT = resolve(HERE, '..', '..');

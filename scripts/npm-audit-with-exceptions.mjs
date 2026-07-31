@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * scripts/npm-audit-with-exceptions.mjs — high+ npm audit gate that honors
- * .github/supply-chain-exceptions.json (construct-h6qjb follow-up).
+ *.github/supply-chain-exceptions.json (follow-up).
  *
  * ci.yml's raw `npm audit --audit-level=high` had no way to see the
  * exceptions file supply-chain.yml's osv-scanner step already respects, so

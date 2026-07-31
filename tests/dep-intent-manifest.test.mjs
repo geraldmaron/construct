@@ -6,8 +6,7 @@
  *   2. Every quarantined dep has a removalCriteria string
  *   3. All dispositions are valid enum values
  *
- * @enforces ADR-0059 (dependency-intent rubric)
- * @bead construct-9oi4.11.1
+ * @enforces ADR-0059
  */
 
 import test from 'node:test';

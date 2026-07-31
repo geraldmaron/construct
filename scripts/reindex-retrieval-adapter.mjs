@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * scripts/reindex-retrieval-adapter.mjs — re-index the retrieval adapter's
- * derived search index from durable source data (construct-b0nny.20 / M5b).
+ * derived search index from durable source data (M5b).
  *
  * The retrieval adapter's index (LanceDB's observations_v1/documents_v1, or
  * the keyword adapter's observations.json/documents.json) is a derived

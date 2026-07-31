@@ -1,8 +1,8 @@
 /**
- * tests/embed/provider-registry-parity.test.mjs — LMCP-B3.
+ * tests/embed/provider-registry-parity.test.mjs.
  *
  * Proves lib/embed/providers/registry.mjs is a thin view over the unified
- * extension manifest registry (LMCP-B1, lib/extensions/*) rather than a
+ * extension manifest registry (lib/extensions/*) rather than a
  * second hardcoded env-driven table:
  *   1. With every known credential set, the embed registry's provider names
  *      equal the unified manifest set (kind: data-source, capability: read)

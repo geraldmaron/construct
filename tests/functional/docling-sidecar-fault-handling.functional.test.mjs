@@ -1,8 +1,7 @@
 /**
  * tests/functional/docling-sidecar-fault-handling.functional.test.mjs —
  * docling-client.mjs surfaces malformed sidecar messages, orphan response
- * ids, and timeouts truthfully instead of silently dropping them
- * (construct-4uxq0.9.13).
+ * ids, and timeouts truthfully instead of silently dropping them.
  *
  * Drives the real `spawnSidecar()` from lib/document-extract/docling-client.mjs
  * against small Node fixture processes standing in for the Python sidecar —

@@ -1,7 +1,7 @@
 /**
  * tests/functional/node-native-extraction.functional.test.mjs
  *
- * Bead construct-ij31.20: the default adapter ingest path extracts plain PDF and
+ * The default adapter ingest path extracts plain PDF and
  * DOCX through the Node-native optional deps (unpdf, mammoth) with NO Python venv
  * and NO system extraction binary on PATH. Builds minimal real fixtures, scrubs
  * PATH so pdftotext/textutil/unzip cannot satisfy the extraction, and asserts the

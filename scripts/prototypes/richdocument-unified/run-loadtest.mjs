@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 /**
- * scripts/prototypes/richdocument-unified/run-loadtest.mjs — DISPOSABLE PROTOTYPE
- * (construct-tsyfe.3.2). Not imported by lib/ or bin/. See this directory's README.md.
+ * scripts/prototypes/richdocument-unified/run-loadtest.mjs — DISPOSABLE PROTOTYPE.
+ * Not imported by lib/ or bin/.
  *
  * Measures parse + full-round-trip wall time and heap delta for the hand-rolled
  * lib/rich-document.mjs pipeline vs. the unified-based prototype (unified-adapter.mjs) at
  * three sizes built by concatenating the real corpus in tests/fixtures/rich-document-corpus/
  * (~83KB combined) 1x/25x/125x, giving ~83KB / ~2MB / ~10.5MB documents — the low end
  * approximates a small bundled export (5 real ADRs concatenated), the high end approximates a
- * large multi-document bundle export (a realistic RichDocument workload per ADR-0073's "packed
- * artifact" framing, not a synthetic worst case). Exact byte counts are printed per row.
+ * large multi-document bundle export (a realistic RichDocument workload for a packed
+ * artifact, not a synthetic worst case). Exact byte counts are printed per row.
  *
  * Each size runs N iterations (default 20, fewer for the largest size) and reports median wall
  * time and median heapUsed delta. Heap numbers are indicative, not lab-grade: no --expose-gc

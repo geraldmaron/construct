@@ -1,5 +1,5 @@
 /**
- * tests/publish/flag-parsing.test.mjs — construct-xj96.11 proof.
+ * tests/publish/flag-parsing.test.mjs — proof.
  *
  * The publish CLI spec declared --recording=<name> and --figures, but the parser
  * had no case for either, so they were silently dropped as unknown `--` args. This

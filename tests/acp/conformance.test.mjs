@@ -6,7 +6,7 @@
  * session/cancel. session/update notifications are asserted for lifecycle
  * sequencing during session/prompt. fetchImpl is injected so CI stays hermetic.
  *
- * @enforces construct-tsyfe.9.3, ADR-0023
+ * @enforces ADR-0023
  */
 
 import assert from 'node:assert/strict';

@@ -11,7 +11,7 @@
  * reasoning ran. A host reading the MCP tool result sees `completed` with no field that
  * states "this run only prepared work; no specialist reasoning was executed."
  *
- * Contract these encode (CX-AUDIT-ORCH-001): an inline (prepare-only) run must carry a
+ * Contract these encode: an inline (prepare-only) run must carry a
  * machine-readable signal — through the MCP surface a host actually consumes — that the
  * work was PREPARED, not executed, so prepared output is never presented as executed
  * specialist reasoning. No provider/network is touched: the inline backend performs no
@@ -43,7 +43,7 @@ function project() {
 test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} } });
 
 // orchestrationRun/runOrchestration resolve the run store through the
-// machine-scoped state root (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE from
+// machine-scoped state root, which reads CONSTRUCT_HOME_OVERRIDE from
 // real process.env — the ENV bag above only feeds model-tier lookups. Pin it
 // for the whole file so these fixtures never write into the real developer
 // machine's ~/.construct/projects/.

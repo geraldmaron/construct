@@ -24,7 +24,7 @@ test('user-research-workflow routes external and codebase research elsewhere', (
   assert.match(body, /docs\/research-workflow/);
   assert.match(body, /docs\/codebase-research-workflow/);
   assert.match(body, /researcher/);
-  // construct-rf26.11 folded cx-explorer into researcher (a skill overlay,
+  // A consolidation folded cx-explorer into researcher (a skill overlay,
   // not a separate specialist), so both sibling workflows now name the same agent.
   assert.match(body, /skill overlay/);
 });

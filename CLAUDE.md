@@ -59,6 +59,8 @@ const bm25Max = bm25Scored[0]?.score || 1;
 
 Never allowed: inline trailing comments (`x = 1; // note`), mid-function narration, between-group labels, narrative voice (`We/This/Now/It`), point-in-time notes (`removed/previously`), noise sentinels (`ok/skip/best effort`).
 
+**Never reference anything outside the file.** No tracker ids (`construct-9oi4.15.3`, `LMCP-A6`, `#412`), no decision-document ids (`ADR-0027 §2`, `RFC-0004`, `PRD-0001`), no project document paths (`see docs/guides/concepts/hooks.md`), no dated decisions (`decided 2026-05-14`, `as of 2026-06-22`). State the constraint the code obeys, not the record that set it. A user may cite their own tracker in their own code; Construct never does. External standards (`RFC 5545`, `SEP-414`) are not project documents and stay. `@enforces <id>` on a line of its own is machine-read metadata and is exempt.
+
 This applies to every file construct touches and to all agents working in this project.
 
 ## After making changes

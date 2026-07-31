@@ -1,6 +1,6 @@
 /**
  * tests/functional/orchestration-context-bindings.functional.test.mjs —
- * structured context-target bindings for orchestration runs (bead construct-760c.4).
+ * structured context-target bindings for orchestration runs.
  *
  * @capability orchestration.context-bindings
  *

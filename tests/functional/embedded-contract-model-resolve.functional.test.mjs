@@ -103,7 +103,7 @@ test('models resolve --json honors the precedence chain', () => {
     'tier-default',
   );
 
-  // Construct ships no implicit defaults (ADR-0027). An unconfigured tier
+  // Construct ships no implicit defaults. An unconfigured tier
   // with no credential anywhere returns a structured config-error rather
   // than silently substituting an Anthropic default or a credential-derived
   // family fallback (construct-uccl.2).

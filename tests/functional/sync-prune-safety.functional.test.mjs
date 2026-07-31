@@ -4,7 +4,7 @@
  * A host excluded from a sync run — whether by explicit `--hosts=` deselection
  * or an auto-detection miss (binary not on PATH) — must never have its prior
  * managed output deleted. Regression coverage for the Codex data-loss bug
- * (construct-lqp4c's copilot precedent, generalized to codex + claude project
+ * (the copilot precedent, generalized to codex + claude project
  * scope) and an invariant sweep across every host sync-worker-profiles.mjs manages.
  */
 

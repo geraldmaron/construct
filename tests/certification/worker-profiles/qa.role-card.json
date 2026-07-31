@@ -8,6 +8,7 @@
     "qa-strategy"
   ],
   "skillEmphasis": [
+    "docs/artifact-authorship",
     "devops/testing",
     "quality-gates/verify-change",
     "quality-gates/verify-module",

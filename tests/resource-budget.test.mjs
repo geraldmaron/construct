@@ -7,7 +7,7 @@
  * traces / worker logs, soft for intake / task graphs).
  *
  * traces and worker-logs resolve through the machine-scoped state root
- * (ADR-0066), not project-local `.construct/`, so this suite pins CONSTRUCT_HOME_OVERRIDE
+ * not project-local `.construct/`, so this suite pins CONSTRUCT_HOME_OVERRIDE
  * to an isolated tmp dir for the whole file — otherwise state-root writes
  * would land on the real developer machine's $HOME.
  */

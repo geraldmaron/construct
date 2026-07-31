@@ -16,7 +16,7 @@
  * `call` gateway — it is a self-registered, non-core tool) records each
  * result and drives the run to a real terminal `completed` state with
  * `executor: host:*` and `provenanceSource: 'host-reported'`; the persisted
- * run file never shows the incident shape this session's construct-neq9.7
+ * run file never shows the incident shape the
  * regression test guards (`degraded:true` + `tasks:[]` + `status:'completed'`);
  * and a run abandoned mid-flight (results never submitted) is honestly
  * reported as still `awaiting-host`, never a fabricated terminal status.
@@ -88,7 +88,7 @@ async function submitTaskResult(client, args) {
   return payload(await client.callTool({ name: 'call', arguments: { tool: 'orchestration_task_result', args } }));
 }
 
-// getRun resolves the machine-scoped state root (ADR-0066) via CONSTRUCT_HOME_OVERRIDE
+// getRun resolves the machine-scoped state root via CONSTRUCT_HOME_OVERRIDE
 // on process.env directly — the { env } option threaded through getRun's own
 // signature is not consulted by that resolution. The subprocess sees the
 // sandboxed HOME via sterileSpawnEnv; this process must pin the same override
@@ -116,7 +116,7 @@ function runFilePathInSandbox(env, runId) {
   }
 }
 
-// The hard invariant this session's construct-neq9.7 regression test
+// The hard invariant the
 // established (tests/functional/regression-run-02158a157d53.functional.test.mjs):
 // a persisted run file must never show degraded:true with an empty task list
 // reported as completed. A host-backend run always plans real tasks before it

@@ -1,5 +1,5 @@
 /**
- * tests/policy/unattended-budget.test.mjs — construct-95phc.3: fail-closed
+ * tests/policy/unattended-budget.test.mjs — fail-closed
  * token budget gate for daemon-originated (unattended) LLM spend.
  *
  * Covers lib/policy/unattended-budget.mjs standalone: an unconfigured

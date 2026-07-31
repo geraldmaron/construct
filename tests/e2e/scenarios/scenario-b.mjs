@@ -5,7 +5,7 @@
  * env, pre-seeds the host noise an earlier tool would have left — a non-Construct
  * AGENTS.md, a .cursor/rules entry, a stub .claude/agents/foo.md, and extra
  * .gitignore lines — and commits it all BEFORE `construct init` runs. The point
- * of the scenario is the non-destructive scaffolding contract (ADR-0027): init
+ * of the scenario is the non-destructive scaffolding contract: init
  * must inject its marker blocks and ignore patterns without clobbering content it
  * does not own.
  *

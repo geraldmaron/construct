@@ -1,7 +1,7 @@
 /**
  * tests/intake-policy.test.mjs — project-config intakePolicy resolution.
  *
- * Single-zone model (ADR-0045 §C): the only drop zone is the project-root
+ * Single-zone model: the only drop zone is the project-root
  * `inbox/`. The policy carries maxDepth and additionalDirs — no zone fields.
  */
 

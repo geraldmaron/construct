@@ -1,5 +1,5 @@
 /**
- * tests/oracle/execute-directive-due.test.mjs — construct-p4cba.6 (WS-B5)
+ * tests/oracle/execute-directive-due.test.mjs
  * executeApprovedAction's 'directive-due' case: toast-only by default,
  * unattended execution only behind oracle.executeDirectives.
  */

@@ -1,6 +1,5 @@
 /**
- * tests/server/auth.test.mjs — unit coverage for lib/server/auth.mjs
- * (construct-b0nny.26, E7).
+ * tests/server/auth.test.mjs — unit coverage for lib/server/auth.mjs.
  *
  * A fake tagged-template sql client stands in for Postgres so these tests
  * run without a live database — the real-Postgres proof lives in

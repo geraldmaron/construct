@@ -4,7 +4,7 @@
  * shouldEscalate is pure (reads events + pending files but no network). Tests
  * isolate via CONSTRUCT_ROLES_ROOT and reset state between tests.
  *
- * Any test that can reach createBdIncident() MUST inject fakeRunBd() (construct-y4iv)
+ * Any test that can reach createBdIncident() MUST inject fakeRunBd()
  * -- CONSTRUCT_ROLES_ROOT only isolates the dedup-fingerprint files, not the bd
  * client, so an uninjected escalation path still hits the real shared bd/dolt
  * database.

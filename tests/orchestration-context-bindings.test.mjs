@@ -1,6 +1,6 @@
 /**
  * tests/orchestration-context-bindings.test.mjs — unit coverage for the
- * per-run context-target binding resolver (bead construct-760c.4).
+ * per-run context-target binding resolver.
  *
  * Covers the pure resolution layer under the functional test: unknown-id hard
  * error, free-form role threading, content-root resolution for a directory

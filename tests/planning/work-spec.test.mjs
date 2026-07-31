@@ -1,5 +1,5 @@
 /**
- * tests/planning/work-spec.test.mjs — Work spec schema (construct-b0nny.23).
+ * tests/planning/work-spec.test.mjs — Work spec schema.
  *
  * Pure, no I/O: validateWorkSpec/validateAssignment never throw and return
  * error strings; createWorkSpec fills defaults without mutating the input.

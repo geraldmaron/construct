@@ -10,7 +10,7 @@
  *   - A Compressor-shaped summariser is invoked when present and falls back
  *     to the representative's summary when absent.
  *   - The pass is idempotent on stable input.
- *   - Supersede (construct-xh6c): a tight restatement is archived behind a
+ * - Supersede: a tight restatement is archived behind a
  *     supersededBy pointer and the highest-salience member stays live and
  *     becomes the representative; a cluster-adjacent but non-duplicate member is
  *     kept; the pass is a no-op when supersedeDuplicates is off.

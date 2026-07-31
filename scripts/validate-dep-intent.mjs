@@ -10,10 +10,9 @@
  * Exits non-zero if any missing entries are found.
  * Exits non-zero if a remove-dispositioned entry is still in package.json.
  * Declared-but-unused npm deps are warn-tier until purpose-drift cases are resolved.
- * Dependency budget ceilings (deps/budget.json) are warn-first per ADR-0097 install footprint.
+ * Dependency budget ceilings (deps/budget.json) are warn-first install footprint.
  *
- * @enforces ADR-0059 (dependency-intent rubric)
- * @bead construct-9oi4.11.1, construct-4uxq0.13.8, construct-4uxq0.13.11
+ * @enforces ADR-0059
  */
 
 import fs from 'node:fs';

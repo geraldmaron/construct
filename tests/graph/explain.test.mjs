@@ -1,5 +1,5 @@
 /**
- * tests/graph/explain.test.mjs — `construct graph explain <workflow>` (LMCP-C3).
+ * tests/graph/explain.test.mjs — `construct graph explain <workflow>`.
  *
  * Pins: every EDGE_RELS relation renders its own section, an empty
  * workflow-level relation prints MISSING while a structurally-inapplicable
@@ -21,9 +21,9 @@ import { writeGraph, loadGraph, EDGE_RELS } from '../../lib/graph/store.mjs';
 import { buildFromRegistry } from '../../lib/graph/build-from-registry.mjs';
 import { listProcedureDefinitions } from '../../lib/embedded-contract/procedure-definitions.mjs';
 
-// construct-b0nny.3: the relational graph store (lib/graph/relational/)
-// resolves graph.db under the machine-scoped state root (resolveStateDir,
-// ADR-0066) whenever writeGraph/loadGraph touch the host graph on Node
+// the relational graph store (lib/graph/relational/)
+// resolves graph.db under the machine-scoped state root (resolveStateDir)
+// whenever writeGraph/loadGraph touch the host graph on Node
 // >=22.5. Every test but the last one below writes a synthetic graph
 // (freshRoot()), so pin CONSTRUCT_HOME_OVERRIDE for those — the isolation contract,
 // tests/functional/README.md, and the same pattern

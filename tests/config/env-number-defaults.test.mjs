@@ -6,7 +6,7 @@
  * fallback), unset/missing/blank/non-numeric/negative values fall back, and positive
  * values pass through. A real integration assertion confirms an actual call site
  * (resolveWebCapability) routes its env through the helper rather than a bare
- * `Number(env) || literal` (construct-o6t8.3).
+ * `Number(env) || literal`.
  */
 
 import { test, describe } from 'node:test';

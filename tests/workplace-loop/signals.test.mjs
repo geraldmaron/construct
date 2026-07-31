@@ -1,6 +1,6 @@
 /**
  * tests/workplace-loop/signals.test.mjs — unit coverage for
- * lib/workplace-loop/signals.mjs (construct-b0nny.25).
+ * lib/workplace-loop/signals.mjs.
  *
  * Fixtures here deliberately mirror messy real-GitHub-issue shapes (missing
  * bodies, inconsistent label casing, no assignee) rather than a clean

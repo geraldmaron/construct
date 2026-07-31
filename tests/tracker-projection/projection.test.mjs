@@ -1,6 +1,6 @@
 /**
  * tests/tracker-projection/projection.test.mjs — field authority + Projection
- * builder (construct-b0nny.27 / E8).
+ * builder.
  *
  * Pure, no I/O: authorityFor classifies bd fields; buildProjection records
  * per-field authority, snapshots field values, and preserves the whole issue

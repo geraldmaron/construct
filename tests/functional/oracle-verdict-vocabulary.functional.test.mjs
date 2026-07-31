@@ -1,11 +1,11 @@
 /**
  * tests/functional/oracle-verdict-vocabulary.functional.test.mjs —
  *
- * ADR-0091's 11-state evidence-status vocabulary (construct-4uxq0.12.2).
+ * The 11-state evidence-status vocabulary.
  * Exercises: each state reachable from synthesizeVerdict's real inputs
  * (or documented as aspirational when it isn't), the worst-status-wins
  * rollup priority, isCleanVerdict(), and the five real consumers named in
- * ADR-0091 — lib/oracle/actions.mjs, lib/oracle/index.mjs,
+ * Lib/oracle/actions.mjs, lib/oracle/index.mjs,
  * lib/oracle/cli.mjs, lib/intake/session-prelude.mjs, lib/oracle/gaps.mjs —
  * against both a clean and a genuinely-bad verdict.
  *
@@ -210,7 +210,7 @@ test('unsupported is a recognized, clean state but is not reachable from any cur
   // for this check class" — every section has a real collector behind it
   // (read-model.mjs), so nothing in this function can emit 'unsupported'.
   // Reserved for a future evidence producer that legitimately has none
-  // (ADR-0091 rejected-alternatives); documented here rather than faked.
+  // (rejected-alternatives); documented here rather than faked.
   assert.ok(VERDICT_STATES.includes('unsupported'));
   assert.ok(isCleanVerdict('unsupported'));
 });

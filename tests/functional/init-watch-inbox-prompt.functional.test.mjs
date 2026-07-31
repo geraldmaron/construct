@@ -1,7 +1,7 @@
 /**
  * tests/functional/init-watch-inbox-prompt.functional.test.mjs
  *
- * construct-b2t01.1: `construct init` asks once whether to watch inbox/
+ * `construct init` asks once whether to watch inbox/
  * continuously. Non-interactive runs (--yes, CI, no TTY) never block on
  * stdin — the default is off, taken instantly via the --watch-inbox flag's
  * absence. On yes (--watch-inbox), autoEmbed:true is wired into

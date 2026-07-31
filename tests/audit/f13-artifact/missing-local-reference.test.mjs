@@ -11,7 +11,7 @@
  *      definitions (`![x][c]` + `[c]: ./gone.png`) are never matched, so their missing targets are
  *      invisible to the gate.
  *
- * Contract (CX-AUDIT-ARTIFACT-002/-004): a deliverable that references a missing local asset must
+ * Contract (004): a deliverable that references a missing local asset must
  * fail the quality gate when claims are made, and the evidence manifest must bind to the produced
  * output, not just the source markdown. Each test asserts a missing local reference makes the result
  * NOT ok. Today every case passes — proving the gaps. They flip green once reference integrity covers

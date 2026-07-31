@@ -3,11 +3,10 @@
  *
  * Verifies that CONSTRUCT_DEPLOYMENT_MODE=enterprise causes:
  *   1. buildStatus to include a per-capability truth table in deployment.
- *   2. deployment.enterpriseVerdict === 'unsupported' while the ADR-0057
+ * 2. deployment.enterpriseVerdict === 'unsupported' while the
  *      IMPLEMENT-NOW capabilities are not yet implemented.
  *   3. formatStatusReport emits the standing warning and capability table.
  *
- * Bead: construct-9oi4.8.6 — LMCP-H6
  */
 
 import assert from 'node:assert/strict';
@@ -182,7 +181,7 @@ test('formatStatusReport enterprise mode: emits standing warning and capability 
   );
 
   // Each registered enterprise capability should appear in the report, tagged
-  // with its ADR-0057 category (active/fail-closed/later) — never the bare
+  // with its category (active/fail-closed/later) — never the bare
   // 'not-implemented' status, which conflates fail-closed and later capabilities.
   for (const cap of CAPABILITY_REGISTRY.enterprise) {
     const category = categorizeEnterpriseCapability(cap);
@@ -214,7 +213,7 @@ test('categorizeEnterpriseCapability: distinguishes fail-closed from later per A
   // per the ADR: "must never show a not-implemented capability as active" implies
   // the inverse is also true — an implemented one is never anything but active.
   assert.equal(categorizeEnterpriseCapability({ id: 'tenant-isolation', status: 'implemented' }), 'active');
-  // An id with no ADR-0057 category (and not implemented) defaults to absent.
+  // An id with no category (and not implemented) defaults to absent.
   assert.equal(categorizeEnterpriseCapability({ id: 'some-future-capability', status: 'not-implemented' }), 'absent');
 });
 

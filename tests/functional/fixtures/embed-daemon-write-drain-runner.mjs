@@ -1,7 +1,6 @@
 /**
  * tests/functional/fixtures/embed-daemon-write-drain-runner.mjs — child
- * process driver for embed-daemon-write-drain.functional.test.mjs
- * (construct-p4cba.3, WS-B2).
+ * process driver for embed-daemon-write-drain.functional.test.mjs.
  *
  * Boots the real EmbedDaemon (lib/embed/daemon.mjs) against a pre-seeded
  * ApprovalQueue (one `jira.comment` write intent, still `awaiting_approval`)
@@ -66,7 +65,7 @@ async function main() {
 
   await daemon.start();
 
-  // A failed execution under the lease model (ADR-0089) releases the lease
+  // A failed execution under the lease model releases the lease
   // back to 'approved' and stamps lastLeaseFailureReason — that durable
   // marker, not main's retired executionAttempts counter, is the proof the
   // drain reached the adapter and recorded the outcome.
