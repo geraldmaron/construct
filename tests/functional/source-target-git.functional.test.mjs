@@ -1,7 +1,7 @@
 /**
  * tests/functional/source-target-git.functional.test.mjs
  *
- * construct-wjap9.1 (P1.1): the generic `git` source-target provider —
+ * The generic `git` source-target provider —
  * unlike `github`, its selector field IS the remote itself (no
  * remoteTemplate), so resolveCorpusRemote's fallback branch
  * (lib/sources/repo-cache.mjs) is what makes this provider resolvable at
@@ -99,7 +99,7 @@ test('git target: a ~-prefixed local remote is expanded before cloning', () => {
   // in the selector value resolves to the same real path. The fixture home is
   // a dedicated mkdtemp dir with the bare repo moved inside — deriving it as
   // dirname(bareRealPath) would make HOME the shared OS tmpdir itself, and the
-  // child's state root would land at $TMPDIR/.construct (construct-4uxq0.14.6).
+  // child's state root would land at $TMPDIR/.construct.
   const homeDir = freshDir('cx-git-home-');
   const bareName = path.basename(bareRealPath);
   fs.renameSync(bareRealPath, path.join(homeDir, bareName));

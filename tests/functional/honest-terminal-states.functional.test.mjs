@@ -1,7 +1,7 @@
 /**
  * tests/functional/honest-terminal-states.functional.test.mjs — Honest terminal states for degraded zero-task runs
  *
- * ADR-0020: A run that resolves no model, prepares zero tasks, and sets degraded:true
+ * A run that resolves no model, prepares zero tasks, and sets degraded:true
  * must persist and report an explicit 'degraded' terminal status — never bare 'completed'.
  *
  * Acceptance criteria (construct-fbxv.1):
@@ -21,7 +21,7 @@ import { shapeRun } from '../../lib/mcp/tools/orchestration-run.mjs';
 import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 // runOrchestration/getRun/orchestrationRun resolve the run store through the
-// machine-scoped state root (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE from
+// machine-scoped state root, which reads CONSTRUCT_HOME_OVERRIDE from
 // real process.env directly — the CONSTRUCT_TOOLKIT_DIR/HOME/USERPROFILE keys below
 // only reach the in-process `env` option bag runOrchestration threads to
 // model resolution, never process.env, so they never isolated state-root

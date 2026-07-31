@@ -1,8 +1,8 @@
 /**
- * tests/graph/evidence.test.mjs — runtime-evidence edges: traces linked to workflow nodes (LMCP-C9).
+ * tests/graph/evidence.test.mjs — runtime-evidence edges: traces linked to workflow nodes.
  *
  * Pins: a fixture orchestration run persisted at the machine-scoped state
- * root's `runtime/orchestration/runs/<runId>.json` (ADR-0066) produces a
+ * root's `runtime/orchestration/runs/<runId>.json` produces a
  * `runtime-evidence:<runId> --evidenced_by--> workflow:<type>` edge via
  * buildRuntimeEvidence; a run still `planned`/`running` (no terminal outcome
  * yet) or with no resolvable workflow type is skipped rather than fabricated

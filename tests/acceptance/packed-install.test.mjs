@@ -1,7 +1,7 @@
 /**
  * tests/acceptance/packed-install.test.mjs
  *
- * LMCP-L2 packed consumer install acceptance test.
+ * Packed consumer install acceptance test.
  *
  * Verifies that the published tarball (produced via `npm pack`) installs
  * cleanly into a fresh project and that the `construct` binary is functional.
@@ -144,7 +144,7 @@ test('packed consumer install (npm pack → clean install → smoke)', { timeout
 
   const binPath = join(tmpDir, 'node_modules', '.bin', 'construct');
 
-  // lib/paths.mjs resolves the ADR-0066 state root from process.env.HOME /
+  // lib/paths.mjs resolves the state root from process.env.HOME /
   // CONSTRUCT_HOME_OVERRIDE in the CHILD's own env, not this test process's env —
   // every spawned `construct` call below must be pinned to a throwaway
   // sandbox home or it leaks project-key directories into the real

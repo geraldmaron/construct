@@ -1,6 +1,6 @@
 /**
  * tests/functional/artifact-content-signals.functional.test.mjs —
- * post-draft content signals recruit late reviewers (construct-pteo2.4).
+ * post-draft content signals recruit late reviewers.
  *
  * The request side never mentions cost; the DRAFT contains a $2M infra cost
  * table. extractContentSignals must fire cost:true from the draft alone, and
@@ -8,7 +8,7 @@
  * the result carries the content signals and the late-recruited reviewer
  * (data-analyst via the cost skill affinity), folded into the overlay Worker
  * Profiles without displacing the Procedure plan's own assignments. Advisory per
- * ADR-0070 — recruitment never changes the release-gate verdict.
+ * Recruitment never changes the release-gate verdict.
  */
 
 import assert from 'node:assert/strict';

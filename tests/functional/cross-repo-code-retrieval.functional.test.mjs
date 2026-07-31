@@ -1,6 +1,6 @@
 /**
  * tests/functional/cross-repo-code-retrieval.functional.test.mjs —
- * sterile cross-repo code retrieval pins (construct-1smc4.4), mirroring the
+ * sterile cross-repo code retrieval pins, mirroring the
  * knowledge-multiroot-corpus pattern: two fixture repos in tmpdirs registered
  * via the real `construct sources add`, fetch-spy preload, isolated HOME,
  * hashing embeddings, zero network.

@@ -1,5 +1,5 @@
 /**
- * tests/acceptance/modes/solo.acceptance.test.mjs — LMCP-L6 solo-mode acceptance leg.
+ * tests/acceptance/modes/solo.acceptance.test.mjs — solo-mode acceptance leg.
  *
  * Proves solo mode delivers what lib/mode-capabilities.mjs's CAPABILITY_REGISTRY.solo
  * promises, with one real assertion per capability marked 'implemented' — not a

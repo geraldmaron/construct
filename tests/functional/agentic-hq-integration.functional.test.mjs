@@ -3,7 +3,7 @@
  * pipeline test against the agentic-hq fixture project.
  *
  * Exercises: intake classifier (A), extractor droppedInfo contract (F),
- * tag suggestTags (B/C), doc-hygiene scanner (N), scheduler job registry (B9),
+ * tag suggestTags (B/C), doc-hygiene scanner (N), scheduler job registry,
  * knowledge search with tag filter (C), workflow template listing (M),
  * skill-call telemetry extended payload (H).
  *

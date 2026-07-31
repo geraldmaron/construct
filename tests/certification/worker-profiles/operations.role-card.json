@@ -12,6 +12,7 @@
   ],
   "skillEmphasis": [
     "perspectives/operations",
+    "docs/artifact-authorship",
     "docs/init-project",
     "operating/incident-response",
     "operating/oncall-rotation",

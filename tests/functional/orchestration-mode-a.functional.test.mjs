@@ -4,7 +4,7 @@
  * Spawns the real `bin/construct orchestrate` binary in an isolated tmpdir and
  * asserts the durable, host-adapter-facing behavior: an orchestrated run plans a
  * specialist chain and writes a run under the machine-scoped state root's
- * `runtime/orchestration/` (ADR-0066), `status` reads it back across process
+ * `runtime/orchestration/`, `status` reads it back across process
  * boundaries (resumability without a daemon), and a prompt-only run honestly
  * owns no specialist sequence. HOME is pinned to the tmpdir and provider keys
  * are blanked so the run is hermetic — since HOME == cwd here, the
@@ -65,7 +65,7 @@ test('orchestrate run --worker-backend provider reaches the execution engine, no
   assert.equal(meta.workerBackend, 'provider');
   assert.ok(meta.tasks.length >= 2, 'multiple specialists sequenced');
   // A task executor of `inline:prepared` would mean the CLI flag only ever labeled the
-  // run, never actually selected the execution backend (construct-1xlz). Provider
+  // run, never actually selected the execution backend. Provider
   // execution (attempted here, and failing without a key) proves the opposite.
 
   assert.ok(meta.tasks.every((t) => t.executor === 'provider:error'), 'provider backend was actually invoked, not inline');

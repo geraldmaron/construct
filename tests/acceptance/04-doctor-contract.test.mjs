@@ -1,7 +1,7 @@
 /**
  * tests/acceptance/04-doctor-contract.test.mjs
  *
- * LMCP-L1 acceptance contract: construct doctor workflow.
+ * Acceptance contract: construct doctor workflow.
  *
  * Verifies that `construct doctor` does not crash with MODULE_NOT_FOUND or
  * an unhandled exception stack trace. The doctor command may exit non-zero
@@ -22,7 +22,7 @@ import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const CONSTRUCT_BIN = new URL('../../bin/construct', import.meta.url).pathname;
 
-// lib/paths.mjs resolves the ADR-0066 state root from process.env.HOME /
+// lib/paths.mjs resolves the state root from process.env.HOME /
 // CONSTRUCT_HOME_OVERRIDE in the CHILD's own env, not the test process's env — so
 // every spawned `construct` call must be pinned to a throwaway sandbox home
 // or it leaks project-key directories into the real developer machine's

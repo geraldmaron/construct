@@ -1,16 +1,16 @@
 /**
  * tests/functional/improvement-controller.functional.test.mjs — the approval-gated
- * controller seam (construct-6zga.1.5).
+ * controller seam.
  *
  * Drives a proposal through the real controller and the real 1.6 evaluation report
  * (buildEvaluationReport), proving the governance invariants:
- *   - only versioned artifacts are admitted; raw session history is refused (AC1).
+ * - only versioned artifacts are admitted; raw session history is refused.
  *   - missing provenance, held-out results, deterministic pass, approver, or
- *     dependency each refuses the proposal (AC2).
+ * dependency each refuses the proposal.
  *   - promotability is re-derived from the report's gates, so a tampered decision
  *     flag cannot pass.
- *   - the final mutation boundary requires a recorded human approval (AC3).
- *   - rollout is planned (never auto-applied), and apply/rollback are traceable (AC4).
+ * - the final mutation boundary requires a recorded human approval.
+ * - rollout is planned (never auto-applied), and apply/rollback are traceable.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';

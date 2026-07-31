@@ -2,7 +2,7 @@
  * tests/functional/web-capability-gate-visibility.functional.test.mjs
  *
  * The web-capability grant ladder (WEB_SEARCH_URL -> provider-native ->
- * CONSTRUCT_ORCHESTRATION_WEB_DELEGATE -> unavailable, ADR-0050) determines
+ * CONSTRUCT_ORCHESTRATION_WEB_DELEGATE -> unavailable) determines
  * whether a web-capable specialist would degrade. Preflight and doctor must
  * both expose the resolved mode pre-run, advisory only — it never fails the
  * gate — and .env.example must document the two governing env vars.

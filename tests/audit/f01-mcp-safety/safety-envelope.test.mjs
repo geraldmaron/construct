@@ -1,7 +1,7 @@
 /**
  * tests/audit/f01-mcp-safety/safety-envelope.red.mjs — F01 missing per-tool safety-envelope proof.
  *
- * Regression guard for CX-AUDIT-MCP-SAFETY-001. Every tool def in the MCP catalog
+ * Every tool def in the MCP catalog
  * carries a declared `outputSchema` and a `safety` block ({ class, filesystem,
  * network, process }) via withSafetyEnvelope / lib/mcp/tool-safety.mjs, so a host
  * can validate tool output, reason about a tool's blast radius, and gate destructive

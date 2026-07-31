@@ -69,7 +69,7 @@ test('config-error: unrecognized host context without cross-provider opt-in', ()
 });
 
 test('cross-provider opt-in cascades to config-error when no tier is configured (no implicit defaults)', () => {
-  // ADR-0027: Construct ships no implicit model defaults. With NO_CREDS and
+  // Construct ships no implicit model defaults. With NO_CREDS and
   // no env override, cross-provider opt-in cannot synthesize a model — the
   // resolver returns a structured config-error so callers can surface a
   // remediation hint rather than silently substituting a vendor default.

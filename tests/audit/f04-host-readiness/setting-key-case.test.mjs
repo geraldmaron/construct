@@ -18,7 +18,7 @@
  *   delete the banner — the bug then collapses to "verify against the schema, not a
  *   doc string" and the fixture still guards the parity.
  *
- * Contract (CX-AUDIT-HOST-001): the key Construct writes must equal the key VS Code's
+ * Contract: the key Construct writes must equal the key VS Code's
  * settings schema reads. Passes once the writer emits the verified key.
  */
 import assert from 'node:assert/strict';

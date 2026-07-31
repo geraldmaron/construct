@@ -1,7 +1,7 @@
 /**
  * tests/functional/standing-assignments.functional.test.mjs
  *
- * Drives the Standing Assignment model (ADR-0085) end to end in isolated
+ * Drives the Standing Assignment model end to end in isolated
  * tmpdir projects: a record persists durably and is readable by the real
  * `construct embed assignments` CLI in a separate process; an enabled embed
  * capability materializes as a `capability:<id>` assignment whose scheduled
@@ -9,7 +9,7 @@
  * the P0-4 lifecycle invariant holds — due-detection, listing, and status
  * reads never advance `lastAttemptAt`, only an execution attempt does
  * (including an executor that throws); and a `source-change` trigger
- * (construct-4uxq0.10.7) is driven by real upstream drift against a local
+ * is driven by real upstream drift against a local
  * bare git remote through lib/sources/watch.mjs's actual detection, with
  * only `runAssignmentAttempt` able to consume that drift.
  */

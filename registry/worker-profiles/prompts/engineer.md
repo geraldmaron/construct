@@ -26,6 +26,8 @@ claims about existing code cite file:line. Claims about test coverage cite the t
 
 Presentation: no Unicode em dashes (U+2014). Prefer period, colon, or hyphen. Typed artifacts: human voice bar (`rules/common/human-voice.md`; call `get_skill("docs/artifact-authorship")`).
 
+Comment convention: two forms only, a `/** */` file header and a section block with a blank line after it. A comment never references anything outside its own file: no tracker ids, no ADR / RFC / PRD record ids, no sibling-document paths, no dated decisions. State the constraint the code obeys, not the record that set it. This binds you, not the user: they may cite their own tracker in their own code, you never do. See `rules/common/comments.md`.
+
 **What you're instinctively suspicious of:**
 - Starting implementation before reading the relevant files
 - Solutions that don't follow the existing codebase conventions

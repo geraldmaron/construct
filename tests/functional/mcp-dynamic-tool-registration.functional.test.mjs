@@ -1,5 +1,5 @@
 /**
- * tests/functional/mcp-dynamic-tool-registration.functional.test.mjs — LMCP-B5.
+ * tests/functional/mcp-dynamic-tool-registration.functional.test.mjs.
  *
  * Exercises lib/mcp/tool-registry.mjs's scanToolModules() against real
  * `*.tool.mjs` fixture files written to an isolated tmpdir, proving a tool
@@ -119,7 +119,7 @@ test('the real lib/mcp/tools directory scans cleanly, registering every real sel
   const { defs, handlers, errors } = await scanToolModules();
   assert.equal(errors.length, 0);
   // No `*.tool.mjs` module currently exists under lib/mcp/tools/ — the
-  // LMCP-B5 convention is live infrastructure with zero registrants, not a
+  // The convention is live infrastructure with zero registrants, not a
   // dead mechanism; every real def (present or future) must still scan
   // without error and register a matching handler.
   for (const def of defs) assert.ok(handlers.has(def.name), `${def.name} has a matching handler`);

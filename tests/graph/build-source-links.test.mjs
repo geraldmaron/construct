@@ -1,6 +1,6 @@
 /**
  * tests/graph/build-source-links.test.mjs — unit coverage for
- * lib/graph/build-source-links.mjs (construct-wjap9.2).
+ * lib/graph/build-source-links.mjs.
  */
 
 import assert from 'node:assert/strict';

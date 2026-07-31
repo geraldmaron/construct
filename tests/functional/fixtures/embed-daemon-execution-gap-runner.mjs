@@ -1,7 +1,7 @@
 /**
  * tests/functional/fixtures/embed-daemon-execution-gap-runner.mjs — child
  * process driver for embed-daemon-execution-gap.functional.test.mjs
- * (construct-p4cba.4, WS-B3: Job 12 "execution-gap" rebound to the governed
+ * (WS-B3: Job 12 "execution-gap" rebound to the governed
  * write tree).
  *
  * Before this bead, Job 12 called `jiraProvider.search(jql, {maxResults})`

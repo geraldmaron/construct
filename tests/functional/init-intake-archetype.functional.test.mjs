@@ -6,7 +6,7 @@
  * archetype shape (an inbox/ drop zone covered by the host .gitignore, plus
  * .construct/intake/manifest.json) and stamps attribution onto Construct-owned
  * artifacts (plan.md, .construct/context.{md,json}). AGENTS.md/CLAUDE.md are user-owned
- * (bd-authored skeleton plus the fenced Construct block, ADR-0027 §2) and are
+ * (bd-authored skeleton plus the fenced Construct block) and are
  * not Construct-stamped.
  *
  * Cases:

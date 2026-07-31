@@ -1,7 +1,6 @@
 /**
  * tests/functional/graph-relational-store.functional.test.mjs — day-one
- * milestone proof for the relational graph store (construct-b0nny.3,
- * directive §4.11).
+ * milestone proof for the relational graph store.
  *
  * Drives the real `construct` binary and the real lib/graph/relational/
  * modules against one isolated project sandbox, walking the exact 12-step
@@ -33,7 +32,7 @@
  *
  * The live round-trip lives in tests/graph/relational-postgres-store.test.mjs,
  * gated on DATABASE_URL, proven for real against a Docker Postgres instance
- * (construct-b0nny.21). Its "query-template parity" suite runs the exact
+ *. Its "query-template parity" suite runs the exact
  * recursive-CTE SQL text behind milestones 4-8 below (queryUp/queryDown/
  * cycles/orphans/orphaned-capabilities/owners/requirements/impact) against
  * live Postgres via bindNamedParams + sql.unsafe, on the same fixture also
@@ -106,7 +105,7 @@ if (!sqliteAvailable()) {
   // (outbox enqueue is a library primitive for a future bead-declaration
   // integration point, not a user-facing command) and for the impact query,
   // which is generic over node type (unlike the file-path-scoped `impacted`
-  // CLI command) — see graph-store-design.md §14 on why `impact` needed its
+  // CLI command) — on why `impact` needed its
   // own rel parameter rather than reusing `impacted`.
   const { enqueueOutboxEvent, drainOutbox } = await import('../../lib/graph/relational/outbox.mjs');
   const { queryImpact, QUERY_UP, QUERY_DOWN, QUERY_PATH, QUERY_CYCLES, QUERY_ORPHANS,

@@ -10,7 +10,7 @@
  * R&D queue filled with false positives that drowned out real signals.
  *
  * Correct behavior: additionalDirs is empty by default. The single canonical
- * `inbox/` zone is always watched (ADR-0045 §C) and the project-root `inbox/`
+ * `inbox/` zone is always watched and the project-root `inbox/`
  * is scaffolded; there is no zones object. Extra dirs are opt-in only via
  * `construct intake config set --add-dir=<path>`.
  */

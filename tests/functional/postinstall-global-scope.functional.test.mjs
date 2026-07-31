@@ -1,11 +1,11 @@
 /**
  * tests/functional/postinstall-global-scope.functional.test.mjs
  *
- * ADR-0029: `npm i -g` runs construct-postinstall.mjs with
+ * `npm i -g` runs construct-postinstall.mjs with
  * `npm_config_global=true`. The postinstall must print footprint guidance and
  * exit 0 without invoking the global front-door sync — `~/.claude/CLAUDE.md`,
  * `~/.claude/settings.json`, and `~/.construct/*` only land on
- * `construct install --footprint=user` (ADR-0071 renamed --scope to
+ * `construct install --footprint=user` (`--scope` remains a deprecated
  * --footprint), so the consent point is visible.
  */
 

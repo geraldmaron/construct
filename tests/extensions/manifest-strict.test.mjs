@@ -1,7 +1,7 @@
 /**
  * tests/extensions/manifest-strict.test.mjs — strict-mode manifest validation.
  *
- * LMCP-N2 Phase 1: extension manifest hardening. Tests the strict option on
+ * Phase 1: extension manifest hardening. Tests the strict option on
  * validateManifest() and loadManifestsFromDir().
  */
 

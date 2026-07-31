@@ -1,13 +1,13 @@
 /**
  * service-op-run-wiring.functional.test.mjs — proves the service tree launches under
- * `op run` when opted in (ADR-0049 Design A).
+ * `op run` when opted in (Design A).
  *
  * Drives startServices() with an injected spawn function that captures the
  * (command, args) each long-lived service would spawn, and a fake `op` binary on
  * PATH so opCliAvailable() reports present without touching a real 1Password. When
  * CONSTRUCT_OP_ENV_FILE points at a real env-file the OpenCode / copilot-bridge
  * spawns are wrapped as `op run --env-file=… -- <cmd>`; cm consumes no provider
- * API key so it is deliberately excluded from the wrap (construct-0wmj); with the
+ * API key so it is deliberately excluded from the wrap; with the
  * var unset the same spawns are byte-for-byte unchanged. A fake-op invocation
  * counter records how many times `op --version` is probed across the wrapped
  * spawns — the cross-process signal observable here without a real vault.
@@ -99,7 +99,7 @@ test('opted in: opencode / copilot spawns are wrapped in op run; cm is not (cons
   );
 
   // cm never consumes a provider API key, so the per-service op-run fallback
-  // is narrowed to skip it (construct-0wmj) — it launches unwrapped even
+  // is narrowed to skip it — it launches unwrapped even
   // when opted in.
   const cm = spawns.find((s) => s.command === 'cm');
   assert.ok(cm, 'cm spawn captured');

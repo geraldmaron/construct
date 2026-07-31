@@ -1,7 +1,7 @@
 /**
  * tests/audit/f01-mcp-safety/delete-traversal.red.mjs — F01 [R11]+[R10] destructive path-traversal proof.
  *
- * Regression guard for CX-AUDIT-MCP-SAFETY-003. deleteIngestedArtifacts resolves each
+ * deleteIngestedArtifacts resolves each
  * model-supplied `files` entry against the ingested-artifact root via resolveWithinRoot,
  * so an entry like `../../../OUTSIDE.txt` that escapes `.construct/knowledge/internal` is refused
  * before any deletion rather than removing an arbitrary file on disk — the destructive

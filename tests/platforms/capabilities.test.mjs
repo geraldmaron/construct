@@ -1,5 +1,5 @@
 /**
- * capabilities.test.mjs — platform capability registry data contract (ADR-0033).
+ * capabilities.test.mjs — platform capability registry data contract.
  *
  * Locks the values sync and init derive from platforms/capabilities.json so a
  * registry edit that changes host behavior must update this test deliberately.

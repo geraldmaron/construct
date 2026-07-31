@@ -1,7 +1,7 @@
 /**
  * tests/audit/f03-package/packed-asset-parity.red.mjs — F03 [R1] packed-tarball asset parity.
  *
- * Regression guard for CX-AUDIT-PACKAGE-001/-002. Runtime code loads data files out of
+ * Regression guard: runtime code loads data files out of
  * the repo-root registry/ and schemas/ directories:
  *   - lib/registry/validate.mjs  reads <root>/registry/capabilities.json
  *   - lib/registry/agent-manifest.mjs  reads <root>/registry/agent-manifest.json

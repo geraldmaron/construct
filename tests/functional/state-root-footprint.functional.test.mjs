@@ -1,7 +1,7 @@
 /**
  * tests/functional/state-root-footprint.functional.test.mjs
  *
- * End-to-end coverage for ADR-0066 (config-layer project footprint): a fresh
+ * (config-layer project footprint): a fresh
  * `construct init` produces a project tree with no heavy state directories
  * under `.construct/`, and an operation that would normally write traces or
  * orchestration runs instead lands under the machine-scoped state root at

@@ -1,6 +1,6 @@
 /**
  * tests/workplace-loop/align.test.mjs — unit coverage for
- * lib/workplace-loop/align.mjs (construct-b0nny.25), including the
+ * lib/workplace-loop/align.mjs, including the
  * no-fabrication guarantee: no configured strategy means no asserted
  * alignment verdict, ever.
  */

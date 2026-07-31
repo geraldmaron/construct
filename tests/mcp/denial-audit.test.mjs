@@ -1,5 +1,5 @@
 /**
- * tests/mcp/denial-audit.test.mjs — LMCP-I3.
+ * tests/mcp/denial-audit.test.mjs.
  *
  * Pins: a denied broker decision writes a durable denied-store record and
  * an audit-trail entry, both carrying the full {decisionId, actor, tenant,
@@ -24,7 +24,7 @@ const REQUIRED_FIELDS = [
 ];
 
 // The broker's default emit is the real emitTraceEvent, which resolves trace
-// writes through the machine-scoped state root (ADR-0066) via
+// writes through the machine-scoped state root via
 // process.env.CONSTRUCT_HOME_OVERRIDE directly, not through any per-call option, so
 // CONSTRUCT_HOME_OVERRIDE is pinned for the whole file to keep those writes off the
 // real developer machine's $HOME.

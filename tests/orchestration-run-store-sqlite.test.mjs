@@ -24,7 +24,7 @@ function project() {
 test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} } });
 
 // createSqliteRunStore resolves its db directory through the machine-scoped
-// state root (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE from real process.env
+// state root, which reads CONSTRUCT_HOME_OVERRIDE from real process.env
 // directly. Pin it for the whole file so these runs never write into the
 // real developer machine's ~/.construct/projects/.
 

@@ -1,6 +1,6 @@
 /**
  * tests/workplace-loop/verify.test.mjs — unit coverage for
- * lib/workplace-loop/verify.mjs (construct-b0nny.25).
+ * lib/workplace-loop/verify.mjs.
  */
 
 import test from 'node:test';

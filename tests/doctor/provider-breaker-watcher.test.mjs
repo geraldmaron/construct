@@ -1,5 +1,5 @@
 /**
- * tests/doctor/provider-breaker-watcher.test.mjs — LMCP-B9 doctor watcher.
+ * tests/doctor/provider-breaker-watcher.test.mjs — doctor watcher.
  *
  * Fixture-forces a provider circuit breaker OPEN via lib/providers/circuit-
  * breaker.mjs's real getBreaker(), then asserts the provider-breaker watcher's

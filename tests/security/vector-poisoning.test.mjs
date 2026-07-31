@@ -1,11 +1,11 @@
 /**
  * tests/security/vector-poisoning.test.mjs — Vector-store poisoning defenses
- * for the retrieval/recall path (construct-9oi4.14.4, LMCP-N4).
+ * for the retrieval/recall path.
  *
  * @owasp LLM04, LLM08
  * @secures research-synthesis
  *
- * N1 (construct-9oi4.14.1, lib/security/trust.mjs) stamps ingested content
+ * N1 (lib/security/trust.mjs) stamps ingested content
  * with a trust label but the retrieval path itself had no defense against a
  * poisoned embedding dominating recall by cosine similarity alone. This
  * suite extends the F08 adversarial corpus
@@ -25,8 +25,7 @@
  *
  * Run: node --test tests/security/vector-poisoning.test.mjs
  *
- * References: CX-AUDIT-LLMSEC-001, OWASP GenAI vector/embedding weaknesses,
- * construct-9oi4.14.4, construct-9oi4.14.1.
+ * References: OWASP GenAI vector/embedding weaknesses.
  */
 import assert from 'node:assert/strict';
 import test from 'node:test';

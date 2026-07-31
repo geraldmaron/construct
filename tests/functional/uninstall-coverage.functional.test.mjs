@@ -1,7 +1,7 @@
 /**
  * tests/functional/uninstall-coverage.functional.test.mjs
  *
- * Coverage for the four reversers ADR-0027 §Consequences requires `construct
+ * Coverage for the four reversers `construct
  * uninstall` to perform: the dev.construct.pressure-release LaunchAgent, a
  * Construct-set git core.hooksPath, the memory MCP registration across Claude /
  * OpenCode / Codex configs, and the opt-in pgvector image removal. Also covers

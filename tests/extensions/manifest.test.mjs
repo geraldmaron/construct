@@ -1,7 +1,7 @@
 /**
  * tests/extensions/manifest.test.mjs — extension manifest validator unit tests.
  *
- * LMCP-B1: validates the manifest schema, required fields, kind registry,
+ * Validates the manifest schema, required fields, kind registry,
  * semver versioning, forward-compat guard, loader, and constants.
  */
 

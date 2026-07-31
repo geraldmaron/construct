@@ -1,6 +1,5 @@
 /**
- * tests/graph/incremental.test.mjs — scoped graph refresh on edit
- * (construct-4uxq0.11.9).
+ * tests/graph/incremental.test.mjs — scoped graph refresh on edit.
  */
 
 import test from 'node:test';

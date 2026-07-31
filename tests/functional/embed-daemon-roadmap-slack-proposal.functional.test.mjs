@@ -1,7 +1,7 @@
 /**
  * tests/functional/embed-daemon-roadmap-slack-proposal.functional.test.mjs —
  * end-to-end proof of daemon Job 10's (roadmap) Slack write-intent proposal,
- * the daemon-side half of construct-p4cba.4's Job 10 rebound (WS-B3): a
+ * the daemon-side half of the Job 10 rebound: a
  * generated roadmap summary is proposed to Slack as a governed writeIntent
  * on the approval queue, never posted directly.
  *

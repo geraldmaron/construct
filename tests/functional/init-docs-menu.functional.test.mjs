@@ -1,7 +1,7 @@
 /**
  * tests/functional/init-docs-menu.functional.test.mjs
  *
- * construct-su4dd: scripted interactive harness for init's docs setup menu.
+ * scripted interactive harness for init's docs setup menu.
  * CI has no reliable pseudo-TTY; CONSTRUCT_PROMPT_SCRIPT_FILE drives Packs /
  * Individual / Skip paths without manual input. Real TTY behavior remains
  * covered by lib/tty-prompts.mjs plus the injected unit tests in

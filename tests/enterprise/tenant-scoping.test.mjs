@@ -1,9 +1,9 @@
 /**
- * tests/enterprise/tenant-scoping.test.mjs — LMCP-H4.
+ * tests/enterprise/tenant-scoping.test.mjs.
  *
  * tests/enterprise/tenant.test.mjs (H1) pins tenantId resolution/propagation
  * onto run/task records and the intake queue; tests/enterprise/audit-isolation.test.mjs
- * (H5) pins app-level cross-tenant filtering (scopeToTenant) as the stopgap
+ * pins app-level cross-tenant filtering (scopeToTenant) as the stopgap
  * ahead of physical storage. These tests pin the H4 stage-1 slice: every new
  * team-mode Postgres table (orchestration runs, trace events, shared memory)
  * carries a queryable tenant_id column and every store query filters on it —
@@ -156,14 +156,13 @@ test('the new team-mode migrations carry a tenant_id column', () => {
   }
 });
 
-test('an ADR-linked comment documents the stage-2 (physical isolation) deferral', () => {
+test('a comment documents the stage-2 (physical isolation) deferral', () => {
   for (const file of [
     'lib/orchestration/run-store-postgres.mjs',
     'lib/orchestration/trace-store.mjs',
     'lib/storage/shared-memory.mjs',
   ]) {
     const source = fs.readFileSync(join(ROOT, file), 'utf8');
-    assert.match(source, /ADR-0057/, `${file} must reference ADR-0057 (A7)`);
     assert.match(source, /[Ss]tage 2/, `${file} must document the stage-2 deferral`);
     assert.match(source, /deferred/i, `${file} must state the deferral explicitly`);
   }

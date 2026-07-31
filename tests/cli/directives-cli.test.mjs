@@ -13,7 +13,7 @@ import { runDirectivesCli } from '../../lib/cli/directives.mjs';
 import { writeDirectiveState } from '../../lib/directives/due-tracker.mjs';
 
 // writeDirectiveState/readDirectiveState resolve through the machine-scoped
-// state root (ADR-0066, lib/state-root.mjs) — CONSTRUCT_HOME_OVERRIDE keeps that
+// state root (lib/state-root.mjs) — CONSTRUCT_HOME_OVERRIDE keeps that
 // off the real developer machine's $HOME for the whole file.
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-directives-cli-home-'));

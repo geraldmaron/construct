@@ -1,14 +1,13 @@
 /**
  * tests/knowledge-multiroot.test.mjs — unit coverage for multi-root corpus
- * origin threading (bead construct-760c.2) and code-file federation
- * (construct-1smc4.1).
+ * origin threading and code-file federation.
  *
  * Covers the two pure layers under the functional test:
  *   - lib/sources/content-roots.mjs: content-capable target resolution and the
  *     --projects filter expansion (all / self / unknown-id).
  *   - lib/knowledge/rag.mjs buildCorpus: host chunks carry the reserved self
  *     origin; registered-root chunks carry their target's origin plus per-file
- *     relPath; the single-root signature stays back-compatible (R1); code
+ * relPath; the single-root signature stays back-compatible; code
  *     files (UTF8_TEXT_EXTS) fold in alongside markdown, excluding
  *     node_modules and non-text extensions.
  */

@@ -1,11 +1,11 @@
 /**
- * tests/audit/f09-orchestration/remote-status-timeout.test.mjs — construct-o6t8.2 proof.
+ * tests/audit/f09-orchestration/remote-status-timeout.test.mjs — proof.
  *
  * The remote orchestration client (lib/mcp/tools/orchestration-run.mjs) bounded the
  * run POST with a hard-coded 200ms per-request timeout and left the status poll GET
  * (statusViaService) completely unbounded — a healthy remote service slower than
  * 200ms was reported as unreachable, and a service that accepted the poll connection
- * but never replied hung the call forever (ORCH-004: every remote fetch must be
+ * but never replied hung the call forever (every remote fetch must be
  * bounded). openai-python and anthropic-sdk-python both default the overall request
  * timeout to 600000ms; this fix raises Construct's default to 30000ms (env-overridable
  * via CONSTRUCT_ORCHESTRATION_TIMEOUT_MS) and applies the same AbortSignal bound to

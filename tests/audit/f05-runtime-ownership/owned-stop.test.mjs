@@ -10,9 +10,9 @@
  * IS the defect.
  *
  * Two contracts are asserted:
- *   1. (CX-AUDIT-RUNTIME-001/-003) service-manager exports an ownership-decision function
+ * 1. (003) service-manager exports an ownership-decision function
  *      so stop can ask "is this PID a Construct-owned port owner?" separately from killing.
- *   2. (CX-AUDIT-RUNTIME-001/-002) the ownership record schema carries the identity fields
+ * 2. the ownership record schema carries the identity fields
  *      stop must check: pid, command, cwd, a Construct env/marker, and a start timestamp.
  *
  * Both fail today: the named export resolves to undefined, so the predicate cannot be

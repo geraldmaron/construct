@@ -1,17 +1,17 @@
 /**
  * tests/functional/state-root-toolkit-isolation.functional.test.mjs
  *
- * Pins that machine-scoped heavy state (ADR-0066) is anchored to the user
+ * Pins that machine-scoped heavy state is anchored to the user
  * home and never follows CONSTRUCT_TOOLKIT_DIR into the toolkit install root or the
  * project working tree. Regression coverage for the stray
- * `<repo>/projects/<key>/lancedb` observed 2026-07-10: state-root resolved its
+ * `<repo>/projects/<key>/lancedb`: state-root resolved its
  * base from constructDir(), so any process carrying CONSTRUCT_TOOLKIT_DIR (every
  * managed MCP entry sets it, and test suites exported it pointing at the repo)
  * dropped the LanceDB vector store inside the working tree.
  *
  * Spawns real child processes (no mocks) against the real lib/state-root.mjs
  * and lib/storage/vector-client.mjs, with all writes confined to mkdtemp
- * fixtures per the isolation contract in tests/functional/README.md.
+ * fixtures per the functional-test isolation contract.
  */
 
 import test from 'node:test';

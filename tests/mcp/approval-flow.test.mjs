@@ -1,5 +1,5 @@
 /**
- * tests/mcp/approval-flow.test.mjs — LMCP-I2 durable awaiting_approval state.
+ * tests/mcp/approval-flow.test.mjs — durable awaiting_approval state.
  *
  * Verifies that when the broker's policy returns approvalRequired, a durable
  * approval record is created and the broker returns a structured

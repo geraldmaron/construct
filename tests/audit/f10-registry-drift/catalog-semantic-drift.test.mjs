@@ -15,7 +15,7 @@
  * as drift. A capability whose stored description, criticality, or verification path diverges
  * from repo reality passes the drift check silently.
  *
- * Contract these encode (CX-AUDIT-REGISTRY-004): semantic capability content must be generated
+ * Contract these encode: semantic capability content must be generated
  * from a source of truth and re-validated against it, so a false description or a verification
  * path that points nowhere is caught as drift — not just timestamp churn or derived-edge skew.
  * Each test regenerates a clean catalog, mutates a semantic field on disk, and asserts the

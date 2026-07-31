@@ -1,6 +1,6 @@
 /**
  * tests/acceptance/pm-feedback-preset.acceptance.test.mjs — golden-fixture
- * acceptance for the `pm-feedback` embed preset (LMCP-P5).
+ * acceptance for the `pm-feedback` embed preset.
  *
  * @embed pm-feedback
  *

@@ -1,6 +1,6 @@
 /**
  * tests/adapters-lean-bootstrap.test.mjs — lean postinstall/init host selection
- * (construct-w4hly). Fresh projects get Claude only; already-marked hosts are
+ *. Fresh projects get Claude only; already-marked hosts are
  * preserved; CONSTRUCT_SYNC_HOSTS opts in without PATH detection.
  */
 

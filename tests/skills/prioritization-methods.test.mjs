@@ -1,5 +1,5 @@
 /**
- * tests/skills/prioritization-methods.test.mjs — construct-72gqn.15 (H5).
+ * tests/skills/prioritization-methods.test.mjs.
  *
  * Pins the full wiring of the prioritization-methods skill that closed the one
  * cross-role authoring gap the coverage audit found: the skill passes the
@@ -7,7 +7,7 @@
  * top for prioritization intents (not just exists on disk), and both the
  * backlog-proposal and PRD templates point at it. The live behavioral proof —
  * a PM scenario asserting method + counterargument + uncertainty language —
- * lands with the H2 scenario schema (construct-72gqn.13/.14); this test locks
+ * lands with the H2 scenario schema (.14); this test locks
  * everything that does not depend on live model output.
  */
 

@@ -1,6 +1,6 @@
 /**
  * tests/functional/cross-project-synthesis.functional.test.mjs —
- * cross-project synthesis map-reduce with a deterministic dry-run (bead construct-760c.3).
+ * cross-project synthesis map-reduce with a deterministic dry-run.
  *
  * @capability research.cross-project-synthesis
  *

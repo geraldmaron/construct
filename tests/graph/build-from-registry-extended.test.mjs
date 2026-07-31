@@ -1,7 +1,7 @@
 /**
  * tests/graph/build-from-registry-extended.test.mjs — extended seeding
  * verification for provider, tool, specialist, and doc node types seeded by
- * buildFromRegistry (LMCP-C1 Phases 2-6).
+ * buildFromRegistry (Phases 2-6).
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';

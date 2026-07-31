@@ -1,6 +1,6 @@
 /**
  * tests/functional/governance-chokepoint-authority-ledger.functional.test.mjs
- * — construct-b0nny.15 (M2): the governed-write pipeline is the sole
+ * — the governed-write pipeline is the sole
  * authority chokepoint, and every authority decision behind it lands in one
  * shared ledger.
  *

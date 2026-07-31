@@ -1,5 +1,5 @@
 /**
- * tests/oracle/directive-executor.test.mjs — construct-p4cba.6 (WS-B5)
+ * tests/oracle/directive-executor.test.mjs
  * directive execution + budget gating + write-proposal enqueueing.
  */
 

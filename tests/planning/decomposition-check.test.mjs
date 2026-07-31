@@ -1,6 +1,6 @@
 /**
  * tests/planning/decomposition-check.test.mjs — graph-informed decomposition
- * check (construct-b0nny.23), generalizing spike C's proven independence
+ * check, generalizing spike C's proven independence
  * pattern (docs/notes/research/workspace-control-plane/synthesis/spike-c-
  * parallel-software-change.md).
  *

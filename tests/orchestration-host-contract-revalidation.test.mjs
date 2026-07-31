@@ -1,5 +1,5 @@
 /**
- * tests/orchestration-host-contract-revalidation.test.mjs — construct-72gqn.12 (H6c).
+ * tests/orchestration-host-contract-revalidation.test.mjs.
  *
  * submitHostTaskResult (lib/orchestration/runtime.mjs) runs
  * applyResearchEvidenceGate on a host-reported result — the least-verified
@@ -7,7 +7,7 @@
  * Construct), and the riskiest boundary for contract and
  * binary-postcondition enforcement to actually fire. Pins that it now
  * reuses lib/orchestration/worker.mjs's enforceOutputHandoff (the same
- * function the provider path uses, construct-72gqn.11) at the
+ * function the provider path uses) at the
  * host-result-submission boundary: a submitted result's outputPacket
  * auto-populates from the real submitted text, the contract disambiguates by
  * the actually-adjacent dispatched task, a real violation is logged and

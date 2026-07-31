@@ -9,7 +9,7 @@
  * packages. GitHub's hardening guidance is to declare an explicit least-
  * privilege top-level `permissions:` and elevate per-job only where needed.
  *
- * Contract these encode (CX-AUDIT-CI-002): (1) every workflow declares a
+ * Contract these encode: (1) every workflow declares a
  * top-level `permissions:` block so it never relies on the repo default; and
  * (2) any broad `contents: write` is scoped to a specific job rather than set
  * workflow-wide. The first assertion lists workflows with no top-level block;

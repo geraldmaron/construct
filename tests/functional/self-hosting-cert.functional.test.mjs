@@ -5,10 +5,10 @@
  * lib/*.mjs module and never spawns a binary. It only checks fs.existsSync/readFileSync
  * against fixed paths under docs/notes/research/construct-self-audit (baseline.md, the six
  * synthesis/*.md docs, the ten subagents/*.md reports, and meta.json at each level), so that
- * those one-time audit deliverables (construct-rr63.11) cannot be silently deleted or moved.
+ * those one-time audit deliverables cannot be silently deleted or moved.
  * No code in lib/, bin/, or scripts/ reads or regenerates this content — do not treat a
  * failure here as a regression in production behavior, and do not remove this file without
- * maintainer sign-off (construct-73n5).
+ * maintainer sign-off.
  */
 
 import test from 'node:test';

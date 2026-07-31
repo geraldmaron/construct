@@ -2,7 +2,7 @@
  * tests/functional/embed-capability-lifecycle.functional.test.mjs
  *
  * Drives `construct embed list|enable|disable|status|dry-run` against the
- * real binary in an isolated tmpdir cwd, proving the ADR-0061 (LMCP-P2)
+ * real binary in an isolated tmpdir cwd, proving the capability
  * lifecycle end to end: an invalid Procedure fails enable with a JSON-schema
  * path and writes nothing; enable/disable round-trips through the durable
  * `.construct/procedures/<id>.manifest.json` project-tier file; status and dry-run

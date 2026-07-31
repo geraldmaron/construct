@@ -5,7 +5,7 @@
  * MCP host-config states (jsonc_unpatched/disabled/healthy, etc.) instead of
  * collapsing readiness to settings.json presence. It was dead code — its sole
  * caller was a fixture test — until wired into `construct doctor` here
- * (construct-1yhp: "wire classifyHostReadiness into doctor"). Spawns the real
+ * ("wire classifyHostReadiness into doctor"). Spawns the real
  * binary against a fake VS Code install in an isolated HOME.
  */
 

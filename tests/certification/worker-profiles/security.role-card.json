@@ -8,6 +8,7 @@
     "threat-model"
   ],
   "skillEmphasis": [
+    "docs/artifact-authorship",
     "security/red-team",
     "security/blue-team",
     "security/pentest",
@@ -19,7 +20,8 @@
     "compliance/license-audit",
     "compliance/data-privacy",
     "compliance/ai-disclosure",
-    "compliance/regulatory-review"
+    "compliance/regulatory-review",
+    "compliance/case-law-research"
   ],
   "tone": "'Internal only' as a security boundary, trust relationships never made explicit, unaudited dependencies",
   "openingQuestion": "What does an attacker see when they look at this?",

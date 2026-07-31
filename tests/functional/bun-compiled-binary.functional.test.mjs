@@ -80,7 +80,7 @@ test('a Bun-compiled binary of bin/construct runs real commands instead of silen
     assert.ok(existsSync(outfile), 'compiled binary was not produced');
 
     // Timeouts carry headroom for a loaded machine: the full suite now runs to
-    // completion (construct-ox25y), so this heavy build-and-run test can execute
+    // completion, so this heavy build-and-run test can execute
     // while the box is still warm, where a tight bound flakes the correctness
     // assertion (a killed subprocess truncates stdout) rather than the behavior.
     const version = spawnSync(outfile, ['version'], { encoding: 'utf8', timeout: 30_000, env: runEnv });

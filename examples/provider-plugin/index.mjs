@@ -12,8 +12,6 @@
  *        construct provider plugins add /path/to/examples/provider-plugin
  *   3. Verify: construct provider list
  *   4. Test:   construct provider test hello-world --query "greet"
- *
- * See docs/providers/authoring.md for the full contract reference.
  */
 
 import { assertProviderContract } from '../../lib/providers/contract.mjs';

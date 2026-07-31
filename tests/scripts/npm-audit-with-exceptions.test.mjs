@@ -1,6 +1,6 @@
 /**
  * tests/scripts/npm-audit-with-exceptions.test.mjs — exceptions-aware npm
- * audit gate (construct-h6qjb follow-up: ci.yml's raw npm audit had no way
+ * audit gate (ci.yml's raw npm audit had no way
  * to see .github/supply-chain-exceptions.json).
  */
 

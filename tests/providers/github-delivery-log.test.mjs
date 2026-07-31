@@ -1,13 +1,13 @@
 /**
  * tests/providers/github-delivery-log.test.mjs — WebhookDeliveryLog
  * persistence, retention, and fault-tolerance contract
- * (lib/providers/github/delivery-log.mjs, construct-h48jh).
+ * (lib/providers/github/delivery-log.mjs).
  *
  * Mirrors the assurance surface of tests/writes/sent-log.test.mjs for the
  * same persistence idiom: durable reload across instances, age-window and
  * entry-cap pruning (with an injected clock, no sleeps), corrupt-line
  * tolerance on load, persist failures thrown rather than swallowed, and the
- * ADR-0066 default path resolving under the machine state root.
+ * Default path resolving under the machine state root.
  */
 
 import { describe, it } from 'node:test';

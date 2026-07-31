@@ -1,7 +1,7 @@
 /**
  * tests/functional/orchestration-keys-no-tiers.functional.test.mjs
  *
- * Guards construct-neq9.2: the incident machine state — a provider API key
+ * The incident machine state — a provider API key
  * present, no CONSTRUCT_MODEL_ or CONSTRUCT_MODEL_ tier vars — was exercised by zero
  * tests before this file (every existing suite either injects all three tiers
  * or blanks the keys, i.e. the exact inverse of the machine that produced
@@ -66,7 +66,7 @@ test('keys-no-tiers: resolveExecution resolves a model from the credential famil
 test('keys-no-tiers: orchestration_run (in-process) executes real tasks, never persists degraded:true with an empty task list as completed', async () => {
   const cwd = tmpProject();
   // orchestrationRun's trace emission resolves the machine-scoped state root
-  // (ADR-0066) via CONSTRUCT_HOME_OVERRIDE read in-process, not via the `env` option
+  // via CONSTRUCT_HOME_OVERRIDE read in-process, not via the `env` option
   // above — pin it or the run writes into the real developer machine's home.
   const prevHomeOverride = process.env.CONSTRUCT_HOME_OVERRIDE;
   process.env.CONSTRUCT_HOME_OVERRIDE = cwd;

@@ -1,5 +1,5 @@
 /**
- * tests/orchestration-web-capability.test.mjs — WebGrant resolver priority (ADR-0050).
+ * tests/orchestration-web-capability.test.mjs — WebGrant resolver priority.
  *
  * resolveWebCapability returns a typed grant in strict priority: governed (WEB_SEARCH_URL) →
  * provider-native (Anthropic / OpenRouter server tools) → host-delegated (explicit opt-in) →

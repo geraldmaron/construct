@@ -1,6 +1,6 @@
 /**
  * tests/improvement-proposal.test.mjs — unit coverage for the improvement-loop
- * proposal record and its state machine (construct-6zga.1.5).
+ * proposal record and its state machine.
  *
  * Proves the validator preserves lineage and that the state machine permits only
  * the legal operator progressions — a proposal can never reach approved or applied

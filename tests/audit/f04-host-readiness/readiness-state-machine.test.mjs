@@ -12,7 +12,7 @@
  * Those collapse to a binary "file exists / doesn't" today.
  *
  * OUTLINE — the corrected design needs a dedicated host-config readiness classifier
- * plus a `construct doctor` lane that surfaces it (CX-AUDIT-HOST-003). This fixture
+ * plus a `construct doctor` lane that surfaces it. This fixture
  * imports that not-yet-existing classifier so it fails at import today; the per-state
  * cases below are the acceptance shape it must satisfy. It turns GREEN once the
  * classifier exists and distinguishes the states (no collapse to a binary).

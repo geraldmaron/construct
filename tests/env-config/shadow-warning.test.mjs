@@ -1,5 +1,5 @@
 /**
- * tests/env-config/shadow-warning.test.mjs — construct-xj96.12 proof.
+ * tests/env-config/shadow-warning.test.mjs — proof.
  *
  * The env-shadow warning claimed "The config file will be used" on every surface,
  * but bin/construct copies only the keys missing from process.env, so on a conflict

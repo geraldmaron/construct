@@ -6,7 +6,7 @@
  * type's count must reach 0), and a model-tier label. Idempotent: a cluster already emitted
  * is updated in place via the mapping in audit-artifacts/emitted-beads.json, never duplicated.
  *
- * Run: node scripts/audit/emit-beads.mjs [--epic=construct-ij31] [--dry-run]
+ * Run: node scripts/audit/emit-beads.mjs [--epic=<bead-id>] [--dry-run]
  */
 
 import { execFileSync } from 'node:child_process';

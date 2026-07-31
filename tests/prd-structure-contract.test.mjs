@@ -3,7 +3,7 @@
  *
  * Pins templates/docs/prd.md headings, manifest structureRequirements,
  * lintPrdDeliveryDepth hierarchy rules, Why-Now timing-economics substance,
- * and nested Acceptance criteria under each FR (construct-pe9sv).
+ * and nested Acceptance criteria under each FR.
  */
 
 import test from 'node:test';

@@ -1,7 +1,7 @@
 /**
  * tests/functional/orchestration-prepare-only-user-facing.functional.test.mjs
  *
- * construct-vzg2i.2: orchestration-truth-negative.functional.test.mjs already pins
+ * orchestration-truth-negative.functional.test.mjs already pins
  * the metadata honesty for a prepare-only run (prepareOnly/degraded fields, no
  * fabricated output). This suite pins the lift of that same honesty onto the two
  * USER-FACING surfaces a caller actually reads without knowing to check metadata:

@@ -1,5 +1,5 @@
 /**
- * audit-rules.test.mjs — static rule-reference audit (bead construct-bt9o).
+ * audit-rules.test.mjs — static rule-reference audit.
  *
  * Rules have no runtime retrieval event to log, so "which rules earn their keep"
  * is answered statically: a rule is load-bearing if it is referenced by path in

@@ -2,7 +2,7 @@
  * tests/functional/orchestration-truth-negative.functional.test.mjs
  *
  * Guardrail tests for the orchestration execution-truth boundary (self-audit
- * construct-rr63.7.1, enforcing ADR-0019/0020/0021). The existing suite asserts the
+ * enforcing the execution-truth rules). The existing suite asserts the
  * positive shape of inline-prepared and provider-executed tasks; these tests pin the
  * inverse and disclosure directions so a regression that lets Construct CLAIM
  * execution it did not perform fails loudly:
@@ -15,7 +15,7 @@
  *   - the remote (team) HTTP path is opt-in via CONSTRUCT_ORCHESTRATION_URL and
  *     relays the service's run faithfully without fabricating local execution.
  *
- * Trace reads resolve through the machine-scoped state root (ADR-0066), so
+ * Trace reads resolve through the machine-scoped state root, so
  * CONSTRUCT_HOME_OVERRIDE is pinned for the whole file to keep them off the real
  * developer machine's $HOME.
  */

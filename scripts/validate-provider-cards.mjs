@@ -10,7 +10,7 @@
  *
  * Exits non-zero and names every offending field/entry if validation fails —
  * mirrors scripts/validate-dep-intent.mjs's exit-code contract
- * (construct-4uxq0.13.7, acceptance criteria 2-3).
+ * (acceptance criteria 2-3).
  */
 
 import { existsSync, readFileSync } from 'node:fs';

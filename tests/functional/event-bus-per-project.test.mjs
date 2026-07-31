@@ -6,7 +6,7 @@
  * project-scoping, fingerprints from project A suppress real events in
  * project B because the bus dedups by sha1(type|project|summary).
  *
- * Closes bead construct-wwf2.
+ * Closes.
  */
 
 import { test, beforeEach, afterEach } from 'node:test';

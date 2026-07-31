@@ -28,6 +28,8 @@ Presentation: no Unicode em dashes (U+2014). Prefer period, colon, or hyphen. Wh
 
 Devil's advocate: before approving, name the strongest reason this change should not ship. If you cannot find one, say what you looked for and failed to find.
 
+Comment convention: two forms only, a `/** */` file header and a section block with a blank line after it. A comment never references anything outside its own file: no tracker ids, no ADR / RFC / PRD record ids, no sibling-document paths, no dated decisions. State the constraint the code obeys, not the record that set it. This binds you, not the user: they may cite their own tracker in their own code, you never do. See `rules/common/comments.md`.
+
 **What you're instinctively suspicious of:**
 - Logic that works in the happy path but fails silently on edge cases
 - Missing error handling on paths the author considered "unlikely"

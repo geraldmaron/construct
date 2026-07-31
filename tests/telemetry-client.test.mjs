@@ -2,7 +2,7 @@
  * tests/telemetry-client.test.mjs — shared telemetry adapter selection and export contracts.
  *
  * Local trace writes resolve through the machine-scoped state root
- * (ADR-0066), so CONSTRUCT_HOME_OVERRIDE is pinned for the whole file to keep them
+ * so CONSTRUCT_HOME_OVERRIDE is pinned for the whole file to keep them
  * off the real developer machine's $HOME.
  */
 import assert from 'node:assert/strict';

@@ -1,11 +1,11 @@
 /**
  * tests/functional/opencode-stale-managed-reconcile.functional.test.mjs
  *
- * construct-cbl6: reconcileStaleManagedEntries wired into syncOpencode. Project
+ * reconcileStaleManagedEntries wired into syncOpencode. Project
  * scope only writes core MCP ids into `.opencode/opencode.json`'s `mcp` map
  * (`PROJECT_DEFAULT_MCP_IDS`), so a managed-but-optional entry like `memory`
  * carrying a stale toolkit path is outside the sync-set loop and was never
- * revisited before this fix (construct-6y6w.1's gap, extended here to OpenCode).
+ * revisited before this fix (the same gap, extended here to OpenCode).
  * Spawns the real sync-worker-profiles.mjs into an isolated tmp project + HOME,
  * seeds a stale `memory` entry in OpenCode's own `command`-array shape, and
  * asserts the real binary rewrites it in place, leaves an unmanaged entry

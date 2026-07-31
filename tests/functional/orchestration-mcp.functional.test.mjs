@@ -1,7 +1,7 @@
 /**
  * tests/functional/orchestration-mcp.functional.test.mjs — MCP orchestration, in-process.
  *
- * ADR-0022 + ADR-0041: the orchestration engine is the in-process runtime
+ * The orchestration engine is the in-process runtime
  * (lib/orchestration/runtime.mjs); the orchestration_run MCP tool drives it
  * directly — no daemon, no port, no token. Proves an MCP host with no subagent
  * primitive reaches a real multi-Assignment run through the tool, the run is
@@ -34,7 +34,7 @@ function tmpProject() {
 
 // Solo default: the registry resolves from the repo via CONSTRUCT_TOOLKIT_DIR.
 // orchestrationRun/orchestrationStatus resolve the run store through the
-// machine-scoped state root (ADR-0066), which reads CONSTRUCT_HOME_OVERRIDE from
+// machine-scoped state root, which reads CONSTRUCT_HOME_OVERRIDE from
 // real process.env directly — the CONSTRUCT_HOME_OVERRIDE sterileSpawnEnv sets below
 // only reaches the in-process `env` option bag these calls thread to model
 // resolution, never process.env, so it alone would not isolate a state-root

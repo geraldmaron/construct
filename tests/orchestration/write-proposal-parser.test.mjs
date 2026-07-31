@@ -1,6 +1,6 @@
 /**
  * tests/orchestration/write-proposal-parser.test.mjs — parseWriteProposals
- * unit coverage (construct-p4cba.5).
+ * unit coverage.
  */
 
 import test from 'node:test';

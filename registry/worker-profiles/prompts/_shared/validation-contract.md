@@ -32,6 +32,14 @@ For typed document work, also load `skills/docs/artifact-authorship.md` (framing
 - Exceptions: AC precision, legal shall/must not, quoted statute, exact required section titles.
 - Full bar: `rules/common/human-voice.md` and `skills/docs/artifact-authorship.md` § Human voice bar.
 
+## Source comments (code you write or edit)
+
+- Two forms only: a `/** */` file header, and a section block placed before a logical block with a blank line after it. Everything else gets deleted.
+- A comment may not reference anything outside its own file. No tracker ids (`construct-8iwgr`, `LMCP-A6`, `#412`), no decision-record ids (`ADR-0027 §2`, `RFC-0004`, `PRD-0001`), no sibling-document paths (`see docs/guides/concepts/hooks.md`), no dated decisions (`decided 2026-05-14`). State the constraint the code obeys, not the record that set it.
+- This binds you, not the user. People cite their own trackers in their own code and that is their call. You never do: your reader may have no access to that tracker and no way to tell which document you meant.
+- External standards are not project documents and stay legal: `RFC 5545`, `SEP-414`, `UTF-8`.
+- Full policy: `rules/common/comments.md`. Enforced by `construct lint:comments` and the comment-lint hook.
+
 ## Before drafting
 
 - Call `get_skill("perspectives/…")` for your role overlay before producing typed output.

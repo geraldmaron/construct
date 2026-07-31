@@ -1,6 +1,6 @@
 /**
  * tests/orchestration-provider-outcome.test.mjs — provider outcome classification,
- * bounded retry, and citation-grounding helpers (construct-5wkl).
+ * bounded retry, and citation-grounding helpers.
  *
  * Pins that HTTP failures classify into stable, distinguishable codes with the
  * right retryable flag, that a 2xx response with unusable content (empty,
@@ -9,7 +9,6 @@
  * retryable outcomes up to its bound and preserves the final error, and that
  * citation grounding flags a URL absent from governed web evidence.
  *
- * @enforces construct-5wkl AC#1, AC#4, AC#5, AC#6
  */
 
 import test from 'node:test';

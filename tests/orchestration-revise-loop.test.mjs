@@ -1,5 +1,5 @@
 /**
- * tests/orchestration-revise-loop.test.mjs — construct-72gqn.30 (D10).
+ * tests/orchestration-revise-loop.test.mjs.
  *
  * Unit coverage for the critic/reviser loop's two pure decisions: whether a
  * critic's output requests a revision at all (critiqueRequestsRevision), and the

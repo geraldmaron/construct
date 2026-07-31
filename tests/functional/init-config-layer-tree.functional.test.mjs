@@ -1,7 +1,7 @@
 /**
  * tests/functional/init-config-layer-tree.functional.test.mjs — per-layer tree
  * pin for what `construct init` writes at each footprint layer
- * (construct-rf26.22, extending construct-rf26.15/ADR-0066 coverage in
+ * (extending the state-root coverage in
  * tests/functional/state-root-footprint.functional.test.mjs and
  * tests/functional/init-host-footprint.functional.test.mjs).
  *

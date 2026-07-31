@@ -19,7 +19,7 @@
  * No network and no provider are involved. The directory is restored before assertions
  * so getRun/getRuns can read the (still 'planned') record, and removed in teardown.
  *
- * Contract these encode (CX-AUDIT-ORCH-002): a terminal background failure must be
+ * Contract these encode: a terminal background failure must be
  * PERSISTED to the run store with a failed/error status (and a recorded error), so it is
  * queryable by status/doctor — not merely emitted to an in-process event bus and lost.
  *
@@ -38,7 +38,7 @@ import { resolveStateDir } from '../../../lib/state-root.mjs';
 const MODEL = 'anthropic/claude-sonnet-4-6';
 const ENV = { CONSTRUCT_MODEL_REASONING: MODEL, CONSTRUCT_MODEL_STANDARD: MODEL, CONSTRUCT_MODEL_FAST: MODEL };
 
-// Runs now persist under the machine-scoped state root (ADR-0066), not
+// Runs now persist under the machine-scoped state root, not
 // project-local `.construct/`. This suite imports lib/orchestration/runtime.mjs
 // in-process rather than spawning the CLI, so CONSTRUCT_HOME_OVERRIDE is the only
 // isolation lever available — without it the state root would resolve

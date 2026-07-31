@@ -1,7 +1,7 @@
 /**
  * tests/functional/doctor-no-repo-mutation.functional.test.mjs
  *
- * Regression guard for construct-ia8b. `construct doctor` is a health *check*
+ * `construct doctor` is a health *check*
  * and must be side-effect-free on tracked repo source: it must never delete or
  * modify committed files (lib/, bin/, tests/, docs/, apps/, scripts/,
  * templates/, skills/, rules/, schemas/, registry/). The ia8b

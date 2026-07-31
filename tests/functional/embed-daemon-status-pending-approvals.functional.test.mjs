@@ -1,7 +1,6 @@
 /**
  * tests/functional/embed-daemon-status-pending-approvals.functional.test.mjs —
- * EmbedDaemon.status().pendingApprovals reflects real queue state
- * (construct-4uxq0.14.9).
+ * EmbedDaemon.status().pendingApprovals reflects real queue state.
  *
  * Before this fix, status() called `approvalQueue.list('pending')` — the
  * queue's real states are `awaiting_approval`/`approved`/`denied`/`expired`/

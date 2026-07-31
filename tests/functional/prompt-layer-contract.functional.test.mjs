@@ -1,7 +1,7 @@
 /**
  * tests/functional/prompt-layer-contract.functional.test.mjs —
  * lib/prompt-layer-contract.mjs vs. lib/prompt-composer.mjs's real fragment
- * assembly (construct-72gqn.33).
+ * assembly.
  *
  * Drives the real composePrompt() against the repo's own prompt/role/registry
  * files (rootDir = repo root, matching tests/prompt-composer.test.mjs's

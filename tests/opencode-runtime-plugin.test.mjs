@@ -47,7 +47,7 @@ function seedToolkitDir(toolkitDir, { models = TEST_REGISTRY_MODELS } = {}) {
 }
 
 // createConstructOpenCodePlugin's trace emission resolves the machine-scoped
-// state root (ADR-0066) via CONSTRUCT_HOME_OVERRIDE read in-process, not via the
+// state root via CONSTRUCT_HOME_OVERRIDE read in-process, not via the
 // `env` option passed to the factory — pin it around a test or the plugin
 // writes into the real developer machine's home. Callers register the
 // returned unpin function with t.after().
@@ -760,7 +760,7 @@ test("buildRuntimeTracePayload produces runtime_event kind for session.created",
   assert.equal(payload.output.traceQualityFlags.hasError, false);
 });
 
-// construct-2q2m — host-side tool-miss capture for OpenCode "unavailable tool" rejections.
+// host-side tool-miss capture for OpenCode "unavailable tool" rejections.
 // Fixtures below match the session.error / message.updated shapes established earlier for
 // buildRuntimeTracePayload; a live OpenCode session has not confirmed the exact rejection
 // shape (see detectUnavailableToolRejections doc comment in lib/opencode-runtime-plugin.mjs).

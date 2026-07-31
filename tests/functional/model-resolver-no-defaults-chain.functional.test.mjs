@@ -1,7 +1,7 @@
 /**
  * tests/functional/model-resolver-no-defaults-chain.functional.test.mjs
  *
- * Construct ships with no implicit model defaults (ADR-0027,
+ * Construct ships with no implicit model defaults (see
  * tests/model-router-no-defaults.test.mjs). When nothing is configured,
  * `readCurrentModels` correctly returns null for every tier. This suite
  * locks in that consumers down the chain handle that null with a clear

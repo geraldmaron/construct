@@ -6,7 +6,7 @@
  * markers instead of whatever happens to be installed in this working copy.
  *
  * The docling venv detection resolves through the machine-shared runtime root
- * (ADR-0066/construct-rf26.16: `resolveSharedRuntimeDir` in lib/state-root.mjs,
+ * (`resolveSharedRuntimeDir` in lib/state-root.mjs,
  * `doclingVenvPath` in lib/ingest-tooling.mjs), never a project-relative or
  * project-keyed path — `doclingVenvPath()` takes no root/cwd argument at all.
  * Because of that, a fixture "venv" is not scoped by fixture root the way
