@@ -53,6 +53,48 @@ export {
 } from './completion/ledger.ts';
 export type { DegradationReason, Evidence, EvidenceInput } from './completion/ledger.ts';
 
+export {
+  EXTRACTION_TIERS,
+  makeUnsupportedResult,
+  planExtraction,
+  resolveExhaustion,
+  resolveRoutingSignals,
+} from './extract/ladder.ts';
+export type {
+  AcceptRule,
+  Exhaustion,
+  ExtractionPlan,
+  ExtractionTier,
+  PlanInput,
+  PlanStep,
+  PrivacyPosture,
+  RoutingSignals,
+  Unavailable,
+  UnsupportedResult,
+} from './extract/ladder.ts';
+export {
+  MIN_TEXT_DENSITY_CHARS_PER_PAGE,
+  ROUTING_THRESHOLDS,
+  docxRequiresDoclingEscalation,
+  isDigitalTextPdf,
+} from './extract/thresholds.ts';
+export type {
+  DocxStructureSignals,
+  PdfTextYield,
+  RoutingThresholds,
+} from './extract/thresholds.ts';
+export {
+  MAX_RETAINED_CHARS,
+  finalizeResult,
+  validateExtractionResult,
+} from './extract/envelope.ts';
+export type {
+  DropInfo,
+  EnvelopeValidation,
+  ExtractionResult,
+  FinalizedResult,
+} from './extract/envelope.ts';
+
 export { CAPABILITIES, hasCapability, validate as validateHost } from './hosts/interface.ts';
 export type {
   HostAdapter,
