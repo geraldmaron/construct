@@ -1,0 +1,36 @@
+{
+  "name": "@geraldmaron/construct",
+  "version": "3.0.0-dev.0",
+  "description": "Outcome engine: state an outcome, a learning staff of roles fills in the rest — decisions in, deliverables out.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "bin": {
+    "construct": "bin/construct.mjs"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "packs",
+    "schemas"
+  ],
+  "exports": {
+    ".": "./dist/kernel/index.js",
+    "./kernel/*": "./dist/kernel/*",
+    "./hosts/*": "./dist/hosts/*"
+  },
+  "scripts": {
+    "test": "node --test \"tests/**/*.test.ts\"",
+    "typecheck": "tsc --noEmit",
+    "lint": "node scripts/lint-no-absolute-paths.mjs && node scripts/lint-glossary-parity.mjs",
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build",
+    "smoke": "bash scripts/smoke-packaged-install.sh"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0"
+  }
+}
