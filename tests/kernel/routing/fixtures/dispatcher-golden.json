@@ -1,0 +1,456 @@
+[
+  {
+    "name": "exact single-word keyword — adjacency trivially holds",
+    "intent": "rotate the secrets",
+    "routes": [
+      {
+        "path": "skills/secrets.md",
+        "domain": "sec",
+        "keywords": [
+          "secret"
+        ],
+        "priority": 1
+      }
+    ],
+    "limit": 5,
+    "result": {
+      "intent": "rotate the secrets",
+      "suggestions": [
+        {
+          "path": "skills/secrets.md",
+          "domain": "sec",
+          "score": 11,
+          "entitled": true
+        }
+      ]
+    }
+  },
+  {
+    "name": "stem prefix matches an inflected token (>=5 chars)",
+    "intent": "our deployments keep failing",
+    "routes": [
+      {
+        "path": "skills/deploy.md",
+        "domain": "eng",
+        "keywords": [
+          "deployment"
+        ],
+        "priority": 1
+      }
+    ],
+    "limit": 5,
+    "result": {
+      "intent": "our deployments keep failing",
+      "suggestions": [
+        {
+          "path": "skills/deploy.md",
+          "domain": "eng",
+          "score": 11,
+          "entitled": true
+        }
+      ]
+    }
+  },
+  {
+    "name": "short fragment must NOT match inside a longer word",
+    "intent": "we need more storage",
+    "routes": [
+      {
+        "path": "skills/rag.md",
+        "domain": "ai",
+        "keywords": [
+          "rag"
+        ],
+        "priority": 1
+      }
+    ],
+    "limit": 5,
+    "result": {
+      "intent": "we need more storage",
+      "suggestions": []
+    }
+  },
+  {
+    "name": "multi-part phrase whose stopword-filtered parts are separated in the intent by the dropped stopword — no adjacency bonus",
+    "intent": "please write a prd for this",
+    "routes": [
+      {
+        "path": "skills/prd.md",
+        "domain": "pm",
+        "keywords": [
+          "write a prd"
+        ],
+        "priority": 1
+      }
+    ],
+    "limit": 5,
+    "result": {
+      "intent": "please write a prd for this",
+      "suggestions": [
+        {
+          "path": "skills/prd.md",
+          "domain": "pm",
+          "score": 8,
+          "entitled": true
+        }
+      ]
+    }
+  },
+  {
+    "name": "multi-part phrase present but far apart — same reduced score",
+    "intent": "write the thing then later a prd",
+    "routes": [
+      {
+        "path": "skills/prd.md",
+        "domain": "pm",
+        "keywords": [
+          "write a prd"
+        ],
+        "priority": 1
+      }
+    ],
+    "limit": 5,
+    "result": {
+      "intent": "write the thing then later a prd",
+      "suggestions": [
+        {
+          "path": "skills/prd.md",
+          "domain": "pm",
+          "score": 8,
+          "entitled": true
+        }
+      ]
+    }
+  },
+  {
+    "name": "partial phrase match — one part only",
+    "intent": "write the document",
+    "routes": [
+      {
+        "path": "skills/prd.md",
+        "domain": "pm",
+        "keywords": [
+          "write a prd"
+        ],
+        "priority": 1
+      }
+    ],
+    "limit": 5,
+    "result": {
+      "intent": "write the document",
+      "suggestions": [
+        {
+          "path": "skills/prd.md",
+          "domain": "pm",
+          "score": 4,
+          "entitled": true
+        }
+      ]
+    }
+  },
+  {
+    "name": "multi-part phrase truly adjacent — full bonus",
+    "intent": "write prd now",
+    "routes": [
+      {
+        "path": "skills/prd.md",
+        "domain": "pm",
+        "keywords": [
+          "write prd"
+        ],
+        "priority": 1
+      }
+    ],
+    "limit": 5,
+    "result": {
+      "intent": "write prd now",
+      "suggestions": [
+        {
+          "path": "skills/prd.md",
+          "domain": "pm",
+          "score": 11,
+          "entitled": true
+        }
+      ]
+    }
+  },
+  {
+    "name": "same phrase, parts split apart — adjacency bonus withheld",
+    "intent": "write something then prd",
+    "routes": [
+      {
+        "path": "skills/prd.md",
+        "domain": "pm",
+        "keywords": [
+          "write prd"
+        ],
+        "priority": 1
+      }
+    ],
+    "limit": 5,
+    "result": {
+      "intent": "write something then prd",
+      "suggestions": [
+        {
+          "path": "skills/prd.md",
+          "domain": "pm",
+          "score": 8,
+          "entitled": true
+        }
+      ]
+    }
+  },
+  {
+    "name": "all-stopword phrase still scores on its original parts",
+    "intent": "how is this",
+    "routes": [
+      {
+        "path": "skills/meta.md",
+        "domain": "meta",
+        "keywords": [
+          "how is this"
+        ],
+        "priority": 1
+      }
+    ],
+    "limit": 5,
+    "result": {
+      "intent": "how is this",
+      "suggestions": [
+        {
+          "path": "skills/meta.md",
+          "domain": "meta",
+          "score": 11,
+          "entitled": true
+        }
+      ]
+    }
+  },
+  {
+    "name": "no match at all — priority alone never earns a suggestion",
+    "intent": "completely unrelated request",
+    "routes": [
+      {
+        "path": "skills/x.md",
+        "domain": "x",
+        "keywords": [
+          "kubernetes"
+        ],
+        "priority": 9
+      }
+    ],
+    "limit": 5,
+    "result": {
+      "intent": "completely unrelated request",
+      "suggestions": []
+    }
+  },
+  {
+    "name": "empty intent returns nothing",
+    "intent": "",
+    "routes": [
+      {
+        "path": "skills/x.md",
+        "domain": "x",
+        "keywords": [
+          "kubernetes"
+        ],
+        "priority": 1
+      }
+    ],
+    "limit": 5,
+    "result": {
+      "intent": "",
+      "suggestions": []
+    }
+  },
+  {
+    "name": "duplicate paths dedup to the best score",
+    "intent": "rotate the secrets now",
+    "routes": [
+      {
+        "path": "skills/a.md",
+        "domain": "sec",
+        "keywords": [
+          "secret"
+        ],
+        "priority": 1
+      },
+      {
+        "path": "skills/a.md",
+        "domain": "sec-dup",
+        "keywords": [
+          "rotate"
+        ],
+        "priority": 1
+      },
+      {
+        "path": "skills/b.md",
+        "domain": "ops",
+        "keywords": [
+          "rotate"
+        ],
+        "priority": 1
+      }
+    ],
+    "limit": 5,
+    "result": {
+      "intent": "rotate the secrets now",
+      "suggestions": [
+        {
+          "path": "skills/a.md",
+          "domain": "sec",
+          "score": 11,
+          "entitled": true
+        },
+        {
+          "path": "skills/b.md",
+          "domain": "ops",
+          "score": 11,
+          "entitled": true
+        }
+      ]
+    }
+  },
+  {
+    "name": "priority raises the floor and the total",
+    "intent": "kubernetes rollout",
+    "routes": [
+      {
+        "path": "skills/k8s.md",
+        "domain": "eng",
+        "keywords": [
+          "kubernetes"
+        ],
+        "priority": 5
+      },
+      {
+        "path": "skills/k8s-low.md",
+        "domain": "eng",
+        "keywords": [
+          "kubernetes"
+        ],
+        "priority": 1
+      }
+    ],
+    "limit": 5,
+    "result": {
+      "intent": "kubernetes rollout",
+      "suggestions": [
+        {
+          "path": "skills/k8s.md",
+          "domain": "eng",
+          "score": 15,
+          "entitled": true
+        },
+        {
+          "path": "skills/k8s-low.md",
+          "domain": "eng",
+          "score": 11,
+          "entitled": true
+        }
+      ]
+    }
+  },
+  {
+    "name": "route with no keywords can never clear its own floor",
+    "intent": "anything",
+    "routes": [
+      {
+        "path": "skills/empty.md",
+        "domain": "x",
+        "priority": 3
+      }
+    ],
+    "limit": 5,
+    "result": {
+      "intent": "anything",
+      "suggestions": []
+    }
+  },
+  {
+    "name": "limit truncates the ranked list",
+    "intent": "secret rotation audit",
+    "routes": [
+      {
+        "path": "skills/a.md",
+        "domain": "s",
+        "keywords": [
+          "secret",
+          "rotation",
+          "audit"
+        ],
+        "priority": 1
+      },
+      {
+        "path": "skills/b.md",
+        "domain": "s",
+        "keywords": [
+          "secret",
+          "rotation"
+        ],
+        "priority": 1
+      },
+      {
+        "path": "skills/c.md",
+        "domain": "s",
+        "keywords": [
+          "secret"
+        ],
+        "priority": 1
+      },
+      {
+        "path": "skills/d.md",
+        "domain": "s",
+        "keywords": [
+          "audit"
+        ],
+        "priority": 1
+      }
+    ],
+    "limit": 2,
+    "result": {
+      "intent": "secret rotation audit",
+      "suggestions": [
+        {
+          "path": "skills/a.md",
+          "domain": "s",
+          "score": 31,
+          "entitled": true
+        },
+        {
+          "path": "skills/b.md",
+          "domain": "s",
+          "score": 21,
+          "entitled": true
+        }
+      ]
+    }
+  },
+  {
+    "name": "case and punctuation are normalized away",
+    "intent": "SECRET-ROTATION!!",
+    "routes": [
+      {
+        "path": "skills/a.md",
+        "domain": "s",
+        "keywords": [
+          "secret rotation"
+        ],
+        "priority": 1
+      }
+    ],
+    "limit": 5,
+    "result": {
+      "intent": "SECRET-ROTATION!!",
+      "suggestions": [
+        {
+          "path": "skills/a.md",
+          "domain": "s",
+          "score": 11,
+          "entitled": true
+        }
+      ]
+    }
+  }
+]

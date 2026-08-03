@@ -1,0 +1,102 @@
+[
+  {
+    "name": "security signal — auth bypass mention (v2 golden-rnd fixture)",
+    "input": { "sourcePath": "inbox/auth-bypass-report.md", "extractedText": "Critical CVE: auth bypass via SQLi." }
+  },
+  {
+    "name": "bug signal — failing tests (v2 golden-rnd fixture)",
+    "input": { "sourcePath": "inbox/bug-test-fails.md", "extractedText": "Tests fail with error: regression in foo module." }
+  },
+  {
+    "name": "architecture signal — design decision (v2 golden-rnd fixture)",
+    "input": { "sourcePath": "inbox/arch-decision.md", "extractedText": "Need a design decision on service boundary and dependency direction." }
+  },
+  {
+    "name": "unknown when no keywords match (v2 golden-rnd fixture)",
+    "input": { "sourcePath": "inbox/blank.md", "extractedText": "something completely unrelated to any taxonomy term" }
+  },
+  {
+    "name": "title lock — postmortem filename and H1 agree, incident wins over bug vocabulary",
+    "input": { "sourcePath": "inbox/2026-postmortem.md", "extractedText": "# Postmortem\n\nThe crash was a regression; tests fail on the hot path." }
+  },
+  {
+    "name": "title lock — ADR filename and H1 agree",
+    "input": { "sourcePath": "inbox/adr-0042-storage.md", "extractedText": "# ADR-0042: storage engine\n\nA design decision about the service boundary." }
+  },
+  {
+    "name": "title penalty without lock — postmortem H1 penalizes bug, filename does not hint",
+    "input": { "sourcePath": "inbox/notes.md", "extractedText": "# Postmortem\n\nregression, stack trace, tests fail, defect" }
+  },
+  {
+    "name": "filename hint only — runbook, no matching body",
+    "input": { "sourcePath": "inbox/deploy-runbook.md", "extractedText": "steps in order" }
+  },
+  {
+    "name": "filename hint plus body agreement — security",
+    "input": { "sourcePath": "inbox/cve-2026-1234.md", "extractedText": "vulnerability, exploit, privilege escalation, xss and csrf all present" }
+  },
+  {
+    "name": "word-boundary guard — 'enforce' must not match 'rce', 'leaks' must not stray",
+    "input": { "sourcePath": "inbox/policy.md", "extractedText": "We enforce the policy and it forces a rebuild." }
+  },
+  {
+    "name": "ambiguous — one hit each for two types, margin under threshold",
+    "input": { "sourcePath": "inbox/mixed.md", "extractedText": "There was an outage and also a regression." }
+  },
+  {
+    "name": "related-doc titles contribute to the signal",
+    "input": {
+      "sourcePath": "inbox/untitled.md",
+      "extractedText": "no local signal here",
+      "related": [{ "title": "incident: pagerduty outage" }, { "title": "oncall 5xx availability" }]
+    }
+  },
+  {
+    "name": "related-doc tag inheritance — two docs share a tag",
+    "input": {
+      "sourcePath": "inbox/cve-note.md",
+      "extractedText": "vulnerability, exploit, sqli, rce confirmed",
+      "related": [{ "title": "a", "tags": ["area/auth"] }, { "title": "b", "tags": ["area/auth", "area/db"] }]
+    }
+  },
+  {
+    "name": "empty input",
+    "input": {}
+  },
+  {
+    "name": "transcript by filename and H1",
+    "input": { "sourcePath": "inbox/2026-05-standup-transcript.md", "extractedText": "# Transcript\n\nspeaker 1: hello. speaker 2: attendees noted." }
+  },
+  {
+    "name": "raw-data by csv extension",
+    "input": { "sourcePath": "inbox/export.csv", "extractedText": "column names and field names, rows and columns" }
+  },
+  {
+    "name": "eval-finding — benchmark vocabulary",
+    "input": { "sourcePath": "inbox/benchmark-run.md", "extractedText": "eval results: recall@10 and precision@5 regressed on the benchmark." }
+  },
+  {
+    "name": "operations preset — routed by preset id",
+    "input": { "sourcePath": "inbox/vendor.md", "extractedText": "vendor contract renewal and invoice approval", "preset": "operations" }
+  },
+  {
+    "name": "operations preset — matching entry, table-specific owner",
+    "input": { "sourcePath": "inbox/job.md", "extractedText": "the nightly cron scheduled job needs a backup rotation and maintenance window", "preset": "operations" }
+  },
+  {
+    "name": "creative preset — routed by preset id",
+    "input": { "sourcePath": "inbox/campaign.md", "extractedText": "campaign brief for the brand launch", "preset": "creative" }
+  },
+  {
+    "name": "research preset — routed by preset id",
+    "input": { "sourcePath": "inbox/study.md", "extractedText": "literature review and hypothesis for the study", "preset": "research" }
+  },
+  {
+    "name": "unknown preset id falls back to the default table",
+    "input": { "sourcePath": "inbox/auth-bypass.md", "extractedText": "Critical CVE: auth bypass via SQLi.", "preset": "no-such-preset" }
+  },
+  {
+    "name": "body is truncated at 4000 chars — keyword past the cut must not count",
+    "input": { "sourcePath": "inbox/long.md", "extractedText": "pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad vulnerability" }
+  }
+]

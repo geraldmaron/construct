@@ -1,0 +1,443 @@
+/**
+ * kernel/intake/tables/rnd.ts — the rnd workspace preset's classification
+ * table. Ported verbatim from construct-legacy lib/intake/tables/rnd.mjs:
+ * keywords, ordering, owners, chains, risk and approval flags are unchanged.
+ * Table order is load-bearing — classify.ts breaks score ties by it.
+ */
+
+import type { ClassificationTable } from '../table.ts';
+
+const rndTable: ClassificationTable = {
+  id: 'rnd',
+  INTAKE_TYPES: [
+    'user-signal',
+    'bug',
+    'requirement',
+    'research',
+    'experiment',
+    'eval-finding',
+    'architecture',
+    'incident',
+    'launch-asset',
+    'ops',
+    'security',
+    'legal-compliance',
+    'memo',
+    'transcript',
+    'raw-data',
+    'unknown'
+  ],
+  STAGES: [
+    'signal',
+    'framing',
+    'hypothesis',
+    'research',
+    'artifact',
+    'design',
+    'implementation',
+    'evaluation',
+    'release',
+    'operations',
+    'unknown'
+  ],
+  UNKNOWN_TRIAGE: {
+    intakeType: 'unknown',
+    rdStage: 'unknown',
+    primaryOwner: 'orchestrator',
+    recommendedChain: [
+      'orchestrator'
+    ],
+    recommendedAction: 'summarize',
+    risk: 'low',
+    requiresApproval: false
+  },
+  CLASSIFICATION_TABLE: [
+    {
+      intakeType: 'security',
+      keywords: [
+        'security',
+        'secret',
+        'cve',
+        'vulnerability',
+        'vuln',
+        'exploit',
+        'leak',
+        'auth bypass',
+        'privilege escalation',
+        'sqli',
+        'xss',
+        'csrf',
+        'rce'
+      ],
+      rdStage: 'operations',
+      primaryOwner: 'security',
+      recommendedChain: [
+        'security',
+        'engineer',
+        'reviewer'
+      ],
+      recommendedAction: 'diagnose',
+      risk: 'high',
+      requiresApproval: true
+    },
+    {
+      intakeType: 'incident',
+      keywords: [
+        'incident',
+        'outage',
+        'slo breach',
+        'sla breach',
+        'latency spike',
+        'availability',
+        'down',
+        'p0 ',
+        'p1 ',
+        'pagerduty',
+        '5xx',
+        'oncall'
+      ],
+      rdStage: 'operations',
+      primaryOwner: 'sre',
+      recommendedChain: [
+        'sre',
+        'debugger',
+        'platform-engineer'
+      ],
+      recommendedAction: 'create-runbook',
+      risk: 'high',
+      requiresApproval: true
+    },
+    {
+      intakeType: 'legal-compliance',
+      keywords: [
+        'gdpr',
+        'ccpa',
+        'hipaa',
+        'sox',
+        'soc2',
+        'license',
+        'lawsuit',
+        'dpa',
+        'data retention',
+        'pii',
+        'subpoena',
+        'compliance audit'
+      ],
+      rdStage: 'operations',
+      primaryOwner: 'legal-compliance',
+      recommendedChain: [
+        'legal-compliance',
+        'security',
+        'product-manager'
+      ],
+      recommendedAction: 'clarify',
+      risk: 'high',
+      requiresApproval: true
+    },
+    {
+      intakeType: 'architecture',
+      keywords: [
+        'architecture',
+        'adr',
+        'rfc',
+        'interface',
+        'tradeoff',
+        'boundary',
+        'system design',
+        'data model',
+        'api contract',
+        'migration plan'
+      ],
+      rdStage: 'design',
+      primaryOwner: 'architect',
+      recommendedChain: [
+        'architect',
+        'devil-advocate',
+        'engineer'
+      ],
+      recommendedAction: 'draft-rfc',
+      risk: 'medium',
+      requiresApproval: false
+    },
+    {
+      intakeType: 'eval-finding',
+      keywords: [
+        'eval',
+        'evaluation',
+        'hallucination',
+        'judge',
+        'trace',
+        'score regression',
+        'recall@',
+        'precision@',
+        'mrr',
+        'ndcg',
+        'failure case',
+        'rubric'
+      ],
+      rdStage: 'evaluation',
+      primaryOwner: 'evaluator',
+      recommendedChain: [
+        'evaluator',
+        'ai-engineer',
+        'trace-reviewer'
+      ],
+      recommendedAction: 'evaluate',
+      risk: 'medium',
+      requiresApproval: false
+    },
+    {
+      intakeType: 'bug',
+      keywords: [
+        'bug',
+        'broken',
+        'error',
+        'stack trace',
+        'regression',
+        'crash',
+        'exception',
+        'fails',
+        'failing',
+        'throws',
+        'not working',
+        'reproduce',
+        'repro:'
+      ],
+      rdStage: 'implementation',
+      primaryOwner: 'debugger',
+      recommendedChain: [
+        'debugger',
+        'engineer',
+        'qa',
+        'reviewer'
+      ],
+      recommendedAction: 'diagnose',
+      risk: 'medium',
+      requiresApproval: false
+    },
+    {
+      intakeType: 'experiment',
+      keywords: [
+        'hypothesis',
+        'experiment',
+        'spike',
+        'prototype',
+        'falsifiable',
+        'research question',
+        'a/b test',
+        'pilot'
+      ],
+      rdStage: 'hypothesis',
+      primaryOwner: 'rd-lead',
+      recommendedChain: [
+        'rd-lead',
+        'researcher',
+        'evaluator'
+      ],
+      recommendedAction: 'create-experiment',
+      risk: 'low',
+      requiresApproval: false
+    },
+    {
+      intakeType: 'launch-asset',
+      keywords: [
+        'release',
+        'changelog',
+        'version bump',
+        'ship',
+        'launch',
+        'rollout',
+        'cut a release',
+        'rc1',
+        'rc2',
+        'release candidate'
+      ],
+      rdStage: 'release',
+      primaryOwner: 'release-manager',
+      recommendedChain: [
+        'release-manager',
+        'qa',
+        'docs-keeper'
+      ],
+      recommendedAction: 'release-review',
+      risk: 'medium',
+      requiresApproval: false
+    },
+    {
+      intakeType: 'research',
+      keywords: [
+        'competitor',
+        'market',
+        'pricing',
+        'positioning',
+        'industry',
+        'state of the art',
+        'literature',
+        'benchmark study',
+        'desk research'
+      ],
+      rdStage: 'research',
+      primaryOwner: 'business-strategist',
+      recommendedChain: [
+        'business-strategist',
+        'researcher',
+        'product-manager'
+      ],
+      recommendedAction: 'research',
+      risk: 'low',
+      requiresApproval: false
+    },
+    {
+      intakeType: 'user-signal',
+      keywords: [
+        'customer',
+        'feedback',
+        'pain point',
+        'user says',
+        'user feedback',
+        'support ticket',
+        'churn',
+        'nps',
+        'usability',
+        'frustrated'
+      ],
+      rdStage: 'signal',
+      primaryOwner: 'product-manager',
+      recommendedChain: [
+        'product-manager',
+        'ux-researcher',
+        'researcher'
+      ],
+      recommendedAction: 'clarify',
+      risk: 'low',
+      requiresApproval: false
+    },
+    {
+      intakeType: 'requirement',
+      keywords: [
+        'acceptance criteria',
+        'requirement',
+        'must have',
+        'should have',
+        'feature request',
+        'prd',
+        'use case',
+        'success metric'
+      ],
+      rdStage: 'framing',
+      primaryOwner: 'product-manager',
+      recommendedChain: [
+        'product-manager',
+        'architect',
+        'engineer'
+      ],
+      recommendedAction: 'draft-prd',
+      risk: 'low',
+      requiresApproval: false
+    },
+    {
+      intakeType: 'ops',
+      keywords: [
+        'runbook',
+        'cron',
+        'scheduled job',
+        'maintenance',
+        'backup',
+        'restore',
+        'capacity plan',
+        'cost optimization',
+        'dependency upgrade'
+      ],
+      rdStage: 'operations',
+      primaryOwner: 'operations',
+      recommendedChain: [
+        'operations',
+        'sre',
+        'engineer'
+      ],
+      recommendedAction: 'create-runbook',
+      risk: 'low',
+      requiresApproval: false
+    },
+    {
+      intakeType: 'memo',
+      keywords: [
+        'memo',
+        'decision memo',
+        'for your information',
+        'fyi',
+        'action item',
+        'action items',
+        'status update',
+        'weekly update',
+        'announcement',
+        'heads up',
+        'team update',
+        'decided to',
+        'proposal to'
+      ],
+      rdStage: 'artifact',
+      primaryOwner: 'docs-keeper',
+      recommendedChain: [
+        'docs-keeper',
+        'reviewer'
+      ],
+      recommendedAction: 'summarize',
+      risk: 'low',
+      requiresApproval: false
+    },
+    {
+      intakeType: 'transcript',
+      keywords: [
+        'transcript',
+        'webvtt',
+        'meeting notes',
+        'meeting minutes',
+        'minutes of',
+        'attendees',
+        'call notes',
+        'stand-up notes',
+        'standup notes',
+        'recording of',
+        'speaker 1',
+        'speaker 2'
+      ],
+      rdStage: 'signal',
+      primaryOwner: 'researcher',
+      recommendedChain: [
+        'researcher',
+        'data-analyst'
+      ],
+      recommendedAction: 'summarize',
+      risk: 'low',
+      requiresApproval: false
+    },
+    {
+      intakeType: 'raw-data',
+      keywords: [
+        'dataset',
+        'raw data',
+        'data dump',
+        'csv export',
+        'data export',
+        'column names',
+        'field names',
+        'rows and columns',
+        'records export',
+        'telemetry export',
+        'json export'
+      ],
+      rdStage: 'research',
+      primaryOwner: 'data-analyst',
+      recommendedChain: [
+        'data-analyst',
+        'data-engineer'
+      ],
+      recommendedAction: 'summarize',
+      risk: 'low',
+      requiresApproval: false
+    }
+  ]
+};
+
+export default rndTable;

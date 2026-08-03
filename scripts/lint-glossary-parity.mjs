@@ -11,7 +11,19 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
 const GLOSSARY_SCOPE = [/^src\//, /^packs\//, /^schemas\//];
-const EXEMPT = [/\.test\.ts$/, /^scripts\/lint-glossary-parity\.mjs$/];
+// src/kernel/intake/tables/ is ported corpus data, not prose, and holds two
+// things the glossary cannot govern:
+//   - match keywords, which are the words USERS write in their documents ("api
+//     contract" is what a reader typed; rewriting it to "api brief" would stop
+//     the classifier matching real input),
+//   - v2 rdStage values, which are load-bearing output locked by the golden
+//     corpus — renaming one is a behavior change, not a rename.
+// The stage-vocabulary reconciliation is tracked separately; see construct-506.2.
+const EXEMPT = [
+  /\.test\.ts$/,
+  /^scripts\/lint-glossary-parity\.mjs$/,
+  /^src\/kernel\/intake\/tables\//,
+];
 
 function parseGlossary(text) {
   const rows = [];

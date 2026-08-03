@@ -1,0 +1,51 @@
+{
+  "evidence": [
+    { "name": "minimal valid evidence", "state": "authored", "input": { "actor": "writer" } },
+    { "name": "fully populated evidence", "state": "exported", "input": { "actor": "exporter", "deliverable": "out/deck.pdf", "proof": "exit 0", "digest": "sha256:abc", "reversible": false, "timestamp": "2026-01-01T00:00:00Z" } },
+    { "name": "degraded evidence", "state": "renderable", "input": { "actor": "renderer", "degradation": "unavailable-renderer" } },
+    { "name": "unknown state is rejected", "state": "shipped", "input": { "actor": "writer" } },
+    { "name": "unknown degradation reason is rejected", "state": "authored", "input": { "actor": "writer", "degradation": "because-friday" } },
+    { "name": "empty actor is rejected", "state": "authored", "input": { "actor": "" } },
+    { "name": "missing actor is rejected", "state": "authored", "input": {} },
+    { "name": "state validation precedes actor validation", "state": "shipped", "input": { "actor": "" } }
+  ],
+  "ledgers": [
+    { "name": "empty ledger has no achieved state", "entries": [] },
+    {
+      "name": "ladder climbs to the highest non-degraded rung",
+      "entries": [
+        { "state": "planned", "input": { "actor": "a" } },
+        { "state": "authored", "input": { "actor": "a" } },
+        { "state": "exported", "input": { "actor": "a" } }
+      ]
+    },
+    {
+      "name": "out-of-order records still resolve to the highest rung",
+      "entries": [
+        { "state": "exported", "input": { "actor": "a" } },
+        { "state": "planned", "input": { "actor": "a" } }
+      ]
+    },
+    {
+      "name": "a degraded top rung never lifts the ladder",
+      "entries": [
+        { "state": "authored", "input": { "actor": "a" } },
+        { "state": "completed", "input": { "actor": "a", "degradation": "skipped-by-policy" } }
+      ]
+    },
+    {
+      "name": "every rung degraded means no achieved state at all",
+      "entries": [
+        { "state": "authored", "input": { "actor": "a", "degradation": "missing-dependency" } },
+        { "state": "completed", "input": { "actor": "a", "degradation": "skipped-by-policy" } }
+      ]
+    },
+    {
+      "name": "duplicate rungs are kept in the record",
+      "entries": [
+        { "state": "authored", "input": { "actor": "a" } },
+        { "state": "authored", "input": { "actor": "b" } }
+      ]
+    }
+  ]
+}

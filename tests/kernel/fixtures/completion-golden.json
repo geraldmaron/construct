@@ -1,0 +1,472 @@
+{
+  "states": [
+    "planned",
+    "authored",
+    "structurally-valid",
+    "source-linted",
+    "exported",
+    "file-valid",
+    "renderable",
+    "screenshot-captured",
+    "visually-reviewed",
+    "accessibility-reviewed",
+    "approved",
+    "completed"
+  ],
+  "degradationReasons": [
+    "unavailable-renderer",
+    "missing-dependency",
+    "unsupported-format",
+    "headless-limitation",
+    "skipped-by-policy"
+  ],
+  "ranks": {
+    "planned": 0,
+    "authored": 1,
+    "structurally-valid": 2,
+    "source-linted": 3,
+    "exported": 4,
+    "file-valid": 5,
+    "renderable": 6,
+    "screenshot-captured": 7,
+    "visually-reviewed": 8,
+    "accessibility-reviewed": 9,
+    "approved": 10,
+    "completed": 11,
+    "not-a-state": -1
+  },
+  "isState": {
+    "planned": true,
+    "authored": true,
+    "structurally-valid": true,
+    "source-linted": true,
+    "exported": true,
+    "file-valid": true,
+    "renderable": true,
+    "screenshot-captured": true,
+    "visually-reviewed": true,
+    "accessibility-reviewed": true,
+    "approved": true,
+    "completed": true,
+    "not-a-state": false,
+    "": false
+  },
+  "evidence": [
+    {
+      "name": "minimal valid evidence",
+      "state": "authored",
+      "input": {
+        "actor": "writer"
+      },
+      "outcome": {
+        "ok": true,
+        "value": {
+          "state": "authored",
+          "actor": "writer",
+          "artifact": null,
+          "proof": null,
+          "digest": null,
+          "degradation": null,
+          "reversible": true,
+          "timestamp": null
+        }
+      }
+    },
+    {
+      "name": "fully populated evidence",
+      "state": "exported",
+      "input": {
+        "actor": "exporter",
+        "deliverable": "out/deck.pdf",
+        "proof": "exit 0",
+        "digest": "sha256:abc",
+        "reversible": false,
+        "timestamp": "2026-01-01T00:00:00Z"
+      },
+      "outcome": {
+        "ok": true,
+        "value": {
+          "state": "exported",
+          "actor": "exporter",
+          "artifact": "out/deck.pdf",
+          "proof": "exit 0",
+          "digest": "sha256:abc",
+          "degradation": null,
+          "reversible": false,
+          "timestamp": "2026-01-01T00:00:00Z"
+        }
+      }
+    },
+    {
+      "name": "degraded evidence",
+      "state": "renderable",
+      "input": {
+        "actor": "renderer",
+        "degradation": "unavailable-renderer"
+      },
+      "outcome": {
+        "ok": true,
+        "value": {
+          "state": "renderable",
+          "actor": "renderer",
+          "artifact": null,
+          "proof": null,
+          "digest": null,
+          "degradation": "unavailable-renderer",
+          "reversible": true,
+          "timestamp": null
+        }
+      }
+    },
+    {
+      "name": "unknown state is rejected",
+      "state": "shipped",
+      "input": {
+        "actor": "writer"
+      },
+      "outcome": {
+        "ok": false,
+        "message": "unknown completion state: shipped (expected one of planned, authored, structurally-valid, source-linted, exported, file-valid, renderable, screenshot-captured, visually-reviewed, accessibility-reviewed, approved, completed)"
+      }
+    },
+    {
+      "name": "unknown degradation reason is rejected",
+      "state": "authored",
+      "input": {
+        "actor": "writer",
+        "degradation": "because-friday"
+      },
+      "outcome": {
+        "ok": false,
+        "message": "unknown degradation reason: because-friday"
+      }
+    },
+    {
+      "name": "empty actor is rejected",
+      "state": "authored",
+      "input": {
+        "actor": ""
+      },
+      "outcome": {
+        "ok": false,
+        "message": "evidence requires a non-empty actor"
+      }
+    },
+    {
+      "name": "missing actor is rejected",
+      "state": "authored",
+      "input": {},
+      "outcome": {
+        "ok": false,
+        "message": "evidence requires a non-empty actor"
+      }
+    },
+    {
+      "name": "state validation precedes actor validation",
+      "state": "shipped",
+      "input": {
+        "actor": ""
+      },
+      "outcome": {
+        "ok": false,
+        "message": "unknown completion state: shipped (expected one of planned, authored, structurally-valid, source-linted, exported, file-valid, renderable, screenshot-captured, visually-reviewed, accessibility-reviewed, approved, completed)"
+      }
+    }
+  ],
+  "ledgers": [
+    {
+      "name": "empty ledger has no achieved state",
+      "entries": [],
+      "outcome": {
+        "ok": true,
+        "value": {
+          "ledger": [],
+          "highest": null
+        }
+      }
+    },
+    {
+      "name": "ladder climbs to the highest non-degraded rung",
+      "entries": [
+        {
+          "state": "planned",
+          "input": {
+            "actor": "a"
+          }
+        },
+        {
+          "state": "authored",
+          "input": {
+            "actor": "a"
+          }
+        },
+        {
+          "state": "exported",
+          "input": {
+            "actor": "a"
+          }
+        }
+      ],
+      "outcome": {
+        "ok": true,
+        "value": {
+          "ledger": [
+            {
+              "state": "planned",
+              "actor": "a",
+              "artifact": null,
+              "proof": null,
+              "digest": null,
+              "degradation": null,
+              "reversible": true,
+              "timestamp": null
+            },
+            {
+              "state": "authored",
+              "actor": "a",
+              "artifact": null,
+              "proof": null,
+              "digest": null,
+              "degradation": null,
+              "reversible": true,
+              "timestamp": null
+            },
+            {
+              "state": "exported",
+              "actor": "a",
+              "artifact": null,
+              "proof": null,
+              "digest": null,
+              "degradation": null,
+              "reversible": true,
+              "timestamp": null
+            }
+          ],
+          "highest": "exported"
+        }
+      }
+    },
+    {
+      "name": "out-of-order records still resolve to the highest rung",
+      "entries": [
+        {
+          "state": "exported",
+          "input": {
+            "actor": "a"
+          }
+        },
+        {
+          "state": "planned",
+          "input": {
+            "actor": "a"
+          }
+        }
+      ],
+      "outcome": {
+        "ok": true,
+        "value": {
+          "ledger": [
+            {
+              "state": "exported",
+              "actor": "a",
+              "artifact": null,
+              "proof": null,
+              "digest": null,
+              "degradation": null,
+              "reversible": true,
+              "timestamp": null
+            },
+            {
+              "state": "planned",
+              "actor": "a",
+              "artifact": null,
+              "proof": null,
+              "digest": null,
+              "degradation": null,
+              "reversible": true,
+              "timestamp": null
+            }
+          ],
+          "highest": "exported"
+        }
+      }
+    },
+    {
+      "name": "a degraded top rung never lifts the ladder",
+      "entries": [
+        {
+          "state": "authored",
+          "input": {
+            "actor": "a"
+          }
+        },
+        {
+          "state": "completed",
+          "input": {
+            "actor": "a",
+            "degradation": "skipped-by-policy"
+          }
+        }
+      ],
+      "outcome": {
+        "ok": true,
+        "value": {
+          "ledger": [
+            {
+              "state": "authored",
+              "actor": "a",
+              "artifact": null,
+              "proof": null,
+              "digest": null,
+              "degradation": null,
+              "reversible": true,
+              "timestamp": null
+            },
+            {
+              "state": "completed",
+              "actor": "a",
+              "artifact": null,
+              "proof": null,
+              "digest": null,
+              "degradation": "skipped-by-policy",
+              "reversible": true,
+              "timestamp": null
+            }
+          ],
+          "highest": "authored"
+        }
+      }
+    },
+    {
+      "name": "every rung degraded means no achieved state at all",
+      "entries": [
+        {
+          "state": "authored",
+          "input": {
+            "actor": "a",
+            "degradation": "missing-dependency"
+          }
+        },
+        {
+          "state": "completed",
+          "input": {
+            "actor": "a",
+            "degradation": "skipped-by-policy"
+          }
+        }
+      ],
+      "outcome": {
+        "ok": true,
+        "value": {
+          "ledger": [
+            {
+              "state": "authored",
+              "actor": "a",
+              "artifact": null,
+              "proof": null,
+              "digest": null,
+              "degradation": "missing-dependency",
+              "reversible": true,
+              "timestamp": null
+            },
+            {
+              "state": "completed",
+              "actor": "a",
+              "artifact": null,
+              "proof": null,
+              "digest": null,
+              "degradation": "skipped-by-policy",
+              "reversible": true,
+              "timestamp": null
+            }
+          ],
+          "highest": null
+        }
+      }
+    },
+    {
+      "name": "duplicate rungs are kept in the record",
+      "entries": [
+        {
+          "state": "authored",
+          "input": {
+            "actor": "a"
+          }
+        },
+        {
+          "state": "authored",
+          "input": {
+            "actor": "b"
+          }
+        }
+      ],
+      "outcome": {
+        "ok": true,
+        "value": {
+          "ledger": [
+            {
+              "state": "authored",
+              "actor": "a",
+              "artifact": null,
+              "proof": null,
+              "digest": null,
+              "degradation": null,
+              "reversible": true,
+              "timestamp": null
+            },
+            {
+              "state": "authored",
+              "actor": "b",
+              "artifact": null,
+              "proof": null,
+              "digest": null,
+              "degradation": null,
+              "reversible": true,
+              "timestamp": null
+            }
+          ],
+          "highest": "authored"
+        }
+      }
+    }
+  ],
+  "rejects": [
+    {
+      "input": null,
+      "outcome": {
+        "ok": false,
+        "message": "completion requires a valid evidence object"
+      }
+    },
+    {
+      "input": "<undefined>",
+      "outcome": {
+        "ok": false,
+        "message": "completion requires a valid evidence object"
+      }
+    },
+    {
+      "input": "authored",
+      "outcome": {
+        "ok": false,
+        "message": "completion requires a valid evidence object"
+      }
+    },
+    {
+      "input": {},
+      "outcome": {
+        "ok": false,
+        "message": "completion requires a valid evidence object"
+      }
+    },
+    {
+      "input": {
+        "state": "not-a-state"
+      },
+      "outcome": {
+        "ok": false,
+        "message": "completion requires a valid evidence object"
+      }
+    }
+  ]
+}

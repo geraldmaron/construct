@@ -1,0 +1,824 @@
+[
+  {
+    "name": "security signal — auth bypass mention (v2 golden-rnd fixture)",
+    "input": {
+      "sourcePath": "inbox/auth-bypass-report.md",
+      "extractedText": "Critical CVE: auth bypass via SQLi."
+    },
+    "triage": {
+      "intakeType": "security",
+      "rdStage": "operations",
+      "primaryOwner": "security",
+      "recommendedChain": [
+        "security",
+        "engineer",
+        "reviewer"
+      ],
+      "recommendedAction": "diagnose",
+      "risk": "high",
+      "requiresApproval": true,
+      "confidence": 0.82,
+      "rationale": "Classified as security: matched 3 keywords (auth bypass, cve, sqli).",
+      "candidates": [
+        {
+          "intakeType": "security",
+          "score": 3,
+          "margin": 3,
+          "hits": 3
+        }
+      ]
+    },
+    "line": "auth-bypass-report.md → security / operations · owner: security · next: diagnose",
+    "tags": [
+      {
+        "tag": "intake/security",
+        "source": "agent:classifier",
+        "confidence": 0.82
+      }
+    ]
+  },
+  {
+    "name": "bug signal — failing tests (v2 golden-rnd fixture)",
+    "input": {
+      "sourcePath": "inbox/bug-test-fails.md",
+      "extractedText": "Tests fail with error: regression in foo module."
+    },
+    "triage": {
+      "intakeType": "bug",
+      "rdStage": "implementation",
+      "primaryOwner": "debugger",
+      "recommendedChain": [
+        "debugger",
+        "engineer",
+        "qa",
+        "reviewer"
+      ],
+      "recommendedAction": "diagnose",
+      "risk": "medium",
+      "requiresApproval": false,
+      "confidence": 0.92,
+      "rationale": "Classified as bug: matched 4 keywords (bug, fails, error, regression); filename hint.",
+      "candidates": [
+        {
+          "intakeType": "bug",
+          "score": 4.4,
+          "margin": 4.4,
+          "hits": 4
+        }
+      ]
+    },
+    "line": "bug-test-fails.md → bug / implementation · owner: debugger · next: diagnose",
+    "tags": [
+      {
+        "tag": "intake/bug",
+        "source": "agent:classifier",
+        "confidence": 0.92
+      }
+    ]
+  },
+  {
+    "name": "architecture signal — design decision (v2 golden-rnd fixture)",
+    "input": {
+      "sourcePath": "inbox/arch-decision.md",
+      "extractedText": "Need a design decision on service boundary and dependency direction."
+    },
+    "triage": {
+      "intakeType": "architecture",
+      "rdStage": "design",
+      "primaryOwner": "architect",
+      "recommendedChain": [
+        "architect",
+        "devil-advocate",
+        "engineer"
+      ],
+      "recommendedAction": "draft-rfc",
+      "risk": "medium",
+      "requiresApproval": false,
+      "confidence": 0.55,
+      "rationale": "Classified as architecture: matched 1 keyword (boundary).",
+      "candidates": [
+        {
+          "intakeType": "architecture",
+          "score": 1,
+          "margin": 1,
+          "hits": 1
+        }
+      ]
+    },
+    "line": "arch-decision.md → architecture / design · owner: architect · next: draft-rfc",
+    "tags": []
+  },
+  {
+    "name": "unknown when no keywords match (v2 golden-rnd fixture)",
+    "input": {
+      "sourcePath": "inbox/blank.md",
+      "extractedText": "something completely unrelated to any taxonomy term"
+    },
+    "triage": {
+      "intakeType": "unknown",
+      "rdStage": "unknown",
+      "primaryOwner": "orchestrator",
+      "recommendedChain": [
+        "orchestrator"
+      ],
+      "recommendedAction": "summarize",
+      "risk": "low",
+      "requiresApproval": false,
+      "confidence": 0.3,
+      "rationale": "No classification keywords matched filename, content excerpt, or related-doc titles.",
+      "candidates": []
+    },
+    "line": "blank.md → unclassified · owner: orchestrator · next: summarize",
+    "tags": []
+  },
+  {
+    "name": "title lock — postmortem filename and H1 agree, incident wins over bug vocabulary",
+    "input": {
+      "sourcePath": "inbox/2026-postmortem.md",
+      "extractedText": "# Postmortem\n\nThe crash was a regression; tests fail on the hot path."
+    },
+    "triage": {
+      "intakeType": "incident",
+      "rdStage": "operations",
+      "primaryOwner": "sre",
+      "recommendedChain": [
+        "sre",
+        "debugger",
+        "platform-engineer"
+      ],
+      "recommendedAction": "create-runbook",
+      "risk": "high",
+      "requiresApproval": true,
+      "confidence": 0.9,
+      "rationale": "Classified as incident: filename hint and H1 title agree (locked).",
+      "candidates": [
+        {
+          "intakeType": "incident",
+          "score": 0.9,
+          "margin": 0.9,
+          "hits": 0
+        }
+      ]
+    },
+    "line": "2026-postmortem.md → incident / operations · owner: sre · next: create-runbook",
+    "tags": [
+      {
+        "tag": "intake/incident",
+        "source": "agent:classifier",
+        "confidence": 0.9
+      }
+    ]
+  },
+  {
+    "name": "title lock — ADR filename and H1 agree",
+    "input": {
+      "sourcePath": "inbox/adr-0042-storage.md",
+      "extractedText": "# ADR-0042: storage engine\n\nA design decision about the service boundary."
+    },
+    "triage": {
+      "intakeType": "architecture",
+      "rdStage": "design",
+      "primaryOwner": "architect",
+      "recommendedChain": [
+        "architect",
+        "devil-advocate",
+        "engineer"
+      ],
+      "recommendedAction": "draft-rfc",
+      "risk": "medium",
+      "requiresApproval": false,
+      "confidence": 0.9,
+      "rationale": "Classified as architecture: filename hint and H1 title agree (locked).",
+      "candidates": [
+        {
+          "intakeType": "architecture",
+          "score": 0.9,
+          "margin": 0.9,
+          "hits": 0
+        }
+      ]
+    },
+    "line": "adr-0042-storage.md → architecture / design · owner: architect · next: draft-rfc",
+    "tags": [
+      {
+        "tag": "intake/architecture",
+        "source": "agent:classifier",
+        "confidence": 0.9
+      }
+    ]
+  },
+  {
+    "name": "title penalty without lock — postmortem H1 penalizes bug, filename does not hint",
+    "input": {
+      "sourcePath": "inbox/notes.md",
+      "extractedText": "# Postmortem\n\nregression, stack trace, tests fail, defect"
+    },
+    "triage": {
+      "intakeType": "bug",
+      "rdStage": "implementation",
+      "primaryOwner": "debugger",
+      "recommendedChain": [
+        "debugger",
+        "engineer",
+        "qa",
+        "reviewer"
+      ],
+      "recommendedAction": "diagnose",
+      "risk": "medium",
+      "requiresApproval": false,
+      "confidence": 0.72,
+      "rationale": "Classified as bug: matched 2 keywords (regression, stack trace); title override applied.",
+      "candidates": [
+        {
+          "intakeType": "bug",
+          "score": 1.5,
+          "margin": 0.5,
+          "hits": 2
+        },
+        {
+          "intakeType": "eval-finding",
+          "score": 1,
+          "margin": 0.5,
+          "hits": 1
+        }
+      ]
+    },
+    "line": "notes.md → bug / implementation · owner: debugger · next: diagnose",
+    "tags": [
+      {
+        "tag": "intake/bug",
+        "source": "agent:classifier",
+        "confidence": 0.72
+      }
+    ]
+  },
+  {
+    "name": "filename hint only — runbook, no matching body",
+    "input": {
+      "sourcePath": "inbox/deploy-runbook.md",
+      "extractedText": "steps in order"
+    },
+    "triage": {
+      "intakeType": "ops",
+      "rdStage": "operations",
+      "primaryOwner": "operations",
+      "recommendedChain": [
+        "operations",
+        "sre",
+        "engineer"
+      ],
+      "recommendedAction": "create-runbook",
+      "risk": "low",
+      "requiresApproval": false,
+      "confidence": 0.55,
+      "rationale": "Classified as ops: matched 1 keyword (runbook); filename hint.",
+      "candidates": [
+        {
+          "intakeType": "ops",
+          "score": 1.4,
+          "margin": 1.4,
+          "hits": 1
+        }
+      ]
+    },
+    "line": "deploy-runbook.md → ops / operations · owner: operations · next: create-runbook",
+    "tags": []
+  },
+  {
+    "name": "filename hint plus body agreement — security",
+    "input": {
+      "sourcePath": "inbox/cve-2026-1234.md",
+      "extractedText": "vulnerability, exploit, privilege escalation, xss and csrf all present"
+    },
+    "triage": {
+      "intakeType": "security",
+      "rdStage": "operations",
+      "primaryOwner": "security",
+      "recommendedChain": [
+        "security",
+        "engineer",
+        "reviewer"
+      ],
+      "recommendedAction": "diagnose",
+      "risk": "high",
+      "requiresApproval": true,
+      "confidence": 0.92,
+      "rationale": "Classified as security: matched 6 keywords (cve, vulnerability, exploit, privilege escalation); filename hint.",
+      "candidates": [
+        {
+          "intakeType": "security",
+          "score": 6.4,
+          "margin": 6.4,
+          "hits": 6
+        }
+      ]
+    },
+    "line": "cve-2026-1234.md → security / operations · owner: security · next: diagnose",
+    "tags": [
+      {
+        "tag": "intake/security",
+        "source": "agent:classifier",
+        "confidence": 0.92
+      }
+    ]
+  },
+  {
+    "name": "word-boundary guard — 'enforce' must not match 'rce', 'leaks' must not stray",
+    "input": {
+      "sourcePath": "inbox/policy.md",
+      "extractedText": "We enforce the policy and it forces a rebuild."
+    },
+    "triage": {
+      "intakeType": "unknown",
+      "rdStage": "unknown",
+      "primaryOwner": "orchestrator",
+      "recommendedChain": [
+        "orchestrator"
+      ],
+      "recommendedAction": "summarize",
+      "risk": "low",
+      "requiresApproval": false,
+      "confidence": 0.3,
+      "rationale": "No classification keywords matched filename, content excerpt, or related-doc titles.",
+      "candidates": []
+    },
+    "line": "policy.md → unclassified · owner: orchestrator · next: summarize",
+    "tags": []
+  },
+  {
+    "name": "ambiguous — one hit each for two types, margin under threshold",
+    "input": {
+      "sourcePath": "inbox/mixed.md",
+      "extractedText": "There was an outage and also a regression."
+    },
+    "triage": {
+      "intakeType": "incident",
+      "rdStage": "operations",
+      "primaryOwner": "sre",
+      "recommendedChain": [
+        "sre",
+        "debugger",
+        "platform-engineer"
+      ],
+      "recommendedAction": "create-runbook",
+      "risk": "high",
+      "requiresApproval": true,
+      "confidence": 0.5,
+      "rationale": "Classified as incident: matched 1 keyword (outage); ambiguous vs bug (margin 0.00).",
+      "candidates": [
+        {
+          "intakeType": "incident",
+          "score": 1,
+          "margin": 0,
+          "hits": 1
+        },
+        {
+          "intakeType": "bug",
+          "score": 1,
+          "margin": 0,
+          "hits": 1
+        }
+      ]
+    },
+    "line": "mixed.md → incident / operations · owner: sre · next: create-runbook",
+    "tags": []
+  },
+  {
+    "name": "related-doc titles contribute to the signal",
+    "input": {
+      "sourcePath": "inbox/untitled.md",
+      "extractedText": "no local signal here",
+      "related": [
+        {
+          "title": "incident: pagerduty outage"
+        },
+        {
+          "title": "oncall 5xx availability"
+        }
+      ]
+    },
+    "triage": {
+      "intakeType": "incident",
+      "rdStage": "operations",
+      "primaryOwner": "sre",
+      "recommendedChain": [
+        "sre",
+        "debugger",
+        "platform-engineer"
+      ],
+      "recommendedAction": "create-runbook",
+      "risk": "high",
+      "requiresApproval": true,
+      "confidence": 0.92,
+      "rationale": "Classified as incident: matched 6 keywords (incident, pagerduty, outage, oncall).",
+      "candidates": [
+        {
+          "intakeType": "incident",
+          "score": 6,
+          "margin": 6,
+          "hits": 6
+        }
+      ]
+    },
+    "line": "untitled.md → incident / operations · owner: sre · next: create-runbook",
+    "tags": [
+      {
+        "tag": "intake/incident",
+        "source": "agent:classifier",
+        "confidence": 0.92
+      }
+    ]
+  },
+  {
+    "name": "related-doc tag inheritance — two docs share a tag",
+    "input": {
+      "sourcePath": "inbox/cve-note.md",
+      "extractedText": "vulnerability, exploit, sqli, rce confirmed",
+      "related": [
+        {
+          "title": "a",
+          "tags": [
+            "area/auth"
+          ]
+        },
+        {
+          "title": "b",
+          "tags": [
+            "area/auth",
+            "area/db"
+          ]
+        }
+      ]
+    },
+    "triage": {
+      "intakeType": "security",
+      "rdStage": "operations",
+      "primaryOwner": "security",
+      "recommendedChain": [
+        "security",
+        "engineer",
+        "reviewer"
+      ],
+      "recommendedAction": "diagnose",
+      "risk": "high",
+      "requiresApproval": true,
+      "confidence": 0.92,
+      "rationale": "Classified as security: matched 5 keywords (cve, vulnerability, exploit, sqli); filename hint.",
+      "candidates": [
+        {
+          "intakeType": "security",
+          "score": 5.4,
+          "margin": 5.4,
+          "hits": 5
+        }
+      ]
+    },
+    "line": "cve-note.md → security / operations · owner: security · next: diagnose",
+    "tags": [
+      {
+        "tag": "intake/security",
+        "source": "agent:classifier",
+        "confidence": 0.92
+      },
+      {
+        "tag": "area/auth",
+        "source": "agent:related-inherit",
+        "confidence": 0.7
+      }
+    ]
+  },
+  {
+    "name": "empty input",
+    "input": {},
+    "triage": {
+      "intakeType": "unknown",
+      "rdStage": "unknown",
+      "primaryOwner": "orchestrator",
+      "recommendedChain": [
+        "orchestrator"
+      ],
+      "recommendedAction": "summarize",
+      "risk": "low",
+      "requiresApproval": false,
+      "confidence": 0.3,
+      "rationale": "No classification keywords matched filename, content excerpt, or related-doc titles.",
+      "candidates": []
+    },
+    "line": "(unknown source) → unclassified · owner: orchestrator · next: summarize",
+    "tags": []
+  },
+  {
+    "name": "transcript by filename and H1",
+    "input": {
+      "sourcePath": "inbox/2026-05-standup-transcript.md",
+      "extractedText": "# Transcript\n\nspeaker 1: hello. speaker 2: attendees noted."
+    },
+    "triage": {
+      "intakeType": "transcript",
+      "rdStage": "signal",
+      "primaryOwner": "researcher",
+      "recommendedChain": [
+        "researcher",
+        "data-analyst"
+      ],
+      "recommendedAction": "summarize",
+      "risk": "low",
+      "requiresApproval": false,
+      "confidence": 0.9,
+      "rationale": "Classified as transcript: filename hint and H1 title agree (locked).",
+      "candidates": [
+        {
+          "intakeType": "transcript",
+          "score": 0.9,
+          "margin": 0.9,
+          "hits": 0
+        }
+      ]
+    },
+    "line": "2026-05-standup-transcript.md → transcript / signal · owner: researcher · next: summarize",
+    "tags": [
+      {
+        "tag": "intake/transcript",
+        "source": "agent:classifier",
+        "confidence": 0.9
+      }
+    ]
+  },
+  {
+    "name": "raw-data by csv extension",
+    "input": {
+      "sourcePath": "inbox/export.csv",
+      "extractedText": "column names and field names, rows and columns"
+    },
+    "triage": {
+      "intakeType": "raw-data",
+      "rdStage": "research",
+      "primaryOwner": "data-analyst",
+      "recommendedChain": [
+        "data-analyst",
+        "data-engineer"
+      ],
+      "recommendedAction": "summarize",
+      "risk": "low",
+      "requiresApproval": false,
+      "confidence": 0.82,
+      "rationale": "Classified as raw-data: matched 3 keywords (column names, field names, rows and columns); filename hint.",
+      "candidates": [
+        {
+          "intakeType": "raw-data",
+          "score": 3.4,
+          "margin": 3.4,
+          "hits": 3
+        }
+      ]
+    },
+    "line": "export.csv → raw-data / research · owner: data-analyst · next: summarize",
+    "tags": [
+      {
+        "tag": "intake/raw-data",
+        "source": "agent:classifier",
+        "confidence": 0.82
+      }
+    ]
+  },
+  {
+    "name": "eval-finding — benchmark vocabulary",
+    "input": {
+      "sourcePath": "inbox/benchmark-run.md",
+      "extractedText": "eval results: recall@10 and precision@5 regressed on the benchmark."
+    },
+    "triage": {
+      "intakeType": "eval-finding",
+      "rdStage": "evaluation",
+      "primaryOwner": "evaluator",
+      "recommendedChain": [
+        "evaluator",
+        "ai-engineer",
+        "trace-reviewer"
+      ],
+      "recommendedAction": "evaluate",
+      "risk": "medium",
+      "requiresApproval": false,
+      "confidence": 0.82,
+      "rationale": "Classified as eval-finding: matched 3 keywords (eval, recall@, precision@); filename hint.",
+      "candidates": [
+        {
+          "intakeType": "eval-finding",
+          "score": 3.4,
+          "margin": 3.4,
+          "hits": 3
+        }
+      ]
+    },
+    "line": "benchmark-run.md → eval-finding / evaluation · owner: evaluator · next: evaluate",
+    "tags": [
+      {
+        "tag": "intake/eval-finding",
+        "source": "agent:classifier",
+        "confidence": 0.82
+      }
+    ]
+  },
+  {
+    "name": "operations preset — routed by preset id",
+    "input": {
+      "sourcePath": "inbox/vendor.md",
+      "extractedText": "vendor contract renewal and invoice approval",
+      "preset": "operations"
+    },
+    "triage": {
+      "intakeType": "unknown",
+      "rdStage": "unknown",
+      "primaryOwner": "operations",
+      "recommendedChain": [
+        "operations"
+      ],
+      "recommendedAction": "summarize",
+      "risk": "low",
+      "requiresApproval": false,
+      "confidence": 0.3,
+      "rationale": "No classification keywords matched filename, content excerpt, or related-doc titles.",
+      "candidates": []
+    },
+    "line": "vendor.md → unclassified · owner: operations · next: summarize",
+    "tags": []
+  },
+  {
+    "name": "operations preset — matching entry, table-specific owner",
+    "input": {
+      "sourcePath": "inbox/job.md",
+      "extractedText": "the nightly cron scheduled job needs a backup rotation and maintenance window",
+      "preset": "operations"
+    },
+    "triage": {
+      "intakeType": "ops",
+      "rdStage": "improve",
+      "primaryOwner": "sre",
+      "recommendedChain": [
+        "sre",
+        "engineer"
+      ],
+      "recommendedAction": "create-runbook",
+      "risk": "low",
+      "requiresApproval": false,
+      "confidence": 0.92,
+      "rationale": "Classified as ops: matched 5 keywords (cron, scheduled job, backup, rotation).",
+      "candidates": [
+        {
+          "intakeType": "ops",
+          "score": 5,
+          "margin": 5,
+          "hits": 5
+        }
+      ]
+    },
+    "line": "job.md → ops / improve · owner: sre · next: create-runbook",
+    "tags": [
+      {
+        "tag": "intake/ops",
+        "source": "agent:classifier",
+        "confidence": 0.92
+      }
+    ]
+  },
+  {
+    "name": "creative preset — routed by preset id",
+    "input": {
+      "sourcePath": "inbox/campaign.md",
+      "extractedText": "campaign brief for the brand launch",
+      "preset": "creative"
+    },
+    "triage": {
+      "intakeType": "brief",
+      "rdStage": "brief",
+      "primaryOwner": "product-manager",
+      "recommendedChain": [
+        "product-manager",
+        "researcher",
+        "docs-keeper"
+      ],
+      "recommendedAction": "draft-prd",
+      "risk": "medium",
+      "requiresApproval": false,
+      "confidence": 0.72,
+      "rationale": "Classified as brief: matched 2 keywords (campaign, brief).",
+      "candidates": [
+        {
+          "intakeType": "brief",
+          "score": 2,
+          "margin": 2,
+          "hits": 2
+        }
+      ]
+    },
+    "line": "campaign.md → brief / brief · owner: product-manager · next: draft-prd",
+    "tags": [
+      {
+        "tag": "intake/brief",
+        "source": "agent:classifier",
+        "confidence": 0.72
+      }
+    ]
+  },
+  {
+    "name": "research preset — routed by preset id",
+    "input": {
+      "sourcePath": "inbox/study.md",
+      "extractedText": "literature review and hypothesis for the study",
+      "preset": "research"
+    },
+    "triage": {
+      "intakeType": "experiment",
+      "rdStage": "analyze",
+      "primaryOwner": "evaluator",
+      "recommendedChain": [
+        "evaluator",
+        "researcher",
+        "data-analyst"
+      ],
+      "recommendedAction": "evaluate",
+      "risk": "low",
+      "requiresApproval": false,
+      "confidence": 0.5,
+      "rationale": "Classified as experiment: matched 1 keyword (hypothesis); ambiguous vs synthesis (margin 0.00).",
+      "candidates": [
+        {
+          "intakeType": "experiment",
+          "score": 1,
+          "margin": 0,
+          "hits": 1
+        },
+        {
+          "intakeType": "synthesis",
+          "score": 1,
+          "margin": 0,
+          "hits": 1
+        }
+      ]
+    },
+    "line": "study.md → experiment / analyze · owner: evaluator · next: evaluate",
+    "tags": []
+  },
+  {
+    "name": "unknown preset id falls back to the default table",
+    "input": {
+      "sourcePath": "inbox/auth-bypass.md",
+      "extractedText": "Critical CVE: auth bypass via SQLi.",
+      "preset": "no-such-preset"
+    },
+    "triage": {
+      "intakeType": "security",
+      "rdStage": "operations",
+      "primaryOwner": "security",
+      "recommendedChain": [
+        "security",
+        "engineer",
+        "reviewer"
+      ],
+      "recommendedAction": "diagnose",
+      "risk": "high",
+      "requiresApproval": true,
+      "confidence": 0.82,
+      "rationale": "Classified as security: matched 3 keywords (auth bypass, cve, sqli).",
+      "candidates": [
+        {
+          "intakeType": "security",
+          "score": 3,
+          "margin": 3,
+          "hits": 3
+        }
+      ]
+    },
+    "line": "auth-bypass.md → security / operations · owner: security · next: diagnose",
+    "tags": [
+      {
+        "tag": "intake/security",
+        "source": "agent:classifier",
+        "confidence": 0.82
+      }
+    ]
+  },
+  {
+    "name": "body is truncated at 4000 chars — keyword past the cut must not count",
+    "input": {
+      "sourcePath": "inbox/long.md",
+      "extractedText": "pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad pad vulnerability"
+    },
+    "triage": {
+      "intakeType": "unknown",
+      "rdStage": "unknown",
+      "primaryOwner": "orchestrator",
+      "recommendedChain": [
+        "orchestrator"
+      ],
+      "recommendedAction": "summarize",
+      "risk": "low",
+      "requiresApproval": false,
+      "confidence": 0.3,
+      "rationale": "No classification keywords matched filename, content excerpt, or related-doc titles.",
+      "candidates": []
+    },
+    "line": "long.md → unclassified · owner: orchestrator · next: summarize",
+    "tags": []
+  }
+]
