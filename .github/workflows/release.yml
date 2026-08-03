@@ -1,0 +1,40 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.18'
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run smoke
+      - name: verify tag matches package.json version
+        run: |
+          tag_version="${GITHUB_REF_NAME#v}"
+          pkg_version="$(node -p "require('./package.json').version")"
+          if [ "$tag_version" != "$pkg_version" ]; then
+            echo "tag v$tag_version does not match package.json version $pkg_version" >&2
+            exit 1
+          fi
+      # --tag alpha keeps this off the default `latest` dist-tag: STRATEGY.md
+      # is explicit that 0.x carries no stability promise until the Phase 5
+      # second-user gate, so `npm install @geraldmaron/construct-engine` with
+      # no version/tag should not resolve here.
+      - run: npm publish --provenance --tag alpha
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

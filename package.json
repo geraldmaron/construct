@@ -4,6 +4,13 @@
   "description": "Outcome engine: state an outcome, a learning staff of roles fills in the rest — decisions in, deliverables out.",
   "type": "module",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/geraldmaron/construct.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": ">=22.18.0"
   },
