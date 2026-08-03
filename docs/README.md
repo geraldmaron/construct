@@ -1,147 +1,15 @@
-# construct documentation
+# Documentation
 
-> Required project state. All LLMs working in this repo, including Construct, must keep the core documents below current.
+The previous documentation system (96 ADRs, 5 RFCs, PRD trees, guides, ~387 files) was deleted on 2026-08-03 as part of the strategy rewrite. It encoded a superseded direction and had become a maintenance surface larger than its value.
 
-<!-- AUTO:core-docs -->
-## Required core documents
+## The new documentation contract
 
-| File | Purpose | Update when |
-|---|---|---|
-| `AGENTS.md` | Canonical agent operating contract | Workflow rules, tracker hierarchy, or repo-wide guardrails change |
-| `.construct/context.md` | Human-readable resumable project context | Active work, decisions, architecture assumptions, or open questions change |
-| `.construct/context.json` | Machine-readable resumable context | Context state needs to stay in sync with `.construct/context.md` |
-| `docs/README.md` | Docs index and maintenance contract | Core docs set or maintenance expectations change |
-| `docs/guides/concepts/architecture.mdx` | Canonical architecture and invariants | Runtime shape, contracts, boundaries, or major dependencies change |
+- **[STRATEGY.md](../STRATEGY.md)** (repo root) is the only standing strategy document: north star, end-state UX, architecture commitments, program shape, named risks.
+- **Beads** is the only work record: the program graph, acceptance criteria, dependencies, and verification evidence live in the tracker, not in decision documents.
+- **No ADRs, RFCs, or PRDs.** A decision is either an architecture commitment (goes in STRATEGY.md, replacing what it supersedes) or a work item (goes in beads). Documents that merely record that a decision happened are not written.
+- **Docs regrow only when they earn their keep.** A new document is added here when a real reader (user or contributor) needs it repeatedly, not ahead of that need. Each addition names its audience and its maintenance owner in its header.
+- **CHANGELOG.md** (repo root) remains the release record.
 
-`plan.md` is a local working document. `construct init` creates it for the active session, but it is gitignored and not committed; durable work belongs in the tracker (Beads or external).
+## What existed before
 
-Tracker hierarchy: external tracker (prefer Beads) for durable work, `plan.md` for the local working plan, and cass-memory via MCP `memory` for cross-session recall.
-
-`AGENTS.md` is the canonical agent instruction file. On case-sensitive filesystems you may also add a lowercase `agents.md` shim for tools that require it.
-All LLMs working in the repo, including Construct, must read these as project state, keep them current when work changes project reality, and prune stale sections instead of letting managed docs drift.
-<!-- /AUTO:core-docs -->
-
-## File format: `.md` vs `.mdx`
-
-Use **`.md`** for every prose page (CommonMark + YAML frontmatter). Reserve **`.mdx`** only when a page embeds `@construct/ui` MDX components (`<FlowPipeline>`, `<RequestFlow>`, `<Callout>`, …). The docs site compiles both through the same pipeline: prose-only bodies are sanitized and rendered as Markdown; JSX pages stay on the MDX path (`apps/docs/lib/docs-source.ts` → `prepareDocBody`).
-
-## Contents
-
-- [Start](./guides/start/). Install, initialize a project, connect an editor, and run the first task
-- [Architecture](./guides/concepts/architecture.mdx). Runtime shape, boundaries, and system map
-- [Worker Profiles](./guides/reference/worker-profiles.md). The 12 assignable execution profiles behind `@construct`
-- [Deployment model](./guides/concepts/deployment-model.mdx). Solo, team, and enterprise topology
-- [Prompt surface architecture](./guides/concepts/prompt-surfaces.mdx). Public Worker Profile prompt, internal role overlays, skills, and fixtures
-- [Knowledge layout](./guides/concepts/knowledge-layout.md). `.construct/` directory structure, inbox routing, and durable knowledge lanes
-- [Project scopes](./guides/concepts/project-scopes.md). `.construct` vs the machine state root vs user home — what belongs in git
-- [Intake and triage](./guides/concepts/intake-and-triage.mdx). How dropped signals become owner-assigned work
-- [Gates and enforcement](./guides/concepts/gates-and-enforcement.mdx). Write-time, commit-time, and CI guardrails
-- [Style](./STYLE.md). Voice, punctuation, structure rules (canonical reference for prose lint)
-- [Branding](./guides/reference/branding.md). Visual identity, naming, voice, tone, and profile terminology
-- [Learning loops](./guides/concepts/learning-loops.mdx). What is wired vs aspirational across A1-A4
-- [Workspace Preset lifecycle](./guides/concepts/workspace-preset-lifecycle.md). Draft → validate → promote → monitor → retire
-- [Release policy](./operations/maintenance/release-policy.md). When to tag
-- [Release and deploy automation](./operations/maintenance/release-and-deploy.md). What fires when you tag, plus the failure-mode lookup
-- [Templates and role anti-patterns](../templates/docs/README.md)
-- [Runbooks](./operations/runbooks/)
-- [ADRs](./decisions/adr/). Architecture decision records (public site lane)
-- [PRD platform artifacts](./prd-platform/README.md). Draft and certified platform PRDs
-- [Skills](../skills/). Domain knowledge organized by area (compliance, architecture, AI, development, devops, etc.)
-- [Functional tests pattern](../tests/functional/README.md). When and how to add an end-to-end test
-
-## Maintainer lanes (not on the public site)
-
-These directories stay in git for Construct maintainers. They are excluded from the published docs site and not linked from README.
-
-- [Research notes](./notes/research/). Competitive audits and synthesis reports; ADR-cited inputs in [decision-input](./notes/research/decision-input/) and the obsolete workspace control plane program archive in [workspace-control-plane](./obsolete/research/workspace-control-plane/)
-- [PRDs](./specs/prd/). Draft product requirements for this repo
-- [Roadmap](./roadmap.md). Generated placeholder (excluded from public site)
-- [Tests audit](../tests/AUDIT.md). Category-by-category survey of test files
-
-## How-to guides
-
-Step-by-step operator guides for common tasks:
-
-- [Quick start](./guides/cookbook/quick-start.md)
-- [Use the inbox](./guides/cookbook/use-the-inbox.mdx)
-- [Configure Slack](./guides/cookbook/configure-slack.md)
-- [Configure GitHub](./guides/cookbook/configure-github.md)
-- [Configure Jira and Confluence](./guides/cookbook/configure-jira-confluence.md)
-- [Override the storage root (`CONSTRUCT_DATA_DIR`)](./guides/cookbook/override-storage-root.md)
-- [Manage providers](./guides/cookbook/manage-providers.md)
-- [Plug in your own LLM](./guides/cookbook/plug-in-your-own-llm.mdx)
-- [Generate artifacts](./guides/cookbook/generate-artifacts.mdx)
-- [Query the knowledge base](./guides/cookbook/query-the-knowledge-base.md)
-- [Multi-project context — register, synthesize, contribute](./guides/cookbook/multi-project-context.md)
-- [Observability and cost](./guides/cookbook/observability-and-cost.md)
-- [Wireframe and drop commands](./guides/cookbook/wireframe-and-drop.md)
-- [Distill and infer commands](./guides/cookbook/distill-and-infer.md)
-
-## Command Coverage
-
-Use the generated [CLI reference](./guides/reference/cli/) for exact flags and subcommands. The docs index intentionally points advanced commands to the reference when a dedicated tutorial would add little beyond the command help.
-
-- Core: `construct docs`, `construct recommendations`, `construct sandbox`
-- Workflows and knowledge: `construct customer`, `construct graph`, `construct integrations`, `construct procedure`, `construct reflect`, `construct tags`, `construct workspace`
-- Models and integrations: `construct claude:allow`, `construct creds`, `construct ollama`
-- Observability and diagnostics: `construct audit`, `construct llm-judge`, `construct telemetry`, `construct cleanup`
-- Administration: `construct auth:status`, `construct backup`, `construct beads`, `construct completions`, `construct gates:audit`, `construct hooks:health`, `construct role`, `construct scheduler`, `construct uninstall`, `construct upgrade`
-
-## Prompt surfaces
-
-`docs/guides/concepts/prompt-surfaces.mdx` is the canonical reference for the prompt architecture.
-
-It defines:
-
-- the sole public Worker Profile prompt surface (`registry/worker-profiles/prompts/construct.md`)
-- internal Worker Profile prompts and perspective overlays
-- offline-only example fixtures
-- the required fixture coverage policy
-
-## Prompt examples
-
-Shipped prompt example fixtures live under `examples/`.
-
-They are the canonical place for:
-
-- Construct public Worker Profile fixtures under `examples/worker-profile-examples/construct/**`
-- internal role fixtures under `examples/internal/roles/**`
-- labeled bad, boundary, and adversarial cases without bloating runtime prompts
-
-## Maintenance
-
-After updating the Construct repo checkout itself, run `construct update` from inside that checkout to reinstall the current source globally and refresh synced host adapters before continuing work.
-
-When a managed file stops reflecting repo reality, update it or prune the stale section. Managed docs are not archives.
-
-Parallel work rule: one writer per file. If multiple agent or harness sessions are active, coordinate ownership through the tracker and `plan.md` instead of editing the same file concurrently.
-
-<!-- AUTO:catalog-sync -->
-## Capability catalog (generated)
-
-> Narrative docs index — this table is regenerated from `registry/capabilities.json`.
-> Run `npm run docs:sync` after catalog changes. Do not hand-edit inside the AUTO markers.
-
-Catalog census: 132 CLI commands, 50 npm scripts, 0 embedded workflows.
-
-| Capability | Criticality | CLI surface | Verification |
-|---|---|---|---|
-| `ingest.adapter` | P0 | construct ingest | `tests/functional/node-native-extraction.functional.test.mjs` |
-| `ingest.docling` | P1 | construct ingest --legacy-extractor=false | `tests/functional/mcp-ingest-resilience.functional.test.mjs` |
-| `local.model.tier` | P1 | construct models resolve | `—` |
-| `mcp.broker.connection` | P0 | — | `tests/functional/mcp-parity.functional.test.mjs` |
-| `oracle.meta-review` | P1 | construct oracle review | `tests/functional/oracle-bounded-auto.functional.test.mjs` |
-| `orchestration.routing` | P0 | construct orchestrate run | `tests/functional/orchestration-mcp.functional.test.mjs` |
-| `surfaces.opencode-primary` | P1 | construct sync | `tests/functional/opencode-primary-surface.functional.test.mjs` |
-| `workflow.architecture-review` | P1 | construct procedure invoke | `tests/functional/embedded-contract-procedure-invoke.functional.test.mjs` |
-| `workflow.evidence-ingest` | P1 | construct procedure invoke | `tests/functional/embedded-contract-procedure-invoke.functional.test.mjs` |
-| `workflow.prd-draft` | P1 | construct procedure invoke | `tests/functional/embedded-contract-procedure-invoke.functional.test.mjs` |
-| `workflow.proposal-review` | P1 | construct procedure invoke | `tests/functional/embedded-contract-procedure-invoke.functional.test.mjs` |
-| `workflow.research-synthesis` | P1 | construct ask | `tests/functional/embedded-contract-procedure-invoke.functional.test.mjs` |
-| `workflow.risk-review` | P1 | construct procedure invoke | `tests/functional/embedded-contract-procedure-invoke.functional.test.mjs` |
-<!-- /AUTO:catalog-sync -->
-
-## Ownership
-
-Maintained by: Construct contributors
-Last updated: 2026-06-19
+The deleted tree is recoverable from git history prior to 2026-08-03 if a specific document is ever needed for archaeology. Do not resurrect documents wholesale; extract the fact you need and cite the commit.

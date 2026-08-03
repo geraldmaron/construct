@@ -1,8 +1,0 @@
-{
-  "title": "Decisions",
-  "pages": [
-    "index",
-    "adr",
-    "rfc"
-  ]
-}

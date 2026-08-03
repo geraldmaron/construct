@@ -4,6 +4,14 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Changed
+
+- **Strategy rewritten from scratch; the decision-record system is retired**: `STRATEGY.md` now defines the outcome-engine direction — point at an outcome and an invisible, learning staff fills in the roles the user didn't know they needed. Thirteen architecture commitments replace the prior bet structure: harness independence by adapter (OpenCode and Claude Code first-class, MCP as the tool layer, never a homebrew runtime), trunk-and-rings learning (append-only cited strata with supersession), personas as lenses with thick domain corpora, risk-weighted ring admission, gated prompt evolution, scenario-regression evals, a live risk heat map governing engagement, gate strictness, and retention, per-user cross-workspace learning, requirement-declaring contracts with a single router, user-arbitrated cross-domain conflicts, issue-spot/draft/escalate legal, and no-fabrication as the trust kernel.
+
+### Removed
+
+- **The documentation tree**: 96 ADRs, 5 RFCs, the PRD trees, guides, operations docs, and notes (~387 tracked files under `docs/`) encoded a superseded direction and were deleted wholesale. The replacement contract lives in `docs/README.md`: `STRATEGY.md` is the only standing strategy document, the tracker is the only work record, and documents regrow only when a real reader needs them repeatedly. The deleted tree remains recoverable from git history; extract facts, do not resurrect documents.
+
 ## [2.1.1] - 2026-07-30
 
 ### Fixed
