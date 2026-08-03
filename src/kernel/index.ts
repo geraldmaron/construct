@@ -119,6 +119,43 @@ export type {
   ProjectionState,
 } from './tracker/projection.ts';
 
+export {
+  applyReconciliation,
+  planDependencyProjection,
+  reconcileAll,
+  reconcileProjection,
+} from './tracker/reconcile.ts';
+export type {
+  AbsorbedField,
+  ConflictField,
+  DriftReport,
+  ReconcileOptions,
+  ReconcileResult,
+} from './tracker/reconcile.ts';
+
+// The storage substrate. Like cleanup/run.ts it does filesystem IO, but never
+// ambiently: the path is injected, so the sterile test discipline still holds.
+export { SCHEMA_VERSION, openStore, storePath, transact } from './store/open.ts';
+export type { Store } from './store/open.ts';
+export {
+  countProjections,
+  getProjection,
+  listProjections,
+  putProjection,
+} from './store/projections.ts';
+export { appendWorkLog, readWorkLog } from './store/worklog.ts';
+export type { AppendWorkLog, WorkLogEntry } from './store/worklog.ts';
+export {
+  DECISION_STATES,
+  getDecision,
+  openDecisions,
+  raiseDecision,
+  resolveDecision,
+} from './store/decisions.ts';
+export type { Decision, DecisionState, Position, RaiseDecision } from './store/decisions.ts';
+export { syncProjections } from './store/reconcile.ts';
+export type { SyncOptions } from './store/reconcile.ts';
+
 export { CAPABILITIES, hasCapability, validate as validateHost } from './hosts/interface.ts';
 export type {
   HostAdapter,
