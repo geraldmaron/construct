@@ -1,0 +1,87 @@
+{
+  "issues": [
+    {
+      "name": "typical issue with both domain- and tracker-owned fields",
+      "issue": {
+        "id": "construct-506.2",
+        "title": "Harvest dual-run-leaf kernel modules",
+        "description": "Port as pure libraries",
+        "issue_type": "task",
+        "status": "closed",
+        "priority": 1,
+        "assignee": "gerald",
+        "labels": ["harvest"],
+        "dependencies": ["construct-506.1"],
+        "parent": "construct-506",
+        "created_at": "2026-08-03T00:00:00Z",
+        "closed_at": "2026-08-03T22:00:00Z",
+        "dependency_count": 1,
+        "comment_count": 0
+      },
+      "options": { "workspace": "construct", "workId": "work-1" }
+    },
+    {
+      "name": "unknown fields default to tracker-owned and survive verbatim",
+      "issue": {
+        "id": "x-1",
+        "title": "t",
+        "some_future_bd_field": { "nested": [1, 2, { "deep": true }] },
+        "another_unknown": null
+      },
+      "options": {}
+    },
+    {
+      "name": "identity field is excluded from fields and authority",
+      "issue": { "id": "only-id" },
+      "options": {}
+    },
+    {
+      "name": "nested values are deep-cloned, not shared",
+      "issue": { "id": "n-1", "labels": ["a", "b"], "dependencies": ["d1", "d2"] },
+      "options": {}
+    },
+    {
+      "name": "no options — workspace and work default to null",
+      "issue": { "id": "n-2", "title": "t", "status": "open" }
+    },
+    {
+      "name": "rejects a missing id",
+      "issue": { "title": "no id here" },
+      "options": {}
+    },
+    {
+      "name": "rejects a non-string id",
+      "issue": { "id": 42 },
+      "options": {}
+    },
+    {
+      "name": "rejects an array",
+      "issue": [],
+      "options": {}
+    },
+    {
+      "name": "rejects null",
+      "issue": null,
+      "options": {}
+    }
+  ],
+  "canonical": [
+    { "name": "key order does not matter", "value": { "b": 1, "a": 2 } },
+    { "name": "nested key order does not matter", "value": { "x": { "z": 1, "y": [ { "q": 1, "p": 2 } ] } } },
+    { "name": "array order DOES matter", "value": [3, 1, 2] },
+    { "name": "null", "value": null },
+    { "name": "string", "value": "hello" },
+    { "name": "number", "value": 42 },
+    { "name": "boolean", "value": true },
+    { "name": "empty object", "value": {} },
+    { "name": "empty array", "value": [] }
+  ],
+  "equality": [
+    { "name": "same object, different key order", "a": { "a": 1, "b": 2 }, "b": { "b": 2, "a": 1 } },
+    { "name": "different values", "a": { "a": 1 }, "b": { "a": 2 } },
+    { "name": "arrays in different order are not equal", "a": [1, 2], "b": [2, 1] },
+    { "name": "null vs empty object", "a": null, "b": {} },
+    { "name": "nested reordering is still equal", "a": { "x": { "p": 1, "q": 2 } }, "b": { "x": { "q": 2, "p": 1 } } }
+  ],
+  "ids": ["construct-506.2", "abc", "with:colon"]
+}

@@ -32,7 +32,7 @@ const rndTable: ClassificationTable = {
     'framing',
     'hypothesis',
     'research',
-    'artifact',
+    'deliverable',
     'design',
     'implementation',
     'evaluation',
@@ -376,7 +376,7 @@ const rndTable: ClassificationTable = {
         'decided to',
         'proposal to'
       ],
-      rdStage: 'artifact',
+      rdStage: 'deliverable',
       primaryOwner: 'docs-keeper',
       recommendedChain: [
         'docs-keeper',

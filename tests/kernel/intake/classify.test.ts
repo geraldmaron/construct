@@ -31,6 +31,22 @@ const GOLDEN: GoldenCase[] = JSON.parse(
   readFileSync(new URL('./fixtures/classify-golden.json', import.meta.url), 'utf8'),
 );
 
+/**
+ * v2 named one pipeline stage `artifact`; the glossary retires that word in
+ * favor of `deliverable`, and a stage name is Construct's own vocabulary rather
+ * than something a user wrote, so the port renames it (construct-egc).
+ *
+ * The captured corpus is deliberately NOT rewritten to match. It is a record of
+ * what the predecessor actually returned, and editing it would break the one
+ * property that makes it worth having — that re-running the capture against
+ * construct-legacy reproduces it byte for byte. The intentional divergence is
+ * declared here instead, so it stays one visible line rather than an invisible
+ * edit to the evidence.
+ */
+function toV3(triage: Record<string, unknown>): Record<string, unknown> {
+  return triage.rdStage === 'artifact' ? { ...triage, rdStage: 'deliverable' } : triage;
+}
+
 test('golden corpus is non-trivial and covers every preset table', () => {
   assert.ok(GOLDEN.length >= 20, `expected a real corpus, got ${GOLDEN.length} cases`);
   const presets = new Set(GOLDEN.map((c) => c.input.preset ?? 'rnd'));
@@ -44,14 +60,15 @@ for (const c of GOLDEN) {
     const actual = classifyIntake(c.input);
     assert.deepEqual(
       JSON.parse(JSON.stringify(actual)),
-      c.triage,
+      toV3(c.triage),
       `${c.name}: port diverged from the captured v2 triage`,
     );
   });
 
   test(`formatTriageLine matches v2 — ${c.name}`, () => {
     const triage = classifyIntake(c.input);
-    assert.equal(formatTriageLine(c.input.sourcePath ?? '', triage), c.line);
+    const expected = c.line.replace(' / artifact ', ' / deliverable ');
+    assert.equal(formatTriageLine(c.input.sourcePath ?? '', triage), expected);
   });
 
   test(`suggestTags matches v2 — ${c.name}`, () => {

@@ -95,6 +95,30 @@ export type {
   FinalizedResult,
 } from './extract/envelope.ts';
 
+export {
+  AUTHORITY,
+  FIELD_AUTHORITY,
+  IDENTITY_FIELDS,
+  authorityFor,
+  isDomainOwned,
+  isTrackerOwned,
+  splitFieldsByAuthority,
+} from './tracker/authority.ts';
+export type { Authority, FieldsByAuthority } from './tracker/authority.ts';
+export {
+  PROJECTION_STATES,
+  buildProjection,
+  canonicalJson,
+  projectionFieldsByAuthority,
+  projectionId,
+  valuesEqual,
+} from './tracker/projection.ts';
+export type {
+  BuildProjectionOptions,
+  Projection,
+  ProjectionState,
+} from './tracker/projection.ts';
+
 export { CAPABILITIES, hasCapability, validate as validateHost } from './hosts/interface.ts';
 export type {
   HostAdapter,

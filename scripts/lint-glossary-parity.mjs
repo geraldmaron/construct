@@ -11,19 +11,18 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
 const GLOSSARY_SCOPE = [/^src\//, /^packs\//, /^schemas\//];
-// src/kernel/intake/tables/ is ported corpus data, not prose, and holds two
-// things the glossary cannot govern:
-//   - match keywords, which are the words USERS write in their documents ("api
-//     contract" is what a reader typed; rewriting it to "api brief" would stop
-//     the classifier matching real input),
-//   - v2 rdStage values, which are load-bearing output locked by the golden
-//     corpus — renaming one is a behavior change, not a rename.
-// The stage-vocabulary reconciliation is tracked separately; see construct-506.2.
-const EXEMPT = [
-  /\.test\.ts$/,
-  /^scripts\/lint-glossary-parity\.mjs$/,
-  /^src\/kernel\/intake\/tables\//,
-];
+const EXEMPT = [/\.test\.ts$/, /^scripts\/lint-glossary-parity\.mjs$/];
+
+// A `keywords: [...]` array is a match list of the words USERS write in their
+// own documents, not Construct's vocabulary. "api contract" is what a reader
+// typed; rewriting it to "api brief" would simply stop the classifier matching
+// real input. Those arrays are blanked before scanning so the glossary still
+// governs every line of actual vocabulary around them — an earlier version of
+// this lint exempted the whole table directory, which also hid the stage names
+// sitting beside the keywords. See construct-egc.
+function stripUserVocabulary(content) {
+  return content.replace(/keywords:\s*\[[^\]]*\]/gs, 'keywords: []');
+}
 
 function parseGlossary(text) {
   const rows = [];
@@ -53,7 +52,7 @@ const retiredTerms = parseGlossary(glossaryText);
 
 let violations = 0;
 for (const file of trackedFiles()) {
-  const content = readFileSync(file, 'utf8');
+  const content = stripUserVocabulary(readFileSync(file, 'utf8'));
   for (const { term, retired } of retiredTerms) {
     const re = new RegExp(`\\b${retired}\\b`, 'i');
     if (re.test(content)) {
