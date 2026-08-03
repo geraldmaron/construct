@@ -37,6 +37,18 @@ export type { Domain } from './implication/domains.ts';
 export { MIN_SIGNAL, implicatedDomains, mapImplications } from './implication/map.ts';
 export type { Implication, ImplicationMap, MapInput } from './implication/map.ts';
 
+export { validateBrief } from './brief/schema.ts';
+export type { Brief, BriefInput, BriefProblem, BriefValidation } from './brief/schema.ts';
+export { UNSATISFIED_KINDS, explainUnsatisfied, satisfyBrief } from './brief/satisfy.ts';
+export type {
+  Availability,
+  Binding,
+  Resolution,
+  Tool,
+  Unsatisfied,
+  UnsatisfiedKind,
+} from './brief/satisfy.ts';
+
 export {
   POSTCONDITIONS,
   describePostconditions,
