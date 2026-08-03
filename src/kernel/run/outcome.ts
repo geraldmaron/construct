@@ -43,7 +43,7 @@ export interface StartedRun {
  *
  * The whole thing is one transaction. A half-recorded run whose log lists three
  * of five inferred domains is indistinguishable from a run that only inferred
- * three, and the work log is the artifact the user is asked to trust.
+ * three, and the work log is the record the user is asked to trust.
  *
  * An outcome that implicates nothing is still recorded, with that fact stated.
  * Silence would be indistinguishable from the run never happening.
