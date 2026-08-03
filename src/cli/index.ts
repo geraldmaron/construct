@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { resolvePaths } from '../kernel/paths.ts';
 import { buildCleanupCatalog } from '../kernel/cleanup/catalog.ts';
+import type { SpawnFn } from '../kernel/cleanup/catalog.ts';
 import { detectedItems, selectedItems, applyCleanup } from '../kernel/cleanup/run.ts';
 import type { CleanupOptions } from '../kernel/cleanup/run.ts';
 
@@ -49,6 +50,7 @@ export function doctor(): number {
 interface CleanupArgs extends CleanupOptions {
   readonly dryRun: boolean;
   readonly yes: boolean;
+  readonly withImages: boolean;
   readonly cwd: string;
   readonly home: string;
 }
@@ -59,6 +61,7 @@ export function parseCleanupArgs(argv: string[]): CleanupArgs {
   let yes = false;
   let all = false;
   let keepState = false;
+  let withImages = false;
   let cwd = process.cwd();
   let home = homedir();
   for (const arg of argv) {
@@ -66,6 +69,7 @@ export function parseCleanupArgs(argv: string[]): CleanupArgs {
     else if (arg === '--yes' || arg === '-y') yes = true;
     else if (arg === '--all') all = true;
     else if (arg === '--keep-state') keepState = true;
+    else if (arg === '--with-images') withImages = true;
     else if (arg.startsWith('--scope=')) scope = arg.slice('--scope='.length) as CleanupOptions['scope'];
     else if (arg.startsWith('--cwd=')) cwd = arg.slice('--cwd='.length);
     else if (arg.startsWith('--home=')) home = arg.slice('--home='.length);
@@ -73,21 +77,26 @@ export function parseCleanupArgs(argv: string[]): CleanupArgs {
   if (!['project', 'machine', 'all'].includes(scope)) {
     throw new Error(`Invalid --scope=${scope}; expected project|machine|all`);
   }
-  return { scope, dryRun, yes, all, keepState, cwd, home };
+  return { scope, dryRun, yes, all, keepState, withImages, cwd, home };
 }
 
-const CLEANUP_COVERAGE_NOTE =
-  'Note: does not yet detect Docker containers/images or macOS LaunchAgents left by the predecessor — remove those by hand if present (see construct-506.1).';
-
-export function cleanup(argv: string[]): number {
+// `spawnOverride` exists only so tests can fake out docker/launchctl instead
+// of depending on the real machine's ambient state; production callers never
+// pass it.
+export function cleanup(argv: string[], spawnOverride?: SpawnFn): number {
   const args = parseCleanupArgs(argv);
   const paths = resolvePaths(process.env, args.home);
-  const catalog = buildCleanupCatalog({ cwd: args.cwd, home: args.home, paths });
+  const catalog = buildCleanupCatalog({
+    cwd: args.cwd,
+    home: args.home,
+    paths,
+    withImages: args.withImages,
+    spawn: spawnOverride,
+  });
   const detected = detectedItems(catalog, args);
 
   if (detected.length === 0) {
     process.stdout.write('cleanup: no predecessor state detected in the selected scope.\n');
-    process.stdout.write(`${CLEANUP_COVERAGE_NOTE}\n`);
     return 0;
   }
 
@@ -98,7 +107,6 @@ export function cleanup(argv: string[]): number {
       process.stdout.write(`  ${mark} ${item.label}\n      ${item.describe()}\n`);
     }
     process.stdout.write('\nPass --yes to remove ✓ items, --yes --all to also remove ◐ items.\n');
-    process.stdout.write(`${CLEANUP_COVERAGE_NOTE}\n`);
     return 0;
   }
 
@@ -113,7 +121,6 @@ export function cleanup(argv: string[]): number {
     process.stdout.write(`  ✓ ${outcome.label} — ${outcome.detail}\n`);
   }
   process.stdout.write(`\ncleanup: removed ${result.removed.length}, skipped ${result.skipped.length}.\n`);
-  process.stdout.write(`${CLEANUP_COVERAGE_NOTE}\n`);
   return result.removed.some((o) => o.detail.startsWith('error:')) ? 1 : 0;
 }
 

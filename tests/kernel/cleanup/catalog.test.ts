@@ -14,8 +14,15 @@ import os from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { resolvePaths } from '../../../src/kernel/paths.ts';
 import { buildCleanupCatalog } from '../../../src/kernel/cleanup/catalog.ts';
+import type { SpawnFn } from '../../../src/kernel/cleanup/catalog.ts';
 import { detectedItems, selectedItems, applyCleanup } from '../../../src/kernel/cleanup/run.ts';
 import type { CleanupOptions } from '../../../src/kernel/cleanup/run.ts';
+
+// Real docker/launchctl are never invoked in the generic fixture tests: a
+// no-op fake spawn keeps them sterile regardless of what's actually running
+// on the host. Dedicated tests below inject a stateful fake to cover the
+// docker/launchagent categories themselves.
+const NOT_FOUND_SPAWN: SpawnFn = () => ({ status: 1, stdout: '', stderr: '' });
 
 interface Fixture {
   readonly cwd: string;
@@ -151,7 +158,7 @@ const DEFAULT_OPTIONS: CleanupOptions = { scope: 'all', all: false, keepState: f
 test('detects every seeded trace across project and machine scope', () => {
   const { fixture, paths } = seeded();
   try {
-    const catalog = buildCleanupCatalog({ cwd: fixture.cwd, home: fixture.home, paths });
+    const catalog = buildCleanupCatalog({ cwd: fixture.cwd, home: fixture.home, paths, spawn: NOT_FOUND_SPAWN });
     const detected = detectedItems(catalog, DEFAULT_OPTIONS);
     const ids = detected.map((item) => item.id).sort();
     assert.deepEqual(ids, [
@@ -178,7 +185,7 @@ test('detects every seeded trace across project and machine scope', () => {
 test('default run (auto-risk only) removes launcher, manifested agents, hooks; preserves ask-risk state', () => {
   const { fixture, paths } = seeded();
   try {
-    const catalog = buildCleanupCatalog({ cwd: fixture.cwd, home: fixture.home, paths });
+    const catalog = buildCleanupCatalog({ cwd: fixture.cwd, home: fixture.home, paths, spawn: NOT_FOUND_SPAWN });
     const detected = detectedItems(catalog, DEFAULT_OPTIONS);
     const toRemove = selectedItems(detected, false);
     applyCleanup(detected, new Set(toRemove.map((i) => i.id)));
@@ -223,7 +230,7 @@ test('default run (auto-risk only) removes launcher, manifested agents, hooks; p
 test('--all also removes ask-risk items', () => {
   const { fixture, paths } = seeded();
   try {
-    const catalog = buildCleanupCatalog({ cwd: fixture.cwd, home: fixture.home, paths });
+    const catalog = buildCleanupCatalog({ cwd: fixture.cwd, home: fixture.home, paths, spawn: NOT_FOUND_SPAWN });
     const options: CleanupOptions = { scope: 'all', all: true, keepState: false };
     const detected = detectedItems(catalog, options);
     const toRemove = selectedItems(detected, true);
@@ -242,7 +249,7 @@ test('--all also removes ask-risk items', () => {
 test('--scope=project leaves machine state untouched', () => {
   const { fixture, paths } = seeded();
   try {
-    const catalog = buildCleanupCatalog({ cwd: fixture.cwd, home: fixture.home, paths });
+    const catalog = buildCleanupCatalog({ cwd: fixture.cwd, home: fixture.home, paths, spawn: NOT_FOUND_SPAWN });
     const options: CleanupOptions = { scope: 'project', all: true, keepState: false };
     const detected = detectedItems(catalog, options);
     applyCleanup(detected, new Set(detected.map((i) => i.id)));
@@ -258,7 +265,7 @@ test('--scope=project leaves machine state untouched', () => {
 test('--scope=machine leaves project state untouched', () => {
   const { fixture, paths } = seeded();
   try {
-    const catalog = buildCleanupCatalog({ cwd: fixture.cwd, home: fixture.home, paths });
+    const catalog = buildCleanupCatalog({ cwd: fixture.cwd, home: fixture.home, paths, spawn: NOT_FOUND_SPAWN });
     const options: CleanupOptions = { scope: 'machine', all: true, keepState: false };
     const detected = detectedItems(catalog, options);
     applyCleanup(detected, new Set(detected.map((i) => i.id)));
@@ -274,7 +281,7 @@ test('--scope=machine leaves project state untouched', () => {
 test('--keep-state limits to launcher + adapters + settings + git-hookspath', () => {
   const { fixture, paths } = seeded();
   try {
-    const catalog = buildCleanupCatalog({ cwd: fixture.cwd, home: fixture.home, paths });
+    const catalog = buildCleanupCatalog({ cwd: fixture.cwd, home: fixture.home, paths, spawn: NOT_FOUND_SPAWN });
     const options: CleanupOptions = { scope: 'all', all: true, keepState: true };
     const detected = detectedItems(catalog, options);
     applyCleanup(detected, new Set(detected.map((i) => i.id)));
@@ -293,7 +300,7 @@ test('reports nothing detected on a clean project and home', () => {
   const fixture = mkFixture();
   try {
     const paths = resolvePaths({}, fixture.home);
-    const catalog = buildCleanupCatalog({ cwd: fixture.cwd, home: fixture.home, paths });
+    const catalog = buildCleanupCatalog({ cwd: fixture.cwd, home: fixture.home, paths, spawn: NOT_FOUND_SPAWN });
     const detected = detectedItems(catalog, DEFAULT_OPTIONS);
     assert.deepEqual(detected, []);
   } finally {
@@ -306,7 +313,7 @@ test('leaves a malformed settings.json untouched', () => {
   try {
     const settingsPath = path.join(fixture.cwd, '.claude', 'settings.json');
     fs.writeFileSync(settingsPath, '{not valid json');
-    const catalog = buildCleanupCatalog({ cwd: fixture.cwd, home: fixture.home, paths });
+    const catalog = buildCleanupCatalog({ cwd: fixture.cwd, home: fixture.home, paths, spawn: NOT_FOUND_SPAWN });
     const detected = detectedItems(catalog, DEFAULT_OPTIONS);
     applyCleanup(detected, new Set(selectedItems(detected, false).map((i) => i.id)));
     assert.equal(fs.readFileSync(settingsPath, 'utf8'), '{not valid json');
@@ -322,10 +329,124 @@ test('deletes .mcp.json once stripping empties it, preserves it when a user entr
     const mcpJsonPath = path.join(fixture.cwd, '.mcp.json');
     fs.writeFileSync(mcpJsonPath, JSON.stringify({ mcpServers: { 'construct-mcp': { command: 'node' } } }, null, 2));
     const paths = resolvePaths({}, fixture.home);
-    const catalog = buildCleanupCatalog({ cwd: fixture.cwd, home: fixture.home, paths });
+    const catalog = buildCleanupCatalog({ cwd: fixture.cwd, home: fixture.home, paths, spawn: NOT_FOUND_SPAWN });
     const detected = detectedItems(catalog, DEFAULT_OPTIONS);
     applyCleanup(detected, new Set(selectedItems(detected, false).map((i) => i.id)));
     assert.equal(fs.existsSync(mcpJsonPath), false, '.mcp.json removed once Construct-only');
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+function findFilterName(args: string[]): string {
+  const filterArg = args.find((a) => a.startsWith('name=')) ?? '';
+  return filterArg.replace(/^name=\^\//, '').replace(/\$$/, '');
+}
+
+test('detects and removes the postgres container under both its derived and legacy names', () => {
+  const fixture = mkFixture();
+  try {
+    const calls: string[][] = [];
+    const spawn: SpawnFn = (command, args) => {
+      calls.push([command, ...args]);
+      if (command === 'docker' && args[0] === 'ps') {
+        return { status: 0, stdout: `${findFilterName(args)}\n`, stderr: '' };
+      }
+      return { status: 0, stdout: '', stderr: '' };
+    };
+    const paths = resolvePaths({}, fixture.home);
+    const catalog = buildCleanupCatalog({ cwd: fixture.cwd, home: fixture.home, paths, spawn });
+    const detected = detectedItems(catalog, DEFAULT_OPTIONS);
+    const item = detected.find((i) => i.id === 'machine-postgres-container');
+    assert.ok(item, 'postgres container detected');
+    assert.equal(item?.risk, 'ask', 'destructive removal stays ask-risk');
+
+    const detail = item!.remove();
+    assert.match(detail, /stopped and removed/);
+    const rmCalls = calls.filter((c) => c[0] === 'docker' && c[1] === 'rm');
+    assert.equal(rmCalls.length, 2, 'removes both the namespaced and legacy container names');
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('--with-images gates the pgvector image category', () => {
+  const fixture = mkFixture();
+  try {
+    const foundSpawn: SpawnFn = (command, args) => {
+      if (command === 'docker' && args[0] === 'ps') return { status: 0, stdout: '', stderr: '' };
+      return { status: 0, stdout: '', stderr: '' };
+    };
+    const paths = resolvePaths({}, fixture.home);
+
+    const withoutFlag = buildCleanupCatalog({ cwd: fixture.cwd, home: fixture.home, paths, spawn: foundSpawn });
+    assert.equal(
+      detectedItems(withoutFlag, DEFAULT_OPTIONS).some((i) => i.id === 'machine-pgvector-image'),
+      false,
+      'image category stays hidden without --with-images',
+    );
+
+    const withFlag = buildCleanupCatalog({
+      cwd: fixture.cwd,
+      home: fixture.home,
+      paths,
+      spawn: foundSpawn,
+      withImages: true,
+    });
+    const detected = detectedItems(withFlag, DEFAULT_OPTIONS);
+    const item = detected.find((i) => i.id === 'machine-pgvector-image');
+    assert.ok(item, 'image category appears under --with-images');
+    assert.match(item!.remove(), /removed image pgvector\/pgvector:pg16/);
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('launchagent: unloads and removes the plist when platform is darwin', () => {
+  const fixture = mkFixture();
+  try {
+    const plistPath = path.join(fixture.home, 'Library', 'LaunchAgents', 'dev.construct.pressure-release.plist');
+    fs.mkdirSync(path.dirname(plistPath), { recursive: true });
+    fs.writeFileSync(plistPath, '<?xml version="1.0"?><plist></plist>\n');
+
+    const calls: string[][] = [];
+    const spawn: SpawnFn = (command, args) => {
+      calls.push([command, ...args]);
+      return { status: 0, stdout: '', stderr: '' };
+    };
+    const paths = resolvePaths({}, fixture.home);
+    const catalog = buildCleanupCatalog({ cwd: fixture.cwd, home: fixture.home, paths, spawn, platform: 'darwin' });
+    const detected = detectedItems(catalog, DEFAULT_OPTIONS);
+    const item = detected.find((i) => i.id === 'machine-launchagent');
+    assert.ok(item, 'launchagent detected when platform is darwin');
+
+    const detail = item!.remove();
+    assert.match(detail, /unregistered and removed plist/);
+    assert.equal(fs.existsSync(plistPath), false, 'plist removed');
+    assert.ok(calls.some((c) => c[0] === 'launchctl' && c[1] === 'bootout'), 'bootout invoked');
+    assert.ok(calls.some((c) => c[0] === 'launchctl' && c[1] === 'unload'), 'unload invoked');
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('launchagent: stays undetected on non-darwin even when the plist file exists', () => {
+  const fixture = mkFixture();
+  try {
+    const plistPath = path.join(fixture.home, 'Library', 'LaunchAgents', 'dev.construct.pressure-release.plist');
+    fs.mkdirSync(path.dirname(plistPath), { recursive: true });
+    fs.writeFileSync(plistPath, '<?xml version="1.0"?><plist></plist>\n');
+
+    const paths = resolvePaths({}, fixture.home);
+    const catalog = buildCleanupCatalog({
+      cwd: fixture.cwd,
+      home: fixture.home,
+      paths,
+      spawn: NOT_FOUND_SPAWN,
+      platform: 'linux',
+    });
+    const detected = detectedItems(catalog, DEFAULT_OPTIONS);
+    assert.equal(detected.some((i) => i.id === 'machine-launchagent'), false);
   } finally {
     fixture.cleanup();
   }

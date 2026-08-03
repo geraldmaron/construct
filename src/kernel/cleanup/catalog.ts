@@ -4,20 +4,28 @@
  * Ported from construct-legacy's lib/uninstall/uninstall.mjs, ids and category
  * boundaries preserved so the behavior stays recognizable across the rewrite.
  *
- * Two changes from the source: MCP ids are hardcoded (KNOWN_PROJECT_MCP_IDS,
+ * One change from the source: MCP ids are hardcoded (KNOWN_PROJECT_MCP_IDS,
  * MEMORY_MCP_IDS) instead of read from v2's own registry/catalog files —
  * cleanup must detect and remove v2's traces even after the v2 package itself
  * has already been uninstalled, so it cannot depend on v2's package internals
- * being present. And Docker container/image removal and the macOS LaunchAgent
- * unload are not yet ported: both require a live external process rather than
- * a filesystem check, so they don't fit this module's fixture-tested
- * discipline the same way. Tracked as a follow-up, not a silent gap — see
- * construct-506.1.
+ * being present.
+ *
+ * The Docker (postgres container + optional pgvector image) and macOS
+ * LaunchAgent items spawn a live external process rather than doing a
+ * filesystem check, so they can't lean on the fixture-home approach the rest
+ * of the catalog uses. They take their process boundary (`spawn`) and the
+ * ambient `platform` as optional CleanupTarget overrides instead, so tests can
+ * fake both without touching a real docker/launchctl. v2's CONSTRUCT_PG_CONTAINER
+ * pin is intentionally not ported: honoring it would mean reading process.env
+ * here, and kernel/paths.ts is meant to stay the only module that does — a
+ * pinned custom container name is rare enough to fall back to the manual
+ * follow-up path. See construct-506.1.1.
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import type { Paths } from '../paths.ts';
 
 export type CleanupScope = 'project' | 'machine';
@@ -33,10 +41,21 @@ export interface CleanupItem {
   remove(): string;
 }
 
+export interface SpawnResult {
+  readonly status: number | null;
+  readonly stdout: string;
+  readonly stderr: string;
+}
+
+export type SpawnFn = (command: string, args: string[]) => SpawnResult;
+
 export interface CleanupTarget {
   readonly cwd: string;
   readonly home: string;
   readonly paths: Paths;
+  readonly withImages?: boolean;
+  readonly platform?: NodeJS.Platform;
+  readonly spawn?: SpawnFn;
 }
 
 // Verified 2026-08-03 against construct-legacy's lib/mcp-catalog.json: the
@@ -48,8 +67,32 @@ const KNOWN_PROJECT_MCP_IDS = ['context7', 'construct-mcp'];
 // construct-legacy's MEMORY_MCP_KEYS.
 const MEMORY_MCP_IDS = ['memory', 'cass'];
 
+// construct-legacy's LEGACY_PG_CONTAINER (pre-home-namespacing installs) and
+// PGVECTOR_IMAGE / PRESSURE_GUARD_LABEL constants.
+const LEGACY_PG_CONTAINER = 'construct-postgres';
+const PGVECTOR_IMAGE = 'pgvector/pgvector:pg16';
+const PRESSURE_GUARD_LABEL = 'dev.construct.pressure-release';
+
+// Mirrors construct-legacy's home-namespace.mjs derivation (sha256 of the
+// resolved home, first 8 hex chars) so cleanup finds a v2 install's
+// per-home-namespaced container, not just the legacy singular name.
+function postgresContainerName(home: string): string {
+  const suffix = createHash('sha256').update(home).digest('hex').slice(0, 8);
+  return `construct-postgres-${suffix}`;
+}
+
+function defaultSpawn(command: string, args: string[]): SpawnResult {
+  const result = spawnSync(command, args, { encoding: 'utf8' });
+  return { status: result.status, stdout: result.stdout ?? '', stderr: result.stderr ?? '' };
+}
+
 export function buildCleanupCatalog(target: CleanupTarget): CleanupItem[] {
   const { cwd, home, paths } = target;
+  const withImages = target.withImages ?? false;
+  const platform = target.platform ?? process.platform;
+  const spawn = target.spawn ?? defaultSpawn;
+  const pgContainerName = postgresContainerName(home);
+  const launchAgentPlist = path.join(home, 'Library', 'LaunchAgents', `${PRESSURE_GUARD_LABEL}.plist`);
 
   const dotConstruct = path.join(cwd, '.construct');
   const launcherDir = path.join(dotConstruct, 'launcher');
@@ -191,13 +234,41 @@ export function buildCleanupCatalog(target: CleanupTarget): CleanupItem[] {
       remove: () => (removePath(userLibLink) ? 'removed' : 'nothing to remove'),
     },
     {
+      id: 'machine-postgres-container',
+      scope: 'machine',
+      risk: 'ask',
+      label: `Docker container "${pgContainerName}" (stop + remove, including data)`,
+      detect: () => dockerContainerExists(spawn, pgContainerName) || dockerContainerExists(spawn, LEGACY_PG_CONTAINER),
+      describe: () =>
+        'Stops and removes the Postgres container and its named data volume. The pgvector image stays cached. This destroys indexed observations — skip if you might restore.',
+      remove: () => {
+        const results: string[] = [];
+        if (dockerContainerExists(spawn, pgContainerName)) {
+          results.push(removeDockerContainer(spawn, pgContainerName, `postgres_${pgContainerName}-data`));
+        }
+        if (dockerContainerExists(spawn, LEGACY_PG_CONTAINER)) {
+          results.push(removeDockerContainer(spawn, LEGACY_PG_CONTAINER));
+        }
+        return results.join(', ') || 'nothing to remove';
+      },
+    },
+    {
       id: 'machine-postgres-compose',
       scope: 'machine',
       risk: 'auto',
       label: `${rel(home, userPgComposeDir)} (compose file)`,
       detect: () => existsAny(userPgComposeDir),
-      describe: () => 'Removes the local docker-compose.yml. Does not stop or remove the container itself — see follow-ups.',
+      describe: () => 'Removes the local docker-compose.yml. Run after removing the container.',
       remove: () => (removePath(userPgComposeDir) ? 'removed' : 'nothing to remove'),
+    },
+    {
+      id: 'machine-launchagent',
+      scope: 'machine',
+      risk: 'auto',
+      label: `LaunchAgent ${PRESSURE_GUARD_LABEL} (unload + plist)`,
+      detect: () => platform === 'darwin' && existsAny(launchAgentPlist),
+      describe: () => `Unregisters the pressure-release LaunchAgent (launchctl bootout) and removes ${rel(home, launchAgentPlist)}.`,
+      remove: () => removePressureGuardLaunchAgent(spawn, launchAgentPlist),
     },
     {
       id: 'machine-memory-mcp',
@@ -219,6 +290,15 @@ export function buildCleanupCatalog(target: CleanupTarget): CleanupItem[] {
         if (stripCodexMcpTables(codexConfig, MEMORY_MCP_IDS)) stripped.push('codex');
         return stripped.length ? `stripped from ${stripped.join(', ')}` : 'nothing to strip';
       },
+    },
+    {
+      id: 'machine-pgvector-image',
+      scope: 'machine',
+      risk: 'ask',
+      label: `Docker image "${PGVECTOR_IMAGE}" (--with-images only)`,
+      detect: () => withImages && dockerImageExists(spawn, PGVECTOR_IMAGE),
+      describe: () => `Removes the cached ${PGVECTOR_IMAGE} image. Off unless --with-images, since other projects may share it.`,
+      remove: () => removeDockerImage(spawn, PGVECTOR_IMAGE),
     },
   ];
 }
@@ -451,4 +531,46 @@ function unsetConstructGitHooksPath(cwd: string): string {
     throw new Error((result.stderr || '').trim() || 'git config --unset failed');
   }
   return 'unset core.hooksPath';
+}
+
+function dockerContainerExists(spawn: SpawnFn, name: string): boolean {
+  const probe = spawn('docker', ['ps', '-a', '--filter', `name=^/${name}$`, '--format', '{{.Names}}']);
+  if (probe.status !== 0) return false;
+  return probe.stdout.trim() === name;
+}
+
+function removeDockerContainer(spawn: SpawnFn, name: string, namedVolume?: string): string {
+  const stop = spawn('docker', ['stop', name]);
+  const rm = spawn('docker', ['rm', '-v', name]);
+  if (rm.status !== 0) {
+    throw new Error(rm.stderr.trim() || 'docker rm failed');
+  }
+  if (namedVolume) spawn('docker', ['volume', 'rm', namedVolume]);
+  return stop.status === 0 ? 'stopped and removed (with volume)' : 'removed (with volume)';
+}
+
+function dockerImageExists(spawn: SpawnFn, image: string): boolean {
+  return spawn('docker', ['image', 'inspect', image]).status === 0;
+}
+
+function removeDockerImage(spawn: SpawnFn, image: string): string {
+  const rm = spawn('docker', ['rmi', image]);
+  if (rm.status !== 0) {
+    throw new Error(rm.stderr.trim() || 'docker rmi failed');
+  }
+  return `removed image ${image}`;
+}
+
+// launchctl bootout takes the GUI domain target; unload is the legacy
+// fallback for older macOS. Either deregisters the agent before the plist is
+// deleted so a reinstall starts clean.
+function removePressureGuardLaunchAgent(spawn: SpawnFn, plistPath: string): string {
+  if (!existsAny(plistPath)) return 'no LaunchAgent plist';
+  const uid = typeof process.getuid === 'function' ? process.getuid() : null;
+  if (uid != null) {
+    spawn('launchctl', ['bootout', `gui/${uid}/${PRESSURE_GUARD_LABEL}`]);
+  }
+  spawn('launchctl', ['unload', plistPath]);
+  const removed = removePath(plistPath);
+  return removed ? 'unregistered and removed plist' : 'unregistered (plist already gone)';
 }
