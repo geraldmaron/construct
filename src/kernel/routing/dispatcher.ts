@@ -104,6 +104,24 @@ function keywordScore(kw: string, tokens: readonly string[]): number {
   return adjacent ? 10 : 7;
 }
 
+/**
+ * Which of `keywords` actually fired against `intent`, strongest first. The
+ * scoring model is unchanged and unexported; this exposes the evidence behind a
+ * score so a caller can say *why* something matched. Added for the implication
+ * map (commitment 4: accountability is never invisible) rather than duplicating
+ * the matcher there.
+ */
+export function matchingKeywords(
+  keywords: readonly string[],
+  intent: string,
+): { keyword: string; score: number }[] {
+  const tokens = tokenize(intent);
+  return keywords
+    .map((keyword) => ({ keyword, score: keywordScore(keyword, tokens) }))
+    .filter((m) => m.score > 0)
+    .sort((a, b) => b.score - a.score || a.keyword.localeCompare(b.keyword));
+}
+
 function scoreRoute(route: Route, tokens: readonly string[]): number {
   let score = route.priority ?? 1;
   for (const kw of route.keywords ?? []) score += keywordScore(kw, tokens);

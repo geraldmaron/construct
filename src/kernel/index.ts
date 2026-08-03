@@ -29,8 +29,13 @@ export {
 } from './intake/table.ts';
 export type { ClassificationEntry, ClassificationTable, Triage } from './intake/table.ts';
 
-export { suggestRoutes } from './routing/dispatcher.ts';
+export { matchingKeywords, suggestRoutes } from './routing/dispatcher.ts';
 export type { Route, SuggestInput, SuggestResult, Suggestion } from './routing/dispatcher.ts';
+
+export { DOMAINS, domainsByName } from './implication/domains.ts';
+export type { Domain } from './implication/domains.ts';
+export { MIN_SIGNAL, implicatedDomains, mapImplications } from './implication/map.ts';
+export type { Implication, ImplicationMap, MapInput } from './implication/map.ts';
 
 export {
   POSTCONDITIONS,
