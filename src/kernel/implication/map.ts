@@ -28,6 +28,13 @@ import type { Domain } from './domains.ts';
  */
 export const MIN_SIGNAL = 10;
 
+/**
+ * The score at which every significant part of a keyword matched, rather than
+ * some of them. Below this a keyword contributed to the score but is not honest
+ * evidence for it.
+ */
+const FULL_MATCH = 7;
+
 export interface Implication {
   readonly domain: string;
   readonly concern: string;
@@ -80,7 +87,14 @@ export function mapImplications(input: MapInput): ImplicationMap {
       domain: domain.domain,
       concern: domain.concern,
       score: signalScore,
-      signals: matchingKeywords(domain.keywords, outcome).map((m) => m.keyword),
+      // Only whole-keyword matches are reported as evidence. A partial match
+      // (one word of "next week" firing on "next month") legitimately
+      // contributes to the score, but listing it as a signal would be the map
+      // overstating why it inferred what it did — the citation half of
+      // commitment 15 applied to its own reasoning.
+      signals: matchingKeywords(domain.keywords, outcome)
+        .filter((m) => m.score >= FULL_MATCH)
+        .map((m) => m.keyword),
     });
   }
 

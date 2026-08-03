@@ -117,6 +117,16 @@ test('an implication carries the evidence that produced it', () => {
   const privacy = map.implicated.find((i) => i.domain === 'privacy');
   assert.ok(privacy, 'privacy should be implicated');
   assert.ok(privacy.signals.length > 0, 'an inference must show its signals');
+
+  // Evidence must not overstate itself: a partial match ("next week" firing on
+  // "next month") may raise the score but is not a signal the map may cite.
+  const sequencing = map.implicated.find((i) => i.domain === 'program-sequencing');
+  assert.ok(sequencing);
+  assert.ok(sequencing.signals.includes('next month'));
+  assert.ok(
+    !sequencing.signals.includes('next week'),
+    'a partially-matched keyword must never be reported as evidence',
+  );
   assert.ok(privacy.concern.length > 0);
   assert.ok(privacy.score >= 10);
 });

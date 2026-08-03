@@ -11,6 +11,11 @@ import { buildCleanupCatalog } from '../kernel/cleanup/catalog.ts';
 import type { SpawnFn } from '../kernel/cleanup/catalog.ts';
 import { detectedItems, selectedItems, applyCleanup } from '../kernel/cleanup/run.ts';
 import type { CleanupOptions } from '../kernel/cleanup/run.ts';
+import { openStore, storePath } from '../kernel/store/open.ts';
+import type { Store } from '../kernel/store/open.ts';
+import { readWorkLog } from '../kernel/store/worklog.ts';
+import { openDecisions, resolveDecision } from '../kernel/store/decisions.ts';
+import { startRun } from '../kernel/run/outcome.ts';
 
 const MIN_NODE = { major: 22, minor: 18 };
 
@@ -124,9 +129,127 @@ export function cleanup(argv: string[], spawnOverride?: SpawnFn): number {
   return result.removed.some((o) => o.detail.startsWith('error:')) ? 1 : 0;
 }
 
+/**
+ * The spine commands. The CLI is the host here, so it is the CLI that supplies
+ * the clock and the run id — the kernel does neither.
+ */
+function withStore<T>(fn: (store: Store) => T): T {
+  const store = openStore(storePath(resolvePaths()));
+  try {
+    return fn(store);
+  } finally {
+    store.close();
+  }
+}
+
+function now(): string {
+  return new Date().toISOString();
+}
+
+export function outcome(argv: string[]): number {
+  const text = argv.join(' ').trim();
+  if (!text) {
+    process.stderr.write('usage: construct outcome "<what you want to happen>"\n');
+    return 2;
+  }
+
+  return withStore((store) => {
+    const at = now();
+    const runId = `run-${at.replace(/[-:.TZ]/g, '')}`;
+    const started = startRun(store, { runId, outcome: text, at });
+
+    process.stdout.write(`run ${started.runId}\n  outcome: ${started.outcome}\n\n`);
+    if (started.implicated.length === 0) {
+      process.stdout.write(
+        'no domains implicated. Nothing was inferred — this is recorded, not silently dropped.\n',
+      );
+      return 0;
+    }
+
+    process.stdout.write(`implicated domains (${started.implicated.length}):\n`);
+    for (const implication of started.implicated) {
+      process.stdout.write(`  ${implication.domain}  — ${implication.concern}\n`);
+      process.stdout.write(
+        `      signals: ${implication.signals.slice(0, 4).join(', ')} (score ${implication.score})\n`,
+      );
+    }
+    process.stdout.write(`\nfiled ${started.logged.length} work log entries. `);
+    process.stdout.write(`See: construct log --run ${started.runId}\n`);
+    return 0;
+  });
+}
+
+export function log(argv: string[]): number {
+  const runIndex = argv.indexOf('--run');
+  const run = runIndex >= 0 ? argv[runIndex + 1] : undefined;
+
+  return withStore((store) => {
+    const entries = readWorkLog(store, run);
+    if (entries.length === 0) {
+      process.stdout.write(run ? `no work log entries for ${run}\n` : 'work log is empty\n');
+      return 0;
+    }
+    for (const entry of entries) {
+      process.stdout.write(`${String(entry.seq).padStart(4)}  ${entry.at}  ${entry.role}  ${entry.action}\n`);
+    }
+    process.stdout.write(`\n${entries.length} entries (append-only).\n`);
+    return 0;
+  });
+}
+
+export function inbox(): number {
+  return withStore((store) => {
+    const open = openDecisions(store);
+    if (open.length === 0) {
+      process.stdout.write('decision inbox: empty. Nothing needs you right now.\n');
+      return 0;
+    }
+    process.stdout.write(`decision inbox (${open.length}):\n\n`);
+    for (const decision of open) {
+      process.stdout.write(`  ${decision.id}  ${decision.question}\n`);
+      for (const position of decision.positions) {
+        const cited = position.citation ? ` [${position.citation}]` : ' [unverified]';
+        process.stdout.write(`      ${position.role}: ${position.stance}${cited}\n`);
+      }
+      process.stdout.write('\n');
+    }
+    process.stdout.write('Resolve with: construct decide <id> "<your call>"\n');
+    return 0;
+  });
+}
+
+export function decide(argv: string[]): number {
+  const [id, ...rest] = argv;
+  const resolution = rest.join(' ').trim();
+  if (!id || !resolution) {
+    process.stderr.write('usage: construct decide <id> "<your call>"\n');
+    return 2;
+  }
+  return withStore((store) => {
+    try {
+      resolveDecision(store, id, resolution, now());
+    } catch (error) {
+      process.stderr.write(`decide: ${(error as Error).message}\n`);
+      return 1;
+    }
+    process.stdout.write(`decided ${id}: ${resolution}\n`);
+    return 0;
+  });
+}
+
+const USAGE = 'usage: construct <outcome|log|inbox|decide|doctor|cleanup|version>\n';
+
 export function main(argv: string[] = process.argv.slice(2)): number {
   const command = argv[0] ?? 'help';
   switch (command) {
+    case 'outcome':
+      return outcome(argv.slice(1));
+    case 'log':
+      return log(argv.slice(1));
+    case 'inbox':
+      return inbox();
+    case 'decide':
+      return decide(argv.slice(1));
     case 'doctor':
       return doctor();
     case 'cleanup':
@@ -137,7 +260,7 @@ export function main(argv: string[] = process.argv.slice(2)): number {
       process.stdout.write(`${packageVersion()}\n`);
       return 0;
     default:
-      process.stdout.write('usage: construct <doctor|cleanup|version>\n');
+      process.stdout.write(USAGE);
       return command === 'help' ? 0 : 1;
   }
 }
