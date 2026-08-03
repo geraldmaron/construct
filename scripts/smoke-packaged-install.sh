@@ -30,4 +30,7 @@ npx --no-install construct doctor
 echo "== running construct version =="
 npx --no-install construct version
 
+echo "== running construct cleanup --dry-run from the packaged install =="
+npx --no-install construct cleanup --dry-run
+
 echo "smoke-packaged-install: pass"

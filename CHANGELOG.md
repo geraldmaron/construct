@@ -11,6 +11,7 @@
 - Packaged-install smoke test (`scripts/smoke-packaged-install.sh`): build, pack, install into a scratch project, run the CLI — the consumer experience, tested before any consumer exists.
 - CI: test + lint + typecheck, a read-only-`HOME` sterile run, and the packaged-install smoke, as three separate jobs.
 - `construct doctor` and `construct version` — the first two CLI commands.
+- `construct cleanup` — detects and removes predecessor (v2) traces on a project checkout and a user's machine: the `.construct/launcher/` directory, manifested `.claude/agents/`+`.claude/commands/` files, Construct-managed keys in `.claude/settings.json`/`.mcp.json`, the `.construct/` state dir and scaffold files (`AGENTS.md`, `plan.md`), a Construct-set `core.hooksPath`, the XDG state/data/cache dirs, `config.env`, the lib symlink, the local Postgres compose file, and memory-MCP registrations in Claude/OpenCode/Codex configs. `--dry-run`, `--yes`/`--yes --all` (auto- vs ask-risk), `--scope=project|machine|all`, `--keep-state`. Ported from construct-legacy's `lib/uninstall/uninstall.mjs`; Docker container/image removal and the macOS LaunchAgent unload are not yet ported (tracked as a follow-up, not silently dropped).
 - `STRATEGY.md` carried forward from the predecessor with three amendments from adversarial review: workspace-scoped lessons by default (commitment 6), kernel-owned completion state with per-role capability tokens (commitment 14), and a self-monitoring commitment (16) as the direct countermeasure to the predecessor's undocumented strategic drift.
 
 ### Context

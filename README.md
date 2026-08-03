@@ -6,7 +6,7 @@ This is a ground-up rebirth — see [STRATEGY.md](STRATEGY.md) for the full dire
 
 ## Status
 
-Phase 0 — bootstrap and guardrails. Not yet usable for real outcomes. Versioning: `0.x` until the Phase 5 second-user gate (STRATEGY.md) passes, no stability promised before then. If you have a predecessor install and want it removed, `construct cleanup` ships in the first alpha (Phase 1) — install `@geraldmaron/construct-engine` to reach it, since the old package under `@geraldmaron/construct` won't auto-update to it.
+Phase 1 — kernel harvest and predecessor cleanup, in progress. Not yet usable for real outcomes. Versioning: `0.x` until the Phase 5 second-user gate (STRATEGY.md) passes, no stability promised before then. If you have a predecessor install and want it removed, `construct cleanup` is implemented (`--dry-run`, `--yes`, `--scope`, `--keep-state`) but not yet published — it lands in the first alpha, which is the remaining Phase 1 exit criterion (STRATEGY.md, tracker `construct-506`). Docker container/image and macOS LaunchAgent cleanup aren't ported yet; everything else the predecessor leaves on a project or a machine is covered. Install `@geraldmaron/construct-engine` to reach it once published, since the old package under `@geraldmaron/construct` won't auto-update to it.
 
 ## Development
 
