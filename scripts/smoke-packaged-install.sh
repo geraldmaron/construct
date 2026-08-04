@@ -2,12 +2,35 @@
 # smoke-packaged-install.sh — the consumer's experience, tested before any
 # consumer exists. v2's history is full of packaging defects (missing files
 # in the tarball, broken postinstall) found only after users hit them.
-# `npm pack` -> install the tarball into a scratch project -> run doctor.
+# `npm pack` -> install the tarball into a scratch project -> run the CLI.
+#
+# It exercises the spine (outcome, log, inbox, decide) and not just the Phase 0
+# surface, because the spine is the only code path that opens node:sqlite and
+# writes to the state dir — exactly the packaging-defect class this script says
+# it exists to catch. doctor and version load almost nothing by comparison, so a
+# tarball missing dist/kernel/store could pass the old script comfortably.
+#
+# Every command below runs under an isolated HOME. That is not tidiness: `doctor`
+# and `cleanup` inspect the user's real state directory, so before the isolation
+# was added this script's own runs were reading the developer's ~/.construct.
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 scratch="$(mktemp -d)"
 trap 'rm -rf "$scratch"' EXIT
+
+fail() {
+  echo "smoke-packaged-install: FAIL — $1" >&2
+  [ $# -gt 1 ] && printf '%s\n' "$2" >&2
+  exit 1
+}
+
+expect_contains() {
+  case "$2" in
+    *"$3"*) ;;
+    *) fail "$1 did not mention \"$3\"" "$2" ;;
+  esac
+}
 
 echo "== building =="
 cd "$repo_root"
@@ -24,6 +47,17 @@ cd "$project"
 npm init -y --silent >/dev/null
 npm install --silent "$tarball_path"
 
+# From here on the packaged CLI sees a home of its own. Set after `npm install`,
+# which needs the real one for its cache and registry config. XDG_* are pinned
+# rather than unset so a machine that already exports them cannot escape.
+export HOME="$scratch/home"
+export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_STATE_HOME="$HOME/.local/state"
+export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_CACHE_HOME="$HOME/.cache"
+mkdir -p "$XDG_CONFIG_HOME" "$XDG_STATE_HOME" "$XDG_DATA_HOME" "$XDG_CACHE_HOME"
+store="$XDG_DATA_HOME/construct/construct.db"
+
 echo "== running construct doctor from the packaged install =="
 npx --no-install construct doctor
 
@@ -32,5 +66,52 @@ npx --no-install construct version
 
 echo "== running construct cleanup --dry-run from the packaged install =="
 npx --no-install construct cleanup --dry-run
+
+echo "== recording an outcome from the packaged install =="
+outcome_out="$(npx --no-install construct outcome \
+  'launch a paid beta to EU users next month')" \
+  || fail "construct outcome exited non-zero" "$outcome_out"
+printf '%s\n' "$outcome_out"
+
+run_id="$(printf '%s\n' "$outcome_out" | awk '/^run /{print $2; exit}')"
+[ -n "$run_id" ] || fail "construct outcome printed no run id" "$outcome_out"
+expect_contains "construct outcome" "$outcome_out" "implicated domains"
+
+# The point of the whole addition: the store has to exist, on disk, written by
+# the tarball's own copy of node:sqlite. A dist/ or files[] change that drops
+# the store module fails here and nowhere earlier.
+[ -f "$store" ] || fail "the spine did not create its store at $store"
+
+echo "== reading the run back =="
+log_out="$(npx --no-install construct log --run "$run_id")" \
+  || fail "construct log exited non-zero" "$log_out"
+printf '%s\n' "$log_out"
+expect_contains "construct log" "$log_out" "entries (append-only)"
+case "$log_out" in
+  *"no work log entries"*) fail "the run was not recorded — construct log read back nothing" ;;
+esac
+
+echo "== reading the decision inbox =="
+inbox_out="$(npx --no-install construct inbox)" \
+  || fail "construct inbox exited non-zero" "$inbox_out"
+printf '%s\n' "$inbox_out"
+# Empty is the correct state: no roles have been dispatched, so nothing has
+# disagreed yet. Asserting the empty message rather than just the exit code is
+# what makes this a read of the store instead of a read of nothing.
+expect_contains "construct inbox" "$inbox_out" "decision inbox: empty"
+
+echo "== resolving a decision that does not exist =="
+# `decide` needs a decision, and raising one needs roles to have disagreed —
+# which needs a host, which this script deliberately does not have. So the
+# command is exercised against a missing id. That still proves what this script
+# is for: the command loaded, opened the store from the tarball, queried it, and
+# failed for the one reason it should. A packaging defect fails differently.
+set +e
+decide_out="$(npx --no-install construct decide no-such-decision 'ship it' 2>&1)"
+decide_status=$?
+set -e
+printf '%s\n' "$decide_out"
+[ "$decide_status" -ne 0 ] || fail "construct decide accepted a decision that does not exist"
+expect_contains "construct decide" "$decide_out" "no open decision no-such-decision"
 
 echo "smoke-packaged-install: pass"
