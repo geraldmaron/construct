@@ -18,6 +18,8 @@
 import { describePostconditions } from '../capabilities/postconditions.ts';
 import { validateBrief } from './schema.ts';
 import type { Brief } from './schema.ts';
+import { meetsFloor } from './tiers.ts';
+import type { ModelTier } from './tiers.ts';
 
 export interface Tool {
   readonly name: string;
@@ -30,6 +32,30 @@ export interface Availability {
   readonly roles: readonly string[];
   /** Input names the caller can actually supply. */
   readonly inputs?: readonly string[];
+  /**
+   * The tier of the model that will actually run this brief, as declared by the
+   * host adapter. Absent means the host did not say — which does NOT satisfy a
+   * floor above `any` (see meetsFloor).
+   */
+  readonly modelTier?: ModelTier;
+  /** The concrete model identity, recorded so a claim about a run is qualified. */
+  readonly model?: string;
+}
+
+/**
+ * A requirement that is not met but does not stop dispatch.
+ *
+ * Kept apart from `Unsatisfied` on purpose. Unsatisfied means the work cannot
+ * honestly be done and `ok` goes false; degraded means it will be done on
+ * something weaker than the brief asked for, and both the user and every later
+ * claim about the run need to know. Folding the two together would force a
+ * choice between refusing the free local-model path outright and saying nothing
+ * at all, and both of those have already been wrong here once.
+ */
+export interface Degradation {
+  readonly kind: 'below-model-floor';
+  readonly what: string;
+  readonly why: string;
 }
 
 export const UNSATISFIED_KINDS = [
@@ -60,6 +86,11 @@ export interface Resolution {
   readonly bindings: readonly Binding[];
   readonly postconditions: readonly string[];
   readonly unsatisfied: readonly Unsatisfied[];
+  /**
+   * Requirements met by something weaker than declared. Never empty silently:
+   * a non-empty list here is what the caller is obliged to record.
+   */
+  readonly degradations: readonly Degradation[];
 }
 
 /**
@@ -86,6 +117,7 @@ export function satisfyBrief(brief: Brief, available: Availability): Resolution 
         what: p.field,
         why: p.problem,
       })),
+      degradations: [],
     };
   }
 
@@ -140,6 +172,23 @@ export function satisfyBrief(brief: Brief, available: Availability): Resolution 
     }
   }
 
+  // The model floor, checked last because it is the one requirement that does
+  // not stop a dispatch. `ok` deliberately ignores degradations: the run happens,
+  // and the record says what it happened on.
+  const degradations: Degradation[] = [];
+  const floor = brief.modelFloor ?? 'any';
+  if (!meetsFloor(available.modelTier, floor)) {
+    const ran = available.model ? `"${available.model}"` : 'the host default';
+    const at = available.modelTier
+      ? `tier "${available.modelTier}"`
+      : 'an undeclared tier — the host did not say, and silence is not compliance';
+    degradations.push({
+      kind: 'below-model-floor',
+      what: floor,
+      why: `brief declares a "${floor}" model floor but ${ran} is ${at}; the work ran anyway and this result is qualified by that`,
+    });
+  }
+
   return {
     ok: unsatisfied.length === 0,
     brief: brief.id,
@@ -147,6 +196,7 @@ export function satisfyBrief(brief: Brief, available: Availability): Resolution 
     bindings,
     postconditions,
     unsatisfied,
+    degradations,
   };
 }
 

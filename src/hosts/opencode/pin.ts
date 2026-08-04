@@ -19,6 +19,8 @@
  * The version this adapter was verified against end to end. `opencode --version`
  * prints exactly this string.
  */
+import type { ModelTier } from '../../kernel/brief/tiers.ts';
+
 export const PINNED_VERSION = '1.15.4';
 
 export interface ConformanceExpectation {
@@ -114,3 +116,36 @@ export const CONFORMANCE_EXPECTATIONS: readonly ConformanceExpectation[] = [
  * which is worse than saying nothing.
  */
 export const UNPROBED_EXPECTATIONS: readonly string[] = ['first-open-migrates-its-database'];
+
+/**
+ * Which of the models reachable through this host sit at which capability tier
+ * (construct-ap0).
+ *
+ * It lives beside the pin because it is the same kind of claim: a statement
+ * about the outside world that was true when it was written and can rot without
+ * anything breaking loudly. The kernel must never learn these names — it
+ * compares ordinals — so the mapping stops here.
+ *
+ * Matching is by prefix on `provider/model` and by a parameter-count heuristic,
+ * both deliberately conservative: an unrecognised model returns null, which
+ * reads as "the host did not say" and degrades a floor rather than satisfying
+ * it. Guessing upward is the failure that matters, since it would let a run
+ * claim it met a floor nobody checked.
+ */
+const OPENCODE_TIERS: readonly { readonly match: RegExp; readonly tier: ModelTier }[] = [
+  // A local model under ~8b is where construct-185's undecidable inbox silence
+  // came from. Named first so it wins over any family rule below.
+  { match: /(^|\/)[^/]*[:-]([0-7](\.\d+)?)b\b/i, tier: 'any' },
+  { match: /^anthropic\/claude-(fable|opus)/i, tier: 'frontier' },
+  { match: /^anthropic\/claude-(sonnet|haiku)/i, tier: 'capable' },
+  { match: /^ollama\//i, tier: 'any' },
+];
+
+/**
+ * The tier of a `provider/model` string, or null when this pin does not
+ * recognise it. Null is not "any": see the module note above.
+ */
+export function tierOfModel(model: string | undefined | null): ModelTier | null {
+  if (!model) return null;
+  return OPENCODE_TIERS.find((entry) => entry.match.test(model))?.tier ?? null;
+}

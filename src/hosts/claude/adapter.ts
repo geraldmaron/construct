@@ -34,7 +34,8 @@ import type { HostAdapter, HostCancellation, HostCapability, HostContext, HostHe
 import { HostNotReadyError, InvocationError, InvocationTimeoutError } from '../../kernel/hosts/errors.ts';
 import { modelDrifted, reduceEnvelope } from './result.ts';
 import type { ClaudeUsage } from './result.ts';
-import { PINNED_VERSION } from './pin.ts';
+import { PINNED_VERSION, tierOfModel } from './pin.ts';
+import type { ModelTier } from '../../kernel/brief/tiers.ts';
 import { mcpArgsFor, writeMcpConfig } from './mcpconfig.ts';
 import type { RoleServeLaunch } from './mcpconfig.ts';
 
@@ -198,6 +199,21 @@ export function createClaudeAdapter(config: ClaudeConfig = {}): ClaudeAdapter {
     kind: 'coding',
     capabilities: CLAUDE_CAPABILITIES,
     pinnedVersion: PINNED_VERSION,
+
+    /** The model every dispatch will request unless the request overrides it. */
+    get model(): string | null {
+      return config.model ?? null;
+    },
+
+    /**
+     * Tier membership is the pin's to declare (construct-ap0). Note the pin's
+     * own recorded measurement: --model is a preference, not a constraint here,
+     * so an unknown name runs the session default. That is exactly why null is
+     * returned for anything unrecognised rather than a guess.
+     */
+    modelTier(model?: string): ModelTier | null {
+      return tierOfModel(model ?? config.model);
+    },
 
     get observedVersion(): string | null {
       return observedVersion;

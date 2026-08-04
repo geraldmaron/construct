@@ -631,6 +631,15 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
         `recovered ${String(report.recovered)} task(s) from an earlier run that did not finish.\n`,
       );
     }
+    if (report.degraded > 0) {
+      // Degrade loudly (construct-ap0). The run happened and the deliverables
+      // are real; what must not happen is anyone citing them without knowing
+      // what produced them.
+      process.stdout.write(
+        `${String(report.degraded)} task(s) ran below the model capability floor their brief declared. ` +
+          'Those deliverables are qualified by the model that produced them — see: construct log\n',
+      );
+    }
     if (report.costSilent > 0) {
       // Saying "under the ceiling" about spend nobody measured is the same
       // class of claim commitment 15 exists to forbid.

@@ -14,6 +14,9 @@
  * adapter) true in practice rather than in principle.
  */
 
+import { MODEL_TIERS, isModelTier } from './tiers.ts';
+import type { ModelTier } from './tiers.ts';
+
 export interface BriefInput {
   readonly name: string;
   readonly description: string;
@@ -43,6 +46,16 @@ export interface Brief {
    * ladder in completion/states.ts, which has no such rung.
    */
   readonly challenges?: readonly string[];
+  /**
+   * The weakest model capability tier this work may run on (construct-ap0).
+   * Optional, and omitting it means `any` — a brief that says nothing about
+   * model strength gets no floor rather than a guessed one.
+   *
+   * Family-agnostic by construction: it is an ordinal from tiers.ts, never a
+   * vendor model string. Which of a host's models sit at which tier is the
+   * adapter's declaration, next to its pin.
+   */
+  readonly modelFloor?: ModelTier;
 }
 
 export interface BriefProblem {
@@ -100,6 +113,15 @@ export function validateBrief(brief: unknown): BriefValidation {
     } else if ((record[field] as unknown[]).some((v) => !nonEmptyString(v))) {
       problems.push({ field, problem: `${field} entries must be non-empty strings` });
     }
+  }
+
+  // A floor is optional, but a floor nobody can compare against is worse than
+  // none: it reads as a declared requirement while satisfying nothing.
+  if (record.modelFloor !== undefined && !isModelTier(record.modelFloor)) {
+    problems.push({
+      field: 'modelFloor',
+      problem: `modelFloor must be one of: ${MODEL_TIERS.join(', ')} — a tier, never a model name (the kernel compares ordinals; adapters own tier membership)`,
+    });
   }
 
   // A brief that names a concrete tool has started orchestrating itself.

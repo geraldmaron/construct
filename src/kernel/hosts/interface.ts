@@ -36,6 +36,8 @@
  * *honors* the interface is the conformance suite's job, not this function's.
  */
 
+import type { ModelTier } from '../brief/tiers.ts';
+
 export const CAPABILITIES = ['interrupt', 'stream', 'sandbox', 'concurrent'] as const;
 
 export type HostCapability = (typeof CAPABILITIES)[number];
@@ -73,6 +75,24 @@ export interface HostAdapter {
   invoke(request: unknown, context?: HostContext): Promise<HostResult>;
   health(): Promise<HostHealth>;
   cancel(invocationId: string): Promise<HostCancellation>;
+
+  /**
+   * The concrete model this adapter will run, if it can say. Recorded on every
+   * task so a claim about what a run demonstrated is qualified by what actually
+   * ran (construct-ap0).
+   */
+  readonly model?: string | null;
+
+  /**
+   * Which capability tier `model` (or the adapter's default) sits at.
+   *
+   * Optional, and its absence is meaningful rather than neutral: a brief
+   * declaring a floor above `any` is recorded as degraded when the host will not
+   * say, because silence is not compliance. Tier membership lives here, next to
+   * each adapter's pin, precisely so the kernel never learns a vendor's model
+   * names — it compares ordinals and nothing else.
+   */
+  modelTier?(model?: string): ModelTier | null;
 }
 
 export interface HostValidation {

@@ -26,7 +26,8 @@ import type { HostAdapter, HostCancellation, HostCapability, HostContext, HostHe
 import { HostNotReadyError, InvocationError, InvocationTimeoutError } from '../../kernel/hosts/errors.ts';
 import { failedToolCalls, reduceTranscript } from './events.ts';
 import type { OpenCodeRunResult } from './events.ts';
-import { PINNED_VERSION } from './pin.ts';
+import { PINNED_VERSION, tierOfModel } from './pin.ts';
+import type { ModelTier } from '../../kernel/brief/tiers.ts';
 
 export const HOST_NAME = 'opencode';
 
@@ -259,6 +260,20 @@ export function createOpenCodeAdapter(config: OpenCodeConfig = {}): OpenCodeAdap
     kind: 'coding',
     capabilities: OPENCODE_CAPABILITIES,
     pinnedVersion: PINNED_VERSION,
+
+    /** The model every dispatch will run unless the request overrides it. */
+    get model(): string | null {
+      return config.model ?? null;
+    },
+
+    /**
+     * Tier membership is the pin's to declare, not the kernel's and not this
+     * function's (construct-ap0). An unrecognised model returns null, which
+     * degrades a declared floor rather than satisfying it.
+     */
+    modelTier(model?: string): ModelTier | null {
+      return tierOfModel(model ?? config.model);
+    },
 
     get observedVersion(): string | null {
       return observedVersion;

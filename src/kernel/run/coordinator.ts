@@ -39,6 +39,7 @@ import type { LeasedTask } from '../store/tasks.ts';
 import type { Store } from '../store/open.ts';
 import type { HostAdapter, HostResult } from '../hosts/interface.ts';
 import type { Brief } from '../brief/schema.ts';
+import { meetsFloor } from '../brief/tiers.ts';
 import { DOMAINS, domainsByName } from '../implication/domains.ts';
 import type { Domain } from '../implication/domains.ts';
 import { deliverableConcerns, licensedReviewFor } from './accountability.ts';
@@ -113,6 +114,13 @@ export interface RunReport {
   readonly flagged: number;
   /** Deliverables routed to a licensed professional before anyone relies on them. */
   readonly escalated: number;
+  /**
+   * Dispatches that ran below the brief's declared model capability floor
+   * (construct-ap0). Non-zero does not mean the run failed — it means every
+   * claim about what these deliverables demonstrate is qualified by the model
+   * that produced them.
+   */
+  readonly degraded: number;
   /** Cross-domain disagreements framed into the decision inbox. */
   readonly conflicts: number;
   readonly spendBefore: number;
@@ -318,6 +326,7 @@ export async function workRun(
   let costSilent = 0;
   let flagged = 0;
   let escalated = 0;
+  let degraded = 0;
   let halted: HaltReason | null = null;
   const settled: string[] = [];
 
@@ -331,14 +340,48 @@ export async function workRun(
 
   async function dispatch(task: LeasedTask): Promise<void> {
     const brief = task.brief as Brief;
+
+    // What is about to run this, recorded before it runs (construct-ap0). A
+    // claim about what a run demonstrated is only as good as the record of what
+    // executed it, and a host that will not say is written down as not saying
+    // rather than left blank — the cost-0-is-not-free precedent, applied to
+    // model identity.
+    const model = host.model ?? null;
+    const modelTier = host.modelTier?.(model ?? undefined) ?? null;
     appendWorkLog(store, {
       run: task.run,
       task: task.id,
       role: task.role,
       action: 'role-dispatched',
-      detail: { host: host.name, attempt: task.token },
+      detail: { host: host.name, attempt: task.token, model, modelTier },
       at: options.clock(),
     });
+
+    // Commitment 10's flagging half. A floor that is not met never stops the
+    // dispatch — refusing would quietly make the free local-model path unusable
+    // for the work it was chosen for — but it is recorded loudly, so nothing
+    // downstream can cite this deliverable without the qualification travelling
+    // with it. STRATEGY's degrade-loudly, at the one seam that can see both the
+    // brief's declaration and the host's answer.
+    const floor = brief.modelFloor ?? 'any';
+    if (!meetsFloor(modelTier, floor)) {
+      degraded += 1;
+      appendWorkLog(store, {
+        run: task.run,
+        task: task.id,
+        role: task.role,
+        action: 'model-floor-degraded',
+        detail: {
+          floor,
+          model,
+          modelTier,
+          why: modelTier
+            ? `brief declares a "${floor}" floor; ${model ?? 'the host default'} is tier "${modelTier}"`
+            : `brief declares a "${floor}" floor and the host did not say what tier ${model ?? 'its default'} is — silence is not compliance`,
+        },
+        at: options.clock(),
+      });
+    }
 
     // Commitment 14's second half: the write surface a role reaches back
     // through. The bearer goes to the adapter as env for the role's serving
@@ -562,6 +605,7 @@ export async function workRun(
     recovered,
     flagged,
     escalated,
+    degraded,
     conflicts,
     spendBefore,
     spendAfter,

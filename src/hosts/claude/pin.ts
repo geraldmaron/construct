@@ -14,6 +14,8 @@
  * expensive expectation behind an explicit flag.
  */
 
+import type { ModelTier } from '../../kernel/brief/tiers.ts';
+
 export const PINNED_VERSION = '2.1.216 (Claude Code)';
 
 export interface Expectation {
@@ -113,3 +115,28 @@ export const EXPECTATIONS: readonly Expectation[] = [
       'rather than assuming.',
   },
 ];
+
+/**
+ * Which of the models reachable through this host sit at which capability tier
+ * (construct-ap0).
+ *
+ * Beside the pin for the same reason the conformance expectations are: it is a
+ * claim about the outside world that can rot silently. The kernel compares
+ * ordinals and never learns these names.
+ *
+ * Read this together with the `--model is a preference, not a constraint`
+ * expectation above. An unknown name does not fail here — the host quietly runs
+ * its session default — so an unrecognised model returns null rather than a
+ * guess, and null degrades a declared floor instead of satisfying it.
+ */
+const CLAUDE_TIERS: readonly { readonly match: RegExp; readonly tier: ModelTier }[] = [
+  { match: /^(claude-)?(fable|opus)/i, tier: 'frontier' },
+  { match: /^(claude-)?sonnet/i, tier: 'capable' },
+  { match: /^(claude-)?haiku/i, tier: 'capable' },
+];
+
+/** The tier of a model name, or null when this pin does not recognise it. */
+export function tierOfModel(model: string | undefined | null): ModelTier | null {
+  if (!model) return null;
+  return CLAUDE_TIERS.find((entry) => entry.match.test(model))?.tier ?? null;
+}

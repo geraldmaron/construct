@@ -566,6 +566,88 @@ test('a run where the roles agree leaves the inbox empty', async () => {
   });
 });
 
+test('every task records the model that ran it, and an unmet floor is loud', async () => {
+  await withStoreAsync(async (store) => {
+    // A brief that needs judgment, dispatched to a 4b local model — the exact
+    // pairing construct-185's undecidable inbox silence came from, and the
+    // reason a tier is declared at all (construct-ap0).
+    enqueueTask(store, {
+      id: 't-privacy',
+      run: 'run-1',
+      role: 'privacy',
+      brief: { ...brief('privacy'), modelFloor: 'frontier' },
+      at: AT,
+    });
+
+    const weak = {
+      ...fakeHost(),
+      model: 'ollama/qwen3.5:4b',
+      modelTier: () => 'any' as const,
+    } as unknown as HostAdapter;
+
+    const report = await workRun(store, weak, { owner: 'w1', clock: frozen(AT), spendCeiling: 100 });
+
+    assert.equal(report.completed, 1, 'degrading must not stop the work');
+    assert.equal(report.degraded, 1);
+
+    const entries = readWorkLog(store, 'run-1');
+    const dispatched = entries.find((e) => e.action === 'role-dispatched');
+    assert.equal((dispatched?.detail as { model: string }).model, 'ollama/qwen3.5:4b');
+    assert.equal((dispatched?.detail as { modelTier: string }).modelTier, 'any');
+
+    const flag = entries.find((e) => e.action === 'model-floor-degraded');
+    assert.ok(flag, 'an unmet floor must reach the record, not just the return value');
+    assert.equal((flag.detail as { floor: string }).floor, 'frontier');
+    assert.match((flag.detail as { why: string }).why, /tier "any"/);
+  });
+});
+
+test('a host that will not name its tier degrades rather than passing quietly', async () => {
+  await withStoreAsync(async (store) => {
+    enqueueTask(store, {
+      id: 't-privacy',
+      run: 'run-1',
+      role: 'privacy',
+      brief: { ...brief('privacy'), modelFloor: 'capable' },
+      at: AT,
+    });
+
+    // fakeHost declares no model and no modelTier — the ordinary adapter that
+    // has not been taught tiers yet. Silence must not read as compliance.
+    const report = await workRun(store, fakeHost(), {
+      owner: 'w1',
+      clock: frozen(AT),
+      spendCeiling: 100,
+    });
+
+    assert.equal(report.degraded, 1);
+    const flag = readWorkLog(store, 'run-1').find((e) => e.action === 'model-floor-degraded');
+    assert.match((flag?.detail as { why: string }).why, /silence is not compliance/);
+    assert.equal((flag?.detail as { modelTier: unknown }).modelTier, null);
+  });
+});
+
+test('a brief declaring no floor is never reported as degraded', async () => {
+  await withStoreAsync(async (store) => {
+    seed(store, ['privacy']);
+    const report = await workRun(store, fakeHost(), {
+      owner: 'w1',
+      clock: frozen(AT),
+      spendCeiling: 100,
+    });
+
+    assert.equal(report.degraded, 0, 'a floor nobody declared cannot be missed');
+    assert.equal(
+      readWorkLog(store, 'run-1').some((e) => e.action === 'model-floor-degraded'),
+      false,
+    );
+    // The model identity is still recorded — that is unconditional.
+    const dispatched = readWorkLog(store, 'run-1').find((e) => e.action === 'role-dispatched');
+    assert.ok(dispatched, 'every dispatch is recorded whatever the brief declared');
+    assert.equal((dispatched.detail as { model: unknown }).model, null);
+  });
+});
+
 test('a run that settled and then died still raises its decision', async () => {
   await withStoreAsync(async (store) => {
     seed(store, ['privacy', 'program-sequencing']);
