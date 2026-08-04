@@ -17,6 +17,9 @@
  */
 
 import { mapImplications } from '../implication/map.ts';
+import { mapImplicationsEscalating } from '../implication/escalate.ts';
+import type { DomainNamer, EscalationCache, InferredBy } from '../implication/escalate.ts';
+import type { Embedder } from '../implication/similarity.ts';
 import type { Domain } from '../implication/domains.ts';
 import type { Implication } from '../implication/map.ts';
 import { appendWorkLog } from '../store/worklog.ts';
@@ -41,6 +44,21 @@ export interface StartedRun {
   readonly logged: readonly number[];
   /** Ids of the tasks enqueued for the coordinator, one per implicated role. */
   readonly tasks: readonly string[];
+  /**
+   * How these implications were reached. Travels out of the kernel because the
+   * CLI must be able to tell a user that an answer cost money and rests on a
+   * model's stated reason rather than on a cited keyword.
+   */
+  readonly inferredBy: InferredBy;
+}
+
+export interface StartRunEscalatingInput extends StartRunInput {
+  /** Absent means no escalation: behaves exactly like `startRun`. */
+  readonly namer?: DomainNamer;
+  readonly cache?: EscalationCache;
+  readonly embedder?: Embedder;
+  /** Named in the work log when a model is consulted, so the cost has a source. */
+  readonly host?: string;
 }
 
 /** Deterministic, so re-recording a run enqueues its work once. */
@@ -85,7 +103,44 @@ function briefFor(input: StartRunInput, implication: Implication): Brief {
  */
 export function startRun(store: Store, input: StartRunInput): StartedRun {
   const map = mapImplications({ outcome: input.outcome, catalog: input.catalog });
+  return record(store, input, map.implicated, map.implicated.length > 0 ? 'keywords' : 'none');
+}
 
+/**
+ * The same run, with one difference: if the keyword pass is silent, a namer is
+ * consulted before anything is recorded.
+ *
+ * Async and separate from `startRun` on purpose. Recording an outcome is the
+ * one spine operation that is pure and free, and a caller must not be able to
+ * reach the paid path by accident — it takes a different function and an
+ * explicitly supplied namer. Without a namer this is `startRun` with an extra
+ * await: the deterministic path still does no I/O and costs nothing.
+ *
+ * The model call happens OUTSIDE the transaction, and must: a transaction held
+ * open across a network round trip blocks every other writer of this store for
+ * as long as a model takes to answer.
+ */
+export async function startRunEscalating(
+  store: Store,
+  input: StartRunEscalatingInput,
+): Promise<StartedRun> {
+  const map = await mapImplicationsEscalating({
+    outcome: input.outcome,
+    catalog: input.catalog,
+    namer: input.namer,
+    cache: input.cache,
+    embedder: input.embedder,
+  });
+  return record(store, input, map.implicated, map.inferredBy, input.host);
+}
+
+function record(
+  store: Store,
+  input: StartRunInput,
+  implicated: readonly Implication[],
+  inferredBy: InferredBy,
+  host?: string,
+): StartedRun {
   return transact(store, () => {
     const logged: number[] = [];
     const tasks: string[] = [];
@@ -100,7 +155,27 @@ export function startRun(store: Store, input: StartRunInput): StartedRun {
       }),
     );
 
-    for (const implication of map.implicated) {
+    // A consulted model is logged whether or not it named anything. An
+    // escalation that cost money and produced silence is exactly the entry a
+    // user needs to see, and the one a "log it if it worked" rule would drop.
+    if (inferredBy === 'escalation' || inferredBy === 'cache') {
+      logged.push(
+        appendWorkLog(store, {
+          run: input.runId,
+          role: 'construct',
+          action: 'implication-escalated',
+          detail: {
+            outcome: input.outcome,
+            inferredBy,
+            host: host ?? null,
+            named: implicated.length,
+          },
+          at: input.at,
+        }),
+      );
+    }
+
+    for (const implication of implicated) {
       const brief = briefFor(input, implication);
       logged.push(
         appendWorkLog(store, {
@@ -112,6 +187,9 @@ export function startRun(store: Store, input: StartRunInput): StartedRun {
             concern: implication.concern,
             score: implication.score,
             signals: implication.signals,
+            // An implication that cost a model call and cites a stated reason
+            // must not read identically to one that cites a keyword.
+            inferredBy,
           },
           at: input.at,
         }),
@@ -131,13 +209,13 @@ export function startRun(store: Store, input: StartRunInput): StartedRun {
       }
     }
 
-    if (map.implicated.length === 0) {
+    if (implicated.length === 0) {
       logged.push(
         appendWorkLog(store, {
           run: input.runId,
           role: 'construct',
           action: 'no-domains-implicated',
-          detail: { outcome: input.outcome },
+          detail: { outcome: input.outcome, inferredBy },
           at: input.at,
         }),
       );
@@ -146,9 +224,10 @@ export function startRun(store: Store, input: StartRunInput): StartedRun {
     return {
       runId: input.runId,
       outcome: input.outcome,
-      implicated: map.implicated,
+      implicated,
       logged,
       tasks,
+      inferredBy,
     };
   });
 }

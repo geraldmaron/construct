@@ -20,7 +20,9 @@ import { countTasksByState, getTask } from '../kernel/store/tasks.ts';
 import { appendFeedback, readFeedback } from '../kernel/store/feedback.ts';
 import { harvestCorpus } from '../kernel/implication/harvest.ts';
 import type { DomainVerdict } from '../kernel/implication/harvest.ts';
-import { startRun } from '../kernel/run/outcome.ts';
+import { startRun, startRunEscalating } from '../kernel/run/outcome.ts';
+import { storeEscalationCache } from '../kernel/store/escalations.ts';
+import { createHostNamer } from '../hosts/namer.ts';
 import { DEFAULT_CONCURRENCY, workRun } from '../kernel/run/coordinator.ts';
 import { deliverableConcerns, licensedReviewFor } from '../kernel/run/accountability.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
@@ -236,38 +238,174 @@ async function roleServe(): Promise<number> {
   return 0;
 }
 
-export function outcome(argv: string[]): number {
-  const text = argv.join(' ').trim();
-  if (!text) {
-    process.stderr.write('usage: construct outcome "<what you want to happen>"\n');
+const OUTCOME_USAGE =
+  'usage: construct outcome [--escalate [--host=<opencode|claude>] [--model=…] [--binary=…]] "<what you want to happen>"\n';
+
+export interface OutcomeArgs {
+  readonly text: string;
+  /**
+   * Opt-in, never opt-out (construct-2fu). Recording an outcome is the one
+   * spine operation that is free, and a model charge at the moment a user
+   * writes down an intention is the least expected charge in the product.
+   */
+  readonly escalate: boolean;
+  readonly host: string;
+  readonly model?: string;
+  readonly binary?: string;
+  readonly dir?: string;
+}
+
+export function parseOutcomeArgs(argv: string[]): OutcomeArgs {
+  const flags: Record<string, string> = {};
+  const words: string[] = [];
+  let escalate = false;
+
+  for (const arg of argv) {
+    if (arg === '--escalate') {
+      escalate = true;
+      continue;
+    }
+    const match = /^--([a-z-]+)=(.*)$/.exec(arg);
+    if (match) {
+      flags[match[1]] = match[2];
+      continue;
+    }
+    words.push(arg);
+  }
+
+  const host = flags.host ?? 'opencode';
+  if (host !== 'opencode' && host !== 'claude') {
+    throw new Error(`unknown host "${host}" (expected opencode or claude)`);
+  }
+
+  // A flag that is quietly ignored is a flag that lies. --host/--model/--binary
+  // only mean something when a model is going to be consulted, so supplying one
+  // without --escalate is a usage error rather than a silent no-op.
+  const hostFlags = ['host', 'model', 'binary', 'dir'].filter((f) => flags[f] !== undefined);
+  if (!escalate && hostFlags.length > 0) {
+    throw new Error(
+      `--${hostFlags[0]} only applies when escalating; add --escalate, or drop the flag`,
+    );
+  }
+
+  return {
+    text: words.join(' ').trim(),
+    escalate,
+    host,
+    model: flags.model,
+    binary: flags.binary,
+    dir: flags.dir,
+  };
+}
+
+function reportRun(started: ReturnType<typeof startRun>): void {
+  process.stdout.write(`run ${started.runId}\n  outcome: ${started.outcome}\n\n`);
+  process.stdout.write(`implicated domains (${started.implicated.length}):\n`);
+  for (const implication of started.implicated) {
+    process.stdout.write(`  ${implication.domain}  — ${implication.concern}\n`);
+    // Escalated implications carry no keyword score, so reporting one would
+    // invite comparison with numbers that mean something else entirely.
+    const evidence =
+      started.inferredBy === 'keywords'
+        ? `signals: ${implication.signals.slice(0, 4).join(', ')} (score ${implication.score})`
+        : `reason: ${implication.signals.join(' ')}`;
+    process.stdout.write(`      ${evidence}\n`);
+  }
+  if (started.inferredBy === 'escalation' || started.inferredBy === 'cache') {
+    process.stdout.write(
+      started.inferredBy === 'cache'
+        ? '\nThese came from a model consulted for this outcome earlier, not from keywords.\n'
+        : '\nThese came from a model, not from keywords: the keyword map was silent.\n',
+    );
+  }
+  process.stdout.write(
+    `\nfiled ${started.logged.length} work log entries and queued ${started.tasks.length} task(s).\n`,
+  );
+  process.stdout.write(`Run them:  construct work --run ${started.runId}\n`);
+  process.stdout.write(`Read back: construct log --run ${started.runId}\n`);
+}
+
+/**
+ * Record an outcome.
+ *
+ * The default path is deterministic, does no I/O beyond the store, and costs
+ * nothing — the keyword map answers or it does not. `--escalate` opts into
+ * asking a model when the map is silent, which is the only case escalation
+ * covers: an outcome that implicates nothing queues nothing, and telling a user
+ * their outcome touched no domain is a confident wrong answer.
+ *
+ * `hostOverride` exists so the CLI's own wiring is testable without a binary
+ * present, exactly as with `work`.
+ */
+export async function outcome(argv: string[], hostOverride?: HostAdapter): Promise<number> {
+  let args: OutcomeArgs;
+  try {
+    args = parseOutcomeArgs(argv);
+  } catch (error) {
+    process.stderr.write(`outcome: ${(error as Error).message}\n${OUTCOME_USAGE}`);
+    return 2;
+  }
+  if (!args.text) {
+    process.stderr.write(OUTCOME_USAGE);
     return 2;
   }
 
-  return withStore((store) => {
+  return withStoreAsync(async (store) => {
     const at = now();
     const runId = `run-${at.replace(/[-:.TZ]/g, '')}`;
-    const started = startRun(store, { runId, outcome: text, at });
 
-    process.stdout.write(`run ${started.runId}\n  outcome: ${started.outcome}\n\n`);
-    if (started.implicated.length === 0) {
-      process.stdout.write(
-        'no domains implicated. Nothing was inferred — this is recorded, not silently dropped.\n',
-      );
+    if (!args.escalate) {
+      const started = startRun(store, { runId, outcome: args.text, at });
+      if (started.implicated.length === 0) {
+        process.stdout.write(`run ${started.runId}\n  outcome: ${started.outcome}\n\n`);
+        process.stdout.write(
+          'no domains implicated. Nothing was inferred — this is recorded, not silently dropped.\n',
+        );
+        // The signpost that makes the dead end a choice rather than a wall
+        // (construct-2fu): the user, not the tool, decides to spend money.
+        process.stdout.write(
+          '\nA model can be asked instead, at cost:\n' +
+            `  construct outcome --escalate ${JSON.stringify(args.text)}\n`,
+        );
+        return 0;
+      }
+      reportRun(started);
       return 0;
     }
 
-    process.stdout.write(`implicated domains (${started.implicated.length}):\n`);
-    for (const implication of started.implicated) {
-      process.stdout.write(`  ${implication.domain}  — ${implication.concern}\n`);
-      process.stdout.write(
-        `      signals: ${implication.signals.slice(0, 4).join(', ')} (score ${implication.score})\n`,
+    const host =
+      hostOverride ??
+      (args.host === 'claude'
+        ? createClaudeAdapter({ binary: args.binary, model: args.model, dir: args.dir })
+        : createOpenCodeAdapter({ binary: args.binary, model: args.model, dir: args.dir }));
+
+    try {
+      await host.init();
+    } catch (error) {
+      process.stderr.write(
+        `outcome: host "${host.name}" is not available — ${(error as Error).message}\n`,
       );
+      return 1;
     }
-    process.stdout.write(
-      `\nfiled ${started.logged.length} work log entries and queued ${started.tasks.length} task(s).\n`,
-    );
-    process.stdout.write(`Run them:  construct work --run ${started.runId}\n`);
-    process.stdout.write(`Read back: construct log --run ${started.runId}\n`);
+
+    const started = await startRunEscalating(store, {
+      runId,
+      outcome: args.text,
+      at,
+      host: host.name,
+      namer: createHostNamer(host),
+      cache: storeEscalationCache(store, { host: host.name, at }),
+    });
+
+    if (started.implicated.length === 0) {
+      process.stdout.write(`run ${started.runId}\n  outcome: ${started.outcome}\n\n`);
+      process.stdout.write(
+        `no domains implicated. The keyword map was silent and ${host.name} named nothing ` +
+          'either — this is recorded, not silently dropped.\n',
+      );
+      return 0;
+    }
+    reportRun(started);
     return 0;
   });
 }
@@ -458,6 +596,20 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
   });
 }
 
+/**
+ * How an entry's inference was reached, when that is not the free default
+ * (construct-2fu). Keyword inferences stay unannotated so the log does not grow
+ * a column that says "normal" on almost every line; an entry that cost a model
+ * call says so, because reading the log is how a user audits what was spent and
+ * what an inference actually rests on.
+ */
+function howInferred(detail: unknown): string {
+  const inferredBy = (detail as { inferredBy?: unknown } | null)?.inferredBy;
+  if (inferredBy === 'escalation') return '  (inferred by: escalation — a model was consulted)';
+  if (inferredBy === 'cache') return '  (inferred by: cache — an earlier escalation for this outcome)';
+  return '';
+}
+
 export function log(argv: string[]): number {
   const runIndex = argv.indexOf('--run');
   const run = runIndex >= 0 ? argv[runIndex + 1] : undefined;
@@ -469,7 +621,9 @@ export function log(argv: string[]): number {
       return 0;
     }
     for (const entry of entries) {
-      process.stdout.write(`${String(entry.seq).padStart(4)}  ${entry.at}  ${entry.role}  ${entry.action}\n`);
+      process.stdout.write(
+        `${String(entry.seq).padStart(4)}  ${entry.at}  ${entry.role}  ${entry.action}${howInferred(entry.detail)}\n`,
+      );
     }
     process.stdout.write(`\n${entries.length} entries (append-only).\n`);
     return 0;
@@ -679,8 +833,9 @@ export function corpus(argv: string[]): number {
 const USAGE = 'usage: construct <outcome|work|verdict|corpus|log|inbox|decide|doctor|cleanup|version>\n';
 
 /**
- * Async because `work` dispatches to a host. The other commands stay
- * synchronous — awaiting a number costs nothing and keeps one entry point.
+ * Async because `work` dispatches to a host, and `outcome --escalate` may
+ * consult one. The other commands stay synchronous — awaiting a number costs
+ * nothing and keeps one entry point.
  */
 export async function main(argv: string[] = process.argv.slice(2)): Promise<number> {
   try {

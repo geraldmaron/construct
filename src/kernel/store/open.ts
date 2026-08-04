@@ -13,7 +13,13 @@
  * adds `implication_feedback`, additive in the same way: a verdict a user
  * renders on the domains a run surfaced (or felt the absence of), append-only
  * like the work log and for the same reason — a corpus whose labels can be
- * quietly edited after the fact is how the last one died.
+ * quietly edited after the fact is how the last one died. Schema version 4
+ * (construct-2fu) adds `escalation_cache`, additive again: what a model said
+ * when the keyword map was silent, so the same outcome does not pay for the
+ * same call twice across processes. Write-once rather than append-only — it
+ * holds one row per outcome, not a history — but guarded by the same reasoning:
+ * a record of a model's stated reason that can be quietly rewritten is not
+ * evidence, and escalated implications cite exactly that reason.
  *
  * SQLite via `node:sqlite`, which ships with Node — no dependency is added to a
  * CLI users install. STRATEGY ("What carries over") commits the tracker model to
@@ -38,7 +44,7 @@ import { accessSync, constants, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Paths } from '../paths.ts';
 
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export interface Store {
   readonly db: DatabaseSync;
@@ -232,6 +238,17 @@ BEGIN SELECT RAISE(ABORT, 'implication_feedback is append-only'); END;
 CREATE TRIGGER IF NOT EXISTS implication_feedback_no_delete
 BEFORE DELETE ON implication_feedback
 BEGIN SELECT RAISE(ABORT, 'implication_feedback is append-only'); END;
+
+CREATE TABLE IF NOT EXISTS escalation_cache (
+  outcome      TEXT PRIMARY KEY,
+  implications TEXT NOT NULL,
+  host         TEXT NOT NULL,
+  recorded_at  TEXT NOT NULL
+) STRICT;
+
+CREATE TRIGGER IF NOT EXISTS escalation_cache_no_update
+BEFORE UPDATE ON escalation_cache
+BEGIN SELECT RAISE(ABORT, 'escalation_cache is write-once'); END;
 `;
 
 /** The substrate's file under an injected Paths. Callers do not build this path. */

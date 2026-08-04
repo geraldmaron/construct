@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { main, work } from '../../src/cli/index.ts';
+import { main, outcome, work } from '../../src/cli/index.ts';
 import type { HostAdapter, HostResult } from '../../src/kernel/hosts/interface.ts';
 
 interface Capture {
@@ -121,6 +121,106 @@ test('an outcome implicating nothing says so rather than going quiet', async () 
   assert.equal(code, 0);
   assert.match(out, /no domains implicated/);
   assert.match(out, /recorded, not silently dropped/);
+});
+
+/**
+ * A host that answers a namer prompt, counting how many times it was asked.
+ * The count is the point of most of these tests: escalation is the one thing
+ * in the spine that costs money, so "was the model called, and how often" is
+ * the property under test, not a detail of it.
+ */
+function namingHost(reply: string): HostAdapter & { readonly calls: () => number } {
+  let calls = 0;
+  return {
+    name: 'stand-in-namer',
+    kind: 'general',
+    capabilities: [],
+    calls: () => calls,
+    init: async (): Promise<void> => {},
+    health: async () => ({ live: true }),
+    cancel: async () => ({ cancelled: false }),
+    invoke: async (): Promise<HostResult> => {
+      calls += 1;
+      return { id: 'namer', status: 'ok', output: { text: reply }, error: null };
+    },
+  };
+}
+
+const SILENT = 'xyzzy plugh frobnicate';
+const NAMED = JSON.stringify({
+  domains: [{ domain: 'accessibility', why: 'the outcome describes assistive software' }],
+});
+
+test('escalating an outcome the keyword map is silent on queues work', async () => {
+  const host = namingHost(NAMED);
+  const { code, out } = await run(() => outcome(['--escalate', SILENT], host));
+  assert.equal(code, 0);
+  assert.equal(host.calls(), 1, 'a silent outcome must reach the namer exactly once');
+  assert.match(out, /accessibility/);
+  assert.match(out, /queued 1 task/);
+  assert.match(out, /came from a model, not from keywords/);
+});
+
+test('an escalated implication is distinguishable in the log from a keyword one', async () => {
+  const host = namingHost(NAMED);
+  const { out } = await runAll([() => outcome(['--escalate', SILENT], host), ['log']]);
+  assert.match(out, /implication-escalated/);
+  assert.match(out, /domain-implicated {2}\(inferred by: escalation — a model was consulted\)/);
+});
+
+test('a keyword-derived log entry does not claim a model was consulted', async () => {
+  const { out } = await runAll([
+    ['outcome', 'launch a paid beta to EU users next month'],
+    ['log'],
+  ]);
+  assert.match(out, /domain-implicated/);
+  assert.ok(!out.includes('inferred by:'), 'the free path must not advertise a cost it never paid');
+  assert.ok(!out.includes('implication-escalated'));
+});
+
+test('a keyword-answered outcome never reaches the namer, even with --escalate', async () => {
+  const host = namingHost(NAMED);
+  const { out } = await run(() =>
+    outcome(['--escalate', 'launch a paid beta to EU users next month'], host),
+  );
+  assert.equal(host.calls(), 0, 'the deterministic path must do no I/O and cost nothing');
+  assert.match(out, /"?signals: /);
+});
+
+test('the same outcome does not pay for the same model call twice', async () => {
+  const host = namingHost(NAMED);
+  const { out } = await runAll([
+    () => outcome(['--escalate', SILENT], host),
+    () => outcome(['--escalate', SILENT], host),
+  ]);
+  assert.equal(host.calls(), 1, 'the second escalation must be served from the store cache');
+  assert.match(out, /consulted for this outcome earlier/);
+});
+
+test('filing an outcome cannot cost money unless the user asks it to', async () => {
+  const host = namingHost(NAMED);
+  const { code, out } = await run(() => outcome([SILENT], host));
+  assert.equal(code, 0);
+  assert.equal(host.calls(), 0, 'the default path must never consult a model');
+  assert.match(out, /no domains implicated/);
+  // The dead end is a signposted choice, not a wall: the r67.9 stall is fixed
+  // by telling the user the command, not by spending their money for them.
+  assert.match(out, /--escalate/);
+  assert.match(out, /at cost/);
+});
+
+test('a host flag with nothing to apply to is a usage error, not a silent no-op', async () => {
+  const { code, err } = await run(['outcome', '--host=claude', SILENT]);
+  assert.equal(code, 2);
+  assert.match(err, /only applies when escalating/);
+});
+
+test('a namer that names nothing is reported, not papered over', async () => {
+  const host = namingHost(JSON.stringify({ domains: [] }));
+  const { code, out } = await run(() => outcome(['--escalate', SILENT], host));
+  assert.equal(code, 0);
+  assert.equal(host.calls(), 1);
+  assert.match(out, /named nothing/);
 });
 
 test('an outcome writes a work log the user can read back', async () => {
