@@ -44,6 +44,7 @@ import type { Domain } from '../implication/domains.ts';
 import { deliverableConcerns, licensedReviewFor } from './accountability.ts';
 import { STANCE_PROTOCOL, frameConflict, parseStance } from './conflicts.ts';
 import type { RoleStance } from './conflicts.ts';
+import { logPromotion } from './promotion.ts';
 import { getDecision, raiseDecision } from '../store/decisions.ts';
 
 export const DEFAULT_CONCURRENCY = 2;
@@ -341,6 +342,13 @@ export async function workRun(
             at: settledAt,
           });
         }
+
+        // Where this deliverable stands on the reliance axis, written down at
+        // the moment it settled. A role that just reported is not thereby
+        // finished with anything — commitment 14 — and the only honest place to
+        // say so is the log the user actually reads. Derived, never set: see
+        // run/promotion.ts.
+        logPromotion(store, task.id, settledAt);
 
         const review = licensedReviewFor(task.role, catalog);
         if (review) {

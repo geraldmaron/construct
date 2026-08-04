@@ -59,6 +59,21 @@ export type {
   PostconditionResult,
   PostconditionRule,
 } from './capabilities/postconditions.ts';
+export {
+  DENIALS,
+  ROLE_GRANTS,
+  TOKEN_FORMAT,
+  authorizeRoleToken,
+  issueRoleToken,
+} from './capabilities/tokens.ts';
+export type {
+  Authorization,
+  AuthorizeRequest,
+  Denial,
+  Grant,
+  IssueRoleToken,
+  TokenScope,
+} from './capabilities/tokens.ts';
 
 export { COMPLETION_STATES, completionRank, isCompletionState } from './completion/states.ts';
 export type { CompletionState } from './completion/states.ts';
@@ -232,6 +247,36 @@ export {
   parseStance,
 } from './run/conflicts.ts';
 export type { DeclaredStance, FrameInput, RoleStance, Stance } from './run/conflicts.ts';
+export {
+  DRAFT_ACTION,
+  PROMOTION_ACTION,
+  VERDICT_ACTION,
+  VERDICT_REFUSALS,
+  VERDICT_REFUSED_ACTION,
+  latestDraft,
+  logPromotion,
+  promotionOf,
+  recordVerdict,
+} from './run/promotion.ts';
+export type {
+  RecordVerdict,
+  SubmittedDraft,
+  TaskPromotion,
+  VerdictRecord,
+  VerdictRefusal,
+} from './run/promotion.ts';
+export {
+  CAPABILITY_DENIED_ACTION,
+  ROLE_ACTION_PREFIX,
+  appendAsRole,
+  submitDraft,
+} from './run/rolewrite.ts';
+export type {
+  DraftSubmission,
+  RoleAppend,
+  RoleCredential,
+  WriteOutcome,
+} from './run/rolewrite.ts';
 
 export { CAPABILITIES, hasCapability, validate as validateHost } from './hosts/interface.ts';
 export type {
