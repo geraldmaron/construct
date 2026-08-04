@@ -8,15 +8,34 @@ full spec, and `RESEARCH-DECISIONS.md` §2 for why this question exists.
 This kit builds sheets and computes statistics. **It does not, and must
 never, produce labels itself** — see the warning at the top of
 `compute-alpha.mjs` and `CODER-INSTRUCTIONS.md`. Every corpus this project
-has is single-author; recruiting 2-3 human labelers is the fix, and an agent
-or model standing in for one of them recreates the exact circularity
-`construct-gsf` identified, with a model as the author.
+has is single-author; independent labelers are the fix, and a script that
+fills in its own inputs recreates the exact circularity `construct-gsf`
+identified.
+
+## Method change, 2026-08-04 (Gerald's direction, accepted with controls)
+
+The study runs **LLM-as-judge instead of recruited human labelers**. An
+Fable/Opus-class coder labels one sheet in a fresh, isolated session —
+`CODER-INSTRUCTIONS.md` applies to an LLM coder unchanged, including "do not
+look at the project's source code" — and Gerald is the second coder, either
+labeling independently or reviewing-and-amending. Alpha is computed between
+the two sets exactly as originally designed.
+
+**The limitation travels with every number this kit produces** (commitment
+15): an LLM coder drawn from the family that authored the domain catalog has
+errors correlated with it. Observed alpha is therefore an **upper** bound on
+true independent agreement, and the derived error floor is a **lower** bound.
+Any quote of these figures that drops this caveat is misreporting them.
+
+This supersedes the recruit-2-3-humans step below; steps 2 and 4-6 are
+unchanged.
 
 ## Steps for Gerald
 
-1. **Recruit 2-3 labelers.** They should not be the corpus author (you) — or
-   if one of them is, that should be a known limitation you note when
-   reporting the result, not silently absorbed.
+1. ~~**Recruit 2-3 labelers.**~~ Superseded by the method change above. The
+   coder set is one LLM coder in a fresh session plus Gerald. If Gerald is
+   also the corpus author, that is a known limitation to note when reporting
+   the result, not to absorb silently.
 
 2. **Generate the sheets**, one per labeler, using their names (or any
    consistent, non-identifying handle):
