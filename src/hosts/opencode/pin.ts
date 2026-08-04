@@ -80,4 +80,30 @@ export const CONFORMANCE_EXPECTATIONS: readonly ConformanceExpectation[] = [
     whyItMatters:
       'Lets a caller tell "the role could not read the file" from "the host fell over". Collapsing them would make every permission denial look like an outage.',
   },
+  {
+    id: 'first-open-migrates-its-database',
+    claim:
+      'the first thing to open the sqlite database in a fresh data dir migrates it, and that first open can fail — measured both ways: two concurrent `run`s lost on `PRAGMA journal_mode = WAL`, and one `run` alone lost on `CREATE TABLE project`',
+    whyItMatters:
+      'Under `construct work` the thing that meets the cold database is a real task, and it fails for a reason that has nothing to do with the work (construct-a76). The adapter absorbs the migration in init() instead. If the host ever makes the first open reliable, that warm-up and the gate behind it become dead weight and can go.',
+  },
+  {
+    id: 'stats-opens-the-database-without-a-model-call',
+    claim: '`opencode stats` opens (and therefore migrates) the database, exits 0, and calls no model',
+    whyItMatters:
+      "This is what the adapter's init() warm-up rides. If `stats` is renamed, or stops touching the database, warming stops working — silently, since it is best-effort — and a cold migration lands back in front of a real task. If it ever started calling a model, every init would spend money the coordinator never sees.",
+  },
 ];
+
+/**
+ * Declared above but deliberately not probed, with the reason. The probe prints
+ * these as unchecked rather than letting them read as verified.
+ *
+ * `first-open-migrates-its-database` is a race and an intermittent failure.
+ * Reproducing it confirms the claim; failing to reproduce it proves nothing,
+ * because a race that did not happen this time is not a race that cannot
+ * happen. A check that can only ever confirm and never refute would report
+ * "still holds" with the same confidence whether the host fixed it or not,
+ * which is worse than saying nothing.
+ */
+export const UNPROBED_EXPECTATIONS: readonly string[] = ['first-open-migrates-its-database'];

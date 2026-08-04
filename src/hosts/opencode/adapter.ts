@@ -32,7 +32,8 @@ export const HOST_NAME = 'opencode';
 /**
  * 'interrupt' is declared because cancel() genuinely kills the child process.
  * 'concurrent' because each `opencode run` brings up its own server on its own
- * port, so invocations do not share state.
+ * port, so invocations do not share state — with one exception the adapter
+ * handles rather than passes on, at the first-run gate below.
  *
  * 'stream' is NOT declared: the transcript is reduced after the process exits.
  * The host does stream, and the interface is explicit that a limitation must be
@@ -141,11 +142,82 @@ export function createOpenCodeAdapter(config: OpenCodeConfig = {}): OpenCodeAdap
   const binary = config.binary ?? 'opencode';
   const spawn = config.spawn ?? defaultSpawn;
   const timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-  const inFlight = new Map<string, SpawnedProcess>();
+  // Only kill() is ever called on these, and an invocation still waiting at the
+  // first-run gate has no process to expose — so the map holds what cancel()
+  // actually needs rather than a process it may not have yet.
+  const inFlight = new Map<string, { kill(): void }>();
   const cancelled = new Set<string>();
 
   let ready = false;
   let observedVersion: string | null = null;
+
+  /**
+   * The first thing to open OpenCode's sqlite database migrates it, and that
+   * first open is unreliable. Measured against the pinned version on a fresh
+   * data dir (construct-a76):
+   *
+   *   - two `run`s together: one loses on `PRAGMA journal_mode = WAL`,
+   *   - one `run` alone under a real workload: lost on `CREATE TABLE project`.
+   *
+   * So this is not only a concurrency bug, which is what the report assumed.
+   * Whatever meets the cold database first can fail, and under `construct work`
+   * that is a real task, failing for a reason with nothing to do with the work.
+   *
+   * The fix is to make the thing that meets it first be something disposable.
+   * `opencode stats` reads that same database and makes no model call, so init()
+   * can absorb the migration for free — verified: after it, two concurrent runs
+   * against a data dir that was cold both exit 0 with clean stderr.
+   *
+   * A throwaway `run` would have worked too and was rejected: it is a real model
+   * call on every init, spending money the coordinator never sees, and unmetered
+   * spend is what the ceiling exists to prevent.
+   */
+  const WARMUP_ARGS = ['stats'];
+  let warmed = false;
+
+  async function warmDatabase(): Promise<boolean> {
+    let probe: SpawnedProcess;
+    try {
+      probe = spawn(binary, WARMUP_ARGS, {});
+    } catch {
+      return false;
+    }
+    const result = await probe.done.catch(() => null);
+    return result?.code === 0;
+  }
+
+  /**
+   * The fallback, armed only when the warm-up did not confirm. A future host
+   * version could rename `stats` or make it stop touching the database, and the
+   * failure would be silent — a cold migration back in front of a real task. So
+   * when warming cannot vouch for the database, the first invocation runs alone
+   * and the rest wait for it: at most one task can be lost to it instead of
+   * however many the coordinator dispatched.
+   *
+   * Not armed when warming succeeded, because then it is pure loss: it would
+   * serialize the first task of every run for a migration that already happened.
+   *
+   * The gate opens when the first invocation settles, success or failure. A
+   * first task that keeps failing must not wedge every task behind it.
+   */
+  let firstRun: Promise<void> | null = null;
+
+  /**
+   * Deliberately synchronous, and it returns rather than awaits. The first
+   * caller must reach `spawn` in the same tick it always did: `cancel()` finds a
+   * run through the in-flight map, so an `await` inserted before the spawn would
+   * silently move the window in which an immediate cancel works.
+   */
+  function claimFirstRunGate(): { wait: Promise<void> | null; open: (() => void) | null } {
+    if (warmed) return { wait: null, open: null };
+    if (firstRun !== null) return { wait: firstRun, open: null };
+    // The executor runs synchronously, so `open` is assigned before the return.
+    let open: () => void = () => {};
+    firstRun = new Promise<void>((resolve) => {
+      open = resolve;
+    });
+    return { wait: null, open };
+  }
 
   async function runVersionProbe(): Promise<string> {
     let process: SpawnedProcess;
@@ -191,6 +263,11 @@ export function createOpenCodeAdapter(config: OpenCodeConfig = {}): OpenCodeAdap
 
     async init(): Promise<void> {
       observedVersion = await runVersionProbe();
+      // Best-effort, never fatal. A host that answers `--version` can run work;
+      // refusing to start because a warm-up command moved would turn a
+      // performance guard into an outage. When it does not confirm, the
+      // first-run gate below takes over.
+      warmed = await warmDatabase();
       ready = true;
     },
 
@@ -208,16 +285,42 @@ export function createOpenCodeAdapter(config: OpenCodeConfig = {}): OpenCodeAdap
       const id = context?.invocationId ?? `oc-${String(inFlight.size)}-${req.role}`;
       const args = buildRunArgs({ ...req, task: framedTask(req) }, config);
 
+      // Claimed after validation, so a malformed request cannot take the gate
+      // and make every other invocation wait on a run that never starts.
+      const gate = claimFirstRunGate();
+      const openGate = gate.open;
+
+      let started: SpawnedProcess | null = null;
+      if (gate.wait) {
+        // A run waiting on the gate is in flight as far as the caller is
+        // concerned, so cancel() has to be able to reach it. Registering a
+        // handle that kills whatever process this invocation ends up with is
+        // what makes that true; before the spawn, killing is a no-op and the
+        // `cancelled` set is what stops it from ever starting.
+        inFlight.set(id, { kill: () => started?.kill() });
+        await gate.wait;
+        if (cancelled.has(id)) {
+          inFlight.delete(id);
+          cancelled.delete(id);
+          return { id, status: 'cancelled', output: null, error: null };
+        }
+      }
+
       let child: SpawnedProcess;
       try {
         child = spawn(binary, args, { cwd: req.dir ?? config.dir });
       } catch (cause) {
+        // A host that never started still has to open the gate. Leaving it shut
+        // here would hang every later invocation on a run that does not exist.
+        inFlight.delete(id);
+        openGate?.();
         throw new InvocationError(`Could not start "${binary} run"`, {
           host: HOST_NAME,
           code: 'HOST_UNAVAILABLE',
           cause,
         });
       }
+      started = child;
       inFlight.set(id, child);
 
       // expired is checked after the race as well as raced against, because
@@ -303,6 +406,7 @@ export function createOpenCodeAdapter(config: OpenCodeConfig = {}): OpenCodeAdap
         if (timer) clearTimeout(timer);
         inFlight.delete(id);
         cancelled.delete(id);
+        openGate?.();
       }
     },
 

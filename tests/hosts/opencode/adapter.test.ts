@@ -59,6 +59,14 @@ function fakeSpawn(options: {
         kill: () => {},
       };
     }
+    // init()'s database warm-up. Answered here so it does not read as a run and
+    // hang every test that fakes a run which never settles.
+    if (args[0] === 'stats') {
+      return {
+        done: Promise.resolve({ code: 0, stdout: '', stderr: '' }),
+        kill: () => {},
+      };
+    }
 
     let settle: (value: { code: number | null; stdout: string; stderr: string }) => void = () => {};
     const done = new Promise<{ code: number | null; stdout: string; stderr: string }>((resolve) => {
@@ -81,6 +89,215 @@ function fakeSpawn(options: {
 }
 
 const REQUEST = { role: 'privacy', task: 'Issue-spot this DPA.' };
+
+/**
+ * A process boundary the test settles by hand, so overlap is observable. The
+ * plain `fakeSpawn` settles before it returns, which makes every invocation
+ * look serial no matter what the adapter does — useless for proving a gate.
+ *
+ * `warmFails` makes init()'s warm-up not confirm, which is the only condition
+ * under which the first-run gate arms. `throwOnRunNumber` fails one specific
+ * `run` spawn: the gate has to open on the path where the host never started,
+ * and that is the one place a leak deadlocks every later invocation instead of
+ * failing one.
+ */
+function gatedSpawn(options: { code?: number; throwOnRunNumber?: number; warmFails?: boolean } = {}) {
+  const release: Array<() => void> = [];
+  let spawned = 0;
+  let live = 0;
+  let peak = 0;
+
+  const spawn: OpenCodeSpawnFn = (_command, args) => {
+    if (args[0] === '--version') {
+      return {
+        done: Promise.resolve({ code: 0, stdout: `${PINNED_VERSION}\n`, stderr: '' }),
+        kill: () => {},
+      };
+    }
+    if (args[0] === 'stats') {
+      return {
+        done: Promise.resolve({ code: options.warmFails ? 1 : 0, stdout: '', stderr: '' }),
+        kill: () => {},
+      };
+    }
+    spawned += 1;
+    if (spawned === options.throwOnRunNumber) throw new Error('ENOENT');
+    live += 1;
+    peak = Math.max(peak, live);
+
+    let settle: (value: { code: number | null; stdout: string; stderr: string }) => void = () => {};
+    const done = new Promise<{ code: number | null; stdout: string; stderr: string }>((resolve) => {
+      settle = resolve;
+    });
+    release.push(() => {
+      live -= 1;
+      settle({ code: options.code ?? 0, stdout: '', stderr: '' });
+    });
+    return { done, kill: () => {} };
+  };
+
+  return {
+    spawn,
+    spawned: () => spawned,
+    peak: () => peak,
+    releaseAll: () => {
+      for (const settle of release.splice(0)) settle();
+    },
+  };
+}
+
+/** Let every pending microtask and promise callback run. */
+function settleQueue(): Promise<void> {
+  return new Promise((resolve) => setImmediate(resolve));
+}
+
+test('init() opens the host database itself, before any task can meet it cold', async () => {
+  const fake = fakeSpawn();
+  const adapter = createOpenCodeAdapter({ spawn: fake.spawn });
+  await adapter.init();
+
+  // construct-a76: whatever opens OpenCode's database first migrates it, and
+  // that open can fail. init() spends a disposable command on it so a real task
+  // never does.
+  const warmup = fake.calls.find((call) => call.args[0] === 'stats');
+  assert.ok(warmup, 'init() must warm the database');
+  assert.ok(
+    !fake.calls.some((call) => call.args[0] === 'run'),
+    'and it must do it without a model call — that would be unmetered spend on every init',
+  );
+});
+
+test('a host whose warm-up fails still starts, and gates instead', async () => {
+  const fake = gatedSpawn({ warmFails: true });
+  const adapter = createOpenCodeAdapter({ spawn: fake.spawn });
+
+  // Best-effort by design: refusing to start because a warm-up command moved
+  // would turn a performance guard into an outage.
+  await adapter.init();
+
+  const both = [
+    adapter.invoke({ role: 'privacy', task: 'one' }),
+    adapter.invoke({ role: 'commerce-tax', task: 'two' }),
+  ];
+  assert.equal(fake.spawned(), 1, 'an unconfirmed database means one run meets it, not two');
+  fake.releaseAll();
+  await settleQueue();
+  fake.releaseAll();
+  await Promise.all(both);
+});
+
+test('a warmed host does not serialize anything — the gate is fallback, not policy', async () => {
+  const fake = gatedSpawn();
+  const adapter = createOpenCodeAdapter({ spawn: fake.spawn });
+  await adapter.init();
+
+  const all = [
+    adapter.invoke({ role: 'privacy', task: 'one' }),
+    adapter.invoke({ role: 'commerce-tax', task: 'two' }),
+    adapter.invoke({ role: 'product-scoping', task: 'three' }),
+  ];
+  await settleQueue();
+
+  assert.equal(fake.spawned(), 3, 'the migration already happened; making tasks queue would be pure loss');
+  assert.equal(fake.peak(), 3);
+  fake.releaseAll();
+  await Promise.all(all);
+});
+
+test('the first run against an unconfirmed database goes alone; the rest go together', async () => {
+  const fake = gatedSpawn({ warmFails: true });
+  const adapter = createOpenCodeAdapter({ spawn: fake.spawn });
+  await adapter.init();
+
+  const all = [
+    adapter.invoke({ role: 'privacy', task: 'one' }),
+    adapter.invoke({ role: 'commerce-tax', task: 'two' }),
+    adapter.invoke({ role: 'product-scoping', task: 'three' }),
+  ];
+
+  // This is construct-a76: without the gate all three start at once and race
+  // OpenCode's one-time sqlite migration, and the losers exit 1. Checked before
+  // any flush, because the gate owner must reach spawn in the same tick it
+  // always did — an await slipped in ahead of it moves cancel()'s window.
+  assert.equal(fake.spawned(), 1, 'only the first run may start against a cold data dir');
+  await settleQueue();
+  assert.equal(fake.spawned(), 1, 'and it is still alone after the queue drains');
+
+  fake.releaseAll();
+  await settleQueue();
+
+  assert.equal(fake.spawned(), 3, 'once the migration is done the rest are free to go');
+  assert.equal(fake.peak(), 2, 'and they go concurrently — the gate is first-run only, not a queue');
+
+  fake.releaseAll();
+  const results = await Promise.all(all);
+  assert.deepEqual(results.map((r) => r.status), ['ok', 'ok', 'ok']);
+});
+
+test('a first run that fails still opens the gate', async () => {
+  const fake = gatedSpawn({ code: 1, warmFails: true });
+  const adapter = createOpenCodeAdapter({ spawn: fake.spawn });
+  await adapter.init();
+
+  const first = adapter.invoke({ role: 'privacy', task: 'one' });
+  const second = adapter.invoke({ role: 'commerce-tax', task: 'two' });
+
+  // Release once per generation: the second run does not exist to be settled
+  // until the first has finished and opened the gate.
+  fake.releaseAll();
+  await settleQueue();
+  fake.releaseAll();
+
+  // The migration runs at host startup whatever the run does afterwards, so a
+  // failing first task must not wedge every task behind it.
+  assert.equal((await first).status, 'error');
+  assert.equal((await second).status, 'error');
+  assert.equal(fake.spawned(), 2);
+});
+
+test('cancelling a run still waiting at the gate stops it before it ever spawns', async () => {
+  const fake = gatedSpawn({ warmFails: true });
+  const adapter = createOpenCodeAdapter({ spawn: fake.spawn });
+  await adapter.init();
+
+  const first = adapter.invoke({ role: 'privacy', task: 'one' });
+  const waiting = adapter.invoke({ role: 'commerce-tax', task: 'two' }, { invocationId: 'inv-wait' });
+
+  // The window this covers did not exist before the gate: an invocation that
+  // has been accepted but has not spawned. Reporting "no in-flight invocation"
+  // for it would tell the caller nothing was cancelled while it went on to run.
+  assert.deepEqual(await adapter.cancel('inv-wait'), { cancelled: true });
+
+  fake.releaseAll();
+  assert.equal((await waiting).status, 'cancelled');
+  assert.equal((await first).status, 'ok');
+  assert.equal(fake.spawned(), 1, 'the cancelled run must never have started');
+});
+
+test('a first run whose host never starts opens the gate rather than deadlocking', async () => {
+  const fake = gatedSpawn({ throwOnRunNumber: 1, warmFails: true });
+  const adapter = createOpenCodeAdapter({ spawn: fake.spawn });
+  await adapter.init();
+
+  await assert.rejects(() => adapter.invoke({ role: 'privacy', task: 'one' }), InvocationError);
+
+  const second = adapter.invoke({ role: 'commerce-tax', task: 'two' });
+  await settleQueue();
+  fake.releaseAll();
+
+  // Guarded, because the failure this test exists for is a hang: an unopened
+  // gate leaves `second` pending forever and would stall the suite, not fail it.
+  let guard: ReturnType<typeof setTimeout> | undefined;
+  const outcome = await Promise.race([
+    second.then((result) => result.status),
+    new Promise((resolve) => {
+      guard = setTimeout(() => resolve('never-settled'), 1000);
+    }),
+  ]).finally(() => {
+    if (guard) clearTimeout(guard);
+  });
+  assert.equal(outcome, 'ok', 'a spawn failure must release the gate it claimed');
+});
 
 test('the adapter satisfies the host seam it claims to implement', () => {
   assert.deepEqual(validate(createOpenCodeAdapter({ spawn: fakeSpawn().spawn })), {
@@ -307,6 +524,9 @@ test('the timeout still fires when nothing else keeps the process alive', () => 
 const spawn = (command, args) => {
   if (args[0] === '--version') {
     return { done: Promise.resolve({ code: 0, stdout: ${JSON.stringify(PINNED_VERSION)} + '\\n', stderr: '' }), kill: () => {} };
+  }
+  if (args[0] === 'stats') {
+    return { done: Promise.resolve({ code: 0, stdout: '', stderr: '' }), kill: () => {} };
   }
   let settle;
   const done = new Promise((resolve) => { settle = resolve; });

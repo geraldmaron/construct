@@ -25,7 +25,11 @@ import { spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { CONFORMANCE_EXPECTATIONS, PINNED_VERSION } from '../src/hosts/opencode/pin.ts';
+import {
+  CONFORMANCE_EXPECTATIONS,
+  PINNED_VERSION,
+  UNPROBED_EXPECTATIONS,
+} from '../src/hosts/opencode/pin.ts';
 import { reduceTranscript } from '../src/hosts/opencode/events.ts';
 
 const args = process.argv.slice(2);
@@ -159,6 +163,30 @@ record(
   `errors ${failedReduced.errors.length}, exit ${failed.status}`,
 );
 
+// ── the init() warm-up ─────────────────────────────────────────────────────
+// A data dir of its own, because the claim is specifically about what happens
+// on a database that has never been opened. Against the ambient one the
+// migration has long since run and the check would pass without meaning it.
+const coldData = mkdtempSync(path.join(tmpdir(), 'oc-probe-cold-'));
+try {
+  const warm = spawnSync(binary, ['stats'], {
+    encoding: 'utf8',
+    env: { ...process.env, XDG_DATA_HOME: coldData },
+  });
+  const stderr = warm.stderr ?? '';
+  record(
+    'stats-opens-the-database-without-a-model-call',
+    warm.status === 0 && /one time database migration/.test(stderr),
+    warm.status !== 0
+      ? `\`stats\` exited ${warm.status} on a cold data dir — the adapter's warm-up cannot rely on it`
+      : /one time database migration/.test(stderr)
+        ? 'migrated a cold database and exited 0'
+        : '`stats` exited 0 but never migrated — it no longer opens the database, so warming does nothing',
+  );
+} finally {
+  rmSync(coldData, { recursive: true, force: true });
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 let broken = 0;
 process.stdout.write(`\nopencode conformance probe — installed ${installed}, pinned ${PINNED_VERSION}\n\n`);
@@ -176,7 +204,12 @@ for (const { id, held, detail } of results) {
 
 const unchecked = CONFORMANCE_EXPECTATIONS.filter((e) => !results.some((r) => r.id === e.id));
 for (const spec of unchecked) {
-  process.stdout.write(`????  ${spec.id} — declared in pin.ts but this probe never checks it\n`);
+  const deliberate = UNPROBED_EXPECTATIONS.includes(spec.id);
+  process.stdout.write(
+    deliberate
+      ? `????  ${spec.id} — declared unprobed on purpose (see UNPROBED_EXPECTATIONS in pin.ts)\n`
+      : `????  ${spec.id} — declared in pin.ts but this probe never checks it\n`,
+  );
 }
 
 if (broken > 0) {
