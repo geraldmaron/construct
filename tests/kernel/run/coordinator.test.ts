@@ -611,3 +611,101 @@ test('the coordinator reads neither the clock nor the environment', async () => 
     assert.ok(!/process\.env|homedir\(/.test(code), `${file} must not read the environment`);
   }
 });
+
+/**
+ * construct-3sa: every dispatch mints a capability token scoped to exactly
+ * that run and task, expiring with the lease, delivered as env for the role's
+ * serving process — and the bearer string never touches the record.
+ */
+test('a dispatch mints a lease-bound capability token and keeps the bearer off the record', async () => {
+  const { authorizeRoleToken } = await import('../../../src/kernel/capabilities/tokens.ts');
+  const { ROLE_RUN_ENV, ROLE_TASK_ENV, ROLE_TOKEN_ENV } = await import(
+    '../../../src/kernel/run/roleenv.ts'
+  );
+
+  await withStoreAsync(async (store) => {
+    seed(store, ['privacy', 'security']);
+    const captured: Array<Record<string, string> | undefined> = [];
+    const host = fakeHost({
+      onInvoke: () => {},
+    });
+    const invoke = host.invoke.bind(host);
+    (host as { invoke: typeof host.invoke }).invoke = (request, context) => {
+      captured.push(context?.roleEnv as Record<string, string> | undefined);
+      return invoke(request, context);
+    };
+
+    const leaseMs = 60_000;
+    await workRun(store, host, {
+      owner: 'w1',
+      clock: frozen(AT),
+      spendCeiling: 100,
+      leaseMs,
+      capabilitySecret: 'test-secret',
+    });
+
+    assert.equal(captured.length, 2);
+    const leaseDeadline = new Date(Date.parse(AT) + leaseMs).toISOString();
+    for (const env of captured) {
+      assert.ok(env, 'dispatch must deliver a role env when a secret is configured');
+      const token = env[ROLE_TOKEN_ENV];
+      const run = env[ROLE_RUN_ENV];
+      const task = env[ROLE_TASK_ENV];
+      assert.equal(run, 'run-1');
+
+      // The token authorizes exactly its own scope...
+      const granted = authorizeRoleToken(token, 'test-secret', {
+        grant: 'submit-draft',
+        run,
+        task,
+        now: AT,
+      });
+      assert.ok(granted.ok, `token must authorize its own scope: ${JSON.stringify(granted)}`);
+      assert.equal(granted.scope.expiresAt, leaseDeadline, 'expiry must be the lease deadline');
+
+      // ...and nothing else: another task, a wider grant, a time past the lease.
+      assert.equal(
+        authorizeRoleToken(token, 'test-secret', { grant: 'submit-draft', run, task: 'other', now: AT }).ok,
+        false,
+      );
+      assert.equal(
+        authorizeRoleToken(token, 'test-secret', { grant: 'record-verdict', run, task, now: AT }).ok,
+        false,
+      );
+      assert.equal(
+        authorizeRoleToken(token, 'test-secret', {
+          grant: 'submit-draft',
+          run,
+          task,
+          now: new Date(Date.parse(leaseDeadline) + 1).toISOString(),
+        }).ok,
+        false,
+      );
+
+      // The bearer appears in no work log entry and no task row.
+      const everything = JSON.stringify(readWorkLog(store)) + JSON.stringify(listTasks(store, 'run-1'));
+      assert.ok(token && !everything.includes(token), 'bearer string must never touch the record');
+    }
+
+    const issued = readWorkLog(store).filter((entry) => entry.action === 'capability-issued');
+    assert.equal(issued.length, 2, 'each dispatch records that a token was issued');
+  });
+});
+
+test('without a secret, no token is minted and no env is delivered', async () => {
+  await withStoreAsync(async (store) => {
+    seed(store, ['privacy']);
+    let sawEnv: unknown = 'unset';
+    const host = fakeHost({});
+    const invoke = host.invoke.bind(host);
+    (host as { invoke: typeof host.invoke }).invoke = (request, context) => {
+      sawEnv = context?.roleEnv;
+      return invoke(request, context);
+    };
+
+    await workRun(store, host, { owner: 'w1', clock: frozen(AT), spendCeiling: 100 });
+
+    assert.equal(sawEnv, undefined, 'no secret means no write surface, not a broken one');
+    assert.equal(readWorkLog(store).filter((e) => e.action === 'capability-issued').length, 0);
+  });
+});

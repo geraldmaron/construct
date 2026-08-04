@@ -236,6 +236,12 @@ export function openStore(path: string): Store {
     db = new DatabaseSync(path);
     db.exec('PRAGMA journal_mode = WAL');
     db.exec('PRAGMA foreign_keys = ON');
+    // Two processes legitimately write this store at once — a coordinator
+    // settling tasks while a role's write surface (role-serve) appends in its
+    // own name. WAL admits one writer at a time; without a busy timeout the
+    // second writer throws SQLITE_BUSY immediately instead of waiting the few
+    // milliseconds the first needs to commit.
+    db.exec('PRAGMA busy_timeout = 5000');
     db.exec(SCHEMA);
   } catch (error) {
     throw new StoreUnavailableError(path, reasonFor(error));

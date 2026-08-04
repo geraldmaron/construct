@@ -46,6 +46,8 @@ import { STANCE_PROTOCOL, frameConflict, parseStance } from './conflicts.ts';
 import type { RoleStance } from './conflicts.ts';
 import { logPromotion } from './promotion.ts';
 import { getDecision, raiseDecision } from '../store/decisions.ts';
+import { ROLE_GRANTS, issueRoleToken } from '../capabilities/tokens.ts';
+import { buildRoleEnv } from './roleenv.ts';
 
 export const DEFAULT_CONCURRENCY = 2;
 
@@ -83,6 +85,14 @@ export interface CoordinatorOptions {
   readonly run?: string;
   /** Domain catalog the assignment text is built from. */
   readonly catalog?: readonly Domain[];
+  /**
+   * The kernel's token-signing secret (see capabilities/secretfile.ts). When
+   * present, every dispatch mints a capability token scoped to exactly that
+   * run and task, expiring with the task's lease — a token that outlives the
+   * lease is a write surface still open on work another worker has taken over.
+   * Absent means roles get no write surface at all, which is safe, not broken.
+   */
+  readonly capabilitySecret?: string;
 }
 
 export interface RunReport {
@@ -287,11 +297,42 @@ export async function workRun(
       at: options.clock(),
     });
 
+    // Commitment 14's second half: the write surface a role reaches back
+    // through. The bearer goes to the adapter as env for the role's serving
+    // process (see roleenv.ts) — NEVER into the assignment text, which crosses
+    // into the host as an argv and lands in its transcript store. The log
+    // entry records that a token was issued and its scope; the bearer string
+    // itself is a secret and a log is not a vault (same rule as rolewrite.ts).
+    let roleEnv: Record<string, string> | undefined;
+    if (options.capabilitySecret !== undefined) {
+      const capabilityToken = issueRoleToken(
+        {
+          run: task.run,
+          task: task.id,
+          role: task.role,
+          expiresAt: task.leaseUntil,
+          // task.token is the lease fence (attempt number), so a re-dispatch
+          // after a crashed lease mints a distinguishable token.
+          nonce: String(task.token),
+        },
+        options.capabilitySecret,
+      );
+      roleEnv = buildRoleEnv({ token: capabilityToken, run: task.run, task: task.id });
+      appendWorkLog(store, {
+        run: task.run,
+        task: task.id,
+        role: task.role,
+        action: 'capability-issued',
+        detail: { grants: ROLE_GRANTS, expiresAt: task.leaseUntil, attempt: task.token },
+        at: options.clock(),
+      });
+    }
+
     let result: HostResult;
     try {
       result = await host.invoke(
         { role: task.role, task: assignmentFor(brief, catalog) },
-        { invocationId: task.id },
+        { invocationId: task.id, roleEnv },
       );
     } catch (error) {
       result = {

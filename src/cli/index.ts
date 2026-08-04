@@ -21,6 +21,10 @@ import { DEFAULT_CONCURRENCY, workRun } from '../kernel/run/coordinator.ts';
 import { deliverableConcerns, licensedReviewFor } from '../kernel/run/accountability.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
 import { createOpenCodeAdapter } from '../hosts/opencode/adapter.ts';
+import { loadOrCreateSecret, loadSecret } from '../kernel/capabilities/secretfile.ts';
+import { readRoleEnv } from '../kernel/run/roleenv.ts';
+import { serveRole } from './roleserve.ts';
+import { join } from 'node:path';
 
 const MIN_NODE = { major: 22, minor: 18 };
 
@@ -177,6 +181,56 @@ function now(): string {
   return new Date().toISOString();
 }
 
+/** Where the token-signing secret lives: next to the store it guards. */
+function secretFile(): string {
+  return join(resolvePaths().dataDir, 'capability-secret');
+}
+
+/**
+ * Serve one role's write surface over MCP stdio. Not in USAGE on purpose:
+ * a host's MCP configuration launches this with the role environment set by
+ * the dispatcher (see kernel/run/roleenv.ts); it is plumbing a person never
+ * types. The secret is load-only here — a serving process that invented a
+ * fresh secret would deny every honestly-minted token as a forgery, and that
+ * misconfiguration should read as this one line instead.
+ */
+async function roleServe(): Promise<number> {
+  const scope = readRoleEnv(process.env);
+  if (!scope) {
+    process.stderr.write(
+      'role-serve: missing CONSTRUCT_ROLE_TOKEN / CONSTRUCT_ROLE_RUN / CONSTRUCT_ROLE_TASK — ' +
+        'this command is launched by a host with the dispatcher-set role environment.\n',
+    );
+    return 2;
+  }
+  const secret = loadSecret(secretFile());
+  if (secret === null) {
+    process.stderr.write(
+      'role-serve: no capability secret exists yet — it is established the first time "construct work" dispatches.\n',
+    );
+    return 1;
+  }
+  const store = openStore(storePath(resolvePaths()));
+  try {
+    await serveRole(
+      {
+        store,
+        secret,
+        token: scope.token,
+        run: scope.run,
+        task: scope.task,
+        clock: now,
+        serverVersion: packageVersion(),
+      },
+      process.stdin,
+      process.stdout,
+    );
+  } finally {
+    store.close();
+  }
+  return 0;
+}
+
 export function outcome(argv: string[]): number {
   const text = argv.join(' ').trim();
   if (!text) {
@@ -319,6 +373,9 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
       concurrency: args.concurrency,
       leaseMs: args.leaseMinutes * 60 * 1000,
       run: args.run,
+      // Establishes the signing secret on first dispatch; every task gets a
+      // capability token scoped to its own lease (commitment 14).
+      capabilitySecret: loadOrCreateSecret(secretFile()),
     });
 
     process.stdout.write(
@@ -475,6 +532,8 @@ async function run(argv: string[]): Promise<number> {
       return inbox();
     case 'decide':
       return decide(argv.slice(1));
+    case 'role-serve':
+      return roleServe();
     case 'doctor':
       return doctor();
     case 'cleanup':
