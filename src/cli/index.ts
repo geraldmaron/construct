@@ -11,7 +11,7 @@ import { buildCleanupCatalog } from '../kernel/cleanup/catalog.ts';
 import type { SpawnFn } from '../kernel/cleanup/catalog.ts';
 import { detectedItems, selectedItems, applyCleanup } from '../kernel/cleanup/run.ts';
 import type { CleanupOptions } from '../kernel/cleanup/run.ts';
-import { openStore, storePath } from '../kernel/store/open.ts';
+import { openStore, storePath, storeWriteProblem, StoreUnavailableError } from '../kernel/store/open.ts';
 import type { Store } from '../kernel/store/open.ts';
 import { readWorkLog } from '../kernel/store/worklog.ts';
 import { openDecisions, resolveDecision } from '../kernel/store/decisions.ts';
@@ -47,6 +47,17 @@ export function doctor(): number {
 
   const paths = resolvePaths();
   checks.push({ name: 'paths', ok: true, detail: `state: ${paths.stateDir}` });
+
+  // Resolving a path proves nothing about being able to use it. Before this
+  // check, doctor reported "healthy" against a data dir it could not write,
+  // and the user found out from a stack trace on their next command.
+  const store = storePath(paths);
+  const problem = storeWriteProblem(store);
+  checks.push({
+    name: 'store',
+    ok: problem === null,
+    detail: problem === null ? store : `${store} — ${problem}`,
+  });
 
   let failed = 0;
   for (const check of checks) {
@@ -440,6 +451,18 @@ const USAGE = 'usage: construct <outcome|work|log|inbox|decide|doctor|cleanup|ve
  * synchronous — awaiting a number costs nothing and keeps one entry point.
  */
 export async function main(argv: string[] = process.argv.slice(2)): Promise<number> {
+  try {
+    return await run(argv);
+  } catch (error) {
+    // Only this class. Every other throw keeps its stack, because a defect that
+    // reads as a tidy one-liner is a defect nobody reports.
+    if (!(error instanceof StoreUnavailableError)) throw error;
+    process.stderr.write(`construct: ${error.message}\n`);
+    return 1;
+  }
+}
+
+async function run(argv: string[]): Promise<number> {
   const command = argv[0] ?? 'help';
   switch (command) {
     case 'outcome':

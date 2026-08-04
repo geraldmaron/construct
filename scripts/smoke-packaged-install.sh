@@ -114,4 +114,39 @@ printf '%s\n' "$decide_out"
 [ "$decide_status" -ne 0 ] || fail "construct decide accepted a decision that does not exist"
 expect_contains "construct decide" "$decide_out" "no open decision no-such-decision"
 
+echo "== a state dir the CLI cannot write =="
+# This is where construct-0co was found: doctor called an unwritable data dir
+# healthy, and the next command died with a node:sqlite stack trace. chmod does
+# not bind root, so under a root CI container the check would pass vacuously —
+# skip it out loud instead.
+if [ "$(id -u)" -eq 0 ]; then
+  echo "   skipped: running as root, chmod would not bind"
+else
+  closed="$scratch/closed"
+  mkdir -p "$closed"
+  chmod 500 "$closed"
+  trap 'chmod 700 "$closed" 2>/dev/null; rm -rf "$scratch"' EXIT
+
+  set +e
+  closed_doctor="$(XDG_DATA_HOME="$closed" npx --no-install construct doctor 2>&1)"
+  closed_doctor_status=$?
+  closed_outcome="$(XDG_DATA_HOME="$closed" npx --no-install construct outcome 'ship a thing' 2>&1)"
+  closed_outcome_status=$?
+  set -e
+
+  [ "$closed_doctor_status" -ne 0 ] || fail "doctor exited 0 on a store it cannot open" "$closed_doctor"
+  expect_contains "construct doctor" "$closed_doctor" "FAIL store"
+  expect_contains "construct doctor" "$closed_doctor" "permission denied"
+
+  [ "$closed_outcome_status" -ne 0 ] || fail "outcome exited 0 with no store" "$closed_outcome"
+  expect_contains "construct outcome" "$closed_outcome" "cannot open the store at"
+  case "$closed_outcome" in
+    *"    at "*) fail "a permissions problem printed a stack trace" "$closed_outcome" ;;
+    *node:sqlite*) fail "the error named node:sqlite at the user" "$closed_outcome" ;;
+  esac
+
+  chmod 700 "$closed"
+  trap 'rm -rf "$scratch"' EXIT
+fi
+
 echo "smoke-packaged-install: pass"

@@ -10,8 +10,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
+import { chmodSync, mkdirSync, writeFileSync } from 'node:fs';
 import { sterile } from '../../harness/sterile.ts';
-import { SCHEMA_VERSION, openStore, storePath, transact } from '../../../src/kernel/store/open.ts';
+import {
+  SCHEMA_VERSION,
+  StoreUnavailableError,
+  openStore,
+  storePath,
+  storeWriteProblem,
+  transact,
+} from '../../../src/kernel/store/open.ts';
 import {
   countProjections,
   getProjection,
@@ -66,6 +74,89 @@ test('a store written by a newer schema is refused, not silently used', () => {
       .run(String(SCHEMA_VERSION + 1), 'schema_version');
     store.close();
     assert.throws(() => openStore(path), /newer than this build understands/);
+    // Refusing is half of it: the CLI can only turn this into one line if the
+    // refusal is the class it catches, carrying the path it could not open.
+    assert.throws(() => openStore(path), (error: unknown) => {
+      assert.ok(error instanceof StoreUnavailableError);
+      assert.equal(error.path, path);
+      return true;
+    });
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+/**
+ * chmod is not enforced against a superuser, so these two would pass vacuously
+ * as root. Skipping honestly beats a green check that proved nothing.
+ */
+const chmodBinds = typeof process.getuid === 'function' && process.getuid() !== 0;
+
+test('a directory that does not exist yet is not a problem — openStore creates it', () => {
+  const fixture = sterile();
+  try {
+    // Nothing under the sterile root exists at this point.
+    assert.equal(storeWriteProblem(storePath(fixture.paths)), null);
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('an unwritable directory is named as a problem before anything opens it', { skip: !chmodBinds }, () => {
+  const fixture = sterile();
+  try {
+    const closed = join(fixture.root, 'closed');
+    mkdirSync(closed, { recursive: true });
+    chmodSync(closed, 0o500);
+    try {
+      const path = join(closed, 'construct', 'construct.db');
+      const problem = storeWriteProblem(path);
+      assert.ok(problem, 'a directory that cannot be written must be reported');
+      assert.match(problem, /permission denied/);
+      assert.match(problem, new RegExp(closed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+      // And the probe agrees with reality: opening it really does fail.
+      assert.throws(() => openStore(path), StoreUnavailableError);
+    } finally {
+      chmodSync(closed, 0o700);
+    }
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('an unopenable store fails with a reason, not an errno the user must decode', { skip: !chmodBinds }, () => {
+  const fixture = sterile();
+  try {
+    const closed = join(fixture.root, 'closed');
+    mkdirSync(closed, { recursive: true });
+    chmodSync(closed, 0o500);
+    try {
+      const path = join(closed, 'construct', 'construct.db');
+      assert.throws(() => openStore(path), (error: unknown) => {
+        assert.ok(error instanceof StoreUnavailableError);
+        assert.equal(error.reason, 'permission denied');
+        assert.match(error.message, /cannot open the store at/);
+        assert.ok(!/EACCES/.test(error.message), 'the message is for a person, not a syscall');
+        return true;
+      });
+    } finally {
+      chmodSync(closed, 0o700);
+    }
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('a file that is not a database is refused as unavailable, not as a crash', () => {
+  const fixture = sterile();
+  try {
+    const path = join(fixture.root, 'data', 'construct.db');
+    mkdirSync(join(fixture.root, 'data'), { recursive: true });
+    writeFileSync(path, 'this is not a sqlite file, it is a note\n');
+    // The probe passes — the bits are fine — and the open still has to explain
+    // itself rather than throwing a raw sqlite error at the user.
+    assert.equal(storeWriteProblem(path), null);
+    assert.throws(() => openStore(path), StoreUnavailableError);
   } finally {
     fixture.cleanup();
   }

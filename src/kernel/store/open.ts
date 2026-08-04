@@ -30,7 +30,7 @@
  */
 
 import { DatabaseSync } from 'node:sqlite';
-import { mkdirSync } from 'node:fs';
+import { accessSync, constants, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Paths } from '../paths.ts';
 
@@ -40,6 +40,89 @@ export interface Store {
   readonly db: DatabaseSync;
   readonly path: string;
   close(): void;
+}
+
+/**
+ * The store could not be opened, and it is the environment's fault rather than
+ * a defect: a directory the user cannot write, a full disk, a file written by a
+ * newer build. Distinct from a plain Error so the CLI can turn exactly this
+ * class into a one-line diagnosis and let every genuine bug keep its stack.
+ */
+export class StoreUnavailableError extends Error {
+  readonly path: string;
+  readonly reason: string;
+
+  constructor(path: string, reason: string) {
+    super(`cannot open the store at ${path}: ${reason}`);
+    this.name = 'StoreUnavailableError';
+    this.path = path;
+    this.reason = reason;
+  }
+}
+
+/**
+ * A user-facing reason for an errno. Anything unmapped keeps the underlying
+ * message: a wrong-but-fluent phrase is worse than the raw truth, and this is
+ * the text someone reads when they are already stuck.
+ */
+const REASONS: Readonly<Record<string, string>> = {
+  EACCES: 'permission denied',
+  EPERM: 'operation not permitted',
+  EROFS: 'the filesystem is read-only',
+  ENOSPC: 'no space left on the device',
+  ENOTDIR: 'a path component is not a directory',
+  EISDIR: 'that path is a directory, not a file',
+  ELOOP: 'too many symbolic links in the path',
+  ENAMETOOLONG: 'the path is too long',
+  EMFILE: 'this process has too many open files',
+  ENFILE: 'this system has too many open files',
+};
+
+function reasonFor(error: unknown): string {
+  const record = error as { code?: unknown; message?: unknown } | null;
+  const code = typeof record?.code === 'string' ? record.code : null;
+  if (code && REASONS[code]) return REASONS[code];
+  const message = typeof record?.message === 'string' ? record.message : String(error);
+  return code ? `${code}: ${message}` : message;
+}
+
+/**
+ * Why the store's directory cannot be written, or null if it can. Non-mutating:
+ * `doctor` answers "would this work" without creating a database as a side
+ * effect of being asked a question.
+ *
+ * A directory that does not exist yet is not a problem — `openStore` creates it
+ * — so the check walks up to the nearest component that does exist and asks
+ * whether that one can be written and traversed.
+ *
+ * The honest limit: this reads permission bits, not every reason a write can
+ * fail. A disk that fills between the probe and the write still fails at first
+ * use — with the one-line diagnosis above, not a stack trace.
+ */
+export function storeWriteProblem(storeFile: string): string | null {
+  let dir = dirname(storeFile);
+  while (!existsSync(dir)) {
+    const parent = dirname(dir);
+    if (parent === dir) return `no existing directory to create ${dir} under`;
+    dir = parent;
+  }
+
+  try {
+    accessSync(dir, constants.W_OK | constants.X_OK);
+  } catch (error) {
+    return `${reasonFor(error)} on ${dir}`;
+  }
+
+  // An existing database file can be unreadable while its directory is fine.
+  if (existsSync(storeFile)) {
+    try {
+      accessSync(storeFile, constants.R_OK | constants.W_OK);
+    } catch (error) {
+      return `${reasonFor(error)} on ${storeFile}`;
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -139,13 +222,24 @@ export function storePath(paths: Paths): string {
  *
  * Refuses to open a file written by a newer schema than this build understands.
  * Silently operating on a future schema is how a downgrade corrupts data.
+ *
+ * Every way this can fail on the environment — an unwritable directory, a full
+ * disk, a file that is not a database, a future schema — leaves as a
+ * `StoreUnavailableError` carrying the path and a reason. The caller's first
+ * contact with a permissions problem should be a sentence, not a stack trace
+ * naming node:sqlite.
  */
 export function openStore(path: string): Store {
-  mkdirSync(dirname(path), { recursive: true });
-  const db = new DatabaseSync(path);
-  db.exec('PRAGMA journal_mode = WAL');
-  db.exec('PRAGMA foreign_keys = ON');
-  db.exec(SCHEMA);
+  let db: DatabaseSync;
+  try {
+    mkdirSync(dirname(path), { recursive: true });
+    db = new DatabaseSync(path);
+    db.exec('PRAGMA journal_mode = WAL');
+    db.exec('PRAGMA foreign_keys = ON');
+    db.exec(SCHEMA);
+  } catch (error) {
+    throw new StoreUnavailableError(path, reasonFor(error));
+  }
 
   const row = db.prepare('SELECT value FROM meta WHERE key = ?').get('schema_version') as
     | { value: string }
@@ -158,8 +252,9 @@ export function openStore(path: string): Store {
     );
   } else if (found > SCHEMA_VERSION) {
     db.close();
-    throw new Error(
-      `store at ${path} has schema version ${found}, newer than this build understands (${SCHEMA_VERSION})`,
+    throw new StoreUnavailableError(
+      path,
+      `it was written by schema version ${found}, newer than this build understands (${SCHEMA_VERSION})`,
     );
   }
 

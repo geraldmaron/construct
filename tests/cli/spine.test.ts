@@ -8,7 +8,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { main, work } from '../../src/cli/index.ts';
@@ -32,6 +32,21 @@ async function runAll(sequence: readonly Step[]): Promise<Capture> {
   const root = mkdtempSync(join(tmpdir(), 'construct-cli-'));
   const previous = process.env.XDG_DATA_HOME;
   process.env.XDG_DATA_HOME = join(root, 'share');
+  try {
+    return await capture(sequence);
+  } finally {
+    if (previous === undefined) delete process.env.XDG_DATA_HOME;
+    else process.env.XDG_DATA_HOME = previous;
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
+/**
+ * The stream capture alone, against whatever data dir is already set. Separate
+ * from `runAll` so a test can choose a hostile data dir — an unwritable one —
+ * instead of the sterile one `runAll` builds.
+ */
+async function capture(sequence: readonly Step[]): Promise<Capture> {
   const out: string[] = [];
   const err: string[] = [];
   const realOut = process.stdout.write.bind(process.stdout);
@@ -53,9 +68,6 @@ async function runAll(sequence: readonly Step[]): Promise<Capture> {
   } finally {
     (process.stdout as { write: unknown }).write = realOut;
     (process.stderr as { write: unknown }).write = realErr;
-    if (previous === undefined) delete process.env.XDG_DATA_HOME;
-    else process.env.XDG_DATA_HOME = previous;
-    rmSync(root, { recursive: true, force: true });
   }
 }
 
@@ -296,3 +308,66 @@ test('an unparseable work flag is a usage error', async () => {
   assert.equal(code, 2);
   assert.match(err, /Invalid --concurrency/);
 });
+
+/**
+ * A data dir the process cannot write. These run the same commands a user runs
+ * when their state dir is on a read-only mount or owned by someone else — the
+ * first contact a real user has with this failure. chmod does not bind a
+ * superuser, so as root they would pass without proving anything.
+ */
+const chmodBinds = typeof process.getuid === 'function' && process.getuid() !== 0;
+
+async function underClosedDataDir(step: Step): Promise<Capture> {
+  const root = mkdtempSync(join(tmpdir(), 'construct-closed-'));
+  const closed = join(root, 'share');
+  mkdirSync(closed);
+  chmodSync(closed, 0o500);
+  const previous = process.env.XDG_DATA_HOME;
+  process.env.XDG_DATA_HOME = closed;
+  try {
+    return await capture([step]);
+  } finally {
+    if (previous === undefined) delete process.env.XDG_DATA_HOME;
+    else process.env.XDG_DATA_HOME = previous;
+    chmodSync(closed, 0o700);
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
+test('doctor calls a state dir it cannot write a problem, not healthy', { skip: !chmodBinds }, async () => {
+  const { code, out } = await underClosedDataDir(['doctor']);
+  assert.equal(code, 1, 'doctor must not exit 0 on a store it cannot open');
+  assert.match(out, /FAIL store/);
+  assert.match(out, /permission denied/);
+  assert.match(out, /doctor: 1 check\(s\) failed/);
+  assert.ok(!/doctor: healthy/.test(out), 'this is the exact claim the bug made');
+});
+
+test('doctor stays healthy — and creates nothing — when the store is merely absent', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'construct-fresh-'));
+  const previous = process.env.XDG_DATA_HOME;
+  process.env.XDG_DATA_HOME = join(root, 'share');
+  try {
+    const { code, out } = await capture([['doctor']]);
+    assert.equal(code, 0);
+    assert.match(out, /ok {3}store/);
+    assert.match(out, /doctor: healthy/);
+    // Asking whether it would work must not be the thing that makes it exist.
+    assert.ok(!existsSync(join(root, 'share')), 'doctor must not create the data dir');
+  } finally {
+    if (previous === undefined) delete process.env.XDG_DATA_HOME;
+    else process.env.XDG_DATA_HOME = previous;
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+for (const command of [['outcome', 'ship a thing'], ['log'], ['inbox'], ['decide', 'd-1', 'yes']]) {
+  test(`construct ${command[0]} diagnoses an unopenable store instead of crashing`, { skip: !chmodBinds }, async () => {
+    const { code, out, err } = await underClosedDataDir(command);
+    assert.equal(code, 1);
+    assert.match(err, /^construct: cannot open the store at .* permission denied\n$/);
+    assert.equal(err.split('\n').filter(Boolean).length, 1, 'one line, not a stack');
+    assert.ok(!/ {4}at /.test(err + out), 'no stack frames');
+    assert.ok(!/node:sqlite|EACCES/.test(err), 'no errno or module name to decode');
+  });
+}
