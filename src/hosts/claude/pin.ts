@@ -59,4 +59,57 @@ export const EXPECTATIONS: readonly Expectation[] = [
     name: 'success-sets-exit-zero-and-is-error-false',
     claim: 'A completed run exits 0 with `is_error: false` and subtype "success".',
   },
+  {
+    name: 'mcp-config-is-read-from-a-path',
+    claim:
+      '`--mcp-config <path>` accepts a FILE PATH to a JSON document with an ' +
+      '`mcpServers` map, launches each `type: "stdio"` entry with its `command`, ' +
+      '`args` and `env`, and the launched server can serve tools/list and ' +
+      'tools/call. The path form is what the adapter depends on: inline JSON is ' +
+      'also accepted and must never be used, because argv is ps-visible and the ' +
+      'role bearer travels in that env block.',
+  },
+  {
+    name: 'mcp-config-flag-is-variadic',
+    claim:
+      '`--mcp-config` consumes EVERY following non-flag argument as another ' +
+      'config path. Measured on the pinned version: `--mcp-config m.json mcp ' +
+      'list` failed with "MCP config file not found: .../mcp" and ".../list". ' +
+      'So the path must be followed immediately by another flag — which is why ' +
+      'mcpArgsFor puts --strict-mcp-config next and never emits a bare ' +
+      'positional after it. Getting this wrong swallows the prompt.',
+  },
+  {
+    name: 'strict-mcp-config-excludes-the-users-own-servers',
+    claim:
+      '`--strict-mcp-config` makes the run use ONLY the servers in --mcp-config, ' +
+      'ignoring the user and project MCP configuration. Without it a role would ' +
+      'inherit whatever write surfaces the operator happens to have registered, ' +
+      'and its authority is supposed to be exactly two writes. Probed indirectly: ' +
+      'the result envelope carries NO server list on the pinned version (measured: ' +
+      'its keys are type, subtype, is_error, ..., permission_denials, and there is ' +
+      'no mcp_servers), and `claude mcp list` reports saved configuration rather ' +
+      "than the run's, so neither is an observable. What the probe measures instead " +
+      'is the tool surface that actually reached the model, by asking it to ' +
+      'enumerate its tools: no `mcp__` name outside this config may appear. That is ' +
+      "weaker than reading the host's own register and is recorded as weaker.",
+  },
+  {
+    name: 'mcp-tool-names-are-namespaced',
+    claim:
+      'A tool named `submit_draft` on a server named `construct` reaches the ' +
+      'model as `mcp__construct__submit_draft`, and that is the spelling ' +
+      '`--allowedTools` matches. Measured on the pinned version: the model ' +
+      'called it and the draft landed in the store attributed to the role.',
+  },
+  {
+    name: 'bearer-appears-in-no-host-transcript',
+    claim:
+      'After a run whose MCP server env carried CONSTRUCT_ROLE_TOKEN, the bearer ' +
+      'string appears in no file under the host session store (~/.claude/projects), ' +
+      'not in the result envelope, and not in argv. Measured on the pinned ' +
+      'version: zero hits. This is the whole reason the token goes through a ' +
+      '0600 config file rather than the command line, so the probe greps for it ' +
+      'rather than assuming.',
+  },
 ];

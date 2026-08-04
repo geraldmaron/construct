@@ -22,6 +22,10 @@
  *     always empty; permission_denials (tool uses the host refused) map to
  *     failedToolCalls, which is what they are from the kernel's side. Not
  *     declaring 'stream' covers the rest, same as the OpenCode adapter.
+ *   - This is the host that launches the role's write surface. Given a
+ *     `context.roleEnv`, it registers `construct role-serve` as an MCP server
+ *     for the invocation (mcpconfig.ts) and allow-lists exactly the two role
+ *     tools; given none, it registers nothing and the role can only talk.
  */
 
 import { spawn as nodeSpawn } from 'node:child_process';
@@ -30,6 +34,8 @@ import { HostNotReadyError, InvocationError, InvocationTimeoutError } from '../.
 import { modelDrifted, reduceEnvelope } from './result.ts';
 import type { ClaudeUsage } from './result.ts';
 import { PINNED_VERSION } from './pin.ts';
+import { mcpArgsFor, writeMcpConfig } from './mcpconfig.ts';
+import type { RoleServeLaunch } from './mcpconfig.ts';
 
 export const HOST_NAME = 'claude';
 
@@ -57,6 +63,12 @@ export interface ClaudeConfig {
   readonly dir?: string;
   readonly timeoutMs?: number;
   readonly spawn?: ClaudeSpawnFn;
+  /**
+   * How to launch `construct role-serve` as this host's MCP server. Only used
+   * when the coordinator supplies a role env; absent that, no server is
+   * registered and the role has no write surface — safe rather than broken.
+   */
+  readonly roleServe?: RoleServeLaunch;
 }
 
 export interface ClaudeRequest {
@@ -109,6 +121,26 @@ function buildRunArgs(request: ClaudeRequest, config: ClaudeConfig): string[] {
   const model = request.model ?? config.model;
   if (model) args.push('--model', model);
   return args;
+}
+
+/**
+ * HostContext is an open bag (`[key: string]: unknown`), so roleEnv arrives
+ * untyped. Narrow it here rather than casting: a malformed entry would end up
+ * as `undefined` in the server's environment, which reads at the far end as a
+ * missing scope rather than as the bug it is.
+ */
+function readRoleEnvFrom(context: HostContext | undefined): Record<string, string> | null {
+  const candidate = context?.roleEnv;
+  if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return null;
+  const entries = Object.entries(candidate as Record<string, unknown>);
+  if (entries.length === 0) return null;
+  if (!entries.every(([, value]) => typeof value === 'string')) {
+    throw new InvocationError('roleEnv must map names to strings', {
+      host: HOST_NAME,
+      code: 'BAD_REQUEST',
+    });
+  }
+  return Object.fromEntries(entries) as Record<string, string>;
 }
 
 /** Same framing rule as the OpenCode adapter: the role is stated in the prompt. */
@@ -188,10 +220,19 @@ export function createClaudeAdapter(config: ClaudeConfig = {}): ClaudeAdapter {
       const args = buildRunArgs({ ...req, task: framedTask(req) }, config);
       const requestedModel = req.model ?? config.model;
 
+      // The role's write surface. The config goes to a 0600 file and only the
+      // PATH reaches argv, because argv is ps-visible and the bearer is not
+      // allowed to be (see mcpconfig.ts). Written before the spawn and removed
+      // in the finally below, so no exit path leaves it on disk.
+      const roleEnv = readRoleEnvFrom(context);
+      const mcp = roleEnv ? writeMcpConfig(roleEnv, config.roleServe) : null;
+      if (mcp) args.push(...mcpArgsFor(mcp.path));
+
       let child: SpawnedProcess;
       try {
         child = spawn(binary, args, { cwd: req.dir ?? config.dir });
       } catch (cause) {
+        mcp?.dispose();
         throw new InvocationError(`Could not start "${binary} -p"`, {
           host: HOST_NAME,
           code: 'HOST_UNAVAILABLE',
@@ -273,6 +314,7 @@ export function createClaudeAdapter(config: ClaudeConfig = {}): ClaudeAdapter {
         return { id, status: 'ok', output: deliverable, error: null };
       } finally {
         if (timer) clearTimeout(timer);
+        mcp?.dispose();
         inFlight.delete(id);
         cancelled.delete(id);
       }

@@ -11,8 +11,10 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { createClaudeAdapter, HOST_NAME } from '../../../src/hosts/claude/adapter.ts';
+import { MCP_SERVER_NAME, ROLE_TOOL_NAMES, writeMcpConfig } from '../../../src/hosts/claude/mcpconfig.ts';
 import type { ClaudeDeliverable, SpawnedProcess } from '../../../src/hosts/claude/adapter.ts';
 import { modelDrifted, reduceEnvelope } from '../../../src/hosts/claude/result.ts';
 import { PINNED_VERSION } from '../../../src/hosts/claude/pin.ts';
@@ -184,4 +186,161 @@ test('reduceEnvelope refuses what is not a result envelope', () => {
   assert.ok(reduced);
   assert.equal(reduced.usage.steps, 1);
   assert.ok(reduced.usage.cost > 0);
+});
+
+test('a run with no role env registers no MCP server', async () => {
+  const fake = fakeSpawn();
+  const adapter = createClaudeAdapter({ spawn: fake.spawn });
+  await adapter.init();
+  await adapter.invoke({ role: 'r', task: 't' }, { invocationId: 'inv-nomcp' });
+  const runCall = fake.calls.find((call) => call.args[0] === '-p');
+  assert.ok(runCall);
+  assert.equal(runCall.args.includes('--mcp-config'), false);
+  assert.equal(runCall.args.includes('--strict-mcp-config'), false);
+  assert.equal(runCall.args.includes('--allowedTools'), false);
+});
+
+test('a role env becomes an MCP config passed by path, never inline on argv', async () => {
+  const fake = fakeSpawn();
+  const adapter = createClaudeAdapter({ spawn: fake.spawn });
+  await adapter.init();
+  const roleEnv = {
+    CONSTRUCT_ROLE_TOKEN: 'cx1.secret.sig',
+    CONSTRUCT_ROLE_RUN: 'run-x',
+    CONSTRUCT_ROLE_TASK: 'task-1',
+  };
+  await adapter.invoke({ role: 'r', task: 't' }, { invocationId: 'inv-mcp', roleEnv });
+  const runCall = fake.calls.find((call) => call.args[0] === '-p');
+  assert.ok(runCall);
+  const mcpConfigIdx = runCall.args.indexOf('--mcp-config');
+  assert.ok(mcpConfigIdx >= 0, 'run argv must include --mcp-config');
+  const configPath = runCall.args[mcpConfigIdx + 1];
+  assert.ok(typeof configPath === 'string' && configPath.startsWith('/'), 'config path must be an absolute path string');
+  assert.ok(runCall.args.includes('--strict-mcp-config'), 'run argv must include --strict-mcp-config');
+  const allowedToolsIdx = runCall.args.indexOf('--allowedTools');
+  assert.ok(allowedToolsIdx >= 0, 'run argv must include --allowedTools');
+  assert.equal(runCall.args[allowedToolsIdx + 1], ROLE_TOOL_NAMES.join(','));
+  // --mcp-config is variadic on the pinned CLI (pin.ts): the path must be
+  // followed by a flag, or the next argument is eaten as another config file.
+  assert.match(runCall.args[mcpConfigIdx + 2] ?? '', /^--/);
+  // The whole point of the change: the bearer is in the file, never in argv.
+  for (const call of fake.calls) {
+    for (const arg of call.args) {
+      assert.equal(
+        arg.includes('cx1.secret.sig'),
+        false,
+        `bearer token must not appear in argv: ${arg}`,
+      );
+    }
+  }
+});
+
+test('the written config is 0600 inside a 0700 dir, names the role tools server, and disposes', () => {
+  const roleEnv = {
+    CONSTRUCT_ROLE_TOKEN: 'cx1.secret.sig',
+    CONSTRUCT_ROLE_RUN: 'run-x',
+  };
+  const launch = {
+    command: '/bin/echo',
+    args: ['x'],
+    env: { XDG_DATA_HOME: '/tmp/d', CONSTRUCT_ROLE_TOKEN: 'wrong' },
+  };
+
+  // Test that roleEnv wins over launch.env collisions
+  const config = writeMcpConfig(roleEnv, launch);
+  assert.ok(existsSync(config.path), 'config file must exist');
+
+  const dirStat = statSync(dirname(config.path));
+  assert.equal((dirStat.mode & 0o777), 0o700, 'directory mode must be 0700');
+
+  const fileStat = statSync(config.path);
+  assert.equal((fileStat.mode & 0o777), 0o600, 'file mode must be 0600');
+
+  const content = JSON.parse(readFileSync(config.path, 'utf8'));
+  assert.ok(content.mcpServers);
+  assert.ok(content.mcpServers[MCP_SERVER_NAME]);
+  const server = content.mcpServers[MCP_SERVER_NAME];
+  assert.equal(server.type, 'stdio');
+  assert.equal(server.command, '/bin/echo');
+  assert.deepEqual(server.args, ['x']);
+  assert.equal(server.env.CONSTRUCT_ROLE_TOKEN, 'cx1.secret.sig', 'roleEnv must win over launch.env collision');
+  assert.equal(server.env.XDG_DATA_HOME, '/tmp/d', 'launch.env must be merged');
+  assert.equal(server.env.CONSTRUCT_ROLE_RUN, 'run-x');
+
+  // dispose() must remove the directory
+  config.dispose();
+  assert.equal(existsSync(config.path), false, 'config file must be gone after dispose');
+
+  // dispose() must be idempotent
+  assert.doesNotThrow(() => {
+    config.dispose();
+  });
+});
+
+test('the config file is removed even when the run times out', async () => {
+  let capturedConfigPath: string | null = null;
+  const wrappedSpawn = (command: string, args: readonly string[]): SpawnedProcess => {
+    // Handle --version call
+    if (args[0] === '--version') {
+      return {
+        done: Promise.resolve({ code: 0, stdout: `${PINNED_VERSION}\n`, stderr: '' }),
+        kill: () => {},
+      };
+    }
+    // For -p calls, capture the config path
+    if (args[0] === '-p') {
+      const mcpIdx = args.indexOf('--mcp-config');
+      if (mcpIdx >= 0) {
+        capturedConfigPath = args[mcpIdx + 1] as string;
+      }
+    }
+    // Hang: never resolve, only kill
+    let killResolve: (() => void) | undefined;
+    const done = new Promise<{ code: number | null; stdout: string; stderr: string }>((resolve) => {
+      killResolve = () => resolve({ code: null, stdout: '', stderr: '' });
+    });
+    return {
+      done,
+      kill: () => {
+        killResolve?.();
+      },
+    };
+  };
+
+  const adapter = createClaudeAdapter({
+    spawn: wrappedSpawn,
+    timeoutMs: 20,
+    roleServe: { command: '/bin/echo', args: [] },
+  });
+  await adapter.init();
+
+  await assert.rejects(
+    adapter.invoke(
+      { role: 'r', task: 't' },
+      {
+        invocationId: 'inv-timeout',
+        roleEnv: { CONSTRUCT_ROLE_TOKEN: 'cx1.secret.sig' },
+      },
+    ),
+    (error: Error) => error.name === 'InvocationTimeoutError',
+  );
+
+  assert.ok(capturedConfigPath, 'config path must have been captured during run');
+  assert.equal(
+    existsSync(capturedConfigPath),
+    false,
+    'config file must be removed after timeout',
+  );
+});
+
+test('a role env whose values are not strings is refused', async () => {
+  const adapter = createClaudeAdapter({ spawn: fakeSpawn().spawn });
+  await adapter.init();
+  await assert.rejects(
+    adapter.invoke(
+      { role: 'r', task: 't' },
+      { invocationId: 'inv-bad', roleEnv: { CONSTRUCT_ROLE_TOKEN: 123 as unknown as string } },
+    ),
+    /strings/,
+  );
 });

@@ -36,7 +36,8 @@
     "smoke": "bash scripts/smoke-packaged-install.sh",
     "probe:opencode": "node scripts/probe-opencode-conformance.mjs",
     "capture:opencode": "node scripts/capture-opencode-transcripts.mjs",
-    "probe:claude": "node scripts/probe-claude-conformance.mjs"
+    "probe:claude": "node scripts/probe-claude-conformance.mjs",
+    "probe:claude:mcp": "node scripts/probe-claude-conformance.mjs --spend-mcp"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
