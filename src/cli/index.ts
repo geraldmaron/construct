@@ -11,11 +11,15 @@ import { buildCleanupCatalog } from '../kernel/cleanup/catalog.ts';
 import type { SpawnFn } from '../kernel/cleanup/catalog.ts';
 import { detectedItems, selectedItems, applyCleanup } from '../kernel/cleanup/run.ts';
 import type { CleanupOptions } from '../kernel/cleanup/run.ts';
+import { writeFileSync } from 'node:fs';
 import { openStore, storePath, storeWriteProblem, StoreUnavailableError } from '../kernel/store/open.ts';
 import type { Store } from '../kernel/store/open.ts';
 import { readWorkLog } from '../kernel/store/worklog.ts';
 import { openDecisions, resolveDecision } from '../kernel/store/decisions.ts';
 import { countTasksByState, getTask } from '../kernel/store/tasks.ts';
+import { appendFeedback, readFeedback } from '../kernel/store/feedback.ts';
+import { harvestCorpus } from '../kernel/implication/harvest.ts';
+import type { DomainVerdict } from '../kernel/implication/harvest.ts';
 import { startRun } from '../kernel/run/outcome.ts';
 import { DEFAULT_CONCURRENCY, workRun } from '../kernel/run/coordinator.ts';
 import { deliverableConcerns, licensedReviewFor } from '../kernel/run/accountability.ts';
@@ -512,7 +516,167 @@ export function decide(argv: string[]): number {
   });
 }
 
-const USAGE = 'usage: construct <outcome|work|log|inbox|decide|doctor|cleanup|version>\n';
+/**
+ * The domains a run surfaced, read back from the work log entries `startRun`
+ * wrote (kernel/run/outcome.ts's `domain-implicated` action) — the log is
+ * already the record of what was inferred, so the verdict surface reads it
+ * rather than keeping a second copy.
+ */
+function surfacedDomains(store: Store, run: string): string[] {
+  return readWorkLog(store, run)
+    .filter((entry) => entry.action === 'domain-implicated')
+    .map((entry) => entry.role);
+}
+
+function runOutcomeText(store: Store, run: string): string | null {
+  const entry = readWorkLog(store, run).find(
+    (candidate) => candidate.action === 'outcome-received',
+  );
+  const detail = entry?.detail as { outcome?: unknown } | undefined;
+  return typeof detail?.outcome === 'string' ? detail.outcome : null;
+}
+
+export interface VerdictArgs {
+  readonly run?: string;
+  readonly confirm: readonly string[];
+  readonly dismiss: readonly string[];
+  readonly missed: readonly string[];
+  readonly source: string;
+}
+
+function splitList(value: string): string[] {
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+}
+
+export function parseVerdictArgs(argv: string[]): VerdictArgs {
+  const args: Record<string, string> = {};
+  for (const arg of argv) {
+    const match = /^--([a-z]+)=(.*)$/.exec(arg);
+    if (match) args[match[1]] = match[2];
+  }
+  return {
+    run: args.run,
+    confirm: args.confirm ? splitList(args.confirm) : [],
+    dismiss: args.dismiss ? splitList(args.dismiss) : [],
+    missed: args.missed ? splitList(args.missed) : [],
+    source: args.source ?? 'user',
+  };
+}
+
+/**
+ * The CLI verdict surface (construct-2jb.13): what confirms, dismisses, or
+ * names a felt absence for the domains one run surfaced. Named `verdict`
+ * rather than reusing `work` — that name already belongs to dispatching tasks
+ * to a host — but it is exactly the surface the bead describes: list what
+ * surfaced, let the user confirm or dismiss it, and give the ambush (a domain
+ * that never surfaced but should have) a way to be recorded too.
+ */
+export function verdict(argv: string[]): number {
+  let args: VerdictArgs;
+  try {
+    args = parseVerdictArgs(argv);
+  } catch (error) {
+    process.stderr.write(`verdict: ${(error as Error).message}\n`);
+    return 2;
+  }
+  if (!args.run) {
+    process.stderr.write('usage: construct verdict --run=<id> [--confirm=d1,d2] [--dismiss=d3] [--missed=d4] [--source=<name>]\n');
+    return 2;
+  }
+  const run = args.run;
+
+  return withStore((store) => {
+    const surfaced = surfacedDomains(store, run);
+    const outcomeText = runOutcomeText(store, run);
+    if (outcomeText === null) {
+      process.stderr.write(`verdict: no recorded outcome for run ${run}\n`);
+      return 1;
+    }
+
+    if (args.confirm.length === 0 && args.dismiss.length === 0 && args.missed.length === 0) {
+      // Nothing to record: show what there is to render a verdict on.
+      process.stdout.write(`run ${run}\n  outcome: ${outcomeText}\n\n`);
+      if (surfaced.length === 0) {
+        process.stdout.write('no domains surfaced for this run.\n');
+      } else {
+        process.stdout.write(`surfaced domains (${surfaced.length}):\n`);
+        for (const domain of surfaced) process.stdout.write(`  ${domain}\n`);
+      }
+      process.stdout.write(
+        '\nRecord a verdict:\n' +
+          `  construct verdict --run=${run} --confirm=<domain,...>   it was right to surface these\n` +
+          `  construct verdict --run=${run} --dismiss=<domain,...>   it was wrong to surface these\n` +
+          `  construct verdict --run=${run} --missed=<domain,...>    these should have surfaced and did not\n`,
+      );
+      return 0;
+    }
+
+    const unsurfacedConfirm = args.confirm.filter((domain) => !surfaced.includes(domain));
+    const unsurfacedDismiss = args.dismiss.filter((domain) => !surfaced.includes(domain));
+    if (unsurfacedConfirm.length > 0 || unsurfacedDismiss.length > 0) {
+      process.stderr.write(
+        `verdict: ${[...unsurfacedConfirm, ...unsurfacedDismiss].join(', ')} did not surface for ${run} — ` +
+          'confirm/dismiss only apply to domains this run actually surfaced. Use --missed for a felt absence.\n',
+      );
+      return 2;
+    }
+
+    const verdicts: Record<string, DomainVerdict> = {};
+    for (const domain of args.confirm) verdicts[domain] = 'confirmed';
+    for (const domain of args.dismiss) verdicts[domain] = 'dismissed';
+    for (const domain of args.missed) verdicts[domain] = 'missed';
+
+    const seq = appendFeedback(store, {
+      run,
+      outcome: outcomeText,
+      verdicts,
+      source: args.source,
+      recordedAt: now(),
+    });
+
+    process.stdout.write(
+      `recorded verdict #${String(seq)} for ${run}: ` +
+        `${String(args.confirm.length)} confirmed, ${String(args.dismiss.length)} dismissed, ` +
+        `${String(args.missed.length)} missed.\n`,
+    );
+    return 0;
+  });
+}
+
+/**
+ * Write the harvested corpus (every recorded verdict, folded through
+ * `harvestCorpus`) to `path`, fixture-shaped exactly as map.test.ts consumes
+ * it. This is the export path construct-2jb.4 (corpus expansion) reads from.
+ */
+export function corpusExport(argv: string[]): number {
+  const path = argv[0];
+  if (!path) {
+    process.stderr.write('usage: construct corpus export <path>\n');
+    return 2;
+  }
+  return withStore((store) => {
+    const history = readFeedback(store);
+    const corpus = harvestCorpus(history);
+    writeFileSync(path, `${JSON.stringify(corpus, null, 2)}\n`);
+    process.stdout.write(
+      `wrote ${String(corpus.outcomes.length)} outcome(s) to ${path} ` +
+        `(${String(corpus.skipped)} verdict-free record(s) skipped).\n`,
+    );
+    return 0;
+  });
+}
+
+export function corpus(argv: string[]): number {
+  const [sub, ...rest] = argv;
+  if (sub === 'export') return corpusExport(rest);
+  process.stderr.write('usage: construct corpus export <path>\n');
+  return 2;
+}
+
+const USAGE = 'usage: construct <outcome|work|verdict|corpus|log|inbox|decide|doctor|cleanup|version>\n';
 
 /**
  * Async because `work` dispatches to a host. The other commands stay
@@ -537,6 +701,10 @@ async function run(argv: string[]): Promise<number> {
       return outcome(argv.slice(1));
     case 'work':
       return work(argv.slice(1));
+    case 'verdict':
+      return verdict(argv.slice(1));
+    case 'corpus':
+      return corpus(argv.slice(1));
     case 'log':
       return log(argv.slice(1));
     case 'inbox':

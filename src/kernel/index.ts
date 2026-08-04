@@ -198,6 +198,15 @@ export {
   resolveDecision,
 } from './store/decisions.ts';
 export type { Decision, DecisionState, Position, RaiseDecision } from './store/decisions.ts';
+export { appendFeedback, readFeedback } from './store/feedback.ts';
+export type { AppendFeedback, FeedbackEntry } from './store/feedback.ts';
+export { harvestCorpus, harvestOutcome } from './implication/harvest.ts';
+export type {
+  DomainVerdict,
+  HarvestedCorpus,
+  HarvestedOutcome,
+  ImplicationFeedback,
+} from './implication/harvest.ts';
 export { syncProjections } from './store/reconcile.ts';
 export type { SyncOptions } from './store/reconcile.ts';
 export {

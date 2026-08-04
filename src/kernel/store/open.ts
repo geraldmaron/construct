@@ -9,7 +9,11 @@
  * consumers exist is guessing. All three consumers exist now, so the shape is
  * chosen against all three at once rather than fitted to whichever landed first.
  * The task table arrived later (construct-r67.5) and is additive: schema version
- * 2 adds a table, changes none of the three.
+ * 2 adds a table, changes none of the three. Schema version 3 (construct-2jb.13)
+ * adds `implication_feedback`, additive in the same way: a verdict a user
+ * renders on the domains a run surfaced (or felt the absence of), append-only
+ * like the work log and for the same reason — a corpus whose labels can be
+ * quietly edited after the fact is how the last one died.
  *
  * SQLite via `node:sqlite`, which ships with Node — no dependency is added to a
  * CLI users install. STRATEGY ("What carries over") commits the tracker model to
@@ -34,7 +38,7 @@ import { accessSync, constants, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Paths } from '../paths.ts';
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export interface Store {
   readonly db: DatabaseSync;
@@ -208,6 +212,26 @@ CREATE TABLE IF NOT EXISTS tasks (
 
 CREATE INDEX IF NOT EXISTS tasks_run ON tasks (run, enqueued_at, id);
 CREATE INDEX IF NOT EXISTS tasks_claimable ON tasks (state, lease_until);
+
+CREATE TABLE IF NOT EXISTS implication_feedback (
+  seq         INTEGER PRIMARY KEY AUTOINCREMENT,
+  run         TEXT NOT NULL,
+  outcome     TEXT NOT NULL,
+  verdicts    TEXT NOT NULL,
+  source      TEXT NOT NULL,
+  recorded_at TEXT NOT NULL,
+  category    TEXT
+) STRICT;
+
+CREATE INDEX IF NOT EXISTS implication_feedback_run ON implication_feedback (run, seq);
+
+CREATE TRIGGER IF NOT EXISTS implication_feedback_no_update
+BEFORE UPDATE ON implication_feedback
+BEGIN SELECT RAISE(ABORT, 'implication_feedback is append-only'); END;
+
+CREATE TRIGGER IF NOT EXISTS implication_feedback_no_delete
+BEFORE DELETE ON implication_feedback
+BEGIN SELECT RAISE(ABORT, 'implication_feedback is append-only'); END;
 `;
 
 /** The substrate's file under an injected Paths. Callers do not build this path. */

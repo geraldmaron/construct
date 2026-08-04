@@ -27,6 +27,7 @@ import {
   putProjection,
 } from '../../../src/kernel/store/projections.ts';
 import { appendWorkLog, readWorkLog } from '../../../src/kernel/store/worklog.ts';
+import { appendFeedback, readFeedback } from '../../../src/kernel/store/feedback.ts';
 import {
   getDecision,
   openDecisions,
@@ -291,6 +292,95 @@ test('transact rolls back a failed multi-write', () => {
     }, /boom/);
     assert.equal(countProjections(store), 0);
   });
+});
+
+test('implication_feedback is append-only at the storage layer, not by convention', () => {
+  withStore((store) => {
+    appendFeedback(store, {
+      run: 'run-1',
+      outcome: 'ship the EU beta',
+      verdicts: { privacy: 'confirmed', security: 'dismissed' },
+      source: 'gerald',
+      recordedAt: AT,
+    });
+
+    assert.throws(
+      () =>
+        store.db
+          .prepare("UPDATE implication_feedback SET source = 'someone-else' WHERE seq = 1")
+          .run(),
+      /append-only/,
+    );
+    assert.throws(
+      () => store.db.prepare('DELETE FROM implication_feedback WHERE seq = 1').run(),
+      /append-only/,
+    );
+
+    const entries = readFeedback(store, 'run-1');
+    assert.equal(entries.length, 1);
+    assert.equal(entries[0].source, 'gerald');
+  });
+});
+
+test('feedback round-trips deterministically at the store boundary', () => {
+  withStore((store) => {
+    appendFeedback(store, {
+      run: 'run-1',
+      outcome: 'ship the EU beta',
+      verdicts: { privacy: 'confirmed', security: 'dismissed' },
+      source: 'gerald',
+      recordedAt: AT,
+      category: 'privacy',
+    });
+    appendFeedback(store, {
+      run: 'run-1',
+      outcome: 'ship the EU beta',
+      verdicts: { finance: 'missed' },
+      source: 'gerald',
+      recordedAt: '2026-08-04T00:00:00.000Z',
+    });
+
+    // Reading the same store twice yields byte-identical records, in append
+    // order — the same discipline the work log holds, and for the same
+    // reason: a harvested corpus must be reproducible from the store alone.
+    const first = readFeedback(store, 'run-1');
+    const second = readFeedback(store, 'run-1');
+    assert.deepEqual(first, second);
+    assert.deepEqual(
+      first.map((entry) => entry.seq),
+      [1, 2],
+    );
+    assert.deepEqual(first[0].verdicts, { privacy: 'confirmed', security: 'dismissed' });
+    assert.equal(first[0].category, 'privacy');
+    assert.equal(first[1].category, undefined, 'no category is not the string "null"');
+  });
+});
+
+test('feedback survives process death: a reopened store reads back what a closed one wrote', () => {
+  const fixture = sterile();
+  try {
+    const path = join(fixture.root, 'data', 'construct.db');
+    const first = openStore(path);
+    appendFeedback(first, {
+      run: 'run-1',
+      outcome: 'ship the EU beta',
+      verdicts: { privacy: 'confirmed' },
+      source: 'gerald',
+      recordedAt: AT,
+    });
+    first.close(); // simulate the process exiting
+
+    const reopened = openStore(path);
+    try {
+      const entries = readFeedback(reopened, 'run-1');
+      assert.equal(entries.length, 1);
+      assert.deepEqual(entries[0].verdicts, { privacy: 'confirmed' });
+    } finally {
+      reopened.close();
+    }
+  } finally {
+    fixture.cleanup();
+  }
 });
 
 test('the store module reads neither the clock nor the environment', async () => {
