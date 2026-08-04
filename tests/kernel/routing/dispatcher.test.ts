@@ -100,3 +100,33 @@ test('the same routes score identically regardless of call order — no cross-ca
   suggestRoutes({ intent: 'kubernetes', routes: b });
   assert.deepEqual(suggestRoutes({ intent: 'secret', routes: a }), first);
 });
+
+/**
+ * Number folding (construct-4jq). The prefix rule runs one way — a keyword stem
+ * reaches its own inflected forms — so a keyword written PLURAL could never
+ * match a singular token. "students" missed "student records" while "student"
+ * would have matched both, which made a catalog author's arbitrary choice of
+ * number decide whether a domain fired at all. The implication catalog had been
+ * paying for it by hand, listing "contractor" and "contractors", "employee" and
+ * "employees", "refund" and "refunds".
+ */
+test('a plural keyword matches a singular token, and the reverse still works', () => {
+  const routes: Route[] = [{ path: 'p', keywords: ['students'] }];
+  assert.equal(suggestRoutes({ intent: 'a letter about student records', routes }).suggestions.length, 1);
+  assert.equal(suggestRoutes({ intent: 'enrolling students', routes }).suggestions.length, 1);
+});
+
+test('irregular and short words survive folding intact', () => {
+  // "access" must not be mauled into "acces" by a rule meant for plurals, and a
+  // three-letter word has nothing to gain and a syllable to lose.
+  const routes: Route[] = [{ path: 'p', keywords: ['access'] }];
+  assert.equal(suggestRoutes({ intent: 'grant access to the store', routes }).suggestions.length, 1);
+  assert.equal(suggestRoutes({ intent: 'the gas bill', routes: [{ path: 'q', keywords: ['gas'] }] }).suggestions.length, 1);
+});
+
+test('folding does not reopen the substring false-positive class', () => {
+  // The rule this replaced let "rag" reach "storage" and "drag". Folding is
+  // exact-only after singularizing, so a short fragment still reaches nothing.
+  const routes: Route[] = [{ path: 'p', keywords: ['rag'] }];
+  assert.deepEqual(suggestRoutes({ intent: 'increase the storage average', routes }).suggestions, []);
+});

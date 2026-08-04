@@ -56,15 +56,45 @@ function tokenize(text: string): string[] {
 }
 
 /**
+ * Reduce a simple English plural to its singular, for comparison only.
+ *
+ * Deliberately narrow. This is not a stemmer and must not become one: it exists
+ * because the prefix rule below runs in one direction, so a keyword written
+ * plural ("students") could never match a singular token ("student"), while the
+ * reverse worked fine. The catalog had been compensating by hand — it lists
+ * "contractor" and "contractors", "employee" and "employees", "refund" and
+ * "refunds" — and silently lost wherever the author did not think to
+ * (construct-4jq).
+ *
+ * "access" and "business" keep their double s, so the rule cannot maul a word
+ * that merely ends in one. Short words are left alone: "ids" -> "id" buys
+ * nothing and "gas" -> "ga" is the kind of damage this guard prevents.
+ */
+function singular(word: string): string {
+  if (word.length > 4 && word.endsWith('ies')) return `${word.slice(0, -3)}y`;
+  if (word.length > 4 && /(?:s|x|z|ch|sh)es$/.test(word)) return word.slice(0, -2);
+  if (word.length > 3 && word.endsWith('s') && !word.endsWith('ss')) return word.slice(0, -1);
+  return word;
+}
+
+/**
  * A keyword part matches a token exactly, or — for a part of 5+ chars — as a
- * prefix of it, so "secret" also matches "secrets". One direction only: a
- * keyword's stem may match its own inflected forms, but a short fragment can
- * never match inside an unrelated longer word. A bidirectional substring check
- * ("rag" matching "storage", "average", "drag") is exactly the false-positive
- * class this replaced.
+ * prefix of it, so "secret" also matches "secrets". A short fragment can never
+ * match inside an unrelated longer word: a bidirectional substring check ("rag"
+ * matching "storage", "average", "drag") is exactly the false-positive class
+ * this replaced, and plural folding below is not a reopening of it.
+ *
+ * Number is the one inflection compared in both directions, because a catalog
+ * author's choice of singular or plural is arbitrary and should not decide
+ * whether a domain fires. Folding is exact-only after singularizing; the prefix
+ * rule still runs one way, so "student" reaches "students" without "st"
+ * reaching anything.
  */
 function partMatches(part: string, tokens: readonly string[]): boolean {
-  return tokens.some((t) => t === part || (part.length >= 5 && t.startsWith(part)));
+  const partSingular = singular(part);
+  return tokens.some(
+    (t) => t === part || (part.length >= 5 && t.startsWith(part)) || singular(t) === partSingular,
+  );
 }
 
 /**

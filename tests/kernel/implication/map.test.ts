@@ -308,3 +308,15 @@ test('the fresh corpus miss rate is recorded, and its gap to the tuned corpora i
       'against — check which before relaxing this assertion.',
   );
 });
+
+/**
+ * Who the work is for is not evidence of what is in scope (construct-4jq).
+ * "users" and "customers" appear in almost any sentence a business writes, and
+ * as product-scoping keywords they conscripted that domain into runs with no
+ * scoping question in them. Number folding made it worse by reaching the
+ * singular too, which is how this surfaced.
+ */
+test('naming who the work is for does not implicate product scope', () => {
+  const domains = implicatedDomains({ outcome: 'encrypt customer passwords' });
+  assert.deepEqual(domains, ['security']);
+});

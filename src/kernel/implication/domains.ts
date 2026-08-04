@@ -160,9 +160,16 @@ export const DOMAINS: readonly Domain[] = Object.freeze([
     path: 'product-scoping',
     domain: 'product-scoping',
     concern: 'what is in, what is out, and how you know it worked',
+    // "users" and "customers" are deliberately absent. They appear in almost
+    // any sentence a business writes, so they earned this domain a seat in runs
+    // that had nothing to do with scope — "encrypt customer passwords" pulled in
+    // product-scoping on the word "customer" alone. Removing them cut the
+    // over-rate on the held-out set from 0.245 to 0.140 and cost exactly one
+    // labeled-set match, o14, which was resting on that same weak word
+    // (construct-4jq). Who the work is for is not evidence of what is in scope.
     keywords: [
       'mvp', 'feature', 'features', 'requirements', 'scope', 'beta', 'pilot',
-      'success metric', 'roadmap', 'prototype', 'users', 'customers', 'onboard',
+      'success metric', 'roadmap', 'prototype', 'onboard',
       'redesign', 'rebuild',
       // The product surfaces people name when scoping what to build or trim.
       'signup', 'dashboard',
