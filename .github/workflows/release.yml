@@ -31,6 +31,26 @@ jobs:
             echo "tag v$tag_version does not match package.json version $pkg_version" >&2
             exit 1
           fi
+      # Trusted publishing (OIDC) needs npm >= 11.5.1, and no bundled npm clears
+      # that bar: Node 22.18 and 22.20 both ship npm 10.9.3, and even Node 24.0.0
+      # ships only 11.3.0. Verified against nodejs.org/dist/index.json rather than
+      # assumed — a note on construct-506.4 claimed this workflow already ran npm
+      # 11, and it did not. Pinned rather than `@latest` because everything else
+      # in this repo that can drift is pinned; bump it deliberately.
+      #
+      # Deliberately the LAST step before publish: `npm ci` and the whole gate
+      # above run on the npm the pinned Node ships, so what was tested is what
+      # ships, and only the publish client is newer.
+      - run: npm install -g npm@11.5.1
+      # No NODE_AUTH_TOKEN below. Auth is the OIDC token the runner mints from
+      # `id-token: write`, checked against the trusted publisher registered on
+      # the package (geraldmaron/construct, workflow release.yml). This replaces
+      # the NPM_TOKEN secret that failed with E403 on 2026-08-04: a long-lived
+      # token whose write scope could not be verified without publishing. A
+      # trusted publisher has no scope to get wrong. If this step fails auth,
+      # the trusted publisher is not registered yet — that is registry-side
+      # configuration and cannot be done from here (construct-506.4).
+      #
       # --tag alpha keeps this off the default `latest` dist-tag, and since
       # construct-3fr that is load-bearing rather than tidy: this package is the
       # predecessor's, whose `latest` is 2.1.1 and has real installs. `npm
@@ -41,5 +61,3 @@ jobs:
       # the registry rather than implied by a version number. `latest` moves only
       # when 3.0.0 is promoted deliberately.
       - run: npm publish --provenance --tag alpha
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
