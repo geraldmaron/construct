@@ -149,4 +149,28 @@ else
   trap 'rm -rf "$scratch"' EXIT
 fi
 
+# The successor must survive its own uninstaller (construct-a5q). v3 resolves its
+# directories from the same XDG variables under the same app name as the
+# predecessor, so `~/.local/share/construct` is at once "a v2 trace" and the
+# running Construct's home. Before the fix, `construct cleanup --yes` deleted the
+# store holding every work log entry, task row and raised decision, plus the
+# capability secret — and the append-only triggers do not help, because the file
+# is unlinked rather than written to.
+#
+# This runs LAST on purpose: by now the spine has written a real store through
+# the packaged install, which is the only state in which the bug is reachable.
+echo "== cleanup must not eat the store it is standing in =="
+[ -f "$store" ] || fail "the store should exist by now — the earlier spine steps write it"
+store_before="$(wc -c < "$store")"
+
+cleanup_out="$(npx --no-install construct cleanup --yes --all 2>&1)" \
+  || fail "cleanup exited non-zero" "$cleanup_out"
+printf '%s\n' "$cleanup_out"
+
+[ -f "$store" ] || fail "cleanup deleted the running Construct's store" "$cleanup_out"
+store_after="$(wc -c < "$store")"
+[ "$store_before" = "$store_after" ] \
+  || fail "cleanup altered the store ($store_before -> $store_after bytes)" "$cleanup_out"
+expect_contains "cleanup" "$cleanup_out" "kept"
+
 echo "smoke-packaged-install: pass"

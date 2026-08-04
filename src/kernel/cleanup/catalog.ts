@@ -81,6 +81,50 @@ function postgresContainerName(home: string): string {
   return `construct-postgres-${suffix}`;
 }
 
+/**
+ * Files only the SUCCESSOR writes (construct-a5q).
+ *
+ * v3 resolves its own directories from the same XDG variables under the same
+ * application name, so `~/.local/share/construct` is simultaneously a
+ * predecessor trace and the running Construct's home. Removing it wholesale —
+ * which is what this catalog did — deletes the store holding every work log
+ * entry, task row and raised decision, plus the capability secret. The
+ * append-only triggers protect against writes, not against unlink.
+ *
+ * The signal has to be a file the successor writes rather than a version, because a
+ * version file
+ * says whoever wrote last rather than who owns the directory. These two are
+ * v3's and the predecessor never wrote either: `construct.db` is the node:sqlite
+ * substrate introduced in the rewrite, and `capability-secret` is the token
+ * signing key from commitment 14.
+ *
+ * The window opens the moment v3 is installed and could not have been seen
+ * before it: until then cleanup only ever ran where v2 was the only Construct.
+ */
+const SUCCESSOR_MARKERS = ['construct.db', 'capability-secret'];
+
+/** Whether the running Construct owns this directory and must keep it. */
+function successorOwns(dir: string): boolean {
+  return SUCCESSOR_MARKERS.some((name) => fs.existsSync(path.join(dir, name)));
+}
+
+/**
+ * A removal that refuses when the successor owns the directory, and says so.
+ *
+ * Refusing whole-directory removal rather than deleting around the successor's
+ * files is the deliberate choice: the predecessor's file list in a shared
+ * directory is not knowable from here, so anything selective would be guessing
+ * at what to keep. Refusing loudly leaves the operator with stale predecessor
+ * files and an accurate sentence, which is strictly better than leaving them
+ * with neither those files nor their own.
+ */
+function removeUnlessSuccessorOwns(dir: string): string {
+  if (successorOwns(dir)) {
+    return 'kept — the Construct that is running owns this directory (its store or capability secret is here). Any predecessor leftovers inside were NOT removed; remove them by hand if you are sure.';
+  }
+  return removePath(dir) ? 'removed' : 'nothing to remove';
+}
+
 function defaultSpawn(command: string, args: string[]): SpawnResult {
   const result = spawnSync(command, args, { encoding: 'utf8' });
   return { status: result.status, stdout: result.stdout ?? '', stderr: result.stderr ?? '' };
@@ -199,8 +243,11 @@ export function buildCleanupCatalog(target: CleanupTarget): CleanupItem[] {
       risk: 'auto',
       label: `${rel(home, paths.stateDir)} (workspace, vector index, daemon/log state)`,
       detect: () => existsAny(paths.stateDir),
-      describe: () => `Removes ${rel(home, paths.stateDir)}. Regenerated on next use.`,
-      remove: () => (removePath(paths.stateDir) ? 'removed' : 'nothing to remove'),
+      describe: () =>
+        successorOwns(paths.stateDir)
+          ? `KEPT: ${rel(home, paths.stateDir)} belongs to the Construct that is running, not to the predecessor.`
+          : `Removes ${rel(home, paths.stateDir)}. Regenerated on next use.`,
+      remove: () => removeUnlessSuccessorOwns(paths.stateDir),
     },
     {
       id: 'machine-data',
@@ -208,8 +255,11 @@ export function buildCleanupCatalog(target: CleanupTarget): CleanupItem[] {
       risk: 'auto',
       label: `${rel(home, paths.dataDir)} (shell completions + per-user data)`,
       detect: () => existsAny(paths.dataDir),
-      describe: () => `Removes ${rel(home, paths.dataDir)}. Rebuilt on next setup.`,
-      remove: () => (removePath(paths.dataDir) ? 'removed' : 'nothing to remove'),
+      describe: () =>
+        successorOwns(paths.dataDir)
+          ? `KEPT: ${rel(home, paths.dataDir)} holds the running Construct's store and capability secret.`
+          : `Removes ${rel(home, paths.dataDir)}. Rebuilt on next setup.`,
+      remove: () => removeUnlessSuccessorOwns(paths.dataDir),
     },
     {
       id: 'machine-cache-embeddings',
@@ -218,7 +268,7 @@ export function buildCleanupCatalog(target: CleanupTarget): CleanupItem[] {
       label: `${rel(home, userEmbedCache)} (cached embedding model)`,
       detect: () => existsAny(userEmbedCache),
       describe: () => 'Removes the cached embedding model. Skip if reinstalling soon — re-downloading takes a minute.',
-      remove: () => (removePath(userEmbedCache) ? 'removed' : 'nothing to remove'),
+      remove: () => removeUnlessSuccessorOwns(userEmbedCache),
     },
     {
       id: 'machine-config-env',

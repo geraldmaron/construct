@@ -188,3 +188,109 @@ test('a home without the predecessor reports nothing to remove', () => {
     fs.rmSync(home, { recursive: true, force: true });
   }
 });
+
+/**
+ * The successor's own directories (construct-a5q).
+ *
+ * v3 resolves its directories from the same XDG variables under the same
+ * application name, so ~/.local/share/construct is at once "a predecessor
+ * trace" and the running Construct's home. Removing it wholesale — which is
+ * what this catalog did — takes the store holding every work log entry, task
+ * row and raised decision, plus the capability secret. Append-only triggers
+ * guard writes, not unlink.
+ *
+ * These are the post-cutover state: a machine where BOTH exist. v2's traces
+ * must still go; v3's must not.
+ */
+function bothInstalled(): { home: string; paths: ReturnType<typeof resolvePaths>; cleanup: () => void } {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-both-'));
+  const paths = resolvePaths({ HOME: home }, home);
+
+  // The successor: its store and its capability secret.
+  fs.mkdirSync(paths.dataDir, { recursive: true });
+  fs.writeFileSync(path.join(paths.dataDir, 'construct.db'), 'SQLite format 3\0');
+  fs.writeFileSync(path.join(paths.dataDir, 'capability-secret'), 'secret');
+
+  // The predecessor, in directories it does not share with the successor.
+  fs.mkdirSync(paths.stateDir, { recursive: true });
+  fs.writeFileSync(path.join(paths.stateDir, 'audit-trail.jsonl'), '{}\n');
+  fs.mkdirSync(path.join(home, '.construct', 'projects'), { recursive: true });
+
+  return { home, paths, cleanup: () => fs.rmSync(home, { recursive: true, force: true }) };
+}
+
+test("the successor's store and secret survive a full cleanup", () => {
+  const f = bothInstalled();
+  try {
+    const items = buildCleanupCatalog({
+      cwd: path.join(f.home, 'project'),
+      home: f.home,
+      paths: f.paths,
+      spawn: NOT_FOUND_SPAWN,
+    });
+
+    // Everything, both tiers — the way an operator who wants v2 gone runs it.
+    for (const item of items) if (item.detect()) item.remove();
+
+    assert.ok(
+      fs.existsSync(path.join(f.paths.dataDir, 'construct.db')),
+      'the store must survive — it is the one thing the system promises is append-only',
+    );
+    assert.ok(
+      fs.existsSync(path.join(f.paths.dataDir, 'capability-secret')),
+      'and so must the signing key, or every issued token is orphaned',
+    );
+
+    // The predecessor still goes. A guard that kept everything would be a
+    // different bug wearing the same fix.
+    assert.equal(fs.existsSync(path.join(f.home, '.construct')), false, "v2's home is still removed");
+    assert.equal(fs.existsSync(f.paths.stateDir), false, "v2's state dir is still removed");
+  } finally {
+    f.cleanup();
+  }
+});
+
+test('refusing to remove the successor is said out loud, not skipped quietly', () => {
+  const f = bothInstalled();
+  try {
+    const items = buildCleanupCatalog({
+      cwd: path.join(f.home, 'project'),
+      home: f.home,
+      paths: f.paths,
+      spawn: NOT_FOUND_SPAWN,
+    });
+    const dataItem = items.find((i: CleanupItem) => i.id === 'machine-data');
+    assert.ok(dataItem);
+
+    assert.equal(dataItem.detect(), true, 'it is still reported, not hidden');
+    assert.match(dataItem.describe(), /KEPT/, 'the plan says it will be kept before anything runs');
+    const result = dataItem.remove();
+    assert.match(result, /kept/i);
+    assert.match(result, /NOT removed/, 'and admits predecessor leftovers may remain inside');
+  } finally {
+    f.cleanup();
+  }
+});
+
+test('a machine with no successor still gets a clean sweep', () => {
+  // The guard must not turn into a reason to keep v2's directories forever.
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-v2only-'));
+  try {
+    const paths = resolvePaths({ HOME: home }, home);
+    fs.mkdirSync(paths.dataDir, { recursive: true });
+    fs.writeFileSync(path.join(paths.dataDir, 'completions.zsh'), '# v2\n');
+
+    const items = buildCleanupCatalog({
+      cwd: path.join(home, 'project'),
+      home,
+      paths,
+      spawn: NOT_FOUND_SPAWN,
+    });
+    const dataItem = items.find((i: CleanupItem) => i.id === 'machine-data');
+    assert.equal(dataItem?.detect(), true);
+    assert.match(dataItem!.remove(), /removed/);
+    assert.equal(fs.existsSync(paths.dataDir), false);
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});

@@ -149,11 +149,23 @@ export function cleanup(argv: string[], spawnOverride?: SpawnFn): number {
 
   const toRemove = selectedItems(detected, args.all);
   const result = applyCleanup(detected, new Set(toRemove.map((item) => item.id)));
-  for (const outcome of result.removed) {
+  // An item that reports "kept" ran and deliberately removed nothing — the
+  // successor owns that directory (construct-a5q). Counting it as removed would
+  // make the summary say a thing was deleted that is still there, which is the
+  // class of claim this project exists to not make.
+  const kept = result.removed.filter((o) => o.detail.startsWith('kept'));
+  const actuallyRemoved = result.removed.filter((o) => !o.detail.startsWith('kept'));
+  for (const outcome of actuallyRemoved) {
     process.stdout.write(`  ✓ ${outcome.label} — ${outcome.detail}\n`);
   }
-  process.stdout.write(`\ncleanup: removed ${result.removed.length}, skipped ${result.skipped.length}.\n`);
-  return result.removed.some((o) => o.detail.startsWith('error:')) ? 1 : 0;
+  for (const outcome of kept) {
+    process.stdout.write(`  • ${outcome.label} — ${outcome.detail}\n`);
+  }
+  process.stdout.write(
+    `\ncleanup: removed ${String(actuallyRemoved.length)}, ` +
+      `kept ${String(kept.length)}, skipped ${String(result.skipped.length)}.\n`,
+  );
+  return actuallyRemoved.some((o) => o.detail.startsWith('error:')) ? 1 : 0;
 }
 
 /**
