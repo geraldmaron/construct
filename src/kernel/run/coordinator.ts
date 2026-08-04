@@ -49,6 +49,7 @@ import { logPromotion } from './promotion.ts';
 import { getDecision, raiseDecision } from '../store/decisions.ts';
 import { ROLE_GRANTS, issueRoleToken } from '../capabilities/tokens.ts';
 import { buildRoleEnv } from './roleenv.ts';
+import { NO_WRITE_SURFACE_NOTE, WRITE_SURFACE_PROTOCOL } from './rolewrite.ts';
 
 export const DEFAULT_CONCURRENCY = 2;
 
@@ -145,15 +146,25 @@ export interface RunReport {
  * specific, and it comes from the catalog, so a role outside the catalog gets an
  * assignment that says only what is actually known about it.
  */
-export function assignmentFor(brief: Brief, catalog: readonly Domain[] = DOMAINS): string {
+export function assignmentFor(
+  brief: Brief,
+  catalog: readonly Domain[] = DOMAINS,
+  options: { readonly writeSurface?: boolean } = {},
+): string {
   const domain = domainsByName(catalog).get(brief.role);
   const concern = domain ? `\nYour concern: ${domain.concern}.` : '';
+  // Whether the role holds the two writes is a fact about THIS dispatch, so the
+  // assignment says which it is rather than describing tools that may not exist
+  // (construct-ghu). Silence was the old behavior and it is the worst of the
+  // three: a role given tools on one run and none on the next cannot tell.
+  const surface = options.writeSurface ? WRITE_SURFACE_PROTOCOL : NO_WRITE_SURFACE_NOTE;
   return (
     `You are acting as the ${brief.role} role.${concern}\n\n` +
     `The outcome the user asked for: ${brief.outcome}\n\n` +
     'Report what this outcome implicates in your domain: what needs to be true, ' +
     'what is likely to be missed, and what you cannot determine from the outcome ' +
     'alone. Do not assert anything you cannot support. Be brief.\n\n' +
+    `${surface}\n\n` +
     STANCE_PROTOCOL
   );
 }
@@ -417,7 +428,13 @@ export async function workRun(
     let result: HostResult;
     try {
       result = await host.invoke(
-        { role: task.role, task: assignmentFor(brief, catalog) },
+        {
+          role: task.role,
+          // The assignment must agree with what was actually minted: roleEnv is
+          // the same value that decides whether the host registers a surface at
+          // all, so the two cannot drift apart (construct-ghu).
+          task: assignmentFor(brief, catalog, { writeSurface: roleEnv !== undefined }),
+        },
         { invocationId: task.id, roleEnv },
       );
     } catch (error) {

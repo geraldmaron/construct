@@ -384,6 +384,73 @@ test('the assignment states the role and its concern, and nothing it cannot supp
   assert.ok(!unknown.includes('Your concern:'));
 });
 
+test('a role holding the two writes is told it has them, and what they are for', () => {
+  // construct-ghu: the surface was built, registered and reachable, and the
+  // assignment never mentioned it. A live four-role run finished with every role
+  // reporting and not one draft submitted.
+  const text = assignmentFor(brief('privacy'), DOMAINS, { writeSurface: true });
+
+  assert.match(text, /submit_draft/);
+  assert.match(text, /append_work_log/);
+  assert.match(text, /exactly once/, 'a role that submits five drafts is not following this');
+  assert.match(text, /does not\s+promote/, 'submitting must not read as finishing');
+  assert.match(text, /in your own name/, "the work log's whole point is attribution");
+
+  // Host-agnostic, per the acceptance criterion: a role has no business knowing
+  // which host it landed on, and naming one host's mechanism would be wrong on
+  // the other.
+  for (const leak of ['--mcp-config', 'opencode.json', 'mcp__', '--strict-mcp-config', 'OPENCODE_CONFIG']) {
+    assert.ok(!text.includes(leak), `the assignment must not name "${leak}"`);
+  }
+  assert.match(text, /may show these names with a prefix/, 'hosts namespace differently; say so');
+
+  // The stance block still has to survive alongside it.
+  assert.match(text, /STANCE: proceed \| hold \| unclear/);
+});
+
+test('a role holding no write surface is told that too, and not left guessing', () => {
+  const text = assignmentFor(brief('privacy'), DOMAINS, { writeSurface: false });
+
+  assert.match(text, /no write surface/);
+  assert.match(text, /normal and not an error/, 'a legitimate dispatch must not read as a failure');
+  assert.ok(!text.includes('submit_draft'), 'do not describe a tool that is not there');
+  assert.match(text, /STANCE: proceed \| hold \| unclear/);
+
+  // Defaulting to no surface is the safe direction: describing tools a role does
+  // not hold sends it hunting for something that will never answer.
+  assert.equal(assignmentFor(brief('privacy')), text, 'omitting the option means no surface');
+});
+
+test('what the assignment claims matches what the dispatch actually minted', () => {
+  // The drift that would make this feature a lie: telling a role it has tools on
+  // a run where no token was issued, or staying silent on one where it was.
+  const seen: string[] = [];
+  const recording = {
+    ...fakeHost(),
+    invoke: async (request: unknown): Promise<HostResult> => {
+      seen.push((request as { task: string }).task);
+      return { id: 'x', status: 'ok', output: { text: 'ok', usage: { cost: 0 } }, error: null };
+    },
+  } as unknown as HostAdapter;
+
+  return withStoreAsync(async (store) => {
+    seed(store, ['privacy']);
+    await workRun(store, recording, {
+      owner: 'w1',
+      clock: frozen(AT),
+      spendCeiling: 100,
+      capabilitySecret: 'a-secret',
+    });
+    assert.match(seen[0], /submit_draft/, 'a secret was supplied, so a surface exists');
+
+    seen.length = 0;
+    seed(store, ['security']);
+    await workRun(store, recording, { owner: 'w1', clock: frozen(AT), spendCeiling: 100 });
+    assert.ok(!seen[0].includes('submit_draft'), 'no secret, no token, no claim of tools');
+    assert.match(seen[0], /no write surface/);
+  });
+});
+
 test('spendOf separates a free run from an unmeasured one', () => {
   const free = spendOf({ id: 'a', status: 'ok', output: { usage: { cost: 0 } }, error: null });
   assert.deepEqual(free, { spend: 0, reported: true });

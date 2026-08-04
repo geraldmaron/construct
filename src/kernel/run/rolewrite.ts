@@ -45,6 +45,60 @@ export const CAPABILITY_DENIED_ACTION = 'capability-denied';
 /** Where a denial is filed when the caller did not even name a run. */
 const UNATTRIBUTED = 'unattributed';
 
+/**
+ * What a role is told about the two writes it holds (construct-ghu).
+ *
+ * This block exists because the surface was built, registered, reachable — and
+ * never mentioned to the model. A live four-role run finished with every role
+ * reporting and not one draft submitted, because nothing in the assignment said
+ * the tools were there. Both host registrations were proven by probes that pass
+ * an explicit "call submit_draft" instruction, which demonstrates plumbing and
+ * not that any real dispatch flows through it.
+ *
+ * Kept beside the grants rather than in the coordinator on purpose: the sentence
+ * describing what a role may do and the code enforcing it should be impossible
+ * to change independently. The wording follows STANCE_PROTOCOL — a fixed block
+ * in plain imperative English, because that is the shape live models actually
+ * follow.
+ *
+ * Deliberately host-agnostic. It names no registration mechanism, because a role
+ * has no business knowing which host it landed on, and the tool names are given
+ * unprefixed with a note that hosts namespace them differently — Claude exposes
+ * `mcp__construct__submit_draft` where OpenCode exposes `construct_submit_draft`,
+ * and a role told only one spelling would be wrong on the other host.
+ */
+export const WRITE_SURFACE_PROTOCOL = [
+  'You can write back to Construct. A server named "construct" gives you exactly',
+  'two tools, and no others:',
+  '',
+  '  submit_draft      — put your deliverable on the record. Submitting does not',
+  '                      promote it: it stays a draft until it survives challenges',
+  '                      that are not yours to record.',
+  '  append_work_log   — record one line, in your own name, about what you',
+  '                      reviewed, flagged, or could not determine.',
+  '',
+  'Call submit_draft exactly once, with your finished deliverable, before you',
+  'stop. Your reply text is read as well, but the draft is what lands on the',
+  'record attributed to you.',
+  '',
+  'Your host may show these names with a prefix. Use whatever spelling appears in',
+  'your own tool list; the names above are the unprefixed ones.',
+].join('\n');
+
+/**
+ * What a role is told when it holds no write surface.
+ *
+ * A dispatch without a role environment is legitimate — it is the safe default
+ * whenever no capability secret is in play — so this must not read as a failure
+ * or send the model hunting for a tool that is not there. Saying nothing was the
+ * old behavior and is worse than either: a model that has been given tools on
+ * other runs and none here cannot tell the difference from silence.
+ */
+export const NO_WRITE_SURFACE_NOTE = [
+  'You have no write surface on this run, which is normal and not an error.',
+  'Report in your reply text and do not look for a tool to call.',
+].join('\n');
+
 export interface RoleCredential {
   /** The bearer string the role presented. Unknown, because it is untrusted input. */
   readonly token: unknown;
