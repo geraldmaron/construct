@@ -129,7 +129,8 @@ a volume target alone.
 
 ## 2. The annotation ceiling — is 0.15 reachable at all?
 
-*Not measurable with current data. This section states what to collect.*
+*Measured 2026-08-04, at Stage 1 (model coders). The section below states what was
+originally to be collected and why; the result is at the end of it.*
 
 All three corpora have **one author**. `construct-gsf` already identified the circularity
 between corpus and catalog; the unexamined consequence is different and larger.
@@ -154,6 +155,41 @@ At one coder, α is not merely unmeasured but undefined. That is the finding.
 without discussion, before any further tuning. The cost is hours. The result determines whether
 0.15 is a goal or a fiction, and it gates every fitting exercise in §§3–6 — tuning against a
 single author's labels harder is how the first two corpora died. Filed as `construct-2jb.3`.
+
+### The result, Stage 1 — model coders
+
+Two coders, 34 outcomes, blind, no discussion, neither seeing the catalog's keywords or the
+project's source. Coder 1 was Fable; coder 2 was `qwen3.6:35b` run locally at temperature 0
+(`scripts/labeling-kit/code-sheet-with-model.mjs`). **Different model families, and coder 2 had
+no hand in authoring the domain catalog** — that separation is the whole point, and a second
+coder from the catalog author's own family would have measured one family agreeing with itself.
+
+| statistic | point | bootstrap 95% CI |
+|---|---|---|
+| Krippendorff's α (MASI, multi-label) | **0.7627** | [0.6317, 0.8857] |
+| Krippendorff's α (exact-match nominal) | 0.6905 | — |
+| implied Bayes error floor | 0.1235 | **[0.0517, 0.2071]** |
+
+Intervals are 4000 resamples over units — the *outcome* is the resampling unit, because the
+outcome is what varies.
+
+**The verdict, stated as the data licenses it and not as the script prints it.** The point
+estimate puts 0.15 above the floor. The interval does not settle it: the floor's 95% CI
+*contains* 0.15, and across the resamples the floor sits below 0.15 **76.9% of the time, not
+95%**. The defensible claim is *"the floor is probably but not demonstrably below 0.15."*
+`compute-alpha.mjs` currently prints a bare above/below with no width, which is the same defect
+class §1 corrected everywhere else; filed as `construct-eib`.
+
+**What this does and does not establish.** It establishes that the labeling task has a stable
+answer: two systems with different training largely agree, so annotation ambiguity is unlikely
+to be what holds the miss rate above target — which points back at the map (`construct-4jq`),
+not at the ground truth. It does **not** establish the human annotation floor. Both coders are
+LLMs with overlapping pretraining, so α here is an **upper bound** on true independent agreement
+and the floor a **lower bound**. That caveat is permanent on these numbers.
+
+Stage 2 lifts it, with human labels drawn from run-derived verdicts rather than sheets coded in
+a room — multi-author, from the deployed distribution, carrying negative labels. Filed as
+`construct-3ft`, blocked on real runs existing.
 
 ---
 
