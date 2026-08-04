@@ -274,20 +274,23 @@ export function buildCleanupCatalog(target: CleanupTarget): CleanupItem[] {
       id: 'machine-memory-mcp',
       scope: 'machine',
       risk: 'auto',
-      label: 'memory MCP registration (Claude, OpenCode, Codex)',
+      label: 'predecessor MCP registrations (Claude, OpenCode, Codex)',
       detect: () =>
-        hasJsonKeys(claudeSettings, 'mcpServers', MEMORY_MCP_IDS)
-        || hasJsonKeys(claudeUserConfig, 'mcpServers', MEMORY_MCP_IDS)
-        || hasJsonKeys(opencodeConfig, 'mcp', MEMORY_MCP_IDS)
-        || hasCodexMcpTables(codexConfig, MEMORY_MCP_IDS),
+        mcpIdsToStrip(claudeSettings, 'mcpServers', MEMORY_MCP_IDS).length > 0
+        || mcpIdsToStrip(claudeUserConfig, 'mcpServers', MEMORY_MCP_IDS).length > 0
+        || mcpIdsToStrip(opencodeConfig, 'mcp', MEMORY_MCP_IDS).length > 0
+        || hasCodexMcpTables(codexConfig, codexIdsToStrip(codexConfig, MEMORY_MCP_IDS)),
       describe: () =>
-        'Strips the Construct memory MCP bridge from ~/.claude.json, ~/.claude/settings.json (legacy path), ~/.config/opencode/opencode.json, and ~/.codex/config.toml. Preserves all other entries.',
+        'Strips every MCP server that launches the predecessor — matched by the command it runs, not by what it is named — from ~/.claude.json, ~/.claude/settings.json (legacy path), ~/.config/opencode/opencode.json, and ~/.codex/config.toml. Preserves all other entries.',
       remove: () => {
         const stripped: string[] = [];
-        if (stripJsonKeys(claudeSettings, 'mcpServers', MEMORY_MCP_IDS)) stripped.push('claude settings.json (legacy)');
-        if (stripJsonKeys(claudeUserConfig, 'mcpServers', MEMORY_MCP_IDS)) stripped.push('claude.json');
-        if (stripJsonKeys(opencodeConfig, 'mcp', MEMORY_MCP_IDS)) stripped.push('opencode');
-        if (stripCodexMcpTables(codexConfig, MEMORY_MCP_IDS)) stripped.push('codex');
+        const strip = (file: string, key: string): boolean =>
+          stripJsonKeys(file, key, mcpIdsToStrip(file, key, MEMORY_MCP_IDS));
+        if (strip(claudeSettings, 'mcpServers')) stripped.push('claude settings.json (legacy)');
+        if (strip(claudeUserConfig, 'mcpServers')) stripped.push('claude.json');
+        if (strip(opencodeConfig, 'mcp')) stripped.push('opencode');
+        if (stripCodexMcpTables(codexConfig, codexIdsToStrip(codexConfig, MEMORY_MCP_IDS)))
+          stripped.push('codex');
         return stripped.length ? `stripped from ${stripped.join(', ')}` : 'nothing to strip';
       },
     },
@@ -529,10 +532,51 @@ function unmergeMcpJson(filePath: string): string | null {
   return `.mcp.json stripped ${removedCount} mcpServers; preserved ${remaining.join(', ')}`;
 }
 
-function hasJsonKeys(filePath: string, containerKey: string, ids: string[]): boolean {
+
+/**
+ * Whether an MCP server entry launches the PREDECESSOR (construct-mei).
+ *
+ * Matched on the command it runs, not on what it is called. The id list this
+ * replaces held `['memory', 'cass']`, and v2's orchestration server is
+ * registered as `construct-mcp`, so cleanup walked past the single strongest
+ * surface the predecessor has: a connected, tool-serving endpoint. It is not
+ * dormant either — OpenCode cannot isolate MCP servers (construct-nv0), so a v3
+ * role dispatched there sees v2's tools, and one did.
+ *
+ * The signature is the predecessor's `lib/mcp/server.mjs`, which is a fact about
+ * its package layout rather than about anyone's naming. v3 has no `lib/` at all
+ * (it ships `bin/` and `dist/`), so this cannot match the successor even though
+ * the two now share a package name.
+ */
+function isPredecessorMcpEntry(entry: unknown): boolean {
+  if (!entry || typeof entry !== 'object') return false;
+  const record = entry as { command?: unknown; args?: unknown };
+  const parts: unknown[] = [
+    ...(Array.isArray(record.command) ? record.command : [record.command]),
+    ...(Array.isArray(record.args) ? record.args : []),
+  ];
+  return parts.some(
+    (part) => typeof part === 'string' && /construct\/lib\/mcp\/server\.mjs/.test(part),
+  );
+}
+
+/** Ids in `container` whose entry launches the predecessor. */
+function predecessorMcpIds(container: Record<string, unknown>): string[] {
+  return Object.keys(container).filter((id) => isPredecessorMcpEntry(container[id]));
+}
+
+/**
+ * Every id worth stripping from one MCP container: the historically-named
+ * bridges, plus anything that actually points at the predecessor whatever it is
+ * called. The union is deliberate — the id list still catches an entry whose
+ * command has been rewritten by hand, and the path check catches the names
+ * nobody wrote down.
+ */
+function mcpIdsToStrip(filePath: string, containerKey: string, ids: string[]): string[] {
   const config = readJsonOrNull(filePath);
   const container = config?.[containerKey] as Record<string, unknown> | undefined;
-  return Boolean(container && ids.some((id) => id in container));
+  if (!container) return [];
+  return [...new Set([...ids.filter((id) => id in container), ...predecessorMcpIds(container)])];
 }
 
 function stripJsonKeys(filePath: string, containerKey: string, ids: string[]): boolean {
@@ -571,6 +615,32 @@ function removeTomlTables(text: string, tableNames: string[]): string {
     next = next.replace(pattern, '\n');
   }
   return next.replace(/\n{3,}/g, '\n\n').trimEnd();
+}
+
+/**
+ * Codex's equivalent of predecessorMcpIds (construct-mei). Its config is TOML
+ * and this file carries only a minimal table remover, not a parser, so the scan
+ * is textual: find each `[mcp_servers.<id>]` header and look for the
+ * predecessor's server path before the next table begins.
+ *
+ * Textual is honest here rather than lazy — a wrong answer errs toward NOT
+ * matching, which leaves a trace behind for the operator to see, instead of
+ * deleting a table this code misread.
+ */
+function codexIdsToStrip(filePath: string, ids: string[]): string[] {
+  if (!fs.existsSync(filePath)) return [...ids];
+  const text = fs.readFileSync(filePath, 'utf8');
+  const found = new Set(ids);
+  const header = /^\s*\[mcp_servers\.(?:"([^"]+)"|([^\]\s]+))\]\s*$/gm;
+  let match: RegExpExecArray | null;
+  while ((match = header.exec(text)) !== null) {
+    const id = match[1] ?? match[2];
+    const rest = text.slice(match.index + match[0].length);
+    const nextTable = rest.search(/^\s*\[/m);
+    const body = nextTable === -1 ? rest : rest.slice(0, nextTable);
+    if (/construct\/lib\/mcp\/server\.mjs/.test(body)) found.add(id);
+  }
+  return [...found];
 }
 
 function hasCodexMcpTables(filePath: string, ids: string[]): boolean {
