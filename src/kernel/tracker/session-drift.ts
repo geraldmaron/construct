@@ -66,7 +66,7 @@ export interface BeadIssue {
 
 /** What the repo says about one bead. Gathered by a caller; no IO happens here. */
 export interface RepoEvidence {
-  /** Commits reachable from the trunk whose message names this bead. */
+  /** Commits reachable from main whose message names this bead. */
   readonly landingCommits?: readonly string[];
   /** Uncommitted changes, a branch, or a worktree naming this bead. */
   readonly inFlight?: boolean;
@@ -202,8 +202,8 @@ export function reconcileSession(
 export function describeConflict(field: string, domain: unknown, tracker: unknown): string {
   if (field === 'landed') {
     return tracker === true
-      ? 'closed, but no commit on the trunk names it — undone work, or work stranded on an unmerged branch'
-      : 'a commit on the trunk names it, but it is still open — a close nobody ran';
+      ? 'closed, but no commit on main names it — undone work, or work stranded on an unmerged branch'
+      : 'a commit on main names it, but it is still open — a close nobody ran';
   }
   if (field === 'in_flight') {
     return tracker === true

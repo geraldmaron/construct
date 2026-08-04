@@ -176,7 +176,7 @@ test('every status that is neither closed nor in_progress claims nothing', () =>
 });
 
 test('a conflict is described as the fix it calls for, and direction decides which', () => {
-  assert.match(describeConflict('landed', false, true), /no commit on the trunk/);
+  assert.match(describeConflict('landed', false, true), /no commit on main/);
   assert.match(describeConflict('landed', true, false), /a close nobody ran/);
   assert.match(describeConflict('in_flight', false, true), /abandoned claim/);
   assert.match(describeConflict('in_flight', true, false), /not claimed/);

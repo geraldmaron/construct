@@ -31,7 +31,7 @@ import { reconcileSession, describeConflict } from '../src/kernel/tracker/sessio
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const ISSUES = join(ROOT, '.beads/issues.jsonl');
-const TRUNK = 'main';
+const MAIN_BRANCH = 'main';
 
 const json = process.argv.includes('--json');
 const quiet = process.argv.includes('--quiet');
@@ -53,7 +53,7 @@ function loadIssues() {
 }
 
 /**
- * Which beads each trunk commit landed.
+ * Which beads each commit on main landed.
  *
  * Only the trailer counts: CLAUDE.md's convention is that a landing commit's
  * subject ends with `(construct-<id>)`, and one subject may carry several. A
@@ -67,7 +67,7 @@ function loadIssues() {
  * `construct-2jb` never matches inside `construct-2jb.9`.
  */
 function landingCommits(ids) {
-  const log = git(['log', '--format=%H%x00%s%x01', TRUNK]);
+  const log = git(['log', '--format=%H%x00%s%x01', MAIN_BRANCH]);
   if (log === null) return null;
   const known = new Set(ids);
   const found = new Map(ids.map((id) => [id, []]));
@@ -109,7 +109,7 @@ if (issues === null) {
 const ids = issues.map((i) => i.id);
 const commits = landingCommits(ids);
 if (commits === null) {
-  process.stderr.write(`reconcile-tracker: cannot read git log for ${TRUNK} — skipped\n`);
+  process.stderr.write(`reconcile-tracker: cannot read git log for ${MAIN_BRANCH} — skipped\n`);
   process.exit(0);
 }
 const flight = inFlight(ids);
@@ -129,7 +129,7 @@ if (json) {
 } else if (!(quiet && report.clean)) {
   const titles = new Map(issues.map((i) => [i.id, i.title ?? '']));
   process.stdout.write(
-    `\nreconcile-tracker: ${report.counts.total} beads against ${TRUNK}` +
+    `\nreconcile-tracker: ${report.counts.total} beads against ${MAIN_BRANCH}` +
       ` — ${report.counts.inSync} in sync, ${report.counts.drifted} drifted,` +
       ` ${report.contradictions.length} contradiction(s)\n`,
   );
