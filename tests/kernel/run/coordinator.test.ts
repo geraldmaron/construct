@@ -26,6 +26,7 @@ import {
   totalSpend,
 } from '../../../src/kernel/store/tasks.ts';
 import { readWorkLog } from '../../../src/kernel/store/worklog.ts';
+import { openDecisions } from '../../../src/kernel/store/decisions.ts';
 import { assignmentFor, spendOf, workRun } from '../../../src/kernel/run/coordinator.ts';
 import { deliverableConcerns, licensedReviewFor } from '../../../src/kernel/run/accountability.ts';
 import { DOMAINS } from '../../../src/kernel/implication/domains.ts';
@@ -85,6 +86,7 @@ interface FakeOptions {
   readonly delayMs?: number;
   readonly fail?: (role: string) => boolean;
   readonly emptyText?: (role: string) => boolean;
+  readonly answer?: (role: string) => string;
   readonly onInvoke?: (role: string) => void | Promise<void>;
 }
 
@@ -123,7 +125,9 @@ function fakeHost(options: FakeOptions = {}): FakeHost {
           return { id, status: 'error', output: null, error: { messages: ['host said no'] } };
         }
         const usage = options.cost === null ? {} : { usage: { cost: options.cost ?? 0, steps: 1 } };
-        const text = options.emptyText?.(req.role) ? '' : `${req.role} reporting`;
+        const text = options.emptyText?.(req.role)
+          ? ''
+          : (options.answer?.(req.role) ?? `${req.role} reporting`);
         return { id, status: 'ok', output: { text, ...usage }, error: null };
       } finally {
         inFlight -= 1;
@@ -518,6 +522,79 @@ test('the work log records what was flagged and what needs a licensed human', as
       !entries.some((e) => e.role === 'product-scoping' && e.action === 'licensed-review-required'),
       'a domain that does not need licensed review must not claim it does',
     );
+  });
+});
+
+test('disagreeing roles become one inbox item, and agreement becomes none', async () => {
+  await withStoreAsync(async (store) => {
+    seed(store, ['privacy', 'program-sequencing', 'product-scoping']);
+    const answers: Record<string, string> = {
+      privacy: 'Analysis.\nSTANCE: hold\nBECAUSE: no processing agreement\nCITE: GDPR Art. 28',
+      'program-sequencing': '**STANCE:** proceed\n**BECAUSE:** the date has slack\n**CITE:** the plan',
+      'product-scoping': 'STANCE: unclear\nBECAUSE: scope is not stated',
+    };
+    const host = fakeHost({ answer: (role) => answers[role] });
+
+    const report = await workRun(store, host, {
+      owner: 'w1',
+      clock: frozen(AT),
+      spendCeiling: 100,
+    });
+
+    assert.equal(report.conflicts, 1, 'one run, one framed decision');
+    const inbox = openDecisions(store, 'run-1');
+    assert.equal(inbox.length, 1);
+    assert.deepEqual(inbox[0].positions.map((p) => p.role), ['privacy', 'program-sequencing']);
+    assert.equal(inbox[0].positions[0].citation, 'GDPR Art. 28');
+    assert.equal(inbox[0].resolution, null, 'nothing auto-arbitrates');
+
+    const raised = readWorkLog(store, 'run-1').find((e) => e.action === 'decision-raised');
+    assert.ok(raised, 'raising a decision is itself accountable');
+    assert.equal((raised.detail as { undeclared: number }).undeclared, 0);
+  });
+});
+
+test('a run where the roles agree leaves the inbox empty', async () => {
+  await withStoreAsync(async (store) => {
+    seed(store, ['privacy', 'security']);
+    const host = fakeHost({ answer: () => 'STANCE: proceed\nBECAUSE: nothing blocks it' });
+
+    const report = await workRun(store, host, { owner: 'w1', clock: frozen(AT), spendCeiling: 100 });
+
+    assert.equal(report.conflicts, 0);
+    assert.equal(openDecisions(store).length, 0, 'a non-decision must not reach the inbox');
+  });
+});
+
+test('a re-run does not rewrite a decision the user is already looking at', async () => {
+  await withStoreAsync(async (store) => {
+    seed(store, ['privacy', 'program-sequencing']);
+    const answers: Record<string, string> = {
+      privacy: 'STANCE: hold\nBECAUSE: no processing agreement',
+      'program-sequencing': 'STANCE: proceed\nBECAUSE: the date has slack',
+    };
+    const host = fakeHost({ answer: (role) => answers[role] });
+    await workRun(store, host, { owner: 'w1', clock: frozen(AT), spendCeiling: 100 });
+    const first = openDecisions(store, 'run-1')[0];
+
+    // A later role lands and also disagrees.
+    enqueueTask(store, {
+      id: 't-security',
+      run: 'run-1',
+      role: 'security',
+      brief: brief('security'),
+      at: AT,
+    });
+    const again = await workRun(store, fakeHost({ answer: () => 'STANCE: hold\nBECAUSE: no review' }), {
+      owner: 'w1',
+      clock: frozen(LATER),
+      spendCeiling: 100,
+    });
+
+    assert.equal(again.conflicts, 0, 'framed once per run');
+    const inbox = openDecisions(store, 'run-1');
+    assert.equal(inbox.length, 1);
+    assert.deepEqual(inbox[0].question, first.question, 'the question must not change underneath');
   });
 });
 

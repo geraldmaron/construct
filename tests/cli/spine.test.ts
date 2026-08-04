@@ -241,6 +241,38 @@ test('work says which deliverables need a licensed human, and what is wrong with
   assert.deepEqual(notes, [], 'a domain needing no licensed review must not claim one');
 });
 
+test('roles that disagree put one framed decision in front of the user', async () => {
+  // privacy holds, program-sequencing proceeds — the shape commitment 11 is about.
+  const split: Record<string, string> = {
+    privacy: 'STANCE: hold\nBECAUSE: no processing agreement is in place\nCITE: GDPR Art. 28',
+    'program-sequencing': 'STANCE: proceed\nBECAUSE: the date has slack\nCITE: the launch plan',
+  };
+  const divided: HostAdapter = {
+    ...standInHost(),
+    invoke: async (request: unknown): Promise<HostResult> => {
+      const role = (request as { role: string }).role;
+      return {
+        id: role,
+        status: 'ok',
+        output: { text: split[role] ?? 'STANCE: unclear', usage: { cost: 0, steps: 1 } },
+        error: null,
+      };
+    },
+  };
+
+  const { out } = await runAll([
+    ['outcome', 'launch a paid beta to EU users next month'],
+    () => work([], divided),
+    ['inbox'],
+  ]);
+
+  assert.match(out, /1 decision\(s\) need you/);
+  assert.match(out, /decision inbox \(1\)/);
+  assert.match(out, /privacy: hold — no processing agreement is in place \[GDPR Art. 28\]/);
+  assert.match(out, /program-sequencing: proceed — the date has slack \[the launch plan\]/);
+  assert.ok(!/recommend/i.test(out), 'the inbox must frame, never arbitrate');
+});
+
 test('a host that reports no cost is called out rather than counted as free', async () => {
   const { out } = await runAll([
     ['outcome', 'launch a paid beta to EU users next month'],

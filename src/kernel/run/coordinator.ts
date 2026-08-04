@@ -31,6 +31,8 @@ import {
   claimTask,
   completeTask,
   failTask,
+  getTask,
+  listTasks,
   totalSpend,
 } from '../store/tasks.ts';
 import type { LeasedTask } from '../store/tasks.ts';
@@ -40,6 +42,9 @@ import type { Brief } from '../brief/schema.ts';
 import { DOMAINS, domainsByName } from '../implication/domains.ts';
 import type { Domain } from '../implication/domains.ts';
 import { deliverableConcerns, licensedReviewFor } from './accountability.ts';
+import { STANCE_PROTOCOL, frameConflict, parseStance } from './conflicts.ts';
+import type { RoleStance } from './conflicts.ts';
+import { getDecision, raiseDecision } from '../store/decisions.ts';
 
 export const DEFAULT_CONCURRENCY = 2;
 
@@ -97,6 +102,8 @@ export interface RunReport {
   readonly flagged: number;
   /** Deliverables routed to a licensed professional before anyone relies on them. */
   readonly escalated: number;
+  /** Cross-domain disagreements framed into the decision inbox. */
+  readonly conflicts: number;
   readonly spendBefore: number;
   readonly spendAfter: number;
   readonly spendCeiling: number;
@@ -127,7 +134,8 @@ export function assignmentFor(brief: Brief, catalog: readonly Domain[] = DOMAINS
     `The outcome the user asked for: ${brief.outcome}\n\n` +
     'Report what this outcome implicates in your domain: what needs to be true, ' +
     'what is likely to be missed, and what you cannot determine from the outcome ' +
-    'alone. Do not assert anything you cannot support. Be brief.'
+    'alone. Do not assert anything you cannot support. Be brief.\n\n' +
+    STANCE_PROTOCOL
   );
 }
 
@@ -167,6 +175,65 @@ function summarize(result: HostResult): Record<string, unknown> {
     failedToolCalls: Array.isArray(output?.failedToolCalls) ? output.failedToolCalls.length : 0,
     usage: output?.usage ?? null,
   };
+}
+
+/**
+ * Frame each worked run's cross-domain disagreement as one inbox item, and
+ * return how many were raised.
+ *
+ * Runs at the end rather than per settle, because a conflict is a property of a
+ * run's deliverables taken together — the first role to report has nothing to
+ * disagree with yet. Every done task in the run is considered, not just the ones
+ * this invocation settled, so a run split across two invocations by the spend
+ * ceiling still gets framed against all of its sides.
+ *
+ * Framed once per run. A later invocation that adds a position does not rewrite
+ * a decision the user may already be reading; the new position is in the work
+ * log, and silently editing the question under them would be worse than leaving
+ * it as it was raised.
+ */
+function frameConflicts(
+  store: Store,
+  settled: readonly string[],
+  options: CoordinatorOptions,
+): number {
+  const runs = new Set<string>();
+  for (const id of settled) {
+    const run = getTask(store, id)?.run;
+    if (run) runs.add(run);
+  }
+
+  let raised = 0;
+  for (const run of runs) {
+    if (getDecision(store, `${run}:stance`)) continue;
+
+    const done = listTasks(store, run).filter((task) => task.state === 'done');
+    const stances: RoleStance[] = [];
+    for (const task of done) {
+      const declared = parseStance((task.result as { text?: unknown } | null)?.text);
+      if (declared) stances.push({ role: task.role, declared });
+    }
+
+    const outcome = (done[0]?.brief as Brief | undefined)?.outcome ?? run;
+    const decision = frameConflict({ run, outcome, stances, at: options.clock() });
+    if (!decision) continue;
+
+    raiseDecision(store, decision);
+    raised += 1;
+    appendWorkLog(store, {
+      run,
+      role: 'construct',
+      action: 'decision-raised',
+      detail: {
+        id: decision.id,
+        question: decision.question,
+        positions: decision.positions,
+        undeclared: done.length - stances.length,
+      },
+      at: options.clock(),
+    });
+  }
+  return raised;
 }
 
 /**
@@ -381,6 +448,8 @@ export async function workRun(
   await Promise.all(inFlight);
   if (fatal !== null) throw fatal;
 
+  const conflicts = frameConflicts(store, settled, options);
+
   const spendAfter = totalSpend(store);
   if (halted !== null) {
     appendWorkLog(store, {
@@ -401,6 +470,7 @@ export async function workRun(
     recovered,
     flagged,
     escalated,
+    conflicts,
     spendBefore,
     spendAfter,
     spendCeiling: options.spendCeiling,

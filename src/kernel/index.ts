@@ -211,6 +211,14 @@ export {
   licensedReviewFor,
 } from './run/accountability.ts';
 export type { Concern, ConcernKind } from './run/accountability.ts';
+export {
+  STANCES,
+  STANCE_PROTOCOL,
+  frameConflict,
+  isConflict,
+  parseStance,
+} from './run/conflicts.ts';
+export type { DeclaredStance, FrameInput, RoleStance, Stance } from './run/conflicts.ts';
 
 export { CAPABILITIES, hasCapability, validate as validateHost } from './hosts/interface.ts';
 export type {

@@ -342,6 +342,14 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
     process.stdout.write(
       `\nspend ${money(report.spendAfter)} of ${money(report.spendCeiling)} ceiling.\n`,
     );
+    if (report.conflicts > 0) {
+      // The inbox is the point of the whole run: work happened in the
+      // background, and this is the part that is genuinely the user's.
+      process.stdout.write(
+        `\n${String(report.conflicts)} decision(s) need you — the roles disagree.\n` +
+          'See: construct inbox\n',
+      );
+    }
     if (report.recovered > 0) {
       process.stdout.write(
         `recovered ${String(report.recovered)} task(s) from an earlier run that did not finish.\n`,
