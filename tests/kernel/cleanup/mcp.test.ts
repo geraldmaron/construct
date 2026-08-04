@@ -130,3 +130,61 @@ test('a config with no MCP servers at all is not a trace', () => {
     f.cleanup();
   }
 });
+
+/**
+ * ~/.construct — the predecessor's home directory (construct-lqs).
+ *
+ * It was in no scope at all: the catalog resolved `.construct` only relative to
+ * cwd, so a machine carrying 685MB of v2 traces and vector indexes could pass
+ * "zero detected traces at machine scope" truthfully. An uninstaller that
+ * reports success while leaving its largest artifact behind teaches the operator
+ * to trust a number that does not mean what they think.
+ */
+test("the predecessor's home directory is a machine-scope trace", () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-home-'));
+  try {
+    const project = path.join(home, '.construct', 'projects', 'abc123');
+    fs.mkdirSync(path.join(project, 'traces'), { recursive: true });
+    fs.writeFileSync(path.join(project, 'traces', '2026-07-23.jsonl'), '{"a":1}\n');
+    fs.writeFileSync(path.join(home, '.construct', 'hook-calls.jsonl'), '{"b":2}\n');
+
+    const items = buildCleanupCatalog({
+      cwd: path.join(home, 'project'),
+      home,
+      paths: resolvePaths({ HOME: home }, home),
+      spawn: NOT_FOUND_SPAWN,
+    });
+    const item = items.find((i: CleanupItem) => i.id === 'machine-home-construct');
+    assert.ok(item, 'the item must exist, or the exit criterion is vacuous');
+
+    assert.equal(item.scope, 'machine', 'cwd has nothing to do with where this lives');
+    assert.equal(
+      item.risk,
+      'ask',
+      'the largest thing cleanup touches is not removed without a question',
+    );
+    assert.equal(item.detect(), true);
+    assert.match(item.describe(), /traces/, 'the prompt says what it is about to take');
+
+    item.remove();
+    assert.equal(fs.existsSync(path.join(home, '.construct')), false);
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test('a home without the predecessor reports nothing to remove', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-home-'));
+  try {
+    const items = buildCleanupCatalog({
+      cwd: path.join(home, 'project'),
+      home,
+      paths: resolvePaths({ HOME: home }, home),
+      spawn: NOT_FOUND_SPAWN,
+    });
+    const item = items.find((i: CleanupItem) => i.id === 'machine-home-construct');
+    assert.equal(item?.detect(), false);
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});

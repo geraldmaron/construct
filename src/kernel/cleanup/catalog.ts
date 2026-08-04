@@ -108,6 +108,11 @@ export function buildCleanupCatalog(target: CleanupTarget): CleanupItem[] {
   const userConfigEnv = path.join(userConfigDir, 'config.env');
   const userLibLink = path.join(userConfigDir, 'lib');
   const userPgComposeDir = path.join(userConfigDir, 'services', 'postgres');
+  // The predecessor's own home directory, distinct from the XDG dirs and from a
+  // checkout's `.construct/` (construct-lqs). It was in no scope at all until
+  // this item existed, which made "zero detected traces" a sentence that could
+  // be true with 685MB of v2 still on disk.
+  const homeConstruct = path.join(home, '.construct');
   const claudeSettings = path.join(home, '.claude', 'settings.json');
   const claudeUserConfig = path.join(home, '.claude.json');
   const opencodeConfig = path.join(home, '.config', 'opencode', 'opencode.json');
@@ -225,6 +230,23 @@ export function buildCleanupCatalog(target: CleanupTarget): CleanupItem[] {
       remove: () => (removePath(userConfigEnv) ? 'removed' : 'nothing to remove'),
     },
     {
+      id: 'machine-home-construct',
+      scope: 'machine',
+      // Ask, deliberately (construct-lqs). This is the predecessor's accumulated
+      // history — per-project traces and vector indexes — not a cache it would
+      // rebuild. It is regenerable in the sense that nothing here is a source of
+      // truth, and it is also the only place a record of what v2 actually did
+      // survives, which is worth one question rather than none. It is the single
+      // largest thing cleanup touches, so a silent auto-removal is exactly the
+      // kind of surprise the ask tier exists for.
+      risk: 'ask',
+      label: `${rel(home, homeConstruct)} (per-project traces + vector indexes)`,
+      detect: () => existsAny(homeConstruct),
+      describe: () =>
+        `Removes ${rel(home, homeConstruct)} — the predecessor's per-project traces, vector indexes and hook-call logs (${describeSize(homeConstruct)}). Nothing here is a source of truth, but it is the only surviving record of what v2 did.`,
+      remove: () => (removePath(homeConstruct) ? 'removed' : 'nothing to remove'),
+    },
+    {
       id: 'machine-lib-symlink',
       scope: 'machine',
       risk: 'auto',
@@ -309,6 +331,40 @@ export function buildCleanupCatalog(target: CleanupTarget): CleanupItem[] {
 function rel(base: string, target: string): string {
   const r = path.relative(base, target);
   return r || target;
+}
+
+/**
+ * A human-readable size for a directory, for an ask-risk prompt that should say
+ * what it is about to take. Best-effort: an unreadable entry is skipped rather
+ * than thrown, because failing to describe something must never stop cleanup
+ * from offering to remove it.
+ */
+function describeSize(dir: string): string {
+  let bytes = 0;
+  const walk = (p: string): void => {
+    let entries: fs.Dirent[];
+    try {
+      entries = fs.readdirSync(p, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const full = path.join(p, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else {
+        try {
+          bytes += fs.statSync(full).size;
+        } catch {
+          /* skip */
+        }
+      }
+    }
+  };
+  walk(dir);
+  const mb = bytes / (1024 * 1024);
+  if (mb >= 1024) return `${(mb / 1024).toFixed(1)}GB`;
+  if (mb >= 1) return `${Math.round(mb)}MB`;
+  return `${Math.max(1, Math.round(bytes / 1024))}KB`;
 }
 
 function existsAny(p: string): boolean {
