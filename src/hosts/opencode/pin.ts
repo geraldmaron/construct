@@ -93,6 +93,13 @@ export const CONFORMANCE_EXPECTATIONS: readonly ConformanceExpectation[] = [
     whyItMatters:
       "This is what the adapter's init() warm-up rides. If `stats` is renamed, or stops touching the database, warming stops working — silently, since it is best-effort — and a cold migration lands back in front of a real task. If it ever started calling a model, every init would spend money the coordinator never sees.",
   },
+  {
+    id: 'provider-registry-follows-xdg-config-home',
+    claim:
+      'the provider registry is read from XDG_CONFIG_HOME, so a host pointed at an empty config root reports zero models where the ambient root reports its registered ones',
+    whyItMatters:
+      "This is the behavior hosts/environment.ts exists to work around (construct-wl8). Construct resolves its own directories from the same XDG variables, so inheriting them wholesale re-pointed the HOST's provider registry at construct's scratch state — every task failed with `Model not found` naming the model, which was correct, rather than the environment, which was the cause. The adapter now spawns the host with those variables dropped. If the host ever stopped reading its registry from XDG_CONFIG_HOME, that dropping would be solving a problem that no longer exists and could go; if it started reading more from there, the workaround is load-bearing in more places than it knows.",
+  },
 ];
 
 /**

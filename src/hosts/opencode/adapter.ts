@@ -21,6 +21,7 @@
  */
 
 import { spawn as nodeSpawn } from 'node:child_process';
+import { hostEnvironment } from '../environment.ts';
 import type { HostAdapter, HostCancellation, HostCapability, HostContext, HostHealth, HostResult } from '../../kernel/hosts/interface.ts';
 import { HostNotReadyError, InvocationError, InvocationTimeoutError } from '../../kernel/hosts/errors.ts';
 import { failedToolCalls, reduceTranscript } from './events.ts';
@@ -97,7 +98,13 @@ export interface OpenCodeAdapter extends HostAdapter {
 }
 
 function defaultSpawn(command: string, args: readonly string[], options: { cwd?: string }): SpawnedProcess {
-  const child = nodeSpawn(command, [...args], { cwd: options.cwd, stdio: ['ignore', 'pipe', 'pipe'] });
+  const child = nodeSpawn(command, [...args], {
+    cwd: options.cwd,
+    stdio: ['ignore', 'pipe', 'pipe'],
+    // Chosen, not inherited: construct's own XDG isolation must not
+    // re-point the host's configuration and credentials (construct-wl8).
+    env: hostEnvironment(),
+  });
   let stdout = '';
   let stderr = '';
   child.stdout?.setEncoding('utf8').on('data', (chunk: string) => {

@@ -187,6 +187,30 @@ try {
   rmSync(coldData, { recursive: true, force: true });
 }
 
+// ── the config collision hosts/environment.ts works around (construct-wl8) ──
+// Two observations, because only the pair is evidence: the ambient config root
+// must list models AND an empty one must not. Checking only the empty root
+// would pass on a machine with no providers registered at all, which is the
+// state that makes the claim vacuous rather than true.
+const emptyConfig = mkdtempSync(path.join(tmpdir(), 'oc-probe-cfg-'));
+try {
+  const countModels = (env) => {
+    const listed = spawnSync(binary, ['models'], { encoding: 'utf8', env });
+    return (listed.stdout ?? '').split('\n').filter((line) => line.trim()).length;
+  };
+  const ambientModels = countModels(process.env);
+  const isolatedModels = countModels({ ...process.env, XDG_CONFIG_HOME: emptyConfig });
+  record(
+    'provider-registry-follows-xdg-config-home',
+    ambientModels > 0 && isolatedModels < ambientModels,
+    ambientModels === 0
+      ? 'the ambient config root registers no models at all — this machine cannot tell the two roots apart, so the claim is untested here rather than held'
+      : `ambient root lists ${ambientModels} model(s), empty root lists ${isolatedModels}`,
+  );
+} finally {
+  rmSync(emptyConfig, { recursive: true, force: true });
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 let broken = 0;
 process.stdout.write(`\nopencode conformance probe — installed ${installed}, pinned ${PINNED_VERSION}\n\n`);

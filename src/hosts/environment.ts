@@ -1,0 +1,89 @@
+/**
+ * hosts/environment.ts — the environment a host binary is spawned with
+ * (construct-wl8).
+ *
+ * Construct resolves its own directories from the XDG variables, which is
+ * correct: they are the standard, and `kernel/paths.ts` is right to honor them.
+ * The defect is what happens next. Both adapters spawned their host by
+ * inheriting `process.env` wholesale, and the hosts are XDG-respecting programs
+ * too — so a user isolating CONSTRUCT's state also silently re-pointed the
+ * HOST's configuration at the same empty scratch directory.
+ *
+ * Measured, not theorized: with XDG_CONFIG_HOME pointed at a scratch dir,
+ * `construct work --host=opencode --model=ollama/qwen3.5:4b` failed every task
+ * with "Model not found: ollama/qwen3.5:4b" while `opencode models` listed six
+ * ollama models under the ambient environment and zero under the scratch one.
+ * OpenCode reads ~/.config/opencode/opencode.json for its provider
+ * registrations. The failure was legible — the task failed with the host's own
+ * message and the coordinator recorded it — but the message named the model,
+ * which was correct, rather than the environment, which was the cause.
+ *
+ * Two things were sharing one namespace: construct's state and the host's
+ * configuration. So the adapter now hands the host a deliberately-chosen
+ * environment rather than inheriting one, which is the same discipline
+ * hosts/claude/mcpconfig.ts already applies to the role environment
+ * (construct-r67.14): decide what crosses the boundary instead of letting
+ * everything cross by default.
+ *
+ * All four XDG variables are dropped, not just CONFIG. Credentials are the
+ * reason: OpenCode keeps provider auth under XDG_DATA_HOME, so isolating
+ * construct's data dir would silently un-authenticate every paid provider the
+ * same way isolating its config dir un-registered the local ones. Only ollama
+ * needs no auth, which is exactly why the original measurement — taken on a
+ * local model — showed XDG_DATA_HOME isolation as harmless when it is not.
+ *
+ * The escape hatch is real and deliberate. Someone whose whole shell genuinely
+ * runs under a custom XDG root is not isolating construct, and for them
+ * dropping these would be the bug rather than the fix. `CONSTRUCT_HOST_INHERIT_XDG`
+ * turns the inheritance back on and is the supported way to say "the host
+ * belongs under this root too".
+ */
+
+/** The variables construct and its hosts both resolve directories from. */
+export const SHARED_XDG_VARS = [
+  'XDG_CONFIG_HOME',
+  'XDG_STATE_HOME',
+  'XDG_DATA_HOME',
+  'XDG_CACHE_HOME',
+] as const;
+
+/** Set this to keep the host under construct's isolation deliberately. */
+export const INHERIT_XDG_VAR = 'CONSTRUCT_HOST_INHERIT_XDG';
+
+export type Environment = Record<string, string | undefined>;
+
+/** Unset, empty, "0", and "false" all mean "do not inherit". */
+function wantsInheritance(value: string | undefined): boolean {
+  if (value === undefined) return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized !== '' && normalized !== '0' && normalized !== 'false';
+}
+
+/**
+ * The environment to spawn a host binary with: the ambient one, minus the XDG
+ * variables construct may have had pointed at its own state.
+ *
+ * Dropping rather than rewriting is the honest operation. If construct was
+ * launched with XDG_CONFIG_HOME already set, it cannot recover what the value
+ * "should" have been — nobody recorded it. Dropping makes the host fall back to
+ * its $HOME-based default, which is precisely the configuration it would have
+ * read had construct never been isolated, and that is the property the bead
+ * asks for.
+ */
+export function hostEnvironment(ambient: Environment = process.env): Environment {
+  if (wantsInheritance(ambient[INHERIT_XDG_VAR])) return { ...ambient };
+  const chosen: Environment = { ...ambient };
+  for (const variable of SHARED_XDG_VARS) delete chosen[variable];
+  return chosen;
+}
+
+/**
+ * Which variables `hostEnvironment` would actually drop for this environment.
+ * Empty when nothing was isolated, which is the common case — so a caller can
+ * report the adjustment only when one was made, rather than narrating a no-op
+ * on every run.
+ */
+export function droppedForHost(ambient: Environment = process.env): readonly string[] {
+  if (wantsInheritance(ambient[INHERIT_XDG_VAR])) return [];
+  return SHARED_XDG_VARS.filter((variable) => ambient[variable] !== undefined);
+}

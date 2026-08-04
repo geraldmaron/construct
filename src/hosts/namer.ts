@@ -17,10 +17,10 @@
  *     gate on what the catalog contains, and duplicating it here would create
  *     two places for a hallucinated role to slip through differently.
  *   - It does not degrade to a guess. Every failure path — a host error, a
- *     non-ok result, unparseable output — THROWS, because escalate.ts's
- *     contract is that a namer which throws becomes silence. Returning an
- *     empty array here would be indistinguishable from "the model considered
- *     the catalog and named nothing", and those two are not the same fact.
+ *     non-ok result, unparseable output — THROWS, because escalate.ts turns a
+ *     namer that throws into silence. Returning an empty array here would be
+ *     indistinguishable from "the model considered the catalog and named
+ *     nothing", and those two are not the same fact.
  *
  * The prompt asks for JSON and nothing else, and the parser tolerates the
  * fenced-code wrapper models add anyway. That tolerance is not politeness: the
