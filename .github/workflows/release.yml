@@ -31,10 +31,15 @@ jobs:
             echo "tag v$tag_version does not match package.json version $pkg_version" >&2
             exit 1
           fi
-      # --tag alpha keeps this off the default `latest` dist-tag: STRATEGY.md
-      # is explicit that 0.x carries no stability promise until the Phase 5
-      # second-user gate, so `npm install @geraldmaron/construct-engine` with
-      # no version/tag should not resolve here.
+      # --tag alpha keeps this off the default `latest` dist-tag, and since
+      # construct-3fr that is load-bearing rather than tidy: this package is the
+      # predecessor's, whose `latest` is 2.1.1 and has real installs. `npm
+      # publish` moves `latest` to whatever it publishes unless told otherwise,
+      # so without this flag an alpha of a from-scratch rewrite would become the
+      # default install for everyone already on 2.x. It is also how STRATEGY's
+      # "no stability promise until the Phase 5 second-user gate" is enforced by
+      # the registry rather than implied by a version number. `latest` moves only
+      # when 3.0.0 is promoted deliberately.
       - run: npm publish --provenance --tag alpha
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -2,7 +2,7 @@
  * hosts/opencode — OpenCode behind the kernel's host adapter seam.
  *
  * Reached from a consumer as
- * `@geraldmaron/construct-engine/hosts/opencode/index.js`, which is the path
+ * `@geraldmaron/construct/hosts/opencode/index.js`, which is the path
  * package.json's `exports["./hosts/*"]` exists to serve. Adapters live here
  * rather than under kernel/ because an adapter is host-coupled by definition
  * and the kernel stays the part that knows nothing about who executes.
