@@ -11,7 +11,10 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { createOpenCodeAdapter, HOST_NAME, OPENCODE_CAPABILITIES } from '../../../src/hosts/opencode/adapter.ts';
 import type { OpenCodeDeliverable, OpenCodeSpawnFn, SpawnedProcess } from '../../../src/hosts/opencode/adapter.ts';
 import { PINNED_VERSION } from '../../../src/hosts/opencode/pin.ts';
@@ -278,4 +281,55 @@ test('a run that never finishes times out as a typed error', async () => {
     return true;
   });
   assert.equal(fake.killed.length, 1, 'and the child is not left running');
+});
+
+/**
+ * The same claim, in the one condition where it was false.
+ *
+ * The test above passes whether or not the timeout can actually fire, because
+ * the rest of the suite keeps the event loop busy long enough for a timer that
+ * does not hold the loop open to fire anyway. It went red only in CI, on the
+ * machine that drained the loop first, which is the shape of a flake and was
+ * treated as one — the defect underneath was a timeout that silently did not
+ * happen when nothing else was pending, leaving invoke() hung forever.
+ *
+ * So this runs the hung invocation in a process of its own with nothing else in
+ * it. Timing is not what makes it deterministic — an empty loop is.
+ */
+test('the timeout still fires when nothing else keeps the process alive', () => {
+  const fixtureDir = mkdtempSync(join(tmpdir(), 'construct-timeout-'));
+  try {
+    const adapterUrl = new URL('../../../src/hosts/opencode/adapter.ts', import.meta.url).href;
+    const probe = join(fixtureDir, 'probe.mjs');
+    writeFileSync(
+      probe,
+      `import { createOpenCodeAdapter } from ${JSON.stringify(adapterUrl)};
+const spawn = (command, args) => {
+  if (args[0] === '--version') {
+    return { done: Promise.resolve({ code: 0, stdout: ${JSON.stringify(PINNED_VERSION)} + '\\n', stderr: '' }), kill: () => {} };
+  }
+  let settle;
+  const done = new Promise((resolve) => { settle = resolve; });
+  return { done, kill: () => settle({ code: null, stdout: '', stderr: '' }) };
+};
+const adapter = createOpenCodeAdapter({ spawn, timeoutMs: 25 });
+await adapter.init();
+try {
+  await adapter.invoke({ role: 'privacy', task: 'a run that never finishes' });
+  process.stdout.write('SETTLED-OK\\n');
+} catch (error) {
+  process.stdout.write('REJECTED:' + error.name + '\\n');
+}
+`,
+    );
+
+    const run = spawnSync(process.execPath, [probe], { encoding: 'utf8' });
+    assert.equal(
+      run.stdout.trim(),
+      'REJECTED:InvocationTimeoutError',
+      `invoke() must settle on an idle loop — it printed ${JSON.stringify(run.stdout)}${run.stderr}`,
+    );
+  } finally {
+    rmSync(fixtureDir, { recursive: true, force: true });
+  }
 });

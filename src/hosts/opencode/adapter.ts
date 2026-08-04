@@ -225,6 +225,15 @@ export function createOpenCodeAdapter(config: OpenCodeConfig = {}): OpenCodeAdap
       // ready and whichever lands first is a coin toss. Racing alone would
       // report a timed-out run as a successful one whenever the child's exit
       // won that toss, which is the failure a timeout exists to prevent.
+      // The timer is deliberately NOT unref'd. An unref'd timer does not hold
+      // the event loop open, so if nothing else is pending it never fires at
+      // all — and the promise it was racing never settles. That is the exact
+      // situation a timeout exists for, and it turned this adapter's timeout
+      // into a suggestion: `invoke()` would hang forever on an idle loop
+      // instead of rejecting. It cost nothing to keep, either, because the
+      // `finally` below clears it on every path, so it cannot outlive the
+      // invocation and cannot hold the process open past it. A run still in
+      // flight SHOULD keep the process alive.
       let expired = false;
       let timer: ReturnType<typeof setTimeout> | undefined;
       const timedOut = new Promise<never>((_resolve, reject) => {
@@ -233,7 +242,6 @@ export function createOpenCodeAdapter(config: OpenCodeConfig = {}): OpenCodeAdap
           child.kill();
           reject(new InvocationTimeoutError(HOST_NAME, timeoutMs));
         }, timeoutMs);
-        timer.unref?.();
       });
 
       try {
