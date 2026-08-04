@@ -327,6 +327,43 @@ within 0.3). It should be fitted (§6) and then **reused**, not reimplemented �
 confidence mechanism beside the first is the drift commitment 16 exists to catch. Filed as
 `construct-2jb.7`; supersedes the design scope of `construct-2fu`.
 
+### The signal that reaches the other five: embedding similarity
+
+*Measured live (`node scripts/measure-decisions.mjs --embeddings`), on a free local model.*
+
+The keyword layer's recall ceiling is dictionary coverage — a miss always closes with a word
+nobody listed. Cosine similarity between the outcome and each domain's concern sentence (the
+text a catalog author already wrote for humans) does not depend on any word being listed.
+Measured on `nomic-embed-text` over all 540 (outcome, domain) pairs:
+
+- **AUC 0.750** — labeled pairs outscore unlabeled ones three times in four. A real signal and a
+  poor classifier: the distributions overlap heavily, so similarity alone must never implicate.
+- The decisive result: **all six keyword-missed labels rank in the top 4 of 10 domains by
+  similarity** — two of them rank first. A shortlist of the top-4 similar unimplicated domains,
+  handed to the namer for judgment, reaches **6 of 6** observed misses where escalate-on-silence
+  reaches 1 of 6.
+
+Seam: `src/kernel/implication/similarity.ts` — embedder injected like Paths and the namer,
+kernel imports no host. The shortlist returns *candidates for a namer to judge*, never
+implications: geometry is not a citation, so commitment 15's evidence bar is untouched. The k=4
+figure is derived from the current corpora and must be re-derived when they grow, not trusted.
+Filed as `construct-2jb.12`.
+
+### The corpus that grows itself
+
+The binding constraint from §1 is not label count but label *provenance* — every corpus is
+single-author and two of three are spent. From Phase 2 on, **every real run is a labeling
+event**: the user sees which domains surfaced, dismisses the wrong ones, and is ambushed by the
+missed ones. Captured at run time, that is a multi-author corpus drawn from the deployed
+distribution at zero marginal cost, and it carries something no authored corpus has: **negative
+labels** (an explicit dismissal is different from an author not thinking of a domain). It also
+retires the burned-on-commit problem — yesterday's runs are always unspent with respect to
+today's catalog edits, so the corpus is spent per catalog version rather than forever.
+
+Pure core: `src/kernel/implication/harvest.ts` — verdict records in, fixture-shaped corpus out,
+provenance on every outcome, deterministic ids so harvests diff across catalog versions.
+Store and CLI wiring filed as `construct-2jb.13`.
+
 ---
 
 ## 6. Calibration

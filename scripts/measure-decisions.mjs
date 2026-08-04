@@ -262,6 +262,58 @@ if (heading(5, 'Escalation as value of information')) {
 }
 
 // ---------------------------------------------------------------------------
+// §5e requires a live local embedding model and is skipped without --embeddings:
+// the rest of this script is deterministic and must stay runnable offline.
+if (process.argv.includes('--embeddings') && heading(5.5, 'Embedding similarity as the escalation shortlist (live, local)')) {
+  const { rankBySimilarity, domainText } = await import('../src/kernel/implication/similarity.ts');
+  const EMBED_MODEL = 'nomic-embed-text';
+  const embedRaw = async (text) => {
+    const res = await fetch('http://127.0.0.1:11434/api/embeddings', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ model: EMBED_MODEL, prompt: text }),
+    });
+    if (!res.ok) throw new Error(`ollama ${res.status} — is ollama running with ${EMBED_MODEL} pulled?`);
+    return (await res.json()).embedding;
+  };
+  // Cache domain vectors: they change on catalog edits, not per outcome.
+  const cache = new Map();
+  const embedder = async (text) => {
+    if (!cache.has(text)) cache.set(text, await embedRaw(text));
+    return cache.get(text);
+  };
+  for (const d of DOMAINS) await embedder(domainText(d));
+
+  const positives = [];
+  const negatives = [];
+  const missRows = [];
+  for (const o of pooled) {
+    const got = implicatedDomains({ outcome: o.outcome });
+    const ranked = await rankBySimilarity({ outcome: o.outcome, catalog: DOMAINS, embedder });
+    for (const r of ranked) {
+      (o.expect.includes(r.domain) ? positives : negatives).push(r.similarity);
+      if (o.expect.includes(r.domain) && !got.includes(r.domain)) {
+        missRows.push({ id: o.id, domain: r.domain, sim: r.similarity, rank: r.rank });
+      }
+    }
+  }
+  let wins = 0;
+  for (const p of positives) for (const n of negatives) wins += p > n ? 1 : p === n ? 0.5 : 0;
+  console.log(`\n  model: ${EMBED_MODEL} (similarities are not comparable across embedders)`);
+  console.log(`  pairs: ${positives.length} labeled, ${negatives.length} unlabeled`);
+  console.log(`  AUC (P[random labeled pair outscores random unlabeled]): ${(wins / (positives.length * negatives.length)).toFixed(3)}`);
+  console.log('\n  The labels the keyword pass misses, ranked by similarity among 10 domains:\n');
+  let worst = 0;
+  for (const r of missRows) {
+    worst = Math.max(worst, r.rank);
+    console.log(`    ${r.id.padEnd(4)} ${r.domain.padEnd(18)} sim ${r.sim.toFixed(3)}  rank ${r.rank}/10`);
+  }
+  console.log(`\n  smallest k covering every keyword-missed label: ${worst}`);
+  console.log('  A shortlist is a candidate list for the namer, never an implication —');
+  console.log('  AUC this size separates populations, not individual pairs.');
+}
+
+// ---------------------------------------------------------------------------
 if (heading(9, 'Phase gates as sequential hypothesis tests')) {
   console.log('\nWhat each gate proves, if every subject succeeds:\n');
   console.log('  successes   two-sided 95% CI        one-sided 95% lower bound');
