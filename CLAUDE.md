@@ -68,7 +68,18 @@ The tracker and the repo drift apart the moment either moves without the other. 
 - bd refuses epic->task edges. When the true dependency is narrower than an epic, record it as a dated NOTES entry on the bead (construct-r67's notes are the house pattern).
 - Every drift fix is a dated NOTES entry on the affected bead. A silent fix recreates the drift.
 - Statuses are facts, not intentions: claim on start, close on land, never before.
+- in_progress means a session is working the bead right now. The moment the next move belongs to Gerald (a token to mint, labels to accept, a decision to make), release the claim, set status back to open, add the `human` label, and write a NOTES line naming exactly what that move is. `bd list --label=human` is Gerald's queue; a bead sitting in_progress across sessions is drift by definition, including sessions that end abnormally.
 - Every landing commit ends with its bead id: `(construct-<id>)`.
+
+**LLM-as-judge (Gerald, 2026-08-04):** label and verdict work runs as recommend-and-accept: Fable (or the strongest available model) labels or recommends, Gerald accepts, then work proceeds — no external recruiting gates a study. Every such verdict's NOTES entry names who judged and who accepted. When the judging model shares a family with whatever authored the thing being judged, the correlated-error caveat travels with the numbers wherever they are quoted (observed agreement is an upper bound on independent agreement).
+
+**Dispatch protocol (generalized from construct-2jb, 2026-08-04):** a bead intended for autonomous execution — a fresh session, any host, possibly a multi-agent stream — carries a dated `DISPATCH` NOTES entry stating:
+
+1. Minimum model tier, as a capability floor, not a vendor lock ("Fable/Opus-class", "Sonnet-class or better", "any local model"). If the bead splits, state the judgment/mechanical split and a tier for each half.
+2. Self-containment: the description + acceptance criteria must carry everything a fresh session needs — file paths, the shape to copy, what must NOT be done. If executing requires chat history, the bead is not dispatchable yet; fix the bead.
+3. The close gate: which checks must pass before `bd close` (default: the full repo gate).
+
+A bead without a DISPATCH note is human-or-interactive by default; do not fan it out to agents.
 
 ## Build & Test
 
