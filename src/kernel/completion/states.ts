@@ -9,6 +9,11 @@
  * JSON schema enum by a parity test; here the array is the single source and
  * COMPLETION_STATES[number] is the type, so drift is a compile error instead of
  * a test failure.
+ *
+ * This ladder is production evidence and nothing else. Whether anyone may rely
+ * on a deliverable is a separate axis — `draft -> challenged -> final`, in
+ * completion/promotion.ts, which carries the written decision about why the two
+ * are not mapped onto each other (construct-r67.13).
  */
 
 export const COMPLETION_STATES = [

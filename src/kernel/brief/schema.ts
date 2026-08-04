@@ -36,8 +36,11 @@ export interface Brief {
    */
   readonly postconditions: readonly string[];
   /**
-   * Challenges the deliverable must satisfy before promoting past draft
-   * (commitment 13). Declared here so a waiver is per-brief and visible.
+   * Challenge ids the deliverable must answer before promoting past `draft`
+   * (commitment 13). Declared here so a waiver is per-brief and visible. These
+   * are the `required` set completion/promotion.ts derives a state from — and
+   * `draft` is a state on that axis, not a rung on the twelve-rung production
+   * ladder in completion/states.ts, which has no such rung.
    */
   readonly challenges?: readonly string[];
 }

@@ -69,6 +69,19 @@ export {
   recordCompletion,
 } from './completion/ledger.ts';
 export type { DegradationReason, Evidence, EvidenceInput } from './completion/ledger.ts';
+export {
+  PROMOTION_STATES,
+  VERDICT_OUTCOMES,
+  isPromotionState,
+  promotionState,
+} from './completion/promotion.ts';
+export type {
+  Promotion,
+  PromotionInput,
+  PromotionState,
+  Verdict,
+  VerdictOutcome,
+} from './completion/promotion.ts';
 
 export {
   EXTRACTION_TIERS,
