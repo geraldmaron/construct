@@ -410,6 +410,14 @@ function partitionHooks(hooks: Record<string, unknown>): {
     for (const entry of entries) {
       const inner = (entry as { hooks?: unknown } | null)?.hooks;
       if (!Array.isArray(inner)) {
+        // The flat shape: an entry carrying its command directly rather than a
+        // matcher wrapping a hooks[]. Both occur — the settings.json files on
+        // this machine use the nested form, while v2 also wrote this one — and a
+        // partition that understood only one would silently keep the other.
+        if (isPredecessorHookCommand((entry as { command?: unknown } | null)?.command)) {
+          removed += 1;
+          continue;
+        }
         keptEntries.push(entry);
         continue;
       }

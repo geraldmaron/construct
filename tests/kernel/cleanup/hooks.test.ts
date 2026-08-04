@@ -168,3 +168,31 @@ test('"construct" appearing in a path is not enough to match', () => {
     f.cleanup();
   }
 });
+
+test('a predecessor hook carrying its command directly is matched too', () => {
+  // The flat shape, from catalog.test.ts's own fixture: an entry with `command`
+  // on it rather than a matcher wrapping a hooks[]. Both forms exist, and a
+  // partition understanding only the nested one would silently leave this behind
+  // — the quiet half of the same defect.
+  const f = fixture({
+    hooks: {
+      'pre:session': [{ command: 'node .construct/launcher/run.mjs hook pre-session' }],
+      'post:write': [{ command: 'node ./tools/mine.mjs' }],
+    },
+  });
+  try {
+    const { detected, result } = runSettingsItem(f.dir);
+    assert.equal(detected, true);
+    assert.match(result ?? '', /1 hook\(s\)/);
+
+    const after = JSON.parse(fs.readFileSync(f.file, 'utf8'));
+    assert.equal('pre:session' in after.hooks, false, "the predecessor's entry is gone");
+    assert.deepEqual(
+      after.hooks['post:write'],
+      [{ command: 'node ./tools/mine.mjs' }],
+      'and the neighbouring one is untouched',
+    );
+  } finally {
+    f.cleanup();
+  }
+});
