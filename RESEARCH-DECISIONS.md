@@ -86,11 +86,21 @@ distinguish the target from the observation.
 The improvement claim is weaker still. 0.400 → 0.300 is **one label changing state**. McNemar's
 exact test on a single discordant pair returns **p = 1.000**: no evidence whatsoever.
 
-Both claims are withdrawn. Note precisely what is withdrawn and what is not — the *structural*
-argument in `construct-4jq` (escalate-on-silence can never revisit a confidently-wrong keyword
-answer, so three of the four fresh misses are unreachable by that design) is a statement about
-the algorithm, verified by direct inspection in §5, and it stands. What does not stand is the
-numerical claim attached to it. Filed as `construct-2jb.2`.
+Both of those claims are withdrawn. Precision about what is *not* withdrawn matters here, and
+cuts in the bead's favour twice:
+
+- **The original finding was sound.** `construct-4jq` was opened on a pre-escalation miss rate of
+  4/10 = 0.400, whose interval is **[0.168, 0.687]** — that one *excludes* 0.15. Filing the bead
+  was justified by its own evidence. The defect appeared later, when the post-escalation 3/10 was
+  reported in the same register as the 4/10 that preceded it, without anyone noticing that one
+  outcome had carried the measurement across the threshold of what it could support.
+- **The structural argument stands.** Escalate-on-silence can never revisit a confidently-wrong
+  keyword answer, so most of the fresh misses are unreachable by that design. That is a claim
+  about the algorithm, not about a rate, and §5 verifies it by direct measurement rather than
+  inference from a sample.
+
+What fails is narrow and specific: the post-escalation "target is not met," and the 0.400 → 0.300
+"improvement." Filed as `construct-2jb.2`.
 
 ### How many labels would settle it
 
