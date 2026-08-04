@@ -39,6 +39,7 @@ import type { HostAdapter, HostResult } from '../hosts/interface.ts';
 import type { Brief } from '../brief/schema.ts';
 import { DOMAINS, domainsByName } from '../implication/domains.ts';
 import type { Domain } from '../implication/domains.ts';
+import { deliverableConcerns, licensedReviewFor } from './accountability.ts';
 
 export const DEFAULT_CONCURRENCY = 2;
 
@@ -92,6 +93,10 @@ export interface RunReport {
   readonly staleSettles: number;
   /** Tasks claimed whose previous lease had expired — recovered crashed work. */
   readonly recovered: number;
+  /** Deliverables carrying a host-reported defect. See run/accountability.ts. */
+  readonly flagged: number;
+  /** Deliverables routed to a licensed professional before anyone relies on them. */
+  readonly escalated: number;
   readonly spendBefore: number;
   readonly spendAfter: number;
   readonly spendCeiling: number;
@@ -190,6 +195,8 @@ export async function workRun(
   let staleSettles = 0;
   let recovered = 0;
   let costSilent = 0;
+  let flagged = 0;
+  let escalated = 0;
   let halted: HaltReason | null = null;
   const settled: string[] = [];
 
@@ -251,6 +258,38 @@ export async function workRun(
           detail: { ...summarize(result), spend: cost.spend, spendReported: cost.reported },
           at: settledAt,
         });
+
+        // What was flagged, and what needs a licensed human. Separate entries
+        // rather than fields on the report above, because these are the two
+        // lines of the log a user reads on their own — burying them inside a
+        // detail blob would make them technically present and practically not.
+        for (const concern of deliverableConcerns(result.output)) {
+          flagged += 1;
+          appendWorkLog(store, {
+            run: task.run,
+            task: task.id,
+            role: task.role,
+            action: 'deliverable-flagged',
+            detail: concern,
+            at: settledAt,
+          });
+        }
+
+        const review = licensedReviewFor(task.role, catalog);
+        if (review) {
+          escalated += 1;
+          appendWorkLog(store, {
+            run: task.run,
+            task: task.id,
+            role: task.role,
+            action: 'licensed-review-required',
+            detail: {
+              profession: review,
+              why: `${task.role} output is issue-spotting, not advice — review by a licensed ${review} is required before anyone relies on it`,
+            },
+            at: settledAt,
+          });
+        }
         return;
       }
 
@@ -360,6 +399,8 @@ export async function workRun(
     settled,
     staleSettles,
     recovered,
+    flagged,
+    escalated,
     spendBefore,
     spendAfter,
     spendCeiling: options.spendCeiling,

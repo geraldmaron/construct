@@ -209,6 +209,38 @@ test('work reports what it did, not everything the store holds', async () => {
   assert.ok(!second.includes('employment'), 'an earlier run\'s work was reported as this one\'s');
 });
 
+test('work says which deliverables need a licensed human, and what is wrong with them', async () => {
+  const emptyAnswer: HostAdapter = {
+    ...standInHost(),
+    invoke: async (request: unknown): Promise<HostResult> => ({
+      id: 'x',
+      status: 'ok',
+      output: {
+        text: (request as { role: string }).role === 'privacy' ? '' : 'a real answer',
+        usage: { cost: 0.01, steps: 1 },
+      },
+      error: null,
+    }),
+  };
+
+  const { out } = await runAll([
+    ['outcome', 'launch a paid beta to EU users next month'],
+    () => work([], emptyAnswer),
+  ]);
+
+  assert.match(out, /needs review by a licensed attorney/, 'privacy output must not read as advice');
+  assert.match(out, /needs review by a licensed tax professional/, 'commerce-tax too');
+  assert.match(out, /⚑ the run succeeded but produced no text/);
+
+  // product-scoping needs no licensed review, and must not be labeled as if it
+  // did. Read the notes attached to its own line, not the whole output.
+  const lines = out.split('\n');
+  const at = lines.findIndex((line) => /^ {2}[✓✗] product-scoping/.test(line));
+  assert.ok(at >= 0, 'product-scoping should have been worked');
+  const notes = lines.slice(at + 1).filter((line) => line.startsWith('      '));
+  assert.deepEqual(notes, [], 'a domain needing no licensed review must not claim one');
+});
+
 test('a host that reports no cost is called out rather than counted as free', async () => {
   const { out } = await runAll([
     ['outcome', 'launch a paid beta to EU users next month'],

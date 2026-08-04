@@ -18,6 +18,7 @@ import { openDecisions, resolveDecision } from '../kernel/store/decisions.ts';
 import { countTasksByState, getTask } from '../kernel/store/tasks.ts';
 import { startRun } from '../kernel/run/outcome.ts';
 import { DEFAULT_CONCURRENCY, workRun } from '../kernel/run/coordinator.ts';
+import { deliverableConcerns, licensedReviewFor } from '../kernel/run/accountability.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
 import { createOpenCodeAdapter } from '../hosts/opencode/adapter.ts';
 
@@ -324,6 +325,18 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
       }
       const cost = task.spendReported ? `$${money(task.spend)}` : 'cost not reported';
       process.stdout.write(`  ✓ ${task.role.padEnd(20)} ${cost}\n`);
+
+      // The two lines a user has to see: what is wrong with this deliverable,
+      // and whether anyone is allowed to rely on it as it stands.
+      for (const concern of deliverableConcerns(task.result)) {
+        process.stdout.write(`      ⚑ ${concern.detail}\n`);
+      }
+      const review = licensedReviewFor(task.role);
+      if (review) {
+        process.stdout.write(
+          `      → issue-spotting only: needs review by a licensed ${review} before you rely on it\n`,
+        );
+      }
     }
 
     process.stdout.write(

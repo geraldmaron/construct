@@ -24,6 +24,14 @@ export interface Domain extends Route {
   /** What this domain is responsible for noticing, in the user's words. */
   readonly concern: string;
   readonly keywords: readonly string[];
+  /**
+   * The profession that must review this domain's output before anyone relies
+   * on it. Construct issue-spots; it does not advise, and the domains where
+   * that distinction has legal weight say so here rather than leaving it to a
+   * disclaimer nobody reads (STRATEGY risk 3). Absent means no licensed review
+   * is required — not that the output is authoritative.
+   */
+  readonly licensedReview?: string;
 }
 
 export const DOMAINS: readonly Domain[] = Object.freeze([
@@ -37,6 +45,7 @@ export const DOMAINS: readonly Domain[] = Object.freeze([
       'european', 'tracking', 'cookies', 'analytics', 'biometric', 'health data',
       'medical records', 'minors', 'children', 'age verification', 'retention',
     ],
+    licensedReview: 'attorney',
   },
   {
     path: 'commerce-tax',
@@ -48,6 +57,7 @@ export const DOMAINS: readonly Domain[] = Object.freeze([
       'checkout', 'stripe', 'revenue', 'currency', 'monetize', 'charge',
       'purchase', 'ecommerce', 'storefront',
     ],
+    licensedReview: 'tax professional',
   },
   {
     path: 'contracts',
@@ -58,6 +68,7 @@ export const DOMAINS: readonly Domain[] = Object.freeze([
       'terms', 'licensing', 'license', 'agreement', 'procurement', 'renewal',
       'partner', 'reseller', 'sign', 'counterparty',
     ],
+    licensedReview: 'attorney',
   },
   {
     path: 'employment',
@@ -68,6 +79,7 @@ export const DOMAINS: readonly Domain[] = Object.freeze([
       'payroll', 'offer letter', 'termination', 'onboarding', 'freelancer',
       'intern', 'benefits', 'staff', 'recruiting', 'headcount',
     ],
+    licensedReview: 'attorney',
   },
   {
     path: 'security',
@@ -88,6 +100,7 @@ export const DOMAINS: readonly Domain[] = Object.freeze([
       'certification', 'compliance', 'attestation', 'controls', 'evidence',
       'questionnaire', 'due diligence',
     ],
+    licensedReview: 'attorney',
   },
   {
     path: 'accessibility',

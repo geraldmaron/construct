@@ -27,6 +27,8 @@ import {
 } from '../../../src/kernel/store/tasks.ts';
 import { readWorkLog } from '../../../src/kernel/store/worklog.ts';
 import { assignmentFor, spendOf, workRun } from '../../../src/kernel/run/coordinator.ts';
+import { deliverableConcerns, licensedReviewFor } from '../../../src/kernel/run/accountability.ts';
+import { DOMAINS } from '../../../src/kernel/implication/domains.ts';
 import type { HostAdapter, HostContext, HostResult } from '../../../src/kernel/hosts/interface.ts';
 import type { Brief } from '../../../src/kernel/brief/schema.ts';
 
@@ -82,6 +84,7 @@ interface FakeOptions {
   readonly cost?: number | null;
   readonly delayMs?: number;
   readonly fail?: (role: string) => boolean;
+  readonly emptyText?: (role: string) => boolean;
   readonly onInvoke?: (role: string) => void | Promise<void>;
 }
 
@@ -119,8 +122,9 @@ function fakeHost(options: FakeOptions = {}): FakeHost {
         if (options.fail?.(req.role)) {
           return { id, status: 'error', output: null, error: { messages: ['host said no'] } };
         }
-        const usage = options.cost === null ? {} : { usage: { cost: options.cost ?? 0 } };
-        return { id, status: 'ok', output: { text: `${req.role} reporting`, ...usage }, error: null };
+        const usage = options.cost === null ? {} : { usage: { cost: options.cost ?? 0, steps: 1 } };
+        const text = options.emptyText?.(req.role) ? '' : `${req.role} reporting`;
+        return { id, status: 'ok', output: { text, ...usage }, error: null };
       } finally {
         inFlight -= 1;
       }
@@ -440,6 +444,80 @@ test('enqueuing the same task twice queues it once', () => {
       false,
     );
     assert.equal(listTasks(store, 'r').length, 1);
+  });
+});
+
+test('a deliverable is flagged from what the host reported, never from its wording', () => {
+  assert.deepEqual(deliverableConcerns({ text: 'a clean answer', failedToolCalls: [] }), []);
+
+  const incomplete = deliverableConcerns({
+    text: 'here is my answer',
+    failedToolCalls: [{ tool: 'read', error: 'permission denied' }],
+  });
+  assert.deepEqual(incomplete.map((c) => c.kind), ['incomplete-inputs']);
+  assert.match(incomplete[0].detail, /could not read everything/);
+
+  assert.deepEqual(
+    deliverableConcerns({ text: '   ', failedToolCalls: [] }).map((c) => c.kind),
+    ['empty-deliverable'],
+  );
+  assert.deepEqual(
+    deliverableConcerns({ text: 'cut off mid-', finishReasons: ['length'] }).map((c) => c.kind),
+    ['truncated'],
+  );
+
+  // An unfamiliar finish reason is not evidence of anything.
+  assert.deepEqual(deliverableConcerns({ text: 'fine', finishReasons: ['tool-calls'] }), []);
+
+  // Alarming prose is not a flag. Only the host's own report is.
+  assert.deepEqual(deliverableConcerns({ text: 'I am not at all sure about any of this' }), []);
+});
+
+test('licensed review is a property of the domain, and every domain has an answer', () => {
+  assert.equal(licensedReviewFor('privacy'), 'attorney');
+  assert.equal(licensedReviewFor('commerce-tax'), 'tax professional');
+  assert.equal(licensedReviewFor('product-scoping'), null);
+  assert.equal(licensedReviewFor('a-domain-that-does-not-exist'), null);
+
+  // Pinned so a new domain is a decision someone makes, not one that defaults.
+  const requiring = DOMAINS.filter((d) => d.licensedReview).map((d) => d.domain).sort();
+  assert.deepEqual(requiring, [
+    'commerce-tax',
+    'compliance',
+    'contracts',
+    'employment',
+    'privacy',
+  ]);
+});
+
+test('the work log records what was flagged and what needs a licensed human', async () => {
+  await withStoreAsync(async (store) => {
+    seed(store, ['privacy', 'product-scoping']);
+    const host = fakeHost({ emptyText: (role) => role === 'privacy' });
+
+    const report = await workRun(store, host, {
+      owner: 'w1',
+      clock: frozen(AT),
+      spendCeiling: 100,
+    });
+
+    assert.equal(report.flagged, 1, 'the empty deliverable is the only flagged one');
+    assert.equal(report.escalated, 1, 'privacy needs an attorney; product-scoping does not');
+
+    const entries = readWorkLog(store, 'run-1');
+    const flag = entries.find((e) => e.action === 'deliverable-flagged');
+    assert.equal(flag?.role, 'privacy');
+    assert.equal((flag?.detail as { kind: string }).kind, 'empty-deliverable');
+
+    const escalation = entries.find((e) => e.action === 'licensed-review-required');
+    assert.equal(escalation?.role, 'privacy');
+    assert.equal((escalation?.detail as { profession: string }).profession, 'attorney');
+    assert.match((escalation?.detail as { why: string }).why, /issue-spotting, not advice/);
+
+    assert.ok(
+      !entries.some((e) => e.role === 'product-scoping' && e.action === 'licensed-review-required'),
+      'a domain that does not need licensed review must not claim it does',
+    );
   });
 });
 

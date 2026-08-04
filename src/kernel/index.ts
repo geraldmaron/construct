@@ -205,6 +205,12 @@ export {
   workRun,
 } from './run/coordinator.ts';
 export type { CoordinatorOptions, HaltReason, RunReport } from './run/coordinator.ts';
+export {
+  CONCERN_KINDS,
+  deliverableConcerns,
+  licensedReviewFor,
+} from './run/accountability.ts';
+export type { Concern, ConcernKind } from './run/accountability.ts';
 
 export { CAPABILITIES, hasCapability, validate as validateHost } from './hosts/interface.ts';
 export type {
