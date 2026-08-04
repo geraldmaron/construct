@@ -44,6 +44,12 @@ export const DOMAINS: readonly Domain[] = Object.freeze([
       'data subject', 'consent', 'privacy', 'data processing', 'eu', 'europe',
       'european', 'tracking', 'cookies', 'analytics', 'biometric', 'health data',
       'medical records', 'minors', 'children', 'age verification', 'retention',
+      // Situations that carry personal data without anyone saying "data":
+      // a hospital or school as counterparty, a person's identity documents,
+      // a list of people you can contact, a request to erase someone.
+      'hospital', 'patient', 'clinic', 'school', 'students', 'ids',
+      'customer list', 'mailing list', 'subscribers', 'signed up',
+      'delete everything', 'another customer',
     ],
     licensedReview: 'attorney',
   },
@@ -56,6 +62,12 @@ export const DOMAINS: readonly Domain[] = Object.freeze([
       'vat', 'sales tax', 'tax', 'subscription', 'billing', 'refund', 'refunds',
       'checkout', 'stripe', 'revenue', 'currency', 'monetize', 'charge',
       'purchase', 'ecommerce', 'storefront',
+      // How people actually talk about money changing hands: naming the
+      // currency, what is owed, price concessions, selling through someone,
+      // selling into more places. ("charging" is separate because the matcher's
+      // stem-prefix cannot reach it from "charge".)
+      'charging', 'euros', 'euro', 'dollars', 'owe', 'discount',
+      'countries', 'distributor',
     ],
     licensedReview: 'tax professional',
   },
@@ -63,10 +75,15 @@ export const DOMAINS: readonly Domain[] = Object.freeze([
     path: 'contracts',
     domain: 'contracts',
     concern: 'agreements with other parties and what they bind you to',
+    // "sign" is deliberately absent: it fired this domain on "single sign-on"
+    // and "sign in", and a signal that gets cited as evidence for the wrong
+    // inference is worse than a lower score (construct-gsf). Signing language
+    // always travels with the thing being signed — the agreement, the terms —
+    // and those keywords carry the match honestly.
     keywords: [
       'contract', 'vendor', 'supplier', 'nda', 'msa', 'sow', 'terms of service',
       'terms', 'licensing', 'license', 'agreement', 'procurement', 'renewal',
-      'partner', 'reseller', 'sign', 'counterparty',
+      'partner', 'reseller', 'counterparty',
     ],
     licensedReview: 'attorney',
   },
@@ -78,6 +95,9 @@ export const DOMAINS: readonly Domain[] = Object.freeze([
       'hiring', 'hire', 'employee', 'employees', 'contractor', 'contractors',
       'payroll', 'offer letter', 'termination', 'onboarding', 'freelancer',
       'intern', 'benefits', 'staff', 'recruiting', 'headcount',
+      // Engaging people without HR words: how much of their time, finding a
+      // person for a duty, ending an engagement.
+      'part time', 'full time', 'find someone', 'let go',
     ],
     licensedReview: 'attorney',
   },
@@ -88,7 +108,15 @@ export const DOMAINS: readonly Domain[] = Object.freeze([
     keywords: [
       'security', 'authentication', 'login', 'password', 'credentials',
       'encryption', 'encrypt', 'breach', 'access control', 'permissions', 'vulnerability',
-      'audit log', 'secrets', 'api keys', 'tokens', 'sso', 'two-factor',
+      // "two factor" not "two-factor": keywords split on whitespace but
+      // outcomes tokenize on non-alphanumeric, so a hyphenated keyword can
+      // never match anything (found dead during construct-gsf).
+      'audit log', 'secrets', 'api keys', 'tokens', 'sso', 'two factor',
+      // How non-experts report or ask for security: seeing someone else's
+      // things, wanting something kept somewhere safer, sensitive records
+      // living in a spreadsheet, signing in with an existing account.
+      'another customer', 'another user', 'someone else', 'safer',
+      'spreadsheet', 'google account', 'work account', 'microsoft account',
     ],
   },
   {
@@ -109,6 +137,10 @@ export const DOMAINS: readonly Domain[] = Object.freeze([
     keywords: [
       'accessibility', 'wcag', 'screen reader', 'contrast', 'keyboard navigation',
       'alt text', 'a11y', 'disability', 'assistive',
+      // People describe who is excluded, not the standard that covers them:
+      // blind users, deaf users, someone who cannot use a mouse.
+      'blind', 'deaf', 'wheelchair', 'colorblind', 'low vision',
+      'hard of hearing', 'captions', 'mouse',
     ],
   },
   {
@@ -119,6 +151,9 @@ export const DOMAINS: readonly Domain[] = Object.freeze([
       'deadline', 'milestone', 'launch', 'next month', 'next week', 'timeline',
       'rollout', 'schedule', 'phased', 'quarter', 'sequence', 'dependencies',
       'by friday', 'ship', 'release', 'migrate', 'migration', 'cutover',
+      // Ordinary date and ordering language: doing it over a weekend, doing
+      // one thing before another.
+      'weekend', 'before',
     ],
   },
   {
@@ -129,6 +164,8 @@ export const DOMAINS: readonly Domain[] = Object.freeze([
       'mvp', 'feature', 'features', 'requirements', 'scope', 'beta', 'pilot',
       'success metric', 'roadmap', 'prototype', 'users', 'customers', 'onboard',
       'redesign', 'rebuild',
+      // The product surfaces people name when scoping what to build or trim.
+      'signup', 'dashboard',
     ],
   },
   {
@@ -139,6 +176,8 @@ export const DOMAINS: readonly Domain[] = Object.freeze([
       'advertising', 'marketing', 'testimonial', 'endorsement', 'campaign',
       'landing page', 'press release', 'announcement', 'positioning', 'brand',
       'newsletter', 'social media',
+      // Mass outreach in plain words: contacting everyone on your list.
+      'send to everyone', 'signed up',
     ],
   },
 ]);

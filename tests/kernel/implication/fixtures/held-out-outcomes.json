@@ -1,0 +1,31 @@
+{
+  "note": "The held-out outcome set (construct-gsf). labeled-outcomes.json was written alongside the keyword catalog, so it shares vocabulary with it and scored a 0.000 miss rate that did not survive contact with wording it had not authored: the construct-r67.9 dogfood scored 0.556 on the same measure. A corpus and a catalog authored by the same mind cannot measure each other.",
+  "discipline": "Every outcome here is written the way a person describes a situation, not the way the catalog names a domain. The rule while writing: state the situation first, then say it in the plainest words available, and do not reach for a term because the catalog contains it. Jargon appears only where a real person would actually use it. `expect` is what a competent human would say the outcome genuinely implicates, decided from the situation and not from what the matcher happens to find.",
+  "howToExtend": "Add outcomes by describing a situation and writing it plainly — never by reading the keyword lists and paraphrasing them, and never by taking a failing case and rewording it until it passes. If a fix requires adding a word to the catalog, that word belongs there because a user would say it, not because this file does.",
+  "outcomes": [
+    { "id": "h1", "category": "legal", "outcome": "A hospital system wants to buy our product and sent over a security questionnaire I do not know how to answer", "expect": ["compliance", "security", "privacy"] },
+    { "id": "h2", "category": "legal", "outcome": "Sign the reseller agreement with the Dutch distributor before the quarter closes", "expect": ["contracts", "commerce-tax", "program-sequencing"] },
+    { "id": "h3", "category": "legal", "outcome": "A customer wants us to delete everything we hold on one of their staff", "expect": ["privacy"] },
+    { "id": "h4", "category": "legal", "outcome": "The company we buy our components from wants us to agree to their terms", "expect": ["contracts"] },
+    { "id": "h5", "category": "legal", "outcome": "Someone reported they could see another customer's invoices", "expect": ["security", "privacy"] },
+    { "id": "h6", "category": "legal", "outcome": "We need to prove to a bank that our controls are real before they will sign anything", "expect": ["compliance", "contracts"] },
+    { "id": "h7", "category": "non-engineering", "outcome": "Bring on two part-time people to help with support over the holidays", "expect": ["employment"] },
+    { "id": "h8", "category": "non-engineering", "outcome": "Put out a press release saying we are the fastest tool in our category", "expect": ["marketing-claims"] },
+    { "id": "h9", "category": "non-engineering", "outcome": "Start charging our European customers in euros instead of dollars", "expect": ["commerce-tax"] },
+    { "id": "h10", "category": "non-engineering", "outcome": "Get our customer list out of the spreadsheet and into something real", "expect": ["privacy", "security"] },
+    { "id": "h11", "category": "non-engineering", "outcome": "Let go of the contractor who has been doing our design work", "expect": ["employment"] },
+    { "id": "h12", "category": "non-engineering", "outcome": "Send a monthly note to everyone who ever signed up", "expect": ["marketing-claims", "privacy"] },
+    { "id": "h13", "category": "non-engineering", "outcome": "Work out what we owe now that we have customers in three more countries", "expect": ["commerce-tax"] },
+    { "id": "h14", "category": "non-engineering", "outcome": "Give the sales team a discount they can offer without asking anyone", "expect": ["commerce-tax"] },
+    { "id": "h15", "category": "non-engineering", "outcome": "Find someone to take over the books from the person doing them now", "expect": ["employment"] },
+    { "id": "h16", "category": "engineering", "outcome": "Move the database to Postgres over the holiday weekend", "expect": ["program-sequencing"] },
+    { "id": "h17", "category": "engineering", "outcome": "Replace the login system with single sign-on before the enterprise pilot", "expect": ["security", "program-sequencing", "product-scoping"] },
+    { "id": "h18", "category": "engineering", "outcome": "Put the photos of people's IDs somewhere safer than they are now", "expect": ["security", "privacy"] },
+    { "id": "h19", "category": "engineering", "outcome": "Cut the signup flow down to a single screen", "expect": ["product-scoping"] },
+    { "id": "h20", "category": "engineering", "outcome": "Let people sign in with their work Google account", "expect": ["security"] },
+    { "id": "h21", "category": "mixed", "outcome": "Make the app usable by our blind customers", "expect": ["accessibility"] },
+    { "id": "h22", "category": "mixed", "outcome": "Open a pilot with three schools in California", "expect": ["privacy", "product-scoping"] },
+    { "id": "h23", "category": "mixed", "outcome": "Let people who cannot use a mouse get all the way through checkout", "expect": ["accessibility", "commerce-tax"] },
+    { "id": "h24", "category": "mixed", "outcome": "Ship the new dashboard to everyone by the end of the quarter", "expect": ["program-sequencing", "product-scoping"] }
+  ]
+}

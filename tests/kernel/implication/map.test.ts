@@ -38,41 +38,56 @@ interface Labeled {
   readonly expect: string[];
 }
 
-const fixture = JSON.parse(
-  readFileSync(new URL('fixtures/labeled-outcomes.json', import.meta.url), 'utf8'),
-) as { outcomes: Labeled[] };
+function load(name: string): { outcomes: Labeled[] } {
+  return JSON.parse(readFileSync(new URL(`fixtures/${name}`, import.meta.url), 'utf8')) as {
+    outcomes: Labeled[];
+  };
+}
 
-test('the labeled set keeps the Phase 2 distribution quota', () => {
-  const total = fixture.outcomes.length;
-  const nonEngineering = fixture.outcomes.filter((o) => o.category !== 'engineering').length;
-  const legal = fixture.outcomes.filter((o) => o.category === 'legal').length;
+const fixture = load('labeled-outcomes.json');
+
+/**
+ * The held-out set (construct-gsf). The corpus above was written alongside the
+ * keyword catalog and scored a 0.000 miss rate that did not survive wording it
+ * had not authored — the Phase 2 dogfood scored 0.556, and this set scored
+ * 0.632 before any of the work that followed. A corpus and a catalog authored
+ * by the same mind cannot measure each other, so the headline number is this
+ * one and the corpus above is kept as a non-regression check.
+ */
+const heldOut = load('held-out-outcomes.json');
+
+function quota(name: string, set: { outcomes: Labeled[] }): void {
+  const total = set.outcomes.length;
+  const nonEngineering = set.outcomes.filter((o) => o.category !== 'engineering').length;
+  const legal = set.outcomes.filter((o) => o.category === 'legal').length;
   assert.ok(
     nonEngineering / total >= 0.4,
-    `labeled set is ${nonEngineering}/${total} non-engineering, below the 40% quota`,
+    `${name} is ${nonEngineering}/${total} non-engineering, below the 40% quota`,
   );
   assert.ok(
     legal / total >= 0.2,
-    `labeled set is ${legal}/${total} legal/compliance, below the 20% quota`,
+    `${name} is ${legal}/${total} legal/compliance, below the 20% quota`,
   );
-});
+}
 
-test('every expected domain in the labeled set exists in the catalog', () => {
-  const known = new Set(DOMAINS.map((d) => d.domain));
-  for (const item of fixture.outcomes) {
-    for (const domain of item.expect) {
-      assert.ok(known.has(domain), `${item.id} expects unknown domain "${domain}"`);
-    }
-  }
-});
+interface Score {
+  readonly expected: number;
+  readonly missed: number;
+  readonly surfaced: number;
+  readonly over: number;
+  readonly missRate: number;
+  readonly overRate: number;
+  readonly misses: readonly string[];
+}
 
-test('implication map meets its pre-agreed miss-rate target', () => {
+function score(set: { outcomes: Labeled[] }): Score {
   let expected = 0;
   let missed = 0;
   let surfaced = 0;
   let over = 0;
   const misses: string[] = [];
 
-  for (const item of fixture.outcomes) {
+  for (const item of set.outcomes) {
     const found = new Set(implicatedDomains({ outcome: item.outcome }));
     expected += item.expect.length;
     surfaced += found.size;
@@ -87,19 +102,93 @@ test('implication map meets its pre-agreed miss-rate target', () => {
     }
   }
 
-  const missRate = missed / expected;
-  const overRate = surfaced === 0 ? 0 : over / surfaced;
+  return {
+    expected,
+    missed,
+    surfaced,
+    over,
+    missRate: missed / expected,
+    overRate: surfaced === 0 ? 0 : over / surfaced,
+    misses,
+  };
+}
 
-  // Printed so a regression shows what moved, not just that something did.
+/** Printed so a regression shows what moved, not just that something did. */
+function report(name: string, s: Score, missTarget: number, overTarget: number): void {
   process.stdout.write(
-    `\n  implication map: miss ${missed}/${expected} = ${missRate.toFixed(3)} ` +
-      `(target <= ${MISS_RATE_TARGET}), over ${over}/${surfaced} = ${overRate.toFixed(3)} ` +
-      `(target <= ${OVER_RATE_TARGET})\n`,
+    `\n  implication map [${name}]: miss ${s.missed}/${s.expected} = ${s.missRate.toFixed(3)} ` +
+      `(target <= ${missTarget}), over ${s.over}/${s.surfaced} = ${s.overRate.toFixed(3)} ` +
+      `(target <= ${overTarget})\n`,
   );
-  for (const miss of misses) process.stdout.write(`    ${miss}\n`);
+  for (const miss of s.misses) process.stdout.write(`    ${miss}\n`);
+}
 
-  assert.ok(missRate <= MISS_RATE_TARGET, `miss rate ${missRate.toFixed(3)} exceeds ${MISS_RATE_TARGET}`);
-  assert.ok(overRate <= OVER_RATE_TARGET, `over rate ${overRate.toFixed(3)} exceeds ${OVER_RATE_TARGET}`);
+test('the labeled set keeps the Phase 2 distribution quota', () => {
+  quota('labeled set', fixture);
+});
+
+test('the held-out set keeps the Phase 2 distribution quota', () => {
+  quota('held-out set', heldOut);
+});
+
+test('the held-out set does not reuse the labeled set', () => {
+  const authored = new Set(fixture.outcomes.map((o) => o.outcome.toLowerCase()));
+  for (const item of heldOut.outcomes) {
+    assert.ok(
+      !authored.has(item.outcome.toLowerCase()),
+      `${item.id} is copied from the labeled set — a held-out set that reuses it measures nothing`,
+    );
+  }
+});
+
+/**
+ * The headline gate. Held to the same target as the authored corpus, because a
+ * looser one for the harder set would be the measurement excusing itself.
+ */
+test('implication map meets its miss-rate target on wording it did not author', () => {
+  const s = score(heldOut);
+  report('held-out', s, MISS_RATE_TARGET, OVER_RATE_TARGET);
+  assert.ok(s.missRate <= MISS_RATE_TARGET, `miss rate ${s.missRate.toFixed(3)} exceeds ${MISS_RATE_TARGET}`);
+  assert.ok(s.overRate <= OVER_RATE_TARGET, `over rate ${s.overRate.toFixed(3)} exceeds ${OVER_RATE_TARGET}`);
+});
+
+test('every expected domain in the labeled set exists in the catalog', () => {
+  const known = new Set(DOMAINS.map((d) => d.domain));
+  for (const item of fixture.outcomes) {
+    for (const domain of item.expect) {
+      assert.ok(known.has(domain), `${item.id} expects unknown domain "${domain}"`);
+    }
+  }
+});
+
+test('implication map meets its pre-agreed miss-rate target', () => {
+  const s = score(fixture);
+  report('labeled', s, MISS_RATE_TARGET, OVER_RATE_TARGET);
+  assert.ok(s.missRate <= MISS_RATE_TARGET, `miss rate ${s.missRate.toFixed(3)} exceeds ${MISS_RATE_TARGET}`);
+  assert.ok(s.overRate <= OVER_RATE_TARGET, `over rate ${s.overRate.toFixed(3)} exceeds ${OVER_RATE_TARGET}`);
+});
+
+/**
+ * The evidence-honesty regression (construct-gsf, secondary finding): "sign"
+ * as a contracts keyword fired on "single sign-on" and "sign in", and the map
+ * then CITED "sign" as the evidence for a contracts inference. A wrongly-cited
+ * signal is worse than a lower score, because signals exist so the inference
+ * can be argued with. Signing language always travels with the thing signed —
+ * agreement, contract, terms — so removing the bare verb costs almost nothing.
+ */
+test('sign-on and sign-in language does not conscript the contracts domain', () => {
+  for (const outcome of [
+    'Replace the login system with single sign-on before the enterprise pilot',
+    'Let people sign in with their work Google account',
+  ]) {
+    const domains = implicatedDomains({ outcome });
+    assert.ok(!domains.includes('contracts'), `contracts inferred from ${JSON.stringify(outcome)}`);
+    assert.ok(domains.includes('security'), `security expected in ${JSON.stringify(domains)} for ${JSON.stringify(outcome)}`);
+  }
+  // And the real thing still fires: signing an actual agreement is contracts.
+  assert.ok(
+    implicatedDomains({ outcome: 'Sign the reseller agreement with the Dutch distributor' }).includes('contracts'),
+  );
 });
 
 test('the canonical STRATEGY outcome infers its roles without being told them', () => {
