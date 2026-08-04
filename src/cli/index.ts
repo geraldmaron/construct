@@ -16,7 +16,7 @@ import { openStore, storePath, storeWriteProblem, StoreUnavailableError } from '
 import type { Store } from '../kernel/store/open.ts';
 import { readWorkLog } from '../kernel/store/worklog.ts';
 import { openDecisions, resolveDecision } from '../kernel/store/decisions.ts';
-import { countTasksByState, getTask } from '../kernel/store/tasks.ts';
+import { countTasksByState, getTask, listTasks } from '../kernel/store/tasks.ts';
 import { appendFeedback, readFeedback } from '../kernel/store/feedback.ts';
 import { harvestCorpus } from '../kernel/implication/harvest.ts';
 import type { DomainVerdict } from '../kernel/implication/harvest.ts';
@@ -511,11 +511,53 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
       // Framing needs no host and no spend, so it runs before the guard reports.
       const raised = frameConflicts(store, [], { clock: now, run: args.run });
 
+      const counts = countTasksByState(store, args.run);
+      const done = counts.done ?? 0;
+      const failedTasks = counts.failed ?? 0;
+
+      if (done === 0 && failedTasks === 0) {
+        process.stdout.write(
+          'nothing to work. Record an outcome first: construct outcome "<what you want>"\n',
+        );
+        return 0;
+      }
+
+      // A run where every task failed is not a run that finished, and saying
+      // "already settled" in the same words used for a successful one leaves the
+      // user with a dead run id and no stated path (construct-d2q). The store is
+      // right that a failed task is terminal and that the host owns retries
+      // (commitment 1) — nothing here adds a retry policy. What was missing is
+      // that two different things were being reported identically: the task a
+      // host genuinely could not do, and the task that never reached a working
+      // host at all. The recorded error is what tells them apart, so it is shown.
+      if (done === 0) {
+        const where = args.run ? ` for ${args.run}` : '';
+        process.stdout.write(
+          `nothing to work${where}. All ${String(failedTasks)} task(s) failed and produced no deliverable.\n`,
+        );
+        for (const task of listTasks(store, args.run).filter((t) => t.state === 'failed')) {
+          process.stdout.write(`  ✗ ${task.role.padEnd(20)} ${failureLine(task.error)}\n`);
+        }
+        process.stdout.write(
+          '\nA failed task is terminal — the host owns retries, so re-running work will not pick these up.\n' +
+            'If the cause was the dispatch rather than the work (an unresolvable --model, a host that was ' +
+            'not reachable), fix it and file the outcome again:\n' +
+            '  construct outcome "<what you want>"\n',
+        );
+        return 1;
+      }
+
       process.stdout.write(
         args.run
           ? `nothing to work for ${args.run}. Its tasks are already settled.\n`
-          : 'nothing to work. Record an outcome first: construct outcome "<what you want>"\n',
+          : 'nothing to work. Every task in the store is already settled.\n',
       );
+      if (failedTasks > 0) {
+        process.stdout.write(
+          `${String(failedTasks)} of ${String(done + failedTasks)} task(s) failed; ` +
+            'their roles produced no deliverable.\n',
+        );
+      }
       if (raised > 0) {
         process.stdout.write(
           `\n${String(raised)} decision(s) need you — the roles disagree.\n` + 'See: construct inbox\n',

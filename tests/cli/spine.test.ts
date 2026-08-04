@@ -455,6 +455,44 @@ test('a decision lost to a dead process is reachable through the normal surface'
   }
 });
 
+test('a run where everything failed is not reported as a run that finished', async () => {
+  // construct-d2q, from the dogfood: 'construct work --model=ollama/qwen3.5:4b'
+  // was dispatched with a model the host could not resolve, every task failed at
+  // once, and the next invocation said "Its tasks are already settled." — an
+  // accurate sentence that leaves the user with a dead run id and no next step.
+  const refusing: HostAdapter = {
+    ...standInHost(),
+    invoke: async (request: unknown): Promise<HostResult> => ({
+      id: (request as { role: string }).role,
+      status: 'error',
+      output: null,
+      error: { messages: ['model ollama/qwen3.5:4b is not resolvable'] },
+    }),
+  };
+
+  const { out, code } = await runAll([
+    ['outcome', 'launch a paid beta to EU users next month'],
+    () => work([], refusing),
+    // The second invocation is the one the bead is about: the user comes back
+    // to a run whose tasks are all settled, all failed.
+    ['work'],
+  ]);
+
+  assert.doesNotMatch(out, /Its tasks are already settled/, 'a total failure is not a completion');
+  assert.match(out, /All \d+ task\(s\) failed and produced no deliverable/);
+  assert.match(out, /model ollama\/qwen3\.5:4b is not resolvable/, 'the recorded error is the recourse');
+  assert.match(out, /host owns retries, so re-running work will not pick these up/);
+  assert.match(out, /construct outcome "<what you want>"/, 'the user is told what to do next');
+  assert.equal(code, 1, 'a run that delivered nothing must not exit clean');
+});
+
+test('a store with no outcome at all still says to record one', async () => {
+  // The empty-store message must not be swallowed by the all-failed branch.
+  const { out, code } = await run(['work']);
+  assert.match(out, /Record an outcome first/);
+  assert.equal(code, 0);
+});
+
 test('a host that reports no cost is called out rather than counted as free', async () => {
   const { out } = await runAll([
     ['outcome', 'launch a paid beta to EU users next month'],
