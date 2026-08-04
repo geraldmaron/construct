@@ -15,7 +15,11 @@ import { openStore, storePath } from '../kernel/store/open.ts';
 import type { Store } from '../kernel/store/open.ts';
 import { readWorkLog } from '../kernel/store/worklog.ts';
 import { openDecisions, resolveDecision } from '../kernel/store/decisions.ts';
+import { countTasksByState, getTask } from '../kernel/store/tasks.ts';
 import { startRun } from '../kernel/run/outcome.ts';
+import { DEFAULT_CONCURRENCY, workRun } from '../kernel/run/coordinator.ts';
+import type { HostAdapter } from '../kernel/hosts/interface.ts';
+import { createOpenCodeAdapter } from '../hosts/opencode/adapter.ts';
 
 const MIN_NODE = { major: 22, minor: 18 };
 
@@ -142,6 +146,21 @@ function withStore<T>(fn: (store: Store) => T): T {
   }
 }
 
+/**
+ * The async twin. Separate rather than generic over both, because a `finally`
+ * that closes the store around a function returning a promise closes it while
+ * the work is still running — the failure mode is a coordinator writing to a
+ * closed database, and it only shows up under load.
+ */
+async function withStoreAsync<T>(fn: (store: Store) => Promise<T>): Promise<T> {
+  const store = openStore(storePath(resolvePaths()));
+  try {
+    return await fn(store);
+  } finally {
+    store.close();
+  }
+}
+
 function now(): string {
   return new Date().toISOString();
 }
@@ -173,9 +192,165 @@ export function outcome(argv: string[]): number {
         `      signals: ${implication.signals.slice(0, 4).join(', ')} (score ${implication.score})\n`,
       );
     }
-    process.stdout.write(`\nfiled ${started.logged.length} work log entries. `);
-    process.stdout.write(`See: construct log --run ${started.runId}\n`);
+    process.stdout.write(
+      `\nfiled ${started.logged.length} work log entries and queued ${started.tasks.length} task(s).\n`,
+    );
+    process.stdout.write(`Run them:  construct work --run ${started.runId}\n`);
+    process.stdout.write(`Read back: construct log --run ${started.runId}\n`);
     return 0;
+  });
+}
+
+export interface WorkArgs {
+  readonly run?: string;
+  readonly concurrency: number;
+  readonly ceiling: number;
+  readonly leaseMinutes: number;
+  readonly model?: string;
+  readonly binary?: string;
+  readonly dir?: string;
+}
+
+/**
+ * The ceiling is total spend across every run this machine has recorded, not
+ * this invocation's — ten runs of nine dollars is exactly what a per-run cap
+ * misses. It is deliberately low enough to be hit, since a ceiling nobody ever
+ * reaches has never been tested.
+ */
+export const DEFAULT_SPEND_CEILING = 10;
+
+export function parseWorkArgs(argv: string[]): WorkArgs {
+  const args: Record<string, string> = {};
+  for (const arg of argv) {
+    const match = /^--([a-z-]+)=(.*)$/.exec(arg);
+    if (match) args[match[1]] = match[2];
+  }
+  const runIndex = argv.indexOf('--run');
+  const run = args.run ?? (runIndex >= 0 ? argv[runIndex + 1] : undefined);
+
+  const number = (name: string, fallback: number): number => {
+    if (args[name] === undefined) return fallback;
+    const value = Number(args[name]);
+    if (!Number.isFinite(value) || value < 0) {
+      throw new Error(`Invalid --${name}=${args[name]}; expected a non-negative number`);
+    }
+    return value;
+  };
+
+  return {
+    run,
+    concurrency: number('concurrency', DEFAULT_CONCURRENCY),
+    ceiling: number('ceiling', DEFAULT_SPEND_CEILING),
+    leaseMinutes: number('lease-minutes', 15),
+    model: args.model,
+    binary: args.binary,
+    dir: args.dir,
+  };
+}
+
+function money(amount: number): string {
+  return amount === 0 ? '0' : amount.toFixed(amount < 0.01 ? 5 : 2);
+}
+
+/**
+ * Why a task failed, in one line. A failed task has no cost to report, and
+ * saying "cost not reported" there tells the user nothing about the thing that
+ * actually went wrong.
+ */
+function failureLine(error: unknown): string {
+  const record = error as { messages?: unknown; message?: unknown } | null;
+  const first = Array.isArray(record?.messages) ? record.messages[0] : record?.message;
+  return typeof first === 'string' && first ? first : 'failed';
+}
+
+/**
+ * Dispatch the queued tasks to a host. `hostOverride` exists so the CLI's own
+ * wiring can be tested without a binary present; production callers never pass
+ * it, exactly as with cleanup's spawn override.
+ */
+export async function work(argv: string[], hostOverride?: HostAdapter): Promise<number> {
+  let args: WorkArgs;
+  try {
+    args = parseWorkArgs(argv);
+  } catch (error) {
+    process.stderr.write(`work: ${(error as Error).message}\n`);
+    return 2;
+  }
+
+  const host =
+    hostOverride ??
+    createOpenCodeAdapter({ binary: args.binary, model: args.model, dir: args.dir });
+
+  return withStoreAsync(async (store) => {
+    const waiting = countTasksByState(store, args.run).pending ?? 0;
+    if (waiting === 0) {
+      process.stdout.write(
+        args.run
+          ? `nothing to work for ${args.run}. Its tasks are already settled.\n`
+          : 'nothing to work. Record an outcome first: construct outcome "<what you want>"\n',
+      );
+      return 0;
+    }
+
+    try {
+      await host.init();
+    } catch (error) {
+      // A host that cannot start must never read as a run with nothing to do.
+      process.stderr.write(`work: host "${host.name}" is not available — ${(error as Error).message}\n`);
+      return 1;
+    }
+
+    const report = await workRun(store, host, {
+      owner: `cli-${String(process.pid)}`,
+      clock: now,
+      spendCeiling: args.ceiling,
+      concurrency: args.concurrency,
+      leaseMs: args.leaseMinutes * 60 * 1000,
+      run: args.run,
+    });
+
+    process.stdout.write(
+      `worked ${String(report.dispatched)} task(s) on ${host.name}: ` +
+        `${String(report.completed)} done, ${String(report.failed)} failed.\n`,
+    );
+    // Only what this invocation settled. Listing everything settled in the
+    // store would report a second run's work as this one's.
+    for (const id of report.settled) {
+      const task = getTask(store, id);
+      if (!task) continue;
+      if (task.state === 'failed') {
+        process.stdout.write(`  ✗ ${task.role.padEnd(20)} ${failureLine(task.error)}\n`);
+        continue;
+      }
+      const cost = task.spendReported ? `$${money(task.spend)}` : 'cost not reported';
+      process.stdout.write(`  ✓ ${task.role.padEnd(20)} ${cost}\n`);
+    }
+
+    process.stdout.write(
+      `\nspend ${money(report.spendAfter)} of ${money(report.spendCeiling)} ceiling.\n`,
+    );
+    if (report.recovered > 0) {
+      process.stdout.write(
+        `recovered ${String(report.recovered)} task(s) from an earlier run that did not finish.\n`,
+      );
+    }
+    if (report.costSilent > 0) {
+      // Saying "under the ceiling" about spend nobody measured is the same
+      // class of claim commitment 15 exists to forbid.
+      process.stdout.write(
+        `${String(report.costSilent)} task(s) ran on a host that reported no cost. ` +
+          'The ceiling did not bind on those.\n',
+      );
+    }
+    if (report.halted === 'spend-ceiling') {
+      const left = countTasksByState(store, args.run).pending ?? 0;
+      process.stdout.write(
+        `\nhalted: spend ceiling reached. ${String(left)} task(s) left pending — ` +
+          'raise it with --ceiling=<amount> to continue.\n',
+      );
+      return 1;
+    }
+    return report.failed > 0 ? 1 : 0;
   });
 }
 
@@ -237,13 +412,19 @@ export function decide(argv: string[]): number {
   });
 }
 
-const USAGE = 'usage: construct <outcome|log|inbox|decide|doctor|cleanup|version>\n';
+const USAGE = 'usage: construct <outcome|work|log|inbox|decide|doctor|cleanup|version>\n';
 
-export function main(argv: string[] = process.argv.slice(2)): number {
+/**
+ * Async because `work` dispatches to a host. The other commands stay
+ * synchronous — awaiting a number costs nothing and keeps one entry point.
+ */
+export async function main(argv: string[] = process.argv.slice(2)): Promise<number> {
   const command = argv[0] ?? 'help';
   switch (command) {
     case 'outcome':
       return outcome(argv.slice(1));
+    case 'work':
+      return work(argv.slice(1));
     case 'log':
       return log(argv.slice(1));
     case 'inbox':

@@ -1,12 +1,15 @@
 /**
- * kernel/store/open.ts — the one storage substrate. Three Phase 2 consumers
- * ride it: the tracker projection mirror, the work log, and the decision inbox.
+ * kernel/store/open.ts — the one storage substrate. Four Phase 2 consumers
+ * ride it: the tracker projection mirror, the work log, the decision inbox, and
+ * the coordinator's task rows.
  *
  * It is one substrate on purpose. The predecessor persisted projections through
  * a Dolt lock, which is why the projection harvest stopped at the pure logic and
  * deferred storage (see construct-v3j): fixing a storage shape before its
  * consumers exist is guessing. All three consumers exist now, so the shape is
  * chosen against all three at once rather than fitted to whichever landed first.
+ * The task table arrived later (construct-r67.5) and is additive: schema version
+ * 2 adds a table, changes none of the three.
  *
  * SQLite via `node:sqlite`, which ships with Node — no dependency is added to a
  * CLI users install. STRATEGY ("What carries over") commits the tracker model to
@@ -31,7 +34,7 @@ import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Paths } from '../paths.ts';
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export interface Store {
   readonly db: DatabaseSync;
@@ -102,6 +105,26 @@ CREATE TABLE IF NOT EXISTS decisions (
 ) STRICT;
 
 CREATE INDEX IF NOT EXISTS decisions_open ON decisions (state, raised_at);
+
+CREATE TABLE IF NOT EXISTS tasks (
+  id             TEXT PRIMARY KEY,
+  run            TEXT NOT NULL,
+  role           TEXT NOT NULL,
+  brief          TEXT NOT NULL,
+  state          TEXT NOT NULL,
+  attempts       INTEGER NOT NULL DEFAULT 0,
+  lease_owner    TEXT,
+  lease_until    TEXT,
+  result         TEXT,
+  error          TEXT,
+  spend          REAL NOT NULL DEFAULT 0,
+  spend_reported INTEGER NOT NULL DEFAULT 0,
+  enqueued_at    TEXT NOT NULL,
+  settled_at     TEXT
+) STRICT;
+
+CREATE INDEX IF NOT EXISTS tasks_run ON tasks (run, enqueued_at, id);
+CREATE INDEX IF NOT EXISTS tasks_claimable ON tasks (state, lease_until);
 `;
 
 /** The substrate's file under an injected Paths. Callers do not build this path. */

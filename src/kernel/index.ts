@@ -172,6 +172,39 @@ export {
 export type { Decision, DecisionState, Position, RaiseDecision } from './store/decisions.ts';
 export { syncProjections } from './store/reconcile.ts';
 export type { SyncOptions } from './store/reconcile.ts';
+export {
+  StaleLeaseError,
+  TASK_STATES,
+  claimTask,
+  completeTask,
+  countTasksByState,
+  enqueueTask,
+  failTask,
+  getTask,
+  listTasks,
+  totalSpend,
+} from './store/tasks.ts';
+export type {
+  ClaimTask,
+  CompleteTask,
+  EnqueueTask,
+  FailTask,
+  LeasedTask,
+  SettleTask,
+  Task,
+  TaskState,
+} from './store/tasks.ts';
+
+export { startRun, taskId } from './run/outcome.ts';
+export type { StartRunInput, StartedRun } from './run/outcome.ts';
+export {
+  DEFAULT_CONCURRENCY,
+  DEFAULT_LEASE_MS,
+  assignmentFor,
+  spendOf,
+  workRun,
+} from './run/coordinator.ts';
+export type { CoordinatorOptions, HaltReason, RunReport } from './run/coordinator.ts';
 
 export { CAPABILITIES, hasCapability, validate as validateHost } from './hosts/interface.ts';
 export type {

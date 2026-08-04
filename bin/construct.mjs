@@ -13,4 +13,4 @@ const src = new URL('../src/cli/index.ts', import.meta.url);
 const target = existsSync(fileURLToPath(dist)) ? dist : src;
 
 const { main } = await import(target.href);
-process.exitCode = main();
+process.exitCode = await main();
