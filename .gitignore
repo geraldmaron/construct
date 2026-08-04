@@ -11,3 +11,8 @@ coverage/
 .dolt/
 *.db
 .beads-credential-key
+
+# construct-2jb.3: generated labeling sheets and real coder responses never
+# belong in git — sheets/ is regenerable, returned/ may carry a labeler's name.
+scripts/labeling-kit/sheets/
+scripts/labeling-kit/returned/*.json
