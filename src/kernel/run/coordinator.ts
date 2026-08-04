@@ -188,8 +188,52 @@ function summarize(result: HostResult): Record<string, unknown> {
   };
 }
 
+/** All framing needs is a clock; it opens no host and spends nothing. */
+export interface FramingOptions {
+  readonly clock: () => string;
+  /** Limit framing to one run, as `construct work --run <id>` does. */
+  readonly run?: string;
+}
+
 /**
- * Frame each worked run's cross-domain disagreement as one inbox item, and
+ * Which runs to consider framing.
+ *
+ * Two sources, because they answer different questions. The ids this invocation
+ * settled cover the ordinary case, including a run split across invocations by
+ * the spend ceiling — it is framed at the end of the first invocation, against
+ * whatever sides exist by then. Every FULLY SETTLED run in the store covers the
+ * case construct-xgi found: tasks settled durably, then the process died before
+ * framing ran, and no later invocation could ever reach it. `construct work`
+ * returns at its nothing-to-work guard, so the decision was unreachable by any
+ * command, on evidence sitting complete in the store.
+ *
+ * Fully settled is the deliberate bound on the second source. Sweeping every run
+ * with a done task would frame runs still in flight in another process, turning
+ * a partial picture into a decision the user reads as final — and the once-per-
+ * run rule means that first framing is the one they keep.
+ */
+function framingCandidates(store: Store, settled: readonly string[], run?: string): string[] {
+  const runs = new Set<string>();
+  for (const id of settled) {
+    const settledRun = getTask(store, id)?.run;
+    if (settledRun) runs.add(settledRun);
+  }
+
+  const unsettled = new Set<string>();
+  const withDone = new Set<string>();
+  for (const task of listTasks(store, run)) {
+    if (task.state === 'done') withDone.add(task.run);
+    else if (task.state !== 'failed') unsettled.add(task.run);
+  }
+  for (const candidate of withDone) {
+    if (!unsettled.has(candidate)) runs.add(candidate);
+  }
+
+  return [...runs].filter((candidate) => run === undefined || candidate === run);
+}
+
+/**
+ * Frame each candidate run's cross-domain disagreement as one inbox item, and
  * return how many were raised.
  *
  * Runs at the end rather than per settle, because a conflict is a property of a
@@ -201,18 +245,17 @@ function summarize(result: HostResult): Record<string, unknown> {
  * Framed once per run. A later invocation that adds a position does not rewrite
  * a decision the user may already be reading; the new position is in the work
  * log, and silently editing the question under them would be worse than leaving
- * it as it was raised.
+ * it as it was raised. That guard is also what makes this operation safe to
+ * re-enter, which is what construct-xgi's fix depends on: everything below is
+ * derived from the store, so calling it again can only raise a decision that was
+ * never raised, never rewrite one that was.
  */
-function frameConflicts(
+export function frameConflicts(
   store: Store,
   settled: readonly string[],
-  options: CoordinatorOptions,
+  options: FramingOptions,
 ): number {
-  const runs = new Set<string>();
-  for (const id of settled) {
-    const run = getTask(store, id)?.run;
-    if (run) runs.add(run);
-  }
+  const runs = framingCandidates(store, settled, options.run);
 
   let raised = 0;
   for (const run of runs) {

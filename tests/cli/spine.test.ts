@@ -13,6 +13,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { main, outcome, work } from '../../src/cli/index.ts';
 import type { HostAdapter, HostResult } from '../../src/kernel/hosts/interface.ts';
+import { openStore } from '../../src/kernel/store/open.ts';
+import { claimTask, completeTask, listTasks } from '../../src/kernel/store/tasks.ts';
+import { openDecisions } from '../../src/kernel/store/decisions.ts';
+
+/** Fixed points for the staged-crash test below; the CLI's own clock is real. */
+const SETTLED_AT = '2026-08-03T00:00:00.000Z';
+const LEASE_END = '2026-08-03T01:00:00.000Z';
 
 interface Capture {
   readonly code: number;
@@ -383,6 +390,69 @@ test('roles that disagree put one framed decision in front of the user', async (
   assert.match(out, /privacy: hold — no processing agreement is in place \[GDPR Art. 28\]/);
   assert.match(out, /program-sequencing: proceed — the date has slack \[the launch plan\]/);
   assert.ok(!/recommend/i.test(out), 'the inbox must frame, never arbitrate');
+});
+
+test('a decision lost to a dead process is reachable through the normal surface', async () => {
+  // construct-xgi, end to end at the surface that failed. The tasks settle, the
+  // invocation that settled them never frames, and the user's next move is the
+  // ordinary one: run `construct work` again, then look in the inbox.
+  const split: Record<string, string> = {
+    privacy: 'STANCE: hold\nBECAUSE: no processing agreement is in place\nCITE: GDPR Art. 28',
+    'program-sequencing': 'STANCE: proceed\nBECAUSE: the date has slack\nCITE: the launch plan',
+  };
+
+  const root = mkdtempSync(join(tmpdir(), 'construct-cli-'));
+  const previous = process.env.XDG_DATA_HOME;
+  process.env.XDG_DATA_HOME = join(root, 'share');
+  try {
+    const first = await capture([['outcome', 'launch a paid beta to EU users next month']]);
+    assert.equal(first.code, 0);
+
+    // The death, staged in the store rather than mimed: every task is settled
+    // durably through the ordinary claim/complete path, and nothing frames. This
+    // is the exact state observed on run-20260804173017057.
+    const store = openStore(join(process.env.XDG_DATA_HOME, 'construct', 'construct.db'));
+    let run = '';
+    try {
+      run = listTasks(store)[0]?.run ?? '';
+      assert.ok(run, 'the outcome should have queued tasks');
+      for (;;) {
+        const leased = claimTask(store, { owner: 'died', leaseUntil: LEASE_END, now: SETTLED_AT });
+        if (!leased) break;
+        completeTask(store, {
+          id: leased.id,
+          owner: 'died',
+          token: leased.token,
+          result: { text: split[leased.role] ?? 'STANCE: unclear', usage: { cost: 0.01, steps: 1 } },
+          spend: 0.01,
+          spendReported: true,
+          at: SETTLED_AT,
+        });
+      }
+      assert.equal(openDecisions(store).length, 0, 'the decision is unraised at this point');
+    } finally {
+      store.close();
+    }
+
+    // Before the fix this printed the settled line and returned 0, and no later
+    // command could ever reach the framing.
+    const recovered = await capture([['work', `--run=${run}`], ['inbox']]);
+
+    assert.match(recovered.out, /Its tasks are already settled/);
+    assert.match(recovered.out, /1 decision\(s\) need you/);
+    assert.match(recovered.out, /decision inbox \(1\)/);
+    assert.match(recovered.out, /privacy: hold — no processing agreement is in place/);
+    assert.match(recovered.out, /program-sequencing: proceed — the date has slack/);
+
+    // Re-entering must not raise it twice or rewrite what the user is reading.
+    const again = await capture([['work', `--run=${run}`], ['inbox']]);
+    assert.match(again.out, /decision inbox \(1\)/);
+    assert.doesNotMatch(again.out, /1 decision\(s\) need you/);
+  } finally {
+    if (previous === undefined) delete process.env.XDG_DATA_HOME;
+    else process.env.XDG_DATA_HOME = previous;
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('a host that reports no cost is called out rather than counted as free', async () => {

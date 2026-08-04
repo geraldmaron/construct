@@ -23,7 +23,7 @@ import type { DomainVerdict } from '../kernel/implication/harvest.ts';
 import { startRun, startRunEscalating } from '../kernel/run/outcome.ts';
 import { storeEscalationCache } from '../kernel/store/escalations.ts';
 import { createHostNamer } from '../hosts/namer.ts';
-import { DEFAULT_CONCURRENCY, workRun } from '../kernel/run/coordinator.ts';
+import { DEFAULT_CONCURRENCY, frameConflicts, workRun } from '../kernel/run/coordinator.ts';
 import { deliverableConcerns, licensedReviewFor } from '../kernel/run/accountability.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
 import { createOpenCodeAdapter } from '../hosts/opencode/adapter.ts';
@@ -503,11 +503,24 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
   return withStoreAsync(async (store) => {
     const waiting = countTasksByState(store, args.run).pending ?? 0;
     if (waiting === 0) {
+      // Nothing to dispatch is not the same as nothing to do. If a previous
+      // invocation settled this run's tasks and then died before framing —
+      // a SIGTERM, an OOM, a closed laptop, and the window is the whole run —
+      // the decision those deliverables imply has never been raised, and this
+      // guard used to return before anything could reach it (construct-xgi).
+      // Framing needs no host and no spend, so it runs before the guard reports.
+      const raised = frameConflicts(store, [], { clock: now, run: args.run });
+
       process.stdout.write(
         args.run
           ? `nothing to work for ${args.run}. Its tasks are already settled.\n`
           : 'nothing to work. Record an outcome first: construct outcome "<what you want>"\n',
       );
+      if (raised > 0) {
+        process.stdout.write(
+          `\n${String(raised)} decision(s) need you — the roles disagree.\n` + 'See: construct inbox\n',
+        );
+      }
       return 0;
     }
 

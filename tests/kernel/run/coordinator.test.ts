@@ -27,7 +27,7 @@ import {
 } from '../../../src/kernel/store/tasks.ts';
 import { readWorkLog } from '../../../src/kernel/store/worklog.ts';
 import { openDecisions } from '../../../src/kernel/store/decisions.ts';
-import { assignmentFor, spendOf, workRun } from '../../../src/kernel/run/coordinator.ts';
+import { assignmentFor, frameConflicts, spendOf, workRun } from '../../../src/kernel/run/coordinator.ts';
 import { deliverableConcerns, licensedReviewFor } from '../../../src/kernel/run/accountability.ts';
 import { DOMAINS } from '../../../src/kernel/implication/domains.ts';
 import type { HostAdapter, HostContext, HostResult } from '../../../src/kernel/hosts/interface.ts';
@@ -563,6 +563,81 @@ test('a run where the roles agree leaves the inbox empty', async () => {
 
     assert.equal(report.conflicts, 0);
     assert.equal(openDecisions(store).length, 0, 'a non-decision must not reach the inbox');
+  });
+});
+
+test('a run that settled and then died still raises its decision', async () => {
+  await withStoreAsync(async (store) => {
+    seed(store, ['privacy', 'program-sequencing']);
+    const answers: Record<string, string> = {
+      privacy: 'STANCE: hold\nBECAUSE: no processing agreement',
+      'program-sequencing': 'STANCE: proceed\nBECAUSE: the date has slack',
+    };
+
+    // The lost invocation, reconstructed: the tasks settle durably through the
+    // ordinary claim/complete path, and then the process is gone. Nothing calls
+    // frameConflicts, and no in-invocation state survives to be handed to it —
+    // which is exactly the state construct-xgi observed on
+    // run-20260804173017057, where two roles disagreed and the inbox was empty.
+    for (let i = 0; i < 2; i += 1) {
+      const leased = claimTask(store, { owner: 'died', leaseUntil: LATER, now: AT });
+      assert.ok(leased);
+      completeTask(store, {
+        id: leased.id,
+        owner: 'died',
+        token: leased.token,
+        result: { text: answers[leased.role], usage: { cost: 0.01, steps: 1 } },
+        spend: 0.01,
+        spendReported: true,
+        at: AT,
+      });
+    }
+
+    assert.equal(openDecisions(store, 'run-1').length, 0, 'the decision is lost at this point');
+
+    // A later invocation reaches the framing with no memory of the first: an
+    // empty settled list is all the fix is allowed to be given.
+    const raised = frameConflicts(store, [], { clock: frozen(LATER) });
+
+    assert.equal(raised, 1, 'the framing is re-derived from the store');
+    const inbox = openDecisions(store, 'run-1');
+    assert.equal(inbox.length, 1);
+    assert.deepEqual(inbox[0].positions.map((p) => p.role), ['privacy', 'program-sequencing']);
+
+    // The once-per-run rule has to survive being re-enterable, or the fix trades
+    // a lost decision for one that rewrites itself under the reader.
+    assert.equal(frameConflicts(store, [], { clock: frozen(LATER) }), 0, 'framed once, not once per call');
+    assert.equal(openDecisions(store, 'run-1').length, 1);
+  });
+});
+
+test('a run still in flight is not framed early by the recovery sweep', async () => {
+  await withStoreAsync(async (store) => {
+    seed(store, ['privacy', 'program-sequencing', 'security']);
+
+    // Two roles disagree and have settled; the third has not run at all. A
+    // sweep that framed on this would hand the user a decision missing a side
+    // and, by the once-per-run rule, never correct it.
+    const answers: Record<string, string> = {
+      privacy: 'STANCE: hold\nBECAUSE: no processing agreement',
+      'program-sequencing': 'STANCE: proceed\nBECAUSE: the date has slack',
+    };
+    for (let i = 0; i < 2; i += 1) {
+      const leased = claimTask(store, { owner: 'w1', leaseUntil: LATER, now: AT });
+      assert.ok(leased);
+      completeTask(store, {
+        id: leased.id,
+        owner: 'w1',
+        token: leased.token,
+        result: { text: answers[leased.role] ?? 'STANCE: unclear', usage: { cost: 0.01, steps: 1 } },
+        spend: 0.01,
+        spendReported: true,
+        at: AT,
+      });
+    }
+
+    assert.equal(frameConflicts(store, [], { clock: frozen(LATER) }), 0, 'a pending task means not settled');
+    assert.equal(openDecisions(store, 'run-1').length, 0);
   });
 });
 
