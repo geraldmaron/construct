@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
-node "$(git rev-parse --show-toplevel)/scripts/hooks/secret-scan.mjs"
+# --- BEGIN CONSTRUCT GATE ---
+# Managed by scripts/install-git-hooks.sh — re-running the installer replaces
+# this section and touches nothing else in the file.
+_construct_root="$(git rev-parse --show-toplevel)"
+node "$_construct_root/scripts/hooks/secret-scan.mjs" || exit 1
+node "$_construct_root/scripts/hooks/repo-gate.mjs" || true
+# --- END CONSTRUCT GATE ---
 
 # --- BEGIN BEADS INTEGRATION v1.0.3 ---
 # This section is managed by beads. Do not remove these markers.

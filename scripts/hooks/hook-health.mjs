@@ -12,7 +12,13 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const stateFile = join(repoRoot, '.claude', '.hook-health.json');
+// Overridable so a test can point it somewhere disposable. Without this the
+// only way to exercise a hook end to end is to let it write into the real repo,
+// which is the sterile-discipline hole tests/harness/sterile.ts exists to close.
+// Env-reading is a scripts/ liberty, not a kernel one — src/kernel/paths.ts is
+// still the only module inside the kernel permitted to do it.
+const stateFile =
+  process.env.CONSTRUCT_HOOK_HEALTH_FILE ?? join(repoRoot, '.claude', '.hook-health.json');
 
 export function recordHookOutcome(hookName, ok) {
   let state = {};

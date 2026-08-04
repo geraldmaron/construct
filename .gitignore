@@ -4,6 +4,9 @@ dist/
 .DS_Store
 coverage/
 
+# Per-repo hook health counters, written by scripts/hooks/hook-health.mjs.
+.claude/.hook-health.json
+
 # Beads / Dolt files (added by bd init)
 .dolt/
 *.db
