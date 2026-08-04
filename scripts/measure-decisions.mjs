@@ -316,6 +316,124 @@ if (process.argv.includes('--embeddings') && heading(5.5, 'Embedding similarity 
 }
 
 // ---------------------------------------------------------------------------
+// §5.6 also requires the live local embedder, and is skipped without
+// --embeddings for the same reason as §5.5.
+if (process.argv.includes('--embeddings') && heading(5.6, 'Margin-triggered escalation: what a similarity margin WOULD have done (construct-zg4)')) {
+  const { rankBySimilarity, domainText, shortlist } = await import('../src/kernel/implication/similarity.ts');
+  const { SHORTLIST_K } = await import('../src/kernel/implication/escalate.ts');
+  const EMBED_MODEL = 'nomic-embed-text';
+  const embedRaw = async (text) => {
+    const res = await fetch('http://127.0.0.1:11434/api/embeddings', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ model: EMBED_MODEL, prompt: text }),
+    });
+    if (!res.ok) throw new Error(`ollama ${res.status} — is ollama running with ${EMBED_MODEL} pulled?`);
+    return (await res.json()).embedding;
+  };
+  const cache = new Map();
+  const embedder = async (text) => {
+    if (!cache.has(text)) cache.set(text, await embedRaw(text));
+    return cache.get(text);
+  };
+  for (const d of DOMAINS) await embedder(domainText(d));
+
+  console.log('\n  CAVEAT, attached to every number below (do not quote without it):');
+  console.log('  UNFITTED. Every threshold in this sweep is evaluated on corpora that are');
+  console.log('  already spent: single-author labels, and two of the three corpora were');
+  console.log('  tuned against during construct-4jq. Nothing here is derived or validated;');
+  console.log('  it is what each threshold WOULD have done, on data that cannot vouch for');
+  console.log('  it. Believing any row requires the corpus construct-2jb.4 will build.');
+
+  console.log('\n  The margin statistic: for an outcome the keyword pass answered,');
+  console.log('    margin = max similarity among IMPLICATED domains');
+  console.log('           - max similarity among UNIMPLICATED domains');
+  console.log('  Escalate when margin < t (or, when the pass is silent, always — today\'s');
+  console.log('  rule is the t = -Infinity row). A silent outcome has no margin.');
+
+  // Precompute, once per outcome: the keyword answer, the ranking, the margin,
+  // and the SHORTLIST_K candidate list a margin-fired escalation would hand the
+  // namer (excluding what keywords already implicated, per shortlist()).
+  const evaluated = [];
+  for (const c of corpora) {
+    for (const o of c.outcomes) {
+      const got = implicatedDomains({ outcome: o.outcome });
+      const ranked = await rankBySimilarity({ outcome: o.outcome, catalog: DOMAINS, embedder });
+      const impSims = ranked.filter((r) => got.includes(r.domain)).map((r) => r.similarity);
+      const unimpSims = ranked.filter((r) => !got.includes(r.domain)).map((r) => r.similarity);
+      const margin = got.length === 0 ? null : Math.max(...impSims) - Math.max(...unimpSims);
+      const candidates = shortlist(ranked, got, SHORTLIST_K).map((r) => r.domain);
+      evaluated.push({ corpus: c.name, expect: o.expect, got, margin, candidates });
+    }
+  }
+
+  const margins = evaluated.filter((e) => e.margin !== null).map((e) => e.margin).sort((a, b) => a - b);
+  console.log(`\n  Margin distribution over the ${margins.length} non-silent outcomes:`);
+  console.log(`    min ${margins[0].toFixed(3)}, median ${margins[Math.floor(margins.length / 2)].toFixed(3)}, max ${margins[margins.length - 1].toFixed(3)}`);
+  console.log(`    negative (an unimplicated domain outranks every implicated one): ${margins.filter((m) => m < 0).length}`);
+
+  /**
+   * Score one threshold. The namer cannot be run inside a deterministic sweep,
+   * so the two sides are bounded, not simulated:
+   *   miss  — BEST case: an oracle namer that names exactly the expected labels
+   *           present in the shortlist. Real misses can only be higher.
+   *   over  — WORST case: a credulous namer that names the whole shortlist.
+   *           Real over-inclusion can only be lower.
+   * Cost is exact, not bounded: escalations fire on the trigger, not the namer.
+   */
+  const scoreAt = (rows, t) => {
+    let expected = 0;
+    let missed = 0;
+    let surfaced = 0;
+    let over = 0;
+    let escalations = 0;
+    for (const e of rows) {
+      const fires = e.margin === null || e.margin < t;
+      if (fires) escalations += 1;
+      const reach = fires ? [...e.got, ...e.candidates] : e.got;
+      expected += e.expect.length;
+      missed += e.expect.filter((x) => !reach.includes(x)).length;
+      surfaced += reach.length;
+      over += reach.filter((g) => !e.expect.includes(g)).length;
+    }
+    return { expected, missed, surfaced, over, escalations, outcomes: rows.length };
+  };
+
+  const thresholds = [
+    { label: 'silence only (today)', t: -Infinity },
+    ...[0, 0.01, 0.02, 0.03, 0.05, 0.08, 0.12].map((t) => ({ label: `margin < ${t.toFixed(2)}`, t })),
+    { label: 'always escalate', t: Infinity },
+  ];
+
+  const totalLabels56 = evaluated.reduce((a, e) => a + e.expect.length, 0);
+  console.log(`\n  Pooled sweep (${evaluated.length} outcomes, ${totalLabels56} labels). Miss is an ORACLE-NAMER FLOOR,`);
+  console.log('  over is a CREDULOUS-NAMER CEILING; a real namer lands between them.\n');
+  console.log('  trigger                 miss (floor)                            over (ceiling)                          namer calls/outcome');
+  for (const { label, t } of thresholds) {
+    const s = scoreAt(evaluated, t);
+    console.log(
+      `  ${label.padEnd(22)}  ${formatRate(s.missed, s.expected).padEnd(38)}  ${formatRate(s.over, s.surfaced).padEnd(38)}  ${(s.escalations / s.outcomes).toFixed(3)} (${s.escalations}/${s.outcomes})`,
+    );
+  }
+
+  console.log('\n  Per corpus, missed labels (oracle floor) and namer calls at each trigger:\n');
+  console.log(`  trigger                 ${corpora.map((c) => c.name.replace('-outcomes.json', '').padEnd(22)).join('')}`);
+  for (const { label, t } of thresholds) {
+    const cells = corpora.map((c) => {
+      const s = scoreAt(evaluated.filter((e) => e.corpus === c.name), t);
+      return `miss ${s.missed}/${s.expected}, calls ${s.escalations}/${s.outcomes}`.padEnd(22);
+    });
+    console.log(`  ${label.padEnd(22)}  ${cells.join('')}`);
+  }
+
+  console.log('\n  Reading the sweep: the miss column is what §5.5 promised — the shortlist');
+  console.log('  contains the misses, so a trigger that fires hands them to the namer.');
+  console.log('  The over ceiling is why the trigger must stay narrow, and the calls');
+  console.log('  column is the bill. No row here is a default: shipping one is a decision');
+  console.log('  Gerald makes against construct-2jb.4\'s corpus, not against this one.');
+}
+
+// ---------------------------------------------------------------------------
 if (heading(9, 'Phase gates as sequential hypothesis tests')) {
   console.log('\nWhat each gate proves, if every subject succeeds:\n');
   console.log('  successes   two-sided 95% CI        one-sided 95% lower bound');
