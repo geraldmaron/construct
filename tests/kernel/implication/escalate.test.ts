@@ -11,10 +11,12 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mapImplicationsEscalating } from '../../../src/kernel/implication/escalate.ts';
+import { mapImplicationsEscalating, SHORTLIST_K } from '../../../src/kernel/implication/escalate.ts';
 import type { DomainNamer, EscalationCache } from '../../../src/kernel/implication/escalate.ts';
 import type { Implication } from '../../../src/kernel/implication/map.ts';
 import type { Domain } from '../../../src/kernel/implication/domains.ts';
+import type { Embedder } from '../../../src/kernel/implication/similarity.ts';
+import { domainText } from '../../../src/kernel/implication/similarity.ts';
 
 /**
  * A fixed catalog, so these tests measure the seam rather than the live
@@ -45,13 +47,16 @@ const SILENT = 'We want to run a raffle for anyone who joins before Friday';
 function namer(namings: Array<{ domain: string; why: string }>): {
   fn: DomainNamer;
   calls: string[];
+  catalogs: (readonly Domain[])[];
 } {
   const calls: string[] = [];
-  const fn: DomainNamer = async (outcome) => {
+  const catalogs: (readonly Domain[])[] = [];
+  const fn: DomainNamer = async (outcome, catalog) => {
     calls.push(outcome);
+    catalogs.push(catalog);
     return namings;
   };
-  return { fn, calls };
+  return { fn, calls, catalogs };
 }
 
 function memoryCache(): EscalationCache & { entries: Map<string, readonly Implication[]> } {
@@ -150,4 +155,96 @@ test('a cached silence is still silence, and still does not re-escalate', async 
   const again = await mapImplicationsEscalating({ catalog: CATALOG, outcome: SILENT, namer: stub.fn, cache });
   assert.equal(again.inferredBy, 'none');
   assert.deepEqual(stub.calls, [SILENT]);
+});
+
+// ---------------------------------------------------------------------------
+// construct-2jb.12: the similarity shortlist, consulted only when a namer AND
+// an embedder are both present.
+
+/** A stub embedder giving each catalog domain a distinct, known similarity. */
+function axisEmbedder(assignments: Record<string, readonly number[]>): Embedder {
+  return async (text) => {
+    const vec = assignments[text];
+    if (!vec) throw new Error(`stub asked to embed unexpected text: ${text}`);
+    return vec;
+  };
+}
+
+test('with no embedder, the namer sees the full catalog exactly as before', async () => {
+  const stub = namer([{ domain: 'marketing-claims', why: 'a raffle is a regulated promotion' }]);
+  await mapImplicationsEscalating({ catalog: CATALOG, outcome: SILENT, namer: stub.fn });
+  assert.deepEqual(stub.catalogs, [CATALOG]);
+});
+
+test('with a namer and an embedder, the namer is shown only the shortlist', async () => {
+  const stub = namer([{ domain: 'marketing-claims', why: 'a raffle is a regulated promotion' }]);
+  // marketing-claims closer to the outcome than privacy; k=1 keeps only the top one.
+  const embedder = axisEmbedder({
+    [SILENT]: [1, 0, 0],
+    [domainText(CATALOG[0]!)]: [0.9, 0, 0], // marketing-claims
+    [domainText(CATALOG[1]!)]: [0, 1, 0], // privacy
+  });
+  const result = await mapImplicationsEscalating({
+    catalog: CATALOG,
+    outcome: SILENT,
+    namer: stub.fn,
+    embedder,
+  });
+  assert.equal(stub.catalogs.length, 1);
+  assert.deepEqual(
+    stub.catalogs[0]!.map((d) => d.domain),
+    SHORTLIST_K >= 2 ? ['marketing-claims', 'privacy'] : ['marketing-claims'],
+  );
+  assert.equal(result.inferredBy, 'escalation');
+});
+
+test('an embedder that throws degrades to the full catalog, never a narrowed one', async () => {
+  const stub = namer([{ domain: 'marketing-claims', why: 'a raffle is a regulated promotion' }]);
+  const exploding: Embedder = async () => {
+    throw new Error('ollama unreachable');
+  };
+  const result = await mapImplicationsEscalating({
+    catalog: CATALOG,
+    outcome: SILENT,
+    namer: stub.fn,
+    embedder: exploding,
+  });
+  assert.deepEqual(stub.catalogs, [CATALOG]);
+  assert.equal(result.inferredBy, 'escalation');
+});
+
+test('a similarity value never appears anywhere on the resulting implication', async () => {
+  const stub = namer([{ domain: 'marketing-claims', why: 'a raffle is a regulated promotion' }]);
+  const embedder = axisEmbedder({
+    [SILENT]: [1, 0, 0],
+    [domainText(CATALOG[0]!)]: [0.9, 0, 0],
+    [domainText(CATALOG[1]!)]: [0, 1, 0],
+  });
+  const result = await mapImplicationsEscalating({
+    catalog: CATALOG,
+    outcome: SILENT,
+    namer: stub.fn,
+    embedder,
+  });
+  for (const implication of result.implicated) {
+    assert.ok(!('similarity' in implication), 'similarity must never leak into an implication');
+    assert.deepEqual(implication.signals, ['a raffle is a regulated promotion']);
+  }
+});
+
+test('an empty catalog yields an empty shortlist, and candidateCatalog falls back rather than crashing', async () => {
+  const stub = namer([{ domain: 'marketing-claims', why: 'a raffle is a regulated promotion' }]);
+  const embedder = axisEmbedder({
+    [SILENT]: [1, 0, 0],
+    [domainText(CATALOG[0]!)]: [0.9, 0, 0],
+    [domainText(CATALOG[1]!)]: [0, 1, 0],
+  });
+  const result = await mapImplicationsEscalating({
+    catalog: [],
+    outcome: SILENT,
+    namer: stub.fn,
+    embedder,
+  });
+  assert.deepEqual(stub.catalogs, [[]]);
+  assert.equal(result.inferredBy, 'none');
 });

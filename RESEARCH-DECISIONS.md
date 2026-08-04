@@ -347,7 +347,29 @@ Seam: `src/kernel/implication/similarity.ts` — embedder injected like Paths an
 kernel imports no host. The shortlist returns *candidates for a namer to judge*, never
 implications: geometry is not a citation, so commitment 15's evidence bar is untouched. The k=4
 figure is derived from the current corpora and must be re-derived when they grow, not trusted.
-Filed as `construct-2jb.12`.
+
+**Wired, not just measured (`construct-2jb.12`).** `mapImplicationsEscalating`
+(`src/kernel/implication/escalate.ts`) consults the shortlist only when a namer AND an embedder
+are both supplied: on a silent deterministic pass, the namer is handed the top-`SHORTLIST_K`
+domains by similarity instead of the full catalog, `SHORTLIST_K` re-derivable via
+`node scripts/measure-decisions.mjs --embeddings --section 5.5`. Two failure paths were
+deliberately kept distinct: an embedder that throws degrades escalation to exactly the pre-.12
+behavior (full catalog, no shortlist — never a narrowed-and-therefore-wrong one), while a namer
+that throws still degrades to silence as before. The host-layer implementation is
+`src/hosts/ollama/embedder.ts`: an ollama-backed `Embedder` plus `withDomainCache`, which caches
+by domain *text* (`similarity.ts`'s `domainText`) and deliberately never caches outcome text —
+domains change on catalog edits, outcomes are not expected to repeat.
+
+Re-run live against `nomic-embed-text` (`node scripts/measure-decisions.mjs --embeddings
+--section 5.5`, same three corpora, 2026-08-04): **AUC 0.750** over 85 labeled / 455 unlabeled
+pairs, and the smallest k covering every keyword-missed label is still **4** — unchanged from the
+design measurement, as expected: the script exercises `similarity.ts`'s `rankBySimilarity` and
+`shortlist` directly, the same functions `escalate.ts`'s `candidateCatalog` now calls, so this is
+a re-measurement of the algorithm the shipped seam runs, not a separately-measured claim about it.
+The wiring's own contract — narrowing under embedder success, full-catalog fallback under
+embedder failure, no similarity value ever touching an `Implication` — is pinned by tests
+(`tests/kernel/implication/escalate.test.ts`) rather than by this script, since that is a property
+of the integration, not a rate.
 
 ### The corpus that grows itself
 

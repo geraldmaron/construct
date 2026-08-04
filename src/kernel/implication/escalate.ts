@@ -27,12 +27,25 @@
  *     result and escalated implications carry the model's stated reason as
  *     their signal, because an inference a user cannot argue with is the defect
  *     this bead started from and a model-stated one is no exception.
+ *
+ * construct-2jb.12 adds one more input, optional and additive: when both a
+ * namer AND an embedder are supplied, the namer is not handed the whole
+ * catalog to judge — it is handed the top-k domains by embedding similarity
+ * to the outcome (similarity.ts's shortlist). This is a narrowing of WHAT THE
+ * NAMER LOOKS AT, never a substitute for its judgment: the namer still names
+ * domains and still states why, `admissible()` still validates against the
+ * full catalog, and no similarity value is ever written into an Implication.
+ * A shortlist is a candidate list, not a citation (similarity.ts's header).
+ * An embedder that throws degrades this to exactly today's behavior — the
+ * namer sees the full catalog, as if no embedder had been supplied at all.
  */
 
 import { mapImplications } from './map.ts';
 import type { Implication, ImplicationMap } from './map.ts';
 import { DOMAINS, domainsByName } from './domains.ts';
 import type { Domain } from './domains.ts';
+import { rankBySimilarity, shortlist } from './similarity.ts';
+import type { Embedder } from './similarity.ts';
 
 /** A domain the namer says is implicated, and why it says so. */
 export interface DomainNaming {
@@ -81,6 +94,57 @@ export interface EscalateInput {
   /** Absent means no escalation: the map behaves exactly as it always has. */
   readonly namer?: DomainNamer;
   readonly cache?: EscalationCache;
+  /**
+   * Absent, or present without a namer, means no shortlisting: the namer (if
+   * any) is handed the full catalog, exactly as before this bead. Present
+   * alongside a namer, it narrows what the namer is asked to judge to the
+   * domains geometry says are closest — never an implication signal itself.
+   */
+  readonly embedder?: Embedder;
+}
+
+/**
+ * How many of the catalog's top-similarity domains the namer is shown when
+ * escalating. Derived from the three measured corpora, not chosen: it is the
+ * smallest k that covered every keyword-missed label in that measurement
+ * (RESEARCH-DECISIONS.md §5.5). Re-derive it — do not just bump it — when the
+ * corpus grows (construct-2jb.4):
+ *
+ *   node scripts/measure-decisions.mjs --embeddings --section 5.5
+ *
+ * and read the "smallest k covering every keyword-missed label" line.
+ */
+export const SHORTLIST_K = 4;
+
+/**
+ * Narrow the catalog a namer is asked to judge to the top SHORTLIST_K domains
+ * by embedding similarity, when an embedder is available. Any failure here —
+ * a missing embedder, an unreachable host, a bad response — returns the full
+ * catalog unchanged: the shortlist is an enhancement to escalation, and a
+ * broken enhancement must fall back to the behavior that shipped before it,
+ * never surface a narrowed-and-therefore-wrong candidate set.
+ */
+async function candidateCatalog(
+  outcome: string,
+  catalog: readonly Domain[],
+  embedder: Embedder | undefined,
+): Promise<readonly Domain[]> {
+  if (!embedder) return catalog;
+  try {
+    const ranked = await rankBySimilarity({ outcome, catalog, embedder });
+    // Nothing is implicated yet in this branch (mapImplicationsEscalating
+    // only reaches here when the deterministic pass was silent), so nothing
+    // needs excluding from the shortlist.
+    const candidates = shortlist(ranked, [], SHORTLIST_K);
+    if (candidates.length === 0) return catalog;
+    const byName = domainsByName(catalog);
+    const narrowed = candidates
+      .map((c) => byName.get(c.domain))
+      .filter((d): d is Domain => d !== undefined);
+    return narrowed.length > 0 ? narrowed : catalog;
+  } catch {
+    return catalog;
+  }
 }
 
 /**
@@ -149,9 +213,11 @@ export async function mapImplicationsEscalating(input: EscalateInput): Promise<E
     return { outcome: input.outcome, implicated: cached, inferredBy: cached.length ? 'cache' : 'none' };
   }
 
+  const namerCatalog = await candidateCatalog(input.outcome, catalog, input.embedder);
+
   let namings: readonly DomainNaming[];
   try {
-    namings = await input.namer(input.outcome, catalog);
+    namings = await input.namer(input.outcome, namerCatalog);
   } catch {
     // A namer that fails is a namer that said nothing. The alternative —
     // surfacing a guess, or failing the whole outcome — trades a recoverable
