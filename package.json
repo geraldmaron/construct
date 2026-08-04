@@ -20,7 +20,6 @@
   "files": [
     "bin",
     "dist",
-    "packs",
     "schemas"
   ],
   "exports": {
@@ -34,7 +33,9 @@
     "lint": "node scripts/lint-no-absolute-paths.mjs && node scripts/lint-glossary-parity.mjs",
     "build": "tsc -p tsconfig.build.json",
     "prepack": "npm run build",
-    "smoke": "bash scripts/smoke-packaged-install.sh"
+    "smoke": "bash scripts/smoke-packaged-install.sh",
+    "probe:opencode": "node scripts/probe-opencode-conformance.mjs",
+    "capture:opencode": "node scripts/capture-opencode-transcripts.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

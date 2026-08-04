@@ -1,0 +1,2 @@
+{"type":"error","timestamp":1785801386885,"sessionID":"ses_035f1576bffeweuBuUL3E7YAT3","error":{"name":"UnknownError","data":{"message":"Model not found: ollama/does-not-exist-cx0."}}}
+{"type":"error","timestamp":1785801386886,"sessionID":"ses_035f1576bffeweuBuUL3E7YAT3","error":{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details."}}}
