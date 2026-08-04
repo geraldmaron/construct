@@ -56,6 +56,14 @@ const fixture = load('labeled-outcomes.json');
  */
 const heldOut = load('held-out-outcomes.json');
 
+/**
+ * The fresh set (construct-4jq): ten outcomes authored during the Phase 2
+ * dogfood, before reading the keyword lists in that session. It scored 0.400
+ * against a 0.15 target while the held-out set — by then tuned against —
+ * scored 0.026. See the file's own `status`: committing it spends it.
+ */
+const fresh = load('fresh-outcomes.json');
+
 function quota(name: string, set: { outcomes: Labeled[] }): void {
   const total = set.outcomes.length;
   const nonEngineering = set.outcomes.filter((o) => o.category !== 'engineering').length;
@@ -252,4 +260,51 @@ test('the catalog is caller-replaceable without forking the kernel', () => {
     ],
   });
   assert.deepEqual(domains, ['franchise']);
+});
+
+/**
+ * The evidence-honesty invariant (construct-4jq). The floor is a SUM, and
+ * partial matches are summable: "Our biggest client wants us to keep their data
+ * in Germany" scored privacy at 18 — six keywords containing the word "data",
+ * three points each — clearing a floor documented as "one whole signal must
+ * fire" while citing no signal at all. That turned catalog verbosity into
+ * score, and produced an inference a user cannot argue with, which is what the
+ * signals list exists to prevent.
+ *
+ * Stated as an invariant over every corpus rather than as a case, because the
+ * failure was structural: any domain listing several multi-word keywords that
+ * share a common word could reach the floor on that word alone.
+ */
+test('no implication is ever surfaced without a whole-keyword signal to cite', () => {
+  for (const set of [fixture, heldOut, fresh]) {
+    for (const item of set.outcomes) {
+      for (const implication of mapImplications({ outcome: item.outcome }).implicated) {
+        assert.ok(
+          implication.signals.length > 0,
+          `${item.id} surfaced ${implication.domain} citing nothing — score ${String(implication.score)}`,
+        );
+      }
+    }
+  }
+});
+
+/**
+ * The third corpus, and the one the other two cannot replace. It is REPORTED,
+ * not enforced. Enforcing a threshold here would be a standing instruction to
+ * tune the catalog against these ten, which is precisely how held-out-outcomes
+ * .json stopped being held out — and this file's own `status` field records
+ * that it is already spent. The number is watched so a regression is visible;
+ * the honest generalization measurement is always the next corpus nobody has
+ * written yet.
+ */
+test('the fresh corpus miss rate is recorded, and its gap to the tuned corpora is the finding', () => {
+  const s = score(fresh);
+  report('fresh (reported, not enforced)', s, MISS_RATE_TARGET, OVER_RATE_TARGET);
+  const tuned = score(heldOut);
+  assert.ok(
+    s.missRate >= tuned.missRate,
+    `fresh (${s.missRate.toFixed(3)}) now scores better than the corpus the catalog was tuned against ` +
+      `(${tuned.missRate.toFixed(3)}). That is either real generalization or this file has been tuned ` +
+      'against — check which before relaxing this assertion.',
+  );
 });

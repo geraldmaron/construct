@@ -1,0 +1,18 @@
+{
+  "note": "The third corpus (construct-4jq), and the one that shows what the first two cannot. labeled-outcomes.json was written alongside the catalog and scores 0.000. held-out-outcomes.json was written to escape that circularity and scored 0.632 before construct-gsf tuned the catalog until it reached 0.026 — at which point it stopped being held out. These ten were authored during the construct-r67.9 dogfood, situation-first and before reading the keyword lists in that session, and scored 0.400 against a 0.15 target on a catalog that scored 0.026 on the corpus it had been tuned against. The gap between 0.026 and 0.400 is the tuning, not the map.",
+  "status": "BURNED. Writing this file down is what spends it: from here on the catalog can be tuned against these ten, so passing them proves progressively less. It is committed anyway, because a regression against it is still real information and an uncommitted measurement is not a gate. Its miss rate is recorded as a fact to be watched, NOT enforced as a passing threshold — enforcing it would be the exact instruction to tune against it.",
+  "discipline": "Same rule as held-out-outcomes.json: state the situation first, then write it in the plainest words available; never reach for a term because the catalog contains it; never reword a failing case until it passes. `expect` is what a competent human would say the outcome implicates, decided at authoring time and not revised after seeing the matcher's answer.",
+  "howToExtend": "Do not extend this file. A generalization measurement is only worth what its wording cost, and appending to a corpus the catalog has already been tuned against buys nothing. Author a NEW file of never-seen wording, measure once, then commit it in this same burned state with its number recorded. The measurement that matters is always the next unspent one.",
+  "outcomes": [
+    { "id": "f1", "category": "legal", "outcome": "Our biggest client wants us to keep their data in Germany and nowhere else", "expect": ["privacy"] },
+    { "id": "f2", "category": "non-engineering", "outcome": "Let people pay us with invoices instead of cards because finance keeps complaining", "expect": ["commerce-tax"] },
+    { "id": "f3", "category": "legal", "outcome": "We want to run a raffle for anyone who joins before Friday", "expect": ["marketing-claims"] },
+    { "id": "f4", "category": "engineering", "outcome": "Turn on the thing where people can log in with their work Google account", "expect": ["security"] },
+    { "id": "f5", "category": "non-engineering", "outcome": "Let go of the two people who came on for the holidays", "expect": ["employment"] },
+    { "id": "f6", "category": "mixed", "outcome": "A customer wrote in saying she cannot use our checkout with her voice software", "expect": ["accessibility"] },
+    { "id": "f7", "category": "legal", "outcome": "The state of Texas sent us a letter asking how we handle student records", "expect": ["privacy"] },
+    { "id": "f8", "category": "engineering", "outcome": "Ship the mobile app to the app store before the conference", "expect": ["program-sequencing"] },
+    { "id": "f9", "category": "non-engineering", "outcome": "Tell everyone on the mailing list about the new pricing", "expect": ["marketing-claims"] },
+    { "id": "f10", "category": "mixed", "outcome": "Bring on a contractor in Poland to help with the backend", "expect": ["employment"] }
+  ]
+}

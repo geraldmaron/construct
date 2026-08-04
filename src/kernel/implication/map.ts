@@ -83,6 +83,19 @@ export function mapImplications(input: MapInput): ImplicationMap {
     // what the keywords alone contributed.
     const signalScore = suggestion.score - (domain.priority ?? 1);
     if (signalScore < minSignal) continue;
+
+    // The floor above is a sum, and partial matches are summable: six keywords
+    // containing the word "data" scored 18 on an outcome that said "data" once,
+    // clearing a floor documented as "one whole signal must fire" while citing
+    // nothing (construct-4jq). That made catalog verbosity into score — the more
+    // multi-word keywords a domain happens to list, the more partial credit one
+    // incidental word earns it. Requiring a whole match makes the floor mean
+    // what its comment says, and makes every implication carry the evidence the
+    // Implication type promises: an inference nobody can argue with is the
+    // citation half of commitment 15 failing on the map's own reasoning.
+    const evidence = matchingKeywords(domain.keywords, outcome).filter((m) => m.score >= FULL_MATCH);
+    if (evidence.length === 0) continue;
+
     implicated.push({
       domain: domain.domain,
       concern: domain.concern,
@@ -91,10 +104,9 @@ export function mapImplications(input: MapInput): ImplicationMap {
       // (one word of "next week" firing on "next month") legitimately
       // contributes to the score, but listing it as a signal would be the map
       // overstating why it inferred what it did — the citation half of
-      // commitment 15 applied to its own reasoning.
-      signals: matchingKeywords(domain.keywords, outcome)
-        .filter((m) => m.score >= FULL_MATCH)
-        .map((m) => m.keyword),
+      // commitment 15 applied to its own reasoning. Non-empty by construction:
+      // a domain with no whole match was skipped above.
+      signals: evidence.map((m) => m.keyword),
     });
   }
 
