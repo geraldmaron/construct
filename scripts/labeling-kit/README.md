@@ -12,7 +12,45 @@ has is single-author; independent labelers are the fix, and a script that
 fills in its own inputs recreates the exact circularity `construct-gsf`
 identified.
 
+## Protocol rewrite, 2026-08-04 — read this before the section below it
+
+The requirement here was never *humanness*. Re-read what the study is for: no
+classifier can be scored below the rate at which the ground truth contradicts
+itself. The property being demanded is **independence from the catalog author**.
+Humans were named because, when this kit was written, recruiting people was the
+only known way to get errors uncorrelated with the catalog's.
+
+**Stage 1 — model coders. Satisfiable without a human, and satisfied.** Two
+coders from *different model families*, at least one of which had no hand in
+authoring the catalog, labeled the same 34 outcomes blind. Result: Krippendorff's
+α = 0.7627 (MASI), bootstrap 95% CI [0.6317, 0.8857]. Cross-family agreement is a
+measurable proxy for independence with an honest ceiling.
+
+The ceiling is permanent and travels with every Stage 1 number: both coders are
+LLMs with overlapping pretraining, so **observed α is an upper bound on true
+independent agreement and the derived floor is a lower bound.** Stage 1
+establishes that the labeling task *has a stable answer*. It does **not**
+establish the human annotation floor. Quoting it as one is a misquote.
+
+**Stage 2 — human labels, and they do not come from this kit.** They come from
+run-derived verdicts (`construct-2jb.13`, shipped): every real run is a labeling
+event, where the user sees which domains surfaced, dismisses the wrong ones, and
+is ambushed by the missed ones. Those labels beat a sheet coded in a room on
+every axis that matters — multi-author instead of one person, drawn from the
+deployed distribution instead of an author's imagination, carrying **negative**
+labels (an explicit dismissal is not the same as an author never thinking of a
+domain), and unspent per catalog version rather than burned on first use. Filed
+as `construct-3ft`, blocked on real runs existing.
+
+**So: do not block this study on finding a human to code a sheet.** Coding
+`sheets/<name>.json` by hand is still worth doing — it raises *n* and adds a
+genuinely independent column — but it is a nice-to-have, not a gate.
+
 ## Method change, 2026-08-04 (Gerald's direction, accepted with controls)
+
+*Superseded in part by the protocol rewrite above: the "Gerald is the second
+coder" step is no longer a gate. The isolation rules below still bind every
+coder, model or human.*
 
 The study runs **LLM-as-judge instead of recruited human labelers**. An
 Fable/Opus-class coder labels one sheet in a fresh, isolated session —
