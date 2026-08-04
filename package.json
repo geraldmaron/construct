@@ -8,6 +8,18 @@
     "type": "git",
     "url": "git+https://github.com/geraldmaron/construct.git"
   },
+  "homepage": "https://github.com/geraldmaron/construct#readme",
+  "bugs": {
+    "url": "https://github.com/geraldmaron/construct/issues"
+  },
+  "keywords": [
+    "outcome",
+    "agent",
+    "orchestration",
+    "mcp",
+    "opencode",
+    "claude"
+  ],
   "publishConfig": {
     "access": "public"
   },
