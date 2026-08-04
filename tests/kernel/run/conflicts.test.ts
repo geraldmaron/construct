@@ -22,13 +22,23 @@ import {
   frameConflict,
   isConflict,
   parseStance,
+  stanceLabel,
 } from '../../../src/kernel/run/conflicts.ts';
 import type { RoleStance } from '../../../src/kernel/run/conflicts.ts';
 
 const AT = '2026-08-03T00:00:00.000Z';
 
-function stance(role: string, stance: string, because: string | null, citation: string | null): RoleStance {
-  return { role, declared: { stance: stance as RoleStance['declared']['stance'], because, citation } };
+function stance(
+  role: string,
+  stance: string,
+  because: string | null,
+  citation: string | null,
+  qualifier: string | null = null,
+): RoleStance {
+  return {
+    role,
+    declared: { stance: stance as RoleStance['declared']['stance'], qualifier, because, citation },
+  };
 }
 
 test('the protocol asks for the three lines and says unclear is a real answer', () => {
@@ -43,6 +53,9 @@ test('a declared stance is parsed through whatever markdown wraps it', () => {
   );
   assert.deepEqual(plain, {
     stance: 'hold',
+    // A plainly declared stance carries no qualifier — see the qualifier tests
+    // below for the case where the role wrote one (construct-gf8).
+    qualifier: null,
     because: 'no processing agreement is in place',
     citation: 'GDPR Art. 28',
   });
@@ -74,8 +87,65 @@ test('a stance that was not declared is never guessed at', () => {
   assert.equal(parseStance(null), null);
   assert.equal(parseStance('STANCE: maybe'), null, 'only the declared vocabulary counts');
   assert.equal(parseStance('STANCE:'), null);
-  // "hold on" starts with the word, and a role that wrote it declared hold.
+  // "hold on" starts with the word, and a role that wrote it declared hold —
+  // with a qualifier, which is kept rather than dropped (construct-gf8).
   assert.equal(parseStance('STANCE: hold on the launch')?.stance, 'hold');
+  assert.equal(parseStance('STANCE: hold on the launch')?.qualifier, 'on the launch');
+});
+
+test('a qualified stance is not recorded as the plain one', () => {
+  // Observed live on run-20260804174150559 (accessibility), quoted verbatim.
+  const declared = parseStance(
+    [
+      'STANCE: proceed with conditions',
+      'BECAUSE: the outcome is valid but "usable by blind customers" requires',
+      'specifying which assistive technologies to test with and what success',
+      'criteria define "usable" before development begins.',
+    ].join('\n'),
+  );
+
+  assert.equal(declared?.stance, 'proceed');
+  assert.equal(
+    declared?.qualifier,
+    'with conditions',
+    'the qualifier is the role\'s position, not decoration around it',
+  );
+  assert.equal(stanceLabel(declared!), 'proceed with conditions');
+});
+
+test('a punctuation tail is decoration, not a qualifier', () => {
+  // These parsed correctly before construct-gf8 and must keep doing so: the
+  // tolerance for a decorated line is what makes live model output usable.
+  for (const raw of ['proceed.', 'proceed --', 'hold!', 'proceed  ', 'unclear —', 'hold,']) {
+    const declared = parseStance(`STANCE: ${raw}`);
+    assert.ok(declared, `"${raw}" should still declare a stance`);
+    assert.equal(declared.qualifier, null, `"${raw}" carries no qualifier`);
+    assert.equal(stanceLabel(declared), declared.stance);
+  }
+});
+
+test('the framing never reports a role as plainer than it wrote', () => {
+  const decision = frameConflict({
+    run: 'run-2',
+    outcome: 'make checkout usable by blind customers',
+    at: AT,
+    stances: [
+      stance('accessibility', 'proceed', 'success criteria are undefined', null, 'with conditions'),
+      stance('commerce-tax', 'proceed', 'no tax impact', null),
+      stance('privacy', 'hold', 'no processing agreement', 'GDPR Art. 28'),
+    ],
+  });
+
+  assert.ok(decision);
+  // The defect in one assertion: this used to read "2 say proceed", counting a
+  // role that named a precondition among the unqualified proceeds.
+  assert.doesNotMatch(decision.question, /2 say proceed\b/);
+  assert.match(decision.question, /1 role\(s\) say hold/);
+  assert.match(decision.question, /1 say proceed with conditions/);
+  assert.match(decision.question, /1 say proceed\b/);
+
+  const accessibility = decision.positions.find((p) => p.role === 'accessibility');
+  assert.match(accessibility!.stance, /^proceed with conditions — /);
 });
 
 test('a restated block resolves to the final declaration', () => {

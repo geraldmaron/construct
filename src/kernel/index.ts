@@ -254,6 +254,7 @@ export {
   frameConflict,
   isConflict,
   parseStance,
+  stanceLabel,
 } from './run/conflicts.ts';
 export type { DeclaredStance, FrameInput, RoleStance, Stance } from './run/conflicts.ts';
 export {

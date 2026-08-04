@@ -32,10 +32,30 @@ export type Stance = (typeof STANCES)[number];
 
 export interface DeclaredStance {
   readonly stance: Stance;
+  /**
+   * What the role wrote after the stance word, when that is a qualifier rather
+   * than punctuation — "with conditions", "on the launch" — or null when it
+   * declared the stance plainly.
+   *
+   * This exists because the qualifier is part of the position, not noise around
+   * it (construct-gf8). A role writing "proceed with conditions" and naming a
+   * precondition has not taken the same position as one writing "proceed", and
+   * recording them identically puts the plainer, more confident position in the
+   * qualified role's mouth.
+   */
+  readonly qualifier: string | null;
   /** The role's one-line reason, or null if it declared none. */
   readonly because: string | null;
   /** What it says it is relying on, or null when it cited nothing. */
   readonly citation: string | null;
+}
+
+/**
+ * How a stance reads back to the user: the declared word, plus the role's own
+ * qualifier when it wrote one. Never plainer than what the role declared.
+ */
+export function stanceLabel(declared: DeclaredStance): string {
+  return declared.qualifier ? `${declared.stance} ${declared.qualifier}` : declared.stance;
 }
 
 /** The three lines every role is asked to end with. */
@@ -85,10 +105,23 @@ function citationOrNull(value: string | null): string | null {
  *
  * Strict on the vocabulary and forgiving on the formatting: only the three
  * declared words count, but they are found through whatever markdown the model
- * wrapped them in. Anything else — a missing block, a fourth word, a sentence
- * where the stance should be — reads as "no stance declared", which is the
- * safe answer because it removes the role from the framing rather than putting
- * a position in its mouth.
+ * wrapped them in. A missing block, a sentence where the stance should be, or a
+ * first word outside the vocabulary reads as "no stance declared", which is the
+ * safe answer because it removes the role from the framing rather than putting a
+ * position in its mouth.
+ *
+ * Words AFTER a valid stance word are kept as a qualifier rather than dropped
+ * (construct-gf8). A live run produced "STANCE: proceed with conditions" over a
+ * BECAUSE naming a precondition that had to be settled before development
+ * began; first-word extraction recorded that as an unqualified "proceed" and the
+ * framing counted the role among the plain proceeds. Both available answers were
+ * worse than this one: discarding the role loses a real position and can empty an
+ * inbox on a run that genuinely conflicts, and silently flattening it reports a
+ * plainer position than the role took. Keeping the qualifier does neither.
+ *
+ * A punctuation tail is not a qualifier. "proceed.", "proceed --" and "hold!"
+ * are the same declaration as the bare word, so the tail is stripped and the
+ * qualifier stays null; only surviving word characters qualify a stance.
  */
 export function parseStance(text: unknown): DeclaredStance | null {
   if (typeof text !== 'string' || !text.trim()) return null;
@@ -96,12 +129,22 @@ export function parseStance(text: unknown): DeclaredStance | null {
 
   const raw = labeled(lines, 'stance');
   if (raw === null) return null;
-  const word = /^([a-z-]+)/i.exec(raw)?.[1]?.toLowerCase();
+  const match = /^([a-z-]+)([\s\S]*)$/i.exec(raw);
+  const word = match?.[1]?.toLowerCase();
   if (!word || !(STANCES as readonly string[]).includes(word)) return null;
+
+  // Strip a leading separator and any trailing punctuation, then require a real
+  // word to remain — otherwise the "qualifier" was only decoration.
+  const tail = (match?.[2] ?? '')
+    .replace(/^[\s:;,.!?—–-]+/, '')
+    .replace(/[\s.,;:!?—–-]+$/, '')
+    .trim();
+  const qualifier = /\w/.test(tail) ? tail : null;
 
   const because = labeled(lines, 'because');
   return {
     stance: word as Stance,
+    qualifier,
     because: because && because.trim() ? because.trim() : null,
     citation: citationOrNull(labeled(lines, 'cite')),
   };
@@ -140,30 +183,44 @@ export interface FrameInput {
  * arbitration it forbids twice over. Roles that declared `unclear` are left out
  * — they are not a side, and padding the framing with them would make the
  * disagreement look broader than it is.
+ *
+ * The tally counts roles under the stance they actually wrote, so a qualified
+ * stance is never folded into the plain one (construct-gf8). Note that this
+ * changes what the question SAYS, not which runs raise a decision: isConflict
+ * still reads the declared word, so carrying qualifiers invents no conflict and
+ * loses none.
  */
 export function frameConflict(input: FrameInput): RaiseDecision | null {
   const sides = input.stances.filter((s) => s.declared.stance !== 'unclear');
   if (!isConflict(sides)) return null;
 
-  const holding = sides.filter((s) => s.declared.stance === 'hold').length;
-  const proceeding = sides.length - holding;
+  // Grouped by what each role wrote, holds first so the question opens on the
+  // objection, then in declaration order — not by size, which would read as a
+  // verdict on which side is winning.
+  const tally = new Map<string, number>();
+  for (const side of sides) {
+    const label = stanceLabel(side.declared);
+    tally.set(label, (tally.get(label) ?? 0) + 1);
+  }
+  const counted = [...tally.entries()]
+    .sort(([a], [b]) => Number(b.startsWith('hold')) - Number(a.startsWith('hold')))
+    .map(([label, n], i) => (i === 0 ? `${String(n)} role(s) say ${label}` : `${String(n)} say ${label}`))
+    .join(', ');
 
   const positions: Position[] = [...sides]
     .sort((a, b) => a.role.localeCompare(b.role))
     .map((s) => ({
       role: s.role,
       stance: s.declared.because
-        ? `${s.declared.stance} — ${s.declared.because}`
-        : s.declared.stance,
+        ? `${stanceLabel(s.declared)} — ${s.declared.because}`
+        : stanceLabel(s.declared),
       citation: s.declared.citation,
     }));
 
   return {
     id: `${input.run}:stance`,
     run: input.run,
-    question:
-      `${input.outcome} — ${String(holding)} role(s) say hold, ` +
-      `${String(proceeding)} say proceed. This one is yours to call.`,
+    question: `${input.outcome} — ${counted}. This one is yours to call.`,
     positions,
     raisedAt: input.at,
   };
