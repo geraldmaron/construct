@@ -21,6 +21,7 @@ import { DEFAULT_CONCURRENCY, workRun } from '../kernel/run/coordinator.ts';
 import { deliverableConcerns, licensedReviewFor } from '../kernel/run/accountability.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
 import { createOpenCodeAdapter } from '../hosts/opencode/adapter.ts';
+import { createClaudeAdapter } from '../hosts/claude/adapter.ts';
 import { loadOrCreateSecret, loadSecret } from '../kernel/capabilities/secretfile.ts';
 import { readRoleEnv } from '../kernel/run/roleenv.ts';
 import { serveRole } from './roleserve.ts';
@@ -275,6 +276,8 @@ export interface WorkArgs {
   readonly model?: string;
   readonly binary?: string;
   readonly dir?: string;
+  /** Which host executes: 'opencode' (default) or 'claude'. */
+  readonly host: string;
 }
 
 /**
@@ -303,6 +306,11 @@ export function parseWorkArgs(argv: string[]): WorkArgs {
     return value;
   };
 
+  const host = args.host ?? 'opencode';
+  if (host !== 'opencode' && host !== 'claude') {
+    throw new Error(`Invalid --host=${host}; expected opencode|claude`);
+  }
+
   return {
     run,
     concurrency: number('concurrency', DEFAULT_CONCURRENCY),
@@ -311,6 +319,7 @@ export function parseWorkArgs(argv: string[]): WorkArgs {
     model: args.model,
     binary: args.binary,
     dir: args.dir,
+    host,
   };
 }
 
@@ -345,7 +354,9 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
 
   const host =
     hostOverride ??
-    createOpenCodeAdapter({ binary: args.binary, model: args.model, dir: args.dir });
+    (args.host === 'claude'
+      ? createClaudeAdapter({ binary: args.binary, model: args.model, dir: args.dir })
+      : createOpenCodeAdapter({ binary: args.binary, model: args.model, dir: args.dir }));
 
   return withStoreAsync(async (store) => {
     const waiting = countTasksByState(store, args.run).pending ?? 0;

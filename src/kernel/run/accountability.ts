@@ -20,7 +20,7 @@ import { DOMAINS, domainsByName } from '../implication/domains.ts';
 import type { Domain } from '../implication/domains.ts';
 
 
-export const CONCERN_KINDS = ['incomplete-inputs', 'empty-deliverable', 'truncated'] as const;
+export const CONCERN_KINDS = ['incomplete-inputs', 'empty-deliverable', 'truncated', 'model-drift'] as const;
 
 export type ConcernKind = (typeof CONCERN_KINDS)[number];
 
@@ -36,6 +36,8 @@ interface Reported {
   readonly text?: unknown;
   readonly failedToolCalls?: unknown;
   readonly finishReasons?: unknown;
+  readonly modelRequested?: unknown;
+  readonly modelRan?: unknown;
 }
 
 /**
@@ -85,6 +87,29 @@ export function deliverableConcerns(deliverable: unknown): Concern[] {
       detail: 'the answer was cut off at the output limit, so it is not the whole answer',
       evidence: { finishReasons: reasons },
     });
+  }
+
+  // A host that treats the model flag as a preference can silently serve a run
+  // on a different — possibly far more expensive — model (measured on the
+  // pinned Claude CLI: an unknown name ran the opus default at 13x the price).
+  // Adapters that can tell say so via modelRequested/modelRan; inclusion
+  // rather than equality because hosts accept aliases ("haiku" is honored by
+  // "claude-haiku-4-5-..."). Hosts that do not report these fields are left
+  // alone — absence of the fields is not evidence of drift.
+  const requested = output?.modelRequested;
+  const ran = Array.isArray(output?.modelRan) ? (output.modelRan as unknown[]) : [];
+  if (typeof requested === 'string' && requested && ran.length > 0) {
+    const honored = ran.some(
+      (model) =>
+        typeof model === 'string' && (model.includes(requested) || requested.includes(model)),
+    );
+    if (!honored) {
+      concerns.push({
+        kind: 'model-drift',
+        detail: `you asked for model "${requested}" but the host ran ${ran.map(String).join(', ')} — check the spend line`,
+        evidence: { modelRequested: requested, modelRan: ran },
+      });
+    }
   }
 
   return concerns;
