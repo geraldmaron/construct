@@ -325,6 +325,159 @@ export function requiredTrials(input: SampleSizeInput): number {
 }
 
 /**
+ * P(rate > `threshold` | observations), under a uniform Beta(1, 1) prior.
+ *
+ * The Bayesian counterpart to `clopperPearsonLowerBound`, and the quantity a
+ * sequential gate is actually stopped on: after each subject, how much of the
+ * posterior sits above the bar the gate names. The frequentist bound answers
+ * "what could I have observed", which is the wrong question when the design lets
+ * you look after every subject — looking repeatedly inflates a fixed-alpha test
+ * and does nothing at all to a posterior.
+ *
+ * Exact, and dependency-free, via the identity that ties the Beta CDF to the
+ * binomial one at integer parameters: with a uniform prior the posterior is
+ * Beta(s + 1, f + 1), and P(theta > x) is then P(Y <= s) for Y ~ Bin(s + f + 1, x).
+ * That is `binomialCdf`, already here. The uniform prior is chosen for exactly
+ * this reason — Jeffreys' Beta(1/2, 1/2) would be the better-motivated default
+ * and would put half-integers where the identity needs integers.
+ *
+ * Worked: no observations at all gives P(theta > 0.5) = 0.5, and one success
+ * gives 0.75 (the posterior is Beta(2, 1), whose CDF is x^2).
+ */
+export function posteriorExceeds(
+  successes: number,
+  failures: number,
+  threshold: number,
+): number {
+  checkCount(successes, successes + failures);
+  if (threshold <= 0) return 1;
+  if (threshold >= 1) return 0;
+  return binomialCdf(successes, successes + failures + 1, threshold);
+}
+
+/**
+ * The lower limit of the one-sided posterior credible interval: the rate that
+ * `confidence` of the posterior mass sits above.
+ */
+export function credibleLowerBound(
+  successes: number,
+  failures: number,
+  confidence = 0.95,
+): number {
+  checkCount(successes, successes + failures);
+  return bisect((x) => posteriorExceeds(successes, failures, x), confidence, false);
+}
+
+export interface SequentialDesign {
+  /** The rate the gate claims. Passing means the posterior clears it. */
+  readonly bar: number;
+  /** Posterior mass above `bar` required to stop and pass. */
+  readonly passAt?: number;
+  /** Posterior mass above `bar` at or below which the gate stops and fails. */
+  readonly futileAt?: number;
+  /** The subject budget. Reaching it without either boundary is inconclusive. */
+  readonly maxSubjects: number;
+}
+
+export interface SequentialOperatingCharacteristics {
+  /** P(the gate stops and passes) when the true rate is the one supplied. */
+  readonly pass: number;
+  /** P(the gate stops early for futility). */
+  readonly futile: number;
+  /** P(the budget runs out with neither boundary reached). */
+  readonly inconclusive: number;
+  /** Expected number of subjects spent, the quantity the design exists to cut. */
+  readonly expectedSubjects: number;
+}
+
+/**
+ * What a sequential gate actually does, at a given true success rate.
+ *
+ * Computed by exact enumeration of the (successes, failures) lattice rather than
+ * by simulation: the reachable state space of a gate that stops by 30 subjects
+ * is a few hundred cells, so there is no reason to accept Monte Carlo error in a
+ * number that decides how many external users a phase costs.
+ *
+ * The error rates are read off this, not asserted: `pass` evaluated at the bar
+ * itself is the design's type-I rate, and `1 - pass` at the rate worth shipping
+ * is its type-II rate. A stopping rule quoted without both is a rule nobody
+ * has checked.
+ */
+export function sequentialOperatingCharacteristics(
+  design: SequentialDesign,
+  trueRate: number,
+): SequentialOperatingCharacteristics {
+  const passAt = design.passAt ?? 0.95;
+  const futileAt = design.futileAt ?? 0.05;
+  if (!Number.isInteger(design.maxSubjects) || design.maxSubjects < 1) {
+    throw new RangeError('maxSubjects must be a positive integer');
+  }
+
+  let pass = 0;
+  let futile = 0;
+  let expectedSubjects = 0;
+  // reachable[s] is the probability of arriving at s successes and n - s
+  // failures without having hit a boundary before now.
+  let reachable = [1];
+
+  for (let n = 1; n <= design.maxSubjects; n += 1) {
+    const next = new Array<number>(n + 1).fill(0);
+    for (let s = 0; s < reachable.length; s += 1) {
+      const mass = reachable[s]!;
+      if (mass === 0) continue;
+      next[s + 1] = (next[s + 1] ?? 0) + mass * trueRate;
+      next[s] = (next[s] ?? 0) + mass * (1 - trueRate);
+    }
+    for (let s = 0; s <= n; s += 1) {
+      const mass = next[s]!;
+      if (mass === 0) continue;
+      const above = posteriorExceeds(s, n - s, design.bar);
+      if (above >= passAt) {
+        pass += mass;
+        expectedSubjects += mass * n;
+        next[s] = 0;
+      } else if (above <= futileAt) {
+        futile += mass;
+        expectedSubjects += mass * n;
+        next[s] = 0;
+      }
+    }
+    reachable = next;
+  }
+
+  const inconclusive = reachable.reduce((a, b) => a + b, 0);
+  return {
+    pass,
+    futile,
+    inconclusive,
+    expectedSubjects: expectedSubjects + inconclusive * design.maxSubjects,
+  };
+}
+
+/**
+ * The pass boundary as a table: for each subject count, the fewest successes
+ * that would stop the gate with a pass, or `null` if no result at that n can.
+ *
+ * This is the form a gate has to be written in to be run by a person who is not
+ * holding a posterior in their head.
+ */
+export function sequentialPassBoundary(design: SequentialDesign): (number | null)[] {
+  const passAt = design.passAt ?? 0.95;
+  const boundary: (number | null)[] = [];
+  for (let n = 1; n <= design.maxSubjects; n += 1) {
+    let found: number | null = null;
+    for (let s = 0; s <= n; s += 1) {
+      if (posteriorExceeds(s, n - s, design.bar) >= passAt) {
+        found = s;
+        break;
+      }
+    }
+    boundary.push(found);
+  }
+  return boundary;
+}
+
+/**
  * Format a rate with its Wilson interval, for anywhere this project prints a
  * measurement. A rate printed alone is the defect this module exists to fix, so
  * the convenient thing to reach for should be the correct one.

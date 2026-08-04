@@ -14,6 +14,10 @@
  *     95% is 0.05^(1/5).
  *   - Clopper-Pearson, k = 0: the upper limit is 1 - alpha^(1/n).
  *   - McNemar with b discordant pairs all one way: 2 * (1/2)^b.
+ *   - The posterior after s successes and no failures is Beta(s + 1, 1), whose
+ *     CDF is x^(s + 1). So P(theta > x) is 1 - x^(s + 1), and the credible lower
+ *     bound at confidence c is (1 - c)^(1 / (s + 1)) — the frequentist bound's
+ *     closed form with one extra success in the exponent, which is the prior.
  */
 
 import { test } from 'node:test';
@@ -22,10 +26,14 @@ import {
   binomialCdf,
   clopperPearson,
   clopperPearsonLowerBound,
+  credibleLowerBound,
   formatRate,
   mcnemarExact,
+  posteriorExceeds,
   probit,
   requiredTrials,
+  sequentialOperatingCharacteristics,
+  sequentialPassBoundary,
   wilson,
 } from '../../../src/kernel/metrics/intervals.ts';
 
@@ -176,4 +184,87 @@ test('impossible counts are rejected rather than silently coerced', () => {
   assert.throws(() => probit(0), RangeError);
   assert.throws(() => probit(1), RangeError);
   assert.throws(() => mcnemarExact(-1, 0), RangeError);
+});
+
+test('the posterior with no data is the uniform prior, not a claim', () => {
+  near(posteriorExceeds(0, 0, 0.5), 0.5);
+  near(posteriorExceeds(0, 0, 0.9), 0.1);
+});
+
+test('an unbroken run of successes matches the Beta(s + 1, 1) closed form', () => {
+  for (const s of [1, 3, 5, 12]) {
+    for (const x of [0.3, 0.5, 0.9]) {
+      near(posteriorExceeds(s, 0, x), 1 - x ** (s + 1));
+    }
+  }
+});
+
+test('the posterior is symmetric under swapping successes for failures', () => {
+  near(posteriorExceeds(3, 7, 0.4), 1 - posteriorExceeds(7, 3, 0.6));
+});
+
+test('the credible bound is the frequentist bound with the prior added', () => {
+  // 5/5 at 95%: Bayes gives 0.05^(1/6), Clopper-Pearson gives 0.05^(1/5). The
+  // uniform prior is worth one imaginary success, and it shows up as exactly
+  // that in the exponent — the gap is the prior, not a better experiment.
+  near(credibleLowerBound(5, 0), 0.05 ** (1 / 6), 1e-5);
+  near(clopperPearsonLowerBound(5, 5), 0.05 ** (1 / 5), 1e-5);
+  assert.ok(credibleLowerBound(5, 0) > clopperPearsonLowerBound(5, 5));
+});
+
+test('an all-success sequential gate stops at the n its closed form names', () => {
+  // bar 0.5, pass at 95%: the run stops the first time 1 - 0.5^(n + 1) >= 0.95,
+  // which is n = 4 by hand (0.5^5 = 0.031 <= 0.05, 0.5^4 = 0.0625 is not).
+  const design = { bar: 0.5, maxSubjects: 30 };
+  const oc = sequentialOperatingCharacteristics(design, 1);
+  near(oc.pass, 1);
+  near(oc.expectedSubjects, 4);
+});
+
+test('the operating characteristics account for every path', () => {
+  const design = { bar: 0.7, maxSubjects: 20 };
+  for (const rate of [0, 0.3, 0.7, 0.95, 1]) {
+    const oc = sequentialOperatingCharacteristics(design, rate);
+    near(oc.pass + oc.futile + oc.inconclusive, 1);
+    assert.ok(oc.expectedSubjects > 0 && oc.expectedSubjects <= 20);
+  }
+});
+
+test('a gate is likeliest to pass exactly when it should be', () => {
+  const design = { bar: 0.7, maxSubjects: 30 };
+  const rates = [0.5, 0.7, 0.85, 0.95];
+  const passes = rates.map((r) => sequentialOperatingCharacteristics(design, r).pass);
+  for (let i = 1; i < passes.length; i += 1) assert.ok(passes[i]! > passes[i - 1]!);
+  // The type-I rate: how often a system that is exactly at the bar passes a
+  // gate claiming it clears the bar. This is the number a stopping rule is
+  // quoted with or it has not been checked.
+  assert.ok(passes[1]! < 0.15, `type-I rate at the bar was ${passes[1]}`);
+});
+
+test('a budget too small to ever pass says so instead of passing', () => {
+  const oc = sequentialOperatingCharacteristics({ bar: 0.5, maxSubjects: 1 }, 1);
+  near(oc.pass, 0);
+  near(oc.inconclusive, 1);
+  assert.deepEqual(sequentialPassBoundary({ bar: 0.5, maxSubjects: 3 }), [null, null, null]);
+});
+
+test('the pass boundary is a table a person can run without a posterior', () => {
+  const boundary = sequentialPassBoundary({ bar: 0.5, maxSubjects: 8 });
+  assert.equal(boundary.length, 8);
+  assert.equal(boundary[4], 5); // n = 5 is the first that can pass, and needs 5/5
+  boundary.forEach((successes, i) => {
+    if (successes === null) return;
+    const n = i + 1;
+    assert.ok(posteriorExceeds(successes, n - successes, 0.5) >= 0.95, `n=${n} does not clear`);
+    if (successes > 0) {
+      assert.ok(
+        posteriorExceeds(successes - 1, n - successes + 1, 0.5) < 0.95,
+        `n=${n} boundary is not the smallest passing count`,
+      );
+    }
+  });
+  assert.throws(
+    () => sequentialOperatingCharacteristics({ bar: 0.5, maxSubjects: 0 }, 1),
+    RangeError,
+  );
 });

@@ -23,6 +23,8 @@ import {
   formatRate,
   mcnemarExact,
   requiredTrials,
+  sequentialOperatingCharacteristics,
+  sequentialPassBoundary,
   wilson,
 } from '../src/kernel/metrics/intervals.ts';
 import { DOMAINS } from '../src/kernel/implication/domains.ts';
@@ -331,6 +333,56 @@ if (heading(9, 'Phase gates as sequential hypothesis tests')) {
     for (let n = 1; n <= 500; n += 1) if (clopperPearsonLowerBound(n, n) > 0.9) return n;
     return '>500';
   })()} consecutive successes.`);
+
+  // The proposed replacement (construct-2jb.9). Every number below is printed,
+  // not asserted, because a stopping rule quoted without its error rates is the
+  // same defect as a rate quoted without its width.
+  const PROPOSED = { bar: 0.7, passAt: 0.95, futileAt: 0.1, maxSubjects: 20 };
+  const boundary = sequentialPassBoundary(PROPOSED);
+  console.log(
+    `\n  Proposed sequential gate: bar ${PROPOSED.bar}, pass at ${PROPOSED.passAt} posterior` +
+      `, stop for futility at ${PROPOSED.futileAt}, budget ${PROPOSED.maxSubjects}.`,
+  );
+  console.log('\n  Pass boundary (fewest successes that stop the gate with a pass):\n');
+  console.log('    subjects  needed');
+  boundary.forEach((needed, i) => {
+    if (needed === null) return;
+    console.log(`    ${String(i + 1).padStart(8)}  ${needed}`);
+  });
+
+  console.log('\n  What it does, by exact enumeration of every path:\n');
+  console.log('    true rate   P(pass)   P(futile)   P(neither)   E[subjects]');
+  for (const rate of [0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 1]) {
+    const oc = sequentialOperatingCharacteristics(PROPOSED, rate);
+    console.log(
+      `    ${rate.toFixed(2).padStart(9)}   ${oc.pass.toFixed(3)}     ${oc.futile.toFixed(3)}` +
+        `       ${oc.inconclusive.toFixed(3)}        ${oc.expectedSubjects.toFixed(1)}`,
+    );
+  }
+  const typeI = sequentialOperatingCharacteristics(PROPOSED, PROPOSED.bar).pass;
+  console.log(`\n    type-I (a system exactly at the bar passes anyway): ${typeI.toFixed(3)}`);
+
+  // The fixed-n alternative that licenses the same claim, for comparison. A run
+  // of consecutive successes is over at the first failure, which is the cost the
+  // sequential design is buying out of.
+  const fixedN = (() => {
+    for (let n = 1; n <= 500; n += 1) if (clopperPearsonLowerBound(n, n) > PROPOSED.bar) return n;
+    return Infinity;
+  })();
+  console.log(`\n  Fixed-n equivalent: ${fixedN} consecutive successes license "> ${PROPOSED.bar}".`);
+  console.log('\n    true rate   P(pass)   E[subjects]   vs sequential P(pass)');
+  for (const rate of [0.8, 0.9, 0.95]) {
+    const pass = rate ** fixedN;
+    // Stops at the first failure, so E[n] is the truncated geometric mean.
+    let expected = 0;
+    for (let i = 1; i <= fixedN; i += 1) expected += i * (i === fixedN ? rate ** (i - 1) : rate ** (i - 1) * (1 - rate));
+    const seq = sequentialOperatingCharacteristics(PROPOSED, rate);
+    console.log(
+      `    ${rate.toFixed(2).padStart(9)}   ${pass.toFixed(3)}     ${expected.toFixed(1)}` +
+        `           ${seq.pass.toFixed(3)} in ${seq.expectedSubjects.toFixed(1)}`,
+    );
+  }
+  console.log('    A single unlucky failure ends the fixed run; the sequential design absorbs it.');
 
   console.log('\n  Phase 2 composition quota, checked against the corpora we have:\n');
   for (const c of corpora) {

@@ -495,8 +495,88 @@ sample size. External users are the scarcest resource in the program, and a sequ
 reaches a decision in fewer of them than a fixed-*n* design at equal confidence; the mature
 literature for "few expensive subjects, early stopping" is clinical trial design (Berry, 2006).
 
-Per Gerald's decision on 2026-08-04, `STRATEGY.md` is **not edited** here. Proposed wording is
-supplied in `construct-2jb.9` for his acceptance or rejection.
+### The proposed design, with its error rates
+
+The rule is stopped on a posterior rather than a p-value, and that is the load-bearing choice, not
+a stylistic one. A gate is looked at after every subject — that is what makes it a gate — and
+repeated looking inflates a fixed-α test while doing nothing at all to a posterior. Machinery:
+`posteriorExceeds`, `credibleLowerBound`, `sequentialOperatingCharacteristics`, and
+`sequentialPassBoundary` in `intervals.ts`, exact and dependency-free (the Beta posterior at
+integer counts is a binomial CDF, which was already there). Prior: **uniform Beta(1, 1)**, worth
+one imaginary success — the Bayesian bound at 5/5 is 0.05^(1/6) = 0.607 against Clopper-Pearson's
+0.05^(1/5) = 0.549, and the whole of that gap is the prior rather than a better experiment.
+
+Proposed rule, **bar 0.70**, pass at 95% posterior mass, futility stop at 10%, budget 20 subjects:
+
+| true success rate | P(pass) | P(stop for futility) | P(neither) | E[subjects] |
+|---|---|---|---|---|
+| 0.50 | 0.005 | 0.906 | 0.089 | 5.5 |
+| **0.70** (the bar) | **0.103** | 0.484 | 0.413 | 11.1 |
+| 0.80 | 0.326 | 0.266 | 0.408 | 12.5 |
+| 0.90 | 0.730 | 0.112 | 0.158 | 11.2 |
+| 0.95 | 0.913 | 0.053 | 0.034 | 9.6 |
+
+Read honestly: **type-I is 0.103** — a system exactly at the bar passes about a tenth of the time —
+and power against a genuinely good system (0.90) is **0.73**, not 0.95. Those are the real numbers
+for a gate spending at most twenty external users, and a design that claimed better at this budget
+would be claiming it by assumption. Computed by exact enumeration over the path lattice, not by
+simulation; there is no Monte Carlo error in a figure that decides how many external users a phase
+costs.
+
+The boundary, which is the form a person can actually run — nothing can pass before the eighth
+subject, and after that:
+
+| subjects | successes needed to pass |
+|---|---|
+| 8–12 | all of them (8, 9, 10, 11, 12) |
+| 13 | 12 |
+| 14 | 13 |
+| 15 | 14 |
+| 16–17 | 15, 16 |
+| 18 | 16 |
+| 19 | 17 |
+| 20 | 18 |
+
+**Against the fixed-*n* alternative.** Licensing "> 0.70" the frequentist way takes 9 consecutive
+successes, and consecutive is the trap: one unlucky failure ends the run with nothing.
+
+| true rate | fixed 9/9: P(pass) | E[subjects] | sequential: P(pass) | E[subjects] |
+|---|---|---|---|---|
+| 0.80 | 0.134 | 4.3 | **0.326** | 12.5 |
+| 0.90 | 0.387 | 6.1 | **0.730** | 11.2 |
+| 0.95 | 0.630 | 7.4 | **0.913** | 9.6 |
+
+The fixed design's expected spend is lower only because it fails fast and often. At a true rate of
+0.90 it spends six users to reach the wrong answer 61% of the time. The sequential design roughly
+doubles the chance of correctly passing a system that deserves to pass, and at 0.95 it does so in
+*fewer* expected subjects than the run it replaces.
+
+### Proposed `STRATEGY.md` wording — supplied, not applied
+
+Phase 5, replacing *"three to five external users have each run a real outcome end to end without
+typing a role name"*:
+
+> No new roles, hosts, or platform investment until the external-user gate passes. External users
+> run a real outcome end to end without typing a role name, one at a time, up to twenty. The gate
+> passes the first time the successes reach the boundary in RESEARCH-DECISIONS.md §9 (8 of 8, …,
+> 12 of 13, …, 18 of 20) and stops early for futility when passing becomes implausible. It licenses
+> the claim "works for more than 70% of users", at a type-I rate of 0.10 and power 0.73 against a
+> true rate of 0.90 — not "it works".
+
+Phase 2, keeping the composition quota verbatim and adding what it currently omits:
+
+> …at least four are non-engineering and at least two are legal- or compliance-flavored, so the
+> implication map is not tuned solely to the one distribution its author needs least. The quota is
+> stratification and is not negotiable downward; the success criterion over those outcomes is the
+> §9 sequential rule, and ten outcomes cannot reach its boundary — Phase 2 therefore exits on
+> composition and on evidence collected, and states no success-rate claim.
+
+That last clause is the point of the exercise. Phase 2's gate as written implies a working system
+and its *n* cannot support any success-rate claim at all; the honest fix is to stop making one,
+not to shrink the bar until ten outcomes clear it.
+
+Per Gerald's decision on 2026-08-04, `STRATEGY.md` is **not edited** here — the wording above is
+proposed for his acceptance or rejection (`construct-2jb.9`).
 
 ---
 
