@@ -29,9 +29,13 @@
  */
 
 import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { recordHookOutcome } from './hook-health.mjs';
 
 const CHECKS = ['lint', 'typecheck'];
+
+const RECONCILE = join(dirname(fileURLToPath(import.meta.url)), '..', 'reconcile-tracker.mjs');
 
 /**
  * Run one npm script. Returns what happened, and never throws — a check that
@@ -69,6 +73,19 @@ try {
     process.stderr.write(
       `\nrepo-gate: this commit will turn CI red. Nothing is blocked — fix it before you push.\n\n`,
     );
+  }
+
+  // The reconciliation ritual, run rather than remembered (construct-fnn). It
+  // is --quiet, so it says nothing when the tracker and the repo agree; a
+  // check that speaks on every commit is a check people learn to scroll past.
+  // Its own exit code is ignored on purpose — drift is a thing to read, not a
+  // reason to interrupt a commit, and this hook blocks nothing regardless.
+  const reconcile = spawnSync('node', [RECONCILE, '--quiet'], {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  if (!reconcile.error && reconcile.stdout?.trim()) {
+    process.stderr.write(`${reconcile.stdout}`);
   }
 
   // `ok` here means the gate itself worked, not that the code passed. A run of

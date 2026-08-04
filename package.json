@@ -34,6 +34,7 @@
     "build": "tsc -p tsconfig.build.json",
     "prepack": "npm run build",
     "smoke": "bash scripts/smoke-packaged-install.sh",
+    "reconcile": "node scripts/reconcile-tracker.mjs",
     "probe:opencode": "node scripts/probe-opencode-conformance.mjs",
     "capture:opencode": "node scripts/capture-opencode-transcripts.mjs",
     "probe:claude": "node scripts/probe-claude-conformance.mjs",

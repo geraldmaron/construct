@@ -57,6 +57,7 @@ The tracker and the repo drift apart the moment either moves without the other. 
 
 **The sweep:**
 
+0. `npm run reconcile` — steps 2 and 3 below, run rather than remembered (construct-fnn). It reconciles the exported bead set against the repo and reports both directions of both disagreements. The same check runs warn-only on every commit via `scripts/hooks/repo-gate.mjs`, so a session that ends abnormally still leaves the drift visible. Its output is read, not obeyed: both classes have known benign causes, which it prints.
 1. `bd ready && bd blocked && bd orphans && bd stale` — the graph's own view first.
 2. Every closed bead names a landing commit on main: `git log --oneline main --grep="construct-<id>"`. A close with no commit is either undone work or work stranded on an unmerged branch (`git merge-base --is-ancestor <sha> main` decides which).
 3. Every in_progress bead matches actual work in flight (`git status`, worktrees). Claim what you are working (`--claim` sets the assignee; set `--status=in_progress` explicitly too); release what you are not. `bd orphans` flags beads named in commit messages that are still open — usually work that landed without a close, but a commit can legitimately reference a bead it did not finish (construct-506.4's failed publish), so read before `--fix`.
