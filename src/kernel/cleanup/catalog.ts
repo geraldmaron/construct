@@ -370,11 +370,70 @@ function readJsonOrNull(filePath: string): Record<string, unknown> | null {
   }
 }
 
+/**
+ * Whether one hook command belongs to the predecessor (construct-7pp).
+ *
+ * Matched on WHAT IT POINTS AT rather than on a list of hook names. Every hook
+ * v2's `construct init` wrote runs through its own launcher — `.construct/run.mjs`
+ * or `.construct/launcher/run.mjs`, with the hook's name as an argument — so the
+ * launcher path is the durable signature. A name list would have to be kept in
+ * sync with a catalog that no longer ships, and the day it fell behind would be
+ * invisible: an unmatched hook is silently left behind, and an over-broad match
+ * silently deletes someone's own work.
+ *
+ * Verified against the real settings.json files this machine still carries, which
+ * include both spellings and, in two projects, user-authored hooks sitting in the
+ * same block — `node -e "…"` JSON validators that must survive.
+ */
+function isPredecessorHookCommand(command: unknown): boolean {
+  if (typeof command !== 'string') return false;
+  // The launcher, under either layout. Anchored on `.construct/` so a path that
+  // merely contains the word "construct" — this repo's own scripts/hooks/ — does
+  // not match.
+  return /(^|[\s"'/])\.construct\/(launcher\/)?run\.mjs(\s|"|'|$)/.test(command);
+}
+
+/** Hook entries whose every command is the predecessor's. */
+function partitionHooks(hooks: Record<string, unknown>): {
+  readonly kept: Record<string, unknown>;
+  readonly removed: number;
+} {
+  const kept: Record<string, unknown> = {};
+  let removed = 0;
+
+  for (const [event, entries] of Object.entries(hooks)) {
+    if (!Array.isArray(entries)) {
+      kept[event] = entries;
+      continue;
+    }
+    const keptEntries: unknown[] = [];
+    for (const entry of entries) {
+      const inner = (entry as { hooks?: unknown } | null)?.hooks;
+      if (!Array.isArray(inner)) {
+        keptEntries.push(entry);
+        continue;
+      }
+      const keptInner = inner.filter(
+        (h) => !isPredecessorHookCommand((h as { command?: unknown } | null)?.command),
+      );
+      removed += inner.length - keptInner.length;
+      // An entry whose hooks were ALL the predecessor's carries nothing but a
+      // matcher now, so it goes; one that kept any is rewritten around them.
+      if (keptInner.length > 0) keptEntries.push({ ...(entry as object), hooks: keptInner });
+    }
+    if (keptEntries.length > 0) kept[event] = keptEntries;
+  }
+
+  return { kept, removed };
+}
+
 function detectProjectSettings(filePath: string): boolean {
   const settings = readJsonOrNull(filePath);
   if (!settings) return false;
   const hooks = settings.hooks as Record<string, unknown> | undefined;
-  if (hooks && Object.keys(hooks).length > 0) return true;
+  // Only the predecessor's own hooks count as a trace. Treating any hooks block
+  // as Construct's is what made this item delete a checkout's own tooling.
+  if (hooks && partitionHooks(hooks).removed > 0) return true;
   const mcpServers = settings.mcpServers as Record<string, unknown> | undefined;
   return Boolean(mcpServers && KNOWN_PROJECT_MCP_IDS.some((id) => id in mcpServers));
 }
@@ -391,8 +450,14 @@ function unmergeProjectSettings(filePath: string): string {
   const changes: string[] = [];
   const hooks = settings.hooks as Record<string, unknown> | undefined;
   if (hooks && Object.keys(hooks).length > 0) {
-    delete settings.hooks;
-    changes.push('hooks');
+    const { kept, removed } = partitionHooks(hooks);
+    if (removed > 0) {
+      // Only the predecessor's hooks go. What remains is written back rather
+      // than dropped, and the key disappears only when it is genuinely empty.
+      if (Object.keys(kept).length > 0) settings.hooks = kept;
+      else delete settings.hooks;
+      changes.push(`${String(removed)} hook(s)`);
+    }
   }
   const mcpServers = settings.mcpServers as Record<string, unknown> | undefined;
   if (mcpServers) {
@@ -408,10 +473,14 @@ function unmergeProjectSettings(filePath: string): string {
   }
 
   const remaining = Object.keys(settings);
-  if (remaining.length === 0) {
+  // Deleted only when this function is what emptied it. A file that arrived
+  // empty was not the predecessor's, and removing it would be cleanup taking
+  // something it never put there.
+  if (remaining.length === 0 && changes.length > 0) {
     fs.unlinkSync(filePath);
-    return `removed (file was Construct-only) [stripped: ${changes.join(', ') || 'nothing'}]`;
+    return `removed (file was Construct-only) [stripped: ${changes.join(', ')}]`;
   }
+  if (changes.length === 0) return 'no Construct keys found; left untouched';
   fs.writeFileSync(filePath, `${JSON.stringify(settings, null, 2)}\n`, 'utf8');
   return `stripped ${changes.join(', ') || 'nothing'}; preserved ${remaining.join(', ')}`;
 }
