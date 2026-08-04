@@ -134,11 +134,21 @@ export function cleanup(argv: string[], spawnOverride?: SpawnFn): number {
 
   if (args.dryRun) {
     process.stdout.write(`cleanup: dry-run plan (scope=${args.scope}${args.keepState ? ', keep-state' : ''}):\n`);
+    let removable = 0;
     for (const item of detected) {
-      const mark = item.risk === 'auto' ? '✓' : '◐';
+      // A kept item must not wear the mark that means "this will be removed".
+      // Saying KEPT beside a ✓ under "pass --yes to remove ✓ items" is a
+      // contradiction, and the mark is what gets read (construct-a5q).
+      const keeping = item.keeps?.() ?? false;
+      if (!keeping) removable += 1;
+      const mark = keeping ? '•' : item.risk === 'auto' ? '✓' : '◐';
       process.stdout.write(`  ${mark} ${item.label}\n      ${item.describe()}\n`);
     }
-    process.stdout.write('\nPass --yes to remove ✓ items, --yes --all to also remove ◐ items.\n');
+    process.stdout.write(
+      removable === 0
+        ? '\nNothing to remove: every detected item belongs to the Construct that is running.\n'
+        : '\nPass --yes to remove ✓ items, --yes --all to also remove ◐ items. • items are kept either way.\n',
+    );
     return 0;
   }
 

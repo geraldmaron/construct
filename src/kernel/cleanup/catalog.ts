@@ -39,6 +39,12 @@ export interface CleanupItem {
   detect(): boolean;
   describe(): string;
   remove(): string;
+  /**
+   * True when this item is detected but will deliberately remove nothing —
+   * today, when the running Construct owns the directory (construct-a5q).
+   * Optional: an item that never keeps does not implement it.
+   */
+  keeps?(): boolean;
 }
 
 export interface SpawnResult {
@@ -248,6 +254,7 @@ export function buildCleanupCatalog(target: CleanupTarget): CleanupItem[] {
           ? `KEPT: ${rel(home, paths.stateDir)} belongs to the Construct that is running, not to the predecessor.`
           : `Removes ${rel(home, paths.stateDir)}. Regenerated on next use.`,
       remove: () => removeUnlessSuccessorOwns(paths.stateDir),
+      keeps: () => successorOwns(paths.stateDir),
     },
     {
       id: 'machine-data',
@@ -260,6 +267,7 @@ export function buildCleanupCatalog(target: CleanupTarget): CleanupItem[] {
           ? `KEPT: ${rel(home, paths.dataDir)} holds the running Construct's store and capability secret.`
           : `Removes ${rel(home, paths.dataDir)}. Rebuilt on next setup.`,
       remove: () => removeUnlessSuccessorOwns(paths.dataDir),
+      keeps: () => successorOwns(paths.dataDir),
     },
     {
       id: 'machine-cache-embeddings',
@@ -269,6 +277,7 @@ export function buildCleanupCatalog(target: CleanupTarget): CleanupItem[] {
       detect: () => existsAny(userEmbedCache),
       describe: () => 'Removes the cached embedding model. Skip if reinstalling soon — re-downloading takes a minute.',
       remove: () => removeUnlessSuccessorOwns(userEmbedCache),
+      keeps: () => successorOwns(userEmbedCache),
     },
     {
       id: 'machine-config-env',

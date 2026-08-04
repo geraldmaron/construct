@@ -294,3 +294,25 @@ test('a machine with no successor still gets a clean sweep', () => {
     fs.rmSync(home, { recursive: true, force: true });
   }
 });
+
+test('an item that will be kept does not advertise itself as removable', () => {
+  // The dry-run plan marks removable items ✓/◐ under "pass --yes to remove ✓
+  // items". A kept item wearing ✓ contradicts its own description, and the mark
+  // is what a reader scans (construct-a5q).
+  const f = bothInstalled();
+  try {
+    const items = buildCleanupCatalog({
+      cwd: path.join(f.home, 'project'),
+      home: f.home,
+      paths: f.paths,
+      spawn: NOT_FOUND_SPAWN,
+    });
+    const data = items.find((i: CleanupItem) => i.id === 'machine-data');
+    const state = items.find((i: CleanupItem) => i.id === 'machine-state');
+
+    assert.equal(data?.keeps?.(), true, "the successor's data dir is kept");
+    assert.equal(state?.keeps?.(), false, "the predecessor's state dir is not");
+  } finally {
+    f.cleanup();
+  }
+});
