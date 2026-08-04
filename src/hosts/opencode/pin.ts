@@ -102,6 +102,20 @@ export const CONFORMANCE_EXPECTATIONS: readonly ConformanceExpectation[] = [
     whyItMatters:
       "This is the behavior hosts/environment.ts exists to work around (construct-wl8). Construct resolves its own directories from the same XDG variables, so inheriting them wholesale re-pointed the HOST's provider registry at construct's scratch state — every task failed with `Model not found` naming the model, which was correct, rather than the environment, which was the cause. The adapter now spawns the host with those variables dropped. If the host ever stopped reading its registry from XDG_CONFIG_HOME, that dropping would be solving a problem that no longer exists and could go; if it started reading more from there, the workaround is load-bearing in more places than it knows.",
   },
+  {
+    id: 'mcp-registered-through-the-config-env-var',
+    claim:
+      'a server declared under `mcp` in the file named by OPENCODE_CONFIG is registered and reachable, and `opencode run` accepts no MCP flag at all',
+    whyItMatters:
+      "This is how a role gets its write surface on this host (construct-nv0). There is no `--mcp-config`: registration is a config file located by an environment variable. That is why the bearer never touches argv here — no path and no JSON go on the command line. If OpenCode moved registration to a flag, or stopped reading OPENCODE_CONFIG, a role dispatched to this host would silently have no write surface, and 'the model did not call submit_draft' looks identical to 'the model could not'.",
+  },
+  {
+    id: 'no-strict-mcp-config-equivalent-so-servers-are-not-isolated',
+    claim:
+      'OPENCODE_CONFIG MERGES with the operator\'s global configuration rather than replacing it: a config registering exactly one server yields that server PLUS every server the operator has registered, and OPENCODE_CONFIG_DIR behaves identically',
+    whyItMatters:
+      "A FINDING, recorded rather than papered over. The Claude adapter can promise a role's tool reach is exactly two writes, because `--strict-mcp-config` makes it so. This host has no equivalent, and both documented config seams merge — measured against 1.15.4, where a one-server config listed that server alongside nine of the operator's. So a role dispatched to OpenCode CAN reach whatever MCP servers the operator has registered, and Construct cannot presently stop it. What is still true is the part Construct owns: the bearer is scoped to one run, one task and one lease, so a wider tool reach does not widen the role's authority over Construct's own store. Any claim that OpenCode dispatch confines a role to two tools is false today. If OpenCode ever adds a replace-don't-merge mode, this expectation is how we find out it is time to take it.",
+  },
 ];
 
 /**

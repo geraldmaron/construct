@@ -87,3 +87,33 @@ export function droppedForHost(ambient: Environment = process.env): readonly str
   if (wantsInheritance(ambient[INHERIT_XDG_VAR])) return [];
   return SHARED_XDG_VARS.filter((variable) => ambient[variable] !== undefined);
 }
+
+/**
+ * The variables the role-serve process needs to open the SAME store construct
+ * is using (construct-nv0).
+ *
+ * This exists because of an interaction between two correct decisions. A role's
+ * MCP server resolves the store through kernel/paths.ts, which reads the XDG
+ * variables — and `hostEnvironment` deliberately drops those on their way to the
+ * host, so the host reads its own configuration rather than construct's scratch
+ * one. The MCP server is launched BY the host, so it inherits the stripped
+ * environment and resolves to the default store, not the isolated one the run
+ * actually lives in. Under isolation the write surface is registered, connects,
+ * and writes to the wrong database.
+ *
+ * So the variables are put back for this one process, explicitly. The role
+ * server is construct's own code and belongs under construct's directories; the
+ * host is a foreign program and does not. Dropping them wholesale was never
+ * about the server, only about the host.
+ *
+ * Returned as an env fragment rather than applied, so it stays merged UNDER the
+ * role env: nothing here can overwrite the run, task or bearer.
+ */
+export function roleServeEnvironment(ambient: Environment = process.env): Record<string, string> {
+  const carried: Record<string, string> = {};
+  for (const variable of [...SHARED_XDG_VARS, 'HOME'] as const) {
+    const value = ambient[variable];
+    if (value !== undefined) carried[variable] = value;
+  }
+  return carried;
+}

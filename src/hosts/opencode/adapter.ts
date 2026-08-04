@@ -21,12 +21,13 @@
  */
 
 import { spawn as nodeSpawn } from 'node:child_process';
-import { hostEnvironment } from '../environment.ts';
+import { hostEnvironment, roleServeEnvironment } from '../environment.ts';
 import type { HostAdapter, HostCancellation, HostCapability, HostContext, HostHealth, HostResult } from '../../kernel/hosts/interface.ts';
 import { HostNotReadyError, InvocationError, InvocationTimeoutError } from '../../kernel/hosts/errors.ts';
 import { failedToolCalls, reduceTranscript } from './events.ts';
 import type { OpenCodeRunResult } from './events.ts';
 import { PINNED_VERSION, tierOfModel } from './pin.ts';
+import { CONFIG_ENV_VAR, writeOpenCodeConfig } from './mcpconfig.ts';
 import type { ModelTier } from '../../kernel/brief/tiers.ts';
 
 export const HOST_NAME = 'opencode';
@@ -54,7 +55,7 @@ export interface SpawnedProcess {
 export type OpenCodeSpawnFn = (
   command: string,
   args: readonly string[],
-  options: { readonly cwd?: string },
+  options: { readonly cwd?: string; readonly env?: Readonly<Record<string, string>> },
 ) => SpawnedProcess;
 
 export interface OpenCodeConfig {
@@ -66,6 +67,10 @@ export interface OpenCodeConfig {
   readonly dir?: string;
   readonly timeoutMs?: number;
   readonly spawn?: OpenCodeSpawnFn;
+  /** Full argv of the role-serve process; a packaged install overrides the dev default. */
+  readonly roleServeCommand?: readonly string[];
+  /** Extra environment the role-serve process needs (the store location, typically). */
+  readonly roleServeEnv?: Readonly<Record<string, string>>;
 }
 
 /** `execute(role, task, tools)` from commitment 1, as a request object. */
@@ -98,13 +103,19 @@ export interface OpenCodeAdapter extends HostAdapter {
   readonly versionDrifted: boolean;
 }
 
-function defaultSpawn(command: string, args: readonly string[], options: { cwd?: string }): SpawnedProcess {
+function defaultSpawn(
+  command: string,
+  args: readonly string[],
+  options: { cwd?: string; env?: Readonly<Record<string, string>> },
+): SpawnedProcess {
   const child = nodeSpawn(command, [...args], {
     cwd: options.cwd,
     stdio: ['ignore', 'pipe', 'pipe'],
     // Chosen, not inherited: construct's own XDG isolation must not
     // re-point the host's configuration and credentials (construct-wl8).
-    env: hostEnvironment(),
+    // The overlay carries OPENCODE_CONFIG when a role has a write surface —
+    // the bearer itself lives in that file, never here and never on argv.
+    env: { ...hostEnvironment(), ...options.env },
   });
   let stdout = '';
   let stderr = '';
@@ -328,12 +339,30 @@ export function createOpenCodeAdapter(config: OpenCodeConfig = {}): OpenCodeAdap
         }
       }
 
+      // The role's write surface, registered the only way this host supports
+      // (construct-nv0). Absent roleEnv means no surface at all, which is safe
+      // rather than broken — the same default as every other host.
+      const roleEnv = context?.roleEnv as Record<string, string> | undefined;
+      const mcpConfig =
+        roleEnv && Object.keys(roleEnv).length > 0
+          ? writeOpenCodeConfig(roleEnv, {
+              command: config.roleServeCommand,
+              // Construct's own directories, put back for construct's own
+              // process — the host child had them stripped on purpose.
+              env: { ...roleServeEnvironment(), ...config.roleServeEnv },
+            })
+          : null;
+
       let child: SpawnedProcess;
       try {
-        child = spawn(binary, args, { cwd: req.dir ?? config.dir });
+        child = spawn(binary, args, {
+          cwd: req.dir ?? config.dir,
+          env: mcpConfig ? { [CONFIG_ENV_VAR]: mcpConfig.path } : undefined,
+        });
       } catch (cause) {
         // A host that never started still has to open the gate. Leaving it shut
         // here would hang every later invocation on a run that does not exist.
+        mcpConfig?.dispose();
         inFlight.delete(id);
         openGate?.();
         throw new InvocationError(`Could not start "${binary} run"`, {
@@ -426,6 +455,9 @@ export function createOpenCodeAdapter(config: OpenCodeConfig = {}): OpenCodeAdap
         return { id, status: 'ok', output: deliverable, error: null };
       } finally {
         if (timer) clearTimeout(timer);
+        // Every exit path: a clean return, a timeout, a cancel, a throw. The
+        // bearer must not outlive the invocation on disk.
+        mcpConfig?.dispose();
         inFlight.delete(id);
         cancelled.delete(id);
         openGate?.();

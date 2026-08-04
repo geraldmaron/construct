@@ -29,7 +29,7 @@
  */
 
 import { spawn as nodeSpawn } from 'node:child_process';
-import { hostEnvironment } from '../environment.ts';
+import { hostEnvironment, roleServeEnvironment } from '../environment.ts';
 import type { HostAdapter, HostCancellation, HostCapability, HostContext, HostHealth, HostResult } from '../../kernel/hosts/interface.ts';
 import { HostNotReadyError, InvocationError, InvocationTimeoutError } from '../../kernel/hosts/errors.ts';
 import { modelDrifted, reduceEnvelope } from './result.ts';
@@ -248,7 +248,15 @@ export function createClaudeAdapter(config: ClaudeConfig = {}): ClaudeAdapter {
       // allowed to be (see mcpconfig.ts). Written before the spawn and removed
       // in the finally below, so no exit path leaves it on disk.
       const roleEnv = readRoleEnvFrom(context);
-      const mcp = roleEnv ? writeMcpConfig(roleEnv, config.roleServe) : null;
+      const mcp = roleEnv
+        ? writeMcpConfig(roleEnv, {
+            ...config.roleServe,
+            // Same reasoning as the OpenCode adapter: the role server is
+            // construct's own code and must land on construct's store, which
+            // the host child's stripped environment would not resolve to.
+            env: { ...roleServeEnvironment(), ...config.roleServe?.env },
+          })
+        : null;
       if (mcp) args.push(...mcpArgsFor(mcp.path));
 
       let child: SpawnedProcess;

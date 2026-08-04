@@ -211,6 +211,54 @@ try {
   rmSync(emptyConfig, { recursive: true, force: true });
 }
 
+// ── the MCP registration a role's write surface rides (construct-nv0) ──────
+// `opencode mcp list` is used rather than a real run because it resolves the
+// same configuration and calls no model, so this stays free to re-verify.
+const mcpConfigDir = mkdtempSync(path.join(tmpdir(), 'oc-probe-mcp-'));
+try {
+  const configPath = path.join(mcpConfigDir, 'opencode.json');
+  const SERVER = 'construct-probe-only';
+  writeFileSync(
+    configPath,
+    JSON.stringify({
+      $schema: 'https://opencode.ai/config.json',
+      mcp: { [SERVER]: { type: 'local', command: ['/bin/echo', 'probe'], enabled: true } },
+    }),
+  );
+
+  const listed = spawnSync(binary, ['mcp', 'list'], {
+    encoding: 'utf8',
+    env: { ...process.env, OPENCODE_CONFIG: configPath },
+  });
+  // The list is decorated with ANSI colour; strip it before matching.
+  const plain = (listed.stdout ?? '').replace(/\[[0-9;]*m/g, '');
+  const servers = plain.split('\n').filter((line) => line.trimStart().startsWith('●'));
+  const registered = plain.includes(SERVER);
+
+  record(
+    'mcp-registered-through-the-config-env-var',
+    registered,
+    registered
+      ? `the config named by OPENCODE_CONFIG registered "${SERVER}"`
+      : 'a server declared under OPENCODE_CONFIG did not appear in `opencode mcp list` — a role dispatched here would have no write surface',
+  );
+
+  // The finding, re-measured rather than remembered: more servers came back
+  // than the config declared, so the config merges rather than replaces.
+  const merged = registered && servers.length > 1;
+  record(
+    'no-strict-mcp-config-equivalent-so-servers-are-not-isolated',
+    merged,
+    !registered
+      ? 'not assessable — the config registered nothing, so there is nothing to say about isolation'
+      : merged
+        ? `a config declaring 1 server yielded ${servers.length} — the operator's registrations are merged in, and a role dispatched here can reach them`
+        : `a config declaring 1 server yielded ${servers.length} — isolation may now be achievable; re-read this expectation in pin.ts, it may be time to take it`,
+  );
+} finally {
+  rmSync(mcpConfigDir, { recursive: true, force: true });
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 let broken = 0;
 process.stdout.write(`\nopencode conformance probe — installed ${installed}, pinned ${PINNED_VERSION}\n\n`);
