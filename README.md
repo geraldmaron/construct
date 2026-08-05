@@ -8,7 +8,17 @@ Nothing installed today changes under you. Alphas publish under the `alpha` tag,
 
 ## Status
 
-Phase 1 — kernel harvest and predecessor cleanup, in progress. Not yet usable for real outcomes. Versioning: `3.x-alpha` under the `alpha` tag until the Phase 5 second-user gate (STRATEGY.md) passes; no stability is promised before then, and the tag rather than the number is what enforces it. If you have a predecessor install and want it removed, `construct cleanup` is implemented (`--dry-run`, `--yes`, `--scope`, `--keep-state`) but not yet published — it lands in the first alpha, which is the remaining Phase 1 exit criterion (STRATEGY.md, tracker `construct-506`). Once published, `npm install @geraldmaron/construct@alpha` reaches it; the plain install stays on 2.x until the gate passes.
+**Phase 1 is closed** (2026-08-04): the kernel harvest landed and `3.0.0-alpha.0` is published. Phase 2 — the spine — is in progress and nearly complete; the outcome → implication → dispatch → deliverable path runs end to end, with a work log and a decision inbox. Treat it as an alpha you can drive, not as a product: no stability is promised until the Phase 5 second-user gate (STRATEGY.md) passes, and the `alpha` tag rather than the version number is what enforces that.
+
+```bash
+npm install -g @geraldmaron/construct@alpha
+construct doctor
+construct outcome "We want to hire a contractor in Poland"
+```
+
+`construct outcome` infers the domains and queues the work; `construct work --run <id>` runs it; `construct log --run <id>` reads back what was done in whose name. Running work needs an agent host present — OpenCode (first-class) or the Claude Agent SDK — because Construct never ships its own agent runtime (commitment 1). `construct doctor` checks the parts it owns; it does not yet check that a host is reachable.
+
+If you have a predecessor install and want it removed, `construct cleanup` ships in this alpha (`--dry-run`, `--yes`, `--scope`, `--keep-state`) and refuses to remove the Construct that is running. `npm install @geraldmaron/construct@alpha` reaches it; a plain install stays on 2.x until the gate passes.
 
 ## Development
 
