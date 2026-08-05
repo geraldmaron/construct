@@ -71,6 +71,7 @@ import { planFor, recordPlan } from '../kernel/store/plans.ts';
 import type { Watch } from '../kernel/watch/watch.ts';
 import { join } from 'node:path';
 import { tuningStamp } from '../hosts/tuning.ts';
+import { probeDocling, readSource } from '../hosts/extract.ts';
 
 const MIN_NODE = { major: 22, minor: 18 };
 
@@ -707,13 +708,40 @@ export async function notes(argv: string[], hostOverride?: HostAdapter): Promise
     return 2;
   }
 
-  let body: string;
-  try {
-    body = readFileSync(args.file, 'utf8');
-  } catch (error) {
-    process.stderr.write(`notes: cannot read ${args.file} — ${(error as Error).message}\n`);
-    return 1;
+  // Source reading goes through the extraction ladder, not a bare byte read:
+  // a binary document either extracts through a rung this install can run, or
+  // is refused with the ladder's own remediation — garbage bytes recorded as
+  // prose is the failure mode this replaces. Docling participates only when
+  // the probe says it exists.
+  const doclingProbe = probeDocling();
+  const sourceRead = readSource(args.file, { docling: doclingProbe });
+  if (!sourceRead.ok) {
+    process.stderr.write(
+      `notes: ${sourceRead.reason}\n` +
+        (sourceRead.remediation ? `  ${sourceRead.remediation}\n` : '') +
+        `  (docling probe: ${doclingProbe.detail})\n`,
+    );
+    return withStoreAsync(async (store) => {
+      // The refusal and its fallback path reach the record, not just stderr —
+      // a run reading its log later must see why this source is absent.
+      if (args.run) {
+        appendWorkLog(store, {
+          run: args.run,
+          role: 'intake',
+          action: 'extraction-refused',
+          detail: {
+            file: args.file,
+            reason: sourceRead.reason,
+            remediation: sourceRead.remediation,
+            doclingProbe: doclingProbe.detail,
+          },
+          at: now(),
+        });
+      }
+      return 1;
+    });
   }
+  const body: string = sourceRead.text;
 
   return withStoreAsync(async (store) => {
     const at = now();
