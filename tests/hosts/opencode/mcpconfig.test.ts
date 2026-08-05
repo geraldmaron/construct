@@ -51,7 +51,7 @@ test('the host\'s mutation tools are off for a role: two MCP writes is the whole
   const config = buildOpenCodeConfig(ROLE_ENV);
   const tools = config.tools as Record<string, boolean>;
 
-  for (const tool of ['bash', 'edit', 'write', 'patch']) {
+  for (const tool of ['bash', 'edit', 'write', 'patch', 'glob', 'grep', 'list', 'webfetch', 'task', 'todowrite', 'todoread']) {
     assert.equal(tools[tool], false, `${tool} is host authority a role must never need`);
   }
 });

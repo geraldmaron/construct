@@ -31,7 +31,10 @@
  * not evidence of anything. Schema version 6 adds `lesson_admissions`,
  * additive and append-only: an admission verdict that could be quietly
  * replaced would let a held lesson go operational with no record of who let
- * it, so rollback is a newer row, never an edit.
+ * it, so rollback is a newer row, never an edit. Schema version 7 adds
+ * `run_dispatch`, write-once: the host and model named at the moment of
+ * intent are facts of the run, recorded so a later dispatch cannot silently
+ * fall through to whatever the host last used.
  *
  * SQLite via `node:sqlite`, which ships with Node — no dependency is added to a
  * CLI users install. STRATEGY ("What carries over") commits the tracker model to
@@ -56,7 +59,7 @@ import { accessSync, constants, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Paths } from '../paths.ts';
 
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
 
 export interface Store {
   readonly db: DatabaseSync;
@@ -311,6 +314,19 @@ BEGIN SELECT RAISE(ABORT, 'lesson_admissions is append-only'); END;
 CREATE TRIGGER IF NOT EXISTS lesson_admissions_no_delete
 BEFORE DELETE ON lesson_admissions
 BEGIN SELECT RAISE(ABORT, 'lesson_admissions is append-only'); END;
+
+CREATE TABLE IF NOT EXISTS run_dispatch (
+  run         TEXT PRIMARY KEY,
+  host        TEXT NOT NULL,
+  model       TEXT,
+  binary      TEXT,
+  dir         TEXT,
+  recorded_at TEXT NOT NULL
+) STRICT;
+
+CREATE TRIGGER IF NOT EXISTS run_dispatch_no_update
+BEFORE UPDATE ON run_dispatch
+BEGIN SELECT RAISE(ABORT, 'run_dispatch is write-once'); END;
 `;
 
 /** The substrate's file under an injected Paths. Callers do not build this path. */

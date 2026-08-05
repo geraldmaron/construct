@@ -14,6 +14,7 @@ import { join } from 'node:path';
 import { main, outcome, work } from '../../src/cli/index.ts';
 import type { HostAdapter, HostResult } from '../../src/kernel/hosts/interface.ts';
 import { openStore } from '../../src/kernel/store/open.ts';
+import { readRunDispatch } from '../../src/kernel/store/dispatch.ts';
 import { claimTask, completeTask, listTasks } from '../../src/kernel/store/tasks.ts';
 import { openDecisions } from '../../src/kernel/store/decisions.ts';
 
@@ -182,6 +183,56 @@ test('with a host named, an outcome the keyword map is silent on still queues wo
   assert.match(out, /accessibility/);
   assert.match(out, /queued 1 task/);
   assert.match(out, /came from a model reading the outcome/);
+});
+
+test('the run remembers the host and model it was filed with, and only what was typed', async () => {
+  // Found on a wire capture: with nothing recorded, a later `work` fell
+  // through to whatever model the host last used — an image model, for legal
+  // work. The record at filing time is what makes that fall-through impossible.
+  const host = namingHost(NAMED);
+  await runAll([
+    () => outcome(['--host=opencode', '--model=openrouter/qwen/qwen3-30b-a3b-instruct-2507', SILENT], host),
+    async () => {
+      const store = openStore(
+        join(process.env.XDG_DATA_HOME as string, 'construct', 'construct.db'),
+      );
+      try {
+        const runs = store.db.prepare('SELECT run FROM run_dispatch').all() as { run: string }[];
+        assert.equal(runs.length, 1, 'a host-named outcome records its dispatch surface');
+        const recorded = readRunDispatch(store, runs[0].run);
+        assert.equal(recorded?.host, 'opencode');
+        assert.equal(recorded?.model, 'openrouter/qwen/qwen3-30b-a3b-instruct-2507');
+        assert.equal(recorded?.binary, null, 'what was not typed is not invented');
+      } finally {
+        store.close();
+      }
+      return 0;
+    },
+  ]);
+});
+
+test('an outcome with no host named records no dispatch surface', async () => {
+  await runAll([
+    ['outcome', ANSWERED],
+    async () => {
+      const store = openStore(
+        join(process.env.XDG_DATA_HOME as string, 'construct', 'construct.db'),
+      );
+      try {
+        const runs = store.db.prepare('SELECT run FROM run_dispatch').all();
+        assert.equal(runs.length, 0, 'the free path names no host, so there is nothing to record');
+      } finally {
+        store.close();
+      }
+      return 0;
+    },
+  ]);
+});
+
+test('parseWorkArgs distinguishes a typed --host from the default', async () => {
+  const { parseWorkArgs } = await import('../../src/cli/index.ts');
+  assert.equal(parseWorkArgs([]).hostExplicit, false, 'the default must be overridable by the record');
+  assert.equal(parseWorkArgs(['--host=opencode']).hostExplicit, true, 'a typed choice must win');
 });
 
 test('a named implication is distinguishable in the log from a keyword one', async () => {

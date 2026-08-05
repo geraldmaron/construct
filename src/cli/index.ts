@@ -14,7 +14,8 @@ import type { CleanupOptions } from '../kernel/cleanup/run.ts';
 import { writeFileSync } from 'node:fs';
 import { openStore, storePath, storeWriteProblem, StoreUnavailableError } from '../kernel/store/open.ts';
 import type { Store } from '../kernel/store/open.ts';
-import { readWorkLog } from '../kernel/store/worklog.ts';
+import { appendWorkLog, readWorkLog } from '../kernel/store/worklog.ts';
+import { readRunDispatch, recordRunDispatch } from '../kernel/store/dispatch.ts';
 import { openDecisions, resolveDecision } from '../kernel/store/decisions.ts';
 import { countTasksByState, getTask, listTasks } from '../kernel/store/tasks.ts';
 import { readFeedback } from '../kernel/store/feedback.ts';
@@ -508,6 +509,18 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
       cache: storeNamingCache(store, { host: host.name, at }),
     });
 
+    // The host and model named here are facts of the run. Without this record,
+    // a later `work` with no flags dispatched to whatever model the host last
+    // used — observed on a wire capture as an image model answering legal work.
+    recordRunDispatch(store, {
+      run: started.runId,
+      host: args.host ?? host.name,
+      model: args.model,
+      binary: args.binary,
+      dir: args.dir,
+      recordedAt: at,
+    });
+
     if (started.implicated.length === 0) {
       process.stdout.write(`run ${started.runId}\n  outcome: ${started.outcome}\n\n`);
       process.stdout.write(
@@ -534,6 +547,11 @@ export interface WorkArgs {
   readonly dir?: string;
   /** Which host executes: 'opencode' (default) or 'claude'. */
   readonly host: string;
+  /**
+   * Whether --host was actually typed. The default and the recorded choice
+   * must be distinguishable, or the recorded choice could never win.
+   */
+  readonly hostExplicit: boolean;
   /**
    * The user asking for a voice other than Construct's, in their own words.
    * Absent is the house voice — the case that needs no flag and no record.
@@ -581,6 +599,7 @@ export function parseWorkArgs(argv: string[]): WorkArgs {
     binary: args.binary,
     dir: args.dir,
     host,
+    hostExplicit: args.host !== undefined,
     voice: args.voice?.trim() ? args.voice.trim() : undefined,
   };
 }
@@ -637,13 +656,41 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
     return 2;
   }
 
-  const host =
-    hostOverride ??
-    (args.host === 'claude'
-      ? createClaudeAdapter({ binary: args.binary, model: args.model, dir: args.dir })
-      : createOpenCodeAdapter({ binary: args.binary, model: args.model, dir: args.dir }));
-
   return withStoreAsync(async (store) => {
+    // The run remembers the surface it was filed with; a flag typed now still
+    // wins, and the divergence goes on the record rather than passing silently.
+    const recorded = args.run ? readRunDispatch(store, args.run) : null;
+    const hostName = args.hostExplicit ? args.host : (recorded?.host ?? args.host);
+    const model = args.model ?? recorded?.model ?? undefined;
+    const binary = args.binary ?? recorded?.binary ?? undefined;
+    const dir = args.dir ?? recorded?.dir ?? undefined;
+
+    if (recorded && args.run) {
+      const overrides: string[] = [];
+      if (args.hostExplicit && args.host !== recorded.host) {
+        overrides.push(`host ${recorded.host} -> ${args.host}`);
+      }
+      if (args.model !== undefined && recorded.model !== null && args.model !== recorded.model) {
+        overrides.push(`model ${recorded.model} -> ${args.model}`);
+      }
+      if (overrides.length > 0) {
+        appendWorkLog(store, {
+          run: args.run,
+          task: null,
+          role: 'construct',
+          action: 'dispatch-overridden',
+          detail: { overrides, recordedAt: recorded.recordedAt },
+          at: now(),
+        });
+      }
+    }
+
+    const host =
+      hostOverride ??
+      (hostName === 'claude'
+        ? createClaudeAdapter({ binary, model, dir })
+        : createOpenCodeAdapter({ binary, model, dir }));
+
     const waiting = countTasksByState(store, args.run).pending ?? 0;
     if (waiting === 0) {
       // Nothing to dispatch is not the same as nothing to do. If a previous
