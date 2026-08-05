@@ -453,6 +453,67 @@ step function, the honest expectation is that this exercise changes no constant 
 produces the stated ratio plus a correction to `map.ts`'s comment — which is a result, not a
 non-result.
 
+### `construct-2jb.6`, done: the PR curve, the sensitivity sweep, and the verdict
+
+*Measured 2026-08-04 (`node scripts/measure-decisions.mjs --section 4`).*
+
+**`c_miss/c_over` is not derived here, and is not smuggled in as derived.** It is Gerald's
+judgment call — how much worse an unrecoverable, confidently-wrong silence is than a recoverable,
+priced extra deliverable — and no amount of corpus measurement turns that judgment into a fact.
+What follows instead is the threshold implied by a *range* of plausible ratios, so the choice of
+ratio stays visibly open rather than picked by the script that reports it.
+
+**The PR curve, read off the same floor sweep** (recall = 1 − miss, precision = 1 − over):
+
+| floor | recall | precision |
+|---|---|---|
+| 0–7 | 0.637 | 0.743 |
+| 8–10 | 0.637 | 0.748 |
+| 11–13 | 0.304 | 0.836 |
+| 14 | 0.250 | 0.875 |
+| 17 | 0.232 | 0.907 |
+| 20 | 0.208 | 0.897 |
+
+It is two flat plateaus and a cliff, not a curve — there is nothing to trade along inside
+[0, 10]. **Flat-region width: 11 floor-units (0 through 10)**, split into an outer plateau (0–7,
+identical precision and recall) and an inner one (8–10, one point better on precision at the same
+recall, because the whole-keyword evidence filter — not `MIN_SIGNAL` — is what actually gates
+admission below the cliff). Every point in [0, 10] dominates or ties every other point in it, at
+every cost ratio; the cliff at 11 nearly halves recall (0.637 → 0.304) for a precision gain no
+project document has argued is worth that.
+
+**Sensitivity: implied optimal floor across a range of ratios.**
+
+| c_miss/c_over | best floor(s) |
+|---|---|
+| 0.5 | 8, 9, 10 |
+| 1 | 8, 9, 10 |
+| 2 | 8, 9, 10 |
+| **4** (the project's own implied ratio) | **8, 9, 10** |
+| 6, 8, **10** (the project's own implied ratio) | 8, 9, 10 |
+| 15, 20, 30 | 8, 9, 10 |
+
+At every ratio ≥ 1 — the entire region the project's stated framing (miss unrecoverable, over
+recoverable and priced) can plausibly occupy — floor 10 ties the optimum. The exact crossover
+against the only competitor on the frontier, floor 11, is **c_miss/c_over = 0.263**: below that
+ratio (an over-inclusion costed at *more* than roughly 3.8× a miss) floor 11 wins; at or above it,
+floor 10 wins. Nobody in this project has argued an over-inclusion costs more than a miss, so the
+crossover sits on the wrong side of every ratio anyone has proposed. (Ratios below ~0.3 in the raw
+sweep output are additionally a tiny-*n* artifact — floor 30 surfaces only 7 routes on the whole
+pooled corpus, all correct, over = 0/7 exactly by chance — printed for completeness, not as a real
+candidate.)
+
+**Verdict: KEEP `MIN_SIGNAL = 10`.** It sits inside the plateau that dominates every floor below
+the cliff, at every ratio this project has stated or is likely to state. Changing it would require
+a judgment that over-inclusion is nearly 4× *more* costly than a miss — the opposite of the
+asymmetry commitment 15 already assumes. `map.ts:22`'s comment, which described a recall/precision
+tradeoff this parameter does not have, is corrected to describe the plateau-and-cliff shape
+instead.
+
+**What this does not do.** It does not pick `c_miss/c_over`. That stays an explicit, open
+parameter — the table above says which choices would and would not move the verdict, and leaves
+the choice itself to Gerald.
+
 ---
 
 ## 5. Escalation, and what it can reach

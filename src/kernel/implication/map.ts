@@ -23,8 +23,17 @@ import type { Domain } from './domains.ts';
  * The signal floor. The dispatcher admits a route on any partial keyword match
  * (worth 3); a full keyword match is worth 10. Requiring 10 means one whole
  * signal must fire, so a single incidental word does not conscript a domain and
- * its role into the run. Raising this trades recall for precision — the labeled
- * set measures both, so the tradeoff is visible rather than assumed.
+ * its role into the run.
+ *
+ * This does NOT trade recall for precision at any exchange rate worth having —
+ * measured (RESEARCH-DECISIONS.md §4): every floor in [0, 10] produces the same
+ * or better precision/recall than every other floor in that range (a flat
+ * plateau, not a curve), because the real admission gate is the whole-keyword
+ * evidence filter below, not this number. Raising the floor does nothing until
+ * 11, where recall collapses (0.637 -> 0.304) for a small precision gain — a
+ * cliff, not a dial. 10 sits one step inside the plateau's high side and is the
+ * expected-loss minimizer at every c_miss/c_over ratio this project has stated;
+ * it is kept for that reason, not because it was tuned along a tradeoff curve.
  */
 export const MIN_SIGNAL = 10;
 

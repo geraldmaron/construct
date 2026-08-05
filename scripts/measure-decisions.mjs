@@ -284,6 +284,109 @@ if (heading(4, 'Threshold selection as expected-loss minimization')) {
   console.log('    The floor is therefore inert: the whole-keyword evidence filter added in');
   console.log('    construct-4jq is what actually gates admission, and MIN_SIGNAL sits one');
   console.log('    step below a cliff rather than at a tuned optimum.');
+
+  // -------------------------------------------------------------------------
+  // The precision-recall curve the sweep above implies. Precision and recall
+  // are just the miss/over rates read the other way round (precision = 1 -
+  // over, recall = 1 - miss) — printed explicitly because the acceptance
+  // criteria ask for a PR curve, not because it is new information.
+  console.log('\nThe same sweep, read as a precision-recall curve:\n');
+  console.log('  floor    recall (1-miss)   precision (1-over)');
+  for (const r of sweep) {
+    console.log(
+      `  ${String(r.floor).padStart(5)}    ${(1 - r.miss).toFixed(3).padStart(9)}         ${(1 - r.over).toFixed(3).padStart(9)}`,
+    );
+  }
+  const flatLow = sweep.filter((r) => r.miss === sweep[0].miss && r.over === sweep[0].over);
+  const flatHigh = sweep.filter(
+    (r) => r.floor >= 8 && r.miss === score(pooled, 8).missed / score(pooled, 8).expected,
+  );
+  console.log(
+    `\n  Flat region: floors [${flatLow[0].floor}, ${flatLow[flatLow.length - 1].floor}] are one plateau` +
+      ` (identical precision/recall), floors [${flatHigh[0].floor}, ${flatHigh[flatHigh.length - 1].floor}]` +
+      ' are a second, adjacent plateau one point better on precision at the same recall.',
+  );
+  console.log(
+    `  Combined flat region width, 0 through the last point before the cliff at 11: ` +
+      `${flatHigh[flatHigh.length - 1].floor - flatLow[0].floor} floor-units (0-10), all strictly` +
+      ' dominating or tying every point in it — there is no curve to trade along inside the plateau.',
+  );
+
+  // -------------------------------------------------------------------------
+  // Sensitivity analysis. c_miss/c_over is Gerald's judgment call, never
+  // derived here — this reports the implied optimal floor across a RANGE of
+  // plausible ratios and states plainly which ratios would change the
+  // verdict on MIN_SIGNAL = 10, rather than asserting a single ratio.
+  console.log('\nSensitivity: implied optimal floor across a range of c_miss/c_over ratios.');
+  console.log('  The ratio itself is NOT derived here — it is a judgment call left to Gerald.');
+  console.log('  This table reports what floor that judgment would imply, for each candidate ratio:\n');
+  console.log('  c_miss/c_over ratio     best floor(s)     E[L]');
+  const ratios = [0.1, 0.2, 0.264, 0.3, 0.5, 1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 30];
+  for (const ratio of ratios) {
+    let bestL = Infinity;
+    let bestFloors = [];
+    for (const r of sweep) {
+      const l = ratio * r.miss + r.over;
+      if (l < bestL - 1e-9) {
+        bestL = l;
+        bestFloors = [r.floor];
+      } else if (Math.abs(l - bestL) < 1e-9) {
+        bestFloors.push(r.floor);
+      }
+    }
+    console.log(
+      `  ${ratio.toFixed(3).padStart(6)}                  ${bestFloors.join(',').padEnd(15)}   ${bestL.toFixed(3)}`,
+    );
+  }
+  console.log(
+    '\n  CAVEAT on the low-ratio rows (<= 0.3): floor 30 "wins" there only because it surfaces',
+  );
+  console.log(
+    '  just 7 routes on the whole pooled corpus (all 7 happen to be correct, over = 0/7 = 0.000',
+  );
+  console.log(
+    '  exactly) — a tiny-n artifact, not a demonstrated precision advantage. It is printed rather',
+  );
+  console.log(
+    '  than dropped, per this document\'s own rule, but should not be read as a real candidate.',
+  );
+
+  // The exact crossover ratio between floor 10 (the current value, tied with
+  // 8-9 on the plateau) and floor 11 (the far side of the cliff), solved
+  // algebraically from the live sweep rather than hardcoded.
+  const f10 = sweep.find((r) => r.floor === 10);
+  const f11 = sweep.find((r) => r.floor === 11);
+  const crossover = (f11.over - f10.over) / (f10.miss - f11.miss);
+  console.log(
+    `\n  Crossover ratio (floor 10 vs floor 11): c_miss/c_over = ${crossover.toFixed(3)}.`,
+  );
+  console.log(
+    '  Below that ratio (over-inclusion costed at MORE than roughly 3.8x a miss),',
+  );
+  console.log(
+    '  floor 11 wins; at or above it, floor 10 (tied with 8-9) wins. The project\'s own',
+  );
+  console.log(
+    '  stated framing (a miss is unrecoverable, an over is recoverable and priced) puts',
+  );
+  console.log(
+    '  every plausible ratio on the miss-costs-more side, i.e. ratio >= 1, which is on the',
+  );
+  console.log(
+    '  floor-10 side of that crossover by a wide margin. Only a ratio judgment that says an',
+  );
+  console.log(
+    '  over-inclusion costs MORE than a miss would change the verdict — a position nobody',
+  );
+  console.log('  in this project has argued for.');
+  console.log(
+    '\n  VERDICT: KEEP MIN_SIGNAL = 10. It sits on the plateau that dominates every floor',
+  );
+  console.log(
+    '  below the cliff at 11, for every ratio in the range this project has ever stated',
+  );
+  console.log('  (4:1 and 10:1 both land on floor 8-10). c_miss/c_over itself remains open,');
+  console.log('  awaiting Gerald — nothing above should be read as having picked it.');
 }
 
 // ---------------------------------------------------------------------------
