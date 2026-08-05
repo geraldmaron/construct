@@ -85,3 +85,26 @@ export function findUntaggedClaims(text: string): UntaggedClaim[] {
   }
   return findings;
 }
+
+/**
+ * Compliance prose about citing is not citing. A deliverable can contain a
+ * sentence shaped like the discipline ("every claim is either supported or
+ * marked [unverified]" — written as prose, no tag) while the body carries no
+ * citation marker and no [unverified] tag at all. The sentence self-attests
+ * the practice; only the markers are the practice.
+ */
+const ATTESTS_CITING =
+  /\b(?:every|all|each)\b[^.\n]{0,80}\bclaims?\b[^.\n]{0,120}\b(?:cit(?:ed|ation)|sourced|supported|unverified)/i;
+
+/**
+ * True when the deliverable talks about the citation discipline but practices
+ * none of it: an attestation sentence is present, and no `[cite:...]` or
+ * `[unverified]` marker appears on any other line. A marker inside the
+ * attestation sentence itself is a mention of the tag, not a use of it.
+ */
+export function selfAttestsCiting(text: string): boolean {
+  const lines = text.split('\n');
+  const attests = lines.some((line) => ATTESTS_CITING.test(line));
+  if (!attests) return false;
+  return !lines.some((line) => !ATTESTS_CITING.test(line) && TAG.test(line));
+}

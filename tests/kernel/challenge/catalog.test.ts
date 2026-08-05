@@ -198,3 +198,45 @@ test('every catalogued challenge states its question, and ids are unique', () =>
     assert.ok(challenge.question.endsWith('?'), `${challenge.id} must ask something`);
   }
 });
+
+test('compliance prose with no marker anywhere fails claims-cited: attesting is not citing', () => {
+  const attested = [
+    '# Review',
+    'Hiring in Poland requires an employment agreement under local labor law.',
+    '## Claims cited',
+    'Every claim above is either supported by the outcome or marked [unverified].',
+    '## Out of scope',
+    'Payroll setup is not covered.',
+  ].join('\n');
+  const run = runStructuralChallenges(brief(['claims-cited']), attested);
+  const check = run.results.find((r) => r.challenge === 'claims-cited');
+  assert.equal(check?.passed, false);
+  assert.match(check?.detail ?? '', /compliance prose is not compliance/);
+
+  // One real marker on a working line is the practice, and the pass returns.
+  const practiced = attested + '\nLocal law requires a written agreement [unverified].';
+  const good = runStructuralChallenges(brief(['claims-cited']), practiced);
+  assert.equal(good.results.find((r) => r.challenge === 'claims-cited')?.passed, true);
+});
+
+test('a scope-diff that invents what the brief asked for fails against the recorded outcome', () => {
+  // brief() records the outcome 'Launch a paid beta to EU users'.
+  const fabricated = [
+    'The brief asked for a hiring roadmap covering contractors.',
+    '## Out of scope',
+    'Vendor selection is not covered.',
+  ].join('\n');
+  const run = runStructuralChallenges(brief(['scope-diff']), fabricated);
+  const check = run.results.find((r) => r.challenge === 'scope-diff');
+  assert.equal(check?.passed, false);
+  assert.match(check?.detail ?? '', /recorded outcome/);
+
+  // A paraphrase anchored in the record survives: "beta" appears in the outcome.
+  const anchored = [
+    'The brief asked for a beta launch in the EU.',
+    '## Out of scope',
+    'Pricing is not covered.',
+  ].join('\n');
+  const ok = runStructuralChallenges(brief(['scope-diff']), anchored);
+  assert.equal(ok.results.find((r) => r.challenge === 'scope-diff')?.passed, true);
+});

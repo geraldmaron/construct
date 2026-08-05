@@ -30,7 +30,7 @@
  * format for the checker rather than to think.
  */
 
-import { findUntaggedClaims, findSourceFileCitations } from '../verify/claims.ts';
+import { findUntaggedClaims, findSourceFileCitations, selfAttestsCiting } from '../verify/claims.ts';
 import type { Brief } from '../brief/schema.ts';
 
 export interface ChallengeCheck {
@@ -59,6 +59,39 @@ function labelled(text: string, labels: readonly string[]): boolean {
 
 function found(passed: boolean, looked: string, detail: string): ChallengeCheck {
   return { passed, detail: passed ? `${looked}: ${detail}` : `${looked}: not found` };
+}
+
+const ASKED_FOR =
+  /\bbrief\s+(?:asked|called)\s+for\s+([^.\n]{3,120})|\bwas\s+asked\s+(?:for|to\s+(?:produce|deliver|provide))\s+([^.\n]{3,120})/gi;
+
+const SCOPE_STOPWORDS = new Set([
+  'a', 'an', 'and', 'the', 'for', 'of', 'to', 'in', 'on', 'with', 'this', 'that',
+  'full', 'complete', 'comprehensive', 'detailed', 'plan', 'review', 'memo',
+]);
+
+/**
+ * Assertions about what the brief asked for whose content words appear
+ * nowhere in the recorded outcome. Conservative on purpose: a claim is
+ * flagged only when NONE of its significant words occur in the outcome, so a
+ * paraphrase survives and only a premise with no anchor in the record fails.
+ */
+function inventedBriefClaims(deliverable: string, outcome: string): string[] {
+  const record = new Set(
+    outcome
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((t) => t.length > 2),
+  );
+  const invented: string[] = [];
+  for (const match of deliverable.matchAll(ASKED_FOR)) {
+    const claimed = (match[1] ?? match[2] ?? '').trim();
+    const words = claimed
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((t) => t.length > 2 && !SCOPE_STOPWORDS.has(t));
+    if (words.length > 0 && !words.some((w) => record.has(w))) invented.push(claimed);
+  }
+  return invented;
 }
 
 export const CHALLENGES: readonly Challenge[] = [
@@ -112,6 +145,17 @@ export const CHALLENGES: readonly Challenge[] = [
       }
       const untagged = findUntaggedClaims(deliverable);
       if (untagged.length === 0) {
+        // A sentence about citing is not citing. A body that attests the
+        // discipline while using no marker anywhere fails on the attestation:
+        // the checker holds the practice, not the prose about the practice.
+        if (selfAttestsCiting(deliverable)) {
+          return {
+            passed: false,
+            detail:
+              'the deliverable asserts its claims are cited, but no [cite:...] or ' +
+              '[unverified] marker appears anywhere in the body — compliance prose is not compliance',
+          };
+        }
         return { passed: true, detail: 'every amount, percentage, date, duration, and statute reference carries a citation or an [unverified] tag' };
       }
       const shown = untagged.slice(0, 3).map((c) => `line ${String(c.line)}`).join(', ');
@@ -125,8 +169,22 @@ export const CHALLENGES: readonly Challenge[] = [
   {
     id: 'scope-diff',
     question: 'What did the brief ask for that this deliverable does not cover?',
-    structural: (deliverable) =>
-      found(
+    structural: (deliverable, brief) => {
+      // The fidelity section is held to the record it claims fidelity to: a
+      // sentence asserting what "the brief asked for" whose content words
+      // appear nowhere in the recorded outcome is a fabricated premise, and a
+      // scope diff against an invented brief covers nothing.
+      const invented = inventedBriefClaims(deliverable, brief.outcome);
+      if (invented.length > 0) {
+        return {
+          passed: false,
+          detail:
+            `the scope diff asserts the brief asked for something the recorded outcome ` +
+            `does not contain: "${invented[0]}"` +
+            (invented.length > 1 ? ` (and ${String(invented.length - 1)} more)` : ''),
+        };
+      }
+      return found(
         labelled(deliverable, [
           'out of scope',
           'not covered',
@@ -137,7 +195,8 @@ export const CHALLENGES: readonly Challenge[] = [
         ]),
         'a stated gap between the brief and the deliverable',
         'present — a deliverable that names nothing it left uncovered is claiming complete coverage',
-      ),
+      );
+    },
   },
   {
     id: 'legal-issue-spot',
