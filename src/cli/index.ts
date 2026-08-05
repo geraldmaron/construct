@@ -503,6 +503,29 @@ function failureLine(error: unknown): string {
 }
 
 /**
+ * What to say when an attempt to work produced no deliverable at all.
+ *
+ * construct-d2q established the substance of this and it is unchanged: a failed
+ * task is terminal, the host owns retries (commitment 1), and nothing here is a
+ * retry policy. What it got wrong was reachability. The text lived only on the
+ * nothing-left-to-work path, so it printed on a SECOND `construct work` against
+ * an already-settled run — and the output of the first gave nobody a reason to
+ * run a second (construct-j32, found in a live run whose every task failed with
+ * "Missing Authentication header" and said nothing further).
+ *
+ * So it is one writer called from both places rather than two copies that drift.
+ */
+function writeTotalFailureRecourse(failedCount: number): void {
+  process.stdout.write(
+    `\nAll ${String(failedCount)} task(s) failed and produced no deliverable.\n` +
+      'A failed task is terminal — the host owns retries, so re-running work will not pick these up.\n' +
+      'If the cause was the dispatch rather than the work (an unresolvable --model, a host that was ' +
+      'not reachable, a missing credential), fix it and file the outcome again:\n' +
+      '  construct outcome "<what you want>"\n',
+  );
+}
+
+/**
  * Dispatch the queued tasks to a host. `hostOverride` exists so the CLI's own
  * wiring can be tested without a binary present; production callers never pass
  * it, exactly as with cleanup's spawn override.
@@ -554,18 +577,11 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
       // host at all. The recorded error is what tells them apart, so it is shown.
       if (done === 0) {
         const where = args.run ? ` for ${args.run}` : '';
-        process.stdout.write(
-          `nothing to work${where}. All ${String(failedTasks)} task(s) failed and produced no deliverable.\n`,
-        );
+        process.stdout.write(`nothing to work${where}.\n`);
         for (const task of listTasks(store, args.run).filter((t) => t.state === 'failed')) {
           process.stdout.write(`  ✗ ${task.role.padEnd(20)} ${failureLine(task.error)}\n`);
         }
-        process.stdout.write(
-          '\nA failed task is terminal — the host owns retries, so re-running work will not pick these up.\n' +
-            'If the cause was the dispatch rather than the work (an unresolvable --model, a host that was ' +
-            'not reachable), fix it and file the outcome again:\n' +
-            '  construct outcome "<what you want>"\n',
-        );
+        writeTotalFailureRecourse(failedTasks);
         return 1;
       }
 
@@ -637,9 +653,17 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
       }
     }
 
-    process.stdout.write(
-      `\nspend ${money(report.spendAfter)} of ${money(report.spendCeiling)} ceiling.\n`,
-    );
+    // "spend 0 of 10.00 ceiling" after a run where nothing completed reads as
+    // "this was cheap" when the true statement is that nothing ran. The
+    // costSilent branch below does not cover it: these tasks failed rather than
+    // completing without reporting a cost (construct-j32).
+    if (report.completed === 0 && report.failed > 0) {
+      writeTotalFailureRecourse(report.failed);
+    } else {
+      process.stdout.write(
+        `\nspend ${money(report.spendAfter)} of ${money(report.spendCeiling)} ceiling.\n`,
+      );
+    }
     if (report.conflicts > 0) {
       // The inbox is the point of the whole run: work happened in the
       // background, and this is the part that is genuinely the user's.

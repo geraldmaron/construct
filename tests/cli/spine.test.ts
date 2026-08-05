@@ -486,6 +486,41 @@ test('a run where everything failed is not reported as a run that finished', asy
   assert.equal(code, 1, 'a run that delivered nothing must not exit clean');
 });
 
+test('the invocation that fails everything states the recourse, not the one after it', async () => {
+  // construct-j32. d2q's recourse was correct and unreachable: it lived only on
+  // the nothing-left-to-work path, so it printed on a SECOND `construct work`
+  // against an already-settled run. Found in a live run whose every task failed
+  // with "Missing Authentication header" and said nothing further — the first
+  // invocation is the one the user is looking at, and for most people the only
+  // one they will run.
+  const refusing: HostAdapter = {
+    ...standInHost(),
+    invoke: async (request: unknown): Promise<HostResult> => ({
+      id: (request as { role: string }).role,
+      status: 'error',
+      output: null,
+      error: { messages: ['Missing Authentication header'] },
+    }),
+  };
+
+  const { out, code } = await runAll([
+    ['outcome', 'launch a paid beta to EU users next month'],
+    // Exactly one work invocation. No second call to fall through to.
+    () => work([], refusing),
+  ]);
+
+  assert.match(out, /Missing Authentication header/, 'the recorded error is shown');
+  assert.match(out, /All \d+ task\(s\) failed and produced no deliverable/);
+  assert.match(out, /host owns retries, so re-running work will not pick these up/);
+  assert.match(out, /construct outcome "<what you want>"/, 'the user is told what to do next');
+  assert.doesNotMatch(
+    out,
+    /spend .* of .* ceiling/,
+    'reporting spend under the ceiling after a run that delivered nothing reads as "this was cheap"',
+  );
+  assert.equal(code, 1);
+});
+
 test('a store with no outcome at all still says to record one', async () => {
   // The empty-store message must not be swallowed by the all-failed branch.
   const { out, code } = await run(['work']);
