@@ -15,10 +15,11 @@ A number that appears here and cannot be printed by that script is a number nobo
 and should be deleted rather than defended. Same discipline as `probe-*-conformance.mjs`,
 applied to statistics instead of to a host.
 
-**Status of this document.** Sections 1, 3, 4, 5, and 9 are measured against the real corpora
-and the live catalog. Sections 2, 6, 7, and 8 identify the right formalism and state what
-would have to be collected to apply it; their conclusions are explicitly marked as pending
-data, not presented as results.
+**Status of this document.** Sections 1, 2, 3, 4, 5, 6, and 9 are measured against the real
+corpora and the live catalog — §6's measurement is a negative result (no ground truth exists to
+calibrate the intake ramp against), stated as such rather than worked around. Sections 7 and 8
+identify the right formalism and state what would have to be collected to apply it; their
+conclusions are explicitly marked as pending data, not presented as results.
 
 ---
 
@@ -668,22 +669,73 @@ is still the one that retires the problem permanently.*
 
 ## 6. Calibration
 
-*Pending data.*
+*Measured 2026-08-04 (`node scripts/measure-decisions.mjs --section 6`). The result is negative:
+no reliability diagram, ECE, or Brier decomposition is computed below, and none should be, because
+no ground truth exists to compute them against.*
 
-The intake ramp emits numbers that look like probabilities. Nothing checks that they behave like
+The intake ramp emits numbers that look like probabilities:
+`src/kernel/intake/classify.ts`'s `calibratedBaseConfidence` — 1 hit → 0.55, 2 → 0.72, 3 → 0.82,
+4+ → 0.92, 0 hits (filename boost only) → 0.45, capped at 0.50 when the top two candidates' margin
+is under 0.3 — plus a fifth, separate constant, `TITLE_LOCK_CONFIDENCE = 0.9`, when a filename hint
+and an agreeing H1 title lock the type outright. Nothing checks that these behave like
 probabilities — that outcomes assigned 0.72 are correct about 72% of the time. This matters more
-after §5 than before it, because the EVSI rule consumes that number directly: an uncalibrated
-confidence feeding a decision rule produces confidently-wrong *spending*, not just
-confidently-wrong labels.
+after §5 than before it, because the EVSI rule (`construct-2jb.7`) is written to consume this ramp
+directly: an uncalibrated confidence feeding a decision rule produces confidently-wrong
+*spending*, not just confidently-wrong labels.
 
-Required: reliability diagrams, expected calibration error, and the Brier score decomposed into
-reliability / resolution / uncertainty. The decomposition is the point — it separates "badly
-calibrated" (fixable by rescaling) from "genuinely hard" (not fixable by rescaling), which are
-different problems that look identical in an aggregate score.
+**What calibrating it would require:** for a real intake document — a `(sourcePath,
+extractedText)` pair, the shape `classifyIntake()` actually consumes, not an outcome sentence —
+an independently adjudicated **true** `intakeType`, produced by a coder who never sees
+`classifyIntake()`'s own prediction. Paired with the ramp's predicted confidence, that is the
+`(predicted confidence, was it correct)` sample a reliability diagram, ECE, and a Platt refit are
+computed from.
 
-Fit with **Platt scaling**. Isotonic regression is the better method in general and would overfit
-badly at n = 168 (up from 85 now that `construct-2jb.4`'s measured half is in the pool). Filed as
-`construct-2jb.8`, blocked on corpus expansion.
+**Two candidate sources were checked, and both fail to supply it:**
+
+- `tests/kernel/intake/fixtures/classify-golden.json` (23 cases) is captured verbatim from a
+  `construct-legacy` run (`scripts/capture-legacy-classify-golden.mjs`) and locked by
+  `tests/kernel/intake/classify.test.ts` as a byte-for-byte regression test. It records what the
+  predecessor's code *did*, not what an independent adjudicator decided the document *was*.
+  Scoring `classifyIntake()` against its own captured output is circular by construction — the
+  golden test already asserts exact equality, so "accuracy" against it is 100% by definition,
+  always, and demonstrates nothing about calibration. Its hit-count distribution (3 cases at 1
+  hit, 2 at 2 hits, 4 at 3 hits, 5 at 4+ hits, 3 title-locks, 5 silent/unknown) is printed by the
+  script for scale only — it is behavior-lock data, not ground truth, and is not treated as any.
+- `tests/kernel/implication/fixtures/{labeled,held-out,fresh,unspent}-outcomes.json` — the corpora
+  §§1–5 measure against — label a **different classifier**: `kernel/routing/dispatcher.ts` and
+  `kernel/implication/map.ts`, which domains an outcome implicates. That path emits no confidence
+  value that this ramp, or anything resembling it, ever produces. There is no shared prediction to
+  calibrate; using these labels here would be scoring the wrong classifier and calling it the
+  right one.
+
+No third source exists. **The finding is that no fixture, corpus, or test in this repository pairs
+this ramp's predicted confidence with an independently-labeled correctness outcome.** Fabricating
+one — treating the golden fixture's own predictions as truth, or repurposing the implication
+corpora's domain labels as if they scored this ramp — would produce either a tautological 100%
+(the first case) or a number that scores a different system entirely (the second), and either
+would be exactly the "measured against a proxy without flagging it" defect `construct-2jb.5`'s
+retraction exists to warn against. Neither is reported. **No Platt refit was fitted, and no
+before/after ECE exists to compare with an interval, because there is no "before" ECE either.**
+
+**What collecting it would cost**, using the same `requiredTrials`/Wilson machinery §1 uses, sized
+per hit-count bucket (target CI half-width chosen loosely tighter near the ramp's own values):
+
+| ramp value | target half-width | documents needed in that bucket |
+|---|---|---|
+| 0.55 (1 hit) | ±0.15 | 39 |
+| 0.72 (2 hits) | ±0.15 | 32 |
+| 0.82 (3 hits) | ±0.10 | 56 |
+| 0.92 (4+ hits) | ±0.08 | 49 |
+
+Four buckets (plus a fifth for `TITLE_LOCK_CONFIDENCE`), each independently filled with real intake
+documents and an independent adjudicator — the same shape of collection `construct-2jb.4` already
+ran once (eight blind authors, two blind coders), applied to intake documents instead of outcome
+sentences, not a new instrument to design.
+
+**Verdict: the ramp is UNVALIDATED, not validated-and-passing.** It is not shown to be miscalibrated
+either — that would also require the data above. `construct-2jb.7`'s EVSI rule, if it reuses this
+ramp as planned, inherits an unvalidated confidence signal; that dependency should be recorded on
+that bead rather than silently assumed away.
 
 ---
 

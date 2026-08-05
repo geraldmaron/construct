@@ -598,6 +598,93 @@ if (process.argv.includes('--embeddings') && heading(5.6, 'Margin-triggered esca
 }
 
 // ---------------------------------------------------------------------------
+// §6 does not touch the implication corpora at all: the confidence ramp it
+// asks about belongs to a different classifier (kernel/intake/classify.ts,
+// document-type triage) than the one the pooled corpus labels (kernel/
+// implication/map.ts, domain routing). The two never emit a shared value, so
+// nothing above can stand in as ground truth for this section.
+if (heading(6, 'Calibration of the intake confidence ramp')) {
+  const golden = JSON.parse(
+    readFileSync(join(ROOT, 'tests/kernel/intake/fixtures/classify-golden.json'), 'utf8'),
+  );
+
+  console.log('\n  The ramp lives in kernel/intake/classify.ts:');
+  console.log('    calibratedBaseConfidence: 1 hit -> 0.55, 2 -> 0.72, 3 -> 0.82, 4+ -> 0.92,');
+  console.log('    0 hits (filename boost only) -> 0.45, capped at 0.50 when margin < 0.3.');
+  console.log('    TITLE_LOCK_CONFIDENCE = 0.9 is a fifth, separate constant (filename + H1 agree).');
+
+  console.log('\n  What "ground truth" would have to mean here: for a real (sourcePath,');
+  console.log('  extractedText) intake document, an independently adjudicated TRUE intakeType —');
+  console.log('  not classifyIntake()\'s own output, and not a label for a different classifier.');
+
+  console.log('\n  Candidate sources checked, and why each fails to supply it:\n');
+  console.log('    tests/kernel/intake/fixtures/classify-golden.json — captured verbatim from a');
+  console.log('    construct-legacy run (scripts/capture-legacy-classify-golden.mjs). It records');
+  console.log('    what the predecessor DID, not what a human independently decided the document');
+  console.log('    WAS. Scoring classifyIntake() against its own captured output is circular by');
+  console.log('    construction: the golden test already asserts exact equality, so "accuracy"');
+  console.log('    against it is 100% by definition, always, and says nothing about calibration.');
+  console.log('\n    tests/kernel/implication/fixtures/{labeled,held-out,fresh,unspent}-outcomes.json');
+  console.log('    — label a DIFFERENT classifier (kernel/routing/dispatcher.ts + implication/');
+  console.log('    map.ts, which domains an outcome implicates) that emits no confidence value at');
+  console.log('    all, let alone this ramp\'s. There is no shared prediction to calibrate.');
+
+  console.log('\n  What DOES exist: the golden fixture\'s own hit-count distribution (captured');
+  console.log('  behavior, not correctness) — for scale, and to show the buckets a real study');
+  console.log('  would need to fill:\n');
+  const buckets = new Map();
+  for (const c of golden) {
+    const hits = c.triage.candidates?.[0]?.hits ?? null;
+    const conf = c.triage.confidence;
+    const key = `${hits === null ? 'n/a (silent/unknown)' : hits} hit(s) -> conf ${conf}`;
+    buckets.set(key, (buckets.get(key) ?? 0) + 1);
+  }
+  for (const [k, v] of [...buckets].sort()) console.log(`    ${k.padEnd(36)} ${v} captured case(s)`);
+  console.log(`    TOTAL: ${golden.length} cases, all behavior-lock, zero independently labeled`);
+
+  console.log('\n  What it would take to fill them: a corpus of real intake documents (not');
+  console.log('  outcome sentences — full sourcePath + extractedText, the shape classifyIntake()');
+  console.log('  actually consumes), each independently adjudicated for true document type by a');
+  console.log('  coder who does not see classifyIntake()\'s prediction, collected across enough');
+  console.log('  documents per hit-count bucket to bound a reliability estimate. Rough per-bucket');
+  console.log('  sample sizes for a few interval widths (Wilson 95%, centered near the ramp\'s own');
+  console.log('  values), via the same requiredTrials machinery §1 uses:\n');
+  console.log('    ramp value   target CI half-width   documents needed in that bucket');
+  for (const [p, halfWidth] of [[0.55, 0.15], [0.72, 0.15], [0.82, 0.1], [0.92, 0.08]]) {
+    // requiredTrials is built for a two-point discrimination test, not a CI
+    // half-width solve, so this reuses the Wilson formula directly rather than
+    // repurposing that function for a shape of question it was not written for.
+    const z = 1.959964;
+    // Solve n from the Wilson half-width at p, iterating rather than inverting
+    // the closed form algebraically -- the same numeric-honesty bar as the rest
+    // of this script: printed from a loop, not from a memorized formula.
+    let n = 1;
+    while (true) {
+      const denom = 1 + (z * z) / n;
+      const center = p + (z * z) / (2 * n);
+      const half = (z * Math.sqrt((p * (1 - p)) / n + (z * z) / (4 * n * n))) / denom;
+      void center;
+      if (half <= halfWidth || n > 5000) break;
+      n += 1;
+    }
+    console.log(`    ${p.toFixed(2).padStart(8)}   +/- ${halfWidth.toFixed(2).padStart(4)}                 ${n}`);
+  }
+  console.log('    (four buckets, independently filled, plus a fifth for TITLE_LOCK_CONFIDENCE —');
+  console.log('    this is the same shape of collection construct-2jb.4 already ran once, applied');
+  console.log('    to intake documents instead of outcome sentences.)');
+
+  console.log('\n  RESULT: no reliability diagram, ECE, or Brier decomposition is computed by this');
+  console.log('  section, and none is fitted with Platt scaling, because no ground-truth-labeled');
+  console.log('  (predicted confidence, was it correct) pair exists anywhere in this repository.');
+  console.log('  Computing any of those numbers here would require inventing a proxy for');
+  console.log('  correctness -- e.g. treating the golden fixture\'s own predictions as truth, or');
+  console.log('  reusing the implication corpora\'s domain labels as if they scored this ramp --');
+  console.log('  and every such proxy either produces a tautological 100% (scoring a classifier');
+  console.log('  against its own captured output) or scores the wrong classifier entirely.');
+  console.log('  Neither is reported. The ramp is UNVALIDATED, not validated-and-passing.');
+}
+
+// ---------------------------------------------------------------------------
 if (heading(9, 'Phase gates as sequential hypothesis tests')) {
   console.log('\nWhat each gate proves, if every subject succeeds:\n');
   console.log('  successes   two-sided 95% CI        one-sided 95% lower bound');
