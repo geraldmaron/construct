@@ -28,7 +28,10 @@
  * the lesson store's scope column is the confidentiality property — a lesson
  * row cannot exist without a workspace, and immutability is a trigger, not a
  * caller convention, because a lesson that can be edited after admission is
- * not evidence of anything.
+ * not evidence of anything. Schema version 6 adds `lesson_admissions`,
+ * additive and append-only: an admission verdict that could be quietly
+ * replaced would let a held lesson go operational with no record of who let
+ * it, so rollback is a newer row, never an edit.
  *
  * SQLite via `node:sqlite`, which ships with Node — no dependency is added to a
  * CLI users install. STRATEGY ("What carries over") commits the tracker model to
@@ -53,7 +56,7 @@ import { accessSync, constants, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Paths } from '../paths.ts';
 
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 
 export interface Store {
   readonly db: DatabaseSync;
@@ -288,6 +291,26 @@ CREATE TABLE IF NOT EXISTS workspace_consent (
   consumes_global INTEGER NOT NULL CHECK (consumes_global IN (0, 1)),
   recorded_at     TEXT NOT NULL
 ) STRICT;
+
+CREATE TABLE IF NOT EXISTS lesson_admissions (
+  seq        INTEGER PRIMARY KEY AUTOINCREMENT,
+  lesson     TEXT NOT NULL,
+  verdict    TEXT NOT NULL CHECK (verdict IN ('admitted', 'held')),
+  basis      TEXT NOT NULL CHECK (basis IN ('adversarial-pass', 'human-approval')),
+  reviewer   TEXT,
+  reason     TEXT NOT NULL,
+  decided_at TEXT NOT NULL
+) STRICT;
+
+CREATE INDEX IF NOT EXISTS lesson_admissions_lesson ON lesson_admissions (lesson, seq);
+
+CREATE TRIGGER IF NOT EXISTS lesson_admissions_no_update
+BEFORE UPDATE ON lesson_admissions
+BEGIN SELECT RAISE(ABORT, 'lesson_admissions is append-only'); END;
+
+CREATE TRIGGER IF NOT EXISTS lesson_admissions_no_delete
+BEFORE DELETE ON lesson_admissions
+BEGIN SELECT RAISE(ABORT, 'lesson_admissions is append-only'); END;
 `;
 
 /** The substrate's file under an injected Paths. Callers do not build this path. */
