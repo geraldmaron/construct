@@ -157,12 +157,18 @@ test('the adapter turns roleEnv into a registration and cleans it up after', asy
   assert.equal(existsSync(configPath), false, 'the config must not outlive the invocation');
 });
 
-test('a dispatch with no role env registers nothing at all', async () => {
+test('a dispatch with no role env gets the advisor config: no server, no host tools', async () => {
+  // The namer and the densifier went out with no config at all, which left
+  // the host's ambient tools enabled for exactly the text-only calls — and a
+  // small model handed a toolkit stalled in it until the invocation timeout.
   let env: Record<string, string> | undefined;
+  let configBody: Record<string, unknown> | null = null;
   const adapter = createOpenCodeAdapter({
     binary: '/nonexistent/opencode',
     spawn: (_command, _args, options) => {
       env = options.env as Record<string, string> | undefined;
+      const path = env?.OPENCODE_CONFIG;
+      if (path) configBody = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
       return {
         done: Promise.resolve({
           code: 0,
@@ -176,7 +182,13 @@ test('a dispatch with no role env registers nothing at all', async () => {
 
   await adapter.init();
   await adapter.invoke({ role: 'privacy', task: 'report' });
-  assert.equal(env?.OPENCODE_CONFIG, undefined, 'no surface is the safe default, not a broken one');
+  assert.ok(env?.OPENCODE_CONFIG, 'a text-only call still carries the tool policy');
+  assert.ok(configBody, 'the config was readable while the host ran');
+  const body = configBody as unknown as { mcp?: unknown; tools?: Record<string, boolean> };
+  assert.equal(body.mcp, undefined, 'an advisor answers; it does not write');
+  assert.equal(body.tools?.bash, false);
+  assert.equal(body.tools?.read, false, 'an advisor has no run directory to read');
+  assert.equal(existsSync(env?.OPENCODE_CONFIG ?? ''), false, 'disposed after the invocation');
 });
 
 /**

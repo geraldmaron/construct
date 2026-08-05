@@ -27,7 +27,7 @@ import { HostNotReadyError, InvocationError, InvocationTimeoutError } from '../.
 import { failedToolCalls, reduceTranscript } from './events.ts';
 import type { OpenCodeRunResult } from './events.ts';
 import { PINNED_VERSION, tierOfModel } from './pin.ts';
-import { CONFIG_ENV_VAR, writeOpenCodeConfig } from './mcpconfig.ts';
+import { CONFIG_ENV_VAR, writeAdvisorConfig, writeOpenCodeConfig } from './mcpconfig.ts';
 import type { ModelTier } from '../../kernel/brief/tiers.ts';
 
 export const HOST_NAME = 'opencode';
@@ -343,6 +343,10 @@ export function createOpenCodeAdapter(config: OpenCodeConfig = {}): OpenCodeAdap
       //. Absent roleEnv means no surface at all, which is safe
       // rather than broken — the same default as every other host.
       const roleEnv = context?.roleEnv as Record<string, string> | undefined;
+      // Without roleEnv there is still a config: the advisor one, which
+      // registers no server and disables the host's tools. Sending a
+      // text-only question out with the ambient toolkit enabled is how the
+      // densifier stalled to its timeout twice.
       const mcpConfig =
         roleEnv && Object.keys(roleEnv).length > 0
           ? writeOpenCodeConfig(roleEnv, {
@@ -351,13 +355,13 @@ export function createOpenCodeAdapter(config: OpenCodeConfig = {}): OpenCodeAdap
               // process — the host child had them stripped on purpose.
               env: { ...roleServeEnvironment(), ...config.roleServeEnv },
             })
-          : null;
+          : writeAdvisorConfig();
 
       let child: SpawnedProcess;
       try {
         child = spawn(binary, args, {
           cwd: req.dir ?? config.dir,
-          env: mcpConfig ? { [CONFIG_ENV_VAR]: mcpConfig.path } : undefined,
+          env: { [CONFIG_ENV_VAR]: mcpConfig.path },
         });
       } catch (cause) {
         // A host that never started still has to open the gate. Leaving it shut

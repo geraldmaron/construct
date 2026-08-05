@@ -89,32 +89,68 @@ export interface WrittenOpenCodeConfig {
  * the Claude adapter's key names here would produce a config that parses and
  * silently registers nothing.
  */
+/**
+ * The host tools a Construct-spawned model may not use. A role's authority is
+ * exactly two MCP writes; the host's own tools are authority it must never
+ * need. Observed both ways: a role with ambient filesystem access cited this
+ * tool's own package as legal authority, and strict providers refuse to route
+ * requests carrying the host toolset's schemas at all ("No endpoints found
+ * that support tool use"). Only `read` stays on, so a role can read material
+ * handed to it via the run directory.
+ */
+const TOOL_POLICY = Object.freeze({
+  bash: false,
+  edit: false,
+  write: false,
+  patch: false,
+  glob: false,
+  grep: false,
+  list: false,
+  webfetch: false,
+  task: false,
+  todowrite: false,
+  todoread: false,
+});
+
+/**
+ * The config for an invocation with no write surface — the namer and the
+ * densifier. They went out with NO config at all, which meant the host's
+ * ambient tools were enabled for exactly the calls that are pure
+ * text-in/text-out — and a small model handed a toolkit and a one-shot
+ * question wandered into the toolkit until the invocation timeout killed it
+ * (observed twice on the densifier). No MCP server is registered here: these
+ * calls answer, they do not write.
+ */
+export function buildAdvisorConfig(): Record<string, unknown> {
+  return {
+    $schema: 'https://opencode.ai/config.json',
+    tools: { ...TOOL_POLICY, read: false },
+  };
+}
+
+export function writeAdvisorConfig(): WrittenOpenCodeConfig {
+  const dir = mkdtempSync(join(tmpdir(), 'construct-oc-advisor-'));
+  chmodSync(dir, 0o700);
+  const path = join(dir, 'opencode.json');
+  writeFileSync(path, `${JSON.stringify(buildAdvisorConfig(), null, 2)}\n`, { mode: 0o600 });
+  let disposed = false;
+  return {
+    path,
+    dispose(): void {
+      if (disposed) return;
+      disposed = true;
+      rmSync(dir, { recursive: true, force: true });
+    },
+  };
+}
+
 export function buildOpenCodeConfig(
   roleEnv: Readonly<Record<string, string>>,
   launch: RoleServeLaunch = {},
 ): Record<string, unknown> {
   return {
     $schema: 'https://opencode.ai/config.json',
-    // A role's authority is exactly two MCP writes; the host's own tools are
-    // authority it must never need. Observed both ways: a role with ambient
-    // filesystem access cited this tool's own package as legal authority, and
-    // strict providers refuse to route requests carrying the host toolset's
-    // schemas at all ("No endpoints found that support tool use"). Only `read`
-    // stays on, so a role can read material handed to it via the run
-    // directory — everything else a role does arrives through the two writes.
-    tools: {
-      bash: false,
-      edit: false,
-      write: false,
-      patch: false,
-      glob: false,
-      grep: false,
-      list: false,
-      webfetch: false,
-      task: false,
-      todowrite: false,
-      todoread: false,
-    },
+    tools: { ...TOOL_POLICY },
     mcp: {
       [MCP_SERVER_NAME]: {
         type: 'local',
