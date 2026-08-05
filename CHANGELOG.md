@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- `STRATEGY.md` — five dated amendments from the routing-architecture adversarial review (construct-r67.16). Host-embedded operation is a first-class deployment shape: the spine projected into the user's own agent host (Claude Code, Codex, VS Code agent mode, OpenCode) through one MCP surface, thin in Phase 2 and dogfood-scoped (tracked as construct-r67.17), breadth held behind the Phase 4/5 gates. Routing direction inverts on the evidence — keyword miss 0.663 [0.556, 0.755] on wording the catalog was never tuned against, against a 0.15 target with a structurally proven dictionary ceiling: where a capable host model is present it becomes the primary namer of implicated domains under the kernel's admission gates, the keyword map demoted to zero-model fallback and evidence layer. Nothing is adopted yet: the inversion is measured first (construct-r67.15) and adopted, if the figures support it, on construct-4jq. Release policy stated plainly in the preamble: no backwards compatibility with anything pre-`3.0.0`; the sole backward obligation remains `construct cleanup`.
+- `GLOSSARY.md` — two bindings added ahead of the code that will use them: **projection** (the spine made present inside an agent host; presence, never execution or completion) and **namer** (whatever names implicated domains when consulted; proposes, never certifies).
+
 ## 3.0.0-alpha.1 — 2026-08-05
 
 Two defects in what the CLI tells you about a run. Both were found by running the published alpha against real outcomes, and neither was caught by the 1,436-test suite or the ten-outcome dogfood — they are failures of what the surface *says*, not of what it does.

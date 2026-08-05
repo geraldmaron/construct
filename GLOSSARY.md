@@ -14,3 +14,5 @@ The natural-language naming binding for every surface — schemas, CLI, docs. `s
 | work log | accountability ledger | The append-only record of what was done, by whom, under what role. |
 | decision inbox | — | The short list of calls that are genuinely the user's to make. |
 | model capability floor | — | The weakest model tier a brief's work may run on: `any`, `capable`, or `frontier`. Ordinal and family-agnostic — never a vendor model name. Running below it degrades loudly and is recorded; it does not refuse. |
+| projection | — | The spine made present inside a user's agent host through one protocol surface (MCP). Presence only: adapters execute work, the projection exposes the loop, and neither can advance completion state. |
+| namer | — | Whatever names the domains an outcome implicates when consulted — a host model behind the kernel's namer seam. Its output passes the same admission gate as every other inference; it proposes, never certifies. |
