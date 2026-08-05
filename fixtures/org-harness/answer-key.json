@@ -34,7 +34,7 @@
     {
       "id": "R1",
       "documents": ["rfc-001-sync-impersonation.md", "tickets/T-28695.md"],
-      "keywords": ["impersonat|service account", "diff", "patch|rbac|permission"],
+      "keywords": ["impersonat|service account|serviceaccount", "diff", "patch|rbac|permission"],
       "gist": "Combining the impersonation RFC's narrow destination service accounts with T-28695's evidence that server-side diff demands patch authority on every resource type: rolling impersonation out fleet-wide silently breaks diff wherever the service account is scoped tightly — which is the whole point of the feature."
     },
     {
@@ -91,6 +91,7 @@
   "roleFindings": {
     "recorded": "2026-08-05, before the first run scored against them; advisory coverage, not a rung gate",
     "labeledBy": "Fable (recommend); accepted or rejected by Gerald per the LLM-as-judge protocol",
+    "amended": "2026-08-05: TP1 and L1 keyword terms widened after the first scored run showed both findings surfaced in vocabulary the terms did not anticipate; recommended by Fable, accepted by Gerald. The first run's recorded score stands unchanged. Same date, same treatment for R1's first term after the second run surfaced R1's exact document pair and mechanism as 'destinationServiceAccounts' (no space); the second run's recorded score also stands.",
     "roles": {
       "pm": ["C1", "X3"],
       "engineering": ["X1", "X2"],
@@ -103,7 +104,7 @@
       {
         "id": "TP1",
         "documents": ["notes/note-2.md", "tickets/T-24578.md"],
-        "keywords": ["hydrat", "applicationset|appset", "must not|restrict|block|conflict"],
+        "keywords": ["hydrat", "applicationset|appset", "must not|restrict|block|conflict|incompatib|collision|undermin"],
         "gist": "Program risk: the incident review's interim rule (hydrator pilot repos must not use progressive sync) collides with the planned Source-Hydrator-for-ApplicationSets work — that workstream is blocked on the debounce nobody has scheduled."
       },
       {
@@ -121,7 +122,7 @@
       {
         "id": "L1",
         "documents": ["tickets/T-28239.md", "rfc-002-manifest-hydrator.md"],
-        "keywords": ["sign|signature", "commit", "provenance|attest|supply|author"],
+        "keywords": ["sign|signature", "commit", "provenance|attest|supply|author|unsigned|spoof|integrity"],
         "gist": "Provenance exposure: the hydrator lands machine-authored commits on the branch deployments run from, and until hydrated commits are signed there is no attestation distinguishing them from human pushes — an unsigned write path into the deployed source of truth."
       }
     ]
