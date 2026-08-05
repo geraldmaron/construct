@@ -49,7 +49,11 @@
  * 9 adds `plans`, write-once: a run's plan is the recorded understanding it
  * worked from, and a plan that could be rewritten after the work would let
  * the record agree with whatever happened instead of what was intended —
- * replanning is a new run, not an edit.
+ * replanning is a new run, not an edit. Schema version 10 adds `notes`,
+ * append-only: a brain-dump note is the evidence the context loop's outputs
+ * cite — memory deltas and propagation proposals justify themselves by note
+ * line — and a citation into a note that could be edited afterward would be
+ * provenance pointing at whatever the note says now, not what the user said.
  *
  * SQLite via `node:sqlite`, which ships with Node — no dependency is added to a
  * CLI users install. STRATEGY ("What carries over") commits the tracker model to
@@ -74,7 +78,7 @@ import { accessSync, constants, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Paths } from '../paths.ts';
 
-export const SCHEMA_VERSION = 9;
+export const SCHEMA_VERSION = 10;
 
 export interface Store {
   readonly db: DatabaseSync;
@@ -446,6 +450,25 @@ BEGIN SELECT RAISE(ABORT, 'a plan is write-once; replanning is a new run'); END;
 CREATE TRIGGER IF NOT EXISTS plans_no_delete
 BEFORE DELETE ON plans
 BEGIN SELECT RAISE(ABORT, 'a plan is write-once; replanning is a new run'); END;
+
+CREATE TABLE IF NOT EXISTS notes (
+  id          TEXT PRIMARY KEY,
+  workspace   TEXT NOT NULL,
+  run         TEXT,
+  door        TEXT NOT NULL CHECK (door IN ('file-drop', 'host-session')),
+  body        TEXT NOT NULL,
+  recorded_at TEXT NOT NULL
+) STRICT;
+
+CREATE INDEX IF NOT EXISTS notes_workspace ON notes (workspace, recorded_at, id);
+
+CREATE TRIGGER IF NOT EXISTS notes_no_update
+BEFORE UPDATE ON notes
+BEGIN SELECT RAISE(ABORT, 'a note is cited evidence; it is never edited'); END;
+
+CREATE TRIGGER IF NOT EXISTS notes_no_delete
+BEFORE DELETE ON notes
+BEGIN SELECT RAISE(ABORT, 'a note is cited evidence; it is never deleted'); END;
 
 CREATE TABLE IF NOT EXISTS write_consent (
   workspace       TEXT PRIMARY KEY,

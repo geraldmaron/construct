@@ -25,6 +25,7 @@ import { listTasks } from '../../../src/kernel/store/tasks.ts';
 import { readWorkLog } from '../../../src/kernel/store/worklog.ts';
 import { readFeedback } from '../../../src/kernel/store/feedback.ts';
 import { raiseDecision, openDecisions } from '../../../src/kernel/store/decisions.ts';
+import { getNote, notesFor } from '../../../src/kernel/store/notes.ts';
 import {
   PROJECTION_TOOLS,
   createProjectionHandler,
@@ -77,6 +78,7 @@ test('the tool surface is exactly the read/append set — nothing dispatches, no
   assert.deepEqual(names, [
     'catalog',
     'decide',
+    'drop_note',
     'inbox',
     'record_outcome',
     'run_status',
@@ -305,6 +307,53 @@ test('initialize declares the server and tools/list matches the exported surface
     const listed = await f.handle({ jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} });
     const tools = (listed?.result as { tools: Array<{ name: string }> }).tools;
     assert.deepEqual(tools.map((t) => t.name), PROJECTION_TOOLS.map((t) => t.name));
+  } finally {
+    f.cleanup();
+  }
+});
+
+test('drop_note: both doors land the verbatim body, and the reply bounds what a citation may name', async () => {
+  const f = fixture();
+  try {
+    const typed = payload(
+      await f.handle(
+        call('drop_note', {
+          workspace: 'acme',
+          body: 'they want the pilot in Q4\npricing stays flat',
+          door: 'host-session',
+        }),
+      ),
+    );
+    assert.equal(typed.isError, false);
+    const body = typed.body as { note: string; door: string; lines: number };
+    assert.equal(body.door, 'host-session');
+    assert.equal(body.lines, 2);
+    assert.equal(getNote(f.store, body.note)?.body, 'they want the pilot in Q4\npricing stays flat');
+
+    const dropped = payload(
+      await f.handle(
+        call('drop_note', { workspace: 'acme', body: 'from the dropped file', door: 'file-drop' }),
+      ),
+    );
+    assert.equal((dropped.body as { door: string }).door, 'file-drop');
+  } finally {
+    f.cleanup();
+  }
+});
+
+test('drop_note refuses a missing workspace, an unknown door, and an empty body', async () => {
+  const f = fixture();
+  try {
+    for (const args of [
+      { body: 'x', door: 'host-session' },
+      { workspace: 'acme', body: 'x', door: 'email' },
+      { workspace: 'acme', body: '  ', door: 'file-drop' },
+    ]) {
+      const { body, isError } = payload(await f.handle(call('drop_note', args)));
+      assert.equal(isError, true, JSON.stringify(args));
+      assert.ok((body as { error: string }).error);
+    }
+    assert.equal(notesFor(f.store, 'acme').length, 0);
   } finally {
     f.cleanup();
   }

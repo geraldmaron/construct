@@ -38,6 +38,7 @@ import { openDecisions, resolveDecision } from '../../kernel/store/decisions.ts'
 import { countTasksByState, listTasks } from '../../kernel/store/tasks.ts';
 import { readWorkLog } from '../../kernel/store/worklog.ts';
 import { storeNamingCache } from '../../kernel/store/namings.ts';
+import { recordNote } from '../../kernel/store/notes.ts';
 import { startRun, startRunNamed } from '../../kernel/run/outcome.ts';
 import type { StartedRun } from '../../kernel/run/outcome.ts';
 import { DOMAINS } from '../../kernel/implication/domains.ts';
@@ -56,9 +57,9 @@ export interface ProjectionCore {
 }
 
 /**
- * The whole tool surface: reads, one append (an outcome), and two relays of
- * the user's own judgment (a decision, a verdict). Nothing here advances
- * completion, and the test suite asserts that by name.
+ * The whole tool surface: reads, two appends (an outcome, a note), and two
+ * relays of the user's own judgment (a decision, a verdict). Nothing here
+ * advances completion, and the test suite asserts that by name.
  */
 export const PROJECTION_TOOLS = [
   {
@@ -164,6 +165,33 @@ export const PROJECTION_TOOLS = [
         missed: { type: 'array', items: { type: 'string' }, description: 'Domains that should have surfaced and did not.' },
       },
       required: ['run'],
+    },
+  },
+  {
+    name: 'drop_note',
+    description:
+      'Record after-call notes exactly as they arrived — a brain dump the ' +
+      'user typed or dictated in this session, or the contents of a file ' +
+      'they dropped. Pass the text verbatim: the note is the evidence later ' +
+      'conclusions cite by line, so a cleaned-up paraphrase would be ' +
+      'provenance for words the user never said. Recording draws no ' +
+      'conclusions; densification and the context loop happen elsewhere.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        workspace: { type: 'string', description: 'The workspace these notes belong to.' },
+        body: { type: 'string', description: "The note text, verbatim, in the user's words." },
+        door: {
+          type: 'string',
+          enum: ['host-session', 'file-drop'],
+          description:
+            'How the note arrived: typed or dictated in this session ' +
+            '(host-session), or as a dropped file whose text you are relaying ' +
+            '(file-drop).',
+        },
+        run: { type: 'string', description: 'A run id, when the notes belong to one.' },
+      },
+      required: ['workspace', 'body', 'door'],
     },
   },
   {
@@ -312,6 +340,32 @@ async function callTool(
           at: core.clock(),
         });
         return toolResult(id, { run, ...recorded });
+      }
+      case 'drop_note': {
+        const workspace = typeof input.workspace === 'string' ? input.workspace.trim() : '';
+        if (!workspace) throw new RangeError('drop_note requires a non-empty string "workspace"');
+        const body = typeof input.body === 'string' ? input.body : '';
+        const door = input.door;
+        if (door !== 'host-session' && door !== 'file-drop') {
+          throw new RangeError('drop_note "door" must be "host-session" or "file-drop"');
+        }
+        const at = core.clock();
+        // Two notes can arrive in one clock tick; the count only grows (the
+        // table is append-only), so it makes the id unique where the
+        // timestamp alone is not.
+        const { n } = core.store.db.prepare('SELECT COUNT(*) AS n FROM notes').get() as { n: number };
+        const noteId = `note-${at.replace(/[-:.TZ]/g, '')}-${n + 1}`;
+        recordNote(core.store, {
+          id: noteId,
+          workspace,
+          run: run ?? null,
+          door,
+          body,
+          recordedAt: at,
+        });
+        // The line count is what a later citation is bounded by; returning it
+        // tells the model what `note:<id>#L<n>` can legally name.
+        return toolResult(id, { note: noteId, door, lines: body.split('\n').length });
       }
       case 'validate_brief':
         if (!('brief' in input)) throw new RangeError('validate_brief requires a "brief" argument');
