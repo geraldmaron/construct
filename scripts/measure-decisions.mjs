@@ -793,6 +793,11 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
   const modelFlag = process.argv.indexOf('--namer-model');
   const MODEL =
     modelFlag !== -1 ? process.argv[modelFlag + 1] : NAMER_HOST === 'ollama' ? 'qwen3.5:4b' : undefined;
+  // A wrapper binary (e.g. one that spawns claude through `op run` so a
+  // password manager injects credentials into the child) — Node's spawn does
+  // not see shell aliases, so an aliased auth path must be passed explicitly.
+  const binaryFlag = process.argv.indexOf('--namer-binary');
+  const BINARY = binaryFlag !== -1 ? process.argv[binaryFlag + 1] : undefined;
   const byName = domainsByName(DOMAINS);
 
   let calls = 0;
@@ -810,7 +815,10 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
     // from each envelope; modelRan is collected so the figures name what
     // actually served them, not what was requested.
     const { createClaudeAdapter } = await import('../src/hosts/claude/adapter.ts');
-    const adapter = createClaudeAdapter(MODEL ? { model: MODEL } : {});
+    const adapter = createClaudeAdapter({
+      ...(MODEL ? { model: MODEL } : {}),
+      ...(BINARY ? { binary: BINARY } : {}),
+    });
     await adapter.init();
     const metered = {
       ...adapter,
