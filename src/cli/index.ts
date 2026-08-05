@@ -28,6 +28,14 @@ import {
 import type { EngagementMode, SourceKind } from '../kernel/store/sources.ts';
 import { createHostDensifier } from '../hosts/densifier.ts';
 import type { DensifiedIntake } from '../kernel/intake/densify.ts';
+import { recordNote, resolveNoteCitation } from '../kernel/store/notes.ts';
+import { applyContextLoop } from '../kernel/context/loop.ts';
+import type { MemoryDelta, PropagationProposal } from '../kernel/context/loop.ts';
+import { toProducedLoop } from '../kernel/context/produce.ts';
+import type { DeltaChallenge, ProducedLoop } from '../kernel/context/produce.ts';
+import { screenObservations } from '../kernel/context/observations.ts';
+import { operationalLessonsFor } from '../kernel/lessons/admission.ts';
+import { createHostChallenger, createHostProducer } from '../hosts/contextloop.ts';
 import { openDecisions, resolveDecision } from '../kernel/store/decisions.ts';
 import { countTasksByState, getTask, listTasks } from '../kernel/store/tasks.ts';
 import { readFeedback } from '../kernel/store/feedback.ts';
@@ -625,6 +633,268 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
     }
     reportRun(started);
     planRun(store, started, densified, 'default', at);
+    return 0;
+  });
+}
+
+const NOTES_USAGE =
+  'usage: construct notes <file> [--workspace=<name>] [--run=<id>] ' +
+  '[--host=<opencode|claude> [--model=…] [--binary=…] [--dir=…]]\n';
+
+export interface NotesArgs {
+  readonly file: string;
+  readonly workspace: string;
+  readonly run?: string;
+  readonly host?: 'opencode' | 'claude';
+  readonly model?: string;
+  readonly binary?: string;
+  readonly dir?: string;
+}
+
+export function parseNotesArgs(argv: string[]): NotesArgs {
+  const flags: Record<string, string> = {};
+  const words: string[] = [];
+  for (const arg of argv) {
+    const match = /^--([a-z-]+)=(.*)$/.exec(arg);
+    if (match) flags[match[1]] = match[2];
+    else words.push(arg);
+  }
+  if (words.length !== 1) {
+    throw new Error(words.length === 0 ? 'a notes file is required' : 'one notes file at a time');
+  }
+  const host = flags.host;
+  if (host !== undefined && host !== 'opencode' && host !== 'claude') {
+    throw new Error(`unknown host "${host}" (expected opencode or claude)`);
+  }
+  const hostFlags = ['model', 'binary', 'dir'].filter((f) => flags[f] !== undefined);
+  if (host === undefined && hostFlags.length > 0) {
+    throw new Error(
+      `--${hostFlags[0]} only applies when a host is named; add --host=<opencode|claude>, or drop the flag`,
+    );
+  }
+  return {
+    file: words[0] as string,
+    workspace: flags.workspace ?? 'default',
+    run: flags.run,
+    host,
+    model: flags.model,
+    binary: flags.binary,
+    dir: flags.dir,
+  };
+}
+
+/**
+ * Drop after-call notes and, with a host named, run the context loop over
+ * them: densify, produce deltas/proposals/observations, challenge each delta
+ * adversarially, then apply — deltas through the admission gate, proposals
+ * into the rung 0 queue, observations through the citation screen.
+ *
+ * Without --host, recording is all that happens: the loop is model work, and
+ * the free path says so instead of guessing. The note is kept either way —
+ * the evidence lands first, and a later pass can always run over it.
+ */
+export async function notes(argv: string[], hostOverride?: HostAdapter): Promise<number> {
+  let args: NotesArgs;
+  try {
+    args = parseNotesArgs(argv);
+  } catch (error) {
+    process.stderr.write(`notes: ${(error as Error).message}\n${NOTES_USAGE}`);
+    return 2;
+  }
+
+  let body: string;
+  try {
+    body = readFileSync(args.file, 'utf8');
+  } catch (error) {
+    process.stderr.write(`notes: cannot read ${args.file} — ${(error as Error).message}\n`);
+    return 1;
+  }
+
+  return withStoreAsync(async (store) => {
+    const at = now();
+    const noteId = `note-${at.replace(/[-:.TZ]/g, '')}`;
+    try {
+      recordNote(store, {
+        id: noteId,
+        workspace: args.workspace,
+        run: args.run ?? null,
+        door: 'file-drop',
+        body,
+        recordedAt: at,
+      });
+    } catch (error) {
+      process.stderr.write(`notes: ${(error as Error).message}\n`);
+      return 1;
+    }
+    const lineCount = body.split('\n').length;
+    process.stdout.write(
+      `note ${noteId}: ${lineCount} line${lineCount === 1 ? '' : 's'} recorded verbatim in workspace "${args.workspace}".\n`,
+    );
+
+    if (args.host === undefined && hostOverride === undefined) {
+      process.stdout.write(
+        '\nThe note is kept; drawing conclusions from it is model work, at cost:\n' +
+          `  construct notes --host=<opencode|claude> ${args.file}\n`,
+      );
+      return 0;
+    }
+
+    const host =
+      hostOverride ??
+      (args.host === 'claude'
+        ? createClaudeAdapter({ binary: args.binary, model: args.model, dir: args.dir })
+        : createOpenCodeAdapter({ binary: args.binary, model: args.model, dir: args.dir }));
+    try {
+      await host.init();
+    } catch (error) {
+      process.stderr.write(
+        `notes: host "${host.name}" is not available — ${(error as Error).message}. ` +
+          'The note is recorded; run the loop again when the host is.\n',
+      );
+      return 1;
+    }
+
+    // Densify first: the confirm-intent summary is a restatement of this
+    // reading, and a loop that cannot state its reading has nothing to
+    // confirm. The note is already safe, so failing here loses no evidence.
+    let densified: DensifiedIntake;
+    try {
+      densified = await createHostDensifier(host)(body);
+    } catch (error) {
+      process.stderr.write(
+        `notes: the note could not be densified (${(error as Error).message}). ` +
+          `It is recorded as ${noteId}; run the loop again when the host answers.\n`,
+      );
+      return 1;
+    }
+
+    const sources = sourcesFor(store, args.workspace);
+    let produced: ProducedLoop;
+    try {
+      const reply = await createHostProducer(host)({
+        noteBody: body,
+        noteId,
+        lessons: operationalLessonsFor(store, args.workspace).map((l) => l.body),
+        sources: sources.map((s) => ({ id: s.id, kind: s.kind, locator: s.locator })),
+      });
+      produced = toProducedLoop(reply, noteId);
+    } catch (error) {
+      process.stderr.write(
+        `notes: the loop could not read the note (${(error as Error).message}). ` +
+          `It is recorded as ${noteId}; run the loop again when the host answers.\n`,
+      );
+      return 1;
+    }
+    for (const reason of produced.discarded) {
+      process.stdout.write(`  discarded: ${reason}\n`);
+    }
+
+    // The screen before the gate: a citation that does not resolve, or a
+    // proposal against an undeclared source, is dropped here with its reason
+    // so one bad item does not abort the pass; the loop's hard gate stays the
+    // backstop for anything that slips past.
+    const sourceIds = new Set(sources.map((s) => s.id));
+    const challenger = createHostChallenger(host);
+    const deltas: MemoryDelta[] = [];
+    for (const [i, delta] of produced.deltas.entries()) {
+      const cited = resolveNoteCitation(store, delta.citation);
+      if (!cited) {
+        process.stdout.write(
+          `  discarded: delta "${delta.body.slice(0, 60)}" cites ${delta.citation}, which is not a line of this note\n`,
+        );
+        continue;
+      }
+      let challenge: DeltaChallenge;
+      try {
+        challenge = await challenger(delta, cited.text);
+      } catch (error) {
+        process.stdout.write(
+          `  held back: delta "${delta.body.slice(0, 60)}" could not be challenged (${(error as Error).message}); an unchallenged delta is not recorded\n`,
+        );
+        continue;
+      }
+      if (!challenge.upheld) {
+        process.stdout.write(
+          `  refuted: delta "${delta.body.slice(0, 60)}" — ${challenge.detail}\n`,
+        );
+        continue;
+      }
+      deltas.push({
+        id: `${noteId}-d${i + 1}`,
+        kind: delta.kind,
+        domain: delta.domain,
+        body: delta.body,
+        citation: delta.citation,
+        external: delta.external,
+        basis: { kind: 'adversarial-pass', detail: challenge.detail },
+      });
+    }
+
+    const proposals: PropagationProposal[] = [];
+    for (const [i, proposal] of produced.proposals.entries()) {
+      if (!sourceIds.has(proposal.source)) {
+        process.stdout.write(
+          `  discarded: proposal "${proposal.change.slice(0, 60)}" targets ${proposal.source}, which is not a declared source\n`,
+        );
+        continue;
+      }
+      if (!resolveNoteCitation(store, proposal.justification)) {
+        process.stdout.write(
+          `  discarded: proposal "${proposal.change.slice(0, 60)}" cites ${proposal.justification}, which is not a line of this note\n`,
+        );
+        continue;
+      }
+      proposals.push({
+        id: `${noteId}-p${i + 1}`,
+        source: proposal.source,
+        change: proposal.change,
+        justification: proposal.justification,
+        risk: proposal.risk,
+      });
+    }
+
+    const result = applyContextLoop(
+      store,
+      {
+        workspace: args.workspace,
+        run: args.run ?? noteId,
+        noteId,
+        densified,
+        deltas,
+        proposals,
+      },
+      at,
+    );
+
+    process.stdout.write(`\n${result.summary}\n`);
+
+    if (result.admissions.length > 0) {
+      process.stdout.write('\nmemory deltas (through the admission gate):\n');
+      for (const admission of result.admissions) {
+        process.stdout.write(`  ${admission.verdict}: ${admission.lesson} — ${admission.reason}\n`);
+      }
+    }
+    if (result.filed.length > 0) {
+      process.stdout.write(
+        `\nfiled ${result.filed.length} propagation proposal${result.filed.length === 1 ? '' : 's'} — ` +
+          'each waits for a decision; nothing was written outward:\n',
+      );
+      for (const id of result.filed) process.stdout.write(`  ${id}\n`);
+    }
+
+    const screened = screenObservations(produced.observations, sources);
+    if (screened.flags.length > 0) {
+      process.stdout.write('\ncross-source drift:\n');
+      for (const flag of screened.flags) {
+        process.stdout.write(
+          `  ${flag.claim}\n    cites: ${flag.citations.map((c) => `${c.source} ${c.document}`).join('; ')}\n`,
+        );
+      }
+    }
+    for (const drop of screened.discarded) {
+      process.stdout.write(`  discarded observation: ${drop.observation.claim.slice(0, 60)} — ${drop.reason}\n`);
+    }
+
     return 0;
   });
 }
@@ -1625,7 +1895,7 @@ export function mode(argv: string[]): number {
   });
 }
 
-const USAGE = 'usage: construct <outcome|work|show|plan|source|mode|watch|waive|verdict|corpus|log|inbox|decide|serve|doctor|cleanup|version>\n';
+const USAGE = 'usage: construct <outcome|work|notes|show|plan|source|mode|watch|waive|verdict|corpus|log|inbox|decide|serve|doctor|cleanup|version>\n';
 
 /**
  * Async because `work` dispatches to a host, and `outcome --host=…` may
@@ -1647,6 +1917,8 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
 async function run(argv: string[]): Promise<number> {
   const command = argv[0] ?? 'help';
   switch (command) {
+    case 'notes':
+      return notes(argv.slice(1));
     case 'outcome':
       return outcome(argv.slice(1));
     case 'work':
