@@ -166,19 +166,20 @@ coder from the catalog author's own family would have measured one family agreei
 
 | statistic | point | bootstrap 95% CI |
 |---|---|---|
-| Krippendorff's α (MASI, multi-label) | **0.7627** | [0.6317, 0.8857] |
+| Krippendorff's α (MASI, multi-label) | **0.7627** | [0.6286, 0.8860] |
 | Krippendorff's α (exact-match nominal) | 0.6905 | — |
-| implied Bayes error floor | 0.1235 | **[0.0517, 0.2071]** |
+| implied Bayes error floor | 0.1235 | **[0.0521, 0.2071]** |
 
 Intervals are 4000 resamples over units — the *outcome* is the resampling unit, because the
 outcome is what varies.
 
 **The verdict, stated as the data licenses it and not as the script prints it.** The point
 estimate puts 0.15 above the floor. The interval does not settle it: the floor's 95% CI
-*contains* 0.15, and across the resamples the floor sits below 0.15 **76.9% of the time, not
+*contains* 0.15, and across the resamples the floor sits below 0.15 **76.7% of the time, not
 95%**. The defensible claim is *"the floor is probably but not demonstrably below 0.15."*
-`compute-alpha.mjs` currently prints a bare above/below with no width, which is the same defect
-class §1 corrected everywhere else; filed as `construct-eib`.
+`compute-alpha.mjs` now prints these intervals and this verdict itself (`construct-eib`); it
+previously printed a bare above/below with no width, the same defect class §1 corrected
+everywhere else. The numbers above are its output, not a separate calculation.
 
 **What this does and does not establish.** It establishes that the labeling task has a stable
 answer: two systems with different training largely agree, so annotation ambiguity is unlikely

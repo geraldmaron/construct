@@ -22,7 +22,7 @@
  */
 
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 
 import { krippendorffAlpha, masiDistance, nominalSetDistance } from '../../src/kernel/metrics/krippendorff.ts';
@@ -89,6 +89,78 @@ function bayesFloorFromDisagreement(Do) {
   return (1 - Math.sqrt(1 - 2 * Do)) / 2;
 }
 
+/**
+ * Resample the study to get widths on alpha and the floor (construct-eib).
+ *
+ * THE UNIT IS THE OUTCOME, not the coder-outcome pair. What varies between
+ * hypothetical repeats of this study is which outcomes were drawn, not which
+ * coders looked at them — resampling pairs independently would break the
+ * pairing alpha is computed over and understate the width.
+ *
+ * Why this exists at all: at n=34 the point floor and the target sit close
+ * enough that a bare above/below is a coin-flip dressed as a finding. The first
+ * real run put the point floor at 0.1235 against a 0.15 target and the interval
+ * straddled it — the verdict and the interval disagreed. Reporting the point
+ * alone would be the defect construct-2jb.2 withdrew claims for across this
+ * project, committed by the instrument that decides whether the project's
+ * headline target is reachable at all.
+ *
+ * Deterministic by construction: a fixed seed, so re-running the script on the
+ * same sheets reproduces the same interval. A measurement that moves when
+ * nobody changed anything cannot be audited.
+ */
+export function bootstrap(observations, target, resamples = 4000) {
+  const units = [...new Set(observations.map((o) => o.unit))];
+  const byUnit = new Map(units.map((u) => [u, observations.filter((o) => o.unit === u)]));
+
+  let seed = 20260805;
+  const next = () => {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    return seed / 0x7fffffff;
+  };
+
+  const alphas = [];
+  const floors = [];
+  let belowTarget = 0;
+  for (let i = 0; i < resamples; i += 1) {
+    const drawn = [];
+    for (let k = 0; k < units.length; k += 1) {
+      const unit = units[Math.floor(next() * units.length)];
+      // Re-key so the same outcome drawn twice counts as two units rather than
+      // collapsing into one.
+      for (const o of byUnit.get(unit)) drawn.push({ ...o, unit: `${o.unit}#${String(k)}` });
+    }
+    const r = krippendorffAlpha(drawn, masiDistance);
+
+    // Alpha and the floor fail independently, and conflating them biases the
+    // interval. A resample where every coder agreed has De = 0, so alpha is
+    // undefined (Krippendorff's own guidance — a corpus with zero variance says
+    // nothing about reliability) — but its floor is not undefined, it is
+    // exactly 0, and dropping those resamples would silently push the floor's
+    // lower bound up and make the study look more pessimistic than it is.
+    if (Number.isFinite(r.alpha)) alphas.push(r.alpha);
+
+    const f = bayesFloorFromDisagreement(r.Do);
+    if (f === null) continue;
+    floors.push(f);
+    if (f < target) belowTarget += 1;
+  }
+
+  const quantile = (arr, p) => {
+    const sorted = [...arr].sort((a, b) => a - b);
+    return sorted[Math.floor(p * (sorted.length - 1))];
+  };
+  return {
+    resamples: floors.length,
+    alphaResamples: alphas.length,
+    alphaLo: quantile(alphas, 0.025),
+    alphaHi: quantile(alphas, 0.975),
+    floorLo: quantile(floors, 0.025),
+    floorHi: quantile(floors, 0.975),
+    pBelowTarget: floors.length > 0 ? belowTarget / floors.length : null,
+  };
+}
+
 function main() {
   const files = loadReturnedSheets();
   if (files.length < 2) {
@@ -148,14 +220,51 @@ function main() {
   console.log(`  floor = ${floor.toFixed(4)}`);
   console.log('');
 
-  if (TARGET < floor) {
-    console.log(`VERDICT: the 0.15 target is BELOW the implied floor (${floor.toFixed(4)}).`);
+  const boot = bootstrap(observations, TARGET);
+  console.log(`Bootstrap over units (${boot.resamples} resamples, fixed seed — the outcome is the`);
+  console.log('resampling unit, because the outcome is what varies between repeats of this study):');
+  console.log(`  alpha 95% CI = [${boot.alphaLo.toFixed(4)}, ${boot.alphaHi.toFixed(4)}]`);
+  console.log(`  floor 95% CI = [${boot.floorLo.toFixed(4)}, ${boot.floorHi.toFixed(4)}]`);
+  console.log('');
+
+  // The verdict is stated as the resamples license it. A bare above/below on a
+  // point estimate is the defect construct-eib was filed for: at these sample
+  // sizes the interval routinely straddles the target, and resolving that by
+  // point estimate manufactures a finding.
+  const straddles = boot.floorLo <= TARGET && TARGET <= boot.floorHi;
+  const pct = boot.pBelowTarget === null ? null : (boot.pBelowTarget * 100).toFixed(1);
+
+  if (straddles) {
+    console.log(`VERDICT: UNSETTLED. The floor's 95% interval CONTAINS the ${TARGET} target.`);
+    console.log(`The floor sits below ${TARGET} in ${pct}% of resamples — probable, not demonstrated.`);
+    console.log(`Defensible: "the floor is probably but not demonstrably below ${TARGET}".`);
+    console.log(`NOT defensible: "the ${TARGET} target is above the floor" — that is this point`);
+    console.log('estimate reported in a register its sample size cannot support.');
+    console.log('Narrowing it takes more units, not more resamples.');
+  } else if (TARGET < boot.floorLo) {
+    console.log(`VERDICT: the ${TARGET} target is BELOW the implied floor, and the interval agrees`);
+    console.log(`(floor 95% CI [${boot.floorLo.toFixed(4)}, ${boot.floorHi.toFixed(4)}] excludes it).`);
     console.log('No classifier can be scored below the rate at which the ground truth itself');
     console.log('disagrees with itself. The target is unreachable by construction under this model.');
   } else {
-    console.log(`VERDICT: the 0.15 target is ABOVE the implied floor (${floor.toFixed(4)}).`);
+    console.log(`VERDICT: the ${TARGET} target is ABOVE the implied floor, and the interval agrees`);
+    console.log(`(floor 95% CI [${boot.floorLo.toFixed(4)}, ${boot.floorHi.toFixed(4)}] excludes it).`);
+    console.log(`The floor sits below ${TARGET} in ${pct}% of resamples.`);
     console.log('The target is not ruled out by annotator disagreement under this model.');
   }
+  console.log('');
+  console.log('CAVEAT, carried with every number above: these coders are what they are. If any');
+  console.log('of them is a model, observed alpha is an UPPER bound on true independent');
+  console.log('agreement and the floor a LOWER bound — correlated training, correlated errors.');
 }
 
-main();
+export function verdictFor(boot, target) {
+  if (boot.floorLo <= target && target <= boot.floorHi) return 'unsettled';
+  return target < boot.floorLo ? 'target-below-floor' : 'target-above-floor';
+}
+
+// Only when run as a script. Importing this file (a test does) must not execute
+// the study or exit the process.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main();
+}
