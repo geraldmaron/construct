@@ -1,0 +1,100 @@
+{
+  "recorded": "2026-08-05",
+  "recordedBefore": "any scored run; this key is committed ahead of the first run and never edited to fit one",
+  "corpusRoot": "corpus",
+  "crossReferences": [
+    {
+      "id": "X1",
+      "documents": ["tickets/T-26443.md", "rfc-002-manifest-hydrator.md"],
+      "keywords": ["push-to-stage|stage branch", "promot|deployment branch"],
+      "gist": "The stale-manifest sync in T-26443 is a consequence of the RFC's push-to-stage mode: the external promoter has not moved fresh manifests, so auto-sync deploys whatever the stage branch last held."
+    },
+    {
+      "id": "X2",
+      "documents": ["tickets/T-26271.md", "rfc-001-sync-impersonation.md"],
+      "keywords": ["impersonat", "service account", "diff"],
+      "gist": "The CI diff failures in T-26271 track the impersonation RFC: with the flag on, operations run as the destination service account, not the broad cluster-secret credential the reporter is inspecting."
+    },
+    {
+      "id": "X3",
+      "documents": ["tickets/T-28511.md", "prd-progressive-sync-deletion.md"],
+      "keywords": ["reverse", "delet", "wait"],
+      "gist": "The delete/re-create loop in T-28511 interacts with the PRD's reverse deletion strategy: the strategy waits for full deletion before advancing, and a stuck Progressing resource means the wait never completes."
+    }
+  ],
+  "conflicts": [
+    {
+      "id": "C1",
+      "documents": ["strategy.md", "prd-progressive-sync-deletion.md"],
+      "keywords": ["delet", "manual|out of scope|will not", "order"],
+      "gist": "The strategy doc rules out ordered/automated deletion of ApplicationSet children (teardown stays manual); the PRD promises exactly that ordered automated deletion."
+    }
+  ],
+  "risks": [
+    {
+      "id": "R1",
+      "documents": ["rfc-001-sync-impersonation.md", "tickets/T-28695.md"],
+      "keywords": ["impersonat|service account", "diff", "patch|rbac|permission"],
+      "gist": "Combining the impersonation RFC's narrow destination service accounts with T-28695's evidence that server-side diff demands patch authority on every resource type: rolling impersonation out fleet-wide silently breaks diff wherever the service account is scoped tightly — which is the whole point of the feature."
+    },
+    {
+      "id": "R2",
+      "documents": ["rfc-002-manifest-hydrator.md", "tickets/T-27949.md"],
+      "keywords": ["hydrat", "commit|push", "wave|restart|progressive"],
+      "gist": "Combining the hydrator RFC (every hydration cycle lands a new commit on the deployed-from branch) with T-27949 (progressive sync restarts its wave on source change): on hydrated repos, rollout waves restart every hydration cycle and large rollouts may never complete."
+    }
+  ],
+  "notesDrop": {
+    "notes": ["notes/note-1.md", "notes/note-2.md"],
+    "expectedProposals": [
+      {
+        "id": "P1",
+        "target": "tickets/T-26271.md",
+        "keywords": ["destination service account|impersonat", "root cause|diff"],
+        "noteLineKeywords": ["root-caused|root cause", "T-26271"],
+        "gist": "Record the root cause on T-26271: with impersonation on, diff runs as the destination service account lacking patch on cluster-scoped resources."
+      },
+      {
+        "id": "P2",
+        "target": "tickets/T-27327.md",
+        "keywords": ["deprioriti|next quarter|q3"],
+        "noteLineKeywords": ["deprioriti", "T-27327"],
+        "gist": "Note on T-27327 that hydrator history & rollback is deprioritized to next quarter."
+      },
+      {
+        "id": "P3",
+        "target": "tickets/T-27949.md",
+        "keywords": ["must not use progressive sync|not use progressive|debounce"],
+        "noteLineKeywords": ["debounce|must not use progressive"],
+        "gist": "Record on T-27949 the interim restriction: hydrator pilot repos must not use progressive sync until a debounce exists."
+      }
+    ],
+    "expectedDeltas": [
+      {
+        "id": "D1",
+        "keywords": ["impersonat", "per-project flag"],
+        "noteLineKeywords": ["per-project flag"],
+        "gist": "Decision: impersonation rollout is gated behind a per-project flag; no project enables it until diff is fixed."
+      },
+      {
+        "id": "D2",
+        "keywords": ["allatonce", "delet"],
+        "noteLineKeywords": ["AllAtOnce"],
+        "gist": "Standing practice: switch an ApplicationSet to AllAtOnce deletion before manually deleting any child Application."
+      }
+    ],
+    "distractors": [
+      "note-1's stage-branch promoter ownership item is explicitly parked: a proposal or delta built on it is over-eager, not scored as a hit.",
+      "note-2's strategy-vs-PRD question is explicitly left undecided: the right output is a drift observation citing both documents, not a memory delta claiming a decision."
+    ]
+  },
+  "scoring": {
+    "keywordSemantics": "each keywords entry is AND of terms; a term may hold |-separated alternatives (OR); matching is case-insensitive substring",
+    "rungs": {
+      "rung0": "provenance validity: every citation in the run output names a document that exists in corpus/; every scored claim carries at least one citation",
+      "rung1": "grounded synthesis: X1, X2, X3 each surfaced with both documents cited and keywords present",
+      "rung2": "artifact-first: R1 and R2 surfaced evidence-tied (both documents cited), and claims use sources rather than list them (substantive-claim ratio >= 0.8)",
+      "rung3": "context loop: C1 drift detected citing both documents; P1-P3 hit their target tickets with justifying note lines; D1-D2 present with matching cited lines"
+    }
+  }
+}
