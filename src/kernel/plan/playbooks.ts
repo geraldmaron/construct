@@ -12,6 +12,7 @@
  */
 
 import { DOMAINS } from '../implication/domains.ts';
+import { lensForDomain } from './lenses.ts';
 import { PLAYBOOK_STAGES } from './schema.ts';
 import type { DeliverableTemplate, PlaybookStage, Slot } from './schema.ts';
 
@@ -90,10 +91,20 @@ const DEFAULT_TEMPLATE: DeliverableTemplate = {
  * generic template with visible empty slots beats refusing to plan.
  */
 export function playbookFor(domain: string): Playbook {
+  const base = TEMPLATES[domain] ?? DEFAULT_TEMPLATE;
+  // A lens that deepens this domain adds its slots to the template, so lens
+  // depth is checkable sufficiency, not prose the deliverable may skip. Slots
+  // the base template already names are not doubled.
+  const lens = lensForDomain(domain);
+  const added = (lens?.slots ?? []).filter(
+    (s) => !base.slots.some((existing) => existing.name === s.name),
+  );
+  const template =
+    added.length > 0 ? { ...base, slots: [...base.slots, ...added] } : base;
   return {
     domain,
     stages: PLAYBOOK_STAGES,
-    template: TEMPLATES[domain] ?? DEFAULT_TEMPLATE,
+    template,
   };
 }
 

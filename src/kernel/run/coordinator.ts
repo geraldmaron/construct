@@ -52,6 +52,7 @@ import { ROLE_GRANTS, issueRoleToken } from '../capabilities/tokens.ts';
 import { buildRoleEnv } from './roleenv.ts';
 import { NO_WRITE_SURFACE_NOTE, WRITE_SURFACE_PROTOCOL } from './rolewrite.ts';
 import { playbookFor } from '../plan/playbooks.ts';
+import { lensForDomain } from '../plan/lenses.ts';
 import { voiceProtocol } from '../voice/voice.ts';
 import type { VoiceOverride } from '../voice/voice.ts';
 
@@ -227,6 +228,39 @@ function workProductDirective(role: string): string {
   );
 }
 
+/**
+ * The role's lens, spoken before the work: posture, the question set the role
+ * works through, when to escalate, and any standing label or jurisdiction
+ * boundary. Depth a role was never shown is depth it cannot apply; the lens is
+ * data (plan/lenses.ts) so what a role knows is committed and testable rather
+ * than living in whoever last edited a prompt.
+ */
+function lensDirective(role: string): string {
+  const lens = lensForDomain(role);
+  if (!lens) return '';
+  const questions = lens.questions.map((q) => `- ${q}`).join('\n');
+  const escalation = lens.escalation.map((e) => `- ${e}`).join('\n');
+  const labeling = lens.labeling
+    ? `Every deliverable under this lens carries the label: ${lens.labeling}.\n`
+    : '';
+  const jurisdictions = lens.jurisdictions
+    ? lens.jurisdictions.covered.length > 0
+      ? `Jurisdictions covered: ${lens.jurisdictions.covered.join(', ')}. ` +
+        `Outside them: ${lens.jurisdictions.outside}\n`
+      : `${lens.jurisdictions.outside}\n`
+    : '';
+  return (
+    `Your posture: ${lens.posture}\n\n` +
+    'Work through these questions against the material; each finding cites what supports it:\n' +
+    `${questions}\n\n` +
+    'Escalate rather than push past your remit:\n' +
+    `${escalation}\n` +
+    labeling +
+    jurisdictions +
+    '\n'
+  );
+}
+
 export function assignmentFor(
   brief: Brief,
   catalog: readonly Domain[] = DOMAINS,
@@ -265,6 +299,7 @@ export function assignmentFor(
     `You are acting as the ${brief.role} role.${concern}\n\n` +
     `The outcome the user asked for: ${brief.outcome}\n\n` +
     engagement +
+    lensDirective(brief.role) +
     workProductDirective(brief.role) +
     MATERIAL_PROTOCOL +
     '\n\n' +

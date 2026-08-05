@@ -389,6 +389,22 @@ test('the assignment states the role and its concern, and nothing it cannot supp
   assert.ok(!unknown.includes('Your concern:'));
 });
 
+test('a deepened role is shown its lens: posture, questions, escalation, labels', () => {
+  const text = assignmentFor(brief('compliance'));
+  assert.match(text, /Your posture: Controls and evidence over intent/);
+  assert.match(text, /which identity acts/, 'the question set travels with the dispatch');
+  assert.match(text, /Escalate rather than push past your remit/);
+  assert.match(text, /dogfood-only/);
+
+  // A legal-lens domain declares the jurisdiction boundary out loud.
+  const contracts = assignmentFor(brief('contracts'));
+  assert.match(contracts, /template-for-review/);
+  assert.match(contracts, /No jurisdiction is covered/);
+
+  // A domain no lens deepens gets no invented posture.
+  assert.ok(!assignmentFor(brief('security')).includes('Your posture:'));
+});
+
 test('a role holding the two writes is told it has them, and what they are for', () => {
   // The surface was built, registered and reachable, and the
   // assignment never mentioned it. A live four-role run finished with every role
