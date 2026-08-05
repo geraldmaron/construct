@@ -24,6 +24,11 @@
  * primary (2026-08-05) — an alpha carries no schema
  * compatibility (STRATEGY preamble), so the rename is a rename, not a
  * migration; a store created before it simply carries an unused table.
+ * Schema version 5 adds `lessons` and `workspace_consent`, additive again:
+ * the lesson store's scope column is the confidentiality property — a lesson
+ * row cannot exist without a workspace, and immutability is a trigger, not a
+ * caller convention, because a lesson that can be edited after admission is
+ * not evidence of anything.
  *
  * SQLite via `node:sqlite`, which ships with Node — no dependency is added to a
  * CLI users install. STRATEGY ("What carries over") commits the tracker model to
@@ -48,7 +53,7 @@ import { accessSync, constants, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Paths } from '../paths.ts';
 
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 export interface Store {
   readonly db: DatabaseSync;
@@ -253,6 +258,36 @@ CREATE TABLE IF NOT EXISTS naming_cache (
 CREATE TRIGGER IF NOT EXISTS naming_cache_no_update
 BEFORE UPDATE ON naming_cache
 BEGIN SELECT RAISE(ABORT, 'naming_cache is write-once'); END;
+
+CREATE TABLE IF NOT EXISTS lessons (
+  id            TEXT PRIMARY KEY,
+  workspace     TEXT NOT NULL,
+  scope         TEXT NOT NULL CHECK (scope IN ('workspace', 'global')),
+  kind          TEXT NOT NULL,
+  body          TEXT NOT NULL,
+  citation      TEXT NOT NULL,
+  external      INTEGER NOT NULL CHECK (external IN (0, 1)),
+  supersedes    TEXT,
+  promoted_from TEXT,
+  created_at    TEXT NOT NULL
+) STRICT;
+
+CREATE INDEX IF NOT EXISTS lessons_workspace ON lessons (workspace, scope, created_at);
+CREATE INDEX IF NOT EXISTS lessons_global ON lessons (scope, created_at);
+
+CREATE TRIGGER IF NOT EXISTS lessons_no_update
+BEFORE UPDATE ON lessons
+BEGIN SELECT RAISE(ABORT, 'lessons are immutable strata'); END;
+
+CREATE TRIGGER IF NOT EXISTS lessons_no_delete
+BEFORE DELETE ON lessons
+BEGIN SELECT RAISE(ABORT, 'lessons are immutable strata'); END;
+
+CREATE TABLE IF NOT EXISTS workspace_consent (
+  workspace       TEXT PRIMARY KEY,
+  consumes_global INTEGER NOT NULL CHECK (consumes_global IN (0, 1)),
+  recorded_at     TEXT NOT NULL
+) STRICT;
 `;
 
 /** The substrate's file under an injected Paths. Callers do not build this path. */
