@@ -31,6 +31,7 @@ import { createClaudeAdapter } from '../hosts/claude/adapter.ts';
 import { loadOrCreateSecret, loadSecret } from '../kernel/capabilities/secretfile.ts';
 import { readRoleEnv } from '../kernel/run/roleenv.ts';
 import { serveRole } from './roleserve.ts';
+import { serveProjection } from '../hosts/mcp/projection.ts';
 import { join } from 'node:path';
 
 const MIN_NODE = { major: 22, minor: 18 };
@@ -258,6 +259,24 @@ async function roleServe(): Promise<number> {
     store.close();
   }
   return 0;
+}
+
+/**
+ * Serve the spine's projection over MCP stdio: presence inside whatever MCP
+ * host the user already works in (one server, every host — commitment 1's
+ * amendment). An MCP configuration launches this ({"command": "construct",
+ * "args": ["serve"]}); it holds no capability secret and exposes no dispatch
+ * and no completion writes — those stay on `work` and the role server.
+ */
+async function serve(): Promise<number> {
+  return withStoreAsync(async (store) => {
+    await serveProjection(
+      { store, clock: now, serverVersion: packageVersion() },
+      process.stdin,
+      process.stdout,
+    );
+    return 0;
+  });
 }
 
 const OUTCOME_USAGE =
@@ -1009,7 +1028,7 @@ export function corpus(argv: string[]): number {
   return 2;
 }
 
-const USAGE = 'usage: construct <outcome|work|verdict|corpus|log|inbox|decide|doctor|cleanup|version>\n';
+const USAGE = 'usage: construct <outcome|work|verdict|corpus|log|inbox|decide|serve|doctor|cleanup|version>\n';
 
 /**
  * Async because `work` dispatches to a host, and `outcome --host=…` may
@@ -1045,6 +1064,8 @@ async function run(argv: string[]): Promise<number> {
       return inbox();
     case 'decide':
       return decide(argv.slice(1));
+    case 'serve':
+      return serve();
     case 'role-serve':
       return roleServe();
     case 'doctor':

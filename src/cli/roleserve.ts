@@ -37,8 +37,11 @@ import { ROLE_GRANTS } from '../kernel/capabilities/tokens.ts';
 import { appendAsRole, submitDraft } from '../kernel/run/rolewrite.ts';
 import type { WriteOutcome } from '../kernel/run/rolewrite.ts';
 import type { Store } from '../kernel/store/open.ts';
+import { PROTOCOL_VERSION, response, failure, serveLines } from '../hosts/mcp/jsonrpc.ts';
+import type { JsonRpcRequest, JsonRpcResponse } from '../hosts/mcp/jsonrpc.ts';
 
-export const PROTOCOL_VERSION = '2025-06-18';
+export { PROTOCOL_VERSION };
+export type { JsonRpcResponse };
 
 export interface RoleServeCore {
   readonly store: Store;
@@ -48,20 +51,6 @@ export interface RoleServeCore {
   readonly task: string;
   readonly clock: () => string;
   readonly serverVersion: string;
-}
-
-interface JsonRpcRequest {
-  readonly jsonrpc?: unknown;
-  readonly id?: unknown;
-  readonly method?: unknown;
-  readonly params?: unknown;
-}
-
-export interface JsonRpcResponse {
-  readonly jsonrpc: '2.0';
-  readonly id: unknown;
-  readonly result?: unknown;
-  readonly error?: { code: number; message: string };
 }
 
 /** The whole tool surface. Two writes, and no third — same as ROLE_GRANTS. */
@@ -100,14 +89,6 @@ export const TOOLS = [
     },
   },
 ] as const;
-
-function response(id: unknown, result: unknown): JsonRpcResponse {
-  return { jsonrpc: '2.0', id, result };
-}
-
-function failure(id: unknown, code: number, message: string): JsonRpcResponse {
-  return { jsonrpc: '2.0', id, error: { code, message } };
-}
 
 /**
  * A tool outcome as an MCP result. Both branches are results, not JSON-RPC
@@ -198,38 +179,13 @@ export function handleMessage(core: RoleServeCore, message: JsonRpcRequest): Jso
 }
 
 /**
- * Serve MCP over the given streams until the input ends. Newline-delimited
- * JSON-RPC, per the MCP stdio transport. Resolves when the client hangs up.
+ * Serve MCP over the given streams until the input ends, on the shared
+ * newline-delimited JSON-RPC framing (hosts/mcp/jsonrpc.ts).
  */
 export function serveRole(
   core: RoleServeCore,
   stdin: NodeJS.ReadableStream,
   stdout: NodeJS.WritableStream,
 ): Promise<void> {
-  return new Promise((resolve) => {
-    let buffer = '';
-    stdin.setEncoding('utf8');
-    stdin.on('data', (chunk: string) => {
-      buffer += chunk;
-      for (;;) {
-        const newline = buffer.indexOf('\n');
-        if (newline < 0) break;
-        const line = buffer.slice(0, newline).trim();
-        buffer = buffer.slice(newline + 1);
-        if (!line) continue;
-
-        let message: JsonRpcRequest;
-        try {
-          message = JSON.parse(line) as JsonRpcRequest;
-        } catch {
-          stdout.write(`${JSON.stringify(failure(null, -32700, 'parse error'))}\n`);
-          continue;
-        }
-        const reply = handleMessage(core, message);
-        if (reply) stdout.write(`${JSON.stringify(reply)}\n`);
-      }
-    });
-    stdin.on('end', () => resolve());
-    stdin.on('close', () => resolve());
-  });
+  return serveLines((message) => handleMessage(core, message), stdin, stdout);
 }
