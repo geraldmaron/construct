@@ -779,4 +779,176 @@ if (heading(8, 'Run coordination inputs')) {
   console.log('    Queueing conclusions therefore cannot be drawn — see construct-2jb.11.');
 }
 
+// ---------------------------------------------------------------------------
+// §10 requires a live local generative model and is skipped without --namer:
+// like §5.5, the rest of this script must stay runnable offline. This is the
+// measured half of construct-r67.15 — model-primary naming vs keywords-first —
+// run against the SHIPPED seam (src/hosts/namer.ts's prompt and parser), so it
+// measures the code an inversion would actually run, not a stand-in.
+if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs keywords-first (live, local) — construct-r67.15')) {
+  const { namerPrompt, parseNamings, createHostNamer } = await import('../src/hosts/namer.ts');
+  const { domainsByName } = await import('../src/kernel/implication/domains.ts');
+  const hostFlag = process.argv.indexOf('--namer-host');
+  const NAMER_HOST = hostFlag !== -1 ? process.argv[hostFlag + 1] : 'ollama';
+  const modelFlag = process.argv.indexOf('--namer-model');
+  const MODEL =
+    modelFlag !== -1 ? process.argv[modelFlag + 1] : NAMER_HOST === 'ollama' ? 'qwen3.5:4b' : undefined;
+  const byName = domainsByName(DOMAINS);
+
+  let calls = 0;
+  let failures = 0;
+  let totalMs = 0;
+  let costUsd = 0;
+  const modelsRan = new Set();
+
+  /** One namer consultation returning raw namings. Throws on failure, like the real namer. */
+  let rawNamer;
+  if (NAMER_HOST === 'claude') {
+    // The SHIPPED path, verbatim: the Claude host adapter behind
+    // createHostNamer — the same objects `construct outcome --escalate
+    // --host=claude` runs. Cost is real on this host (pin.ts) and is summed
+    // from each envelope; modelRan is collected so the figures name what
+    // actually served them, not what was requested.
+    const { createClaudeAdapter } = await import('../src/hosts/claude/adapter.ts');
+    const adapter = createClaudeAdapter(MODEL ? { model: MODEL } : {});
+    await adapter.init();
+    const metered = {
+      ...adapter,
+      invoke: async (request, context) => {
+        const result = await adapter.invoke(request, context);
+        const out = result?.output;
+        if (out && typeof out.cost === 'number') costUsd += out.cost;
+        if (out && typeof out.modelRan === 'string' && out.modelRan) modelsRan.add(out.modelRan);
+        return result;
+      },
+    };
+    rawNamer = createHostNamer(metered);
+  } else {
+    rawNamer = async (outcome, catalog) => {
+      const res = await fetch('http://127.0.0.1:11434/api/generate', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          model: MODEL,
+          prompt: namerPrompt(outcome, catalog),
+          stream: false,
+          options: { temperature: 0 },
+        }),
+      });
+      if (!res.ok) throw new Error(`ollama ${res.status} — is ollama running with ${MODEL} pulled?`);
+      return parseNamings((await res.json()).response ?? '');
+    };
+  }
+
+  // Same admission bar as escalate.ts's admissible(): catalog membership, a
+  // non-empty stated why, de-duplicated. Inlined because admissible() is
+  // deliberately unexported; semantics must match it, not extend it.
+  const admit = (namings) => {
+    const seen = new Set();
+    const kept = [];
+    for (const n of namings) {
+      const d = byName.get(n.domain);
+      if (!d || seen.has(d.domain)) continue;
+      if (typeof n.why !== 'string' || !n.why.trim()) continue;
+      seen.add(d.domain);
+      kept.push(d.domain);
+    }
+    return kept;
+  };
+
+  const consult = async (outcome) => {
+    calls += 1;
+    const started = Date.now();
+    const namings = await rawNamer(outcome, DOMAINS);
+    totalMs += Date.now() - started;
+    return admit(namings);
+  };
+
+  // Outcomes repeat across configurations; one consultation serves all of them.
+  const namerCache = new Map();
+  let lastFailure = null;
+  const named = async (outcome) => {
+    if (!namerCache.has(outcome)) {
+      try {
+        namerCache.set(outcome, await consult(outcome));
+      } catch (err) {
+        failures += 1;
+        lastFailure = err instanceof Error ? err.message : String(err);
+        namerCache.set(outcome, null); // null = the namer failed, not "named nothing"
+      }
+    }
+    return namerCache.get(outcome);
+  };
+
+  // Prefetch every unique outcome with bounded concurrency so the per-corpus
+  // reporting below reads the cache. The Claude adapter declares 'concurrent';
+  // ollama serves one generation at a time, so it stays sequential.
+  const uniqueOutcomes = [...new Set(pooled.map((o) => o.outcome))];
+  const POOL = NAMER_HOST === 'claude' ? 4 : 1;
+  let nextOutcome = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(POOL, uniqueOutcomes.length) }, async () => {
+      while (nextOutcome < uniqueOutcomes.length) {
+        const outcome = uniqueOutcomes[nextOutcome];
+        nextOutcome += 1;
+        await named(outcome);
+      }
+    }),
+  );
+
+  const tally = (outcomes, got) => {
+    let expected = 0;
+    let missed = 0;
+    let surfaced = 0;
+    let over = 0;
+    outcomes.forEach((o, i) => {
+      expected += o.expect.length;
+      missed += o.expect.filter((e) => !got[i].includes(e)).length;
+      surfaced += got[i].length;
+      over += got[i].filter((g) => !o.expect.includes(g)).length;
+    });
+    return { expected, missed, surfaced, over };
+  };
+
+  console.log(`\n  namer host: ${NAMER_HOST}${MODEL ? `, model ${MODEL}` : ' (session default model)'}`);
+  console.log('  Figures are per-model, never per-architecture — a different tier answering');
+  console.log('  differently is the point of measuring per tier.\n');
+  console.log('  Configurations: A0 keywords only; A1 keywords + namer on silence (shipped');
+  console.log('  --escalate behavior); B namer on every outcome, keyword map as the');
+  console.log('  fallback when the namer fails (the construct-r67.15 inversion).\n');
+
+  for (const c of corpora) {
+    const kw = c.outcomes.map((o) => implicatedDomains({ outcome: o.outcome }));
+    const a1 = [];
+    const b = [];
+    for (let i = 0; i < c.outcomes.length; i += 1) {
+      const o = c.outcomes[i];
+      const answer = await named(o.outcome);
+      a1.push(kw[i].length > 0 ? kw[i] : (answer ?? []));
+      b.push(answer ?? kw[i]);
+    }
+    console.log(`  ${c.name}`);
+    for (const [label, got] of [['A0 keywords', kw], ['A1 +silence', a1], ['B  namer-1st', b]]) {
+      const t = tally(c.outcomes, got);
+      console.log(
+        `    ${label.padEnd(13)} miss ${formatRate(t.missed, t.expected).padEnd(38)} over ${formatRate(t.over, t.surfaced)}`,
+      );
+    }
+  }
+  console.log(`\n  namer consultations: ${calls} (${failures} failed), mean latency ${calls ? Math.round(totalMs / calls) : 0}ms`);
+  if (failures > 0) {
+    console.log(`  LAST FAILURE: ${lastFailure}`);
+    console.log('  A failed consultation falls back per configuration (A1 -> silence, B -> keywords),');
+    console.log('  so a run with failures is measuring the FALLBACK, not the namer. Figures from');
+    console.log('  such a run must not be quoted as namer figures.');
+  }
+  if (NAMER_HOST === 'claude') {
+    console.log(`  cost: $${costUsd.toFixed(4)} summed from envelopes; model(s) that ran: ${[...modelsRan].join(', ') || 'unreported'}`);
+  }
+  console.log('  The sealed corpus is deliberately absent, as everywhere in this script.');
+  console.log('  Adoption is decided on construct-4jq, by Gerald, on these figures — a weak');
+  console.log('  namer understating the inversion must not kill it, and a strong one');
+  console.log('  flattering it must not ship it without the figures being read per tier.');
+}
+
 console.log('');
