@@ -26,7 +26,8 @@ import {
   UnsurfacedVerdictError,
 } from '../kernel/implication/verdict.ts';
 import type { RecordedVerdict } from '../kernel/implication/verdict.ts';
-import { startRun, startRunNamed } from '../kernel/run/outcome.ts';
+import { startRun, startRunNamed, startRunSelected } from '../kernel/run/outcome.ts';
+import type { StartedRun } from '../kernel/run/outcome.ts';
 import { storeNamingCache } from '../kernel/store/namings.ts';
 import { createHostNamer } from '../hosts/namer.ts';
 import { DEFAULT_CONCURRENCY, frameConflicts, workRun } from '../kernel/run/coordinator.ts';
@@ -286,7 +287,8 @@ async function serve(): Promise<number> {
 }
 
 const OUTCOME_USAGE =
-  'usage: construct outcome [--host=<opencode|claude> [--model=…] [--binary=…]] "<what you want to happen>"\n';
+  'usage: construct outcome [--host=<opencode|claude> [--model=…] [--binary=…]] ' +
+  '[--domains=<name,…>] "<what you want to happen>"\n';
 
 export interface OutcomeArgs {
   readonly text: string;
@@ -301,6 +303,11 @@ export interface OutcomeArgs {
   readonly model?: string;
   readonly binary?: string;
   readonly dir?: string;
+  /**
+   * Domains the user named outright. Inference is the door for the user who
+   * does not know what to ask for; this is the door for the user who does.
+   */
+  readonly domains?: readonly string[];
 }
 
 export function parseOutcomeArgs(argv: string[]): OutcomeArgs {
@@ -338,16 +345,36 @@ export function parseOutcomeArgs(argv: string[]): OutcomeArgs {
     );
   }
 
+  const domains =
+    flags.domains === undefined
+      ? undefined
+      : flags.domains
+          .split(',')
+          .map((name) => name.trim())
+          .filter((name) => name.length > 0);
+
+  // Same rule, other direction: naming the domains skips inference entirely,
+  // so a host would be consulted for nothing and charged for it.
+  if (domains !== undefined && host !== undefined) {
+    throw new Error(
+      '--domains names the staff outright, so no model is consulted; drop --host, or drop --domains to let it infer',
+    );
+  }
+  if (domains !== undefined && domains.length === 0) {
+    throw new Error('--domains needs at least one domain name');
+  }
+
   return {
     text: words.join(' ').trim(),
     host,
     model: flags.model,
     binary: flags.binary,
     dir: flags.dir,
+    domains,
   };
 }
 
-function reportRun(started: ReturnType<typeof startRun>): void {
+function reportRun(started: StartedRun): void {
   process.stdout.write(`run ${started.runId}\n  outcome: ${started.outcome}\n\n`);
   process.stdout.write(`implicated domains (${started.implicated.length}):\n`);
   for (const implication of started.implicated) {
@@ -359,6 +386,9 @@ function reportRun(started: ReturnType<typeof startRun>): void {
         ? `signals: ${implication.signals.slice(0, 4).join(', ')} (score ${implication.score})`
         : `reason: ${implication.signals.join(' ')}`;
     process.stdout.write(`      ${evidence}\n`);
+  }
+  if (started.inferredBy === 'user') {
+    process.stdout.write('\nYou named these; nothing was inferred and no model was consulted.\n');
   }
   if (started.inferredBy === 'namer' || started.inferredBy === 'cache') {
     process.stdout.write(
@@ -410,6 +440,24 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
   return withStoreAsync(async (store) => {
     const at = now();
     const runId = `run-${at.replace(/[-:.TZ]/g, '')}`;
+
+    // Named staff: no map, no model, no cost — but the same catalog gate.
+    if (args.domains !== undefined) {
+      let started: StartedRun;
+      try {
+        started = startRunSelected(store, {
+          runId,
+          outcome: args.text,
+          at,
+          domains: args.domains,
+        });
+      } catch (error) {
+        process.stderr.write(`outcome: ${(error as Error).message}\n`);
+        return 2;
+      }
+      reportRun(started);
+      return 0;
+    }
 
     if (args.host === undefined) {
       const started = startRun(store, { runId, outcome: args.text, at });
@@ -755,6 +803,7 @@ function howInferred(detail: unknown): string {
   const inferredBy = (detail as { inferredBy?: unknown } | null)?.inferredBy;
   if (inferredBy === 'namer') return '  (inferred by: namer — a model read the outcome)';
   if (inferredBy === 'cache') return '  (inferred by: cache — an earlier consultation for this outcome)';
+  if (inferredBy === 'user') return '  (named by: the user — not inferred)';
   return '';
 }
 

@@ -19,6 +19,7 @@
 import { mapImplications } from '../implication/map.ts';
 import { mapImplicationsNamed } from '../implication/naming.ts';
 import type { DomainNamer, NamingCache, InferredBy } from '../implication/naming.ts';
+import { domainsByName } from '../implication/domains.ts';
 import type { Domain } from '../implication/domains.ts';
 import type { Implication } from '../implication/map.ts';
 import { appendWorkLog } from '../store/worklog.ts';
@@ -136,6 +137,54 @@ export async function startRunNamed(
     cache: input.cache,
   });
   return record(store, input, map.implicated, map.inferredBy, input.host, map.namerFailure);
+}
+
+export interface StartRunSelectedInput extends StartRunInput {
+  /** The domains the user named, in their own words, in the order given. */
+  readonly domains: readonly string[];
+}
+
+/** The evidence a user-named implication cites. It is not a keyword and not a
+ * model's reason, and the record must not let it read as either. */
+export const USER_NAMED_SIGNAL = 'named by the user';
+
+/**
+ * Record an outcome against domains the user named outright.
+ *
+ * Inference exists for the user who does not know what to ask for; a user who
+ * does must be able to say so. This path skips the map and the namer entirely
+ * — no keywords, no model, no cost — but not the catalog: a named domain is
+ * validated exactly as a namer's proposal is, and a domain nobody defined is an
+ * error listing what exists rather than a role invented on the spot.
+ *
+ * The provenance is its own value ('user'), because a user's own choice is not
+ * an inference and the work log must not show it as one.
+ */
+export function startRunSelected(store: Store, input: StartRunSelectedInput): StartedRun {
+  const catalog = domainsByName(input.catalog);
+  const seen = new Set<string>();
+  const implicated: Implication[] = [];
+
+  for (const name of input.domains) {
+    const domain = catalog.get(name);
+    if (!domain) {
+      throw new RangeError(
+        `unknown domain "${name}" — the catalog is: ${[...catalog.keys()].join(', ')}`,
+      );
+    }
+    if (seen.has(name)) continue;
+    seen.add(name);
+    implicated.push({
+      domain: domain.domain,
+      concern: domain.concern,
+      // No keyword scored this and no model argued for it; a number here would
+      // invite comparison with scores that mean something else.
+      score: 0,
+      signals: [USER_NAMED_SIGNAL],
+    });
+  }
+
+  return record(store, input, implicated, 'user');
 }
 
 function record(

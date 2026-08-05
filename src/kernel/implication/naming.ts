@@ -74,7 +74,7 @@ export interface NamingCache {
   set(outcome: string, implications: readonly Implication[]): void;
 }
 
-export type InferredBy = 'namer' | 'keywords' | 'cache' | 'none';
+export type InferredBy = 'namer' | 'keywords' | 'cache' | 'none' | 'user';
 
 export interface NamedMap extends ImplicationMap {
   /**
@@ -82,6 +82,7 @@ export interface NamedMap extends ImplicationMap {
    * 'keywords' — the zero-model fallback answered: no namer was supplied, or
    *              the namer failed and the map caught the run.
    * 'cache'    — a previous consultation for this exact outcome answered.
+   * 'user'     — the user named the domains outright; nothing was inferred.
    * 'none'     — nobody named a domain. Reported, never papered over.
    */
   readonly inferredBy: InferredBy;
