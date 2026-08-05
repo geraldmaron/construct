@@ -112,7 +112,7 @@ export const CHALLENGES: readonly Challenge[] = [
       }
       const untagged = findUntaggedClaims(deliverable);
       if (untagged.length === 0) {
-        return { passed: true, detail: 'every amount, percentage, and date carries a citation or an [unverified] tag' };
+        return { passed: true, detail: 'every amount, percentage, date, duration, and statute reference carries a citation or an [unverified] tag' };
       }
       const shown = untagged.slice(0, 3).map((c) => `line ${String(c.line)}`).join(', ');
       const more = untagged.length > 3 ? ` (and ${String(untagged.length - 3)} more)` : '';
