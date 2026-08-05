@@ -20,7 +20,9 @@ corpora and the live catalog — §6's measurement is a negative result (no grou
 calibrate the intake ramp against), stated as such rather than worked around. Sections 7 and 8
 identify the right formalism and state what would have to be collected to apply it; their
 conclusions are explicitly marked as pending data, not presented as results. §10 is measured
-against a live host model and its figures are per-model, not per-architecture.
+against a live host model and its figures are per-model, not per-architecture. §11 is not a
+measurement at all: it records the external sources grounding the 2026-08-05 strategy
+amendments, and assigns no numbers.
 
 ---
 
@@ -1022,6 +1024,44 @@ prompt, or the serving tier changes. An absolute target returns if and when corp
 support one.
 
 ---
+
+## 11. The awareness lens — grounding for the construct-r67.23 amendments
+
+*Recorded 2026-08-05. This section grounds strategy amendments, not code: it carries no
+measurement of Construct itself, and it says so. Sources here are web publications opened and
+read on 2026-08-05, cited for the specific claims below and nothing broader.*
+
+Three claims from the 2026-08-05 brain-dump challenge were checked against external sources
+before the STRATEGY amendments they justify were written:
+
+1. **The organizational gap Construct targets is documented, not assumed.** Practitioner
+   literature on cross-functional failure consistently locates compliance and review failures in
+   the seams between departments — checks that were nobody's checkpoint, coordination that relied
+   on informal conversation, review treated as an end-stage gate rather than a woven-in function
+   (Adherent, "Cross-Functional Compliance Collaboration"; Full Tilt Teams, "Why Cross-Functional
+   Teams Fail"; Sprinto, "Consequences of Non-Compliance"). This is the basis for the North star
+   through-line and the Phase 4 depth ordering. These are practitioner sources, not controlled
+   studies; they establish that the gap is widely observed, not its rate.
+
+2. **Verbalized model confidence is systematically miscalibrated.** Human-in-the-loop design
+   literature warns specifically against routing on a model's self-reported confidence, noting
+   that stated confidence and correctness diverge and that calibration is earned from labeled
+   feedback, not asserted (Galileo, "How to Build Human-in-the-Loop Oversight for AI Agents";
+   Digital Applied, "Human-in-the-Loop Escalation Design for AI Agents 2026"). This is the basis
+   for the commitment 9 amendment, and it confirms from the outside what §6 found from the
+   inside: the intake ramp's numbers had no ground truth, and no confidence enters a decision
+   without one.
+
+3. **The standing-watch lane is still empty.** The 2026 "agent risk" and decision-intelligence
+   market governs the agents themselves — identity, shadow-AI exposure, agent observability (AWS,
+   "AI risk intelligence in the agentic era"; Resilient Cyber, "The Agentic AI Governance Blind
+   Spot"). Nothing found watches the organization's own work for diverging strategies or
+   contended resources. The claim in the end-state UX amendment survives this second pass;
+   re-check it whenever a phase gate elevates watch work.
+
+What this section deliberately does not do: assign probabilities to any of it. The house rule the
+amendments encode — no probability without a consuming shipped decision and a grounding
+measurement — applies to this section first.
 
 ## What this pass did not do
 
