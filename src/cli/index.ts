@@ -736,8 +736,64 @@ export function log(argv: string[]): number {
       );
     }
     process.stdout.write(`\n${entries.length} entries (append-only).\n`);
+    writeRunState(store, run);
     return 0;
   });
+}
+
+/**
+ * Where a run currently stands, under the event stream (construct-7zu).
+ *
+ * The defect this closes: a run in flight and a run that died end at the SAME
+ * log line. A failed task writes no event past `capability-issued`, and neither
+ * does a task that is still executing — so the two are indistinguishable from
+ * the stream alone. Found on a live, healthy run that was reasonably read as
+ * hung, where telling them apart meant opening construct.db by hand.
+ *
+ * Why this lives on `log` rather than a new `construct status` verb. The user
+ * whose confusion produced the bead reached for `construct log`, so answering
+ * anywhere else costs a discovery step at exactly the moment someone is unsure
+ * whether their run is broken. It also honours the project's preference for
+ * extending an existing surface over adding one.
+ *
+ * The stream itself is untouched and stays append-only: this is a footer that
+ * reads current task state, clearly separated from the events above it. Nothing
+ * here mutates, and nothing polls — it is one read of what the store already
+ * holds, which is the whole reason the CLI could have said it all along.
+ */
+function writeRunState(store: Store, run?: string): void {
+  const tasks = listTasks(store, run);
+  if (tasks.length === 0) return;
+
+  const counts = new Map<string, number>();
+  for (const task of tasks) counts.set(task.state, (counts.get(task.state) ?? 0) + 1);
+
+  const parts = [...counts.entries()].map(([state, n]) => `${String(n)} ${state}`);
+  process.stdout.write(`${tasks.length} task(s): ${parts.join(', ')}.\n`);
+
+  // A lease with time left is the one fact that separates "still working" from
+  // "stopped", and it is the fact nobody could see. Report the deadline rather
+  // than a remaining-time countdown, so the line does not imply it is watching.
+  const running = tasks.filter((t) => t.state === 'leased' && t.leaseUntil);
+  if (running.length > 0) {
+    const latest = running
+      .map((t) => t.leaseUntil as string)
+      .reduce((a, b) => (a > b ? a : b));
+    process.stdout.write(
+      `Still running — ${String(running.length)} task(s) hold a lease until ${latest}. ` +
+        'Re-read this log rather than re-running work; work will not take a live lease.\n',
+    );
+    return;
+  }
+
+  const failed = tasks.filter((t) => t.state === 'failed');
+  if (failed.length > 0 && failed.length === tasks.length) {
+    writeTotalFailureRecourse(failed.length);
+  } else if (failed.length > 0) {
+    process.stdout.write(
+      `${String(failed.length)} task(s) failed and produced no deliverable; their errors are above.\n`,
+    );
+  }
 }
 
 export function inbox(): number {

@@ -521,6 +521,59 @@ test('the invocation that fails everything states the recourse, not the one afte
   assert.equal(code, 1);
 });
 
+test('a run still in flight does not read like a run that died', async () => {
+  // construct-7zu. A failed task writes no work-log event past capability-issued
+  // — and neither does one that is still executing, so the two ended at the same
+  // line and were indistinguishable from `construct log`. Found on a live,
+  // healthy run that was reasonably read as hung.
+  const refusing: HostAdapter = {
+    ...standInHost(),
+    invoke: async (request: unknown): Promise<HostResult> => ({
+      id: (request as { role: string }).role,
+      status: 'error',
+      output: null,
+      error: { messages: ['Missing Authentication header'] },
+    }),
+  };
+
+  const dead = await runAll([
+    ['outcome', 'launch a paid beta to EU users next month'],
+    () => work([], refusing),
+    ['log'],
+  ]);
+
+  assert.match(dead.out, /task\(s\): \d+ failed/, 'a dead run names its task states');
+  assert.doesNotMatch(dead.out, /Still running/, 'nothing is running in a run that failed');
+  assert.match(dead.out, /host owns retries/, 'the dead run states the recourse');
+
+  // A live run: tasks dispatched and leased, nothing settled. `log` must say so
+  // rather than trailing off at the same event the dead one stopped at.
+  const live = await runAll([
+    ['outcome', 'launch a paid beta to EU users next month'],
+    async () => {
+      const store = openStore(join(process.env.XDG_DATA_HOME as string, 'construct', 'construct.db'));
+      try {
+        // A lease held by someone else, far in the future: dispatched, working,
+        // nothing settled — the state the frozen log could not distinguish.
+        claimTask(store, {
+          owner: 'another-worker',
+          leaseUntil: '2099-01-01T00:00:00.000Z',
+          now: new Date().toISOString(),
+        });
+      } finally {
+        store.close();
+      }
+      return 0;
+    },
+    ['log'],
+  ]);
+
+  assert.match(live.out, /Still running/, 'a live lease is reported as still running');
+  assert.match(live.out, /2099-01-01T00:00:00\.000Z/, 'the lease deadline is shown');
+  assert.match(live.out, /will not take a live lease/, 'the user is steered off re-running work');
+  assert.doesNotMatch(live.out, /host owns retries/, 'a live run is not offered failure recourse');
+});
+
 test('a store with no outcome at all still says to record one', async () => {
   // The empty-store message must not be swallowed by the all-failed branch.
   const { out, code } = await run(['work']);
