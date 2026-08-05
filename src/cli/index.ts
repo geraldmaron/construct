@@ -16,6 +16,8 @@ import { openStore, storePath, storeWriteProblem, StoreUnavailableError } from '
 import type { Store } from '../kernel/store/open.ts';
 import { appendWorkLog, readWorkLog } from '../kernel/store/worklog.ts';
 import { readRunDispatch, recordRunDispatch } from '../kernel/store/dispatch.ts';
+import { createHostDensifier } from '../hosts/densifier.ts';
+import type { DensifiedIntake } from '../kernel/intake/densify.ts';
 import { openDecisions, resolveDecision } from '../kernel/store/decisions.ts';
 import { countTasksByState, getTask, listTasks } from '../kernel/store/tasks.ts';
 import { readFeedback } from '../kernel/store/feedback.ts';
@@ -500,6 +502,18 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
       return 1;
     }
 
+    // With a host already being paid for this outcome, the rough framing is
+    // optimized here rather than by the user remembering to ask. The original
+    // words stay the outcome; the densified form is a recorded companion the
+    // namer reads. A densifier failure is a stated fallback to the raw text.
+    let densified: DensifiedIntake | null = null;
+    let densifyFailure: string | undefined;
+    try {
+      densified = await createHostDensifier(host)(args.text);
+    } catch (error) {
+      densifyFailure = (error as Error).message;
+    }
+
     const started = await startRunNamed(store, {
       runId,
       outcome: args.text,
@@ -507,7 +521,29 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
       host: host.name,
       namer: createHostNamer(host),
       cache: storeNamingCache(store, { host: host.name, at }),
+      namerText: densified?.outcome,
     });
+
+    if (densified) {
+      appendWorkLog(store, {
+        run: started.runId,
+        task: null,
+        role: 'construct',
+        action: 'intake-densified',
+        detail: densified,
+        at,
+      });
+      process.stdout.write(`as understood (your words are the record; correct this if it is wrong):\n`);
+      process.stdout.write(`  outcome: ${densified.outcome}\n`);
+      for (const c of densified.constraints) process.stdout.write(`  constraint: ${c}\n`);
+      for (const d of densified.decisions) process.stdout.write(`  decided: ${d}\n`);
+      for (const p of densified.parked) process.stdout.write(`  parked: ${p}\n`);
+      process.stdout.write('\n');
+    } else if (densifyFailure !== undefined) {
+      process.stdout.write(
+        `the outcome could not be optimized at intake (${densifyFailure}); the raw text is used as given.\n\n`,
+      );
+    }
 
     // The host and model named here are facts of the run. Without this record,
     // a later `work` with no flags dispatched to whatever model the host last

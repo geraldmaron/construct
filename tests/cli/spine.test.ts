@@ -137,17 +137,36 @@ test('an outcome implicating nothing says so rather than going quiet', async () 
  * one thing in this path that costs money, so "was the model called, and how
  * often" is the property under test, not a detail of it.
  */
-function namingHost(reply: string): HostAdapter & { readonly calls: () => number } {
+/**
+ * The fake answers by role: the densifier's question gets a densifier-shaped
+ * reply (or a failure when none is supplied, which exercises the stated
+ * fallback), the namer's gets `reply`. `calls()` counts NAMER consultations
+ * only — the cache and cost assertions below are about paying for naming, and
+ * counting the intake call would make them assert two different things at once.
+ */
+function namingHost(
+  reply: string,
+  densifiedReply?: string,
+): HostAdapter & { readonly calls: () => number; readonly densifyCalls: () => number } {
   let calls = 0;
+  let densifyCalls = 0;
   return {
     name: 'stand-in-namer',
     kind: 'general',
     capabilities: [],
     calls: () => calls,
+    densifyCalls: () => densifyCalls,
     init: async (): Promise<void> => {},
     health: async () => ({ live: true }),
     cancel: async () => ({ cancelled: false }),
-    invoke: async (): Promise<HostResult> => {
+    invoke: async (request: unknown): Promise<HostResult> => {
+      if ((request as { role?: string }).role === 'intake-densifier') {
+        densifyCalls += 1;
+        if (densifiedReply === undefined) {
+          return { id: 'densifier', status: 'error', output: null, error: 'no densifier configured' };
+        }
+        return { id: 'densifier', status: 'ok', output: { text: densifiedReply }, error: null };
+      }
       calls += 1;
       return { id: 'namer', status: 'ok', output: { text: reply }, error: null };
     },
@@ -233,6 +252,42 @@ test('parseWorkArgs distinguishes a typed --host from the default', async () => 
   const { parseWorkArgs } = await import('../../src/cli/index.ts');
   assert.equal(parseWorkArgs([]).hostExplicit, false, 'the default must be overridable by the record');
   assert.equal(parseWorkArgs(['--host=opencode']).hostExplicit, true, 'a typed choice must win');
+});
+
+const DENSIFIED = JSON.stringify({
+  outcome: 'Ensure the organization has the standard contracts it is missing',
+  constraints: ['include the ones that are often ignored'],
+  decisions: [],
+  parked: [],
+});
+
+test('a rough framing is optimized at intake, shown, recorded, and fed to the namer', async () => {
+  // The framing is a verbatim corpus entry, not text written to be parseable.
+  const host = namingHost(NAMED, DENSIFIED);
+  const { out } = await runAll([
+    () =>
+      outcome(
+        [
+          '--host=opencode',
+          'I need you to ensure the contracts that should exist within an organization that are often ignored are covered',
+        ],
+        host,
+      ),
+    ['log'],
+  ]);
+  assert.equal(host.densifyCalls(), 1, 'a named host optimizes intake without being asked');
+  assert.match(out, /as understood \(your words are the record/);
+  assert.match(out, /outcome: Ensure the organization has the standard contracts/);
+  assert.match(out, /constraint: include the ones that are often ignored/);
+  assert.match(out, /intake-densified/, 'the densified form is on the work log');
+});
+
+test('a densifier failure is a stated fallback to the raw text, not a guess', async () => {
+  const host = namingHost(NAMED);
+  const { code, out } = await run(() => outcome(['--host=opencode', SILENT], host));
+  assert.equal(code, 0);
+  assert.match(out, /could not be optimized at intake/);
+  assert.match(out, /accessibility/, 'the namer still reads the raw text');
 });
 
 test('a named implication is distinguishable in the log from a keyword one', async () => {

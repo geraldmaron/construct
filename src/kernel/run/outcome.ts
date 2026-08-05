@@ -65,6 +65,12 @@ export interface StartRunNamedInput extends StartRunInput {
   readonly cache?: NamingCache;
   /** Named in the work log when a model is consulted, so the cost has a source. */
   readonly host?: string;
+  /**
+   * What the namer reads, when intake produced a densified form of a rough
+   * framing. The recorded outcome stays `outcome` — the user's words — in
+   * every case; this only redirects the inference's input.
+   */
+  readonly namerText?: string;
 }
 
 /** Deterministic, so re-recording a run enqueues its work once. */
@@ -154,7 +160,7 @@ export async function startRunNamed(
   input: StartRunNamedInput,
 ): Promise<StartedRun> {
   const map = await mapImplicationsNamed({
-    outcome: input.outcome,
+    outcome: input.namerText ?? input.outcome,
     catalog: input.catalog,
     namer: input.namer,
     cache: input.cache,
