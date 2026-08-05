@@ -93,6 +93,23 @@ export interface HostAdapter {
    * names — it compares ordinals and nothing else.
    */
   modelTier?(model?: string): ModelTier | null;
+
+  /**
+   * Whether `model` (or the adapter's default) belongs to a tuned family —
+   * one whose producer prompts are validated against its output shapes with
+   * eval evidence on record. Family membership is read off vendor model
+   * strings, so it lives host-side like tier membership; the kernel only
+   * relays the answer. An untuned or silent answer means the dispatch runs
+   * best-effort and is recorded as exactly that.
+   */
+  modelTuning?(model?: string): ModelTuning | null;
+}
+
+/** A host's answer about tuning evidence for a model. */
+export interface ModelTuning {
+  /** The tuned family the model belongs to, or null when none matches. */
+  readonly family: string | null;
+  readonly tuned: boolean;
 }
 
 export interface HostValidation {

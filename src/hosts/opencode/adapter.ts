@@ -22,11 +22,12 @@
 
 import { spawn as nodeSpawn } from 'node:child_process';
 import { hostEnvironment, roleServeEnvironment } from '../environment.ts';
-import type { HostAdapter, HostCancellation, HostCapability, HostContext, HostHealth, HostResult } from '../../kernel/hosts/interface.ts';
+import type { HostAdapter, HostCancellation, HostCapability, HostContext, HostHealth, HostResult, ModelTuning } from '../../kernel/hosts/interface.ts';
 import { HostNotReadyError, InvocationError, InvocationTimeoutError } from '../../kernel/hosts/errors.ts';
 import { failedToolCalls, reduceTranscript } from './events.ts';
 import type { OpenCodeRunResult } from './events.ts';
 import { PINNED_VERSION, tierOfModel } from './pin.ts';
+import { tuningOf } from '../tuning.ts';
 import { CONFIG_ENV_VAR, writeAdvisorConfig, writeOpenCodeConfig } from './mcpconfig.ts';
 import type { ModelTier } from '../../kernel/brief/tiers.ts';
 
@@ -284,6 +285,10 @@ export function createOpenCodeAdapter(config: OpenCodeConfig = {}): OpenCodeAdap
      */
     modelTier(model?: string): ModelTier | null {
       return tierOfModel(model ?? config.model);
+    },
+
+    modelTuning(model?: string): ModelTuning {
+      return tuningOf(model ?? config.model);
     },
 
     get observedVersion(): string | null {

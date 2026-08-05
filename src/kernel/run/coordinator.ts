@@ -628,6 +628,30 @@ export async function workRun(
       });
     }
 
+    // The model matrix's honesty half: a family without tuning evidence runs,
+    // but every such dispatch is recorded best-effort so no later claim quotes
+    // its deliverable as if the producer prompts were validated for it. A host
+    // that stays silent about tuning is recorded the same way — an unmeasured
+    // family is best-effort, never assumed tuned.
+    const tuning = host.modelTuning?.(model ?? undefined) ?? null;
+    if (!tuning?.tuned) {
+      appendWorkLog(store, {
+        run: task.run,
+        task: task.id,
+        role: task.role,
+        action: 'model-untuned-best-effort',
+        detail: {
+          model,
+          family: tuning?.family ?? null,
+          note:
+            'best-effort: producer prompts are not validated against this model ' +
+            'family; output shape and citation habits are unmeasured for it, and ' +
+            'any claim about this run carries that qualification',
+        },
+        at: options.clock(),
+      });
+    }
+
     // Commitment 14's second half: the write surface a role reaches back
     // through. The bearer goes to the adapter as env for the role's serving
     // process (see roleenv.ts) — NEVER into the assignment text, which crosses

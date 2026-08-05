@@ -70,6 +70,7 @@ import { synthesizeIssues } from '../kernel/run/synthesis.ts';
 import { planFor, recordPlan } from '../kernel/store/plans.ts';
 import type { Watch } from '../kernel/watch/watch.ts';
 import { join } from 'node:path';
+import { tuningStamp } from '../hosts/tuning.ts';
 
 const MIN_NODE = { major: 22, minor: 18 };
 
@@ -96,6 +97,10 @@ export function doctor(): number {
 
   const paths = resolvePaths();
   checks.push({ name: 'paths', ok: true, detail: `state: ${paths.stateDir}` });
+
+  // Stale-loudly: the stamp carries the dates the tuning evidence was
+  // recorded, so an aging matrix reads as aged instead of current.
+  checks.push({ name: 'matrix', ok: true, detail: tuningStamp() });
 
   // Resolving a path proves nothing about being able to use it. Before this
   // check, doctor reported "healthy" against a data dir it could not write,
@@ -1957,6 +1962,7 @@ async function run(argv: string[]): Promise<number> {
     case '--version':
     case '-v':
       process.stdout.write(`${packageVersion()}\n`);
+      process.stdout.write(`${tuningStamp()}\n`);
       return 0;
     default:
       process.stdout.write(USAGE);

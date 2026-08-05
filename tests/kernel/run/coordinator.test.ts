@@ -715,6 +715,37 @@ test('a host that will not name its tier degrades rather than passing quietly', 
   });
 });
 
+test('an untuned or tuning-silent family is recorded best-effort on every dispatch', async () => {
+  await withStoreAsync(async (store) => {
+    seed(store, ['privacy']);
+    // fakeHost declares no modelTuning — silence must read as best-effort.
+    await workRun(store, fakeHost(), { owner: 'w1', clock: frozen(AT), spendCeiling: 100 });
+
+    const flag = readWorkLog(store, 'run-1').find((e) => e.action === 'model-untuned-best-effort');
+    assert.ok(flag, 'an unmeasured family must reach the record');
+    assert.match((flag.detail as { note: string }).note, /best-effort/);
+    assert.match((flag.detail as { note: string }).note, /not validated/);
+  });
+});
+
+test('a tuned family is not labeled best-effort', async () => {
+  await withStoreAsync(async (store) => {
+    seed(store, ['privacy']);
+    const tuned = {
+      ...fakeHost(),
+      model: 'claude-sonnet-5',
+      modelTuning: () => ({ family: 'claude', tuned: true }),
+    } as unknown as HostAdapter;
+    await workRun(store, tuned, { owner: 'w1', clock: frozen(AT), spendCeiling: 100 });
+
+    assert.equal(
+      readWorkLog(store, 'run-1').some((e) => e.action === 'model-untuned-best-effort'),
+      false,
+      'tuning evidence on record means no degradation label',
+    );
+  });
+});
+
 test('a brief declaring no floor is never reported as degraded', async () => {
   await withStoreAsync(async (store) => {
     seed(store, ['privacy']);

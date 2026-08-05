@@ -30,11 +30,12 @@
 
 import { spawn as nodeSpawn } from 'node:child_process';
 import { hostEnvironment, roleServeEnvironment } from '../environment.ts';
-import type { HostAdapter, HostCancellation, HostCapability, HostContext, HostHealth, HostResult } from '../../kernel/hosts/interface.ts';
+import type { HostAdapter, HostCancellation, HostCapability, HostContext, HostHealth, HostResult, ModelTuning } from '../../kernel/hosts/interface.ts';
 import { HostNotReadyError, InvocationError, InvocationTimeoutError } from '../../kernel/hosts/errors.ts';
 import { modelDrifted, reduceEnvelope } from './result.ts';
 import type { ClaudeUsage } from './result.ts';
 import { PINNED_VERSION, tierOfModel } from './pin.ts';
+import { tuningOf } from '../tuning.ts';
 import type { ModelTier } from '../../kernel/brief/tiers.ts';
 import { mcpArgsFor, writeMcpConfig } from './mcpconfig.ts';
 import type { RoleServeLaunch } from './mcpconfig.ts';
@@ -213,6 +214,10 @@ export function createClaudeAdapter(config: ClaudeConfig = {}): ClaudeAdapter {
      */
     modelTier(model?: string): ModelTier | null {
       return tierOfModel(model ?? config.model);
+    },
+
+    modelTuning(model?: string): ModelTuning {
+      return tuningOf(model ?? config.model);
     },
 
     get observedVersion(): string | null {
