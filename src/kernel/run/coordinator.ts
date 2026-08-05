@@ -298,8 +298,50 @@ function replyTextOf(output: unknown): string | null {
  */
 function deliverableTextOf(store: Store, taskId: string, output: unknown): string | null {
   const draft = latestDraft(store, taskId)?.deliverable;
-  if (typeof draft === 'string' && draft.trim() !== '') return draft;
+  if (draft !== undefined && draft !== null) {
+    const text = draftText(draft);
+    // A draft exists and is not readable as text. The reply is NOT a fallback
+    // here: the role submitted something it considers its deliverable, and
+    // checking the summary instead would report a verdict about the wrong
+    // thing in a new way. Unreadable is the honest answer.
+    return text;
+  }
   return replyTextOf(output);
+}
+
+/**
+ * A submitted draft as text, or null when it is not text at all.
+ *
+ * Roles do not always send prose. On a real run one called submit_draft with a
+ * JSON object whose keys were the challenge ids from its own assignment — it
+ * read the obligations block as a response schema. Coercing it gave the
+ * literal string "[object Object]", which the citation check then PASSED,
+ * because a string with no amounts or dates has nothing untagged in it. A
+ * verdict about a coerced object is the worst thing this layer can produce:
+ * it reports success about nothing.
+ *
+ * One envelope is unwrapped, because it is the same deliverable wearing a
+ * wrapper: a JSON string or object whose payload is `deliverable`. Anything
+ * else returns null and is reported as unreadable rather than checked.
+ */
+function draftText(draft: unknown): string | null {
+  if (typeof draft === 'string') {
+    const trimmed = draft.trim();
+    if (trimmed === '') return null;
+    if (trimmed.startsWith('{')) {
+      try {
+        const parsed: unknown = JSON.parse(trimmed);
+        const inner = (parsed as { deliverable?: unknown } | null)?.deliverable;
+        if (typeof inner === 'string' && inner.trim() !== '') return inner;
+      } catch {
+        // Not JSON. It is prose that happens to open with a brace.
+      }
+    }
+    return draft;
+  }
+  const inner = (draft as { deliverable?: unknown } | null)?.deliverable;
+  if (typeof inner === 'string' && inner.trim() !== '') return inner;
+  return null;
 }
 
 function summarize(result: HostResult): Record<string, unknown> {
@@ -611,7 +653,26 @@ export async function workRun(
         // form is left unanswered rather than passed — recorded as such, so a
         // brief's declared control is never satisfied by nobody looking.
         const deliverableText = deliverableTextOf(store, task.id, result.output);
-        if (deliverableText !== null && (brief.challenges?.length ?? 0) > 0) {
+        const declaredChallenges = brief.challenges ?? [];
+        if (deliverableText === null && declaredChallenges.length > 0) {
+          // Nothing readable to check. Recorded as unanswered — a check that
+          // cannot see its subject must never report a pass, whatever the
+          // cause, or the promotion state becomes an assurance nobody made.
+          appendWorkLog(store, {
+            run: task.run,
+            task: task.id,
+            role: 'construct',
+            action: 'challenge-unanswered',
+            detail: {
+              unanswered: declaredChallenges.map((challenge) => ({
+                challenge,
+                reason: 'the deliverable is not readable as text, so nothing could be checked',
+              })),
+            },
+            at: settledAt,
+          });
+        }
+        if (deliverableText !== null && declaredChallenges.length > 0) {
           const run = runStructuralChallenges(brief, deliverableText);
           for (const check of run.results) {
             recordVerdict(store, {

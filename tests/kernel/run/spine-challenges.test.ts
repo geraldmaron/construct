@@ -186,3 +186,103 @@ test('the challenges read the submitted draft, not the reply that summarizes it'
     done();
   }
 });
+
+/** Submit a draft of any shape, reply with a summary, as a real role does. */
+function hostSubmitting(store: ReturnType<typeof openStore>, deliverable: unknown): HostAdapter {
+  return {
+    ...hostReturning('Draft submitted.'),
+    invoke: async (_request: unknown, ctx: { invocationId: string }) => {
+      appendWorkLog(store, {
+        run: 'run-1',
+        task: ctx.invocationId,
+        role: 'privacy',
+        action: DRAFT_ACTION,
+        detail: { deliverable },
+        at: AT,
+      });
+      return {
+        id: ctx.invocationId,
+        status: 'ok',
+        output: { text: 'Draft submitted.', usage: { cost: 0, steps: 1 } },
+        error: null,
+      };
+    },
+  } as unknown as HostAdapter;
+}
+
+test('a draft that is not text is reported unreadable, and never passes a challenge', async () => {
+  const { store, done } = fixtureStore();
+  try {
+    const started = startRun(store, { runId: 'run-1', outcome: OUTCOME, at: AT });
+
+    // What the role actually sent on a real run: the challenge ids read as a
+    // response schema. Coerced, this is the string "[object Object]", which the
+    // citation check passes because it contains no amounts or dates.
+    await workRun(
+      store,
+      hostSubmitting(store, {
+        finding: 'Erasure requests need a route before launch.',
+        'claims-cited': 'done',
+        'scope-diff': 'done',
+      }),
+      { owner: 'w1', clock: () => AT, spendCeiling: 100 },
+    );
+
+    const verdicts = readWorkLog(store, 'run-1').filter((e) => e.action === 'verdict-recorded');
+    assert.deepEqual(verdicts, [], 'nothing may be judged when nothing could be read');
+
+    const unanswered = readWorkLog(store, 'run-1').filter(
+      (e) => e.action === 'challenge-unanswered',
+    );
+    assert.ok(unanswered.length > 0, 'and the silence is on the record, not implied');
+    const detail = unanswered[0].detail as { unanswered: Array<{ challenge: string; reason: string }> };
+    assert.deepEqual(detail.unanswered.map((u) => u.challenge), [...SPINE_CHALLENGES]);
+    assert.match(detail.unanswered[0].reason, /not readable as text/);
+
+    // Draft is the state for "nobody answered these", which is exactly true.
+    assert.equal(promotionOf(store, started.tasks[0])?.state, 'draft');
+  } finally {
+    done();
+  }
+});
+
+test('a deliverable wearing a JSON envelope is unwrapped, not judged as a wrapper', async () => {
+  const { store, done } = fixtureStore();
+  try {
+    const started = startRun(store, { runId: 'run-1', outcome: OUTCOME, at: AT });
+    // Observed on a real run: a string whose whole content is {"deliverable": "..."}.
+    await workRun(store, hostSubmitting(store, JSON.stringify({ deliverable: SOURCED })), {
+      owner: 'w1',
+      clock: () => AT,
+      spendCeiling: 100,
+    });
+
+    const promotion = promotionOf(store, started.tasks[0]);
+    assert.ok(promotion);
+    assert.deepEqual(promotion.failing, [], 'the checks read the prose inside the wrapper');
+    assert.deepEqual(promotion.outstanding, []);
+  } finally {
+    done();
+  }
+});
+
+test('prose that merely opens with a brace is left alone', async () => {
+  const { store, done } = fixtureStore();
+  try {
+    startRun(store, { runId: 'run-1', outcome: OUTCOME, at: AT });
+    const prose = `{not json at all}\n${SOURCED}`;
+    await workRun(store, hostSubmitting(store, prose), {
+      owner: 'w1',
+      clock: () => AT,
+      spendCeiling: 100,
+    });
+
+    const verdicts = readWorkLog(store, 'run-1')
+      .filter((e) => e.action === 'verdict-recorded')
+      .map((e) => e.detail as { outcome: string });
+    assert.ok(verdicts.length > 0);
+    assert.ok(verdicts.every((v) => v.outcome === 'passed'));
+  } finally {
+    done();
+  }
+});
