@@ -31,7 +31,7 @@
  */
 
 import type { Store } from '../store/open.ts';
-import { appendWorkLog } from '../store/worklog.ts';
+import { appendWorkLog, countWorkLogEntries } from '../store/worklog.ts';
 import { authorizeRoleToken } from '../capabilities/tokens.ts';
 import type { Denial } from '../capabilities/tokens.ts';
 import { DRAFT_ACTION } from './promotion.ts';
@@ -132,10 +132,22 @@ export interface DraftSubmission {
 }
 
 export type WriteOutcome =
-  | { readonly ok: true; readonly seq: number; readonly role: string }
+  | {
+      readonly ok: true;
+      readonly seq: number;
+      readonly role: string;
+      /**
+       * Guidance carried in the tool reply itself. Observed on a live run: a
+       * small model read a bare {ok:true} as "continue" and resubmitted its
+       * draft twenty times until the host timeout killed the task, so a
+       * resubmission's success now says out loud that stopping is the next
+       * move.
+       */
+      readonly note?: string;
+    }
   | {
       readonly ok: false;
-      readonly denial: Denial;
+      readonly denial: Denial | 'draft-cap';
       readonly reason: string;
       /** The work log sequence the denial itself was filed under. */
       readonly seq: number;
@@ -204,11 +216,26 @@ export function appendAsRole(
 }
 
 /**
+ * How many drafts one task may put on the record. Supersession is legal — a
+ * clean live run submitted twice — but a role in a loop submitted twenty-plus
+ * times over ten minutes until the host timeout killed the task. Five is
+ * generous for legitimate revision and small enough that a loop hits the wall
+ * in seconds, not minutes.
+ */
+export const DRAFT_CAP = 5;
+
+/** The one-time log marker that the cap closed a task's draft window. */
+export const DRAFT_CAP_ACTION = 'draft-cap-reached';
+
+/**
  * Submit a draft of the deliverable.
  *
  * Submitting does not promote. The draft lands on the record and the promotion
  * state is derived from verdicts that are not this role's to record — see
- * promotion.ts. A role can submit as many drafts as it likes and move nothing.
+ * promotion.ts. A role may supersede its draft up to DRAFT_CAP times; past
+ * that, submissions are refused with a stop message, and the cap event lands
+ * on the append-only log exactly once rather than once per retry — the log
+ * records that the window closed, not the shape of the loop that hit it.
  */
 export function submitDraft(
   store: Store,
@@ -233,6 +260,31 @@ export function submitDraft(
   }
 
   const { scope } = authorization;
+
+  const drafts = countWorkLogEntries(store, scope.run, scope.task, DRAFT_ACTION);
+  if (drafts >= DRAFT_CAP) {
+    const marked = countWorkLogEntries(store, scope.run, scope.task, DRAFT_CAP_ACTION);
+    const seq =
+      marked > 0
+        ? 0
+        : appendWorkLog(store, {
+            run: scope.run,
+            task: scope.task,
+            role: scope.role,
+            action: DRAFT_CAP_ACTION,
+            detail: { cap: DRAFT_CAP },
+            at: credential.at,
+          });
+    return {
+      ok: false,
+      denial: 'draft-cap',
+      reason:
+        `${String(DRAFT_CAP)} drafts are already on the record for this task and this one was NOT recorded. ` +
+        'Your work is done. Stop now — do not call submit_draft again.',
+      seq,
+    };
+  }
+
   const seq = appendWorkLog(store, {
     run: scope.run,
     task: scope.task,
@@ -241,5 +293,15 @@ export function submitDraft(
     detail: { deliverable: request.deliverable },
     at: credential.at,
   });
+  if (drafts > 0) {
+    return {
+      ok: true,
+      seq,
+      role: scope.role,
+      note:
+        `draft ${String(drafts + 1)} is on the record and supersedes your earlier draft. ` +
+        'If this is your final draft, stop now — do not call submit_draft again.',
+    };
+  }
   return { ok: true, seq, role: scope.role };
 }

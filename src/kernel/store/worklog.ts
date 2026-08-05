@@ -78,6 +78,19 @@ export function appendWorkLog(store: Store, entry: AppendWorkLog): number {
   return Number(result.lastInsertRowid);
 }
 
+/** How many entries a task has filed under one action. Cheap: index-covered. */
+export function countWorkLogEntries(
+  store: Store,
+  run: string,
+  task: string,
+  action: string,
+): number {
+  const row = store.db
+    .prepare('SELECT COUNT(*) AS n FROM work_log WHERE run = ? AND task = ? AND action = ?')
+    .get(run, task, action) as { n: number };
+  return row.n;
+}
+
 /** Read a run's log in append order. Omit `run` to read the whole log. */
 export function readWorkLog(store: Store, run?: string): WorkLogEntry[] {
   const rows = (

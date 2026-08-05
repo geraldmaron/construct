@@ -89,6 +89,44 @@ function actions(store: Store): string[] {
   return readWorkLog(store, RUN).map((entry) => entry.action);
 }
 
+test('a resubmission is told to stop, the cap closes the window, and the log records the cap once', () => {
+  withStore((store) => {
+    seed(store);
+    const submit = () =>
+      submitDraft(store, credential(), { run: RUN, task: TASK, deliverable: { text: 'a draft' } });
+
+    const first = submit();
+    assert.equal(first.ok, true);
+    assert.equal('note' in first && first.note !== undefined, false, 'a first draft needs no warning');
+
+    const second = submit();
+    assert.equal(second.ok, true);
+    assert.match(
+      (second as { note?: string }).note ?? '',
+      /stop now/,
+      'a superseding draft is told stopping is the next move',
+    );
+
+    submit();
+    submit();
+    const fifth = submit();
+    assert.equal(fifth.ok, true);
+
+    // The loop observed live: the role keeps going. Every attempt past the cap
+    // is refused with a stop message, and the record shows the window closed
+    // once — not the shape of the loop that kept hitting it.
+    for (let i = 0; i < 3; i += 1) {
+      const over = submit();
+      assert.equal(over.ok, false);
+      assert.equal((over as { denial: string }).denial, 'draft-cap');
+      assert.match((over as { reason: string }).reason, /Stop now/);
+    }
+    const all = actions(store);
+    assert.equal(all.filter((a) => a === 'draft-submitted').length, 5, 'the cap held');
+    assert.equal(all.filter((a) => a === 'draft-cap-reached').length, 1, 'the cap logged once');
+  });
+});
+
 test('a role submits drafts and appends to its log, and moves nothing', () => {
   withStore((store) => {
     seed(store);
