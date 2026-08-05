@@ -67,10 +67,20 @@ const documents = new Set(listDocuments(corpusRoot));
 const normalizeCitation = (c) => String(c).replace(/#L\d+.*$/, '').trim();
 const lower = (s) => String(s ?? '').toLowerCase();
 
-/** AND of terms; a term is OR of |-separated case-insensitive substrings. */
+/**
+ * Collapse case, camelCase, and separators before matching, so that a claim
+ * written "destinationServiceAccounts" satisfies the term "service account".
+ * The collapse also joins adjacent words, which can in principle match a term
+ * across a word boundary; that looseness is accepted — the plants' terms are
+ * multi-word enough that the false-positive class is smaller than the
+ * vocabulary-artifact class this removes.
+ */
+const collapse = (s) => lower(s).replace(/[^a-z0-9]+/g, '');
+
+/** AND of terms; a term is OR of |-separated case/separator-insensitive substrings. */
 function matchesKeywords(text, keywords) {
-  const t = lower(text);
-  return keywords.every((term) => term.split('|').some((alt) => t.includes(alt.toLowerCase())));
+  const t = collapse(text);
+  return keywords.every((term) => term.split('|').some((alt) => t.includes(collapse(alt))));
 }
 
 const claims = Array.isArray(run.claims) ? run.claims : [];

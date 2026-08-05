@@ -74,6 +74,8 @@ The tracker and the repo drift apart the moment either moves without the other. 
 
 **LLM-as-judge (Gerald, 2026-08-04):** label and verdict work runs as recommend-and-accept: Fable (or the strongest available model) labels or recommends, Gerald accepts, then work proceeds — no external recruiting gates a study. Every such verdict's NOTES entry names who judged and who accepted. When the judging model shares a family with whatever authored the thing being judged, the correlated-error caveat travels with the numbers wherever they are quoted (observed agreement is an upper bound on independent agreement).
 
+**Amended (Gerald, 2026-08-05):** Gerald is the stakeholder, not a coder in the loop. He clarifies requirements and approves outputs; label and verdict production never waits on him. The strongest available model labels autonomously, cross-family panels supply independence where correlated error matters, and each verdict's NOTES entry names the judging model(s) under this standing approval. No bead depends on Gerald "providing labels"; the `human` label is reserved for genuine stakeholder moves — requirement clarifications, output approvals, external actions (tokens, attorneys, users). Any bead whose description assumes human-provided labels is reread under this amendment.
+
 **Dispatch protocol (generalized from construct-2jb, 2026-08-04):** a bead intended for autonomous execution — a fresh session, any host, possibly a multi-agent stream — carries a dated `DISPATCH` NOTES entry stating:
 
 1. Minimum model tier, as a capability floor, not a vendor lock ("Fable/Opus-class", "Sonnet-class or better", "any local model"). If the bead splits, state the judgment/mechanical split and a tier for each half.

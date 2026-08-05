@@ -50,6 +50,23 @@ scorer reports role coverage as advisory — it shows which role lenses saw and
 which were blind, but never gates a rung. Those labels are recommendations
 awaiting human acceptance.
 
+## Acceptance across runs
+
+Scored runs vary: the first two runs each surfaced findings the other did not
+(TP1 hit only in run 1; A1 and L1 hit only in run 2). The recorded policy:
+
+- **Rung gates are per-run.** A rung is accepted when a single scored run
+  passes it; a pass assembled by unioning partial runs is not a pass, because
+  the rung claims a capability one run must demonstrate whole.
+- **Role coverage is union-over-accepted-runs.** A role finding counts as
+  covered when any accepted run surfaced it, because the findings are
+  independent plants and role coverage is advisory. Coverage claims name the
+  run they come from.
+- **Repeated absence is a finding.** A planted item missed by every run to
+  date (CP1 after two runs) is recorded as a blind spot where the run count
+  stands, not averaged away. With single-digit runs, no rate claims — hits
+  and misses are enumerated, never percentaged.
+
 A run produced by the same model family that authored the plants carries the
 correlated-error caveat: an observed pass is an upper bound on what an
 independent run would score. The caveat travels with any number quoted from

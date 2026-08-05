@@ -13,7 +13,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, readFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -121,6 +121,49 @@ test('a propagation proposal on the wrong ticket fails rung 3', () => {
   run.notesDrop.proposals[0].target = 'tickets/T-29001.md';
   const { report } = score(run);
   assert.equal(report.rung3.pass, false);
+});
+
+test('identifier vocabulary matches its spaced form: destinationServiceAccounts satisfies "service account"', () => {
+  // The real second scored run stated a planted risk's exact mechanism but
+  // wrote the identifier form of the key's term and was scored a miss; the
+  // scorer now collapses case and separators on both sides before matching.
+  const dir = mkdtempSync(join(tmpdir(), 'org-harness-mini-'));
+  mkdirSync(join(dir, 'corpus'));
+  writeFileSync(join(dir, 'corpus', 'a.md'), 'doc a');
+  writeFileSync(join(dir, 'corpus', 'b.md'), 'doc b');
+  const miniKey = {
+    corpusRoot: 'corpus',
+    crossReferences: [],
+    conflicts: [],
+    risks: [
+      {
+        id: 'R',
+        documents: ['a.md', 'b.md'],
+        keywords: ['service account', 'push-to-stage'],
+      },
+    ],
+    notesDrop: { expectedProposals: [], expectedDeltas: [] },
+  };
+  writeFileSync(join(dir, 'answer-key.json'), JSON.stringify(miniKey));
+  const run = {
+    claims: [
+      {
+        kind: 'risk',
+        claim:
+          'The destinationServiceAccounts credential is what the push to stage runs as, and that combination is the risk this claim ties together.',
+        citations: ['a.md', 'b.md'],
+      },
+    ],
+    notesDrop: { proposals: [], deltas: [] },
+  };
+  const runFile = join(dir, 'run.json');
+  writeFileSync(runFile, JSON.stringify(run));
+  const out = execFileSync('node', [scorer, runFile, '--harness', dir, '--json'], {
+    cwd: repo,
+    encoding: 'utf8',
+  });
+  const report = JSON.parse(out) as { rung2: { pass: boolean } };
+  assert.equal(report.rung2.pass, true);
 });
 
 test('a memory delta that cannot cite its note line fails rung 3', () => {
