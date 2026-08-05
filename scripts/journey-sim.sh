@@ -65,6 +65,8 @@ run_journey() {
     # No flags on purpose: the recorded dispatch surface is under test.
     echo "--- work $run_id ---"
     cx work --run "$run_id" 2>&1 | tee "$results/$name.work.txt"
+    echo "--- show ---"
+    cx show --run "$run_id" 2>&1 | tee "$results/$name.show.txt"
     echo "--- log ---"
     cx log --run "$run_id" 2>&1 | tee "$results/$name.log.txt"
     echo "--- inbox ---"

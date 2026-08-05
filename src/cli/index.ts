@@ -46,7 +46,7 @@ import { gatherRepoEvidence, isFailure } from '../hosts/repo/evidence.ts';
 import { reconcileSession } from '../kernel/tracker/session-drift.ts';
 import { constructFindings, CONSTRUCT_GROUND } from '../kernel/watch/construct-ground.ts';
 import { startWatch, sweepWatch, watchRun } from '../kernel/watch/watch.ts';
-import { promotionOf, waiveChallenge } from '../kernel/run/promotion.ts';
+import { latestDraft, promotionOf, waiveChallenge } from '../kernel/run/promotion.ts';
 import type { Watch } from '../kernel/watch/watch.ts';
 import { join } from 'node:path';
 
@@ -910,6 +910,71 @@ function howInferred(detail: unknown): string {
   return '';
 }
 
+/**
+ * Render a submitted deliverable for reading. A string is the text itself; an
+ * object with a `text` field was a role wrapping its prose; anything else is
+ * shown as formatted JSON rather than hidden.
+ */
+function renderDeliverable(deliverable: unknown): string {
+  if (typeof deliverable === 'string') return deliverable;
+  const text = (deliverable as { text?: unknown } | null)?.text;
+  if (typeof text === 'string') return text;
+  return JSON.stringify(deliverable, null, 2);
+}
+
+/**
+ * The deliverable is the product, and until this command existed no surface
+ * showed it: `work` reported "done" with the cost, `log` reported action
+ * names, and the text a user paid for sat in the store readable only by hand.
+ * A spine that ends at "done" without showing the work is missing its last
+ * step.
+ */
+export function show(argv: string[]): number {
+  const runIndex = argv.indexOf('--run');
+  const run = argv.find((a) => a.startsWith('--run='))?.slice('--run='.length)
+    ?? (runIndex >= 0 ? argv[runIndex + 1] : undefined);
+  if (!run) {
+    process.stderr.write('usage: construct show --run <id>\n');
+    return 2;
+  }
+
+  return withStore((store) => {
+    const tasks = listTasks(store, run);
+    if (tasks.length === 0) {
+      process.stdout.write(`no tasks for ${run}. Record an outcome first: construct outcome "<what you want>"\n`);
+      return 0;
+    }
+    for (const task of tasks) {
+      const draft = latestDraft(store, task.id);
+      const promotion = promotionOf(store, task.id);
+      process.stdout.write(`\n${task.role} — ${task.state}`);
+      if (promotion) process.stdout.write(` · ${promotion.state}`);
+      const review = licensedReviewFor(task.role);
+      if (review) {
+        process.stdout.write(
+          `\n  issue-spotting only: needs review by a licensed ${review} before you rely on it`,
+        );
+      }
+      process.stdout.write('\n');
+      // A draft submitted through the write surface is the deliverable of
+      // record; a role whose host has no write-through leaves its reply in the
+      // task result, and showing nothing there would hide real work.
+      const deliverable = draft?.deliverable ?? task.result;
+      if (deliverable === null || deliverable === undefined) {
+        process.stdout.write('  (no deliverable was produced for this task)\n');
+        continue;
+      }
+      if (!draft) process.stdout.write('  (from the role\'s reply; no draft was submitted)\n');
+      const body = renderDeliverable(deliverable)
+        .split('\n')
+        .map((line) => `  ${line}`)
+        .join('\n');
+      process.stdout.write(`${body}\n`);
+    }
+    return 0;
+  });
+}
+
 export function log(argv: string[]): number {
   const runIndex = argv.indexOf('--run');
   const run = runIndex >= 0 ? argv[runIndex + 1] : undefined;
@@ -1289,7 +1354,7 @@ export function waive(argv: string[]): number {
   });
 }
 
-const USAGE = 'usage: construct <outcome|work|watch|waive|verdict|corpus|log|inbox|decide|serve|doctor|cleanup|version>\n';
+const USAGE = 'usage: construct <outcome|work|show|watch|waive|verdict|corpus|log|inbox|decide|serve|doctor|cleanup|version>\n';
 
 /**
  * Async because `work` dispatches to a host, and `outcome --host=…` may
@@ -1325,6 +1390,8 @@ async function run(argv: string[]): Promise<number> {
       return corpus(argv.slice(1));
     case 'log':
       return log(argv.slice(1));
+    case 'show':
+      return show(argv.slice(1));
     case 'inbox':
       return inbox();
     case 'decide':

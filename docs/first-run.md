@@ -92,6 +92,17 @@ cost units), and hitting it stops dispatch rather than surprising you.
 If your host is not installed or not authenticated, this is where you find out,
 and the error says which it was.
 
+## Read the deliverable
+
+```bash
+construct show --run <your-run-id>
+```
+
+This is the work itself: each role's deliverable in full, with its promotion
+state and, where the domain calls for it, the licensed-review qualifier on the
+same screen as the text it qualifies. A deliverable you cannot read is not a
+deliverable, so this command exists.
+
 ## Read back what happened
 
 ```bash

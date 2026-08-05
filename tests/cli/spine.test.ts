@@ -413,6 +413,41 @@ test('an outcome queues work, and construct work runs it to a deliverable', asyn
   assert.match(out, /role-reported/);
 });
 
+test('construct show renders the deliverable a run produced, with its qualifiers', async () => {
+  // The gap this closes: work said "done", log said action names, and the
+  // text the user paid for was readable only with sqlite by hand.
+  const { code, out } = await runAll([
+    ['outcome', 'We want to hire a contractor in Poland'],
+    () => work([], standInHost()),
+    async () => {
+      const store = openStore(
+        join(process.env.XDG_DATA_HOME as string, 'construct', 'construct.db'),
+      );
+      let runId = '';
+      try {
+        const row = store.db.prepare('SELECT run FROM tasks LIMIT 1').get() as { run: string };
+        runId = row.run;
+      } finally {
+        store.close();
+      }
+      const { show } = await import('../../src/cli/index.ts');
+      return show(['--run', runId]);
+    },
+  ]);
+
+  assert.equal(code, 0);
+  assert.match(out, /employment — done/);
+  assert.match(out, /employment reporting/, 'the deliverable body is readable');
+  assert.match(out, /needs review by a licensed attorney/, 'the qualifier travels with the text');
+});
+
+test('construct show without a run id is a usage error, not a dump', async () => {
+  const { show } = await import('../../src/cli/index.ts');
+  const { code, err } = await run(() => Promise.resolve(show([])));
+  assert.equal(code, 2);
+  assert.match(err, /usage: construct show/);
+});
+
 test('work with nothing queued says so rather than reporting an empty success', async () => {
   const { code, out } = await run(() => work([], standInHost()));
   assert.equal(code, 0);
