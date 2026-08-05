@@ -27,25 +27,94 @@
 // coder as "the human disagreement floor" — it is not one, and construct-2jb.3
 // does not close on it.
 //
+// TWO KINDS OF DIVERSITY, AND ONLY ONE OF THEM COUNTS HERE (construct-adf).
+// Choosing a bigger or smaller model from the same vendor changes capability and
+// cost; it does not change correlated error, because the caveat above is about
+// shared pretraining and survives a tier change untouched. Only a different
+// FAMILY moves that number. That is why this script takes a provider and a
+// model rather than a size: the point is whose weights answer, not how many.
+//
 // Usage:
-//   node scripts/labeling-kit/code-sheet-with-model.mjs <coder-name> <ollama-model>
+//   node scripts/labeling-kit/code-sheet-with-model.mjs <coder-name> <model>
+//   node scripts/labeling-kit/code-sheet-with-model.mjs <coder-name> <model> \
+//     [--provider ollama|openrouter] [--corpus <path-to-fixture>]
+//
+// --corpus codes a corpus fixture (tests/kernel/implication/fixtures/*.json)
+// instead of a prepared sheet, so a corpus built by one family can be re-coded
+// by another without a second script. --provider openrouter reads
+// OPENROUTER_API_KEY from the environment and nowhere else: no file, no prompt,
+// no argument. A key that is not in the environment is a key this script does
+// not have.
 
-import { readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { DOMAINS } from '../../src/kernel/implication/domains.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const OLLAMA = process.env.OLLAMA_HOST ?? 'http://127.0.0.1:11434';
+const OPENROUTER = 'https://openrouter.ai/api/v1/chat/completions';
 
-const [coder, model] = process.argv.slice(2);
+const argv = process.argv.slice(2);
+function flag(name) {
+  const i = argv.indexOf(`--${name}`);
+  return i === -1 ? undefined : argv[i + 1];
+}
+const positional = argv.filter((a, i) => !a.startsWith('--') && !argv[i - 1]?.startsWith('--'));
+const [coder, model] = positional;
+const provider = flag('provider') ?? 'ollama';
+const corpusPath = flag('corpus');
+
 if (!coder || !model) {
-  console.error('usage: code-sheet-with-model.mjs <coder-name> <ollama-model>');
+  console.error(
+    'usage: code-sheet-with-model.mjs <coder-name> <model> [--provider ollama|openrouter] [--corpus <fixture>]',
+  );
   process.exit(2);
 }
+if (!['ollama', 'openrouter'].includes(provider)) {
+  console.error(`unknown provider "${provider}" — expected ollama or openrouter`);
+  process.exit(2);
+}
+if (provider === 'openrouter' && !process.env.OPENROUTER_API_KEY) {
+  // Fail before the first call rather than as an opaque 401 forty outcomes in.
+  console.error(
+    'OPENROUTER_API_KEY is not in the environment. This script reads it from there and nowhere\n' +
+      'else. Launch through the op-wrapped `claude` alias, or run under `op run --env-file=...`.',
+  );
+  process.exit(78);
+}
 
-const sheetPath = join(HERE, 'sheets', `${coder}.json`);
-const outPath = join(HERE, 'returned', `${coder}.json`);
-const sheet = JSON.parse(readFileSync(sheetPath, 'utf8'));
+// Corpus coding lands in its own directory. `returned/` is construct-2jb.3's
+// study — compute-alpha.mjs pools everything it finds there, and a 72-outcome
+// panel sheet dropped in beside a 34-outcome study sheet would change what that
+// study reports without anyone editing it.
+const outPath = join(HERE, corpusPath ? 'returned-panel' : 'returned', `${coder}.json`);
+
+/** A prepared sheet, or a corpus fixture reshaped into one. */
+function loadWork() {
+  if (!corpusPath) return JSON.parse(readFileSync(join(HERE, 'sheets', `${coder}.json`), 'utf8'));
+
+  const corpus = JSON.parse(readFileSync(resolve(corpusPath), 'utf8'));
+  // The seal, checked by what the file says about itself rather than by its
+  // name — naming it here would itself be the violation corpus-split.test.ts
+  // watches for.
+  if (String(corpus.partition ?? '').startsWith('SEALED')) {
+    console.error(
+      `${corpusPath} declares itself sealed. Coding it is scoring it, and that is a decision with\n` +
+        'a date and a reason (see construct-2jb notes), not something a runner does in passing.',
+    );
+    process.exit(2);
+  }
+  return {
+    // The coder sees the catalog's plain-English concerns only — never the
+    // keywords, never the existing labels.
+    catalog: DOMAINS.map((d) => ({ domain: d.domain, concern: d.concern })),
+    source: corpusPath,
+    outcomes: corpus.outcomes.map((o) => ({ id: o.id, outcome: o.outcome })),
+  };
+}
+
+const sheet = loadWork();
 
 // The coder sees exactly what a human coder sees: the catalog's plain-English
 // concern lines and the outcome text. No keywords, no source, no other coder's
@@ -86,7 +155,12 @@ function parseLabels(raw) {
   return cleaned;
 }
 
-async function ask(prompt) {
+// Both providers are asked at temperature 0. This is a measurement, and a coder
+// that answers differently on a re-run cannot be audited. (Seeding is honoured
+// by ollama; hosted providers generally do not promise it, so an OpenRouter
+// coder is reproducible only as far as its host makes it so — stated here
+// rather than assumed away.)
+async function askOllama(prompt) {
   const res = await fetch(`${OLLAMA}/api/generate`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -94,15 +168,34 @@ async function ask(prompt) {
       model,
       prompt,
       stream: false,
-      // Deterministic: this is a measurement, and a coder that answers differently
-      // on a re-run cannot be audited.
       options: { temperature: 0, seed: 7 },
     }),
   });
   if (!res.ok) throw new Error(`ollama ${res.status}: ${await res.text()}`);
-  const body = await res.json();
-  return body.response;
+  return (await res.json()).response;
 }
+
+async function askOpenRouter(prompt) {
+  const res = await fetch(OPENROUTER, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model,
+      temperature: 0,
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  });
+  if (!res.ok) throw new Error(`openrouter ${res.status}: ${await res.text()}`);
+  const body = await res.json();
+  const text = body.choices?.[0]?.message?.content;
+  if (typeof text !== 'string') throw new Error(`no message content: ${JSON.stringify(body).slice(0, 200)}`);
+  return text;
+}
+
+const ask = provider === 'openrouter' ? askOpenRouter : askOllama;
 
 const started = new Date().toISOString();
 let done = 0;
@@ -118,14 +211,15 @@ for (const item of sheet.outcomes) {
 sheet.codedBy = {
   kind: 'model',
   model,
-  via: 'ollama',
+  via: provider,
   temperature: 0,
-  seed: 7,
+  ...(provider === 'ollama' ? { seed: 7 } : {}),
   started,
   finished: new Date().toISOString(),
   caveat:
     'Model coder from a different family than the catalog author. Reduces but does not remove correlated error; a LOW alpha here cannot distinguish task ambiguity from coder incompetence. Not a human coder and not a close gate for construct-2jb.3.',
 };
 
+mkdirSync(dirname(outPath), { recursive: true });
 writeFileSync(outPath, `${JSON.stringify(sheet, null, 2)}\n`);
 console.log(`\nwrote ${outPath} (${sheet.outcomes.length} outcomes, model ${model})`);
