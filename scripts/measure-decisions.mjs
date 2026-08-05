@@ -826,7 +826,12 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
         const result = await adapter.invoke(request, context);
         const out = result?.output;
         if (out && typeof out.cost === 'number') costUsd += out.cost;
-        if (out && typeof out.modelRan === 'string' && out.modelRan) modelsRan.add(out.modelRan);
+        // modelRan is string[] on the Claude adapter (adapter.ts) — a string
+        // check here silently reported 'unreported' for a run that named its
+        // model in every envelope. Accept both shapes.
+        const ran = out?.modelRan;
+        if (typeof ran === 'string' && ran) modelsRan.add(ran);
+        else if (Array.isArray(ran)) for (const m of ran) if (typeof m === 'string' && m) modelsRan.add(m);
         return result;
       },
     };
@@ -952,6 +957,10 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
   }
   if (NAMER_HOST === 'claude') {
     console.log(`  cost: $${costUsd.toFixed(4)} summed from envelopes; model(s) that ran: ${[...modelsRan].join(', ') || 'unreported'}`);
+    if (costUsd === 0 && calls > 0) {
+      console.log('  A summed zero with consultations made is unmeasured, not free (subscription');
+      console.log('  auth reports no spend). Do not quote this run as costless.');
+    }
   }
   console.log('  The sealed corpus is deliberately absent, as everywhere in this script.');
   console.log('  Adoption is decided on construct-4jq, by Gerald, on these figures — a weak');
