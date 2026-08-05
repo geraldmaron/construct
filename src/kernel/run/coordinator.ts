@@ -200,7 +200,8 @@ export function assignmentFor(
     engagement +
     'Report what this outcome implicates in your domain: what needs to be true, ' +
     'what is likely to be missed, and what you cannot determine from the outcome ' +
-    'alone. Do not assert anything you cannot support. Be brief.\n\n' +
+    'alone. Do not assert anything you cannot support. Keep it as short as it can ' +
+    'be while still letting the reader follow how you got there.\n\n' +
     `${voiceProtocol(options.voice)}\n\n` +
     `${surface}\n\n` +
     STANCE_PROTOCOL

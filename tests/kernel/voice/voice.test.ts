@@ -14,6 +14,7 @@ import assert from 'node:assert/strict';
 import { HOUSE_VOICE, voiceProtocol } from '../../../src/kernel/voice/voice.ts';
 import { assignmentFor } from '../../../src/kernel/run/coordinator.ts';
 import type { Brief } from '../../../src/kernel/brief/schema.ts';
+import { findUntaggedClaims } from '../../../src/kernel/verify/claims.ts';
 import { parseWorkArgs } from '../../../src/cli/index.ts';
 
 const BRIEF: Brief = {
@@ -49,13 +50,41 @@ test("an override replaces the house voice rather than arguing with it", () => {
   assert.match(voiceProtocol(override), /the voice the user asked for/);
 });
 
-test('the voice is stated positively and names the hype vocabulary it refuses', () => {
+test('the voice covers register, not only vocabulary', () => {
   const house = voiceProtocol();
+  // Lead with the finding, then narrate how you got there.
   assert.match(house, /Lead with the finding/);
+  assert.match(house, /tell the story/i);
+  // Human, not corporate.
+  assert.match(house, /colleague who stepped away/);
+  assert.match(house, /Contractions are fine/);
+  // The hype list is named outright rather than left to taste.
   assert.match(house, /seamless/);
   assert.match(house, /best-in-class/);
+  // Punctuation: dashes are a last resort, not a rhythm.
+  assert.match(house, /em dash only where none of those works/);
   // A gap named is a real answer, and the voice says so rather than implying it.
   assert.match(house, /could not determine/);
+});
+
+test('the voice asks for language a reader can see themselves in', () => {
+  const house = voiceProtocol();
+  assert.match(house, /they\/them for a person whose pronouns you have not been told/);
+  assert.match(house, /never guess from a name/);
+  assert.match(house, /ableist shorthand/);
+});
+
+test('the voice teaches the citation notation the deterministic check reads', () => {
+  const house = voiceProtocol();
+  assert.match(house, /Never invent a fact/);
+  // The notation must match what verify/claims.ts actually looks for, or the
+  // role is being held to a rule it was shown in different words.
+  assert.match(house, /\[cite:/);
+  assert.match(house, /\[unverified\]/);
+
+  const taught = 'Churn rose 4% last quarter [cite:billing export 2026-07-01] and the trend held.';
+  assert.deepEqual(findUntaggedClaims(taught), []);
+  assert.equal(findUntaggedClaims('Churn rose 4% last quarter.').length, 1);
 });
 
 test('the CLI carries an override through, and blank is not an override', () => {

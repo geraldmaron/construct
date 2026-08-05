@@ -19,9 +19,14 @@
  *      their own register. Identity is not a per-role choice, for the same
  *      reason completion state is not.
  *
- * The rules are stated positively and kept few. A long list of prohibitions
- * reads as a style guide nobody finishes; these are the ones that decide
- * whether a reader believes the deliverable.
+ * The rules are stated positively, and each one is here because it changes
+ * whether a reader believes the deliverable or can act on it. Two of them do
+ * work no other part of the system does: `inclusive-language`, because a
+ * deliverable a reader cannot see themselves in is a deliverable they discount;
+ * and `cite-or-mark`, which teaches the citation notation that verify/claims.ts
+ * checks deterministically afterwards. That check has always existed and the
+ * role was never told the notation it would be held to, which is a rule
+ * enforced against someone who was never shown it.
  */
 
 export interface VoiceRule {
@@ -36,20 +41,36 @@ export const HOUSE_VOICE: readonly VoiceRule[] = [
     rule: 'Lead with the finding. The first sentence says what is true or what to do, not what you set out to examine.',
   },
   {
+    id: 'tell-the-story',
+    rule: 'Then tell the story: what you looked at, what you found, and what follows from it, in that order. A reader should be able to follow how you got there, not just be handed a verdict. Describe the situation before you judge it.',
+  },
+  {
+    id: 'human-register',
+    rule: 'Write like a person explaining this to a colleague who stepped away. Contractions are fine. Corporate register, throat-clearing openers, and sentences arranged to sound official are not.',
+  },
+  {
     id: 'plain-words',
-    rule: 'Use plain words. No hype vocabulary — seamless, robust, revolutionary, best-in-class, game-changing, effortless, unlock, empower — and no word chosen because it sounds more serious than the plain one.',
+    rule: 'Use plain words. No hype vocabulary (seamless, robust, revolutionary, best-in-class, game-changing, effortless, unlock, empower), and no word chosen because it sounds more serious than the plain one.',
   },
   {
     id: 'complete-sentences',
-    rule: 'Write complete sentences. Fragments, arrow chains, and abbreviations save you time and cost the reader more than they save.',
+    rule: 'Write complete sentences and real paragraphs. Fragments, arrow chains, and abbreviations save you a moment and cost the reader more than they save. Reach for a list only when the content is genuinely a list.',
+  },
+  {
+    id: 'sparing-dashes',
+    rule: 'Punctuate with commas, colons, periods, and parentheses. Use an em dash only where none of those works, and never two in one sentence. A paragraph strung together with dashes reads as one long breath.',
+  },
+  {
+    id: 'inclusive-language',
+    rule: 'Write so any reader can see themselves in it. Use they/them for a person whose pronouns you have not been told, and never guess from a name. Describe people by what is relevant to the work, not by group. Skip idioms, sports and military metaphors, and ableist shorthand (blind to, crippled, sanity check) that carry meaning for some readers and noise for the rest.',
   },
   {
     id: 'name-the-gap',
     rule: 'Say what you could not determine, in the same voice as what you could. "I cannot tell from the outcome alone" is a real answer; vague phrasing that hides the gap is not.',
   },
   {
-    id: 'no-borrowed-certainty',
-    rule: 'Claim only what you can support, and say what supports it. Confidence you did not earn reads as confidence about everything else you wrote.',
+    id: 'cite-or-mark',
+    rule: 'Never invent a fact, a number, a date, a source, or a quotation. Every amount, percentage, and date carries either [cite:where it came from] or [unverified] on the same line — a deterministic check reads those markers, so an untagged number will come back to you.',
   },
 ];
 
