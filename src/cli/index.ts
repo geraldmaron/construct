@@ -39,6 +39,11 @@ import { loadOrCreateSecret, loadSecret } from '../kernel/capabilities/secretfil
 import { readRoleEnv } from '../kernel/run/roleenv.ts';
 import { serveRole } from './roleserve.ts';
 import { serveProjection } from '../hosts/mcp/projection.ts';
+import { gatherRepoEvidence, isFailure } from '../hosts/repo/evidence.ts';
+import { reconcileSession } from '../kernel/tracker/session-drift.ts';
+import { constructFindings, CONSTRUCT_GROUND } from '../kernel/watch/construct-ground.ts';
+import { startWatch, sweepWatch, watchRun } from '../kernel/watch/watch.ts';
+import type { Watch } from '../kernel/watch/watch.ts';
 import { join } from 'node:path';
 
 const MIN_NODE = { major: 22, minor: 18 };
@@ -1073,7 +1078,76 @@ export function corpus(argv: string[]): number {
   return 2;
 }
 
-const USAGE = 'usage: construct <outcome|work|verdict|corpus|log|inbox|decide|serve|doctor|cleanup|version>\n';
+
+const WATCH_USAGE =
+  'usage: construct watch [--root=<repo>] [--sweep]\n';
+
+/**
+ * The standing watch, swept once.
+ *
+ * A watch is an outcome that never closes, so there is no "start" to run and
+ * nothing to schedule: something outside decides when to look, exactly as
+ * something outside decides when to `work`. Today the only ground is Construct
+ * itself (commitment 16 made operational), which is why this takes a repo root
+ * and nothing else. External ground waits for Phase 4 behind its gates.
+ */
+export function watch(argv: string[]): number {
+  const flags: Record<string, string> = {};
+  for (const arg of argv) {
+    const match = /^--([a-z-]+)(?:=(.*))?$/.exec(arg);
+    if (match) flags[match[1]] = match[2] ?? '';
+  }
+  if (flags.help !== undefined) {
+    process.stdout.write(WATCH_USAGE);
+    return 0;
+  }
+  const root = flags.root || process.cwd();
+
+  const gathered = gatherRepoEvidence({ root });
+  if (isFailure(gathered)) {
+    // Nothing to watch is not a failure of the watch; it is a fact about the
+    // ground, and saying which is the difference between a broken tool and an
+    // unwatched repository.
+    process.stderr.write(`watch: ${gathered.problem}\n`);
+    return 1;
+  }
+
+  const at = now();
+  const report = reconcileSession(gathered.issues, gathered.evidence, at);
+  const findings = constructFindings(report);
+  const target: Watch = { id: 'construct', ground: CONSTRUCT_GROUND };
+
+  return withStore((store) => {
+    if (readWorkLog(store, watchRun(target)).length === 0) startWatch(store, target, at);
+    const result = sweepWatch(store, { watch: target, findings, at });
+
+    process.stdout.write(`watch ${target.id}\n  ground: ${target.ground}\n\n`);
+    if (findings.length === 0) {
+      process.stdout.write('nothing diverged. The tracker and the repo agree.\n');
+      return 0;
+    }
+    process.stdout.write(
+      `${String(findings.length)} finding(s): ` +
+        `${String(result.raised.length)} raised as new decisions, ` +
+        `${String(result.standing.length)} already standing.\n`,
+    );
+    for (const key of result.raised) process.stdout.write(`  new       ${key}\n`);
+    for (const key of result.standing) process.stdout.write(`  standing  ${key}\n`);
+    if (result.raised.length > 0) {
+      process.stdout.write('\nRead them:  construct inbox\n');
+    } else {
+      // A sweep that raises nothing new is the common case, and it must not
+      // read as a sweep that found nothing.
+      process.stdout.write(
+        '\nEverything found is already in the inbox, unresolved. A standing finding is\n' +
+          'not raised twice; resolve it with: construct decide --id=<id> --resolution="..."\n',
+      );
+    }
+    return 0;
+  });
+}
+
+const USAGE = 'usage: construct <outcome|work|watch|verdict|corpus|log|inbox|decide|serve|doctor|cleanup|version>\n';
 
 /**
  * Async because `work` dispatches to a host, and `outcome --host=…` may
@@ -1099,6 +1173,8 @@ async function run(argv: string[]): Promise<number> {
       return outcome(argv.slice(1));
     case 'work':
       return work(argv.slice(1));
+    case 'watch':
+      return watch(argv.slice(1));
     case 'verdict':
       return verdict(argv.slice(1));
     case 'corpus':

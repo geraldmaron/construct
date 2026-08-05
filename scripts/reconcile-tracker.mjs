@@ -8,10 +8,11 @@
  * ones that leave the tracker asserting things the repo stopped agreeing with.
  * So the ritual runs here instead of being remembered.
  *
- * This is the IO half; every judgement lives in
- * src/kernel/tracker/session-drift.ts, which is pure and tested against fixtures
- * rather than against whatever this repo happens to look like today. All this
- * file does is gather evidence and print.
+ * Every judgement lives in src/kernel/tracker/session-drift.ts, which is pure
+ * and tested against fixtures rather than against whatever this repo happens to
+ * look like today, and the evidence gathering lives in
+ * src/hosts/repo/evidence.ts, shared with the standing watch. All this file
+ * does is print.
  *
  *   node scripts/reconcile-tracker.mjs            # human-readable
  *   node scripts/reconcile-tracker.mjs --json     # the report as data
@@ -22,104 +23,28 @@
  * less than a gate that only talks.
  */
 
-import { readFileSync, existsSync } from 'node:fs';
-import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 import { reconcileSession, describeConflict } from '../src/kernel/tracker/session-drift.ts';
+import { gatherRepoEvidence, isFailure } from '../src/hosts/repo/evidence.ts';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const ISSUES = join(ROOT, '.beads/issues.jsonl');
 const MAIN_BRANCH = 'main';
 
 const json = process.argv.includes('--json');
 const quiet = process.argv.includes('--quiet');
 const strict = process.argv.includes('--strict');
 
-function git(args) {
-  const result = spawnSync('git', args, { cwd: ROOT, encoding: 'utf8' });
-  if (result.error || result.status !== 0) return null;
-  return result.stdout;
-}
-
-function loadIssues() {
-  if (!existsSync(ISSUES)) return null;
-  return readFileSync(ISSUES, 'utf8')
-    .split('\n')
-    .filter((line) => line.trim() !== '')
-    .map((line) => JSON.parse(line))
-    .filter((record) => record._type === 'issue' && typeof record.id === 'string');
-}
-
-/**
- * Which beads each commit on main landed.
- *
- * Only the trailer counts: CLAUDE.md's convention is that a landing commit's
- * subject ends with `(construct-<id>)`, and one subject may carry several. A
- * bead named anywhere else in the message is explicitly NOT evidence that it
- * landed — the ritual already names this case ("a commit can legitimately
- * reference a bead it did not finish"), and scanning whole messages reproduces
- * it as noise: every epic gets credited by each of its children's commits, and
- * every bead a commit merely discusses reads as closed work.
- *
- * The trailer is matched against the known id set rather than by shape, so
- * `construct-2jb` never matches inside `construct-2jb.9`.
- */
-function landingCommits(ids) {
-  const log = git(['log', '--format=%H%x00%s%x01', MAIN_BRANCH]);
-  if (log === null) return null;
-  const known = new Set(ids);
-  const found = new Map(ids.map((id) => [id, []]));
-  for (const entry of log.split('\x01')) {
-    const [sha, subject] = entry.split('\x00');
-    if (!sha || !subject) continue;
-    const trailer = subject.trim().match(/\(([^()]*)\)$/);
-    if (!trailer) continue;
-    for (const token of trailer[1].split(/[,\s]+/)) {
-      const id = token.trim();
-      if (known.has(id)) found.get(id).push(sha.trim().slice(0, 12));
-    }
-  }
-  return found;
-}
-
-/**
- * Which beads have work in flight: named by a branch, a worktree, or the
- * uncommitted working tree. Deliberately generous — a false "in flight" makes a
- * stale claim look legitimate, which is quieter than the reverse, and this
- * checker earns its keep by being trusted rather than by being maximal.
- */
-function inFlight(ids) {
-  const haystacks = [
-    git(['status', '--porcelain=v1', '-b']) ?? '',
-    git(['branch', '--list', '--format=%(refname:short)']) ?? '',
-    git(['worktree', 'list']) ?? '',
-    git(['stash', 'list']) ?? '',
-  ].join('\n');
-  return new Set(ids.filter((id) => haystacks.includes(id)));
-}
-
-const issues = loadIssues();
-if (issues === null) {
-  process.stderr.write('reconcile-tracker: no .beads/issues.jsonl — nothing to reconcile\n');
+// The gather lives in src/hosts/repo/evidence.ts because the standing watch
+// (construct watch) asks this repository the same question, and two callers
+// answering it differently is the drift this script exists to catch.
+const gathered = gatherRepoEvidence({ root: ROOT, mainBranch: MAIN_BRANCH });
+if (isFailure(gathered)) {
+  process.stderr.write(`reconcile-tracker: ${gathered.problem} — skipped\n`);
   process.exit(0);
 }
-
-const ids = issues.map((i) => i.id);
-const commits = landingCommits(ids);
-if (commits === null) {
-  process.stderr.write(`reconcile-tracker: cannot read git log for ${MAIN_BRANCH} — skipped\n`);
-  process.exit(0);
-}
-const flight = inFlight(ids);
-
-// Evidence is gathered for every bead, so absence of an entry never silently
-// excuses one. The kernel's skip-what-was-not-looked-at rule is for callers that
-// gather partially; this caller does not.
-const evidence = Object.fromEntries(
-  ids.map((id) => [id, { landingCommits: commits.get(id) ?? [], inFlight: flight.has(id) }]),
-);
+const { issues, evidence } = gathered;
 
 const reconciledAt = new Date().toISOString();
 const report = reconcileSession(issues, evidence, reconciledAt);
