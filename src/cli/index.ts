@@ -16,6 +16,16 @@ import { openStore, storePath, storeWriteProblem, StoreUnavailableError } from '
 import type { Store } from '../kernel/store/open.ts';
 import { appendWorkLog, readWorkLog } from '../kernel/store/worklog.ts';
 import { readRunDispatch, recordRunDispatch } from '../kernel/store/dispatch.ts';
+import {
+  addSource,
+  ENGAGEMENT_MODES,
+  engagementMode,
+  retireSource,
+  setEngagementMode,
+  SOURCE_KINDS,
+  sourcesFor,
+} from '../kernel/store/sources.ts';
+import type { EngagementMode, SourceKind } from '../kernel/store/sources.ts';
 import { createHostDensifier } from '../hosts/densifier.ts';
 import type { DensifiedIntake } from '../kernel/intake/densify.ts';
 import { openDecisions, resolveDecision } from '../kernel/store/decisions.ts';
@@ -1354,7 +1364,142 @@ export function waive(argv: string[]): number {
   });
 }
 
-const USAGE = 'usage: construct <outcome|work|show|watch|waive|verdict|corpus|log|inbox|decide|serve|doctor|cleanup|version>\n';
+const SOURCE_USAGE =
+  'usage: construct source add --kind=<directory|git|github|jira|docs> --locator=<where> [--workspace=<name>]\n' +
+  '       construct source list [--workspace=<name>] [--all]\n' +
+  '       construct source retire --id=<source-id>\n';
+
+const MODE_USAGE = 'usage: construct mode [--workspace=<name>] [--set=<team|seat>]\n';
+
+/**
+ * Sources and mode default to the "default" workspace rather than inferring
+ * one from the directory: an inferred workspace that guessed wrong would file
+ * one client's sources under another, which is the exact failure the lesson
+ * store was rebuilt to make unrepresentable. Naming a workspace is cheap;
+ * un-crossing two is not.
+ */
+function workspaceFlag(flags: Record<string, string>): string {
+  return flags.workspace?.trim() || 'default';
+}
+
+function parseFlags(argv: string[]): { flags: Record<string, string>; rest: string[] } {
+  const flags: Record<string, string> = {};
+  const rest: string[] = [];
+  for (const arg of argv) {
+    const match = /^--([a-z-]+)(?:=(.*))?$/.exec(arg);
+    if (match) flags[match[1]] = match[2] ?? 'true';
+    else rest.push(arg);
+  }
+  return { flags, rest };
+}
+
+/**
+ * Declare, list, and retire the sources a workspace works from. Declaring
+ * builds no connector and reads nothing: it names where organizational
+ * context lives so a run can be held to what it actually read from there
+ * (the provenance rows), and so an outward write can name its target.
+ */
+export function source(argv: string[]): number {
+  const sub = argv[0];
+  const { flags } = parseFlags(argv.slice(1));
+  const workspace = workspaceFlag(flags);
+
+  if (sub === 'add') {
+    const kind = flags.kind ?? '';
+    const locator = flags.locator ?? '';
+    if (!(SOURCE_KINDS as readonly string[]).includes(kind) || locator.trim() === '') {
+      process.stderr.write(SOURCE_USAGE);
+      return 2;
+    }
+    return withStore((store) => {
+      const at = now();
+      const id = `src-${at.replace(/[-:.TZ]/g, '')}`;
+      try {
+        addSource(store, { id, workspace, kind: kind as SourceKind, locator, addedAt: at });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (/UNIQUE/i.test(message)) {
+          process.stderr.write(
+            `source: ${workspace} already declares ${kind} ${locator} — retire the old declaration first if it moved\n`,
+          );
+          return 1;
+        }
+        throw error;
+      }
+      process.stdout.write(`declared ${id}: ${kind} ${locator} (workspace ${workspace})\n`);
+      return 0;
+    });
+  }
+
+  if (sub === 'list') {
+    return withStore((store) => {
+      const rows = sourcesFor(store, workspace, { includeRetired: flags.all === 'true' });
+      if (rows.length === 0) {
+        process.stdout.write(`no sources declared for workspace ${workspace}\n`);
+        return 0;
+      }
+      for (const row of rows) {
+        process.stdout.write(
+          `${row.id}  ${row.kind}  ${row.locator}` +
+            (row.retiredAt ? `  (retired ${row.retiredAt})` : '') +
+            '\n',
+        );
+      }
+      return 0;
+    });
+  }
+
+  if (sub === 'retire') {
+    const id = flags.id ?? '';
+    if (id.trim() === '') {
+      process.stderr.write(SOURCE_USAGE);
+      return 2;
+    }
+    return withStore((store) => {
+      try {
+        retireSource(store, id, now());
+      } catch (error) {
+        process.stderr.write(`source: ${error instanceof Error ? error.message : String(error)}\n`);
+        return 1;
+      }
+      process.stdout.write(`retired ${id}\n`);
+      return 0;
+    });
+  }
+
+  process.stderr.write(SOURCE_USAGE);
+  return 2;
+}
+
+/**
+ * Show or set how a workspace engages: `team` (Construct is the whole team,
+ * work tracked its own way) or `seat` (it fills one role on a human team and
+ * works inside their tracker). Downstream consent postures read this, so it
+ * is a declared setting rather than something inferred from usage.
+ */
+export function mode(argv: string[]): number {
+  const { flags } = parseFlags(argv);
+  const workspace = workspaceFlag(flags);
+  return withStore((store) => {
+    if (flags.set !== undefined) {
+      if (!(ENGAGEMENT_MODES as readonly string[]).includes(flags.set)) {
+        process.stderr.write(MODE_USAGE);
+        return 2;
+      }
+      setEngagementMode(store, workspace, flags.set as EngagementMode, now());
+    }
+    const current = engagementMode(store, workspace);
+    process.stdout.write(
+      `workspace ${workspace}: ${current}` +
+        (current === 'team'
+          ? ' (Construct is the whole team)\n'
+          : ' (Construct fills one role on your team)\n'),
+    );
+    return 0;
+  });
+}
+
+const USAGE = 'usage: construct <outcome|work|show|source|mode|watch|waive|verdict|corpus|log|inbox|decide|serve|doctor|cleanup|version>\n';
 
 /**
  * Async because `work` dispatches to a host, and `outcome --host=…` may
@@ -1392,6 +1537,10 @@ async function run(argv: string[]): Promise<number> {
       return log(argv.slice(1));
     case 'show':
       return show(argv.slice(1));
+    case 'source':
+      return source(argv.slice(1));
+    case 'mode':
+      return mode(argv.slice(1));
     case 'inbox':
       return inbox();
     case 'decide':

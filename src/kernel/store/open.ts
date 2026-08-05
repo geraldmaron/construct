@@ -34,7 +34,18 @@
  * it, so rollback is a newer row, never an edit. Schema version 7 adds
  * `run_dispatch`, write-once: the host and model named at the moment of
  * intent are facts of the run, recorded so a later dispatch cannot silently
- * fall through to whatever the host last used.
+ * fall through to whatever the host last used. Schema version 8 adds the
+ * grounding surfaces: `sources` (what a workspace has declared it works
+ * from — retire-only, never deleted, so a source that informed past runs
+ * stays inspectable), `workspace_mode` (team: Construct is the whole team;
+ * seat: it fills one role on a human team — a user setting, so an upsert),
+ * `source_reads` (append-only provenance: a claim of grounding without a
+ * matching read row is a fabrication, and this is the row it must match),
+ * `write_proposals` + `proposal_decisions` (outward writes to tickets and
+ * trackers exist only as immutable proposals decided by append-only
+ * verdicts — applying is a recorded decision, never a side effect), and
+ * `write_consent` (standing per-workspace permission for low-risk applies;
+ * an absent row is a no, same reasoning as workspace_consent).
  *
  * SQLite via `node:sqlite`, which ships with Node — no dependency is added to a
  * CLI users install. STRATEGY ("What carries over") commits the tracker model to
@@ -59,7 +70,7 @@ import { accessSync, constants, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Paths } from '../paths.ts';
 
-export const SCHEMA_VERSION = 7;
+export const SCHEMA_VERSION = 8;
 
 export interface Store {
   readonly db: DatabaseSync;
@@ -327,6 +338,101 @@ CREATE TABLE IF NOT EXISTS run_dispatch (
 CREATE TRIGGER IF NOT EXISTS run_dispatch_no_update
 BEFORE UPDATE ON run_dispatch
 BEGIN SELECT RAISE(ABORT, 'run_dispatch is write-once'); END;
+
+CREATE TABLE IF NOT EXISTS sources (
+  id         TEXT PRIMARY KEY,
+  workspace  TEXT NOT NULL,
+  kind       TEXT NOT NULL CHECK (kind IN ('directory', 'git', 'github', 'jira', 'docs')),
+  locator    TEXT NOT NULL,
+  added_at   TEXT NOT NULL,
+  retired_at TEXT
+) STRICT;
+
+CREATE UNIQUE INDEX IF NOT EXISTS sources_active
+  ON sources (workspace, kind, locator) WHERE retired_at IS NULL;
+
+CREATE TRIGGER IF NOT EXISTS sources_retire_only
+BEFORE UPDATE ON sources
+WHEN NEW.id != OLD.id OR NEW.workspace != OLD.workspace OR NEW.kind != OLD.kind
+  OR NEW.locator != OLD.locator OR NEW.added_at != OLD.added_at
+  OR OLD.retired_at IS NOT NULL OR NEW.retired_at IS NULL
+BEGIN SELECT RAISE(ABORT, 'a source is retired, never edited'); END;
+
+CREATE TRIGGER IF NOT EXISTS sources_no_delete
+BEFORE DELETE ON sources
+BEGIN SELECT RAISE(ABORT, 'a source is retired, never deleted'); END;
+
+CREATE TABLE IF NOT EXISTS workspace_mode (
+  workspace   TEXT PRIMARY KEY,
+  mode        TEXT NOT NULL CHECK (mode IN ('team', 'seat')),
+  recorded_at TEXT NOT NULL
+) STRICT;
+
+CREATE TABLE IF NOT EXISTS source_reads (
+  seq         INTEGER PRIMARY KEY AUTOINCREMENT,
+  run         TEXT NOT NULL,
+  source      TEXT NOT NULL,
+  descriptor  TEXT NOT NULL,
+  coverage    TEXT NOT NULL CHECK (coverage IN ('complete', 'partial', 'unreachable')),
+  detail      TEXT NOT NULL,
+  recorded_at TEXT NOT NULL
+) STRICT;
+
+CREATE INDEX IF NOT EXISTS source_reads_run ON source_reads (run, seq);
+
+CREATE TRIGGER IF NOT EXISTS source_reads_no_update
+BEFORE UPDATE ON source_reads
+BEGIN SELECT RAISE(ABORT, 'source_reads is append-only'); END;
+
+CREATE TRIGGER IF NOT EXISTS source_reads_no_delete
+BEFORE DELETE ON source_reads
+BEGIN SELECT RAISE(ABORT, 'source_reads is append-only'); END;
+
+CREATE TABLE IF NOT EXISTS write_proposals (
+  id            TEXT PRIMARY KEY,
+  workspace     TEXT NOT NULL,
+  run           TEXT,
+  source        TEXT NOT NULL,
+  change        TEXT NOT NULL,
+  justification TEXT NOT NULL,
+  risk          TEXT NOT NULL CHECK (risk IN ('low', 'high')),
+  proposed_at   TEXT NOT NULL
+) STRICT;
+
+CREATE INDEX IF NOT EXISTS write_proposals_workspace ON write_proposals (workspace, proposed_at);
+
+CREATE TRIGGER IF NOT EXISTS write_proposals_no_update
+BEFORE UPDATE ON write_proposals
+BEGIN SELECT RAISE(ABORT, 'a proposal is immutable; its fate is a decision row'); END;
+
+CREATE TRIGGER IF NOT EXISTS write_proposals_no_delete
+BEFORE DELETE ON write_proposals
+BEGIN SELECT RAISE(ABORT, 'a proposal is immutable; its fate is a decision row'); END;
+
+CREATE TABLE IF NOT EXISTS proposal_decisions (
+  seq        INTEGER PRIMARY KEY AUTOINCREMENT,
+  proposal   TEXT NOT NULL,
+  verdict    TEXT NOT NULL CHECK (verdict IN ('approved', 'rejected', 'applied')),
+  basis      TEXT NOT NULL CHECK (basis IN ('human-approval', 'standing-consent')),
+  reason     TEXT NOT NULL,
+  decided_at TEXT NOT NULL
+) STRICT;
+
+CREATE INDEX IF NOT EXISTS proposal_decisions_proposal ON proposal_decisions (proposal, seq);
+
+CREATE TRIGGER IF NOT EXISTS proposal_decisions_no_update
+BEFORE UPDATE ON proposal_decisions
+BEGIN SELECT RAISE(ABORT, 'proposal_decisions is append-only'); END;
+
+CREATE TRIGGER IF NOT EXISTS proposal_decisions_no_delete
+BEFORE DELETE ON proposal_decisions
+BEGIN SELECT RAISE(ABORT, 'proposal_decisions is append-only'); END;
+
+CREATE TABLE IF NOT EXISTS write_consent (
+  workspace       TEXT PRIMARY KEY,
+  allows_low_risk INTEGER NOT NULL CHECK (allows_low_risk IN (0, 1)),
+  recorded_at     TEXT NOT NULL
+) STRICT;
 `;
 
 /** The substrate's file under an injected Paths. Callers do not build this path. */

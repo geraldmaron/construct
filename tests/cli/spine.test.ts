@@ -840,3 +840,69 @@ for (const command of [['outcome', 'ship a thing'], ['log'], ['inbox'], ['decide
     assert.ok(!/node:sqlite|EACCES/.test(err), 'no errno or module name to decode');
   });
 }
+
+test('source add/list/retire round-trips, and a duplicate declaration is a sentence, not a stack', async () => {
+  const first = await runAll([
+    ['source', 'add', '--kind=jira', '--locator=PROJ'],
+    ['source', 'list'],
+  ]);
+  assert.equal(first.code, 0);
+  assert.match(first.out, /declared src-\d+: jira PROJ \(workspace default\)/);
+  assert.match(first.out, /src-\d+ {2}jira {2}PROJ/);
+
+  const dup = await runAll([
+    ['source', 'add', '--kind=jira', '--locator=PROJ'],
+    ['source', 'add', '--kind=jira', '--locator=PROJ'],
+  ]);
+  assert.equal(dup.code, 1);
+  assert.match(dup.err, /already declares jira PROJ/);
+});
+
+test('retiring a source removes it from the active list but --all still shows it', async () => {
+  const result = await runAll([
+    ['source', 'add', '--kind=git', '--locator=github.com/acme/app'],
+    async () => {
+      const store = openStore(join(process.env.XDG_DATA_HOME as string, 'construct', 'construct.db'));
+      try {
+        const rows = store.db.prepare('SELECT id FROM sources').all() as Array<{ id: string }>;
+        process.env.CONSTRUCT_TEST_SOURCE_ID = rows[0]?.id ?? '';
+      } finally {
+        store.close();
+      }
+      return 0;
+    },
+    () => main(['source', 'retire', `--id=${process.env.CONSTRUCT_TEST_SOURCE_ID}`]),
+    ['source', 'list'],
+    ['source', 'list', '--all'],
+  ]);
+  delete process.env.CONSTRUCT_TEST_SOURCE_ID;
+  assert.equal(result.code, 0);
+  assert.match(result.out, /retired src-\d+/);
+  assert.match(result.out, /no sources declared for workspace default/);
+  assert.match(result.out, /\(retired /);
+});
+
+test('mode defaults to team, records a set, and refuses a mode nobody defined', async () => {
+  const result = await runAll([
+    ['mode'],
+    ['mode', '--set=seat'],
+    ['mode'],
+  ]);
+  assert.equal(result.code, 0);
+  assert.match(result.out, /workspace default: team \(Construct is the whole team\)/);
+  assert.match(result.out, /workspace default: seat \(Construct fills one role on your team\)/);
+
+  const bad = await run(['mode', '--set=boss']);
+  assert.equal(bad.code, 2);
+  assert.match(bad.err, /usage: construct mode/);
+});
+
+test('source without a subcommand or with a kind nobody defined prints usage', async () => {
+  const bare = await run(['source']);
+  assert.equal(bare.code, 2);
+  assert.match(bare.err, /usage: construct source/);
+
+  const bad = await run(['source', 'add', '--kind=wiki', '--locator=x']);
+  assert.equal(bad.code, 2);
+  assert.match(bad.err, /usage: construct source/);
+});

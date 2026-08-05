@@ -103,6 +103,30 @@ state and, where the domain calls for it, the licensed-review qualifier on the
 same screen as the text it qualifies. A deliverable you cannot read is not a
 deliverable, so this command exists.
 
+## Tell it what you work from
+
+Construct can hold what your project works from — a directory of docs, a git
+repo, a GitHub or Jira project — so future runs can be held to what they
+actually read:
+
+```bash
+construct source add --kind=jira --locator=PROJ
+construct source list
+```
+
+Declaring a source builds no connection and reads nothing by itself; the
+reading happens through your agent host when work runs, and every run records
+what it read from each source and how completely — including "unreachable,"
+which is an answer, not an omission. There is also an engagement mode:
+
+```bash
+construct mode --set=seat
+```
+
+`team` (the default) means Construct is the whole team. `seat` means it fills
+one role on your human team and treats your tracker as the system of record —
+changes to it are proposed to you, never just made.
+
 ## Read back what happened
 
 ```bash
