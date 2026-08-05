@@ -32,7 +32,10 @@ import type { Brief } from '../../../src/kernel/brief/schema.ts';
 import type { HostAdapter, HostResult } from '../../../src/kernel/hosts/interface.ts';
 
 const AT = '2026-08-05T00:00:00.000Z';
-const OUTCOME = 'Handle GDPR data subject requests for EU customers';
+// Low-tier on purpose: these tests exercise the structural challenge
+// mechanics, and a high-tier run also declares challenges with no structural
+// form, which hold promotion at draft regardless of what the checks find.
+const OUTCOME = 'Add single sign-on login for the admin portal';
 
 /** What the simulation actually produced: sourced-sounding, sourced by nothing. */
 const UNSOURCED = [
@@ -282,6 +285,35 @@ test('prose that merely opens with a brace is left alone', async () => {
       .map((e) => e.detail as { outcome: string });
     assert.ok(verdicts.length > 0);
     assert.ok(verdicts.every((v) => v.outcome === 'passed'));
+  } finally {
+    done();
+  }
+});
+
+test('a high-tier run declares the conditional challenges; a low-tier run declares only the spine two', () => {
+  const { store, done } = fixtureStore();
+  try {
+    const low = startRun(store, { runId: 'run-low', outcome: OUTCOME, at: AT });
+    for (const id of low.tasks) {
+      assert.deepEqual((getTask(store, id)?.brief as Brief).challenges, SPINE_CHALLENGES);
+    }
+
+    const high = startRun(store, {
+      runId: 'run-high',
+      outcome: 'Handle GDPR data subject requests for EU customers',
+      at: AT,
+    });
+    assert.ok(high.tasks.length > 0, 'the keyword map must implicate something here');
+    for (const id of high.tasks) {
+      const brief = getTask(store, id)?.brief as Brief;
+      // Every brief in a high-tier run carries the pre-mortem; the legal
+      // issue-spot rides only on briefs whose own domain carries a
+      // licensed-review marker.
+      assert.ok(brief.challenges?.includes('pre-mortem'), `${id} declares pre-mortem`);
+      if (brief.role === 'privacy') {
+        assert.ok(brief.challenges?.includes('legal-issue-spot'), `${id} declares legal-issue-spot`);
+      }
+    }
   } finally {
     done();
   }

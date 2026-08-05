@@ -27,6 +27,7 @@ import { enqueueTask } from '../store/tasks.ts';
 import { transact } from '../store/open.ts';
 import type { Store } from '../store/open.ts';
 import { SPINE_CHALLENGES } from '../challenge/catalog.ts';
+import { riskTierFor } from '../lessons/admission.ts';
 import type { Brief } from '../brief/schema.ts';
 
 export interface StartRunInput {
@@ -79,6 +80,22 @@ export function taskId(runId: string, domain: string): string {
 }
 
 /**
+ * The challenges this brief declares. Two are unconditional on every spine
+ * brief. The conditional ones key off risk: a run that implicates any
+ * high-tier domain declares a pre-mortem on every brief in it, and a brief
+ * whose own domain carries a licensed-review marker declares the legal
+ * issue-spot. Declaring a challenge with no structural form is deliberate —
+ * it stays unanswered and holds the deliverable at draft, which is the
+ * opposite of reading as passed.
+ */
+function challengesFor(domain: string, runHighTier: boolean): readonly string[] {
+  const declared = [...SPINE_CHALLENGES];
+  if (runHighTier) declared.push('pre-mortem');
+  if (riskTierFor(domain) === 'high') declared.push('legal-issue-spot');
+  return declared;
+}
+
+/**
  * The brief for one implicated role. It declares what the task needs and
  * nothing about how to do it — no tool, no host, no order of operations
  * (commitment 10). `capabilities` is empty because an issue-spotting pass over
@@ -90,6 +107,7 @@ function briefFor(
   input: StartRunInput,
   implication: Implication,
   inferredBy: InferredBy,
+  runHighTier: boolean,
 ): Brief {
   return {
     id: taskId(input.runId, implication.domain),
@@ -104,7 +122,7 @@ function briefFor(
     // "nothing is pending" when it means "nobody required anything" — and a
     // deliverable that asserts statutes it did not source promoted straight
     // past draft on the strength of no one asking.
-    challenges: SPINE_CHALLENGES,
+    challenges: challengesFor(implication.domain, runHighTier),
     // The evidence that engaged this role travels with the work. Dropping it
     // here is what made a role start blind to which concern fired. An
     // implication with nothing cited carries no engagement rather than an
@@ -278,8 +296,9 @@ function record(
       );
     }
 
+    const runHighTier = implicated.some((i) => riskTierFor(i.domain) === 'high');
     for (const implication of implicated) {
-      const brief = briefFor(input, implication, inferredBy);
+      const brief = briefFor(input, implication, inferredBy, runHighTier);
       logged.push(
         appendWorkLog(store, {
           run: input.runId,
