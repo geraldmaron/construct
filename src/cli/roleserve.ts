@@ -65,7 +65,12 @@ export const TOOLS = [
       type: 'object',
       properties: {
         deliverable: {
-          description: 'The deliverable being drafted, as JSON (an object or a string).',
+          // Typed as string because strict providers refuse endpoints for any
+          // tool whose schema carries an untyped property; the server still
+          // accepts an object, and parses a string that holds JSON.
+          type: 'string',
+          description:
+            'The deliverable being drafted: the text itself, or a JSON object serialized as a string.',
         },
       },
       required: ['deliverable'],
@@ -83,7 +88,10 @@ export const TOOLS = [
           type: 'string',
           description: 'Short action name for the entry (it is namespaced under your role).',
         },
-        detail: { description: 'Optional detail for the entry, as JSON.' },
+        detail: {
+          type: 'string',
+          description: 'Optional detail for the entry: text, or JSON serialized as a string.',
+        },
       },
       required: ['action'],
     },
@@ -103,6 +111,22 @@ function toolResult(id: unknown, outcome: WriteOutcome): JsonRpcResponse {
   });
 }
 
+/**
+ * The schema declares string (an untyped property routes to zero strict
+ * providers), but a string that holds JSON was meant as JSON — store the value,
+ * not its serialization. Objects still pass through for hosts that send them.
+ */
+function fromWire(value: unknown): unknown {
+  if (typeof value !== 'string') return value;
+  const text = value.trim();
+  if (!text.startsWith('{') && !text.startsWith('[')) return value;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return value;
+  }
+}
+
 function callTool(core: RoleServeCore, id: unknown, params: unknown): JsonRpcResponse {
   const { name, arguments: args } = (params ?? {}) as { name?: unknown; arguments?: unknown };
   const input = (args ?? {}) as Record<string, unknown>;
@@ -117,7 +141,7 @@ function callTool(core: RoleServeCore, id: unknown, params: unknown): JsonRpcRes
       submitDraft(core.store, credential, {
         run: core.run,
         task: core.task,
-        deliverable: input.deliverable,
+        deliverable: fromWire(input.deliverable),
       }),
     );
   }
@@ -132,7 +156,7 @@ function callTool(core: RoleServeCore, id: unknown, params: unknown): JsonRpcRes
         run: core.run,
         task: core.task,
         action: input.action,
-        detail: input.detail,
+        detail: fromWire(input.detail),
       }),
     );
   }

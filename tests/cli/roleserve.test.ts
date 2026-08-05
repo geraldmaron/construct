@@ -202,6 +202,52 @@ test('a role submits a draft and appends to the log through MCP, never holding t
   }
 });
 
+test('a JSON deliverable serialized as a string is stored as JSON, not as its serialization', async () => {
+  const seeded = seedFixture();
+  const child = serve(seeded, { run: 'run-x', task: 'task-1' });
+  try {
+    const read = lineReader(child);
+    send(child, { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18' } });
+    await read();
+
+    // Strict providers only route tools whose properties are typed, so the
+    // schema says string and models send JSON serialized. The value meant is
+    // the object; a log entry holding "\"{\\\"a\\\":1}\"" would be the wire
+    // format leaking into the record.
+    send(child, {
+      jsonrpc: '2.0',
+      id: 2,
+      method: 'tools/call',
+      params: { name: 'submit_draft', arguments: { deliverable: '{"summary":"typed as string"}' } },
+    });
+    const draft = (await read()) as { result: { isError: boolean; content: [{ text: string }] } };
+    assert.equal(draft.result.isError, false, draft.result.content[0].text);
+
+    send(child, {
+      jsonrpc: '2.0',
+      id: 3,
+      method: 'tools/call',
+      params: { name: 'append_work_log', arguments: { action: 'noted', detail: 'plain prose stays prose' } },
+    });
+    const note = (await read()) as { result: { isError: boolean } };
+    assert.equal(note.result.isError, false);
+
+    child.stdin.end();
+    await exited(child);
+
+    withReopened(seeded.storeFile, (store) => {
+      const log = readWorkLog(store, 'run-x');
+      const submitted = log.find((entry) => entry.action === 'draft-submitted');
+      assert.ok(JSON.stringify(submitted).includes('"summary":"typed as string"'), 'stored as JSON');
+      const noted = log.find((entry) => entry.action === 'role:noted');
+      assert.ok(JSON.stringify(noted).includes('plain prose stays prose'), 'plain strings survive');
+    });
+  } finally {
+    child.kill();
+    seeded.cleanup();
+  }
+});
+
 test('an env claim for another task is denied and the denial is on the record', async () => {
   const seeded = seedFixture();
   const child = serve(seeded, { run: 'run-x', task: 'task-2' });
