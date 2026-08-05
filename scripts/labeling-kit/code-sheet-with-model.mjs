@@ -27,7 +27,7 @@
 // coder as "the human disagreement floor" — it is not one, and construct-2jb.3
 // does not close on it.
 //
-// TWO KINDS OF DIVERSITY, AND ONLY ONE OF THEM COUNTS HERE (construct-adf).
+// TWO KINDS OF DIVERSITY, AND ONLY ONE OF THEM COUNTS HERE.
 // Choosing a bigger or smaller model from the same vendor changes capability and
 // cost; it does not change correlated error, because the caveat above is about
 // shared pretraining and survives a tier change untouched. Only a different

@@ -1,6 +1,6 @@
 /**
  * tests/hosts/claude/adapter.test.ts — the second host adapter, driven
- * against envelopes captured from the real binary (construct-r67.4).
+ * against envelopes captured from the real binary.
  *
  * The fixtures are real: success.json is a live haiku run, and
  * silent-fallback.json is the run where `--model no-such-model-xyz` was

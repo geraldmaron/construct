@@ -1,6 +1,6 @@
 /**
  * tests/cli/verdict.test.ts — the CLI verdict surface through its real
- * surface (construct-2jb.13): confirming, dismissing, and naming a felt
+ * surface: confirming, dismissing, and naming a felt
  * absence for the domains a run surfaced, and exporting what accumulates.
  */
 

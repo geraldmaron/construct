@@ -46,7 +46,7 @@ export const CAPABILITY_DENIED_ACTION = 'capability-denied';
 const UNATTRIBUTED = 'unattributed';
 
 /**
- * What a role is told about the two writes it holds (construct-ghu).
+ * What a role is told about the two writes it holds.
  *
  * This block exists because the surface was built, registered, reachable — and
  * never mentioned to the model. A live four-role run finished with every role

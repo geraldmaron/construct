@@ -13,7 +13,7 @@
  * 1. A run emits MANY step_finish events, one per step. Token counts and cost
  *    are therefore summed across steps; reading the last event reports one
  *    step's usage as the whole run's, which understates spend — and the
- *    coordinator's spend ceiling (construct-r67.5) is built on this number.
+ *    coordinator's spend ceiling is built on this number.
  * 2. A tool call can fail while the run succeeds. A rejected permission comes
  *    back as part.state.status "error" with the run still exiting 0, so tool
  *    failures are surfaced separately from run failures and a caller can tell

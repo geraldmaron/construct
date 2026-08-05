@@ -1,5 +1,5 @@
 /**
- * tests/kernel/brief/tiers.test.ts — the model capability floor (construct-ap0).
+ * tests/kernel/brief/tiers.test.ts — the model capability floor.
  *
  * Two properties carry this feature, and they pull against each other. A floor
  * has to be comparable across hosts that share no model names, which is why the

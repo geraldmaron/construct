@@ -187,7 +187,7 @@ try {
   rmSync(coldData, { recursive: true, force: true });
 }
 
-// ── the config collision hosts/environment.ts works around (construct-wl8) ──
+// ── the config collision hosts/environment.ts works around ──
 // Two observations, because only the pair is evidence: the ambient config root
 // must list models AND an empty one must not. Checking only the empty root
 // would pass on a machine with no providers registered at all, which is the
@@ -211,7 +211,7 @@ try {
   rmSync(emptyConfig, { recursive: true, force: true });
 }
 
-// ── the MCP registration a role's write surface rides (construct-nv0) ──────
+// ── the MCP registration a role's write surface rides ──────
 // `opencode mcp list` is used rather than a real run because it resolves the
 // same configuration and calls no model, so this stays free to re-verify.
 const mcpConfigDir = mkdtempSync(path.join(tmpdir(), 'oc-probe-mcp-'));

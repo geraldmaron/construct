@@ -96,7 +96,7 @@ export function mapImplications(input: MapInput): ImplicationMap {
     // The floor above is a sum, and partial matches are summable: six keywords
     // containing the word "data" scored 18 on an outcome that said "data" once,
     // clearing a floor documented as "one whole signal must fire" while citing
-    // nothing (construct-4jq). That made catalog verbosity into score — the more
+    // nothing. That made catalog verbosity into score — the more
     // multi-word keywords a domain happens to list, the more partial credit one
     // incidental word earns it. Requiring a whole match makes the floor mean
     // what its comment says, and makes every implication carry the evidence the

@@ -47,7 +47,7 @@ function load(name: string): { outcomes: Labeled[] } {
 const fixture = load('labeled-outcomes.json');
 
 /**
- * The held-out set (construct-gsf). The corpus above was written alongside the
+ * The held-out set. The corpus above was written alongside the
  * keyword catalog and scored a 0.000 miss rate that did not survive wording it
  * had not authored — the Phase 2 dogfood scored 0.556, and this set scored
  * 0.632 before any of the work that followed. A corpus and a catalog authored
@@ -57,7 +57,7 @@ const fixture = load('labeled-outcomes.json');
 const heldOut = load('held-out-outcomes.json');
 
 /**
- * The fresh set (construct-4jq): ten outcomes authored during the Phase 2
+ * The fresh set: ten outcomes authored during the Phase 2
  * dogfood, before reading the keyword lists in that session. It scored 0.400
  * against a 0.15 target while the held-out set — by then tuned against —
  * scored 0.026. See the file's own `status`: committing it spends it.
@@ -65,7 +65,7 @@ const heldOut = load('held-out-outcomes.json');
 const fresh = load('fresh-outcomes.json');
 
 /**
- * The measured half of construct-2jb.4's corpus: 72 outcomes written by eight
+ * The measured half of the expanded corpus: 72 outcomes written by eight
  * agents that were forbidden to read anything in this repository, labeled twice
  * by two coders who saw the ten domain names and their concerns but never a
  * keyword. It is the first corpus large enough to answer the coarse question
@@ -191,7 +191,7 @@ test('implication map meets its pre-agreed miss-rate target', () => {
 });
 
 /**
- * The evidence-honesty regression (construct-gsf, secondary finding): "sign"
+ * The evidence-honesty regression (secondary finding): "sign"
  * as a contracts keyword fired on "single sign-on" and "sign in", and the map
  * then CITED "sign" as the evidence for a contracts inference. A wrongly-cited
  * signal is worse than a lower score, because signals exist so the inference
@@ -277,7 +277,7 @@ test('the catalog is caller-replaceable without forking the kernel', () => {
 });
 
 /**
- * The evidence-honesty invariant (construct-4jq). The floor is a SUM, and
+ * The evidence-honesty invariant. The floor is a SUM, and
  * partial matches are summable: "Our biggest client wants us to keep their data
  * in Germany" scored privacy at 18 — six keywords containing the word "data",
  * three points each — clearing a floor documented as "one whole signal must
@@ -324,7 +324,7 @@ test('the fresh corpus miss rate is recorded, and its gap to the tuned corpora i
 });
 
 /**
- * The construct-2jb.4 corpus, reported. This is the measurement construct-4jq
+ * The expanded corpus, reported. This is the measurement the generalization bug
  * asked for and did not have: wording authored by minds that never saw the
  * catalog, at an n the power analysis supports, with a second coder confirming
  * the labels are not one opinion. Its number is far worse than the fresh
@@ -337,7 +337,7 @@ test('the fresh corpus miss rate is recorded, and its gap to the tuned corpora i
  * corpus starts scoring like the corpora the catalog was tuned against, which
  * would mean it has been tuned against too.
  */
-test('the construct-2jb.4 corpus miss rate is recorded, and its size is what makes it usable', () => {
+test('the expanded corpus miss rate is recorded, and its size is what makes it usable', () => {
   const s = score(unspent);
   report('unspent (reported, not enforced)', s, MISS_RATE_TARGET, OVER_RATE_TARGET);
   assert.ok(s.expected >= 64, `${s.expected} labels is below the 64 the power analysis derives`);
@@ -351,7 +351,7 @@ test('the construct-2jb.4 corpus miss rate is recorded, and its size is what mak
 });
 
 /**
- * Who the work is for is not evidence of what is in scope (construct-4jq).
+ * Who the work is for is not evidence of what is in scope.
  * "users" and "customers" appear in almost any sentence a business writes, and
  * as product-scoping keywords they conscripted that domain into runs with no
  * scoping question in them. Number folding made it worse by reaching the

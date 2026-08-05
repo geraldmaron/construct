@@ -34,7 +34,7 @@ const GOLDEN: GoldenCase[] = JSON.parse(
 /**
  * v2 named one pipeline stage `artifact`; the glossary retires that word in
  * favor of `deliverable`, and a stage name is Construct's own vocabulary rather
- * than something a user wrote, so the port renames it (construct-egc).
+ * than something a user wrote, so the port renames it.
  *
  * The captured corpus is deliberately NOT rewritten to match. It is a record of
  * what the predecessor actually returned, and editing it would break the one

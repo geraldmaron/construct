@@ -2,7 +2,7 @@
  * kernel/completion/promotion.ts — `draft -> challenged -> final`, and the
  * written decision about how it relates to the twelve-rung ladder next door.
  *
- * THE DECISION (construct-r67.13). They are two axes, not two views of one.
+ * THE DECISION. They are two axes, not two views of one.
  * Neither is a coarser rendering of the other, and nothing maps between them.
  *
  *   states.ts is PRODUCTION evidence: planned, authored, exported, renderable,
@@ -35,7 +35,7 @@
  * reach: promotion is a function of recorded verdicts, so the only way to move
  * it is to produce a verdict, and a verdict a role recorded about its own work
  * does not count (see `promotionState`). Enforcing that at the token layer as
- * well is construct-r67.6's job; enforcing it here means the invariant holds
+ * well is handled at the dispatch layer; enforcing it here means the invariant holds
  * even for a caller that never sees a token.
  */
 

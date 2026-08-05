@@ -54,7 +54,7 @@ test('a declared stance is parsed through whatever markdown wraps it', () => {
   assert.deepEqual(plain, {
     stance: 'hold',
     // A plainly declared stance carries no qualifier — see the qualifier tests
-    // below for the case where the role wrote one (construct-gf8).
+    // below for the case where the role wrote one.
     qualifier: null,
     because: 'no processing agreement is in place',
     citation: 'GDPR Art. 28',
@@ -88,7 +88,7 @@ test('a stance that was not declared is never guessed at', () => {
   assert.equal(parseStance('STANCE: maybe'), null, 'only the declared vocabulary counts');
   assert.equal(parseStance('STANCE:'), null);
   // "hold on" starts with the word, and a role that wrote it declared hold —
-  // with a qualifier, which is kept rather than dropped (construct-gf8).
+  // with a qualifier, which is kept rather than dropped.
   assert.equal(parseStance('STANCE: hold on the launch')?.stance, 'hold');
   assert.equal(parseStance('STANCE: hold on the launch')?.qualifier, 'on the launch');
 });
@@ -114,7 +114,7 @@ test('a qualified stance is not recorded as the plain one', () => {
 });
 
 test('a punctuation tail is decoration, not a qualifier', () => {
-  // These parsed correctly before construct-gf8 and must keep doing so: the
+  // These parsed correctly before the parser fix and must keep doing so: the
   // tolerance for a decorated line is what makes live model output usable.
   for (const raw of ['proceed.', 'proceed --', 'hold!', 'proceed  ', 'unclear —', 'hold,']) {
     const declared = parseStance(`STANCE: ${raw}`);

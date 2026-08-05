@@ -38,7 +38,7 @@ export interface DeclaredStance {
    * declared the stance plainly.
    *
    * This exists because the qualifier is part of the position, not noise around
-   * it (construct-gf8). A role writing "proceed with conditions" and naming a
+   * it. A role writing "proceed with conditions" and naming a
    * precondition has not taken the same position as one writing "proceed", and
    * recording them identically puts the plainer, more confident position in the
    * qualified role's mouth.
@@ -111,7 +111,7 @@ function citationOrNull(value: string | null): string | null {
  * position in its mouth.
  *
  * Words AFTER a valid stance word are kept as a qualifier rather than dropped
- * (construct-gf8). A live run produced "STANCE: proceed with conditions" over a
+ *. A live run produced "STANCE: proceed with conditions" over a
  * BECAUSE naming a precondition that had to be settled before development
  * began; first-word extraction recorded that as an unqualified "proceed" and the
  * framing counted the role among the plain proceeds. Both available answers were
@@ -185,7 +185,7 @@ export interface FrameInput {
  * disagreement look broader than it is.
  *
  * The tally counts roles under the stance they actually wrote, so a qualified
- * stance is never folded into the plain one (construct-gf8). Note that this
+ * stance is never folded into the plain one. Note that this
  * changes what the question SAYS, not which runs raise a decision: isConflict
  * still reads the declared word, so carrying qualifiers invents no conflict and
  * loses none.

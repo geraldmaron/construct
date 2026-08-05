@@ -1,6 +1,6 @@
 /**
  * hosts/environment.ts — the environment a host binary is spawned with
- * (construct-wl8).
+ *.
  *
  * Construct resolves its own directories from the XDG variables, which is
  * correct: they are the standard, and `kernel/paths.ts` is right to honor them.
@@ -22,7 +22,7 @@
  * configuration. So the adapter now hands the host a deliberately-chosen
  * environment rather than inheriting one, which is the same discipline
  * hosts/claude/mcpconfig.ts already applies to the role environment
- * (construct-r67.14): decide what crosses the boundary instead of letting
+ *: decide what crosses the boundary instead of letting
  * everything cross by default.
  *
  * All four XDG variables are dropped, not just CONFIG. Credentials are the
@@ -90,7 +90,7 @@ export function droppedForHost(ambient: Environment = process.env): readonly str
 
 /**
  * The variables the role-serve process needs to open the SAME store construct
- * is using (construct-nv0).
+ * is using.
  *
  * This exists because of an interaction between two correct decisions. A role's
  * MCP server resolves the store through kernel/paths.ts, which reads the XDG

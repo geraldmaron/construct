@@ -77,7 +77,7 @@ export const DOMAINS: readonly Domain[] = Object.freeze([
     concern: 'agreements with other parties and what they bind you to',
     // "sign" is deliberately absent: it fired this domain on "single sign-on"
     // and "sign in", and a signal that gets cited as evidence for the wrong
-    // inference is worse than a lower score (construct-gsf). Signing language
+    // inference is worse than a lower score. Signing language
     // always travels with the thing being signed — the agreement, the terms —
     // and those keywords carry the match honestly.
     keywords: [
@@ -110,7 +110,7 @@ export const DOMAINS: readonly Domain[] = Object.freeze([
       'encryption', 'encrypt', 'breach', 'access control', 'permissions', 'vulnerability',
       // "two factor" not "two-factor": keywords split on whitespace but
       // outcomes tokenize on non-alphanumeric, so a hyphenated keyword can
-      // never match anything (found dead during construct-gsf).
+      // never match anything (found dead during corpus measurement).
       'audit log', 'secrets', 'api keys', 'tokens', 'sso', 'two factor',
       // How non-experts report or ask for security: seeing someone else's
       // things, wanting something kept somewhere safer, sensitive records
@@ -166,7 +166,7 @@ export const DOMAINS: readonly Domain[] = Object.freeze([
     // product-scoping on the word "customer" alone. Removing them cut the
     // over-rate on the held-out set from 0.245 to 0.140 and cost exactly one
     // labeled-set match, o14, which was resting on that same weak word
-    // (construct-4jq). Who the work is for is not evidence of what is in scope.
+    //. Who the work is for is not evidence of what is in scope.
     keywords: [
       'mvp', 'feature', 'features', 'requirements', 'scope', 'beta', 'pilot',
       'success metric', 'roadmap', 'prototype', 'onboard',

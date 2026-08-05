@@ -1,5 +1,5 @@
 /**
- * tests/kernel/tracker/session-drift.test.ts — construct-fnn.
+ * tests/kernel/tracker/session-drift.test.ts.
  *
  * Every case here is a hand-built bead-and-evidence pair, never this repo's real
  * tracker. The module's whole job is to notice when the repo and the tracker

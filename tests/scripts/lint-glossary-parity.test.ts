@@ -1,6 +1,6 @@
 /**
  * tests/scripts/lint-glossary-parity.test.ts — what the glossary lint can see
- * (construct-2ua).
+ *.
  *
  * The lint's correctness has two halves, and only one of them was ever tested
  * by running it: whether it recognises a retired term, and whether the file

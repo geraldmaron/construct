@@ -1,8 +1,8 @@
 /**
  * hosts/opencode/mcpconfig.ts — the OpenCode-side registration that gives a role
- * its write surface (construct-nv0).
+ * its write surface.
  *
- * construct-r67.14 wired the write surface into ONE host, which satisfies host
+ * The write surface was wired into ONE host first, which satisfies host
  * independence as a proof but not as a property: this adapter accepted
  * `context.roleEnv` and ignored it, so a run dispatched to OpenCode had no write
  * surface at all. This module is the missing link, and it copies the SHAPE of

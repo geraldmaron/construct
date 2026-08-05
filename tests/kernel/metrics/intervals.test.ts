@@ -1,5 +1,5 @@
 /**
- * tests/kernel/metrics/intervals.test.ts — construct-2jb.1.
+ * tests/kernel/metrics/intervals.test.ts.
  *
  * Every expected value here is either a published reference figure or a closed
  * form that can be evaluated by hand, never this module's own output captured as

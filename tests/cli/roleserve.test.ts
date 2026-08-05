@@ -1,6 +1,6 @@
 /**
  * tests/cli/roleserve.test.ts — the role write surface, exercised end to end
- * across a real process boundary (construct-3sa).
+ * across a real process boundary.
  *
  * The heart of these tests is the shape of the trust boundary: the model-side
  * caller sends tool calls that carry NO credential, run, or task; the serving

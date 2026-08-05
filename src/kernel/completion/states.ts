@@ -13,7 +13,7 @@
  * This ladder is production evidence and nothing else. Whether anyone may rely
  * on a deliverable is a separate axis — `draft -> challenged -> final`, in
  * completion/promotion.ts, which carries the written decision about why the two
- * are not mapped onto each other (construct-r67.13).
+ * are not mapped onto each other.
  */
 
 export const COMPLETION_STATES = [

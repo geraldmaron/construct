@@ -1,6 +1,6 @@
 /**
  * tests/hosts/environment.test.ts — the environment a host is spawned with
- * (construct-wl8).
+ *.
  *
  * The property under test is the one the bug violated: isolating CONSTRUCT's
  * state must not change which configuration the HOST reads. Everything here is

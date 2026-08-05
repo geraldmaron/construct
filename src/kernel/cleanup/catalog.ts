@@ -19,7 +19,7 @@
  * pin is intentionally not ported: honoring it would mean reading process.env
  * here, and kernel/paths.ts is meant to stay the only module that does — a
  * pinned custom container name is rare enough to fall back to the manual
- * follow-up path. See construct-506.1.1.
+ * follow-up path.
  */
 
 import fs from 'node:fs';
@@ -41,7 +41,7 @@ export interface CleanupItem {
   remove(): string;
   /**
    * True when this item is detected but will deliberately remove nothing —
-   * today, when the running Construct owns the directory (construct-a5q).
+   * today, when the running Construct owns the directory.
    * Optional: an item that never keeps does not implement it.
    */
   keeps?(): boolean;
@@ -88,7 +88,7 @@ function postgresContainerName(home: string): string {
 }
 
 /**
- * Files only the SUCCESSOR writes (construct-a5q).
+ * Files only the SUCCESSOR writes.
  *
  * v3 resolves its own directories from the same XDG variables under the same
  * application name, so `~/.local/share/construct` is simultaneously a
@@ -159,7 +159,7 @@ export function buildCleanupCatalog(target: CleanupTarget): CleanupItem[] {
   const userLibLink = path.join(userConfigDir, 'lib');
   const userPgComposeDir = path.join(userConfigDir, 'services', 'postgres');
   // The predecessor's own home directory, distinct from the XDG dirs and from a
-  // checkout's `.construct/` (construct-lqs). It was in no scope at all until
+  // checkout's `.construct/`. It was in no scope at all until
   // this item existed, which made "zero detected traces" a sentence that could
   // be true with 685MB of v2 still on disk.
   const homeConstruct = path.join(home, '.construct');
@@ -291,7 +291,7 @@ export function buildCleanupCatalog(target: CleanupTarget): CleanupItem[] {
     {
       id: 'machine-home-construct',
       scope: 'machine',
-      // Ask, deliberately (construct-lqs). This is the predecessor's accumulated
+      // Ask, deliberately. This is the predecessor's accumulated
       // history — per-project traces and vector indexes — not a cache it would
       // rebuild. It is regenerable in the sense that nothing here is a source of
       // truth, and it is also the only place a record of what v2 actually did
@@ -489,7 +489,7 @@ function readJsonOrNull(filePath: string): Record<string, unknown> | null {
 }
 
 /**
- * Whether one hook command belongs to the predecessor (construct-7pp).
+ * Whether one hook command belongs to the predecessor.
  *
  * Matched on WHAT IT POINTS AT rather than on a list of hook names. Every hook
  * v2's `construct init` wrote runs through its own launcher — `.construct/run.mjs`
@@ -649,13 +649,13 @@ function unmergeMcpJson(filePath: string): string | null {
 
 
 /**
- * Whether an MCP server entry launches the PREDECESSOR (construct-mei).
+ * Whether an MCP server entry launches the PREDECESSOR.
  *
  * Matched on the command it runs, not on what it is called. The id list this
  * replaces held `['memory', 'cass']`, and v2's orchestration server is
  * registered as `construct-mcp`, so cleanup walked past the single strongest
  * surface the predecessor has: a connected, tool-serving endpoint. It is not
- * dormant either — OpenCode cannot isolate MCP servers (construct-nv0), so a v3
+ * dormant either — OpenCode cannot isolate MCP servers, so a v3
  * role dispatched there sees v2's tools, and one did.
  *
  * The signature is the predecessor's `lib/mcp/server.mjs`, which is a fact about
@@ -733,7 +733,7 @@ function removeTomlTables(text: string, tableNames: string[]): string {
 }
 
 /**
- * Codex's equivalent of predecessorMcpIds (construct-mei). Its config is TOML
+ * Codex's equivalent of predecessorMcpIds. Its config is TOML
  * and this file carries only a minimal table remover, not a parser, so the scan
  * is textual: find each `[mcp_servers.<id>]` header and look for the
  * predecessor's server path before the next table begins.

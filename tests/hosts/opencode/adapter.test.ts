@@ -156,7 +156,7 @@ test('init() opens the host database itself, before any task can meet it cold', 
   const adapter = createOpenCodeAdapter({ spawn: fake.spawn });
   await adapter.init();
 
-  // construct-a76: whatever opens OpenCode's database first migrates it, and
+  // The migration race: whatever opens OpenCode's database first migrates it, and
   // that open can fail. init() spends a disposable command on it so a real task
   // never does.
   const warmup = fake.calls.find((call) => call.args[0] === 'stats');
@@ -215,7 +215,7 @@ test('the first run against an unconfirmed database goes alone; the rest go toge
     adapter.invoke({ role: 'product-scoping', task: 'three' }),
   ];
 
-  // This is construct-a76: without the gate all three start at once and race
+  // This is the migration race: without the gate all three start at once and race
   // OpenCode's one-time sqlite migration, and the losers exit 1. Checked before
   // any flush, because the gate owner must reach spawn in the same tick it
   // always did — an await slipped in ahead of it moves cancel()'s window.

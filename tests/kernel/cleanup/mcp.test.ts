@@ -1,6 +1,6 @@
 /**
  * tests/kernel/cleanup/mcp.test.ts — which MCP registrations belong to the
- * predecessor (construct-mei).
+ * predecessor.
  *
  * The defect: detection was a hardcoded id list, `['memory', 'cass']`, while v2
  * registers its orchestration server as `construct-mcp`. Cleanup therefore
@@ -8,7 +8,7 @@
  * tool-serving MCP endpoint — and reported the machine clean.
  *
  * That is not dormant clutter. OpenCode cannot isolate MCP servers
- * (construct-nv0: both of its config seams merge with the operator's own
+ * (both of its config seams merge with the operator's own
  * registrations), so a v3 role dispatched there sees v2's tools too. It was
  * observed: a probe model told to call `submit_draft` called
  * `construct-mcp_find_tool` instead and got back v2's workspace-preset tools.
@@ -132,7 +132,7 @@ test('a config with no MCP servers at all is not a trace', () => {
 });
 
 /**
- * ~/.construct — the predecessor's home directory (construct-lqs).
+ * ~/.construct — the predecessor's home directory.
  *
  * It was in no scope at all: the catalog resolved `.construct` only relative to
  * cwd, so a machine carrying 685MB of v2 traces and vector indexes could pass
@@ -190,7 +190,7 @@ test('a home without the predecessor reports nothing to remove', () => {
 });
 
 /**
- * The successor's own directories (construct-a5q).
+ * The successor's own directories.
  *
  * v3 resolves its directories from the same XDG variables under the same
  * application name, so ~/.local/share/construct is at once "a predecessor
@@ -298,7 +298,7 @@ test('a machine with no successor still gets a clean sweep', () => {
 test('an item that will be kept does not advertise itself as removable', () => {
   // The dry-run plan marks removable items ✓/◐ under "pass --yes to remove ✓
   // items". A kept item wearing ✓ contradicts its own description, and the mark
-  // is what a reader scans (construct-a5q).
+  // is what a reader scans.
   const f = bothInstalled();
   try {
     const items = buildCleanupCatalog({

@@ -5,7 +5,7 @@
  * the shape and ships no adapter, because an adapter is by definition
  * host-coupled; the kernel stays the part that knows nothing about who executes.
  * That is also what package.json's `exports["./hosts/*"]` was reserved for
- * (construct-r67.12).
+ *.
  *
  * Commitment 1 in full: Construct rides the host and never rebuilds it. So this
  * file spawns `opencode run --format json` and reads what comes back. There is
@@ -112,7 +112,7 @@ function defaultSpawn(
     cwd: options.cwd,
     stdio: ['ignore', 'pipe', 'pipe'],
     // Chosen, not inherited: construct's own XDG isolation must not
-    // re-point the host's configuration and credentials (construct-wl8).
+    // re-point the host's configuration and credentials.
     // The overlay carries OPENCODE_CONFIG when a role has a write surface —
     // the bearer itself lives in that file, never here and never on argv.
     env: { ...hostEnvironment(), ...options.env },
@@ -173,7 +173,7 @@ export function createOpenCodeAdapter(config: OpenCodeConfig = {}): OpenCodeAdap
   /**
    * The first thing to open OpenCode's sqlite database migrates it, and that
    * first open is unreliable. Measured against the pinned version on a fresh
-   * data dir (construct-a76):
+   * data dir:
    *
    *   - two `run`s together: one loses on `PRAGMA journal_mode = WAL`,
    *   - one `run` alone under a real workload: lost on `CREATE TABLE project`.
@@ -279,7 +279,7 @@ export function createOpenCodeAdapter(config: OpenCodeConfig = {}): OpenCodeAdap
 
     /**
      * Tier membership is the pin's to declare, not the kernel's and not this
-     * function's (construct-ap0). An unrecognised model returns null, which
+     * function's. An unrecognised model returns null, which
      * degrades a declared floor rather than satisfying it.
      */
     modelTier(model?: string): ModelTier | null {
@@ -340,7 +340,7 @@ export function createOpenCodeAdapter(config: OpenCodeConfig = {}): OpenCodeAdap
       }
 
       // The role's write surface, registered the only way this host supports
-      // (construct-nv0). Absent roleEnv means no surface at all, which is safe
+      //. Absent roleEnv means no surface at all, which is safe
       // rather than broken — the same default as every other host.
       const roleEnv = context?.roleEnv as Record<string, string> | undefined;
       const mcpConfig =

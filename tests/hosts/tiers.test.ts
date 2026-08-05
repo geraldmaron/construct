@@ -1,6 +1,6 @@
 /**
  * tests/hosts/tiers.test.ts — each host's declaration of which of its models sit
- * at which capability tier (construct-ap0).
+ * at which capability tier.
  *
  * This is the half of the feature the kernel is forbidden to know. The kernel
  * compares ordinals; the vendor model names live beside each adapter's pin, and
@@ -19,7 +19,7 @@ import { tierOfModel as opencodeTier } from '../../src/hosts/opencode/pin.ts';
 import { tierOfModel as claudeTier } from '../../src/hosts/claude/pin.ts';
 
 test('a small local model is the floor of the scale, not an unknown', () => {
-  // The pairing behind construct-185's undecidable silence.
+  // The pairing behind the undecidable-silence case.
   assert.equal(opencodeTier('ollama/qwen3.5:4b'), 'any');
   assert.equal(opencodeTier('ollama/qwen3.6:35b'), 'any', 'a local model is still local');
 });

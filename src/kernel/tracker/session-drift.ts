@@ -1,6 +1,6 @@
 /**
  * kernel/tracker/session-drift.ts — reconcile the repo's own bead set against
- * the repo itself (construct-fnn).
+ * the repo itself.
  *
  * CLAUDE.md carries the reconciliation ritual as a manual practice, run at the
  * session boundaries. A manual practice is exactly the thing a session that ends

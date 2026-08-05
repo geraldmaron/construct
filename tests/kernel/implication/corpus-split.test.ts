@@ -1,11 +1,11 @@
 /**
- * tests/kernel/implication/corpus-split.test.ts — the seal on construct-2jb.4's
+ * tests/kernel/implication/corpus-split.test.ts — the seal on the expanded corpus's
  * corpus.
  *
  * Every corpus this project has built died the same death: it was measured
  * against, then tuned against, and by the time anyone quoted its number the
  * number no longer meant what it said. `labeled` shared an author with the
- * catalog. `held-out` stopped being held out the moment construct-gsf tuned
+ * catalog. `held-out` stopped being held out the moment the catalog was tuned
  * until it passed. `fresh` says in its own `status` field that committing it
  * spent it.
  *

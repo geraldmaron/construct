@@ -1,5 +1,5 @@
 /**
- * tests/kernel/implication/harvest.test.ts — construct-2jb.13.
+ * tests/kernel/implication/harvest.test.ts.
  *
  * The properties under test are the ones that keep a harvested corpus honest:
  * verdicts become labels only in the direction the user actually judged, an

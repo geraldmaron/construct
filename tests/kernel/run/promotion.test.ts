@@ -1,5 +1,5 @@
 /**
- * tests/kernel/run/promotion.test.ts — the enforcement construct-r67.6 exists
+ * tests/kernel/run/promotion.test.ts — the enforcement promotion.ts exists
  * for: a role cannot advance its own promotion state, by any route it holds,
  * and every attempt lands on the record.
  *

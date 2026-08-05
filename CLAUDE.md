@@ -107,5 +107,6 @@ That line is the full gate; nothing is "done" without it. Pieces:
 ## Conventions & Patterns
 
 - Commit messages: a plain-language first line stating the invariant or behavior, ending with the bead id — `A timeout that may not fire is not a timeout (construct-byd)`. No attribution trailers of any kind.
+- **No bead ids in committed code (Gerald, 2026-08-05).** AI-authored code — source, tests, scripts — never references tracker bead ids, in code or comments; the comment states the invariant in plain language instead. Lineage lives in the commit message trailer and the tracker. Human authors may cite beads; AI does not unless a user directs it. Enforced by `scripts/lint-no-bead-refs.mjs` (part of `npm run lint`); root documents (STRATEGY, CHANGELOG, RESEARCH-DECISIONS, GLOSSARY) are the drift record and keep their dated bead lineage; tracker tooling and the labeling kit handle ids as data and are exempt by name.
 - Measured gates over asserted claims: anything called working carries a test, a probe, or a recorded run (commitment 15). A corpus and the thing it measures must not share an author (construct-gsf).
 - Fixtures and tests never touch the real HOME; the sterile harness (`tests/harness/sterile.ts`) roots everything in a tmpdir.

@@ -1,5 +1,5 @@
 /**
- * tests/kernel/run/coordinator.test.ts — the four properties construct-r67.5
+ * tests/kernel/run/coordinator.test.ts — the four properties the coordinator
  * exists for: the concurrency bound holds, a crashed run's work comes back, a
  * resumed run does not duplicate what finished, and the spend ceiling halts
  * dispatch.
@@ -385,7 +385,7 @@ test('the assignment states the role and its concern, and nothing it cannot supp
 });
 
 test('a role holding the two writes is told it has them, and what they are for', () => {
-  // construct-ghu: the surface was built, registered and reachable, and the
+  // The surface was built, registered and reachable, and the
   // assignment never mentioned it. A live four-role run finished with every role
   // reporting and not one draft submitted.
   const text = assignmentFor(brief('privacy'), DOMAINS, { writeSurface: true });
@@ -636,8 +636,8 @@ test('a run where the roles agree leaves the inbox empty', async () => {
 test('every task records the model that ran it, and an unmet floor is loud', async () => {
   await withStoreAsync(async (store) => {
     // A brief that needs judgment, dispatched to a 4b local model — the exact
-    // pairing construct-185's undecidable inbox silence came from, and the
-    // reason a tier is declared at all (construct-ap0).
+    // pairing the undecidable inbox silence came from, and the
+    // reason a tier is declared at all.
     enqueueTask(store, {
       id: 't-privacy',
       run: 'run-1',
@@ -726,7 +726,7 @@ test('a run that settled and then died still raises its decision', async () => {
     // The lost invocation, reconstructed: the tasks settle durably through the
     // ordinary claim/complete path, and then the process is gone. Nothing calls
     // frameConflicts, and no in-invocation state survives to be handed to it —
-    // which is exactly the state construct-xgi observed on
+    // which is exactly the state a live run observed on
     // run-20260804173017057, where two roles disagreed and the inbox was empty.
     for (let i = 0; i < 2; i += 1) {
       const leased = claimTask(store, { owner: 'died', leaseUntil: LATER, now: AT });
@@ -837,7 +837,7 @@ test('the coordinator reads neither the clock nor the environment', async () => 
 });
 
 /**
- * construct-3sa: every dispatch mints a capability token scoped to exactly
+ * Every dispatch mints a capability token scoped to exactly
  * that run and task, expiring with the lease, delivered as env for the role's
  * serving process — and the bearer string never touches the record.
  */

@@ -2,7 +2,7 @@
  * cli/roleserve.ts — the MCP server a role's host connects to: the only door
  * into the kernel a role gets, speaking Model Context Protocol over stdio.
  *
- * This is the seam construct-3sa exists for. rolewrite.ts holds the two gated
+ * This is the seam the capability-token design exists for. rolewrite.ts holds the two gated
  * writes and tokens.ts the bearer they require, but until now no process
  * exposed either to a role running inside a host. This server does, and it is
  * deliberately the CLI's job rather than the kernel's: it reads the process
@@ -23,7 +23,7 @@
  *
  * Denials are forwarded to the caller AND recorded by rolewrite, every time,
  * un-collapsed. A role retrying a denied write in a loop does grow the
- * append-only log; that is accepted on purpose (the construct-3sa question 3
+ * append-only log; that is accepted on purpose (the recorded design-question 3
  * decision): the flood itself is the evidence that a role is fighting its
  * grants, the token's lease-bound expiry caps the window, and rolewrite's
  * covenant is that a refused write is never silently dropped.

@@ -1,6 +1,6 @@
 /**
  * kernel/metrics/krippendorff.ts — Krippendorff's alpha, for multi-label,
- * missing-tolerant coder agreement (construct-2jb.3).
+ * missing-tolerant coder agreement.
  *
  * Cohen's kappa assumes exactly two coders, one label per unit, and no missing
  * data. None of those hold for a labeling study against this project's domain

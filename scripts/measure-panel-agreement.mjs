@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * scripts/measure-panel-agreement.mjs — cross-family annotator agreement over
- * construct-2jb.4's corpus (construct-adf).
+ * construct-2jb.4's corpus.
  *
  * WHY THIS EXISTS. Every agreement figure this project has quoted came from
  * coders of one model family, and the caveat attached to all of them — observed

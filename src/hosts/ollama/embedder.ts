@@ -1,6 +1,6 @@
 /**
  * hosts/ollama/embedder.ts — the host-layer implementation of kernel's
- * Embedder seam (construct-2jb.12), backed by a local ollama server.
+ * Embedder seam, backed by a local ollama server.
  *
  * kernel/implication/similarity.ts defines `Embedder` as text-in, vector-out
  * and does no I/O of its own, on purpose: the kernel stays host-ignorant, the
@@ -61,7 +61,7 @@ export function createOllamaEmbedder(config: OllamaEmbedderConfig = {}): Embedde
 /**
  * Wrap an embedder so a catalog's domain vectors are computed once and
  * reused, instead of once per outcome. Domains change on catalog edits, not
- * per outcome (construct-2jb.12) — the cache key is domain TEXT
+ * per outcome — the cache key is domain TEXT
  * (kernel/implication/similarity.ts's domainText, the same representation
  * the measurement pins), so a caller that swaps catalogs invalidates itself
  * for free rather than needing an explicit bust.

@@ -1,7 +1,7 @@
 /**
  * tests/kernel/metrics/krippendorff.test.ts — validates the alpha
  * implementation against published worked examples, not against numbers this
- * project made up (construct-2jb.3). No fixture here is model- or
+ * project made up. No fixture here is model- or
  * project-authored; both come from citable published sources, matched to the
  * digit the source reports.
  */

@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
  * scripts/measure-keyword-idf.mjs — per-keyword document frequency and IDF over
- * the pooled unsealed corpora (construct-2jb.5).
+ * the pooled unsealed corpora.
  *
  * THIS SCRIPT MEASURES. It does not generate a table the kernel imports, and
  * that is the result of the bead rather than an omission.
  *
- * construct-2jb.5 implemented IDF-weighted keyword scoring behind
+ * IDF-weighted keyword scoring was implemented behind
  * dispatcher.ts's existing seam and measured it on all four corpora. Every
  * after-interval sat inside its own before-interval, on every corpus, and under
  * the project's own asymmetric loss framing the pooled point estimate moved the

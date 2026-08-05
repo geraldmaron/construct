@@ -1,6 +1,6 @@
 /**
  * tests/hosts/parity.test.ts — the smoke-parity gate between the two host
- * adapters (construct-r67.4's acceptance): the same task, run through
+ * adapters: the same task, run through
  * OpenCode and through Claude, produces an EQUIVALENT deliverable. Divergence
  * fails here, by name, before any caller discovers it as a crash.
  *

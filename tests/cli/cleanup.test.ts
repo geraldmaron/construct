@@ -108,7 +108,7 @@ test('--yes applies auto-risk removals and reports a summary', () => {
     fs.mkdirSync(path.join(cwd, '.construct', 'launcher'), { recursive: true });
     const { result, out } = captureStdio(() => cleanup(['--yes', `--cwd=${cwd}`, `--home=${home}`], NOT_FOUND_SPAWN));
     assert.equal(result, 0);
-    // "kept" is its own count since construct-a5q: an item the successor owns
+    // "kept" is deliberately its own count: an item the successor owns
     // ran and removed nothing, and folding it into "removed" would report a
     // deletion that did not happen.
     assert.match(out, /removed 1, kept \d+, skipped \d+\./);

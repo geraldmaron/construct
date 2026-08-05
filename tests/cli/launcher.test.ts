@@ -1,6 +1,6 @@
 /**
  * tests/cli/launcher.test.ts — which build bin/construct.mjs actually runs
- * (construct-0dj).
+ *.
  *
  * The launcher chooses between a checkout's src/ and a build's dist/. That
  * choice is invisible at every surface: a subprocess test spawning the launcher

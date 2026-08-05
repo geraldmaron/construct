@@ -102,7 +102,7 @@ test('the same routes score identically regardless of call order — no cross-ca
 });
 
 /**
- * Number folding (construct-4jq). The prefix rule runs one way — a keyword stem
+ * Number folding. The prefix rule runs one way — a keyword stem
  * reaches its own inflected forms — so a keyword written PLURAL could never
  * match a singular token. "students" missed "student records" while "student"
  * would have matched both, which made a catalog author's arbitrary choice of

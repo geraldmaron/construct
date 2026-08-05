@@ -1,6 +1,6 @@
 /**
  * kernel/store/feedback.ts — storage for implication verdicts
- * (construct-2jb.13).
+ *.
  *
  * Every real run is a labeling event: the user sees which domains surfaced,
  * confirms or dismisses them, and is occasionally ambushed by one that never

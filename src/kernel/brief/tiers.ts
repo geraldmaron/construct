@@ -1,6 +1,6 @@
 /**
  * kernel/brief/tiers.ts — the model capability floor a brief may declare
- * (construct-ap0).
+ *.
  *
  * Commitment 10 says briefs declare and a dispatcher satisfies. Until now a
  * brief could declare its inputs, its tool capabilities and its postconditions
@@ -8,7 +8,7 @@
  * judgment dispatched identically to a 4b local model and to a frontier one, and
  * nothing in the record distinguished the two runs afterwards.
  *
- * That gap is measured, not assumed. construct-185 ran conflict-shaped outcomes
+ * That gap is measured, not assumed. A recorded run put conflict-shaped outcomes
  * through the Phase 2 dogfood on a 4b model and the decision inbox never fired;
  * whether that was honest silence or a model too weak to stake opposing
  * positions is undecidable, precisely because no floor was declared and no model

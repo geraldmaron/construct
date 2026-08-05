@@ -1,6 +1,6 @@
 /**
  * kernel/implication/harvest.ts — every real run is a labeling event
- * (construct-2jb.13).
+ *.
  *
  * The scarcest input to measuring the implication map is honestly-labeled
  * outcomes. All three committed corpora are dead in the specific sense
@@ -131,7 +131,7 @@ export function harvestCorpus(history: readonly ImplicationFeedback[]): Harveste
   }
   return {
     note:
-      'Harvested from real runs (construct-2jb.13): every label is a user verdict ' +
+      'Harvested from real runs: every label is a user verdict ' +
       'rendered at run time, not an author guess. Provenance travels with each outcome.',
     discipline:
       'Never tune against outcomes whose verdicts postdate the catalog change being ' +

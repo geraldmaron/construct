@@ -1,12 +1,12 @@
 /**
  * The agreement study's instrument must not overstate its own confidence
- * (construct-eib).
+ *.
  *
  * The first real two-coder run put the point floor at 0.1235 against a 0.15
  * target and printed "the 0.15 target is ABOVE the implied floor" — while the
  * bootstrap interval on that same floor was [0.05, 0.21], containing the target.
  * The point and the interval disagreed, and the script reported only the point.
- * That is the defect construct-2jb.2 withdrew claims for across this project,
+ * That is the defect earlier agreement claims were withdrawn for across this project,
  * committed by the tool that decides whether the headline target is reachable.
  */
 import { test } from 'node:test';

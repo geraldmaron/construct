@@ -1,5 +1,5 @@
 /**
- * tests/hosts/ollama/embedder.test.ts — construct-2jb.12.
+ * tests/hosts/ollama/embedder.test.ts.
  *
  * fetch is stubbed throughout: these tests pin the HTTP contract and the
  * domain-vector caching behavior, not live ollama availability (that is

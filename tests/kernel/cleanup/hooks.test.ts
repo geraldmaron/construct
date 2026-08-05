@@ -1,6 +1,6 @@
 /**
  * tests/kernel/cleanup/hooks.test.ts — whose hooks cleanup is allowed to remove
- * (construct-7pp).
+ *.
  *
  * The defect these exist for: the un-merge deleted the entire `hooks` block
  * whenever any hooks were present, then deleted the file because emptying it
@@ -66,7 +66,7 @@ function runSettingsItem(dir: string): { detected: boolean; result: string | nul
 }
 
 test('a checkout whose only hooks are its own is not touched at all', () => {
-  // The exact file this repo carries. Before construct-7pp it was deleted.
+  // The exact file this repo carries. It used to be deleted wholesale.
   const f = fixture({ hooks: OWN_HOOKS });
   try {
     const { detected } = runSettingsItem(f.dir);

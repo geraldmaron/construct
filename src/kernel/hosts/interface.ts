@@ -79,7 +79,7 @@ export interface HostAdapter {
   /**
    * The concrete model this adapter will run, if it can say. Recorded on every
    * task so a claim about what a run demonstrated is qualified by what actually
-   * ran (construct-ap0).
+   * ran.
    */
   readonly model?: string | null;
 

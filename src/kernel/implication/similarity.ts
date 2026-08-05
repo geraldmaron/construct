@@ -1,6 +1,6 @@
 /**
  * kernel/implication/similarity.ts — the signal the keyword layer structurally
- * cannot carry (construct-2jb.12).
+ * cannot carry.
  *
  * The keyword map's recall ceiling is dictionary coverage: a miss always closes
  * with a word nobody listed, and adding the word moves the failure to the next
@@ -109,7 +109,7 @@ export async function rankBySimilarity(input: SimilarityInput): Promise<DomainSi
  * pass did NOT implicate. These are the candidates worth spending a namer call
  * on — the measured basis for k=4 is that it covers all six keyword-missed
  * labels across the three corpora, and that number should be re-derived, not
- * trusted, when the corpus grows (construct-2jb.4).
+ * trusted, when the corpus grows.
  *
  * Deliberately returns candidates for a namer to judge, never implications: a
  * shortlist admits domains on geometry, and geometry is not a citation.

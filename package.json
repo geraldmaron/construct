@@ -42,7 +42,7 @@
   "scripts": {
     "test": "node --test \"tests/**/*.test.ts\"",
     "typecheck": "tsc --noEmit",
-    "lint": "node scripts/lint-no-absolute-paths.mjs && node scripts/lint-glossary-parity.mjs",
+    "lint": "node scripts/lint-no-absolute-paths.mjs && node scripts/lint-glossary-parity.mjs && node scripts/lint-no-bead-refs.mjs",
     "build": "tsc -p tsconfig.build.json",
     "prepack": "npm run build",
     "smoke": "bash scripts/smoke-packaged-install.sh",

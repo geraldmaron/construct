@@ -2,7 +2,7 @@
 /**
  * scripts/labeling-kit/compute-alpha.mjs — Krippendorff's alpha and the
  * implied Bayes error floor, over REAL returned coder sheets
- * (construct-2jb.3).
+ *.
  *
  * Reads every *.json file in scripts/labeling-kit/returned/ (one per coder,
  * the CODER-INSTRUCTIONS.md-filled copy of what generate-sheets.mjs
@@ -90,7 +90,7 @@ function bayesFloorFromDisagreement(Do) {
 }
 
 /**
- * Resample the study to get widths on alpha and the floor (construct-eib).
+ * Resample the study to get widths on alpha and the floor.
  *
  * THE UNIT IS THE OUTCOME, not the coder-outcome pair. What varies between
  * hypothetical repeats of this study is which outcomes were drawn, not which

@@ -118,7 +118,7 @@ export const EXPECTATIONS: readonly Expectation[] = [
 
 /**
  * Which of the models reachable through this host sit at which capability tier
- * (construct-ap0).
+ *.
  *
  * Beside the pin for the same reason the conformance expectations are: it is a
  * claim about the outside world that can rot silently. The kernel compares

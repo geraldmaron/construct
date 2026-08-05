@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * scripts/labeling-kit/generate-sheets.mjs — blind per-coder labeling sheets
- * for the multi-coder agreement study (construct-2jb.3).
+ * for the multi-coder agreement study.
  *
  * Draws outcomes from the held-out and fresh corpora ONLY
  * (tests/kernel/implication/fixtures/{held-out,fresh}-outcomes.json) — never

@@ -3,7 +3,7 @@
  * projection harvest, frozen into
  * tests/kernel/tracker/fixtures/tracker-golden.json.
  *
- * v2 sources ported by construct-cpz:
+ * v2 sources ported:
  *   lib/tracker-projection/field-authority.mjs
  *   lib/tracker-projection/projection.mjs
  *

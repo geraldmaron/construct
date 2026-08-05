@@ -1,8 +1,8 @@
 /**
  * hosts/claude/mcpconfig.ts — the host-side registration that gives a role its
- * write surface (construct-r67.14).
+ * write surface.
  *
- * construct-3sa built the chain up to the seam: the coordinator mints a scoped
+ * Earlier work built the chain up to the seam: the coordinator mints a scoped
  * bearer per dispatch, hands it to the adapter as `context.roleEnv`, and
  * `construct role-serve` speaks MCP over stdio against it. What was missing is
  * the last link — a real host that actually launches that server. This module

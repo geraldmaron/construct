@@ -22,7 +22,7 @@
  * lock, which is a rewrite rather than a port, and the substrate it should be
  * rewritten onto is the one Phase 2's spine needs for the work log and decision
  * inbox. Fixing a storage shape before that consumer exists would be guessing.
- * See construct-cpz.
+ *
  */
 
 import { AUTHORITY, IDENTITY_FIELDS, authorityFor } from './authority.ts';

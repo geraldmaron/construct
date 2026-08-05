@@ -1,6 +1,6 @@
 /**
  * tests/hosts/opencode/mcpconfig.test.ts — the role write surface on the second
- * host (construct-nv0).
+ * host.
  *
  * These assert the two things that are Construct's to guarantee here: the
  * bearer reaches the server without ever touching argv, and it does not outlive
@@ -99,7 +99,7 @@ test('the path is what travels, never the bearer', () => {
 
 /**
  * The adapter half: roleEnv arriving at invoke() must become a real
- * registration, and must be gone afterwards. Before construct-nv0 the adapter
+ * registration, and must be gone afterwards. Before the isolation fix the adapter
  * accepted context.roleEnv and ignored it, so a run dispatched to OpenCode had
  * no write surface at all — and nothing failed, which is why it went unnoticed.
  */
@@ -172,7 +172,7 @@ test('a dispatch with no role env registers nothing at all', async () => {
 
 /**
  * The interaction between two correct decisions, which together were wrong
- * (found running construct-nv0's live probe).
+ * (found on a live probe).
  *
  * hostEnvironment() strips the XDG variables so the HOST reads its own config
  * rather than construct's scratch one — right. The role's MCP server resolves

@@ -64,7 +64,7 @@ function tokenize(text: string): string[] {
  * reverse worked fine. The catalog had been compensating by hand — it lists
  * "contractor" and "contractors", "employee" and "employees", "refund" and
  * "refunds" — and silently lost wherever the author did not think to
- * (construct-4jq).
+ *.
  *
  * "access" and "business" keep their double s, so the rule cannot maul a word
  * that merely ends in one. Short words are left alone: "ids" -> "id" buys

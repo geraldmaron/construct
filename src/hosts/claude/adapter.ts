@@ -1,7 +1,7 @@
 /**
  * hosts/claude/adapter.ts — the Claude Code CLI behind the host adapter seam:
  * the second host, and therefore the proof that host independence is real
- * rather than asserted (construct-r67.4, commitment 1).
+ * rather than asserted (commitment 1).
  *
  * Same shape and same restraint as hosts/opencode/adapter.ts: spawn
  * `claude -p --output-format json`, read one envelope back, reimplement
@@ -106,7 +106,7 @@ function defaultSpawn(command: string, args: readonly string[], options: { cwd?:
     cwd: options.cwd,
     stdio: ['ignore', 'pipe', 'pipe'],
     // Chosen, not inherited: construct's own XDG isolation must not
-    // re-point the host's configuration and credentials (construct-wl8).
+    // re-point the host's configuration and credentials.
     env: hostEnvironment(),
   });
   let stdout = '';
@@ -206,7 +206,7 @@ export function createClaudeAdapter(config: ClaudeConfig = {}): ClaudeAdapter {
     },
 
     /**
-     * Tier membership is the pin's to declare (construct-ap0). Note the pin's
+     * Tier membership is the pin's to declare. Note the pin's
      * own recorded measurement: --model is a preference, not a constraint here,
      * so an unknown name runs the session default. That is exactly why null is
      * returned for anything unrecognised rather than a guess.
@@ -273,7 +273,7 @@ export function createClaudeAdapter(config: ClaudeConfig = {}): ClaudeAdapter {
       inFlight.set(id, child);
 
       // Not unref'd, checked after the race as well as raced — the same two
-      // lessons the OpenCode adapter's timeout carries (construct-byd).
+      // lessons the OpenCode adapter's timeout carries.
       let expired = false;
       let timer: ReturnType<typeof setTimeout> | undefined;
       const timedOut = new Promise<never>((_resolve, reject) => {

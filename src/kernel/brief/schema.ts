@@ -47,7 +47,7 @@ export interface Brief {
    */
   readonly challenges?: readonly string[];
   /**
-   * The weakest model capability tier this work may run on (construct-ap0).
+   * The weakest model capability tier this work may run on.
    * Optional, and omitting it means `any` — a brief that says nothing about
    * model strength gets no floor rather than a guessed one.
    *

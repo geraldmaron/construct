@@ -56,7 +56,7 @@ export const CONFORMANCE_EXPECTATIONS: readonly ConformanceExpectation[] = [
     id: 'step-finish-carries-usage',
     claim: 'a step_finish event carries part.tokens {input,output,total} and part.cost',
     whyItMatters:
-      "The coordinator's spend ceiling (construct-r67.5) is enforced on these numbers. If they move, the ceiling silently stops counting.",
+      "The coordinator's spend ceiling is enforced on these numbers. If they move, the ceiling silently stops counting.",
   },
   {
     id: 'usage-is-per-step',
@@ -87,7 +87,7 @@ export const CONFORMANCE_EXPECTATIONS: readonly ConformanceExpectation[] = [
     claim:
       'the first thing to open the sqlite database in a fresh data dir migrates it, and that first open can fail — measured both ways: two concurrent `run`s lost on `PRAGMA journal_mode = WAL`, and one `run` alone lost on `CREATE TABLE project`',
     whyItMatters:
-      'Under `construct work` the thing that meets the cold database is a real task, and it fails for a reason that has nothing to do with the work (construct-a76). The adapter absorbs the migration in init() instead. If the host ever makes the first open reliable, that warm-up and the gate behind it become dead weight and can go.',
+      'Under `construct work` the thing that meets the cold database is a real task, and it fails for a reason that has nothing to do with the work. The adapter absorbs the migration in init() instead. If the host ever makes the first open reliable, that warm-up and the gate behind it become dead weight and can go.',
   },
   {
     id: 'stats-opens-the-database-without-a-model-call',
@@ -100,14 +100,14 @@ export const CONFORMANCE_EXPECTATIONS: readonly ConformanceExpectation[] = [
     claim:
       'the provider registry is read from XDG_CONFIG_HOME, so a host pointed at an empty config root reports zero models where the ambient root reports its registered ones',
     whyItMatters:
-      "This is the behavior hosts/environment.ts exists to work around (construct-wl8). Construct resolves its own directories from the same XDG variables, so inheriting them wholesale re-pointed the HOST's provider registry at construct's scratch state — every task failed with `Model not found` naming the model, which was correct, rather than the environment, which was the cause. The adapter now spawns the host with those variables dropped. If the host ever stopped reading its registry from XDG_CONFIG_HOME, that dropping would be solving a problem that no longer exists and could go; if it started reading more from there, the workaround is load-bearing in more places than it knows.",
+      "This is the behavior hosts/environment.ts exists to work around. Construct resolves its own directories from the same XDG variables, so inheriting them wholesale re-pointed the HOST's provider registry at construct's scratch state — every task failed with `Model not found` naming the model, which was correct, rather than the environment, which was the cause. The adapter now spawns the host with those variables dropped. If the host ever stopped reading its registry from XDG_CONFIG_HOME, that dropping would be solving a problem that no longer exists and could go; if it started reading more from there, the workaround is load-bearing in more places than it knows.",
   },
   {
     id: 'mcp-registered-through-the-config-env-var',
     claim:
       'a server declared under `mcp` in the file named by OPENCODE_CONFIG is registered and reachable, and `opencode run` accepts no MCP flag at all',
     whyItMatters:
-      "This is how a role gets its write surface on this host (construct-nv0). There is no `--mcp-config`: registration is a config file located by an environment variable. That is why the bearer never touches argv here — no path and no JSON go on the command line. If OpenCode moved registration to a flag, or stopped reading OPENCODE_CONFIG, a role dispatched to this host would silently have no write surface, and 'the model did not call submit_draft' looks identical to 'the model could not'.",
+      "This is how a role gets its write surface on this host. There is no `--mcp-config`: registration is a config file located by an environment variable. That is why the bearer never touches argv here — no path and no JSON go on the command line. If OpenCode moved registration to a flag, or stopped reading OPENCODE_CONFIG, a role dispatched to this host would silently have no write surface, and 'the model did not call submit_draft' looks identical to 'the model could not'.",
   },
   {
     id: 'no-strict-mcp-config-equivalent-so-servers-are-not-isolated',
@@ -133,7 +133,7 @@ export const UNPROBED_EXPECTATIONS: readonly string[] = ['first-open-migrates-it
 
 /**
  * Which of the models reachable through this host sit at which capability tier
- * (construct-ap0).
+ *.
  *
  * It lives beside the pin because it is the same kind of claim: a statement
  * about the outside world that was true when it was written and can rot without
@@ -147,7 +147,7 @@ export const UNPROBED_EXPECTATIONS: readonly string[] = ['first-open-migrates-it
  * claim it met a floor nobody checked.
  */
 const OPENCODE_TIERS: readonly { readonly match: RegExp; readonly tier: ModelTier }[] = [
-  // A local model under ~8b is where construct-185's undecidable inbox silence
+  // A local model under ~8b is where the undecidable inbox silence
   // came from. Named first so it wins over any family rule below.
   { match: /(^|\/)[^/]*[:-]([0-7](\.\d+)?)b\b/i, tier: 'any' },
   { match: /^anthropic\/claude-(fable|opus)/i, tier: 'frontier' },

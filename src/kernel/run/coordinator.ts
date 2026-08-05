@@ -117,7 +117,7 @@ export interface RunReport {
   readonly escalated: number;
   /**
    * Dispatches that ran below the brief's declared model capability floor
-   * (construct-ap0). Non-zero does not mean the run failed — it means every
+   *. Non-zero does not mean the run failed — it means every
    * claim about what these deliverables demonstrate is qualified by the model
    * that produced them.
    */
@@ -155,7 +155,7 @@ export function assignmentFor(
   const concern = domain ? `\nYour concern: ${domain.concern}.` : '';
   // Whether the role holds the two writes is a fact about THIS dispatch, so the
   // assignment says which it is rather than describing tools that may not exist
-  // (construct-ghu). Silence was the old behavior and it is the worst of the
+  //. Silence was the old behavior and it is the worst of the
   // three: a role given tools on one run and none on the next cannot tell.
   const surface = options.writeSurface ? WRITE_SURFACE_PROTOCOL : NO_WRITE_SURFACE_NOTE;
   return (
@@ -221,7 +221,7 @@ export interface FramingOptions {
  * settled cover the ordinary case, including a run split across invocations by
  * the spend ceiling — it is framed at the end of the first invocation, against
  * whatever sides exist by then. Every FULLY SETTLED run in the store covers the
- * case construct-xgi found: tasks settled durably, then the process died before
+ * case a live run found: tasks settled durably, then the process died before
  * framing ran, and no later invocation could ever reach it. `construct work`
  * returns at its nothing-to-work guard, so the decision was unreachable by any
  * command, on evidence sitting complete in the store.
@@ -265,7 +265,7 @@ function framingCandidates(store: Store, settled: readonly string[], run?: strin
  * a decision the user may already be reading; the new position is in the work
  * log, and silently editing the question under them would be worse than leaving
  * it as it was raised. That guard is also what makes this operation safe to
- * re-enter, which is what construct-xgi's fix depends on: everything below is
+ * re-enter, which is what the crash-recovery fix depends on: everything below is
  * derived from the store, so calling it again can only raise a decision that was
  * never raised, never rewrite one that was.
  */
@@ -352,7 +352,7 @@ export async function workRun(
   async function dispatch(task: LeasedTask): Promise<void> {
     const brief = task.brief as Brief;
 
-    // What is about to run this, recorded before it runs (construct-ap0). A
+    // What is about to run this, recorded before it runs. A
     // claim about what a run demonstrated is only as good as the record of what
     // executed it, and a host that will not say is written down as not saying
     // rather than left blank — the cost-0-is-not-free precedent, applied to
@@ -432,7 +432,7 @@ export async function workRun(
           role: task.role,
           // The assignment must agree with what was actually minted: roleEnv is
           // the same value that decides whether the host registers a surface at
-          // all, so the two cannot drift apart (construct-ghu).
+          // all, so the two cannot drift apart.
           task: assignmentFor(brief, catalog, { writeSurface: roleEnv !== undefined }),
         },
         { invocationId: task.id, roleEnv },

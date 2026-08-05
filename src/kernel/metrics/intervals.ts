@@ -1,6 +1,6 @@
 /**
  * kernel/metrics/intervals.ts — how uncertain is a rate this project quotes?
- * (construct-2jb.1)
+ *
  *
  * The project measures its corpora honestly and then reasons about the results
  * as if they were precise. Those are different failures and only the first one

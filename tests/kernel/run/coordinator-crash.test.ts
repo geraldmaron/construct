@@ -3,7 +3,7 @@
  * mid-run, and the work it names comes back.
  *
  * This one spends a child process and a SIGKILL rather than simulating the
- * crash in-process, because the two properties construct-r67.7 promises are
+ * crash in-process, because the two properties crash-safety promises are
  * exactly the ones a simulation cannot show: that the entry was already on disk
  * when the process died, and that a killed run leaves a lease rather than a
  * wedge. An in-process fake would be testing the fake.
