@@ -45,7 +45,7 @@ import type { Domain } from '../implication/domains.ts';
 import { deliverableConcerns, licensedReviewFor } from './accountability.ts';
 import { STANCE_PROTOCOL, frameConflict, parseStance } from './conflicts.ts';
 import type { RoleStance } from './conflicts.ts';
-import { logPromotion, recordVerdict } from './promotion.ts';
+import { latestDraft, logPromotion, recordVerdict } from './promotion.ts';
 import { challengeById, runStructuralChallenges } from '../challenge/catalog.ts';
 import { getDecision, raiseDecision } from '../store/decisions.ts';
 import { ROLE_GRANTS, issueRoleToken } from '../capabilities/tokens.ts';
@@ -176,6 +176,28 @@ function howEngaged(inferredBy: string): string {
  * specific, and it comes from the catalog, so a role outside the catalog gets an
  * assignment that says only what is actually known about it.
  */
+/**
+ * What a role is allowed to treat as evidence, said out loud.
+ *
+ * A role dispatched into a working directory with ambient filesystem access
+ * and no material of its own reaches for the nearest readable thing. On a real
+ * run an employment-law question was answered by reading this tool's own
+ * package and citing a module of keyword definitions. The deliverable looked
+ * cited, which is worse than looking uncited.
+ *
+ * Saying it is the cheap half and it is not the whole fix, because a statement
+ * relies on the model to comply. The citation challenge checks the same rule
+ * afterwards, so the two halves fail independently.
+ */
+const MATERIAL_PROTOCOL = [
+  'Your material is the outcome above and what you already know about your',
+  'domain. Whatever files happen to be around you are not evidence for it —',
+  'you may be running inside this tool\'s own package or inside the user\'s',
+  'codebase, and neither one tells you anything about your domain. Never cite a',
+  'file path as the source for a claim about your domain. If a claim needs a',
+  'source you do not have, mark it [unverified] and say what would settle it.',
+].join(' ');
+
 export function assignmentFor(
   brief: Brief,
   catalog: readonly Domain[] = DOMAINS,
@@ -218,6 +240,8 @@ export function assignmentFor(
     'what is likely to be missed, and what you cannot determine from the outcome ' +
     'alone. Do not assert anything you cannot support. Keep it as short as it can ' +
     'be while still letting the reader follow how you got there.\n\n' +
+    MATERIAL_PROTOCOL +
+    '\n\n' +
     obligations +
     `${voiceProtocol(options.voice)}\n\n` +
     `${surface}\n\n` +
@@ -255,9 +279,27 @@ export function spendOf(result: HostResult): { spend: number; reported: boolean 
  * are different answers: a structural check over an absent deliverable would
  * fail every challenge for a reason that has nothing to do with the work.
  */
-function deliverableTextOf(output: unknown): string | null {
+function replyTextOf(output: unknown): string | null {
   const text = (output as { text?: unknown } | null)?.text;
   return typeof text === 'string' && text.trim() !== '' ? text : null;
+}
+
+/**
+ * The text the challenges are run against: the submitted draft when there is
+ * one, the reply otherwise.
+ *
+ * The write-surface protocol tells a role in as many words that "the draft is
+ * what lands on the record attributed to you", and roles believe it — on a real
+ * run one submitted a full deliverable and replied with a two-line summary, and
+ * another submitted a draft and replied with nothing at all. Checking the reply
+ * meant the citation check passed a summary while the deliverable of record
+ * went unread, which is the failure this whole layer exists to prevent: a
+ * verdict about something other than the thing being relied on.
+ */
+function deliverableTextOf(store: Store, taskId: string, output: unknown): string | null {
+  const draft = latestDraft(store, taskId)?.deliverable;
+  if (typeof draft === 'string' && draft.trim() !== '') return draft;
+  return replyTextOf(output);
 }
 
 function summarize(result: HostResult): Record<string, unknown> {
@@ -568,7 +610,7 @@ export async function workRun(
         // shown, never that it is good, and a challenge with no structural
         // form is left unanswered rather than passed — recorded as such, so a
         // brief's declared control is never satisfied by nobody looking.
-        const deliverableText = deliverableTextOf(result.output);
+        const deliverableText = deliverableTextOf(store, task.id, result.output);
         if (deliverableText !== null && (brief.challenges?.length ?? 0) > 0) {
           const run = runStructuralChallenges(brief, deliverableText);
           for (const check of run.results) {

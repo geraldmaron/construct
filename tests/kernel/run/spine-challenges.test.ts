@@ -26,6 +26,8 @@ import { startRun } from '../../../src/kernel/run/outcome.ts';
 import { workRun, assignmentFor } from '../../../src/kernel/run/coordinator.ts';
 import { promotionOf } from '../../../src/kernel/run/promotion.ts';
 import { SPINE_CHALLENGES, challengeById } from '../../../src/kernel/challenge/catalog.ts';
+import { appendWorkLog } from '../../../src/kernel/store/worklog.ts';
+import { DRAFT_ACTION } from '../../../src/kernel/run/promotion.ts';
 import type { Brief } from '../../../src/kernel/brief/schema.ts';
 import type { HostAdapter, HostResult } from '../../../src/kernel/hosts/interface.ts';
 
@@ -145,6 +147,41 @@ test('a cited deliverable that names its gaps clears both, on the same path', as
     assert.deepEqual(promotion.outstanding, []);
     assert.notEqual(promotion.state, 'draft');
     assert.deepEqual(promotion.waived, [], 'cleared by passing, not by setting aside');
+  } finally {
+    done();
+  }
+});
+
+test('the challenges read the submitted draft, not the reply that summarizes it', async () => {
+  const { store, done } = fixtureStore();
+  try {
+    const started = startRun(store, { runId: 'run-1', outcome: OUTCOME, at: AT });
+    const task = started.tasks[0];
+
+    // What a role with a write surface actually does, and is told to do: the
+    // deliverable goes through submit_draft and the reply is a summary of it.
+    const host = {
+      ...hostReturning('Draft submitted.'),
+      invoke: async (_request: unknown, ctx: { invocationId: string }) => {
+        appendWorkLog(store, {
+          run: 'run-1',
+          task: ctx.invocationId,
+          role: 'privacy',
+          action: DRAFT_ACTION,
+          detail: { deliverable: SOURCED },
+          at: AT,
+        });
+        return { id: ctx.invocationId, status: 'ok', output: { text: 'Draft submitted.', usage: { cost: 0, steps: 1 } }, error: null };
+      },
+    } as unknown as HostAdapter;
+
+    await workRun(store, host, { owner: 'w1', clock: () => AT, spendCeiling: 100 });
+
+    // The reply alone shows no scope diff and would have failed. The draft does.
+    const promotion = promotionOf(store, task);
+    assert.ok(promotion);
+    assert.deepEqual(promotion.failing, [], 'the verdict must be about the draft');
+    assert.deepEqual(promotion.outstanding, []);
   } finally {
     done();
   }

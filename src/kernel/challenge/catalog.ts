@@ -30,7 +30,7 @@
  * format for the checker rather than to think.
  */
 
-import { findUntaggedClaims } from '../verify/claims.ts';
+import { findUntaggedClaims, findSourceFileCitations } from '../verify/claims.ts';
 import type { Brief } from '../brief/schema.ts';
 
 export interface ChallengeCheck {
@@ -96,6 +96,20 @@ export const CHALLENGES: readonly Challenge[] = [
     // a second matcher for the same job is the drift commitment 16 exists to
     // catch, and two of them would disagree eventually.
     structural: (deliverable) => {
+      // A citation that points at code fails here rather than in a challenge of
+      // its own, because from the reader's side it is the same failure: the
+      // claim is not sourced. Checked first — a deliverable that cites the
+      // tool's insides has a worse problem than one that cites nothing.
+      const misplaced = findSourceFileCitations(deliverable);
+      if (misplaced.length > 0) {
+        const shown = misplaced.slice(0, 3).map((c) => `line ${String(c.line)}`).join(', ');
+        return {
+          passed: false,
+          detail:
+            `${String(misplaced.length)} citation(s) point at a source file rather than a source: ` +
+            `${shown}. Code in the working directory is not evidence about this domain.`,
+        };
+      }
       const untagged = findUntaggedClaims(deliverable);
       if (untagged.length === 0) {
         return { passed: true, detail: 'every amount, percentage, and date carries a citation or an [unverified] tag' };
