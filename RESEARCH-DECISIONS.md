@@ -22,7 +22,9 @@ identify the right formalism and state what would have to be collected to apply 
 conclusions are explicitly marked as pending data, not presented as results. §10 is measured
 against a live host model and its figures are per-model, not per-architecture. §11 is not a
 measurement at all: it records the external sources grounding the 2026-08-05 strategy
-amendments, and assigns no numbers.
+amendments, and assigns no numbers. §12 writes the Phase 3 deferral triggers: two are derived
+by exact binomial power calculations at stated (and flagged) assumptions, one is anchored to
+demonstrated manual capacity with its unmeasurables named.
 
 ---
 
@@ -1062,6 +1064,81 @@ before the STRATEGY amendments they justify were written:
 What this section deliberately does not do: assign probabilities to any of it. The house rule the
 amendments encode — no probability without a consuming shipped decision and a grounding
 measurement — applies to this section first.
+
+## 12. The Phase 3 deferral triggers — construct-h66.6
+
+*Recorded 2026-08-05. STRATEGY Phase 3 defers retention automation, learned heat baselines,
+and eval-gated prompt evolution each "behind a written data-volume trigger" — and until this
+section, no trigger was written anywhere, which made "deferred" indistinguishable from
+"forgotten". The figures below are exact binomial closed forms, recomputable from `binomialCdf`
+and `wilson` in `src/kernel/metrics/intervals.ts` at the stated parameters; they are not yet
+emitted by `scripts/measure-decisions.mjs`, and that parity gap is stated here rather than
+hidden. The evidence base they rest on, counted on 2026-08-05: **zero real recorded runs** (§8's
+"no work-log corpus exists yet" still holds; the one recorded run is a simulation and is labeled
+as one, construct-r67.10), **zero stored lessons** (the store ships in Phase 3), **zero fixed
+scenario evals** (commitment 8 mints them from past outcomes, of which there are none), and
+126 corpus outcomes across the four labeled fixture files.*
+
+### Eval-gated prompt evolution — trigger: 40 scenario evals
+
+Commitment 8's gate is pass/fail per scenario: a candidate re-runs the suite and must not
+regress. For that gate to be statistically meaningful the suite must detect a stated regression
+at a stated power, so the trigger is a power calculation, not a taste. With *n* scenarios at
+baseline pass rate *p₀*, flag a candidate when passes fall at or below the largest cutoff *c*
+whose false-alarm probability under *p₀* stays within α = 0.05:
+
+| regression to detect | n required | cutoff | false alarm | power |
+|---|---|---|---|---|
+| 0.90 → 0.70 (20 points) | 30 | ≤23 pass | 0.026 | 0.840 |
+| **0.90 → 0.75 (15 points)** | **40** | **≤32 pass** | **0.042** | **0.818** |
+| 0.90 → 0.80 (10 points) | 100 | ≤84 pass | 0.040 | 0.871 |
+
+The written trigger is **40**: below 40 scenarios, no cutoff exists that detects a 15-point
+regression at 80% power without a false-alarm rate that would train people to ignore the gate,
+so prompt changes stay eyeball-reviewed and labeled as such, exactly as commitment 8 says. Two
+honesty notes travel with the number. The baseline *p₀* = 0.90 is **assumed, not measured** —
+there are no real runs to measure it from — so the first 40 evals' first job is to measure the
+actual baseline, and the required *n* recomputes if it lands elsewhere. And scenarios minted
+from outcomes sharing an author are correlated the same way §7's challenges are; 40 correlated
+scenarios detect less than 40 independent ones, so 40 is a floor, not a certificate.
+
+### Learned heat baselines — trigger: 25 labeled real runs in a single domain
+
+A learned baseline replaces a hand-set heat tier with a per-domain rate estimated from history.
+The question is when that estimate stops being fitted to noise. Separating a hot domain from a
+cool one exact-binomially — the smallest per-domain *n* at which a hot rate is distinguishable
+from a cool one at 95% confidence and ≥80% power — takes **25 observations** in that domain
+(power 0.846 at α = 0.025; 20 observations reach only 0.750). Wilson intervals tell the same
+story from the other side: at an observed rate of 0.3, ten runs bound it to [0.11, 0.60] and
+twenty to [0.15, 0.52] — intervals wider than the tier distinctions heat governs.
+
+So the trigger is per-domain, not global: **a domain's baseline may be learned once that domain
+holds 25 labeled real runs; until then its heat stays hand-set and overridable.** The stake this
+number is computed at — hot ≈ 0.4 defect rate versus cool ≈ 0.15 — is **placed, not measured**;
+commitment 9's own rule applies, and the real per-tier rates must come from labeled runs before
+anyone quotes them. The second unknown is how fast any domain accumulates 25: the corpora put
+mean domain-touches per outcome at 1.33 across 10 catalog domains (§8), but the corpus touch
+distribution is not the real-usage touch distribution, and the latter has never been observed.
+Current count in every domain: zero.
+
+### Retention automation — trigger: 168 stored lessons, and a stated dependency
+
+This is the trigger that mostly cannot be derived, and saying so is the point. Retention
+pressure has two real mechanisms — the store outgrowing manual review, and lesson injection
+crowding a host's context budget — and the second is unmeasurable today because there are no
+lessons and no measured per-lesson injection cost. What the project *does* have evidence for is
+manual capacity: the largest body a single maintainer has hand-adjudicated end to end is the
+pooled 168-outcome corpus (§1), so manual retention review is demonstrated feasible at that
+order of magnitude, and automating below it is speculation. The written trigger is therefore
+**168 stored lessons** — the demonstrated manual-review ceiling — with two measurements that
+would move it and must be taken once real runs exist: lesson accrual rate per run (sets the
+calendar), and per-lesson injection cost against the live host's context budget (a budget
+squeeze pulls the trigger earlier than any count). A structural constraint also holds
+regardless of count: commitment 9 says rare-but-critical knowledge in hot domains never
+auto-compacts, so retention automation with that safety property needs learned heat baselines
+first — this trigger sits behind the 25-runs-per-domain trigger above, by construction.
+
+---
 
 ## What this pass did not do
 
