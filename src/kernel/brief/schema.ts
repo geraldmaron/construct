@@ -24,6 +24,27 @@ export interface BriefInput {
   readonly required: boolean;
 }
 
+/**
+ * Why this task exists: the concern that fired and the evidence for it.
+ *
+ * It rides on the brief because the brief is what reaches the dispatcher, and
+ * a role that starts work not knowing which concern engaged it has to guess at
+ * its own remit. This is evidence, not orchestration — it names no tool, no
+ * host, and no order of operations, so commitment 10's line holds.
+ */
+export interface Engagement {
+  /** The domain's stated concern, from the catalog.  */
+  readonly concern: string;
+  /**
+   * What was cited: keyword signals on the deterministic path, the namer's
+   * stated reason on the escalated one, the user's own word when they named
+   * the staff themselves.
+   */
+  readonly evidence: readonly string[];
+  /** How it was reached — keywords, namer, cache, user. */
+  readonly inferredBy: string;
+}
+
 export interface Brief {
   readonly id: string;
   /** The outcome this task serves, in the user's words. */
@@ -56,6 +77,13 @@ export interface Brief {
    * adapter's declaration, next to its pin.
    */
   readonly modelFloor?: ModelTier;
+  /**
+   * Why this role was engaged. Optional because a brief can be written by
+   * hand, with no inference behind it; when present it travels into the
+   * assignment verbatim so the deliverable can open from the concern that
+   * fired.
+   */
+  readonly engagement?: Engagement;
 }
 
 export interface BriefProblem {
@@ -122,6 +150,28 @@ export function validateBrief(brief: unknown): BriefValidation {
       field: 'modelFloor',
       problem: `modelFloor must be one of: ${MODEL_TIERS.join(', ')} — a tier, never a model name (the kernel compares ordinals; adapters own tier membership)`,
     });
+  }
+
+  // Half an engagement is worse than none: a role told it was engaged, with
+  // nothing cited, reads as evidence that was never actually there.
+  if (record.engagement !== undefined) {
+    const engagement = record.engagement as Partial<Engagement>;
+    if (!nonEmptyString(engagement?.concern)) {
+      problems.push({ field: 'engagement.concern', problem: 'engagement needs a concern' });
+    }
+    if (!nonEmptyString(engagement?.inferredBy)) {
+      problems.push({ field: 'engagement.inferredBy', problem: 'engagement must say how it was reached' });
+    }
+    if (
+      !Array.isArray(engagement?.evidence) ||
+      engagement.evidence.length === 0 ||
+      engagement.evidence.some((v) => !nonEmptyString(v))
+    ) {
+      problems.push({
+        field: 'engagement.evidence',
+        problem: 'engagement must cite at least one non-empty piece of evidence',
+      });
+    }
   }
 
   // A brief that names a concrete tool has started orchestrating itself.

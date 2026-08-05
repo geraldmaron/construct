@@ -79,7 +79,11 @@ export function taskId(runId: string, domain: string): string {
  * empty because the role's registered defaults apply, which is not the same as
  * unverified.
  */
-function briefFor(input: StartRunInput, implication: Implication): Brief {
+function briefFor(
+  input: StartRunInput,
+  implication: Implication,
+  inferredBy: InferredBy,
+): Brief {
   return {
     id: taskId(input.runId, implication.domain),
     outcome: input.outcome,
@@ -89,6 +93,19 @@ function briefFor(input: StartRunInput, implication: Implication): Brief {
     ],
     capabilities: [],
     postconditions: [],
+    // The evidence that engaged this role travels with the work. Dropping it
+    // here is what made a role start blind to which concern fired. An
+    // implication with nothing cited carries no engagement rather than an
+    // empty one, which would claim evidence that does not exist.
+    ...(implication.signals.length > 0
+      ? {
+          engagement: {
+            concern: implication.concern,
+            evidence: implication.signals,
+            inferredBy,
+          },
+        }
+      : {}),
   };
 }
 
@@ -250,7 +267,7 @@ function record(
     }
 
     for (const implication of implicated) {
-      const brief = briefFor(input, implication);
+      const brief = briefFor(input, implication, inferredBy);
       logged.push(
         appendWorkLog(store, {
           run: input.runId,

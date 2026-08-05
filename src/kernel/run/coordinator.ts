@@ -146,6 +146,27 @@ export interface RunReport {
  * specific, and it comes from the catalog, so a role outside the catalog gets an
  * assignment that says only what is actually known about it.
  */
+/**
+ * How the engagement was reached, said plainly to the role. Provenance matters
+ * to the reader: a keyword match and a model's stated reason are not the same
+ * quality of evidence, and a role weighing its own remit should know which it
+ * was handed.
+ */
+function howEngaged(inferredBy: string): string {
+  switch (inferredBy) {
+    case 'keywords':
+      return 'those are keyword signals matched in the outcome, not a judgment';
+    case 'namer':
+      return 'a model read the outcome and gave that as its reason';
+    case 'cache':
+      return 'a model gave that reason for this same outcome earlier';
+    case 'user':
+      return 'the user named your domain themselves';
+    default:
+      return `provenance: ${inferredBy}`;
+  }
+}
+
 export function assignmentFor(
   brief: Brief,
   catalog: readonly Domain[] = DOMAINS,
@@ -153,6 +174,13 @@ export function assignmentFor(
 ): string {
   const domain = domainsByName(catalog).get(brief.role);
   const concern = domain ? `\nYour concern: ${domain.concern}.` : '';
+  // Why this role is here, in the words the record holds. A role that knows
+  // which concern fired can open from it; one that does not has to guess at
+  // its own remit, and the evidence was sitting in the brief the whole time.
+  const engagement = brief.engagement
+    ? `You were engaged because: ${brief.engagement.evidence.join(' ')}\n` +
+      `(${howEngaged(brief.engagement.inferredBy)})\n\n`
+    : '';
   // Whether the role holds the two writes is a fact about THIS dispatch, so the
   // assignment says which it is rather than describing tools that may not exist
   //. Silence was the old behavior and it is the worst of the
@@ -161,6 +189,7 @@ export function assignmentFor(
   return (
     `You are acting as the ${brief.role} role.${concern}\n\n` +
     `The outcome the user asked for: ${brief.outcome}\n\n` +
+    engagement +
     'Report what this outcome implicates in your domain: what needs to be true, ' +
     'what is likely to be missed, and what you cannot determine from the outcome ' +
     'alone. Do not assert anything you cannot support. Be brief.\n\n' +
@@ -364,7 +393,16 @@ export async function workRun(
       task: task.id,
       role: task.role,
       action: 'role-dispatched',
-      detail: { host: host.name, attempt: task.token, model, modelTier },
+      detail: {
+        host: host.name,
+        attempt: task.token,
+        model,
+        modelTier,
+        // What the role was told about why it is here. Recorded because a
+        // deliverable that opens from a concern can only be read against the
+        // evidence the role actually received, not the evidence it might have.
+        engagement: brief.engagement ?? null,
+      },
       at: options.clock(),
     });
 
