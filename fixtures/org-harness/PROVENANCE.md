@@ -38,3 +38,10 @@ auditable as a diff.
 Risk R1 needed no edit: it falls out of combining rfc-001 with
 `tickets/T-28695.md` as both stand. Ticket headers carry an origin line added
 to every ticket file.
+
+## Role-lens additions (2026-08-05, before the first run scored against them)
+
+`tickets/T-27846.md` (progressive-sync metrics, verbatim, no edits) was added
+as the sixteenth ticket so the analyst lens has ground truth to see. The
+role-lens findings (TP1, A1, CP1, L1) in `answer-key.json` cite corpus text as
+it already stood — they are labels over existing evidence, not new edits.

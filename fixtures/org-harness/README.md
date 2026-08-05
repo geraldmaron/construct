@@ -11,7 +11,7 @@ scored run over this corpus.
   - `strategy.md` — the org's strategy document
   - `prd-progressive-sync-deletion.md` — a PRD
   - `rfc-001-sync-impersonation.md`, `rfc-002-manifest-hydrator.md` — two RFCs
-  - `tickets/T-*.md` — 15 tracker tickets
+  - `tickets/T-*.md` — 16 tracker tickets
   - `notes/note-1.md`, `notes/note-2.md` — two brain-dump notes (the
     team-notes-drop scenario stimulus)
 - `answer-key.json` — the planted ground truth: three cross-references, one
@@ -43,6 +43,17 @@ no uncited claims), rung 1 is the planted cross-references, rung 2 is the
 combined-source risks plus the uses-sources-rather-than-lists-them ratio,
 rung 3 is the drift conflict and the notes-drop loop. The scorer exits
 non-zero if any rung fails.
+
+The answer key also carries `roleFindings`: per-role expected findings (PM,
+TPM, analyst, compliance, legal, thin engineering) over the same corpus. The
+scorer reports role coverage as advisory — it shows which role lenses saw and
+which were blind, but never gates a rung. Those labels are recommendations
+awaiting human acceptance.
+
+A run produced by the same model family that authored the plants carries the
+correlated-error caveat: an observed pass is an upper bound on what an
+independent run would score. The caveat travels with any number quoted from
+such a run.
 
 Gerald reviews scored runs in place of an external tester, with the same
 recorded honesty as prior phase closes: the score is the floor, the review is

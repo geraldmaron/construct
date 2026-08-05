@@ -88,6 +88,44 @@
       "note-2's strategy-vs-PRD question is explicitly left undecided: the right output is a drift observation citing both documents, not a memory delta claiming a decision."
     ]
   },
+  "roleFindings": {
+    "recorded": "2026-08-05, before the first run scored against them; advisory coverage, not a rung gate",
+    "labeledBy": "Fable (recommend); accepted or rejected by Gerald per the LLM-as-judge protocol",
+    "roles": {
+      "pm": ["C1", "X3"],
+      "engineering": ["X1", "X2"],
+      "tpm": ["TP1"],
+      "analyst": ["A1"],
+      "compliance": ["CP1"],
+      "legal": ["L1"]
+    },
+    "findings": [
+      {
+        "id": "TP1",
+        "documents": ["notes/note-2.md", "tickets/T-24578.md"],
+        "keywords": ["hydrat", "applicationset|appset", "must not|restrict|block|conflict"],
+        "gist": "Program risk: the incident review's interim rule (hydrator pilot repos must not use progressive sync) collides with the planned Source-Hydrator-for-ApplicationSets work — that workstream is blocked on the debounce nobody has scheduled."
+      },
+      {
+        "id": "A1",
+        "documents": ["tickets/T-27846.md", "tickets/T-27949.md"],
+        "keywords": ["metric|observab|monitor", "wave|restart|progressive"],
+        "gist": "Measurement gap: the wave-restart failure mode cannot be detected in production because the progressive-sync metrics that would show it (time per step, refreshes caused, what a wave is waiting on) do not exist yet."
+      },
+      {
+        "id": "CP1",
+        "documents": ["rfc-001-sync-impersonation.md", "tickets/T-9095.md"],
+        "keywords": ["rbac", "impersonat|service account", "least privilege|audit|attribut|governance"],
+        "gist": "Access-governance shift: impersonation moves sync authority from the shared control-plane credential to per-destination Kubernetes RBAC, which is also what the user/group RBAC request asks for — reviews and audit trails must follow the service-account identity, not the controller's."
+      },
+      {
+        "id": "L1",
+        "documents": ["tickets/T-28239.md", "rfc-002-manifest-hydrator.md"],
+        "keywords": ["sign|signature", "commit", "provenance|attest|supply|author"],
+        "gist": "Provenance exposure: the hydrator lands machine-authored commits on the branch deployments run from, and until hydrated commits are signed there is no attestation distinguishing them from human pushes — an unsigned write path into the deployed source of truth."
+      }
+    ]
+  },
   "scoring": {
     "keywordSemantics": "each keywords entry is AND of terms; a term may hold |-separated alternatives (OR); matching is case-insensitive substring",
     "rungs": {

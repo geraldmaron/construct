@@ -145,7 +145,28 @@ const rung3 = {
   deltas: deltaHits,
 };
 
-const report = { rung0, rung1, rung2, rung3, pass: rung0.pass && rung1.pass && rung2.pass && rung3.pass };
+// ---- role coverage (advisory): which role lenses saw, which are blind ------
+// Coverage reports; it never gates. Labels are recommended, then accepted or
+// rejected by a human — the scorer only measures against what was recorded.
+const roleKey = key.roleFindings ?? { roles: {}, findings: [] };
+const plantById = new Map(
+  [...key.crossReferences, ...key.conflicts, ...key.risks, ...roleKey.findings].map((p) => [p.id, p]),
+);
+const roleCoverage = Object.fromEntries(
+  Object.entries(roleKey.roles).map(([role, ids]) => [
+    role,
+    ids.map((id) => ({ id, found: Boolean(findPlant(plantById.get(id))) })),
+  ]),
+);
+
+const report = {
+  rung0,
+  rung1,
+  rung2,
+  rung3,
+  roleCoverage,
+  pass: rung0.pass && rung1.pass && rung2.pass && rung3.pass,
+};
 
 if (jsonMode) {
   console.log(JSON.stringify(report, null, 2));
@@ -155,6 +176,9 @@ if (jsonMode) {
   console.log(`rung 1 cross-references  ${mark(rung1.pass)}  ${xrefs.map((x) => `${x.id}:${x.found ? 'hit' : 'miss'}`).join(' ')}`);
   console.log(`rung 2 risks + usage     ${mark(rung2.pass)}  ${risks.map((r) => `${r.id}:${r.found ? 'hit' : 'miss'}`).join(' ')} substantive=${rung2.substantiveRatio}`);
   console.log(`rung 3 context loop      ${mark(rung3.pass)}  ${[...conflicts, ...propHits, ...deltaHits].map((x) => `${x.id}:${x.found ? 'hit' : 'miss'}`).join(' ')}`);
+  for (const [role, hits] of Object.entries(roleCoverage)) {
+    console.log(`role ${role.padEnd(12)} (advisory)  ${hits.map((h) => `${h.id}:${h.found ? 'hit' : 'miss'}`).join(' ')}`);
+  }
   console.log(report.pass ? 'HARNESS PASS' : 'HARNESS FAIL');
 }
 process.exit(report.pass ? 0 : 1);

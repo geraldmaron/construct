@@ -80,6 +80,19 @@ test('a run that surfaces every plant with citations passes every rung', () => {
   assert.equal(report.pass, true);
 });
 
+test('role coverage reports blindness without gating the rungs', () => {
+  const { code, report } = score(earnedRun());
+  assert.equal(code, 0);
+  const coverage = (report as unknown as { roleCoverage: Record<string, Array<{ found: boolean }>> })
+    .roleCoverage;
+  // The earned run surfaces the rung plants but none of the role-lens
+  // findings: every role mapped only to those findings shows blind, and the
+  // run still passes — coverage is advisory.
+  assert.ok(coverage.analyst.every((h) => !h.found));
+  assert.ok(coverage.legal.every((h) => !h.found));
+  assert.ok(coverage.pm.every((h) => h.found));
+});
+
 test('a fabricated citation fails rung 0 even when every plant is found', () => {
   const run = earnedRun() as { claims: Array<{ citations: string[] }> };
   run.claims[0].citations = [...run.claims[0].citations, 'tickets/T-99999.md'];
