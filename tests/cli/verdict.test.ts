@@ -153,6 +153,15 @@ test('corpus export with no recorded verdicts writes zero outcomes, not an error
   }
 });
 
+test('verdict takes --run <id> as well as --run=<id>, the form log and work accept', async () => {
+  const result = await runAll([
+    ['outcome', 'We want to hire a contractor in Poland'],
+    (soFar) => ['verdict', '--run', /run-\d+/.exec(soFar)?.[0] ?? 'missing'],
+  ]);
+  assert.equal(result.code, 0, result.err);
+  assert.match(result.out, /surfaced domains/);
+});
+
 test('verdict with no --run is a usage error', async () => {
   const { code, err } = await runAll([['verdict']]);
   assert.equal(code, 2);

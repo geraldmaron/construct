@@ -964,8 +964,13 @@ export function parseVerdictArgs(argv: string[]): VerdictArgs {
     const match = /^--([a-z]+)=(.*)$/.exec(arg);
     if (match) args[match[1]] = match[2];
   }
+  // `--run <id>` as well as `--run=<id>`, because `log` and `work` both take
+  // the spaced form and a user who learned it there types it here. This
+  // surface refusing it sent people to a usage error at the one step the
+  // routing corpus depends on.
+  const runIndex = argv.indexOf('--run');
   return {
-    run: args.run,
+    run: args.run ?? (runIndex >= 0 ? argv[runIndex + 1] : undefined),
     confirm: args.confirm ? splitList(args.confirm) : [],
     dismiss: args.dismiss ? splitList(args.dismiss) : [],
     missed: args.missed ? splitList(args.missed) : [],
