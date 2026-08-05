@@ -41,6 +41,7 @@ import { storeNamingCache } from '../../kernel/store/namings.ts';
 import { startRun, startRunNamed } from '../../kernel/run/outcome.ts';
 import type { StartedRun } from '../../kernel/run/outcome.ts';
 import { DOMAINS } from '../../kernel/implication/domains.ts';
+import { recordVerdict } from '../../kernel/implication/verdict.ts';
 import { validateBrief } from '../../kernel/brief/schema.ts';
 import type { DomainNaming } from '../../kernel/implication/naming.ts';
 import type { Store } from '../../kernel/store/open.ts';
@@ -55,9 +56,9 @@ export interface ProjectionCore {
 }
 
 /**
- * The whole tool surface: reads, one append (an outcome), and one relay of the
- * user's own call. Nothing here advances completion, and the test suite
- * asserts that by name.
+ * The whole tool surface: reads, one append (an outcome), and two relays of
+ * the user's own judgment (a decision, a verdict). Nothing here advances
+ * completion, and the test suite asserts that by name.
  */
 export const PROJECTION_TOOLS = [
   {
@@ -145,6 +146,27 @@ export const PROJECTION_TOOLS = [
     },
   },
   {
+    name: 'verdict',
+    description:
+      'Record the user\'s judgment of what a run surfaced: `confirm` (it was ' +
+      'right to surface these), `dismiss` (it was wrong to), `missed` (these ' +
+      'should have surfaced and did not). Relay only a judgment the user ' +
+      'actually made — these labels are the corpus the routing measurements ' +
+      'are computed from, and a model agreeing with itself measures nothing. ' +
+      'confirm and dismiss apply only to domains the run surfaced; a domain ' +
+      'that never appeared can only be `missed`.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        run: { type: 'string', description: 'The run being judged.' },
+        confirm: { type: 'array', items: { type: 'string' }, description: 'Domains it was right to surface.' },
+        dismiss: { type: 'array', items: { type: 'string' }, description: 'Domains it was wrong to surface.' },
+        missed: { type: 'array', items: { type: 'string' }, description: 'Domains that should have surfaced and did not.' },
+      },
+      required: ['run'],
+    },
+  },
+  {
     name: 'validate_brief',
     description:
       'Check a brief against its schema: what a task declares it needs ' +
@@ -222,6 +244,15 @@ async function recordOutcome(
   return startedReply(started, namings);
 }
 
+/** A verdict list argument: absent is empty, anything else must be strings. */
+function domainList(value: unknown, field: string): string[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) {
+    throw new RangeError(`verdict "${field}" must be an array of domain names`);
+  }
+  return value as string[];
+}
+
 function runStatus(core: ProjectionCore, run: string | undefined): unknown {
   return {
     counts: countTasksByState(core.store, run),
@@ -267,6 +298,20 @@ async function callTool(
         if (!resolution) throw new RangeError('decide requires a non-empty string "resolution"');
         resolveDecision(core.store, input.id, resolution, core.clock());
         return toolResult(id, { decided: input.id, resolution });
+      }
+      case 'verdict': {
+        if (run === undefined) throw new RangeError('verdict requires a string "run"');
+        const recorded = recordVerdict(core.store, {
+          run,
+          confirm: domainList(input.confirm, 'confirm'),
+          dismiss: domainList(input.dismiss, 'dismiss'),
+          missed: domainList(input.missed, 'missed'),
+          // Whose surface the judgment came through, kept distinct from the
+          // CLI's `user` so the corpus can be read by provenance later.
+          source: `mcp:${client}`,
+          at: core.clock(),
+        });
+        return toolResult(id, { run, ...recorded });
       }
       case 'validate_brief':
         if (!('brief' in input)) throw new RangeError('validate_brief requires a "brief" argument');

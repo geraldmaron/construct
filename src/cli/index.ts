@@ -17,9 +17,15 @@ import type { Store } from '../kernel/store/open.ts';
 import { readWorkLog } from '../kernel/store/worklog.ts';
 import { openDecisions, resolveDecision } from '../kernel/store/decisions.ts';
 import { countTasksByState, getTask, listTasks } from '../kernel/store/tasks.ts';
-import { appendFeedback, readFeedback } from '../kernel/store/feedback.ts';
+import { readFeedback } from '../kernel/store/feedback.ts';
 import { harvestCorpus } from '../kernel/implication/harvest.ts';
-import type { DomainVerdict } from '../kernel/implication/harvest.ts';
+import {
+  recordVerdict,
+  runOutcomeText,
+  surfacedDomains,
+  UnsurfacedVerdictError,
+} from '../kernel/implication/verdict.ts';
+import type { RecordedVerdict } from '../kernel/implication/verdict.ts';
 import { startRun, startRunNamed } from '../kernel/run/outcome.ts';
 import { storeNamingCache } from '../kernel/store/namings.ts';
 import { createHostNamer } from '../hosts/namer.ts';
@@ -868,26 +874,6 @@ export function decide(argv: string[]): number {
   });
 }
 
-/**
- * The domains a run surfaced, read back from the work log entries `startRun`
- * wrote (kernel/run/outcome.ts's `domain-implicated` action) — the log is
- * already the record of what was inferred, so the verdict surface reads it
- * rather than keeping a second copy.
- */
-function surfacedDomains(store: Store, run: string): string[] {
-  return readWorkLog(store, run)
-    .filter((entry) => entry.action === 'domain-implicated')
-    .map((entry) => entry.role);
-}
-
-function runOutcomeText(store: Store, run: string): string | null {
-  const entry = readWorkLog(store, run).find(
-    (candidate) => candidate.action === 'outcome-received',
-  );
-  const detail = entry?.detail as { outcome?: unknown } | undefined;
-  return typeof detail?.outcome === 'string' ? detail.outcome : null;
-}
-
 export interface VerdictArgs {
   readonly run?: string;
   readonly confirm: readonly string[];
@@ -966,33 +952,29 @@ export function verdict(argv: string[]): number {
       return 0;
     }
 
-    const unsurfacedConfirm = args.confirm.filter((domain) => !surfaced.includes(domain));
-    const unsurfacedDismiss = args.dismiss.filter((domain) => !surfaced.includes(domain));
-    if (unsurfacedConfirm.length > 0 || unsurfacedDismiss.length > 0) {
-      process.stderr.write(
-        `verdict: ${[...unsurfacedConfirm, ...unsurfacedDismiss].join(', ')} did not surface for ${run} — ` +
-          'confirm/dismiss only apply to domains this run actually surfaced. Use --missed for a felt absence.\n',
-      );
+    let recorded: RecordedVerdict;
+    try {
+      recorded = recordVerdict(store, {
+        run,
+        confirm: args.confirm,
+        dismiss: args.dismiss,
+        missed: args.missed,
+        source: args.source,
+        at: now(),
+      });
+    } catch (error) {
+      const hint =
+        error instanceof UnsurfacedVerdictError
+          ? ` Use --missed=${error.domains.join(',')} for a felt absence.`
+          : '';
+      process.stderr.write(`verdict: ${(error as Error).message}${hint}\n`);
       return 2;
     }
 
-    const verdicts: Record<string, DomainVerdict> = {};
-    for (const domain of args.confirm) verdicts[domain] = 'confirmed';
-    for (const domain of args.dismiss) verdicts[domain] = 'dismissed';
-    for (const domain of args.missed) verdicts[domain] = 'missed';
-
-    const seq = appendFeedback(store, {
-      run,
-      outcome: outcomeText,
-      verdicts,
-      source: args.source,
-      recordedAt: now(),
-    });
-
     process.stdout.write(
-      `recorded verdict #${String(seq)} for ${run}: ` +
-        `${String(args.confirm.length)} confirmed, ${String(args.dismiss.length)} dismissed, ` +
-        `${String(args.missed.length)} missed.\n`,
+      `recorded verdict #${String(recorded.seq)} for ${run}: ` +
+        `${String(recorded.confirmed)} confirmed, ${String(recorded.dismissed)} dismissed, ` +
+        `${String(recorded.missed)} missed.\n`,
     );
     return 0;
   });

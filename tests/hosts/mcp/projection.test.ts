@@ -23,6 +23,7 @@ import { openStore } from '../../../src/kernel/store/open.ts';
 import type { Store } from '../../../src/kernel/store/open.ts';
 import { listTasks } from '../../../src/kernel/store/tasks.ts';
 import { readWorkLog } from '../../../src/kernel/store/worklog.ts';
+import { readFeedback } from '../../../src/kernel/store/feedback.ts';
 import { raiseDecision, openDecisions } from '../../../src/kernel/store/decisions.ts';
 import {
   PROJECTION_TOOLS,
@@ -80,6 +81,7 @@ test('the tool surface is exactly the read/append set — nothing dispatches, no
     'record_outcome',
     'run_status',
     'validate_brief',
+    'verdict',
     'work_log',
   ]);
 
@@ -172,7 +174,7 @@ test('omitting namings is the deterministic keyword path — no model is claimed
   }
 });
 
-test('exercising every tool leaves task state and completion untouched', async () => {
+test('exercising every read leaves task state and completion untouched', async () => {
   const f = fixture();
   try {
     // Seed a run through the projection itself, then drive the whole surface.
@@ -232,6 +234,44 @@ test('decide relays the user call and closes the decision', async () => {
   }
 });
 
+test('a verdict is recorded against what the run actually surfaced, in the host client\'s name', async () => {
+  const f = fixture();
+  try {
+    await f.handle({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { clientInfo: { name: 'claude-code' } } });
+    const recorded = payload(
+      await f.handle(
+        call('record_outcome', {
+          outcome: 'Launch a paid beta to EU users next month',
+          namings: [{ domain: 'privacy', why: 'EU users means GDPR obligations before launch.' }],
+        }),
+      ),
+    );
+    const run = (recorded.body as { run: string }).run;
+
+    const ok = payload(
+      await f.handle(call('verdict', { run, confirm: ['privacy'], missed: ['commerce-tax'] })),
+    );
+    assert.equal(ok.isError, false);
+    assert.deepEqual(ok.body, { run, seq: 1, confirmed: 1, dismissed: 0, missed: 1 });
+
+    const stored = readFeedback(f.store);
+    assert.equal(stored.length, 1);
+    assert.equal(stored[0].source, 'mcp:claude-code');
+    assert.deepEqual(stored[0].verdicts, { privacy: 'confirmed', 'commerce-tax': 'missed' });
+
+    // Confirming something that never surfaced would manufacture agreement in
+    // the corpus; the projection enforces the CLI's rule, not a looser one.
+    const bad = payload(await f.handle(call('verdict', { run, confirm: ['security'] })));
+    assert.equal(bad.isError, true);
+    assert.match((bad.body as { error: string }).error, /did not surface/);
+
+    // A verdict is a label, not a state change.
+    assert.ok(listTasks(f.store).every((t) => t.state === 'pending'));
+  } finally {
+    f.cleanup();
+  }
+});
+
 test('bad arguments come back as readable tool errors, not transport failures', async () => {
   const f = fixture();
   try {
@@ -240,6 +280,9 @@ test('bad arguments come back as readable tool errors, not transport failures', 
       call('record_outcome', { outcome: '  ' }),
       call('record_outcome', { outcome: 'x', namings: 'privacy' }),
       call('decide', { id: 'dec-1' }),
+      call('verdict', {}),
+      call('verdict', { run: 'run-nope', confirm: ['privacy'] }),
+      call('verdict', { run: 'run-1', confirm: 'privacy' }),
       call('validate_brief', {}),
     ]) {
       const reply = await f.handle(bad);
