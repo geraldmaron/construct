@@ -288,24 +288,40 @@ if (heading(4, 'Threshold selection as expected-loss minimization')) {
 
 // ---------------------------------------------------------------------------
 if (heading(5, 'Escalation as value of information')) {
-  const heldOut = corpora.find((c) => c.name === 'held-out-outcomes.json');
-  const s = score(heldOut.outcomes);
-  console.log(`\n  held-out outcomes where the keyword pass is silent: ${s.silent}/${s.outcomes}`);
-  const ci = wilson(s.silent, s.outcomes);
-  console.log(`  Wilson 95% CI on the escalation rate: [${ci.low.toFixed(3)}, ${ci.high.toFixed(3)}]`);
-  console.log(`  defensible claim: escalation fires on under ${(ci.high * 100).toFixed(1)}% of outcomes`);
-  console.log('  NOT defensible: "escalation costs nothing" as an absolute.');
+  console.log('\n  COST is the escalation rate under today\'s rule (escalate iff the keyword');
+  console.log('  pass is silent): the fraction of outcomes that trigger a namer call, per');
+  console.log('  corpus, each with its own Wilson 95% interval — pooling would let a corpus');
+  console.log('  at 0 silence hide one that is not.');
+  console.log('\n  REACH is what the trigger hands the namer, not what the namer recovers:');
+  console.log('  reaching a miss only means the outcome that missed it is now escalated. What');
+  console.log('  a real namer NAMES CORRECTLY from there is unmeasured here (that is §5.6\'s');
+  console.log('  oracle-floor / credulous-ceiling sweep, live-embedder only). Any per-miss count');
+  console.log('  below is a REACH count, not a recovery count.');
 
-  console.log('\n  Silence by corpus, which is what the current rule can reach at all:\n');
+  console.log('\n  Per-corpus escalation cost (silence rate) and reach (share of missed labels');
+  console.log('  reachable by escalate-on-silence), each with Wilson 95% CI:\n');
   for (const c of corpora) {
     const cs = score(c.outcomes);
-    console.log(`    ${c.name.padEnd(28)} silent ${cs.silent}/${cs.outcomes}, missed labels ${cs.missed}/${cs.expected}`);
+    const costCi = wilson(cs.silent, cs.outcomes);
+    const reachable = c.outcomes
+      .filter((o) => implicatedDomains({ outcome: o.outcome }).length === 0)
+      .reduce((a, o) => a + o.expect.length, 0);
+    const reachCi = wilson(reachable, cs.missed);
+    console.log(`    ${c.name}`);
     console.log(
-      `      ${'reachable by escalate-on-silence:'.padEnd(36)}` +
-        `${c.outcomes.filter((o) => implicatedDomains({ outcome: o.outcome }).length === 0)
-          .reduce((a, o) => a + o.expect.length, 0)} of those misses`,
+      `      cost (silent/outcomes):  ${(cs.silent / cs.outcomes || 0).toFixed(3)} ` +
+        `(${cs.silent}/${cs.outcomes}, 95% CI [${costCi.low.toFixed(3)}, ${costCi.high.toFixed(3)}])`,
+    );
+    console.log(
+      `      reach (of missed labels): ${cs.missed === 0 ? 'n/a (0 misses)' :
+        `${(reachable / cs.missed).toFixed(3)} (${reachable}/${cs.missed}, 95% CI ` +
+        `[${reachCi.low.toFixed(3)}, ${reachCi.high.toFixed(3)}])`}`,
     );
   }
+  console.log('\n  The held-out corpus alone (0/24 silent) is the corpus least like unseen');
+  console.log('  wording — it is one of the two spent, tuned-against corpora — so quoting its');
+  console.log('  cost figure pooled or alone hides the unspent corpus\'s 0.458 silence rate');
+  console.log('  behind two zeros. Read the table above per row, not as one number.');
 }
 
 // ---------------------------------------------------------------------------

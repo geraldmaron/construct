@@ -427,14 +427,36 @@ escalate-on-silence is where most of the recoverable miss lives. The earlier con
 measured against and is not a general property of the rule; it was a property of how close those
 corpora's wording sat to the catalog's own vocabulary.
 
-### What can honestly be claimed about cost
+### What can honestly be claimed about cost and reach, per corpus
 
-Escalation fired on 0 of 24 held-out outcomes. The Wilson 95% interval on that is
-**[0.000, 0.138]**.
+*Measured (`node scripts/measure-decisions.mjs --section 5`).* Two figures, not one, and neither
+should be pooled across corpora — pooling is exactly what let a corpus at 0 silence hide one that
+is not:
 
-- Defensible: *escalation fires on under 14% of outcomes, with 95% confidence.*
+- **COST** — the escalation rate under today's rule (escalate iff the keyword pass is silent):
+  the share of outcomes that trigger a namer call.
+- **REACH** — the share of that corpus's missed labels that sit behind a silent outcome, i.e. that
+  escalate-on-silence hands to a namer at all. Reaching a miss is not recovering it: nothing here
+  measures whether a namer, given the shortlist, names it correctly — that bound is §5.6's
+  oracle-namer-floor / credulous-namer-ceiling sweep, and it requires the live embedder. Every
+  reach figure below is a REACH count, never a recovery count.
+
+| corpus | cost (silent/outcomes), 95% CI | reach (of missed labels), 95% CI |
+|---|---|---|
+| labeled | 0.000 (0/20) [0.000, 0.161] | 0.000 (0/1) [0.000, 0.793] |
+| held-out | 0.000 (0/24) [0.000, 0.138] | 0.000 (0/1) [0.000, 0.793] |
+| fresh | 0.100 (1/10) [0.018, 0.404] | 0.250 (1/4) [0.046, 0.699] |
+| unspent | **0.458** (33/72) [0.348, 0.573] | **0.691** (38/55) [0.560, 0.797] |
+
+- Defensible, per corpus: *on held-out, escalation fires on under 14% of outcomes, with 95%
+  confidence.* *On unspent, escalation fires on 45.8% of outcomes, 95% CI [0.348, 0.573] — the
+  same rule, measured on wording unlike the catalog's own vocabulary.*
 - Not defensible: *escalation costs nothing in the common case* — stated as an absolute, from an
-  observation of zero. That phrasing was used in the 2026-08-03 report and is withdrawn.
+  observation of zero on the corpus that happens to resemble the catalog's own wording most
+  closely. That phrasing was used in the 2026-08-03 report and is withdrawn. The held-out
+  corpus's 0/24 is one of the two spent, tuned-against corpora — the corpus least like unseen
+  wording — so quoting its cost alone, or quoting a pooled figure, hides `unspent-outcomes.json`'s
+  0.458 rate behind two zeros.
 
 ### The general rule
 
