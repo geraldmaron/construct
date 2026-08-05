@@ -1,6 +1,6 @@
 /**
  * scripts/measure-decisions.mjs — regenerate every number quoted in
- * RESEARCH-DECISIONS.md (construct-2jb).
+ * RESEARCH-DECISIONS.md.
  *
  * The document is prose, and prose is where unchecked numbers go to become
  * folklore. This script is the document's gate: a figure that appears there and
@@ -40,7 +40,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const FIXTURES = join(ROOT, 'tests/kernel/implication/fixtures');
 /**
  * The corpora, in the order they were authored. `unspent-outcomes.json` is the
- * measured half of construct-2jb.4's corpus; its sealed half is deliberately
+ * measured half of the expanded corpus; its sealed half is deliberately
  * absent from this list and from every other reader in the repo, which is what
  * makes it still worth something (tests/kernel/implication/corpus-split.test.ts
  * enforces that absence).
@@ -145,7 +145,7 @@ if (heading(2, 'The annotation ceiling')) {
   console.log('\n  Independent coders per corpus: 1 for the first three, 2 for unspent-outcomes.json.');
   console.log('  For the first three, Krippendorff alpha is UNMEASURABLE at one coder.');
 
-  // construct-2jb.4's corpus is the first one labeled twice at authoring time,
+  // The expanded corpus is the first one labeled twice at authoring time,
   // so its agreement is a property of the corpus rather than a later study.
   // Only the measured half is read here. The sealed half carries the same two
   // coders' raw sets, but nothing in the repo may open it — its own note records
@@ -162,14 +162,14 @@ if (heading(2, 'The annotation ceiling')) {
     (o) => o.provenance.resolution === 'both coders agreed',
   ).length;
   console.log(
-    `\n  construct-2jb.4 corpus, measured half (${observations.length / 2} outcomes, 2 coders):`,
+    `\n  expanded corpus, measured half (${observations.length / 2} outcomes, 2 coders):`,
   );
   console.log(`    exact set agreement: ${exact}/${observations.length / 2}`);
   console.log(`    Krippendorff alpha (MASI):    ${masi.alpha.toFixed(4)}  (Do ${masi.Do.toFixed(4)}, De ${masi.De.toFixed(4)})`);
   console.log(`    Krippendorff alpha (nominal): ${nominal.alpha.toFixed(4)}`);
   console.log('    CAVEAT: both coders, both adjudicator and all eight authors are models of');
   console.log('    one family. Observed agreement is an UPPER BOUND on independent agreement');
-  console.log('    (correlated error — construct-2jb.3\'s caveat, unchanged).');
+  console.log('    (correlated error — the same-family caveat, unchanged).');
   console.log('\n  Implied Bayes error floor: still unknown at model coders alone, so 0.15');
   console.log('  remains unvalidated as reachable — but a stable ground truth is now evidence');
   console.log('  that residual miss is the MAP\'s, not the labels\'.');
@@ -282,7 +282,7 @@ if (heading(4, 'Threshold selection as expected-loss minimization')) {
   console.log(`\n    lowest occurring score: ${scores[0]}`);
   console.log(`    MIN_SIGNAL is 10. Any floor in [0, ${scores[0]}] admits exactly the same set.`);
   console.log('    The floor is therefore inert: the whole-keyword evidence filter added in');
-  console.log('    construct-4jq is what actually gates admission, and MIN_SIGNAL sits one');
+  console.log('    the generalization gate is what actually gates admission, and MIN_SIGNAL sits one');
   console.log('    step below a cliff rather than at a tuned optimum.');
 
   // -------------------------------------------------------------------------
@@ -482,7 +482,7 @@ if (process.argv.includes('--embeddings') && heading(5.5, 'Embedding similarity 
 // ---------------------------------------------------------------------------
 // §5.6 also requires the live local embedder, and is skipped without
 // --embeddings for the same reason as §5.5.
-if (process.argv.includes('--embeddings') && heading(5.6, 'Margin-triggered escalation: what a similarity margin WOULD have done (construct-zg4)')) {
+if (process.argv.includes('--embeddings') && heading(5.6, 'Margin-triggered escalation: what a similarity margin WOULD have done')) {
   const { rankBySimilarity, domainText, shortlist } = await import('../src/kernel/implication/similarity.ts');
   const { SHORTLIST_K } = await import('../src/kernel/implication/escalate.ts');
   const EMBED_MODEL = 'nomic-embed-text';
@@ -505,9 +505,9 @@ if (process.argv.includes('--embeddings') && heading(5.6, 'Margin-triggered esca
   console.log('\n  CAVEAT, attached to every number below (do not quote without it):');
   console.log('  UNFITTED. Every threshold in this sweep is evaluated on corpora that are');
   console.log('  already spent: single-author labels, and two of the three corpora were');
-  console.log('  tuned against during construct-4jq. Nothing here is derived or validated;');
+  console.log('  tuned against during the generalization measurement. Nothing here is derived or validated;');
   console.log('  it is what each threshold WOULD have done, on data that cannot vouch for');
-  console.log('  it. Believing any row requires the corpus construct-2jb.4 will build.');
+  console.log('  it. Believing any row requires the expanded corpus.');
 
   console.log('\n  The margin statistic: for an outcome the keyword pass answered,');
   console.log('    margin = max similarity among IMPLICATED domains');
@@ -594,7 +594,7 @@ if (process.argv.includes('--embeddings') && heading(5.6, 'Margin-triggered esca
   console.log('  contains the misses, so a trigger that fires hands them to the namer.');
   console.log('  The over ceiling is why the trigger must stay narrow, and the calls');
   console.log('  column is the bill. No row here is a default: shipping one is a decision');
-  console.log('  Gerald makes against construct-2jb.4\'s corpus, not against this one.');
+  console.log('  Gerald makes against the expanded corpus, not against this one.');
 }
 
 // ---------------------------------------------------------------------------
@@ -670,7 +670,7 @@ if (heading(6, 'Calibration of the intake confidence ramp')) {
     console.log(`    ${p.toFixed(2).padStart(8)}   +/- ${halfWidth.toFixed(2).padStart(4)}                 ${n}`);
   }
   console.log('    (four buckets, independently filled, plus a fifth for TITLE_LOCK_CONFIDENCE —');
-  console.log('    this is the same shape of collection construct-2jb.4 already ran once, applied');
+  console.log('    this is the same shape of collection the corpus expansion already ran once, applied');
   console.log('    to intake documents instead of outcome sentences.)');
 
   console.log('\n  RESULT: no reliability diagram, ECE, or Brier decomposition is computed by this');
@@ -703,7 +703,7 @@ if (heading(9, 'Phase gates as sequential hypothesis tests')) {
     return '>500';
   })()} consecutive successes.`);
 
-  // The proposed replacement (construct-2jb.9). Every number below is printed,
+  // The proposed replacement. Every number below is printed,
   // not asserted, because a stopping rule quoted without its error rates is the
   // same defect as a rate quoted without its width.
   const PROPOSED = { bar: 0.7, passAt: 0.95, futileAt: 0.1, maxSubjects: 20 };
@@ -776,16 +776,16 @@ if (heading(8, 'Run coordination inputs')) {
   const mean = counts.reduce((a, b) => a + b, 0) / counts.length;
   console.log(`\n    mean ${mean.toFixed(2)}, max ${Math.max(...counts)}, concurrency is 2`);
   console.log('    Service-time distribution: NOT MEASURED (no work-log corpus yet).');
-  console.log('    Queueing conclusions therefore cannot be drawn — see construct-2jb.11.');
+  console.log('    Queueing conclusions therefore cannot be drawn until they exist.');
 }
 
 // ---------------------------------------------------------------------------
 // §10 requires a live local generative model and is skipped without --namer:
 // like §5.5, the rest of this script must stay runnable offline. This is the
-// measured half of construct-r67.15 — model-primary naming vs keywords-first —
+// measured half of the inversion experiment — model-primary naming vs keywords-first —
 // run against the SHIPPED seam (src/hosts/namer.ts's prompt and parser), so it
 // measures the code an inversion would actually run, not a stand-in.
-if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs keywords-first (live, local) — construct-r67.15')) {
+if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs keywords-first (live, local)')) {
   const { namerPrompt, parseNamings, createHostNamer } = await import('../src/hosts/namer.ts');
   const { domainsByName } = await import('../src/kernel/implication/domains.ts');
   const hostFlag = process.argv.indexOf('--namer-host');
@@ -928,7 +928,7 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
   console.log('  differently is the point of measuring per tier.\n');
   console.log('  Configurations: A0 keywords only; A1 keywords + namer on silence (shipped');
   console.log('  --escalate behavior); B namer on every outcome, keyword map as the');
-  console.log('  fallback when the namer fails (the construct-r67.15 inversion).\n');
+  console.log('  fallback when the namer fails (the shipped inversion).\n');
 
   for (const c of corpora) {
     const kw = c.outcomes.map((o) => implicatedDomains({ outcome: o.outcome }));
@@ -963,7 +963,7 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
     }
   }
   console.log('  The sealed corpus is deliberately absent, as everywhere in this script.');
-  console.log('  Adoption is decided on construct-4jq, by Gerald, on these figures — a weak');
+  console.log('  Adoption was decided by Gerald on these figures, recorded in the tracker — a weak');
   console.log('  namer understating the inversion must not kill it, and a strong one');
   console.log('  flattering it must not ship it without the figures being read per tier.');
 }

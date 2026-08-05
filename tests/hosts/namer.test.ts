@@ -1,13 +1,13 @@
 /**
- * tests/hosts/namer.test.ts — the host-layer DomainNamer (construct-2fu).
+ * tests/hosts/namer.test.ts — the host-layer DomainNamer.
  *
  * The parser's job is narrow and its failure modes are asymmetric, which is
  * what these tests are shaped around. Being too strict turns a model's
  * formatting habit into a reported non-implication, and a user reads "no domain
  * applies" as an answer rather than as a parse failure. Being too loose lets a
- * malformed reply become an empty-but-confident result, which escalate.ts would
+ * malformed reply become an empty-but-confident result, which naming.ts would
  * then cache. So: tolerate the wrappers models actually add, and THROW on
- * everything else — because escalate.ts turns a throw into honest silence and
+ * everything else — because naming.ts turns a throw into an honestly-stated fallback and
  * an empty return into "the model considered the catalog and named nothing".
  */
 
@@ -74,8 +74,8 @@ test('an entry with no domain name is dropped, not guessed at', () => {
   assert.deepEqual(namings, [{ domain: 'privacy', why: 'ok' }]);
 });
 
-test('a naming with no reason survives parsing so escalate.ts can reject it', () => {
-  // The empty-reason bar belongs to escalate.ts's admissible(), in one place.
+test('a naming with no reason survives parsing so naming.ts can reject it', () => {
+  // The empty-reason bar belongs to naming.ts's admissible(), in one place.
   // Enforcing it here too would give a reasonless naming two different ways to
   // slip through, which is how the two checks drift apart.
   assert.deepEqual(parseNamings('{"domains":[{"domain":"privacy"}]}'), [

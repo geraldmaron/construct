@@ -1,26 +1,27 @@
 /**
  * hosts/namer.ts — the host-layer implementation of kernel's `DomainNamer`
- * seam (construct-2fu).
+ * seam.
  *
- * escalate.ts defines the seam and constructs nothing, on purpose: the kernel
+ * naming.ts defines the seam and constructs nothing, on purpose: the kernel
  * stays host-ignorant. This module is the adapter side. It is deliberately
  * written against `HostAdapter` rather than against OpenCode or Claude, because
  * both adapters already take `{ role, task }` and return a deliverable carrying
  * `text` — so one namer serves every conforming host, and a future host gets
- * escalation for free rather than a third copy of this file.
+ * naming for free rather than a third copy of this file.
  *
  * What this module is careful NOT to do:
  *
- *   - It does not decide whether to escalate. That is the CLI's decision
- *     (--escalate) and the kernel's condition (the keyword pass was silent).
- *   - It does not validate domains. `admissible()` in escalate.ts is the only
+ *   - It does not decide whether a model is consulted. That is the CLI's
+ *     decision (--host); with a host named, the kernel consults the namer on
+ *     every outcome (adopted 2026-08-05).
+ *   - It does not validate domains. `admissible()` in naming.ts is the only
  *     gate on what the catalog contains, and duplicating it here would create
  *     two places for a hallucinated role to slip through differently.
  *   - It does not degrade to a guess. Every failure path — a host error, a
- *     non-ok result, unparseable output — THROWS, because escalate.ts turns a
- *     namer that throws into silence. Returning an empty array here would be
- *     indistinguishable from "the model considered the catalog and named
- *     nothing", and those two are not the same fact.
+ *     non-ok result, unparseable output — THROWS, because naming.ts turns a
+ *     throw into the keyword fallback, stated as such. Returning an empty
+ *     array here would be indistinguishable from "the model considered the
+ *     catalog and named nothing", and those two are not the same fact.
  *
  * The prompt asks for JSON and nothing else, and the parser tolerates the
  * fenced-code wrapper models add anyway. That tolerance is not politeness: the
@@ -29,7 +30,7 @@
  */
 
 import type { Domain } from '../kernel/implication/domains.ts';
-import type { DomainNamer, DomainNaming } from '../kernel/implication/escalate.ts';
+import type { DomainNamer, DomainNaming } from '../kernel/implication/naming.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
 
 /** The role a namer runs as. Not a catalog domain — it is asking about them. */
@@ -39,7 +40,7 @@ export const NAMER_ROLE = 'implication-namer';
  * The namer is asked for a reason per domain, not just a list. escalate.ts
  * discards any naming whose `why` is empty, so a model that will not say why
  * produces silence rather than an implication nobody can argue with — the exact
- * defect construct-4jq recorded against the keyword path's empty signal lists.
+ * defect the inversion recorded against the keyword path's empty signal lists.
  */
 export function namerPrompt(outcome: string, catalog: readonly Domain[]): string {
   const lines = catalog.map((d) => `- ${d.domain}: ${d.concern}`).join('\n');

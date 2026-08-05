@@ -1,8 +1,8 @@
 /**
- * tests/kernel/implication/similarity.test.ts — construct-2jb.12.
+ * tests/kernel/implication/similarity.test.ts.
  *
  * The embedder is a stub on purpose, same reasoning as the namer stubs in
- * escalate.test.ts: the kernel must be provably host-ignorant, and the live
+ * naming.test.ts: the kernel must be provably host-ignorant, and the live
  * signal quality is measured by script against a real model, not asserted here.
  * What these tests pin is the seam's contract — ranking, determinism, the
  * shortlist's exclusion rule, and that geometry never becomes an implication.
@@ -140,7 +140,7 @@ test('an embedder that throws propagates: a shortlist is optional, a wrong one i
   const exploding: Embedder = async () => {
     throw new Error('embedder unreachable');
   };
-  // Unlike the namer in escalate.ts (which degrades to silence, because silence
+  // Unlike the namer in naming.ts (which degrades to a stated fallback, because silence
   // is a safe answer there), a failed embedder must not degrade to an empty
   // shortlist that looks identical to "nothing was similar". The caller decides
   // whether to skip the shortlist; this module does not decide for it.

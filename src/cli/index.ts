@@ -20,8 +20,8 @@ import { countTasksByState, getTask, listTasks } from '../kernel/store/tasks.ts'
 import { appendFeedback, readFeedback } from '../kernel/store/feedback.ts';
 import { harvestCorpus } from '../kernel/implication/harvest.ts';
 import type { DomainVerdict } from '../kernel/implication/harvest.ts';
-import { startRun, startRunEscalating } from '../kernel/run/outcome.ts';
-import { storeEscalationCache } from '../kernel/store/escalations.ts';
+import { startRun, startRunNamed } from '../kernel/run/outcome.ts';
+import { storeNamingCache } from '../kernel/store/namings.ts';
 import { createHostNamer } from '../hosts/namer.ts';
 import { DEFAULT_CONCURRENCY, frameConflicts, workRun } from '../kernel/run/coordinator.ts';
 import { deliverableConcerns, licensedReviewFor } from '../kernel/run/accountability.ts';
@@ -138,7 +138,7 @@ export function cleanup(argv: string[], spawnOverride?: SpawnFn): number {
     for (const item of detected) {
       // A kept item must not wear the mark that means "this will be removed".
       // Saying KEPT beside a ✓ under "pass --yes to remove ✓ items" is a
-      // contradiction, and the mark is what gets read (construct-a5q).
+      // contradiction, and the mark is what gets read.
       const keeping = item.keeps?.() ?? false;
       if (!keeping) removable += 1;
       const mark = keeping ? '•' : item.risk === 'auto' ? '✓' : '◐';
@@ -160,7 +160,7 @@ export function cleanup(argv: string[], spawnOverride?: SpawnFn): number {
   const toRemove = selectedItems(detected, args.all);
   const result = applyCleanup(detected, new Set(toRemove.map((item) => item.id)));
   // An item that reports "kept" ran and deliberately removed nothing — the
-  // successor owns that directory (construct-a5q). Counting it as removed would
+  // successor owns that directory. Counting it as removed would
   // make the summary say a thing was deleted that is still there, which is the
   // class of claim this project exists to not make.
   const kept = result.removed.filter((o) => o.detail.startsWith('kept'));
@@ -261,17 +261,18 @@ async function roleServe(): Promise<number> {
 }
 
 const OUTCOME_USAGE =
-  'usage: construct outcome [--escalate [--host=<opencode|claude>] [--model=…] [--binary=…]] "<what you want to happen>"\n';
+  'usage: construct outcome [--host=<opencode|claude> [--model=…] [--binary=…]] "<what you want to happen>"\n';
 
 export interface OutcomeArgs {
   readonly text: string;
   /**
-   * Opt-in, never opt-out (construct-2fu). Recording an outcome is the one
-   * spine operation that is free, and a model charge at the moment a user
-   * writes down an intention is the least expected charge in the product.
+   * Naming a host is the opt-in to spend (the original opt-in rule, carried into
+   * the inversion): recording an outcome without one is free and deterministic,
+   * and a model charge at the moment a user writes down an intention is the
+   * least expected charge in the product. With a host named, its model is the
+   * primary namer on every outcome (adopted 2026-08-05).
    */
-  readonly escalate: boolean;
-  readonly host: string;
+  readonly host?: 'opencode' | 'claude';
   readonly model?: string;
   readonly binary?: string;
   readonly dir?: string;
@@ -280,12 +281,14 @@ export interface OutcomeArgs {
 export function parseOutcomeArgs(argv: string[]): OutcomeArgs {
   const flags: Record<string, string> = {};
   const words: string[] = [];
-  let escalate = false;
 
   for (const arg of argv) {
     if (arg === '--escalate') {
-      escalate = true;
-      continue;
+      // Removed with the inversion, loudly: silence here would read as the
+      // old behavior still existing.
+      throw new Error(
+        '--escalate was removed: a named host\'s model is primary on every outcome now; use --host=<opencode|claude>',
+      );
     }
     const match = /^--([a-z-]+)=(.*)$/.exec(arg);
     if (match) {
@@ -295,24 +298,23 @@ export function parseOutcomeArgs(argv: string[]): OutcomeArgs {
     words.push(arg);
   }
 
-  const host = flags.host ?? 'opencode';
-  if (host !== 'opencode' && host !== 'claude') {
+  const host = flags.host;
+  if (host !== undefined && host !== 'opencode' && host !== 'claude') {
     throw new Error(`unknown host "${host}" (expected opencode or claude)`);
   }
 
-  // A flag that is quietly ignored is a flag that lies. --host/--model/--binary
+  // A flag that is quietly ignored is a flag that lies. --model/--binary/--dir
   // only mean something when a model is going to be consulted, so supplying one
-  // without --escalate is a usage error rather than a silent no-op.
-  const hostFlags = ['host', 'model', 'binary', 'dir'].filter((f) => flags[f] !== undefined);
-  if (!escalate && hostFlags.length > 0) {
+  // without --host is a usage error rather than a silent no-op.
+  const hostFlags = ['model', 'binary', 'dir'].filter((f) => flags[f] !== undefined);
+  if (host === undefined && hostFlags.length > 0) {
     throw new Error(
-      `--${hostFlags[0]} only applies when escalating; add --escalate, or drop the flag`,
+      `--${hostFlags[0]} only applies when a host is named; add --host=<opencode|claude>, or drop the flag`,
     );
   }
 
   return {
     text: words.join(' ').trim(),
-    escalate,
     host,
     model: flags.model,
     binary: flags.binary,
@@ -325,7 +327,7 @@ function reportRun(started: ReturnType<typeof startRun>): void {
   process.stdout.write(`implicated domains (${started.implicated.length}):\n`);
   for (const implication of started.implicated) {
     process.stdout.write(`  ${implication.domain}  — ${implication.concern}\n`);
-    // Escalated implications carry no keyword score, so reporting one would
+    // Named implications carry no keyword score, so reporting one would
     // invite comparison with numbers that mean something else entirely.
     const evidence =
       started.inferredBy === 'keywords'
@@ -333,11 +335,18 @@ function reportRun(started: ReturnType<typeof startRun>): void {
         : `reason: ${implication.signals.join(' ')}`;
     process.stdout.write(`      ${evidence}\n`);
   }
-  if (started.inferredBy === 'escalation' || started.inferredBy === 'cache') {
+  if (started.inferredBy === 'namer' || started.inferredBy === 'cache') {
     process.stdout.write(
       started.inferredBy === 'cache'
         ? '\nThese came from a model consulted for this outcome earlier, not from keywords.\n'
-        : '\nThese came from a model, not from keywords: the keyword map was silent.\n',
+        : '\nThese came from a model reading the outcome; each reason above is its stated evidence.\n',
+    );
+  }
+  if (started.namerFailure !== undefined) {
+    // A keyword answer standing in for a model's is a degradation, and the
+    // user hears it here as well as in the log.
+    process.stdout.write(
+      `\nThe model could not be consulted (${started.namerFailure}); the keyword map answered instead.\n`,
     );
   }
   process.stdout.write(
@@ -350,11 +359,12 @@ function reportRun(started: ReturnType<typeof startRun>): void {
 /**
  * Record an outcome.
  *
- * The default path is deterministic, does no I/O beyond the store, and costs
- * nothing — the keyword map answers or it does not. `--escalate` opts into
- * asking a model when the map is silent, which is the only case escalation
- * covers: an outcome that implicates nothing queues nothing, and telling a user
- * their outcome touched no domain is a confident wrong answer.
+ * Without --host the path is deterministic, does no I/O beyond the store, and
+ * costs nothing — the keyword map answers or it does not. With --host, that
+ * host's model reads every outcome as the primary namer and the map is only
+ * the fallback if the model fails (adopted 2026-08-05 on the
+ * RESEARCH-DECISIONS.md §10 figures: on wording the catalog's authors never
+ * wrote, the map missed 0.634 where the namer missed 0.301).
  *
  * `hostOverride` exists so the CLI's own wiring is testable without a binary
  * present, exactly as with `work`.
@@ -376,7 +386,7 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
     const at = now();
     const runId = `run-${at.replace(/[-:.TZ]/g, '')}`;
 
-    if (!args.escalate) {
+    if (args.host === undefined) {
       const started = startRun(store, { runId, outcome: args.text, at });
       if (started.implicated.length === 0) {
         process.stdout.write(`run ${started.runId}\n  outcome: ${started.outcome}\n\n`);
@@ -384,10 +394,10 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
           'no domains implicated. Nothing was inferred — this is recorded, not silently dropped.\n',
         );
         // The signpost that makes the dead end a choice rather than a wall
-        // (construct-2fu): the user, not the tool, decides to spend money.
+        //: the user, not the tool, decides to spend money.
         process.stdout.write(
-          '\nA model can be asked instead, at cost:\n' +
-            `  construct outcome --escalate ${JSON.stringify(args.text)}\n`,
+          '\nA host model can be asked instead, at cost:\n' +
+            `  construct outcome --host=<opencode|claude> ${JSON.stringify(args.text)}\n`,
         );
         return 0;
       }
@@ -410,20 +420,23 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
       return 1;
     }
 
-    const started = await startRunEscalating(store, {
+    const started = await startRunNamed(store, {
       runId,
       outcome: args.text,
       at,
       host: host.name,
       namer: createHostNamer(host),
-      cache: storeEscalationCache(store, { host: host.name, at }),
+      cache: storeNamingCache(store, { host: host.name, at }),
     });
 
     if (started.implicated.length === 0) {
       process.stdout.write(`run ${started.runId}\n  outcome: ${started.outcome}\n\n`);
       process.stdout.write(
-        `no domains implicated. The keyword map was silent and ${host.name} named nothing ` +
-          'either — this is recorded, not silently dropped.\n',
+        started.namerFailure !== undefined
+          ? `no domains implicated. ${host.name} could not be consulted (${started.namerFailure}) ` +
+              'and the keyword map is silent too — this is recorded, not silently dropped.\n'
+          : `no domains implicated. ${host.name} considered the catalog and named nothing — ` +
+              'this is recorded, not silently dropped.\n',
       );
       return 0;
     }
@@ -505,12 +518,12 @@ function failureLine(error: unknown): string {
 /**
  * What to say when an attempt to work produced no deliverable at all.
  *
- * construct-d2q established the substance of this and it is unchanged: a failed
+ * An earlier fix established the substance of this and it is unchanged: a failed
  * task is terminal, the host owns retries (commitment 1), and nothing here is a
  * retry policy. What it got wrong was reachability. The text lived only on the
  * nothing-left-to-work path, so it printed on a SECOND `construct work` against
  * an already-settled run — and the output of the first gave nobody a reason to
- * run a second (construct-j32, found in a live run whose every task failed with
+ * run a second (found in a live run whose every task failed with
  * "Missing Authentication header" and said nothing further).
  *
  * So it is one writer called from both places rather than two copies that drift.
@@ -552,7 +565,7 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
       // invocation settled this run's tasks and then died before framing —
       // a SIGTERM, an OOM, a closed laptop, and the window is the whole run —
       // the decision those deliverables imply has never been raised, and this
-      // guard used to return before anything could reach it (construct-xgi).
+      // guard used to return before anything could reach it.
       // Framing needs no host and no spend, so it runs before the guard reports.
       const raised = frameConflicts(store, [], { clock: now, run: args.run });
 
@@ -569,7 +582,7 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
 
       // A run where every task failed is not a run that finished, and saying
       // "already settled" in the same words used for a successful one leaves the
-      // user with a dead run id and no stated path (construct-d2q). The store is
+      // user with a dead run id and no stated path. The store is
       // right that a failed task is terminal and that the host owns retries
       // (commitment 1) — nothing here adds a retry policy. What was missing is
       // that two different things were being reported identically: the task a
@@ -656,7 +669,7 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
     // "spend 0 of 10.00 ceiling" after a run where nothing completed reads as
     // "this was cheap" when the true statement is that nothing ran. The
     // costSilent branch below does not cover it: these tasks failed rather than
-    // completing without reporting a cost (construct-j32).
+    // completing without reporting a cost.
     if (report.completed === 0 && report.failed > 0) {
       writeTotalFailureRecourse(report.failed);
     } else {
@@ -678,7 +691,7 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
       );
     }
     if (report.degraded > 0) {
-      // Degrade loudly (construct-ap0). The run happened and the deliverables
+      // Degrade loudly. The run happened and the deliverables
       // are real; what must not happen is anyone citing them without knowing
       // what produced them.
       process.stdout.write(
@@ -708,15 +721,15 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
 
 /**
  * How an entry's inference was reached, when that is not the free default
- * (construct-2fu). Keyword inferences stay unannotated so the log does not grow
+ *. Keyword inferences stay unannotated so the log does not grow
  * a column that says "normal" on almost every line; an entry that cost a model
  * call says so, because reading the log is how a user audits what was spent and
  * what an inference actually rests on.
  */
 function howInferred(detail: unknown): string {
   const inferredBy = (detail as { inferredBy?: unknown } | null)?.inferredBy;
-  if (inferredBy === 'escalation') return '  (inferred by: escalation — a model was consulted)';
-  if (inferredBy === 'cache') return '  (inferred by: cache — an earlier escalation for this outcome)';
+  if (inferredBy === 'namer') return '  (inferred by: namer — a model read the outcome)';
+  if (inferredBy === 'cache') return '  (inferred by: cache — an earlier consultation for this outcome)';
   return '';
 }
 
@@ -742,7 +755,7 @@ export function log(argv: string[]): number {
 }
 
 /**
- * Where a run currently stands, under the event stream (construct-7zu).
+ * Where a run currently stands, under the event stream.
  *
  * The defect this closes: a run in flight and a run that died end at the SAME
  * log line. A failed task writes no event past `capability-issued`, and neither
@@ -887,7 +900,7 @@ export function parseVerdictArgs(argv: string[]): VerdictArgs {
 }
 
 /**
- * The CLI verdict surface (construct-2jb.13): what confirms, dismisses, or
+ * The CLI verdict surface: what confirms, dismisses, or
  * names a felt absence for the domains one run surfaced. Named `verdict`
  * rather than reusing `work` — that name already belongs to dispatching tasks
  * to a host — but it is exactly the surface the bead describes: list what
@@ -969,7 +982,7 @@ export function verdict(argv: string[]): number {
 /**
  * Write the harvested corpus (every recorded verdict, folded through
  * `harvestCorpus`) to `path`, fixture-shaped exactly as map.test.ts consumes
- * it. This is the export path construct-2jb.4 (corpus expansion) reads from.
+ * it. This is the export path corpus expansion reads from.
  */
 export function corpusExport(argv: string[]): number {
   const path = argv[0];
@@ -999,7 +1012,7 @@ export function corpus(argv: string[]): number {
 const USAGE = 'usage: construct <outcome|work|verdict|corpus|log|inbox|decide|doctor|cleanup|version>\n';
 
 /**
- * Async because `work` dispatches to a host, and `outcome --escalate` may
+ * Async because `work` dispatches to a host, and `outcome --host=…` may
  * consult one. The other commands stay synchronous — awaiting a number costs
  * nothing and keeps one entry point.
  */

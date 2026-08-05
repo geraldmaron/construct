@@ -1006,6 +1006,21 @@ for over-implication, and the direction question is already answered without spe
 candidates) is likewise unmeasured. Adoption is decided on construct-4jq, by Gerald, on these
 figures.
 
+**Adopted, 2026-08-05 (construct-4jq: recommended by Fable 5, accepted by Gerald in-session).**
+The shipped path is configuration B: with a host named, its model reads every outcome; the
+keyword map answers only with no host or on namer failure, and a failure is stated in the work
+log and on screen rather than letting a keyword answer impersonate a model's. The similarity
+shortlist does not ride the shipped path — B was measured on the full catalog — which also
+retires the SHORTLIST_K constant and its 4-vs-8 derivation contradiction (construct-2jb.14,
+mooted). With adoption, the 0.15 miss target is **retired as the admission gate**: §2 puts the
+annotation floor at 0.1235 with interval [0.052, 0.207], so 0.15 sits inside labeling noise and
+no configuration can be shown to meet it at these corpus sizes — B's 0.325 on `unspent` fails
+it, and so would anything measurable. The gate that replaces it is relative and per-tier: on
+out-of-family corpora, the shipped configuration must dominate the zero-model fallback on both
+axes (miss and over), re-measured by this section's command whenever the catalog, the namer
+prompt, or the serving tier changes. An absolute target returns if and when corpus sizes can
+support one.
+
 ---
 
 ## What this pass did not do

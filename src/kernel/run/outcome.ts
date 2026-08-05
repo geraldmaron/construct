@@ -17,9 +17,8 @@
  */
 
 import { mapImplications } from '../implication/map.ts';
-import { mapImplicationsEscalating } from '../implication/escalate.ts';
-import type { DomainNamer, EscalationCache, InferredBy } from '../implication/escalate.ts';
-import type { Embedder } from '../implication/similarity.ts';
+import { mapImplicationsNamed } from '../implication/naming.ts';
+import type { DomainNamer, NamingCache, InferredBy } from '../implication/naming.ts';
 import type { Domain } from '../implication/domains.ts';
 import type { Implication } from '../implication/map.ts';
 import { appendWorkLog } from '../store/worklog.ts';
@@ -50,13 +49,18 @@ export interface StartedRun {
    * model's stated reason rather than on a cited keyword.
    */
   readonly inferredBy: InferredBy;
+  /**
+   * Present when a supplied namer threw and the keyword map answered in its
+   * place. Travels out for the same reason `inferredBy` does: a fallback the
+   * user cannot see is a keyword answer impersonating a model's.
+   */
+  readonly namerFailure?: string;
 }
 
-export interface StartRunEscalatingInput extends StartRunInput {
-  /** Absent means no escalation: behaves exactly like `startRun`. */
+export interface StartRunNamedInput extends StartRunInput {
+  /** Absent means the zero-model fallback: behaves exactly like `startRun`. */
   readonly namer?: DomainNamer;
-  readonly cache?: EscalationCache;
-  readonly embedder?: Embedder;
+  readonly cache?: NamingCache;
   /** Named in the work log when a model is consulted, so the cost has a source. */
   readonly host?: string;
 }
@@ -107,8 +111,9 @@ export function startRun(store: Store, input: StartRunInput): StartedRun {
 }
 
 /**
- * The same run, with one difference: if the keyword pass is silent, a namer is
- * consulted before anything is recorded.
+ * The same run, with the namer primary: when one is supplied it reads every
+ * outcome, and the keyword map only answers if the namer fails
+ * (adopted 2026-08-05 on the §10 figures).
  *
  * Async and separate from `startRun` on purpose. Recording an outcome is the
  * one spine operation that is pure and free, and a caller must not be able to
@@ -120,18 +125,17 @@ export function startRun(store: Store, input: StartRunInput): StartedRun {
  * open across a network round trip blocks every other writer of this store for
  * as long as a model takes to answer.
  */
-export async function startRunEscalating(
+export async function startRunNamed(
   store: Store,
-  input: StartRunEscalatingInput,
+  input: StartRunNamedInput,
 ): Promise<StartedRun> {
-  const map = await mapImplicationsEscalating({
+  const map = await mapImplicationsNamed({
     outcome: input.outcome,
     catalog: input.catalog,
     namer: input.namer,
     cache: input.cache,
-    embedder: input.embedder,
   });
-  return record(store, input, map.implicated, map.inferredBy, input.host);
+  return record(store, input, map.implicated, map.inferredBy, input.host, map.namerFailure);
 }
 
 function record(
@@ -140,6 +144,7 @@ function record(
   implicated: readonly Implication[],
   inferredBy: InferredBy,
   host?: string,
+  namerFailure?: string,
 ): StartedRun {
   return transact(store, () => {
     const logged: number[] = [];
@@ -155,20 +160,40 @@ function record(
       }),
     );
 
-    // A consulted model is logged whether or not it named anything. An
-    // escalation that cost money and produced silence is exactly the entry a
+    // A consulted model is logged whether or not it named anything. A
+    // consultation that cost money and produced silence is exactly the entry a
     // user needs to see, and the one a "log it if it worked" rule would drop.
-    if (inferredBy === 'escalation' || inferredBy === 'cache') {
+    if (inferredBy === 'namer' || inferredBy === 'cache') {
       logged.push(
         appendWorkLog(store, {
           run: input.runId,
           role: 'construct',
-          action: 'implication-escalated',
+          action: 'implication-named',
           detail: {
             outcome: input.outcome,
             inferredBy,
             host: host ?? null,
             named: implicated.length,
+          },
+          at: input.at,
+        }),
+      );
+    }
+
+    // The degradation note: when the namer threw and keywords
+    // caught the run, the log says so, because a keyword answer standing in
+    // for a model's must never read identically to the model answering.
+    if (namerFailure !== undefined) {
+      logged.push(
+        appendWorkLog(store, {
+          run: input.runId,
+          role: 'construct',
+          action: 'namer-failed',
+          detail: {
+            outcome: input.outcome,
+            host: host ?? null,
+            failure: namerFailure,
+            fellBackTo: inferredBy,
           },
           at: input.at,
         }),
@@ -228,6 +253,7 @@ function record(
       logged,
       tasks,
       inferredBy,
+      ...(namerFailure !== undefined ? { namerFailure } : {}),
     };
   });
 }

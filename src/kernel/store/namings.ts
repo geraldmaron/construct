@@ -1,9 +1,10 @@
 /**
- * kernel/store/escalations.ts — the store-backed EscalationCache
- * (construct-2fu).
+ * kernel/store/namings.ts — the store-backed NamingCache — renamed from
+ * escalations.ts when the namer became primary, because a cache consulted on
+ * every outcome is not an escalation record.
  *
- * escalate.ts declares `EscalationCache` as an interface rather than reaching
- * for a Map for exactly this reason: escalation costs a model call, and a
+ * naming.ts declares `NamingCache` as an interface rather than reaching for a
+ * Map for exactly this reason: a consultation costs a model call, and a
  * per-process Map would re-pay that cost on every invocation of a CLI that
  * exits between outcomes. Backing it with the store makes "the same outcome
  * does not pay twice" true across processes, which is the only place it was
@@ -11,12 +12,12 @@
  *
  * Two properties this module holds, both inherited from the rest of the store:
  *
- *   - Write-once. `escalation_cache` has an update trigger, and writes go
- *     through INSERT OR IGNORE. This is not append-only history — there is one
- *     row per outcome — but it is not editable either, and for the same reason
- *     the work log is not: an escalated implication cites the model's stated
- *     reason as its evidence, and evidence that can be quietly rewritten after
- *     the fact is not evidence.
+ *   - Write-once. `naming_cache` has an update trigger, and writes go through
+ *     INSERT OR IGNORE. This is not append-only history — there is one row per
+ *     outcome — but it is not editable either, and for the same reason the
+ *     work log is not: a named implication cites the model's stated reason as
+ *     its evidence, and evidence that can be quietly rewritten after the fact
+ *     is not evidence.
  *   - The kernel never reads the clock. `recordedAt` is supplied by the caller,
  *     like every other timestamp under kernel/store.
  *
@@ -26,10 +27,10 @@
  */
 
 import type { Implication } from '../implication/map.ts';
-import type { EscalationCache } from '../implication/escalate.ts';
+import type { NamingCache } from '../implication/naming.ts';
 import type { Store } from './open.ts';
 
-export interface EscalationRecord {
+export interface NamingRecord {
   readonly outcome: string;
   readonly implications: readonly Implication[];
   /** Which host was consulted, so a cached answer names its source. */
@@ -47,7 +48,7 @@ interface Row {
 /**
  * A row whose JSON will not parse, or does not hold an array, is treated as a
  * cache miss rather than an error. A corrupt cache entry should cost one
- * re-escalation, never fail the run that read it.
+ * re-consultation, never fail the run that read it.
  */
 function parseImplications(json: string): readonly Implication[] | undefined {
   try {
@@ -59,9 +60,9 @@ function parseImplications(json: string): readonly Implication[] | undefined {
 }
 
 /** What was cached for this exact outcome, with its provenance. */
-export function readEscalation(store: Store, outcome: string): EscalationRecord | undefined {
+export function readNaming(store: Store, outcome: string): NamingRecord | undefined {
   const row = store.db
-    .prepare('SELECT * FROM escalation_cache WHERE outcome = ?')
+    .prepare('SELECT * FROM naming_cache WHERE outcome = ?')
     .get(outcome) as unknown as Row | undefined;
   if (!row) return undefined;
   const implications = parseImplications(row.implications);
@@ -76,13 +77,13 @@ export function readEscalation(store: Store, outcome: string): EscalationRecord 
 
 /**
  * Record what a host said for an outcome. Returns false when a row was already
- * present — the first answer stands, and a second escalation of the same
+ * present — the first answer stands, and a second consultation of the same
  * outcome does not overwrite the reason the first one cited.
  */
-export function writeEscalation(store: Store, record: EscalationRecord): boolean {
+export function writeNaming(store: Store, record: NamingRecord): boolean {
   const result = store.db
     .prepare(
-      `INSERT OR IGNORE INTO escalation_cache (outcome, implications, host, recorded_at)
+      `INSERT OR IGNORE INTO naming_cache (outcome, implications, host, recorded_at)
        VALUES (?, ?, ?, ?)`,
     )
     .run(
@@ -95,18 +96,18 @@ export function writeEscalation(store: Store, record: EscalationRecord): boolean
 }
 
 /**
- * Adapt the store to escalate.ts's `EscalationCache`. The host name and clock
- * are bound here because the interface's `set` carries neither — the kernel's
- * escalation path knows what it inferred, not who it asked or when.
+ * Adapt the store to naming.ts's `NamingCache`. The host name and clock are
+ * bound here because the interface's `set` carries neither — the kernel's
+ * naming path knows what it inferred, not who it asked or when.
  */
-export function storeEscalationCache(
+export function storeNamingCache(
   store: Store,
   options: { readonly host: string; readonly at: string },
-): EscalationCache {
+): NamingCache {
   return {
-    get: (outcome) => readEscalation(store, outcome)?.implications,
+    get: (outcome) => readNaming(store, outcome)?.implications,
     set: (outcome, implications) => {
-      writeEscalation(store, {
+      writeNaming(store, {
         outcome,
         implications,
         host: options.host,

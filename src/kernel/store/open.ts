@@ -5,21 +5,25 @@
  *
  * It is one substrate on purpose. The predecessor persisted projections through
  * a Dolt lock, which is why the projection harvest stopped at the pure logic and
- * deferred storage (see construct-v3j): fixing a storage shape before its
+ * deferred storage: fixing a storage shape before its
  * consumers exist is guessing. All three consumers exist now, so the shape is
  * chosen against all three at once rather than fitted to whichever landed first.
- * The task table arrived later (construct-r67.5) and is additive: schema version
- * 2 adds a table, changes none of the three. Schema version 3 (construct-2jb.13)
+ * The task table arrived later and is additive: schema version
+ * 2 adds a table, changes none of the three. Schema version 3
  * adds `implication_feedback`, additive in the same way: a verdict a user
  * renders on the domains a run surfaced (or felt the absence of), append-only
  * like the work log and for the same reason — a corpus whose labels can be
  * quietly edited after the fact is how the last one died. Schema version 4
- * (construct-2fu) adds `escalation_cache`, additive again: what a model said
- * when the keyword map was silent, so the same outcome does not pay for the
- * same call twice across processes. Write-once rather than append-only — it
- * holds one row per outcome, not a history — but guarded by the same reasoning:
- * a record of a model's stated reason that can be quietly rewritten is not
- * evidence, and escalated implications cite exactly that reason.
+ * adds the model-consultation cache, additive again: what a
+ * model said about an outcome, so the same outcome does not pay for the same
+ * call twice across processes. Write-once rather than append-only — it holds
+ * one row per outcome, not a history — but guarded by the same reasoning: a
+ * record of a model's stated reason that can be quietly rewritten is not
+ * evidence, and named implications cite exactly that reason. The table was
+ * born `escalation_cache` and became `naming_cache` when the namer turned
+ * primary (2026-08-05) — an alpha carries no schema
+ * compatibility (STRATEGY preamble), so the rename is a rename, not a
+ * migration; a store created before it simply carries an unused table.
  *
  * SQLite via `node:sqlite`, which ships with Node — no dependency is added to a
  * CLI users install. STRATEGY ("What carries over") commits the tracker model to
@@ -239,16 +243,16 @@ CREATE TRIGGER IF NOT EXISTS implication_feedback_no_delete
 BEFORE DELETE ON implication_feedback
 BEGIN SELECT RAISE(ABORT, 'implication_feedback is append-only'); END;
 
-CREATE TABLE IF NOT EXISTS escalation_cache (
+CREATE TABLE IF NOT EXISTS naming_cache (
   outcome      TEXT PRIMARY KEY,
   implications TEXT NOT NULL,
   host         TEXT NOT NULL,
   recorded_at  TEXT NOT NULL
 ) STRICT;
 
-CREATE TRIGGER IF NOT EXISTS escalation_cache_no_update
-BEFORE UPDATE ON escalation_cache
-BEGIN SELECT RAISE(ABORT, 'escalation_cache is write-once'); END;
+CREATE TRIGGER IF NOT EXISTS naming_cache_no_update
+BEFORE UPDATE ON naming_cache
+BEGIN SELECT RAISE(ABORT, 'naming_cache is write-once'); END;
 `;
 
 /** The substrate's file under an injected Paths. Callers do not build this path. */

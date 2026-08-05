@@ -132,9 +132,9 @@ test('an outcome implicating nothing says so rather than going quiet', async () 
 
 /**
  * A host that answers a namer prompt, counting how many times it was asked.
- * The count is the point of most of these tests: escalation is the one thing
- * in the spine that costs money, so "was the model called, and how often" is
- * the property under test, not a detail of it.
+ * The count is the point of most of these tests: a model consultation is the
+ * one thing in this path that costs money, so "was the model called, and how
+ * often" is the property under test, not a detail of it.
  */
 function namingHost(reply: string): HostAdapter & { readonly calls: () => number } {
   let calls = 0;
@@ -153,54 +153,67 @@ function namingHost(reply: string): HostAdapter & { readonly calls: () => number
   };
 }
 
+/** A host whose invoke fails outright, so the namer throws. */
+function brokenHost(): HostAdapter {
+  return {
+    name: 'stand-in-namer',
+    kind: 'general',
+    capabilities: [],
+    init: async (): Promise<void> => {},
+    health: async () => ({ live: true }),
+    cancel: async () => ({ cancelled: false }),
+    invoke: async (): Promise<HostResult> => {
+      throw new Error('host unreachable');
+    },
+  };
+}
+
 const SILENT = 'xyzzy plugh frobnicate';
+const ANSWERED = 'launch a paid beta to EU users next month';
 const NAMED = JSON.stringify({
   domains: [{ domain: 'accessibility', why: 'the outcome describes assistive software' }],
 });
 
-test('escalating an outcome the keyword map is silent on queues work', async () => {
+test('with a host named, an outcome the keyword map is silent on still queues work', async () => {
   const host = namingHost(NAMED);
-  const { code, out } = await run(() => outcome(['--escalate', SILENT], host));
+  const { code, out } = await run(() => outcome(['--host=opencode', SILENT], host));
   assert.equal(code, 0);
-  assert.equal(host.calls(), 1, 'a silent outcome must reach the namer exactly once');
+  assert.equal(host.calls(), 1, 'the outcome must reach the namer exactly once');
   assert.match(out, /accessibility/);
   assert.match(out, /queued 1 task/);
-  assert.match(out, /came from a model, not from keywords/);
+  assert.match(out, /came from a model reading the outcome/);
 });
 
-test('an escalated implication is distinguishable in the log from a keyword one', async () => {
+test('a named implication is distinguishable in the log from a keyword one', async () => {
   const host = namingHost(NAMED);
-  const { out } = await runAll([() => outcome(['--escalate', SILENT], host), ['log']]);
-  assert.match(out, /implication-escalated/);
-  assert.match(out, /domain-implicated {2}\(inferred by: escalation — a model was consulted\)/);
+  const { out } = await runAll([() => outcome(['--host=opencode', SILENT], host), ['log']]);
+  assert.match(out, /implication-named/);
+  assert.match(out, /domain-implicated {2}\(inferred by: namer — a model read the outcome\)/);
 });
 
 test('a keyword-derived log entry does not claim a model was consulted', async () => {
-  const { out } = await runAll([
-    ['outcome', 'launch a paid beta to EU users next month'],
-    ['log'],
-  ]);
+  const { out } = await runAll([['outcome', ANSWERED], ['log']]);
   assert.match(out, /domain-implicated/);
   assert.ok(!out.includes('inferred by:'), 'the free path must not advertise a cost it never paid');
-  assert.ok(!out.includes('implication-escalated'));
+  assert.ok(!out.includes('implication-named'));
 });
 
-test('a keyword-answered outcome never reaches the namer, even with --escalate', async () => {
+test('with a host named, the namer reads even an outcome keywords would answer', async () => {
   const host = namingHost(NAMED);
-  const { out } = await run(() =>
-    outcome(['--escalate', 'launch a paid beta to EU users next month'], host),
-  );
-  assert.equal(host.calls(), 0, 'the deterministic path must do no I/O and cost nothing');
-  assert.match(out, /"?signals: /);
+  const { out } = await run(() => outcome(['--host=opencode', ANSWERED], host));
+  assert.equal(host.calls(), 1, 'the namer is primary, not a fallback for keyword silence');
+  assert.match(out, /accessibility/);
+  assert.match(out, /reason: /);
+  assert.ok(!out.includes('signals: '), 'the namer answered; a keyword answer must not be merged in');
 });
 
 test('the same outcome does not pay for the same model call twice', async () => {
   const host = namingHost(NAMED);
   const { out } = await runAll([
-    () => outcome(['--escalate', SILENT], host),
-    () => outcome(['--escalate', SILENT], host),
+    () => outcome(['--host=opencode', SILENT], host),
+    () => outcome(['--host=opencode', SILENT], host),
   ]);
-  assert.equal(host.calls(), 1, 'the second escalation must be served from the store cache');
+  assert.equal(host.calls(), 1, 'the second consultation must be served from the store cache');
   assert.match(out, /consulted for this outcome earlier/);
 });
 
@@ -210,24 +223,43 @@ test('filing an outcome cannot cost money unless the user asks it to', async () 
   assert.equal(code, 0);
   assert.equal(host.calls(), 0, 'the default path must never consult a model');
   assert.match(out, /no domains implicated/);
-  // The dead end is a signposted choice, not a wall: the r67.9 stall is fixed
-  // by telling the user the command, not by spending their money for them.
-  assert.match(out, /--escalate/);
+  // The dead end is a signposted choice, not a wall: the user is told the
+  // command rather than having their money spent for them.
+  assert.match(out, /--host=/);
   assert.match(out, /at cost/);
 });
 
-test('a host flag with nothing to apply to is a usage error, not a silent no-op', async () => {
-  const { code, err } = await run(['outcome', '--host=claude', SILENT]);
+test('a model flag with no host to apply to is a usage error, not a silent no-op', async () => {
+  const { code, err } = await run(['outcome', '--model=sonnet', SILENT]);
   assert.equal(code, 2);
-  assert.match(err, /only applies when escalating/);
+  assert.match(err, /only applies when a host is named/);
 });
 
-test('a namer that names nothing is reported, not papered over', async () => {
+test('the removed --escalate flag fails loudly with the replacement, never silently', async () => {
+  const { code, err } = await run(['outcome', '--escalate', SILENT]);
+  assert.equal(code, 2);
+  assert.match(err, /--escalate was removed/);
+  assert.match(err, /--host=/);
+});
+
+test('a namer that names nothing is reported as its answer, not papered over', async () => {
   const host = namingHost(JSON.stringify({ domains: [] }));
-  const { code, out } = await run(() => outcome(['--escalate', SILENT], host));
+  const { code, out } = await run(() => outcome(['--host=opencode', SILENT], host));
   assert.equal(code, 0);
   assert.equal(host.calls(), 1);
-  assert.match(out, /named nothing/);
+  assert.match(out, /considered the catalog and named nothing/);
+});
+
+test('a namer that fails falls back to keywords, and the substitution is stated everywhere', async () => {
+  const { code, out } = await runAll([
+    () => outcome(['--host=opencode', ANSWERED], brokenHost()),
+    ['log'],
+  ]);
+  assert.equal(code, 0, 'a broken host must not take routing with it');
+  assert.match(out, /signals: /, 'the keyword fallback answers');
+  assert.match(out, /could not be consulted/);
+  assert.match(out, /keyword map answered instead/);
+  assert.match(out, /namer-failed/, 'the degradation is in the log, not only on screen');
 });
 
 test('an outcome writes a work log the user can read back', async () => {
@@ -393,7 +425,7 @@ test('roles that disagree put one framed decision in front of the user', async (
 });
 
 test('a decision lost to a dead process is reachable through the normal surface', async () => {
-  // construct-xgi, end to end at the surface that failed. The tasks settle, the
+  // The crash-recovery case, end to end at the surface that failed. The tasks settle, the
   // invocation that settled them never frames, and the user's next move is the
   // ordinary one: run `construct work` again, then look in the inbox.
   const split: Record<string, string> = {
@@ -456,7 +488,7 @@ test('a decision lost to a dead process is reachable through the normal surface'
 });
 
 test('a run where everything failed is not reported as a run that finished', async () => {
-  // construct-d2q, from the dogfood: 'construct work --model=ollama/qwen3.5:4b'
+  // From the dogfood: 'construct work --model=ollama/qwen3.5:4b'
   // was dispatched with a model the host could not resolve, every task failed at
   // once, and the next invocation said "Its tasks are already settled." — an
   // accurate sentence that leaves the user with a dead run id and no next step.
@@ -487,7 +519,7 @@ test('a run where everything failed is not reported as a run that finished', asy
 });
 
 test('the invocation that fails everything states the recourse, not the one after it', async () => {
-  // construct-j32. d2q's recourse was correct and unreachable: it lived only on
+  // An earlier recourse was correct and unreachable: it lived only on
   // the nothing-left-to-work path, so it printed on a SECOND `construct work`
   // against an already-settled run. Found in a live run whose every task failed
   // with "Missing Authentication header" and said nothing further — the first
@@ -522,7 +554,7 @@ test('the invocation that fails everything states the recourse, not the one afte
 });
 
 test('a run still in flight does not read like a run that died', async () => {
-  // construct-7zu. A failed task writes no work-log event past capability-issued
+  // A failed task writes no work-log event past capability-issued
   // — and neither does one that is still executing, so the two ended at the same
   // line and were indistinguishable from `construct log`. Found on a live,
   // healthy run that was reasonably read as hung.
