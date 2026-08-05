@@ -581,6 +581,9 @@ export async function workRun(
               // which verdicts cost a judgement and which cost nothing.
               by: 'construct:structural',
               at: settledAt,
+              // What was looked for and what was found. A bare pass tells the
+              // role nothing it can act on when the next one fails.
+              detail: { check: check.detail },
             });
           }
           if (run.unanswered.length > 0) {

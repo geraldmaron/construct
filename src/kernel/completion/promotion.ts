@@ -75,6 +75,14 @@ export interface Promotion {
   /** Challenges answered `failed` and not waived. */
   readonly failing: readonly string[];
   /**
+   * Challenges the user waived. Derived and reported rather than folded
+   * silently into the state: a deliverable that reached `final` because
+   * somebody waived its legal pass must not read identically to one that
+   * survived it (commitment 13 puts waivers with the user alone, per
+   * deliverable, per challenge, and logged — invisible is not logged).
+   */
+  readonly waived: readonly string[];
+  /**
    * Verdicts discarded because the role recorded them about its own work. Kept
    * rather than dropped silently: an attempt to self-promote is exactly the
    * event commitment 14 wants visible, and a caller logs these.
@@ -105,14 +113,15 @@ export function promotionState(input: PromotionInput): Promotion {
 
   const outstanding = input.required.filter((challenge) => !latest.has(challenge));
   const failing = input.required.filter((challenge) => latest.get(challenge)?.outcome === 'failed');
+  const waived = input.required.filter((challenge) => latest.get(challenge)?.outcome === 'waived');
 
   if (input.required.length === 0 || outstanding.length > 0) {
-    return { state: 'draft', outstanding, failing, rejected };
+    return { state: 'draft', outstanding, failing, waived, rejected };
   }
   if (failing.length > 0) {
-    return { state: 'challenged', outstanding, failing, rejected };
+    return { state: 'challenged', outstanding, failing, waived, rejected };
   }
-  return { state: 'final', outstanding, failing, rejected };
+  return { state: 'final', outstanding, failing, waived, rejected };
 }
 
 export function isPromotionState(state: unknown): state is PromotionState {

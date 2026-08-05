@@ -55,7 +55,12 @@ export const DRAFT_ACTION = 'draft-submitted';
 /** The derived state, written down at settle so a user can read it. */
 export const PROMOTION_ACTION = 'promotion-derived';
 
-export const VERDICT_REFUSALS = ['unknown-task', 'self-verdict', 'unknown-outcome'] as const;
+export const VERDICT_REFUSALS = [
+  'unknown-task',
+  'self-verdict',
+  'unknown-outcome',
+  'unreasoned-waiver',
+] as const;
 
 export type VerdictRefusal = (typeof VERDICT_REFUSALS)[number];
 
@@ -68,6 +73,8 @@ export interface RecordVerdict {
   readonly by: string;
   /** Injected; the kernel never reads the clock. */
   readonly at: string;
+  /** Anything the verdict needs to carry — a waiver's reason, a check's detail. */
+  readonly detail?: Record<string, unknown>;
 }
 
 export interface VerdictRecord {
@@ -173,6 +180,7 @@ export function recordVerdict(store: Store, input: RecordVerdict): VerdictRecord
       outcome: input.outcome as VerdictOutcome,
       by: input.by,
       producedBy: task.role,
+      ...(input.detail ?? {}),
     },
     at: input.at,
   });
@@ -256,4 +264,55 @@ export function logPromotion(store: Store, taskId: string, at: string): TaskProm
     at,
   });
   return promotion;
+}
+
+/**
+ * The user waiving one challenge on one deliverable.
+ *
+ * Commitment 13's last sentence, and every word of it is a constraint: waivers
+ * are the user's alone, per deliverable, per challenge, and are logged — never
+ * a global off-switch. So this takes a task and a challenge and nothing
+ * broader; there is no configuration key, no environment variable, and no
+ * skip-all flag, because a waiver that can be set once and forgotten is the
+ * global off-switch arriving under another name.
+ *
+ * A reason is required. A waiver without one is indistinguishable from the
+ * check never having been asked for, and the reason is the whole reason the
+ * record is worth keeping — a person reading this deliverable in six months
+ * needs to know why the challenge was set aside, not merely that it was.
+ *
+ * It rides the same verdict path as every other outcome, so there is exactly
+ * one place a challenge outcome is recorded and exactly one derivation of
+ * promotion state. `waived` was already in the vocabulary; nothing could write
+ * it until now.
+ */
+export function waiveChallenge(
+  store: Store,
+  input: { readonly task: string; readonly challenge: string; readonly by: string; readonly reason: string; readonly at: string },
+): VerdictRecord {
+  if (input.reason.trim() === '') {
+    const task = getTask(store, input.task);
+    const reason = 'a waiver needs a stated reason — an unreasoned waiver is indistinguishable from the challenge never being asked for';
+    if (!task) {
+      return { recorded: false, seq: null, refusal: 'unknown-task', reason: `no task ${input.task} in this store` };
+    }
+    const seq = appendWorkLog(store, {
+      run: task.run,
+      task: task.id,
+      role: 'construct',
+      action: VERDICT_REFUSED_ACTION,
+      detail: { refusal: 'unreasoned-waiver', reason, challenge: input.challenge, outcome: 'waived', by: input.by, producedBy: task.role },
+      at: input.at,
+    });
+    return { recorded: false, seq, refusal: 'unreasoned-waiver', reason };
+  }
+
+  return recordVerdict(store, {
+    task: input.task,
+    challenge: input.challenge,
+    outcome: 'waived',
+    by: input.by,
+    at: input.at,
+    detail: { reason: input.reason },
+  });
 }

@@ -43,6 +43,7 @@ import { gatherRepoEvidence, isFailure } from '../hosts/repo/evidence.ts';
 import { reconcileSession } from '../kernel/tracker/session-drift.ts';
 import { constructFindings, CONSTRUCT_GROUND } from '../kernel/watch/construct-ground.ts';
 import { startWatch, sweepWatch, watchRun } from '../kernel/watch/watch.ts';
+import { promotionOf, waiveChallenge } from '../kernel/run/promotion.ts';
 import type { Watch } from '../kernel/watch/watch.ts';
 import { join } from 'node:path';
 
@@ -1147,7 +1148,60 @@ export function watch(argv: string[]): number {
   });
 }
 
-const USAGE = 'usage: construct <outcome|work|watch|verdict|corpus|log|inbox|decide|serve|doctor|cleanup|version>\n';
+
+const WAIVE_USAGE =
+  'usage: construct waive --task=<id> --challenge=<id> --reason="<why>"\n';
+
+/**
+ * Set one challenge aside, on one deliverable.
+ *
+ * There is deliberately no --all, no config key, and no way to waive a
+ * challenge for future work: commitment 13 puts waivers with the user alone,
+ * per deliverable and per challenge, and a waiver that outlives the deliverable
+ * it was granted for is the global off-switch that commitment forbids.
+ */
+export function waive(argv: string[]): number {
+  const flags: Record<string, string> = {};
+  for (const arg of argv) {
+    const match = /^--([a-z-]+)=(.*)$/.exec(arg);
+    if (match) flags[match[1]] = match[2];
+  }
+  const task = flags.task;
+  const challenge = flags.challenge;
+  const reason = flags.reason ?? '';
+  if (!task || !challenge) {
+    process.stderr.write(WAIVE_USAGE);
+    return 2;
+  }
+
+  return withStore((store) => {
+    const record = waiveChallenge(store, {
+      task,
+      challenge,
+      // The waiver is the user's, and the record says so rather than letting it
+      // read as something the system decided.
+      by: 'user',
+      reason,
+      at: now(),
+    });
+    if (!record.recorded) {
+      process.stderr.write(`waive: ${record.reason ?? 'refused'}\n`);
+      return record.refusal === 'unknown-task' ? 1 : 2;
+    }
+    const promotion = promotionOf(store, task);
+    process.stdout.write(`waived ${challenge} on ${task}: ${reason}\n`);
+    if (promotion) {
+      process.stdout.write(
+        `  ${task} is now ${promotion.state}` +
+          (promotion.waived.length > 0 ? ` (waived: ${promotion.waived.join(', ')})` : '') +
+          '\n',
+      );
+    }
+    return 0;
+  });
+}
+
+const USAGE = 'usage: construct <outcome|work|watch|waive|verdict|corpus|log|inbox|decide|serve|doctor|cleanup|version>\n';
 
 /**
  * Async because `work` dispatches to a host, and `outcome --host=…` may
@@ -1175,6 +1229,8 @@ async function run(argv: string[]): Promise<number> {
       return work(argv.slice(1));
     case 'watch':
       return watch(argv.slice(1));
+    case 'waive':
+      return waive(argv.slice(1));
     case 'verdict':
       return verdict(argv.slice(1));
     case 'corpus':
