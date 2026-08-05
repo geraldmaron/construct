@@ -69,7 +69,7 @@ export function loadIssues(root: string): BeadIssue[] | null {
  * children's commits.
  *
  * Trailers are matched against the known id set rather than by shape, so
- * `construct-2jb` never matches inside `construct-2jb.9`.
+ * a parent id never matches inside one of its own child ids.
  */
 export function landingCommits(
   root: string,

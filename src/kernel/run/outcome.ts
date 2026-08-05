@@ -26,6 +26,7 @@ import { appendWorkLog } from '../store/worklog.ts';
 import { enqueueTask } from '../store/tasks.ts';
 import { transact } from '../store/open.ts';
 import type { Store } from '../store/open.ts';
+import { SPINE_CHALLENGES } from '../challenge/catalog.ts';
 import type { Brief } from '../brief/schema.ts';
 
 export interface StartRunInput {
@@ -93,6 +94,11 @@ function briefFor(
     ],
     capabilities: [],
     postconditions: [],
+    // Declared here rather than left empty, because an empty list reads as
+    // "nothing is pending" when it means "nobody required anything" — and a
+    // deliverable that asserts statutes it did not source promoted straight
+    // past draft on the strength of no one asking.
+    challenges: SPINE_CHALLENGES,
     // The evidence that engaged this role travels with the work. Dropping it
     // here is what made a role start blind to which concern fired. An
     // implication with nothing cited carries no engagement rather than an

@@ -1,0 +1,151 @@
+/**
+ * tests/kernel/run/spine-challenges.test.ts — the challenges reach the path
+ * people actually use.
+ *
+ * The challenge catalog was reachable only by a hand-written brief: everything
+ * the spine produced declared nothing, so every deliverable came back at draft
+ * with an empty outstanding list. That reads as "nothing is pending" and means
+ * "nobody required anything", which is the worse of the two by far — the state
+ * looks like a control that was never applied. A run in an isolated environment
+ * made the cost concrete, returning confident statutory claims from a small
+ * local model with nothing asking for a source.
+ *
+ * So these tests go through `startRun` and `workRun` rather than constructing a
+ * brief, because a brief written by a test is exactly the thing that passed
+ * while the real path did not.
+ */
+
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { join } from 'node:path';
+import { sterile } from '../../harness/sterile.ts';
+import { openStore } from '../../../src/kernel/store/open.ts';
+import { getTask } from '../../../src/kernel/store/tasks.ts';
+import { readWorkLog } from '../../../src/kernel/store/worklog.ts';
+import { startRun } from '../../../src/kernel/run/outcome.ts';
+import { workRun, assignmentFor } from '../../../src/kernel/run/coordinator.ts';
+import { promotionOf } from '../../../src/kernel/run/promotion.ts';
+import { SPINE_CHALLENGES, challengeById } from '../../../src/kernel/challenge/catalog.ts';
+import type { Brief } from '../../../src/kernel/brief/schema.ts';
+import type { HostAdapter, HostResult } from '../../../src/kernel/hosts/interface.ts';
+
+const AT = '2026-08-05T00:00:00.000Z';
+const OUTCOME = 'Handle GDPR data subject requests for EU customers';
+
+/** What the simulation actually produced: sourced-sounding, sourced by nothing. */
+const UNSOURCED = [
+  '# Privacy read',
+  'Fines reach 4% of global annual turnover, and the rules applied from 2018-05-25.',
+].join('\n');
+
+/** The same work, cited and honest about what it did not cover. */
+const SOURCED = [
+  '# Privacy read',
+  'A breach must be reported within 72 hours of awareness [cite:GDPR Article 33(1)].',
+  '',
+  '## Out of scope',
+  'I could not determine where the data is processed, so transfers are uncovered.',
+].join('\n');
+
+function fixtureStore(): { store: ReturnType<typeof openStore>; done: () => void } {
+  const fixture = sterile();
+  const store = openStore(join(fixture.paths.dataDir, 'construct.db'));
+  return {
+    store,
+    done: () => {
+      store.close();
+      fixture.cleanup();
+    },
+  };
+}
+
+function hostReturning(text: string): HostAdapter {
+  return {
+    name: 'fake',
+    kind: 'general',
+    capabilities: ['concurrent'],
+    init: async (): Promise<void> => {},
+    health: async () => ({ live: true }),
+    cancel: async () => ({ cancelled: false }),
+    invoke: async (task: { id: string }): Promise<HostResult> => ({
+      id: task.id,
+      status: 'ok',
+      output: { text, usage: { cost: 0, steps: 1 } },
+      error: null,
+    }),
+  } as unknown as HostAdapter;
+}
+
+test('a brief the spine produced declares the free challenges, and says so to the role', () => {
+  const { store, done } = fixtureStore();
+  try {
+    const started = startRun(store, { runId: 'run-1', outcome: OUTCOME, at: AT });
+    assert.ok(started.tasks.length > 0, 'the keyword map must implicate something here');
+
+    for (const id of started.tasks) {
+      const brief = getTask(store, id)?.brief as Brief;
+      assert.deepEqual(brief.challenges, SPINE_CHALLENGES);
+    }
+
+    // Declared and stated: a role held to a challenge it was never shown is the
+    // same failure in a different place.
+    const assignment = assignmentFor(getTask(store, started.tasks[0])?.brief as Brief);
+    for (const id of SPINE_CHALLENGES) {
+      const challenge = challengeById(id);
+      assert.ok(challenge, `${id} must exist in the catalog`);
+      assert.ok(assignment.includes(challenge.question), `the role is told about ${id}`);
+    }
+  } finally {
+    done();
+  }
+});
+
+test('an unsourced deliverable is held at draft by the run itself, not by a hand-written brief', async () => {
+  const { store, done } = fixtureStore();
+  try {
+    const started = startRun(store, { runId: 'run-1', outcome: OUTCOME, at: AT });
+    await workRun(store, hostReturning(UNSOURCED), {
+      owner: 'w1',
+      clock: () => AT,
+      spendCeiling: 100,
+    });
+
+    const promotion = promotionOf(store, started.tasks[0]);
+    assert.ok(promotion);
+    // Challenged and failing, never final. The state deliberately does not fall
+    // back to draft, because "nobody challenged it" and "it was challenged and
+    // failed" are the two things this whole fix exists to tell apart.
+    assert.equal(promotion.state, 'challenged');
+    assert.ok(promotion.failing.includes('claims-cited'));
+
+    const verdicts = readWorkLog(store, 'run-1')
+      .filter((e) => e.action === 'verdict-recorded')
+      .map((e) => e.detail as { challenge: string; outcome: string; by: string });
+    const cited = verdicts.find((v) => v.challenge === 'claims-cited');
+    assert.ok(cited, 'the citation check ran on the real path');
+    assert.equal(cited.outcome, 'failed');
+    assert.equal(cited.by, 'construct:structural');
+  } finally {
+    done();
+  }
+});
+
+test('a cited deliverable that names its gaps clears both, on the same path', async () => {
+  const { store, done } = fixtureStore();
+  try {
+    const started = startRun(store, { runId: 'run-1', outcome: OUTCOME, at: AT });
+    await workRun(store, hostReturning(SOURCED), {
+      owner: 'w1',
+      clock: () => AT,
+      spendCeiling: 100,
+    });
+
+    const promotion = promotionOf(store, started.tasks[0]);
+    assert.ok(promotion);
+    assert.deepEqual(promotion.outstanding, []);
+    assert.notEqual(promotion.state, 'draft');
+    assert.deepEqual(promotion.waived, [], 'cleared by passing, not by setting aside');
+  } finally {
+    done();
+  }
+});

@@ -34,8 +34,8 @@ const LATER = '2026-08-06T00:00:00.000Z';
 const WATCH: Watch = { id: 'construct', ground: 'the tracker and the repo agreeing' };
 
 const FINDING: Finding = {
-  key: 'drift:construct-abc:landed',
-  trigger: 'tracker and repo disagree about construct-abc',
+  key: 'drift:bead-one:landed',
+  trigger: 'tracker and repo disagree about bead-one',
   question: 'Is this closed bead work that actually landed?',
   branches: [
     { role: 'as-recorded', stance: 'the program counts capability it may not have', citation: 'no commit names it' },
@@ -108,7 +108,7 @@ test('a raised finding carries the whole risk assessment, not just the disagreem
 
     // The trigger pattern is in the question, because the question is all a
     // user reads before deciding whether to care.
-    assert.match(decision.question, /tracker and repo disagree about construct-abc/);
+    assert.match(decision.question, /tracker and repo disagree about bead-one/);
     assert.match(decision.question, /Is this closed bead work that actually landed\?/);
 
     const roles = decision.positions.map((p) => p.role);
@@ -146,12 +146,12 @@ test('drift and self-contradiction both become findings, keyed so they stay stab
     counts: { total: 2, inSync: 0, absorbed: 0, drifted: 1, missing: 0 },
     drifted: [
       {
-        external_id: 'construct-abc',
+        external_id: 'bead-one',
         conflicts: [{ field: 'landed', domain: false, tracker: true }],
       },
       // A bead that drifted on both fields is one situation, resolved once.
       {
-        external_id: 'construct-def',
+        external_id: 'bead-two',
         conflicts: [
           { field: 'in_flight', domain: false, tracker: true },
           { field: 'landed', domain: true, tracker: false },
@@ -161,7 +161,7 @@ test('drift and self-contradiction both become findings, keyed so they stay stab
     missing: [],
     contradictions: [
       {
-        external_id: 'construct-ghi',
+        external_id: 'bead-three',
         rule: 'human-labelled-bead-is-in-progress',
         detail: 'release the claim and set status back to open',
       },
@@ -172,9 +172,9 @@ test('drift and self-contradiction both become findings, keyed so they stay stab
   const findings = constructFindings(report);
   assert.equal(findings.length, 3);
   assert.deepEqual(findings.map((f) => f.key), [
-    'drift:construct-abc:landed',
-    'drift:construct-def:in_flight+landed',
-    'contradiction:construct-ghi:human-labelled-bead-is-in-progress',
+    'drift:bead-one:landed',
+    'drift:bead-two:in_flight+landed',
+    'contradiction:bead-three:human-labelled-bead-is-in-progress',
   ]);
 
   // Every finding states a reversible default and names who would have caught it.

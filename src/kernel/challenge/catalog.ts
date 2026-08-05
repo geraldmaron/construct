@@ -135,6 +135,26 @@ export const CHALLENGES: readonly Challenge[] = [
   },
 ];
 
+/**
+ * The challenges every spine-produced brief declares.
+ *
+ * Commitment 13 scopes most of its challenges to a condition — a strongest
+ * objection "on load-bearing decisions", a pre-mortem "on plans", a legal
+ * issue-spot "on heat-flagged deliverables" — and leaves exactly two
+ * unconditional: a citation or `[unverified]` tag on *every* claim, and a scope
+ * diff against the brief. Those two are this set. Both are answerable for free,
+ * so declaring them on every run spends nothing and holds a deliverable at
+ * draft when it asserts facts it did not source.
+ *
+ * The conditional three are deliberately absent rather than forgotten. Nothing
+ * in the spine yet decides whether an outcome is a decision, a plan, or hot
+ * enough to be worth a second role's model call, and declaring them on
+ * everything would either burn a call per deliverable or leave a permanently
+ * unanswered challenge that never promotes. When a heat signal exists, it
+ * chooses; until then the honest state is that these are not required.
+ */
+export const SPINE_CHALLENGES: readonly string[] = ['claims-cited', 'scope-diff'];
+
 const BY_ID = new Map(CHALLENGES.map((challenge) => [challenge.id, challenge]));
 
 export function challengeById(id: string): Challenge | undefined {
