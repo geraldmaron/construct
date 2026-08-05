@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.0.0-alpha.1 — 2026-08-05
+
+Two defects in what the CLI tells you about a run. Both were found by running the published alpha against real outcomes, and neither was caught by the 1,436-test suite or the ten-outcome dogfood — they are failures of what the surface *says*, not of what it does.
+
+### Fixed
+- **A run where every task failed now states the recourse on the invocation that failed, not the one after it** (construct-j32). The guidance existed and was correct; it lived only on the nothing-left-to-work path, so it printed on a *second* `construct work` against an already-settled run — and the first invocation gave nobody a reason to run a second. Found on a live run whose every task failed with `Missing Authentication header` and said nothing further. "A missing credential" now joins the listed dispatch-side causes, since that is what produced it. The spend footer no longer reports a reassuring `0 of 10.00 ceiling` when nothing completed: that reads as "this was cheap" when the true statement is that nothing ran.
+- **`construct log` now says where a run stands, not only what it did** (construct-7zu). A failed task writes no event past `capability-issued` — and neither does one still executing, so a healthy run and a dead one ended at the identical line, and telling them apart meant opening `construct.db` by hand. A run in flight now reports its live lease and its deadline, and steers you away from re-running `work`, which was the dangerous instinct: re-running against live leases. The event stream itself is untouched and stays append-only; this is a footer reading current task state, mutating nothing and polling nothing.
+
+### Changed
+- The agreement-study instrument reports intervals rather than a point verdict (construct-eib). `compute-alpha.mjs` bootstraps over units and prints 95% intervals on both Krippendorff's α and the implied error floor, and states the probability the floor lies below the target instead of a bare above/below. On the real two-coder study the point estimate and the interval disagree — floor 0.1235 against a 0.15 target, interval [0.0521, 0.2071], which contains it — so the verdict is now `UNSETTLED` with "probable, not demonstrated" and a note that narrowing it takes more units, not more resamples. Writing its test found a bias in the resampler: resamples whose α was undefined (perfect agreement, De = 0) were dropping their perfectly well-defined floor of 0, pushing the lower bound up and making the study look more pessimistic than the data.
+
 ## 3.0.0-alpha.0 — 2026-08-04
 
 The first published build of the rewrite. Installable as `npm i @geraldmaron/construct@alpha`; `latest` stays on the predecessor's `2.1.1` and nothing about an existing 2.x install changes.
