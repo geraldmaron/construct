@@ -95,6 +95,18 @@ export function buildOpenCodeConfig(
 ): Record<string, unknown> {
   return {
     $schema: 'https://opencode.ai/config.json',
+    // A role's authority is exactly two MCP writes; the host's own mutation
+    // tools are authority it must never need. Observed both ways: a role with
+    // ambient filesystem access cited this tool's own package as legal
+    // authority, and OpenRouter's endpoint routing refuses requests carrying
+    // the bash tool's schema outright. Read tools stay on so a role can read
+    // material handed to it via the run directory.
+    tools: {
+      bash: false,
+      edit: false,
+      write: false,
+      patch: false,
+    },
     mcp: {
       [MCP_SERVER_NAME]: {
         type: 'local',

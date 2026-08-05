@@ -47,6 +47,15 @@ test('the config uses OpenCode\'s schema, not the Claude adapter\'s', () => {
   assert.equal('env' in server, false, 'the Claude key name would register nothing');
 });
 
+test('the host\'s mutation tools are off for a role: two MCP writes is the whole authority', () => {
+  const config = buildOpenCodeConfig(ROLE_ENV);
+  const tools = config.tools as Record<string, boolean>;
+
+  for (const tool of ['bash', 'edit', 'write', 'patch']) {
+    assert.equal(tools[tool], false, `${tool} is host authority a role must never need`);
+  }
+});
+
 test('the role env wins over anything the launcher supplies', () => {
   const config = buildOpenCodeConfig(ROLE_ENV, {
     // A launcher trying, by accident or otherwise, to set the scope itself.
