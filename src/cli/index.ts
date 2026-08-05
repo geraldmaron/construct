@@ -528,6 +528,11 @@ export interface WorkArgs {
   readonly dir?: string;
   /** Which host executes: 'opencode' (default) or 'claude'. */
   readonly host: string;
+  /**
+   * The user asking for a voice other than Construct's, in their own words.
+   * Absent is the house voice — the case that needs no flag and no record.
+   */
+  readonly voice?: string;
 }
 
 /**
@@ -570,6 +575,7 @@ export function parseWorkArgs(argv: string[]): WorkArgs {
     binary: args.binary,
     dir: args.dir,
     host,
+    voice: args.voice?.trim() ? args.voice.trim() : undefined,
   };
 }
 
@@ -698,6 +704,12 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
       return 1;
     }
 
+    if (args.voice) {
+      // Said out loud, not only written down: an deliverable that will not sound
+      // like Construct is a thing the user should see themselves choosing.
+      process.stdout.write(`voice overridden for this run: ${args.voice}\n`);
+    }
+
     const report = await workRun(store, host, {
       owner: `cli-${String(process.pid)}`,
       clock: now,
@@ -708,7 +720,9 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
       // Establishes the signing secret on first dispatch; every task gets a
       // capability token scoped to its own lease (commitment 14).
       capabilitySecret: loadOrCreateSecret(secretFile()),
+      ...(args.voice ? { voice: { instruction: args.voice, source: 'cli --voice' } } : {}),
     });
+
 
     process.stdout.write(
       `worked ${String(report.dispatched)} task(s) on ${host.name}: ` +

@@ -92,12 +92,15 @@ interface FakeOptions {
 
 interface FakeHost extends HostAdapter {
   readonly seen: string[];
+  /** The assignment text each dispatch actually carried, in dispatch order. */
+  readonly assignments: string[];
   readonly maxInFlight: number;
 }
 
 /** A host that records what it was asked to do and how much of it overlapped. */
 function fakeHost(options: FakeOptions = {}): FakeHost {
   const seen: string[] = [];
+  const assignments: string[] = [];
   let inFlight = 0;
   let maxInFlight = 0;
 
@@ -106,6 +109,7 @@ function fakeHost(options: FakeOptions = {}): FakeHost {
     kind: 'general',
     capabilities: ['concurrent'] as const,
     seen,
+    assignments,
     get maxInFlight(): number {
       return maxInFlight;
     },
@@ -117,6 +121,7 @@ function fakeHost(options: FakeOptions = {}): FakeHost {
       inFlight += 1;
       maxInFlight = Math.max(maxInFlight, inFlight);
       seen.push(req.role);
+      assignments.push(req.task);
       try {
         await options.onInvoke?.(req.role);
         if (options.delayMs) await new Promise((resolve) => setTimeout(resolve, options.delayMs));
@@ -931,5 +936,42 @@ test('without a secret, no token is minted and no env is delivered', async () =>
 
     assert.equal(sawEnv, undefined, 'no secret means no write surface, not a broken one');
     assert.equal(readWorkLog(store).filter((e) => e.action === 'capability-issued').length, 0);
+  });
+});
+
+test('a voice override reaches the assignment and is recorded at the dispatch it shaped', async () => {
+  await withStoreAsync(async (store) => {
+    seed(store, ['privacy']);
+    const host = fakeHost();
+
+    await workRun(store, host, {
+      owner: 'w1',
+      clock: frozen(AT),
+      spendCeiling: 100,
+      voice: { instruction: 'Write it as a limerick.', source: 'cli --voice' },
+    });
+
+    assert.match(host.assignments[0], /Write it as a limerick\./);
+
+    // An deliverable that will not sound like Construct is traceable to the user
+    // who asked for that, at the dispatch it shaped.
+    const overridden = readWorkLog(store, 'run-1').filter((e) => e.action === 'voice-overridden');
+    assert.equal(overridden.length, 1);
+    assert.deepEqual(overridden[0].detail, {
+      instruction: 'Write it as a limerick.',
+      source: 'cli --voice',
+    });
+  });
+});
+
+test('the house voice needs no record — silence in the log means Construct sounded like itself', async () => {
+  await withStoreAsync(async (store) => {
+    seed(store, ['privacy']);
+    const host = fakeHost();
+    await workRun(store, host, { owner: 'w1', clock: frozen(AT), spendCeiling: 100 });
+    assert.equal(
+      readWorkLog(store, 'run-1').some((e) => e.action === 'voice-overridden'),
+      false,
+    );
   });
 });

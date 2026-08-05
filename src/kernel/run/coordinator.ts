@@ -50,6 +50,8 @@ import { getDecision, raiseDecision } from '../store/decisions.ts';
 import { ROLE_GRANTS, issueRoleToken } from '../capabilities/tokens.ts';
 import { buildRoleEnv } from './roleenv.ts';
 import { NO_WRITE_SURFACE_NOTE, WRITE_SURFACE_PROTOCOL } from './rolewrite.ts';
+import { voiceProtocol } from '../voice/voice.ts';
+import type { VoiceOverride } from '../voice/voice.ts';
 
 export const DEFAULT_CONCURRENCY = 2;
 
@@ -95,6 +97,12 @@ export interface CoordinatorOptions {
    * Absent means roles get no write surface at all, which is safe, not broken.
    */
   readonly capabilitySecret?: string;
+  /**
+   * The user's instruction to sound like something other than Construct. Absent
+   * means the house voice, which is the case that needs no record; an override
+   * in force is written to the work log at every dispatch it shapes.
+   */
+  readonly voice?: VoiceOverride;
 }
 
 export interface RunReport {
@@ -137,16 +145,6 @@ export interface RunReport {
 }
 
 /**
- * What the role is being asked to do, in words.
- *
- * Built here rather than stored on the brief because a brief declares what a
- * task NEEDS — inputs, capabilities, postconditions — and the moment it also
- * carried the prompt it would be orchestrating itself, which is what commitment
- * 10 separates. The domain's own stated concern is what makes the assignment
- * specific, and it comes from the catalog, so a role outside the catalog gets an
- * assignment that says only what is actually known about it.
- */
-/**
  * How the engagement was reached, said plainly to the role. Provenance matters
  * to the reader: a keyword match and a model's stated reason are not the same
  * quality of evidence, and a role weighing its own remit should know which it
@@ -167,10 +165,20 @@ function howEngaged(inferredBy: string): string {
   }
 }
 
+/**
+ * What the role is being asked to do, in words.
+ *
+ * Built here rather than stored on the brief because a brief declares what a
+ * task NEEDS — inputs, capabilities, postconditions — and the moment it also
+ * carried the prompt it would be orchestrating itself, which is what commitment
+ * 10 separates. The domain's own stated concern is what makes the assignment
+ * specific, and it comes from the catalog, so a role outside the catalog gets an
+ * assignment that says only what is actually known about it.
+ */
 export function assignmentFor(
   brief: Brief,
   catalog: readonly Domain[] = DOMAINS,
-  options: { readonly writeSurface?: boolean } = {},
+  options: { readonly writeSurface?: boolean; readonly voice?: VoiceOverride } = {},
 ): string {
   const domain = domainsByName(catalog).get(brief.role);
   const concern = domain ? `\nYour concern: ${domain.concern}.` : '';
@@ -193,6 +201,7 @@ export function assignmentFor(
     'Report what this outcome implicates in your domain: what needs to be true, ' +
     'what is likely to be missed, and what you cannot determine from the outcome ' +
     'alone. Do not assert anything you cannot support. Be brief.\n\n' +
+    `${voiceProtocol(options.voice)}\n\n` +
     `${surface}\n\n` +
     STANCE_PROTOCOL
   );
@@ -406,6 +415,20 @@ export async function workRun(
       at: options.clock(),
     });
 
+    // An deliverable that does not sound like Construct must be traceable to the
+    // user who asked for that, at the dispatch it shaped. Voice is bound
+    // before the work, so this is the only place the record can be made.
+    if (options.voice) {
+      appendWorkLog(store, {
+        run: task.run,
+        task: task.id,
+        role: task.role,
+        action: 'voice-overridden',
+        detail: { instruction: options.voice.instruction, source: options.voice.source },
+        at: options.clock(),
+      });
+    }
+
     // Commitment 10's flagging half. A floor that is not met never stops the
     // dispatch — refusing would quietly make the free local-model path unusable
     // for the work it was chosen for — but it is recorded loudly, so nothing
@@ -471,7 +494,10 @@ export async function workRun(
           // The assignment must agree with what was actually minted: roleEnv is
           // the same value that decides whether the host registers a surface at
           // all, so the two cannot drift apart.
-          task: assignmentFor(brief, catalog, { writeSurface: roleEnv !== undefined }),
+          task: assignmentFor(brief, catalog, {
+            writeSurface: roleEnv !== undefined,
+            voice: options.voice,
+          }),
         },
         { invocationId: task.id, roleEnv },
       );
