@@ -51,6 +51,7 @@ import { getDecision, raiseDecision } from '../store/decisions.ts';
 import { ROLE_GRANTS, issueRoleToken } from '../capabilities/tokens.ts';
 import { buildRoleEnv } from './roleenv.ts';
 import { NO_WRITE_SURFACE_NOTE, WRITE_SURFACE_PROTOCOL } from './rolewrite.ts';
+import { playbookFor } from '../plan/playbooks.ts';
 import { voiceProtocol } from '../voice/voice.ts';
 import type { VoiceOverride } from '../voice/voice.ts';
 
@@ -198,6 +199,34 @@ const MATERIAL_PROTOCOL = [
   'source you do not have, mark it [unverified] and say what would settle it.',
 ].join(' ');
 
+/**
+ * The deliverable is a work product, not a restated gap. Issue-spotting has a
+ * shape — numbered issues, each with the step that resolves it — and the
+ * playbook template's slots make the rest of the shape checkable. Missing
+ * information becomes a labeled assumption the work proceeds on; it is never
+ * a reason to withhold the deliverable.
+ */
+function workProductDirective(role: string): string {
+  const template = playbookFor(role).template;
+  const slots = template.slots
+    .map((s) => `- ${s.name}${s.required ? '' : ' (optional)'}: ${s.expects}`)
+    .join('\n');
+  return (
+    `Deliver a ${template.deliverable} the user can act on. Structure it under ` +
+    'exactly these headed sections:\n' +
+    `${slots}\n\n` +
+    'Rules for the work product:\n' +
+    '- Number every issue. Each issue states the problem in one sentence, then ' +
+    'the concrete step that resolves it.\n' +
+    '- Missing information is never an issue. If something cannot be determined ' +
+    'from the outcome, state the assumption you proceed on, label it [assumed], ' +
+    'and deliver the work that assumption allows.\n' +
+    '- Do not assert anything you cannot support.\n' +
+    '- Keep it as short as it can be while the reader can still follow how you ' +
+    'got there.\n\n'
+  );
+}
+
 export function assignmentFor(
   brief: Brief,
   catalog: readonly Domain[] = DOMAINS,
@@ -236,10 +265,7 @@ export function assignmentFor(
     `You are acting as the ${brief.role} role.${concern}\n\n` +
     `The outcome the user asked for: ${brief.outcome}\n\n` +
     engagement +
-    'Report what this outcome implicates in your domain: what needs to be true, ' +
-    'what is likely to be missed, and what you cannot determine from the outcome ' +
-    'alone. Do not assert anything you cannot support. Keep it as short as it can ' +
-    'be while still letting the reader follow how you got there.\n\n' +
+    workProductDirective(brief.role) +
     MATERIAL_PROTOCOL +
     '\n\n' +
     obligations +

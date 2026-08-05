@@ -1,10 +1,8 @@
 /**
  * kernel/plan/ladder.ts — the acquisition ladder: what happens when a required
- * slot is empty. The old behavior at this point was the stall — a role
- * declaring it cannot proceed without more information. The ladder replaces
- * the stall with a defined climb: read the declared sources, research beyond
- * them, ask the human, and finally assume-and-label. Every rung ends in a
- * draft; asking never blocks one.
+ * slot is empty. A gap is never a stall; it is a defined climb: read the
+ * declared sources, research beyond them, ask the human, and finally
+ * assume-and-label. Every rung ends in a draft; asking never blocks one.
  *
  * Asking the human is batched to the decision inbox, and every question ships
  * with its assumed default. In the inbox's own shape that is two positions —

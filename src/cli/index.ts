@@ -58,6 +58,7 @@ import { constructFindings, CONSTRUCT_GROUND } from '../kernel/watch/construct-g
 import { startWatch, sweepWatch, watchRun } from '../kernel/watch/watch.ts';
 import { latestDraft, promotionOf, waiveChallenge } from '../kernel/run/promotion.ts';
 import { buildPlan } from '../kernel/plan/planner.ts';
+import { synthesizeIssues } from '../kernel/run/synthesis.ts';
 import { planFor, recordPlan } from '../kernel/store/plans.ts';
 import type { Watch } from '../kernel/watch/watch.ts';
 import { join } from 'node:path';
@@ -894,6 +895,31 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
         process.stdout.write(
           `      → issue-spotting only: needs review by a licensed ${review} before you rely on it\n`,
         );
+      }
+    }
+
+    // One merged issue list instead of N overlapping essays. The merge is
+    // lexical and labeled; a duplicate it fails to merge shows twice rather
+    // than losing anything.
+    const settledDeliverables = report.settled
+      .map((id) => getTask(store, id))
+      .filter((task) => task !== null && task.state === 'done')
+      .map((task) => {
+        const draft = latestDraft(store, task!.id)?.deliverable ?? task!.result;
+        const text =
+          typeof draft === 'string'
+            ? draft
+            : typeof (draft as { text?: unknown } | null)?.text === 'string'
+              ? ((draft as { text: string }).text)
+              : null;
+        return text === null ? null : { role: task!.role, text };
+      })
+      .filter((d): d is { role: string; text: string } => d !== null);
+    const merged = synthesizeIssues(settledDeliverables);
+    if (merged.length > 0) {
+      process.stdout.write(`\nissues across roles (${String(merged.length)}, merged lexically):\n`);
+      for (const [index, issue] of merged.entries()) {
+        process.stdout.write(`  ${String(index + 1)}. [${issue.roles.join(', ')}] ${issue.text}\n`);
       }
     }
 
