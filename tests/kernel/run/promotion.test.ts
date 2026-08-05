@@ -127,6 +127,34 @@ test('a resubmission is told to stop, the cap closes the window, and the log rec
   });
 });
 
+test('a role that loops its notes hits the cap with a stop message, logged once', () => {
+  withStore((store) => {
+    seed(store);
+    const note = (action: string) =>
+      appendAsRole(store, credential(), { run: RUN, task: TASK, action, detail: null });
+
+    // The observed loop varied nothing but time; this one varies the action
+    // name too, so the cap is proven to count the surface, not the label.
+    for (let i = 0; i < 25; i += 1) {
+      const ok = note(i % 2 === 0 ? 'awaiting_clarification' : 'waiting_for_clarification');
+      assert.equal(ok.ok, true, `note ${String(i + 1)} is within the cap`);
+    }
+    for (let i = 0; i < 3; i += 1) {
+      const over = note('awaiting_clarification');
+      assert.equal(over.ok, false);
+      assert.equal((over as { denial: string }).denial, 'note-cap');
+      assert.match((over as { reason: string }).reason, /Stop now/);
+    }
+    const all = actions(store);
+    assert.equal(all.filter((a) => a.startsWith('role:')).length, 25, 'the cap held');
+    assert.equal(all.filter((a) => a === 'note-cap-reached').length, 1, 'the cap logged once');
+
+    // The wall closes notes, not the deliverable: the draft still lands.
+    const draft = submitDraft(store, credential(), { run: RUN, task: TASK, deliverable: 'the work' });
+    assert.equal(draft.ok, true);
+  });
+});
+
 test('a role submits drafts and appends to its log, and moves nothing', () => {
   withStore((store) => {
     seed(store);

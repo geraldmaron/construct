@@ -31,7 +31,16 @@
  */
 
 import type { Store } from '../store/open.ts';
-import { appendWorkLog, countWorkLogEntries } from '../store/worklog.ts';
+import {
+  appendWorkLog,
+  countWorkLogEntries,
+  countWorkLogEntriesByPrefix,
+} from '../store/worklog.ts';
+
+/** Role-authored notes for a task, whatever action names the role chose. */
+function countRoleNotes(store: Store, run: string, task: string): number {
+  return countWorkLogEntriesByPrefix(store, run, task, ROLE_ACTION_PREFIX);
+}
 import { authorizeRoleToken } from '../capabilities/tokens.ts';
 import type { Denial } from '../capabilities/tokens.ts';
 import { DRAFT_ACTION } from './promotion.ts';
@@ -147,7 +156,7 @@ export type WriteOutcome =
     }
   | {
       readonly ok: false;
-      readonly denial: Denial | 'draft-cap';
+      readonly denial: Denial | 'draft-cap' | 'note-cap';
       readonly reason: string;
       /** The work log sequence the denial itself was filed under. */
       readonly seq: number;
@@ -204,6 +213,36 @@ export function appendAsRole(
   }
 
   const { scope } = authorization;
+
+  // The same wall the draft cap is, for the same observed loop: with drafts
+  // capped, a role that wanted to ask a question spun "awaiting_clarification"
+  // through this surface hundreds of times until the host timeout killed the
+  // task. Notes are counted across all role-authored actions per task, so the
+  // loop cannot dodge the cap by varying the action name.
+  const notes = countRoleNotes(store, scope.run, scope.task);
+  if (notes >= NOTE_CAP) {
+    const marked = countWorkLogEntries(store, scope.run, scope.task, NOTE_CAP_ACTION);
+    const seq =
+      marked > 0
+        ? 0
+        : appendWorkLog(store, {
+            run: scope.run,
+            task: scope.task,
+            role: scope.role,
+            action: NOTE_CAP_ACTION,
+            detail: { cap: NOTE_CAP },
+            at: credential.at,
+          });
+    return {
+      ok: false,
+      denial: 'note-cap',
+      reason:
+        `${String(NOTE_CAP)} work log entries are already on the record for this task and this one was NOT recorded. ` +
+        'If something blocks you, say so in your deliverable and finish. Stop now — do not call append_work_log again.',
+      seq,
+    };
+  }
+
   const seq = appendWorkLog(store, {
     run: scope.run,
     task: scope.task,
@@ -226,6 +265,17 @@ export const DRAFT_CAP = 5;
 
 /** The one-time log marker that the cap closed a task's draft window. */
 export const DRAFT_CAP_ACTION = 'draft-cap-reached';
+
+/**
+ * How many notes one task may put on the record through append_work_log.
+ * Generous for real work — the richest legitimate run observed used a
+ * handful — and small enough that the observed clarification loop hits the
+ * wall in seconds rather than running to the host timeout.
+ */
+export const NOTE_CAP = 25;
+
+/** The one-time log marker that the cap closed a task's note window. */
+export const NOTE_CAP_ACTION = 'note-cap-reached';
 
 /**
  * Submit a draft of the deliverable.

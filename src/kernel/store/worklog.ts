@@ -91,6 +91,21 @@ export function countWorkLogEntries(
   return row.n;
 }
 
+/** How many entries a task has filed under actions sharing a prefix. */
+export function countWorkLogEntriesByPrefix(
+  store: Store,
+  run: string,
+  task: string,
+  actionPrefix: string,
+): number {
+  const row = store.db
+    .prepare(
+      "SELECT COUNT(*) AS n FROM work_log WHERE run = ? AND task = ? AND action GLOB ? || '*'",
+    )
+    .get(run, task, actionPrefix) as { n: number };
+  return row.n;
+}
+
 /** Read a run's log in append order. Omit `run` to read the whole log. */
 export function readWorkLog(store: Store, run?: string): WorkLogEntry[] {
   const rows = (
