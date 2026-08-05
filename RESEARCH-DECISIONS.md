@@ -634,11 +634,15 @@ and it guards a real, named failure mode: a map tuned solely to the one distribu
 needs least. All three corpora clear it. The sample size is the weakness; the design is not.
 
 *Note, 2026-08-04: a fourth corpus, `unspent-outcomes.json` (72 outcomes), has since joined the
-pool (see §1). It clears the non-engineering quota at 72/72 but carries 0/72 legal-or-compliance
-outcomes, failing the second half of the quota this paragraph defends. The conclusion above is
-left as written because it is about the quota's design, which this does not touch — but "all
-[the] corpora clear it" is no longer true of all four, and that is worth flagging rather than
-quietly re-counting to three.*
+pool (see §1), and the quota cannot be counted on it the way it is counted on the other three.
+Those three carry a hand-assigned `category` field per outcome; this one carries none, because
+its authors were blind and a category is a judgment they were deliberately not asked to make.
+The quota was instead imposed at authoring: every setting was told to include at least eight of
+eighteen with nothing to do with engineering and at least four that a careful person would read
+as touching laws, rules or officials. Measured after the fact by the only proxy the file
+supports — outcomes whose adjudicated labels include `compliance`, `privacy` or `contracts` —
+28 of 72 qualify, comfortably above the 20% the quota asks for. That is a proxy and is not the
+same instrument, which is the honest thing to say about it. The conclusion above stands.*
 
 **Recommendation:** replace fixed-*n* gates with a **Bayesian sequential design** — stop early on
 failure, continue until a credible interval reaches a target width. This is not pedantry about
