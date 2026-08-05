@@ -64,6 +64,20 @@ const heldOut = load('held-out-outcomes.json');
  */
 const fresh = load('fresh-outcomes.json');
 
+/**
+ * The measured half of construct-2jb.4's corpus: 72 outcomes written by eight
+ * agents that were forbidden to read anything in this repository, labeled twice
+ * by two coders who saw the ten domain names and their concerns but never a
+ * keyword. It is the first corpus large enough to answer the coarse question
+ * (83 labels against the 64 the power analysis derives) and the first one whose
+ * ground truth was checked against a second opinion.
+ *
+ * REPORTED, not enforced, for the same reason as `fresh`: a threshold here is a
+ * standing instruction to tune against it. Its sibling sealed-outcomes.json is
+ * what remains once this one is spent.
+ */
+const unspent = load('unspent-outcomes.json');
+
 function quota(name: string, set: { outcomes: Labeled[] }): void {
   const total = set.outcomes.length;
   const nonEngineering = set.outcomes.filter((o) => o.category !== 'engineering').length;
@@ -276,7 +290,7 @@ test('the catalog is caller-replaceable without forking the kernel', () => {
  * share a common word could reach the floor on that word alone.
  */
 test('no implication is ever surfaced without a whole-keyword signal to cite', () => {
-  for (const set of [fixture, heldOut, fresh]) {
+  for (const set of [fixture, heldOut, fresh, unspent]) {
     for (const item of set.outcomes) {
       for (const implication of mapImplications({ outcome: item.outcome }).implicated) {
         assert.ok(
@@ -306,6 +320,33 @@ test('the fresh corpus miss rate is recorded, and its gap to the tuned corpora i
     `fresh (${s.missRate.toFixed(3)}) now scores better than the corpus the catalog was tuned against ` +
       `(${tuned.missRate.toFixed(3)}). That is either real generalization or this file has been tuned ` +
       'against — check which before relaxing this assertion.',
+  );
+});
+
+/**
+ * The construct-2jb.4 corpus, reported. This is the measurement construct-4jq
+ * asked for and did not have: wording authored by minds that never saw the
+ * catalog, at an n the power analysis supports, with a second coder confirming
+ * the labels are not one opinion. Its number is far worse than the fresh
+ * corpus's 0.400 and its interval is nowhere near the 0.15 target, which is the
+ * finding — not a regression in the map, but the first honest look at what
+ * whole-keyword matching over a hand-written dictionary does on wording it was
+ * never shown.
+ *
+ * The assertion is deliberately a floor and not a target: it fails only if this
+ * corpus starts scoring like the corpora the catalog was tuned against, which
+ * would mean it has been tuned against too.
+ */
+test('the construct-2jb.4 corpus miss rate is recorded, and its size is what makes it usable', () => {
+  const s = score(unspent);
+  report('unspent (reported, not enforced)', s, MISS_RATE_TARGET, OVER_RATE_TARGET);
+  assert.ok(s.expected >= 64, `${s.expected} labels is below the 64 the power analysis derives`);
+  const tuned = score(heldOut);
+  assert.ok(
+    s.missRate >= tuned.missRate,
+    `the unspent corpus (${s.missRate.toFixed(3)}) now scores like the tuned one ` +
+      `(${tuned.missRate.toFixed(3)}) — check whether the catalog has been tuned against it ` +
+      'before relaxing this assertion.',
   );
 });
 

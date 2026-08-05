@@ -54,7 +54,14 @@ solved.
 | `labeled-outcomes.json` | 20 | 37 | 1.85 | authored alongside the catalog — circular by construction |
 | `held-out-outcomes.json` | 24 | 38 | 1.58 | spent: tuned against during `construct-gsf` |
 | `fresh-outcomes.json` | 10 | 10 | 1.00 | burned on commit, by its own `status` field |
-| **total** | **54** | **85** | **1.57** | |
+| `unspent-outcomes.json` | 72 | 83 | 1.15 | authored blind, labeled twice — spent by this table |
+| **total** | **126** | **168** | **1.33** | |
+
+`unspent-outcomes.json` is the measured half of `construct-2jb.4`'s corpus. Its sealed half
+(`sealed-outcomes.json`, 72 outcomes / 84 labels) is deliberately absent from the table, from
+this document's numbers, and from every reader in the repo — `tests/kernel/implication/
+corpus-split.test.ts` fails if anything scores it. It is the one honest measurement left after
+the row above becomes what its predecessors became.
 
 The unit that matters is **labels**, not outcomes: an outcome carrying four expected domains
 contributes four opportunities to miss.
@@ -66,7 +73,15 @@ contributes four opportunities to miss.
 | labeled | 0.027 (1/37) — CI [0.005, 0.138] | 0.143 (6/42) — CI [0.067, 0.278] |
 | held-out | 0.026 (1/38) — CI [0.005, 0.135] | 0.140 (6/43) — CI [0.066, 0.273] |
 | fresh | 0.400 (4/10) — CI [0.168, 0.687] | 0.455 (5/11) — CI [0.213, 0.720] |
-| pooled | 0.071 (6/85) — CI [0.033, 0.146] | 0.177 (17/96) — CI [0.114, 0.265] |
+| **unspent** | **0.663 (55/83) — CI [0.556, 0.755]** | 0.404 (19/47) — CI [0.276, 0.547] |
+| pooled | 0.363 (61/168) — CI [0.294, 0.438] | 0.252 (36/143) — CI [0.188, 0.329] |
+
+**The `unspent` row is the headline of this document now.** It is the first miss rate measured
+on wording authored by minds that had never seen the catalog, at an n the power analysis
+supports, against labels a second coder confirmed. Its interval — [0.556, 0.755] — does not
+come near 0.15, and does not overlap the held-out corpus's interval at all. The gap between
+0.026 and 0.663 is not the map getting worse; it is the first time the map has been asked
+something it was not, directly or indirectly, tuned for.
 
 Wilson score intervals, 95%, from `src/kernel/metrics/intervals.ts`. Wilson rather than the
 textbook normal approximation for two reasons the corpora force: the normal approximation is
@@ -108,22 +123,41 @@ One-sample test, two-sided 5%, 80% power:
 
 | distinguish a true rate of | from | labels needed | have |
 |---|---|---|---|
-| 0.300 | 0.15 | 64 | 85 |
-| 0.250 | 0.15 | 133 | 85 |
-| 0.200 | 0.15 | 471 | 85 |
-| 0.175 | 0.15 | 1749 | 85 |
+| 0.300 | 0.15 | 64 | 168 |
+| 0.250 | 0.15 | 133 | 168 |
+| 0.200 | 0.15 | 471 | 168 |
+| 0.175 | 0.15 | 1749 | 168 |
 
 **This corrects an assumption made when scoping this work.** The plan predicted the answer was
 "on the order of hundreds of labels, not tens." For the coarse question — is the true rate
-nearer 0.30 or 0.15 — it is 64, and the pooled 85 nominally clears it.
+nearer 0.30 or 0.15 — it is 64, and the pooled count nominally clears it.
 
-The real problem is therefore **not raw count**. It is that 44 of those 85 labels are spent:
-`labeled` shares an author with the catalog, and `held-out` was tuned against until it stopped
-being held out. Only 10 labels are from a corpus that ever measured anything honestly, and that
-corpus is now burned too. **The corpus is not too small so much as too used**, and a corpus
-expansion that repeats the authorship pattern would add labels without adding evidence.
-Filed as `construct-2jb.4`, with authorship provenance as an acceptance criterion rather than
-a volume target alone.
+The real problem was therefore **not raw count**. It was that the labels were spent: `labeled`
+shares an author with the catalog, `held-out` was tuned against until it stopped being held out,
+and `fresh` burned itself on commit. **The corpus was not too small so much as too used**, and a
+corpus expansion repeating that authorship pattern would have added labels without adding
+evidence. That was `construct-2jb.4`, with authorship provenance as an acceptance criterion
+rather than a volume target alone.
+
+### What `construct-2jb.4` built, 2026-08-04
+
+144 outcomes across eight settings — a bakery chain, a physiotherapy group, a game studio, a
+freight brokerage, a tutoring nonprofit, a sensor maker, a laundromat chain, a travel agency.
+Eight authoring agents, one per setting, each instructed to read **nothing** in this repository:
+not the catalog, not the matcher, not the earlier corpora. Then two coders labeled all 144
+independently, seeing only the ten domain names and their one-line concerns — never a keyword.
+The 17 outcomes they disagreed on were adjudicated afterwards, and every outcome carries both
+coders' raw sets so each adjudication can be argued with.
+
+The corpus is split in half by position inside each setting, so both halves carry all eight
+settings and neither is one author's whole output. One half is measured (the `unspent` row
+above, now spent by being printed). The other is sealed, and the seal is a test rather than an
+intention.
+
+**The caveat travels with every number taken from it**, unchanged from `construct-2jb.3`:
+authors, coders and adjudicator are all models of one family, so observed agreement is an upper
+bound on independent agreement. What blindness buys is not independence of *error*, only
+independence of *wording* — and it is the wording that the earlier corpora leaked.
 
 ---
 
@@ -132,8 +166,10 @@ a volume target alone.
 *Measured 2026-08-04, at Stage 1 (model coders). The section below states what was
 originally to be collected and why; the result is at the end of it.*
 
-All three corpora have **one author**. `construct-gsf` already identified the circularity
-between corpus and catalog; the unexamined consequence is different and larger.
+The first three corpora have **one author**; `construct-2jb.4`'s has eight authors and two
+coders, and its agreement figures are at the end of this section. `construct-gsf` already
+identified the circularity between corpus and catalog; the unexamined consequence is different
+and larger.
 
 Nobody knows how much of the residual miss rate is *model error* and how much is *label
 disagreement*. If two careful people, given the same catalog, disagree about whether
@@ -192,6 +228,31 @@ Stage 2 lifts it, with human labels drawn from run-derived verdicts rather than 
 a room — multi-author, from the deployed distribution, carrying negative labels. Filed as
 `construct-3ft`, blocked on real runs existing.
 
+### The result, Stage 1b — the `construct-2jb.4` corpus, labeled twice at authoring time
+
+The corpus §1 describes was double-coded as it was built, so its agreement is a property of the
+corpus rather than a study run afterwards on someone else's sheets. Both coders saw the ten
+domain names and their concerns and nothing else.
+
+| statistic | measured half (72) | whole corpus (144) |
+|---|---|---|
+| exact set agreement | 66/72 | 127/144 |
+| Krippendorff's α (MASI, multi-label) | **0.9270** | 0.8955 |
+| Krippendorff's α (exact-match nominal) | 0.9088 | 0.8730 |
+
+`measure-decisions.mjs` regenerates the measured-half column; the whole-corpus column was
+computed once at authoring and recorded in the fixtures' own notes, because nothing in the repo
+is allowed to open the sealed half to recompute it.
+
+**Read against Stage 1, this cuts two ways.** It agrees with Stage 1's conclusion and
+strengthens it: the labeling task has a stable answer, so the miss rate is the map's problem
+and not the ground truth's — and at α 0.93 the implied ambiguity floor is far below 0.15, while
+the map sits at 0.663 on the same outcomes. But it is a **weaker** measurement of independence
+than Stage 1 was, and the direction matters: Stage 1's coders came from two different model
+families, these two do not. A higher α measured under a weaker separation is exactly what
+correlated error looks like, so the honest reading is that 0.93 bounds nothing that 0.7627 did
+not already bound. Stage 2 (`construct-3ft`) remains the measurement that would settle it.
+
 ---
 
 ## 3. Keyword scoring is an unweighted linear model
@@ -213,22 +274,24 @@ automatically, without an author having to notice first.
 | | count |
 |---|---|
 | catalog keywords | 207 |
-| fire at least once on 54 outcomes | 91 |
-| **never fire** | **116** |
+| fire at least once on the 126-outcome pooled corpus | 101 |
+| **never fire** | **106** |
 
-More than half the catalog has never been observed to do anything. Those 116 keywords cannot be
+More than half the catalog has never been observed to do anything. Those 106 keywords cannot be
 weighted, validated, or shown to be harmless — they are pure unmeasured surface area.
 
 ### Keywords whose firings are mostly wrong
 
 | domain | keyword | fires | correct | precision | IDF |
 |---|---|---|---|---|---|
-| contracts | `contract` | 4 | 0 | **0.000** | 2.603 |
-| program-sequencing | `release` | 2 | 0 | **0.000** | 3.296 |
+| contracts | `contract` | 5 | 0 | **0.000** | 3.227 |
+| program-sequencing | `release` | 2 | 0 | **0.000** | 4.143 |
+| privacy | `school` | 4 | 1 | **0.250** | 3.450 |
+| program-sequencing | `before` | 14 | 5 | **0.357** | 2.197 |
 
-`contract` fires four times and is right **zero** times. It is the eponymous keyword of its own
+`contract` fires five times and is right **zero** times. It is the eponymous keyword of its own
 domain, which is exactly why nobody audited it — and precisely the class of error IDF catches
-without needing a human to suspect it first. Neither of these was found by hand.
+without needing a human to suspect it first. None of these was found by hand.
 
 ### The hand-rolled correction, re-measured
 
@@ -237,8 +300,8 @@ a single judgment. The data separates it into two very different decisions:
 
 | keyword | fires | genuinely product-scoping | precision | IDF |
 |---|---|---|---|---|
-| `customers` | 10 | 1 | **0.100** | 1.686 |
-| `users` | 1 | 1 | **1.000** | 3.989 |
+| `customers` | 17 | 3 | **0.176** | 2.003 |
+| `users` | 1 | 1 | **1.000** | 4.836 |
 
 `customers` is exactly the IDF story: high frequency, near-zero discrimination, removed by hand
 after it caused a visible regression. **`users` is not.** It fired once, correctly, and its
@@ -266,30 +329,35 @@ Sweeping the floor over the pooled corpus:
 
 | floor | miss | over | silent | E[L] @ 4:1 | E[L] @ 10:1 |
 |---|---|---|---|---|---|
-| 0 | 0.071 | 0.177 | 1 | 0.459 | 0.883 |
-| 7 | 0.071 | 0.177 | 1 | 0.459 | 0.883 |
-| 9 | 0.071 | 0.177 | 1 | 0.459 | 0.883 |
-| **10 (current)** | **0.071** | **0.177** | **1** | **0.459** | **0.883** |
-| 11 | 0.518 | 0.068 | 19 | 2.139 | 5.245 |
-| 14 | 0.600 | 0.029 | 25 | 2.429 | 6.029 |
-| 20 | 0.671 | 0.034 | 30 | 2.717 | 6.740 |
+| 0 | 0.363 | 0.257 | 33 | 1.709 | 3.888 |
+| 7 | 0.363 | 0.257 | 33 | 1.709 | 3.888 |
+| 8 | 0.363 | 0.252 | 34 | 1.704 | 3.883 |
+| 9 | 0.363 | 0.252 | 34 | 1.704 | 3.883 |
+| **10 (current)** | **0.363** | **0.252** | **34** | **1.704** | **3.883** |
+| 11 | 0.696 | 0.164 | 75 | 2.950 | 7.128 |
+| 14 | 0.750 | 0.125 | 84 | 3.125 | 7.625 |
+| 20 | 0.792 | 0.103 | 92 | 3.269 | 8.019 |
 
-Every floor from 0 to 10 produces **byte-identical output**. At 11, recall collapses.
+Every floor from 0 to 7 produces byte-identical output, and floors 8 through 10 are also
+identical to each other (one more outcome goes silent than at floor 0–7, but the loss figures
+move together). At 11, recall collapses.
 
 The reason is visible in the score distribution. Among domains that clear the whole-keyword
 evidence filter, the scores that actually occur are:
 
 ```
-score  10: 52 occurrences   <- the mode, and the minimum
-score  13: 9
-score  20: 17
+score   7: 1 occurrence
+score  10: 82 occurrences   <- the mode
+score  13: 13
+score  20: 23
 ...
 score  40: 1
 ```
 
-The **lowest occurring score is exactly 10**, because a single-word keyword match scores 10 by
-construction (a one-part keyword is trivially adjacent). So any floor in [0, 10] admits exactly
-the same set, and 11 excludes the 52-occurrence mode.
+The **lowest occurring score is 7**, one step below `MIN_SIGNAL`, and the mode sits at exactly
+10 — a single-word keyword match scores 10 by construction (a one-part keyword is trivially
+adjacent). So any floor in [0, 7] admits exactly the same set, floors 8–10 admit one fewer
+occurrence than that but stay flat across themselves, and 11 excludes the 82-occurrence mode.
 
 Three consequences:
 
@@ -297,11 +365,16 @@ Three consequences:
    added in `construct-4jq` — the fix that was framed as an evidence-honesty change turns out to
    be the entire mechanism.
 2. **The documented tradeoff does not exist.** Raising the floor by one does not trade recall
-   for precision at any exchange rate worth having: miss goes 0.071 → 0.518 (7×) while over goes
-   0.177 → 0.068. There is no curve here to tune, only a cliff. The comment at `map.ts:22` should
-   be corrected — it describes behavior the parameter does not have.
-3. **10 is the right value for the wrong stated reason.** It is the largest inert value, one step
-   before the cliff. Keeping it is correct; believing it was tuned is not.
+   for precision at any exchange rate worth having: at the cliff, miss goes 0.363 → 0.696 (nearly
+   2×) while over goes 0.252 → 0.164. There is no curve here to tune, only a cliff. The comment at
+   `map.ts:22` should be corrected — it describes behavior the parameter does not have.
+3. **10 is the right value for the wrong stated reason.** It sits inside the inert plateau, one
+   step before the cliff. Keeping it is correct; believing it was tuned is not.
+
+*Note, 2026-08-04: the pooled miss rate that anchors this table has moved from 0.071 to 0.363
+now that `unspent-outcomes.json` is in the pool (see §1). The three consequences above are about
+the shape of the sweep — flat, then a cliff at 11 — and that shape is unchanged on the new
+corpus; only the absolute miss level at every floor moved with it.*
 
 ### The missing loss function
 
@@ -336,11 +409,23 @@ can reach, per corpus:
 | labeled | 0/20 | 1/37 | **0** |
 | held-out | 0/24 | 1/38 | **0** |
 | fresh | 1/10 | 4/10 | **1** |
+| unspent | 33/72 | 55/83 | **38** |
 
-Six missed labels across all three corpora; **one** of them sits behind a silent outcome. The
-other five occur where keywords answered — partially or wrongly — and a confidently-wrong answer
-is never revisited. This is the direct measurement of the structural argument in `construct-4jq`,
-and it confirms it: escalate-on-silence addresses **1 of 6** observed misses.
+Sixty-one missed labels across all four corpora; **thirty-nine** of them sit behind a silent
+outcome (1 from fresh, 38 from unspent). The remaining twenty-two occur where keywords answered —
+partially or wrongly — and a confidently-wrong answer is never revisited. This is the direct
+measurement of the structural argument in `construct-4jq`, and on the earlier corpora it
+confirmed it narrowly: escalate-on-silence addressed 1 of 6 observed misses there.
+
+**On the new corpus the picture is different in kind, not just in size.** `unspent-outcomes.json`
+is silent on 33 of its 72 outcomes — the keyword pass has nothing to say on nearly half of it —
+and escalate-on-silence can reach 38 of its 55 missed labels. That is not the narrow lever the
+first three corpora showed (1 of 6, i.e. escalation catches almost nothing). It is closer to the
+opposite: on wording the catalog was never tuned against, silence is the common case, and
+escalate-on-silence is where most of the recoverable miss lives. The earlier conclusion —
+"escalate-on-silence addresses almost none of the miss" — was correct on the corpora it was
+measured against and is not a general property of the rule; it was a property of how close those
+corpora's wording sat to the catalog's own vocabulary.
 
 ### What can honestly be claimed about cost
 
@@ -356,7 +441,7 @@ Escalation fired on 0 of 24 held-out outcomes. The Wilson 95% interval on that i
 Silence is the degenerate case of a decision rule that should read: escalate when the expected
 reduction in decision loss exceeds the cost of the call — expected value of sample information,
 against §4's loss function. The general rule also fires in the *uncertain* band, which is exactly
-where the other five misses live.
+where the remaining twenty-two non-silent misses live.
 
 This requires a calibrated per-domain confidence, and `src/kernel/intake/classify.ts` already has
 that pattern (hit-count ramp 0.55/0.72/0.82/0.92, capped at 0.50 when the top two candidates fall
@@ -364,26 +449,30 @@ within 0.3). It should be fitted (§6) and then **reused**, not reimplemented �
 confidence mechanism beside the first is the drift commitment 16 exists to catch. Filed as
 `construct-2jb.7`; supersedes the design scope of `construct-2fu`.
 
-### The signal that reaches the other five: embedding similarity
+### The signal that reaches the rest: embedding similarity
 
 *Measured live (`node scripts/measure-decisions.mjs --embeddings`), on a free local model.*
 
 The keyword layer's recall ceiling is dictionary coverage — a miss always closes with a word
 nobody listed. Cosine similarity between the outcome and each domain's concern sentence (the
 text a catalog author already wrote for humans) does not depend on any word being listed.
-Measured on `nomic-embed-text` over all 540 (outcome, domain) pairs:
+Measured on `nomic-embed-text` over all 1,260 (outcome, domain) pairs in the pooled corpus:
 
-- **AUC 0.750** — labeled pairs outscore unlabeled ones three times in four. A real signal and a
-  poor classifier: the distributions overlap heavily, so similarity alone must never implicate.
-- The decisive result: **all six keyword-missed labels rank in the top 4 of 10 domains by
-  similarity** — two of them rank first. A shortlist of the top-4 similar unimplicated domains,
-  handed to the namer for judgment, reaches **6 of 6** observed misses where escalate-on-silence
-  reaches 1 of 6.
+- **AUC 0.787** — labeled pairs outscore unlabeled ones a little more often than three times in
+  four. A real signal and a poor classifier: the distributions overlap heavily, so similarity
+  alone must never implicate.
+- The keyword-missed labels rank as low as 8th of 10 domains by similarity now that the pool
+  includes `unspent-outcomes.json` — the smallest k that covers every one of them is **8**, not
+  4. A shortlist of the top-8 similar unimplicated domains, handed to the namer for judgment,
+  reaches every keyword-missed label the script tracks; a top-4 shortlist, the figure this
+  section originally reported, would not.
 
 Seam: `src/kernel/implication/similarity.ts` — embedder injected like Paths and the namer,
 kernel imports no host. The shortlist returns *candidates for a namer to judge*, never
-implications: geometry is not a citation, so commitment 15's evidence bar is untouched. The k=4
-figure is derived from the current corpora and must be re-derived when they grow, not trusted.
+implications: geometry is not a citation, so commitment 15's evidence bar is untouched. The k
+figure is derived from the current corpora and must be re-derived when they grow, not trusted —
+this is that re-derivation: k moved from 4 to 8 the moment the pool grew, which is the figure
+demonstrating its own instructions.
 
 **Wired, not just measured (`construct-2jb.12`).** `mapImplicationsEscalating`
 (`src/kernel/implication/escalate.ts`) consults the shortlist only when a namer AND an embedder
@@ -398,15 +487,20 @@ by domain *text* (`similarity.ts`'s `domainText`) and deliberately never caches 
 domains change on catalog edits, outcomes are not expected to repeat.
 
 Re-run live against `nomic-embed-text` (`node scripts/measure-decisions.mjs --embeddings
---section 5.5`, same three corpora, 2026-08-04): **AUC 0.750** over 85 labeled / 455 unlabeled
-pairs, and the smallest k covering every keyword-missed label is still **4** — unchanged from the
-design measurement, as expected: the script exercises `similarity.ts`'s `rankBySimilarity` and
-`shortlist` directly, the same functions `escalate.ts`'s `candidateCatalog` now calls, so this is
-a re-measurement of the algorithm the shipped seam runs, not a separately-measured claim about it.
+--section 5.5`, now over all four corpora, 2026-08-04): **AUC 0.787** over 168 labeled / 1,092
+unlabeled pairs, and the smallest k covering every keyword-missed label is **8**, up from 4 at the
+prior measurement — the script exercises `similarity.ts`'s `rankBySimilarity` and `shortlist`
+directly, the same functions `escalate.ts`'s `candidateCatalog` now calls, so this is a
+re-measurement of the algorithm the shipped seam runs, not a separately-measured claim about it.
 The wiring's own contract — narrowing under embedder success, full-catalog fallback under
 embedder failure, no similarity value ever touching an `Implication` — is pinned by tests
 (`tests/kernel/implication/escalate.test.ts`) rather than by this script, since that is a property
 of the integration, not a rate.
+
+*Note, 2026-08-04: `SHORTLIST_K` in `escalate.ts` is not re-measured by this pass — it is a code
+constant, not a document figure — but this k moving from 4 to 8 on the new corpus is evidence it
+should be revisited before the wired seam is trusted at its current setting. That is a follow-up,
+not something this document changes on its own authority.*
 
 ### The corpus that grows itself
 
@@ -422,6 +516,12 @@ today's catalog edits, so the corpus is spent per catalog version rather than fo
 Pure core: `src/kernel/implication/harvest.ts` — verdict records in, fixture-shaped corpus out,
 provenance on every outcome, deterministic ids so harvests diff across catalog versions.
 Store and CLI wiring filed as `construct-2jb.13`.
+
+*Note, 2026-08-04: `construct-2jb.4` did not wait for this path. Its 144 outcomes were authored
+by agents forbidden to read the repository rather than harvested from runs, because no runs
+exist yet. That buys independence of wording, which is what the earlier corpora lacked; it does
+not buy negative labels or the deployed distribution, which only real runs can. The harvest path
+is still the one that retires the problem permanently.*
 
 ---
 
@@ -441,7 +541,8 @@ calibrated" (fixable by rescaling) from "genuinely hard" (not fixable by rescali
 different problems that look identical in an aggregate score.
 
 Fit with **Platt scaling**. Isotonic regression is the better method in general and would overfit
-badly at n = 85. Filed as `construct-2jb.8`, blocked on corpus expansion.
+badly at n = 168 (up from 85 now that `construct-2jb.4`'s measured half is in the pool). Filed as
+`construct-2jb.8`, blocked on corpus expansion.
 
 ---
 
@@ -476,14 +577,20 @@ What the corpora do supply — the burst size the coordinator faces:
 
 | domains per outcome | outcomes |
 |---|---|
-| 1 | 30 |
-| 2 | 18 |
+| 0 | 3 |
+| 1 | 85 |
+| 2 | 32 |
 | 3 | 5 |
 | 4 | 1 |
 
-Mean 1.57, max 4, against `DEFAULT_CONCURRENCY = 2`. So the common case is already serialized at
+Mean 1.33, max 4, against `DEFAULT_CONCURRENCY = 2`. So the common case is already serialized at
 1–2 and the tail is short; concurrency 2 is not obviously wrong, and no evidence here says to
 change it.
+
+*Note, 2026-08-04: the mean moved from 1.57 to 1.33 and a new "0 domains" row appeared now that
+the pooled corpus includes `unspent-outcomes.json`, which contributes outcomes the map implicates
+no domain for. The distribution's shape — concentrated at 1, short tail to 4 — is unchanged, and
+so is this section's conclusion; only the exact counts moved.*
 
 What is missing is the **service-time distribution**, which has never been measured because no
 work-log corpus exists yet. Without it none of the real questions can be answered: the M/M/c
@@ -525,6 +632,13 @@ The Phase 2 composition quota is a different matter and should be defended, not 
 least four of ten non-engineering, at least two legal or compliance" is **stratified sampling**,
 and it guards a real, named failure mode: a map tuned solely to the one distribution its author
 needs least. All three corpora clear it. The sample size is the weakness; the design is not.
+
+*Note, 2026-08-04: a fourth corpus, `unspent-outcomes.json` (72 outcomes), has since joined the
+pool (see §1). It clears the non-engineering quota at 72/72 but carries 0/72 legal-or-compliance
+outcomes, failing the second half of the quota this paragraph defends. The conclusion above is
+left as written because it is about the quota's design, which this does not touch — but "all
+[the] corpora clear it" is no longer true of all four, and that is worth flagging rather than
+quietly re-counting to three.*
 
 **Recommendation:** replace fixed-*n* gates with a **Bayesian sequential design** — stop early on
 failure, continue until a credible interval reaches a target width. This is not pedantry about
@@ -619,10 +733,13 @@ proposed for his acceptance or rejection (`construct-2jb.9`).
 
 ## What this pass did not do
 
-- **Nothing in §§3–6 was fitted.** At 85 labels from single-author corpora, IDF weights,
-  calibration curves, and PR-derived thresholds would all fit noise. The honest sequence is
-  agreement study → corpus expansion → fitting, and the beads carry that order as dependency
-  edges.
+- **Nothing in §§3–6 was fitted.** At the 85 labels from single-author corpora this pass began
+  with, IDF weights, calibration curves, and PR-derived thresholds would all fit noise. The honest
+  sequence is agreement study → corpus expansion → fitting, and the beads carry that order as
+  dependency edges. *Note, 2026-08-04: the first two steps are done — `construct-2jb.3` and
+  `construct-2jb.4` — so the fitting beads are unblocked for the first time. What they must now be
+  fitted against is the blind 83, not the pooled 168, and every fit spends the corpus it is fitted
+  on.*
 - **The loss ratio in §4 is a judgment, not a measurement**, and is not smuggled in as derived.
 - **§7's independence assumption is likely false** and is tagged `[unverified]` rather than
   quietly used.

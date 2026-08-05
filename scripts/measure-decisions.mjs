@@ -27,13 +27,30 @@ import {
   sequentialPassBoundary,
   wilson,
 } from '../src/kernel/metrics/intervals.ts';
+import {
+  krippendorffAlpha,
+  masiDistance,
+  nominalSetDistance,
+} from '../src/kernel/metrics/krippendorff.ts';
 import { DOMAINS } from '../src/kernel/implication/domains.ts';
 import { implicatedDomains } from '../src/kernel/implication/map.ts';
 import { matchingKeywords } from '../src/kernel/routing/dispatcher.ts';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const FIXTURES = join(ROOT, 'tests/kernel/implication/fixtures');
-const CORPORA = ['labeled-outcomes.json', 'held-out-outcomes.json', 'fresh-outcomes.json'];
+/**
+ * The corpora, in the order they were authored. `unspent-outcomes.json` is the
+ * measured half of construct-2jb.4's corpus; its sealed half is deliberately
+ * absent from this list and from every other reader in the repo, which is what
+ * makes it still worth something (tests/kernel/implication/corpus-split.test.ts
+ * enforces that absence).
+ */
+const CORPORA = [
+  'labeled-outcomes.json',
+  'held-out-outcomes.json',
+  'fresh-outcomes.json',
+  'unspent-outcomes.json',
+];
 
 /** Only whole-keyword matches count as a firing, matching map.ts's evidence bar. */
 const FULL_MATCH = 7;
@@ -125,9 +142,37 @@ if (heading(2, 'The annotation ceiling')) {
   for (const c of corpora) {
     console.log(`  ${c.name}: ${c.note ? `${c.note.slice(0, 110)}...` : '(no note)'}`);
   }
-  console.log('\n  Independent coders per corpus: 1 (all three).');
-  console.log('  Krippendorff alpha: UNMEASURABLE at one coder — this is the finding.');
-  console.log('  Implied Bayes error floor: unknown, therefore 0.15 is unvalidated as reachable.');
+  console.log('\n  Independent coders per corpus: 1 for the first three, 2 for unspent-outcomes.json.');
+  console.log('  For the first three, Krippendorff alpha is UNMEASURABLE at one coder.');
+
+  // construct-2jb.4's corpus is the first one labeled twice at authoring time,
+  // so its agreement is a property of the corpus rather than a later study.
+  // Only the measured half is read here. The sealed half carries the same two
+  // coders' raw sets, but nothing in the repo may open it — its own note records
+  // the whole-corpus agreement figure as a one-time fact instead.
+  const twice = corpora.find((c) => c.name === 'unspent-outcomes.json');
+  const observations = [];
+  for (const o of twice.outcomes) {
+    observations.push({ unit: o.id, coder: 'coder1', value: new Set(o.provenance.coder1) });
+    observations.push({ unit: o.id, coder: 'coder2', value: new Set(o.provenance.coder2) });
+  }
+  const masi = krippendorffAlpha(observations, masiDistance);
+  const nominal = krippendorffAlpha(observations, nominalSetDistance);
+  const exact = twice.outcomes.filter(
+    (o) => o.provenance.resolution === 'both coders agreed',
+  ).length;
+  console.log(
+    `\n  construct-2jb.4 corpus, measured half (${observations.length / 2} outcomes, 2 coders):`,
+  );
+  console.log(`    exact set agreement: ${exact}/${observations.length / 2}`);
+  console.log(`    Krippendorff alpha (MASI):    ${masi.alpha.toFixed(4)}  (Do ${masi.Do.toFixed(4)}, De ${masi.De.toFixed(4)})`);
+  console.log(`    Krippendorff alpha (nominal): ${nominal.alpha.toFixed(4)}`);
+  console.log('    CAVEAT: both coders, both adjudicator and all eight authors are models of');
+  console.log('    one family. Observed agreement is an UPPER BOUND on independent agreement');
+  console.log('    (correlated error — construct-2jb.3\'s caveat, unchanged).');
+  console.log('\n  Implied Bayes error floor: still unknown at model coders alone, so 0.15');
+  console.log('  remains unvalidated as reachable — but a stable ground truth is now evidence');
+  console.log('  that residual miss is the MAP\'s, not the labels\'.');
 }
 
 // ---------------------------------------------------------------------------
@@ -157,7 +202,7 @@ if (heading(3, 'Keyword scoring as an unweighted linear model')) {
 
   const live = rows.filter((r) => r.fires > 0);
   console.log(`\n  catalog keywords: ${rows.length}`);
-  console.log(`  fire at least once on the 54-outcome corpus: ${live.length}`);
+  console.log(`  fire at least once on the ${N}-outcome pooled corpus: ${live.length}`);
   console.log(`  never fire (unmeasurable, and unweightable): ${rows.length - live.length}`);
 
   console.log('\nKeywords that fire most and discriminate least (IDF is lowest here):\n');
