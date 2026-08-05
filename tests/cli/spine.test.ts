@@ -906,3 +906,36 @@ test('source without a subcommand or with a kind nobody defined prints usage', a
   assert.equal(bad.code, 2);
   assert.match(bad.err, /usage: construct source/);
 });
+
+test('an outcome records a plan and construct plan renders it, sequenced and labeled', async () => {
+  const result = await runAll([
+    ['source', 'add', '--kind=jira', '--locator=PROJ'],
+    ['outcome', 'store customer emails for the newsletter and secure the signup endpoint'],
+    async () => {
+      const store = openStore(join(process.env.XDG_DATA_HOME as string, 'construct', 'construct.db'));
+      try {
+        const rows = store.db.prepare('SELECT run FROM plans').all() as Array<{ run: string }>;
+        process.env.CONSTRUCT_TEST_PLAN_RUN = rows[0]?.run ?? '';
+      } finally {
+        store.close();
+      }
+      return 0;
+    },
+    () => main(['plan', process.env.CONSTRUCT_TEST_PLAN_RUN as string]),
+  ]);
+  delete process.env.CONSTRUCT_TEST_PLAN_RUN;
+  assert.equal(result.code, 0);
+  assert.match(result.out, /plan plan-run-\d+: \d+ steps?, risk (low|high), grounded in 1 declared source/);
+  assert.match(result.out, /routed to [a-z-]+ by lexical-fallback/);
+  assert.match(result.out, /required slots: finding, evidence, risks/);
+  assert.match(result.out, /sources: src-\d+/);
+});
+
+test('plan without a run id is usage, and an unknown run is a sentence', async () => {
+  const result = await runAll([['plan', 'run-nope']]);
+  assert.equal(result.code, 1);
+  assert.match(result.err, /no plan recorded for run-nope/);
+  const usage = await runAll([['plan']]);
+  assert.equal(usage.code, 2);
+  assert.match(usage.err, /usage: construct plan/);
+});

@@ -57,6 +57,8 @@ import { reconcileSession } from '../kernel/tracker/session-drift.ts';
 import { constructFindings, CONSTRUCT_GROUND } from '../kernel/watch/construct-ground.ts';
 import { startWatch, sweepWatch, watchRun } from '../kernel/watch/watch.ts';
 import { latestDraft, promotionOf, waiveChallenge } from '../kernel/run/promotion.ts';
+import { buildPlan } from '../kernel/plan/planner.ts';
+import { planFor, recordPlan } from '../kernel/store/plans.ts';
 import type { Watch } from '../kernel/watch/watch.ts';
 import { join } from 'node:path';
 
@@ -393,6 +395,44 @@ export function parseOutcomeArgs(argv: string[]): OutcomeArgs {
   };
 }
 
+/**
+ * Build and record the run's plan from what the run already established: the
+ * implicated domains and how they were inferred, the workspace's declared
+ * sources, and its engagement mode. Recorded write-once at outcome time so
+ * `work` executes against a stated plan rather than an implicit one.
+ */
+function planRun(
+  store: Store,
+  started: StartedRun,
+  densified: DensifiedIntake | null,
+  workspace: string,
+  at: string,
+): void {
+  const plan = buildPlan({
+    id: `plan-${started.runId}`,
+    run: started.runId,
+    outcome: started.outcome,
+    densified,
+    implicated: started.implicated,
+    inferredBy: started.inferredBy,
+    sources: sourcesFor(store, workspace),
+    mode: engagementMode(store, workspace),
+    plannedAt: at,
+  });
+  recordPlan(store, plan);
+  process.stdout.write(
+    `\nplan ${plan.id}: ${plan.steps.length} step${plan.steps.length === 1 ? '' : 's'}, ` +
+      `risk ${plan.riskTier}` +
+      (plan.sourcesConsulted.length > 0
+        ? `, grounded in ${plan.sourcesConsulted.length} declared source${plan.sourcesConsulted.length === 1 ? '' : 's'}`
+        : ', no sources declared') +
+      `\n  construct plan ${started.runId}\n`,
+  );
+  for (const d of plan.discarded) {
+    process.stdout.write(`  discarded: ${d.description} — ${d.reason}\n`);
+  }
+}
+
 function reportRun(started: StartedRun): void {
   process.stdout.write(`run ${started.runId}\n  outcome: ${started.outcome}\n\n`);
   process.stdout.write(`implicated domains (${started.implicated.length}):\n`);
@@ -475,6 +515,7 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
         return 2;
       }
       reportRun(started);
+      planRun(store, started, null, 'default', at);
       return 0;
     }
 
@@ -491,9 +532,11 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
           '\nA host model can be asked instead, at cost:\n' +
             `  construct outcome --host=<opencode|claude> ${JSON.stringify(args.text)}\n`,
         );
+        planRun(store, started, null, 'default', at);
         return 0;
       }
       reportRun(started);
+      planRun(store, started, null, 'default', at);
       return 0;
     }
 
@@ -576,9 +619,11 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
           : `no domains implicated. ${host.name} considered the catalog and named nothing — ` +
               'this is recorded, not silently dropped.\n',
       );
+      planRun(store, started, densified, 'default', at);
       return 0;
     }
     reportRun(started);
+    planRun(store, started, densified, 'default', at);
     return 0;
   });
 }
@@ -1371,6 +1416,61 @@ const SOURCE_USAGE =
 
 const MODE_USAGE = 'usage: construct mode [--workspace=<name>] [--set=<team|seat>]\n';
 
+const PLAN_USAGE = 'usage: construct plan <run-id>\n';
+
+/**
+ * Render a run's recorded plan: the understanding it worked from, its risk
+ * tier, the steps with their playbook routing and deliverable slots, and anything
+ * the planner discarded for fabricated provenance. Read-only: the plan is
+ * write-once at outcome time, so this command shows, never edits.
+ */
+export function plan(argv: string[]): number {
+  const runId = argv[0];
+  if (!runId || runId.startsWith('--')) {
+    process.stderr.write(PLAN_USAGE);
+    return 2;
+  }
+  return withStore((store) => {
+    const found = planFor(store, runId);
+    if (!found) {
+      process.stderr.write(`plan: no plan recorded for ${runId}\n`);
+      return 1;
+    }
+    process.stdout.write(`plan ${found.id} (run ${found.run}, ${found.plannedAt})\n`);
+    process.stdout.write(`  outcome: ${found.outcome}\n`);
+    process.stdout.write(`  understood as: ${found.understanding.restated}\n`);
+    for (const c of found.understanding.constraints) process.stdout.write(`  constraint: ${c}\n`);
+    for (const d of found.understanding.decisions) process.stdout.write(`  decided: ${d}\n`);
+    for (const p of found.understanding.parked) process.stdout.write(`  parked: ${p}\n`);
+    process.stdout.write(`  risk: ${found.riskTier}  mode: ${found.mode}\n`);
+    process.stdout.write(
+      found.sourcesConsulted.length > 0
+        ? `  sources: ${found.sourcesConsulted.join(', ')}\n`
+        : '  sources: none declared\n',
+    );
+    if (found.steps.length === 0) {
+      process.stdout.write('  steps: none — nothing was implicated\n');
+    }
+    for (const step of found.steps) {
+      const route = found.routing.find((r) => r.step === step.id);
+      process.stdout.write(`\n  ${step.id}  ${step.description}\n`);
+      process.stdout.write(
+        `    routed to ${step.domain} by ${route?.routedBy ?? 'unknown'}` +
+          (route && route.evidence.length > 0 ? ` (${route.evidence.slice(0, 4).join(', ')})` : '') +
+          '\n',
+      );
+      process.stdout.write(`    stage: ${step.stage}  deliverable: ${step.deliverable.deliverable}\n`);
+      const required = step.deliverable.slots.filter((s) => s.required).map((s) => s.name);
+      process.stdout.write(`    required slots: ${required.join(', ')}\n`);
+      if (step.after.length > 0) process.stdout.write(`    after: ${step.after.join(', ')}\n`);
+    }
+    for (const d of found.discarded) {
+      process.stdout.write(`\n  discarded: ${d.description} — ${d.reason}\n`);
+    }
+    return 0;
+  });
+}
+
 /**
  * Sources and mode default to the "default" workspace rather than inferring
  * one from the directory: an inferred workspace that guessed wrong would file
@@ -1499,7 +1599,7 @@ export function mode(argv: string[]): number {
   });
 }
 
-const USAGE = 'usage: construct <outcome|work|show|source|mode|watch|waive|verdict|corpus|log|inbox|decide|serve|doctor|cleanup|version>\n';
+const USAGE = 'usage: construct <outcome|work|show|plan|source|mode|watch|waive|verdict|corpus|log|inbox|decide|serve|doctor|cleanup|version>\n';
 
 /**
  * Async because `work` dispatches to a host, and `outcome --host=…` may
@@ -1537,6 +1637,8 @@ async function run(argv: string[]): Promise<number> {
       return log(argv.slice(1));
     case 'show':
       return show(argv.slice(1));
+    case 'plan':
+      return plan(argv.slice(1));
     case 'source':
       return source(argv.slice(1));
     case 'mode':

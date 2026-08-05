@@ -45,7 +45,11 @@
  * trackers exist only as immutable proposals decided by append-only
  * verdicts — applying is a recorded decision, never a side effect), and
  * `write_consent` (standing per-workspace permission for low-risk applies;
- * an absent row is a no, same reasoning as workspace_consent).
+ * an absent row is a no, same reasoning as workspace_consent). Schema version
+ * 9 adds `plans`, write-once: a run's plan is the recorded understanding it
+ * worked from, and a plan that could be rewritten after the work would let
+ * the record agree with whatever happened instead of what was intended —
+ * replanning is a new run, not an edit.
  *
  * SQLite via `node:sqlite`, which ships with Node — no dependency is added to a
  * CLI users install. STRATEGY ("What carries over") commits the tracker model to
@@ -70,7 +74,7 @@ import { accessSync, constants, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Paths } from '../paths.ts';
 
-export const SCHEMA_VERSION = 8;
+export const SCHEMA_VERSION = 9;
 
 export interface Store {
   readonly db: DatabaseSync;
@@ -427,6 +431,21 @@ BEGIN SELECT RAISE(ABORT, 'proposal_decisions is append-only'); END;
 CREATE TRIGGER IF NOT EXISTS proposal_decisions_no_delete
 BEFORE DELETE ON proposal_decisions
 BEGIN SELECT RAISE(ABORT, 'proposal_decisions is append-only'); END;
+
+CREATE TABLE IF NOT EXISTS plans (
+  id         TEXT PRIMARY KEY,
+  run        TEXT NOT NULL UNIQUE,
+  plan       TEXT NOT NULL,
+  planned_at TEXT NOT NULL
+) STRICT;
+
+CREATE TRIGGER IF NOT EXISTS plans_no_update
+BEFORE UPDATE ON plans
+BEGIN SELECT RAISE(ABORT, 'a plan is write-once; replanning is a new run'); END;
+
+CREATE TRIGGER IF NOT EXISTS plans_no_delete
+BEFORE DELETE ON plans
+BEGIN SELECT RAISE(ABORT, 'a plan is write-once; replanning is a new run'); END;
 
 CREATE TABLE IF NOT EXISTS write_consent (
   workspace       TEXT PRIMARY KEY,
