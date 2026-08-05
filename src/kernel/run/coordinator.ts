@@ -45,7 +45,8 @@ import type { Domain } from '../implication/domains.ts';
 import { deliverableConcerns, licensedReviewFor } from './accountability.ts';
 import { STANCE_PROTOCOL, frameConflict, parseStance } from './conflicts.ts';
 import type { RoleStance } from './conflicts.ts';
-import { logPromotion } from './promotion.ts';
+import { logPromotion, recordVerdict } from './promotion.ts';
+import { challengeById, runStructuralChallenges } from '../challenge/catalog.ts';
 import { getDecision, raiseDecision } from '../store/decisions.ts';
 import { ROLE_GRANTS, issueRoleToken } from '../capabilities/tokens.ts';
 import { buildRoleEnv } from './roleenv.ts';
@@ -193,6 +194,21 @@ export function assignmentFor(
   // assignment says which it is rather than describing tools that may not exist
   //. Silence was the old behavior and it is the worst of the
   // three: a role given tools on one run and none on the next cannot tell.
+  // What the deliverable will be held to, stated before the work
+  // rather than checked after it. A challenge a role was never shown is a rule
+  // enforced against someone who was never told it, and the deterministic
+  // checks below run whether or not anyone mentioned them.
+  const declared = (brief.challenges ?? [])
+    .map((id) => challengeById(id))
+    .filter((challenge) => challenge !== undefined);
+  const obligations =
+    declared.length > 0
+      ? 'Before this deliverable can be relied on, it must satisfy the challenges ' +
+        'the brief names. Answer each one in the deliverable itself, under a ' +
+        'heading a reader can find:\n' +
+        declared.map((c) => `- ${c.id}: ${c.question}`).join('\n') +
+        '\n\n'
+      : '';
   const surface = options.writeSurface ? WRITE_SURFACE_PROTOCOL : NO_WRITE_SURFACE_NOTE;
   return (
     `You are acting as the ${brief.role} role.${concern}\n\n` +
@@ -202,6 +218,7 @@ export function assignmentFor(
     'what is likely to be missed, and what you cannot determine from the outcome ' +
     'alone. Do not assert anything you cannot support. Keep it as short as it can ' +
     'be while still letting the reader follow how you got there.\n\n' +
+    obligations +
     `${voiceProtocol(options.voice)}\n\n` +
     `${surface}\n\n` +
     STANCE_PROTOCOL
@@ -231,6 +248,16 @@ export function spendOf(result: HostResult): { spend: number; reported: boolean 
   const steps = output?.usage?.steps;
   if (typeof steps === 'number' && steps <= 0) return { spend: 0, reported: false };
   return { spend: cost, reported: true };
+}
+
+/**
+ * The deliverable as text, or null when the host returned none. Null and empty
+ * are different answers: a structural check over an absent deliverable would
+ * fail every challenge for a reason that has nothing to do with the work.
+ */
+function deliverableTextOf(output: unknown): string | null {
+  const text = (output as { text?: unknown } | null)?.text;
+  return typeof text === 'string' && text.trim() !== '' ? text : null;
 }
 
 function summarize(result: HostResult): Record<string, unknown> {
@@ -535,6 +562,38 @@ export async function workRun(
           detail: { ...summarize(result), spend: cost.spend, spendReported: cost.reported },
           at: settledAt,
         });
+
+        // Commitment 13's free half, run at the one moment the deliverable and
+        // its brief are both in hand. A structural pass says the work was
+        // shown, never that it is good, and a challenge with no structural
+        // form is left unanswered rather than passed — recorded as such, so a
+        // brief's declared control is never satisfied by nobody looking.
+        const deliverableText = deliverableTextOf(result.output);
+        if (deliverableText !== null && (brief.challenges?.length ?? 0) > 0) {
+          const run = runStructuralChallenges(brief, deliverableText);
+          for (const check of run.results) {
+            recordVerdict(store, {
+              task: task.id,
+              challenge: check.challenge,
+              outcome: check.passed ? 'passed' : 'failed',
+              // Named for what it is: a free deterministic check, not a role
+              // and not a person. A reader must be able to tell at a glance
+              // which verdicts cost a judgement and which cost nothing.
+              by: 'construct:structural',
+              at: settledAt,
+            });
+          }
+          if (run.unanswered.length > 0) {
+            appendWorkLog(store, {
+              run: task.run,
+              task: task.id,
+              role: 'construct',
+              action: 'challenge-unanswered',
+              detail: { unanswered: run.unanswered },
+              at: settledAt,
+            });
+          }
+        }
 
         // What was flagged, and what needs a licensed human. Separate entries
         // rather than fields on the report above, because these are the two
