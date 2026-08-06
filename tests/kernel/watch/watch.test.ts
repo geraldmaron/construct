@@ -16,7 +16,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { main } from '../../../src/cli/index.ts';
@@ -201,10 +202,25 @@ test('drift and self-contradiction both become findings, keyed so they stay stab
   assert.notEqual(closedNoCommit.question, openWithCommit.question);
 });
 
-test('the watch surface reaches the real repo through the CLI, and a second sweep is quiet', async () => {
+test('the watch surface reaches a real repo through the CLI, and a second sweep is quiet', async () => {
   const root = mkdtempSync(join(tmpdir(), 'construct-watch-'));
   const previous = process.env.XDG_DATA_HOME;
   process.env.XDG_DATA_HOME = join(root, 'share');
+  // The fixture is a repository this test builds, not the checkout the suite
+  // happens to run in: a shallow tag checkout (CI on a release) has no main
+  // branch, and watch correctly calls that unwatched ground — which is a fact
+  // about the checkout, not about this surface.
+  const ground = join(root, 'watched-repo');
+  mkdirSync(ground, { recursive: true });
+  const git = (...argv: string[]): void => {
+    execFileSync('git', ['-C', ground, ...argv], { stdio: 'ignore' });
+  };
+  git('init', '-q', '-b', 'main');
+  git('-c', 'user.email=t@example.com', '-c', 'user.name=t', 'commit', '--allow-empty', '-q', '-m', 'first');
+  // Watched ground needs a tracker export beside the repo; empty is a valid
+  // tracker state and keeps the fixture about the surface, not the data.
+  mkdirSync(join(ground, '.beads'), { recursive: true });
+  writeFileSync(join(ground, '.beads', 'issues.jsonl'), '');
   const out: string[] = [];
   const realOut = process.stdout.write.bind(process.stdout);
   const realErr = process.stderr.write.bind(process.stderr);
@@ -216,15 +232,14 @@ test('the watch surface reaches the real repo through the CLI, and a second swee
   try {
     // A directory that is not a repository is unwatched ground, not a broken
     // tool, and the exit code says which.
-    assert.equal(await main(['watch', `--root=${root}`]), 1);
+    assert.equal(await main(['watch', `--root=${join(root, 'share')}`]), 1);
 
-    // This repository is the first watched ground, so it is also the fixture.
-    assert.equal(await main(['watch']), 0);
+    assert.equal(await main(['watch', `--root=${ground}`]), 0);
     const first = out.join('');
     assert.match(first, /watch construct/);
     out.length = 0;
 
-    assert.equal(await main(['watch']), 0);
+    assert.equal(await main(['watch', `--root=${ground}`]), 0);
     const second = out.join('');
     assert.doesNotMatch(second, /raised as new decisions\n {2}new /);
   } finally {
