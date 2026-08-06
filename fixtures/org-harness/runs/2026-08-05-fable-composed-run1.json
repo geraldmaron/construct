@@ -1,0 +1,576 @@
+{
+ "claims": [
+  {
+   "kind": "conflict",
+   "claim": "The strategy commits that ordered or automated deletion of ApplicationSet children 'will not be implemented' and that teardown remains a manual, one-Application-at-a-time operator action, while the PRD proposes exactly that feature: a `deletionOrder` field with a `Reverse` strategy that automatically deletes generated applications in reverse RollingSync order. Both commitments cannot hold; note-2 records that this disagreement was noticed at the incident review but explicitly left without an owner.",
+   "citations": [
+    "strategy.md",
+    "prd-progressive-sync-deletion.md",
+    "notes/note-2.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "The platform sync call decided impersonation ships behind a per-project flag ('nobody flips it on a project until the diff story is fixed'), but RFC-001's stated goal is the opposite: 'The feature can be enabled/disabled only at the system level. Once enabled/disabled, it is applicable to all Argo CD Applications,' with the flag living in argocd-cm as applicationcontroller.enable.impersonation. The rollout decision assumes a granularity the approved design does not provide, and no document assigns anyone to change the design.",
+   "citations": [
+    "notes/note-1.md",
+    "rfc-001-sync-impersonation.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "The PRD's Risks and Mitigations section states 'No immediate Risks to consider,' but T-28511 reproduces an infinite delete/recreate loop in an ApplicationSet configured with rollingSync plus the reverse deletion strategy (the wait for full deletion never completes on a stuck-Progressing app and the wave restarts), and note-2 confirms the loop reproduced in staging with reverse deletion order. The PRD is scheduling a feature whose core mechanism has a live incident against it, with no mitigation planned.",
+   "citations": [
+    "prd-progressive-sync-deletion.md",
+    "tickets/T-28511.md",
+    "notes/note-2.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "The incident-review interim restriction 'hydrator pilot repos must not use progressive sync until there's a debounce' collides with work already scheduled or requested elsewhere: T-27949's reporter is piloting the source hydrator on a RollingSync ApplicationSet right now (every hydrator push lands a commit picked up as a source change, the exact wave-restart mechanism the restriction targets), and T-24578 requests Source Hydrator support for ApplicationSets, which would put every adopter into the forbidden combination. Neither ticket carries the restriction; note-2 only asked that T-27949 be updated, and no debounce workstream or owner exists in the corpus.",
+   "citations": [
+    "notes/note-2.md",
+    "tickets/T-27949.md",
+    "tickets/T-24578.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "Note-1's decision that no project enables impersonation 'until the diff story is fixed' blocks more than the diff tickets it was written about: T-27833's proposed fix for the namespace privilege-escape depends on the service account impersonation feature being turned on for the project, so that security work cannot proceed while the restriction stands, and nothing in T-27833 acknowledges the gate. Meanwhile T-28695 shows the diff story is not merely a CLI bug but a design gap (the diff path ignores destinationServiceAccounts entirely), meaning the restriction has no scheduled lifting date.",
+   "citations": [
+    "notes/note-1.md",
+    "tickets/T-27833.md",
+    "tickets/T-28695.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-26271 and T-28695 are the same underlying mechanism reported as separate defects: server-side apply dry-run authorized as `patch` under an impersonated/narrow identity while the reporter expects the broad cluster credential. Note-1 records the root cause for T-26271 (with impersonation on, diff runs as the destination service account lacking patch on cluster-scoped resources) but that root cause was never written onto the ticket, whose reporter is still 'chasing the cluster secret'; T-28695 explicitly distinguishes itself only by component (application-controller on external clusters vs argocd-server in-cluster). Fixing one path without the other leaves the diff/sync identity split open.",
+   "citations": [
+    "tickets/T-26271.md",
+    "tickets/T-28695.md",
+    "notes/note-1.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "RFC-002's push-to-stage mode 'relies on some external system to move changes to the deployment branch,' but note-1 records that the stage-branch promoter is 'still the shell script, nobody owns it' and parks the issue. T-26443 shows the concrete failure this dependency produces: when the promoter has not yet moved fresh manifests, auto-sync deploys whatever stale manifests the stage branch last held. The promotion integration point the hydrator design depends on is an unowned script with a demonstrated failure mode, and ownership was explicitly deferred.",
+   "citations": [
+    "rfc-002-manifest-hydrator.md",
+    "notes/note-1.md",
+    "tickets/T-26443.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "Note-1 deprioritizes hydrator rollback (T-27327) to next quarter and moves the dev pair to the progressive sync deletion loop, while note-1 elsewhere records that impersonation adoption on projects is 'a real decision' pending the diff story and gitops-promoter + source hydrator rollout is already onboarding users whose first question is how rollbacks work. The program is expanding hydrator adoption while removing the workstream that answers its onboarding blocker, and T-27327 itself notes rollback must bypass the staging branch, an interaction with push-to-stage promotion no remaining owner is examining.",
+   "citations": [
+    "notes/note-1.md",
+    "tickets/T-27327.md",
+    "rfc-002-manifest-hydrator.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "T-28927 defines the scope to promote Progressive Sync to Stable ('tested and validated... expected to be backwards compatible'), but the corpus shows two unresolved correctness defects in exactly that feature: T-27949 (RollingSync reports Healthy and completes while child Applications are OutOfSync after a spec-only change) and T-28511 (delete/recreate loop, with note-2's runbook mitigation of switching to AllAtOnce still the standing operational rule 'until the controller fix lands'). Promoting to Stable while an incident runbook restriction is the mitigation for a known loop means the stability date is not real until both land.",
+   "citations": [
+    "tickets/T-28927.md",
+    "tickets/T-27949.md",
+    "tickets/T-28511.md",
+    "notes/note-2.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-26271's CI diff failure and note-1 describe the same event without citing each other: the note's platform-sync root cause is that with impersonation enabled the diff runs as the destination service account from RFC-001's destinationServiceAccounts model, not the broad cluster Secret credential the reporter is still chasing. The identity that acts changed (argocd-server SA to the per-destination SA) while the reporter's expectation, and any access review, still watches the old credential.",
+   "citations": [
+    "tickets/T-26271.md",
+    "notes/note-1.md",
+    "rfc-001-sync-impersonation.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "Note-1 records a decision that impersonation rolls out 'behind a per-project flag, not fleet-wide', but RFC-001's Goals state the feature 'can be enabled/disabled only at the system level. Once enabled/disabled, it is applicable to all Argo CD Applications' (applicationcontroller.enable.impersonation in argocd-cm). The rollout control the organization decided on does not exist in the design it is rolling out; either the decision is unimplementable or the RFC must change, and no document owns the discrepancy.",
+   "citations": [
+    "notes/note-1.md",
+    "rfc-001-sync-impersonation.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "RFC-001's stated purpose is least privilege: the cluster credential is used 'purely for control plane operations' while sync impersonates a narrow SA. T-28695 shows the diff path defeats this: Server-Side Diff runs as the standing cluster Secret credential and, because Kubernetes RBAC has no dry-run verb, forces repeated real 'patch' grants onto that deliberately narrow credential (five widening rounds, 'no end state'). The privileged shared credential RFC-001 meant to confine is being quietly re-widened, and the safety story rests on the dryRun=All convention rather than an enforced boundary.",
+   "citations": [
+    "rfc-001-sync-impersonation.md",
+    "tickets/T-28695.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-27833's proposal (control plane SA creates namespaces via CreateNamespace=true, impersonated SA syncs everything else, with namespace stripped from the impersonated SA's permissions) asks for per-resource identity splitting, which RFC-001 explicitly rules out: 'The service account to be used for impersonation is determined on a per Application level rather than on per resource level.' The open access-control ask and the shipped design converge on the same mechanism but disagree on its granularity; under RFC-001 as written the namespace-escape T-27833 documents (committing a Namespace manifest that matches clusterResourceWhitelist to strip pod-security labels) remains open.",
+   "citations": [
+    "tickets/T-27833.md",
+    "rfc-001-sync-impersonation.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "RFC-002's Goal 4 commits that 'Every deployed change must have a corresponding dry commit — i.e. git is always the source of any changes.' T-27327's rollback design violates this: a UI-triggered rollback checks out old rendered manifests and pushes directly to the sync branch, bypassing the staging branch and any dry commit, using the hydrator's repository-write credential (the GitHub App key in the argocd.argoproj.io/secret-type: repository-write Secret). A UI action becomes a git write attributed only to the bot identity, outside the promotion review point the push-to-stage mode exists to provide.",
+   "citations": [
+    "tickets/T-27327.md",
+    "rfc-002-manifest-hydrator.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "The hydrated branch is the deploy source of truth (RFC-002), yet T-28239 records that the commit server pushes unsigned commits, so anyone with push access to the hydrated branch can inject deployed state with no signature to distinguish bot output from tampering; if SourceIntegrity verification is enabled Argo CD even rejects its own output. Until commitserver.sign.hydrated.commits ships and the public key lands in argocd-gpg-keys-cm, an auditor asking 'what evidence proves this deployed commit came from the hydrator identity' has none — the control is only planned.",
+   "citations": [
+    "tickets/T-28239.md",
+    "rfc-002-manifest-hydrator.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "The strategy roadmap commits that 'ordered or automated deletion of ApplicationSet children will not be implemented. Teardown remains a manual operator action, performed one Application at a time,' while the PRD ships exactly that capability as deletionOrder: Reverse in ApplicationSetStrategy. Note-2 flags the disagreement with no owner. A customer or auditor reading the strategy document would conclude automated ordered teardown does not exist while the controller gains it.",
+   "citations": [
+    "strategy.md",
+    "prd-progressive-sync-deletion.md",
+    "notes/note-2.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "RFC-002's push-to-stage mode delegates the deployment-gating step to 'some external system' that moves hydrated commits to the deploy branch, and T-26443 shows real deploy behavior (auto-sync applying stale stage-branch manifests) already hinges on that promoter's timing. Note-1 records that this promoter 'is still the shell script, nobody owns it.' The control point that decides what reaches production is an unowned script with write access to deployment branches: no identified operator identity, no reviewer, and no owner for its credential.",
+   "citations": [
+    "rfc-002-manifest-hydrator.md",
+    "tickets/T-26443.md",
+    "notes/note-1.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-9095's open request (let user actions in the Argo CD UI be authorized by the cluster's own Kubernetes RBAC instead of duplicated Argo-specific RBAC) and RFC-001 converge on the same access model — Kubernetes-native RBAC as the source of authorization — but RFC-001 deliberately scopes impersonation to sync service accounts only, deferring user/group impersonation ('support to impersonate users or groups can be added in future'). If that future lands, the acting identity for UI actions shifts from Argo CD RBAC policies to cluster RoleBindings, and the review and audit processes built around AppProject policies would be watching the wrong layer; neither document names the other or this consequence.",
+   "citations": [
+    "tickets/T-9095.md",
+    "rfc-001-sync-impersonation.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "RFC-001's Example 3 keeps the argocd-manager service account with a cluster-admin ClusterRoleBinding on remote clusters even when impersonation routes syncs through narrow per-namespace SAs — the privileged standing credential is retained, not retired. Combined with T-28695, where the non-impersonated diff path acts as exactly that standing cluster credential, the retained cluster-admin credential is not dormant: reconcile-path operations exercise it continuously, so the audit trail for routine diffs shows the privileged identity while access reviews focus on the new destinationServiceAccounts.",
+   "citations": [
+    "rfc-001-sync-impersonation.md",
+    "tickets/T-28695.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "Machine-generated writes enter the system of record indistinguishable from human acts: RFC-002's commit server pushes hydrated commits to git (the audit history the 'strong requirements around change auditing' use case relies on) while embedding the dry commit's human commitAuthor in hydrator.metadata and the README, and T-28239 confirms those pushed commits are today unsigned, so nothing cryptographically distinguishes the bot's writes from a human's or proves who authored a hydrated commit on the sync branch.",
+   "citations": [
+    "rfc-002-manifest-hydrator.md",
+    "tickets/T-28239.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "Every ticket in the corpus carries the provenance line 'verbatim base; see PROVENANCE.md for edits', but no PROVENANCE.md exists in the corpus; the record that would prove which passages are verbatim upstream text and which are local edits cannot be produced, so the authorship and origin of the tickets the organization relies on is asserted, not provable.",
+   "citations": [
+    "tickets/T-24417.md",
+    "tickets/T-26271.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "The roadmap publishes a commitment that 'ordered or automated deletion of ApplicationSet children will not be implemented' and that teardown 'remains a manual operator action, performed one Application at a time', while the PRD specifies exactly that automated ordered deletion via the deletionOrder field (AllAtOnce/Reverse); note-2 records the disagreement was noticed ('needs an owner. not deciding here') but left unresolved, so both commitments currently stand.",
+   "citations": [
+    "strategy.md",
+    "prd-progressive-sync-deletion.md",
+    "notes/note-2.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "The governance decision recorded in note-1 ('impersonation goes behind a per-project flag, not fleet-wide... that's a real decision, not a maybe') cannot be honored under RFC-001 as approved, whose Goals state 'The feature can be enabled/disabled only at the system level. Once enabled/disabled, it is applicable to all Argo CD Applications' via applicationcontroller.enable.impersonation; the organization is operating on a permission-scoping promise the approved design does not support.",
+   "citations": [
+    "notes/note-1.md",
+    "rfc-001-sync-impersonation.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-26271's reporter attributes the CI diff failures to the cluster Secret credential and expects the Application Controller service account to be used, but note-1 records the platform call already root-caused it: with the sync impersonation flag on, the diff runs as the destination service account, which lacks patch on cluster-scoped resources. The root cause was never written back to the ticket, so the record of record misstates the cause and the reporter 'keeps chasing the cluster secret'.",
+   "citations": [
+    "tickets/T-26271.md",
+    "notes/note-1.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "RFC-001's stated security benefit (least privilege via decoupled sync identities) is being unwound by the diff path: T-28695 documents that Server-Side Diff requires real 'patch' write authority on every resource kind because Kubernetes RBAC has no dry-run verb, forcing five successive expansions of a deliberately least-privilege credential with 'no end state', and the safety story rests on Argo CD's convention of sending dryRun=All rather than any enforced boundary — an unbounded standing write grant the RFC's privilege-escalation mitigation never contemplated.",
+   "citations": [
+    "tickets/T-28695.md",
+    "rfc-001-sync-impersonation.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "T-27327's rollback design ('git checkout old rendered manifests, commit, push directly to the sync branch, bypassing the staging branch') breaks RFC-002's binding Goal 4 that 'every deployed change must have a corresponding dry commit — i.e. git is always the source of any changes': a rollback commit is a hydrated write with no originating dry commit, so the complete-lineage guarantee the hydrator's auditing use case is sold on does not hold for rollbacks.",
+   "citations": [
+    "tickets/T-27327.md",
+    "rfc-002-manifest-hydrator.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-28511's reproduction spec already runs 'deletionOrder: AllAtOnce' in a live v3.3.9 ApplicationSet, and the incident review's second detail confirms the Reverse order reproduced in staging, yet the PRD defining deletionOrder still lists sponsors, reviewers, and approvers as TBD: the feature is deployed and causing incidents before the design that authorizes it has any named approver, leaving no accountable owner for the automated deletion behavior.",
+   "citations": [
+    "tickets/T-28511.md",
+    "notes/note-2.md",
+    "prd-progressive-sync-deletion.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "When rollback and hydration are automated, responsibility moves to unowned automation: note-1 records the stage-branch promoter is 'still the shell script, nobody owns it', while RFC-002's push-to-stage mode explicitly 'relies on some external system to move changes to the deployment branch' — the unowned script is the named integration point for production deployment, and T-26443 shows its lag already causes stale manifests to auto-sync; no responsible holder is named anywhere in the corpus.",
+   "citations": [
+    "notes/note-1.md",
+    "rfc-002-manifest-hydrator.md",
+    "tickets/T-26443.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "Licensed review recommended: the hydrator design concentrates a repository-write credential (githubAppPrivateKey secret) and a proposed cluster-wide GPG signing key in an automated commit server whose output populates an audit history offered to organizations 'with strong requirements around change auditing'; whether machine-signed, human-attributed commits satisfy those organizations' regulatory record-keeping and attribution obligations is a question for licensed counsel in the deploying organization's jurisdiction, and this review does not answer it.",
+   "citations": [
+    "rfc-002-manifest-hydrator.md",
+    "tickets/T-28239.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "The strategy commits that 'Deletion of generated Applications is explicitly out of scope for rollout orchestration' and that teardown 'remains a manual operator action, performed one Application at a time', while the PRD commits to shipping ordered ApplicationSet deletion via a new deletionOrder field (AllAtOnce/Reverse) inside the RollingSync strategy. Both cannot hold; note-2 records that the disagreement 'needs an owner' with no one assigned, so the call is currently unowned.",
+   "citations": [
+    "strategy.md",
+    "prd-progressive-sync-deletion.md",
+    "notes/note-2.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "RFC-001's stated goal is that impersonation 'can be enabled/disabled only at the system level. Once enabled/disabled, it is applicable to all Argo CD Applications', but the platform sync call decided the rollout 'goes behind a per-project flag, not fleet-wide' and calls that 'a real decision, not a maybe'. The design as specified cannot deliver the rollout mechanism the organization has committed to.",
+   "citations": [
+    "rfc-001-sync-impersonation.md",
+    "notes/note-1.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "The PRD's Risks section says 'No immediate Risks to consider', but field evidence already contradicts it: with rollingSync plus reverse deletion order, a child Application stuck in Progressing makes the wait-for-full-deletion never complete and the controller restarts the wave, producing an infinite delete/re-create loop, and the incident runbook's standing mitigation is to switch to AllAtOnce before any manual child deletion — the exact ordered-deletion behavior the PRD is shipping.",
+   "citations": [
+    "prd-progressive-sync-deletion.md",
+    "tickets/T-28511.md",
+    "notes/note-2.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-26271's CI diff failures and T-28695's external-cluster ComparisonErrors are the same underlying gap in RFC-001: the RFC decouples the sync path via destinationServiceAccounts impersonation but never specifies the diff path, so Server-Side Diff's server-side-apply dry-run is authorized as patch under a different identity than sync. Note-1 records the root cause for T-26271 (diff runs as the destination service account lacking patch on cluster-scoped resources) but it was never written back to the ticket, and the reporter is still 'chasing the cluster secret'.",
+   "citations": [
+    "tickets/T-26271.md",
+    "tickets/T-28695.md",
+    "rfc-001-sync-impersonation.md",
+    "notes/note-1.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "RFC-002 declares 'Implementing a change promotion system' a non-goal, yet push-to-stage mode depends on 'some external system' moving changes to the deployment branch. T-26443 shows the cost of that dependency in the field: when the sync source changes in push-to-stage mode, auto-sync deploys whatever stale manifests the stage branch last held because the external promoter hasn't run. Note-1 confirms that promoter is 'still the shell script, nobody owns it' and it was parked — the feature's correctness rests on an explicitly out-of-scope, unowned component.",
+   "citations": [
+    "rfc-002-manifest-hydrator.md",
+    "tickets/T-26443.md",
+    "notes/note-1.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "RFC-002's goal 4 is 'Every deployed change must have a corresponding dry commit - i.e. git is always the source of any changes', but the hydrator rollback proposal deliberately checks out old rendered manifests and pushes them directly to the sync branch, bypassing the staging branch, with no new dry commit and no re-render. The rollback design breaks the invariant the hydrator's promotion/audit story is built on, and neither document acknowledges the other.",
+   "citations": [
+    "rfc-002-manifest-hydrator.md",
+    "tickets/T-27327.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "The incident review imposed a restriction that 'hydrator pilot repos must not use progressive sync until there's a debounce' because each hydrator push restarts the rolling sync wave, and explicitly asked that T-27949 carry it. T-27949 still describes piloting the source hydrator on a RollingSync ApplicationSet repository with no restriction recorded, so the next team working that ticket will re-trip the confirmed wave-restart failure.",
+   "citations": [
+    "notes/note-2.md",
+    "tickets/T-27949.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "T-28927 proposes promoting Progressive Sync to Stable ('tested and validated with various use cases'), but T-27846 documents that the observability to validate it does not exist: there are no metrics answering how long steps take, why a sync is not starting, or which Applications a wave is waiting for. The success measure for the Stable promotion has no data source, so 'mature' cannot currently be demonstrated, only asserted.",
+   "citations": [
+    "tickets/T-28927.md",
+    "tickets/T-27846.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "Note-1 deprioritizes the hydrator History & Rollback ticket to next quarter and moves the dev pair to the progressive sync deletion loop, while that same ticket records that 'how do rollbacks work?' is 'one of the first questions we get when onboarding new users' during the gitops-promoter + source hydrator rollout. The organization is simultaneously rolling the hydrator out to new users and deferring the capability those users ask for first, and the ticket was never updated to say so.",
+   "citations": [
+    "notes/note-1.md",
+    "tickets/T-27327.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-27833's proposed fix (control plane creates namespaces with the Argo CD SA while sync runs as an impersonated SA stripped of namespace permissions) assumes per-resource identity splitting, but RFC-001 explicitly answers that 'the service account to be used for impersonation is determined on a per Application level rather than on per resource level'. The ticket is relying on a capability the accepted design rules out, and neither document cites the other.",
+   "citations": [
+    "tickets/T-27833.md",
+    "rfc-001-sync-impersonation.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "T-28927 proposes promoting Progressive Sync to Stable ('tested and validated with various use cases'), while T-27846 records that the metrics needed to observe progressive sync at all — time to trigger, per-step duration, refresh counts caused by the ApplicationSet, and 'why is my sync not starting' — are still an open request. The promotion decision depends on a maturity claim nobody can currently measure in production, and T-28927 does not name the metrics ticket as a blocker.",
+   "citations": [
+    "tickets/T-28927.md",
+    "tickets/T-27846.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "The wave-restart behavior on hydrated repos confirmed in the incident review (each hydrator push restarts the rolling sync wave, leading to the rule that hydrator pilot repos must not use progressive sync) is unobservable in production today: T-27949 shows the ApplicationSet controller emitted no progressive-sync transition logs because it ran at warn level, and the exact counters that would surface restarts — Application refreshes caused by the ApplicationSet and per-step timing — are the still-open metrics request in T-27846. A repo that violates the pilot restriction would move no recorded number.",
+   "citations": [
+    "notes/note-2.md",
+    "tickets/T-27949.md",
+    "tickets/T-27846.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "The platform sync call decided impersonation goes behind a per-project flag, but RFC-001's Goals state 'The feature can be enabled/disabled only at the system level. Once enabled/disabled, it is applicable to all Argo CD Applications,' and its examples enable it via a single argocd-cm key (application.sync.impersonation.enabled). The rollout decision assumes a per-project control the spec explicitly rules out; both cannot hold as written.",
+   "citations": [
+    "notes/note-1.md",
+    "rfc-001-sync-impersonation.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "The strategy roadmap states deletion of ApplicationSet-generated Applications is explicitly out of scope — 'ordered or automated deletion of ApplicationSet children will not be implemented. Teardown remains a manual operator action' — while the PRD commits to shipping exactly that as the deletionOrder field (AllAtOnce/Reverse) in ApplicationSetStrategy. Note-2 flags the disagreement as ownerless; the two documents currently promise opposite things.",
+   "citations": [
+    "strategy.md",
+    "prd-progressive-sync-deletion.md",
+    "notes/note-2.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "The PRD's Risks and Mitigations section asserts 'No immediate Risks to consider,' but T-28511 documents a reproduced failure of the same mechanism: a rollingSync step order with reverse deletion strategy, where the wait for full deletion never completes on a stuck-Progressing resource and the controller loops deleting/re-creating. Note-2 confirms it reproduced in staging and required a runbook mitigation (switch to AllAtOnce before manual child deletion). The PRD's no-risk claim and the open incident cannot both stand; the wait-for-deletion behavior the PRD specifies is the loop's trigger.",
+   "citations": [
+    "prd-progressive-sync-deletion.md",
+    "tickets/T-28511.md",
+    "notes/note-2.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-26271's reporter attributes the CI diff failure to the cluster Secret ('the cluster Secret credential itself is broad, so we don't understand why the diff suddenly runs with a narrower identity'), but note-1 records the actual root cause reached on the platform call — with impersonation on, the diff runs as the destination service account, which lacks patch on cluster-scoped resources — and asks that it be noted on the ticket. The ticket still carries the wrong hypothesis; the two documents describe the same failure without the ticket saying so.",
+   "citations": [
+    "tickets/T-26271.md",
+    "notes/note-1.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-26271 (argocd-server CLI diff path, in-cluster) and T-28695 (application-controller reconcile path, external clusters) are the same underlying defect stated in RFC-001's own vocabulary: sync honors destinationServiceAccounts impersonation while Server-Side Diff's server-side-apply dry-run runs as a different identity, and Kubernetes RBAC has no dry-run verb so the diff demands real patch authority. RFC-001 lists only sync.go/SyncContext work under Implementation Details and never specifies the diff path, which is the gap both tickets fall into. T-28695 also supplies the only measured baseline in the corpus — client-side diff across ~20 charts at 'measured cost: zero' — while no equivalent measurement of SSD-under-impersonation failure rates exists anywhere.",
+   "citations": [
+    "tickets/T-26271.md",
+    "tickets/T-28695.md",
+    "rfc-001-sync-impersonation.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "RFC-002's push-to-stage mode explicitly 'relies on some external system to move changes to the deployment branch,' but note-1 records that this external system is 'still the shell script, nobody owns it' — and T-26443 documents the concrete failure that lands in that gap: in push-to-stage mode, auto-sync deploys whatever stale manifests the stage branch last held because the promoter has not moved fresh ones. No freshness measurement exists today; T-26443's proposed timestamp annotation coupled to hydrator.metadata is the only candidate signal, and it is unimplemented. If stale-sync happened right now, no number would move.",
+   "citations": [
+    "rfc-002-manifest-hydrator.md",
+    "notes/note-1.md",
+    "tickets/T-26443.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "Note-2's interim rule that hydrator pilot repos must not use progressive sync collides with work already in flight: T-27949 is itself the hydrator pilot ticket ('we are also piloting the source hydrator on this repository') running RollingSync, and T-24578 proposes extending the Source Hydrator to ApplicationSets precisely to control ordered deployment — a design that would institutionalize the hydrator-plus-progressive-sync combination before the debounce exists. Nothing in either ticket carries the restriction, and there is no measurement (per T-27846's open request) that would reveal a repo violating it.",
+   "citations": [
+    "notes/note-2.md",
+    "tickets/T-27949.md",
+    "tickets/T-24578.md",
+    "tickets/T-27846.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-26271's CI diff failure ('argocd app diff' forbidden as a narrower identity after 'we recently enabled the sync impersonation flag') is the observable symptom of RFC-001's impersonation design ('application.sync.impersonation.enabled'), which swaps the sync identity to the AppProject's destinationServiceAccounts service account; the server-side apply dry-run then runs without the broad cluster-credential privileges the reporter expects. Note-1 records this exact root-cause but it was never written back to the ticket, so the reporter is still chasing the cluster Secret.",
+   "citations": [
+    "tickets/T-26271.md",
+    "rfc-001-sync-impersonation.md",
+    "notes/note-1.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-28695 reports that sync honors destinationServiceAccounts but the application-controller diff path runs as the raw cluster Secret credential, forcing unbounded 'patch' grants for Server-Side Diff. RFC-001's implementation section only wires impersonation into sync.go/SyncContext for the sync operation and never mentions the diff/comparison path, so the asymmetry the ticket describes is a direct consequence of the design's scope, not a regression — and RFC-001 does not acknowledge it.",
+   "citations": [
+    "tickets/T-28695.md",
+    "rfc-001-sync-impersonation.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-28511's delete/recreate infinite loop is filed against the exact mechanism the PRD introduces: the ticket's ApplicationSet uses a rollingSync step order with a reverse deletion strategy that 'waits for one application to be fully deleted before moving onto the next', and a stuck-Progressing resource makes that wait never complete. The PRD's Risks and Mitigations section says 'No immediate Risks to consider', so a symptom already reproduced in staging (note-2's runbook mitigation: switch to AllAtOnce before manual child deletion) is unacknowledged by the design.",
+   "citations": [
+    "tickets/T-28511.md",
+    "prd-progressive-sync-deletion.md",
+    "notes/note-2.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "strategy.md commits that 'Deletion of generated Applications is explicitly out of scope for rollout orchestration: ordered or automated deletion of ApplicationSet children will not be implemented' and teardown remains manual, while the PRD's stated goal is precisely ordered automated deletion via the deletionOrder field (AllAtOnce/Reverse) in ApplicationSetStrategy. Both cannot hold; note-2 flags the disagreement as ownerless.",
+   "citations": [
+    "strategy.md",
+    "prd-progressive-sync-deletion.md",
+    "notes/note-2.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-26443's symptom (auto-sync deploying very old hydrated manifests when the syncSource changes, observed 'only when the hydrator runs in push-to-stage mode') traces to RFC-002's push-to-stage design decision: 'manifests are pushed to a different branch, and Argo CD relies on some external system to move changes to the deployment branch.' Because the external promoter has not yet moved fresh manifests, auto-sync consumes whatever the branch last held — a freshness gap RFC-002 does not address.",
+   "citations": [
+    "tickets/T-26443.md",
+    "rfc-002-manifest-hydrator.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-27949's RollingSync gap is aggravated by the hydrator pilot on the same repo: every hydration cycle lands a fresh commit on the hydrated branch (RFC-002's design pushes a hydrated commit per dry commit per environment branch) and each is picked up as a source change; note-2 confirms 'each hydrator push restarts the rolling sync wave' and imposed an interim rule that hydrator pilot repos must not use progressive sync. Neither RFC-002 nor the progressive-sync work acknowledges this interaction.",
+   "citations": [
+    "tickets/T-27949.md",
+    "rfc-002-manifest-hydrator.md",
+    "notes/note-2.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "T-27327's rollback proposal (git checkout of old rendered manifests directly onto the sync branch, bypassing the staging branch) contradicts RFC-002's foundational opinion and Goal 4 that 'every deployed change must have a corresponding dry commit - i.e. git is always the source of any changes': a rollback commit produced by checkout of prior hydrated output has no originating dry commit, breaking the dry-hash lineage RFC-002 says promotion rules depend on.",
+   "citations": [
+    "tickets/T-27327.md",
+    "rfc-002-manifest-hydrator.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-27833's proposal to split which resources the control plane applies versus the impersonated SA (so the SA can be denied 'kind: Namespace' while CreateNamespace=true still works) collides with RFC-001's explicit decision that 'the service account to be used for impersonation is determined on a per Application level rather than on per resource level' — the per-resource split the ticket needs is exactly the granularity the design ruled out.",
+   "citations": [
+    "tickets/T-27833.md",
+    "rfc-001-sync-impersonation.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-24417 (DrySource cannot reference a Helm chart in a Helm repository) is the filed symptom of RFC-002's design decisions: drySource carries 'only three fields: repoURL, targetRevision, and path' with a single source, and the 'Handling External Values Files' section deliberately dropped multi-source in favor of the umbrella chart approach — the ticket reports exactly the cost RFC-002 accepted ('switching to helm dependencies which makes it difficult to use with ApplicationSets').",
+   "citations": [
+    "tickets/T-24417.md",
+    "rfc-002-manifest-hydrator.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "T-28239 shows the hydrator's commit server always pushes unsigned commits, so enabling signature verification on the hydrated branch makes Argo CD reject its own output. RFC-002's Security Considerations plan to 'recommend enabling (e.g. branch protection)' hardening on the very branches the hydrator pushes to, without a commit-signing design — following the RFC's own hardening advice can wedge the deploy path until the opt-in signing proposed in the ticket exists.",
+   "citations": [
+    "tickets/T-28239.md",
+    "rfc-002-manifest-hydrator.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "Note-1 records the decision that impersonation stays behind a per-project flag and 'nobody flips it on a project until the diff story is fixed', while T-28695 notes Server-Side Diff is slated to become the default (#24134) and that its diff path ignores destinationServiceAccounts. If SSD defaults on before the diff path honors impersonation, every external-cluster project hits ComparisonError on upgrade, and the per-project rollout gate becomes permanently blocked by an unowned dependency.",
+   "citations": [
+    "notes/note-1.md",
+    "tickets/T-28695.md"
+   ]
+  }
+ ],
+ "notesDrop": {
+  "proposals": [
+   {
+    "target": "tickets/T-26271.md",
+    "change": "Record the root cause: with impersonation enabled, diff runs as the destination service account, which lacks patch permission on cluster-scoped resources. The cluster secret is not the cause and should stop being investigated.",
+    "citedLine": "the CI diff failures (the missing-permissions one, T-26271) got root-caused on the call: with impersonation on, diff runs as the destination service account which doesn't hold patch on cluster-scoped stuff. someone should note the root cause on that ticket so the reporter stops chasing the cluster secret."
+   },
+   {
+    "target": "tickets/T-27327.md",
+    "change": "Record that hydrator history & rollback work is deprioritized to next quarter, and that the dev pair moves to the progressive sync deletion loop.",
+    "citedLine": "hydrator rollback work (the history & rollback ticket, T-27327) is deprioritized to next quarter. dev pair moves to the progressive sync deletion loop instead. ticket should say so."
+   },
+   {
+    "target": "tickets/T-28511.md",
+    "change": "Record that the delete/recreate loop reproduced in staging with the reverse deletion order, and the interim mitigation: the incident runbook says switch the ApplicationSet to AllAtOnce deletion before deleting any child app by hand, until the controller fix lands.",
+    "citedLine": "the delete/recreate loop (T-28511) reproduced in staging with the reverse deletion order. mitigation for now: incident runbook says switch the ApplicationSet to AllAtOnce deletion before deleting any child app by hand. that's the operational rule until the controller fix lands — worth remembering as a standing practice."
+   },
+   {
+    "target": "tickets/T-27949.md",
+    "change": "Record the confirmed finding that each hydrator push restarts the rolling sync wave, and the interim restriction: hydrator pilot repos must not use progressive sync until a debounce exists.",
+    "citedLine": "the wave-restart thing on hydrated repos: we confirmed each hydrator push restarts the rolling sync wave. interim call from the review: hydrator pilot repos must not use progressive sync until there's a debounce. the pilot ticket (T-27949) should carry that restriction so the next team doesn't trip it."
+   }
+  ],
+  "deltas": [
+   {
+    "body": "Impersonation rollout goes behind a per-project flag, not fleet-wide; no project enables it until the diff story is fixed.",
+    "citedLine": "impersonation rollout: we decided it goes behind a per-project flag, not fleet-wide. nobody flips it on a project until the diff story is fixed. that's a real decision, not a maybe."
+   },
+   {
+    "body": "Standing operational rule (until the controller fix lands): switch an ApplicationSet to AllAtOnce deletion before manually deleting any child app.",
+    "citedLine": "the delete/recreate loop (T-28511) reproduced in staging with the reverse deletion order. mitigation for now: incident runbook says switch the ApplicationSet to AllAtOnce deletion before deleting any child app by hand. that's the operational rule until the controller fix lands — worth remembering as a standing practice."
+   },
+   {
+    "body": "Interim rule from the incident review: hydrator pilot repos must not use progressive sync until a debounce exists, because each hydrator push restarts the rolling sync wave.",
+    "citedLine": "the wave-restart thing on hydrated repos: we confirmed each hydrator push restarts the rolling sync wave. interim call from the review: hydrator pilot repos must not use progressive sync until there's a debounce. the pilot ticket (T-27949) should carry that restriction so the next team doesn't trip it."
+   }
+  ]
+ },
+ "composedOf": [
+  {
+   "file": "/private/tmp/claude-501/-Users-geralddagher-Developer-Projects-construct/5de5f73b-a545-439f-885a-4e2a4578baa6/scratchpad/runA-program.json",
+   "claims": 9
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-geralddagher-Developer-Projects-construct/5de5f73b-a545-439f-885a-4e2a4578baa6/scratchpad/runA-compliance.json",
+   "claims": 10
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-geralddagher-Developer-Projects-construct/5de5f73b-a545-439f-885a-4e2a4578baa6/scratchpad/runA-legal.json",
+   "claims": 10
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-geralddagher-Developer-Projects-construct/5de5f73b-a545-439f-885a-4e2a4578baa6/scratchpad/runA-product.json",
+   "claims": 10
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-geralddagher-Developer-Projects-construct/5de5f73b-a545-439f-885a-4e2a4578baa6/scratchpad/runA-analyst.json",
+   "claims": 9
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-geralddagher-Developer-Projects-construct/5de5f73b-a545-439f-885a-4e2a4578baa6/scratchpad/runA-engineering.json",
+   "claims": 11
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-geralddagher-Developer-Projects-construct/5de5f73b-a545-439f-885a-4e2a4578baa6/scratchpad/runA-notes.json",
+   "proposals": 4,
+   "deltas": 3
+  }
+ ]
+}

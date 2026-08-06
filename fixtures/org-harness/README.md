@@ -58,6 +58,20 @@ Scored runs vary: the first two runs each surfaced findings the other did not
 - **Rung gates are per-run.** A rung is accepted when a single scored run
   passes it; a pass assembled by unioning partial runs is not a pass, because
   the rung claims a capability one run must demonstrate whole.
+- **A composed run is one run, not a union.** The product dispatches one role
+  per host invocation and aggregates the deliverables, so the harness has a
+  run shape that measures exactly that: one dispatch per lens
+  (`org-harness-producer-prompt.mjs --lens <name>`) plus one notes-drop pass
+  (`--notes`), merged by `compose-org-harness-run.mjs` in one sitting, with
+  `composedOf` recorded in the run file. Composition is bookkeeping, never
+  editing — every dispatch's claims land whole. What the union rule forbids
+  is different: assembling a pass after the fact from separately recorded
+  runs of the same shape, keeping hits and discarding misses. A composed run
+  declares its parts before scoring; a laundered union picks them by looking
+  at the scores. The single-prompt all-lens shape remains recorded for
+  whole-roster and cross-family comparisons; measured on this corpus it is
+  less stable than per-lens dispatch (obligations compete for one pass's
+  attention), which is why pack-depth acceptance reads the dispatch shape.
 - **Role coverage is union-over-accepted-runs.** A role finding counts as
   covered when any accepted run surfaced it, because the findings are
   independent plants and role coverage is advisory. Coverage claims name the

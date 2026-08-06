@@ -152,7 +152,10 @@ export const LENSES: readonly RoleLens[] = Object.freeze([
         'lifted? For each restriction, name every OTHER planned or requested ' +
         'workstream — beyond the one it was written against — that cannot ' +
         'proceed while it stands, citing the restriction and each plan it ' +
-        'collides with.',
+        'collides with. An open request is planned work for this purpose: a ' +
+        'restriction that forbids the combination a request asks for collides ' +
+        'with that request, and the claim cites the request itself, not only ' +
+        'the work the restriction was written against.',
       'Is the date real: what has to be true for it that is not true yet?',
     ],
     slots: [
