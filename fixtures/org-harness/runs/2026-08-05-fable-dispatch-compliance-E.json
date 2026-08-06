@@ -1,0 +1,78 @@
+{
+ "claims": [
+  {
+   "kind": "conflict",
+   "claim": "RFC-001 states the impersonation feature 'can be enabled/disabled only at the system level' (the `applicationcontroller.enable.impersonation` / `application.sync.impersonation.enabled` switch applies to all Applications once set), but the platform sync call decided the rollout 'goes behind a per-project flag, not fleet-wide.' The design offers no per-project control surface, so the governance decision cannot be enforced by the mechanism as specified: either the RFC's system-level flag design changes, or the per-project decision is being implemented by informal convention with no control an auditor can verify.",
+   "citations": [
+    "rfc-001-sync-impersonation.md",
+    "notes/note-1.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-26271's CI diff failures and the platform-sync root cause are the same event: with the sync impersonation flag enabled, the diff runs as the destination service account, which lacks patch on cluster-scoped resources like ClusterRole/cert-manager-cainjector. The reporter is still 'chasing the cluster Secret' (the old broad credential) because the identity that acts changed underneath them without the ticket recording it \u2014 the audit-relevant identity for diff is now the impersonated SA, not `system:serviceaccount:argocd:argocd-server`, and note-1 explicitly asks that this root cause be written onto the ticket.",
+   "citations": [
+    "tickets/T-26271.md",
+    "notes/note-1.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "RFC-001's stated purpose is least privilege: the cluster-config service account is reserved 'purely for control plane operations' so the standing credential can be narrow. T-28695 shows the diff path defeats this: Server-Side Diff ignores `destinationServiceAccounts` and runs as the cluster Secret credential, and because Kubernetes RBAC has no dry-run verb, computing a diff requires real, unbounded `patch` authority on that deliberately narrow credential (five successive ClusterRole widenings with 'no end state'). The two cannot both hold \u2014 either the standing credential stays least-privilege and diff breaks, or the credential is progressively widened and RFC-001's security posture claim is void.",
+   "citations": [
+    "rfc-001-sync-impersonation.md",
+    "tickets/T-28695.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-27833's proposal is an application-level split of RFC-001's impersonation model: control-plane SA bootstraps namespaces while the impersonated `destinationServiceAccounts` SA (stripped of `kind: Namespace`) performs sync, closing the hole where a tenant commits a Namespace manifest matching the `clusterResourceWhitelist` glob and strips the `pod-security.kubernetes.io/enforce` label. Neither document cites the other, yet T-27833 is an open access-control request that RFC-001's `destinationServiceAccounts` mechanism partially satisfies; the governance consequence is that two identities act within one sync (control-plane SA and impersonated SA), and the Kubernetes audit trail RFC-001 relies on must be read per-resource to attribute which identity applied what, with the AppProject admin as the reviewer of that split.",
+   "citations": [
+    "tickets/T-27833.md",
+    "rfc-001-sync-impersonation.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "RFC-002 introduces a standing privileged credential \u2014 the `repository-write` secret (githubAppPrivateKey) that lets the commit server push to deployment branches \u2014 while T-28239 records that every commit that credential pushes is unsigned, and RFC-002's own commit metadata attributes the hydrated commit to the dry `commitAuthor`, a human who never pushed it. Until `commitserver.sign.hydrated.commits` exists, an auditor examining the hydrated branch (the actual deployed state) sees human-attributed, unsigned, unverifiable commits produced by a bot key; RFC-002's suggested branch-protection rules ('only allow pushes to argo/* from the argo bot') are listed only as an open question, not a control.",
+   "citations": [
+    "rfc-002-manifest-hydrator.md",
+    "tickets/T-28239.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-9095 (respect cluster-configured Kubernetes RBAC for user actions through the Argo CD UI instead of duplicating Argo-specific RBAC) and RFC-001 (replace duplicated `AppProject` access settings with Kubernetes-native RBAC via impersonation for sync) are the same standing access-model request converging from two directions, and neither cites the other. RFC-001 explicitly defers user/group impersonation ('support to impersonate users or groups can be added in future'), which is exactly the half T-9095 needs; the governance consequence is that after RFC-001 ships, sync actions are attributed to per-tenant SAs in the Kubernetes audit trail while UI-initiated actions still act as the Argo CD server identity under Argo-internal RBAC \u2014 two review regimes for the same tenant's access.",
+   "citations": [
+    "tickets/T-9095.md",
+    "rfc-001-sync-impersonation.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "The strategy document commits that 'ordered or automated deletion of ApplicationSet children will not be implemented' and teardown 'remains a manual operator action, performed one Application at a time,' while the PRD ships exactly that: a `deletionOrder` field (AllAtOnce/Reverse) automating ordered deletion of ApplicationSet-generated Applications. The incident-review note already flagged that the two disagree with no owner; for compliance the exposure is that a published scope commitment is contradicted by an approved-track spec, and any customer or auditor relying on the strategy's 'deletion stays manual' assurance is relying on a superseded control.",
+   "citations": [
+    "strategy.md",
+    "prd-progressive-sync-deletion.md",
+    "notes/note-2.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "The T-28511 delete/recreate loop mitigation lives only in the incident runbook per note-2: operators must switch the ApplicationSet to AllAtOnce deletion before deleting any child app by hand. The PRD formalizing `deletionOrder` (whose Reverse mode is the very setting T-28511 shows looping, since Reverse 'waits for one application to be fully deleted' and a stuck-Progressing resource makes that wait never complete) declares 'No immediate Risks to consider' and never mentions the incident or the runbook rule \u2014 so the standing operational control is invisible to the spec that will ship the hazard as a supported option, and nothing obliges the controller fix to land first.",
+   "citations": [
+    "notes/note-2.md",
+    "tickets/T-28511.md",
+    "prd-progressive-sync-deletion.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "RFC-002 states 'It's the application controller's job to ensure that the user has write access to the repo before making the call' to the CommitManifests service, but the actual push identity is the shared repository-write GitHub App credential, not the user. This is a confused-deputy exposure with an evidence gap: the access check happens in one component against one identity, the privileged act is performed by another, and no field in the CommitManifests message or the hydrator.metadata output records which user's authorization justified the push \u2014 T-28239's signing proposal adds key custody but still signs with one cluster-wide key, so per-user attribution never enters the trail.",
+   "citations": [
+    "rfc-002-manifest-hydrator.md",
+    "tickets/T-28239.md"
+   ]
+  }
+ ]
+}

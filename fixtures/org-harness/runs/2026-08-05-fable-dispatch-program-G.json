@@ -1,0 +1,110 @@
+{
+ "claims": [
+  {
+   "kind": "conflict",
+   "claim": "The impersonation rollout decision and the design cannot both hold: the platform sync decided impersonation goes behind a per-project flag, but RFC-001's Goals state the feature 'can be enabled/disabled only at the system level' and once enabled applies to all Applications (applicationcontroller.enable.impersonation in argocd-cm). Either the RFC's system-level-only mechanism changes or the per-project rollout decision is unimplementable as decided; no owner is named for reconciling them.",
+   "citations": [
+    "notes/note-1.md",
+    "rfc-001-sync-impersonation.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "The strategy document explicitly rules out what the PRD plans to ship: strategy says 'Deletion of generated Applications is explicitly out of scope for rollout orchestration: ordered or automated deletion of ApplicationSet children will not be implemented,' while the PRD introduces deletionOrder Reverse to do exactly that ordered, automated deletion. The incident review noticed the disagreement but explicitly did not assign an owner ('needs an owner. not deciding here'), so both commitments currently stand.",
+   "citations": [
+    "strategy.md",
+    "prd-progressive-sync-deletion.md",
+    "notes/note-2.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "The incident runbook's standing mitigation forbids the PRD's core value: the runbook rule for the delete/recreate loop is to switch the ApplicationSet to AllAtOnce deletion before deleting any child app by hand, until the controller fix lands \u2014 but the PRD's Reverse strategy is defined as waiting for one application to be fully deleted before moving to the next, which is precisely the wait that T-28511 shows never completes on a stuck-Progressing resource and restarts the wave. Shipping Reverse while the runbook restriction stands ships a configuration operators are instructed to turn off.",
+   "citations": [
+    "notes/note-2.md",
+    "prd-progressive-sync-deletion.md",
+    "tickets/T-28511.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "The interim restriction 'hydrator pilot repos must not use progressive sync until there's a debounce' collides with the pilot as it is actually running: T-27949 describes the same repository simultaneously piloting the source hydrator and running a RollingSync ApplicationSet, i.e. the forbidden combination is live in the pilot the restriction was supposed to be carried on. The restriction was only 'should carry' on the ticket, and the ticket text shows no such restriction recorded.",
+   "citations": [
+    "notes/note-2.md",
+    "tickets/T-27949.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "The hydrator/progressive-sync restriction also forbids what T-24578 requests: Source Hydrator support for ApplicationSets exists to drive ordered creation/deletion of generated Applications, a combination that cannot proceed while hydrator repos are barred from progressive sync (each hydrator push restarts the rolling sync wave). The request additionally collides with strategy's rule that ApplicationSet child deletion stays manual \u2014 two independent blocks on the same open request, neither cited by it.",
+   "citations": [
+    "tickets/T-24578.md",
+    "notes/note-2.md",
+    "strategy.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "The per-project impersonation freeze ('nobody flips it on a project until the diff story is fixed') blocks T-27833's proposed fix, which depends on enabling impersonation so namespace syncs run as an impersonated SA stripped of namespace permissions. The diff story is T-26271 (CLI diff path) and T-28695 (application-controller diff on external clusters, where the workaround is disabling Server-Side Diff entirely); until both close, T-27833's proposal cannot be adopted anywhere, and the ticket shows no awareness of the freeze.",
+   "citations": [
+    "notes/note-1.md",
+    "tickets/T-27833.md",
+    "tickets/T-28695.md",
+    "tickets/T-26271.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-26271's mystery is already solved in the platform sync notes without the ticket saying so: the reporter is 'chasing the cluster secret' because the cluster credential is broad, but the call root-caused it \u2014 with impersonation on, the diff runs as the destination service account, which lacks the RBAC needed for the server-side apply dry-run. The root cause was never written onto the ticket, so the reporter is still investigating the wrong component.",
+   "citations": [
+    "notes/note-1.md",
+    "tickets/T-26271.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "The push-to-stage mode's correctness depends on an unowned shell script: RFC-002 delegates moving hydrated commits from the stage branch to the deployment branch to 'some external system,' T-26443 shows auto-sync deploying stale manifests exactly when that promoter has not yet moved fresh manifests, and note-1 records that the stage-branch promoter 'is still the shell script, nobody owns it' \u2014 parked, not assigned. The cross-team dependency that makes push-to-stage safe has no named owner while the stale-sync bug is open.",
+   "citations": [
+    "rfc-002-manifest-hydrator.md",
+    "tickets/T-26443.md",
+    "notes/note-1.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "Deprioritizing T-27327 to next quarter removes the rollback story from an active rollout: the ticket says gitops-promoter plus source hydrator is being 'gradually rolled out' and rollback is 'one of the first questions' new users ask, and RFC-002's design (git branch as sole source of truth, no controls on branch revision) is what makes rollback need the ticket's checkout-and-roll-forward mechanism. Onboarding continues through the quarter with no rollback path, and the reassigned dev pair moves onto the progressive sync deletion loop that the strategy document says is out of scope.",
+   "citations": [
+    "notes/note-1.md",
+    "tickets/T-27327.md",
+    "rfc-002-manifest-hydrator.md",
+    "strategy.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "The Promote-Progressive-Sync-to-Stable milestone is scheduled as if the interim restrictions were lifted: stability requires the feature be 'tested and validated with various use cases,' but the delete/recreate loop (T-28511) is mitigated only by a runbook rule, RollingSync still silently strips spec-only changes (T-27949), and hydrator repos are barred from progressive sync pending a debounce that no ticket owns. None of these blockers are enumerated in T-28927's scope beyond generic backlog links, so the promotion date has no path to being real.",
+   "citations": [
+    "tickets/T-28927.md",
+    "tickets/T-28511.md",
+    "tickets/T-27949.md",
+    "notes/note-2.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "T-24417's request for Helm-repository charts as a DrySource collides with RFC-002's stated opinions: the RFC lists Helm chart dependencies on unpinned versions and multi-source configurations as nondeterministic injection the hydrator deliberately locks out, and prescribes the umbrella-chart approach instead \u2014 the very approach the ticket says 'makes it difficult to use with ApplicationSets.' Granting the request compromises the RFC's reproducibility opinion; refusing it leaves the ticket's workflow unsupported, and no document decides which.",
+   "citations": [
+    "tickets/T-24417.md",
+    "rfc-002-manifest-hydrator.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-28695 and the SSD-by-default plan it cites turn the impersonation freeze into an upgrade hazard the freeze's authors did not consider: the diff path ignores destinationServiceAccounts and runs as the cluster Secret credential, so RBAC must grant real patch authority just to compute diffs ('no dry-run verb'). If Server-Side Diff becomes default before the diff path honors impersonation, every least-privilege external cluster hits ComparisonError on upgrade \u2014 meaning the 'diff story' gating the per-project impersonation rollout in note-1 is also gating a default-flip owned by a different workstream.",
+   "citations": [
+    "tickets/T-28695.md",
+    "notes/note-1.md"
+   ]
+  }
+ ]
+}
