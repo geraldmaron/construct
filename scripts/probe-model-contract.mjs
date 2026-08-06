@@ -92,7 +92,7 @@ for (const seam of SEAMS) {
     } catch (error) {
       const message = String(error?.message ?? error);
       // A host/transport failure is not evidence about the model's contract.
-      result = /status |not available|rate|429|timed out/i.test(message)
+      result = /status |not available|rate|429|timed out|timeout|exceeded \d+ms/i.test(message)
         ? { outcome: 'unmeasured', reason: message }
         : { outcome: 'fell-through', reason: message };
     }
