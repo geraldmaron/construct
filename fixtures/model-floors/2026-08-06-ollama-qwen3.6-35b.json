@@ -1,0 +1,48 @@
+{
+  "model": "ollama/qwen3.6:35b",
+  "probedAt": "2026-08-06T04:48:01.959Z",
+  "trials": 2,
+  "note": "clean = first reply parsed; repaired = one corrective retry parsed; fell-through = both replies malformed (the stated fallback fires); unmeasured = the host or transport failed, which is not evidence about the model. Dated and per-model: free-tier catalogs churn, so this result must not be generalized to a tier or a family.",
+  "seams": {
+    "namer": {
+      "trials": 2,
+      "clean": 2,
+      "repaired": 0,
+      "fellThrough": 0,
+      "unmeasured": 0
+    },
+    "densifier": {
+      "trials": 2,
+      "clean": 2,
+      "repaired": 0,
+      "fellThrough": 0,
+      "unmeasured": 0
+    }
+  },
+  "runs": [
+    {
+      "seam": "namer",
+      "trial": 0,
+      "ms": 70032,
+      "outcome": "clean"
+    },
+    {
+      "seam": "namer",
+      "trial": 1,
+      "ms": 34254,
+      "outcome": "clean"
+    },
+    {
+      "seam": "densifier",
+      "trial": 0,
+      "ms": 19351,
+      "outcome": "clean"
+    },
+    {
+      "seam": "densifier",
+      "trial": 1,
+      "ms": 23224,
+      "outcome": "clean"
+    }
+  ]
+}
