@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+The untuned path stops being merely honest about neglect and starts being engineered: the everyday setup may be a free hosted or local open-weight model, and this pass makes that path work as well as what we control allows, then measures it.
+
+### Added
+- **A malformed reply gets one corrective retry before the fallback fires.** The namer and densifier reprompt once with the model's own reply and the parser's complaint (`src/hosts/jsonrepair.ts`) — the community-measured highest-ROI repair for small open-weight models — and a repaired answer is recorded (`namer-retried` in the work log, stated on screen) rather than reading as a clean first turn. Reasoning-model `<think>` blocks are stripped before any brace wins the outermost-object scan, and both prompts now forbid fences and think-blocks explicitly. Measured honestly: the retry does not rescue `qwen3.5:4b` on the namer (both trials fell through even with the correction — that model is below the namer's floor), while the densifier now passes clean on the same model.
+- **A model's capability floor is a recorded artifact, not a per-run discovery.** `scripts/probe-model-contract.mjs` runs the namer and densifier contracts against any provider/model through the pinned OpenCode host and writes a dated per-model result to `fixtures/model-floors/` — clean, repaired, fell-through, and unmeasured kept distinct, because a rate-limited host is not evidence about a model. The free-tier caveat is in the artifact itself: OpenRouter's free catalog churned five of six planned models out from under this session's first matrix run, so results are dated and per-model, never generalized to a tier.
+- **The promotion gate is written down** (`docs/model-family-promotion.md`): contract floor clean, all four org-harness rungs on the dispatch shape with distractors clean, and a stated stability rate — then and only then a family joins `TUNED_FAMILIES`. The harness runner reaches hosted families over the same byte-identical prompt (`--endpoint openrouter`).
+- **Persona acceptance rubrics precede the judging** (`docs/persona-acceptance-rubrics.md`): what an engineer, product manager, operations, legal, compliance, and R&D leadership reader each require before calling a deliverable adequate for the role Construct fills, committed before any deliverable was scored against them.
+
+### Fixed
+- **A citation naming the tool's own scaffolding is refused** — the citation-provenance class's third shape. A live run cited `[domain catalog]` as the authority for Polish labor law and the GDPR fine ceiling; the catalog holds a name, a one-line concern, and keywords. The facts were roughly right and the provenance invented, which is worse than uncited. `findScaffoldingCitations` refuses bracketed and `CITE:`-stance citations naming the catalog, lenses, playbook, work log, or keyword map, validated against the stored live deliverables: it flags the three that invented provenance and passes the two that cited honestly.
+- **The log shows the reason it recorded.** Failure and degradation entries (`namer-failed`, `model-untuned-best-effort`, `model-floor-degraded`, `extraction-refused`, `role-failed`, `dispatch-halted`, `voice-overridden`, and the new `namer-retried`) render their stored detail as a one-line clause instead of a bare action name — the reason used to survive only in the terminal that produced it.
+
 ## 3.0.0-alpha.2 — 2026-08-06
 
 Phase 4 in one release: the six role packs stop being prompt folklore and ship as committed data, the model matrix learns to say which families it has actually validated, and the spine gains the surfaces a run needs to be readable — `serve`, `watch`, `waive`, `verdict`, and challenges that are checked rather than merely declared. The routing inversion is adopted on measured figures, so a capable host model names the implicated domains and the keyword map is demoted to the zero-model fallback.

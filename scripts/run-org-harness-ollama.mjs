@@ -24,6 +24,12 @@
  * Usage:
  *   node scripts/run-org-harness-ollama.mjs --model qwen3.6:35b --out runs/<date>-<label>.json
  *   node scripts/run-org-harness-ollama.mjs --model qwen3.6:35b --lens compliance --out <part.json>
+ *
+ * Hosted families run through the same script so the measured prompt is
+ * byte-identical across providers: --endpoint openrouter switches the
+ * transport to OpenRouter's OpenAI-compatible chat API (OPENROUTER_API_KEY
+ * must be in the environment) and nothing else changes. The artifact then
+ * records a hosted model's run on exactly the shape a local one is scored on.
  */
 
 import { readFileSync, readdirSync, statSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
@@ -81,13 +87,35 @@ for (const file of walk(corpusRoot)) {
   corpus += `\n===== FILE: ${rel} =====\n${readFileSync(file, 'utf8')}\n`;
 }
 
+const endpoint = arg('--endpoint', 'ollama');
 const prompt = `${base}${corpus}\n\nReturn only the JSON object.`;
-const body = JSON.stringify({
-  model,
-  prompt,
-  stream: false,
-  options: { temperature: 0.2, num_ctx: 49152 },
-});
+
+let url;
+let headers = ['-H', 'content-type: application/json'];
+let body;
+if (endpoint === 'openrouter') {
+  const key = process.env.OPENROUTER_API_KEY;
+  if (!key) {
+    console.error('--endpoint openrouter needs OPENROUTER_API_KEY in the environment');
+    process.exit(2);
+  }
+  url = 'https://openrouter.ai/api/v1/chat/completions';
+  headers = [...headers, '-H', `Authorization: Bearer ${key}`];
+  body = JSON.stringify({
+    model,
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.2,
+    stream: false,
+  });
+} else {
+  url = 'http://localhost:11434/api/generate';
+  body = JSON.stringify({
+    model,
+    prompt,
+    stream: false,
+    options: { temperature: 0.2, num_ctx: 49152 },
+  });
+}
 
 const scratch = mkdtempSync(join(tmpdir(), 'org-harness-ollama-'));
 try {
@@ -95,19 +123,27 @@ try {
   writeFileSync(reqPath, body);
   const raw = execFileSync(
     'curl',
-    ['-s', '--max-time', '3500', '-X', 'POST', 'http://localhost:11434/api/generate',
-     '-H', 'content-type: application/json', '--data-binary', `@${reqPath}`],
+    ['-s', '--max-time', '3500', '-X', 'POST', url,
+     ...headers, '--data-binary', `@${reqPath}`],
     { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 },
   );
   const data = JSON.parse(raw);
-  let text = data.response ?? '';
+  let text = endpoint === 'openrouter'
+    ? data.choices?.[0]?.message?.content ?? ''
+    : data.response ?? '';
+  if (endpoint === 'openrouter' && !text) {
+    console.error(`openrouter returned no content: ${raw.slice(0, 400)}`);
+    process.exit(1);
+  }
   const fence = text.match(/```json\n([\s\S]*?)\n```/);
   if (fence) text = fence[1];
   const parsed = JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1));
   writeFileSync(out, JSON.stringify(parsed, null, 1));
+  const promptTokens = data.prompt_eval_count ?? data.usage?.prompt_tokens ?? '?';
+  const outputTokens = data.eval_count ?? data.usage?.completion_tokens ?? '?';
   console.log(
     `run recorded: ${out} — ${parsed.claims?.length ?? 0} claims, ` +
-      `${data.prompt_eval_count ?? '?'} prompt tokens, ${data.eval_count ?? '?'} output tokens`,
+      `${promptTokens} prompt tokens, ${outputTokens} output tokens`,
   );
 } finally {
   rmSync(scratch, { recursive: true, force: true });
