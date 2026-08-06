@@ -58,6 +58,12 @@ export interface StartedRun {
    * user cannot see is a keyword answer impersonating a model's.
    */
   readonly namerFailure?: string;
+  /**
+   * Present when the namer answered only after a corrective retry: the first
+   * reply's parse failure. The answer is the model's, but it cost a second
+   * call, and a repair the user cannot see is a fragile path reading as solid.
+   */
+  readonly namerRetriedAfter?: string;
 }
 
 export interface StartRunNamedInput extends StartRunInput {
@@ -183,7 +189,15 @@ export async function startRunNamed(
     namer: input.namer,
     cache: input.cache,
   });
-  return record(store, input, map.implicated, map.inferredBy, input.host, map.namerFailure);
+  return record(
+    store,
+    input,
+    map.implicated,
+    map.inferredBy,
+    input.host,
+    map.namerFailure,
+    map.namerRetriedAfter,
+  );
 }
 
 export interface StartRunSelectedInput extends StartRunInput {
@@ -241,6 +255,7 @@ function record(
   inferredBy: InferredBy,
   host?: string,
   namerFailure?: string,
+  namerRetriedAfter?: string,
 ): StartedRun {
   return transact(store, () => {
     const logged: number[] = [];
@@ -290,6 +305,25 @@ function record(
             host: host ?? null,
             failure: namerFailure,
             fellBackTo: inferredBy,
+          },
+          at: input.at,
+        }),
+      );
+    }
+
+    // A repaired reply is the model's answer, but it took a corrective second
+    // call to get it, and that cost and fragility must not read as a clean
+    // first-turn answer.
+    if (namerRetriedAfter !== undefined) {
+      logged.push(
+        appendWorkLog(store, {
+          run: input.runId,
+          role: 'construct',
+          action: 'namer-retried',
+          detail: {
+            outcome: input.outcome,
+            host: host ?? null,
+            firstFailure: namerRetriedAfter,
           },
           at: input.at,
         }),
@@ -351,6 +385,7 @@ function record(
       tasks,
       inferredBy,
       ...(namerFailure !== undefined ? { namerFailure } : {}),
+      ...(namerRetriedAfter !== undefined ? { namerRetriedAfter } : {}),
     };
   });
 }

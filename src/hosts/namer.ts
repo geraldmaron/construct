@@ -32,6 +32,7 @@
 import type { Domain } from '../kernel/implication/domains.ts';
 import type { DomainNamer, DomainNaming } from '../kernel/implication/naming.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
+import { invokeWithRepair, stripThinkBlocks } from './jsonrepair.ts';
 
 /** The role a namer runs as. Not a catalog domain — it is asking about them. */
 export const NAMER_ROLE = 'implication-namer';
@@ -59,7 +60,8 @@ export function namerPrompt(outcome: string, catalog: readonly Domain[]): string
     '- For each domain you name, state why in one sentence, grounded in the',
     '  outcome\'s own words. A reason the user cannot argue with is not a reason.',
     '',
-    'Reply with JSON only, no prose and no explanation outside it:',
+    'Reply with JSON only — no prose, no markdown fences, no <think> blocks,',
+    'nothing outside the object:',
     '{"domains":[{"domain":"<exact catalog name>","why":"<one sentence>"}]}',
     'If nothing is implicated, reply exactly: {"domains":[]}',
   ].join('\n');
@@ -71,8 +73,9 @@ export function namerPrompt(outcome: string, catalog: readonly Domain[]): string
  * turn a formatting habit into a reported non-implication.
  */
 export function parseNamings(text: string): readonly DomainNaming[] {
-  const fenced = /```(?:json)?\s*([\s\S]*?)```/i.exec(text);
-  const body = fenced ? fenced[1] : text;
+  const bare = stripThinkBlocks(text);
+  const fenced = /```(?:json)?\s*([\s\S]*?)```/i.exec(bare);
+  const body = fenced ? fenced[1] : bare;
   const start = body.indexOf('{');
   const end = body.lastIndexOf('}');
   if (start === -1 || end <= start) {
@@ -103,30 +106,28 @@ export function parseNamings(text: string): readonly DomainNaming[] {
   return namings;
 }
 
-/** The text a conforming adapter puts in its deliverable. */
-function deliverableText(output: unknown): string {
-  const text = (output as { text?: unknown } | null)?.text;
-  if (typeof text !== 'string' || !text.trim()) {
-    throw new Error('the host returned no text');
-  }
-  return text;
-}
-
 /**
  * Build a `DomainNamer` backed by a host adapter. The caller owns the
  * adapter's lifecycle: `init()` must have succeeded before the returned namer
  * is used, exactly as with `work`'s dispatch path.
+ *
+ * A malformed first reply gets one corrective retry (jsonrepair.ts) before
+ * the throw that naming.ts turns into the keyword fallback, and a repaired
+ * answer reports itself as repaired so the work log can say a second model
+ * call was paid.
  */
 export function createHostNamer(host: HostAdapter): DomainNamer {
   return async (outcome, catalog) => {
     // No invocationId: nothing cancels a namer call, and inventing one here
     // would mean reading a clock this layer has no reason to read.
-    const result = await host.invoke({ role: NAMER_ROLE, task: namerPrompt(outcome, catalog) });
-    if (result.status !== 'ok') {
-      // Thrown, not returned empty: escalate.ts turns a throw into silence,
-      // and a host that errored has not considered the catalog at all.
-      throw new Error(`host "${host.name}" returned status ${result.status}`);
-    }
-    return parseNamings(deliverableText(result.output));
+    const repaired = await invokeWithRepair(
+      host,
+      NAMER_ROLE,
+      namerPrompt(outcome, catalog),
+      parseNamings,
+    );
+    return repaired.retried
+      ? { namings: repaired.value, retried: true, firstFailure: repaired.firstFailure }
+      : repaired.value;
   };
 }

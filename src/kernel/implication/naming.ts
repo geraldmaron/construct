@@ -54,14 +54,29 @@ export interface DomainNaming {
 }
 
 /**
+ * A namer's answer when it has more to say than the namings themselves: a
+ * malformed first reply that a corrective retry repaired is a fact the work
+ * log must be able to show, because the repair cost a second model call.
+ */
+export interface NamerReply {
+  readonly namings: readonly DomainNaming[];
+  /** True when the answer came from a corrective retry after a parse failure. */
+  readonly retried?: boolean;
+  /** The first reply's parse failure, present exactly when `retried` is true. */
+  readonly firstFailure?: string;
+}
+
+/**
  * The seam. Given an outcome and the catalog to choose from, name the domains
  * it implicates. Implementations live outside the kernel (a host adapter, a
- * local model, a stub in tests) — this module never constructs one.
+ * local model, a stub in tests) — this module never constructs one. A bare
+ * array and a `NamerReply` with no `retried` mean the same thing; the object
+ * form exists so a repaired answer can report itself.
  */
 export type DomainNamer = (
   outcome: string,
   catalog: readonly Domain[],
-) => Promise<readonly DomainNaming[]>;
+) => Promise<readonly DomainNaming[] | NamerReply>;
 
 /**
  * A namer consultation costs a model call, and the same outcome should not pay
@@ -93,6 +108,12 @@ export interface NamedMap extends ImplicationMap {
    * path, including a namer that legitimately named nothing.
    */
   readonly namerFailure?: string;
+  /**
+   * Present exactly when the namer answered only after a corrective retry:
+   * the first reply's parse failure. A repaired answer is still the namer's
+   * answer, but it cost a second model call and the log says so.
+   */
+  readonly namerRetriedAfter?: string;
 }
 
 export interface NameInput {
@@ -177,8 +198,17 @@ export async function mapImplicationsNamed(input: NameInput): Promise<NamedMap> 
   }
 
   let namings: readonly DomainNaming[];
+  let retriedAfter: string | undefined;
   try {
-    namings = await input.namer(input.outcome, catalog);
+    const reply = await input.namer(input.outcome, catalog);
+    if ('namings' in reply) {
+      namings = reply.namings;
+      if (reply.retried) {
+        retriedAfter = reply.firstFailure ?? 'the first reply could not be parsed';
+      }
+    } else {
+      namings = reply;
+    }
   } catch (error) {
     // The zero-model fallback catches the run — §10's configuration B fell
     // back exactly here — but the substitution is stated, never silent: a
@@ -201,5 +231,6 @@ export async function mapImplicationsNamed(input: NameInput): Promise<NamedMap> 
     outcome: input.outcome,
     implicated: limited,
     inferredBy: limited.length > 0 ? 'namer' : 'none',
+    ...(retriedAfter !== undefined ? { namerRetriedAfter: retriedAfter } : {}),
   };
 }

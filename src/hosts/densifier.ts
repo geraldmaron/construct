@@ -12,9 +12,10 @@
  * discarded or promoted into the outcome.
  */
 
-import type { Densifier } from '../kernel/intake/densify.ts';
+import type { DensifiedIntake } from '../kernel/intake/densify.ts';
 import { toDensifiedIntake } from '../kernel/intake/densify.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
+import { invokeWithRepair, stripThinkBlocks } from './jsonrepair.ts';
 
 /** The role a densifier runs as. Not a catalog domain — it runs before them. */
 export const DENSIFIER_ROLE = 'intake-densifier';
@@ -38,15 +39,17 @@ export function densifierPrompt(raw: string): string {
     '- Invent nothing. Every item must be traceable to their words.',
     '- Empty lists are valid. Do not reach.',
     '',
-    'Reply with JSON only, no prose outside it:',
+    'Reply with JSON only — no prose, no markdown fences, no <think> blocks,',
+    'nothing outside the object:',
     '{"outcome":"<one sentence>","constraints":[],"decisions":[],"parked":[]}',
   ].join('\n');
 }
 
 /** Pull the JSON object out of the reply, tolerating fenced-code wrappers. */
 export function parseDensified(text: string): ReturnType<typeof toDensifiedIntake> {
-  const fenced = /```(?:json)?\s*([\s\S]*?)```/i.exec(text);
-  const body = fenced ? fenced[1] : text;
+  const bare = stripThinkBlocks(text);
+  const fenced = /```(?:json)?\s*([\s\S]*?)```/i.exec(bare);
+  const body = fenced ? fenced[1] : bare;
   const start = body.indexOf('{');
   const end = body.lastIndexOf('}');
   if (start === -1 || end <= start) {
@@ -61,21 +64,28 @@ export function parseDensified(text: string): ReturnType<typeof toDensifiedIntak
   return toDensifiedIntake(parsed);
 }
 
-function deliverableText(output: unknown): string {
-  const text = (output as { text?: unknown } | null)?.text;
-  if (typeof text !== 'string' || !text.trim()) {
-    throw new Error('the host returned no text');
-  }
-  return text;
+/** A densified intake plus the fact of whether a corrective retry produced it. */
+export interface DensifiedReply extends DensifiedIntake {
+  /** The first reply's parse failure, present exactly when a retry repaired it. */
+  readonly retriedAfter?: string;
 }
 
-/** Build a `Densifier` backed by a host adapter; caller owns init(). */
-export function createHostDensifier(host: HostAdapter): Densifier {
+/**
+ * Build a densifier backed by a host adapter; caller owns init(). A malformed
+ * first reply gets one corrective retry (jsonrepair.ts) before the throw the
+ * CLI states as the fallback to the raw text, and a repaired reply carries
+ * `retriedAfter` so the record shows the second call.
+ */
+export function createHostDensifier(host: HostAdapter): (raw: string) => Promise<DensifiedReply> {
   return async (raw) => {
-    const result = await host.invoke({ role: DENSIFIER_ROLE, task: densifierPrompt(raw) });
-    if (result.status !== 'ok') {
-      throw new Error(`host "${host.name}" returned status ${result.status}`);
-    }
-    return parseDensified(deliverableText(result.output));
+    const repaired = await invokeWithRepair(
+      host,
+      DENSIFIER_ROLE,
+      densifierPrompt(raw),
+      parseDensified,
+    );
+    return repaired.retried
+      ? { ...repaired.value, retriedAfter: repaired.firstFailure ?? 'the first reply could not be parsed' }
+      : repaired.value;
   };
 }

@@ -190,3 +190,30 @@ test('the limit applies to named implications exactly as it does to keyword ones
   const result = await mapImplicationsNamed({ catalog: CATALOG, outcome: SILENT, namer: stub.fn, limit: 1 });
   assert.equal(result.implicated.length, 1);
 });
+
+test('a repaired answer is the namer answering, and the repair travels on the result', async () => {
+  const result = await mapImplicationsNamed({
+    catalog: CATALOG,
+    outcome: SILENT,
+    namer: async () => ({
+      namings: [{ domain: 'marketing-claims', why: 'a raffle is a regulated promotion' }],
+      retried: true,
+      firstFailure: 'the host replied with malformed JSON',
+    }),
+  });
+  assert.equal(result.inferredBy, 'namer');
+  assert.equal(result.implicated.length, 1);
+  assert.equal(result.namerRetriedAfter, 'the host replied with malformed JSON');
+});
+
+test('an object reply without a retry reads exactly like a bare array', async () => {
+  const result = await mapImplicationsNamed({
+    catalog: CATALOG,
+    outcome: SILENT,
+    namer: async () => ({
+      namings: [{ domain: 'privacy', why: 'entrant details are personal data' }],
+    }),
+  });
+  assert.equal(result.inferredBy, 'namer');
+  assert.equal(result.namerRetriedAfter, undefined);
+});

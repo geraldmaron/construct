@@ -140,3 +140,31 @@ test('a brief with no engagement is still a valid brief, and its assignment clai
   const problems = validateBrief(hollow).problems.map((p) => p.field);
   assert.deepEqual(problems, ['engagement.evidence']);
 });
+
+test('a repaired namer answer writes a namer-retried entry and travels on the run', async () => {
+  await withStoreAsync(async (store) => {
+    const started = await startRunNamed(store, {
+      runId: 'run-repaired',
+      outcome: 'Launch a paid beta to EU users next month',
+      at: AT,
+      host: 'test-host',
+      namer: () =>
+        Promise.resolve({
+          namings: [{ domain: 'privacy', why: 'EU users means GDPR obligations before launch.' }],
+          retried: true,
+          firstFailure: 'the host replied with malformed JSON',
+        }),
+    });
+    assert.equal(started.inferredBy, 'namer');
+    assert.equal(started.namerRetriedAfter, 'the host replied with malformed JSON');
+
+    const { readWorkLog } = await import('../../../src/kernel/store/worklog.ts');
+    const entries = readWorkLog(store, 'run-repaired');
+    const retried = entries.find((e) => e.action === 'namer-retried');
+    assert.ok(retried, 'the repair is in the log, not only on the result');
+    assert.equal(
+      (retried?.detail as { firstFailure?: string }).firstFailure,
+      'the host replied with malformed JSON',
+    );
+  });
+});
