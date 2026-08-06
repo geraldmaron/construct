@@ -2,13 +2,15 @@
 
 An outcome engine. Point at an outcome; a learning staff of roles fills in the rest. Work happens in the background; only genuine decisions surface; deliverables arrive finished and traceable.
 
-This is a ground-up rebirth — see [STRATEGY.md](STRATEGY.md) for the full direction, [GLOSSARY.md](GLOSSARY.md) for the vocabulary every surface uses, and [CHANGELOG.md](CHANGELOG.md) for what shipped. The code shares nothing with the predecessor (1.x/2.x), which lives on archived and read-only at `construct-legacy`, but the package is the same one: `@geraldmaron/construct`, continuing past `2.1.1` as `3.0.0-alpha.0`. The `construct` CLI command name is unchanged, as it always was.
+This is a ground-up rebirth — see [STRATEGY.md](STRATEGY.md) for the full direction, [GLOSSARY.md](GLOSSARY.md) for the vocabulary every surface uses, and [CHANGELOG.md](CHANGELOG.md) for what shipped. The code shares nothing with the predecessor (1.x/2.x), which lives on archived and read-only at `construct-legacy`, but the package is the same one: `@geraldmaron/construct`, continuing past `2.1.1` as `3.0.0-alpha.2`. The `construct` CLI command name is unchanged, as it always was.
 
 Nothing installed today changes under you. Alphas publish under the `alpha` tag, so `latest` stays on the predecessor's `2.1.1` until the Phase 5 stakeholder-acceptance gate passes and `3.0.0` is promoted deliberately — an existing `npm install @geraldmaron/construct` cannot wander into the rewrite.
 
 ## Status
 
-**Phase 1 is closed** (2026-08-04): the kernel harvest landed and `3.0.0-alpha.0` is published. Phase 2, the spine, is complete but for its exit criterion: the outcome → implication → dispatch → deliverable path runs end to end, with a work log, a decision inbox, and a verdict surface. Treat it as an alpha you can drive, not as a product. No stability is promised until the Phase 5 stakeholder-acceptance gate (STRATEGY.md) passes, and the `alpha` tag rather than the version number is what enforces that.
+**Phases 1 through 4 have landed** (`3.0.0-alpha.2`, 2026-08-05). The spine runs end to end — outcome → implicated domains → dispatch → deliverable, with an append-only work log, a decision inbox, and a verdict surface. The six role packs ship as committed data rather than prompt text, challenges are checked rather than declared, and the model matrix states which families it has actually validated instead of implying all of them.
+
+Three limits are load-bearing rather than fine print. **Legal and compliance output is dogfood-only**, and the legal pack declares no covered jurisdiction until a licensed attorney accepts its corpus, so its findings are flagged for licensed review, never issued as advice. **One model family is tuned** (Claude); every other family runs labeled best-effort and writes a degradation note on each dispatch. And **nothing here claims to work for anyone other than its author**: the gates that would have sampled external users are removed, so the project makes no cross-user success-rate claim at all (STRATEGY.md, Phase 5). Treat it as an alpha you can drive, not a product. No stability is promised until the Phase 5 stakeholder-acceptance gate passes, and the `alpha` tag rather than the version number is what enforces that.
 
 **[docs/first-run.md](docs/first-run.md) is the ten-minute walkthrough**, and every command in it has been run as written. The short version:
 

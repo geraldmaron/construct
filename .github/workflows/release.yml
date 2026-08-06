@@ -57,7 +57,7 @@ jobs:
       # publish` moves `latest` to whatever it publishes unless told otherwise,
       # so without this flag an alpha of a from-scratch rewrite would become the
       # default install for everyone already on 2.x. It is also how STRATEGY's
-      # "no stability promise until the Phase 5 second-user gate" is enforced by
-      # the registry rather than implied by a version number. `latest` moves only
-      # when 3.0.0 is promoted deliberately.
+      # "no stability promise until the Phase 5 stakeholder-acceptance gate" is
+      # enforced by the registry rather than implied by a version number.
+      # `latest` moves only when 3.0.0 is promoted deliberately.
       - run: npm publish --provenance --tag alpha
