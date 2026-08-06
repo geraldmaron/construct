@@ -230,9 +230,21 @@ not at the ground truth. It does **not** establish the human annotation floor. B
 LLMs with overlapping pretraining, so α here is an **upper bound** on true independent agreement
 and the floor a **lower bound**. That caveat is permanent on these numbers.
 
-Stage 2 lifts it, with human labels drawn from run-derived verdicts rather than sheets coded in
-a room — multi-author, from the deployed distribution, carrying negative labels. Filed as
-`construct-3ft`, blocked on real runs existing.
+Stage 2 was to lift it, with human labels drawn from run-derived verdicts rather than sheets coded
+in a room — multi-author, from the deployed distribution, carrying negative labels. Filed as
+`construct-3ft`.
+
+*Amended 2026-08-05, on Gerald's decision that the program recruits no external subjects: **Stage 2
+as designed is now unreachable, and the caveat above is permanent without qualification.**
+Krippendorff's α over human coders needs at least two humans; this program has exactly one, so
+there is no inter-human agreement to compute and no human annotation floor to measure. Saying the
+caveat holds "until Stage 2 lands" would be a promise nothing can keep. What one human can still
+settle is a different and narrower question — does the model-coder proxy track the stakeholder's
+own judgment — and `construct-3ft` is rewritten to that: agreement between Gerald's run-derived
+verdicts and the model panel's labels on the same outcomes, reported as single-annotator agreement
+against a model reference, never as an inter-human floor. A high figure there licenses using the
+proxy for future work; it does not raise the floor, because a floor is a statement about
+disagreement between independent humans and one annotator cannot disagree with anyone.*
 
 ### The result, Stage 1b — the `construct-2jb.4` corpus, labeled twice at authoring time
 
@@ -257,7 +269,9 @@ the map sits at 0.663 on the same outcomes. But it is a **weaker** measurement o
 than Stage 1 was, and the direction matters: Stage 1's coders came from two different model
 families, these two do not. A higher α measured under a weaker separation is exactly what
 correlated error looks like, so the honest reading is that 0.93 bounds nothing that 0.7627 did
-not already bound. Stage 2 (`construct-3ft`) remains the measurement that would settle it.
+not already bound. What would settle it is an inter-human measurement, and per the 2026-08-05
+amendment above, this program will not produce one: the question stays open permanently rather
+than pending.
 
 ---
 
@@ -803,7 +817,20 @@ Recorded so the gap is explicit rather than discovered later. Filed as `construc
 
 ## 9. The phase gates prove less than they read
 
-*Measured.*
+*Measured. Superseded as a live gate 2026-08-05 — read the note before quoting anything below.*
+
+> **The design in this section is no longer the Phase 5 gate.** On 2026-08-05 Gerald decided the
+> program will recruit no external subjects at all: he evaluates the surface himself against test
+> cases the session runs. `STRATEGY.md` Phase 5 now carries a stakeholder-acceptance gate, and the
+> external-validity claim this section's design would have licensed — "works for more than 70% of
+> users" — is **withdrawn rather than restated at lower confidence**, because self-evaluation is
+> not a sample from the population that claim is about. Nothing below is retracted as arithmetic:
+> the boundaries, operating characteristics, and the finding that a gate reading "it works"
+> licenses only "it works more than about half the time" all stand, and they are why the fixed-*n*
+> gate was not simply kept. What the section no longer supplies is a live acceptance rule. The
+> figures stay here for the day external evidence becomes payable; the sequential machinery in
+> `intervals.ts` stays shipped and tested, because it is what any future external gate would use
+> and because §1's rate intervals depend on it.
 
 `STRATEGY.md` Phase 5: *"No new roles, hosts, or platform investment until three to five external
 users have each run a real outcome end to end without typing a role name."*
@@ -904,7 +931,13 @@ The fixed design's expected spend is lower only because it fails fast and often.
 doubles the chance of correctly passing a system that deserves to pass, and at 0.95 it does so in
 *fewer* expected subjects than the run it replaces.
 
-### Proposed `STRATEGY.md` wording — supplied, not applied
+### Proposed `STRATEGY.md` wording — supplied, then applied, then superseded
+
+*The Phase 5 block below was accepted and applied on 2026-08-04, and superseded on 2026-08-05 by
+the stakeholder-acceptance gate (see the note opening this section). It is kept as the record of
+what was decided when. The Phase 2 block below is unaffected in the part that matters — the
+composition quota and the refusal to state a success rate both stand — and only its reference to
+the sequential rule as Phase 2's success criterion lapses with the gate.*
 
 Phase 5, replacing *"three to five external users have each run a real outcome end to end without
 typing a role name"*:

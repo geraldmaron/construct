@@ -14,8 +14,16 @@
  * pattern). curl carries the request because the generation legitimately
  * outlives fetch's header timeout on large local models.
  *
+ * The prompt shape is chosen the same way it is for any other family: --lens
+ * <name> or --notes produce one dispatch's prompt, which is the shape the spine
+ * ships and the shape pack-depth acceptance reads; with neither flag the
+ * whole-roster monolith is produced, for cross-family comparison only. A local
+ * family measured on the monolith is being measured on a shape the product does
+ * not use.
+ *
  * Usage:
  *   node scripts/run-org-harness-ollama.mjs --model qwen3.6:35b --out runs/<date>-<label>.json
+ *   node scripts/run-org-harness-ollama.mjs --model qwen3.6:35b --lens compliance --out <part.json>
  */
 
 import { readFileSync, readdirSync, statSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
@@ -32,8 +40,16 @@ const arg = (name, fallback) => {
 };
 const model = arg('--model');
 const out = arg('--out');
+const lens = arg('--lens');
+const notesMode = args.includes('--notes');
 if (!model || !out) {
-  console.error('usage: run-org-harness-ollama.mjs --model <ollama-model> --out <run.json>');
+  console.error(
+    'usage: run-org-harness-ollama.mjs --model <ollama-model> --out <run.json> [--lens <name> | --notes]',
+  );
+  process.exit(2);
+}
+if (lens && notesMode) {
+  console.error('--lens and --notes are different dispatches; pass one');
   process.exit(2);
 }
 
@@ -50,9 +66,12 @@ function walk(dir) {
   return files;
 }
 
-const base = execFileSync('node', [join(repo, 'scripts', 'org-harness-producer-prompt.mjs')], {
-  encoding: 'utf8',
-})
+const shape = lens ? ['--lens', lens] : notesMode ? ['--notes'] : [];
+const base = execFileSync(
+  'node',
+  [join(repo, 'scripts', 'org-harness-producer-prompt.mjs'), ...shape],
+  { encoding: 'utf8' },
+)
   .replace(/Your material is every file under:.*\n/, 'Your material is the corpus inlined below.\n')
   .replace(/^Read all of it.*\n/m, '');
 
