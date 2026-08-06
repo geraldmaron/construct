@@ -1,5 +1,49 @@
 # Phase 4 stakeholder acceptance: what to check
 
+> **Updated 2026-08-06, after the fixes.** The first reading of this packet
+> was "everything failed" — which was the packet doing its job: the runs
+> below were recorded to surface defects, and they did. Since that reading,
+> the defects have been worked and `3.0.0-alpha.3` shipped with the fixes.
+> Where each one stands:
+>
+> - **The fabricated provenance (case 1, `construct-kl4`) is FIXED and
+>   released.** Citations naming Construct's own scaffolding (`[domain
+>   catalog]`, `[source: domain catalog — …]`, `CITE: domain catalog`) now
+>   fail the citation challenge. Validated against these exact deliverables:
+>   the rule flags the three that invented provenance and passes the two that
+>   cited honestly. A re-run of case 1 would hold those deliverables at
+>   `challenged` instead of promoting them.
+> - **The dropped log reasons (`construct-bay`) are FIXED and released.**
+>   `construct log` now prints the recorded reason on every failure and
+>   degradation entry, so `namer-failed` reads with its cause and fallback.
+> - **The namer capability floor (`construct-3w9`) is RECORDED and closed.**
+>   `fixtures/model-floors/` holds dated per-model results: the 4b fails the
+>   namer contract even with the new one-shot corrective retry (also shipped),
+>   while 35b, gpt-oss:20b, and three hosted free models hold it clean. The
+>   floor is a fact about the model, and it is now written down.
+> - **Case 2's keyword silence is the designed ceiling, not a regression.**
+>   The zero-model fallback cannot reach vocabulary nobody listed; the routing
+>   inversion exists because of that, and case 3 shows the same sentence
+>   answered correctly by a model that holds the namer contract. The fix for a
+>   user on a too-small model is the recorded floor plus the retry — and the
+>   honest miss statement, which case 2 shows working.
+> - **The open-weight depth gap (`construct-fdl`) is MEASURED, not fixed.**
+>   qwen3.6:35b (and now nemotron-3-super:free) fail the depth harness while
+>   holding the JSON contracts, so both stay best-effort. That is the model
+>   matrix telling the truth; docs/model-family-promotion.md is the written
+>   path up.
+> - **Two new defects the follow-up judging surfaced are FILED:**
+>   `construct-8yi` (a role quoting the namer's inferred framing as the user's
+>   outcome) and `construct-z34` (the best-effort label and an owner per issue
+>   must reach the deliverable body). The judging record is
+>   `fixtures/persona-acceptance/2026-08-06-panel-claude.md`: four of five
+>   deliverables rejected, and invented provenance — now refused — decided
+>   every rejection; the fifth (35b compliance) passed the Compliance rubric
+>   as-is.
+>
+> What remains yours: the verdicts below (still deliberately unrecorded), and
+> acceptance of this packet, which closes the Phase 4 exit.
+
 This is the packet that replaces the external-tester gate. Gerald reads it, checks
 the outcomes himself, and accepts or rejects. Every run named here was executed
 through the shipped CLI on this machine; nothing in it was produced by a script
@@ -206,12 +250,14 @@ existing).
 
 ## The findings, as beads
 
-| Bead | Priority | What it records |
-|---|---|---|
-| `construct-kl4` | P1 | Citations naming Construct-internal artifacts pass the citation check while inventing provenance |
-| `construct-bay` | P2 | `construct log` drops the recorded reason on `namer-failed` and other degradation entries |
-| `construct-3w9` | P3 | The namer's capability floor (4b fails the contract, 35b holds it) should be recorded, not rediscovered |
-| `construct-fdl` | P3 | The open-weight family, measured on the dispatch shape: improved, still not a pass; stays best-effort |
+| Bead | Priority | What it records | Status (2026-08-06) |
+|---|---|---|---|
+| `construct-kl4` | P1 | Citations naming Construct-internal scaffolding pass the citation check while inventing provenance | **Fixed, released in alpha.3** |
+| `construct-bay` | P2 | `construct log` drops the recorded reason on `namer-failed` and other degradation entries | **Fixed, released in alpha.3** |
+| `construct-3w9` | P3 | The namer's capability floor (4b fails the contract, 35b holds it) should be recorded, not rediscovered | **Recorded in `fixtures/model-floors/`, closed** |
+| `construct-fdl` | P3 | The open-weight family, measured on the dispatch shape: improved, still not a pass; stays best-effort | Measured; stays best-effort by design |
+| `construct-8yi` | P2 | A role quotes the namer's inferred framing as the user's outcome (`[cite:outcome brief]`) | Open, filed from the persona panel |
+| `construct-z34` | P2 | The best-effort label and an owner per issue must reach the deliverable body | Open, filed from the persona panel |
 
 Acceptance of this packet closes `construct-9xq` and, with it, the Phase 4
 exit. It does not close the beads above; they are the follow-up work the runs
