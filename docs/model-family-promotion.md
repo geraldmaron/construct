@@ -51,5 +51,11 @@ artifact here is dated and per-model, and why no result is ever generalized to
   dispatch shape (X1, R2 missed; distractors clean). Stays best-effort.
 - `qwen3.5:4b` (local) — namer below floor even with the corrective retry;
   densifier clean. Not a promotion candidate.
+- `gpt-oss:20b` (local) — contract clean on every trial; the namer floor on
+  this hardware sits between 4b and 20b. Harness run not yet attempted.
 - `nvidia/nemotron-3-super-120b-a12b:free` (OpenRouter) — contract clean on
-  every trial. Harness run pending.
+  every trial; harness **FAIL** on the composed dispatch shape (2 fabricated
+  citations fail rung 0; X1, R1, R2, and most awareness plants missed;
+  distractors clean). The pair is the gate's argument in miniature: holding
+  the JSON contract and holding depth are different facts, and the family
+  stays best-effort on the second one.
