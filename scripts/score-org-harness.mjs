@@ -64,7 +64,32 @@ if (!existsSync(corpusRoot)) {
 }
 const documents = new Set(listDocuments(corpusRoot));
 
-const normalizeCitation = (c) => String(c).replace(/#L\d+.*$/, '').trim();
+/**
+ * A citation naming a real document by its unique basename resolves to that
+ * document. The prompt demands full corpus-relative paths and some families
+ * shorten them anyway; that is a format violation, not invented provenance,
+ * and "fabricated" must keep meaning "cites a document that does not exist" —
+ * a first hosted-family run was failed on exactly this false accusation. An
+ * ambiguous or unknown basename stays as written and falls through to
+ * fabricated. Shortened-but-resolved paths are reported separately so the
+ * format violation stays visible without wearing the wrong verdict.
+ */
+const byBasename = new Map();
+for (const d of documents) {
+  const base = d.split('/').pop();
+  byBasename.set(base, byBasename.has(base) ? null : d);
+}
+const pathShortened = new Set();
+const normalizeCitation = (c) => {
+  const bare = String(c).replace(/#L\d+.*$/, '').trim();
+  if (documents.has(bare)) return bare;
+  const resolved = byBasename.get(bare);
+  if (resolved) {
+    pathShortened.add(bare);
+    return resolved;
+  }
+  return bare;
+};
 const lower = (s) => String(s ?? '').toLowerCase();
 
 /**
@@ -109,7 +134,12 @@ for (const c of claims) {
 for (const p of proposals) {
   if (p.target && !documents.has(normalizeCitation(p.target))) fabricated.push(p.target);
 }
-const rung0 = { pass: fabricated.length === 0 && uncited.length === 0, fabricated, uncited };
+const rung0 = {
+  pass: fabricated.length === 0 && uncited.length === 0,
+  fabricated,
+  uncited,
+  pathShortened: [...pathShortened],
+};
 
 // ---- rung 1: grounded synthesis (planted cross-references) ------------------
 const xrefs = key.crossReferences.map((p) => ({ id: p.id, found: Boolean(findPlant(p)) }));
@@ -202,7 +232,10 @@ if (jsonMode) {
   console.log(JSON.stringify(report, null, 2));
 } else {
   const mark = (b) => (b ? 'PASS' : 'FAIL');
-  console.log(`rung 0 provenance        ${mark(rung0.pass)}  fabricated=${fabricated.length} uncited=${uncited.length}`);
+  console.log(
+    `rung 0 provenance        ${mark(rung0.pass)}  fabricated=${fabricated.length} uncited=${uncited.length}` +
+      (pathShortened.size > 0 ? ` path-shortened=${pathShortened.size} (resolved by unique basename; format violation, not fabrication)` : ''),
+  );
   console.log(`rung 1 cross-references  ${mark(rung1.pass)}  ${xrefs.map((x) => `${x.id}:${x.found ? 'hit' : 'miss'}`).join(' ')}`);
   console.log(`rung 2 risks + usage     ${mark(rung2.pass)}  ${risks.map((r) => `${r.id}:${r.found ? 'hit' : 'miss'}`).join(' ')} substantive=${rung2.substantiveRatio}`);
   console.log(`rung 3 context loop      ${mark(rung3.pass)}  ${[...conflicts, ...propHits, ...deltaHits].map((x) => `${x.id}:${x.found ? 'hit' : 'miss'}`).join(' ')}`);

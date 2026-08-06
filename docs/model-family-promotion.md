@@ -54,8 +54,13 @@ artifact here is dated and per-model, and why no result is ever generalized to
 - `gpt-oss:20b` (local) — contract clean on every trial; the namer floor on
   this hardware sits between 4b and 20b. Harness run not yet attempted.
 - `nvidia/nemotron-3-super-120b-a12b:free` (OpenRouter) — contract clean on
-  every trial; harness **FAIL** on the composed dispatch shape (2 fabricated
-  citations fail rung 0; X1, R1, R2, and most awareness plants missed;
-  distractors clean). The pair is the gate's argument in miniature: holding
-  the JSON contract and holding depth are different facts, and the family
-  stays best-effort on the second one.
+  every trial; harness **FAIL** on the composed dispatch shape. The first
+  score charged it with two fabricated citations; that was the scorer's
+  false accusation (real documents cited by unique basename — a format
+  violation, not invention), fixed and rescored the same day: rung 0 now
+  passes with the shortening reported. The remaining misses are the bar
+  itself, on the same byte-identical prompt the tuned family passes: X1 and
+  R1 are genuinely absent (R1's near claim cites the right pair but states a
+  different mechanism), R2's substance appears twice but never with the
+  two-document pair that proves the synthesis, and four of six awareness
+  plants miss. Distractors clean. Stays best-effort on depth, correctly.

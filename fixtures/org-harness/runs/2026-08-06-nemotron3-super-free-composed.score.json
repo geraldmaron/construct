@@ -1,11 +1,12 @@
 {
   "rung0": {
-    "pass": false,
-    "fabricated": [
+    "pass": true,
+    "fabricated": [],
+    "uncited": [],
+    "pathShortened": [
       "T-26271.md",
       "T-28511.md"
-    ],
-    "uncited": []
+    ]
   },
   "rung1": {
     "pass": false,

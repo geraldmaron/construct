@@ -246,3 +246,34 @@ test('a run that leaves the parked and undecided items alone reports both distra
   assert.equal(distractors.length, 2);
   assert.ok(distractors.every((d) => !d.violated));
 });
+
+test('a unique-basename citation resolves to its document instead of reading as fabricated', () => {
+  const { report } = score({
+    claims: [
+      {
+        kind: 'cross-reference',
+        claim: 'The stale manifest ships because push-to-stage relies on the promoter moving manifests to the stage branch before deployment.',
+        citations: ['T-26443.md', 'rfc-002-manifest-hydrator.md'],
+      },
+    ],
+    notesDrop: { proposals: [], deltas: [] },
+  });
+  const rung0 = report.rung0 as unknown as { fabricated: string[]; pathShortened: string[] };
+  assert.equal(rung0.fabricated.length, 0);
+  assert.deepEqual(rung0.pathShortened, ['T-26443.md']);
+});
+
+test('a basename matching no corpus document is still fabricated', () => {
+  const { report } = score({
+    claims: [
+      {
+        kind: 'risk',
+        claim: 'A claim resting on a document nobody wrote is invented provenance whatever the path looks like.',
+        citations: ['T-99999.md'],
+      },
+    ],
+    notesDrop: { proposals: [], deltas: [] },
+  });
+  const rung0 = report.rung0 as unknown as { fabricated: string[] };
+  assert.ok(rung0.fabricated.includes('T-99999.md'));
+});
