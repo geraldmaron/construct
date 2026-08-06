@@ -28,6 +28,7 @@ import {
 import type { EngagementMode, SourceKind } from '../kernel/store/sources.ts';
 import { createHostDensifier } from '../hosts/densifier.ts';
 import type { DensifiedIntake } from '../kernel/intake/densify.ts';
+import type { DensifiedReply } from '../hosts/densifier.ts';
 import { recordNote, resolveNoteCitation } from '../kernel/store/notes.ts';
 import { applyContextLoop } from '../kernel/context/loop.ts';
 import type { MemoryDelta, PropagationProposal } from '../kernel/context/loop.ts';
@@ -478,6 +479,14 @@ function reportRun(started: StartedRun): void {
       `\nThe model could not be consulted (${started.namerFailure}); the keyword map answered instead.\n`,
     );
   }
+  if (started.namerRetriedAfter !== undefined) {
+    // A repaired reply is the model's answer, but it took a second call to
+    // get it, and the fragility should not read as a clean first turn.
+    process.stdout.write(
+      `\nThe model's first reply could not be parsed (${started.namerRetriedAfter}); ` +
+        'a corrective retry produced this answer.\n',
+    );
+  }
   process.stdout.write(
     `\nfiled ${started.logged.length} work log entries and queued ${started.tasks.length} task(s).\n`,
   );
@@ -574,7 +583,7 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
     // optimized here rather than by the user remembering to ask. The original
     // words stay the outcome; the densified form is a recorded companion the
     // namer reads. A densifier failure is a stated fallback to the raw text.
-    let densified: DensifiedIntake | null = null;
+    let densified: DensifiedReply | null = null;
     let densifyFailure: string | undefined;
     try {
       densified = await createHostDensifier(host)(args.text);
@@ -601,6 +610,12 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
         detail: densified,
         at,
       });
+      if (densified.retriedAfter !== undefined) {
+        process.stdout.write(
+          `intake's first reply could not be parsed (${densified.retriedAfter}); ` +
+            'a corrective retry produced this understanding.\n',
+        );
+      }
       process.stdout.write(`as understood (your words are the record; correct this if it is wrong):\n`);
       process.stdout.write(`  outcome: ${densified.outcome}\n`);
       for (const c of densified.constraints) process.stdout.write(`  constraint: ${c}\n`);
@@ -1295,6 +1310,42 @@ function howInferred(detail: unknown): string {
 }
 
 /**
+ * The recorded reason on entries that carry one. The store holds the whole
+ * detail; a failure or degradation line that reads as a bare action name
+ * defeats the append-only record — the reason survived only in the terminal
+ * that produced it. This stays a clause on the known reason-bearing kinds,
+ * not a general detail dump: the log keeps one line per entry.
+ */
+export function reasonClause(action: string, detail: unknown): string {
+  const d = detail as Record<string, unknown> | null;
+  const s = (key: string): string | undefined =>
+    typeof d?.[key] === 'string' && (d[key] as string).trim() !== '' ? (d[key] as string) : undefined;
+  switch (action) {
+    case 'namer-failed': {
+      const failure = s('failure') ?? 'reason not recorded';
+      const fellBackTo = s('fellBackTo');
+      return `  — ${failure}${fellBackTo ? `; fell back to ${fellBackTo}` : ''}`;
+    }
+    case 'namer-retried':
+      return `  — first reply failed (${s('firstFailure') ?? 'unparseable'}); a corrective retry answered`;
+    case 'model-untuned-best-effort':
+      return `  — ${s('model') ?? 'model unknown'}: no tuning evidence for this family; output is best-effort`;
+    case 'model-floor-degraded':
+      return `  — ${s('why') ?? 'reason not recorded'}`;
+    case 'extraction-refused':
+      return `  — ${s('reason') ?? 'reason not recorded'}`;
+    case 'role-failed':
+      return `  — ${s('error') ?? s('status') ?? 'reason not recorded'}`;
+    case 'dispatch-halted':
+      return `  — ${s('reason') ?? 'reason not recorded'}`;
+    case 'voice-overridden':
+      return `  — ${s('instruction') ?? 'instruction not recorded'}`;
+    default:
+      return '';
+  }
+}
+
+/**
  * Render a submitted deliverable for reading. A string is the text itself; an
  * object with a `text` field was a role wrapping its prose; anything else is
  * shown as formatted JSON rather than hidden.
@@ -1371,7 +1422,8 @@ export function log(argv: string[]): number {
     }
     for (const entry of entries) {
       process.stdout.write(
-        `${String(entry.seq).padStart(4)}  ${entry.at}  ${entry.role}  ${entry.action}${howInferred(entry.detail)}\n`,
+        `${String(entry.seq).padStart(4)}  ${entry.at}  ${entry.role}  ${entry.action}` +
+          `${howInferred(entry.detail)}${reasonClause(entry.action, entry.detail)}\n`,
       );
     }
     process.stdout.write(`\n${entries.length} entries (append-only).\n`);
