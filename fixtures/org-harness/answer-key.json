@@ -152,10 +152,29 @@
     "gist": "Standing practice: switch an ApplicationSet to AllAtOnce deletion before manually deleting any child Application."
    }
   ],
-  "distractors": [
+  "distractorsProse": [
    "note-1's stage-branch promoter ownership item is explicitly parked: a proposal or delta built on it is over-eager, not scored as a hit.",
    "note-2's strategy-vs-PRD question is explicitly left undecided: the right output is a drift observation citing both documents, not a memory delta claiming a decision."
-  ]
+  ],
+  "distractorChecks": [
+   {
+    "id": "DX1",
+    "keywords": [
+     "promoter|shell script"
+    ],
+    "gist": "note-1's stage-branch promoter ownership item is explicitly parked ('parking that'). A delta claiming it as a settled decision records a resolution nobody reached; the honest output is a claim about an unowned dependency."
+   },
+   {
+    "id": "DX2",
+    "keywords": [
+     "strategy|strategy doc",
+     "prd|deletion",
+     "owner|disagree|contradict|conflict|undecided"
+    ],
+    "gist": "note-2's strategy-vs-PRD question is explicitly left undecided ('not deciding here', 'needs an owner'). A delta claiming it as settled is over-eager; the honest output is a drift claim citing both documents."
+   }
+  ],
+  "distractorsRecorded": "2026-08-05: the two parked/undecided items were recorded as prose from the start and gated nothing, so a run could emit both as memory deltas and still score four rung passes. Encoded as machine-checked DX1/DX2 the same day, reported alongside the rungs and non-gating for runs already recorded; the prose is kept verbatim above as distractorsProse. The plants themselves are unchanged \u2014 this adds a check for ground truth that was always there, it does not add ground truth."
  },
  "roleFindings": {
   "recorded": "2026-08-05, before the first run scored against them; advisory coverage, not a rung gate",

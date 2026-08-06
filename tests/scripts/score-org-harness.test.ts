@@ -172,3 +172,28 @@ test('a memory delta that cannot cite its note line fails rung 3', () => {
   const { report } = score(run);
   assert.equal(report.rung3.pass, false);
 });
+
+test('a delta claiming a parked item is reported as a distractor violation', () => {
+  // The corpus plants two items the notes explicitly park or leave to an
+  // owner. Writing one up as a settled memory delta records agreement nobody
+  // reached. This lived in the key as prose and gated nothing, so real runs
+  // violated it while showing four rung passes.
+  const run = earnedRun() as { notesDrop: { deltas: Array<{ body: string; citedLine: string }> } };
+  run.notesDrop.deltas.push({
+    body: 'The stage-branch promoter is still an unowned shell script and needs an owner.',
+    citedLine: 'our stage-branch promoter is still the shell script, nobody owns it. parking that.',
+  });
+  const { code, report } = score(run);
+  const distractors = (report as unknown as { distractors: Array<{ id: string; violated: boolean }> })
+    .distractors;
+  assert.equal(distractors.find((d) => d.id === 'DX1')?.violated, true);
+  assert.equal(code, 0, 'reported, not gating — recorded runs keep their as-run scores');
+  assert.equal(report.pass, true);
+});
+
+test('a run that leaves the parked and undecided items alone reports both distractors clean', () => {
+  const { report } = score(earnedRun());
+  const distractors = (report as unknown as { distractors: Array<{ violated: boolean }> }).distractors;
+  assert.equal(distractors.length, 2);
+  assert.ok(distractors.every((d) => !d.violated));
+});

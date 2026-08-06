@@ -169,12 +169,27 @@ const roleCoverage = Object.fromEntries(
   ]),
 );
 
+// ---- distractor discipline: what the notes did NOT settle -----------------
+// The corpus plants two items the notes explicitly park or leave to an owner.
+// Writing either up as a memory delta records a resolution the organization
+// never reached — a fabrication of agreement, which is the one thing this
+// project's trust kernel forbids. This was prose in the answer key and gated
+// nothing, so a run could violate both and still show four rung passes; it is
+// checked and reported here. Reported rather than gating, because the runs
+// already recorded were scored without it and a gate applied backwards would
+// rewrite their results.
+const distractors = (key.notesDrop.distractorChecks ?? []).map((d) => ({
+  id: d.id,
+  violated: deltas.some((delta) => matchesKeywords(delta.body, d.keywords)),
+}));
+
 const report = {
   rung0,
   rung1,
   rung2,
   rung3,
   roleCoverage,
+  distractors,
   pass: rung0.pass && rung1.pass && rung2.pass && rung3.pass,
 };
 
@@ -188,6 +203,13 @@ if (jsonMode) {
   console.log(`rung 3 context loop      ${mark(rung3.pass)}  ${[...conflicts, ...propHits, ...deltaHits].map((x) => `${x.id}:${x.found ? 'hit' : 'miss'}`).join(' ')}`);
   for (const [role, hits] of Object.entries(roleCoverage)) {
     console.log(`role ${role.padEnd(12)} (advisory)  ${hits.map((h) => `${h.id}:${h.found ? 'hit' : 'miss'}`).join(' ')}`);
+  }
+  if (distractors.length > 0) {
+    const violations = distractors.filter((d) => d.violated);
+    console.log(
+      `distractors    (reported)  ${distractors.map((d) => `${d.id}:${d.violated ? 'VIOLATED' : 'clean'}`).join(' ')}` +
+        (violations.length > 0 ? '  — a delta claims something the notes left parked or undecided' : ''),
+    );
   }
   console.log(report.pass ? 'HARNESS PASS' : 'HARNESS FAIL');
 }

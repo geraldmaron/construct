@@ -84,6 +84,8 @@ ${lensBlocks}
 
 The two files under notes/ are raw brain-dump notes from team members. They contain decisions and facts the organization's records do not yet hold. Propose, for each ticket the notes bear on, what should be recorded there (proposals), and state each decision or standing rule the notes establish (deltas). Every proposal and delta quotes the exact justifying line from the notes file it came from.
 
+A delta records what the notes SETTLED, and only that. Notes also carry items that were explicitly parked, deferred to an owner, or raised and left undecided — those are not decisions, and writing one up as a delta records a resolution the organization never reached. Where the notes park something or say a question needs an owner, that belongs in a claim (as an unowned risk or an open drift), never in a delta. Before writing each delta, point at the words in the note that make it settled; if the words say "parking that", "needs an owner", "not deciding here", or anything of that shape, it is not a delta.
+
 Return only the JSON object.`;
 
 process.stdout.write(prompt + '\n');
