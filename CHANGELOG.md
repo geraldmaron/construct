@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.0.0-alpha.3 — 2026-08-06
 
 The untuned path stops being merely honest about neglect and starts being engineered: the everyday setup may be a free hosted or local open-weight model, and this pass makes that path work as well as what we control allows, then measures it.
 
