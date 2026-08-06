@@ -173,11 +173,11 @@ test('a memory delta that cannot cite its note line fails rung 3', () => {
   assert.equal(report.rung3.pass, false);
 });
 
-test('a delta claiming a parked item is reported as a distractor violation', () => {
+test('a delta claiming a parked item fails rung 3 under the declared distractor gate', () => {
   // The corpus plants two items the notes explicitly park or leave to an
   // owner. Writing one up as a settled memory delta records agreement nobody
-  // reached. This lived in the key as prose and gated nothing, so real runs
-  // violated it while showing four rung passes.
+  // reached — a provenance-class fabrication. The committed key declares the
+  // gate, so a violation fails the context-loop rung and the run.
   const run = earnedRun() as { notesDrop: { deltas: Array<{ body: string; citedLine: string }> } };
   run.notesDrop.deltas.push({
     body: 'The stage-branch promoter is still an unowned shell script and needs an owner.',
@@ -187,7 +187,56 @@ test('a delta claiming a parked item is reported as a distractor violation', () 
   const distractors = (report as unknown as { distractors: Array<{ id: string; violated: boolean }> })
     .distractors;
   assert.equal(distractors.find((d) => d.id === 'DX1')?.violated, true);
-  assert.equal(code, 0, 'reported, not gating — recorded runs keep their as-run scores');
+  assert.equal(report.rung3.pass, false);
+  assert.equal(report.pass, false);
+  assert.equal(code, 1);
+});
+
+test('a key without a declared gate reports distractor violations without gating', () => {
+  // Score files recorded before the gate began keep their as-run results; the
+  // gate lives in the key, so a key that never declared one stays report-only.
+  const dir = mkdtempSync(join(tmpdir(), 'org-harness-nogate-'));
+  mkdirSync(join(dir, 'corpus'));
+  writeFileSync(join(dir, 'corpus', 'a.md'), 'doc a');
+  const miniKey = {
+    corpusRoot: 'corpus',
+    crossReferences: [],
+    conflicts: [],
+    risks: [],
+    notesDrop: {
+      expectedProposals: [],
+      expectedDeltas: [],
+      distractorChecks: [{ id: 'DX1', keywords: ['promoter|shell script'] }],
+    },
+  };
+  writeFileSync(join(dir, 'answer-key.json'), JSON.stringify(miniKey));
+  const run = {
+    claims: [
+      {
+        kind: 'risk',
+        claim:
+          'A substantive grounded claim about document a, long enough to count as using the source rather than merely listing it.',
+        citations: ['a.md'],
+      },
+    ],
+    notesDrop: {
+      proposals: [],
+      deltas: [{ body: 'the promoter question is settled', citedLine: 'parking that' }],
+    },
+  };
+  const runFile = join(dir, 'run.json');
+  writeFileSync(runFile, JSON.stringify(run));
+  const out = execFileSync('node', [scorer, runFile, '--harness', dir, '--json'], {
+    cwd: repo,
+    encoding: 'utf8',
+  });
+  const report = JSON.parse(out) as {
+    pass: boolean;
+    rung3: { pass: boolean };
+    distractors: Array<{ violated: boolean }>;
+  };
+  assert.equal(report.distractors[0].violated, true);
+  assert.equal(report.rung3.pass, true);
   assert.equal(report.pass, true);
 });
 

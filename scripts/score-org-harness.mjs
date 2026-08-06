@@ -128,6 +128,23 @@ const rung2 = {
   substantiveRatio: Number(substantiveRatio.toFixed(2)),
 };
 
+// ---- distractor discipline: what the notes did NOT settle -----------------
+// The corpus plants two items the notes explicitly park or leave to an owner.
+// Writing either up as a memory delta records a resolution the organization
+// never reached — a fabrication of agreement, which is the one thing this
+// project's trust kernel forbids. When the answer key declares a distractor
+// gate, a violation fails rung 3: fabricating a decision is a provenance-class
+// failure, not a style note. The key records the date the gate began; score
+// files recorded before that date are never regenerated, so earlier runs keep
+// their as-run scores. A key without a declared gate reports violations
+// without gating.
+const distractors = (key.notesDrop.distractorChecks ?? []).map((d) => ({
+  id: d.id,
+  violated: deltas.some((delta) => matchesKeywords(delta.body, d.keywords)),
+}));
+const distractorGate = key.notesDrop.distractorGate ?? null;
+const distractorsClean = distractors.every((d) => !d.violated);
+
 // ---- rung 3: drift conflict + notes-drop propagation and memory deltas ------
 const conflicts = key.conflicts.map((p) => ({ id: p.id, found: Boolean(findPlant(p)) }));
 const propHits = key.notesDrop.expectedProposals.map((exp) => {
@@ -149,7 +166,8 @@ const rung3 = {
   pass:
     conflicts.every((c) => c.found) &&
     propHits.every((p) => p.found) &&
-    deltaHits.every((d) => d.found),
+    deltaHits.every((d) => d.found) &&
+    (distractorGate === null || distractorsClean),
   conflicts,
   proposals: propHits,
   deltas: deltaHits,
@@ -169,20 +187,6 @@ const roleCoverage = Object.fromEntries(
   ]),
 );
 
-// ---- distractor discipline: what the notes did NOT settle -----------------
-// The corpus plants two items the notes explicitly park or leave to an owner.
-// Writing either up as a memory delta records a resolution the organization
-// never reached — a fabrication of agreement, which is the one thing this
-// project's trust kernel forbids. This was prose in the answer key and gated
-// nothing, so a run could violate both and still show four rung passes; it is
-// checked and reported here. Reported rather than gating, because the runs
-// already recorded were scored without it and a gate applied backwards would
-// rewrite their results.
-const distractors = (key.notesDrop.distractorChecks ?? []).map((d) => ({
-  id: d.id,
-  violated: deltas.some((delta) => matchesKeywords(delta.body, d.keywords)),
-}));
-
 const report = {
   rung0,
   rung1,
@@ -190,6 +194,7 @@ const report = {
   rung3,
   roleCoverage,
   distractors,
+  distractorGate,
   pass: rung0.pass && rung1.pass && rung2.pass && rung3.pass,
 };
 
@@ -206,8 +211,9 @@ if (jsonMode) {
   }
   if (distractors.length > 0) {
     const violations = distractors.filter((d) => d.violated);
+    const label = distractorGate ? `(gating rung 3 since ${distractorGate.began})` : '(reported)';
     console.log(
-      `distractors    (reported)  ${distractors.map((d) => `${d.id}:${d.violated ? 'VIOLATED' : 'clean'}`).join(' ')}` +
+      `distractors    ${label}  ${distractors.map((d) => `${d.id}:${d.violated ? 'VIOLATED' : 'clean'}`).join(' ')}` +
         (violations.length > 0 ? '  — a delta claims something the notes left parked or undecided' : ''),
     );
   }
