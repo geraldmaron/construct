@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { findUntaggedClaims } from '../../src/kernel/verify/claims.ts';
+import { findUntaggedClaims, findScaffoldingCitations } from '../../src/kernel/verify/claims.ts';
 
 test('flags a dollar figure with no citation or unverified tag', () => {
   const findings = findUntaggedClaims('Revenue grew to $4.2M last quarter.');
@@ -59,4 +59,40 @@ test('does not flag bare spelled-out quantities — those belong to the substant
     'The licence covers three of the five fields of exploitation.',
   );
   assert.equal(findings.length, 0);
+});
+
+test('a citation naming the domain catalog is refused: scaffolding is not evidence', () => {
+  // Exact lines from a recorded live run (opencode, ollama/qwen3.5:4b,
+  // employment role): the catalog contains none of the cited content.
+  const observed = [
+    "- Poland's labor code (Kodeks Pracy) governs contractor classification and employment terms [domain catalog]",
+    '- GDPR non-compliance creates fines up to 20 million EUR or 4% of global turnover [domain catalog]',
+    'CITE: domain catalog; employment law jurisdictional requirements',
+  ].join('\n');
+  const findings = findScaffoldingCitations(observed);
+  assert.equal(findings.length, 3);
+});
+
+test('the source-prefixed form observed on another live run is refused too', () => {
+  const line =
+    'Voice recordings are personal data. [source: domain catalog — GDPR Art. 4(1), CCPA/CPRA definitions]';
+  assert.equal(findScaffoldingCitations(line).length, 1);
+});
+
+test('the other scaffolding artifacts a dispatch names are refused by name', () => {
+  assert.equal(findScaffoldingCitations('Retention is 30 days. [cite: playbook]').length, 1);
+  assert.equal(findScaffoldingCitations('Access widened. [cite: role lens]').length, 1);
+  assert.equal(findScaffoldingCitations('Seen before. [cite: work log]').length, 1);
+  assert.equal(findScaffoldingCitations('Contractor signals. [cite: keyword map]').length, 1);
+});
+
+test('legitimate citations and prose mentions of the catalog are not refused', () => {
+  const fine = [
+    'Fines reach 20 million EUR or 4% of turnover. [cite: GDPR Art. 83(5)]',
+    'The retention period is unstated. [unverified]',
+    'See agreement.pdf for the indemnity clause. [cite: agreement.pdf]',
+    'The domain catalog is how Construct decides which roles engage.',
+    'Their product catalog lists 40 SKUs. [cite: catalog-2026.pdf]',
+  ].join('\n');
+  assert.equal(findScaffoldingCitations(fine).length, 0);
 });

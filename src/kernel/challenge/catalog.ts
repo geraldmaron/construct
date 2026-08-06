@@ -30,7 +30,12 @@
  * format for the checker rather than to think.
  */
 
-import { findUntaggedClaims, findSourceFileCitations, selfAttestsCiting } from '../verify/claims.ts';
+import {
+  findUntaggedClaims,
+  findSourceFileCitations,
+  findScaffoldingCitations,
+  selfAttestsCiting,
+} from '../verify/claims.ts';
 import type { Brief } from '../brief/schema.ts';
 
 export interface ChallengeCheck {
@@ -141,6 +146,20 @@ export const CHALLENGES: readonly Challenge[] = [
           detail:
             `${String(misplaced.length)} citation(s) point at a source file rather than a source: ` +
             `${shown}. Code in the working directory is not evidence about this domain.`,
+        };
+      }
+      // Same failure family, third observed shape: a citation naming the
+      // tool's own scaffolding ("[domain catalog]") as the authority for
+      // facts it does not contain. Invented provenance is worse than none.
+      const internal = findScaffoldingCitations(deliverable);
+      if (internal.length > 0) {
+        const shown = internal.slice(0, 3).map((c) => `line ${String(c.line)}`).join(', ');
+        return {
+          passed: false,
+          detail:
+            `${String(internal.length)} citation(s) name Construct's own scaffolding as their source: ` +
+            `${shown}. The catalog, lenses, and playbook are not evidence about the world — ` +
+            'mark the claim [unverified] instead.',
         };
       }
       const untagged = findUntaggedClaims(deliverable);

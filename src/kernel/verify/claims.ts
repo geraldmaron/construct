@@ -58,6 +58,53 @@ export interface MisplacedCitation {
 }
 
 /**
+ * A citation whose body names Construct's own scaffolding.
+ *
+ * The third shape of the same defect the source-path rule caught: a role with
+ * no material of its own cited "[domain catalog]" as the authority for Polish
+ * labor law and the GDPR fine ceiling — content the catalog demonstrably does
+ * not hold (it is a domain name, a one-line concern, and a keyword list). The
+ * facts were roughly right and the provenance was invented, which is worse
+ * than uncited: it reads sourced. "domain catalog" is not a path, so the
+ * source-path rule passed it.
+ *
+ * The names are the observed vocabulary from live runs plus the scaffolding a
+ * dispatch actually mentions to the role (the catalog, the lenses, the
+ * playbook, the work log, the keyword map) — a role can only cite scaffolding
+ * it has been told exists. Deliberately NOT matched: "brief" (a user's own
+ * material is legitimately called a brief) and bare "catalog" (a product
+ * catalog is real evidence). Two shapes, both observed: a bracketed tag whose
+ * body names the scaffolding, and a "CITE: <name>" stance line.
+ */
+const INTERNAL_SCAFFOLDING_NAMES =
+  '(?:domain[ -]catalog|catalog of domains|role[ -]lens(?:es)?|playbook|work[ -]log|keyword[ -](?:map|list|definitions)|implication[ -]map)';
+const INTERNAL_SCAFFOLDING_BRACKET = new RegExp(
+  `\\[(?:cite:|source:)?[^\\]]*\\b${INTERNAL_SCAFFOLDING_NAMES}\\b[^\\]]*\\]`,
+  'i',
+);
+const INTERNAL_SCAFFOLDING_STANCE = new RegExp(
+  `\\bCITE:\\s*[^.\\n]*\\b${INTERNAL_SCAFFOLDING_NAMES}\\b`,
+  'i',
+);
+
+/**
+ * Citations that name Construct-internal scaffolding as their source. A role's
+ * own scaffolding is never evidence about the world; the honest marker for a
+ * claim with no source is [unverified].
+ */
+export function findScaffoldingCitations(text: string): MisplacedCitation[] {
+  const findings: MisplacedCitation[] = [];
+  const lines = text.split('\n');
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i] ?? '';
+    if (INTERNAL_SCAFFOLDING_BRACKET.test(line) || INTERNAL_SCAFFOLDING_STANCE.test(line)) {
+      findings.push({ line: i + 1, text: line.trim() });
+    }
+  }
+  return findings;
+}
+
+/**
  * Citations that point at code rather than at a source for the claim.
  *
  * Reported separately from untagged claims because the two failures need
