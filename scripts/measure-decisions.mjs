@@ -695,8 +695,12 @@ if (heading(9, 'Phase gates as sequential hypothesis tests')) {
         `${' '.repeat(11)}${clopperPearsonLowerBound(n, n).toFixed(3)}`,
     );
   }
-  console.log('\n  Phase 5 gate is "three to five external users".');
-  console.log(`  At 5/5 that licenses only: true success rate > ${clopperPearson(5, 5).low.toFixed(3)} (two-sided)`);
+  console.log(
+    '\n  No phase gate spends external subjects: the program evaluates its own runs, so no' +
+      '\n  cross-user success rate is claimed anywhere. The table stands as what a consecutive-' +
+      '\n  success gate would license, for the day such evidence is payable.',
+  );
+  console.log(`  A hypothetical 5/5 would license only: true success rate > ${clopperPearson(5, 5).low.toFixed(3)} (two-sided)`);
   console.log(`                          or > ${clopperPearsonLowerBound(5, 5).toFixed(3)} (one-sided).`);
   console.log(`  To license "> 0.90" at 95% confidence needs ${(() => {
     for (let n = 1; n <= 500; n += 1) if (clopperPearsonLowerBound(n, n) > 0.9) return n;

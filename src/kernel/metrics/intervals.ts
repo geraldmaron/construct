@@ -22,9 +22,9 @@
  *     which would license the claim that escalation *never* fires from
  *     twenty-four observations. Wilson stays inside [0, 1] and stays honest at
  *     the boundary.
- *   - Clopper-Pearson for the phase gates, which live entirely at the boundary.
- *     "Five external users each succeed" is 5/5, where only an exact method
- *     says anything defensible.
+ *   - Clopper-Pearson for all-successes counts, which live entirely at the
+ *     boundary. "Five subjects, five successes" is 5/5, where only an exact
+ *     method says anything defensible.
  *   - McNemar for before/after. The project's characteristic comparison is
  *     paired — the same corpus, scored before and after a catalog change — and
  *     comparing two independent-looking point estimates both overstates the
@@ -396,7 +396,7 @@ export interface SequentialOperatingCharacteristics {
  * Computed by exact enumeration of the (successes, failures) lattice rather than
  * by simulation: the reachable state space of a gate that stops by 30 subjects
  * is a few hundred cells, so there is no reason to accept Monte Carlo error in a
- * number that decides how many external users a phase costs.
+ * number that decides how many subjects a gate costs.
  *
  * The error rates are read off this, not asserted: `pass` evaluated at the bar
  * itself is the design's type-I rate, and `1 - pass` at the rate worth shipping
