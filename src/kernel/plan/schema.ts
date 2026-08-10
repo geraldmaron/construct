@@ -122,7 +122,7 @@ export interface Plan {
   readonly routing: readonly PlanRouting[];
   /** What the planner discarded for fabricated provenance, said aloud. */
   readonly discarded: readonly DiscardedElement[];
-  /** Source ids the plan drew on. Empty is honest when nothing was declared. */
-  readonly sourcesConsulted: readonly string[];
+  /** Source ids declared on the workspace at plan time. Declared, not read: whether a run read them is the source_reads record, never this field. */
+  readonly sourcesDeclared: readonly string[];
   readonly plannedAt: string;
 }

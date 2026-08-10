@@ -160,7 +160,7 @@ export function buildPlan(input: PlanInput): Plan {
     steps,
     routing,
     discarded,
-    sourcesConsulted: input.sources.map((s) => s.id),
+    sourcesDeclared: input.sources.map((s) => s.id),
     plannedAt: input.plannedAt,
   };
 }

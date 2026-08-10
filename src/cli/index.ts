@@ -443,8 +443,8 @@ function planRun(
   process.stdout.write(
     `\nplan ${plan.id}: ${plan.steps.length} step${plan.steps.length === 1 ? '' : 's'}, ` +
       `risk ${plan.riskTier}` +
-      (plan.sourcesConsulted.length > 0
-        ? `, grounded in ${plan.sourcesConsulted.length} declared source${plan.sourcesConsulted.length === 1 ? '' : 's'}`
+      (plan.sourcesDeclared.length > 0
+        ? `, over ${plan.sourcesDeclared.length} declared source${plan.sourcesDeclared.length === 1 ? '' : 's'} (read at work time)`
         : ', no sources declared') +
       `\n  construct plan ${started.runId}\n`,
   );
@@ -1175,9 +1175,9 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
     );
     for (const runId of pendingRuns) {
       const plan = planFor(store, runId);
-      if (!plan || plan.sourcesConsulted.length === 0) continue;
+      if (!plan || plan.sourcesDeclared.length === 0) continue;
       const surveys: SourceSurvey[] = [];
-      for (const id of plan.sourcesConsulted) {
+      for (const id of plan.sourcesDeclared) {
         const declared = getSource(store, id);
         if (declared) surveys.push(surveySource(declared));
       }
@@ -1869,9 +1869,9 @@ export function plan(argv: string[]): number {
     for (const p of found.understanding.parked) process.stdout.write(`  parked: ${p}\n`);
     process.stdout.write(`  risk: ${found.riskTier}  mode: ${found.mode}\n`);
     process.stdout.write(
-      found.sourcesConsulted.length > 0
-        ? `  sources: ${found.sourcesConsulted.join(', ')}\n`
-        : '  sources: none declared\n',
+      found.sourcesDeclared.length > 0
+        ? `  sources declared: ${found.sourcesDeclared.join(', ')}\n`
+        : '  sources declared: none\n',
     );
     if (found.steps.length === 0) {
       process.stdout.write('  steps: none — nothing was implicated\n');

@@ -94,7 +94,7 @@ test('steps cite the catalog domain and every declared source', () => {
     { kind: 'catalog', domain: 'privacy' },
     { kind: 'source', source: 'src-1' },
   ]);
-  assert.deepEqual(plan.sourcesConsulted, ['src-1']);
+  assert.deepEqual(plan.sourcesDeclared, ['src-1']);
 });
 
 test('a citation of an undeclared source or unknown domain is discarded and said aloud', () => {

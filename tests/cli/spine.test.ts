@@ -925,10 +925,10 @@ test('an outcome records a plan and construct plan renders it, sequenced and lab
   ]);
   delete process.env.CONSTRUCT_TEST_PLAN_RUN;
   assert.equal(result.code, 0);
-  assert.match(result.out, /plan plan-run-\d+: \d+ steps?, risk (low|high), grounded in 1 declared source/);
+  assert.match(result.out, /plan plan-run-\d+: \d+ steps?, risk (low|high), over 1 declared source \(read at work time\)/);
   assert.match(result.out, /routed to [a-z-]+ by lexical-fallback/);
   assert.match(result.out, /required slots: finding, evidence, risks/);
-  assert.match(result.out, /sources: src-\d+/);
+  assert.match(result.out, /sources declared: src-\d+/);
 });
 
 test('plan without a run id is usage, and an unknown run is a sentence', async () => {
