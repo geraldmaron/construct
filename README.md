@@ -10,7 +10,7 @@ Nothing installed today changes under you. Alphas publish under the `alpha` tag,
 
 **Phases 1 through 4 have landed** (`3.0.0-alpha.3`). The spine runs end to end — outcome → implicated domains → dispatch → deliverable, with an append-only work log, a decision inbox, and a verdict surface. The role packs ship as committed data rather than prompt text, challenges are checked rather than declared, and the model matrix states which families it has actually validated instead of implying all of them.
 
-Phase 4 has two criteria it has **not** met, said here rather than left to the changelog: only one model family is tuned, and the program pack's depth was reopened when the prompt behind its two passing runs changed. Five concerns added in 2026-08 — strategy, system design, operations, user experience, and measurement — route and carry lenses, and none of them has passed the harness-plant measurement that is what "at depth" means here.
+Phase 4 has two criteria it has **not** met, said here rather than left to the changelog: only one model family is tuned, and the program pack's depth was reopened when the prompt behind its two passing runs changed. Six concerns added in 2026-08 — strategy, system design, operations, user experience, measurement, and a lens for security — all route and carry lenses; two of them (strategy, system design) have since passed the harness-plant measurement that is what "at depth" means here, and the rest have not. The table below says which is which.
 
 Three limits are load-bearing rather than fine print. **Legal and compliance output is dogfood-only**, and the legal pack declares no covered jurisdiction until a licensed attorney accepts its corpus, so its findings are flagged for licensed review, never issued as advice. **One model family is tuned** (Claude); every other family runs labeled best-effort and writes a degradation note on each dispatch. And **nothing here claims to work for anyone other than its author**: the gates that would have sampled external users are removed, so the project makes no cross-user success-rate claim at all (STRATEGY.md, Phase 5). Treat it as an alpha you can drive, not a product. No stability is promised until the Phase 5 stakeholder-acceptance gate passes, and the `alpha` tag rather than the version number is what enforces that.
 
@@ -50,23 +50,26 @@ name in the right-hand column.
 | Program manager / TPM | `program-sequencing` | at depth, criterion reopened |
 | Counsel | `contracts`, `privacy`, `employment` | at depth, dogfood-only |
 | Compliance | `compliance` | at depth, dogfood-only |
-| Director / VP | `strategy-alignment` | routes, depth unmeasured |
-| Architect / tech lead / platform | `system-design` | routes, depth unmeasured |
-| Support / on-call | `operations` | routes, depth unmeasured |
-| Designer / UX | `user-experience`, `accessibility` | routes, depth unmeasured |
+| Director / VP | `strategy-alignment` | at depth (one run, untuned family) |
+| Architect / tech lead / platform | `system-design` | at depth (one run, untuned family) |
+| Support / on-call | `operations` | routes, missed its plant |
+| Designer / UX | `user-experience`, `accessibility` | routes, missed its plant |
 | Data / analyst | `measurement` | routes, depth unmeasured |
-| Security engineer | `security` | routes, depth unmeasured |
+| Security engineer | `security` | routes, plant defective — unmeasured |
 | Finance / billing | `commerce-tax` | routes, default template |
 | Marketing | `marketing-claims` | routes, default template |
 | Engineer | — | deliberately absent: your host is the engineer |
 
-"At depth" is not a description, it is a measurement: a clean-context run over a
-fixture organization, scored against an answer key written before the run by
-someone who never saw the catalog, hitting a finding planted for that concern.
-"Routes, depth unmeasured" means the concern is inferred, carries a lens and a
-deliverable template, and has not yet passed that bar. The distinction is kept
-in public because collapsing it is the exact failure this project exists to
-prevent.
+"At depth" is not a description, it is a measurement: a clean-context run over
+a fixture organization, scored against an answer key committed before the run
+and never edited to make a run pass, hitting a finding planted for that
+concern. Anything else means the concern is inferred and carries a lens and a
+deliverable template, and has not passed that bar — either because it missed
+its plant, or because the plant itself was found defective, both of which are
+said here rather than smoothed over. The distinction is kept in public because
+collapsing it is the exact failure this project exists to prevent. The two
+rows marked at depth rest on one run each, on an untuned local family; one run
+is evidence, not a rate.
 
 ## Development
 
