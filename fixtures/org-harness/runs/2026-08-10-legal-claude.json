@@ -1,0 +1,89 @@
+{
+  "claims": [
+    {
+      "kind": "risk",
+      "claim": "Hydrated commits are attributed to a named human who never wrote them: the hydrator's README template and hydrator.metadata copy commitAuthor, commitMessage and commitTime from the dry commit onto the machine-produced commit the commit server pushes to the hydrated branch, and that commit server today always pushes unsigned commits. The git record of the deployed state therefore names a person as author with no cryptographic proof of origin, so attribution in the hydrated branch is asserted metadata rather than provable authorship.",
+      "citations": ["rfc-002-manifest-hydrator.md", "tickets/T-28239.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "Signing the hydrated commits would establish integrity but not tenant attribution: the commit server signs with one cluster-wide signing key, with per-project keys explicitly out of scope, and push access is a single repository-write Secret holding one GitHub App identity for the repo. Every hydrated commit for every AppProject therefore carries the same signer and the same pusher, so a signed hydrated branch cannot evidence which tenant's configuration produced a given change.",
+      "citations": ["tickets/T-28239.md", "rfc-002-manifest-hydrator.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "The impersonation design's audit-trail assurance does not cover the diff path. The RFC answers the open question about tracking who executed commands by relying on Kubernetes audit events capturing both the actual and the impersonated user, but Server-Side Diff ignores destinationServiceAccounts and runs as the cluster Secret credential, and the API server authorizes its server-side apply dry-run as a patch. Diff-time write authorizations are therefore recorded in the audit trail against the shared argocd cluster identity, not the tenant service account.",
+      "citations": ["rfc-001-sync-impersonation.md", "tickets/T-28695.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "The AppProject permission boundary the impersonation design promises to preserve does not bind machine writes. The RFC's stated goal is that access restrictions implemented through AppProject properties keep their existing behavior once impersonation is enabled, but the AppProject RBAC policy denying actions on Namespace resources governs only actions taken through Argo CD's API and UI and does not stop the Application controller from applying a namespace committed to the synced repository. The granted-permission model constrains human acts through the API while the controller's writes escape it.",
+      "citations": ["rfc-001-sync-impersonation.md", "tickets/T-27833.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The source hydrator widens the namespace-escape path described for hand-committed manifests, because under spec.sourceHydrator the manifests the controller syncs are written to the hydrated branch by the commit server using the repository-write credential rather than by a reviewed human commit, and whether pushes to hydrated branches are restricted is still only an open question in the hydrator proposal (naming convention and branch protection unresolved). The clusterResourceWhitelist pattern match remains the only check on what reaches the cluster.",
+      "citations": ["rfc-002-manifest-hydrator.md", "tickets/T-27833.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "The rollout control the organization committed to cannot be built from the design as written: the platform call recorded impersonation going behind a per-project flag rather than fleet-wide as a firm decision, while the RFC's goals state the feature can be enabled or disabled only at the system level and, once set, applies to all Argo CD Applications. The safeguard being relied on for rollout has no counterpart in the approved specification.",
+      "citations": ["notes/note-1.md", "rfc-001-sync-impersonation.md"]
+    },
+    {
+      "kind": "cross-reference",
+      "claim": "The field report of impersonation being scoped per project is the same disagreement seen from production: the CI diff failures are reported only in projects where the sync impersonation flag was recently enabled, which presumes project-level enablement, whereas the RFC specifies a single system-level toggle applying to all Applications. The reporter's confusion about why the diff runs with a narrower identity than the broad cluster Secret is produced by that gap, not by the cluster credential.",
+      "citations": ["tickets/T-26271.md", "rfc-001-sync-impersonation.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "The published roadmap and the PRD state incompatible commitments about the same behavior. The roadmap says deletion of generated Applications is explicitly out of scope for rollout orchestration, that ordered or automated deletion of ApplicationSet children will not be implemented, and that teardown remains a manual operator action performed one Application at a time. The PRD introduces deletionOrder with a Reverse value that deletes children in reverse rollingSync step order, waiting for each to be fully deleted. Shipping the PRD reverses a commitment the roadmap publishes to users.",
+      "citations": ["strategy.md", "prd-progressive-sync-deletion.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "The PRD's written risk record is contradicted by an already-reproduced defect. The PRD records no immediate risks to consider and asserts no impact on security aspects because no additional roles or privileges are needed, while the ApplicationSet ticket reports an ApplicationSet configured with rollingSync step order and the reverse deletion strategy entering an infinite delete and re-create loop, because the wait for one Application to be fully deleted never completes when a child is stuck Progressing and the controller restarts the wave. The approval-facing risk assessment is false as recorded.",
+      "citations": ["prd-progressive-sync-deletion.md", "tickets/T-28511.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The PRD's own Non-Goals commit to shipping a field that misleads its user: the custom deletion strategy is unsupported, yet the UI will not state the option is unavailable, leaving a configuration field that accepts input and silently ignores it. Set against the incident review's standing operational rule that operators must switch the ApplicationSet to AllAtOnce deletion before deleting any child app by hand, an operator who believes they configured a custom deletion order has neither the order they set nor the mitigation the runbook assumes.",
+      "citations": ["prd-progressive-sync-deletion.md", "notes/note-2.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The gate that decides what reaches production in push-to-stage mode has no named holder. The hydrator proposal states that in push-to-stage manifests are pushed to a different branch and Argo CD relies on some external system to move changes to the deployment branch, and the platform note records that the stage-branch promoter is still the shell script that nobody owns, parked. Automation moved the deploy decision out of Argo CD into a component with no owner of record.",
+      "citations": ["rfc-002-manifest-hydrator.md", "notes/note-1.md"]
+    },
+    {
+      "kind": "cross-reference",
+      "claim": "The stale-manifest sync bug is the unowned promoter observed from the cluster side: the defect is seen only when the hydrator runs in push-to-stage mode, where the external promoter has not yet moved fresh manifests to the deployment branch and auto-sync deploys whatever the stage branch last held. The unowned shell-script promoter recorded on the platform call is the external system whose latency produces that window.",
+      "citations": ["tickets/T-26443.md", "notes/note-1.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "Recovery from an ordered-deletion failure has been left with the manual operator and no tooling. The platform note records the hydrator History and Rollback work deprioritized to next quarter with the dev pair moved to the progressive sync deletion loop, leaving no automated mechanism to revert manifest changes if progressive sync deletion fails mid-way, while the PRD's Reverse deletionOrder is precisely a mid-way-interruptible sequence that waits for each Application to be fully deleted before the next. The exposure is created by shipping the sequence and removing the revert in the same quarter.",
+      "citations": ["notes/note-1.md", "prd-progressive-sync-deletion.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "Rollback writes a commit into the audit record that carries none of the provenance the record is built on. The rollback proposal pushes a checkout of an old revision directly to the sync branch in both hydrator modes, bypassing the staging branch, while the hydrator defines the hydrated branch's history through fields the hydrator populates from a dry commit: drySHA, commitAuthor, commitMessage and the reproduction commands. A rollback has no dry commit, so the change-auditing use case the hydrator claims for organizations with strong audit requirements has a commit with no dry lineage to trace.",
+      "citations": ["tickets/T-27327.md", "rfc-002-manifest-hydrator.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The least-privilege posture the impersonation RFC is justified by is not enforced on the diff path, and the RFC's mitigation does not reach it. The RFC mitigates privilege escalation by restricting service account configuration to admin users at the AppProject level; the diff path ignores destinationServiceAccounts entirely and requires real patch authority on the standing cluster credential, because Kubernetes RBAC has no dry-run verb and authorization happens before the dry-run flag is evaluated. The stated safety rests on Argo CD's convention of always sending dryRun=All, not on any enforced boundary, and the grant grows with each new resource kind.",
+      "citations": ["rfc-001-sync-impersonation.md", "tickets/T-28695.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "Escalation for licensed review, authorship: whether a GPG-signed hydrated commit produced by the commit server under one cluster-wide key, carrying a human's name in the commitAuthor field copied from an unrelated dry commit, can be relied on as evidence that a named person authorized a production change is a question of attribution and electronic-records law, not an engineering question. This draft does not answer it. Route to licensed counsel in each jurisdiction where the organization asserts change-audit compliance, before the change-auditing use case is offered as satisfying an audit requirement.",
+      "citations": ["tickets/T-28239.md", "rfc-002-manifest-hydrator.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "Escalation for licensed review, published commitments: the roadmap's published statement that ordered or automated deletion of ApplicationSet children will not be implemented and that teardown remains a manual operator action is a public representation that users configure and contract around, and the PRD reverses it. Whether reversing it, and whether the PRD's acknowledged silent acceptance of an ignored custom deletion configuration, creates any warranty, support or consumer-protection exposure is for licensed counsel in the governing jurisdiction; this review only identifies the two records that conflict.",
+      "citations": ["strategy.md", "prd-progressive-sync-deletion.md"]
+    }
+  ]
+}

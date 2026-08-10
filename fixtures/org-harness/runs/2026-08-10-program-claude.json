@@ -1,0 +1,94 @@
+{
+  "claims": [
+    {
+      "kind": "conflict",
+      "claim": "The interim restriction from the appset incident review — hydrator pilot repos must not use progressive sync until there is a debounce for the wave restart each hydrator push causes — forbids the PRD's entire delivery vehicle on those repos: deletionOrder is added to ApplicationSetStrategy nested inside strategy.rollingSync, so an AllAtOnce or Reverse deletionOrder can only be exercised by an ApplicationSet that is already running RollingSync progressive sync. Hydrator pilot repos therefore cannot adopt the deletion strategy at all while the restriction stands, and the PRD is written as if it were already lifted.",
+      "citations": ["notes/note-2.md", "prd-progressive-sync-deletion.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "The same no-progressive-sync-on-hydrator-pilot-repos restriction collides with T-24578, which is a request to give ApplicationSets the Source Hydrator so that hydrated child Applications can be ordered on destroy through sync waves. That request asks for exactly the combination the restriction bans — hydration and ApplicationSet rollout ordering on the same repo — so it cannot be piloted until the debounce lands, and the ticket carries no note of the restriction.",
+      "citations": ["notes/note-2.md", "tickets/T-24578.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "T-28927 proposes promoting Progressive Sync from beta to Stable, where Stable means tested and validated across various use cases. The incident review's standing restriction bans progressive sync on hydrator pilot repos until a debounce exists, so the hydrated-branch use case is by rule untested at the moment of promotion. The stable-promotion scope and the interim restriction cannot both hold unless the debounce is added to T-28927's remaining scope, which it is not.",
+      "citations": ["notes/note-2.md", "tickets/T-28927.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "The platform-sync decision that impersonation goes behind a per-project flag and that nobody flips it on a project until the diff story is fixed blocks T-28695, which is not merely a bug report but a request whose reproduction and expected behaviour both require impersonation enabled (application.sync.impersonation.enabled: true) together with Server-Side Diff. The restriction forbids the precondition the request depends on, so T-28695 cannot be validated on any project while the freeze stands — and T-28695 is itself the diff story the freeze is waiting on, making the two mutually blocking.",
+      "citations": ["notes/note-1.md", "tickets/T-28695.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "T-27833's only proposed fix for the namespace-escape hole — split resources so namespace bootstrapping uses the Argo CD service account while the sync operation uses the impersonated SA — requires the impersonation feature to be turned on for the affected projects. The per-project impersonation freeze forbids that until the diff story is fixed, so the review-environment security boundary T-27833 describes stays open for as long as the diff work takes, and nothing on the ticket records that dependency.",
+      "citations": ["notes/note-1.md", "tickets/T-27833.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "The incident runbook rule — switch the ApplicationSet to AllAtOnce deletion before deleting any child app by hand, standing until the controller fix lands — is the operational negation of the PRD's headline goal. The PRD's Reverse deletionOrder waits for one Application to be fully deleted before moving to the next; T-28511 shows that wait never completes when a child is stuck Progressing, which is why the runbook mandates AllAtOnce. Shipping Reverse gives operators a setting the standing runbook instructs them to turn off before every manual teardown.",
+      "citations": ["notes/note-2.md", "prd-progressive-sync-deletion.md", "tickets/T-28511.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "The roadmap states that deletion of generated Applications is explicitly out of scope for rollout orchestration, that ordered or automated deletion of ApplicationSet children will not be implemented, and that teardown remains a manual operator action performed one Application at a time. The PRD's stated goal is a Reverse deletionOrder that deletes ApplicationSet children in reverse RollingSync step order automatically. These are direct contradictions on the same object, and the roadmap statement is the one currently published.",
+      "citations": ["strategy.md", "prd-progressive-sync-deletion.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The roadmap-versus-PRD contradiction over whether appset deletion stays manual has no owner who can resolve it: the incident review explicitly declined to decide it and asked for an owner, and the PRD lists sponsors, reviewers and approvers all as TBD. RFC-001 by contrast names its approvers, which is the shape a decidable proposal has here. Until the PRD's approver line is filled, the two documents will keep disagreeing in public with no one empowered to retract either.",
+      "citations": ["notes/note-2.md", "prd-progressive-sync-deletion.md", "rfc-001-sync-impersonation.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "The root cause recorded on the platform sync call for T-26271 — that with impersonation on, diff runs as the destination service account which lacks patch on cluster-scoped resources — contradicts both the ticket's own evidence and T-28695. T-26271's error names the identity as system:serviceaccount:argocd:argocd-server, and T-28695 states that the diff path does not honour destinationServiceAccounts at all and runs as the cluster credential from the cluster Secret. If T-28695 is right, propagating the call's root cause to T-26271 sends the reporter after the wrong identity, which is the opposite of the intent of getting them to stop chasing the cluster Secret.",
+      "citations": ["notes/note-1.md", "tickets/T-26271.md", "tickets/T-28695.md"]
+    },
+    {
+      "kind": "cross-reference",
+      "claim": "RFC-001 scoped impersonation to the sync path only: its Application Controller component work is to set the Impersonate configuration from the AppProject CR into the SyncContext in sync.go, and its component list covers GitOps Engine, API, controller, UI, CLI and docs with no diff path anywhere. T-28695 is precisely the consequence — sync honours destinationServiceAccounts, diff does not — and that omission is what produced the impersonation freeze that now blocks RFC-001's own rollout. A design decision recorded as a scope boundary in one document is the blocking defect in another, and neither cites the other.",
+      "citations": ["rfc-001-sync-impersonation.md", "tickets/T-28695.md", "notes/note-1.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "T-27327 proposes rollback as a direct git checkout, commit and push to the sync branch, bypassing the staging branch. RFC-002 requires that the actual push operation be delegated to the commit server, and T-28239 makes that commit server fail fast and refuse to push any commit it cannot verify against the configured signing key once commitserver.sign.hydrated.commits is on, with the operator enforcing the branch through the project's SourceIntegrity policy. A rollback pushed outside the commit server would be unsigned and rejected by the very SourceIntegrity policy protecting the hydrated branch, so the rollback design and the signing design cannot both ship as written.",
+      "citations": ["tickets/T-27327.md", "rfc-002-manifest-hydrator.md", "tickets/T-28239.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "T-28755 proposes parallelGroups, in which steps within a group execute concurrently and carry no total order. The PRD's Reverse deletionOrder is defined as the reverse order of the steps configured in RollingSync and requires a check that errors out unless rollingSync lists an order of application deployment. Under parallelGroups there is no single ordering to reverse, so either Reverse must reject parallel ApplicationSets outright or the ordering check the PRD specifies is undefined. Neither ticket accounts for the other.",
+      "citations": ["tickets/T-28755.md", "prd-progressive-sync-deletion.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "Deprioritizing T-27327 to next quarter and moving the dev pair onto the progressive sync deletion loop means the ordered-deletion feature ships into an environment with no rollback path: with the hydrator active, the desired state that ordered deletion is tearing down lives on a hydrated branch, and T-27327 is the only proposed mechanism for reverting an application to a prior rendered revision. A Reverse deletion that stalls on a stuck child leaves the ApplicationSet inconsistent with the cluster and no supported way to roll the sync branch back.",
+      "citations": ["notes/note-1.md", "tickets/T-27327.md", "prd-progressive-sync-deletion.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "RFC-002's second goal is to make a promotion system possible on push-to-stage mode, where Argo CD relies on an external system to move changes to the deployment branch. That external system, for this org, is the stage-branch promoter that is still a shell script with nobody owning it. T-26443 is the failure that unowned component produces: in push-to-stage the promoter has not moved the fresh manifests, so auto-sync deploys whatever the stage branch last held. An RFC goal is resting on an unassigned dependency, and parking the ownership question leaves the defect unassigned too.",
+      "citations": ["rfc-002-manifest-hydrator.md", "notes/note-1.md", "tickets/T-26443.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The hydrator pilot repo in T-27949 lands a fresh commit on the hydrated branch every hydration cycle, which RFC-002 confirms is the design — each dry commit produces a commit on each affected environment branch. T-27875 shows that an application with automated sync policy, no selfHeal, and the manifest-generate-paths annotation permanently skips auto-sync when a commit arrives while a previous sync is still running, because Status.Sync.Revision records the last compared rather than last synced revision. A high hydration commit rate is a machine for producing exactly that overlap, so hydrator pilot apps can silently stop syncing while reporting no error.",
+      "citations": ["tickets/T-27949.md", "rfc-002-manifest-hydrator.md", "tickets/T-27875.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "T-28927 treats the out-of-order sync blocker as resolved in #27467 for v3.6 and defines the remaining scope for Stable around backlog labels, but T-27949 documents a still-open timing gap on v3.4.2 in which the ApplicationSet reports the rollout complete while child Applications are OutOfSync, and it records that no relevant progressive-sync transition logs were emitted because the controller logs at warn. T-27846, the ticket that would add the metrics answering exactly which Applications a sync is waiting for, is still a proposal. The stable date depends on being able to observe a silent-success failure mode with observability that does not exist yet.",
+      "citations": ["tickets/T-28927.md", "tickets/T-27949.md", "tickets/T-27846.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "T-28755's parallelGroups exist to stop production cluster groups waiting on staging, which multiplies the number of clusters being reconciled simultaneously. T-29001 documents that QPS and Burst are today global across all managed destination clusters, forcing a lowest-common-denominator setting that already overwhelms edge clusters at the default QPS 50 and Burst 100. Removing the sequential barrier without per-cluster limits raises concurrent API pressure on precisely the fragile clusters the global setting cannot protect, so parallel steps should be sequenced behind the per-cluster override, not beside it.",
+      "citations": ["tickets/T-28755.md", "tickets/T-29001.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "The PRD's Non-Goals accept that a user selecting the custom deletion strategy gets a configuration field that takes input and silently ignores it, with no UI statement that the option is unavailable. The roadmap's first-class ApplicationSet UI/CLI/API workstream is the surface where that field would appear, and it already records that managing deletion order of child applications is not exposed through those interfaces. Shipping deletionOrder into the CRD with a silently ignored Custom value hands the UI workstream a field it must render as accepted while the roadmap says the capability behind it does not exist.",
+      "citations": ["prd-progressive-sync-deletion.md", "strategy.md"]
+    }
+  ]
+}

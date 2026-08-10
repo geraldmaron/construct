@@ -10,7 +10,7 @@ Nothing installed today changes under you. Alphas publish under the `alpha` tag,
 
 **Phases 1 through 4 have landed** (`3.0.0-alpha.3`). The spine runs end to end — outcome → implicated domains → dispatch → deliverable, with an append-only work log, a decision inbox, and a verdict surface. The role packs ship as committed data rather than prompt text, challenges are checked rather than declared, and the model matrix states which families it has actually validated instead of implying all of them.
 
-Phase 4 has two criteria it has **not** met, said here rather than left to the changelog: only one model family is tuned, and the program pack's depth was reopened when the prompt behind its two passing runs changed. Six concerns added in 2026-08 — strategy, system design, operations, user experience, measurement, and a lens for security — all route and carry lenses; two of them (strategy, system design) have since passed the harness-plant measurement that is what "at depth" means here, and the rest have not. The table below says which is which.
+Phase 4 has criteria it has **not** met, said here rather than left to the changelog: only one model family is tuned, the program pack's depth was reopened when the prompt behind its two passing runs changed, and — found on 2026-08-10 and the largest of the three — the pack-depth measurement itself does not do what its name claims. A full eleven-lens sweep on the tuned family showed that most planted findings are produced by lenses that do not own them, so the old "at depth" verdict was measuring how much of the corpus a run swept rather than what the lens contributed. Every affected claim is restated in the table below; exactly one concern survives the stricter rule.
 
 Three limits are load-bearing rather than fine print. **Legal and compliance output is dogfood-only**, and the legal pack declares no covered jurisdiction until a licensed attorney accepts its corpus, so its findings are flagged for licensed review, never issued as advice. **One model family is tuned** (Claude); every other family runs labeled best-effort and writes a degradation note on each dispatch. And **nothing here claims to work for anyone other than its author**: the gates that would have sampled external users are removed, so the project makes no cross-user success-rate claim at all (STRATEGY.md, Phase 5). Treat it as an alpha you can drive, not a product. No stability is promised until the Phase 5 stakeholder-acceptance gate passes, and the `alpha` tag rather than the version number is what enforces that.
 
@@ -44,32 +44,43 @@ it cover my role?" is really "is the thing my role notices in the catalog?"
 Here is that map, and it is also the honest coverage report — nobody types any
 name in the right-hand column.
 
-| The seat on a human team | The concern it owns here | State |
+| The seat on a human team | The concern it owns here | What the full sweep measured |
 |---|---|---|
-| Product manager | `product-scoping` | at depth |
-| Program manager / TPM | `program-sequencing` | at depth, criterion reopened |
-| Counsel | `contracts`, `privacy`, `employment` | at depth, dogfood-only |
-| Compliance | `compliance` | at depth, dogfood-only |
-| Director / VP | `strategy-alignment` | at depth (one run, untuned family) |
-| Architect / tech lead / platform | `system-design` | at depth (one run, untuned family) |
-| Support / on-call | `operations` | routes, missed its plant |
-| Designer / UX | `user-experience`, `accessibility` | routes, missed its plant |
-| Data / analyst | `measurement` | routes, depth unmeasured |
-| Security engineer | `security` | routes, plant defective — unmeasured |
-| Finance / billing | `commerce-tax` | routes, default template |
-| Marketing | `marketing-claims` | routes, default template |
+| Compliance | `compliance` | **isolated** — the only one; dogfood-only |
+| Product manager | `product-scoping` | found, not isolated |
+| Program manager / TPM | `program-sequencing` | found, not isolated |
+| Counsel | `contracts`, `privacy`, `employment` | found, not isolated; dogfood-only |
+| Director / VP | `strategy-alignment` | found, not isolated; its plant restates the product one |
+| Designer / UX | `user-experience`, `accessibility` | found, not isolated |
+| Data / analyst | `measurement` | found, not isolated |
+| Security engineer | `security` | found, not isolated |
+| Architect / tech lead / platform | `system-design` | missed by its own lens |
+| Support / on-call | `operations` | missed by its own lens |
+| Finance / billing | `commerce-tax` | routes, default template, unmeasured |
+| Marketing | `marketing-claims` | routes, default template, unmeasured |
 | Engineer | — | deliberately absent: your host is the engineer |
 
-"At depth" is not a description, it is a measurement: a clean-context run over
-a fixture organization, scored against an answer key committed before the run
-and never edited to make a run pass, hitting a finding planted for that
-concern. Anything else means the concern is inferred and carries a lens and a
-deliverable template, and has not passed that bar — either because it missed
-its plant, or because the plant itself was found defective, both of which are
-said here rather than smoothed over. The distinction is kept in public because
-collapsing it is the exact failure this project exists to prevent. The two
-rows marked at depth rest on one run each, on an untuned local family; one run
-is evidence, not a rate.
+Read that column carefully, because it was weaker than this page used to say.
+The measurement is a sweep: every lens dispatched once, clean context, over a
+fixture organization, scored against an answer key committed before any run and
+never edited to make a run pass. A concern is **isolated** only when the lens
+that owns a planted finding produces it *and no other lens does*. **Found, not
+isolated** means the finding was produced, but lenses that do not own it
+produced it too — so the run shows the corpus was swept, not that the lens
+contributed anything the others would have missed. **Missed** means the owning
+lens did not produce its own finding at all.
+
+Until 2026-08-10 this table said "at depth" for six rows, on a rule that only
+asked whether the owning lens hit its plant. A full eleven-lens sweep on the
+tuned family then showed ten of the thirteen planted findings being produced by
+lenses that do not own them, so that rule could not tell depth from coverage,
+and the rows resting on it have been restated above. One concern survives the
+stricter rule. This is published rather than repaired quietly because a
+coverage number dressed as a depth number is the exact failure this project
+exists to prevent — including when the project is the one making it. The
+sweep, its per-run scores, and the discrimination matrix are all under
+`fixtures/org-harness/runs/`; `npm run harness:discrimination -- --suite claude`
+reproduces the verdict from them.
 
 ## Development
 

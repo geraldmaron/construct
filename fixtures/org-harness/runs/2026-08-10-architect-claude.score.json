@@ -1,0 +1,231 @@
+{
+  "rung0": {
+    "pass": true,
+    "fabricated": [],
+    "uncited": [],
+    "pathShortened": []
+  },
+  "rung1": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "X1",
+        "found": true,
+        "by": {
+          "claim": "RFC-002 names push-to-stage as an integration point for an external promotion system and lists implementing a change promotion system as a non-goal, so freshness of the stage branch is owned outside Argo CD. T-26443 is the consequence at that seam: in push-to-stage, auto-sync deploys whatever the stage branch last held before the external promoter moves the fresh manifests. note-1 records that the promoter on this side of the seam is still an unowned shell script, so the half of the design Argo CD delegated has no owner at all.",
+          "citations": [
+            "rfc-002-manifest-hydrator.md",
+            "tickets/T-26443.md",
+            "notes/note-1.md"
+          ]
+        }
+      },
+      {
+        "id": "X2",
+        "found": false
+      },
+      {
+        "id": "X3",
+        "found": false
+      }
+    ]
+  },
+  "rung2": {
+    "pass": true,
+    "plants": [
+      {
+        "id": "R1",
+        "found": true,
+        "by": {
+          "claim": "note-1 gates impersonation rollout on the diff story being fixed, while T-28695 notes that #24134 would make Server Side Diff the default. Because RBAC has no dry-run verb and server-side apply dry-run authorizes as `patch`, defaulting SSD before the diff path honors `destinationServiceAccounts` converts every least-privilege external cluster credential into a standing unbounded `patch` grant or a `ComparisonError`. The ordering of those two changes, not either one alone, decides whether the least-privilege boundary RFC-001 was written to create survives.",
+          "citations": [
+            "tickets/T-28695.md",
+            "rfc-001-sync-impersonation.md",
+            "notes/note-1.md"
+          ]
+        }
+      },
+      {
+        "id": "R2",
+        "found": true,
+        "by": {
+          "claim": "The hydrator's per-cycle commit to the hydrated branch is read by child Applications as a source change, and note-2 confirms each such push restarts the rolling sync wave, with the interim rule that hydrator pilot repos must not use progressive sync until a debounce exists. T-27949 is that collision on the record: a repository piloting the source hydrator where every hydration commit is picked up as a source change while RollingSync loses the spec-change trigger. The hydrator commit cadence and the progressive sync step machine are coupled through the sync branch with nothing arbitrating between them.",
+          "citations": [
+            "notes/note-2.md",
+            "tickets/T-27949.md",
+            "rfc-002-manifest-hydrator.md"
+          ]
+        }
+      }
+    ],
+    "substantiveRatio": 1
+  },
+  "rung3": {
+    "pass": false,
+    "conflicts": [
+      {
+        "id": "C1",
+        "found": true,
+        "by": {
+          "claim": "The roadmap commits that ordered or automated deletion of ApplicationSet children will not be implemented and that teardown stays a manual operator action performed one Application at a time, while the PRD's stated goal is a `deletionOrder: Reverse` that deletes children in reverse rollingSync step order and waits for each to finish. Both cannot hold: shipping the PRD retires a roadmap non-commitment that the UI/CLI/API first-class ApplicationSet item was scoped around.",
+          "citations": [
+            "strategy.md",
+            "prd-progressive-sync-deletion.md"
+          ]
+        }
+      }
+    ],
+    "proposals": [
+      {
+        "id": "P1",
+        "found": false
+      },
+      {
+        "id": "P2",
+        "found": false
+      },
+      {
+        "id": "P3",
+        "found": false
+      }
+    ],
+    "deltas": [
+      {
+        "id": "D1",
+        "found": false
+      },
+      {
+        "id": "D2",
+        "found": false
+      }
+    ]
+  },
+  "roleCoverage": {
+    "pm": [
+      {
+        "id": "C1",
+        "found": true,
+        "by": {
+          "claim": "The roadmap commits that ordered or automated deletion of ApplicationSet children will not be implemented and that teardown stays a manual operator action performed one Application at a time, while the PRD's stated goal is a `deletionOrder: Reverse` that deletes children in reverse rollingSync step order and waits for each to finish. Both cannot hold: shipping the PRD retires a roadmap non-commitment that the UI/CLI/API first-class ApplicationSet item was scoped around.",
+          "citations": [
+            "strategy.md",
+            "prd-progressive-sync-deletion.md"
+          ]
+        }
+      },
+      {
+        "id": "X3",
+        "found": false
+      }
+    ],
+    "engineering": [
+      {
+        "id": "X1",
+        "found": true,
+        "by": {
+          "claim": "RFC-002 names push-to-stage as an integration point for an external promotion system and lists implementing a change promotion system as a non-goal, so freshness of the stage branch is owned outside Argo CD. T-26443 is the consequence at that seam: in push-to-stage, auto-sync deploys whatever the stage branch last held before the external promoter moves the fresh manifests. note-1 records that the promoter on this side of the seam is still an unowned shell script, so the half of the design Argo CD delegated has no owner at all.",
+          "citations": [
+            "rfc-002-manifest-hydrator.md",
+            "tickets/T-26443.md",
+            "notes/note-1.md"
+          ]
+        }
+      },
+      {
+        "id": "X2",
+        "found": false
+      }
+    ],
+    "tpm": [
+      {
+        "id": "TP1",
+        "found": false
+      }
+    ],
+    "analyst": [
+      {
+        "id": "A1",
+        "found": true,
+        "by": {
+          "claim": "T-27846 asks for progressive sync metrics because there is no wide view of where a rollout is waiting, and T-27949 reports that its ApplicationSet controller logs were at warn level so no progressive-sync transition logs were emitted at all. The observability gap is what makes the ordering designs unfalsifiable in practice: `Reverse` deletion waits for one Application to be fully deleted before the next, and nothing exposes which Application a stalled wave is waiting on, which is precisely the state T-28511 gets stuck in.",
+          "citations": [
+            "tickets/T-27846.md",
+            "tickets/T-27949.md",
+            "prd-progressive-sync-deletion.md"
+          ]
+        }
+      }
+    ],
+    "compliance": [
+      {
+        "id": "CP1",
+        "found": false
+      }
+    ],
+    "legal": [
+      {
+        "id": "L1",
+        "found": true,
+        "by": {
+          "claim": "T-28239 has the commit server hold one cluster-wide GPG signing key, fail fast at startup when it is missing or invalid, and depends on the operator adding the public key to `argocd-gpg-keys-cm` and the project's `SourceIntegrity` policy. Combined with RFC-002's `repository-write` secret and its own note that push credentials probably belong in a separate namespace, the enforcing half of the design sits with the repo and cluster operators: once branch protection and SourceIntegrity are enforced against that one key, moving to per-project keys requires their consent and a coordinated rotation, not an Argo CD-side config change.",
+          "citations": [
+            "tickets/T-28239.md",
+            "rfc-002-manifest-hydrator.md"
+          ]
+        }
+      }
+    ],
+    "strategy": [
+      {
+        "id": "SA2",
+        "found": true,
+        "by": {
+          "claim": "The roadmap commits that ordered or automated deletion of ApplicationSet children will not be implemented and that teardown stays a manual operator action performed one Application at a time, while the PRD's stated goal is a `deletionOrder: Reverse` that deletes children in reverse rollingSync step order and waits for each to finish. Both cannot hold: shipping the PRD retires a roadmap non-commitment that the UI/CLI/API first-class ApplicationSet item was scoped around.",
+          "citations": [
+            "strategy.md",
+            "prd-progressive-sync-deletion.md"
+          ]
+        }
+      }
+    ],
+    "architect": [
+      {
+        "id": "SD1",
+        "found": false
+      }
+    ],
+    "operations": [
+      {
+        "id": "OP1",
+        "found": false
+      }
+    ],
+    "design": [
+      {
+        "id": "UX1",
+        "found": false
+      }
+    ],
+    "security": [
+      {
+        "id": "TH2",
+        "found": false
+      }
+    ]
+  },
+  "distractors": [
+    {
+      "id": "DX1",
+      "violated": false
+    },
+    {
+      "id": "DX2",
+      "violated": false
+    }
+  ],
+  "distractorGate": {
+    "began": "2026-08-05",
+    "note": "DX1/DX2 violations fail rung 3 for runs scored from this date; score files recorded earlier are never regenerated and keep their as-run results. Evidence: five distractor-disciplined runs (two single-pass, three composed dispatch-shape) all clean; every run before the discipline paragraph violated at least one."
+  },
+  "pass": false
+}

@@ -1,0 +1,212 @@
+{
+  "rung0": {
+    "pass": true,
+    "fabricated": [],
+    "uncited": [],
+    "pathShortened": []
+  },
+  "rung1": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "X1",
+        "found": false
+      },
+      {
+        "id": "X2",
+        "found": false
+      },
+      {
+        "id": "X3",
+        "found": true,
+        "by": {
+          "claim": "The PRD's written risk record is contradicted by an already-reproduced defect. The PRD records no immediate risks to consider and asserts no impact on security aspects because no additional roles or privileges are needed, while the ApplicationSet ticket reports an ApplicationSet configured with rollingSync step order and the reverse deletion strategy entering an infinite delete and re-create loop, because the wait for one Application to be fully deleted never completes when a child is stuck Progressing and the controller restarts the wave. The approval-facing risk assessment is false as recorded.",
+          "citations": [
+            "prd-progressive-sync-deletion.md",
+            "tickets/T-28511.md"
+          ]
+        }
+      }
+    ]
+  },
+  "rung2": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "R1",
+        "found": true,
+        "by": {
+          "claim": "The impersonation design's audit-trail assurance does not cover the diff path. The RFC answers the open question about tracking who executed commands by relying on Kubernetes audit events capturing both the actual and the impersonated user, but Server-Side Diff ignores destinationServiceAccounts and runs as the cluster Secret credential, and the API server authorizes its server-side apply dry-run as a patch. Diff-time write authorizations are therefore recorded in the audit trail against the shared argocd cluster identity, not the tenant service account.",
+          "citations": [
+            "rfc-001-sync-impersonation.md",
+            "tickets/T-28695.md"
+          ]
+        }
+      },
+      {
+        "id": "R2",
+        "found": false
+      }
+    ],
+    "substantiveRatio": 1
+  },
+  "rung3": {
+    "pass": false,
+    "conflicts": [
+      {
+        "id": "C1",
+        "found": true,
+        "by": {
+          "claim": "The published roadmap and the PRD state incompatible commitments about the same behavior. The roadmap says deletion of generated Applications is explicitly out of scope for rollout orchestration, that ordered or automated deletion of ApplicationSet children will not be implemented, and that teardown remains a manual operator action performed one Application at a time. The PRD introduces deletionOrder with a Reverse value that deletes children in reverse rollingSync step order, waiting for each to be fully deleted. Shipping the PRD reverses a commitment the roadmap publishes to users.",
+          "citations": [
+            "strategy.md",
+            "prd-progressive-sync-deletion.md"
+          ]
+        }
+      }
+    ],
+    "proposals": [
+      {
+        "id": "P1",
+        "found": false
+      },
+      {
+        "id": "P2",
+        "found": false
+      },
+      {
+        "id": "P3",
+        "found": false
+      }
+    ],
+    "deltas": [
+      {
+        "id": "D1",
+        "found": false
+      },
+      {
+        "id": "D2",
+        "found": false
+      }
+    ]
+  },
+  "roleCoverage": {
+    "pm": [
+      {
+        "id": "C1",
+        "found": true,
+        "by": {
+          "claim": "The published roadmap and the PRD state incompatible commitments about the same behavior. The roadmap says deletion of generated Applications is explicitly out of scope for rollout orchestration, that ordered or automated deletion of ApplicationSet children will not be implemented, and that teardown remains a manual operator action performed one Application at a time. The PRD introduces deletionOrder with a Reverse value that deletes children in reverse rollingSync step order, waiting for each to be fully deleted. Shipping the PRD reverses a commitment the roadmap publishes to users.",
+          "citations": [
+            "strategy.md",
+            "prd-progressive-sync-deletion.md"
+          ]
+        }
+      },
+      {
+        "id": "X3",
+        "found": true,
+        "by": {
+          "claim": "The PRD's written risk record is contradicted by an already-reproduced defect. The PRD records no immediate risks to consider and asserts no impact on security aspects because no additional roles or privileges are needed, while the ApplicationSet ticket reports an ApplicationSet configured with rollingSync step order and the reverse deletion strategy entering an infinite delete and re-create loop, because the wait for one Application to be fully deleted never completes when a child is stuck Progressing and the controller restarts the wave. The approval-facing risk assessment is false as recorded.",
+          "citations": [
+            "prd-progressive-sync-deletion.md",
+            "tickets/T-28511.md"
+          ]
+        }
+      }
+    ],
+    "engineering": [
+      {
+        "id": "X1",
+        "found": false
+      },
+      {
+        "id": "X2",
+        "found": false
+      }
+    ],
+    "tpm": [
+      {
+        "id": "TP1",
+        "found": false
+      }
+    ],
+    "analyst": [
+      {
+        "id": "A1",
+        "found": false
+      }
+    ],
+    "compliance": [
+      {
+        "id": "CP1",
+        "found": false
+      }
+    ],
+    "legal": [
+      {
+        "id": "L1",
+        "found": true,
+        "by": {
+          "claim": "Hydrated commits are attributed to a named human who never wrote them: the hydrator's README template and hydrator.metadata copy commitAuthor, commitMessage and commitTime from the dry commit onto the machine-produced commit the commit server pushes to the hydrated branch, and that commit server today always pushes unsigned commits. The git record of the deployed state therefore names a person as author with no cryptographic proof of origin, so attribution in the hydrated branch is asserted metadata rather than provable authorship.",
+          "citations": [
+            "rfc-002-manifest-hydrator.md",
+            "tickets/T-28239.md"
+          ]
+        }
+      }
+    ],
+    "strategy": [
+      {
+        "id": "SA2",
+        "found": true,
+        "by": {
+          "claim": "The published roadmap and the PRD state incompatible commitments about the same behavior. The roadmap says deletion of generated Applications is explicitly out of scope for rollout orchestration, that ordered or automated deletion of ApplicationSet children will not be implemented, and that teardown remains a manual operator action performed one Application at a time. The PRD introduces deletionOrder with a Reverse value that deletes children in reverse rollingSync step order, waiting for each to be fully deleted. Shipping the PRD reverses a commitment the roadmap publishes to users.",
+          "citations": [
+            "strategy.md",
+            "prd-progressive-sync-deletion.md"
+          ]
+        }
+      }
+    ],
+    "architect": [
+      {
+        "id": "SD1",
+        "found": false
+      }
+    ],
+    "operations": [
+      {
+        "id": "OP1",
+        "found": false
+      }
+    ],
+    "design": [
+      {
+        "id": "UX1",
+        "found": false
+      }
+    ],
+    "security": [
+      {
+        "id": "TH2",
+        "found": false
+      }
+    ]
+  },
+  "distractors": [
+    {
+      "id": "DX1",
+      "violated": false
+    },
+    {
+      "id": "DX2",
+      "violated": false
+    }
+  ],
+  "distractorGate": {
+    "began": "2026-08-05",
+    "note": "DX1/DX2 violations fail rung 3 for runs scored from this date; score files recorded earlier are never regenerated and keep their as-run results. Evidence: five distractor-disciplined runs (two single-pass, three composed dispatch-shape) all clean; every run before the discipline paragraph violated at least one."
+  },
+  "pass": false
+}

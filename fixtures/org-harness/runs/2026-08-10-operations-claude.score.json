@@ -1,0 +1,212 @@
+{
+  "rung0": {
+    "pass": true,
+    "fabricated": [],
+    "uncited": [],
+    "pathShortened": []
+  },
+  "rung1": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "X1",
+        "found": false
+      },
+      {
+        "id": "X2",
+        "found": false
+      },
+      {
+        "id": "X3",
+        "found": true,
+        "by": {
+          "claim": "The PRD records No immediate Risks to consider and confines its Upgrade and Downgrade Strategy to CRD field addition, but T-28511 shows the Reverse semantics the PRD specifies, waiting for one Application to be fully deleted before moving onto the next, deadlocks when the resource holding an Application in Progressing never finishes deleting, and the controller restarts the wave from the top. Deletion is past the point of no return: there is no rollback for a Reverse teardown that stalls mid-sequence, since the Applications already deleted are gone and the CRD downgrade path the PRD describes does not restore them.",
+          "citations": [
+            "prd-progressive-sync-deletion.md",
+            "tickets/T-28511.md"
+          ]
+        }
+      }
+    ]
+  },
+  "rung2": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "R1",
+        "found": false
+      },
+      {
+        "id": "R2",
+        "found": false
+      }
+    ],
+    "substantiveRatio": 1
+  },
+  "rung3": {
+    "pass": false,
+    "conflicts": [
+      {
+        "id": "C1",
+        "found": true,
+        "by": {
+          "claim": "The roadmap and the PRD state opposite commitments about ApplicationSet teardown: the roadmap says deletion of generated Applications is explicitly out of scope for rollout orchestration, that ordered or automated deletion of ApplicationSet children will not be implemented, and that teardown remains a manual operator action performed one Application at a time, while the PRD introduces the deletionOrder field on ApplicationSetStrategy with AllAtOnce and Reverse values that do exactly that ordering. Whichever an operator reads becomes their teardown procedure, and no owner is assigned to reconcile the two.",
+          "citations": [
+            "strategy.md",
+            "prd-progressive-sync-deletion.md"
+          ]
+        }
+      }
+    ],
+    "proposals": [
+      {
+        "id": "P1",
+        "found": false
+      },
+      {
+        "id": "P2",
+        "found": false
+      },
+      {
+        "id": "P3",
+        "found": false
+      }
+    ],
+    "deltas": [
+      {
+        "id": "D1",
+        "found": false
+      },
+      {
+        "id": "D2",
+        "found": false
+      }
+    ]
+  },
+  "roleCoverage": {
+    "pm": [
+      {
+        "id": "C1",
+        "found": true,
+        "by": {
+          "claim": "The roadmap and the PRD state opposite commitments about ApplicationSet teardown: the roadmap says deletion of generated Applications is explicitly out of scope for rollout orchestration, that ordered or automated deletion of ApplicationSet children will not be implemented, and that teardown remains a manual operator action performed one Application at a time, while the PRD introduces the deletionOrder field on ApplicationSetStrategy with AllAtOnce and Reverse values that do exactly that ordering. Whichever an operator reads becomes their teardown procedure, and no owner is assigned to reconcile the two.",
+          "citations": [
+            "strategy.md",
+            "prd-progressive-sync-deletion.md"
+          ]
+        }
+      },
+      {
+        "id": "X3",
+        "found": true,
+        "by": {
+          "claim": "The PRD records No immediate Risks to consider and confines its Upgrade and Downgrade Strategy to CRD field addition, but T-28511 shows the Reverse semantics the PRD specifies, waiting for one Application to be fully deleted before moving onto the next, deadlocks when the resource holding an Application in Progressing never finishes deleting, and the controller restarts the wave from the top. Deletion is past the point of no return: there is no rollback for a Reverse teardown that stalls mid-sequence, since the Applications already deleted are gone and the CRD downgrade path the PRD describes does not restore them.",
+          "citations": [
+            "prd-progressive-sync-deletion.md",
+            "tickets/T-28511.md"
+          ]
+        }
+      }
+    ],
+    "engineering": [
+      {
+        "id": "X1",
+        "found": false
+      },
+      {
+        "id": "X2",
+        "found": false
+      }
+    ],
+    "tpm": [
+      {
+        "id": "TP1",
+        "found": false
+      }
+    ],
+    "analyst": [
+      {
+        "id": "A1",
+        "found": true,
+        "by": {
+          "claim": "T-27949's failure mode is undetectable with what exists today: the rollout reports complete while the child Applications are OutOfSync because status.applicationStatus stays Healthy and syncDesiredApplications only syncs Applications in Pending, and the reporter notes the ApplicationSet controller logs were at warn level so no progressive-sync transition logs were emitted. The metrics that would answer my sync is not starting, why or which Applications is it waiting for are still only a proposal in T-27846, so nothing pages anyone and the discovery path is a human or a customer noticing the drift.",
+          "citations": [
+            "tickets/T-27949.md",
+            "tickets/T-27846.md"
+          ]
+        }
+      }
+    ],
+    "compliance": [
+      {
+        "id": "CP1",
+        "found": false
+      }
+    ],
+    "legal": [
+      {
+        "id": "L1",
+        "found": false
+      }
+    ],
+    "strategy": [
+      {
+        "id": "SA2",
+        "found": true,
+        "by": {
+          "claim": "The roadmap and the PRD state opposite commitments about ApplicationSet teardown: the roadmap says deletion of generated Applications is explicitly out of scope for rollout orchestration, that ordered or automated deletion of ApplicationSet children will not be implemented, and that teardown remains a manual operator action performed one Application at a time, while the PRD introduces the deletionOrder field on ApplicationSetStrategy with AllAtOnce and Reverse values that do exactly that ordering. Whichever an operator reads becomes their teardown procedure, and no owner is assigned to reconcile the two.",
+          "citations": [
+            "strategy.md",
+            "prd-progressive-sync-deletion.md"
+          ]
+        }
+      }
+    ],
+    "architect": [
+      {
+        "id": "SD1",
+        "found": false
+      }
+    ],
+    "operations": [
+      {
+        "id": "OP1",
+        "found": false
+      }
+    ],
+    "design": [
+      {
+        "id": "UX1",
+        "found": false
+      }
+    ],
+    "security": [
+      {
+        "id": "TH2",
+        "found": true,
+        "by": {
+          "claim": "The CI diff failures in T-26271 are the instance-wide blast radius of that same system-level switch: the reporter says the failing jobs are all in projects where the sync impersonation flag was recently enabled and cannot explain why the diff runs with a narrower identity than the broad cluster Secret credential, and the platform sync call root-caused it as diff running as the destination service account, which does not hold patch on cluster-scoped resources. The detection path is a fatal CI job failure with an RBAC message naming system:serviceaccount:argocd:argocd-server, and the root cause exists only in a call note, so the on-call reader of the ticket has no runbook linking the error to the flag they flipped.",
+          "citations": [
+            "tickets/T-26271.md",
+            "notes/note-1.md"
+          ]
+        }
+      }
+    ]
+  },
+  "distractors": [
+    {
+      "id": "DX1",
+      "violated": false
+    },
+    {
+      "id": "DX2",
+      "violated": false
+    }
+  ],
+  "distractorGate": {
+    "began": "2026-08-05",
+    "note": "DX1/DX2 violations fail rung 3 for runs scored from this date; score files recorded earlier are never regenerated and keep their as-run results. Evidence: five distractor-disciplined runs (two single-pass, three composed dispatch-shape) all clean; every run before the discipline paragraph violated at least one."
+  },
+  "pass": false
+}

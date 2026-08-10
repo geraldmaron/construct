@@ -64,6 +64,32 @@ the authored register is more formal than the informal notes two of the
 plants sit in, so a plant may be locatable by style rather than by synthesis.
 
 
+### Discrimination measured 2026-08-10 (the sweep that reopened the depth claims)
+
+Every lens was dispatched once over this corpus, clean context, on the tuned
+family, and the resulting matrix is
+`runs/2026-08-10-claude-sweep.discrimination.json`. It asks of each planted
+role finding which lenses earned it. The result: `CP1` is produced by its owner
+and by nobody else; `SD1` and `OP1` are missed by their own lens; the remaining
+ten (`A1`, `C1`, `L1`, `SA2`, `TH2`, `TP1`, `UX1`, `X1`, `X2`, `X3`) are also
+produced by lenses that do not own them, up to nine non-owners for `C1` and
+`SA2`.
+
+Those ten cannot support a claim that the owning lens reaches depth, and this
+is a property of the plants, not of the runs that scored against them. No
+keyword set is being tightened in response: keywords are a proxy for stating a
+mechanism, so narrowing them after seeing which lenses collided is both editing
+a key to fit results and a change that moves the coincidence rather than
+removing it. The plants stay exactly as they are, graded exactly as they were,
+and are recorded here as not depth-bearing. Replacements have to be authored as
+mechanisms only one lens has reason to look for, which is a corpus question
+rather than a scoring one.
+
+`SA2` is the sharpest case: it names the same mechanism over the same document
+pair as `C1`, and its keyword sets are supersets of `C1`'s, so every claim that
+earns `C1` earns `SA2` for free. It was never capable of measuring the strategy
+lens.
+
 ### Retired 2026-08-10 (same day, before further runs)
 
 `TH1` and `SA1` are retired and replaced by `TH2` and `SA2`. Both originals
