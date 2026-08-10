@@ -505,6 +505,8 @@ message CommitManifestsResponse {
 
 The hydrator will need to push to the git repository. This will require a secret containing the git credentials.
 
+The `commitAuthor` value recorded in the README and `hydrator.metadata` is copied forward from the dry commit and is never the identity that produced the hydrated content: every push under this design is made by the GitHub App credential described above, not by the person named in that field. Until commit signing is available (tracked separately), nothing in the hydrated branch cryptographically ties a hydrated commit to either identity, the app that pushed it or the human credited in the metadata, so the branch cannot itself serve as proof of who authored a given change, only as a record of what a prior dry commit's author was claimed to be.
+
 Write access will be configured via a Kubernetes secret with the following structure:
 
 ```yaml
@@ -530,6 +532,8 @@ An organization with strong requirements around change auditing might enable man
 #### Use case 2:
 
 ### Implementation Details/Notes/Constraints
+
+The `CommitManifests` message marks `repoURL`, `targetBranch`, `drySHA`, `commitAuthor`, `commitMessage`, and `commitTime` as required fields. This is workable for the only caller we're building against today, the application controller pushing a freshly-hydrated dry commit, but it is a permanent commitment: proto2 `required` fields cannot later be loosened to optional without breaking every deployed client and server still compiled against the old message definition. Any future caller of the CommitManifestsService that isn't hydrating a brand-new dry commit, a rollback or promotion tool re-pushing a prior rendered tree for example, will still be obligated to populate all six fields even where the values don't map cleanly onto what's actually being pushed, because the wire contract can never make them optional out from under the callers already depending on it.
 
 ### Detailed examples
 

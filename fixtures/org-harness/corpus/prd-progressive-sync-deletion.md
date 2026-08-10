@@ -51,6 +51,8 @@ Following goals should be achieved in order to conclude this proposal:
 1. Deletion strategy `AllAtOnce` as default value - deletes all applications at once as the current behavior of deletion.
 2. Deletion strategy `Reverse` lets applications be deleted in the reverse order of the steps configured in RollingSync strategy.
 
+This ordering guarantee is the crux of the Reverse strategy: since the rollingSync steps array defines a single ordered sequence of match groups, reversing that sequence gives an unambiguous last-in-first-out deletion order. Any change that lets a step contain more than one match group evaluated concurrently would remove the single ordering that Reverse depends on, so Reverse deletion assumes rollingSync.steps stays a strictly sequential list of match groups, one deployed and deleted at a time, for as long as this feature exists.
+
 ### Non-Goals
 
 Users attempting to use the custom deletion strategy will find it unsupported, yet the UI will not explicitly state that this option is unavailable, leaving them with a configuration field that accepts input but ignores it silently.

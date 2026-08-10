@@ -97,6 +97,8 @@ Support more than one source for creating an Application [#8322](https://github.
 
 Application controller to scale automatically to provide high availability[#8340](https://github.com/argoproj/argo-cd/issues/8340).
 
+Note: application controller capacity for this quarter is committed to closing out Progressive Sync's remaining Stable-promotion punch list; the pair who owns sharding is the same pair working that list, so sharding work will not start until the Stable promotion closes.
+
 ### Add support for secrets in Application parameters
 
 The feature allows referencing secrets in Application parameters. [#1786](https://github.com/argoproj/argo-cd/issues/1786).

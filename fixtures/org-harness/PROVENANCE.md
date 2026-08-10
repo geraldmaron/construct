@@ -64,6 +64,70 @@ the authored register is more formal than the informal notes two of the
 plants sit in, so a plant may be locatable by style rather than by synthesis.
 
 
+### Replanted 2026-08-10 (third entry), committed before any run scored them
+
+Nine plants, one per role that carries a depth claim, each keyed to the
+territory in the table below rather than to a kind of finding. Drafted against
+the corpus by authors who were kept away from the answer key, the previous
+plants, and the recorded runs, so none of them could anchor on what already
+failed. Inserted paragraphs, by role:
+
+| Plant | Role | Inserted into | The mechanism |
+| --- | --- | --- | --- |
+| `L2` | legal | `rfc-002-manifest-hydrator.md`, `tickets/T-28239.md` | the hydrated branch credits a human author copied from the dry commit, and the only thing that could prove it defaults to off |
+| `SA3` | strategy | `strategy.md` | controller sharding is unstaffed because the same pair owns the Stable-promotion punch list |
+| `C2` | product | `prd-progressive-sync-deletion.md` | Reverse deletion's determinism promise assumes strictly sequential steps, against a proposal for concurrent ones |
+| `TP2` | program | `tickets/T-28927.md` | a shape freeze at Stable forecloses an open proposal's restructuring, and neither ticket references the other |
+| `A2` | analyst | `tickets/T-27949.md` | an asserted incidence rate with no counter that could confirm or refute it |
+| `SD2` | architect | `rfc-002-manifest-hydrator.md` | proto2 `required` fields cannot be loosened once a second caller exists |
+| `OP2` | operations | `tickets/T-28239.md` | a bad signing key crash-loops the fleet behind a generic pod-health alert |
+| `UX2` | design | `tickets/T-27327.md` | a rejected push leaves the operator at a failed-push message with no cause and no way forward |
+| `TH3` | security | `tickets/T-28239.md` | the signing key sits in the shared control-plane namespace, so anything with Secret reach there can produce commits verification trusts |
+
+`CP1` is unchanged: it already discriminated, and it is the model the rest were
+written against. Every retired plant keeps its paragraph in the corpus and its
+grading exactly as recorded, so runs already scored stay readable.
+
+Known risks, recorded here BEFORE any run is scored against these, rather than
+discovered afterwards: five of the nine sit on the manifest-hydrator and
+commit-signing material, so a run that sweeps that area may earn several; `L2`
+and `TH3` share a document pair and are separated only by their term sets; and
+`C2` and `TP2` both bear on the parallel-steps proposal, from different pairs.
+The next sweep is what decides whether these held.
+
+### Why the first batch could not discriminate (root cause, 2026-08-10)
+
+The plants were keyed to a KIND of finding rather than to the territory a role
+uniquely owns, and several roles ask overlapping questions. The clearest case:
+`product` asks "do any two commitments contradict, strategy against
+specification" and `strategy` asks "which recorded commitment does this
+contradict". A plant keyed to a contradiction between the roadmap and the spec
+therefore cannot separate them, no matter how its terms are written. It was
+doomed by the question sets, not by its wording.
+
+`CP1` survives for the mirror-image reason: it is keyed to which identity acts
+and whose audit trail follows, and no other lens asks that.
+
+So a discriminating plant is keyed to the OWNING LENS'S UNIQUE SLOT, not to a
+generic conflict, risk, or cross-reference:
+
+| Role | The territory only it asks about |
+| --- | --- |
+| compliance | which identity acts, and whose audit trail follows |
+| legal | who authored a record, and what the organization is bound by |
+| program | what an interim restriction blocks in a *different* workstream |
+| product | a promise made twice, incompatibly, about scope |
+| strategy | what gets displaced, unstaffed, or slipped by saying yes |
+| architect | what becomes hard to undo, and the second consumer |
+| operations | how anyone finds out at 3am, and what they can do then |
+| design | where a person gets stuck with no way forward and no way back |
+| security | what someone gains by making it break |
+| analyst | what cannot be observed, and the missing baseline |
+
+`engineering` gets no plant: no depth claim rests on it, deliberately and
+permanently, because the hosts are the engineers. `X1` and `X2` remain as
+cross-reference gates and stop being read as evidence about a role.
+
 ### Discrimination measured 2026-08-10 (the sweep that reopened the depth claims)
 
 Every lens was dispatched once over this corpus, clean context, on the tuned
