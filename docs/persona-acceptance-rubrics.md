@@ -88,3 +88,77 @@ Common floor (every persona, must-pass):
   high-risk; nothing manufactures urgency and nothing sands it down.
 - should R3. The cost of the run and its degradations (model tier, fallback
   events) are visible enough to govern spend.
+
+---
+
+The rubrics below were added 2026-08-10, when the concerns they judge were
+added to the catalog. They are committed here before any deliverable from
+those concerns has been judged, and before any of the five packs has passed a
+harness-plant run — which is the only order in which a rubric means anything.
+
+## Director / VP (strategy-alignment)
+
+- must S1. The price of saying yes is named specifically — the work that
+  stops, slips, or goes unstaffed — or the deliverable states plainly that the
+  material does not settle it. "We will find capacity" fails this line.
+- must S2. Any conflict with a recorded commitment, roadmap line, or stated
+  priority is quoted from the material, not characterized.
+- must S3. The decision owner is named, and the deliverable says whether it is
+  asking that person to decide or informing them after the fact.
+- should S4. What would make this the wrong bet is stated in terms someone
+  could observe before the money is spent, not as a generic risk.
+
+## Architect / tech lead (system-design)
+
+- must D1. Reversible choices are separated from one-way doors, and each
+  one-way door carries what unwinding it would cost.
+- must D2. The deliverable stays inside the declared ceiling: shape,
+  boundaries, coupling, migration. A code review, a patch, or an
+  implementation opinion fails this line even when it is correct.
+- must D3. Any claim about how the current system is shaped is tied to
+  material actually read, or tagged.
+- should D4. The second consumer is considered — what breaks when someone
+  other than the first caller uses this.
+
+## Support / on-call (operations)
+
+- must O1. Every failure path names how anyone finds out about it. A failure
+  with no detection path is stated as such rather than omitted.
+- must O2. An owner is named for answering the failure, with what access that
+  person needs; "the team" is not an owner.
+- must O3. The rollback is stated, including past any irreversible step, or
+  the deliverable says plainly that there is none.
+- should O4. The recurring cost of keeping this alive is named, not folded
+  into the build estimate.
+
+## Designer / UX (user-experience)
+
+- must U1. The path from where the user starts to what they came to do is
+  written out step by step, and the steps this change adds are identified.
+- must U2. The unhandled states this change creates — empty, error, partial,
+  permission-denied — are enumerated, with what the interface says in each.
+- must U3. Any claim about existing product behavior is tied to material or
+  tagged; no invented screens.
+- should U4. A pattern change names the cost to users who already learned the
+  old pattern.
+
+## Data / analyst (measurement)
+
+- must M1. Each claimed behavior is marked observable or unobservable in
+  production today, with the measurement that exists, is requested, or is
+  missing.
+- must M2. The baseline is stated, including the case where none exists and
+  what that costs a before/after comparison.
+- must M3. Instrumentation names where a number would be recorded and who
+  owns recording it.
+
+## Security engineer (security)
+
+- must Y1. Each threat path runs from who can reach the surface to what they
+  gain, with the check that stops it or the explicit gap where none does.
+- must Y2. Blast radius is stated concretely — one record, one tenant, every
+  tenant, or persistent access — not as a severity word.
+- must Y3. The deliverable stays defensive: exposures, paths, and checks. Any
+  working exploit, attack tooling, or evasion guidance fails this line.
+- should Y4. What evidence would show the exposure had already been used is
+  named, and whether anything records it today.
