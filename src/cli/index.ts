@@ -2073,6 +2073,19 @@ const USAGE = 'usage: construct <outcome|work|notes|show|plan|source|mode|watch|
  * nothing and keeps one entry point.
  */
 export async function main(argv: string[] = process.argv.slice(2)): Promise<number> {
+  // `construct outcome … | head -1` closes the pipe while the command is still
+  // writing, and an unhandled write to a closed stdout throws an 'error' event
+  // that Node reports as a crash with a full stack. Piping into head, less, or
+  // grep -m1 is ordinary use, and a stack trace on it reads as a broken tool.
+  // A reader that has gone away is a normal end for a CLI, not a failure, so
+  // the process stops quietly at that point rather than reporting one.
+  const quitOnClosedOutput = (error: NodeJS.ErrnoException): void => {
+    if (error.code === 'EPIPE') process.exit(0);
+    throw error;
+  };
+  process.stdout.on('error', quitOnClosedOutput);
+  process.stderr.on('error', quitOnClosedOutput);
+
   try {
     return await run(argv);
   } catch (error) {
