@@ -103,6 +103,32 @@ state and, where the domain calls for it, the licensed-review qualifier on the
 same screen as the text it qualifies. A deliverable you cannot read is not a
 deliverable, so this command exists.
 
+## Ask a question instead
+
+Not everything you want from a team is a piece of work. Sometimes you want to
+turn to whoever owns a thing and ask them:
+
+```bash
+construct ask --host=claude "what does our roadmap say about the billing migration"
+```
+
+This is the same spine — the same catalog choosing who answers, the same
+declared sources read before the dispatch, the same work log, the same citation
+check — with one concern answering instead of every concern that was touched,
+and the answer printed here rather than left for `construct show`. It is one
+model call, not four.
+
+You still never type a role name. If the question touches concerns beyond the
+one answering, they are named on screen so you can see what a full run would
+have added, and told how to get it. If it lands somewhere this tool rates high
+risk — privacy, contracts, employment, compliance — it says so before it
+answers, because one grounded pass is not a review and an answer shaped like an
+answer invites more trust than it has earned.
+
+Without `--host` the question is still recorded and routed, and nothing is
+answered: reading a question costs a model call, and Construct does not spend
+without being told to.
+
 ## Tell it what you work from
 
 Construct can hold what your project works from — a directory of docs, a git

@@ -84,6 +84,17 @@ export interface Brief {
    * fired.
    */
   readonly engagement?: Engagement;
+  /**
+   * The question this task answers, when the run is a question rather than an
+   * outcome. Present means the deliverable owed is an answer with its sources,
+   * not a work product — a declaration about what the task must produce, which
+   * is the brief's job, and it still names no tool and no order of operations.
+   *
+   * It duplicates `outcome` by design: `outcome` is the field the whole spine
+   * reads, so the user's words stay where every reader already looks, and this
+   * field is the marker rather than a second copy nobody can be sure about.
+   */
+  readonly question?: string;
 }
 
 export interface BriefProblem {
@@ -172,6 +183,15 @@ export function validateBrief(brief: unknown): BriefValidation {
         problem: 'engagement must cite at least one non-empty piece of evidence',
       });
     }
+  }
+
+  // An empty question is worse than none: it marks the dispatch as an ask, so
+  // the answer directive is spoken, and then names nothing to answer.
+  if (record.question !== undefined && !nonEmptyString(record.question)) {
+    problems.push({
+      field: 'question',
+      problem: 'question must be a non-empty string when present — omit it for an outcome brief',
+    });
   }
 
   // A brief that names a concrete tool has started orchestrating itself.

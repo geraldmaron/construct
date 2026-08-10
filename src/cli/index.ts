@@ -52,8 +52,10 @@ import {
   UnsurfacedVerdictError,
 } from '../kernel/implication/verdict.ts';
 import type { RecordedVerdict } from '../kernel/implication/verdict.ts';
-import { startRun, startRunNamed, startRunSelected } from '../kernel/run/outcome.ts';
+import { startAskNamed, startRun, startRunNamed, startRunSelected } from '../kernel/run/outcome.ts';
 import type { StartedRun } from '../kernel/run/outcome.ts';
+import { highRiskNotice, primaryImplication } from '../kernel/run/ask.ts';
+import type { Implication } from '../kernel/implication/map.ts';
 import { storeNamingCache } from '../kernel/store/namings.ts';
 import { createHostNamer } from '../hosts/namer.ts';
 import { DEFAULT_CONCURRENCY, frameConflicts, workRun } from '../kernel/run/coordinator.ts';
@@ -427,13 +429,20 @@ function planRun(
   densified: DensifiedIntake | null,
   workspace: string,
   at: string,
+  /**
+   * The concerns this run will actually dispatch, when that is narrower than
+   * what it implicated. A question is answered by one of them, and a plan
+   * listing steps nobody will work would be a schedule of work that is not
+   * going to happen.
+   */
+  dispatching?: readonly Implication[],
 ): void {
   const plan = buildPlan({
     id: `plan-${started.runId}`,
     run: started.runId,
     outcome: started.outcome,
     densified,
-    implicated: started.implicated,
+    implicated: dispatching ?? started.implicated,
     inferredBy: started.inferredBy,
     sources: sourcesFor(store, workspace),
     mode: engagementMode(store, workspace),
@@ -658,6 +667,273 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
     }
     reportRun(started);
     planRun(store, started, densified, 'default', at);
+    return 0;
+  });
+}
+
+/** The same lease `work` takes by default; a single dispatch needs no other rule. */
+const DEFAULT_LEASE_MINUTES_ASK = 15;
+
+const ASK_USAGE =
+  'usage: construct ask [--host=<opencode|claude> [--model=…] [--binary=…] [--dir=…]] ' +
+  '[--workspace=<name>] [--ceiling=<amount>] "<your question>"\n';
+
+export interface AskArgs {
+  readonly question: string;
+  readonly host?: 'opencode' | 'claude';
+  readonly model?: string;
+  readonly binary?: string;
+  readonly dir?: string;
+  readonly workspace: string;
+  readonly ceiling: number;
+}
+
+export function parseAskArgs(argv: string[]): AskArgs {
+  const { flags, rest } = parseFlags(argv);
+
+  const host = flags.host;
+  if (host !== undefined && host !== 'opencode' && host !== 'claude') {
+    throw new Error(`unknown host "${host}" (expected opencode or claude)`);
+  }
+  // Same rule as `outcome`: a flag that only means something with a host, given
+  // without one, is a usage error rather than a silent no-op.
+  const hostFlags = ['model', 'binary', 'dir'].filter((f) => flags[f] !== undefined);
+  if (host === undefined && hostFlags.length > 0) {
+    throw new Error(
+      `--${hostFlags[0]} only applies when a host is named; add --host=<opencode|claude>, or drop the flag`,
+    );
+  }
+
+  const ceiling = flags.ceiling === undefined ? DEFAULT_SPEND_CEILING : Number(flags.ceiling);
+  if (!Number.isFinite(ceiling) || ceiling < 0) {
+    throw new Error(`--ceiling must be a non-negative number, got "${flags.ceiling}"`);
+  }
+
+  return {
+    question: rest.join(' ').trim(),
+    host,
+    model: flags.model,
+    binary: flags.binary,
+    dir: flags.dir,
+    workspace: workspaceFlag(flags),
+    ceiling,
+  };
+}
+
+/**
+ * Ask the staff a question.
+ *
+ * The spine end to end in one command, which is the point: recording a question
+ * and then remembering to work it is the ceremony an outcome earns and a
+ * question does not. One concern answers, over whatever sources the workspace
+ * declared, and the answer is printed here rather than left for `construct
+ * show` — a question the user has to go and collect the answer to has not been
+ * answered.
+ *
+ * Nothing about it is a shortcut around the record. The run, the plan, the
+ * source reads, the dispatch, the challenge verdict and the spend all land in
+ * the store exactly as `outcome` and `work` leave them, and the same commands
+ * read them back.
+ */
+export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<number> {
+  let args: AskArgs;
+  try {
+    args = parseAskArgs(argv);
+  } catch (error) {
+    process.stderr.write(`ask: ${(error as Error).message}\n${ASK_USAGE}`);
+    return 2;
+  }
+  if (!args.question) {
+    process.stderr.write(ASK_USAGE);
+    return 2;
+  }
+
+  return withStoreAsync(async (store) => {
+    const at = now();
+    const runId = `run-${at.replace(/[-:.TZ]/g, '')}`;
+
+    const host =
+      args.host === undefined && hostOverride === undefined
+        ? null
+        : (hostOverride ??
+          (args.host === 'claude'
+            ? createClaudeAdapter({ binary: args.binary, model: args.model, dir: args.dir })
+            : createOpenCodeAdapter({ binary: args.binary, model: args.model, dir: args.dir })));
+
+    if (host) {
+      try {
+        await host.init();
+      } catch (error) {
+        process.stderr.write(
+          `ask: host "${host.name}" is not available — ${(error as Error).message}\n`,
+        );
+        return 1;
+      }
+    }
+
+    // Who answers is inferred exactly as it is for an outcome: the named host's
+    // model reads the question, and the keyword map answers only if it fails or
+    // if no host was named. A question with no host is recorded and routed and
+    // then has nobody to answer it, which is said rather than pretended past.
+    const started = host
+      ? await startAskNamed(store, {
+          runId,
+          outcome: args.question,
+          at,
+          host: host.name,
+          namer: createHostNamer(host),
+          cache: storeNamingCache(store, { host: host.name, at }),
+        })
+      : await startAskNamed(store, { runId, outcome: args.question, at });
+
+    process.stdout.write(`run ${started.runId}\n  question: ${args.question}\n\n`);
+
+    const answering = primaryImplication(started.implicated);
+    if (!answering) {
+      process.stdout.write(
+        host
+          ? `no concern in the catalog owns this question — ${host.name} read it and named nothing. ` +
+              'That is recorded, not silently dropped.\n'
+          : 'no concern in the catalog owns this question, by keyword match. ' +
+              'Nothing was inferred and no model was consulted.\n',
+      );
+      if (!host) {
+        process.stdout.write(
+          '\nA host model reads the question properly, at cost:\n' +
+            `  construct ask --host=<opencode|claude> ${JSON.stringify(args.question)}\n`,
+        );
+      }
+      planRun(store, started, null, args.workspace, at, []);
+      return 0;
+    }
+
+    process.stdout.write(`answering: ${answering.domain} — ${answering.concern}\n`);
+    process.stdout.write(
+      `  ${started.inferredBy === 'keywords' ? 'signals' : 'reason'}: ${answering.signals.join(' ')}\n`,
+    );
+    const alsoTouched = started.implicated.filter((i) => i !== answering);
+    if (alsoTouched.length > 0) {
+      // The concerns a question reached and nobody answered are the reason the
+      // full run exists. Naming them is what keeps the cheap surface from
+      // reading as the complete one.
+      process.stdout.write(
+        `\nalso implicated, and not asked: ${alsoTouched.map((i) => i.domain).join(', ')}\n` +
+          '  A question is answered by one concern. To have them all answered:\n' +
+          `  construct outcome ${JSON.stringify(args.question)}\n`,
+      );
+    }
+    if (started.namerFailure !== undefined) {
+      process.stdout.write(
+        `\nThe model could not be consulted (${started.namerFailure}); the keyword map answered instead.\n`,
+      );
+    }
+    const notice = highRiskNotice(answering.domain, licensedReviewFor(answering.domain));
+    if (notice) process.stdout.write(`\n${notice}\n`);
+
+    planRun(store, started, null, args.workspace, at, [answering]);
+
+    if (!host) {
+      process.stdout.write(
+        '\nNobody was dispatched: answering costs a model call, and no host was named.\n' +
+          `  construct ask --host=<opencode|claude> ${JSON.stringify(args.question)}\n`,
+      );
+      return 0;
+    }
+
+    recordRunDispatch(store, {
+      run: started.runId,
+      host: args.host ?? host.name,
+      model: args.model,
+      binary: args.binary,
+      dir: args.dir,
+      recordedAt: at,
+    });
+
+    // The same grounding pass `work` runs, on this one run: what the declared
+    // sources actually hold, surveyed and recorded before the dispatch that
+    // will cite them.
+    const plan = planFor(store, started.runId);
+    if (plan && plan.sourcesDeclared.length > 0) {
+      const surveys: SourceSurvey[] = [];
+      for (const id of plan.sourcesDeclared) {
+        const declared = getSource(store, id);
+        if (declared) surveys.push(surveySource(declared));
+      }
+      const { recorded, skipped } = recordRunSourceReads(store, started.runId, surveys, now());
+      if (!skipped) {
+        const unreachable = surveys.filter((s) => s.outcome === 'unreachable').length;
+        const documents = surveys.reduce(
+          (sum, s) => sum + (s.outcome === 'listed' ? s.documents.length : 0),
+          0,
+        );
+        appendWorkLog(store, {
+          run: started.runId,
+          role: 'construct',
+          action: 'sources-read',
+          detail: {
+            sources: surveys.length,
+            documents,
+            unreachable,
+            reads: recorded,
+            licensedRoots: surveys
+              .filter((s) => s.outcome === 'listed')
+              .map((s) => s.locator)
+              .sort(),
+          },
+          at: now(),
+        });
+        process.stdout.write(
+          `\ngrounded: ${String(documents)} document${documents === 1 ? '' : 's'} ` +
+            `from ${String(surveys.length)} source${surveys.length === 1 ? '' : 's'}` +
+            (unreachable > 0 ? ` (${String(unreachable)} unreachable)` : '') +
+            '\n',
+        );
+      }
+    } else {
+      // An answer with no declared sources rests on the model's own knowledge,
+      // and the reader has to know that before they read it.
+      process.stdout.write(
+        '\nno sources declared for this workspace, so the answer rests on what the ' +
+          'model knows rather than on your material.\n' +
+          '  construct source add <path> --kind=<kind>\n',
+      );
+    }
+
+    const report = await workRun(store, host, {
+      owner: `cli-${String(process.pid)}`,
+      clock: now,
+      spendCeiling: args.ceiling,
+      concurrency: 1,
+      leaseMs: DEFAULT_LEASE_MINUTES_ASK * 60 * 1000,
+      run: started.runId,
+      capabilitySecret: loadOrCreateSecret(secretFile()),
+    });
+
+    const task = report.settled.map((id) => getTask(store, id)).find((t) => t !== null);
+    if (!task || task.state !== 'done') {
+      process.stderr.write(
+        `\nno answer: ${task ? failureLine(task.error) : 'the dispatch produced nothing'}\n`,
+      );
+      return 1;
+    }
+
+    const draft = latestDraft(store, task.id)?.deliverable ?? task.result;
+    const answer = renderDeliverable(draft);
+    process.stdout.write(`\n${answer.trimEnd()}\n`);
+
+    const cost = task.spendReported ? `$${money(task.spend)}` : 'cost not reported';
+    process.stdout.write(`\n— ${task.role}, ${cost}\n`);
+    // The deliverable's own defects, printed with it rather than left in the
+    // log: an answer read without them is an answer read as better than it is.
+    for (const concern of deliverableConcerns(task.result)) {
+      process.stdout.write(`⚑ ${concern.detail}\n`);
+    }
+    if (report.degraded > 0) {
+      process.stdout.write(
+        '⚑ this ran below the model capability floor its brief declared — see: construct log\n',
+      );
+    }
+    process.stdout.write(`Read back: construct log --run ${started.runId}\n`);
     return 0;
   });
 }
@@ -2065,7 +2341,8 @@ export function mode(argv: string[]): number {
   });
 }
 
-const USAGE = 'usage: construct <outcome|work|notes|show|plan|source|mode|watch|waive|verdict|corpus|log|inbox|decide|serve|doctor|cleanup|version>\n';
+const USAGE =
+  'usage: construct <outcome|ask|work|notes|show|plan|source|mode|watch|waive|verdict|corpus|log|inbox|decide|serve|doctor|cleanup|version>\n';
 
 /**
  * Async because `work` dispatches to a host, and `outcome --host=…` may
@@ -2104,6 +2381,8 @@ async function run(argv: string[]): Promise<number> {
       return notes(argv.slice(1));
     case 'outcome':
       return outcome(argv.slice(1));
+    case 'ask':
+      return ask(argv.slice(1));
     case 'work':
       return work(argv.slice(1));
     case 'watch':

@@ -49,6 +49,7 @@ import type { Domain } from '../implication/domains.ts';
 import { deliverableConcerns, licensedReviewFor } from './accountability.ts';
 import { STANCE_PROTOCOL, frameConflict, parseStance } from './conflicts.ts';
 import { ASK_PROTOCOL, answeredAsksFor, frameAsk, parseAsk } from './asks.ts';
+import { answerDirective } from './ask.ts';
 import type { AnsweredAsk } from './asks.ts';
 import type { RoleStance } from './conflicts.ts';
 import { latestDraft, logPromotion, recordVerdict } from './promotion.ts';
@@ -352,19 +353,29 @@ export function assignmentFor(
         options.answers.map((a) => `- ${a.question}\n  answer: ${a.answer}`).join('\n') +
         '\n\n'
       : '';
+  // A question and an outcome are answered by the same role reading the same
+  // material, and they owe different things. An ask owes an answer with its
+  // sources; it does not owe a work product, and it must not be asked for a
+  // stance — the stance protocol exists so two roles can disagree in a shape
+  // the kernel can frame into a decision, and there is no second role in an
+  // ask. Asking anyway would put a position in the record that nothing will
+  // ever be weighed against.
+  const asking = brief.question !== undefined;
   return (
     `You are acting as the ${brief.role} role.${concern}\n\n` +
-    `The outcome the user asked for: ${brief.outcome}\n\n` +
+    (asking
+      ? `The question the user asked: ${brief.question}\n\n`
+      : `The outcome the user asked for: ${brief.outcome}\n\n`) +
     engagement +
     lensDirective(brief.role) +
-    workProductDirective(brief.role) +
+    (asking ? answerDirective() : workProductDirective(brief.role)) +
     material +
     '\n\n' +
     obligations +
     answered +
     `${voiceProtocol(options.voice)}\n\n` +
     `${surface}\n\n` +
-    `${STANCE_PROTOCOL}\n\n` +
+    (asking ? '' : `${STANCE_PROTOCOL}\n\n`) +
     ASK_PROTOCOL
   );
 }
