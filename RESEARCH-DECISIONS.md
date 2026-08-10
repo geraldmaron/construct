@@ -1334,3 +1334,85 @@ breadth. Each was a way for the result to be an artifact of the instrument. What
 remains is the premise itself — that role differentiation produces differentiated
 findings — and it is now the thing under suspicion rather than the thing being
 measured around. `STRATEGY.md`'s Phase 4 criterion is amended accordingly.
+
+## 15. The role premise, decided against external evidence (2026-08-10)
+
+§14 left the premise under suspicion and the Phase 4 criterion suspended. This
+section closes it, because the external record already answers the question and
+a further study here would have re-measured a settled result.
+
+**What the literature says.** Zheng et al. (2024), 162 personas across four LLM
+families and 2,410 questions: personas in system prompts do not improve
+performance, with small negative effects in places; domain-aligned personas (a
+"lawyer" for legal work) help negligibly. The paper's own abstract was revised
+in October 2024 from "consistently improves" to "does not improve" — the claim
+this project built a phase on is one the field already retracted.
+
+**The mechanism, and the number that matches ours.** The agent-scaling work
+(arXiv 2602.03794) separates four conditions: no diversity, persona-only,
+model-only, and both. Persona-only is the weak one. Even with distinct personas,
+mean pairwise output similarity stays high; personas produce surface variation
+without divergence in reasoning. Their construct is K*, the count of independent
+non-redundant reasoning paths — additional agents help only if they raise K*,
+and homogeneous agents produce correlated outputs at K* ≈ 1. Model diversity
+raises it substantially more than persona diversity: full diversity at 2 agents
+matches homogeneous at 16, while persona-only needs 8 to do the same.
+
+Construct's own sweep is that finding restated in this corpus. Eleven lenses,
+one model, one prompt shape: 0 of 10 plants isolate. We measured K* ≈ 1 without
+knowing the name for it.
+
+**Where the value actually is.** MAST (arXiv 2503.13657), 1,600+ annotated
+traces across seven multi-agent frameworks, finds 14 failure modes in three
+clusters — specification, coordination, verification. "Disobey role
+specification" is about 1.5% of failures; specification and verification gaps
+account for the overwhelming majority. Cognition's position paper reaches the
+same place from production: dispersed decision-making across agents is fragile,
+and context engineering beats role decomposition. Spotify's Xirp (launched
+2026-08-10) is the shape the market is converging on: sessions partitioned by
+worktree, organizational context — component architecture, dependency graphs,
+ownership topology, architectural decisions — injected at session start and
+captured back out. Explicitly not role personas. The failure it was built
+against is worth quoting for this project's benefit: institutional knowledge
+fragmenting into individual `CLAUDE.md` files, bespoke MCP setups, and personal
+prompt libraries, with engineers spending as much effort reconstructing context
+as building.
+
+**Decision.** The premise is rejected, not suspended.
+
+1. **Per-role depth is retired as a claim and as a phase criterion.** Differing
+   question sets over one model do not produce differentiated findings. No pack
+   is, or will be, described as at depth on that basis. The isolation criterion
+   is withdrawn rather than left suspended, because it is now known to be
+   measuring something that does not exist.
+2. **Roles keep the three jobs that never depended on differentiation:**
+   routing and coverage (which domains get looked at at all — the promise that
+   nobody is ambushed by a domain they did not know existed), attribution (who
+   flagged what, in the work log), and obligation (what a deliverable owes
+   before anyone relies on it). Every one of those is a property of the catalog
+   and the templates, and none needs a lens to see what other lenses cannot.
+3. **Where independence is genuinely required, buy it with model diversity, not
+   with personas.** This is the one intervention with a measured effect size,
+   and Construct already has the seam for it: the host adapter interface and
+   `TUNED_FAMILIES`. Cross-family dispatch is reserved for the places
+   independence is load-bearing — adversarial challenge, and any judge pass —
+   rather than spent on every dispatch.
+4. **Information partitioning replaces question partitioning where breadth is
+   needed.** Give dispatches different material, which raises K*; giving them
+   different questions over identical material does not.
+5. **The depth budget moves to verification and grounding**, where MAST puts the
+   failures and where this project's actual asset already is: no-fabrication,
+   the challenge catalog, the work log, and grounded sources.
+
+**What this costs, stated plainly.** The product's differentiator is no longer
+"a lens sees what others miss." It is coverage, obligation, and provenance — the
+tacit "of course legal sees this" knowledge, made explicit and auditable. That
+is a smaller claim than the one Phase 4 was written on, and it is the one the
+evidence supports.
+
+**Sources.** Zheng et al., *When "A Helpful Assistant" Is Not Really Helpful*,
+Findings of EMNLP 2024 (arXiv 2311.10054). *Understanding Agent Scaling in
+LLM-Based Multi-Agent Systems via Diversity*, arXiv 2602.03794. Cemri et al.,
+*Why Do Multi-Agent LLM Systems Fail?*, arXiv 2503.13657. Cognition, *Don't
+Build Multi-Agents*. Spotify, *Introducing Xirp*, portal.spotify.com, read
+2026-08-10.
