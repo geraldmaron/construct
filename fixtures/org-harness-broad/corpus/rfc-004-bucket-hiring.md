@@ -74,6 +74,10 @@ I propose the following:
    candidates from that initial pool, they can select a second pool of
    candidates.
    1. Rationale: This will limit the burden on everyone participating in hiring.
+   2. The cap is derived from the hires a manager is trying to make in this
+      action. Requests to replace someone already assigned to an engagement are
+      not counted separately; they draw from the same capped pool, in the order
+      the manager selects.
 4. We’ll consolidate the number of interviews from 4 to 3. Traditionally offices
    have done a phone screen, technical, core values, and behavioral based
    interview.

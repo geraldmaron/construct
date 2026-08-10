@@ -76,6 +76,12 @@ started. If there is already a staffing issue, the **Needs IAA** label is
 replaced with the **Staffing Request** tag; otherwise, a new staffing issue is
 created and tagged with **Staffing Request**.
 
+The stage names in the Dashboard were written to describe where an opportunity
+sits in the business development pipeline, and business development is where
+they are still maintained. Staffing now reads the same field: reaching
+**Executed** is what replaces the **Needs IAA** label with **Staffing Request**,
+and chapter staffing leads schedule against that transition.
+
 The chapter staffing leads now look at the staffing issue to understand the more
 specific project needs and scope. They then consider the particular skills and
 availability of the people in their chapters to decide who will be able to work

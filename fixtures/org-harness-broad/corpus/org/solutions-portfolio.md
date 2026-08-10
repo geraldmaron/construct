@@ -79,6 +79,11 @@ government via USA.gov, USA.gov en Español, and the USAGov Contact Center.
 - [USAGov Partnership Toolkit](https://usa.gov/partnerships): how agencies can
   partner with USAGov for outreach and engagement efforts
 
+Each initiative above is a standing commitment. Agencies and members of the
+public depend on these services continuously, and none of them carries an end
+date. They are funded the same way engagement work is: out of reimbursements
+recovered against agreements that each name a period of performance.
+
 ## Our History
 
 Check out our [brief history]({% page "/solutions-history/" %}) and learn how

@@ -65,6 +65,11 @@ helpful in identifying if a project needs to pivot, pause, or stop. It allows
 the team to collaboratively collect thoughts on different options and enable a
 decision between the different potential actions.
 
+The health tracker is filled in by the team for its own use, and the decision to
+pivot, pause, or stop is reached in conversation among the people listed above.
+No count of those decisions, or of the reasons behind them, is kept anywhere
+outside the project.
+
 ### Sources for partner leadership and support for the team
 
 1. Your **Account Manager** is your first stop for helping to align your team

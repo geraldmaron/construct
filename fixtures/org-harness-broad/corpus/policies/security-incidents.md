@@ -106,6 +106,10 @@ steps.
    5. Has the message - or file - containing the secrets been deleted (and
       removed from archive) in the exposed system?
 
+No rotation watches for incidents outside working hours. The clock in this
+policy starts when a person becomes aware, and awareness is whoever happens to
+be looking at the time.
+
 ## What is an incident?
 
 First: it's always OK to err on the side of reporting!

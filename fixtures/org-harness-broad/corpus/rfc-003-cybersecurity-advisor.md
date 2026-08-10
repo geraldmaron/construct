@@ -99,6 +99,11 @@ From @ryanhofdotgov:
 > ones at their top-level agency), with atrophied skills and unnecessarily
 > divergent policies and practices.
 
+The role's own hours would go to coordination across programs, advice to teams,
+hiring support, and training. None of that is work assigned to a single
+engagement, and the position sits in the Front Office rather than on a delivery
+team.
+
 It is important to note that there may be issues if this role is not provided
 the budget and staff required to do this work. While the initial part of this
 role will be to determine a budget, staff and hiring, a funding source for this

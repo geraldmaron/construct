@@ -49,6 +49,11 @@ An admin will then do one of the following:
   - [Change their email](https://get.slack.help/hc/en-us/articles/225531168-Change-a-team-member-s-email-address)
     to their personal address
 
+A converted account is still a member of the workspace. Its second factor has
+been switched off and the address on it is one the organization no longer
+administers, so the ordinary "forgot my password" path for that account now runs
+through a mailbox nobody here controls.
+
 \*NOTE: When a TTS Slack user is converted to a Single-channel user, they
 maintain access to their direct message chat history but are unable to search
 for or create new direct messages with folks that they've never messaged before.

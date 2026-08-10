@@ -151,6 +151,8 @@ Example:
 
 > “I will be out of the office from Monday September 16th through Monday September 23rd: could you enter 40 hours for me to \#670 for the 16th-20th time period?”
 
+When the Tock team enters hours this way, the timecard records them against the name of the person who is out, on the engagement line they asked for. The timesheet has no field for who submitted the entry, so an entry made by the Tock team and an entry made by the employee are the same record afterwards. The weekly check the timekeeping manager runs confirms that a timecard exists for each person for the previous week; it does not establish who filed it.
+
 ## How do supervisors review hours logged in Tock? {#supervisor-review}
 
 Supervisors should regularly review the hours their direct reports are logging.

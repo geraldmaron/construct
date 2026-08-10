@@ -37,6 +37,12 @@ executive, or a statute that authorizes a designated governmental official to
 act on behalf of the state/local executive to request services from the Federal
 government.
 
+Where the letter comes back signed by a designated official rather than by the
+chief executive, the account manager confirms with the partner that a delegation
+or an authorizing statute exists before routing the letter onward. The
+instrument itself is not collected, and it is not one of the items assembled
+into the package that goes for review and signature.
+
 ### Agreement and SOW
 
 As we wait for the signed letter, the Account Manager can begin **drafting the
