@@ -1416,3 +1416,50 @@ LLM-Based Multi-Agent Systems via Diversity*, arXiv 2602.03794. Cemri et al.,
 *Why Do Multi-Agent LLM Systems Fail?*, arXiv 2503.13657. Cognition, *Don't
 Build Multi-Agents*. Spotify, *Introducing Xirp*, portal.spotify.com, read
 2026-08-10.
+
+## 16. Xirp, and the ownership gap it exposes (2026-08-10)
+
+Read against §13's question — plugin, built-in, or out of scope — Spotify's Xirp
+(public beta 2026-08-10) is a **host**, not a competitor, and the one that most
+directly fits the projection path commitment 1 already commits to.
+
+**What it is, from its own documentation.** A macOS desktop application for
+running coding-agent sessions across Claude Code, Codex, and Gemini: persistent
+terminals, git worktree isolation per session, agents authenticated through
+their own CLIs, and an optional Spotify Portal (Backstage) connection that feeds
+component architecture, dependency graphs, ownership topology and architectural
+decisions into a session at start, then captures session output back into
+documentation. Portal is optional; the local session management works without
+it. Its docs state it does not address domain routing, legal or compliance
+review, or deliverable obligations.
+
+**So it does not overlap the remaining claim.** After §15, Construct's claim is
+coverage, obligation and provenance across the domains a cross-functional team
+owns. Xirp's scope is the coding session. The three CLIs it manages are the same
+ones `src/hosts/` already targets, which makes it a projection target beside
+OpenCode rather than a substitute for anything here. Adopting it is riding a
+host, which is the committed path, not building one, which is forbidden.
+
+**What it exposes, which is the useful part.** Xirp gets ownership from a real
+catalog. Construct infers it from keywords, and this document's own §4 records
+that 116 of 207 catalog keywords have never fired. The weakest joint in the
+coverage claim — knowing who owns what, so "of course legal sees this" is
+grounded rather than guessed — is precisely where Xirp is strong and Construct
+is weak. That is a gap in Construct's evidence, independent of whether Xirp is
+ever adopted, and it is now filed as its own work rather than left as a
+paragraph.
+
+**Two risks, recorded rather than absorbed.** Its documentation loop
+(auto-generated docs from sessions, fed back into later sessions) is a thinner
+form of the research → distill → operationalize loop, and would overlap
+materially if it ever grew obligations. And it is a day-one, macOS-only,
+Portal-coupled beta controlled by one vendor: usable now, not yet safe to depend
+on. No adapter is written against it until the host-breadth gates of Phase 4/5
+apply, exactly as for every other host.
+
+**The question this leaves open, which is a stakeholder decision and not a
+measurement.** With per-role depth retired, is coverage-obligation-provenance
+for non-engineering domains a product, or a feature of somebody else's? It has
+never been tested against an organization other than this one, and the standing
+"no external subjects" rule means it cannot be. That is the next decision worth
+making, and it is Gerald's, not a session's.
