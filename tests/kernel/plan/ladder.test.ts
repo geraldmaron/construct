@@ -84,3 +84,18 @@ test('a question with no assumed default is refused: that is a stall in disguise
     fixture.cleanup();
   }
 });
+
+test('product-scoping ships the document a product manager hands a team', () => {
+  const template = playbookFor('product-scoping').template;
+  assert.equal(template.deliverable, 'product requirements document');
+  const names = template.slots.map((s) => s.name);
+  for (const required of ['users-and-problem', 'in-scope', 'out-of-scope', 'success-measures']) {
+    const found = template.slots.find((s) => s.name === required);
+    assert.ok(found?.required, `${required} is a required slot`);
+  }
+  assert.ok(names.includes('phasing'), 'phasing is present, optional');
+  assert.ok(
+    playbookFor('program-sequencing').template.slots.some((s) => s.name === 'milestones'),
+    'sequencing carries milestones',
+  );
+});

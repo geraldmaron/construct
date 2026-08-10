@@ -68,14 +68,23 @@ const TEMPLATES: Readonly<Record<string, DeliverableTemplate>> = {
       ...CORE_SLOTS,
       slot('order', 'the sequence and why each item precedes the next'),
       slot('blockers', 'what stops progress today and who can unstick it'),
+      slot('milestones', 'the checkpoints a reader can verify passing, each dated or explicitly unscheduled', false),
     ],
   },
+  // The deliverable a product manager actually hands a team. Every question a
+  // PRD review would ask is a named slot here, so the organization's unwritten
+  // checklist becomes a check rather than a reviewer's memory — and a fact the
+  // material cannot settle is an [assumed] or [unverified] entry in the slot,
+  // never a reason to withhold the document.
   'product-scoping': {
-    deliverable: 'scope memo',
+    deliverable: 'product requirements document',
     slots: [
       ...CORE_SLOTS,
+      slot('users-and-problem', 'who this serves and the problem it solves for them, cited to the material or [unverified]'),
       slot('in-scope', 'what this outcome includes'),
       slot('out-of-scope', 'what it deliberately excludes, so growth is visible as growth'),
+      slot('success-measures', 'how the user will know it worked — each one checkable, cited or [unverified]'),
+      slot('phasing', 'what ships first and what deliberately waits, with the reason for the split', false),
     ],
   },
 };
