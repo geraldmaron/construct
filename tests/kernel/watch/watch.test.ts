@@ -221,6 +221,10 @@ test('the watch surface reaches a real repo through the CLI, and a second sweep 
   // tracker state and keeps the fixture about the surface, not the data.
   mkdirSync(join(ground, '.beads'), { recursive: true });
   writeFileSync(join(ground, '.beads', 'issues.jsonl'), '');
+  // The watch reports drift about Construct itself, so it refuses ground that
+  // is not a Construct checkout. The fixture identifies as one; any repository
+  // can carry a tracker, and the package name is what the refusal reads.
+  writeFileSync(join(ground, 'package.json'), JSON.stringify({ name: '@geraldmaron/construct' }));
   const out: string[] = [];
   const realOut = process.stdout.write.bind(process.stdout);
   const realErr = process.stderr.write.bind(process.stderr);

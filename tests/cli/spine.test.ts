@@ -988,3 +988,19 @@ test('a run over declared sources dispatches roles grounded in the named documen
     rmSync(ground, { recursive: true, force: true });
   }
 });
+
+test('watch refuses ground that is not Construct rather than filing another repo\'s drift as its own', async () => {
+  const elsewhere = mkdtempSync(join(tmpdir(), 'not-construct-'));
+  try {
+    writeFileSync(join(elsewhere, 'package.json'), JSON.stringify({ name: 'someone-elses-app' }));
+    const refused = await runAll([['watch', `--root=${elsewhere}`]]);
+    assert.equal(refused.code, 1);
+    assert.match(refused.err, /is not a Construct checkout/);
+    // The failure names what --root actually selects, so the next person does
+    // not read the flag as "watch this project".
+    assert.match(refused.err, /which checkout of Construct to inspect/);
+    assert.doesNotMatch(refused.out, /ground:/, 'a refused sweep records no ground at all');
+  } finally {
+    rmSync(elsewhere, { recursive: true, force: true });
+  }
+});

@@ -1723,13 +1723,39 @@ const WATCH_USAGE =
   'usage: construct watch [--root=<repo>] [--sweep]\n';
 
 /**
+ * Whether a root is a checkout of Construct itself, decided from the package
+ * identity rather than from the presence of a tracker: any repository can carry
+ * beads, and only this one is what the watch's findings are about.
+ */
+function isConstructCheckout(root: string): boolean {
+  try {
+    const manifest: unknown = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
+    return (
+      typeof manifest === 'object' &&
+      manifest !== null &&
+      (manifest as { name?: unknown }).name === '@geraldmaron/construct'
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
  * The standing watch, swept once.
  *
  * A watch is an outcome that never closes, so there is no "start" to run and
  * nothing to schedule: something outside decides when to look, exactly as
- * something outside decides when to `work`. Today the only ground is Construct
+ * something outside decides when to `work`. The only ground is Construct
  * itself (commitment 16 made operational), which is why this takes a repo root
- * and nothing else. External ground waits for Phase 4 behind its gates.
+ * and nothing else. External ground waits behind its gates.
+ *
+ * `--root` therefore selects WHICH CHECKOUT of Construct to inspect, and never
+ * which project to watch. The findings are drift between this project's
+ * strategy, tracker, and repo; pointed at an unrelated repository they would be
+ * meaningless, and reporting them under Construct's own watch identity — which
+ * is what happened while the flag was half-wired — is worse than meaningless,
+ * because the record would name a ground the evidence did not come from. A root
+ * that is not a Construct checkout is refused by name rather than swept.
  */
 export function watch(argv: string[]): number {
   const flags: Record<string, string> = {};
@@ -1742,6 +1768,15 @@ export function watch(argv: string[]): number {
     return 0;
   }
   const root = flags.root || process.cwd();
+  if (!isConstructCheckout(root)) {
+    process.stderr.write(
+      `watch: ${root} is not a Construct checkout.\n` +
+        'The watch reports drift between this project\'s strategy, tracker, and repo,\n' +
+        'so --root selects which checkout of Construct to inspect, not which project\n' +
+        'to watch. Watching other ground is not built yet.\n',
+    );
+    return 1;
+  }
 
   const gathered = gatherRepoEvidence({ root });
   if (isFailure(gathered)) {
