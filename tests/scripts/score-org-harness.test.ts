@@ -93,6 +93,67 @@ test('role coverage reports blindness without gating the rungs', () => {
   assert.ok(coverage.pm.every((h) => h.found));
 });
 
+test('every plant a run earns records the claim that earned it', () => {
+  const { report } = score(earnedRun());
+  const rung1 = (report as unknown as {
+    rung1: { plants: Array<{ id: string; found: boolean; by?: { claim: string; citations: string[] } }> };
+  }).rung1;
+  for (const plant of rung1.plants) {
+    assert.ok(plant.found, `${plant.id} should be earned by this run`);
+    assert.ok(plant.by, `${plant.id} records no crediting claim`);
+    assert.ok((plant.by?.claim ?? '').length > 0);
+    assert.ok((plant.by?.citations ?? []).length > 0);
+  }
+});
+
+test('a plant missed records no crediting claim', () => {
+  const run = earnedRun() as { claims: Array<unknown> };
+  run.claims = [];
+  const { report } = score(run);
+  const rung1 = (report as unknown as {
+    rung1: { plants: Array<{ found: boolean; by?: unknown }> };
+  }).rung1;
+  assert.ok(rung1.plants.every((p) => !p.found && p.by === undefined));
+});
+
+/**
+ * The known limit, held as a test so it cannot be forgotten or quietly assumed
+ * fixed. R2's document pair supports two mechanisms — the planted wave-restart
+ * loop and the ticket's separate specChanged promotion gap — and both are
+ * written in the same words, so a claim about the second satisfies the first's
+ * terms. This asserts the false credit still happens, because it does, and that
+ * the artifact now names the claim responsible, which is the part that changed.
+ */
+test('a claim on the neighbouring mechanism still takes the credit, and the score says which claim did', () => {
+  const wrongMechanism =
+    'The rfc-002-manifest-hydrator.md decision to treat hydration as a ' +
+    'first-class feature that pushes to the sync branch explains ' +
+    'tickets/T-27949.md: the ApplicationSet controller specChanged status ' +
+    'promotion logic advances to Healthy based on the pre-update child state ' +
+    'before the generated spec change is applied, breaking the progressive ' +
+    'sync trigger.';
+  const { report } = score({
+    claims: [
+      {
+        kind: 'risk',
+        claim: wrongMechanism,
+        citations: ['rfc-002-manifest-hydrator.md', 'tickets/T-27949.md'],
+      },
+    ],
+    notesDrop: { proposals: [], deltas: [] },
+  });
+  const r2 = (report as unknown as {
+    rung2: { plants: Array<{ id: string; found: boolean; by?: { claim: string } }> };
+  }).rung2.plants.find((p) => p.id === 'R2');
+  assert.equal(r2?.found, true, 'the vocabulary coincidence is real and not yet fixed');
+  assert.equal(
+    r2?.by?.claim,
+    wrongMechanism,
+    'the crediting claim must be readable in the score, so the false credit is ' +
+      'visible without re-deriving it from the run',
+  );
+});
+
 test('a fabricated citation fails rung 0 even when every plant is found', () => {
   const run = earnedRun() as { claims: Array<{ citations: string[] }> };
   run.claims[0].citations = [...run.claims[0].citations, 'tickets/T-99999.md'];

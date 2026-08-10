@@ -10,6 +10,15 @@
  * tester; the scorer's job is to make that review cheap and honest, not to
  * replace it.
  *
+ * What structural scoring cannot do, stated here so a reader of a score file
+ * knows what they hold: terms are a proxy for stating the planted mechanism,
+ * and where one document pair supports two mechanisms they are written in the
+ * same vocabulary, so a claim about the neighbouring mechanism satisfies the
+ * terms and takes the credit. Adding terms only moves the coincidence. Every
+ * plant result therefore records the claim that earned it, which is what makes
+ * that failure legible in the artifact instead of requiring someone to derive
+ * it by hand from the run.
+ *
  * Usage:
  *   node scripts/score-org-harness.mjs <run-output.json> [--harness <dir>] [--json]
  *
@@ -123,6 +132,25 @@ function findPlant(plant) {
   });
 }
 
+/**
+ * A plant's result, carrying the claim that earned it.
+ *
+ * Matching terms is a proxy for stating the planted mechanism, and it is a
+ * loose one wherever a plant's document pair supports more than one mechanism:
+ * both mechanisms are then written in the same vocabulary, and a claim about
+ * the neighbouring one satisfies the terms. Recording the crediting claim does
+ * not close that gap — nothing structural can, once the pair and the words stop
+ * discriminating — but it moves the gap onto the face of the artifact. A score
+ * that says only `found: true` has to be re-derived by hand before anyone can
+ * tell which mechanism was actually stated.
+ */
+function scorePlant(plant) {
+  const hit = findPlant(plant);
+  return hit
+    ? { id: plant.id, found: true, by: { claim: hit.claim, citations: hit.citations ?? [] } }
+    : { id: plant.id, found: false };
+}
+
 // ---- rung 0: provenance validity --------------------------------------------
 const fabricated = [];
 const uncited = [];
@@ -142,11 +170,11 @@ const rung0 = {
 };
 
 // ---- rung 1: grounded synthesis (planted cross-references) ------------------
-const xrefs = key.crossReferences.map((p) => ({ id: p.id, found: Boolean(findPlant(p)) }));
+const xrefs = key.crossReferences.map(scorePlant);
 const rung1 = { pass: xrefs.every((x) => x.found), plants: xrefs };
 
 // ---- rung 2: risks evidence-tied + uses sources rather than listing them ----
-const risks = key.risks.map((p) => ({ id: p.id, found: Boolean(findPlant(p)) }));
+const risks = key.risks.map(scorePlant);
 const substantive = claims.filter((c) => {
   const stripped = lower(c.claim).replace(/[a-z0-9/_.-]+\.md/g, '').trim();
   return stripped.length >= 40 && (c.citations ?? []).length <= 4;
@@ -176,7 +204,7 @@ const distractorGate = key.notesDrop.distractorGate ?? null;
 const distractorsClean = distractors.every((d) => !d.violated);
 
 // ---- rung 3: drift conflict + notes-drop propagation and memory deltas ------
-const conflicts = key.conflicts.map((p) => ({ id: p.id, found: Boolean(findPlant(p)) }));
+const conflicts = key.conflicts.map(scorePlant);
 const propHits = key.notesDrop.expectedProposals.map((exp) => {
   const hit = proposals.find(
     (p) =>
@@ -213,7 +241,7 @@ const plantById = new Map(
 const roleCoverage = Object.fromEntries(
   Object.entries(roleKey.roles).map(([role, ids]) => [
     role,
-    ids.map((id) => ({ id, found: Boolean(findPlant(plantById.get(id))) })),
+    ids.map((id) => scorePlant(plantById.get(id))),
   ]),
 );
 

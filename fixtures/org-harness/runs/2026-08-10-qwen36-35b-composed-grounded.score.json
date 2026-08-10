@@ -14,7 +14,15 @@
       },
       {
         "id": "X2",
-        "found": true
+        "found": true,
+        "by": {
+          "claim": "The destinationServiceAccounts design decision in rfc-001-sync-impersonation.md scopes impersonation to the sync path, which explains why tickets/T-26271.md and tickets/T-28695.md report diff failures: the diff path falls back to the narrow cluster credential, which lacks the patch authority required for server-side apply dry-runs.",
+          "citations": [
+            "rfc-001-sync-impersonation.md",
+            "tickets/T-26271.md",
+            "tickets/T-28695.md"
+          ]
+        }
       },
       {
         "id": "X3",
@@ -27,11 +35,25 @@
     "plants": [
       {
         "id": "R1",
-        "found": true
+        "found": true,
+        "by": {
+          "claim": "The impersonation RFC defines `destinationServiceAccount` as the identity that acts afterward during sync and mandates that the kubernetes audit trail records the impersonating user, but the server-side diff path executes as the cluster credential and logs the control plane identity instead of the scoped SA; an auditor reviewing that access would require evidence that the unbounded `patch` RBAC is bounded and that the trail correctly attributes the action to the intended impersonated user rather than the control plane credential.",
+          "citations": [
+            "rfc-001-sync-impersonation.md",
+            "tickets/T-28695.md"
+          ]
+        }
       },
       {
         "id": "R2",
-        "found": true
+        "found": true,
+        "by": {
+          "claim": "The rfc-002-manifest-hydrator.md decision to treat hydration as a first-class feature that pushes to the sync branch explains tickets/T-27949.md: the ApplicationSet controller's specChanged status promotion logic advances to Healthy based on the pre-update child state before the generated spec change is applied, breaking the progressive sync trigger.",
+          "citations": [
+            "rfc-002-manifest-hydrator.md",
+            "tickets/T-27949.md"
+          ]
+        }
       }
     ],
     "substantiveRatio": 1
@@ -41,7 +63,14 @@
     "conflicts": [
       {
         "id": "C1",
-        "found": true
+        "found": true,
+        "by": {
+          "claim": "The roadmap restricts teardown to a manual operator action as the controlling identity, but the progressive sync PRD introduces the `deletionOrder` CRD field that automates destruction, shifting the identity that acts afterward to the ApplicationSet controller; an auditor reviewing that access would require an audit trail capturing each automated deletion event and a formal waiver of the manual teardown mandate, as the CRD mechanism bypasses the standing operator gate.",
+          "citations": [
+            "strategy.md",
+            "prd-progressive-sync-deletion.md"
+          ]
+        }
       }
     ],
     "proposals": [
@@ -73,7 +102,14 @@
     "pm": [
       {
         "id": "C1",
-        "found": true
+        "found": true,
+        "by": {
+          "claim": "The roadmap restricts teardown to a manual operator action as the controlling identity, but the progressive sync PRD introduces the `deletionOrder` CRD field that automates destruction, shifting the identity that acts afterward to the ApplicationSet controller; an auditor reviewing that access would require an audit trail capturing each automated deletion event and a formal waiver of the manual teardown mandate, as the CRD mechanism bypasses the standing operator gate.",
+          "citations": [
+            "strategy.md",
+            "prd-progressive-sync-deletion.md"
+          ]
+        }
       },
       {
         "id": "X3",
@@ -87,7 +123,15 @@
       },
       {
         "id": "X2",
-        "found": true
+        "found": true,
+        "by": {
+          "claim": "The destinationServiceAccounts design decision in rfc-001-sync-impersonation.md scopes impersonation to the sync path, which explains why tickets/T-26271.md and tickets/T-28695.md report diff failures: the diff path falls back to the narrow cluster credential, which lacks the patch authority required for server-side apply dry-runs.",
+          "citations": [
+            "rfc-001-sync-impersonation.md",
+            "tickets/T-26271.md",
+            "tickets/T-28695.md"
+          ]
+        }
       }
     ],
     "tpm": [
