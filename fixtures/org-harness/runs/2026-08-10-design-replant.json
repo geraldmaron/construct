@@ -1,0 +1,44 @@
+{
+  "claims": [
+    {
+      "kind": "risk",
+      "claim": "The History & Rollback tab is a terminal dead end on any hydrated branch protected by SourceIntegrity: rollback pushes directly to the sync branch from outside the commit server, and signing lives only inside the commit server behind commitserver.sign.hydrated.commits, so the rollback commit lands unsigned and the git host rejects the push. Even an operator who has opted into hydrated-commit signing gains nothing on this path. The tab surfaces only a failed push with no mention of signing and no retry, so the interface's only forward move is to leave the product and inspect the commit server's signing config by hand; it should instead name the SourceIntegrity requirement as the cause and either offer a signed-push retry or state plainly that rollback is unavailable on this branch.",
+      "citations": ["tickets/T-27327.md", "tickets/T-28239.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "Deleting a generated child Application in the Argo CD UI can strand the operator with no way forward and no way back: with deletionOrder Reverse the controller waits for one Application to be fully deleted before moving to the next, a child stuck Progressing makes that wait never complete, and the app flips indefinitely between Deleting and Syncing. The only escape is an out-of-product incident runbook rule to switch the ApplicationSet to AllAtOnce before deleting any child by hand, and the review explicitly notes there is no controller-level check or alert enforcing it. The delete confirmation screen says nothing about deletionOrder; it should refuse or warn at the point of the manual delete, and the flipping app row should offer the AllAtOnce switch rather than leaving the operator to recognise the loop.",
+      "citations": ["tickets/T-28511.md", "notes/note-2.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "The PRD puts deletionOrder inside strategy in the ApplicationSet CRD while the roadmap's first-class ApplicationSet UI/CLI/API support explicitly excludes managing deletion order of child applications, keeping teardown a manual operator action performed one Application at a time. The result is a setting that governs destructive behaviour and is reachable only by editing YAML: a user who manages ApplicationSets through the UI has no surface that shows which deletionOrder is in effect before they delete, and the roadmap commits to never adding one.",
+      "citations": ["prd-progressive-sync-deletion.md", "strategy.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The diff failure screen names the wrong identity and so sends the user down a dead-end diagnosis. With impersonation enabled the diff path does not honour destinationServiceAccounts and runs as the cluster Secret credential, but the surfaced error is a raw Kubernetes forbidden message naming system:serviceaccount:argocd:argocd-server, which is why the reporter concluded the broad cluster Secret should have been sufficient. The App then rotates Synced and Unknown on every reconcile with no explanation. The interface should say the diff ran under the cluster credential rather than the impersonated destination service account and offer the documented ServerSideDiff=false opt-out inline, instead of emitting an RBAC string about an identity the user never configured for sync.",
+      "citations": ["tickets/T-26271.md", "tickets/T-28695.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "Progressive sync reports a rollout complete while its children are OutOfSync, and the product offers no state that lets the operator discover this. When only the generated child Application.spec changes, status.applicationStatus is promoted back to Healthy, syncDesiredApplications never creates a sync operation because it only syncs children in Pending, and the ApplicationSet view shows a finished rollout. The metrics gap request confirms there is no signal answering \"my sync is not starting, why, and which Applications is it waiting for,\" and there is no counter incrementing when specChanged fires without a resulting sync. A Healthy rollout containing OutOfSync children is a state nobody designed; it needs to render as a distinct partial state with a manual re-trigger, not as success.",
+      "citations": ["tickets/T-27949.md", "tickets/T-27846.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "In push-to-stage mode the product silently contradicts what it taught users about auto-sync. The hydrator writes to the hydrateTo branch and relies on an external system to move changes to the deployment branch, so when the sync source changes an auto-synced Application immediately applies whatever the stage branch last held, which may be very old manifests, while presenting an ordinary Synced state. The only remedy offered today is for the user to imperatively disable auto-sync before changing the sync source and re-enable it after, which is the opposite of the declarative model the Application spec teaches. The stale-manifest condition needs its own visible state, blocking the sync until a fresh hydration has landed, rather than a manual toggle the user must know to perform.",
+      "citations": ["tickets/T-26443.md", "rfc-002-manifest-hydrator.md"]
+    },
+    {
+      "kind": "cross-reference",
+      "claim": "Two independent specs describe the same defect without connecting it: a field the CRD accepts and the system quietly ignores. The PRD's non-goals state that a user selecting the custom deletion strategy gets a configuration field that accepts input and is ignored silently with no indication the option is unavailable, and the hydrator RFC leaves open whether sourceHydrator configured alongside source or sources should throw an error or just pick one and ignore the others. Resolving either toward silent ignoring teaches users that CRD acceptance says nothing about whether a setting takes effect, which removes the only feedback channel a YAML-driven interface has; both need validation that rejects the combination at admission time with the reason.",
+      "citations": ["prd-progressive-sync-deletion.md", "rfc-002-manifest-hydrator.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "A rotated or expired hydrator signing key produces an operator-facing dead end by design. Signing fails fast with no silent fallback, so the commit server refuses to start and every hydrator-enabled app across the fleet stops receiving commits, but the only signal is a generic CrashLoopBackOff with nothing distinguishing a bad signing key from any other crash loop. The person on generic pod-health paging cannot act, because resolving it requires access to the signing-key Secret, and the hydrator design's recommendation to isolate the commit server's push credentials in a separate namespace means the responder is likely outside that boundary. The startup failure needs a distinct, named condition identifying the signing key as the cause and naming the Secret to fix, rather than a crash-loop the pager cannot interpret.",
+      "citations": ["tickets/T-28239.md", "rfc-002-manifest-hydrator.md"]
+    }
+  ]
+}

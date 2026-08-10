@@ -44,21 +44,25 @@ it cover my role?" is really "is the thing my role notices in the catalog?"
 Here is that map, and it is also the honest coverage report — nobody types any
 name in the right-hand column.
 
-| The seat on a human team | The concern it owns here | What the full sweep measured |
+| The seat on a human team | The concern it owns here | What two full sweeps measured |
 |---|---|---|
-| Compliance | `compliance` | **isolated** — the only one; dogfood-only |
 | Product manager | `product-scoping` | found, not isolated |
 | Program manager / TPM | `program-sequencing` | found, not isolated |
 | Counsel | `contracts`, `privacy`, `employment` | found, not isolated; dogfood-only |
-| Director / VP | `strategy-alignment` | found, not isolated; its plant restates the product one |
+| Compliance | `compliance` | isolated once, did not reproduce; dogfood-only |
+| Director / VP | `strategy-alignment` | found, not isolated |
 | Designer / UX | `user-experience`, `accessibility` | found, not isolated |
 | Data / analyst | `measurement` | found, not isolated |
-| Security engineer | `security` | found, not isolated |
-| Architect / tech lead / platform | `system-design` | missed by its own lens |
+| Architect / tech lead / platform | `system-design` | found, not isolated |
+| Security engineer | `security` | missed by its own lens |
 | Support / on-call | `operations` | missed by its own lens |
 | Finance / billing | `commerce-tax` | routes, default template, unmeasured |
 | Marketing | `marketing-claims` | routes, default template, unmeasured |
 | Engineer | — | deliberately absent: your host is the engineer |
+
+**No concern currently meets the bar, and that is the finding.** It is stated
+here first because it is the most important true thing this project knows about
+itself.
 
 Read that column carefully, because it was weaker than this page used to say.
 The measurement is a sweep: every lens dispatched once, clean context, over a
@@ -72,14 +76,32 @@ lens did not produce its own finding at all.
 
 Until 2026-08-10 this table said "at depth" for six rows, on a rule that only
 asked whether the owning lens hit its plant. A full eleven-lens sweep on the
-tuned family then showed ten of the thirteen planted findings being produced by
-lenses that do not own them, so that rule could not tell depth from coverage,
-and the rows resting on it have been restated above. One concern survives the
-stricter rule. This is published rather than repaired quietly because a
-coverage number dressed as a depth number is the exact failure this project
-exists to prevent — including when the project is the one making it. The
-sweep, its per-run scores, and the discrimination matrix are all under
-`fixtures/org-harness/runs/`; `npm run harness:discrimination -- --suite claude`
+tuned family showed ten of thirteen planted findings being produced by lenses
+that do not own them, so that rule could not tell depth from coverage. Two
+explanations were then tested and both failed. Bounding how much each role
+reports cut output 44% and off-lens findings 47% and changed no verdict. The
+plants were then rewritten from scratch, one per role, each keyed to territory
+only its owner asks about, committed before the sweep that graded them — and
+off-lens findings did not fall at all (18 to 19).
+
+A judge pass settled which of those collisions were real. Given each plant's
+mechanism as committed before any run, an independent pass found 41 of 50
+credited claims genuinely state the planted mechanism. **The collisions are
+not a scoring artifact. The roles actually converge**: asked different
+questions over this material, they return the same findings, naming the same
+mechanisms. On judged credits, zero of ten plants isolate their role.
+
+What that does and does not license. It is one corpus, one model family, one
+run per lens; the corpus is 22 documents from a single project's sync and
+hydration work, which is narrow enough that convergence may be a property of
+the material rather than of the roles — that is the live hypothesis and it is
+not yet tested. The judge shares a family with the runs it judged, so its
+agreement is an upper bound on what independent judges would find. What is not
+in doubt is that the depth claim is unsupported today. It is published rather
+than repaired quietly because a coverage number dressed as a depth number is
+the exact failure this project exists to prevent, including when the project is
+the one making it. Every sweep, score, judged verdict and matrix is under
+`fixtures/org-harness/runs/`; `npm run harness:discrimination -- --suite replant --judged`
 reproduces the verdict from them.
 
 ## Development

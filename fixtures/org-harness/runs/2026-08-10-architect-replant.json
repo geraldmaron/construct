@@ -1,0 +1,49 @@
+{
+  "claims": [
+    {
+      "kind": "conflict",
+      "claim": "Promoting Progressive Sync to Stable freezes `strategy.rollingSync.steps` (one `matchExpressions` match-set per step) as the v1 shape under the argoproj backward-compatibility bar, and the parallel-steps proposal's first API sketch restructures that exact field in place by nesting a `parallel:` list of match-sets inside each step. After the promotion only the sibling-field variant (`rollingSync.parallelGroups`) is still landable, so the Stable promotion date, not the API review, decides which of the two proposed shapes survives; reversing that choice afterwards would require breaking the compatibility bar the promotion itself established.",
+      "citations": ["tickets/T-28927.md", "tickets/T-28755.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "The deletion PRD makes `deletionOrder: Reverse` depend on `rollingSync.steps` staying a strictly sequential list of match groups, one deployed and deleted at a time, and states this must hold for as long as the feature exists; the parallel-steps proposal removes exactly that property by evaluating several match-sets concurrently within one step. Both commitments cannot hold: shipping parallel groups either voids the last-in-first-out guarantee for ApplicationSets already configured with Reverse, or forces the controller to reject the two settings in combination, and by that point `deletionOrder` is a published CRD field that operators have written into their specs.",
+      "citations": ["prd-progressive-sync-deletion.md", "tickets/T-28755.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "The roadmap commits that ordered or automated deletion of ApplicationSet children will not be implemented and that teardown stays a manual, one-Application-at-a-time operator action, while the PRD adds `deletionOrder` to `ApplicationSetStrategy` and a reproduction in the field already shows `strategy.deletionOrder: AllAtOnce` in a live ApplicationSet. The PRD's upgrade section calls the addition clean because no existing field changes, which is true of the CRD but not of the roadmap position: once the field is in the published ApplicationSet CRD, unwinding it means removing a published API field, which no single roadmap owner can do without the backward-compatibility bar's consent.",
+      "citations": ["strategy.md", "prd-progressive-sync-deletion.md", "tickets/T-28511.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "The impersonation RFC states as a goal that the feature can be enabled or disabled only at the system level, applicable to all Applications, and its enablement surfaces are correspondingly process-scoped: `applicationcontroller.enable.impersonation` in argocd-cm, the `ARGOCD_APPLICATION_CONTROLLER_ENABLE_IMPERSONATION` environment variable, and the `--enable-impersonation` flag. The platform decision is the opposite unit, a per-project flag rather than fleet-wide, and a CI report already describes projects where the sync impersonation flag was recently enabled. Delivering the decided granularity moves the enable/disable boundary out of the Application controller's process configuration and into AppProject, while all three system-level surfaces stay published and have to keep meaning something.",
+      "citations": ["rfc-001-sync-impersonation.md", "notes/note-1.md", "tickets/T-26271.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "The two accounts of which identity runs the diff are incompatible, and they imply opposite fixes. The platform call root-causes the CI diff failures as diff running as the destination service account, which lacks patch on cluster-scoped resources; the external-cluster report states the diff path does not honor `destinationServiceAccounts` at all and runs as the cluster Secret credential, and the failing log in the CI ticket names `system:serviceaccount:argocd:argocd-server`, a control-plane identity, not a destination service account. One reading says diff already impersonates and that is the defect; the other asks for diff to start impersonating so the standing cluster credential stops accumulating patch grants. The rollout gate is stated as blocking until the diff story is fixed, so which side of the sync/diff boundary owns the identity has to be settled before the gate can be judged met.",
+      "citations": ["notes/note-1.md", "tickets/T-28695.md", "tickets/T-26271.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The impersonation design fixes the selection unit at the Application level, keyed on the (server, namespace) pair with first-valid-match semantics over a user-ordered `destinationServiceAccounts` list, and explicitly answers that the service account is not chosen per resource; the namespace-resource request asks for exactly a per-resource-kind split, control-plane service account for `kind: Namespace` bootstrapping and the impersonated service account for everything else. Adding a resource-kind dimension changes what first-valid-match selects for lists operators have already written and ordered, so it cannot be a pure addition; the design also pre-spent the obvious escape hatch by reserving the name `serviceAccount` for a future Application-level override.",
+      "citations": ["rfc-001-sync-impersonation.md", "tickets/T-27833.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The hydrator design routes the actual push through the commit server, and signing is being implemented there as a commit-server setting (`commitserver.sign.hydrated.commits` with a key path mounted from a Secret). The rollback proposal pushes to the sync branch outside the commit server. That places the rollback path on the far side of the boundary where the signing invariant is enforced, so on any branch whose `SourceIntegrity` policy requires verified signatures, rollback pushes land unsigned and are rejected by the git host by construction rather than by bug. Bringing rollback back inside that boundary means it must become a caller of the commit server, which is a different design than the git checkout-and-push sketch the ticket proposes.",
+      "citations": ["rfc-002-manifest-hydrator.md", "tickets/T-27327.md", "tickets/T-28239.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The `CommitManifests` message marks `repoURL`, `targetBranch`, `drySHA`, `commitAuthor`, `commitMessage`, and `commitTime` as proto2 `required`, which the design itself notes can never be loosened to optional once clients are compiled against it. The second consumer is already visible: rollback re-pushes a previously rendered tree to the sync branch, where `drySHA`, `commitAuthor`, and `commitMessage` describe a dry commit that is not what is being pushed. That contract shape is a standing reason for any non-hydration caller to bypass the commit server and push directly, which is what the rollback proposal does, so the wire contract is quietly deciding which operations get commit-server-enforced behavior.",
+      "citations": ["rfc-002-manifest-hydrator.md", "tickets/T-27327.md"]
+    },
+    {
+      "kind": "cross-reference",
+      "claim": "The hydrator design guarantees that each dry commit produces a commit on the hydrated `syncSource.targetBranch` that child Applications deploy from, and the progressive sync report confirms that on a pilot repository every such hydration commit is picked up as a source change that restarts the RollingSync wave. Enabling the source hydrator on a repository therefore couples hydration cadence to rollout progress: the wave can only complete if hydration is quiet for its duration. The incident review's response is an operational restriction (hydrator pilot repos must not use progressive sync until a debounce exists), which keeps the two features separable only for as long as no team ships an ApplicationSet on a hydrated repo; decoupling them afterwards costs a debounce in the controller plus a migration for whatever already depends on push-per-dry-commit.",
+      "citations": ["rfc-002-manifest-hydrator.md", "tickets/T-27949.md", "notes/note-2.md"]
+    }
+  ]
+}

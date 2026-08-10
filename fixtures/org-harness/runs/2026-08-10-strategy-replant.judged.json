@@ -1,0 +1,39 @@
+{
+ "judgedBy": "Opus 5 (clean-context judge pass, 3 independent judges over 11 files)",
+ "judgedFrom": "fixtures/org-harness/runs/2026-08-10-strategy-replant.score.json",
+ "standard": "each plant's gist as committed before any run; the scorer has never read these gists, so the standard was fixed in advance rather than fitted to results",
+ "correlatedError": "if the judging model shares a family with the model that produced the run, observed agreement is an upper bound on what independent judges would reach",
+ "results": [
+  {
+   "plant": "C1",
+   "structuralFound": true,
+   "statesMechanism": true,
+   "why": "The claim asserts exactly the planted collision: the roadmap excludes ordered/automated deletion of ApplicationSet children and keeps teardown manual, while the PRD proposes that same ordered automated deletion as a new field."
+  },
+  {
+   "plant": "C2",
+   "structuralFound": true,
+   "statesMechanism": true,
+   "why": "The claim states that Reverse's determinism depends on rollingSync.steps staying strictly sequential and that the parallel-steps proposal makes match groups concurrent within a step, removing the ordering Reverse depends on."
+  },
+  {
+   "plant": "TP2",
+   "structuralFound": true,
+   "statesMechanism": true,
+   "why": "The claim explicitly states that the Stable promotion freezes the steps shape as the v1 compatibility bar, forcing any change to the step expression to land before that point and thereby closing the window on the parallel-steps restructuring, with neither document citing the other."
+  },
+  {
+   "plant": "A2",
+   "structuralFound": true,
+   "statesMechanism": true,
+   "why": "The claim states that no counter increments when specChanged fires without a resulting sync, so the asserted failure rate is only a count of support pings and the failure mode is unmeasured at promotion time."
+  },
+  {
+   "plant": "SA3",
+   "structuralFound": true,
+   "statesMechanism": true,
+   "why": "The claim names the same displacement chain: the application-controller pair is committed to the Progressive Sync Stable-promotion punch list, so sharding does not start until that list closes."
+  }
+ ],
+ "falseCredits": []
+}

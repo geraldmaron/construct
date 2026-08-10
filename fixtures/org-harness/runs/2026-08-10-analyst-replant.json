@@ -1,0 +1,64 @@
+{
+  "claims": [
+    {
+      "kind": "risk",
+      "claim": "The \"1 in 6 Helm-parameter-only RollingSync rollouts\" figure in T-27949 is unobservable in production: the ticket itself says there is no counter that increments when `specChanged` fires without a resulting sync operation, so the number is a headcount of support pings. The metrics request that would be the natural home for that counter, T-27846, asks for four progressive-sync measurements (time from detection to trigger, time to complete step X, how many Application refreshes the ApplicationSet caused, and which Applications a stalled sync is waiting for) and none of them counts a spec change that produced no sync operation. Shipping T-27846 as proposed therefore leaves the T-27949 failure mode exactly as unmeasured as it is today.",
+      "citations": ["tickets/T-27949.md", "tickets/T-27846.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "T-28927 promotes Progressive Sync to Stable against the argoproj feature-status bar of \"tested and validated with various use cases\", but the one defect rate the corpus quotes for the feature, T-27949's silent `Healthy` rollout completion over `OutOfSync` children, is explicitly not a measured rate: the reporter says there is no counter and it could be 1 in 6, 1 in 60, or worse on rollouts nobody complained about. The Stable-promotion decision would be taken on support-ping volume, and nothing in T-28927's scope makes a measured rate a precondition.",
+      "citations": ["tickets/T-28927.md", "tickets/T-27949.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The roadmap's sharding schedule depends on an unmeasured close condition without saying so: strategy.md states that application controller capacity is committed to the Progressive Sync Stable-promotion punch list and that sharding will not start until the Stable promotion closes, while T-28927 defines that punch list only as open enhancement and bug label queries. Because closure is judged from ticket queues rather than any observable behavior, and the progressive-sync observability that would tell anyone whether the feature is behaving, T-27846, is itself still an open request, there is no measurement that can say when the punch list is actually done, and therefore none that can date the start of sharding.",
+      "citations": ["strategy.md", "tickets/T-28927.md", "tickets/T-27846.md"]
+    },
+    {
+      "kind": "cross-reference",
+      "claim": "T-26443's proposed freshness check cannot be computed from the artifact it names. The ticket proposes an app annotation timestamp that blocks sync against any `hydrator.metadata` older than that annotation, but rfc-002's `hydrator.metadata` payload carries only `commands`, `drySHA`, `commitAuthor`, `commitMessage`, and `repoURL`; the only time value in the design, `commitTime` in the `CommitManifests` message, is the dry commit's timestamp, not the time hydration produced the files. So \"are the hydrated files in this path stale?\" is unobservable from the hydrated branch as specified, which is why T-26443 has to concede it is difficult to determine whether the files are old or dirty.",
+      "citations": ["tickets/T-26443.md", "rfc-002-manifest-hydrator.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "The impersonation rollout gate cannot be checked because the state it gates on does not exist. note-1 records a firm decision that impersonation goes behind a per-project flag and that nobody flips it on a project until the diff story is fixed, but rfc-001 states the feature can be enabled or disabled only at the system level and, once set, applies to all Argo CD Applications, offering exactly three system-scoped controls: `applicationcontroller.enable.impersonation` in `argocd-cm`, the `ARGOCD_APPLICATION_CONTROLLER_ENABLE_IMPERSONATION` environment variable, and `--enable-impersonation`. There is no per-project enablement field to read, so \"which projects have impersonation on\" is unobservable, and compliance with the gate is measurable only in arrears through failures like T-26271's CI diff errors.",
+      "citations": ["notes/note-1.md", "rfc-001-sync-impersonation.md", "tickets/T-26271.md"]
+    },
+    {
+      "kind": "cross-reference",
+      "claim": "The same missing-permissions diff failure is reported twice with no shared measurement tying either instance to its cause. T-26271 reports `argocd-server` running the server-side apply dry-run and failing on `ClusterRole/cert-manager-cainjector` in projects where the sync impersonation flag was recently enabled, and its reporter is chasing the broad cluster Secret; T-28695 reports the application-controller reconcile path failing the same way on external clusters because the diff path ignores `destinationServiceAccounts`. The only production signals are the `ComparisonError` string and the App rotating `Synced` to `Unknown` on every reconcile; nothing counts diff failures or attributes them to impersonation-enabled destinations, which is precisely why note-1 has to circulate the root cause by hand so the T-26271 reporter stops chasing the cluster secret.",
+      "citations": ["tickets/T-26271.md", "tickets/T-28695.md", "notes/note-1.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The only quantitative baseline in the diff-path material does not cover the change it would be used to justify. T-28695's \"measured cost: zero\" is a count of cosmetic OutOfSync results and `ignoreDifferences` entries across roughly 20 monitoring charts under the `ServerSideDiff=false` workaround, one operator's fleet. The change actually in flight is making Server Side Diff the default (#24134 as cited in T-28695), whose blast radius is the `ComparisonError` rate on external clusters, and the same error already appeared in a different component in T-26271 where maintainers scoped it away from external clusters. No before-and-after number for that rate exists on either side of the default flip.",
+      "citations": ["tickets/T-28695.md", "tickets/T-26271.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "Hydrated-commit signing turns a key problem into a fleet-wide hydration stall with no proportional signal. T-28239's fail-fast rule makes the commit server refuse to start on a missing or invalid signing key, and its own ops caveat says there is no distinct signal for crash-looping on a bad signing key versus any other crash-loop, so the only alert is generic pod-health CrashLoopBackOff. On the rfc-002 side, the application controller only acts when it detects a new commit on `syncSource.targetBranch`, so a stalled commit server produces silence rather than an error: nothing records per-application time since the last hydrated commit, and the outage lasts until a user notices their manifests stopped moving.",
+      "citations": ["tickets/T-28239.md", "rfc-002-manifest-hydrator.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The standing mitigation for the delete/recreate loop is unverifiable. note-2 makes it an operational rule that operators switch the ApplicationSet to AllAtOnce deletion before deleting any child app by hand, and notes there is no controller-level check or alert behind it. T-28511 shows the observable is downstream of the failure: the operator sees the Application flipping between Deleting and Syncing after the wave has already restarted. Nothing observes the `strategy.deletionOrder` value at the moment of a manual child deletion, so adherence to the rule is measurable only by the incident it was written to prevent.",
+      "citations": ["notes/note-2.md", "tickets/T-28511.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The debounce that would lift the hydrator-pilot restriction has no baseline to be measured against. note-2 confirms each hydrator push restarts the rolling sync wave and makes \"hydrator pilot repos must not use progressive sync until there's a debounce\" the interim rule carried on T-27949, which reports its own hydration cycles landing a fresh commit picked up as a source change on every cycle. The count that a before-and-after comparison would need, how many Application refreshes the ApplicationSet caused, is item 3 of the still-open T-27846 metrics request, so today the restart behavior is confirmed qualitatively in staging and quantified nowhere.",
+      "citations": ["notes/note-2.md", "tickets/T-27949.md", "tickets/T-27846.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "Two silent-failure defects share one diagnostic channel, and it is off by default. T-27875's evidence that auto-sync was skipped is a pair of controller log lines (\"Already attempted sync: revisions have no changes\" and \"Skipping auto-sync\"), and T-27949 reports that its ApplicationSet controller logs were at warn level so no progressive-sync transition logs were emitted at all. In both defects the application ends `OutOfSync` with no operation created and no status that reflects it, so at default log level the failure produces no record; no metric measures how long an Application sits `OutOfSync` without a sync operation being created.",
+      "citations": ["tickets/T-27875.md", "tickets/T-27949.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "T-29001 asks operators to set per-cluster `qps` and `burst` values with no per-cluster measurement to set them from: its motivation asserts edge clusters are overwhelmed by the default QPS of 50 and Burst of 100 and can suffer API server crashes, but names no recorded request rate, throttling counter, or latency figure per destination cluster. The load being tuned is also not accounted for: T-28695 describes Server Side Diff issuing a server-side apply dry-run per resource kind and the App rotating `Synced` to `Unknown` on every reconcile, meaning a failing diff path re-issues that write-authorized traffic against the same external clusters continuously, with nothing separating diff-driven requests from sync-driven ones in any measurement.",
+      "citations": ["tickets/T-29001.md", "tickets/T-28695.md"]
+    }
+  ]
+}

@@ -47,6 +47,8 @@ const arg = (name, fallback) => {
 const suite = arg('--suite');
 const runsDir = arg('--runs', join('fixtures', 'org-harness', 'runs'));
 const jsonMode = args.includes('--json');
+/** Read judged verdicts beside the scores, so a collision must state the mechanism to count. */
+const judgedMode = args.includes('--judged');
 
 if (!suite) {
   console.error('usage: check-plant-discrimination.mjs --suite <label> [--runs <dir>] [--json]');
@@ -100,12 +102,33 @@ for (const score of scores.values()) {
   }
 }
 
+/**
+ * Judged verdicts for a lens, when a judge pass has been recorded beside its
+ * score. Structural credit and stating the mechanism are different facts, and a
+ * collision only counts against a plant when the colliding claim actually
+ * states that plant's mechanism rather than sharing its vocabulary.
+ */
+function refusedBy(lens) {
+  const suffix = `-${lens}-${suite}.judged.json`;
+  const match = readdirSync(runsDir).find((f) => f.endsWith(suffix));
+  if (!match) return null;
+  const judged = JSON.parse(readFileSync(join(runsDir, match), 'utf8'));
+  return new Set(judged.falseCredits ?? []);
+}
+
+const refusals = new Map();
+for (const lens of scores.keys()) refusals.set(lens, judgedMode ? refusedBy(lens) : null);
+const unjudged = [...refusals].filter(([, v]) => v === null).map(([l]) => l);
+
 const results = [];
 for (const [plantId, owner] of owners) {
   const earnedBy = [];
   for (const [lens, score] of scores) {
     const plants = Object.values(score.roleCoverage ?? {}).flat();
-    if (plants.some((p) => p.id === plantId && p.found)) earnedBy.push(lens);
+    if (!plants.some((p) => p.id === plantId && p.found)) continue;
+    // A credit the judge refused is not evidence about this plant either way.
+    if (judgedMode && refusals.get(lens)?.has(plantId)) continue;
+    earnedBy.push(lens);
   }
   const ownerLens = lensOf(owner);
   const ownerTested = scores.has(ownerLens);
@@ -134,7 +157,10 @@ const failing = results.filter((r) => r.verdict === 'not-discriminating');
 if (jsonMode) {
   console.log(JSON.stringify({ suite, lensesTested: [...scores.keys()], lensesMissing: missing, results }, null, 1));
 } else {
-  console.log(`suite: ${suite} — ${scores.size}/${lensNames.length} lenses swept`);
+  console.log(`suite: ${suite} — ${scores.size}/${lensNames.length} lenses swept${judgedMode ? ', judged credits only' : ''}`);
+  if (judgedMode && unjudged.length > 0) {
+    console.log(`no judge pass recorded for: ${unjudged.join(', ')} — their credits are counted as structural`);
+  }
   if (missing.length > 0) console.log(`lenses not swept (their plants are untested, not passing): ${missing.join(', ')}`);
   console.log('');
   for (const r of results) {

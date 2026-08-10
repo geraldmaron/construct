@@ -1,0 +1,54 @@
+{
+ "judgedBy": "Opus 5 (clean-context judge pass, 3 independent judges over 11 files)",
+ "judgedFrom": "fixtures/org-harness/runs/2026-08-10-legal-replant.score.json",
+ "standard": "each plant's gist as committed before any run; the scorer has never read these gists, so the standard was fixed in advance rather than fitted to results",
+ "correlatedError": "if the judging model shares a family with the model that produced the run, observed agreement is an upper bound on what independent judges would reach",
+ "results": [
+  {
+   "plant": "R1",
+   "structuralFound": true,
+   "statesMechanism": false,
+   "why": "The plant is that narrowly scoped destination service accounts silently break Server-Side Diff, which demands patch authority on every resource type, while the claim asserts diff never uses those service accounts at all and instead frames the harm as misattributed audit records."
+  },
+  {
+   "plant": "C1",
+   "structuralFound": true,
+   "statesMechanism": true,
+   "why": "The claim states the same contradiction: the strategy doc rules out ordered/automated deletion of ApplicationSet children while the PRD ships exactly that via DeletionOrder Reverse."
+  },
+  {
+   "plant": "C2",
+   "structuralFound": true,
+   "statesMechanism": false,
+   "why": "The claim's causal chain is the Stable-promotion compatibility freeze foreclosing the parallel-steps restructuring, not the plant's chain in which concurrent step groups destroy the sequential ordering Reverse deletion depends on."
+  },
+  {
+   "plant": "TP2",
+   "structuralFound": true,
+   "statesMechanism": true,
+   "why": "The claim states the same chain: the Stable promotion freezes the rollingSync.steps shape under the backward-compatibility bar, foreclosing the parallel-steps proposal's in-place restructuring unless it lands first."
+  },
+  {
+   "plant": "L2",
+   "structuralFound": true,
+   "statesMechanism": true,
+   "why": "The claim states the same chain: a human commitAuthor copied from the dry commit onto pushes made by the GitHub App credential, unverifiable because signing defaults to false."
+  },
+  {
+   "plant": "SD2",
+   "structuralFound": true,
+   "statesMechanism": true,
+   "why": "The claim states the same chain: proto2 required fields on CommitManifests can never be relaxed, so the rollback flow as a second caller must supply hydration-only provenance values that describe an earlier commit rather than the act performed."
+  },
+  {
+   "plant": "UX2",
+   "structuralFound": true,
+   "statesMechanism": true,
+   "why": "The claim states the same chain: rollback pushes happen outside the commit server where signing lives, so they are rejected on signature-required branches and leave the operator with a failed push and no messaging tying it to signing."
+  }
+ ],
+ "falseCredits": [
+  "R1",
+  "C2"
+ ]
+}

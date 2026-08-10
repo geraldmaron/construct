@@ -1,0 +1,54 @@
+{
+  "claims": [
+    {
+      "kind": "conflict",
+      "claim": "The impersonation RFC answers its own audit question by asserting that Kubernetes audit events capture both the acting and impersonated identity, but that guarantee only covers the sync path: with impersonation enabled, Server-Side Diff still runs as the cluster credential from the cluster Secret rather than the AppProject's destinationServiceAccounts SA, so the diff-time server-side apply dry-run is recorded in the API server audit trail under the standing cluster identity with no impersonation chain at all, and the RBAC review that grants the accumulating patch rules follows that old identity rather than the new per-destination service account.",
+      "citations": ["rfc-001-sync-impersonation.md", "tickets/T-28695.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "Because RBAC has no dry-run verb, the diff path's failure to honor destinationServiceAccounts forces real patch authority for every resource kind onto the standing cluster role of deliberately least-privilege external-cluster credentials, five rounds of grants so far with no end state. The impersonation design's stated security goal, that the control plane no longer needs to match the highest-privileged tenant, is therefore reversed on the diff path: the control-plane credential keeps widening while only the sync path narrows, and the only boundary preventing those grants from being exercised as writes is Argo CD's convention of sending dryRun=All, which is not an enforced control an auditor can verify.",
+      "citations": ["rfc-001-sync-impersonation.md", "tickets/T-28695.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "The rollout decision records that impersonation goes behind a per-project flag rather than fleet-wide, and the diff-failure report describes projects where the sync impersonation flag was recently enabled, but the RFC's goals state the feature can be enabled or disabled only at the system level via applicationcontroller.enable.impersonation and is applicable to all Argo CD Applications once set. There is no per-project scope in the design to hold that governance boundary, so the identity that performs syncs changes fleet-wide the moment any project is treated as opted in, and no per-project reviewer owns that change.",
+      "citations": ["notes/note-1.md", "rfc-001-sync-impersonation.md", "tickets/T-26271.md"]
+    },
+    {
+      "kind": "cross-reference",
+      "claim": "The open access-control request to keep Applications from syncing kind: Namespace converges on the impersonation model but cannot be satisfied by it: the RFC fixes the impersonated service account per Application, determined from Application.spec.destination.namespace, not per resource, so there is no way to split control-plane-owned namespace creation from the impersonated SA's sync as the ticket proposes. The governance consequence is that after impersonation ships, a namespace object committed to the repo is applied by the destination SA, the audit record names that SA rather than the committing user, and the AppProject deny policy the team wrote only governs actions taken through the Argo CD API and UI, so no review sees the controller-applied change that drops the pod-security enforce label.",
+      "citations": ["tickets/T-27833.md", "rfc-001-sync-impersonation.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The privileged shared credential is retired nowhere: the RFC's remote-destination example keeps relying on the argocd-manager service account with cluster-admin created by argocd cluster add, adding a narrow per-destination SA for sync alongside it rather than replacing it, and the diff path continues to run as exactly that cluster Secret credential. So after impersonation is enabled the cluster-admin credential is still held by the control plane, still used on every reconcile, and no review process is attached to it because attention has moved to the destinationServiceAccounts entries.",
+      "citations": ["rfc-001-sync-impersonation.md", "tickets/T-28695.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The hydrator's stated change-auditing use case rests on evidence that does not exist: every push to the hydrated branch is made by the GitHub App credential in the repository-write Secret, while the commitAuthor recorded in README.md and hydrator.metadata is copied forward from the dry commit and never identifies who produced the hydrated content, and commit signing is opt-in and defaults to false via commitserver.sign.hydrated.commits. An auditor asking who authored a deployed change gets an unverifiable human name attached to a commit pushed by a shared machine identity, until an operator both enables signing and loads the public key into argocd-gpg-keys-cm and the project's SourceIntegrity policy.",
+      "citations": ["rfc-002-manifest-hydrator.md", "tickets/T-28239.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "The hydrator design states that git push secrets probably need to live in a namespace separate from the other Argo CD components for extra protection, but the signing proposal mounts the GPG signing key from a Secret in the Argo CD namespace where the rest of the control plane runs. That placement makes the signing key readable by anything already scoped to read Secrets in that namespace, so any Argo CD component or extension, not only the commit server, can mint commits that pass SourceIntegrity verification on the hydrated branch, which converts the signature from proof of commit-server authorship into proof only that something inside the control-plane namespace produced it.",
+      "citations": ["rfc-002-manifest-hydrator.md", "tickets/T-28239.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "Rollback and signing are structurally incompatible as designed: signing capability lives only in the commit server, enabled by commitserver.sign.hydrated.commits with a single cluster-wide key, while the rollback push is explicitly performed outside the commit server. Any branch whose SourceIntegrity policy requires verified signatures therefore rejects every rollback push, and the History and Rollback tab surfaces only a failed push with no messaging tying it to signing, so the recovery path is blocked precisely on the branches with the strongest integrity controls and the operator has no audit-visible reason for the failure.",
+      "citations": ["tickets/T-27327.md", "tickets/T-28239.md"]
+    },
+    {
+      "kind": "cross-reference",
+      "claim": "Two proposals move who acts on the cluster in opposite directions and would produce inconsistent audit records if both ship: the RBAC proxying request wants Argo CD UI actions such as pod deletion and exec to be authorized as the end user against the cluster's own RBAC, while the impersonation RFC binds cluster actions to a service account selected from the AppProject's destinationServiceAccounts by destination match, with the first valid glob match winning. The same cluster object would then be mutated under a named human identity when touched through the UI and under a shared per-destination SA when touched by sync, splitting the access review between Argo CD RBAC and Kubernetes RBAC with no single place that shows who can change a given resource.",
+      "citations": ["tickets/T-9095.md", "rfc-001-sync-impersonation.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The fail-fast signing behavior turns a credential-rotation event into a fleet-wide outage with no matching escalation path: a rotated or expired signing key stops commit-server startup for every hydrator-enabled application, and because the failure presents as an undifferentiated CrashLoopBackOff to whoever holds generic pod-health paging, resolution requires finding someone with access to the signing-key Secret in the Argo CD namespace. The single cluster-wide key means no project-scoped rotation is possible, so key custody and the on-call rota that first sees the failure are held by different people by construction.",
+      "citations": ["tickets/T-28239.md", "rfc-002-manifest-hydrator.md"]
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+ "judgedBy": "Opus 5 (clean-context judge pass, 3 independent judges over 11 files)",
+ "judgedFrom": "fixtures/org-harness/runs/2026-08-10-engineering-replant.score.json",
+ "standard": "each plant's gist as committed before any run; the scorer has never read these gists, so the standard was fixed in advance rather than fitted to results",
+ "correlatedError": "if the judging model shares a family with the model that produced the run, observed agreement is an upper bound on what independent judges would reach",
+ "results": [
+  {
+   "plant": "X1",
+   "structuralFound": true,
+   "statesMechanism": true,
+   "why": "The claim states the same chain: in push-to-stage the external promoter has not moved fresh manifests to the sync branch, so auto-sync applies whatever that branch last held."
+  },
+  {
+   "plant": "X2",
+   "structuralFound": true,
+   "statesMechanism": false,
+   "why": "The plant attributes the diff failures to the operation running as the narrow destination service account instead of the broad cluster-secret credential, while the claim asserts impersonation never reaches the diff path and that the reporter's belief about the cluster Secret credential is what the design implies."
+  },
+  {
+   "plant": "X3",
+   "structuralFound": true,
+   "statesMechanism": true,
+   "why": "The claim states the same chain: the reverse deletion strategy waits for each Application to be fully deleted before advancing, so a child stuck Progressing never releases the barrier and the sequence restarts."
+  },
+  {
+   "plant": "R1",
+   "structuralFound": true,
+   "statesMechanism": false,
+   "why": "The plant's effect is that narrowly scoped destination service accounts silently break server-side diff under fleet-wide impersonation, whereas the claim argues diff stays on the cluster credential and therefore that credential must retain patch authority on every kind, a different route and a different consequence."
+  },
+  {
+   "plant": "R2",
+   "structuralFound": true,
+   "statesMechanism": true,
+   "why": "The claim states the same chain: one hydrated commit per hydration cycle on the branch the child Applications deploy from, each read as a new source revision by the rolling wave, with no debounce in the design."
+  }
+ ],
+ "falseCredits": [
+  "X2",
+  "R1"
+ ]
+}

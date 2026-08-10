@@ -1,0 +1,171 @@
+{
+  "rung0": {
+    "pass": true,
+    "fabricated": [],
+    "uncited": [],
+    "pathShortened": []
+  },
+  "rung1": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "X1",
+        "found": true,
+        "by": {
+          "claim": "In push-to-stage mode the product silently contradicts what it taught users about auto-sync. The hydrator writes to the hydrateTo branch and relies on an external system to move changes to the deployment branch, so when the sync source changes an auto-synced Application immediately applies whatever the stage branch last held, which may be very old manifests, while presenting an ordinary Synced state. The only remedy offered today is for the user to imperatively disable auto-sync before changing the sync source and re-enable it after, which is the opposite of the declarative model the Application spec teaches. The stale-manifest condition needs its own visible state, blocking the sync until a fresh hydration has landed, rather than a manual toggle the user must know to perform.",
+          "citations": [
+            "tickets/T-26443.md",
+            "rfc-002-manifest-hydrator.md"
+          ]
+        }
+      },
+      {
+        "id": "X2",
+        "found": false
+      },
+      {
+        "id": "X3",
+        "found": false
+      }
+    ]
+  },
+  "rung2": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "R1",
+        "found": false
+      },
+      {
+        "id": "R2",
+        "found": false
+      }
+    ],
+    "substantiveRatio": 1
+  },
+  "rung3": {
+    "pass": false,
+    "conflicts": [
+      {
+        "id": "C1",
+        "found": true,
+        "by": {
+          "claim": "The PRD puts deletionOrder inside strategy in the ApplicationSet CRD while the roadmap's first-class ApplicationSet UI/CLI/API support explicitly excludes managing deletion order of child applications, keeping teardown a manual operator action performed one Application at a time. The result is a setting that governs destructive behaviour and is reachable only by editing YAML: a user who manages ApplicationSets through the UI has no surface that shows which deletionOrder is in effect before they delete, and the roadmap commits to never adding one.",
+          "citations": [
+            "prd-progressive-sync-deletion.md",
+            "strategy.md"
+          ]
+        }
+      }
+    ],
+    "proposals": [
+      {
+        "id": "P1",
+        "found": false
+      },
+      {
+        "id": "P2",
+        "found": false
+      },
+      {
+        "id": "P3",
+        "found": false
+      }
+    ],
+    "deltas": [
+      {
+        "id": "D1",
+        "found": false
+      },
+      {
+        "id": "D2",
+        "found": false
+      }
+    ]
+  },
+  "roleCoverage": {
+    "pm": [
+      {
+        "id": "C2",
+        "found": false
+      }
+    ],
+    "engineering": [],
+    "tpm": [
+      {
+        "id": "TP2",
+        "found": false
+      }
+    ],
+    "analyst": [
+      {
+        "id": "A2",
+        "found": false
+      }
+    ],
+    "compliance": [
+      {
+        "id": "CP1",
+        "found": false
+      }
+    ],
+    "legal": [
+      {
+        "id": "L2",
+        "found": false
+      }
+    ],
+    "strategy": [
+      {
+        "id": "SA3",
+        "found": false
+      }
+    ],
+    "architect": [
+      {
+        "id": "SD2",
+        "found": false
+      }
+    ],
+    "operations": [
+      {
+        "id": "OP2",
+        "found": false
+      }
+    ],
+    "design": [
+      {
+        "id": "UX2",
+        "found": true,
+        "by": {
+          "claim": "The History & Rollback tab is a terminal dead end on any hydrated branch protected by SourceIntegrity: rollback pushes directly to the sync branch from outside the commit server, and signing lives only inside the commit server behind commitserver.sign.hydrated.commits, so the rollback commit lands unsigned and the git host rejects the push. Even an operator who has opted into hydrated-commit signing gains nothing on this path. The tab surfaces only a failed push with no mention of signing and no retry, so the interface's only forward move is to leave the product and inspect the commit server's signing config by hand; it should instead name the SourceIntegrity requirement as the cause and either offer a signed-push retry or state plainly that rollback is unavailable on this branch.",
+          "citations": [
+            "tickets/T-27327.md",
+            "tickets/T-28239.md"
+          ]
+        }
+      }
+    ],
+    "security": [
+      {
+        "id": "TH3",
+        "found": false
+      }
+    ]
+  },
+  "distractors": [
+    {
+      "id": "DX1",
+      "violated": false
+    },
+    {
+      "id": "DX2",
+      "violated": false
+    }
+  ],
+  "distractorGate": {
+    "began": "2026-08-05",
+    "note": "DX1/DX2 violations fail rung 3 for runs scored from this date; score files recorded earlier are never regenerated and keep their as-run results. Evidence: five distractor-disciplined runs (two single-pass, three composed dispatch-shape) all clean; every run before the discipline paragraph violated at least one."
+  },
+  "pass": false
+}
