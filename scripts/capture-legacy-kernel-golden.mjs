@@ -1,7 +1,6 @@
 /**
  * scripts/capture-legacy-kernel-golden.mjs — one-shot capture of the
- * predecessor's postcondition and completion-ladder behavior, frozen into
- * tests/kernel/fixtures/postconditions-golden.json and
+ * predecessor's completion-ladder behavior, frozen into
  * tests/kernel/fixtures/completion-golden.json.
  *
  * Both v2 modules are pure with no IO, so the dual run is direct: feed the same
@@ -18,9 +17,6 @@ import { join } from 'node:path';
 const LEGACY =
   process.env.CONSTRUCT_LEGACY ?? join(process.env.HOME ?? '', 'Developer/Projects/construct-legacy');
 
-const { validateBinaryPostconditions, describePostconditions } = await import(
-  `${LEGACY}/lib/capabilities/postconditions.mjs`
-);
 const { makeEvidence, recordCompletion, highestState, DEGRADATION_REASONS } = await import(
   `${LEGACY}/lib/artifact-completion.mjs`
 );
@@ -36,38 +32,14 @@ const write = (name, value) => {
   console.log(`captured ${Array.isArray(value) ? value.length : Object.keys(value).length} -> ${name}`);
 };
 
-// v3 renamed two fields to match the glossary (brief, deliverable). The corpus
-// is written in v3 names; these translate a case back into v2's spelling so the
-// dual run compares behavior rather than vocabulary.
-
-const toV2Packet = (packet) => {
-  if (!packet || typeof packet !== 'object') return packet;
-  const { briefStart, ...rest } = packet;
-  return briefStart === undefined ? packet : { ...rest, contractStart: briefStart };
-};
+// v3 renamed a field to match the glossary (deliverable). The corpus is written
+// in v3 names; this translates a case back into v2's spelling so the dual run
+// compares behavior rather than vocabulary.
 
 const toV2Evidence = (input) => {
   const { deliverable, ...rest } = input ?? {};
   return deliverable === undefined ? input : { ...rest, artifact: deliverable };
 };
-
-// --- postconditions ---------------------------------------------------------
-
-const pcCases = read('postconditions-cases.json');
-write(
-  'postconditions-golden.json',
-  {
-    producers: Object.fromEntries(
-      [...new Set(pcCases.map((c) => c.producer))].map((p) => [p, describePostconditions(p)]),
-    ),
-    cases: pcCases.map((c) => ({
-      name: c.name,
-      producer: c.producer,
-      packet: c.packet,
-      result: validateBinaryPostconditions(c.producer, toV2Packet(c.packet)),
-    })),
-  },
-);
 
 // --- completion ladder ------------------------------------------------------
 

@@ -46,9 +46,9 @@ test('a satisfiable brief binds each capability to a concrete tool', () => {
 
 test('an empty postcondition declaration means the role defaults, never none', () => {
   const resolution = satisfyBrief(BRIEF, AVAILABLE);
-  const registered = describePostconditions('reviewer').map((p) => p.id);
-  assert.ok(registered.length > 0, 'reviewer should have registered postconditions');
-  assert.deepEqual(resolution.postconditions, registered);
+  // No rules ship registered, so the default is empty — but it is the
+  // REGISTRY's answer for this role, not a shortcut past asking.
+  assert.deepEqual(resolution.postconditions, describePostconditions(BRIEF.role).map((p) => p.id));
 });
 
 test('a missing capability is unsatisfied, not silently dropped', () => {
