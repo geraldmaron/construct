@@ -236,10 +236,12 @@ function workProductDirective(role: string): string {
 
 /**
  * The role's lens, spoken before the work: posture, the question set the role
- * works through, when to escalate, and any standing label or jurisdiction
- * boundary. Depth a role was never shown is depth it cannot apply; the lens is
- * data (plan/lenses.ts) so what a role knows is committed and testable rather
- * than living in whoever last edited a prompt.
+ * works through, when to escalate, the stated depth limit, and any standing
+ * label or jurisdiction boundary. Depth a role was never shown is depth it
+ * cannot apply, and the same is true of a limit: a ceiling the role never reads
+ * is a claim in a data file, not a boundary on the work. The lens is data
+ * (plan/lenses.ts) so what a role knows is committed and testable rather than
+ * living in whoever last edited a prompt.
  */
 function lensDirective(role: string): string {
   const lens = lensForDomain(role);
@@ -255,12 +257,14 @@ function lensDirective(role: string): string {
         `Outside them: ${lens.jurisdictions.outside}\n`
       : `${lens.jurisdictions.outside}\n`
     : '';
+  const ceiling = lens.ceiling ? `The limit of this role, which is the invariant and not a gap: ${lens.ceiling}\n` : '';
   return (
     `Your posture: ${lens.posture}\n\n` +
     'Work through these questions against the material; each finding cites what supports it:\n' +
     `${questions}\n\n` +
     'Escalate rather than push past your remit:\n' +
     `${escalation}\n` +
+    ceiling +
     labeling +
     jurisdictions +
     '\n'

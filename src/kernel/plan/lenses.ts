@@ -198,6 +198,159 @@ export const LENSES: readonly RoleLens[] = Object.freeze([
     ],
   },
   {
+    lens: 'strategy',
+    domains: ['strategy-alignment'],
+    posture:
+      'A bet is a claim about the future paid for in foregone alternatives: ' +
+      'the question is never whether this is good, but what it costs to say yes.',
+    questions: [
+      'What stops, slips, or goes unstaffed if this proceeds? Name the ' +
+        'displaced work specifically — "we will find capacity" is not an answer.',
+      'Which recorded commitment, roadmap line, or stated priority does this ' +
+        'contradict? Quote it, or say plainly that nothing on record speaks to it.',
+      'Who owns this call, and is this outcome asking them to decide or ' +
+        'informing them after the fact?',
+      'What would have to be true for this to be the wrong bet, and is any of ' +
+        'that observable before the money is spent?',
+      'If this succeeds completely, what is the next thing that becomes ' +
+        'possible — and is that the direction anyone said they wanted to go?',
+    ],
+    slots: [
+      slot(
+        'displaced-work',
+        'what stops or slips to pay for this, named specifically, or "nothing identified" said explicitly',
+      ),
+    ],
+    escalation: [
+      'A displacement the outcome does not acknowledge: surface it as a finding, with the commitment it contradicts cited.',
+      'A bet that contradicts a recorded strategy line: this is the stakeholder\'s call, not the role\'s — frame both sides and route it.',
+    ],
+  },
+  {
+    lens: 'architect',
+    domains: ['system-design'],
+    posture:
+      'Every design decision is a bet about what will change next; the job is ' +
+      'naming what this makes hard to undo, not judging the code that implements it.',
+    questions: [
+      'What does this make hard to undo? Separate the reversible choices from ' +
+        'the ones that need a migration, a rewrite, or someone else\'s consent to unwind.',
+      'Which boundary moves, and who owns each side of it after the change?',
+      'What breaks when a second consumer uses this the way the first one ' +
+        'does? The design is only proven by the caller nobody has written yet.',
+      'What does this couple together that was separate, and what would ' +
+        'decoupling cost later versus now?',
+      'Which existing data or published interface has to keep working through ' +
+        'the change, and is there a version of this where it does not?',
+    ],
+    slots: [
+      slot(
+        'hard-to-undo',
+        'each choice this locks in, with what unwinding it would cost and who would have to agree',
+      ),
+    ],
+    escalation: [
+      'A one-way door the outcome treats as reversible: surface it as its own finding, not a caveat.',
+      'Anything requiring a judgment about the implementation rather than the shape: out of scope, hand it to the host.',
+    ],
+    ceiling:
+      'This lens reviews the shape of the system and never the code that ' +
+      'realizes it: no code review, no implementation opinion, no patch. The ' +
+      'hosts are the engineers. Boundaries, coupling, reversibility, and ' +
+      'migration cost are the whole of its contribution.',
+  },
+  {
+    lens: 'operations',
+    domains: ['operations'],
+    posture:
+      'Everything ships into someone\'s night shift: the question is who is ' +
+      'woken, by what signal, and what they can actually do at that hour.',
+    questions: [
+      'When this fails, how does anyone find out — an alert, a customer, or ' +
+        'a quarterly report? Name the detection path or say there is none.',
+      'Who answers when it breaks, and do they have the access and the ' +
+        'runbook to fix it without waking whoever built it?',
+      'What support burden does this create per week once it is live — new ' +
+        'ticket categories, new questions, new manual steps?',
+      'What is the rollback, and has anyone confirmed it works after the ' +
+        'point of no return (a migration, a published message, a charged card)?',
+      'What does this cost to keep alive — the recurring maintenance nobody ' +
+        'budgets because it is not a feature?',
+    ],
+    slots: [
+      slot(
+        'operability-gaps',
+        'each failure path with its detection signal and its owner, or the gap named where one of the three is missing',
+      ),
+    ],
+    escalation: [
+      'A failure path with no detection: surface it as a finding — an outage nobody notices is the expensive kind.',
+      'A change with no rollback past an irreversible step: route it as a decision, not a caveat.',
+    ],
+  },
+  {
+    lens: 'design',
+    domains: ['user-experience', 'accessibility'],
+    posture:
+      'The interface is the argument the product makes for itself: if someone ' +
+      'has to be told how it works, that telling is the defect.',
+    questions: [
+      'What is the shortest path from where the user starts to what they came ' +
+        'to do, and how many steps does this outcome add to it?',
+      'Which states did nobody design — empty, loading, partial, error, ' +
+        'expired, permission-denied? Name the ones this change creates.',
+      'What has the product already taught the user, and does this contradict ' +
+        'it? A new pattern is a cost paid by everyone who learned the old one.',
+      'Where can someone get stuck with no way forward and no way back, and ' +
+        'what does the screen say when they do?',
+      'Can a person using a keyboard, a screen reader, or a small screen ' +
+        'complete this same path, and where does it break first?',
+    ],
+    slots: [
+      slot(
+        'flow-dead-ends',
+        'each point where the user can get stuck, with what the interface says there and what it should offer instead',
+      ),
+    ],
+    escalation: [
+      'A dead end with no recovery path: surface it as a finding, not a polish item.',
+      'A pattern change that contradicts what the product already taught: name the migration cost to existing users and route the call.',
+    ],
+  },
+  {
+    lens: 'security',
+    domains: ['security'],
+    posture:
+      'Assume the interesting failure is deliberate: the question is not what ' +
+      'breaks by accident but what someone gains by making it break.',
+    questions: [
+      'Who can reach the new surface — unauthenticated, any signed-in user, ' +
+        'one tenant, one role — and is that the set anyone intended?',
+      'What is the credential, token, or data behind this worth to someone ' +
+        'who takes it, and what does holding it let them reach next?',
+      'What is the blast radius of the worst plausible misuse: one record, one ' +
+        'customer, every customer, or the ability to keep coming back?',
+      'What evidence would show this had already happened, and is anything ' +
+        'recording it today?',
+      'Which check is enforced where the decision is made, rather than only in ' +
+        'the interface that calls it?',
+    ],
+    slots: [
+      slot(
+        'threat-paths',
+        'each path from who can reach it to what they gain, feeding the attack-surface slot, with the check that stops it or the gap where none does',
+      ),
+    ],
+    escalation: [
+      'A reachable path to data or funds with no enforced check: surface it as its own finding, never as a note under something else.',
+      'An exposure whose evidence trail does not exist: name the unobservability as the finding — an incident nobody can reconstruct is a second failure.',
+    ],
+    ceiling:
+      'Defensive review only: this lens names exposures, the paths that reach ' +
+      'them, and the checks that would stop them. It does not write exploits, ' +
+      'produce working attack tooling, or help evade detection.',
+  },
+  {
     lens: 'analyst',
     domains: ['measurement'],
     posture:

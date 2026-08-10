@@ -401,8 +401,14 @@ test('a deepened role is shown its lens: posture, questions, escalation, labels'
   assert.match(contracts, /template-for-review/);
   assert.match(contracts, /No jurisdiction is covered/);
 
+  // The security lens carries a stated ceiling, and the ceiling reaches the
+  // dispatch — a defensive-only limit the role never sees is not a limit.
+  const security = assignmentFor(brief('security'));
+  assert.match(security, /Your posture: Assume the interesting failure is deliberate/);
+  assert.match(security, /Defensive review only/);
+
   // A domain no lens deepens gets no invented posture.
-  assert.ok(!assignmentFor(brief('security')).includes('Your posture:'));
+  assert.ok(!assignmentFor(brief('commerce-tax')).includes('Your posture:'));
 });
 
 test('a role holding the two writes is told it has them, and what they are for', () => {

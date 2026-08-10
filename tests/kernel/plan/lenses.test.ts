@@ -81,9 +81,25 @@ test('a deepened domain template carries the lens slots, undoubled', () => {
 });
 
 test('a domain no lens deepens keeps its template untouched', () => {
+  const commerce = playbookFor('commerce-tax').template;
+  assert.equal(lensForDomain('commerce-tax'), undefined);
+  assert.deepEqual(commerce, playbookFor('no-such-domain').template);
+});
+
+test('the security lens deepens the domain that already routed without one', () => {
   const security = playbookFor('security').template;
-  assert.equal(lensForDomain('security'), undefined);
-  assert.ok(security.slots.some((s) => s.name === 'attack-surface'));
+  assert.equal(lensForDomain('security')?.lens, 'security');
+  assert.ok(security.slots.some((s) => s.name === 'attack-surface'), 'the base template survives');
+  assert.ok(security.slots.some((s) => s.name === 'threat-paths'), 'the lens slot is added');
+});
+
+test('the design lens deepens both the new experience concern and accessibility', () => {
+  assert.equal(lensForDomain('user-experience')?.lens, 'design');
+  assert.equal(lensForDomain('accessibility')?.lens, 'design');
+  assert.ok(
+    playbookFor('accessibility').template.slots.some((s) => s.name === 'flow-dead-ends'),
+    'accessibility keeps its own concern and gains the lens depth',
+  );
 });
 
 test('the legal lens declares no covered jurisdiction until licensed review, and labels for review', () => {

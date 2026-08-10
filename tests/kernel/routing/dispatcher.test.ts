@@ -4,6 +4,16 @@
  * scripts/capture-legacy-dispatcher-golden.mjs; a diff here is a real scoring
  * change and needs justifying in the commit.
  *
+ * One golden case diverges from v2 deliberately, and the lock was what surfaced
+ * it. v2 withheld the adjacency bonus from a keyword whose parts are separated
+ * in the text only by a stopword the keyword itself dropped — so "write a prd"
+ * scored as non-adjacent inside "please write a prd for this", where the phrase
+ * appears verbatim. Any keyword carrying an internal stopword therefore sat
+ * under the signal floor permanently, and the shipped catalog had two such
+ * keywords firing on nothing. Adjacency is now judged against the stopword-
+ * filtered text as well as the raw text; a keyword whose parts are genuinely
+ * far apart still has the bonus withheld, and that case is locked below.
+ *
  * Entitlement filtering is tested separately from the corpus: v2 could only
  * derive entitlements by loading a registry off disk, so there is nothing to
  * dual-run against — the port takes them as an argument, and these tests assert

@@ -289,6 +289,25 @@ test('the catalog is caller-replaceable without forking the kernel', () => {
  * failure was structural: any domain listing several multi-word keywords that
  * share a common word could reach the floor on that word alone.
  */
+/**
+ * A keyword that cannot fire is worse than a missing one: the catalog reads as
+ * if the word is covered. Punctuation was the silent killer — the text tokenizer
+ * split "on-call" into two tokens while the keyword stayed one unmatchable part
+ * — so every keyword is checked against a sentence that contains it verbatim.
+ */
+test('every catalog keyword can actually fire: no silently dead signal', () => {
+  const dead: string[] = [];
+  for (const domain of DOMAINS) {
+    for (const keyword of domain.keywords) {
+      const fired = mapImplications({ outcome: `We need to talk about ${keyword} today.` }).implicated;
+      if (!fired.some((i) => i.domain === domain.domain && i.signals.includes(keyword))) {
+        dead.push(`${domain.domain}: "${keyword}"`);
+      }
+    }
+  }
+  assert.deepEqual(dead, [], `these keywords can never fire:\n${dead.join('\n')}`);
+});
+
 test('no implication is ever surfaced without a whole-keyword signal to cite', () => {
   for (const set of [fixture, heldOut, fresh, unspent]) {
     for (const item of set.outcomes) {

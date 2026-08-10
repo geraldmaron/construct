@@ -87,6 +87,46 @@ const TEMPLATES: Readonly<Record<string, DeliverableTemplate>> = {
       slot('phasing', 'what ships first and what deliberately waits, with the reason for the split', false),
     ],
   },
+  // The document a leader reads before saying yes. The price slot is required
+  // because a bet whose cost is unstated reads as free, and nothing is.
+  'strategy-alignment': {
+    deliverable: 'strategy review',
+    slots: [
+      ...CORE_SLOTS,
+      slot('the-bet', 'what this commits to and what it assumes about the future, in one paragraph'),
+      slot('price', 'what saying yes costs — money, time, and the work that stops — or "unstated in the material" explicitly'),
+      slot('decision-owner', 'who owns this call, and whether this outcome asks them to decide or tells them afterward'),
+    ],
+  },
+  // What survives the change, and what it costs to change your mind. Ordered
+  // so the irreversible parts are read before the pleasant ones.
+  'system-design': {
+    deliverable: 'design review',
+    slots: [
+      ...CORE_SLOTS,
+      slot('boundaries', 'which boundaries move and who owns each side after the change'),
+      slot('reversibility', 'what stays reversible and what does not, each with the cost of unwinding it'),
+      slot('migration', 'what has to keep working through the change, and how, or "nothing in flight" explicitly'),
+    ],
+  },
+  // Written for the person who gets paged, not the person who ships.
+  operations: {
+    deliverable: 'operability review',
+    slots: [
+      ...CORE_SLOTS,
+      slot('failure-paths', 'how this breaks, each with how anyone would find out'),
+      slot('ownership', 'who answers when it breaks and what access they need to fix it'),
+      slot('rollback', 'how to undo it, including past any irreversible step, or the plain statement that there is none'),
+    ],
+  },
+  'user-experience': {
+    deliverable: 'experience review',
+    slots: [
+      ...CORE_SLOTS,
+      slot('the-path', 'the shortest route from where the user starts to what they came to do, step by step'),
+      slot('unhandled-states', 'the empty, error, partial, and permission-denied states this creates, and what each one says'),
+    ],
+  },
   // What an analyst hands back: not the number, but whether the number can
   // exist. A baseline that does not exist yet is the finding, so the slot
   // demands it be said rather than left as silence.
