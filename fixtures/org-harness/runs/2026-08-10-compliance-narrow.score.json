@@ -1,0 +1,180 @@
+{
+  "rung0": {
+    "pass": true,
+    "fabricated": [],
+    "uncited": [],
+    "pathShortened": []
+  },
+  "rung1": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "X1",
+        "found": false
+      },
+      {
+        "id": "X2",
+        "found": true,
+        "by": {
+          "claim": "Sync impersonation was built so that after enabling it, the identity performing cluster writes for an Application shifts from the standing control-plane/cluster credential to the AppProject's mapped destinationServiceAccounts entry, with Kubernetes audit trail capturing both the real and impersonated user (rfc-001-sync-impersonation.md). But the diff path does not follow that shift consistently: in-cluster CLI diff runs as the destination service account and fails for lacking patch on cluster-scoped resources (tickets/T-26271.md), while the application-controller's Server-Side Diff on external clusters ignores destinationServiceAccounts entirely and runs as the standing, narrowly-scoped cluster Secret credential instead — forcing that credential to accumulate unbounded patch grants across five separate rounds just to keep diffing working (tickets/T-28695.md). The two diff code paths enforce two different identity models for what should be one impersonation feature, so the audit trail an auditor would check (who acted, under which identity) diverges by cluster type for the same operation class.",
+          "citations": [
+            "rfc-001-sync-impersonation.md",
+            "tickets/T-26271.md",
+            "tickets/T-28695.md"
+          ]
+        }
+      },
+      {
+        "id": "X3",
+        "found": false
+      }
+    ]
+  },
+  "rung2": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "R1",
+        "found": true,
+        "by": {
+          "claim": "Sync impersonation was built so that after enabling it, the identity performing cluster writes for an Application shifts from the standing control-plane/cluster credential to the AppProject's mapped destinationServiceAccounts entry, with Kubernetes audit trail capturing both the real and impersonated user (rfc-001-sync-impersonation.md). But the diff path does not follow that shift consistently: in-cluster CLI diff runs as the destination service account and fails for lacking patch on cluster-scoped resources (tickets/T-26271.md), while the application-controller's Server-Side Diff on external clusters ignores destinationServiceAccounts entirely and runs as the standing, narrowly-scoped cluster Secret credential instead — forcing that credential to accumulate unbounded patch grants across five separate rounds just to keep diffing working (tickets/T-28695.md). The two diff code paths enforce two different identity models for what should be one impersonation feature, so the audit trail an auditor would check (who acted, under which identity) diverges by cluster type for the same operation class.",
+          "citations": [
+            "rfc-001-sync-impersonation.md",
+            "tickets/T-26271.md",
+            "tickets/T-28695.md"
+          ]
+        }
+      },
+      {
+        "id": "R2",
+        "found": false
+      }
+    ],
+    "substantiveRatio": 1
+  },
+  "rung3": {
+    "pass": false,
+    "conflicts": [
+      {
+        "id": "C1",
+        "found": false
+      }
+    ],
+    "proposals": [
+      {
+        "id": "P1",
+        "found": false
+      },
+      {
+        "id": "P2",
+        "found": false
+      },
+      {
+        "id": "P3",
+        "found": false
+      }
+    ],
+    "deltas": [
+      {
+        "id": "D1",
+        "found": false
+      },
+      {
+        "id": "D2",
+        "found": false
+      }
+    ]
+  },
+  "roleCoverage": {
+    "pm": [
+      {
+        "id": "C2",
+        "found": false
+      }
+    ],
+    "engineering": [],
+    "tpm": [
+      {
+        "id": "TP2",
+        "found": false
+      }
+    ],
+    "analyst": [
+      {
+        "id": "A2",
+        "found": false
+      }
+    ],
+    "compliance": [
+      {
+        "id": "CP1",
+        "found": false
+      }
+    ],
+    "legal": [
+      {
+        "id": "L2",
+        "found": true,
+        "by": {
+          "claim": "T-28239's hydrated-commit signing is meant to let SourceIntegrity verification attest which identity produced a hydrated commit, since the existing commitAuthor field is just copied from the dry commit and is not cryptographic proof of authorship (rfc-002-manifest-hydrator.md, tickets/T-28239.md). But the signing key Secret is placed in the same namespace as the rest of the Argo CD control plane rather than the isolated namespace the hydrator design recommends for the commit server's own push credential (tickets/T-28239.md) — so any Argo CD component or extension already scoped to read Secrets in that namespace, not just the commit server, can read the signing key and produce commits that pass SourceIntegrity verification. The control introduced to make the hydrated branch's provenance auditable is reachable by a broader set of identities than the push credential it's supposed to backstop, undermining the audit trail it was built to create.",
+          "citations": [
+            "tickets/T-28239.md",
+            "rfc-002-manifest-hydrator.md"
+          ]
+        }
+      }
+    ],
+    "strategy": [
+      {
+        "id": "SA3",
+        "found": false
+      }
+    ],
+    "architect": [
+      {
+        "id": "SD2",
+        "found": false
+      }
+    ],
+    "operations": [
+      {
+        "id": "OP2",
+        "found": false
+      }
+    ],
+    "design": [
+      {
+        "id": "UX2",
+        "found": true,
+        "by": {
+          "claim": "History & Rollback's proposed flow pushes directly to the sync branch outside the commit server ('This push happens outside the commit server') (tickets/T-27327.md), which means it never goes through the GitHub App credential or the signing step that T-28239 is designed to add. If a target branch's SourceIntegrity policy requires verified signatures, the unsigned rollback push is rejected by the git host with no messaging tying the failure to signing, and no retry path exists from the Rollback UI (tickets/T-27327.md). The audit control (signed-commit provenance) that T-28239 introduces for the hydrator's normal write path does not extend to this second, distinct write path that reaches the same protected branch, so an auditor verifying that only signed commits land on the branch would find an operator-facing gap that has no owning fix in either ticket.",
+          "citations": [
+            "tickets/T-27327.md",
+            "tickets/T-28239.md"
+          ]
+        }
+      }
+    ],
+    "security": [
+      {
+        "id": "TH3",
+        "found": false
+      }
+    ]
+  },
+  "distractors": [
+    {
+      "id": "DX1",
+      "violated": false
+    },
+    {
+      "id": "DX2",
+      "violated": false
+    }
+  ],
+  "distractorGate": {
+    "began": "2026-08-05",
+    "note": "DX1/DX2 violations fail rung 3 for runs scored from this date; score files recorded earlier are never regenerated and keep their as-run results. Evidence: five distractor-disciplined runs (two single-pass, three composed dispatch-shape) all clean; every run before the discipline paragraph violated at least one."
+  },
+  "pass": false
+}

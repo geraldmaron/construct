@@ -33,8 +33,16 @@
  * Hosted families run through the same script so the measured prompt is
  * byte-identical across providers: --endpoint openrouter switches the
  * transport to OpenRouter's OpenAI-compatible chat API (OPENROUTER_API_KEY
- * must be in the environment) and nothing else changes. The artifact then
- * records a hosted model's run on exactly the shape a local one is scored on.
+ * must be in the environment), and --endpoint claude switches it to the Claude
+ * binary in headless mode (--binary names it when it is not on PATH). Nothing
+ * else changes. The artifact then records a hosted model's run on exactly the
+ * shape a local one is scored on, which is the whole point of one script:
+ * a cross-family comparison is only readable if the prompt did not vary.
+ *
+ * The Claude transport runs the binary from an empty scratch directory with no
+ * MCP servers, because started inside this project it would inherit the
+ * project's instructions and be able to read the answer key it is being
+ * measured against. Its only material is the corpus inlined in the prompt.
  */
 
 import {
@@ -112,6 +120,7 @@ for (const file of walk(corpusRoot)) {
 }
 
 const endpoint = arg('--endpoint', 'ollama');
+const claudeBinary = arg('--binary', 'claude');
 const prompt = `${base}${corpus}\n\nReturn only the JSON object.`;
 
 let url;
@@ -143,31 +152,79 @@ if (endpoint === 'openrouter') {
 
 const scratch = mkdtempSync(join(tmpdir(), 'org-harness-ollama-'));
 try {
-  const reqPath = join(scratch, 'request.json');
-  writeFileSync(reqPath, body);
-  const raw = execFileSync(
-    'curl',
-    ['-s', '--max-time', '3500', '-X', 'POST', url,
-     ...headers, '--data-binary', `@${reqPath}`],
-    { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 },
-  );
-  const data = JSON.parse(raw);
-  let text = endpoint === 'openrouter'
-    ? data.choices?.[0]?.message?.content ?? ''
-    : data.response ?? '';
-  if (endpoint === 'openrouter' && !text) {
-    console.error(`openrouter returned no content: ${raw.slice(0, 400)}`);
+  let data;
+  if (endpoint === 'claude') {
+    // The binary is run from the empty scratch directory, not from the repo:
+    // started anywhere inside this project it would inherit the project's own
+    // instructions and read its files, and a run that can reach the answer key
+    // is not a measurement. Nothing is available to it but the inlined corpus.
+    //
+    // The two credential variables are dropped rather than passed through, so
+    // the dispatch authenticates as the interactive session that launched it
+    // and cannot quietly become separately-billed API traffic because
+    // something upstream exported a key. Whoever wants that billing sets it
+    // deliberately below, where it is visible, instead of inheriting it.
+    const { ANTHROPIC_API_KEY, ANTHROPIC_AUTH_TOKEN, ...sessionEnv } = process.env;
+    if (ANTHROPIC_API_KEY || ANTHROPIC_AUTH_TOKEN) {
+      console.error(
+        'note: an Anthropic credential was set in the environment and is being ' +
+          'dropped; this dispatch runs on the launching session instead.',
+      );
+    }
+    data = JSON.parse(
+      execFileSync(
+        claudeBinary,
+        ['-p', '--output-format', 'json', '--model', model,
+         '--strict-mcp-config', '--mcp-config', '{"mcpServers":{}}'],
+        {
+          encoding: 'utf8',
+          input: prompt,
+          cwd: scratch,
+          env: sessionEnv,
+          maxBuffer: 64 * 1024 * 1024,
+        },
+      ),
+    );
+  } else {
+    const reqPath = join(scratch, 'request.json');
+    writeFileSync(reqPath, body);
+    data = JSON.parse(
+      execFileSync(
+        'curl',
+        ['-s', '--max-time', '3500', '-X', 'POST', url,
+         ...headers, '--data-binary', `@${reqPath}`],
+        { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 },
+      ),
+    );
+  }
+  let text =
+    endpoint === 'openrouter'
+      ? (data.choices?.[0]?.message?.content ?? '')
+      : endpoint === 'claude'
+        ? (data.result ?? '')
+        : (data.response ?? '');
+  if (endpoint !== 'ollama' && !text) {
+    console.error(`${endpoint} returned no content: ${JSON.stringify(data).slice(0, 400)}`);
     process.exit(1);
   }
   const fence = text.match(/```json\n([\s\S]*?)\n```/);
   if (fence) text = fence[1];
   const parsed = JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1));
   writeFileSync(out, JSON.stringify(parsed, null, 1));
-  const promptTokens = data.prompt_eval_count ?? data.usage?.prompt_tokens ?? '?';
-  const outputTokens = data.eval_count ?? data.usage?.completion_tokens ?? '?';
+  const promptTokens =
+    data.prompt_eval_count ??
+    data.usage?.prompt_tokens ??
+    (data.usage?.input_tokens != null
+      ? data.usage.input_tokens +
+        (data.usage.cache_creation_input_tokens ?? 0) +
+        (data.usage.cache_read_input_tokens ?? 0)
+      : '?');
+  const outputTokens =
+    data.eval_count ?? data.usage?.completion_tokens ?? data.usage?.output_tokens ?? '?';
   console.log(
     `run recorded: ${out} — ${parsed.claims?.length ?? 0} claims, ` +
-      `${promptTokens} prompt tokens, ${outputTokens} output tokens`,
+      `${promptTokens} prompt tokens, ${outputTokens} output tokens` +
+      (data.total_cost_usd != null ? `, $${data.total_cost_usd.toFixed(4)}` : ''),
   );
 } finally {
   rmSync(scratch, { recursive: true, force: true });

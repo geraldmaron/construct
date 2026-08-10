@@ -1,0 +1,89 @@
+{
+  "rung0": {
+    "pass": true,
+    "fabricated": [],
+    "uncited": [],
+    "pathShortened": []
+  },
+  "rung1": {
+    "pass": true,
+    "plants": []
+  },
+  "rung2": {
+    "pass": true,
+    "plants": [],
+    "substantiveRatio": 1
+  },
+  "rung3": {
+    "pass": true,
+    "conflicts": [],
+    "proposals": [],
+    "deltas": []
+  },
+  "roleCoverage": {
+    "pm": [
+      {
+        "id": "C-B1",
+        "found": false
+      }
+    ],
+    "engineering": [],
+    "tpm": [
+      {
+        "id": "TP-B1",
+        "found": false
+      }
+    ],
+    "analyst": [
+      {
+        "id": "A-B1",
+        "found": false
+      }
+    ],
+    "compliance": [
+      {
+        "id": "CP-B1",
+        "found": false
+      }
+    ],
+    "legal": [
+      {
+        "id": "L-B1",
+        "found": false
+      }
+    ],
+    "strategy": [
+      {
+        "id": "SA-B1",
+        "found": false
+      }
+    ],
+    "architect": [
+      {
+        "id": "SD-B1",
+        "found": false
+      }
+    ],
+    "operations": [
+      {
+        "id": "OP-B1",
+        "found": false
+      }
+    ],
+    "design": [
+      {
+        "id": "UX-B1",
+        "found": false
+      }
+    ],
+    "security": [
+      {
+        "id": "TH-B1",
+        "found": false
+      }
+    ]
+  },
+  "distractors": [],
+  "distractorGate": null,
+  "pass": true
+}

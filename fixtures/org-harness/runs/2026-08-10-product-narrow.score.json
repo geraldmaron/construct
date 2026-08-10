@@ -1,0 +1,164 @@
+{
+  "rung0": {
+    "pass": true,
+    "fabricated": [],
+    "uncited": [],
+    "pathShortened": []
+  },
+  "rung1": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "X1",
+        "found": false
+      },
+      {
+        "id": "X2",
+        "found": false
+      },
+      {
+        "id": "X3",
+        "found": false
+      }
+    ]
+  },
+  "rung2": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "R1",
+        "found": false
+      },
+      {
+        "id": "R2",
+        "found": false
+      }
+    ],
+    "substantiveRatio": 1
+  },
+  "rung3": {
+    "pass": false,
+    "conflicts": [
+      {
+        "id": "C1",
+        "found": true,
+        "by": {
+          "claim": "strategy.md commits that 'deletion of generated Applications is explicitly out of scope for rollout orchestration: ordered or automated deletion of ApplicationSet children will not be implemented,' while prd-progressive-sync-deletion.md is a shipped proposal that adds exactly that: a `deletionOrder` field (AllAtOnce/Reverse) giving ApplicationSets ordered, automated child-deletion. One of these two owning documents (roadmap vs. PRD author @ranakan19) is stale and needs to be reconciled before either can be treated as the current commitment.",
+          "citations": [
+            "strategy.md",
+            "prd-progressive-sync-deletion.md"
+          ]
+        }
+      }
+    ],
+    "proposals": [
+      {
+        "id": "P1",
+        "found": false
+      },
+      {
+        "id": "P2",
+        "found": false
+      },
+      {
+        "id": "P3",
+        "found": false
+      }
+    ],
+    "deltas": [
+      {
+        "id": "D1",
+        "found": false
+      },
+      {
+        "id": "D2",
+        "found": false
+      }
+    ]
+  },
+  "roleCoverage": {
+    "pm": [
+      {
+        "id": "C2",
+        "found": false
+      }
+    ],
+    "engineering": [],
+    "tpm": [
+      {
+        "id": "TP2",
+        "found": true,
+        "by": {
+          "claim": "T-28927's maturity-review scope call freezes 'strategy.rollingSync.steps (the matchExpressions list, one match-set per step)' as the backward-compatibility-bound v1 shape once Progressive Sync ships Stable, requiring any change to how a step is expressed to land as a new field rather than an in-place restructuring — but T-28755's proposed API sketch nests a `parallel` list of matchExpressions directly inside `rollingSync.steps` entries, restructuring the frozen step shape in place instead of introducing it as a separate field. Whoever owns the Stable-promotion scope call needs to force T-28755 into a new-field shape (e.g. a sibling `parallelGroups`) before it can land post-freeze.",
+          "citations": [
+            "tickets/T-28927.md",
+            "tickets/T-28755.md"
+          ]
+        }
+      }
+    ],
+    "analyst": [
+      {
+        "id": "A2",
+        "found": false
+      }
+    ],
+    "compliance": [
+      {
+        "id": "CP1",
+        "found": false
+      }
+    ],
+    "legal": [
+      {
+        "id": "L2",
+        "found": false
+      }
+    ],
+    "strategy": [
+      {
+        "id": "SA3",
+        "found": false
+      }
+    ],
+    "architect": [
+      {
+        "id": "SD2",
+        "found": false
+      }
+    ],
+    "operations": [
+      {
+        "id": "OP2",
+        "found": false
+      }
+    ],
+    "design": [
+      {
+        "id": "UX2",
+        "found": false
+      }
+    ],
+    "security": [
+      {
+        "id": "TH3",
+        "found": false
+      }
+    ]
+  },
+  "distractors": [
+    {
+      "id": "DX1",
+      "violated": false
+    },
+    {
+      "id": "DX2",
+      "violated": false
+    }
+  ],
+  "distractorGate": {
+    "began": "2026-08-05",
+    "note": "DX1/DX2 violations fail rung 3 for runs scored from this date; score files recorded earlier are never regenerated and keep their as-run results. Evidence: five distractor-disciplined runs (two single-pass, three composed dispatch-shape) all clean; every run before the discipline paragraph violated at least one."
+  },
+  "pass": false
+}

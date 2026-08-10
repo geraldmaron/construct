@@ -1250,3 +1250,87 @@ Bayesian sequential design.
 These are named as the standard references for each method, and the methods are implemented from
 their standard closed forms — not quoted from, and not consulted as primary sources for this
 document's claims. The claims come from `scripts/measure-decisions.mjs` and the corpora.
+
+## 14. Corpus breadth does not rescue role differentiation (2026-08-10)
+
+**The question.** Measured over the original fixture organization, planted role
+findings do not isolate the lens that owns them: asked different questions over
+the same material, lenses return the same findings and name the same mechanisms,
+and a judge pass confirmed the collisions were real rather than shared
+vocabulary. Three explanations had been tested and rejected — keyword
+brittleness, unbounded per-role output, and badly keyed plants. One was left.
+That corpus is 22 documents from a single project's sync and hydration work,
+narrow enough that every role reading it might be forced onto the same few
+salient tensions. If so, convergence belongs to the material and the depth claim
+is recoverable per corpus.
+
+**The experiment.** A second fixture organization (`fixtures/org-harness-broad`)
+was built from 22 documents of a real organization's real operating
+documentation — what it sells work under, how it prices and bills, how it hires
+and staffs, who holds which accounts, what happens when delivery goes wrong —
+public domain under CC0, held to parity with the original on document count
+(22/22), corpus bytes (141,115 against 135,443) and measured prompt fit. Ten
+plants, one per depth-bearing role, each keyed to the territory only its owner
+asks about, on **twenty disjoint documents**: no two plants share a document
+pair, which excludes by construction the confound that a claim about a
+neighbouring mechanism collects another plant's credit. Every plant was verified
+to be credited by its own committed mechanism before any run existed, which
+excludes the keyword-brittleness failure the first batch suffered. Both were
+recorded in `PROVENANCE.md` before the sweep and committed ahead of it.
+
+Both corpora were then swept in the same sitting, same family
+(`claude-sonnet-5` through `claude -p`, the shape the product ships), same
+per-lens dispatch prompt, eleven lenses each, clean context — the binary run
+from an empty directory with no MCP servers, because started inside the project
+it could read the answer key it was being graded against.
+
+**The result.**
+
+| | broad corpus | original corpus |
+| --- | --- | --- |
+| owner lens found its own plant | 1/10 | 5/10 |
+| plants established as discriminating | **0/10** | **1/10** (`SD2`, architect) |
+| plants no lens found at all | 6/10 | 4/10 |
+
+Matrices: `fixtures/org-harness-broad/runs/2026-08-10-broad-sweep.judged-discrimination.json`
+and `fixtures/org-harness/runs/2026-08-10-narrow-sweep.judged-discrimination.json`.
+Of 23 structural credits, 22 were judged to state the planted mechanism and one
+was refused (`analyst` on `SA-B1`: a claim about the role's value being
+invisible to the utilization metric, where the plant is about the cost landing
+on overhead or utilization — same documents, different causal chain).
+
+**The verdict: breadth is rejected as the explanation.** Plants collide on
+material spanning agreements, billing, hiring, access and delivery exactly as
+they collide on one engineering programme. The depth claim is not recoverable by
+choosing a broader corpus.
+
+**Robustness, stated because the judge is the weakest link here.** This is the
+least independent verdict in the record: the plants were authored by a Claude
+model, the runs were produced by a Claude model, and a Claude model judged the
+credits. The direction of that bias is knowable, though. A lenient judge keeps
+foreign credits alive, and foreign credits are what suppress discrimination — so
+leniency biases *against* the depth claim, and 22 of 23 credits were accepted.
+The result therefore has to be read as "no plant was established as
+discriminating", not "every plant was proven non-discriminating". Against that,
+the collisions were checked for whether stricter judging could flip them: on
+three of the four broad collisions (`CP-B1`, `SA-B1`, `TH-B1`) the owning lens
+never found its own plant at all, so refusing every foreign credit turns them
+into misses rather than into discrimination. Only `L-B1` could flip. The finding
+survives its own worst case.
+
+**What is a confound, and is not being dressed up as a result.** The broad
+corpus was harder: 6 of 10 plants were found by no lens, against 4 of 10.
+Discrimination is only measurable among plants somebody found — 4 on the broad
+corpus, 6 on the original — so the broad arm rests on less evidence than the
+original arm, and the comparison licenses "breadth did not rescue
+discrimination" and nothing stronger. In particular it does **not** license
+"breadth makes convergence worse": that reading would need the two corpora to be
+equally findable, and they demonstrably are not. At these counts no rate is
+quoted; hits and misses are enumerated.
+
+**What this leaves.** Four explanations for the convergence have now been tested
+and rejected: keyword brittleness, output volume, plant keying, and corpus
+breadth. Each was a way for the result to be an artifact of the instrument. What
+remains is the premise itself — that role differentiation produces differentiated
+findings — and it is now the thing under suspicion rather than the thing being
+measured around. `STRATEGY.md`'s Phase 4 criterion is amended accordingly.

@@ -24,6 +24,24 @@ narrow material and the depth claim is recoverable per corpus. If they collide
 here too, role differentiation does not produce differentiated findings, and
 that is a fact about the premise rather than about any corpus.
 
+## What it answered (2026-08-10)
+
+Breadth is not the explanation. Both corpora were swept in one sitting on one
+family (`claude-sonnet-5` through `claude -p`, eleven lenses each, clean
+context), and the plants collide here as they collide there:
+
+| | this corpus | `../org-harness` |
+| --- | --- | --- |
+| owner lens found its own plant | 1/10 | 5/10 |
+| plants established as discriminating | 0/10 | 1/10 |
+| plants no lens found at all | 6/10 | 4/10 |
+
+Read the two judged matrices together, never the broad one alone: this corpus
+was the harder of the two to find anything in, so it carries less evidence, and
+the pair licenses "breadth did not rescue discrimination" rather than anything
+about breadth making it worse. Full write-up, including why the finding survives
+the judge's own lack of independence, is `RESEARCH-DECISIONS.md` §14.
+
 ## What is in here
 
 - `corpus/` — what the system under test is given, and nothing else. See

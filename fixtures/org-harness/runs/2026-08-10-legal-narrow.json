@@ -1,0 +1,44 @@
+{
+ "claims": [
+  {
+   "kind": "conflict",
+   "claim": "strategy.md publishes an explicit, standing commitment that 'ordered or automated deletion of ApplicationSet children will not be implemented' and that teardown 'remains a manual operator action, performed one Application at a time' — yet prd-progressive-sync-deletion.md is a concrete design to add exactly that: a `deletionOrder` field (AllAtOnce/Reverse) that automates ordered deletion of ApplicationSet-generated Applications. Shipping the PRD as scoped puts the organization in breach of its own published roadmap commitment unless the roadmap is revised before release; the roadmap and PRD currently disagree on the same subject and nothing in either document assigns anyone to reconcile them.",
+   "citations": [
+    "strategy.md",
+    "prd-progressive-sync-deletion.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "rfc-002-manifest-hydrator.md states plainly that the `commitAuthor` field recorded in the hydrated branch's README and hydrator.metadata is copied forward from the dry commit and that every push is actually made by the GitHub App credential, not the named human — so nothing in that record cryptographically ties a hydrated commit to either party. T-28239 is the feature meant to close that gap (GPG-signing hydrated commits), but it specifies the signing key Secret lives in the shared Argo CD control-plane namespace rather than the isolated namespace the hydrator design recommends for push credentials, so any component already scoped to read Secrets there can sign commits that pass SourceIntegrity verification. A verified signature on that branch therefore proves only that the configured key was used, not that the credited human or even the intended pushing component produced the content — the authorship record the organization would rely on (e.g., for change-of-custody in an audit) remains unprovable even after signing is enabled.",
+   "citations": [
+    "rfc-002-manifest-hydrator.md",
+    "tickets/T-28239.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "T-27327 proposes that rollback push directly to the sync branch, bypassing the staging branch and, by its own account, bypassing the commit server ('this push happens outside the commit server'). T-28239's signing design is fail-fast with 'no silent fallback' and is implemented in the commit server itself. Once an organization opts into commitserver.sign.hydrated.commits, the rollback path described in T-27327 has no route to produce a signed commit at all — it will always be rejected by a host enforcing SourceIntegrity, and T-27327 already documents that failure mode (unsigned push rejected, no messaging, no retry path) without recognizing it as structural rather than incidental. The two documents jointly commit the organization to a rollback feature that cannot function under the signing policy the organization is simultaneously building.",
+   "citations": [
+    "tickets/T-27327.md",
+    "tickets/T-28239.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "T-27833 shows that AppProject deny-policies restricting user actions on `kind: Namespace` control only ArgoCD's API/UI surface, not what the Application controller applies from a synced git repository — a tenant can commit a namespace manifest directly to the repo and have it override controller-managed security labels (e.g. `pod-security.kubernetes.io/enforce`), because RBAC has no verb for 'block this from being synced from git.' rfc-001-sync-impersonation.md's impersonation model moves sync execution to a per-destination service account and represents that AppProject-based restrictions 'must continue to be honoured,' but the mechanism it describes (a service account scoped to a destination namespace) does not address resource-kind-level restrictions within that namespace — it narrows *who* syncs, not *what* can be synced. If a tenant boundary commitment (e.g., a customer-facing guarantee that review-environment namespaces carry baseline pod-security enforcement) rests on the AppProject deny-policy holding, that commitment is not actually enforced by either document's controls, and no owner for closing this gap is named in either.",
+   "citations": [
+    "tickets/T-27833.md",
+    "rfc-001-sync-impersonation.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "rfc-002-manifest-hydrator.md's stated use case for shipping this feature at all is an organization with 'strong requirements around change auditing' relying on the hydrated git history as its record of change. Given that (a) the commitAuthor field is not provably tied to an actual author absent signing, and (b) T-28239 confirms signing defaults to off and, even when on, the signing key's namespace placement lets other control-plane components produce verifiably-signed commits, any organization intending to rely on the hydrated branch as an audit trail for a compliance or regulatory obligation (change-management attestation, SOX/SOC2 evidence, etc.) should have that reliance reviewed by qualified compliance/audit counsel before representing the hydrated branch as satisfying such an obligation — this is a determination this corpus cannot make and should not be treated as settled by the engineering design alone.",
+   "citations": [
+    "rfc-002-manifest-hydrator.md",
+    "tickets/T-28239.md"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,37 @@
+{
+ "claims": [
+  {
+   "kind": "conflict",
+   "claim": "strategy.md states that ordered or automated deletion of ApplicationSet children 'will not be implemented' and that 'teardown remains a manual operator action, performed one Application at a time,' while prd-progressive-sync-deletion.md proposes exactly that: a deletionOrder field (AllAtOnce/Reverse) that automates ordered teardown of ApplicationSet-generated Applications. notes/note-2.md shows the team is aware of this ('if the PRD ships ordered deletion those two disagree, needs an owner. not deciding here') but the conflict is left unowned, so the PRD is proceeding to implementation (see T-28511, T-28927) against a standing roadmap commitment that nobody has retracted or reconciled.",
+   "citations": [
+    "strategy.md",
+    "prd-progressive-sync-deletion.md",
+    "notes/note-2.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "notes/note-1.md records that hydrator History & Rollback work (T-27327) is deprioritized to next quarter so the dev pair can move to the progressive sync deletion loop instead. T-27327 itself states the org is 'gradually rolling out gitops-promoter + argocd source hydrator' and that rollback is 'one of the first questions we get when onboarding new users.' Displacing the rollback work now removes the answer to that onboarding question for the duration of an active pilot rollout, exposing new hydrator adopters to a known gap precisely while they're being onboarded onto the feature that creates the gap.",
+   "citations": [
+    "notes/note-1.md",
+    "tickets/T-27327.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "strategy.md states that application-controller capacity this quarter is committed to closing Progressive Sync's Stable-promotion punch list (T-28927), and that sharding work (needed for the roadmap's 'Sharding application controller' scale goal) will not start until that closes, because the same pair owns both. This makes multi-cluster scaling capacity contingent on an open-ended maturity review (T-28927 lists unresolved enhancement/bug backlogs with no completion date), so the roadmap's scaling commitment has an unstated, unbounded dependency on Progressive Sync's Stable timeline rather than its own schedule.",
+   "citations": [
+    "strategy.md",
+    "tickets/T-28927.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "T-28927 records a scope call that once Progressive Sync ships Stable, 'strategy.rollingSync.steps (the matchExpressions list, one match-set per step) is the frozen v1 shape under the argoproj backward-compatibility bar' and any change to how a step is expressed must land as a new field before that point. T-28755's first proposed API sketch nests a `parallel:` list of match-expression groups directly inside a step entry, restructuring what a step *is* rather than adding a sibling field — which is the exact kind of in-place restructuring the maturity review says cannot happen after Stable ships. If T-28755 isn't merged before Progressive Sync promotes to Stable, that API option becomes permanently foreclosed by a compatibility bar the team itself is about to set.",
+   "citations": [
+    "tickets/T-28927.md",
+    "tickets/T-28755.md"
+   ]
+  }
+ ]
+}

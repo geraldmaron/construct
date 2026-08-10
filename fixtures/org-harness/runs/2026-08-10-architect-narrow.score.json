@@ -1,0 +1,178 @@
+{
+  "rung0": {
+    "pass": true,
+    "fabricated": [],
+    "uncited": [],
+    "pathShortened": []
+  },
+  "rung1": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "X1",
+        "found": false
+      },
+      {
+        "id": "X2",
+        "found": false
+      },
+      {
+        "id": "X3",
+        "found": false
+      }
+    ]
+  },
+  "rung2": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "R1",
+        "found": true,
+        "by": {
+          "claim": "rfc-001 moves the application-sync privilege boundary onto the destinationServiceAccounts-impersonated SA but never extends that boundary to the diff codepath, which still runs under the raw cluster Secret identity. T-28695 shows this gap forces external-cluster operators to keep broadening a single cluster-role's patch grant (five rounds and counting) as the only workaround, re-coupling exactly the control-plane/application-privilege split rfc-001 set out to decouple. Reversing it requires shipping diff-path impersonation and then a separate migration to walk back every already-granted resource kind on the standing credential.",
+          "citations": [
+            "rfc-001-sync-impersonation.md",
+            "tickets/T-28695.md"
+          ]
+        }
+      },
+      {
+        "id": "R2",
+        "found": false
+      }
+    ],
+    "substantiveRatio": 1
+  },
+  "rung3": {
+    "pass": false,
+    "conflicts": [
+      {
+        "id": "C1",
+        "found": false
+      }
+    ],
+    "proposals": [
+      {
+        "id": "P1",
+        "found": false
+      },
+      {
+        "id": "P2",
+        "found": false
+      },
+      {
+        "id": "P3",
+        "found": false
+      }
+    ],
+    "deltas": [
+      {
+        "id": "D1",
+        "found": false
+      },
+      {
+        "id": "D2",
+        "found": false
+      }
+    ]
+  },
+  "roleCoverage": {
+    "pm": [
+      {
+        "id": "C2",
+        "found": true,
+        "by": {
+          "claim": "The PRD locks the Reverse deletion strategy to the invariant that rollingSync.steps stays a strictly sequential, one-match-group-at-a-time list 'for as long as this feature exists,' but T-28755 proposes parallel step groups inside that same rollingSync.steps structure. Adopting parallel steps silently breaks the last-in-first-out ordering Reverse depends on; unwinding requires either excluding parallel groups from Reverse entirely or a coordinated redesign of the deletion strategy, needing agreement from both the deletion-strategy owners and whoever implements T-28755.",
+          "citations": [
+            "prd-progressive-sync-deletion.md",
+            "tickets/T-28755.md"
+          ]
+        }
+      }
+    ],
+    "engineering": [],
+    "tpm": [
+      {
+        "id": "TP2",
+        "found": true,
+        "by": {
+          "claim": "T-28927's maturity-review scope call freezes strategy.rollingSync.steps' matchExpressions-list shape as the backward-compatible v1 contract once Progressive Sync ships Stable. T-28755's parallel-steps proposal changes exactly that shape, so if Stable ships first, parallel steps can only land as a new coexisting field rather than an in-place restructuring. That locks in two permanent step-expression mechanisms; collapsing them back to one later requires a deprecation cycle across every existing rollingSync.steps consumer, gated by the same back-compat bar that froze the shape.",
+          "citations": [
+            "tickets/T-28927.md",
+            "tickets/T-28755.md"
+          ]
+        }
+      }
+    ],
+    "analyst": [
+      {
+        "id": "A2",
+        "found": false
+      }
+    ],
+    "compliance": [
+      {
+        "id": "CP1",
+        "found": false
+      }
+    ],
+    "legal": [
+      {
+        "id": "L2",
+        "found": false
+      }
+    ],
+    "strategy": [
+      {
+        "id": "SA3",
+        "found": false
+      }
+    ],
+    "architect": [
+      {
+        "id": "SD2",
+        "found": true,
+        "by": {
+          "claim": "rfc-002's CommitManifests proto2 message marks repoURL, targetBranch, drySHA, commitAuthor, commitMessage, and commitTime as required, a wire commitment that can never be relaxed once shipped clients depend on it. T-27327's proposed rollback flow (checkout an old rendered tree and re-push) is exactly the second caller the RFC didn't design for: it isn't hydrating a fresh dry commit, yet must still populate all six required fields with values that don't map cleanly onto what it's doing. Undoing this coupling later needs a new message/RPC version, since the existing required fields can't be loosened for callers already built against them.",
+          "citations": [
+            "rfc-002-manifest-hydrator.md",
+            "tickets/T-27327.md"
+          ]
+        }
+      }
+    ],
+    "operations": [
+      {
+        "id": "OP2",
+        "found": false
+      }
+    ],
+    "design": [
+      {
+        "id": "UX2",
+        "found": false
+      }
+    ],
+    "security": [
+      {
+        "id": "TH3",
+        "found": false
+      }
+    ]
+  },
+  "distractors": [
+    {
+      "id": "DX1",
+      "violated": false
+    },
+    {
+      "id": "DX2",
+      "violated": false
+    }
+  ],
+  "distractorGate": {
+    "began": "2026-08-05",
+    "note": "DX1/DX2 violations fail rung 3 for runs scored from this date; score files recorded earlier are never regenerated and keep their as-run results. Evidence: five distractor-disciplined runs (two single-pass, three composed dispatch-shape) all clean; every run before the discipline paragraph violated at least one."
+  },
+  "pass": false
+}

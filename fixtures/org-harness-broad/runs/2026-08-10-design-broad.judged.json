@@ -1,0 +1,21 @@
+{
+ "judgedBy": "claude-opus-5",
+ "judgedFrom": "fixtures/org-harness-broad/runs/2026-08-10-design-broad.score.json",
+ "standard": "each plant's gist as committed before any run; the scorer has never read these gists, so the standard was fixed in advance rather than fitted to results",
+ "correlatedError": "if the judging model shares a family with the model that produced the run, observed agreement is an upper bound on what independent judges would reach",
+ "results": [
+  {
+   "plant": "L-B1",
+   "structuralFound": true,
+   "statesMechanism": true,
+   "why": "States that the delegation instrument is never collected into the package, so anyone checking the executed agreement for signing authority finds no artifact."
+  },
+  {
+   "plant": "TH-B1",
+   "structuralFound": true,
+   "statesMechanism": true,
+   "why": "States the converted account with 2FA disabled and address swapped to an unadministered personal mailbox, so the recovery path exits the organization's control."
+  }
+ ],
+ "falseCredits": []
+}
