@@ -8,7 +8,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { main, outcome, work } from '../../src/cli/index.ts';
@@ -938,4 +938,50 @@ test('plan without a run id is usage, and an unknown run is a sentence', async (
   const usage = await runAll([['plan']]);
   assert.equal(usage.code, 2);
   assert.match(usage.err, /usage: construct plan/);
+});
+
+test('a run over declared sources dispatches roles grounded in the named documents', async () => {
+  const ground = mkdtempSync(join(tmpdir(), 'construct-ground-'));
+  writeFileSync(join(ground, 'roadmap.md'), '# roadmap\nbeta in the EU\n');
+  writeFileSync(join(ground, 'constraints.txt'), 'no launch before compliance sign-off\n');
+
+  const assignments: string[] = [];
+  const capturing: HostAdapter = {
+    name: 'stand-in',
+    kind: 'general',
+    capabilities: [],
+    init: async (): Promise<void> => {},
+    health: async () => ({ live: true }),
+    cancel: async () => ({ cancelled: false }),
+    invoke: async (request: unknown): Promise<HostResult> => {
+      assignments.push((request as { task: string }).task);
+      const role = (request as { role: string }).role;
+      return { id: role, status: 'ok', output: { text: `${role} reporting` }, error: null };
+    },
+  };
+
+  try {
+    const { code, out } = await runAll([
+      ['source', 'add', '--kind=directory', `--locator=${ground}`],
+      ['source', 'add', '--kind=jira', '--locator=PROJ'],
+      ['outcome', 'launch a paid beta to EU users next month'],
+      () => work([], capturing),
+      ['log'],
+    ]);
+
+    assert.equal(code, 0);
+    assert.match(out, /grounded run-/, 'the survey reports before dispatch');
+    assert.match(out, /2 documents from 2 sources \(1 unreachable\)/);
+    assert.match(out, /sources-read/, 'the survey is in the work log, not only on screen');
+
+    assert.ok(assignments.length > 0, 'roles were dispatched');
+    for (const assignment of assignments) {
+      assert.match(assignment, /Your material for this task/);
+      assert.ok(assignment.includes(join(ground, 'roadmap.md')), 'documents are named by citable path');
+      assert.match(assignment, /\[unreachable\]/, 'the source nobody could read says so');
+      assert.match(assignment, /Not all of it was read/);
+    }
+  } finally {
+    rmSync(ground, { recursive: true, force: true });
+  }
 });

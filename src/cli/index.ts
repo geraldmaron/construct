@@ -20,11 +20,15 @@ import {
   addSource,
   ENGAGEMENT_MODES,
   engagementMode,
+  getSource,
   retireSource,
   setEngagementMode,
   SOURCE_KINDS,
   sourcesFor,
 } from '../kernel/store/sources.ts';
+import { recordRunSourceReads } from '../kernel/run/sourcereads.ts';
+import type { SourceSurvey } from '../kernel/run/sourcereads.ts';
+import { surveySource } from '../hosts/sources.ts';
 import type { EngagementMode, SourceKind } from '../kernel/store/sources.ts';
 import { createHostDensifier } from '../hosts/densifier.ts';
 import type { DensifiedIntake } from '../kernel/intake/densify.ts';
@@ -1157,6 +1161,46 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
         );
       }
       return 0;
+    }
+
+    // The producer half of grounding, run before any dispatch: what each run's
+    // declared sources actually hold is surveyed and recorded, so materialFor
+    // answers the coordinator from evidence rather than from silence. Once per
+    // run — the record is evidence, not a cache — and a run whose plan
+    // declared no sources is left exactly as it was.
+    const pendingRuns = new Set(
+      listTasks(store, args.run)
+        .filter((t) => t.state === 'pending')
+        .map((t) => t.run),
+    );
+    for (const runId of pendingRuns) {
+      const plan = planFor(store, runId);
+      if (!plan || plan.sourcesConsulted.length === 0) continue;
+      const surveys: SourceSurvey[] = [];
+      for (const id of plan.sourcesConsulted) {
+        const declared = getSource(store, id);
+        if (declared) surveys.push(surveySource(declared));
+      }
+      const { recorded, skipped } = recordRunSourceReads(store, runId, surveys, now());
+      if (skipped) continue;
+      const unreachable = surveys.filter((s) => s.outcome === 'unreachable').length;
+      const documents = surveys.reduce(
+        (sum, s) => sum + (s.outcome === 'listed' ? s.documents.length : 0),
+        0,
+      );
+      appendWorkLog(store, {
+        run: runId,
+        role: 'construct',
+        action: 'sources-read',
+        detail: { sources: surveys.length, documents, unreachable, reads: recorded },
+        at: now(),
+      });
+      process.stdout.write(
+        `grounded ${runId}: ${String(documents)} document${documents === 1 ? '' : 's'} ` +
+          `from ${String(surveys.length)} source${surveys.length === 1 ? '' : 's'}` +
+          (unreachable > 0 ? ` (${String(unreachable)} unreachable)` : '') +
+          '\n',
+      );
     }
 
     try {
