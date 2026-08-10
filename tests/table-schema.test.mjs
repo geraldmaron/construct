@@ -1,8 +1,6 @@
 /**
  * tests/table-schema.test.mjs — table schema postcondition.
  *
- * @enforces ADR-0015
- *
  * Bead construct-wvbf.12: a declared table must carry the required columns and at
  * least one data row. These pin artifact-table-has-columns against the
  * validateArtifactPostconditions path, including the missing-column and

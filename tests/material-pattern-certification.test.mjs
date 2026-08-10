@@ -94,9 +94,4 @@ describe('construct-tsyfe.1.6 schema validation pilot', () => {
   });
 });
 
-describe('construct-tsyfe.1.7 cross-pattern certification', () => {
-  it('lists material-pattern-inventories in reference nav metadata', () => {
-    const meta = JSON.parse(readRepo('docs/guides/reference/meta.json'));
-    assert.ok(meta.pages.includes('material-pattern-inventories'));
-  });
-});
+

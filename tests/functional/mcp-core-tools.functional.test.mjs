@@ -12,8 +12,6 @@
  *      wedged tool cannot hang the suite.
  *   3. `call` reaches a canonical registry tool by name and returns
  *      real worker-profile data from the unified registry.
- *
- * @enforces ADR-0022
  */
 
 import assert from 'node:assert/strict';

@@ -3,8 +3,7 @@
  *
  * The machine-readable map is the handoff between the architecture decision and
  * breaking registry, catalog, executable-surface, documentation, and generated-
- * adapter cutovers. These checks keep its concept boundary complete and prevent
- * canonical architecture pages from restoring the retired fixed-cast model.
+ * adapter cutovers. These checks keep its concept boundary complete.
  * Planned/interim concepts must not advertise missing store paths as live APIs.
  */
 import assert from 'node:assert/strict';
@@ -128,29 +127,4 @@ test('Objective/Work/Plan store paths are not advertised as live modules', () =>
   assert.match(map.currentToCanonical['lib/work/'], /planned/);
   assert.match(map.currentToCanonical['lib/plans/'], /interim/);
   assert.match(map.currentToCanonical['lib/work-specifications/'], /interim/);
-});
-
-test('canonical concept docs do not restore the fixed-cast organization model', () => {
-  const files = [
-    'docs/guides/concepts/architecture.mdx',
-    'docs/guides/concepts/workspace-preset-lifecycle.md',
-  ];
-  const forbidden = [
-    /team of specialists/i,
-    /fixed (?:\d+-)?role roster/i,
-    /specialist sequence/i,
-    /persona is the only thing the user talks to/i,
-    /specialists challenge each other/i,
-    /invent(?:ing)? new roles or departments/i,
-    /department-style model/i,
-    /## specialist roster/i,
-    /12-role roster/i,
-  ];
-
-  for (const rel of files) {
-    const source = fs.readFileSync(path.join(ROOT, rel), 'utf8');
-    for (const pattern of forbidden) {
-      assert.doesNotMatch(source, pattern, `${rel} restores retired domain model: ${pattern}`);
-    }
-  }
 });

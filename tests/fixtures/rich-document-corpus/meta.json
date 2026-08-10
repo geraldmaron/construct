@@ -1,31 +1,41 @@
 {
-  "purpose": "Round-trip fidelity corpus for construct-tsyfe.3.2 (unified/remark/rehype vs. hand-rolled RichDocument parser prototype), structured for reuse by construct-tsyfe.3.3's adapter migration regression tests regardless of the adopt/retain decision.",
+  "purpose": "Round-trip fidelity corpus for the RichDocument parser and adapter migration regression tests. Fixtures are vendored copies of real markdown files; the originals' repo paths were removed in the 2026-08-03 docs deletion, so the vendored copies are now the canonical corpus.",
   "pulled_at": "2026-07-17",
   "fixtures": [
     {
       "file": "adr-0001-zero-npm-core.md",
-      "source": "docs/decisions/adr/0001-zero-npm-core.md",
+      "source": "vendored from docs/decisions/adr/0001-zero-npm-core.md (pre-2026-08-03 tree)",
       "why": "Small doc; a genuine mid-document thematic break (`---`) distinct from frontmatter delimiters."
     },
     {
       "file": "adr-0029-install-scopes-and-hook-budgets.md",
-      "source": "docs/decisions/adr/0029-install-scopes-and-hook-budgets.md",
+      "source": "vendored from docs/decisions/adr/0029-install-scopes-and-hook-budgets.md (pre-2026-08-03 tree)",
       "why": "Pipe table, nested links, bold, long paragraphs."
     },
     {
       "file": "adr-0073-richdocument-ir-html-canonical-surface.md",
-      "source": "docs/decisions/adr/0073-richdocument-ir-html-canonical-surface.md",
+      "source": "vendored from docs/decisions/adr/0073-richdocument-ir-html-canonical-surface.md (pre-2026-08-03 tree)",
       "why": "Fenced code blocks, blockquotes, deep nesting -- and it is the ADR defining the IR under test."
     },
     {
       "file": "adr-0097-capability-delegation-rubric.md",
-      "source": "docs/decisions/adr/0097-capability-delegation-rubric.md",
+      "source": "vendored from docs/decisions/adr/0097-capability-delegation-rubric.md (pre-2026-08-03 tree)",
       "why": "Nested lists, bold, inline links, no table -- the ADR this bead applies."
     },
     {
       "file": "readme.md",
       "source": "README.md",
       "why": "Largest fixture; emoji, badges/images, inline code, a blockquote, and a thematic break -- closest to a realistic long-form document."
+    },
+    {
+      "file": "adr-0003-provider-interface.md",
+      "source": "vendored from docs/decisions/adr/0003-provider-interface.md (pre-2026-08-03 tree)",
+      "why": "Pipe table in a compact decision record."
+    },
+    {
+      "file": "export-audit.md",
+      "source": "vendored from docs/guides/cookbook/export-audit.md (pre-2026-08-03 tree)",
+      "why": "Nested lists and fenced code blocks in a long how-to."
     }
   ]
 }

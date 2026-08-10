@@ -6,7 +6,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync, mkdtempSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
 import { dirname, resolve, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -42,12 +42,6 @@ test('retired construct commands are flagged as drift in consumer scan', () => {
   const result = resolveConsumerInvocation(['matrix', 'build'], { handlers, commandIndex });
   assert.equal(result.valid, false);
   assert.match(result.reason, /retired command 'matrix'/);
-});
-
-test('generated CLI reference contains rendered subcommands, not object coercions', () => {
-  for (const file of readdirSync(resolve(REPO, 'docs/guides/reference/cli')).filter((name) => name.endsWith('.md'))) {
-    assert.doesNotMatch(readFileSync(resolve(REPO, 'docs/guides/reference/cli', file), 'utf8'), /\[object Object\]/, file);
-  }
 });
 
 test('artifact run is both documented and available at runtime', (t) => {

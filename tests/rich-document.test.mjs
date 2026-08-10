@@ -1,9 +1,9 @@
 /**
  * tests/rich-document.test.mjs — RichDocument IR: schema, markdown reader, HTML round-trip.
  *
- * Fixtures are real markdown files already in this repo (docs/decisions/adr/0003 for a pipe
- * table, docs/guides/cookbook/export-audit.md for nested lists + fenced code, docs/decisions/adr/0029
- * for prose-heavy sections with links/bold). No file in this repo contains a real embedded
+ * Fixtures are vendored real markdown files under tests/fixtures/rich-document-corpus/
+ * (a decision record with a pipe table, an export-audit guide with nested lists + fenced
+ * code, and a prose-heavy record with links/bold). No fixture contains a real embedded
  * image, so the figure/image and blockquote cases below use a small inline synthetic snippet
  * instead of a fourth on-disk fixture — noted honestly rather than claimed as "real repo content."
  */
@@ -19,9 +19,10 @@ import {
 } from '../lib/rich-document.mjs';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const TABLE_FIXTURE = resolve(REPO, 'docs/decisions/adr/0003-provider-interface.md');
-const NESTED_LIST_FIXTURE = resolve(REPO, 'docs/guides/cookbook/export-audit.md');
-const PROSE_FIXTURE = resolve(REPO, 'docs/decisions/adr/0029-install-scopes-and-hook-budgets.md');
+const CORPUS = resolve(REPO, 'tests/fixtures/rich-document-corpus');
+const TABLE_FIXTURE = resolve(CORPUS, 'adr-0003-provider-interface.md');
+const NESTED_LIST_FIXTURE = resolve(CORPUS, 'export-audit.md');
+const PROSE_FIXTURE = resolve(CORPUS, 'adr-0029-install-scopes-and-hook-budgets.md');
 
 const SYNTHETIC_MEDIA_MD = `# Media Sample
 

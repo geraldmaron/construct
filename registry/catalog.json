@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "catalog": {
-    "generatedAt": "2026-07-22T14:32:15.962Z",
+    "generatedAt": "2026-08-03T17:48:36.387Z",
     "npmScripts": [
       "adapters",
       "audit:published",
@@ -20,7 +20,6 @@
       "docs:build",
       "docs:dev",
       "docs:init",
-      "docs:site",
       "docs:sync",
       "docs:update",
       "docs:verify",
@@ -173,6 +172,12 @@
         "internal": false
       },
       {
+        "name": "contract",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
         "name": "creds",
         "category": "Integrations",
         "core": false,
@@ -258,12 +263,6 @@
       },
       {
         "name": "docs:reconcile",
-        "category": "Diagnostics",
-        "core": false,
-        "internal": false
-      },
-      {
-        "name": "docs:site",
         "category": "Diagnostics",
         "core": false,
         "internal": false
@@ -609,12 +608,6 @@
         "category": "Work",
         "core": false,
         "internal": false
-      },
-      {
-        "name": "registry:generate-docs",
-        "category": "Internal",
-        "core": false,
-        "internal": true
       },
       {
         "name": "registry:status",

@@ -25,7 +25,6 @@ function read(relPath) {
 const OPTIMIZER_DOCS = [
   'skills/ai/prompt-optimizer.md',
   'commands/work/optimize-prompts.md',
-  'docs/guides/concepts/learning-loops.mdx',
 ];
 
 test('scripts/optimize.mjs has no bare __dirname (ESM ReferenceError class)', () => {

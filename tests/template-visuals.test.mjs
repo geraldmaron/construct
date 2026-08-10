@@ -1,7 +1,5 @@
 /**
  * tests/template-visuals.test.mjs — templates satisfy the visual matrix.
- *
- * @enforces ADR-0015
  */
 
 import test from 'node:test';

@@ -25,8 +25,6 @@
  *      asserts the convergence (identical fallback-shaped prompts) is
  *      actually detected, not silently accepted.
  *
- * @enforces ADR-0055
- * @enforces ADR-0056
  */
 
 import test, { after } from 'node:test';

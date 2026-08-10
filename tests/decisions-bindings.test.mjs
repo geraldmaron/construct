@@ -1,8 +1,6 @@
 /**
  * tests/decisions-bindings.test.mjs — decision durability gate (bead wvbf.2).
  *
- * @enforces ADR-0015
- *
  * The ratchet: a decision in the enforced baseline must stay enforced, and every
  * binding marker must resolve to a real decision. These tests pin both the happy
  * path (the live tree is intact) and the failure paths (a dropped binding and a

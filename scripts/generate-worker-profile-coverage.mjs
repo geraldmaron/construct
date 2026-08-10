@@ -11,7 +11,7 @@
  * every required axis clears its minimum.
  *
  * --write regenerates registry/worker-profile-coverage.json and its
- * docs/guides/reference/worker-profile-coverage-matrix.md render. --check
+ * registry/worker-profiles/COVERAGE.md render. --check
  * regenerates in memory, exits 1 on drift or on any profile below the floor,
  * for the release gate.
  */
@@ -26,7 +26,7 @@ import { splitFrontmatter } from '../lib/worker-profiles/prompt-schema.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SKILLS_DIR = path.join(ROOT, 'skills');
 const JSON_PATH = path.join(ROOT, 'registry', 'worker-profile-coverage.json');
-const MD_PATH = path.join(ROOT, 'docs', 'guides', 'reference', 'worker-profile-coverage-matrix.md');
+const MD_PATH = path.join(ROOT, 'registry', 'worker-profiles', 'COVERAGE.md');
 
 export const FLOOR = {
   minSkills: 5,
@@ -150,7 +150,7 @@ export function buildMatrix() {
 function renderMarkdown(matrix) {
   const lines = [
     '<!--',
-    'docs/guides/reference/worker-profile-coverage-matrix.md — generated render of',
+    'registry/worker-profiles/COVERAGE.md — generated render of',
     'registry/worker-profile-coverage.json. Do not hand-edit: run',
     '`npm run worker-profiles:coverage -- --write`.',
     '-->',

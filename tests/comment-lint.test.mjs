@@ -352,15 +352,15 @@ test('future-state marker: out-of-scope docs paths (research notes) are not chec
   }
 });
 
-test('future-state marker: hooks-deprecated.md ledger is excluded', () => {
+test('future-state marker: the hooks-removal ledger lives outside docs/ and is out of scope', () => {
   const body = '# Deprecated hooks\n\nThe replacement is not yet implemented in policy-engine.\n';
-  const { dir, full } = makeTempFile('docs/guides/reference/hooks-deprecated.md', body);
+  const { dir, full } = makeTempFile('lib/hooks/DEPRECATED.md', body);
   process.env.CONSTRUCT_ARTIFACT_LINT_MODE = 'block';
   try {
     const result = lintFile(full, { rootDir: dir });
     assert.ok(
       !result.errors.some((e) => e.label.includes('future-state doc marker')),
-      `hooks-deprecated.md is its own ledger convention; got ${JSON.stringify(result)}`,
+      `lib/hooks/DEPRECATED.md is its own ledger convention, checked by construct doctor; got ${JSON.stringify(result)}`,
     );
   } finally {
     delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;

@@ -85,7 +85,7 @@ test('verifyAgentManifest passes against the live core set', () => {
 
 test('committed manifest is in canonical generated form (no drift)', () => {
   const { drift } = checkAgentManifestDrift();
-  assert.equal(drift, false, 'agent-manifest.json drifts from generated form — run `construct registry:generate-docs`');
+  assert.equal(drift, false, 'agent-manifest.json drifts from generated form — regenerate with generateAgentManifest({ write: true })');
 });
 
 test('generateAgentManifest is idempotent and emits canonical JSON', () => {

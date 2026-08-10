@@ -1,8 +1,6 @@
 /**
  * tests/precedence.test.mjs — rule precedence resolution and tier validation.
  *
- * @enforces ADR-0015
- *
  * Bead construct-wvbf.8: conflicting guidance resolves by an explicit tier order,
  * deterministically. These pin the ordering (safety beats style), the resolver,
  * and that a rule cannot declare a tier outside the canonical set.

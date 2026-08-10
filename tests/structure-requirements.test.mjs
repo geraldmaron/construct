@@ -1,8 +1,6 @@
 /**
  * tests/structure-requirements.test.mjs — templates satisfy the structural floor.
  *
- * @enforces ADR-0018
- *
  * Resolves template paths via artifact manifest when a type maps to a non-default file.
  */
 

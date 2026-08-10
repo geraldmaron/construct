@@ -1,19 +1,9 @@
 name: GitHub Pages
 
+# Parked: the documentation site sourced the deleted docs/ tree and the retired
+# docs:site generator, so it cannot build until the docs-website retire/keep
+# decision is executed. Manual dispatch only until then.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'README.md'
-      - 'docs/**'
-      - 'apps/docs/**'
-      - 'CONTRIBUTING.md'
-      - 'registry/**'
-      - 'lib/cli-commands.mjs'
-      - 'lib/auto-docs.mjs'
-      - 'lib/hooks/**'
-      - 'bin/construct'
-      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:

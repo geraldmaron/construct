@@ -11,8 +11,6 @@
  * Exits non-zero if a remove-dispositioned entry is still in package.json.
  * Declared-but-unused npm deps are warn-tier until purpose-drift cases are resolved.
  * Dependency budget ceilings (deps/budget.json) are warn-first install footprint.
- *
- * @enforces ADR-0059
  */
 
 import fs from 'node:fs';

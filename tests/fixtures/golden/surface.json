@@ -137,10 +137,6 @@
       "core": false
     },
     {
-      "name": "docs:site",
-      "core": false
-    },
-    {
       "name": "docs:update",
       "core": false
     },
@@ -366,10 +362,6 @@
     },
     {
       "name": "reflect",
-      "core": false
-    },
-    {
-      "name": "registry:generate-docs",
       "core": false
     },
     {

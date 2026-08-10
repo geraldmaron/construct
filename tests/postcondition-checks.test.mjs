@@ -1,8 +1,6 @@
 /**
  * tests/postcondition-checks.test.mjs — new executable postcondition checks.
  *
- * @enforces ADR-0015
- *
  * Bead construct-wvbf.7 extends the postcondition vocabulary beyond
  * has-section / claims-cited so prose expectations can become enforced ones.
  * These pin artifact-has-mermaid, artifact-has-table, and

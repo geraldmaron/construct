@@ -157,12 +157,3 @@ test('ci.yml archives shadow artifacts and defines graph-impact-gate job', () =>
   assert.match(ci, /graph-impact-gate\.mjs/);
 });
 
-test('docs page documents promotion threshold', () => {
-  const doc = fs.readFileSync(
-    path.join(REPO_ROOT, 'docs/guides/concepts/test-impact-gating.md'),
-    'utf8'
-  );
-  assert.match(doc, /minEligibleRuns/);
-  assert.match(doc, /maxOutlierRuns/);
-  assert.match(doc, /not-promoted/);
-});

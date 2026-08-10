@@ -1,8 +1,6 @@
 /**
  * tests/source-taxonomy.test.mjs — source credibility taxonomy is wired in.
  *
- * @enforces ADR-0017
- *
  * Pins that the research policy carries claim-relative
  * classing and the Admiralty grade, the community catalog exists, and the
  * research templates' sources tables actually expose the Reliability/Credibility

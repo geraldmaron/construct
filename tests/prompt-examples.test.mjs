@@ -139,11 +139,7 @@ test('examples README states the public-vs-internal fixture split and lean-promp
   assert.match(readme, /keep most examples here as regression fixtures, not embedded into prompt bodies/);
 });
 
-test('Construct remains the sole public Worker Profile surface in docs and fixtures', () => {
-  const promptSurfaces = fs.readFileSync(path.join(root, 'docs', 'guides', 'concepts', 'prompt-surfaces.mdx'), 'utf8');
-  assert.match(promptSurfaces, /sole public Worker Profile prompt/);
-  assert.match(promptSurfaces, /worker-profiles\/prompts\/construct\.md/);
-
+test('Construct remains the sole public Worker Profile surface in fixtures', () => {
   const workerProfileDirs = fs.readdirSync(path.join(examplesRoot, 'worker-profile-examples'))
     .filter((entry) => fs.statSync(path.join(examplesRoot, 'worker-profile-examples', entry)).isDirectory());
   assert.deepEqual(workerProfileDirs, ['construct']);

@@ -1,8 +1,6 @@
 /**
  * tests/deployment-parity.test.mjs — capability parity contract vs topology.
  *
- * @enforces ADR-0016
- *
  * Pins that every deployment topology dimension carries a parity declaration and
  * that the declaration is reconciled with the live topology (bead construct-wvbf.13):
  * a `parity` capability must be present in every mode, a `mode-specific` one must

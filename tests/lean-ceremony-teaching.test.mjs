@@ -43,32 +43,6 @@ test('construct_guide day-one table omits intake/graph ceremony verbs', () => {
   assert.doesNotMatch(guide, /Process via the recommended chain/);
 });
 
-test('start docs do not require intake triage or graph intent before first coding task', () => {
-  const firstTask = read('docs/guides/start/first-task.mdx');
-  const index = read('docs/guides/start/index.mdx');
-  const whatNext = read('docs/guides/start/what-next.md');
-
-  const beforeDispatch = firstTask.slice(
-    0,
-    firstTask.indexOf('## Dispatch a task'),
-  );
-  assert.doesNotMatch(beforeDispatch, /graph intent declare/);
-  assert.doesNotMatch(beforeDispatch, /construct intake (list|show|done)/);
-  assert.match(beforeDispatch, /you do \*\*not\*\* need to file beads/i);
-  assert.match(firstTask, /## When you need more \(opt-in\)/);
-  const optIn = firstTask.slice(firstTask.indexOf('## When you need more'));
-  assert.match(optIn, /construct graph intent declare/);
-  assert.match(optIn, /construct intake/);
-
-  assert.doesNotMatch(index, /intake · concepts · cookbook/);
-  assert.match(index, /lean path · power when needed/);
-  assert.match(index, /not required to write code on day one/i);
-
-  assert.match(whatNext, /## Lean essentials/);
-  assert.match(whatNext, /## Power surfaces \(when you need them\)/);
-  assert.match(whatNext, /progressive disclosure/i);
-});
-
 test('AGENTS inject teaches opt-in tracker/signals, not mandatory ceremony', () => {
   const body = buildConstructIntegrationBody({ hasBeadsBlock: false });
   assert.doesNotMatch(body, /use Beads \(`bd`\) for all task tracking/i);

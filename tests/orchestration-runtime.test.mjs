@@ -8,8 +8,6 @@
  * sequence — the runtime records that rather than implying orchestration — and
  * the inline backend marks tasks `prepared` (not executed), a boundary this
  * suite makes explicit.
- *
- * @enforces ADR-0020
  */
 
 import test from 'node:test';

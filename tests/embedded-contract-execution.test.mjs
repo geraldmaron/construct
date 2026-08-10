@@ -8,8 +8,6 @@
  * constructCapabilitiesActive is a subset of the declared set, and that a
  * credential canary in env never reaches the response — the no-fabrication and
  * no-secret guarantees.
- *
- * @enforces ADR-0019
  */
 
 import test from 'node:test';

@@ -5,8 +5,6 @@
  * asserts response shapes for initialize, session/new, session/prompt, and
  * session/cancel. session/update notifications are asserted for lifecycle
  * sequencing during session/prompt. fetchImpl is injected so CI stays hermetic.
- *
- * @enforces ADR-0023
  */
 
 import assert from 'node:assert/strict';

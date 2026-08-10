@@ -1,8 +1,6 @@
 /**
  * tests/decisions-supersede.test.mjs — supersede-chain validation gate.
  *
- * @enforces ADR-0015
- *
  * The supersede edge is how a decision is consciously replaced rather than
  * silently reversed (bead construct-wvbf.3). These pin the four failure classes
  * over synthetic registries and confirm the live tree is clean.
