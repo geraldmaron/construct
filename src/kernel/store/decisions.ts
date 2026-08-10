@@ -126,6 +126,14 @@ export function openDecisions(store: Store, run?: string): Decision[] {
   return rows.map(toDecision);
 }
 
+/** Resolved decisions for a run, oldest resolution first: the answers on record. */
+export function resolvedDecisions(store: Store, run: string): Decision[] {
+  const rows = store.db
+    .prepare("SELECT * FROM decisions WHERE state = 'resolved' AND run = ? ORDER BY resolved_at, id")
+    .all(run) as unknown as Row[];
+  return rows.map(toDecision);
+}
+
 export function getDecision(store: Store, id: string): Decision | null {
   const row = store.db.prepare('SELECT * FROM decisions WHERE id = ?').get(id) as Row | undefined;
   return row ? toDecision(row) : null;

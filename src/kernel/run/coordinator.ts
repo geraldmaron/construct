@@ -48,10 +48,12 @@ import { DOMAINS, domainsByName } from '../implication/domains.ts';
 import type { Domain } from '../implication/domains.ts';
 import { deliverableConcerns, licensedReviewFor } from './accountability.ts';
 import { STANCE_PROTOCOL, frameConflict, parseStance } from './conflicts.ts';
+import { ASK_PROTOCOL, answeredAsksFor, frameAsk, parseAsk } from './asks.ts';
+import type { AnsweredAsk } from './asks.ts';
 import type { RoleStance } from './conflicts.ts';
 import { latestDraft, logPromotion, recordVerdict } from './promotion.ts';
 import { challengeById, runStructuralChallenges } from '../challenge/catalog.ts';
-import { getDecision, raiseDecision } from '../store/decisions.ts';
+import { getDecision, openDecisions as openDecisionsFor, raiseDecision } from '../store/decisions.ts';
 import { ROLE_GRANTS, issueRoleToken } from '../capabilities/tokens.ts';
 import { buildRoleEnv } from './roleenv.ts';
 import { NO_WRITE_SURFACE_NOTE, WRITE_SURFACE_PROTOCOL } from './rolewrite.ts';
@@ -294,6 +296,8 @@ export function assignmentFor(
     readonly material?: readonly Material[];
     /** Local roots the role may read beyond the listed documents. */
     readonly groundRoots?: readonly string[];
+    /** Requirements the user already answered for this run. */
+    readonly answers?: readonly AnsweredAsk[];
   } = {},
 ): string {
   const domain = domainsByName(catalog).get(brief.role);
@@ -329,6 +333,15 @@ export function assignmentFor(
     options.material && options.material.length > 0
       ? groundedMaterialProtocol(options.material, options.groundRoots ?? [])
       : MATERIAL_PROTOCOL;
+  // Settled requirements reach every later dispatch of the run: an answer
+  // given once is a decision to build on, not a suggestion to reconsider.
+  const answered =
+    options.answers && options.answers.length > 0
+      ? 'The user has already answered these questions for this run. Each ' +
+        'answer is a decision — build on it and cite it as [cite:user answer]:\n' +
+        options.answers.map((a) => `- ${a.question}\n  answer: ${a.answer}`).join('\n') +
+        '\n\n'
+      : '';
   return (
     `You are acting as the ${brief.role} role.${concern}\n\n` +
     `The outcome the user asked for: ${brief.outcome}\n\n` +
@@ -338,9 +351,11 @@ export function assignmentFor(
     material +
     '\n\n' +
     obligations +
+    answered +
     `${voiceProtocol(options.voice)}\n\n` +
     `${surface}\n\n` +
-    STANCE_PROTOCOL
+    `${STANCE_PROTOCOL}\n\n` +
+    ASK_PROTOCOL
   );
 }
 
@@ -740,6 +755,7 @@ export async function workRun(
             // the no-material rule instead.
             material,
             groundRoots,
+            answers: answeredAsksFor(store, task.run),
           }),
         },
         { invocationId: task.id, roleEnv },
@@ -827,6 +843,43 @@ export async function workRun(
               role: 'construct',
               action: 'challenge-unanswered',
               detail: { unanswered: run.unanswered },
+              at: settledAt,
+            });
+          }
+        }
+
+        // The role's declared requirement, turned into an inbox decision by
+        // the kernel (commitment 14) — at most one open ask per run, so a
+        // four-role run cannot turn the inbox into a questionnaire. A second
+        // role's ask while one is open is recorded in the log and nowhere
+        // else; the deliverable already proceeds on its stated assumption.
+        const declaredAsk = parseAsk(deliverableText);
+        if (declaredAsk) {
+          const askId = `${task.id}:ask`;
+          const openAsk = openDecisionsFor(store, task.run).some((d) => d.id.endsWith(':ask'));
+          if (!getDecision(store, askId) && !openAsk) {
+            raiseDecision(store, frameAsk({
+              run: task.run,
+              task: task.id,
+              role: task.role,
+              ask: declaredAsk,
+              at: settledAt,
+            }));
+            appendWorkLog(store, {
+              run: task.run,
+              task: task.id,
+              role: task.role,
+              action: 'requirements-question-raised',
+              detail: { question: declaredAsk.question, default: declaredAsk.assuming },
+              at: settledAt,
+            });
+          } else if (!getDecision(store, askId)) {
+            appendWorkLog(store, {
+              run: task.run,
+              task: task.id,
+              role: task.role,
+              action: 'ask-suppressed-open-question',
+              detail: { question: declaredAsk.question, default: declaredAsk.assuming },
               at: settledAt,
             });
           }

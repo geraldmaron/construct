@@ -73,15 +73,17 @@ export const STANCE_PROTOCOL = [
  * Strip the decoration a model puts around a labeled line. Live runs return
  * `**STANCE:** hold`, `- STANCE: hold`, and `### STANCE: hold` for the same
  * instruction; the label is what matters, not the markdown around it.
+ * Exported for every declared-line protocol, so ASK and STANCE cannot drift
+ * into two parsers that disagree about the same markdown.
  */
-function undecorate(line: string): string {
+export function undecorate(line: string): string {
   return line
     .replace(/[*_`>#]/g, '')
     .replace(/^\s*[-+•]\s*/, '')
     .trim();
 }
 
-function labeled(lines: readonly string[], label: string): string | null {
+export function labeled(lines: readonly string[], label: string): string | null {
   const pattern = new RegExp(`^${label}\\s*[:\\-–]\\s*(.+)$`, 'i');
   // Last wins: a model that restates the block (a summary, then the real one)
   // means the final declaration, and an earlier draft of it is not the answer.
