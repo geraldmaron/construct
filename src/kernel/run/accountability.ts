@@ -18,6 +18,8 @@
 
 import { DOMAINS, domainsByName } from '../implication/domains.ts';
 import type { Domain } from '../implication/domains.ts';
+import { readWorkLog } from '../store/worklog.ts';
+import type { Store } from '../store/open.ts';
 
 
 export const CONCERN_KINDS = ['incomplete-inputs', 'empty-deliverable', 'truncated', 'model-drift'] as const;
@@ -113,6 +115,54 @@ export function deliverableConcerns(deliverable: unknown): Concern[] {
   }
 
   return concerns;
+}
+
+/**
+ * A stated limit on what produced a deliverable, recovered from the run's own
+ * record so it can be printed next to the text it qualifies.
+ *
+ * The defect this closes: the dispatch already records that a model family is
+ * unvalidated, or that the run fell below the capability floor its brief
+ * declared, and both facts lived only in the work log. A deliverable read on
+ * its own — which is how a deliverable is read — carried no trace of either,
+ * and a lens-less role had nothing else to carry one. So the qualification was
+ * true, recorded, and invisible to exactly the reader it exists for.
+ *
+ * Read off the log rather than re-derived from the host, for the reason
+ * `deliverableConcerns` takes a stored deliverable: a task read back must
+ * qualify the same way it qualified when it settled, and two code paths for
+ * that eventually disagree.
+ */
+export interface DeliverableLimit {
+  /** One line, in the reader's words, stating what the text cannot claim. */
+  readonly label: string;
+  /** The recorded detail behind it, never a paraphrase. */
+  readonly evidence: unknown;
+}
+
+export function limitsFor(store: Store, run: string, task: string): DeliverableLimit[] {
+  const limits: DeliverableLimit[] = [];
+  for (const entry of readWorkLog(store, run)) {
+    if (entry.task !== task) continue;
+    const detail = entry.detail as Record<string, unknown> | null;
+    if (entry.action === 'model-untuned-best-effort') {
+      const family = typeof detail?.family === 'string' ? detail.family : null;
+      const model = typeof detail?.model === 'string' ? detail.model : null;
+      limits.push({
+        label:
+          'best-effort: this was produced by ' +
+          (family ? `the ${family} family` : model ? model : 'a model family') +
+          ', whose output shape and citation habits are unvalidated here — ' +
+          'nothing that quotes this may drop that qualification',
+        evidence: detail,
+      });
+    }
+    if (entry.action === 'model-floor-degraded') {
+      const why = typeof detail?.why === 'string' ? detail.why : 'the declared floor was not met';
+      limits.push({ label: `below the declared capability floor: ${why}`, evidence: detail });
+    }
+  }
+  return limits;
 }
 
 /**

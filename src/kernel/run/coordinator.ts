@@ -225,7 +225,14 @@ function workProductDirective(role: string): string {
     `${slots}\n\n` +
     'Rules for the work product:\n' +
     '- Number every issue. Each issue states the problem in one sentence, then ' +
-    'the concrete step that resolves it.\n' +
+    'the concrete step that resolves it, then who takes that step.\n' +
+    // A resolving step with nobody attached is a step nobody takes. Naming a
+    // role, a team, or a named person all count; what does not count is
+    // leaving it out, so the honest answer when the material does not say gets
+    // its own marker rather than silence.
+    '- Every issue names an owner for its step — a role, a team, or a person. ' +
+    'If the material does not say who owns it, write [unowned] and say who ' +
+    'would have to decide.\n' +
     '- Missing information is never an issue. If something cannot be determined ' +
     'from the outcome, state the assumption you proceed on, label it [assumed], ' +
     'and deliver the work that assumption allows.\n' +

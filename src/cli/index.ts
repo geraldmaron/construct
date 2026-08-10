@@ -59,7 +59,7 @@ import type { Implication } from '../kernel/implication/map.ts';
 import { storeNamingCache } from '../kernel/store/namings.ts';
 import { createHostNamer } from '../hosts/namer.ts';
 import { DEFAULT_CONCURRENCY, frameConflicts, workRun } from '../kernel/run/coordinator.ts';
-import { deliverableConcerns, licensedReviewFor } from '../kernel/run/accountability.ts';
+import { deliverableConcerns, licensedReviewFor, limitsFor } from '../kernel/run/accountability.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
 import { createOpenCodeAdapter } from '../hosts/opencode/adapter.ts';
 import { createClaudeAdapter } from '../hosts/claude/adapter.ts';
@@ -928,6 +928,9 @@ export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<n
     for (const concern of deliverableConcerns(task.result)) {
       process.stdout.write(`⚑ ${concern.detail}\n`);
     }
+    for (const limit of limitsFor(store, started.runId, task.id)) {
+      process.stdout.write(`⚑ ${limit.label}\n`);
+    }
     if (report.degraded > 0) {
       process.stdout.write(
         '⚑ this ran below the model capability floor its brief declared — see: construct log\n',
@@ -1715,6 +1718,12 @@ export function show(argv: string[]): number {
         process.stdout.write(
           `\n  issue-spotting only: needs review by a licensed ${review} before you rely on it`,
         );
+      }
+      // What produced this, stated with it. A role with no lens has no
+      // labeling rule of its own, so without this the untuned fact reached
+      // nobody reading the deliverable — which is everybody who reads it.
+      for (const limit of limitsFor(store, task.run, task.id)) {
+        process.stdout.write(`\n  ${limit.label}`);
       }
       process.stdout.write('\n');
       // A draft submitted through the write surface is the deliverable of
