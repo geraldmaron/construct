@@ -100,9 +100,9 @@ waiting; construct-9xq is the Phase 4 packet). No wave-B bead dispatches
 before acceptance is recorded. If Gerald wants breadth to start sooner,
 that is a dated STRATEGY amendment only he can make.
 
-**Wave B — the missing concerns.** One independence bead first:
-construct-pmn, corpus plants authored by a non-Claude family (a corpus and
-its subject never share an author), blocking every pack close. Then five
+**Wave B — the missing concerns.** One corpus bead first: construct-pmn,
+planted findings for the new concerns, committed to the answer key before any
+pack run, blocking every pack close. Then five
 packs, each in the Phase 4 shape (domain + lens + playbook + plant +
 clean-context runs + tests): construct-alo strategy-alignment,
 construct-gzw system-design, construct-sqx operations, construct-xh7

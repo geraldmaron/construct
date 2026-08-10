@@ -183,7 +183,7 @@
   "roleFindings": {
     "recorded": "2026-08-05, before the first run scored against them; advisory coverage, not a rung gate",
     "labeledBy": "Fable (recommend); accepted or rejected by Gerald per the LLM-as-judge protocol",
-    "amended": "2026-08-05: TP1 and L1 keyword terms widened after the first scored run showed both findings surfaced in vocabulary the terms did not anticipate; recommended by Fable, accepted by Gerald. The first run's recorded score stands unchanged. Same date, same treatment for R1's first term after the second run surfaced R1's exact document pair and mechanism as 'destinationServiceAccounts' (no space); the second run's recorded score also stands. Same date: CP1's second term widened after two lens runs surfaced the exact document pair and the governance consequence phrased as 'acting identity'/'sync identity' \u2014 the claims name the review point and audit consequence but paraphrase the mechanism the term anticipated; recommended by Fable under Gerald's standing acceptance, both runs' as-run scores stand unchanged. 2026-08-10: five findings added for the concerns that landed the same day (SA1 strategy-alignment, SD1 system-design, OP1 operations, UX1 user-experience, TH1 security). Their plant text, target documents, gists, and keywords were authored by qwen3.6:35b running locally via Ollama, NOT by the Claude-family session that authored the lenses those findings measure; the session's only role was mechanical insertion and schema formatting. Independence is real but PARTIAL and must be quoted as such: the five concern definitions handed to the authoring model were written by the same session that wrote the lenses, so the plants are independent in document choice, mechanism, wording, and keywords, but not in taxonomy. Two known weaknesses, recorded before any run rather than discovered after: TH1's mechanism overlaps the pre-existing X2 impersonation finding, so a run may hit it without the security reasoning the plant is meant to require; and the plant register is more formal than the informal notes it sits in, so a plant may be locatable by style rather than by synthesis. Both bound how much any score against these five is worth.",
+    "amended": "2026-08-05: TP1 and L1 keyword terms widened after the first scored run showed both findings surfaced in vocabulary the terms did not anticipate; recommended by Fable, accepted by Gerald. The first run's recorded score stands unchanged. Same date, same treatment for R1's first term after the second run surfaced R1's exact document pair and mechanism as 'destinationServiceAccounts' (no space); the second run's recorded score also stands. Same date: CP1's second term widened after two lens runs surfaced the exact document pair and the governance consequence phrased as 'acting identity'/'sync identity' \u2014 the claims name the review point and audit consequence but paraphrase the mechanism the term anticipated; recommended by Fable under Gerald's standing acceptance, both runs' as-run scores stand unchanged. 2026-08-10: five findings added for the concerns that landed the same day (SA1 strategy-alignment, SD1 system-design, OP1 operations, UX1 user-experience, TH1 security), authored by qwen3.6:35b running locally and committed before any run scored against them. Two weaknesses recorded before any scoring rather than discovered after: TH1's mechanism overlaps the pre-existing X2 finding, and the plant register is more formal than the informal notes two of them sit in. 2026-08-10 (second entry, same day): TH1 and SA1 retired and replaced by TH2 and SA2, keyed on mechanism vocabulary with alternatives rather than on quoted document phrases, and paired with documents that actually carry the mechanism. The runs already scored against TH1 and SA1 keep their recorded results; TH2 and SA2 are committed here before any run is scored against them.",
     "roles": {
       "pm": [
         "C1",
@@ -206,7 +206,7 @@
         "L1"
       ],
       "strategy": [
-        "SA1"
+        "SA2"
       ],
       "architect": [
         "SD1"
@@ -218,7 +218,7 @@
         "UX1"
       ],
       "security": [
-        "TH1"
+        "TH2"
       ]
     },
     "findings": [
@@ -284,7 +284,8 @@
           "deletion",
           "ApplicationSet"
         ],
-        "gist": "The strategy promises first-class management of ApplicationSet resources, but the current scope excludes deletion orchestration, contradicting the goal of complete lifecycle management."
+        "gist": "The strategy promises first-class management of ApplicationSet resources, but the current scope excludes deletion orchestration, contradicting the goal of complete lifecycle management.",
+        "retired": "2026-08-10: retired unscored-forward. Both were keyed on quoted document phrases rather than on the mechanism, and one was paired with a document that does not carry its mechanism, so a correct finding on the right pair scored a miss. Replaced by TH2 and SA2. The runs already scored against TH1 and SA1 keep their recorded results unchanged."
       },
       {
         "id": "SD1",
@@ -336,7 +337,34 @@
           "service account",
           "permissions"
         ],
-        "gist": "Impersonation allows users to trigger diff operations as a service account with insufficient permissions, creating a security risk where the user cannot see the true state of cluster-scoped resources."
+        "gist": "Impersonation allows users to trigger diff operations as a service account with insufficient permissions, creating a security risk where the user cannot see the true state of cluster-scoped resources.",
+        "retired": "2026-08-10: retired unscored-forward. Both were keyed on quoted document phrases rather than on the mechanism, and one was paired with a document that does not carry its mechanism, so a correct finding on the right pair scored a miss. Replaced by TH2 and SA2. The runs already scored against TH1 and SA1 keep their recorded results unchanged."
+      },
+      {
+        "id": "TH2",
+        "documents": [
+          "notes/note-1.md",
+          "tickets/T-26271.md"
+        ],
+        "keywords": [
+          "impersonat",
+          "service account|serviceaccount",
+          "patch|permission|rbac"
+        ],
+        "gist": "With impersonation enabled the sync path runs as the destination service account, which may lack patch on cluster-scoped resources; the reporter inspecting the broad cluster credential is looking at a different identity than the one that acts, so the privilege boundary is not where either party assumes."
+      },
+      {
+        "id": "SA2",
+        "documents": [
+          "strategy.md",
+          "prd-progressive-sync-deletion.md"
+        ],
+        "keywords": [
+          "delet",
+          "manual|out of scope|not.{0,12}scope|excluded",
+          "automat|ordered|reverse"
+        ],
+        "gist": "The roadmap keeps teardown of generated applications a manual operator action and out of scope; the progressive sync deletion PRD commits to automated ordered deletion, so one of the two has to give and nobody has said which."
       }
     ]
   },

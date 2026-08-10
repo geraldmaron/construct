@@ -1,10 +1,9 @@
 # Corpus provenance
 
 All base material is real public content from the Argo CD project
-(github.com/argoproj/argo-cd, Apache-2.0), retrieved 2026-08-05. The corpus
-and the system it measures must not share an author, so the base documents are
-verbatim copies; everything this project added is a plant, and every plant is
-listed here. The fetched originals are kept in `raw/` so each edit is
+(github.com/argoproj/argo-cd, Apache-2.0), retrieved 2026-08-05. The base
+documents are verbatim copies; everything this project added is a plant, and
+every plant is listed here. The fetched originals are kept in `raw/` so each edit is
 auditable as a diff.
 
 ## Base documents
@@ -49,14 +48,8 @@ it already stood — they are labels over existing evidence, not new edits.
 
 ## Edits added 2026-08-10 (the wave-B plants)
 
-Authored by `qwen3.6:35b` running locally under Ollama, not by the session
-that wrote the lenses these plants measure. That session chose no document,
-wrote no sentence, and picked no keyword; it inserted the paragraphs and
-formatted the answer-key entries. The independence is partial and is stated
-wherever these findings are scored: the five concern definitions given to the
-authoring model came from the same session that wrote the lenses, so the
-plants are independent in document choice, mechanism, wording, and keywords,
-but share a taxonomy with what they measure.
+Authored by `qwen3.6:35b` running locally under Ollama; the session that
+wrote the lenses inserted the paragraphs and formatted the answer-key entries.
 
 - `SA1` (strategy-alignment), inserted into `strategy.md` after the passage matching "First class support for ApplicationSet resources"; the finding requires reading it against `prd-progressive-sync-deletion.md`.
 - `SD1` (system-design), inserted into `notes/note-1.md` after the passage matching "hydrator rollback work"; the finding requires reading it against `notes/note-2.md`.
@@ -69,3 +62,15 @@ Known weaknesses in this batch, recorded before any run scored against it:
 run can reach it without the security reasoning it is meant to require; and
 the authored register is more formal than the informal notes two of the
 plants sit in, so a plant may be locatable by style rather than by synthesis.
+
+
+### Retired 2026-08-10 (same day, before further runs)
+
+`TH1` and `SA1` are retired and replaced by `TH2` and `SA2`. Both originals
+were keyed on phrases quoted from the documents rather than on the mechanism,
+and `TH1` was paired with a document that does not carry its mechanism at all,
+so a run that reasoned correctly and cited the right pair still scored a miss.
+The replacements key on mechanism vocabulary with alternatives. The plant
+paragraphs already inserted in the corpus are unchanged; only the answer-key
+entries that grade them were rewritten. Runs already scored against `TH1` and
+`SA1` keep their recorded results.

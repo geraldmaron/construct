@@ -1,0 +1,46 @@
+{
+ "claims": [
+  {
+   "kind": "conflict",
+   "claim": "The RFC's coupling of sync privileges to `destinationServiceAccounts` locks in a split-identity boundary where the diff path remains bound to the cluster secret, making it hard to undo least-privilege sync without escalating the standing cluster credential to unbounded patch authority, a change requiring cluster-admin consent to unwind.",
+   "citations": [
+    "rfc-001-sync-impersonation.md",
+    "tickets/T-28695.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "Deprioritizing the hydrator rollback mechanism while enabling progressive sync locks in a state where the sync branch serves as the source of truth for both hydration and rollout, making it hard to undo a failed wave without manual git intervention and requiring operator consent to unwind the inconsistent state.",
+   "citations": [
+    "notes/note-1.md",
+    "notes/note-2.md",
+    "tickets/T-27327.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "The PRD's introduction of `deletionOrder` in `ApplicationSetStrategy` locks in a controller-managed teardown boundary that contradicts the roadmap's manual teardown scope, making it hard to undo the sequencing logic without a CRD migration and requiring platform architects to agree to expand the controller's ownership of application lifecycle.",
+   "citations": [
+    "prd-progressive-sync-deletion.md",
+    "strategy.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "The hydrator's push-to-stage coupling of git promotion with the application controller's `auto-sync` trigger locks in a stale-state window where the controller irreversibly commits to outdated manifests, making it hard to undo the drift without disabling auto-sync and requiring external promoter coordination to unwind.",
+   "citations": [
+    "rfc-002-manifest-hydrator.md",
+    "tickets/T-26443.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "The PRD's `deletionOrder: Reverse` strategy locks in a sequential deletion boundary that couples the ApplicationSet controller to a stuck-resource failure mode, making it hard to undo the wave-restart loop without controller-level debounce logic and requiring controller maintainers to agree to rewrite the deletion state machine.",
+   "citations": [
+    "notes/note-2.md",
+    "prd-progressive-sync-deletion.md",
+    "tickets/T-28511.md"
+   ]
+  }
+ ]
+}
