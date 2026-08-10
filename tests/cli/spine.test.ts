@@ -980,6 +980,9 @@ test('a run over declared sources dispatches roles grounded in the named documen
       assert.ok(assignment.includes(join(ground, 'roadmap.md')), 'documents are named by citable path');
       assert.match(assignment, /\[unreachable\]/, 'the source nobody could read says so');
       assert.match(assignment, /Not all of it was read/);
+      assert.match(assignment, /the survey, not the boundary/, 'reads past the list are licensed');
+      assert.ok(assignment.includes(ground), 'the licensed root is the declared locator');
+      assert.match(assignment, /ASK: <the question, one sentence>/, 'requirements protocol is stated');
     }
   } finally {
     rmSync(ground, { recursive: true, force: true });
