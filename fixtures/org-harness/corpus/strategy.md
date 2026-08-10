@@ -34,6 +34,8 @@
     - [✅ Automated Registry Monitoring](#-automated-registry-monitoring)
     - [✅ Projects Enhancements](#-projects-enhancements)
 
+Note that while the roadmap lists first-class UI/CLI/API support for ApplicationSet resources, the current implementation does not include the ability to manage the deletion order of child applications through these interfaces, leaving teardown as a manual operator action.
+
 ## v2.3
 
 > ETA: Feb 2021

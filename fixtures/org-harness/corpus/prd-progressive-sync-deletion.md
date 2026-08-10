@@ -53,6 +53,8 @@ Following goals should be achieved in order to conclude this proposal:
 
 ### Non-Goals
 
+Users attempting to use the custom deletion strategy will find it unsupported, yet the UI will not explicitly state that this option is unavailable, leaving them with a configuration field that accepts input but ignores it silently.
+
 custom deletion strategy - this will be a separate goal if there is enough demand for it.
 
 ## Proposal

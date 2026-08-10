@@ -45,3 +45,27 @@ to every ticket file.
 as the sixteenth ticket so the analyst lens has ground truth to see. The
 role-lens findings (TP1, A1, CP1, L1) in `answer-key.json` cite corpus text as
 it already stood — they are labels over existing evidence, not new edits.
+
+
+## Edits added 2026-08-10 (the wave-B plants)
+
+Authored by `qwen3.6:35b` running locally under Ollama, not by the session
+that wrote the lenses these plants measure. That session chose no document,
+wrote no sentence, and picked no keyword; it inserted the paragraphs and
+formatted the answer-key entries. The independence is partial and is stated
+wherever these findings are scored: the five concern definitions given to the
+authoring model came from the same session that wrote the lenses, so the
+plants are independent in document choice, mechanism, wording, and keywords,
+but share a taxonomy with what they measure.
+
+- `SA1` (strategy-alignment), inserted into `strategy.md` after the passage matching "First class support for ApplicationSet resources"; the finding requires reading it against `prd-progressive-sync-deletion.md`.
+- `SD1` (system-design), inserted into `notes/note-1.md` after the passage matching "hydrator rollback work"; the finding requires reading it against `notes/note-2.md`.
+- `OP1` (operations), inserted into `notes/note-2.md` after the passage matching "incident runbook says switch"; the finding requires reading it against `notes/note-1.md`.
+- `UX1` (user-experience), inserted into `prd-progressive-sync-deletion.md` after the passage matching "Non-Goals"; the finding requires reading it against `strategy.md`.
+- `TH1` (security), inserted into `notes/note-1.md` after the passage matching "diff story is fixed"; the finding requires reading it against `strategy.md`.
+
+Known weaknesses in this batch, recorded before any run scored against it:
+`TH1`'s mechanism overlaps the pre-existing `X2` impersonation finding, so a
+run can reach it without the security reasoning it is meant to require; and
+the authored register is more formal than the informal notes two of the
+plants sit in, so a plant may be locatable by style rather than by synthesis.
