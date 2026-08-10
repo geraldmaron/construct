@@ -44,43 +44,21 @@ export const NAMER_ROLE = 'implication-namer';
  * defect the inversion recorded against the keyword path's empty signal lists.
  */
 export function namerPrompt(outcome: string, catalog: readonly Domain[]): string {
-  const lines = catalog
-    .map((d) => {
-      const block = [`- ${d.domain}: ${d.concern}`];
-      for (const when of d.implicatedWhen) block.push(`    applies when: ${when}`);
-      for (const not of d.notImplicatedWhen) block.push(`    does NOT apply when: ${not}`);
-      return block.join('\n');
-    })
-    .join('\n');
+  const lines = catalog.map((d) => `- ${d.domain}: ${d.concern}`).join('\n');
   return [
-    'You are deciding which of a fixed catalog of concerns an outcome implicates.',
-    '',
-    'Think about the SITUATION the outcome describes, not the words it uses. A',
-    'concern applies because the thing it watches for is actually happening —',
-    'not because a matching word appeared, and not because the topic sounds',
-    'adjacent. Somebody describing their situation in plain language will name',
-    'almost none of these concerns, and will still be in the middle of several',
-    'of them. Finding those is the entire job.',
+    'You are deciding which of a fixed catalog of domains an outcome implicates.',
     '',
     'The outcome, in the user\'s own words:',
     outcome,
     '',
-    'The catalog. You may name ONLY these concerns, exactly as spelled here.',
-    'Each one lists when it applies, and where useful the look-alikes where it',
-    'does not:',
+    'The catalog. You may name ONLY these domains, exactly as spelled here:',
     lines,
     '',
     'Rules:',
-    '- Name a concern only when one of its "applies when" conditions is actually',
-    '  met by the situation. Check its "does NOT apply when" lines before naming',
-    '  it: those are mistakes that have genuinely been made here.',
-    '- Read past the vocabulary in both directions. An outcome that never says',
-    '  "personal data" can still be squarely about it; an outcome that says',
-    '  "contracts" may involve no agreement with anyone at all.',
+    '- Name a domain only if the outcome genuinely implicates its concern.',
     '- Naming nothing is a valid and useful answer. Do not reach.',
-    '- For each concern you name, state why in one sentence: which condition is',
-    '  met, and what in the outcome meets it. A reason the user cannot argue',
-    '  with is not a reason.',
+    '- For each domain you name, state why in one sentence, grounded in the',
+    '  outcome\'s own words. A reason the user cannot argue with is not a reason.',
     '',
     'Reply with JSON only — no prose, no markdown fences, no <think> blocks,',
     'nothing outside the object:',

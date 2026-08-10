@@ -19,9 +19,9 @@ import type { Embedder } from '../../../src/kernel/implication/similarity.ts';
 import type { Domain } from '../../../src/kernel/implication/domains.ts';
 
 const CATALOG: readonly Domain[] = [
-  { path: 'privacy', domain: 'privacy', concern: 'personal data and consent', implicatedWhen: [], notImplicatedWhen: [], keywords: [] },
-  { path: 'security', domain: 'security', concern: 'who can reach what', implicatedWhen: [], notImplicatedWhen: [], keywords: [] },
-  { path: 'contracts', domain: 'contracts', concern: 'agreements and what they bind', implicatedWhen: [], notImplicatedWhen: [], keywords: [] },
+  { path: 'privacy', domain: 'privacy', concern: 'personal data and consent', keywords: [] },
+  { path: 'security', domain: 'security', concern: 'who can reach what', keywords: [] },
+  { path: 'contracts', domain: 'contracts', concern: 'agreements and what they bind', keywords: [] },
 ];
 
 /**

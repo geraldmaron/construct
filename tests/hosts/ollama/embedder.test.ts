@@ -65,8 +65,8 @@ test('a response with no embedding array throws rather than returning undefined'
 });
 
 const CATALOG: readonly Domain[] = [
-  { path: 'privacy', domain: 'privacy', concern: 'personal data and consent', implicatedWhen: [], notImplicatedWhen: [], keywords: [] },
-  { path: 'security', domain: 'security', concern: 'who can reach what', implicatedWhen: [], notImplicatedWhen: [], keywords: [] },
+  { path: 'privacy', domain: 'privacy', concern: 'personal data and consent', keywords: [] },
+  { path: 'security', domain: 'security', concern: 'who can reach what', keywords: [] },
 ];
 
 test('withDomainCache calls the underlying embedder once per domain, no matter how many outcomes ask', async () => {

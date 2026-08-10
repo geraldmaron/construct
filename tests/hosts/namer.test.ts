@@ -86,12 +86,8 @@ test('a naming with no reason survives parsing so naming.ts can reject it', () =
 test('the prompt names every catalog domain and forbids inventing one', () => {
   const prompt = namerPrompt('ship a thing', DOMAINS);
   for (const domain of DOMAINS) assert.ok(prompt.includes(domain.domain), domain.domain);
-  assert.match(prompt, /ONLY these concerns/);
+  assert.match(prompt, /ONLY these domains/);
   assert.match(prompt, /Naming nothing is a valid/);
-  // The conditions are the point: a prompt carrying only the names is the
-  // one-line catalog the situational definitions replaced.
-  assert.match(prompt, /applies when:/);
-  assert.match(prompt, /does NOT apply when:/);
 });
 
 test('a namer reads the host deliverable', async () => {
