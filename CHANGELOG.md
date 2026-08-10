@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- **A role handed documents is told how to use them** (construct-7ww). Two rules about material contradict each other and only one can be true of a given dispatch: a role with nothing was already told that the files around it are not evidence, because it may be running inside this tool's own package or the user's codebase. A role that was *given* documents is in the opposite position, and until now nothing said so. `src/kernel/run/grounding.ts` holds the grounded half — what was read, at what coverage, and how to work it: the findings worth a dispatch combine two documents that never cite each other; prefer ones that collapse if either is removed; name mechanisms in the material's own vocabulary rather than a looser paraphrase; where a document already states a conclusion, cite the documents whose combination produced it rather than the one reporting it; cite both when a finding rests on two. `assignmentFor` swaps it in for the no-material rule when a dispatch carries documents, never both, and the coordinator fills it from what the store recorded the run actually read. A source that could not be read travels with the rest, named as a gap, because its silence would otherwise read as coverage.
+
+### Fixed
+- **The instrument stops grading a prompt the product never sends** (construct-7ww). The fixture-organization runs score grounded synthesis, and the synthesis protocol they scored lived only in `scripts/org-harness-producer-prompt.mjs`. Rendering the shipped assignment and probing it for the instrument's own strings found every one absent: the two-document heuristic, the collapse test, the corpus-vocabulary rule, the cite-both rule, and the cross-reference/conflict/risk taxonomy. Rungs 1 and 2 were therefore measuring depth no user could receive, and tuning them would have moved a number and nothing else. The script now imports the kernel export instead of keeping a copy, and its docblock states what it shares (lens depth and synthesis discipline, both from `src/`) against what stays local (the JSON envelope and citation format, which are the eval's output contract). A test renders the prompt through the script and asserts the kernel text appears verbatim, so the copy cannot come back quietly.
+
+### Known gaps
+- The grounded protocol is **shipped and dormant**: nothing in `src/` calls `recordSourceRead` yet, so `materialFor` returns empty on every real run and no role receives the material block today (construct-818). Until that producer lands, the fixture rungs measure what a real run receives for the prompt text but not for the material block, and `construct-fdl`'s second-tuned-family criterion stays unmet rather than rounded up.
+
 ## 3.0.0-alpha.3 — 2026-08-06
 
 The untuned path stops being merely honest about neglect and starts being engineered: the everyday setup may be a free hosted or local open-weight model, and this pass makes that path work as well as what we control allows, then measures it.
