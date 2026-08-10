@@ -23,6 +23,22 @@
  * challenge with no structural checker is never recorded as passed — it stays
  * unanswered until something that can judge it answers.
  *
+ * WHERE THE INDEPENDENCE OF A SUBSTANTIVE PASS COMES FROM. Not from the second
+ * role. A different role over the same model produces correlated output — that
+ * is measured here and in the external record, and it is why per-role depth was
+ * retired. What a second role buys is attribution (a name on the verdict) and
+ * the structural guarantee that the author does not grade itself, which is real
+ * and is why the rule below stands. What it does NOT buy is an independent
+ * opinion. Independence is bought with a second model FAMILY, dispatched
+ * through the host adapter seam, and that is where any challenge or judge pass
+ * that is load-bearing should spend.
+ *
+ * Stated as a limit rather than left implied: only one family is tuned today
+ * (`hosts/tuning.ts`), so a cross-family substantive pass cannot be run yet.
+ * Until a second family passes its eval gate, a substantive verdict carries the
+ * independence its author's family can give it and no more, and no surface
+ * describes it as independent review.
+ *
  * The checks are deliberately generous about form and strict about presence.
  * Models write "## Strongest objection", "**The strongest objection:**", and
  * "Strongest counter-argument -" for the same instruction, and a checker that
