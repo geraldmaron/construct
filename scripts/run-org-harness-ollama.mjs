@@ -25,6 +25,11 @@
  *   node scripts/run-org-harness-ollama.mjs --model qwen3.6:35b --out runs/<date>-<label>.json
  *   node scripts/run-org-harness-ollama.mjs --model qwen3.6:35b --lens compliance --out <part.json>
  *
+ * `--harness <dir>` points the run at a different fixture organization; the
+ * corpus is that directory's `corpus/`. There is more than one organization to
+ * measure over, and which corpus a run read is the variable under test in the
+ * breadth comparison, so it is a flag rather than a second copy of this file.
+ *
  * Hosted families run through the same script so the measured prompt is
  * byte-identical across providers: --endpoint openrouter switches the
  * transport to OpenRouter's OpenAI-compatible chat API (OPENROUTER_API_KEY
@@ -32,7 +37,15 @@
  * records a hosted model's run on exactly the shape a local one is scored on.
  */
 
-import { readFileSync, readdirSync, statSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
+import {
+  readFileSync,
+  readdirSync,
+  statSync,
+  writeFileSync,
+  mkdtempSync,
+  rmSync,
+  existsSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -50,7 +63,8 @@ const lens = arg('--lens');
 const notesMode = args.includes('--notes');
 if (!model || !out) {
   console.error(
-    'usage: run-org-harness-ollama.mjs --model <ollama-model> --out <run.json> [--lens <name> | --notes]',
+    'usage: run-org-harness-ollama.mjs --model <ollama-model> --out <run.json> ' +
+      '[--lens <name> | --notes] [--harness <dir>]',
   );
   process.exit(2);
 }
@@ -60,7 +74,12 @@ if (lens && notesMode) {
 }
 
 const repo = join(dirname(fileURLToPath(import.meta.url)), '..');
-const corpusRoot = join(repo, 'fixtures', 'org-harness', 'corpus');
+const harnessDir = arg('--harness', join('fixtures', 'org-harness'));
+const corpusRoot = join(repo, harnessDir, 'corpus');
+if (!existsSync(corpusRoot)) {
+  console.error(`corpus not found at ${corpusRoot}`);
+  process.exit(2);
+}
 
 function walk(dir) {
   const files = [];
@@ -75,7 +94,12 @@ function walk(dir) {
 const shape = lens ? ['--lens', lens] : notesMode ? ['--notes'] : [];
 const base = execFileSync(
   'node',
-  [join(repo, 'scripts', 'org-harness-producer-prompt.mjs'), ...shape],
+  [
+    join(repo, 'scripts', 'org-harness-producer-prompt.mjs'),
+    '--corpus',
+    corpusRoot,
+    ...shape,
+  ],
   { encoding: 'utf8' },
 )
   .replace(/Your material is every file under:.*\n/, 'Your material is the corpus inlined below.\n')
