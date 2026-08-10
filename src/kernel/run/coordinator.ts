@@ -629,6 +629,12 @@ export async function workRun(
     // model identity.
     const model = host.model ?? null;
     const modelTier = host.modelTier?.(model ?? undefined) ?? null;
+    // Resolved once and recorded on the dispatch itself, not only on the
+    // best-effort note below. A host that names no model can still name the
+    // family it belongs to, and a log that records the family only when tuning
+    // is absent cannot answer "what ran this?" for the runs that went well —
+    // which are exactly the runs a later claim quotes.
+    const tuning = host.modelTuning?.(model ?? undefined) ?? null;
     appendWorkLog(store, {
       run: task.run,
       task: task.id,
@@ -639,6 +645,8 @@ export async function workRun(
         attempt: task.token,
         model,
         modelTier,
+        modelFamily: tuning?.family ?? null,
+        modelTuned: tuning?.tuned ?? null,
         // What the role was told about why it is here. Recorded because a
         // deliverable that opens from a concern can only be read against the
         // evidence the role actually received, not the evidence it might have.
@@ -692,7 +700,6 @@ export async function workRun(
     // its deliverable as if the producer prompts were validated for it. A host
     // that stays silent about tuning is recorded the same way — an unmeasured
     // family is best-effort, never assumed tuned.
-    const tuning = host.modelTuning?.(model ?? undefined) ?? null;
     if (!tuning?.tuned) {
       appendWorkLog(store, {
         run: task.run,

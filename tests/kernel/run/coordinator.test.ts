@@ -752,6 +752,38 @@ test('a tuned family is not labeled best-effort', async () => {
   });
 });
 
+test('the dispatch itself records the family, not only the best-effort note', async () => {
+  await withStoreAsync(async (store) => {
+    seed(store, ['privacy']);
+    const tuned = {
+      ...fakeHost(),
+      model: 'claude-sonnet-5',
+      modelTuning: () => ({ family: 'claude', tuned: true }),
+    } as unknown as HostAdapter;
+    await workRun(store, tuned, { owner: 'w1', clock: frozen(AT), spendCeiling: 100 });
+
+    // A record that names the family only when tuning is missing cannot answer
+    // "what ran this?" for the runs that succeeded, which are the runs a later
+    // claim quotes.
+    const dispatched = readWorkLog(store, 'run-1').find((e) => e.action === 'role-dispatched');
+    const detail = dispatched?.detail as { modelFamily: unknown; modelTuned: unknown };
+    assert.equal(detail.modelFamily, 'claude');
+    assert.equal(detail.modelTuned, true);
+  });
+});
+
+test('a host that will not say which family it is records that silence', async () => {
+  await withStoreAsync(async (store) => {
+    seed(store, ['privacy']);
+    await workRun(store, fakeHost(), { owner: 'w1', clock: frozen(AT), spendCeiling: 100 });
+
+    const dispatched = readWorkLog(store, 'run-1').find((e) => e.action === 'role-dispatched');
+    const detail = dispatched?.detail as { modelFamily: unknown; modelTuned: unknown };
+    assert.equal(detail.modelFamily, null, 'an unknown family is written down as unknown');
+    assert.equal(detail.modelTuned, null);
+  });
+});
+
 test('a brief declaring no floor is never reported as degraded', async () => {
   await withStoreAsync(async (store) => {
     seed(store, ['privacy']);
