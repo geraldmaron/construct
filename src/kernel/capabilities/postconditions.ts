@@ -20,6 +20,13 @@
  *
  * The registry is caller-replaceable for the same reason the domain catalog is:
  * a workspace carries its own without forking the kernel.
+ *
+ * What this module is NOT: the thing that verifies a prose deliverable. That is
+ * the challenge catalog and the template's required slots, which run on every
+ * dispatch. These rules are pure functions of a structured output packet, so
+ * they can only judge a producer that emits one. Registering a rule against a
+ * role whose deliverable is prose declares an obligation nothing can evaluate,
+ * which is worse than declaring none.
  */
 
 export interface PostconditionRule {
