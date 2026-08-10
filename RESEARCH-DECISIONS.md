@@ -1173,6 +1173,53 @@ first — this trigger sits behind the 25-runs-per-domain trigger above, by cons
 
 ---
 
+## 13. The orchestration landscape and where Construct sits — construct-v0d (2026-08-10)
+
+Asked by the stakeholder: how do CrewAI-class multi-agent frameworks and the claw-family agent
+runtimes relate to Construct — is orchestration a plugin, built in, or out of scope? Commitment 1
+already answers the build question (never a second runtime; MCP projection is presence). This
+section is the evidence pass behind that answer, from the 2026 landscape as published by the
+tools themselves and the surveys that compare them.
+
+**What each class of tool is, and the organizational assumption it makes:**
+
+- **Graph orchestrators (LangGraph).** Explicit state graphs with checkpointing and
+  human-in-the-loop primitives; the largest production footprint in 2026 surveys. Assumes an
+  engineer designs the workflow: the organizational process must already be known to be encoded.
+  (dev.to and tensoria.fr 2026 framework comparisons, read 2026-08-10.)
+- **Role-crew frameworks (CrewAI).** Role-based agent crews with the lowest barrier to entry;
+  strongest at prototypes, weaker on production observability per the same surveys. Assumes the
+  roles and their handoffs are named by the builder up front — the crew is cast, not inferred.
+- **Debate/conversation frameworks (AutoGen).** Research-strong multi-agent debate and
+  verification patterns; Microsoft has shifted it toward maintenance in favor of its broader
+  agent framework. Assumes evaluation-literate builders.
+- **Personal agent runtimes (OpenClaw, ZeroClaw).** Self-hosted autonomous agents driven from
+  messaging channels, with local memory and a skills directory model. Single-user by design;
+  governance is thin — OpenClaw's own maintainer warns non-CLI users off it, and its skill
+  repository was found to lack vetting against malicious submissions (Cisco, via the OpenClaw
+  Wikipedia entry, read 2026-08-10). ZeroClaw is the same shape minimized into a Rust binary
+  with command allowlists and workspace scoping. These are agent runtimes, the exact thing
+  commitment 1 forbids building, and therefore potential hosts, not competitors.
+
+**The common gap, which is Construct's lane.** Every tool above orchestrates *execution*: who
+runs, in what order, with what tools. None of them carries the organizational layer — which
+domains an outcome implicates, what a deliverable owes before anyone relies on it, where the
+tacit "of course legal sees this" knowledge lives, who decides when roles disagree, and what was
+actually read when a claim was made. Each assumes a human already encoded that process. That
+assumption is exactly the gap the stakeholder named: organizations trust AI to fill gaps their
+business processes used to fill, and nothing in the execution layer holds those gaps. One 2026
+survey says it plainly: the differentiator is never the framework but the eval pipeline,
+observability, and failure recovery around it — the contract layer, not the runtime.
+
+**Conclusion (plugin / built-in / out of scope):** building an orchestrator is out of scope,
+permanently (commitment 1, risk 4). Riding them is the projection path already committed:
+execution hosts behind the adapter seam, presence through one MCP surface. A CrewAI or
+LangGraph adapter is justified the day a real user's work already lives there and never before
+(Phase 4/5 gates); the claw-family runtimes are additionally gated by their own governance
+posture — a host whose skill supply chain is unvetted inherits lesson-poisoning risk 5, so any
+such adapter carries the same provenance ceiling ingested documents already have. No code
+changes from this pass.
+
 ## What this pass did not do
 
 - **Nothing in §§3–6 was fitted.** At the 85 labels from single-author corpora this pass began
