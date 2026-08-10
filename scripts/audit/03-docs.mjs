@@ -1,14 +1,14 @@
 /**
  * 03-docs.mjs — Phase 3: command/flag <-> documentation alignment, both directions.
  *
- * Runs over the WHOLE docs/ tree (not the narrow README+cookbook corpus checkDocsCoverage
- * uses) and with NO skip list, so masked gaps surface:
- *   (a) registry -> docs : every non-internal command and every options[].flag must be
- *       mentioned somewhere in docs/. Absent = undocumented.
- *   (b) docs -> registry : every `construct <token>` mention whose token is not a current
+ * Runs over the WHOLE docs/ tree and with NO skip list, so masked gaps surface:
+ *   (a) docs -> registry : every `construct <token>` mention whose token is not a current
  *       command is a stale reference (catches the dev/dashboard rename: up/serve/down).
- *   (c) orphaned docs    : every .md/.mdx unreachable from README link-closure (templates
+ *   (b) orphaned docs    : every .md/.mdx unreachable from README link-closure (templates
  *       excluded) is orphaned.
+ * The registry -> docs direction (every command/flag mentioned in docs/) was removed with
+ * the documentation system: the CLI catalog is the reference surface, so absence from the
+ * minimal docs tree is the intended state, not a finding.
  *
  * Read-only. Run: node scripts/audit/03-docs.mjs
  */
@@ -195,11 +195,6 @@ export function docsFindings() {
 
 function toFindings(report) {
   const rows = [];
-  for (const c of report.undocumented_commands) {
-    rows.push({ type: 'undocumented-command', target: c, severity: 'medium', tier: 'mechanical',
-      evidence: 'no `construct ' + c + '` mention anywhere in docs/',
-      recommendation: `Document ${c} (cookbook entry or reference page).` });
-  }
   for (const s of report.retired_alias_references) {
     rows.push({ type: 'stale-doc-reference', target: s, severity: 'high', tier: 'mechanical',
       evidence: '`construct ' + s + '` is a retired alias still referenced in docs',
@@ -209,11 +204,6 @@ function toFindings(report) {
     rows.push({ type: 'review-doc-reference', target: s, severity: 'low', tier: 'judgment',
       evidence: '`construct ' + s + '` referenced in docs but is not a current command',
       recommendation: 'Confirm intentional (rejected/future capability) or fix the reference.' });
-  }
-  for (const f of report.undocumented_flags) {
-    rows.push({ type: 'undocumented-flag', target: `${f.command} ${f.flag}`, severity: 'low', tier: 'mechanical',
-      evidence: `${f.flag} not mentioned in docs/`,
-      recommendation: `Document ${f.flag} on the ${f.command} reference page.` });
   }
   for (const o of report.nav_orphans) {
     rows.push({ type: 'orphaned-doc', target: o, severity: 'medium', tier: 'judgment',

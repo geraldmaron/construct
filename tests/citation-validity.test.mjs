@@ -33,7 +33,7 @@ test('a footnote reference without a definition is dangling', () => {
 });
 
 test('a [source: repo-path] that exists is clean', () => {
-  const md = 'See the decision. [source: docs/decisions/adr/0015-affirm-hybrid-architecture.md]\n';
+  const md = 'See the rule. [source: rules/common/no-fabrication.md]\n';
   assert.equal(findDanglingCitations(md, { rootDir: REPO }).length, 0);
 });
 

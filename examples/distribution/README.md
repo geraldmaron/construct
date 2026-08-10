@@ -59,4 +59,4 @@ Fixtures force legal/privacy triggers, user-advocacy evidence gaps (`unknown` / 
 node bin/construct export examples/distribution/sources/adr.md --to=pdf --figures
 ```
 
-See [branding.md](../../docs/guides/reference/branding.md) and [diagram-and-demo.md](../../docs/guides/cookbook/diagram-and-demo.md).
+Branding tokens live in `templates/branding/`; diagram and demo tooling is described by `construct export --help`.

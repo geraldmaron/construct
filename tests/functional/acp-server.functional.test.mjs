@@ -8,7 +8,6 @@
  * real orchestration through the same engine the daemon/MCP tool use. Inline
  * worker backend keeps it hermetic.
  *
- * @enforces ADR-0023
  */
 
 import assert from 'node:assert/strict';

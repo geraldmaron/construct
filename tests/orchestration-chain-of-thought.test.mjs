@@ -9,8 +9,6 @@
  * `telemetry_only` writes it to the run trace and never to a task, and `hidden`
  * captures nothing.
  *
- * @enforces ADR-0030
- *
  * Trace reads resolve through the machine-scoped state root, so
  * CONSTRUCT_HOME_OVERRIDE is pinned for the whole file to keep them off the real
  * developer machine's $HOME.

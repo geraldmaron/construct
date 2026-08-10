@@ -276,15 +276,12 @@ test('init-docs scaffolds postmortems, changelogs, and onboarding lanes', () => 
 test('construct package repo keeps lane starters under templates/ only', () => {
   const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 
-  // Lane homes after the docs/ bucket regroup: record lanes live
-  // under their bucket; init-lane template starters live under templates/docs/.
+  // The construct repo hosts no record lanes of its own; init-lane template
+  // starters for consumer projects live under templates/docs/.
 
   const laneDirs = [
-    path.join('docs', 'decisions', 'adr'),
-    path.join('docs', 'notes', 'memos'),
     path.join('templates', 'docs', 'prds'),
     path.join('templates', 'docs', 'rfcs'),
-    path.join('docs', 'operations', 'runbooks'),
   ];
   for (const dir of laneDirs) {
     assert.equal(

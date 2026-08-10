@@ -81,14 +81,13 @@ test('release gate: construct docs:update --check reports no drift', () => {
   }
 });
 
-test('release gate: construct docs:site --check reports no drift', () => {
-  const tmpHome = mkdtempSync(join(tmpdir(), 'release-gate-docs-site-'));
-  try {
-    const result = run(['docs:site', '--check'], { env: { HOME: tmpHome, CONSTRUCT_HOME_OVERRIDE: tmpHome } });
-    assert.equal(result.status, 0, `docs:site --check exited ${result.status}; stdout: ${result.stdout}`);
-  } finally {
-    rmTmpDir(tmpHome);
-  }
+test('release gate: docs:sync --check reports the generated region current', () => {
+  const result = spawnSync('node', [join(REPO_ROOT, 'scripts', 'docs-sync.mjs'), '--check'], {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+    timeout: 120_000,
+  });
+  assert.equal(result.status, 0, `docs:sync --check exited ${result.status}; stderr: ${result.stderr}`);
 });
 
 test('release gate: construct lint:comments is clean', () => {

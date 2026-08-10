@@ -1,8 +1,6 @@
 /**
  * tests/scheduler-optimize-job.test.mjs — scheduled optimize loop is gated.
  *
- * @enforces ADR-0015
- *
  * Bead construct-wvbf.9 puts the prompt-optimize loop on a cadence. The safety
  * property is that a scheduled run never auto-applies: these pin that the job is
  * registered and that its argv carries no --apply, so the schedule can only

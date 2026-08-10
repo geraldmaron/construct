@@ -5,8 +5,6 @@
  *   1. Every dep in package.json has an entry in deps/intent.json
  *   2. Every quarantined dep has a removalCriteria string
  *   3. All dispositions are valid enum values
- *
- * @enforces ADR-0059
  */
 
 import test from 'node:test';

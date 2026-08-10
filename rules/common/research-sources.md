@@ -1,7 +1,6 @@
 ---
 description: Per-domain community starting points for sentiment and signal research.
 enforced_by: rules/common/research.md
-adr_reference: ADR-0017
 ---
 # Community source catalog
 

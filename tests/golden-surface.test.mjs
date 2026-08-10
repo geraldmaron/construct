@@ -1,8 +1,6 @@
 /**
  * tests/golden-surface.test.mjs — core-surface drift guard.
  *
- * @enforces ADR-0015
- *
  * The CLI command set, worker-profile roster, and hook
  * execution order are pinned in tests/fixtures/golden/surface.json. A change to
  * any of them fails here until the snapshot is regenerated on purpose

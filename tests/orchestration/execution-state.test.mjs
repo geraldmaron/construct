@@ -8,8 +8,6 @@
  * `prepared`, and a zero-task run (prompt-only/host-direct) aggregating to
  * null rather than a fabricated state. hostAdapterMetadata surfaces the same
  * aggregate and tolerates a pre-F4 legacy run record.
- *
- * @enforces ADR-0020
  */
 
 import test from 'node:test';

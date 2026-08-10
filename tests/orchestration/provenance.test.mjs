@@ -10,8 +10,6 @@
  * separate source. Every reader (hostAdapterMetadata here; status/oracle/graph
  * are out of scope for this bead) tolerates a pre-F1 run record that carries
  * none of these fields.
- *
- * @enforces ADR-0056
  */
 
 import test from 'node:test';

@@ -269,7 +269,6 @@ The embed daemon writes its supervisor stdout log to the machine's XDG state dir
 | `construct doc` | Verify or inspect auditability stamps on Construct-generated markdown files |
 | `construct docs:check` | Check for missing how-to guides (alias for `docs check`) |
 | `construct docs:reconcile` | Reconcile docs against the registry |
-| `construct docs:site` | Regenerate generated reference pages under docs/guides/reference/ |
 | `construct docs:update` | Regenerate AUTO-managed doc regions (alias for `docs update`) |
 | `construct docs:verify` | Validate documentation quality (alias for `docs verify`) |
 | `construct impact` | Change-impact analysis — map changed files to affected tests, capabilities, and procedures |

@@ -1,7 +1,6 @@
 ---
 description: canonical inline citation methodology for Construct artifacts.
 enforced_by: lib/comment-lint.mjs, lib/artifact-release-gate.mjs, lib/artifact-link-validate.mjs
-adr_reference: ADR-0017, ADR-0015
 precedence_tier: correctness
 ---
 # Citation Methodology

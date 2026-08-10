@@ -9,8 +9,6 @@
  * through executeRun — marks tasks `done` with real output and `executor`,
  * records a failing task as `failed` with the run `completed-with-failures`, and
  * never crashes the run.
- *
- * @enforces ADR-0021
  */
 
 import test from 'node:test';

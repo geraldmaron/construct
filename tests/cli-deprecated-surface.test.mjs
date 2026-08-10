@@ -30,8 +30,6 @@ import { CLI_COMMANDS } from '../lib/cli-commands.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BIN = path.join(REPO, 'bin', 'construct');
-const ARCH_PATH = path.join(REPO, 'docs/guides/concepts/architecture.mdx');
-const CATALOG_PATH = path.join(REPO, 'docs/guides/reference/cli/command-catalog.md');
 
 function canSpawnConstruct() {
   const probe = spawnSync(process.execPath, ['--test', '--test-name=noop'], {
@@ -79,21 +77,14 @@ test('up/down legacy aliases are sunset as removed, not live handler-only aliase
   assert.ok(!catalog.commands.some((row) => row.name === 'down' && row.status === 'legacy-alias'));
 });
 
-test('architecture.mdx no longer references construct matrix build', () => {
-  const text = fs.readFileSync(ARCH_PATH, 'utf8');
-  assert.doesNotMatch(text, /construct matrix build/i);
-});
-
-test('command-catalog artifact matches the live dispatch table', () => {
+test('rendered command-catalog markdown matches the live dispatch table', () => {
   const catalog = buildCliCommandCatalog({ rootDir: REPO });
   const rendered = renderCliCommandCatalogMarkdown(catalog);
-  fs.writeFileSync(CATALOG_PATH, rendered);
-  const onDisk = fs.readFileSync(CATALOG_PATH, 'utf8');
-  assert.match(onDisk, /## Sunset decisions/);
-  assert.match(onDisk, /construct matrix/);
-  assert.match(onDisk, /construct graph/);
+  assert.match(rendered, /## Sunset decisions/);
+  assert.match(rendered, /construct matrix/);
+  assert.match(rendered, /construct graph/);
   for (const row of catalog.commands.filter((entry) => entry.status === 'current')) {
-    assert.match(onDisk, new RegExp(`\`${row.name}\``));
+    assert.match(rendered, new RegExp(`\`${row.name}\``));
   }
 });
 

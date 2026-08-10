@@ -1,7 +1,6 @@
 ---
 description: Canonical precedence order for resolving conflicting guidance.
 enforced_by: lib/decisions/precedence.mjs
-adr_reference: ADR-0015
 ---
 # Rule precedence
 

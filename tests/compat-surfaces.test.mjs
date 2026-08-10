@@ -9,8 +9,6 @@
  *   3. Removed surfaces are honest tombstones (status:removed) and do not
  * claim live module paths or handlers; the matrix entry keeps
  *      its documented extension history.
- *
- * @enforces ADR-0053
  */
 
 import test from 'node:test';

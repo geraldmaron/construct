@@ -20,15 +20,6 @@ test('document-io fixture catalog covers every category', () => {
   assert.equal(result.categoryCount, DOCUMENT_IO_CATEGORIES.length);
 });
 
-test('strict-mode error codes are documented in document-io reference', async () => {
-  const doc = await import('node:fs/promises').then((fs) =>
-    fs.readFile(path.join(REPO, 'docs/guides/reference/document-io.md'), 'utf8'),
-  );
-  for (const code of ['ASR_REQUIRED', 'OFFICE_REQUIRES_DOCLING', 'IMAGE_REQUIRES_DOCLING']) {
-    assert.match(doc, new RegExp(code));
-  }
-});
-
 test('extractor declares presentation and raster image imports as supported', () => {
   for (const ext of ['.odp', '.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp', '.webp']) {
     assert.equal(EXTRACTABLE_DOCUMENT_EXTS.has(ext), true, `${ext} should be extractable through high-fidelity ingest`);

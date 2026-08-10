@@ -10,14 +10,6 @@ import { fileURLToPath } from 'node:url';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
-test('ADR-0099 rejects promptfoo adoption', () => {
-  const adrPath = path.join(REPO, 'docs/decisions/adr/0099-reject-promptfoo-dev-harness.md');
-  assert.ok(fs.existsSync(adrPath));
-  const text = fs.readFileSync(adrPath, 'utf8');
-  assert.match(text, /Reject/i);
-  assert.match(text, /construct-72gqn\.38/);
-});
-
 test('package.json does not list promptfoo in runtime or dev dependencies', () => {
   const pkg = JSON.parse(fs.readFileSync(path.join(REPO, 'package.json'), 'utf8'));
   const sections = ['dependencies', 'devDependencies', 'optionalDependencies'];

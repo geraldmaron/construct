@@ -1,6 +1,6 @@
 /**
- * tests/onboarding-docs-consistency.test.mjs — guards README's quickstart and
- * docs/guides/start's first-task path against re-diverging.
+ * tests/onboarding-docs-consistency.test.mjs — guards README's quickstart
+ * claims against re-diverging from the init code path.
  *
  * Ground truth (lib/init-unified.mjs) is that `construct init` syncs adapters
  * and starts services by default unless `--no-start` or `--interactive` is
@@ -51,27 +51,3 @@ test('README quickstart claims construct init starts services by default', () =>
   );
 });
 
-test('first-task.mdx does not present sync/dev as separate required onboarding steps', () => {
-  const firstTask = read('docs/guides/start/first-task.mdx');
-  const initSection = firstTask.slice(
-    firstTask.indexOf('## Initialize Construct in the project'),
-    firstTask.indexOf('## Dispatch a task')
-  );
-  assert.doesNotMatch(
-    initSection,
-    /### `construct sync`/,
-    'construct sync must not reappear as a separate <Step> in the init walkthrough — ' +
-      'construct init syncs adapters itself by default'
-  );
-  assert.doesNotMatch(
-    initSection,
-    /### `construct dev`/,
-    'construct dev must not reappear as a separate <Step> in the init walkthrough — ' +
-      'construct init starts services itself by default'
-  );
-  assert.match(
-    initSection,
-    /construct init --yes/,
-    'the init walkthrough should lead with the single-command canonical path'
-  );
-});

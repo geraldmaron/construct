@@ -175,7 +175,7 @@ function usage(opts = {}) {
     }
   }
 
-  println(`\n${COLORS.dim}Docs:${COLORS.reset} ${linkPath('docs/guides/reference/cli/')}`);
+  println(`\n${COLORS.dim}Docs:${COLORS.reset} ${linkPath('README.md')}`);
 }
 
 function runNodeScript(scriptPath, args = [], extraEnv = {}, { exitOnError = true } = {}) {
@@ -197,12 +197,6 @@ async function cmdRegistryStatus(args = []) {
 async function cmdRegistryValidate(args = []) {
   const { runRegistryValidate } = await import('../lib/registry/cli.mjs');
   const code = await runRegistryValidate(args, { rootDir: ROOT_DIR, println, errorln });
-  if (code) process.exit(code);
-}
-
-async function cmdRegistryGenerateDocs(args = []) {
-  const { runRegistryGenerateDocs } = await import('../lib/registry/cli.mjs');
-  const code = await runRegistryGenerateDocs(args, { rootDir: ROOT_DIR, println, errorln });
   if (code) process.exit(code);
 }
 
@@ -5421,31 +5415,8 @@ async function cmdDocsCheck(args) {
     println('Commands with no linked how-to in docs/README.md:');
     for (const name of result.uncovered) println(`  ✗  construct ${name}`);
     println('');
-    println(`Add cookbook recipes under docs/guides/cookbook/ and link them from the cookbook index.`);
+    println(`Link a how-to for each command from docs/README.md.`);
     process.exitCode = 1;
-  }
-}
-
-async function cmdDocsSite(args = []) {
-  const check = args.includes('--check');
-  const { buildFumadocsReference, checkFumadocsReferenceDrift } = await import('../lib/auto-docs.mjs');
-  if (check) {
-    const { drift } = checkFumadocsReferenceDrift({ rootDir: ROOT_DIR });
-    if (drift.length === 0) {
-      ok('docs/guides/reference/ is up to date.');
-      return;
-    }
-    println('');
-    println('Generated reference docs are out of date. Run `construct docs:site` to regenerate:');
-    for (const f of drift) println(`  ✗  ${f}`);
-    process.exitCode = 1;
-    return;
-  }
-  const { written } = buildFumadocsReference({ rootDir: ROOT_DIR });
-  if (written.length === 0) {
-    ok('docs/guides/reference/ already up to date.');
-  } else {
-    ok(`docs/guides/reference/ regenerated (${written.length} file${written.length === 1 ? '' : 's'}).`);
   }
 }
 
@@ -6585,7 +6556,7 @@ async function cmdTelemetryQuery(args) {
   println('  errors [--agent=<name>] [--since=24h]                error span summary');
   println('  trace <traceId>                                       full span tree');
   println('');
-  println('For Langfuse/Honeycomb/Grafana Tempo/Datadog, see docs/guides/concepts/observability.md');
+  println('Langfuse/Honeycomb/Grafana Tempo/Datadog export via OTLP: set CONSTRUCT_OTEL_EXPORTER_OTLP_ENDPOINT.');
 }
 
 async function cmdHook(args) {
@@ -6683,7 +6654,6 @@ const handlers = new Map([
   ['storage', cmdStorage],
   ['registry:status', cmdRegistryStatus],
   ['registry:validate', cmdRegistryValidate],
-  ['registry:generate-docs', cmdRegistryGenerateDocs],
   ['workspace-preset', cmdWorkspacePreset],
   ['worker-profile', (args) => cmdRegistryCatalog('worker-profile', args)],
   ['procedure', cmdProcedure],
@@ -6803,7 +6773,6 @@ const handlers = new Map([
   ['version', cmdVersion],
   ['docs:update', cmdDocsUpdate],
   ['docs:check', cmdDocsCheck],
-  ['docs:site', cmdDocsSite],
   ['lint:comments', cmdLintComments],
   ['lint:templates', cmdLintTemplates],
   ['gates:audit', cmdGatesAudit],

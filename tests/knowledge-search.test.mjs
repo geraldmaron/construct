@@ -45,9 +45,9 @@ test('returns ok:false when repo has no docs', () => {
   } finally { cleanTmp(root); }
 });
 
-test('finds content in docs/guides/concepts/architecture.md', () => {
+test('finds content in STRATEGY.md', () => {
   const root = makeTmpRepo({
-    'docs/guides/concepts/architecture.md': `# Construct Architecture
+    'STRATEGY.md': `# Construct Strategy
 
 ## System overview
 
@@ -64,7 +64,7 @@ Construct is an org-in-a-box: an AI orchestration system that can be pointed at 
     const result = knowledgeSearch({ query: 'what is construct', repoRoot: root, rootDir: root });
     assert.equal(result.ok, true);
     assert.ok(result.hits.length > 0, 'should have hits');
-    assert.ok(result.hits[0].file.includes('architecture'), 'top hit should be architecture.md');
+    assert.ok(result.hits[0].file.includes('STRATEGY'), 'top hit should be STRATEGY.md');
   } finally { cleanTmp(root); }
 });
 
@@ -87,9 +87,9 @@ test('finds content in docs/README.md', () => {
   } finally { cleanTmp(root); }
 });
 
-test('finds content in cookbook recipes', () => {
+test('finds content in rules/common', () => {
   const root = makeTmpRepo({
-    'docs/guides/cookbook/start-embed-mode.md': `# How to start embed mode
+    'rules/common/start-embed-mode.md': `# How to start embed mode
 
 ## Starting the daemon
 
@@ -101,7 +101,7 @@ configured GitHub repos and Jira projects on a schedule.
     const result = knowledgeSearch({ query: 'how to start embed daemon', repoRoot: root, rootDir: root });
     assert.equal(result.ok, true);
     assert.ok(result.hits.length > 0);
-    assert.ok(result.hits[0].file.includes('cookbook'));
+    assert.ok(result.hits[0].file.includes('rules/common'));
   } finally { cleanTmp(root); }
 });
 
@@ -121,7 +121,7 @@ We use construct with three GitHub repos. Config lives in ~/.construct/config.en
 
 test('respects topK limit', () => {
   const root = makeTmpRepo({
-    'docs/guides/concepts/architecture.md': Array.from({ length: 20 }, (_, i) =>
+    'STRATEGY.md': Array.from({ length: 20 }, (_, i) =>
       `## Section ${i}\n\nconstruct is a system with feature ${i} that does something useful.\n`
     ).join('\n'),
   });
@@ -133,7 +133,7 @@ test('respects topK limit', () => {
 
 test('hit fields are present and correct shape', () => {
   const root = makeTmpRepo({
-    'docs/guides/concepts/architecture.md': `# Construct Architecture\n\n## Overview\n\nConstruct is an orchestration system.\n`,
+    'STRATEGY.md': `# Construct Strategy\n\n## Overview\n\nConstruct is an orchestration system.\n`,
   });
   try {
     const result = knowledgeSearch({ query: 'orchestration', repoRoot: root, rootDir: root });
@@ -151,7 +151,7 @@ test('hit fields are present and correct shape', () => {
 
 test('sources list contains only unique file paths', () => {
   const root = makeTmpRepo({
-    'docs/guides/concepts/architecture.md': `# Construct Architecture\n\nconstruct orchestration system.\n`,
+    'STRATEGY.md': `# Construct Strategy\n\nconstruct orchestration system.\n`,
     'docs/README.md': `# Docs\n\nconstruct commands and guides.\n`,
   });
   try {
@@ -177,16 +177,16 @@ test('returns message when no hits found', () => {
   } finally { cleanTmp(root); }
 });
 
-test('architecture.md ranks above how-to for overview questions', () => {
+test('STRATEGY.md ranks above rules for overview questions', () => {
   const root = makeTmpRepo({
-    'docs/guides/concepts/architecture.md': `# Construct Architecture\n\n## System overview\n\nConstruct is an AI orchestration system that manages organizational intelligence.\n`,
-    'docs/guides/cookbook/start-embed-mode.md': `# Embed start\n\nConstruct embed mode monitors systems.\n`,
+    'STRATEGY.md': `# Construct Strategy\n\n## System overview\n\nConstruct is an AI orchestration system that manages organizational intelligence.\n`,
+    'rules/common/start-embed-mode.md': `# Embed start\n\nConstruct embed mode monitors systems.\n`,
   });
   try {
     const result = knowledgeSearch({ query: 'what is construct system overview', repoRoot: root, rootDir: root });
     assert.equal(result.ok, true);
     assert.ok(result.hits.length > 0);
-    // architecture.md has priority bonus — should appear in results
-    assert.ok(result.hits.some(h => h.file.includes('architecture')));
+    // STRATEGY.md has priority bonus — should appear in results
+    assert.ok(result.hits.some(h => h.file.includes('STRATEGY')));
   } finally { cleanTmp(root); }
 });

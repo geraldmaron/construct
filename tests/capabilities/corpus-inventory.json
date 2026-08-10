@@ -1,25 +1,25 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-30T23:47:22.127Z",
+  "generatedAt": "2026-08-03T20:12:40.157Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 1140,
-    "topLevelTestFiles": 430,
-    "nestedTestFiles": 710,
+    "testFiles": 1137,
+    "topLevelTestFiles": 428,
+    "nestedTestFiles": 709,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 52,
     "byLayer": {
-      "unit": 750,
+      "unit": 747,
       "functional": 329,
       "visual": 14,
       "integration": 45,
       "live-provider": 2
     },
     "byCategory": {
-      "unit": 667,
+      "unit": 665,
       "functional": 329,
       "visual": 14,
-      "structural-guard": 23,
+      "structural-guard": 22,
       "contract-subsystem": 62,
       "integration": 33,
       "live-provider": 2,
@@ -163,14 +163,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/adapters-lean-bootstrap.test.mjs — lean postinstall/init host selection"
-    },
-    {
-      "path": "tests/adr-stamp-integrity.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/adr-stamp-integrity.test.mjs — ADR body-hash drift gate."
     },
     {
       "path": "tests/agent-manifest.test.mjs",
@@ -933,14 +925,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/audit/root-disposition.test.mjs — repository-root ownership contract."
-    },
-    {
-      "path": "tests/audit/workspace-control-plane-nav.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "workspace-control-plane-nav.test.mjs — archive + deadcode ratchet after quarantine."
     },
     {
       "path": "tests/auto-docs.test.mjs",
@@ -3465,7 +3449,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/docs-site-check.functional.test.mjs — Generated reference drift gate."
+      "maintainerNotes": "tests/functional/docs-site-check.functional.test.mjs — generated-docs gate shape."
     },
     {
       "path": "tests/functional/doctor-fresh-project-ux.functional.test.mjs",
@@ -6513,14 +6497,6 @@
       "maintainerNotes": "tests/mcp-tool-schema-validate.test.mjs — unit coverage for"
     },
     {
-      "path": "tests/mcp-tools-doc-parity.test.mjs",
-      "layer": "unit",
-      "category": "structural-guard",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/mcp-tools-doc-parity.test.mjs — every registered MCP tool is documented."
-    },
-    {
       "path": "tests/mcp-tools-list-coverage.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -6768,7 +6744,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/onboarding-docs-consistency.test.mjs — guards README's quickstart and"
+      "maintainerNotes": "tests/onboarding-docs-consistency.test.mjs — guards README's quickstart"
     },
     {
       "path": "tests/op-log.test.mjs",
