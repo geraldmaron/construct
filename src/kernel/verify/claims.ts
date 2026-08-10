@@ -33,7 +33,18 @@ export interface UntaggedClaim {
 
 const CLAIM =
   /(\$[\d][\d,.]*|\b\d+(?:\.\d+)?%|\b\d{4}-\d{2}-\d{2}\b|\b\d+(?:\.\d+)?\s*(?:business\s+)?(?:hour|day|week|month|year)s?\b|\barts?\.\s*\d+|§\s*\d+|\bDirective\s+\d+\/\d+)/i;
-const TAG = /\[(cite:[^\]]+|unverified)\]/i;
+/**
+ * The three shapes that discharge a claim, and the reason there are three.
+ *
+ * `[cite:…]` points at the run's own ground — a declared source, a document the
+ * run read, an answer the user gave. `[research:…]` points outside it, at
+ * something publicly reachable the role opened during the research rung. Both
+ * are citations and both satisfy the discipline; they stay separate markers so
+ * a reader can tell at a glance whether a claim rests on their own material or
+ * on the open web, which are not the same quality of evidence and must never
+ * read as if they were. `[unverified]` is the honest third answer.
+ */
+const TAG = /\[(cite:[^\]]+|research:[^\]]+|unverified)\]/i;
 
 /**
  * A citation whose body is a source file rather than a source.

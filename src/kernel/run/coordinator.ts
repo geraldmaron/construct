@@ -50,6 +50,7 @@ import { deliverableConcerns, licensedReviewFor } from './accountability.ts';
 import { STANCE_PROTOCOL, frameConflict, parseStance } from './conflicts.ts';
 import { ASK_PROTOCOL, answeredAsksFor, frameAsk, parseAsk } from './asks.ts';
 import { answerDirective } from './ask.ts';
+import { RESEARCH_PROTOCOL } from './research.ts';
 import type { AnsweredAsk } from './asks.ts';
 import type { RoleStance } from './conflicts.ts';
 import { latestDraft, logPromotion, recordVerdict } from './promotion.ts';
@@ -351,6 +352,11 @@ export function assignmentFor(
     options.material && options.material.length > 0
       ? groundedMaterialProtocol(options.material, options.groundRoots ?? [])
       : MATERIAL_PROTOCOL;
+  // The acquisition ladder's second rung, defined where the role can read it.
+  // Spoken on every dispatch rather than only when a gap appears, because the
+  // role discovers the gap mid-work and there is no second turn in which to
+  // tell it the rules for what it is about to do.
+  const research = RESEARCH_PROTOCOL;
   // Settled requirements reach every later dispatch of the run: an answer
   // given once is a decision to build on, not a suggestion to reconsider.
   const answered =
@@ -377,6 +383,8 @@ export function assignmentFor(
     lensDirective(brief.role) +
     (asking ? answerDirective() : workProductDirective(brief.role)) +
     material +
+    '\n\n' +
+    research +
     '\n\n' +
     obligations +
     answered +

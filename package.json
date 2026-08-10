@@ -1,7 +1,7 @@
 {
   "name": "@geraldmaron/construct",
   "version": "3.0.0-alpha.3",
-  "description": "Outcome engine: state an outcome, a learning staff of roles fills in the rest — decisions in, deliverables out.",
+  "description": "Outcome engine: state an outcome, a learning staff of roles fills in the rest \u2014 decisions in, deliverables out.",
   "type": "module",
   "license": "Apache-2.0",
   "repository": {
@@ -51,7 +51,8 @@
     "capture:opencode": "node scripts/capture-opencode-transcripts.mjs",
     "harness:discrimination": "node scripts/check-plant-discrimination.mjs",
     "probe:claude": "node scripts/probe-claude-conformance.mjs",
-    "probe:claude:mcp": "node scripts/probe-claude-conformance.mjs --spend-mcp"
+    "probe:claude:mcp": "node scripts/probe-claude-conformance.mjs --spend-mcp",
+    "check:research": "node scripts/check-research-discipline.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
