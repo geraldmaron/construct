@@ -110,13 +110,24 @@ export function findScaffoldingCitations(text: string): MisplacedCitation[] {
  * Reported separately from untagged claims because the two failures need
  * different words: one deliverable did not source its claim, the other sourced
  * it to something that cannot support it.
+ *
+ * `allowedRoots` is the grounded exception, and it inverts nothing: when the
+ * user points a run at a codebase, that code IS the declared ground, so a
+ * cited path under a declared root is evidence exactly the way a document is.
+ * A path under no declared root keeps failing — that is still the tool's
+ * insides or a tree nobody declared, whichever it is.
  */
-export function findSourceFileCitations(text: string): MisplacedCitation[] {
+export function findSourceFileCitations(
+  text: string,
+  allowedRoots: readonly string[] = [],
+): MisplacedCitation[] {
   const findings: MisplacedCitation[] = [];
   const lines = text.split('\n');
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i] ?? '';
-    if (SOURCE_PATH.test(line)) findings.push({ line: i + 1, text: line.trim() });
+    if (!SOURCE_PATH.test(line)) continue;
+    if (allowedRoots.some((root) => root.trim() !== '' && line.includes(root))) continue;
+    findings.push({ line: i + 1, text: line.trim() });
   }
   return findings;
 }

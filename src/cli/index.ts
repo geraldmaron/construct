@@ -1188,11 +1188,17 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
         (sum, s) => sum + (s.outcome === 'listed' ? s.documents.length : 0),
         0,
       );
+      // Licensed vs listed, on the record: the listed documents are the read
+      // rows; the roots are what the roles may read past them.
+      const licensedRoots = surveys
+        .filter((s) => s.outcome === 'listed')
+        .map((s) => s.locator)
+        .sort();
       appendWorkLog(store, {
         run: runId,
         role: 'construct',
         action: 'sources-read',
-        detail: { sources: surveys.length, documents, unreachable, reads: recorded },
+        detail: { sources: surveys.length, documents, unreachable, reads: recorded, licensedRoots },
         at: now(),
       });
       process.stdout.write(

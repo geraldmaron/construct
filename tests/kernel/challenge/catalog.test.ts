@@ -240,3 +240,18 @@ test('a scope-diff that invents what the brief asked for fails against the recor
   const ok = runStructuralChallenges(brief(['scope-diff']), anchored);
   assert.equal(ok.results.find((r) => r.challenge === 'scope-diff')?.passed, true);
 });
+
+test('claims-cited judges code citations against the ground roots the run was licensed', () => {
+  const cited = challengeById('claims-cited');
+  assert.ok(cited?.structural);
+  const grounded =
+    'Retry policy is the host\'s alone [cite:/ground/repo/src/kernel/run/coordinator.ts].';
+  const inRoot = cited.structural(grounded, brief(['claims-cited']), {
+    groundRoots: ['/ground/repo'],
+  });
+  assert.equal(inRoot.passed, true, 'ground under a licensed root is evidence');
+  const outOfRoot = cited.structural(grounded, brief(['claims-cited']), {
+    groundRoots: ['/somewhere/else'],
+  });
+  assert.equal(outOfRoot.passed, false, 'an unlicensed tree is still not evidence');
+});

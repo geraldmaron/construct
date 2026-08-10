@@ -17,7 +17,7 @@
  * coverage decision testable without a filesystem.
  */
 
-import { recordSourceRead, sourceReadsFor } from '../store/sources.ts';
+import { getSource, recordSourceRead, sourceReadsFor } from '../store/sources.ts';
 import type { SourceRead } from '../store/sources.ts';
 import type { Store } from '../store/open.ts';
 
@@ -100,6 +100,28 @@ export function readsFromSurvey(run: string, survey: SourceSurvey, at: string): 
     });
   }
   return reads;
+}
+
+/**
+ * The local roots a run's roles are licensed to read beyond the listed
+ * documents. Derived from the read record, never from the declarations alone:
+ * a source whose every read row is unreachable licenses nothing, because a
+ * root nobody could survey is a root the citation gate cannot vouch for.
+ */
+export function groundRootsFor(store: Store, run: string): string[] {
+  const reachable = new Set(
+    sourceReadsFor(store, run)
+      .filter((read) => read.coverage !== 'unreachable')
+      .map((read) => read.source),
+  );
+  const roots: string[] = [];
+  for (const id of reachable) {
+    const source = getSource(store, id);
+    if (source && (source.kind === 'directory' || source.kind === 'git')) {
+      roots.push(source.locator);
+    }
+  }
+  return roots.sort();
 }
 
 export interface RecordedReads {

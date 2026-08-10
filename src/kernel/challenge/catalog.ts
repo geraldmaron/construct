@@ -45,6 +45,15 @@ export interface ChallengeCheck {
   readonly detail: string;
 }
 
+/**
+ * Facts about the dispatch a check may need beyond the deliverable and brief.
+ * Ground roots are the one so far: a grounded run's citations are judged
+ * against what the run was actually licensed to read.
+ */
+export interface ChallengeContext {
+  readonly groundRoots?: readonly string[];
+}
+
 export interface Challenge {
   readonly id: string;
   /** What the challenge asks of the deliverable, in one sentence. */
@@ -53,7 +62,9 @@ export interface Challenge {
    * A free, deterministic check for the presence of the work, or null when
    * only a substantive pass can answer this challenge.
    */
-  readonly structural: ((deliverable: string, brief: Brief) => ChallengeCheck) | null;
+  readonly structural:
+    | ((deliverable: string, brief: Brief, context?: ChallengeContext) => ChallengeCheck)
+    | null;
 }
 
 /** Any of these labels, however the model decorated them, counts as present. */
@@ -133,12 +144,14 @@ export const CHALLENGES: readonly Challenge[] = [
     // implementation before this catalog existed. Reused rather than rewritten:
     // a second matcher for the same job is the drift commitment 16 exists to
     // catch, and two of them would disagree eventually.
-    structural: (deliverable) => {
+    structural: (deliverable, _brief, context) => {
       // A citation that points at code fails here rather than in a challenge of
       // its own, because from the reader's side it is the same failure: the
       // claim is not sourced. Checked first — a deliverable that cites the
-      // tool's insides has a worse problem than one that cites nothing.
-      const misplaced = findSourceFileCitations(deliverable);
+      // tool's insides has a worse problem than one that cites nothing. A
+      // grounded dispatch is the exception: code under a declared root is the
+      // user's own ground, and citing it is the discipline, not the defect.
+      const misplaced = findSourceFileCitations(deliverable, context?.groundRoots ?? []);
       if (misplaced.length > 0) {
         const shown = misplaced.slice(0, 3).map((c) => `line ${String(c.line)}`).join(', ');
         return {
@@ -278,7 +291,11 @@ export interface StructuralRun {
  * declaration on the brief, and a dispatcher that ran checks nobody asked for
  * would be deciding the obligation itself.
  */
-export function runStructuralChallenges(brief: Brief, deliverable: string): StructuralRun {
+export function runStructuralChallenges(
+  brief: Brief,
+  deliverable: string,
+  context?: ChallengeContext,
+): StructuralRun {
   const results: StructuralResult[] = [];
   const unanswered: UnansweredChallenge[] = [];
 
@@ -298,7 +315,7 @@ export function runStructuralChallenges(brief: Brief, deliverable: string): Stru
       });
       continue;
     }
-    const check = challenge.structural(deliverable, brief);
+    const check = challenge.structural(deliverable, brief, context);
     results.push({ challenge: id, passed: check.passed, detail: check.detail });
   }
 

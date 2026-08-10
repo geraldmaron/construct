@@ -70,3 +70,19 @@ test('the role is told the rule before it writes, not only held to it after', ()
   // alternative is answered by inventing a source.
   assert.match(assignment, /mark it \[unverified\] and say what would settle it/);
 });
+
+test('a cited code path under a declared ground root is evidence, not a misplaced citation', () => {
+  const grounded =
+    'The lease fence drops a stale settle [cite:/ground/repo/src/kernel/store/tasks.ts].';
+  assert.deepEqual(findSourceFileCitations(grounded, ['/ground/repo']), []);
+  assert.equal(
+    findSourceFileCitations(grounded, ['/other/root']).length,
+    1,
+    'a root the run was not licensed for vouches for nothing',
+  );
+  assert.equal(
+    findSourceFileCitations(grounded).length,
+    1,
+    'no roots means the original rule, unchanged',
+  );
+});

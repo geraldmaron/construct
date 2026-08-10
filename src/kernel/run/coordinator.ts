@@ -37,6 +37,7 @@ import {
 } from '../store/tasks.ts';
 import type { LeasedTask } from '../store/tasks.ts';
 import { sourceReadsFor } from '../store/sources.ts';
+import { groundRootsFor } from './sourcereads.ts';
 import { groundedMaterialProtocol } from './grounding.ts';
 import type { Material } from './grounding.ts';
 import type { Store } from '../store/open.ts';
@@ -291,6 +292,8 @@ export function assignmentFor(
      * ever spoken.
      */
     readonly material?: readonly Material[];
+    /** Local roots the role may read beyond the listed documents. */
+    readonly groundRoots?: readonly string[];
   } = {},
 ): string {
   const domain = domainsByName(catalog).get(brief.role);
@@ -324,7 +327,7 @@ export function assignmentFor(
   const surface = options.writeSurface ? WRITE_SURFACE_PROTOCOL : NO_WRITE_SURFACE_NOTE;
   const material =
     options.material && options.material.length > 0
-      ? groundedMaterialProtocol(options.material)
+      ? groundedMaterialProtocol(options.material, options.groundRoots ?? [])
       : MATERIAL_PROTOCOL;
   return (
     `You are acting as the ${brief.role} role.${concern}\n\n` +
@@ -594,6 +597,12 @@ export async function workRun(
   async function dispatch(task: LeasedTask): Promise<void> {
     const brief = task.brief as Brief;
 
+    // What the run read and where it may read further, fetched once: the
+    // assignment and the citation gate must judge against the same ground, or
+    // a role could be licensed one set of roots and graded on another.
+    const material = materialFor(store, task.run);
+    const groundRoots = material.length > 0 ? groundRootsFor(store, task.run) : [];
+
     // What is about to run this, recorded before it runs. A
     // claim about what a run demonstrated is only as good as the record of what
     // executed it, and a host that will not say is written down as not saying
@@ -729,7 +738,8 @@ export async function workRun(
             // assignment asks it rather than taking a caller's word. A run
             // that read nothing hands back an empty list and the role is told
             // the no-material rule instead.
-            material: materialFor(store, task.run),
+            material,
+            groundRoots,
           }),
         },
         { invocationId: task.id, roleEnv },
@@ -794,7 +804,7 @@ export async function workRun(
           });
         }
         if (deliverableText !== null && declaredChallenges.length > 0) {
-          const run = runStructuralChallenges(brief, deliverableText);
+          const run = runStructuralChallenges(brief, deliverableText, { groundRoots });
           for (const check of run.results) {
             recordVerdict(store, {
               task: task.id,

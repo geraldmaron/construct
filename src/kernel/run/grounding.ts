@@ -88,7 +88,10 @@ export const GROUNDED_SYNTHESIS_PROTOCOL = [
  * silence would otherwise read as coverage, and a role that believes it saw
  * everything writes with a confidence the run did not earn.
  */
-export function groundedMaterialProtocol(material: readonly Material[]): string {
+export function groundedMaterialProtocol(
+  material: readonly Material[],
+  groundRoots: readonly string[] = [],
+): string {
   const lines = material.map(
     (m) => `- ${m.descriptor} (${m.source}) [${m.coverage}]: ${m.detail}`,
   );
@@ -100,10 +103,21 @@ export function groundedMaterialProtocol(material: readonly Material[]): string 
         ' above would have held as unknown, say so where a finding depends on ' +
         'it, and never let the gap pass as coverage.'
       : '';
+  // The listed documents are a survey, not a fence: the ground itself is the
+  // evidence, and a role whose host can open any file in it may go past the
+  // list — inside the named roots and nowhere else, citing only what it read.
+  const license =
+    groundRoots.length > 0
+      ? '\n\nThe list above is the survey, not the boundary. You may read and ' +
+        'cite any document under these declared roots, by its full path:\n' +
+        groundRoots.map((root) => `- ${root}`).join('\n') +
+        '\nNothing outside these roots is evidence, and a path you did not ' +
+        'actually read is not a citation.'
+      : '';
   return (
     'Your material for this task is these documents, and nothing else around ' +
     'you. Files that happen to sit near you are not evidence for it.\n' +
-    `${lines.join('\n')}${gap}\n\n` +
+    `${lines.join('\n')}${gap}${license}\n\n` +
     GROUNDED_SYNTHESIS_PROTOCOL
   );
 }

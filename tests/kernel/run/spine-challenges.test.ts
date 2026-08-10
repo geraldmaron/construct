@@ -21,6 +21,7 @@ import { join } from 'node:path';
 import { sterile } from '../../harness/sterile.ts';
 import { openStore } from '../../../src/kernel/store/open.ts';
 import { getTask } from '../../../src/kernel/store/tasks.ts';
+import { addSource, recordSourceRead } from '../../../src/kernel/store/sources.ts';
 import { readWorkLog } from '../../../src/kernel/store/worklog.ts';
 import { startRun } from '../../../src/kernel/run/outcome.ts';
 import { workRun, assignmentFor } from '../../../src/kernel/run/coordinator.ts';
@@ -314,6 +315,58 @@ test('a high-tier run declares the conditional challenges; a low-tier run declar
         assert.ok(brief.challenges?.includes('legal-issue-spot'), `${id} declares legal-issue-spot`);
       }
     }
+  } finally {
+    done();
+  }
+});
+
+test('a grounded run cites its own ground and the citation gate accepts exactly that', async () => {
+  const { store, done } = fixtureStore();
+  try {
+    const started = startRun(store, { runId: 'run-1', outcome: OUTCOME, at: AT });
+    addSource(store, {
+      id: 'src-1',
+      workspace: 'default',
+      kind: 'directory',
+      locator: '/ground/repo',
+      addedAt: AT,
+    });
+    recordSourceRead(store, {
+      run: 'run-1',
+      source: 'src-1',
+      descriptor: '/ground/repo/docs/plan.md',
+      coverage: 'complete',
+      detail: '120 bytes',
+      recordedAt: AT,
+    });
+
+    const GROUNDED = [
+      '# Privacy read',
+      'Sessions are minted in one module [cite:/ground/repo/src/auth/session.ts].',
+      '',
+      '## Out of scope',
+      'I could not determine retention policy; it is uncovered.',
+    ].join('\n');
+    await workRun(store, hostReturning(GROUNDED), {
+      owner: 'w1',
+      clock: () => AT,
+      spendCeiling: 100,
+    });
+
+    const verdicts = readWorkLog(store, 'run-1')
+      .filter((e) => e.action === 'verdict-recorded')
+      .map((e) => e.detail as { challenge: string; outcome: string });
+    const cited = verdicts.filter((v) => v.challenge === 'claims-cited');
+    assert.ok(cited.length > 0, 'the citation check ran');
+    assert.ok(
+      cited.every((v) => v.outcome === 'passed'),
+      'code under the declared root is evidence on the real settle path',
+    );
+
+    // The same dispatch told the role about the license it is being judged by.
+    const dispatches = readWorkLog(store, 'run-1').filter((e) => e.action === 'role-dispatched');
+    assert.ok(dispatches.length > 0);
+    void started;
   } finally {
     done();
   }
