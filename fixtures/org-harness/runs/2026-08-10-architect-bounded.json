@@ -1,0 +1,79 @@
+{
+  "claims": [
+    {
+      "kind": "conflict",
+      "claim": "The impersonation rollout gate the platform call committed to does not exist in the design it gates: RFC-001 states the feature \"can be enabled/disabled only at the system level. Once enabled/disabled, it is applicable to all Argo CD Applications\", enabled via the argocd-cm key application.sync.impersonation.enabled or the --enable-impersonation controller flag, while the call decided rollout goes behind a per-project flag with nobody flipping it per project until the diff story is fixed. Honouring that decision means adding a new enablement scope to a Beta feature flag whose granularity is currently system-wide, and unwinding the system-level toggle later requires the Argo CD admin who owns argocd-cm plus every project owner who assumed per-project opt-in.",
+      "citations": ["rfc-001-sync-impersonation.md", "notes/note-1.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "RFC-001 draws the identity boundary at the sync operation only: destinationServiceAccounts is declared \"for the sole purpose of specifying the impersonation configuration\" for the sync, so the diff path keeps using the cluster Secret credential. On external clusters T-28695 shows that boundary forces the opposite of least privilege on the side RFC-001 left alone: Server-Side Diff issues a server-side apply dry-run that Kubernetes authorizes as patch, and since RBAC has no dry-run verb, every new resource kind adds a real write grant to the standing cluster credential (five rounds so far). The unwind is expensive on both sides of the boundary: the accumulated patch rules live in a ClusterRole on a cluster RFC-001's own Example 4 says is \"managed by a different administrator\", so revoking them needs that administrator's consent, not Argo CD's.",
+      "citations": ["rfc-001-sync-impersonation.md", "tickets/T-28695.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "RFC-001 fixes the resolution rule that the impersonated service account \"is determined on a per Application level rather than on per resource level\", using Application.spec.destination.namespace for all resources in the Application. T-27833 is the second consumer that rule cannot serve: it needs namespace creation to run as the Argo CD control plane service account while the rest of the sync runs as the impersonated SA that has had kind: Namespace permissions removed. Serving it means splitting the per-Application binding into a per-resource-kind one, which changes the meaning of an already-published AppProject.spec.destinationServiceAccounts entry rather than adding to it.",
+      "citations": ["rfc-001-sync-impersonation.md", "tickets/T-27833.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "The roadmap commits that \"ordered or automated deletion of ApplicationSet children will not be implemented\" and that teardown \"remains a manual operator action, performed one Application at a time\", while the PRD adds DeletionOrder to ApplicationSetStrategy with a Reverse value that deletes children in reverse rollingSync step order and waits for each Application to be fully deleted. Both cannot hold, and the asymmetry matters for reversibility: the roadmap sentence is editable, the CRD field is a published ApplicationSet API surface, so shipping the PRD decides the disagreement in the direction that cannot be walked back without removing a field users have written into their specs.",
+      "citations": ["strategy.md", "prd-progressive-sync-deletion.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The PRD defines Reverse as deletion \"in the reverse order of the steps configured in RollingSync strategy\" and requires a check that errors out unless rollingSync lists an order. T-28755 proposes replacing that sequential step list with parallel groups, in which applications inside a group have no relative order. Reverse is therefore defined against a field shape T-28755 intends to change, and the coupling is in the wrong direction to decouple cheaply: once deletionOrder: Reverse is in user specs, adding parallel steps requires deciding what reverse means for an unordered group, or refusing parallel steps to any ApplicationSet that set Reverse.",
+      "citations": ["prd-progressive-sync-deletion.md", "tickets/T-28755.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "T-28927 promotes Progressive Sync from Beta to Stable, which by the cited argoproj feature-status definition means the feature \"is expected to be backwards compatible\" and issues become bugs. Both live proposals against it change the same rollingSync surface Stable would freeze: T-28755 restructures rollingSync.steps into parallel groups, and the PRD adds DeletionOrder inside ApplicationSetStrategy while explicitly reserving room for a later Custom value plus a DeletionSync field. Sequencing the promotion before those land converts each of them from a design change into a compatibility exercise on a stable API.",
+      "citations": ["tickets/T-28927.md", "tickets/T-28755.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "RFC-002's opinion is that \"every change to an application's desired state must originate from a commit to a single GitOps repository\" and its goal 4 is that \"every deployed change must have a corresponding dry commit\". T-27327's rollback writes directly to the sync branch by checking out an older rendered revision, explicitly bypassing the staging branch and explicitly preferring checkout over re-render because \"the dry source in git does not fully capture the inputs to rendering\". That produces a hydrated commit with no corresponding dry commit, which is exactly the condition RFC-002 says makes lineage rules such as \"prod may never be more than one dry hash ahead of test\" undefinable. Adopting it retires the invariant any promotion system built on push-to-stage would have been reading.",
+      "citations": ["rfc-002-manifest-hydrator.md", "tickets/T-27327.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "RFC-002 declares implementing a change promotion system a Non-Goal and makes push-to-stage the integration point where \"Argo CD relies on some external system to move changes to the deployment branch\". T-26443 is that boundary failing in production: it is observed only in push-to-stage mode, where auto-sync deploys whatever the stage branch last held because the external promoter has not yet moved the fresh manifests. The far side of the boundary has no owner either, since the stage-branch promoter is still a shell script nobody owns. The proposed fixes (a freshness annotation, or blocking sync while a hydrate annotation is present) all move promoter responsibility back inside Argo CD, which is the coupling the Non-Goal was drawn to avoid.",
+      "citations": ["rfc-002-manifest-hydrator.md", "tickets/T-26443.md", "notes/note-1.md"]
+    },
+    {
+      "kind": "cross-reference",
+      "claim": "RFC-002 restricts spec.sourceHydrator.drySource to exactly three fields, repoURL, targetRevision and path, and states that \"since only one source may be used as the dry source, the multi-source approach to external Helm values files will not work here\", recommending the umbrella chart instead. T-24417 is the caller that shape excludes: it needs Chart in the DrySource spec to point at a chart in a Helm repository, and says switching to Helm dependencies \"makes it difficult to use with ApplicationSets to control the chart version across environments\". The exclusion is a deliberate consequence of the determinism opinion listing unpinned chart dependencies and multiple sources as nondeterministic inputs, so admitting T-24417 is a change to the opinion, not just a field addition.",
+      "citations": ["rfc-002-manifest-hydrator.md", "tickets/T-24417.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The hydrator's unit of grouping is the Application: RFC-002 groups appGroups map[DrySource]map[SyncSource][]Application, hydrates per Application path and bundles a targetBranch's changes into one CommitManifests call. T-24578 asks for the same feature on ApplicationSets so that generated Applications are themselves hydrated into git, precisely because destroy ordering is \"shadowed\" by the ApplicationSets and DAG ordering across multiple ApplicationSets does not exist. A per-ApplicationSet deletionOrder field cannot supply that either, since it orders only one ApplicationSet's own children. The second consumer therefore needs a grouping key above the Application, which is the map key RFC-002 hardcodes.",
+      "citations": ["rfc-002-manifest-hydrator.md", "tickets/T-24578.md", "prd-progressive-sync-deletion.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "T-28239 starts the commit server with \"one cluster-wide signing key\" and per-project keys out of scope, and requires the operator to add the public key to argocd-gpg-keys-cm and to the project's SourceIntegrity policy. RFC-002 makes that key cross-tenant by construction: hydrated commits are grouped by syncSource targetBranch and \"a single call will bundle all the changes destined for a given targetBranch\", so one commit signed by the one key can carry manifests belonging to several Applications and teams. Introducing per-project keys later cannot be an additive config change, because it requires splitting the per-targetBranch commit bundling that the grouping design is built on, and every project that has already enrolled the shared public key in its SourceIntegrity policy must re-enroll.",
+      "citations": ["tickets/T-28239.md", "rfc-002-manifest-hydrator.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The PRD calls the upgrade clean because only optional fields are added and says downgrading the controller while keeping the upgraded CRD \"should cleanly downgrade/revert the behavior of the controller to the previous version without requiring users to adjust their existing ApplicationSet specs\". Combined with the incident review, that silent revert is the hazard: the runbook's standing mitigation is to switch the ApplicationSet to AllAtOnce before deleting any child app by hand, so deletionOrder becomes the control operators check, and a downgraded controller that ignores the retained field leaves a spec reading Reverse behaving as AllAtOnce with nothing to distinguish the two. Making the downgrade legible needs the reconciliation warning the impersonation RFC gives its own flag, which the PRD does not specify.",
+      "citations": ["prd-progressive-sync-deletion.md", "notes/note-2.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "The PRD's Non-Goals accept shipping a configuration field that \"accepts input but ignores it silently\" for the custom deletion strategy, with the UI not stating the option is unavailable. The roadmap simultaneously commits that \"the Argo CD UI/CLI/API allows to manage ApplicationSet resources same as Argo CD Applications\". Once the ApplicationSet API is first class, an accepted-and-ignored deletionOrder value is a published API accepting a value it does not honour, and the fix later is a breaking validation change that rejects specs already stored in clusters.",
+      "citations": ["prd-progressive-sync-deletion.md", "strategy.md"]
+    },
+    {
+      "kind": "cross-reference",
+      "claim": "Per-cluster tuning is being pushed into the cluster Secret while per-destination identity lives in AppProject: T-29001 proposes qps and burst either as argocd.argoproj.io/k8s-client-qps annotations or as native fields in the Cluster Secret's data.config ClusterConfig struct, and RFC-001 already moves the sync identity out of that same cluster credential into AppProject.spec.destinationServiceAccounts. The two options differ sharply in reversibility, and the choice is the architectural one: annotations can be dropped without a CRD-level commitment, whereas extending the ClusterConfig JSON schema in types.go publishes a typed field on the object the cluster's own administrator owns and must keep parsing.",
+      "citations": ["tickets/T-29001.md", "rfc-001-sync-impersonation.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The hydrator and progressive sync are coupled today by nothing stronger than a policy: the incident review confirmed each hydrator push restarts the rolling sync wave, and the interim boundary is that hydrator pilot repos must not use progressive sync until there is a debounce. T-27949 is the pilot carrying both, where every hydration cycle \"lands a fresh commit on the hydrated branch that the child Applications deploy from, and each of those commits is picked up as a source change\". The mechanism that creates the coupling is RFC-002's design that every dry commit produces a commit on each affected environment branch, so hydration cadence drives rollout restarts; decoupling now costs a debounce in one controller, while decoupling later costs it plus unwinding whatever pilot repos adopted both.",
+      "citations": ["tickets/T-27949.md", "notes/note-2.md", "rfc-002-manifest-hydrator.md"]
+    }
+  ]
+}

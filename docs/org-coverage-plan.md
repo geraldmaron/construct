@@ -83,6 +83,41 @@ points at the GitHub README and no hosted site exists.
    pre-convention closes, or commits that touched without finishing). No
    bead was pruned because none was found dead.
 
+## Amendment, 2026-08-10: the wave order changed because the instrument did
+
+Everything below this section was written on the assumption that a pack is
+measured by dispatching its lens and checking whether it hits the finding
+planted for it. A full eleven-lens sweep on the tuned family showed that test
+does not do what it claims: ten of the thirteen planted role findings were also
+produced by lenses that do not own them, and two were missed by their own lens.
+Exactly one — the compliance plant — is produced by its owner and by nobody
+else.
+
+A finding that every lens reaches measures how much of the corpus a run swept.
+It cannot tell whether the lens contributed anything, which is the only thing
+"at depth" was ever supposed to assert. So depth now requires **isolation**,
+established over a complete sweep, and the wave-B and wave-D closes below are
+not reachable in the order they are written.
+
+The consequence for this plan:
+
+- The five wave-B pack items are reopened or held open, and every one of them
+  now depends on replacement plants that only their own lens has a reason to
+  find. That corpus work is the real gate, not the pack code, which shipped.
+- Keyword narrowing is refused as the repair. Terms proxy for stating a
+  mechanism, so tightening them after seeing which lenses collided is editing a
+  key to fit results, and it moves the coincidence rather than removing it.
+- A candidate repair on the product side is under measurement: the lens prompt
+  currently bounds output only with an advisory line, and runs produce far more
+  claims than a real deliverable would. Whether making ownership binding
+  improves isolation without suppressing the lens's own findings is being
+  measured on both prompt shapes, same corpus, same family.
+- Wave D cannot close the epic while the epic's exit criterion is known to
+  measure the wrong thing.
+
+Prior recorded runs keep their as-run scores. What changed is what a score is
+read to mean.
+
 ## The wave plan
 
 **Wave A — repair (may land now).** Fixing what is claimed shipped but

@@ -38,7 +38,7 @@ import {
 import type { LeasedTask } from '../store/tasks.ts';
 import { sourceReadsFor } from '../store/sources.ts';
 import { groundRootsFor } from './sourcereads.ts';
-import { groundedMaterialProtocol } from './grounding.ts';
+import { ROLE_OWNERSHIP_BOUND, groundedMaterialProtocol } from './grounding.ts';
 import type { Material } from './grounding.ts';
 import type { Store } from '../store/open.ts';
 import type { HostAdapter, HostResult } from '../hosts/interface.ts';
@@ -260,6 +260,7 @@ function lensDirective(role: string): string {
   const ceiling = lens.ceiling ? `The limit of this role, which is the invariant and not a gap: ${lens.ceiling}\n` : '';
   return (
     `Your posture: ${lens.posture}\n\n` +
+    `${ROLE_OWNERSHIP_BOUND}\n\n` +
     'Work through these questions against the material; each finding cites what supports it:\n' +
     `${questions}\n\n` +
     'Escalate rather than push past your remit:\n' +
@@ -311,7 +312,12 @@ export function assignmentFor(
   // its own remit, and the evidence was sitting in the brief the whole time.
   const engagement = brief.engagement
     ? `You were engaged because: ${brief.engagement.evidence.join(' ')}\n` +
-      `(${howEngaged(brief.engagement.inferredBy)})\n\n`
+      `(${howEngaged(brief.engagement.inferredBy)})\n` +
+      'This is the tool telling you why it involved you — not the user\'s own ' +
+      'words, and not the outcome. If you quote it, cite it as ' +
+      '[cite:engagement], never as [cite:outcome] or [cite:outcome brief]: the ' +
+      "outcome above is the user's material, this is the tool's inference " +
+      'about it, and the two are not interchangeable evidence.\n\n'
     : '';
   // Whether the role holds the two writes is a fact about THIS dispatch, so the
   // assignment says which it is rather than describing tools that may not exist

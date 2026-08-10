@@ -79,6 +79,23 @@ if (versionProbe.error || versionProbe.status !== 0) {
 const installed = versionProbe.stdout.trim().split('\n').pop().trim();
 record('version-pinned', installed === PINNED_VERSION, `installed ${installed}, pinned ${PINNED_VERSION}`);
 
+// ── no structured-output surface ──────────────────────────────────────────
+// Static: reads --help text, spawns no model, touches no network. A future
+// version growing any of these flags is exactly the drift this expectation
+// exists to catch.
+const STRUCTURED_OUTPUT_WORDS = ['response-format', 'response_format', 'json-schema', 'structured-output', 'structured output'];
+const runHelp = spawnSync(binary, ['run', '--help'], { encoding: 'utf8' });
+const topHelp = spawnSync(binary, ['--help'], { encoding: 'utf8' });
+const helpText = `${runHelp.stdout ?? ''}\n${topHelp.stdout ?? ''}`.toLowerCase();
+const foundWords = STRUCTURED_OUTPUT_WORDS.filter((word) => helpText.includes(word));
+record(
+  'run-carries-no-response-format',
+  foundWords.length === 0,
+  foundWords.length === 0
+    ? '`run --help` and `--help` carry none of ' + JSON.stringify(STRUCTURED_OUTPUT_WORDS)
+    : `found ${JSON.stringify(foundWords)} in --help output — re-read this expectation in pin.ts, a flag may now exist`,
+);
+
 // ── a plain run ────────────────────────────────────────────────────────────
 const simple = runOpenCode({ prompt: 'Reply with exactly the word: READY', model });
 if (simple.error) {

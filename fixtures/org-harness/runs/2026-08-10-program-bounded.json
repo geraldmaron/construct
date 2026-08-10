@@ -1,0 +1,64 @@
+{
+  "claims": [
+    {
+      "kind": "conflict",
+      "claim": "The rollout decision that impersonation goes behind a per-project flag, not fleet-wide, cannot be executed against the design it is rolling out: RFC-001 states as a goal that the impersonation feature can be enabled/disabled only at the system level and that once enabled it applies to all Argo CD Applications, and the enablement it specifies is a single argocd-cm key (application.sync.impersonation.enabled) plus a controller-wide flag and environment variable. Nobody owns reconciling the per-project rollout gate with a system-level-only switch, so the gate that is being described as 'a real decision, not a maybe' has no configuration surface behind it.",
+      "citations": ["notes/note-1.md", "rfc-001-sync-impersonation.md"]
+    },
+    {
+      "kind": "collision",
+      "claim": "The standing restriction that nobody flips impersonation on a project until the diff story is fixed is already breached in production: the reporter of T-26271 states the failing CI diff jobs are all in projects where the sync impersonation flag was recently enabled, and the failure they are reporting is the diff story itself (diff running as the destination service account rather than the broad cluster Secret credential). The restriction was written after the enablement it forbids, and the reporter is still chasing the cluster Secret because nobody has been assigned to record the root cause on the ticket.",
+      "citations": ["notes/note-1.md", "tickets/T-26271.md"]
+    },
+    {
+      "kind": "collision",
+      "claim": "T-27833 is planned work that cannot proceed while the impersonation freeze stands, and it does not know it: its only proposed remedy is to use the service account impersonation feature and strip kind: Namespace from the impersonated SA, which requires flipping impersonation on precisely the review-environment projects the freeze covers. It is doubly blocked by the design itself, since RFC-001 fixes the impersonated service account per Application from Application.spec.destination.namespace rather than per resource, so the split T-27833 asks for (namespace bootstrap under the Argo CD SA, sync under the impersonated SA) is not expressible in destinationServiceAccounts as specified.",
+      "citations": ["notes/note-1.md", "tickets/T-27833.md", "rfc-001-sync-impersonation.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The condition that would lift the impersonation freeze is unsatisfiable on the path currently scheduled: T-28695 shows that on external clusters Server-Side Diff ignores destinationServiceAccounts and runs as the cluster Secret credential, and its accepted fix is to make diff run as the same impersonated identity as sync — which means the diff story can only be fixed by exercising impersonation, the exact thing the freeze forbids enabling. Meanwhile T-28695's own workaround (ServerSideDiff=false on all external-cluster Applications) collides with making Server Side Diff the default, so the freeze's exit criterion, the diff fix, and the SSD default cannot all be scheduled independently.",
+      "citations": ["notes/note-1.md", "tickets/T-28695.md"]
+    },
+    {
+      "kind": "collision",
+      "claim": "The interim restriction from the appset incident review — hydrator pilot repos must not use progressive sync until there is a debounce — forbids the entire premise of T-24578, which asks for Source Hydrator support in ApplicationSets so that hydrated Applications can be destroy-ordered. T-24578 is an open request for exactly the hydrator-plus-ApplicationSet combination the restriction bans, and the restriction was written only against the pilot ticket, so T-24578 carries no notice of it. No owner is named for deciding whether the debounce is a prerequisite of T-24578 or a separate workstream.",
+      "citations": ["notes/note-2.md", "tickets/T-24578.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The date for promoting Progressive Sync to Stable is not real as scoped: T-28927 draws its remaining scope entirely from the issues carrying the feature:progressive-sync label, but the two conditions that currently prevent unrestricted use are outside that set — the standing incident-review restriction barring progressive sync on hydrator pilot repos until a debounce exists, and T-27949's defect in which a RollingSync rollout reports complete while child Applications are OutOfSync. A feature cannot be called tested and validated across use cases while a standing operational restriction forbids one of its use cases and its rollout completion signal is known to be wrong.",
+      "citations": ["tickets/T-28927.md", "notes/note-2.md", "tickets/T-27949.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "Two scheduled commitments about ApplicationSet teardown cannot both hold: the roadmap states that ordered or automated deletion of ApplicationSet children will not be implemented and that teardown remains a manual operator action performed one Application at a time, while the PRD ships deletionOrder with a Reverse value that deletes children in reverse rollingSync step order and waits for each to be fully deleted. The incident review noticed the disagreement and explicitly declined to resolve it ('needs an owner. not deciding here'), so the conflict is live and unassigned rather than superseded.",
+      "citations": ["strategy.md", "prd-progressive-sync-deletion.md", "notes/note-2.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The teardown path the roadmap sanctions is the reproducer for T-28511. The roadmap leaves teardown as a manual operator action performed one Application at a time; T-28511 reproduces an infinite delete/re-create loop precisely when a child Application generated by a progressive-sync ApplicationSet is deleted manually outside the controller's purview while a resource holds it in Progressing. The incident review's mitigation — switch the ApplicationSet to AllAtOnce before deleting any child by hand — is an unenforced convention with no controller-level check or alert, so the officially supported teardown procedure and the known-defective procedure are the same sequence of operator actions.",
+      "citations": ["strategy.md", "tickets/T-28511.md", "notes/note-2.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "Push-to-stage has a named cross-team dependency with no owner. RFC-002 designs push-to-stage so that Argo CD relies on some external system to move changes to the deployment branch and lists implementing a change promotion system as a Non-Goal; the platform sync call records that the stage-branch promoter is still a shell script that nobody owns, and parked it. T-26443 is that gap arriving as a defect: it is observed only in push-to-stage mode, where the external promoter has not yet moved the fresh manifests and auto-sync deploys whatever the stage branch last held.",
+      "citations": ["rfc-002-manifest-hydrator.md", "notes/note-1.md", "tickets/T-26443.md"]
+    },
+    {
+      "kind": "collision",
+      "claim": "T-28755 and the deletion PRD are being designed against incompatible definitions of a rollingSync step. The PRD defines Reverse as deleting applications in the reverse order of the steps configured in rollingSync, and requires a validation check that Reverse may only be selected when rollingSync lists an order; T-28755 proposes replacing that linear step list with parallel groups so logically independent clusters do not act as sequential barriers. Under parallelGroups there is no single reverse ordering to invert, and neither ticket cites the other, so whichever lands second inherits an undefined deletionOrder validation.",
+      "citations": ["tickets/T-28755.md", "prd-progressive-sync-deletion.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "Deferring hydrator rollback a quarter while commit signing proceeds sets up a collision at the branch protection boundary. T-28239 has the commit server sign every hydrated commit and has the operator add the public key to the project's SourceIntegrity policy so signature verification is actually enforced on the hydrated branch; T-27327's rollback design pushes a commit to the sync branch directly, bypassing the staging branch, and was deprioritized to next quarter with the dev pair moved to the progressive sync deletion loop. If signing enforcement lands first, the enforced hydrated branch will reject the rollback path the same way it currently rejects the hydrator's own unsigned output.",
+      "citations": ["tickets/T-28239.md", "tickets/T-27327.md", "notes/note-1.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The debounce restriction is scoped to the wrong failure mode for the pilot's commit cadence. It was written against wave restarts, but T-27949 records that on the pilot repository every hydration cycle lands a fresh commit on the hydrated branch, and T-27875 shows that on v3.4.2 an Application with automated sync and no selfHeal permanently skips syncing when a new commit arrives while a sync to the previous commit is still in progress. Continuous hydrator pushes are the exact input that produces that overlap, so a debounce that only prevents wave restarts still leaves pilot Applications able to strand OutOfSync indefinitely.",
+      "citations": ["tickets/T-27949.md", "tickets/T-27875.md", "notes/note-2.md"]
+    }
+  ]
+}

@@ -1,0 +1,184 @@
+{
+  "rung0": {
+    "pass": true,
+    "fabricated": [],
+    "uncited": [],
+    "pathShortened": []
+  },
+  "rung1": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "X1",
+        "found": true,
+        "by": {
+          "claim": "Push-to-stage produces a Synced status that is true about the branch and false about intent, and the only way out is imperative. In push-to-stage the hydrator writes to hydrateTo.targetBranch and an external system moves changes to the deployment branch; when a user changes the hydrator sync source, auto-sync immediately applies whatever old manifests already sit at that path on the stage branch, before the promoter has moved the fresh ones. The Application reports Synced against stale content with nothing on screen distinguishing it from a current sync, and the documented recovery is for the user to disable auto-sync by hand and re-enable it after hydration. The state needing design is a pending-hydration state that blocks sync and says so, keyed on hydrator.metadata freshness rather than on the user remembering to toggle a policy.",
+          "citations": [
+            "tickets/T-26443.md",
+            "rfc-002-manifest-hydrator.md"
+          ]
+        }
+      },
+      {
+        "id": "X2",
+        "found": false
+      },
+      {
+        "id": "X3",
+        "found": false
+      }
+    ]
+  },
+  "rung2": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "R1",
+        "found": false
+      },
+      {
+        "id": "R2",
+        "found": false
+      }
+    ],
+    "substantiveRatio": 1
+  },
+  "rung3": {
+    "pass": false,
+    "conflicts": [
+      {
+        "id": "C1",
+        "found": false
+      }
+    ],
+    "proposals": [
+      {
+        "id": "P1",
+        "found": false
+      },
+      {
+        "id": "P2",
+        "found": false
+      },
+      {
+        "id": "P3",
+        "found": false
+      }
+    ],
+    "deltas": [
+      {
+        "id": "D1",
+        "found": false
+      },
+      {
+        "id": "D2",
+        "found": false
+      }
+    ]
+  },
+  "roleCoverage": {
+    "pm": [
+      {
+        "id": "C1",
+        "found": false
+      },
+      {
+        "id": "X3",
+        "found": false
+      }
+    ],
+    "engineering": [
+      {
+        "id": "X1",
+        "found": true,
+        "by": {
+          "claim": "Push-to-stage produces a Synced status that is true about the branch and false about intent, and the only way out is imperative. In push-to-stage the hydrator writes to hydrateTo.targetBranch and an external system moves changes to the deployment branch; when a user changes the hydrator sync source, auto-sync immediately applies whatever old manifests already sit at that path on the stage branch, before the promoter has moved the fresh ones. The Application reports Synced against stale content with nothing on screen distinguishing it from a current sync, and the documented recovery is for the user to disable auto-sync by hand and re-enable it after hydration. The state needing design is a pending-hydration state that blocks sync and says so, keyed on hydrator.metadata freshness rather than on the user remembering to toggle a policy.",
+          "citations": [
+            "tickets/T-26443.md",
+            "rfc-002-manifest-hydrator.md"
+          ]
+        }
+      },
+      {
+        "id": "X2",
+        "found": false
+      }
+    ],
+    "tpm": [
+      {
+        "id": "TP1",
+        "found": false
+      }
+    ],
+    "analyst": [
+      {
+        "id": "A1",
+        "found": true,
+        "by": {
+          "claim": "Progressive sync's completion state has no interface behind it to interrogate. RollingSync can leave status.applicationStatus at Healthy with step recorded while the child Applications are OutOfSync and syncDesiredApplications never creates a sync operation, and in that live case the controller logs at warn level emitted no progressive-sync transition entries at all. The metrics request states the same gap from the operator's side: there is no way to answer which Applications a sync is waiting for. An operator looking at a rollout reported complete has no screen, status field, or log line that contradicts it, so the dead end is silent. The ApplicationSet status needs to carry the desired-spec identity it was promoted against, so the UI can show Healthy-but-stale rather than Healthy.",
+          "citations": [
+            "tickets/T-27949.md",
+            "tickets/T-27846.md"
+          ]
+        }
+      }
+    ],
+    "compliance": [
+      {
+        "id": "CP1",
+        "found": false
+      }
+    ],
+    "legal": [
+      {
+        "id": "L1",
+        "found": false
+      }
+    ],
+    "strategy": [
+      {
+        "id": "SA2",
+        "found": false
+      }
+    ],
+    "architect": [
+      {
+        "id": "SD1",
+        "found": false
+      }
+    ],
+    "operations": [
+      {
+        "id": "OP1",
+        "found": false
+      }
+    ],
+    "design": [
+      {
+        "id": "UX1",
+        "found": false
+      }
+    ],
+    "security": [
+      {
+        "id": "TH2",
+        "found": false
+      }
+    ]
+  },
+  "distractors": [
+    {
+      "id": "DX1",
+      "violated": false
+    },
+    {
+      "id": "DX2",
+      "violated": false
+    }
+  ],
+  "distractorGate": {
+    "began": "2026-08-05",
+    "note": "DX1/DX2 violations fail rung 3 for runs scored from this date; score files recorded earlier are never regenerated and keep their as-run results. Evidence: five distractor-disciplined runs (two single-pass, three composed dispatch-shape) all clean; every run before the discipline paragraph violated at least one."
+  },
+  "pass": false
+}

@@ -106,6 +106,25 @@ test("a namer's stated reason travels the same way, labelled as a model's reason
   });
 });
 
+test('the assignment warns that engagement evidence is not the outcome and may not be cited as one', () => {
+  withStore((store) => {
+    const started = startRun(store, {
+      runId: 'run-kw-2',
+      outcome: 'Handle GDPR data subject requests for EU customers',
+      at: AT,
+    });
+    const brief = briefOf(store, started.tasks[0]);
+    const assignment = assignmentFor(brief);
+    // This is the exact defect a real run produced: the deliverable quoted the
+    // namer's inferred evidence back as if it were the user's stated outcome,
+    // citing it `[cite:outcome brief]`. The assignment now names that form and
+    // says it is wrong, and gives the role the correct tag to use instead.
+    assert.match(assignment, /not the user's own words, and not the outcome/);
+    assert.match(assignment, /\[cite:outcome brief\]/);
+    assert.match(assignment, /\[cite:engagement\]/);
+  });
+});
+
 test('a user who named the staff is quoted as the user, not as an inference', () => {
   withStore((store) => {
     const started = startRunSelected(store, {

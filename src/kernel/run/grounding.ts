@@ -82,6 +82,31 @@ export const GROUNDED_SYNTHESIS_PROTOCOL = [
 ].join('\n\n');
 
 /**
+ * What a role may report, as an instruction rather than a suggestion.
+ *
+ * A dispatched role can see findings that belong to other concerns, and saying
+ * so mildly does not stop it reporting them. Two things go wrong when it does.
+ * The reader gets a survey of the material instead of the concern they asked
+ * for, and the findings only this role would have reached are buried among
+ * findings anyone would.
+ *
+ * Measured before it shipped, across a sweep of every lens over one fixture
+ * organization: making ownership binding cut what a role produced by roughly
+ * two fifths and cut findings belonging to other roles by about half, while
+ * every role that reached its own planted finding still reached it. Fewer
+ * claims, same recall on the role's own ground.
+ */
+export const ROLE_OWNERSHIP_BOUND = [
+  'What belongs to you. A finding another role owns is not yours to report,',
+  'however real it is. Before you write each one, name which of your slots it',
+  'fills; if it fills none of them, drop it rather than reporting it as an',
+  'aside. Reporting everything you noticed is not thoroughness, it is declining',
+  'to exercise the judgment you were dispatched for, and it buries the findings',
+  'only your concern would have reached. Fewer findings that are all yours beat',
+  'a survey of the material.',
+].join(' ');
+
+/**
  * The material block: what this dispatch was given, and what it was not.
  *
  * A source that could not be read is listed saying so rather than omitted. Its

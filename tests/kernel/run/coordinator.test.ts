@@ -12,7 +12,9 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { sterile } from '../../harness/sterile.ts';
 import { openStore } from '../../../src/kernel/store/open.ts';
 import type { Store } from '../../../src/kernel/store/open.ts';
@@ -29,9 +31,13 @@ import { readWorkLog } from '../../../src/kernel/store/worklog.ts';
 import { openDecisions } from '../../../src/kernel/store/decisions.ts';
 import { assignmentFor, frameConflicts, spendOf, workRun } from '../../../src/kernel/run/coordinator.ts';
 import { deliverableConcerns, licensedReviewFor } from '../../../src/kernel/run/accountability.ts';
+import { ROLE_OWNERSHIP_BOUND } from '../../../src/kernel/run/grounding.ts';
 import { DOMAINS } from '../../../src/kernel/implication/domains.ts';
 import type { HostAdapter, HostContext, HostResult } from '../../../src/kernel/hosts/interface.ts';
 import type { Brief } from '../../../src/kernel/brief/schema.ts';
+
+/** The checkout this test runs from, so the prompt script is invoked where it lives. */
+const REPO_ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..', '..', '..');
 
 const AT = '2026-08-03T00:00:00.000Z';
 const LATER = '2026-08-03T01:00:00.000Z';
@@ -409,6 +415,29 @@ test('a deepened role is shown its lens: posture, questions, escalation, labels'
 
   // A domain no lens deepens gets no invented posture.
   assert.ok(!assignmentFor(brief('commerce-tax')).includes('Your posture:'));
+});
+
+test('a deepened role is told to drop findings another role owns, verbatim', () => {
+  // Stated as an instruction rather than a suggestion, because a mild version
+  // was measured and did not bind: roles reported other roles' findings freely,
+  // which buries what only this role would have reached.
+  const text = assignmentFor(brief('compliance'));
+  assert.ok(
+    text.includes(ROLE_OWNERSHIP_BOUND),
+    'the bound must reach the dispatch verbatim, not as a paraphrase that can drift',
+  );
+});
+
+test('the fixture-organization prompt states the same ownership bound as the product', () => {
+  // The instrument must not credit itself with a discipline the shipped
+  // dispatch never carries; that drift is what makes a measured number one no
+  // user feels.
+  const rendered = execFileSync(
+    process.execPath,
+    [join(REPO_ROOT, 'scripts', 'org-harness-producer-prompt.mjs'), '--lens', 'security'],
+    { encoding: 'utf8', cwd: REPO_ROOT },
+  );
+  assert.ok(rendered.includes(ROLE_OWNERSHIP_BOUND));
 });
 
 test('a role holding the two writes is told it has them, and what they are for', () => {

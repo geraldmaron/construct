@@ -1,0 +1,39 @@
+{
+  "claims": [
+    {
+      "kind": "risk",
+      "claim": "The manual delete of an ApplicationSet child is a designed dead end: the incident review's standing rule is that an operator must switch the ApplicationSet's deletionOrder to AllAtOnce before deleting any child Application by hand, yet the surface where that delete is initiated is the Argo CD UI's Application delete action, which says nothing about deletionOrder. An operator who deletes a child under the Reverse order while a resource is stuck Progressing gets an Application flipping between Deleting and Syncing indefinitely, with no control on that screen to stop the wave or to reach the AllAtOnce setting that would have prevented it. The delete confirmation is where the rule belongs: it should read the parent ApplicationSet's deletionOrder and either block or offer the AllAtOnce switch in place.",
+      "citations": ["tickets/T-28511.md", "notes/note-2.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "The PRD accepts a field that the interface will never explain: it makes the custom deletion strategy a non-goal while leaving deletionOrder a field that accepts Custom input and silently ignores it, and the roadmap independently states that first-class ApplicationSet UI/CLI/API support does not include managing deletion order at all. So there is no screen anywhere in the product that could tell the user their configured value is inert. The two commitments cannot both hold: either deletionOrder is validated and rejected at admission with a message naming AllAtOnce and Reverse as the accepted values, or the roadmap owes an ApplicationSet UI surface that renders the effective deletion order.",
+      "citations": ["prd-progressive-sync-deletion.md", "strategy.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The remedy for the diff dead end is scoped one level below the control that causes it. Impersonation was decided as a per-project flag, but the only exit from the resulting Server-Side Diff failure is ServerSideDiff=false set on every external-cluster Application. A user who flips one project flag must then edit N Applications to escape, and in between sees an App rotating Synced to Unknown on every reconcile with a ComparisonError that names a resource kind, not the project flag that changed. The opt-out needs to exist at the same granularity as the switch that broke it, and the Unknown state needs to name the impersonation flag as its cause.",
+      "citations": ["notes/note-1.md", "tickets/T-28695.md"]
+    },
+    {
+      "kind": "cross-reference",
+      "claim": "The AppProject editor the impersonation RFC specifies teaches a false scope. It asks the UI to offer creating and adding multiple DestinationServiceAccounts entries per AppProject, presented as the mapping from a destination to the identity used there, and the first-valid-match rule makes the row order in that list load-bearing with nothing on screen expressing order. But that mapping governs only the sync path; the diff path ignores destinationServiceAccounts entirely and runs as the cluster Secret credential. The same screen that convinces an admin they have set the identity for a destination silently covers half of what runs against it, and it should state which operations the entry applies to and render the resolved match for a given destination.",
+      "citations": ["rfc-001-sync-impersonation.md", "tickets/T-28695.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The History & Rollback tab is an affordance the product already taught, and hydrator users arrive at it with no defined behavior behind it. Onboarding's first question is how rollbacks work, because the hydrated branch is the source of truth and offers no controls on a specific revision, and the proposal to make Rollback render directly to the sync branch was deprioritized to next quarter in favor of the progressive sync deletion loop. Until that lands, a hydrator-enabled Application still shows the same tab every other Application shows, and using it acts on a desired state that the next hydration push overwrites. The tab should be disabled for Applications with spec.sourceHydrator set, naming the hydrated branch as the place a revert must be made.",
+      "citations": ["tickets/T-27327.md", "notes/note-1.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "Push-to-stage produces a Synced status that is true about the branch and false about intent, and the only way out is imperative. In push-to-stage the hydrator writes to hydrateTo.targetBranch and an external system moves changes to the deployment branch; when a user changes the hydrator sync source, auto-sync immediately applies whatever old manifests already sit at that path on the stage branch, before the promoter has moved the fresh ones. The Application reports Synced against stale content with nothing on screen distinguishing it from a current sync, and the documented recovery is for the user to disable auto-sync by hand and re-enable it after hydration. The state needing design is a pending-hydration state that blocks sync and says so, keyed on hydrator.metadata freshness rather than on the user remembering to toggle a policy.",
+      "citations": ["tickets/T-26443.md", "rfc-002-manifest-hydrator.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "Progressive sync's completion state has no interface behind it to interrogate. RollingSync can leave status.applicationStatus at Healthy with step recorded while the child Applications are OutOfSync and syncDesiredApplications never creates a sync operation, and in that live case the controller logs at warn level emitted no progressive-sync transition entries at all. The metrics request states the same gap from the operator's side: there is no way to answer which Applications a sync is waiting for. An operator looking at a rollout reported complete has no screen, status field, or log line that contradicts it, so the dead end is silent. The ApplicationSet status needs to carry the desired-spec identity it was promoted against, so the UI can show Healthy-but-stale rather than Healthy.",
+      "citations": ["tickets/T-27949.md", "tickets/T-27846.md"]
+    }
+  ]
+}

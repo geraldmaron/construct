@@ -1,0 +1,44 @@
+{
+  "claims": [
+    {
+      "kind": "conflict",
+      "claim": "The roadmap records a standing commitment that ordered or automated deletion of ApplicationSet children will not be implemented and that teardown remains a manual operator action performed one Application at a time; the PRD's goal is exactly that feature, a `deletionOrder: Reverse` on `ApplicationSetStrategy` that deletes children in reverse of the `rollingSync` step order and waits for each to be fully deleted. Shipping the PRD does not extend the roadmap line, it reverses it, and nothing in the roadmap has been amended to say so.",
+      "citations": ["strategy.md", "prd-progressive-sync-deletion.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "Nobody owns the reversal above. The incident-review notes record the question being raised ('whether the strategy doc still says appset deletion stays manual — if the PRD ships ordered deletion those two disagree, needs an owner. not deciding here'), and the PRD itself lists sponsors, reviewers and approvers all as TBD. The roadmap's out-of-scope line is therefore being retired by an implementation landing rather than by whoever set it, which means the owner of the roadmap commitment learns about the change after the fact instead of deciding it.",
+      "citations": ["notes/note-2.md", "prd-progressive-sync-deletion.md", "strategy.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "displaced-work: the bill for the progressive sync deletion loop is named specifically in the platform sync notes — the hydrator rollback work is deprioritized to next quarter and the dev pair moves to the deletion loop instead. That deprioritized work is T-27327, whose stated motivation is that 'how do rollbacks work?' is one of the first questions asked when onboarding new users onto gitops-promoter + source hydrator, and that hydrator-enabled apps lose the History & Rollback path that non-hydrator deployments still have. So the deletion feature is paid for by leaving hydrator onboarding without the recovery story its own ticket says blocks adoption — and, as the same notes observe, by leaving no automated way to revert manifest changes if the new deletion logic fails mid-way.",
+      "citations": ["notes/note-1.md", "tickets/T-27327.md", "prd-progressive-sync-deletion.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "displaced-work: the second thing going unstaffed is the stage-branch promoter, which the notes park as 'still the shell script, nobody owns it'. The hydrator RFC makes that component load-bearing by design: push-to-stage pushes hydrated manifests to a different branch and 'relies on some external system to move changes to the deployment branch', which is the RFC's declared integration point for automated environment promotion. T-26443 is that gap already firing — the stale-manifest auto-sync is observed only in push-to-stage mode, because the external promoter has not yet moved fresh manifests and auto-sync takes whatever the stage branch last held. An unowned shell script is the promotion system the RFC declined to build.",
+      "citations": ["notes/note-1.md", "rfc-002-manifest-hydrator.md", "tickets/T-26443.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "The PRD's 'Risks and Mitigations' section says 'No immediate Risks to consider', but the exact mechanism it proposes has already failed in staging before any of the money is spent: T-28511 reproduces an infinite delete/re-create loop on an ApplicationSet configured with a rollingSync step order and the reverse deletion strategy, where the wait-for-one-Application-to-be-fully-deleted step never completes because a child is stuck Progressing, and the controller restarts the wave from the top. The falsifying evidence for this bet is observable today, and the only thing standing between it and users is a runbook line telling operators to switch the ApplicationSet to AllAtOnce before deleting any child by hand.",
+      "citations": ["prd-progressive-sync-deletion.md", "tickets/T-28511.md", "notes/note-2.md"]
+    },
+    {
+      "kind": "cross-reference",
+      "claim": "T-24578 is the demand this bet is aimed at and the bet does not reach it. Its motivation is controlling destroy order when deprovisioning a cluster, and its specific complaint is that ApplicationSets do not support DAG-based destroy ordering *across multiple ApplicationSets*, so deletion order is 'shadowed' when several ApplicationSets deploy to one cluster — which is why the reporter fell back to an app-of-apps chart per cluster to get sync waves. The PRD's `deletionOrder` sits inside a single ApplicationSet's `strategy` and derives its order from that same ApplicationSet's `rollingSync` steps, so it orders children within one ApplicationSet and leaves the cross-ApplicationSet case, and therefore the app-of-apps workaround, exactly where it was.",
+      "citations": ["tickets/T-24578.md", "prd-progressive-sync-deletion.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "T-28927 is defining the remaining scope to promote Progressive Sync from beta to Stable, where Stable means mature and 'expected to be backwards compatible'. The PRD adds a new `DeletionOrder` field to `ApplicationSetStrategy` and simultaneously records in its Non-Goals that the `custom` value will be unsupported while the UI still accepts the configuration field and silently ignores the input, leaving 'is such a usecase needed?' as an open question. Landing that field into the surface being frozen for Stable means the compatibility promise covers a value that is accepted and discarded, and the later `custom`/`deletionSync` extension the PRD sketches has to be added under it.",
+      "citations": ["tickets/T-28927.md", "prd-progressive-sync-deletion.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "The recorded impersonation rollout decision — 'it goes behind a per-project flag, not fleet-wide', called out in the notes as a real decision rather than a maybe — cannot be executed against the design as written. RFC-001 states as a goal that 'the feature can be enabled/disabled only at the system level. Once enabled/disabled, it is applicable to all Argo CD Applications', and its enablement mechanisms are all system-scoped: the `applicationcontroller.enable.impersonation` key in `argocd-cm`, the `ARGOCD_APPLICATION_CONTROLLER_ENABLE_IMPERSONATION` environment variable, and the `--enable-impersonation` controller flag. Either the rollout gate or the RFC goal has to give, and no document records that choice.",
+      "citations": ["notes/note-1.md", "rfc-001-sync-impersonation.md"]
+    }
+  ]
+}
