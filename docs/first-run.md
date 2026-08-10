@@ -110,14 +110,18 @@ repo, a GitHub or Jira project — so future runs can be held to what they
 actually read:
 
 ```bash
-construct source add --kind=jira --locator=PROJ
+construct source add --kind=directory --locator=./docs
+construct source add --kind=git --locator=/path/to/your/repo
 construct source list
 ```
 
-Declaring a source builds no connection and reads nothing by itself; the
-reading happens through your agent host when work runs, and every run records
-what it read from each source and how completely — including "unreachable,"
-which is an answer, not an omission. There is also an engagement mode:
+Declaring a source builds no connection and reads nothing by itself. When
+work runs, local ground (a directory, a git checkout) is surveyed first: the
+run records which documents it found and how completely, the roles receive
+them by name, and they may read further inside those roots and cite what they
+read by path. A remote source (`jira`, `github`, `docs`) is recorded as
+unreachable until a host can reach it — an answer, not an omission. There is
+also an engagement mode:
 
 ```bash
 construct mode --set=seat
