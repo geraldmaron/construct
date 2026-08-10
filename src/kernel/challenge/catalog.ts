@@ -67,9 +67,15 @@ export interface Challenge {
     | null;
 }
 
-/** Any of these labels, however the model decorated them, counts as present. */
+/**
+ * Any of these labels, however the model decorated them, counts as present.
+ * Hyphens flatten to spaces because the templates themselves dictate
+ * hyphenated headings ("out-of-scope"): a checker that failed the exact
+ * heading the assignment asked for would be grading its own instructions.
+ * Labels are written in the flattened form.
+ */
 function labelled(text: string, labels: readonly string[]): boolean {
-  const flattened = text.toLowerCase().replace(/[*_`#>]/g, ' ').replace(/\s+/g, ' ');
+  const flattened = text.toLowerCase().replace(/[*_`#>-]/g, ' ').replace(/\s+/g, ' ');
   return labels.some((label) => flattened.includes(label));
 }
 
@@ -132,7 +138,7 @@ export const CHALLENGES: readonly Challenge[] = [
     question: 'Assume this failed. What is the most likely story of how?',
     structural: (deliverable) =>
       found(
-        labelled(deliverable, ['pre-mortem', 'premortem', 'assume this failed', 'how this fails']),
+        labelled(deliverable, ['pre mortem', 'premortem', 'assume this failed', 'how this fails']),
         'a labelled pre-mortem',
         'present — the plausibility of the failure story is a substantive question',
       ),
