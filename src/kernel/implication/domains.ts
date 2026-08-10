@@ -176,6 +176,21 @@ export const DOMAINS: readonly Domain[] = Object.freeze([
     ],
   },
   {
+    path: 'measurement',
+    domain: 'measurement',
+    concern: 'how you would know — whether the claim about behavior can be observed at all',
+    // The words a non-expert writes when they are already thinking about
+    // numbers. "success metric" is deliberately shared with product-scoping:
+    // a sentence that names one is asking both what the promise is and
+    // whether anyone can check it, and both roles should answer.
+    keywords: [
+      'metric', 'metrics', 'kpi', 'dashboard', 'funnel', 'conversion',
+      'experiment', 'a/b test', 'ab test', 'retention', 'churn',
+      'instrumentation', 'telemetry', 'data quality', 'success metric',
+      'baseline', 'measure', 'track usage', 'analytics',
+    ],
+  },
+  {
     path: 'marketing-claims',
     domain: 'marketing-claims',
     concern: 'what you say publicly and whether you can back it up',

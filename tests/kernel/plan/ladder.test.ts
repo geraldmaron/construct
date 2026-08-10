@@ -99,3 +99,12 @@ test('product-scoping ships the document a product manager hands a team', () => 
     'sequencing carries milestones',
   );
 });
+
+test('measurement ships the plan an analyst hands back: whether the number can exist', () => {
+  const template = playbookFor('measurement').template;
+  assert.equal(template.deliverable, 'measurement plan');
+  for (const required of ['baseline', 'instrumentation', 'measurement-gaps']) {
+    const found = template.slots.find((s) => s.name === required);
+    assert.ok(found?.required, `${required} is a required slot`);
+  }
+});

@@ -87,6 +87,17 @@ const TEMPLATES: Readonly<Record<string, DeliverableTemplate>> = {
       slot('phasing', 'what ships first and what deliberately waits, with the reason for the split', false),
     ],
   },
+  // What an analyst hands back: not the number, but whether the number can
+  // exist. A baseline that does not exist yet is the finding, so the slot
+  // demands it be said rather than left as silence.
+  measurement: {
+    deliverable: 'measurement plan',
+    slots: [
+      ...CORE_SLOTS,
+      slot('baseline', 'what the number reads today, or that no baseline exists and what that costs'),
+      slot('instrumentation', 'what would have to be recorded, where it would be recorded, and who owns recording it'),
+    ],
+  },
 };
 
 const DEFAULT_TEMPLATE: DeliverableTemplate = {

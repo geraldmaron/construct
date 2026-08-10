@@ -31,6 +31,27 @@ test('no two lenses claim the same domain', () => {
   }
 });
 
+test('a lens that no domain routes to says so itself — no silently dead depth', () => {
+  for (const lens of LENSES) {
+    if (lens.domains.length > 0) continue;
+    assert.ok(
+      lens.ceiling && lens.ceiling.length > 0,
+      `${lens.lens} is unreachable by dispatch and does not say why — either route it or state the ceiling`,
+    );
+  }
+});
+
+test('the analyst lens reaches dispatch through a catalog domain', () => {
+  const analyst = lensByName('analyst');
+  assert.ok(analyst, 'analyst lens exists');
+  assert.deepEqual(analyst.domains, ['measurement']);
+  assert.equal(lensForDomain('measurement')?.lens, 'analyst');
+  assert.ok(
+    playbookFor('measurement').template.slots.some((s) => s.name === 'measurement-gaps'),
+    'the lens slot reaches the measurement template',
+  );
+});
+
 test('every lens carries a posture, questions, and an escalation ladder', () => {
   for (const lens of LENSES) {
     assert.ok(lens.posture.length > 0, `${lens.lens} has no posture`);

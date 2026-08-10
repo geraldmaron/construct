@@ -8,10 +8,12 @@
  * question set the role works through, the extra deliverable slots its output
  * must fill, and the escalation ladder that says when to stop and route
  * upward. The domain catalog (implication/domains.ts) stays the one list of
- * who exists — a lens with an empty `domains` list is depth waiting for the
- * catalog to grow a matching domain, and until then it reaches runs only
- * through surfaces that consume lenses directly (evaluation prompts, the
- * whole-roster views).
+ * who exists. A lens with an empty `domains` list reaches runs only through
+ * surfaces that consume lenses directly (evaluation prompts, the whole-roster
+ * views), and there are two reasons a list is empty, which must not be
+ * confused: depth waiting for the catalog to grow a matching domain, or a
+ * lens deliberately kept off the dispatch path. A lens in the second case
+ * states so in its `ceiling`, so an empty list is never silently unexplained.
  *
  * The question sets are written from role practice, not from any corpus they
  * are evaluated on: each question is one a practitioner of the role asks about
@@ -197,7 +199,7 @@ export const LENSES: readonly RoleLens[] = Object.freeze([
   },
   {
     lens: 'analyst',
-    domains: [],
+    domains: ['measurement'],
     posture:
       'A behavior nobody can measure is a claim, not a fact; the job is naming ' +
       'what is observable, what is not, and what closing the gap costs.',
@@ -248,7 +250,13 @@ export const LENSES: readonly RoleLens[] = Object.freeze([
       'Engineering stays thin by design: the hosts are the engineers. This lens ' +
       'contributes cross-references tying symptoms to design documents and ' +
       'nothing deeper — no code review, no implementation judgment. The limit ' +
-      'is the invariant, not a gap to fill.',
+      'is the invariant, not a gap to fill. Its empty domain list is therefore ' +
+      'deliberate and permanent: no catalog domain routes to it, because ' +
+      'dispatching an engineering role is the one thing the host already does ' +
+      'better. It reaches runs only through the roster surfaces. The adjacent ' +
+      'architectural concern — whether the shape of the system survives a ' +
+      'change — is the system-design domain, which is a different question ' +
+      'from reviewing an implementation and carries its own lens.',
   },
 ]);
 
