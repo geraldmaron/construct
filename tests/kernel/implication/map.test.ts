@@ -269,6 +269,8 @@ test('the catalog is caller-replaceable without forking the kernel', () => {
         path: 'franchise',
         domain: 'franchise',
         concern: 'franchise disclosure obligations',
+        implicatedWhen: [],
+        notImplicatedWhen: [],
         keywords: ['franchise', 'renew'],
       },
     ],

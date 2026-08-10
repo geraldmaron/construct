@@ -1463,3 +1463,167 @@ for non-engineering domains a product, or a feature of somebody else's? It has
 never been tested against an organization other than this one, and the standing
 "no external subjects" rule means it cannot be. That is the next decision worth
 making, and it is Gerald's, not a session's.
+
+## 17. Where ownership facts come from (2026-08-10)
+
+§16 recorded that Xirp reads ownership from a real catalog while Construct
+infers it from keywords, and called that the weakest joint in the coverage
+claim. That framing is half right, and the half it gets wrong is the load-bearing
+one. Two different relations are both called ownership, and separating them
+answers most of the question.
+
+**Relation A, component → team.** Which team owns which service. This is what a
+Backstage catalog holds and what Xirp injects at session start. It is a registry
+fact: somebody declared it, it can be looked up, it can go stale, but it is never
+inferred.
+
+**Relation B, outcome → concern.** Which concerns a piece of work implicates —
+whether an agreement is being made, whether information about a person is being
+handled, whether somebody will have to answer for this at 2am. This is what
+Construct's coverage claim rests on entirely.
+
+**No registry supplies B, and this is not a gap that better tooling closes.** A
+service catalog can say team-payments owns the billing service. It cannot say
+that changing how refunds work in Germany implicates tax treatment, a payment
+processor's terms, and a support path that does not exist yet. B is a judgment
+about a situation, and there are only two mechanisms that produce it: infer it,
+or have somebody state it who already knows. The second is not available, and not
+because of tooling — the entire promise is that a user is not ambushed by a
+domain they did not know existed, so the user cannot be the source of the list of
+domains they do not know exist. That is not a limitation to engineer around; it
+is what the product is for.
+
+So §16's comparison, read precisely, does not say Construct is weak where Xirp is
+strong. It says the two tools hold different facts. Xirp's catalog would not
+improve Construct's coverage by one percentage point, because it does not contain
+the relation coverage is made of.
+
+### The decision, against the three options the work item named
+
+1. **Read an existing catalog behind an adapter seam — refused for coverage,
+   left open as a different feature.** It answers relation A. Adopting it to
+   shore up a claim about relation B would be importing a dependency that cannot
+   affect the number, and doing so in a lane a host already occupies. Where A is
+   genuinely useful is *after* routing: once a concern is known, naming the human
+   who owns the affected component turns a finding into something somebody can
+   act on. That is notification, not coverage, and it is filed as its own work
+   rather than smuggled in here.
+2. **An optional declared-ownership file — accepted, scoped to relation A, not
+   built here.** Cheap, honest, unverified, and degrades to today's behavior when
+   absent. It improves who a finding reaches. It does not touch what gets found.
+3. **Accept inference for relation B and state its measured accuracy — accepted,
+   and made structural rather than promised.** Every surface that claims coverage
+   carries the measured routing figure or an explicit unverified tag. Asserted
+   completeness is a defect, and the README now quotes the miss rate in the same
+   breath as the coverage table.
+
+### Accepting inference is not the same as leaving it alone
+
+The catalog as it stood described each concern to the model in one line —
+`contracts: agreements with other parties and what they bind you to` — and then
+carried, in comments addressed to whoever next edited the file, everything
+actually known about when that concern does and does not apply. The comment
+explaining that `sign` was removed because it fired on "single sign-on" was
+written for a human maintainer. **The router never saw it.** The same is true of
+every precision lesson this document has recorded: `contract` firing five times
+and being right zero times (§3), `customers` at precision 0.176, `before` at
+0.357. Hard-won knowledge, sitting one layer away from the thing making the
+decision.
+
+So each concern now states two things as data rather than as prose for
+maintainers:
+
+- `implicatedWhen` — the conditions under which the concern genuinely applies,
+  written as situations rather than as phrases to look for, in language a
+  non-expert would recognize. "Somebody is engaged to do work, or stops being
+  engaged — hired, contracted, brought on, let go — whatever the arrangement is
+  called."
+- `notImplicatedWhen` — the near misses. "Signing refers to authentication rather
+  than to executing a document." "Users or customers are named only as who the
+  work is for." Each entry earns its place by naming a confusion that has
+  actually happened here, and this is where precision is bought.
+
+Both are required fields, not optional ones. A concern that omits them still
+routes — silently, and worse — and quietly added unmeasured surface area is a
+failure mode this catalog has already been burned by once (§3's 106 keywords that
+have never fired). The namer prompt renders both, and instructs the model to
+decide from the situation rather than the vocabulary, in both directions: an
+outcome that never says "personal data" can be squarely about it, and one that
+says "contract" may involve no agreement with anyone.
+
+Keywords stay, demoted and labeled: they are the zero-model fallback's evidence
+so that recording an outcome stays free and offline, and they are not the
+definition of anything.
+
+### Re-measured, because the adopted gate requires it
+
+§10's adoption is conditional: the shipped configuration must dominate the
+zero-model fallback on both axes on out-of-family corpora, **re-measured whenever
+the catalog, the namer prompt, or the serving tier changes.** This change is both
+of the first two, so the gate was re-run rather than assumed, by the command §10
+names.
+
+Run of 2026-08-10, same corpora, same seam, 126 consultations, 0 failed, mean
+latency 7,159 ms, served by `claude-sonnet-5` — the same tier §10 measured, so
+the difference below is the catalog and the prompt, not the model:
+
+```
+labeled-outcomes.json
+  A0 keywords   miss 0.027 (1/37,  CI [0.005, 0.138])   over 0.250 (12/48, CI [0.149, 0.388])
+  A1 +silence   miss 0.027 (1/37,  CI [0.005, 0.138])   over 0.250 (12/48, CI [0.149, 0.388])
+  B  namer-1st  miss 0.351 (13/37, CI [0.218, 0.512])   over 0.351 (13/37, CI [0.218, 0.512])
+held-out-outcomes.json
+  A0 keywords   miss 0.026 (1/38,  CI [0.005, 0.135])   over 0.229 (11/48, CI [0.133, 0.365])
+  A1 +silence   miss 0.026 (1/38,  CI [0.005, 0.135])   over 0.229 (11/48, CI [0.133, 0.365])
+  B  namer-1st  miss 0.421 (16/38, CI [0.279, 0.578])   over 0.083 (2/24,  CI [0.023, 0.258])
+fresh-outcomes.json
+  A0 keywords   miss 0.400 (4/10,  CI [0.168, 0.687])   over 0.500 (6/12,  CI [0.254, 0.746])
+  A1 +silence   miss 0.400 (4/10,  CI [0.168, 0.687])   over 0.500 (6/12,  CI [0.254, 0.746])
+  B  namer-1st  miss 0.500 (5/10,  CI [0.237, 0.763])   over 0.286 (2/7,   CI [0.082, 0.641])
+unspent-outcomes.json
+  A0 keywords   miss 0.663 (55/83, CI [0.556, 0.755])   over 0.462 (24/52, CI [0.333, 0.595])
+  A1 +silence   miss 0.590 (49/83, CI [0.483, 0.690])   over 0.424 (25/59, CI [0.306, 0.551])
+  B  namer-1st  miss 0.639 (53/83, CI [0.531, 0.734])   over 0.167 (6/36,  CI [0.079, 0.319])
+
+pooled out-of-family (fresh + unspent), which is the axis the gate is stated in
+  A0 keywords   miss 0.634 (59/93, CI [0.533, 0.725])   over 0.469 (30/64, CI [0.352, 0.589])
+  A1 +silence   miss 0.570 (53/93, CI [0.468, 0.666])   over 0.437 (31/71, CI [0.327, 0.552])
+  B  namer-1st  miss 0.624 (58/93, CI [0.522, 0.715])   over 0.186 (8/43,  CI [0.097, 0.326])
+```
+
+**The gate is met, and the reading underneath it is bad.** B dominates the
+zero-model fallback on both axes out-of-family — miss 0.624 against 0.634, over
+0.186 against 0.469 — so the shipped configuration still passes the condition
+adoption was made under. But the margin on miss is one label wide with intervals
+that almost entirely overlap, and against B's own prior measurement the
+direction is unmistakable: **out-of-family miss went 0.301 to 0.624 under this
+change.** The keyword arm is byte-identical across both runs (A0 miss 0.027,
+0.026, 0.400, 0.663 in both), which rules out corpus drift and points the whole
+difference at the catalog and the prompt. A1 moved the same way (0.398 to
+0.570), and A1 and B share only the namer, which is the same conclusion by a
+second route.
+
+Over-rates are **not** comparable across the two runs: the script's
+over-implication denominator changed between them (A0 on `labeled` reads 0.143
+in §10 and 0.250 here on an unchanged keyword arm), so the apparent
+over-implication win is unquantified. Only the miss figures carry across, and
+they carry the wrong way.
+
+**What the change did, most likely.** `notImplicatedWhen` is doing exactly what
+it says and doing too much of it. Handing a model a list of look-alikes to rule
+out makes it rule out, and the outcomes it now declines to route are
+disproportionately the ones written in vocabulary the catalog never anticipated
+— which is the population the whole inversion exists to serve. Precision bought
+with recall, at a price nobody set.
+
+**Held, not adopted (2026-08-10).** The mechanism — conditions and near misses
+as data the router reads, rather than comments the router never sees — survives
+the measurement; §3's lesson that hard-won precision knowledge sits one layer
+away from the decision is unaffected by this result. What does not survive is
+shipping this wording on these figures. The change is recorded here with its
+numbers rather than quietly kept or quietly reverted, and the calls that follow
+— whether the exclusions are pruned to the ones with a measured confusion behind
+them, whether the prompt's "do not reach" instruction is what is actually
+costing the recall, whether a union configuration is finally worth its 126
+consultations — are Gerald's on these figures, exactly as adoption was.
+

@@ -29,12 +29,16 @@ const CATALOG: readonly Domain[] = [
     path: 'marketing-claims',
     domain: 'marketing-claims',
     concern: 'what you say publicly and whether you can back it up',
+    implicatedWhen: ['something is said publicly about the product'],
+    notImplicatedWhen: [],
     keywords: ['press release'],
   },
   {
     path: 'privacy',
     domain: 'privacy',
     concern: 'personal data, consent, and cross-border transfer',
+    implicatedWhen: ['information identifying a person is handled'],
+    notImplicatedWhen: [],
     keywords: ['personal data'],
   },
 ];
