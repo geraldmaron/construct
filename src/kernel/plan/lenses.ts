@@ -1,25 +1,34 @@
 /**
- * kernel/plan/lenses.ts — role lenses: the awareness depth each role pack
- * carries over the shared playbook.
+ * kernel/plan/lenses.ts — role lenses: what a domain's deliverable owes, and
+ * who it is answered in the name of.
  *
- * A role is a framing and risk posture over the shared playbook plus a domain
- * corpus; this module is where that depth lives as data. Each lens names the
- * catalog domains it deepens, the posture sentence a dispatch opens with, the
- * question set the role works through, the extra deliverable slots its output
- * must fill, and the escalation ladder that says when to stop and route
- * upward. The domain catalog (implication/domains.ts) stays the one list of
- * who exists. A lens with an empty `domains` list reaches runs only through
- * surfaces that consume lenses directly (evaluation prompts, the whole-roster
- * views), and there are two reasons a list is empty, which must not be
- * confused: depth waiting for the catalog to grow a matching domain, or a
- * lens deliberately kept off the dispatch path. A lens in the second case
- * states so in its `ceiling`, so an empty list is never silently unexplained.
+ * A lens is an obligation set, not a claim to sight. It names the catalog
+ * domains it equips, the posture sentence a dispatch opens with, the question
+ * set that must be worked through, the extra deliverable slots the output must
+ * fill, and the escalation ladder that says when to stop and route upward. The
+ * domain catalog (implication/domains.ts) stays the one list of who exists.
+ *
+ * What a lens explicitly does NOT assert is that it reaches findings other
+ * lenses cannot. That claim was tested over two independently authored fixture
+ * organizations and is retired: differing question sets over one model produce
+ * the same findings naming the same mechanisms, and the external record says
+ * the same (RESEARCH-DECISIONS.md sections 14 and 15). What survives, and what
+ * this module is for, is narrower and checkable — the questions get asked at
+ * all, the slots get filled before anything is called finished, and the work
+ * log can say in whose name each finding was written. Where genuine
+ * independence is needed, it is bought with cross-family dispatch, not with a
+ * second question set.
+ *
+ * A lens with an empty `domains` list reaches runs only through surfaces that
+ * consume lenses directly (evaluation prompts, the whole-roster views), and
+ * there are two reasons a list is empty, which must not be confused: an
+ * obligation set waiting for the catalog to grow a matching domain, or a lens
+ * deliberately kept off the dispatch path. A lens in the second case states so
+ * in its `ceiling`, so an empty list is never silently unexplained.
  *
  * The question sets are written from role practice, not from any corpus they
  * are evaluated on: each question is one a practitioner of the role asks about
- * any organization. Whether the depth is real is measured, not asserted —
- * fixture-organization runs score each lens against ground truth recorded
- * before the run.
+ * any organization.
  */
 
 import type { Slot } from './schema.ts';
@@ -29,7 +38,7 @@ const slot = (name: string, expects: string, required = true): Slot => ({ name, 
 export interface RoleLens {
   /** The lens name, stable across surfaces. */
   readonly lens: string;
-  /** Catalog domains this lens deepens. Empty means no catalog domain carries it yet. */
+  /** Catalog domains this lens equips. Empty means no catalog domain carries it yet. */
   readonly domains: readonly string[];
   /** The framing and risk posture, one sentence a dispatch opens with. */
   readonly posture: string;
@@ -55,8 +64,8 @@ export interface RoleLens {
     readonly outside: string;
   };
   /**
-   * The stated depth limit. A lens with a ceiling contributes exactly what the
-   * ceiling names and nothing deeper — the limit is the invariant, not a gap.
+   * The stated scope limit. A lens with a ceiling contributes exactly what the
+   * ceiling names and nothing beyond it — the limit is the invariant, not a gap.
    */
   readonly ceiling?: string;
 }
@@ -413,7 +422,7 @@ export const LENSES: readonly RoleLens[] = Object.freeze([
   },
 ]);
 
-/** The lens that deepens a domain, if any does. */
+/** The lens that equips a domain, if any does. */
 export function lensForDomain(domain: string): RoleLens | undefined {
   return LENSES.find((l) => l.domains.includes(domain));
 }

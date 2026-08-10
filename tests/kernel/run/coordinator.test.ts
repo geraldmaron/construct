@@ -395,7 +395,7 @@ test('the assignment states the role and its concern, and nothing it cannot supp
   assert.ok(!unknown.includes('Your concern:'));
 });
 
-test('a deepened role is shown its lens: posture, questions, escalation, labels', () => {
+test('an equipped role is shown its lens: posture, questions, escalation, labels', () => {
   const text = assignmentFor(brief('compliance'));
   assert.match(text, /Your posture: Controls and evidence over intent/);
   assert.match(text, /which identity acts/, 'the question set travels with the dispatch');
@@ -413,11 +413,11 @@ test('a deepened role is shown its lens: posture, questions, escalation, labels'
   assert.match(security, /Your posture: Assume the interesting failure is deliberate/);
   assert.match(security, /Defensive review only/);
 
-  // A domain no lens deepens gets no invented posture.
+  // A domain no lens equips gets no invented posture.
   assert.ok(!assignmentFor(brief('commerce-tax')).includes('Your posture:'));
 });
 
-test('a deepened role is told to drop findings another role owns, verbatim', () => {
+test('an equipped role is told to drop findings another role owns, verbatim', () => {
   // Stated as an instruction rather than a suggestion, because a mild version
   // was measured and did not bind: roles reported other roles' findings freely,
   // which buries what only this role would have reached.

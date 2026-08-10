@@ -11,8 +11,9 @@ that always happens before a launch, the question legal always asks, the
 person who always notices the date is not real. Teams adopting AI assume it
 fills those gaps. It does not, because nobody wrote them down. Construct
 codifies them: each concern a seasoned cross-functional team covers becomes
-a routable domain, a deepening lens, a deliverable with checkable slots,
-and a challenge gate — measured, never asserted. The contract work already
+a routable domain, a lens carrying that concern's obligations, a deliverable
+with checkable slots, and a challenge gate — measured, never asserted. The
+contract work already
 shipped (grounded PRDs, asks, citations) is the wedge, not the product.
 This plan builds out the base org so Construct solves problems for teams,
 not just for the contract-hardening use case.
@@ -33,7 +34,7 @@ The target tree:
 | TPM / Program Manager | program-sequencing | routed + program lens | shipped |
 | Counsel | contracts, privacy, employment | routed + legal lens (dogfood-only) | shipped |
 | Compliance officer | compliance | routed + compliance lens (dogfood-only) | shipped |
-| Accessibility specialist | accessibility | routed, default template | shipped (design lens may deepen it) |
+| Accessibility specialist | accessibility | routed, default template | shipped (design lens equips it) |
 | Finance / billing | commerce-tax | routed, default template | shipped |
 | Analyst / data | measurement (new) | lens shipped, **unroutable** | construct-nmh (wave A repair) |
 | Engineer | the host is the engineer | lens exists, **unroutable**, thin by design | construct-xhe (record or route) |
@@ -63,8 +64,8 @@ points at the GitHub README and no hosted site exists.
 
 1. **Two shipped packs are unreachable.** The analyst and engineering
    lenses have no domain wired (`domains: []` in lenses.ts), so the namer
-   can never dispatch them, while STRATEGY Phase 4 counts both among the
-   six packs at real depth. Repair: construct-nmh, construct-xhe.
+   can never dispatch them, while STRATEGY Phase 4 counted both among its
+   six shipped packs. Repair: construct-nmh, construct-xhe.
 2. **Five postconditions are fossils.** postconditions.ts registers rules
    for v2 role names (reviewer, security, debugger, operations, designer)
    no v3 dispatch can produce. Deletion: construct-j5k; wave-B packs
@@ -113,10 +114,49 @@ The consequence for this plan:
   improves isolation without suppressing the lens's own findings is being
   measured on both prompt shapes, same corpus, same family.
 - Wave D cannot close the epic while the epic's exit criterion is known to
-  measure the wrong thing.
+  measure the wrong thing. *(Resolved by the second amendment below: the
+  criterion is withdrawn and replaced, so wave D is reachable again.)*
 
 Prior recorded runs keep their as-run scores. What changed is what a score is
 read to mean.
+
+## Amendment, 2026-08-10 (second): the criterion above is withdrawn, not tightened again
+
+The section above sharpened the depth test into an isolation test. That test was
+then failed by everything, on a second fixture organization built specifically to
+give it a fair chance — 22 documents of a real organization's operating
+documentation, ten plants on twenty disjoint documents, every plant verified
+creditable before any run existed. Zero of ten isolate. Four explanations for the
+convergence had by then been tested and rejected in turn (keyword brittleness,
+output volume, plant keying, corpus breadth), which left the premise, and the
+premise was answered from the external record rather than by a fifth study:
+persona prompting does not produce differentiated reasoning, and the diversity
+that does is model diversity, not question-set diversity. Evidence, confounds and
+sources: `RESEARCH-DECISIONS.md` sections 14, 15 and 16.
+
+**So the isolation criterion is withdrawn.** It is not suspended pending a better
+instrument; it measures a property that is not there. Three consequences for this
+plan, and they simplify it rather than complicating it:
+
+- **The pack gate is no longer a plant hit.** A pack closes when its concern
+  routes from ordinary wording, its lens carries the obligations that concern
+  owes, its deliverable template has the slots to prove it, and the work log
+  attributes the output. Those are checkable by unit test and by a run through
+  the shipped surface — no corpus sweep is in the path. `construct-pmn` therefore
+  stops blocking the five wave-B closes.
+- **Wave C's conflict work stands, and gets more important, not less.** With
+  differentiation gone, the value of routing two concerns at one outcome is that
+  both obligations get answered and the disagreement between them surfaces —
+  which is a coverage-and-conflict property, measurable without any depth claim.
+- **The harnesses stay in the repo.** Both fixture organizations, both answer
+  keys, every run and judged matrix remain as the record of how the claim was
+  tested and retired. They are not deleted and not re-keyed; re-running them to
+  re-measure a settled result is explicitly out of scope.
+
+What the epic now delivers is the smaller, supported claim: every concern a
+cross-functional team owns is **routable from ordinary wording, carries stated
+obligations, and is attributed in the log** — with the routing accuracy quoted as
+a measured figure rather than asserted as completeness.
 
 ## The wave plan
 
@@ -135,11 +175,12 @@ waiting; construct-9xq is the Phase 4 packet). No wave-B bead dispatches
 before acceptance is recorded. If Gerald wants breadth to start sooner,
 that is a dated STRATEGY amendment only he can make.
 
-**Wave B — the missing concerns.** One corpus bead first: construct-pmn,
-planted findings for the new concerns, committed to the answer key before any
-pack run, blocking every pack close. Then five
-packs, each in the Phase 4 shape (domain + lens + playbook + plant +
-clean-context runs + tests): construct-alo strategy-alignment,
+**Wave B — the missing concerns.** *(Amended 2026-08-10, second amendment above:
+the corpus bead construct-pmn no longer gates these. Planting findings for the
+new concerns was the isolation criterion's requirement, and that criterion is
+withdrawn.)* Five packs, each shipping domain + lens + playbook slots + unit
+tests, and each closing on routing from ordinary wording rather than on a plant
+hit: construct-alo strategy-alignment,
 construct-gzw system-design, construct-sqx operations, construct-xh7
 user-experience, construct-phe security lens. Rubrics for the new
 personas pre-committed before any judging: construct-nn4.

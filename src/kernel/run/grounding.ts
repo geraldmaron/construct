@@ -14,10 +14,10 @@
  * dispatch. This module owns the grounded half.
  *
  * The protocol lives here rather than inside the assignment builder because the
- * scored runs over the fixture organization are graded on exactly this text. An
+ * scored runs over the fixture organizations are graded on exactly this text. An
  * instrument that measures a prompt the product does not send reports a number
  * nobody feels; rendering both the dispatch and the scored run from one export
- * is what keeps that instrument a measurement of shipped depth rather than of
+ * is what keeps that instrument a measurement of what ships rather than of
  * itself.
  */
 
@@ -87,23 +87,30 @@ export const GROUNDED_SYNTHESIS_PROTOCOL = [
  * A dispatched role can see findings that belong to other concerns, and saying
  * so mildly does not stop it reporting them. Two things go wrong when it does.
  * The reader gets a survey of the material instead of the concern they asked
- * for, and the findings only this role would have reached are buried among
- * findings anyone would.
+ * for, and attribution stops meaning anything — a work log in which every role
+ * reports everything cannot say in whose name a finding was written, which is
+ * the one thing it exists to say.
+ *
+ * The bound does NOT rest on a role reaching findings the others could not.
+ * That premise was tested over two fixture organizations and retired; a role's
+ * output is scoped here because its deliverable owes specific slots and its
+ * name goes on the answer, not because its question set grants it sight.
  *
  * Measured before it shipped, across a sweep of every lens over one fixture
  * organization: making ownership binding cut what a role produced by roughly
  * two fifths and cut findings belonging to other roles by about half, while
- * every role that reached its own planted finding still reached it. Fewer
- * claims, same recall on the role's own ground.
+ * every role that reached its own planted finding still reached it. That effect
+ * came from making the scope binding, which the wording below keeps; what it
+ * drops is a justifying clause since shown to be false.
  */
 export const ROLE_OWNERSHIP_BOUND = [
   'What belongs to you. A finding another role owns is not yours to report,',
   'however real it is. Before you write each one, name which of your slots it',
   'fills; if it fills none of them, drop it rather than reporting it as an',
   'aside. Reporting everything you noticed is not thoroughness, it is declining',
-  'to exercise the judgment you were dispatched for, and it buries the findings',
-  'only your concern would have reached. Fewer findings that are all yours beat',
-  'a survey of the material.',
+  'to exercise the judgment you were dispatched for, and it leaves the reader',
+  'unable to tell which concern actually answered. Fewer findings that are all',
+  'yours beat a survey of the material.',
 ].join(' ');
 
 /**

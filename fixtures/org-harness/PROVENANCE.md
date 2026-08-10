@@ -154,6 +154,19 @@ pair as `C1`, and its keyword sets are supersets of `C1`'s, so every claim that
 earns `C1` earns `SA2` for free. It was never capable of measuring the strategy
 lens.
 
+**Closed 2026-08-10 (fourth entry): no replacement plant will be authored, for
+`SA2` or for any other retired plant.** The open question above — whether a
+mechanism can be keyed so that only one lens has reason to look for it — was
+answered on a second fixture organization built to answer exactly it
+(`fixtures/org-harness-broad`): ten plants on twenty disjoint documents, each
+verified creditable by its own mechanism before any run existed, zero of ten
+isolating. Per-role depth is retired as a claim (`RESEARCH-DECISIONS.md` §15),
+so a replacement plant would be an instrument for a property that is not there.
+`SA2` stays retired unscored-forward, its paragraph stays in the corpus, its
+grading is unchanged, and every run already scored against it keeps its recorded
+result. The surfaces that once quoted a depth verdict for the strategy concern
+now report routing and obligations instead, and quote no depth figure at all.
+
 ### Retired 2026-08-10 (same day, before further runs)
 
 `TH1` and `SA1` are retired and replaced by `TH2` and `SA2`. Both originals
