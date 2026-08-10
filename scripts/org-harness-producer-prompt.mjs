@@ -6,10 +6,15 @@
  * The prompt is committed, not improvised: a scored run whose prompt lives
  * only in a session transcript cannot be reproduced, compared across model
  * families, or tuned with a record of what changed. This script is the one
- * source of that prompt. The role depth comes from the committed lenses
- * (src/kernel/plan/lenses.ts), so what a run was told is exactly what the
- * product's dispatches are told — the harness measures the shipped depth, not
- * a bespoke eval prompt.
+ * source of that prompt.
+ *
+ * What a run is told comes from the product, in two pieces: the role depth from
+ * the committed lenses (src/kernel/plan/lenses.ts) and the synthesis discipline
+ * from the grounded dispatch protocol (src/kernel/run/grounding.ts). Both are
+ * rendered here from those exports, so a scored rung measures depth the product
+ * actually ships. What this file adds on top is the eval's output contract
+ * alone: the JSON envelope and the corpus-relative citation format, which exist
+ * so a run can be scored structurally and are not depth under measurement.
  *
  * Two shapes, because the product has one and the whole-roster view has one:
  *
@@ -40,6 +45,7 @@
 
 import process from 'node:process';
 import { LENSES } from '../src/kernel/plan/lenses.ts';
+import { GROUNDED_SYNTHESIS_PROTOCOL } from '../src/kernel/run/grounding.ts';
 
 const args = process.argv.slice(2);
 const corpusIdx = args.indexOf('--corpus');
@@ -56,15 +62,16 @@ Read all of it — the strategy document, the PRD, both RFCs, every ticket under
 
 const CITATION_RULES = `Each citation is a bare corpus-relative path, exactly as the file sits on disk (for example "tickets/T-12345.md") — no line numbers, no parentheses, no annotations, nothing appended. Every claim carries at least one citation; never cite a file that does not exist; never invent content.`;
 
-const HOW_TO_WORK = `## How to work
-
-The valuable findings combine two documents that never cite each other. For each claim, ask: which OTHER document changes what this one means? A ticket that looks routine next to a design document, a strategy sentence next to a spec, an incident note next to a roadmap item. Prefer claims where removing either cited document would collapse the finding. A document you have already connected once is not finished: ask what ELSE it collides with — the second, less obvious connection is usually the one nobody in the organization has made.
-
-- "cross-reference": two documents describe the same underlying thing without saying so; tie them and name the connection.
-- "conflict": two commitments cannot both hold; cite both sides.
-- "risk": a forward-looking exposure only visible by combining sources; name the mechanism, not a vague worry.
-
-Use the sources; do not merely list them. Each claim states what follows from the cited documents, specific enough that a reader could verify it against the citations. Name mechanisms in the corpus's own vocabulary — the specific field, strategy, setting, or rule the documents themselves use — never a looser paraphrase. When a finding rests on two documents, cite both; a claim that names a second document in its text without citing it is an uncited claim.`;
+/**
+ * The synthesis discipline is the product's, imported rather than restated.
+ *
+ * A copy here would let the harness drift into scoring depth the product never
+ * asks for, and a run tuned against that copy would raise a number no user
+ * feels. What stays local below is the eval's output contract — the JSON
+ * envelope and the corpus-relative citation format — because that is the
+ * harness's own shape, not depth under measurement.
+ */
+const HOW_TO_WORK = GROUNDED_SYNTHESIS_PROTOCOL;
 
 const CLAIMS_SHAPE = `## What you produce
 
@@ -134,7 +141,7 @@ Every question above is an obligation on its own: for EACH question, either prod
 Your deliverable must fill these slots, expressed as claims:
 ${slots}
 
-Work the whole corpus under this one lens before writing. Depth over breadth: three findings with both documents cited and the mechanism named beat ten observations.
+Work the whole corpus under this one lens before writing.
 
 Return only the JSON object.`;
 }

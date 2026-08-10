@@ -36,6 +36,9 @@ import {
   totalSpend,
 } from '../store/tasks.ts';
 import type { LeasedTask } from '../store/tasks.ts';
+import { sourceReadsFor } from '../store/sources.ts';
+import { groundedMaterialProtocol } from './grounding.ts';
+import type { Material } from './grounding.ts';
 import type { Store } from '../store/open.ts';
 import type { HostAdapter, HostResult } from '../hosts/interface.ts';
 import type { Brief } from '../brief/schema.ts';
@@ -261,10 +264,34 @@ function lensDirective(role: string): string {
   );
 }
 
+/**
+ * What a run read, shaped for the assignment. Unreachable reads travel with the
+ * rest: a source that failed is material the role must know it does not have.
+ */
+export function materialFor(store: Store, run: string): Material[] {
+  return sourceReadsFor(store, run).map((read) => ({
+    source: read.source,
+    descriptor: read.descriptor,
+    coverage: read.coverage,
+    detail: read.detail,
+  }));
+}
+
 export function assignmentFor(
   brief: Brief,
   catalog: readonly Domain[] = DOMAINS,
-  options: { readonly writeSurface?: boolean; readonly voice?: VoiceOverride } = {},
+  options: {
+    readonly writeSurface?: boolean;
+    readonly voice?: VoiceOverride;
+    /**
+     * What this dispatch read, when it read anything. Empty or absent means the
+     * role reasons from its domain and cites no paths; present means the
+     * documents are the evidence and the grounded protocol replaces the
+     * no-material one. The two rules contradict each other, so exactly one is
+     * ever spoken.
+     */
+    readonly material?: readonly Material[];
+  } = {},
 ): string {
   const domain = domainsByName(catalog).get(brief.role);
   const concern = domain ? `\nYour concern: ${domain.concern}.` : '';
@@ -295,13 +322,17 @@ export function assignmentFor(
         '\n\n'
       : '';
   const surface = options.writeSurface ? WRITE_SURFACE_PROTOCOL : NO_WRITE_SURFACE_NOTE;
+  const material =
+    options.material && options.material.length > 0
+      ? groundedMaterialProtocol(options.material)
+      : MATERIAL_PROTOCOL;
   return (
     `You are acting as the ${brief.role} role.${concern}\n\n` +
     `The outcome the user asked for: ${brief.outcome}\n\n` +
     engagement +
     lensDirective(brief.role) +
     workProductDirective(brief.role) +
-    MATERIAL_PROTOCOL +
+    material +
     '\n\n' +
     obligations +
     `${voiceProtocol(options.voice)}\n\n` +
@@ -694,6 +725,11 @@ export async function workRun(
           task: assignmentFor(brief, catalog, {
             writeSurface: roleEnv !== undefined,
             voice: options.voice,
+            // What the run read is a fact the store already holds, so the
+            // assignment asks it rather than taking a caller's word. A run
+            // that read nothing hands back an empty list and the role is told
+            // the no-material rule instead.
+            material: materialFor(store, task.run),
           }),
         },
         { invocationId: task.id, roleEnv },
