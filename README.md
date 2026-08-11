@@ -60,13 +60,17 @@ in the right-hand columns.
 | Architect / tech lead / platform | `system-design` | boundaries, coupling, what becomes hard to undo | design-review ceiling |
 | Security engineer | `security` | who can reach what, and failure behavior | defensive-review ceiling |
 | Support / on-call | `operations` | who answers, how you find out, what it costs to keep alive | — |
-| Finance / billing | `commerce-tax` | routes to the default template | **tax-professional review** |
-| Marketing | `marketing-claims` | routes to the default template | — |
+| Finance / billing | `commerce-tax` | money-flow obligations: what attaches where, who computes, who remits | **tax-professional review** |
+| Marketing | `marketing-claims` | claims inventory: substantiation that exists today, or who can pull the claim | — |
 | Engineer | — | deliberately absent: your host is the engineer | — |
 
-Thirteen of the fifteen concerns carry a lens — a posture, a question set, extra
-deliverable slots, and an escalation ladder. Two route to the default template
-and say so here rather than implying more.
+All fifteen concerns carry a lens — a posture, a question set, extra
+deliverable slots, and an escalation ladder — and each lens states what its
+method stands on: the external standards its questions descend from where a
+primary standard exists (OWASP ASVS for security, WCAG 2.2 for accessibility,
+FTC substantiation policy for marketing claims), or a stated reason where none
+does, because an authoritative-looking citation nobody could defend is worse
+than an honest absence.
 
 Seat by seat, with what each concern is obliged to produce, what its deliverable
 must answer, and the limit it states about itself: [docs/org-map.md](docs/org-map.md).
