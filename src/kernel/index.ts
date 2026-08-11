@@ -12,22 +12,6 @@ export type { CleanupItem, CleanupScope, CleanupRisk, CleanupTarget } from './cl
 export { detectedItems, selectedItems, applyCleanup } from './cleanup/run.ts';
 export type { CleanupOptions, CleanupOutcome, CleanupResult } from './cleanup/run.ts';
 
-export { classifyIntake, formatTriageLine, suggestTags } from './intake/classify.ts';
-export type {
-  Candidate,
-  ClassifyInput,
-  RelatedDoc,
-  TagSuggestion,
-  TagVocabulary,
-  TriageResult,
-} from './intake/classify.ts';
-export {
-  DEFAULT_PRESET_ID,
-  DEFAULT_TABLE,
-  RECOMMENDED_ACTIONS,
-  TABLES,
-} from './intake/table.ts';
-export type { ClassificationEntry, ClassificationTable, Triage } from './intake/table.ts';
 
 export { matchingKeywords, suggestRoutes } from './routing/dispatcher.ts';
 export type { Route, SuggestInput, SuggestResult, Suggestion } from './routing/dispatcher.ts';
@@ -75,15 +59,6 @@ export type {
   TokenScope,
 } from './capabilities/tokens.ts';
 
-export { COMPLETION_STATES, completionRank, isCompletionState } from './completion/states.ts';
-export type { CompletionState } from './completion/states.ts';
-export {
-  DEGRADATION_REASONS,
-  highestState,
-  makeEvidence,
-  recordCompletion,
-} from './completion/ledger.ts';
-export type { DegradationReason, Evidence, EvidenceInput } from './completion/ledger.ts';
 export {
   PROMOTION_STATES,
   VERDICT_OUTCOMES,

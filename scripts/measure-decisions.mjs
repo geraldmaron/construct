@@ -623,7 +623,10 @@ if (heading(6, 'Calibration of the intake confidence ramp')) {
     readFileSync(join(ROOT, 'tests/kernel/intake/fixtures/classify-golden.json'), 'utf8'),
   );
 
-  console.log('\n  The ramp lives in kernel/intake/classify.ts:');
+  console.log('\n  RETIRED 2026-08-11: the classifier this section calibrates was deleted as');
+  console.log('  an unwired v2 port (the densifier is the live intake). The fixtures stay as');
+  console.log('  the historical record this section reads; nothing below describes shipping code.');
+  console.log('\n  The ramp lived in kernel/intake/classify.ts:');
   console.log('    calibratedBaseConfidence: 1 hit -> 0.55, 2 -> 0.72, 3 -> 0.82, 4+ -> 0.92,');
   console.log('    0 hits (filename boost only) -> 0.45, capped at 0.50 when margin < 0.3.');
   console.log('    TITLE_LOCK_CONFIDENCE = 0.9 is a fifth, separate constant (filename + H1 agree).');

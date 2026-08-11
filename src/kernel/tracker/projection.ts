@@ -14,7 +14,7 @@
  * all: v2 defaulted `importedAt` to `new Date().toISOString()`, so building a
  * projection read the clock and two identical imports were never equal. Here
  * the timestamp is injected and defaults to null, matching the discipline
- * kernel/completion/ledger.ts already follows — the kernel does not read the
+ * the deleted completion ledger followed — the kernel does not read the
  * clock, the host supplies the time. A caller that wants v2's behavior passes
  * its own timestamp.
  *

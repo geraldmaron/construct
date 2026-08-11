@@ -13,7 +13,14 @@ import {
   isPromotionState,
   promotionState,
 } from '../../../src/kernel/completion/promotion.ts';
-import { COMPLETION_STATES } from '../../../src/kernel/completion/states.ts';
+// The production-completion ladder (the predecessor's evidence rungs) was
+// deleted 2026-08-11 as an unwired port; its vocabulary is pinned here as a
+// literal so the two axes can still never converge on a shared word.
+const COMPLETION_STATES = [
+  'planned', 'authored', 'structurally-valid', 'source-linted', 'exported',
+  'file-valid', 'renderable', 'screenshot-captured', 'visually-reviewed',
+  'accessibility-reviewed', 'approved', 'completed',
+] as const;
 import type { Verdict } from '../../../src/kernel/completion/promotion.ts';
 
 const REQUIRED = ['strongest-objection', 'scope-diff'];
