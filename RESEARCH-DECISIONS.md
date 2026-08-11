@@ -1683,7 +1683,15 @@ first replies. §17's 0.624 is 0.548 on the fixed instrument.
 **The tier was never pinned** (construct-5l8l). The Claude path passed no model,
 so the session default served the run and could drift mid-run; one run was
 observed answered by two tiers at once. Every arm below is verified single-tier
-`claude-sonnet-5`.
+`claude-sonnet-5` — verified by what the envelopes *reported*, not by a pin: four
+of the five arm records in `fixtures/namer-arms/` carry `model: null` and only
+`armE` names the model it asked for. Observation after the fact is weaker
+evidence than a constraint before it, so as of 2026-08-11 recording an arm on
+this host requires `--namer-model` and is refused before any consultation is
+paid for. Four of these five arms could not be recorded today. They are kept
+because their `modelsRan` is single-valued and their per-outcome answers are on
+file, which is what a re-derivation needs; a future arm earns the stronger
+guarantee.
 
 Both were already being *printed*. Printing is not refusing: a warning dies with
 its terminal and the record file outlives it, gets read by the next comparison,
@@ -1702,6 +1710,14 @@ is stated in; over is the `unspent` rate.
 | E — 23 exclusions, no inclusions | 4,747 ch | 0.333 | **0.321** | 11 lost / 6 recovered, p = 0.33 |
 | A — 58 inclusions, no exclusions | 9,781 ch | 0.505 | 0.377 | 22 lost / 1 recovered, p < 0.0001 |
 | held — 58 inclusions + 23 exclusions | 12,883 ch | 0.548 | 0.190 | 26 lost / 1 recovered, p < 0.0001 |
+
+**Read D and E's rows with their p-values attached.** 0.61 and 0.33 on 168
+label-pairs mean *this corpus cannot tell*, not *these arms are free*; both
+moved the wrong way on miss and neither is exonerated. The caveat is repeated
+here rather than left to the recommendation below because a table is the most
+liftable thing in this document, and a row quoted without its p-value reads as
+a measured equivalence nobody measured. Only A and `held` are distinguishable
+from the baseline.
 
 **The two kinds of text do different things, and only one of them is the
 defect.** `implicatedWhen` clauses buy no precision whatsoever — arm A carries
