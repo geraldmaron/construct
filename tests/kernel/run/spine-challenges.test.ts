@@ -298,7 +298,14 @@ test('a high-tier run declares the conditional challenges; a low-tier run declar
   try {
     const low = startRun(store, { runId: 'run-low', outcome: OUTCOME, at: AT });
     for (const id of low.tasks) {
-      assert.deepEqual((getTask(store, id)?.brief as Brief).challenges, SPINE_CHALLENGES);
+      const brief = getTask(store, id)?.brief as Brief;
+      // Decision-class concerns add strongest-objection on top of the spine
+      // two; everything else in a low-tier run declares exactly the spine.
+      const decisionClass = ['strategy-alignment', 'system-design', 'product-scoping'];
+      const expected = decisionClass.includes(brief.role)
+        ? [...SPINE_CHALLENGES, 'strongest-objection']
+        : SPINE_CHALLENGES;
+      assert.deepEqual(brief.challenges, expected);
     }
 
     const high = startRun(store, {
@@ -316,6 +323,30 @@ test('a high-tier run declares the conditional challenges; a low-tier run declar
       if (brief.role === 'privacy') {
         assert.ok(brief.challenges?.includes('legal-issue-spot'), `${id} declares legal-issue-spot`);
       }
+    }
+  } finally {
+    done();
+  }
+});
+
+test('a decision-class brief must state the strongest case against itself before it promotes', () => {
+  const { store, done } = fixtureStore();
+  try {
+    // "Decide" phrasing routes to the concerns whose deliverable IS a choice.
+    const run = startRun(store, {
+      runId: 'run-decide',
+      outcome: 'Decide whether the product roadmap bets on depth or breadth next quarter',
+      at: AT,
+    });
+    const decisionRoles = run.tasks
+      .map((id) => getTask(store, id)?.brief as Brief)
+      .filter((b) => ['strategy-alignment', 'system-design', 'product-scoping'].includes(b.role));
+    assert.ok(decisionRoles.length > 0, 'the outcome must implicate a decision-class concern');
+    for (const brief of decisionRoles) {
+      assert.ok(
+        brief.challenges?.includes('strongest-objection'),
+        `${brief.role} declares strongest-objection`,
+      );
     }
   } finally {
     done();

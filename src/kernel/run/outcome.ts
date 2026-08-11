@@ -95,10 +95,26 @@ export function taskId(runId: string, domain: string): string {
  * it stays unanswered and holds the deliverable at draft, which is the
  * opposite of reading as passed.
  */
+/**
+ * The concerns whose deliverable is itself a load-bearing choice — a bet, a
+ * shape, a scope — rather than a review of one. A recommendation that has
+ * never stated the strongest case against itself has not been challenged, it
+ * has been agreed with; these are the briefs that declare strongest-objection.
+ * The check is structural (the objection is present under a label), and
+ * whether it is genuinely the strongest stays a substantive question — the
+ * declared limit of every structural pass, not a gap in this list.
+ */
+const DECISION_CLASS_DOMAINS: ReadonlySet<string> = new Set([
+  'strategy-alignment',
+  'system-design',
+  'product-scoping',
+]);
+
 function challengesFor(domain: string, runHighTier: boolean): readonly string[] {
   const declared = [...SPINE_CHALLENGES];
   if (runHighTier) declared.push('pre-mortem');
   if (riskTierFor(domain) === 'high') declared.push('legal-issue-spot');
+  if (DECISION_CLASS_DOMAINS.has(domain)) declared.push('strongest-objection');
   return declared;
 }
 
