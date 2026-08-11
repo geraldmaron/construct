@@ -79,6 +79,7 @@ import { planFor, recordPlan } from '../kernel/store/plans.ts';
 import type { Watch } from '../kernel/watch/watch.ts';
 import { join } from 'node:path';
 import { tuningStamp } from '../hosts/tuning.ts';
+import { presenceLines, surveyHosts } from '../hosts/presence.ts';
 import { probeDocling, readSource } from '../hosts/extract.ts';
 
 const MIN_NODE = { major: 22, minor: 18 };
@@ -121,6 +122,13 @@ export function doctor(): number {
     ok: problem === null,
     detail: problem === null ? store : `${store} — ${problem}`,
   });
+
+  // Hosts are reported, never gated: a missing host is information, because
+  // serve-only use is legitimate. Before this, a user without a host met the
+  // absence as mid-run errors instead of one line here.
+  for (const line of presenceLines(surveyHosts())) {
+    checks.push({ name: 'host', ok: true, detail: line });
+  }
 
   let failed = 0;
   for (const check of checks) {
