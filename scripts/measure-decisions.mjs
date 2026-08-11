@@ -837,6 +837,9 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
 
   let calls = 0;
   let failures = 0;
+  // A repair is a second model call that succeeded, not a failure — but it is
+  // a cost, and a prompt that provokes more of them is paying it.
+  let repairs = 0;
   let totalMs = 0;
   let costUsd = 0;
   const modelsRan = new Set();
@@ -904,12 +907,24 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
     return kept;
   };
 
+  // A namer that had to repair its first reply answers with `{ namings,
+  // retried }` rather than with a bare array (naming.ts's NamerReply), and
+  // escalate.ts unwraps that before it admits anything. This script iterated
+  // the reply directly, so every outcome that needed a repair threw "namings
+  // is not iterable", was counted as a namer FAILURE, and fell back to
+  // keywords — while the run still reported its figures as the namer's. The
+  // unwrap belongs here for the same reason admit() does: the semantics must
+  // match the shipped path, not approximate it.
+  const unwrap = (reply) => (reply && !Array.isArray(reply) && 'namings' in reply ? reply.namings : reply);
+
   const consult = async (outcome) => {
     calls += 1;
     const started = Date.now();
-    const namings = await rawNamer(outcome, DOMAINS);
+    const reply = await rawNamer(outcome, DOMAINS);
     totalMs += Date.now() - started;
-    return admit(namings);
+    const namings = unwrap(reply);
+    if (Array.isArray(reply) === false && namings !== reply) repairs += 1;
+    return admit(Array.isArray(namings) ? namings : []);
   };
 
   // Outcomes repeat across configurations; one consultation serves all of them.
@@ -998,7 +1013,7 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
       B: b[i],
     }));
   }
-  console.log(`\n  namer consultations: ${calls} (${failures} failed), mean latency ${calls ? Math.round(totalMs / calls) : 0}ms`);
+  console.log(`\n  namer consultations: ${calls} (${failures} failed, ${repairs} answered on a corrective retry), mean latency ${calls ? Math.round(totalMs / calls) : 0}ms`);
   if (failures > 0) {
     console.log(`  LAST FAILURE: ${lastFailure}`);
     console.log('  A failed consultation falls back per configuration (A1 -> silence, B -> keywords),');
@@ -1017,7 +1032,22 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
   console.log('  namer understating the inversion must not kill it, and a strong one');
   console.log('  flattering it must not ship it without the figures being read per tier.');
 
-  if (RECORD_TO) {
+  // A record of a run that fell back is a trap: it looks like an arm, compares
+  // like an arm, and is partly the keyword map. The run already says so on
+  // screen, but a file outlives the terminal it was printed in, so the refusal
+  // is here rather than left to whoever reads the figures later.
+  if (RECORD_TO && failures > 0) {
+    console.log(`\n  NOT RECORDED: ${failures} of ${calls} consultations failed, so this run is`);
+    console.log(`  partly the fallback arm. ${RECORD_TO} is left untouched. Fix the cause and re-run.`);
+  } else if (RECORD_TO && modelsRan.size > 1) {
+    // These figures are stated per tier, and a run answered by two tiers is
+    // not one tier's figures. The record is refused rather than annotated,
+    // because an annotation on a file is a note the next comparison will not
+    // read. Pin the tier with --namer-model and run it again.
+    console.log(`\n  NOT RECORDED: ${modelsRan.size} tiers served this run (${[...modelsRan].join(', ')}),`);
+    console.log('  so it is not a per-tier measurement. Pin the tier with --namer-model and re-run.');
+    console.log(`  ${RECORD_TO} is left untouched.`);
+  } else if (RECORD_TO) {
     const record = {
       arm: ARM_LABEL,
       recordedAt: new Date().toISOString(),
@@ -1027,6 +1057,7 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
       promptFingerprint: promptFingerprint(),
       consultations: calls,
       failures,
+      repairs,
       perOutcome,
     };
     writeFileSync(RECORD_TO, `${JSON.stringify(record, null, 2)}\n`);
@@ -1052,6 +1083,16 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
     let totalPairs = 0;
     let baseMissed = 0;
     let nowMissed = 0;
+    // The §10 adoption gate is stated on pooled out-of-family miss — fresh +
+    // unspent, the corpora written after the catalog — so that pooling gets
+    // its own row rather than being recovered by hand from the per-corpus
+    // ones. The all-four POOLED row below is not the gate's axis.
+    const OUT_OF_FAMILY = new Set(['fresh-outcomes.json', 'unspent-outcomes.json']);
+    let oofBaseOnly = 0;
+    let oofNowOnly = 0;
+    let oofPairs = 0;
+    let oofBaseMissed = 0;
+    let oofNowMissed = 0;
 
     for (const c of corpora) {
       const baseRows = base.perOutcome?.[c.name];
@@ -1099,7 +1140,23 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
       totalPairs += pairs;
       baseMissed += bMiss;
       nowMissed += nMiss;
+      if (OUT_OF_FAMILY.has(c.name)) {
+        oofBaseOnly += onlyBase;
+        oofNowOnly += onlyNow;
+        oofPairs += pairs;
+        oofBaseMissed += bMiss;
+        oofNowMissed += nMiss;
+      }
     }
+
+    const oofP = mcnemarExact(oofBaseOnly, oofNowOnly);
+    console.log(
+      `  ${'OUT-OF-FAMILY (gate axis)'.padEnd(28)} ${(oofBaseMissed / oofPairs)
+        .toFixed(3)
+        .padStart(9)} ${(oofNowMissed / oofPairs).toFixed(3).padStart(11)} ${String(
+        oofBaseOnly,
+      ).padStart(11)} ${String(oofNowOnly).padStart(10)} ${oofP.toFixed(4).padStart(11)}`,
+    );
 
     const pooledP = mcnemarExact(totalBaseOnly, totalNowOnly);
     console.log(
