@@ -77,6 +77,84 @@ test('the default names its authors, so it is not the tool speaking', () => {
   assert.match(decision!.positions[2].stance, /not a preference/);
 });
 
+test('the stance is read from the deliverable of record, not from the reply', async () => {
+  // Observed on a live run: a role submitted a 9,000-character deliverable
+  // citing three files through the write surface, then replied with a summary
+  // whose restated stance block carried the word and dropped the BECAUSE and
+  // CITE lines. The framing read the reply, so the inbox showed that role's
+  // position with no reason and no citation while its deliverable had both —
+  // and "both sides cited" is the one thing commitment 11 asks of a framed
+  // conflict. The challenge checks had already learned this lesson; the stance
+  // parser had not.
+  const { openStore } = await import('../../../src/kernel/store/open.ts');
+  const { enqueueTask, claimTask, completeTask } = await import('../../../src/kernel/store/tasks.ts');
+  const { DRAFT_ACTION } = await import('../../../src/kernel/run/promotion.ts');
+  const { appendWorkLog } = await import('../../../src/kernel/store/worklog.ts');
+  const { frameConflicts } = await import('../../../src/kernel/run/coordinator.ts');
+  const { openDecisions } = await import('../../../src/kernel/store/decisions.ts');
+  const { mkdtempSync, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+
+  const root = mkdtempSync(join(tmpdir(), 'construct-stance-'));
+  const store = openStore(join(root, 'construct.db'));
+  try {
+    const seed = (role: string, reply: string, draft: string): void => {
+      const id = `run-1:${role}`;
+      enqueueTask(store, {
+        id,
+        run: 'run-1',
+        role,
+        brief: { id, outcome: 'ship it', role, inputs: [], capabilities: [], postconditions: [] },
+        at: AT,
+      });
+      const leased = claimTask(store, { owner: 'test', leaseUntil: '2099-01-01T00:00:00.000Z', now: AT, run: 'run-1' });
+      completeTask(store, {
+        id: leased!.id,
+        owner: 'test',
+        token: leased!.token,
+        result: { text: reply },
+        spend: 0,
+        spendReported: false,
+        at: AT,
+      });
+      appendWorkLog(store, {
+        run: 'run-1',
+        task: leased!.id,
+        role,
+        action: DRAFT_ACTION,
+        // A submitted draft arrives as a plain string on the real path.
+        detail: { deliverable: draft },
+        at: AT,
+      });
+    };
+
+    seed(
+      'security',
+      'Summary of what I found.\n\nSTANCE: proceed — bounded exposures, worth filing as follow-up.',
+      'FINDING\nthe store is deletable\n\nSTANCE: proceed\nBECAUSE: the exposures are bounded\nCITE: src/kernel/cleanup/catalog.ts',
+    );
+    seed(
+      'operations',
+      'Summary.\n\nSTANCE: hold\nBECAUSE: no detection path\nCITE: docs/first-run.md',
+      'FINDING\nnobody finds out\n\nSTANCE: hold\nBECAUSE: no detection path\nCITE: docs/first-run.md',
+    );
+
+    assert.equal(frameConflicts(store, [], { clock: () => AT, run: 'run-1' }), 1);
+    const decision = openDecisions(store, 'run-1')[0];
+    const security = decision.positions.find((p) => p.role === 'security');
+    assert.equal(
+      security?.citation,
+      'src/kernel/cleanup/catalog.ts',
+      'the citation lives in the deliverable, so the framing has to read the deliverable',
+    );
+    assert.match(security!.stance, /the exposures are bounded/);
+  } finally {
+    store.close();
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('the two-sided run passes every check', () => {
   const { code, result } = score('two-sided');
   assert.equal(code, 0, JSON.stringify(result.checks));

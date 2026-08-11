@@ -1,0 +1,50 @@
+{
+ "recorded": "2026-08-10",
+ "note": "a live three-way cross-concern conflict from a wave-B stakeholder packet run on the claude host; recorded as observed, never edited to score better",
+ "run": "run-20260811001658945",
+ "deliverables": [
+  {
+   "role": "measurement",
+   "text": "Draft submitted (seq 244, role measurement).\n\n**Bottom line:** three failure paths for a mid-run crash are already partially instrumented (task state, lease deadlines, recovery, cost-silent hosts), but one — a decision dying between task settlement and conflict framing — is filed as a known defect (`CHANGELOG.md` line 175, construct-185) with no recovery path and no trace that lets anyone notice it happened. That's why I held rather than passed.\n\nSTANCE: hold\nBECAUSE: a filed, apparently still-open defect lets a run failure destroy a decision the user was supposed to see, with no record left to detect the loss.\nCITE: CHANGELOG.md, construct-185 entry (line 175)"
+  },
+  {
+   "role": "operations",
+   "text": "Draft submitted. Summary:\n\n**Finding:** Detection of a halfway-failed run is pull-only across the whole product (including the standing-watch feature meant to catch things unprompted), and the walkthrough that onboards a new installer teaches exactly the recovery move — re-running `construct work` — that the coordinator's lease design warns against, with nothing telling the reader to check first. Separately, the append-only guarantee inside the database has already survived one real threat to the file that holds it (`cleanup` deleting a live v3 store), fixed by a marker-file convention scoped to the v2→v3 transition specifically.\n\nThree numbered issues filed (walkthrough gap, undisclosed no-push-notification limitation, cutover convention needs re-verification at v4), each with an owner or `[unowned]` where the material doesn't say. Stance: **hold**, on the walkthrough/recovery-move conflict.\n\nSTANCE: hold\nBECAUSE: the walkthrough that onboards a new installer teaches the one recovery move the coordinator's own lease design warns against, with no documented check in between.\nCITE: CHANGELOG.md construct-7zu against docs/first-run.md's \"Run the work\" section."
+  },
+  {
+   "role": "security",
+   "text": "Draft submitted and logged. Summary for you:\n\n**Finding.** The work log's append-only property (DB triggers) stops row tampering but not whole-file deletion — `src/kernel/cleanup/catalog.ts` says this in its own comment, in the context of a real incident (`construct-a5q`) where Construct's own cleanup command deleted the store, the work log, and the capability secret together. The fix that shipped only guards `construct cleanup`, not direct filesystem deletion by anything else with same-user access.\n\n**Two threat paths reported:**\n1. Same-OS-user filesystem access → delete `construct.db` → the entire evidentiary record of a failed/halfway run vanishes, with no external copy anywhere (Construct is pull-only, single-machine, per `docs/first-run.md`) and no check that stops it.\n2. Same access → read the `0600` `capability-secret` (protects against a different user, not the same one) → forge `submit-draft`/`append-work-log` tokens. Contained by a hardcoded grant set that can't self-promote a deliverable, but `docs/stakeholder-acceptance-phase-4.md` shows verdicts are routinely left unrecorded for a long time by design, so a forged low-privilege write can sit unreviewed for a while.\n\n**Mitigations proposed (both [unowned]):** export the work log somewhere outside the store's own directory so deletion isn't total, and add a host-reachability/auth check to `construct doctor` (a gap the doc already names itself) so credential failures surface before a run starts rather than mid-dispatch.\n\nSTANCE: proceed — these are real but bounded exposures (evidence destruction and capped-privilege forgery, not reach to funds or other tenants), worth filing as follow-up work rather than holding the install."
+  }
+ ],
+ "decision": {
+  "id": "run-20260811001658945:stance",
+  "run": "run-20260811001658945",
+  "state": "open",
+  "question": "Two concerns disagree on this outcome: Work out what happens after Construct is installed on someone else's machine and a run fails halfway: who finds out, what they can see, and what it costs to keep the work log trustworthy — 2 role(s) say hold, 1 say proceed these are real but bounded exposures (evidence destruction and capped-privilege forgery, not reach to funds or other tenants), worth filing as follow-up work rather than holding the install. This one is yours to call.",
+  "positions": [
+   {
+    "role": "measurement",
+    "stance": "hold — a filed, apparently still-open defect lets a run failure destroy a decision the user was supposed to see, with no record left to detect the loss.",
+    "citation": "CHANGELOG.md, construct-185 entry (line 175)"
+   },
+   {
+    "role": "operations",
+    "stance": "hold — the walkthrough that onboards a new installer teaches the one recovery move the coordinator's own lease design warns against, with no documented check in between.",
+    "citation": "CHANGELOG.md construct-7zu against docs/first-run.md's \"Run the work\" section."
+   },
+   {
+    "role": "security",
+    "stance": "proceed these are real but bounded exposures (evidence destruction and capped-privilege forgery, not reach to funds or other tenants), worth filing as follow-up work rather than holding the install",
+    "citation": null
+   },
+   {
+    "role": "construct",
+    "stance": "the reversible default if you do nothing: this holds, because holding can be undone tomorrow and proceeding cannot. That is what silence costs, not a preference — measurement and operations argued for it, security argued against, and the call is yours",
+    "citation": null
+   }
+  ],
+  "raisedAt": "2026-08-11T00:22:30.547Z",
+  "resolvedAt": null,
+  "resolution": null
+ }
+}

@@ -579,7 +579,15 @@ export function frameConflicts(
     const done = listTasks(store, run).filter((task) => task.state === 'done');
     const stances: RoleStance[] = [];
     for (const task of done) {
-      const declared = parseStance((task.result as { text?: unknown } | null)?.text);
+      // The deliverable of record, not the reply — the same rule the challenge
+      // checks already follow, for the same reason. A role that submits its
+      // draft through the write surface and replies with a summary restates its
+      // stance word there and drops the BECAUSE and CITE lines with it. Reading
+      // the reply then framed that role's position with no reason and no
+      // citation while its deliverable carried both, which is the one thing
+      // commitment 11 asks of a framed conflict. Observed on a live run: the
+      // security role cited three files and reached the inbox uncited.
+      const declared = parseStance(deliverableTextOf(store, task.id, task.result));
       if (declared) stances.push({ role: task.role, declared });
     }
 
