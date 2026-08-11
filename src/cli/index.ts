@@ -64,6 +64,7 @@ import type { HostAdapter } from '../kernel/hosts/interface.ts';
 import { createOpenCodeAdapter } from '../hosts/opencode/adapter.ts';
 import { createClaudeAdapter } from '../hosts/claude/adapter.ts';
 import { createCodexAdapter } from '../hosts/codex/adapter.ts';
+import { createCursorAdapter } from '../hosts/cursor/adapter.ts';
 import { dispatchFloorFor } from '../hosts/floors.ts';
 import { loadOrCreateSecret, loadSecret } from '../kernel/capabilities/secretfile.ts';
 import { readRoleEnv } from '../kernel/run/roleenv.ts';
@@ -96,6 +97,7 @@ function adapterForHost(
 ): HostAdapter {
   if (host === 'claude') return createClaudeAdapter(opts);
   if (host === 'codex') return createCodexAdapter(opts);
+  if (host === 'cursor') return createCursorAdapter(opts);
   return createOpenCodeAdapter(opts);
 }
 
@@ -354,7 +356,7 @@ async function serve(): Promise<number> {
 }
 
 const OUTCOME_USAGE =
-  'usage: construct outcome [--host=<opencode|claude|codex> [--model=…] [--binary=…]] ' +
+  'usage: construct outcome [--host=<opencode|claude|codex|cursor> [--model=…] [--binary=…]] ' +
   '[--domains=<name,…>] [--workspace=<name>] [--timeout=<minutes>] "<what you want to happen>"\n';
 
 export interface OutcomeArgs {
@@ -366,7 +368,7 @@ export interface OutcomeArgs {
    * least expected charge in the product. With a host named, its model is the
    * primary namer on every outcome (adopted 2026-08-05).
    */
-  readonly host?: 'opencode' | 'claude' | 'codex';
+  readonly host?: 'opencode' | 'claude' | 'codex' | 'cursor';
   readonly model?: string;
   readonly binary?: string;
   readonly dir?: string;
@@ -395,7 +397,7 @@ export function parseOutcomeArgs(argv: string[]): OutcomeArgs {
       // Removed with the inversion, loudly: silence here would read as the
       // old behavior still existing.
       throw new Error(
-        '--escalate was removed: a named host\'s model is primary on every outcome now; use --host=<opencode|claude|codex>',
+        '--escalate was removed: a named host\'s model is primary on every outcome now; use --host=<opencode|claude|codex|cursor>',
       );
     }
     const match = /^--([a-z-]+)=(.*)$/.exec(arg);
@@ -407,8 +409,8 @@ export function parseOutcomeArgs(argv: string[]): OutcomeArgs {
   }
 
   const host = flags.host;
-  if (host !== undefined && host !== 'opencode' && host !== 'claude' && host !== 'codex') {
-    throw new Error(`unknown host "${host}" (expected opencode, claude, or codex)`);
+  if (host !== undefined && host !== 'opencode' && host !== 'claude' && host !== 'codex' && host !== 'cursor') {
+    throw new Error(`unknown host "${host}" (expected opencode, claude, codex, or cursor)`);
   }
 
   // A flag that is quietly ignored is a flag that lies. --model/--binary/--dir
@@ -417,7 +419,7 @@ export function parseOutcomeArgs(argv: string[]): OutcomeArgs {
   const hostFlags = ['model', 'binary', 'dir', 'timeout'].filter((f) => flags[f] !== undefined);
   if (host === undefined && hostFlags.length > 0) {
     throw new Error(
-      `--${hostFlags[0]} only applies when a host is named; add --host=<opencode|claude|codex>, or drop the flag`,
+      `--${hostFlags[0]} only applies when a host is named; add --host=<opencode|claude|codex|cursor>, or drop the flag`,
     );
   }
 
@@ -609,7 +611,7 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
         //: the user, not the tool, decides to spend money.
         process.stdout.write(
           '\nA host model can be asked instead, at cost:\n' +
-            `  construct outcome --host=<opencode|claude|codex> ${JSON.stringify(args.text)}\n`,
+            `  construct outcome --host=<opencode|claude|codex|cursor> ${JSON.stringify(args.text)}\n`,
         );
         planRun(store, started, null, args.workspace, at);
         return 0;
@@ -715,12 +717,12 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
 const DEFAULT_LEASE_MINUTES_ASK = 15;
 
 const ASK_USAGE =
-  'usage: construct ask [--host=<opencode|claude|codex> [--model=…] [--binary=…] [--dir=…]] ' +
+  'usage: construct ask [--host=<opencode|claude|codex|cursor> [--model=…] [--binary=…] [--dir=…]] ' +
   '[--workspace=<name>] [--ceiling=<amount>] [--timeout=<minutes>] "<your question>"\n';
 
 export interface AskArgs {
   readonly question: string;
-  readonly host?: 'opencode' | 'claude' | 'codex';
+  readonly host?: 'opencode' | 'claude' | 'codex' | 'cursor';
   readonly model?: string;
   readonly binary?: string;
   readonly dir?: string;
@@ -734,15 +736,15 @@ export function parseAskArgs(argv: string[]): AskArgs {
   const { flags, rest } = parseFlags(argv);
 
   const host = flags.host;
-  if (host !== undefined && host !== 'opencode' && host !== 'claude' && host !== 'codex') {
-    throw new Error(`unknown host "${host}" (expected opencode, claude, or codex)`);
+  if (host !== undefined && host !== 'opencode' && host !== 'claude' && host !== 'codex' && host !== 'cursor') {
+    throw new Error(`unknown host "${host}" (expected opencode, claude, codex, or cursor)`);
   }
   // Same rule as `outcome`: a flag that only means something with a host, given
   // without one, is a usage error rather than a silent no-op.
   const hostFlags = ['model', 'binary', 'dir', 'timeout'].filter((f) => flags[f] !== undefined);
   if (host === undefined && hostFlags.length > 0) {
     throw new Error(
-      `--${hostFlags[0]} only applies when a host is named; add --host=<opencode|claude|codex>, or drop the flag`,
+      `--${hostFlags[0]} only applies when a host is named; add --host=<opencode|claude|codex|cursor>, or drop the flag`,
     );
   }
 
@@ -843,7 +845,7 @@ export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<n
       if (!host) {
         process.stdout.write(
           '\nA host model reads the question properly, at cost:\n' +
-            `  construct ask --host=<opencode|claude|codex> ${JSON.stringify(args.question)}\n`,
+            `  construct ask --host=<opencode|claude|codex|cursor> ${JSON.stringify(args.question)}\n`,
         );
       }
       planRun(store, started, null, args.workspace, at, []);
@@ -878,7 +880,7 @@ export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<n
     if (!host) {
       process.stdout.write(
         '\nNobody was dispatched: answering costs a model call, and no host was named.\n' +
-          `  construct ask --host=<opencode|claude|codex> ${JSON.stringify(args.question)}\n`,
+          `  construct ask --host=<opencode|claude|codex|cursor> ${JSON.stringify(args.question)}\n`,
       );
       return 0;
     }
@@ -986,13 +988,13 @@ export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<n
 
 const NOTES_USAGE =
   'usage: construct notes <file> [--workspace=<name>] [--run=<id>] ' +
-  '[--host=<opencode|claude|codex> [--model=…] [--binary=…] [--dir=…] [--timeout=<minutes>]]\n';
+  '[--host=<opencode|claude|codex|cursor> [--model=…] [--binary=…] [--dir=…] [--timeout=<minutes>]]\n';
 
 export interface NotesArgs {
   readonly file: string;
   readonly workspace: string;
   readonly run?: string;
-  readonly host?: 'opencode' | 'claude' | 'codex';
+  readonly host?: 'opencode' | 'claude' | 'codex' | 'cursor';
   readonly model?: string;
   readonly binary?: string;
   readonly dir?: string;
@@ -1012,13 +1014,13 @@ export function parseNotesArgs(argv: string[]): NotesArgs {
     throw new Error(words.length === 0 ? 'a notes file is required' : 'one notes file at a time');
   }
   const host = flags.host;
-  if (host !== undefined && host !== 'opencode' && host !== 'claude' && host !== 'codex') {
-    throw new Error(`unknown host "${host}" (expected opencode, claude, or codex)`);
+  if (host !== undefined && host !== 'opencode' && host !== 'claude' && host !== 'codex' && host !== 'cursor') {
+    throw new Error(`unknown host "${host}" (expected opencode, claude, codex, or cursor)`);
   }
   const hostFlags = ['model', 'binary', 'dir', 'timeout'].filter((f) => flags[f] !== undefined);
   if (host === undefined && hostFlags.length > 0) {
     throw new Error(
-      `--${hostFlags[0]} only applies when a host is named; add --host=<opencode|claude|codex>, or drop the flag`,
+      `--${hostFlags[0]} only applies when a host is named; add --host=<opencode|claude|codex|cursor>, or drop the flag`,
     );
   }
   return {
@@ -1111,7 +1113,7 @@ export async function notes(argv: string[], hostOverride?: HostAdapter): Promise
     if (args.host === undefined && hostOverride === undefined) {
       process.stdout.write(
         '\nThe note is kept; drawing conclusions from it is model work, at cost:\n' +
-          `  construct notes --host=<opencode|claude|codex> ${args.file}\n`,
+          `  construct notes --host=<opencode|claude|codex|cursor> ${args.file}\n`,
       );
       return 0;
     }
@@ -1330,8 +1332,8 @@ export function parseWorkArgs(argv: string[]): WorkArgs {
   };
 
   const host = args.host ?? 'opencode';
-  if (host !== 'opencode' && host !== 'claude' && host !== 'codex') {
-    throw new Error(`Invalid --host=${host}; expected opencode|claude|codex`);
+  if (host !== 'opencode' && host !== 'claude' && host !== 'codex' && host !== 'cursor') {
+    throw new Error(`Invalid --host=${host}; expected opencode|claude|codex|cursor`);
   }
 
   const leaseMinutes = number('lease-minutes', 15);

@@ -23,6 +23,7 @@ import { hostEnvironment } from './environment.ts';
 import { PINNED_VERSION as OPENCODE_PINNED } from './opencode/pin.ts';
 import { PINNED_VERSION as CLAUDE_PINNED } from './claude/pin.ts';
 import { PINNED_VERSION as CODEX_PINNED } from './codex/pin.ts';
+import { PINNED_VERSION as CURSOR_PINNED } from './cursor/pin.ts';
 
 export interface HostPresence {
   /** The host, by the name its adapter (or future adapter) uses. */
@@ -102,6 +103,19 @@ export function surveyHosts(exec: ProbeExec = defaultExec): HostPresence[] {
     pinned: CODEX_PINNED,
     auth: codexAuth ?? (codex !== null ? 'login status unavailable' : 'not probed'),
     dispatchable: codex !== null,
+  });
+
+  // `cursor-agent status` is the same costs-nothing auth probe: it names the
+  // signed-in account, or exits nonzero saying "Not logged in".
+  const cursor = exec('cursor-agent', ['--version']);
+  const cursorAuth = cursor !== null ? exec('cursor-agent', ['status']) : null;
+  rows.push({
+    host: 'cursor',
+    found: cursor !== null,
+    ...(cursor !== null ? { version: cursor } : {}),
+    pinned: CURSOR_PINNED,
+    auth: cursorAuth ?? (cursor !== null ? 'not logged in' : 'not probed'),
+    dispatchable: cursor !== null,
   });
 
   return rows;
