@@ -1174,3 +1174,37 @@ test('a run with no plan or no lessons dispatches without a memory block', async
     assert.ok(!readWorkLog(store, 'run-1').some((e) => e.action === 'lessons-briefed'));
   });
 });
+
+test('a seat-mode run tells every role it proposes to a human team; team mode adds nothing', async () => {
+  await withStoreAsync(async (store) => {
+    recordPlan(
+      store,
+      buildPlan({
+        id: 'plan-run-1',
+        run: 'run-1',
+        outcome: 'launch the beta',
+        densified: null,
+        implicated: [{ domain: 'privacy', concern: 'personal data', score: 10, signals: ['beta'] }],
+        inferredBy: 'keywords',
+        sources: [],
+        workspace: 'default',
+        mode: 'seat',
+        plannedAt: AT,
+      }),
+    );
+    seed(store, ['privacy']);
+    const host = fakeHost();
+    await workRun(store, host, { owner: 'w1', clock: frozen(AT), spendCeiling: 100 });
+    const assignment = host.assignments[0]!;
+    assert.match(assignment, /Engagement mode: seat/);
+    assert.match(assignment, /system of record/);
+    assert.match(assignment, /never "done", "applied", or "decided"/);
+  });
+  await withStoreAsync(async (store) => {
+    // Team mode — and the no-plan legacy case — must not carry seat framing.
+    seed(store, ['privacy']);
+    const host = fakeHost();
+    await workRun(store, host, { owner: 'w1', clock: frozen(AT), spendCeiling: 100 });
+    assert.ok(!host.assignments[0]!.includes('Engagement mode: seat'));
+  });
+});

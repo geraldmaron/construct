@@ -321,6 +321,15 @@ export function assignmentFor(
      * cited [cite:lesson], and a finding still needs material behind it.
      */
     readonly lessons?: readonly string[];
+    /**
+     * The workspace's engagement mode. 'seat' changes the role's standing:
+     * Construct fills one seat on the user's human team, the user's own
+     * tracker and documents are the system of record, and every change the
+     * deliverable recommends is a proposal addressed to a named human owner —
+     * never described as done, applied, or decided. 'team' (or absent) is the
+     * whole-team default and adds nothing.
+     */
+    readonly mode?: 'team' | 'seat';
   } = {},
 ): string {
   const domain = domainsByName(catalog).get(brief.role);
@@ -396,6 +405,18 @@ export function assignmentFor(
         options.lessons.map((l) => `- ${l}`).join('\n') +
         '\n\n'
       : '';
+  // The seat posture, spoken only when the workspace chose it. In seat mode a
+  // deliverable that narrates changes as made is not a smaller error than a
+  // wrong finding — it forges a human act into a system of record.
+  const seat =
+    options.mode === 'seat'
+      ? 'Engagement mode: seat. You fill one seat on the user\'s human team; ' +
+        'you are not the team. Their tracker and documents are the system of ' +
+        'record. Every change you recommend is a proposal addressed to a named ' +
+        'human owner — write "propose", never "done", "applied", or "decided". ' +
+        'Where the material shows a team convention that differs from your ' +
+        'default, the team\'s convention wins.\n\n'
+      : '';
   const asking = brief.question !== undefined;
   return (
     `You are acting as the ${brief.role} role.${concern}\n\n` +
@@ -403,6 +424,7 @@ export function assignmentFor(
       ? `The question the user asked: ${brief.question}\n\n`
       : `The outcome the user asked for: ${brief.outcome}\n\n`) +
     engagement +
+    seat +
     remembered +
     lensDirective(brief.role) +
     (asking ? answerDirective() : workProductDirective(brief.role)) +
@@ -690,7 +712,8 @@ export async function workRun(
     // the dispatch and the record agree on which workspace was consulted. A
     // run predating recorded workspaces reads the default one, which is where
     // every pre-existing lesson lives.
-    const workspace = planFor(store, task.run)?.workspace ?? 'default';
+    const plan = planFor(store, task.run);
+    const workspace = plan?.workspace ?? 'default';
     const lessons = operationalLessonsFor(store, workspace);
     if (lessons.length > 0) {
       appendWorkLog(store, {
@@ -849,6 +872,7 @@ export async function workRun(
             groundRoots,
             answers: answeredAsksFor(store, task.run),
             lessons: lessons.map((l) => l.body),
+            mode: plan?.mode,
           }),
         },
         { invocationId: task.id, roleEnv },
