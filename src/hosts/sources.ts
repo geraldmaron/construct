@@ -15,7 +15,7 @@
 
 import { readdirSync, statSync } from 'node:fs';
 import { join, extname } from 'node:path';
-import { UTF8_TEXT_EXTS, TRANSCRIPT_EXTS } from '../kernel/extract/formats.ts';
+import { UTF8_TEXT_EXTS, TRANSCRIPT_EXTS, EXTRACTABLE_DOCUMENT_EXTS } from '../kernel/extract/formats.ts';
 import type { Source } from '../kernel/store/sources.ts';
 import type { SourceSurvey, SurveyedDocument } from '../kernel/run/sourcereads.ts';
 
@@ -48,6 +48,18 @@ const PROSE_EXTS: ReadonlySet<string> = new Set(['.md', '.txt', '.rst', '.adoc',
 
 const READABLE_EXTS: ReadonlySet<string> = new Set([...UTF8_TEXT_EXTS, ...TRANSCRIPT_EXTS]);
 
+/**
+ * Documents that exist and are not plain text: PDFs, office formats, images,
+ * recordings. Surveyed rather than skipped, because a directory of PDFs that
+ * surveys as zero documents is not a small ground, it is an invisible one —
+ * and a role told the ground is empty writes with a confidence the walk never
+ * earned. Whether the host can actually read one is the host's affair; the
+ * survey's job is that the document exists on the record either way.
+ */
+const BINARY_EXTS: ReadonlySet<string> = new Set(
+  [...EXTRACTABLE_DOCUMENT_EXTS].filter((ext) => !READABLE_EXTS.has(ext)),
+);
+
 function isRemoteGitLocator(locator: string): boolean {
   return /^(https?|git|ssh):\/\//.test(locator) || /^[\w.-]+@[\w.-]+:/.test(locator);
 }
@@ -71,8 +83,12 @@ function walk(dir: string, found: SurveyedDocument[]): void {
       continue;
     }
     if (!entry.isFile()) continue;
-    if (!READABLE_EXTS.has(extname(entry.name).toLowerCase())) continue;
-    found.push({ path, bytes: statSync(path).size });
+    const ext = extname(entry.name).toLowerCase();
+    if (READABLE_EXTS.has(ext)) {
+      found.push({ path, bytes: statSync(path).size });
+    } else if (BINARY_EXTS.has(ext)) {
+      found.push({ path, bytes: statSync(path).size, binary: true });
+    }
   }
 }
 
@@ -119,9 +135,11 @@ export function surveySource(source: Source, opts?: { readonly cap?: number }): 
   }
 
   const ranked = [...found].sort((a, b) => {
-    const aProse = PROSE_EXTS.has(extname(a.path).toLowerCase());
-    const bProse = PROSE_EXTS.has(extname(b.path).toLowerCase());
-    if (aProse !== bProse) return aProse ? -1 : 1;
+    // Prose first, plain text next, binary last: when the cap bites, the
+    // documents a role can definitely open outrank the ones it may not.
+    const rank = (d: SurveyedDocument): number =>
+      PROSE_EXTS.has(extname(d.path).toLowerCase()) ? 0 : d.binary ? 2 : 1;
+    if (rank(a) !== rank(b)) return rank(a) - rank(b);
     return a.path.localeCompare(b.path);
   });
 

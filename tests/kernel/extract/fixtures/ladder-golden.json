@@ -47,7 +47,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "PDF text density below calibrated corpus threshold suggests scanned or image-heavy content; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` for local OCR, set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok for shared Docling Serve, or transcribe manually.",
+      "remediation": "Install Docling for local OCR so `docling --version` answers on PATH (pip install docling), set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok for shared Docling Serve, or transcribe manually.",
       "calls": [
         "unpdf"
       ]
@@ -65,7 +65,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "PDF text density below calibrated corpus threshold suggests scanned or image-heavy content; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` for local OCR, set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok for shared Docling Serve, or transcribe manually.",
+      "remediation": "Install Docling for local OCR so `docling --version` answers on PATH (pip install docling), set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok for shared Docling Serve, or transcribe manually.",
       "calls": [
         "unpdf"
       ]
@@ -83,7 +83,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "PDF text density below calibrated corpus threshold suggests scanned or image-heavy content; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` for local OCR, set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok for shared Docling Serve, or transcribe manually.",
+      "remediation": "Install Docling for local OCR so `docling --version` answers on PATH (pip install docling), set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok for shared Docling Serve, or transcribe manually.",
       "calls": [
         "unpdf"
       ]
@@ -101,7 +101,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "PDF text density below calibrated corpus threshold suggests scanned or image-heavy content; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` for local OCR, set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok for shared Docling Serve, or transcribe manually.",
+      "remediation": "Install Docling for local OCR so `docling --version` answers on PATH (pip install docling), set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok for shared Docling Serve, or transcribe manually.",
       "calls": [
         "unpdf"
       ]
@@ -155,7 +155,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "PDF text density below calibrated corpus threshold suggests scanned or image-heavy content; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` for local OCR, set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok for shared Docling Serve, or transcribe manually.",
+      "remediation": "Install Docling for local OCR so `docling --version` answers on PATH (pip install docling), set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok for shared Docling Serve, or transcribe manually.",
       "calls": [
         "unpdf"
       ]
@@ -173,7 +173,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "PDF text density below calibrated corpus threshold suggests scanned or image-heavy content; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` for local OCR, set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok for shared Docling Serve, or transcribe manually.",
+      "remediation": "Install Docling for local OCR so `docling --version` answers on PATH (pip install docling), set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok for shared Docling Serve, or transcribe manually.",
       "calls": [
         "unpdf"
       ]
@@ -191,7 +191,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "PDF text density below calibrated corpus threshold suggests scanned or image-heavy content; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` for local OCR, set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok for shared Docling Serve, or transcribe manually.",
+      "remediation": "Install Docling for local OCR so `docling --version` answers on PATH (pip install docling), set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok for shared Docling Serve, or transcribe manually.",
       "calls": [
         "unpdf"
       ]
@@ -209,7 +209,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "PDF text density below calibrated corpus threshold suggests scanned or image-heavy content; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` for local OCR, set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok for shared Docling Serve, or transcribe manually.",
+      "remediation": "Install Docling for local OCR so `docling --version` answers on PATH (pip install docling), set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok for shared Docling Serve, or transcribe manually.",
       "calls": [
         "unpdf"
       ]
@@ -599,7 +599,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "PDF text density below calibrated corpus threshold suggests scanned or image-heavy content; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` for local OCR, set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok for shared Docling Serve, or transcribe manually.",
+      "remediation": "Install Docling for local OCR so `docling --version` answers on PATH (pip install docling), set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok for shared Docling Serve, or transcribe manually.",
       "calls": [
         "unpdf"
       ]
@@ -617,7 +617,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "PDF text density below calibrated corpus threshold suggests scanned or image-heavy content; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` for local OCR, set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok for shared Docling Serve, or transcribe manually.",
+      "remediation": "Install Docling for local OCR so `docling --version` answers on PATH (pip install docling), set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok for shared Docling Serve, or transcribe manually.",
       "calls": [
         "unpdf"
       ]
@@ -635,7 +635,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "PDF text density below calibrated corpus threshold suggests scanned or image-heavy content; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` for local OCR, set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok for shared Docling Serve, or transcribe manually.",
+      "remediation": "Install Docling for local OCR so `docling --version` answers on PATH (pip install docling), set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok for shared Docling Serve, or transcribe manually.",
       "calls": [
         "unpdf"
       ]
@@ -653,7 +653,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "PDF text density below calibrated corpus threshold suggests scanned or image-heavy content; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` for local OCR, set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok for shared Docling Serve, or transcribe manually.",
+      "remediation": "Install Docling for local OCR so `docling --version` answers on PATH (pip install docling), set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok for shared Docling Serve, or transcribe manually.",
       "calls": [
         "unpdf"
       ]
@@ -707,7 +707,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
-      "remediation": "Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.",
       "calls": [
         "mammoth"
       ]
@@ -725,7 +725,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
-      "remediation": "Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.",
       "calls": [
         "mammoth"
       ]
@@ -743,7 +743,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
-      "remediation": "Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.",
       "calls": [
         "mammoth"
       ]
@@ -761,7 +761,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
-      "remediation": "Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.",
       "calls": [
         "mammoth"
       ]
@@ -815,7 +815,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
-      "remediation": "Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.",
       "calls": [
         "mammoth"
       ]
@@ -833,7 +833,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
-      "remediation": "Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.",
       "calls": [
         "mammoth"
       ]
@@ -851,7 +851,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
-      "remediation": "Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.",
       "calls": [
         "mammoth"
       ]
@@ -869,7 +869,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
-      "remediation": "Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.",
       "calls": [
         "mammoth"
       ]
@@ -1259,7 +1259,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
-      "remediation": "Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.",
       "calls": [
         "mammoth"
       ]
@@ -1277,7 +1277,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
-      "remediation": "Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.",
       "calls": [
         "mammoth"
       ]
@@ -1295,7 +1295,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
-      "remediation": "Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.",
       "calls": [
         "mammoth"
       ]
@@ -1313,7 +1313,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
-      "remediation": "Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.",
       "calls": [
         "mammoth"
       ]
@@ -1331,7 +1331,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
-      "remediation": "Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.",
       "calls": [
         "mammoth"
       ]
@@ -1367,7 +1367,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
-      "remediation": "Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.",
       "calls": [
         "mammoth"
       ]
@@ -1385,7 +1385,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
-      "remediation": "Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.",
       "calls": [
         "mammoth"
       ]
@@ -1403,7 +1403,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
-      "remediation": "Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.",
       "calls": [
         "mammoth"
       ]
@@ -1421,7 +1421,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
-      "remediation": "Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.",
       "calls": [
         "mammoth"
       ]
@@ -1439,7 +1439,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
-      "remediation": "Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.",
       "calls": [
         "mammoth"
       ]
@@ -1475,7 +1475,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
-      "remediation": "Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.",
       "calls": [
         "mammoth"
       ]
@@ -1493,7 +1493,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
-      "remediation": "Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.",
       "calls": [
         "mammoth"
       ]
@@ -1511,7 +1511,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
-      "remediation": "Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.",
       "calls": [
         "mammoth"
       ]
@@ -1529,7 +1529,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
-      "remediation": "Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.",
       "calls": [
         "mammoth"
       ]
@@ -1886,7 +1886,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
-      "remediation": "Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.",
       "calls": [
         "mammoth"
       ]
@@ -1922,7 +1922,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
-      "remediation": "Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.",
       "calls": [
         "mammoth"
       ]
@@ -1940,7 +1940,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
-      "remediation": "Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.",
       "calls": [
         "mammoth"
       ]
@@ -1958,7 +1958,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
-      "remediation": "Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.",
       "calls": [
         "mammoth"
       ]
@@ -1976,7 +1976,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
-      "remediation": "Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.",
       "calls": [
         "mammoth"
       ]
@@ -1994,7 +1994,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".doc has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2010,7 +2010,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".doc has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2026,7 +2026,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".doc has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2042,7 +2042,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".doc has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2058,7 +2058,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".doc has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2074,7 +2074,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".doc has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2090,7 +2090,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".doc has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2106,7 +2106,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".doc has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2122,7 +2122,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".doc has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2138,7 +2138,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".doc has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2154,7 +2154,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".doc has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2170,7 +2170,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".doc has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2510,7 +2510,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".doc has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2526,7 +2526,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".doc has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2542,7 +2542,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".doc has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2558,7 +2558,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".doc has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2574,7 +2574,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".doc has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2590,7 +2590,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".doc has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2606,7 +2606,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".xlsx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2622,7 +2622,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".xlsx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2638,7 +2638,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".xlsx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2654,7 +2654,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".xlsx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2670,7 +2670,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".xlsx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2686,7 +2686,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".xlsx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2702,7 +2702,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".xlsx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2718,7 +2718,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".xlsx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2734,7 +2734,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".xlsx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2750,7 +2750,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".xlsx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2766,7 +2766,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".xlsx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -2782,7 +2782,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".xlsx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3122,7 +3122,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".xlsx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3138,7 +3138,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".xlsx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3154,7 +3154,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".xlsx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3170,7 +3170,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".xlsx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3186,7 +3186,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".xlsx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3202,7 +3202,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".xlsx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3218,7 +3218,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".pptx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3234,7 +3234,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".pptx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3250,7 +3250,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".pptx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3266,7 +3266,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".pptx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3282,7 +3282,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".pptx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3298,7 +3298,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".pptx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3314,7 +3314,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".pptx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3330,7 +3330,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".pptx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3346,7 +3346,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".pptx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3362,7 +3362,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".pptx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3378,7 +3378,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".pptx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3394,7 +3394,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".pptx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3734,7 +3734,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".pptx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3750,7 +3750,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".pptx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3766,7 +3766,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".pptx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3782,7 +3782,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".pptx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3798,7 +3798,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".pptx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3814,7 +3814,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".pptx has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3830,7 +3830,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".odt has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3846,7 +3846,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".odt has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3862,7 +3862,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".odt has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3878,7 +3878,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".odt has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3894,7 +3894,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".odt has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3910,7 +3910,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".odt has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3926,7 +3926,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".odt has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3942,7 +3942,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".odt has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3958,7 +3958,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".odt has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3974,7 +3974,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".odt has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -3990,7 +3990,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".odt has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -4006,7 +4006,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".odt has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -4346,7 +4346,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".odt has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -4362,7 +4362,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".odt has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -4378,7 +4378,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".odt has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -4394,7 +4394,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".odt has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -4410,7 +4410,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".odt has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -4426,7 +4426,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".odt has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -4442,7 +4442,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".png has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -4458,7 +4458,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".png has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -4474,7 +4474,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".png has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -4490,7 +4490,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".png has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -4506,7 +4506,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".png has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -4522,7 +4522,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".png has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -4538,7 +4538,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".png has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -4554,7 +4554,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".png has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -4570,7 +4570,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".png has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -4586,7 +4586,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".png has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -4602,7 +4602,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".png has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -4618,7 +4618,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".png has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -4958,7 +4958,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".png has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -4974,7 +4974,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".png has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -4990,7 +4990,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".png has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -5006,7 +5006,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".png has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -5022,7 +5022,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".png has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -5038,7 +5038,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".png has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -5054,7 +5054,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".tiff has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -5070,7 +5070,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".tiff has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -5086,7 +5086,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".tiff has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -5102,7 +5102,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".tiff has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -5118,7 +5118,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".tiff has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -5134,7 +5134,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".tiff has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -5150,7 +5150,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".tiff has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -5166,7 +5166,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".tiff has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -5182,7 +5182,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".tiff has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -5198,7 +5198,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".tiff has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -5214,7 +5214,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".tiff has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -5230,7 +5230,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".tiff has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -5570,7 +5570,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".tiff has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -5586,7 +5586,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".tiff has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -5602,7 +5602,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".tiff has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -5618,7 +5618,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".tiff has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -5634,7 +5634,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".tiff has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },
@@ -5650,7 +5650,7 @@
       "extractionMethod": "unsupported",
       "unsupported": true,
       "reason": ".tiff has no lightweight parser; Docling is unavailable.",
-      "remediation": "Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
+      "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.",
       "calls": []
     }
   },

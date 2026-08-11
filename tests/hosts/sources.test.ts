@@ -32,7 +32,9 @@ test('a directory survey lists readable documents and skips build output', () =>
   withGround((root) => {
     writeFileSync(join(root, 'plan.md'), '# plan\n');
     writeFileSync(join(root, 'notes.txt'), 'notes\n');
-    writeFileSync(join(root, 'logo.png'), 'not text');
+    // A png is a real image document now — surveyed as binary, not skipped —
+    // so the not-a-document case uses a format nothing can extract.
+    writeFileSync(join(root, 'logo.bin'), 'not text');
     mkdirSync(join(root, 'sub'));
     writeFileSync(join(root, 'sub', 'spec.md'), '# spec\n');
     mkdirSync(join(root, 'node_modules'));
@@ -94,4 +96,29 @@ test('what cannot be walked is unreachable with its reason, never a throw', () =
   const jira = surveySource(declared('jira', 'PROJ'));
   assert.equal(jira.outcome, 'unreachable');
   if (jira.outcome === 'unreachable') assert.match(jira.reason, /through the host/);
+});
+
+test('a binary document is surveyed and marked, not silently invisible', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'construct-src-'));
+  try {
+    writeFileSync(join(dir, 'notes.md'), '# notes\n');
+    writeFileSync(join(dir, 'contract.pdf'), Buffer.from('%PDF-1.4 fake'));
+    writeFileSync(join(dir, 'deck.pptx'), Buffer.from('PK fake'));
+    writeFileSync(join(dir, 'binary.exe'), Buffer.from([0]), );
+    const survey = surveySource({
+      id: 's1', workspace: 'default', kind: 'directory', locator: dir,
+      addedAt: AT, retiredAt: null,
+    });
+    assert.equal(survey.outcome, 'listed');
+    if (survey.outcome !== 'listed') return;
+    const byPath = new Map(survey.documents.map((d) => [d.path, d]));
+    assert.equal(byPath.get(join(dir, 'notes.md'))?.binary, undefined);
+    assert.equal(byPath.get(join(dir, 'contract.pdf'))?.binary, true);
+    assert.equal(byPath.get(join(dir, 'deck.pptx'))?.binary, true);
+    assert.ok(!byPath.has(join(dir, 'binary.exe')), 'an unextractable format stays out');
+    // Prose outranks binary when the cap bites.
+    assert.equal(survey.documents[0]!.path, join(dir, 'notes.md'));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

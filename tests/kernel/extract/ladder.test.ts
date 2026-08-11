@@ -13,6 +13,11 @@
  * winning tier, same extractionMethod, same providers called in the same order,
  * same reason and remediation when every rung is exhausted.
  *
+ * One deliberate divergence from the raw capture: v2's remediation strings
+ * named `construct install --with-docling`, a command v2 had and this CLI does
+ * not. The fixture carries the current strings — a golden that locks a dead
+ * command into user-facing text is locking the defect, not the port.
+ *
  * The executor is deliberately dumb. Every decision it makes it asks the kernel
  * for; if it started making routing choices of its own, it would be testing
  * itself rather than the port.

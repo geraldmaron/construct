@@ -109,3 +109,24 @@ test('recording writes once per run; a second survey never rewrites evidence', (
     assert.equal(sourceReadsFor(store, 'run-1').length, 2, 'the first record is the record');
   });
 });
+
+test('a binary document earns a partial read row that says listed, not extracted', () => {
+  const reads = readsFromSurvey(
+    'run-1',
+    {
+      source: 's1',
+      locator: '/ground',
+      outcome: 'listed',
+      documents: [
+        { path: '/ground/plan.md', bytes: 10 },
+        { path: '/ground/contract.pdf', bytes: 999, binary: true },
+      ],
+      total: 2,
+    },
+    AT,
+  );
+  assert.equal(reads[0]!.coverage, 'complete');
+  assert.equal(reads[1]!.coverage, 'partial');
+  assert.match(reads[1]!.detail, /listed, not extracted/);
+  assert.match(reads[1]!.detail, /treat its content as unknown/);
+});

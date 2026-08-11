@@ -25,6 +25,8 @@ import type { Store } from '../store/open.ts';
 export interface SurveyedDocument {
   readonly path: string;
   readonly bytes: number;
+  /** Present and true for a document the survey listed but could not read as text. */
+  readonly binary?: boolean;
 }
 
 /**
@@ -67,14 +69,31 @@ export function readsFromSurvey(run: string, survey: SourceSurvey, at: string): 
       },
     ];
   }
-  const reads: SourceRead[] = survey.documents.map((doc) => ({
-    run,
-    source: survey.source,
-    descriptor: doc.path,
-    coverage: 'complete' as const,
-    detail: `${String(doc.bytes)} bytes`,
-    recordedAt: at,
-  }));
+  const reads: SourceRead[] = survey.documents.map((doc) =>
+    doc.binary
+      ? {
+          // Listed, not read: a binary document is on the record so a role
+          // knows it exists, and partial so the gap warning fires — the walk
+          // saw a file, never its content.
+          run,
+          source: survey.source,
+          descriptor: doc.path,
+          coverage: 'partial' as const,
+          detail:
+            `${String(doc.bytes)} bytes, binary — listed, not extracted; ` +
+            'read it with your host\'s own tools if you can, and treat its ' +
+            'content as unknown otherwise',
+          recordedAt: at,
+        }
+      : {
+          run,
+          source: survey.source,
+          descriptor: doc.path,
+          coverage: 'complete' as const,
+          detail: `${String(doc.bytes)} bytes`,
+          recordedAt: at,
+        },
+  );
   if (survey.total > survey.documents.length) {
     reads.push({
       run,

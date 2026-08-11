@@ -141,7 +141,7 @@ export interface PlanInput {
 }
 
 const REMEDIATION_DOCLING =
-  'Run `construct install --with-docling` or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.';
+  'Install Docling so `docling --version` answers on PATH (pip install docling), or set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok.';
 
 /**
  * Derive the routing signals for a file. Pure: everything v2 sniffed from the
@@ -283,7 +283,7 @@ export function planExtraction(input: PlanInput): ExtractionPlan {
         reasonWhenLightweightReturned:
           'PDF text density below calibrated corpus threshold suggests scanned or image-heavy content; Docling is unavailable.',
         remediation:
-          'Run `construct install --with-docling` for local OCR, set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok for shared Docling Serve, or transcribe manually.',
+          'Install Docling for local OCR so `docling --version` answers on PATH (pip install docling), set DOCLING_SERVE_URL with CONSTRUCT_EXTRACTION_PRIVACY=remote-ok for shared Docling Serve, or transcribe manually.',
       },
       unavailable: null,
     };
@@ -304,7 +304,7 @@ export function planExtraction(input: PlanInput): ExtractionPlan {
       exhausted: {
         reason: 'DOCX extraction requires mammoth or Docling; neither produced usable text.',
         remediation:
-          'Run `construct install --with-docling`, ensure mammoth is installed, or convert the document manually.',
+          'Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually.',
       },
       unavailable: null,
     };
