@@ -901,8 +901,11 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
     };
     rawNamer = createHostNamer(metered);
   } else {
+    // ollama's own clients read OLLAMA_HOST; following that convention is what
+    // lets this be pointed somewhere other than the daemon on this machine.
+    const OLLAMA = (process.env.OLLAMA_HOST ?? 'http://127.0.0.1:11434').replace(/\/$/, '');
     rawNamer = async (outcome, catalog) => {
-      const res = await fetch('http://127.0.0.1:11434/api/generate', {
+      const res = await fetch(`${OLLAMA}/api/generate`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
@@ -913,11 +916,13 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
         }),
       });
       if (!res.ok) throw new Error(`ollama ${res.status} — is ollama running with ${MODEL} pulled?`);
-      // The local path names the model it asked for and gets that model; the
-      // attribution is recorded the same way regardless, so a record from
-      // either host answers the same question.
-      attribute(MODEL);
-      return parseNamings((await res.json()).response ?? '');
+      const body = await res.json();
+      // What answered, not what was asked for — the same question the Claude
+      // path's modelRan answers. Requesting a model and being served it is the
+      // usual case here and not the guaranteed one, and a record that reports
+      // the request cannot tell the difference.
+      attribute(typeof body.model === 'string' && body.model ? body.model : MODEL);
+      return parseNamings(body.response ?? '');
     };
   }
 
