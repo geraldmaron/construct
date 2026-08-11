@@ -85,16 +85,25 @@ disagreement between them surfaces, not because each brings private sight.
 
 **Routing is measured, and the number is not flattering.** On wording authored
 by people who had never seen the catalog — the only case that matters, since a
-user does not know the catalog exists — the shipped router misses **0.301** of
-the domains a labeler marked implicated (28/93, Wilson 95% [0.217, 0.401]) and
-falsely implicates **0.188** of what it names (15/80, [0.117, 0.287]). Roughly
-three in ten concerns that should have been pulled in are not. The zero-model
-keyword fallback, which is what runs with no host present, misses **0.634**
-(59/93, [0.533, 0.725]) on the same wording. Full figures, both configurations, four corpora:
-`RESEARCH-DECISIONS.md` §10.
+user does not know the catalog exists — the shipped router misses **0.280** of
+the domains a labeler marked implicated (26/93, Wilson 95% [0.199, 0.378]) and
+falsely implicates **0.374** of what it names (40/107, [0.288, 0.468]). Roughly
+three in ten concerns that should have been pulled in are not, and better than
+a third of what it does name did not belong. The zero-model keyword fallback,
+which is what runs with no host present, misses **0.634** (59/93, [0.533,
+0.725]) on the same wording. Full figures, both configurations, four corpora:
+`RESEARCH-DECISIONS.md` §10, and the run behind these two in §18.
+
+These replace an earlier pair — miss 0.301, over 0.188 — measured before the
+instrument was fixed. The miss moved two labels and is noise. The over-rate did
+not: 0.188 was computed on a denominator the current script no longer produces,
+and every reading available now is worse than the one it published, so it is
+replaced rather than reconciled. Both figures above come from one recorded
+single-tier run whose per-outcome answers are in `fixtures/namer-arms/`, so
+anyone can re-derive them without paying for the run.
 
 Two things that number is not. It is not a completeness claim — nothing here
-asserts that every concern an outcome touches is found, and the 0.301 is exactly
+asserts that every concern an outcome touches is found, and the 0.280 is exactly
 the size of the gap. And it predates the five concerns added on 2026-08-10
 (strategy, system design, operations, user experience, measurement): the labeled
 corpora carry no labels for them, so every correct fire on a new concern scores

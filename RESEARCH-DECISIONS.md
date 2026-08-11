@@ -1033,6 +1033,18 @@ and over 0.188 (15/80) vs 0.325 (27/83); A0 trails both at 0.634 miss. The namer
 miss less out-of-family, it also asserts less falsely — B's unspent over-rate (0.125) is the
 lowest over-rate measured anywhere in this document.
 
+> **Corrected 2026-08-10 by §18.** B's figures above were measured before
+> construct-rxah was found: every JSON-repaired reply was scored as a namer
+> failure and fell that outcome back to the keyword arm. Re-run single-tier on
+> the fixed instrument, the same shipped configuration reads **miss 0.280
+> (26/93)** and **over 0.374 (40/107)**. The miss moved two labels and is noise.
+> The over-rate did not, and its denominator differs (107 surfaced against 80),
+> so 0.188 is not a figure the current script can produce and the "lowest
+> over-rate measured anywhere in this document" sentence no longer holds. The
+> A0/A1 comparison and the adoption that rests on it are unaffected: A0 is
+> byte-identical across runs, and B still dominates it on miss. The run behind
+> the corrected pair is in `fixtures/namer-arms/shipped.json`, per outcome.
+
 **What this does not decide.** Neither configuration reaches the 0.15 miss target
 out-of-family (B: 0.325 on `unspent`); the inversion halves the miss, it does not close
 construct-4jq's gap, so adopting it re-opens the question of whether 0.15 was ever a defensible
