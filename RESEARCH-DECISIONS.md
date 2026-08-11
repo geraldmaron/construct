@@ -1627,3 +1627,118 @@ them, whether the prompt's "do not reach" instruction is what is actually
 costing the recall, whether a union configuration is finally worth its 126
 consultations — are Gerald's on these figures, exactly as adoption was.
 
+> **Corrected 2026-08-10 by §18.** The 0.624 above was produced by an instrument
+> that scored every JSON-repaired reply as a namer failure and fell the outcome
+> back to the keyword arm (construct-rxah). Re-run unchanged on the fixed
+> instrument, this same configuration measures **0.548**, and the run above is
+> superseded as a figure while standing as a record of what was run. The three
+> candidate causes this section handed forward have since been separated in §18,
+> and two of them are refuted. A recorded run is never rescored to fit a later
+> rule — but a run whose *instrument* was defective is re-run, and both numbers
+> stay visible.
+
+
+## 18. What the catalog conditions actually cost, separated (2026-08-10)
+
+§17 handed forward three candidate causes for the regression it recorded and
+could not separate them, because the instrument that produced its figures
+reported four aggregate rates per run and threw the per-outcome answers away.
+Two runs compared that way are two independent proportions, and on these corpora
+the interval around a single rate is wide enough to hide any difference worth
+acting on — 0.624 carries [0.522, 0.715].
+
+Both arms of a prompt change score the *same* outcomes against the *same* gold,
+so the question is paired and the unit is the (outcome, expected label) pair,
+which is exactly what `miss = missed/expected` already counts. §10 now records
+each arm's per-outcome answers and compares arms with McNemar on the discordant
+pairs; the concordant ones carry no information about a difference, which is why
+the aggregate rates were the wrong thing to read. Records are refused for any
+run with a failure or with more than one tier in `modelsRan`, and each carries a
+fingerprint of the prompt that produced it.
+
+### Two instrument defects, both found by running it
+
+**Repaired replies were scored as failures** (construct-rxah). `createHostNamer`
+answers with a bare array normally and with a `NamerReply` object when
+`jsonrepair.ts` corrected the first reply; `escalate.ts` unwraps that before
+admitting anything and the measurement script did not. Every repaired outcome
+therefore counted as a namer failure and fell back to the keyword map, while the
+run reported its figures as the namer's. Six of 126 on the first baseline. The
+keyword arm misses far more out-of-family, so this inflated measured namer miss
+— and not equally across arms, because a longer prompt provokes more malformed
+first replies. §17's 0.624 is 0.548 on the fixed instrument.
+
+**The tier was never pinned** (construct-5l8l). The Claude path passed no model,
+so the session default served the run and could drift mid-run; one run was
+observed answered by two tiers at once. Every arm below is verified single-tier
+`claude-sonnet-5`.
+
+Both were already being *printed*. Printing is not refusing: a warning dies with
+its terminal and the record file outlives it, gets read by the next comparison,
+and compares exactly like a clean arm.
+
+### The ablation, as a 2x2
+
+Five arms, one corpus set, one tier, every arm paired against the same recorded
+baseline. Miss is pooled out-of-family (fresh + unspent), the axis the §10 gate
+is stated in; over is the `unspent` rate.
+
+| arm | prompt | miss | over | paired vs shipped |
+|---|---|---|---|---|
+| shipped — one-line concerns | 1,224 ch | **0.280** | 0.376 | baseline |
+| D — 4 measured exclusions | 2,515 ch | 0.312 | 0.353 | 9 lost / 6 recovered, p = 0.61 |
+| E — 23 exclusions, no inclusions | 4,747 ch | 0.333 | **0.321** | 11 lost / 6 recovered, p = 0.33 |
+| A — 58 inclusions, no exclusions | 9,781 ch | 0.505 | 0.377 | 22 lost / 1 recovered, p < 0.0001 |
+| held — 58 inclusions + 23 exclusions | 12,883 ch | 0.548 | 0.190 | 26 lost / 1 recovered, p < 0.0001 |
+
+**The two kinds of text do different things, and only one of them is the
+defect.** `implicatedWhen` clauses buy no precision whatsoever — arm A carries
+all 58 of them and its over-rate is 0.377 against the shipped 0.376 — while
+costing 0.225 of miss. `notImplicatedWhen` clauses buy real precision that
+scales with dose (0.376 → 0.353 → 0.321 → 0.190) and cost recall more gently.
+
+### The three candidate causes, settled
+
+1. **Exclusions too broad — refuted.** Removing all 23 from the held
+   configuration recovers 0.548 → 0.505. They are ~0.04 of a ~0.27 regression.
+2. **The "do not reach" instruction — refuted without spending a run.** That
+   line is byte-identical in shipped (0.280) and in arm A (0.505). A constant
+   cannot explain a difference. The ablation answered a question it was not
+   built to ask, which is the argument for laddering arms rather than testing
+   each hypothesis against the shipped path alone.
+3. **The conditions crowd out the model's own reading — confirmed, and it is
+   essentially the whole effect.**
+
+### The recommendation, and what is not being claimed
+
+**Revert stands, on a better reason than the one it was taken on.** No
+configuration tested beats the shipped router on both axes. Arms D and E buy
+precision and pay recall, and this project's promise is stated on recall — a
+user not ambushed by a domain they did not know existed — so a trade in that
+direction is a loss even where it is not statistically distinguishable.
+
+What is **not** claimed: that arms D and E cost nothing. Their p-values are 0.61
+and 0.33, which on 168 label-pairs means *this corpus cannot tell*, not *these
+are the same*. Both moved the wrong way on miss and neither is exonerated.
+
+The literature this was read against says the same thing from the other
+direction, and is recorded here because it predicted the result rather than
+explaining it afterward: verbose label definitions across a high-cardinality
+schema in a single prompt degrade classification badly (Banking77 with all 77
+labels and descriptions in-prompt collapses to 4.0 F1 on Mistral-7B,
+arXiv:2501.12332), and LLMs under-predict label counts with each generation step
+suppressing alternatives, with the prompt's own composition carrying through to
+the output rate (arXiv:2505.17510). Both are affect and intent corpora rather
+than outcome-to-concern judgments, so they are cited as why the hypothesis was
+ordered first, never as evidence for this catalog.
+
+### What this leaves for §3's lesson
+
+§3's finding is untouched and still unaddressed: the precision knowledge this
+project has bought sits in comments addressed to whoever next edits the catalog,
+one layer away from the router. §17 proposed to fix that by handing the router
+everything. The measurement says the router cannot be handed everything at this
+tier, and that the half worth handing it — the near misses — is also the half
+that is cheap to write and expensive to verify. Whether a smaller, measured
+exclusion set can be bought without a recall cost this corpus is too small to
+see is open, and needs a corpus that can see it before it is worth another run.
