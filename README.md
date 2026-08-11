@@ -68,6 +68,11 @@ Thirteen of the fifteen concerns carry a lens — a posture, a question set, ext
 deliverable slots, and an escalation ladder. Two route to the default template
 and say so here rather than implying more.
 
+Seat by seat, with what each concern is obliged to produce, what its deliverable
+must answer, and the limit it states about itself: [docs/org-map.md](docs/org-map.md).
+That page is generated from the catalog and the gate regenerates and compares
+it, so it cannot quietly stop being true.
+
 ### What the columns claim, and what they do not
 
 **"Obligations it carries" is a promise about the deliverable, not about
