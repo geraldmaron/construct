@@ -1595,6 +1595,12 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
       `worked ${String(report.dispatched)} task(s) on ${host.name}: ` +
         `${String(report.completed)} done, ${String(report.failed)} failed.\n`,
     );
+    if (report.slotGapsRaised > 0) {
+      process.stdout.write(
+        `${String(report.slotGapsRaised)} deliverable(s) came back with required sections unfilled; ` +
+          'each is one inbox decision carrying the default the draft proceeds on. See: construct inbox\n',
+      );
+    }
     // Only what this invocation settled. Listing everything settled in the
     // store would report a second run's work as this one's.
     for (const id of report.settled) {

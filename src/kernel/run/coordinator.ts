@@ -38,6 +38,7 @@ import {
 import type { LeasedTask } from '../store/tasks.ts';
 import { sourceReadsFor } from '../store/sources.ts';
 import { planFor } from '../store/plans.ts';
+import { unheadedSlots } from '../plan/ladder.ts';
 import { operationalLessonsFor } from '../lessons/admission.ts';
 import { groundRootsFor } from './sourcereads.ts';
 import { ROLE_OWNERSHIP_BOUND, groundedMaterialProtocol } from './grounding.ts';
@@ -122,6 +123,8 @@ export interface RunReport {
   readonly dispatched: number;
   readonly completed: number;
   readonly failed: number;
+  /** Inbox decisions raised for required slots the deliverables never filled. */
+  readonly slotGapsRaised: number;
   /**
    * Ids this invocation settled, in settle order. Reported rather than left to
    * the caller to infer from the store, because "what this run did" and "what
@@ -689,6 +692,7 @@ export async function workRun(
   let escalated = 0;
   let degraded = 0;
   let halted: HaltReason | null = null;
+  let slotGapsRaised = 0;
   const settled: string[] = [];
 
   const inFlight = new Set<Promise<void>>();
@@ -965,6 +969,62 @@ export async function workRun(
           }
         }
 
+        // The acquisition ladder's last two rungs, run where the gap becomes
+        // visible. The role already climbed the first two — it read the
+        // declared sources and holds the research protocol — so a required
+        // slot still unheaded here goes to the human as a batched decision,
+        // and the ladder's rule that asking never blocks a draft is kept by
+        // shipping each question with the assumed default the deliverable
+        // stands on until the answer arrives.
+        if (deliverableText !== null && brief.question === undefined) {
+          // An ask owes an answer, not a work product; its prose has no
+          // template and owes no sections, so the ladder never fires on it.
+          const template = playbookFor(task.role).template;
+          const gaps = unheadedSlots(template, deliverableText);
+          if (gaps.length > 0) {
+            // One decision per deliverable, not per slot. The first wiring
+            // raised one per gap and a run of terse deliverables put
+            // twenty-four near-identical questions in the inbox — a flood is
+            // how an inbox stops being read. The whole set travels in one
+            // question, and the ladder's rule holds: the ask ships with the
+            // default the draft stands on, so asking never blocks it.
+            const names = gaps.map((gap) => gap.slot.name);
+            raiseDecision(store, {
+              id: `${task.id}:sections`,
+              run: task.run,
+              question:
+                `The ${template.deliverable} from ${task.role} left ` +
+                `${String(names.length)} required section${names.length === 1 ? '' : 's'} ` +
+                `unfilled: ${names.join(', ')}. Supply them, or accept the draft without?`,
+              positions: [
+                {
+                  role: task.role,
+                  stance: `delivered without: ${names.join(', ')}`,
+                  citation: null,
+                },
+                {
+                  role: 'assumed-default',
+                  stance:
+                    'the draft stands as delivered; any conclusion that would rest ' +
+                    'on an absent section is treated as unsupported until it is supplied',
+                  citation:
+                    'the role recorded neither content nor an assumption for these sections',
+                },
+              ],
+              raisedAt: settledAt,
+            });
+            slotGapsRaised += 1;
+            appendWorkLog(store, {
+              run: task.run,
+              task: task.id,
+              role: 'construct',
+              action: 'slot-gaps-raised',
+              detail: { deliverable: template.deliverable, slots: names },
+              at: settledAt,
+            });
+          }
+        }
+
         // The role's declared requirement, turned into an inbox decision by
         // the kernel (commitment 14) — at most one open ask per run, so a
         // four-role run cannot turn the inbox into a questionnaire. A second
@@ -1146,6 +1206,7 @@ export async function workRun(
 
   return {
     dispatched,
+    slotGapsRaised,
     completed,
     failed,
     settled,

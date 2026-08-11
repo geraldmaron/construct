@@ -562,7 +562,11 @@ test('roles that disagree put one framed decision in front of the user', async (
   ]);
 
   assert.match(out, /1 decision\(s\) need you/);
-  assert.match(out, /decision inbox \(1\)/);
+  // The inbox also carries one unfilled-sections decision per terse
+  // deliverable now, so the count is not 1 — the framed conflict is what this
+  // test pins, and the section asks are asserted as present, not counted.
+  assert.match(out, /decision inbox \(\d+\)/);
+  assert.match(out, /required section/);
   assert.match(out, /privacy: hold — no processing agreement is in place \[GDPR Art. 28\]/);
   assert.match(out, /program-sequencing: proceed — the date has slack \[the launch plan\]/);
   assert.ok(!/recommend/i.test(out), 'the inbox must frame, never arbitrate');

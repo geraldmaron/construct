@@ -37,6 +37,25 @@ export function slotGaps(
     .map((slot) => ({ deliverable: template.deliverable, slot }));
 }
 
+/**
+ * The required slots a prose deliverable never headed, detected the same way
+ * the structural challenges read prose: markdown emphasis flattened away,
+ * whitespace collapsed, case ignored. Presence-only on purpose — whether the
+ * section under a heading is any good is the substantive question every
+ * structural pass declares as its limit, and a headed-but-thin section is the
+ * next reader's finding, not this parser's.
+ */
+export function unheadedSlots(
+  template: DeliverableTemplate,
+  deliverable: string,
+): SlotGap[] {
+  const flattened = deliverable.toLowerCase().replace(/[*_`#>-]/g, ' ').replace(/\s+/g, ' ');
+  return template.slots
+    .filter((slot) => slot.required)
+    .filter((slot) => !flattened.includes(slot.name.toLowerCase().replace(/-/g, ' ')))
+    .map((slot) => ({ deliverable: template.deliverable, slot }));
+}
+
 /** What one gap should do next, given how far it has already climbed. */
 export function nextRung(climbed: readonly AcquisitionRung[]): AcquisitionRung | null {
   for (const rung of ACQUISITION_LADDER) {

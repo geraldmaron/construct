@@ -32,6 +32,7 @@ import { recordPlan } from '../../../src/kernel/store/plans.ts';
 import { buildPlan } from '../../../src/kernel/plan/planner.ts';
 import { recordLesson } from '../../../src/kernel/store/lessons.ts';
 import { decideAdmission } from '../../../src/kernel/lessons/admission.ts';
+import { playbookFor } from '../../../src/kernel/plan/playbooks.ts';
 import { openDecisions } from '../../../src/kernel/store/decisions.ts';
 import { assignmentFor, frameConflicts, spendOf, workRun } from '../../../src/kernel/run/coordinator.ts';
 import { deliverableConcerns, licensedReviewFor } from '../../../src/kernel/run/accountability.ts';
@@ -670,7 +671,9 @@ test('disagreeing roles become one inbox item, and agreement becomes none', asyn
     });
 
     assert.equal(report.conflicts, 1, 'one run, one framed decision');
-    const inbox = openDecisions(store, 'run-1');
+    // Slot-gap asks share the inbox now; the conflict framing is the ':stance'
+    // decision, and these assertions are about that framing alone.
+    const inbox = openDecisions(store, 'run-1').filter((d) => d.id.endsWith(':stance'));
     assert.equal(inbox.length, 1);
     // The two sides by name, then the reversible default, which is not a side.
     assert.deepEqual(
@@ -695,7 +698,11 @@ test('a run where the roles agree leaves the inbox empty', async () => {
     const report = await workRun(store, host, { owner: 'w1', clock: frozen(AT), spendCeiling: 100 });
 
     assert.equal(report.conflicts, 0);
-    assert.equal(openDecisions(store).length, 0, 'a non-decision must not reach the inbox');
+    assert.equal(
+      openDecisions(store).filter((d) => d.id.endsWith(':stance')).length,
+      0,
+      'agreement must not be framed as a decision',
+    );
   });
 });
 
@@ -931,7 +938,7 @@ test('a re-run does not rewrite a decision the user is already looking at', asyn
     };
     const host = fakeHost({ answer: (role) => answers[role] });
     await workRun(store, host, { owner: 'w1', clock: frozen(AT), spendCeiling: 100 });
-    const first = openDecisions(store, 'run-1')[0];
+    const first = openDecisions(store, 'run-1').find((d) => d.id.endsWith(':stance'))!;
 
     // A later role lands and also disagrees.
     enqueueTask(store, {
@@ -948,7 +955,7 @@ test('a re-run does not rewrite a decision the user is already looking at', asyn
     });
 
     assert.equal(again.conflicts, 0, 'framed once per run');
-    const inbox = openDecisions(store, 'run-1');
+    const inbox = openDecisions(store, 'run-1').filter((d) => d.id.endsWith(':stance'));
     assert.equal(inbox.length, 1);
     assert.deepEqual(inbox[0].question, first.question, 'the question must not change underneath');
   });
@@ -1206,5 +1213,46 @@ test('a seat-mode run tells every role it proposes to a human team; team mode ad
     const host = fakeHost();
     await workRun(store, host, { owner: 'w1', clock: frozen(AT), spendCeiling: 100 });
     assert.ok(!host.assignments[0]!.includes('Engagement mode: seat'));
+  });
+});
+
+test('a required slot the deliverable never filled becomes a batched inbox decision with its default', async () => {
+  await withStoreAsync(async (store) => {
+    seed(store, ['privacy']);
+    // The privacy template requires finding/evidence/risks plus the lens and
+    // domain slots; answer with only two of them headed.
+    const host = fakeHost({
+      answer: () => '## Finding\nok\n\n## Evidence\nnone cited\n',
+    });
+    const report = await workRun(store, host, { owner: 'w1', clock: frozen(AT), spendCeiling: 100 });
+    assert.ok(report.slotGapsRaised > 0, 'gaps were raised');
+
+    const raised = readWorkLog(store, 'run-1').find((e) => e.action === 'slot-gaps-raised');
+    assert.ok(raised);
+    const slots = (raised!.detail as { slots: string[] }).slots;
+    assert.ok(slots.includes('risks'), 'the unheaded required slot is named');
+    assert.ok(!slots.includes('finding') && !slots.includes('evidence'), 'headed slots are not gaps');
+
+    // One decision per deliverable, whatever the gap count: a flood is how an
+    // inbox stops being read.
+    const open = openDecisions(store).filter((d) => d.id.endsWith(':sections'));
+    assert.equal(open.length, 1);
+    assert.match(open[0].question, /risks/);
+    assert.doesNotMatch(open[0].question, /finding, /, 'headed slots are not asked about');
+    // The ladder's rule: asking never blocks a draft — the question ships with
+    // the default the deliverable stands on until the human answers.
+    assert.ok(open[0].positions.some((p) => /stands as delivered/.test(p.stance)));
+  });
+});
+
+test('a deliverable that heads every required section raises no slot-gap decisions', async () => {
+  await withStoreAsync(async (store) => {
+    seed(store, ['program-sequencing']);
+    const template = playbookFor('program-sequencing').template;
+    const complete = template.slots.map((s) => `## ${s.name}\ncontent for ${s.name}\n`).join('\n');
+    const host = fakeHost({ answer: () => complete });
+    const report = await workRun(store, host, { owner: 'w1', clock: frozen(AT), spendCeiling: 100 });
+    assert.equal(report.slotGapsRaised, 0);
+    assert.ok(!readWorkLog(store, 'run-1').some((e) => e.action === 'slot-gaps-raised'));
   });
 });
