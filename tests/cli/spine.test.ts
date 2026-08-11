@@ -11,7 +11,8 @@ import assert from 'node:assert/strict';
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { main, outcome, work } from '../../src/cli/index.ts';
+import { main, outcome, parseWorkArgs, work } from '../../src/cli/index.ts';
+import { createOpenCodeAdapter } from '../../src/hosts/opencode/adapter.ts';
 import type { HostAdapter, HostResult } from '../../src/kernel/hosts/interface.ts';
 import { openStore } from '../../src/kernel/store/open.ts';
 import { readRunDispatch } from '../../src/kernel/store/dispatch.ts';
@@ -1041,4 +1042,77 @@ test('an outcome plans against the workspace it was given, not always the defaul
   } finally {
     rmSync(ground, { recursive: true, force: true });
   }
+});
+
+test('the invocation limit is the caller\'s to set, and cannot silently outlast the lease', async () => {
+  assert.equal(parseWorkArgs(['--timeout=5']).timeoutMs, 5 * 60 * 1000);
+  assert.equal(parseWorkArgs([]).timeoutMs, undefined, 'unset means the host\'s own declared default');
+  assert.throws(() => parseWorkArgs(['--timeout=0']), /positive number of minutes/);
+  // Longer than the lease means a task still running when its lease expires is
+  // handed to a second worker and the same work is paid for twice.
+  assert.throws(() => parseWorkArgs(['--timeout=20']), /exceeds --lease-minutes=15/);
+  assert.equal(parseWorkArgs(['--timeout=20', '--lease-minutes=30']).timeoutMs, 20 * 60 * 1000);
+});
+
+test('a host states the invocation limit it will enforce rather than leaving it to be discovered', () => {
+  assert.equal(createOpenCodeAdapter({}).invocationTimeoutMs, 10 * 60 * 1000);
+  assert.equal(createOpenCodeAdapter({ timeoutMs: 90_000 }).invocationTimeoutMs, 90_000);
+});
+
+test('a dispatch meets the recorded throughput floor before it spends ten minutes per role on it', async () => {
+  const ground = mkdtempSync(join(tmpdir(), 'construct-ground-'));
+  try {
+    // The recorded observation is at 40 surveyed documents; a ground at least
+    // that large is what it was measured against.
+    for (let i = 0; i < 40; i += 1) {
+      writeFileSync(join(ground, `doc-${String(i)}.md`), `# doc ${String(i)}\nbeta in the EU\n`);
+    }
+    const { out } = await runAll([
+      ['source', 'add', '--kind=directory', `--locator=${ground}`],
+      ['outcome', 'launch a paid beta to EU users next month'],
+      () => work(['--model=ollama/qwen3.6:35b'], standInHost()),
+    ]);
+    assert.match(out, /nearest recorded observation \(2026-08-10, ollama\/qwen3\.6:35b\)/);
+    // A caution with no next move is a slower failure, so both ways out are named.
+    assert.match(out, /--timeout=<minutes>/);
+    assert.match(out, /construct outcome --workspace=<name>/);
+    assert.match(out, /docs\/stakeholder-acceptance-phase-5\.md/);
+  } finally {
+    rmSync(ground, { recursive: true, force: true });
+  }
+});
+
+test('a dispatch on a model nothing was measured on is not cautioned about one that was', async () => {
+  const ground = mkdtempSync(join(tmpdir(), 'construct-ground-'));
+  try {
+    for (let i = 0; i < 40; i += 1) {
+      writeFileSync(join(ground, `doc-${String(i)}.md`), `# doc ${String(i)}\nbeta in the EU\n`);
+    }
+    const { out } = await runAll([
+      ['source', 'add', '--kind=directory', `--locator=${ground}`],
+      ['outcome', 'launch a paid beta to EU users next month'],
+      () => work(['--model=claude-sonnet-5'], standInHost()),
+    ]);
+    assert.doesNotMatch(out, /nearest recorded observation/);
+  } finally {
+    rmSync(ground, { recursive: true, force: true });
+  }
+});
+
+test('a timeout failure names the flag that moves the wall, not just the wall', async () => {
+  const timedOut: HostAdapter = {
+    ...standInHost(),
+    invoke: async (): Promise<HostResult> => ({
+      id: 'x',
+      status: 'error',
+      output: null,
+      error: { messages: ['Host "opencode" invocation exceeded 600000ms'] },
+    }),
+  };
+  const { code, out } = await runAll([
+    ['outcome', 'launch a paid beta to EU users next month'],
+    () => work([], timedOut),
+  ]);
+  assert.equal(code, 1);
+  assert.match(out, /invocation exceeded 600000ms — raise it with --timeout=<minutes>/);
 });

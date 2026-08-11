@@ -63,6 +63,7 @@ import { deliverableConcerns, licensedReviewFor, limitsFor } from '../kernel/run
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
 import { createOpenCodeAdapter } from '../hosts/opencode/adapter.ts';
 import { createClaudeAdapter } from '../hosts/claude/adapter.ts';
+import { dispatchFloorFor } from '../hosts/floors.ts';
 import { loadOrCreateSecret, loadSecret } from '../kernel/capabilities/secretfile.ts';
 import { readRoleEnv } from '../kernel/run/roleenv.ts';
 import { serveRole } from './roleserve.ts';
@@ -331,7 +332,7 @@ async function serve(): Promise<number> {
 
 const OUTCOME_USAGE =
   'usage: construct outcome [--host=<opencode|claude> [--model=…] [--binary=…]] ' +
-  '[--domains=<name,…>] [--workspace=<name>] "<what you want to happen>"\n';
+  '[--domains=<name,…>] [--workspace=<name>] [--timeout=<minutes>] "<what you want to happen>"\n';
 
 export interface OutcomeArgs {
   readonly text: string;
@@ -358,6 +359,8 @@ export interface OutcomeArgs {
    * command and nothing on the next.
    */
   readonly workspace: string;
+  /** How long one host invocation may run, in milliseconds. Host default when unset. */
+  readonly timeoutMs?: number;
 }
 
 export function parseOutcomeArgs(argv: string[]): OutcomeArgs {
@@ -388,12 +391,14 @@ export function parseOutcomeArgs(argv: string[]): OutcomeArgs {
   // A flag that is quietly ignored is a flag that lies. --model/--binary/--dir
   // only mean something when a model is going to be consulted, so supplying one
   // without --host is a usage error rather than a silent no-op.
-  const hostFlags = ['model', 'binary', 'dir'].filter((f) => flags[f] !== undefined);
+  const hostFlags = ['model', 'binary', 'dir', 'timeout'].filter((f) => flags[f] !== undefined);
   if (host === undefined && hostFlags.length > 0) {
     throw new Error(
       `--${hostFlags[0]} only applies when a host is named; add --host=<opencode|claude>, or drop the flag`,
     );
   }
+
+  const timeoutMs = timeoutFlag(flags);
 
   const domains =
     flags.domains === undefined
@@ -422,6 +427,7 @@ export function parseOutcomeArgs(argv: string[]): OutcomeArgs {
     dir: flags.dir,
     domains,
     workspace: workspaceFlag(flags),
+    ...(timeoutMs === undefined ? {} : { timeoutMs }),
   };
 }
 
@@ -592,8 +598,8 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
     const host =
       hostOverride ??
       (args.host === 'claude'
-        ? createClaudeAdapter({ binary: args.binary, model: args.model, dir: args.dir })
-        : createOpenCodeAdapter({ binary: args.binary, model: args.model, dir: args.dir }));
+        ? createClaudeAdapter({ binary: args.binary, model: args.model, dir: args.dir, timeoutMs: args.timeoutMs })
+        : createOpenCodeAdapter({ binary: args.binary, model: args.model, dir: args.dir, timeoutMs: args.timeoutMs }));
 
     try {
       await host.init();
@@ -688,7 +694,7 @@ const DEFAULT_LEASE_MINUTES_ASK = 15;
 
 const ASK_USAGE =
   'usage: construct ask [--host=<opencode|claude> [--model=…] [--binary=…] [--dir=…]] ' +
-  '[--workspace=<name>] [--ceiling=<amount>] "<your question>"\n';
+  '[--workspace=<name>] [--ceiling=<amount>] [--timeout=<minutes>] "<your question>"\n';
 
 export interface AskArgs {
   readonly question: string;
@@ -698,6 +704,8 @@ export interface AskArgs {
   readonly dir?: string;
   readonly workspace: string;
   readonly ceiling: number;
+  /** How long one host invocation may run, in milliseconds. Host default when unset. */
+  readonly timeoutMs?: number;
 }
 
 export function parseAskArgs(argv: string[]): AskArgs {
@@ -709,12 +717,14 @@ export function parseAskArgs(argv: string[]): AskArgs {
   }
   // Same rule as `outcome`: a flag that only means something with a host, given
   // without one, is a usage error rather than a silent no-op.
-  const hostFlags = ['model', 'binary', 'dir'].filter((f) => flags[f] !== undefined);
+  const hostFlags = ['model', 'binary', 'dir', 'timeout'].filter((f) => flags[f] !== undefined);
   if (host === undefined && hostFlags.length > 0) {
     throw new Error(
       `--${hostFlags[0]} only applies when a host is named; add --host=<opencode|claude>, or drop the flag`,
     );
   }
+
+  const timeoutMs = timeoutFlag(flags);
 
   const ceiling = flags.ceiling === undefined ? DEFAULT_SPEND_CEILING : Number(flags.ceiling);
   if (!Number.isFinite(ceiling) || ceiling < 0) {
@@ -729,6 +739,7 @@ export function parseAskArgs(argv: string[]): AskArgs {
     dir: flags.dir,
     workspace: workspaceFlag(flags),
     ceiling,
+    ...(timeoutMs === undefined ? {} : { timeoutMs }),
   };
 }
 
@@ -769,8 +780,8 @@ export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<n
         ? null
         : (hostOverride ??
           (args.host === 'claude'
-            ? createClaudeAdapter({ binary: args.binary, model: args.model, dir: args.dir })
-            : createOpenCodeAdapter({ binary: args.binary, model: args.model, dir: args.dir })));
+            ? createClaudeAdapter({ binary: args.binary, model: args.model, dir: args.dir, timeoutMs: args.timeoutMs })
+            : createOpenCodeAdapter({ binary: args.binary, model: args.model, dir: args.dir, timeoutMs: args.timeoutMs })));
 
     if (host) {
       try {
@@ -955,7 +966,7 @@ export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<n
 
 const NOTES_USAGE =
   'usage: construct notes <file> [--workspace=<name>] [--run=<id>] ' +
-  '[--host=<opencode|claude> [--model=…] [--binary=…] [--dir=…]]\n';
+  '[--host=<opencode|claude> [--model=…] [--binary=…] [--dir=…] [--timeout=<minutes>]]\n';
 
 export interface NotesArgs {
   readonly file: string;
@@ -965,6 +976,8 @@ export interface NotesArgs {
   readonly model?: string;
   readonly binary?: string;
   readonly dir?: string;
+  /** How long one host invocation may run, in milliseconds. Host default when unset. */
+  readonly timeoutMs?: number;
 }
 
 export function parseNotesArgs(argv: string[]): NotesArgs {
@@ -982,7 +995,7 @@ export function parseNotesArgs(argv: string[]): NotesArgs {
   if (host !== undefined && host !== 'opencode' && host !== 'claude') {
     throw new Error(`unknown host "${host}" (expected opencode or claude)`);
   }
-  const hostFlags = ['model', 'binary', 'dir'].filter((f) => flags[f] !== undefined);
+  const hostFlags = ['model', 'binary', 'dir', 'timeout'].filter((f) => flags[f] !== undefined);
   if (host === undefined && hostFlags.length > 0) {
     throw new Error(
       `--${hostFlags[0]} only applies when a host is named; add --host=<opencode|claude>, or drop the flag`,
@@ -996,6 +1009,7 @@ export function parseNotesArgs(argv: string[]): NotesArgs {
     model: flags.model,
     binary: flags.binary,
     dir: flags.dir,
+    ...(timeoutFlag(flags) === undefined ? {} : { timeoutMs: timeoutFlag(flags) }),
   };
 }
 
@@ -1085,8 +1099,8 @@ export async function notes(argv: string[], hostOverride?: HostAdapter): Promise
     const host =
       hostOverride ??
       (args.host === 'claude'
-        ? createClaudeAdapter({ binary: args.binary, model: args.model, dir: args.dir })
-        : createOpenCodeAdapter({ binary: args.binary, model: args.model, dir: args.dir }));
+        ? createClaudeAdapter({ binary: args.binary, model: args.model, dir: args.dir, timeoutMs: args.timeoutMs })
+        : createOpenCodeAdapter({ binary: args.binary, model: args.model, dir: args.dir, timeoutMs: args.timeoutMs }));
     try {
       await host.init();
     } catch (error) {
@@ -1262,6 +1276,13 @@ export interface WorkArgs {
    * Absent is the house voice — the case that needs no flag and no record.
    */
   readonly voice?: string;
+  /**
+   * How long one host invocation may run, in milliseconds. Host default when
+   * unset. A grounded dispatch over a real repository on a small local model
+   * was measured producing nothing inside the ten-minute default, so the limit
+   * is the caller's to set rather than one constant for every model.
+   */
+  readonly timeoutMs?: number;
 }
 
 /**
@@ -1295,17 +1316,32 @@ export function parseWorkArgs(argv: string[]): WorkArgs {
     throw new Error(`Invalid --host=${host}; expected opencode|claude`);
   }
 
+  const leaseMinutes = number('lease-minutes', 15);
+  const timeoutMs = timeoutFlag(args);
+  // The lease exceeds the invocation limit by design: a task whose lease
+  // expires while the host is still working it is handed to a second worker,
+  // and the same work is then paid for twice. Raising the limit past the lease
+  // silently would arrange exactly that, so it is refused with the other flag
+  // named rather than accepted and warned about.
+  if (timeoutMs !== undefined && timeoutMs >= leaseMinutes * 60 * 1000) {
+    throw new Error(
+      `--timeout=${args.timeout} exceeds --lease-minutes=${String(leaseMinutes)}; a task still running ` +
+        'when its lease expires is dispatched again and paid for twice. Raise --lease-minutes past the timeout.',
+    );
+  }
+
   return {
     run,
     concurrency: number('concurrency', DEFAULT_CONCURRENCY),
     ceiling: number('ceiling', DEFAULT_SPEND_CEILING),
-    leaseMinutes: number('lease-minutes', 15),
+    leaseMinutes,
     model: args.model,
     binary: args.binary,
     dir: args.dir,
     host,
     hostExplicit: args.host !== undefined,
     voice: args.voice?.trim() ? args.voice.trim() : undefined,
+    ...(timeoutMs === undefined ? {} : { timeoutMs }),
   };
 }
 
@@ -1321,7 +1357,13 @@ function money(amount: number): string {
 function failureLine(error: unknown): string {
   const record = error as { messages?: unknown; message?: unknown } | null;
   const first = Array.isArray(record?.messages) ? record.messages[0] : record?.message;
-  return typeof first === 'string' && first ? first : 'failed';
+  const message = typeof first === 'string' && first ? first : 'failed';
+  // A wall the user cannot move is a wall; naming the flag that moves it is
+  // the difference between a limit and a dead end. Said here rather than in
+  // the error itself, which belongs to the kernel and knows no flags.
+  return /invocation exceeded \d+ms/.test(message)
+    ? `${message} — raise it with --timeout=<minutes> (and --lease-minutes past it), or ground the run in fewer documents`
+    : message;
 }
 
 /**
@@ -1393,8 +1435,8 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
     const host =
       hostOverride ??
       (hostName === 'claude'
-        ? createClaudeAdapter({ binary, model, dir })
-        : createOpenCodeAdapter({ binary, model, dir }));
+        ? createClaudeAdapter({ binary, model, dir, timeoutMs: args.timeoutMs })
+        : createOpenCodeAdapter({ binary, model, dir, timeoutMs: args.timeoutMs }));
 
     const waiting = countTasksByState(store, args.run).pending ?? 0;
     if (waiting === 0) {
@@ -1498,6 +1540,26 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
           (unreachable > 0 ? ` (${String(unreachable)} unreachable)` : '') +
           '\n',
       );
+
+      // Where a measured floor is met before it is paid for, rather than ten
+      // minutes per role later. It is stated as the nearest recorded
+      // observation and names the model it was measured on, because a
+      // measurement on a neighbouring model is not a prediction about this
+      // one — and both ways out are named, since a caution with no next move
+      // is just a slower failure.
+      const floor = dispatchFloorFor(host.model ?? model, documents);
+      if (floor) {
+        const limit = host.invocationTimeoutMs ?? floor.timeoutMs;
+        process.stdout.write(
+          `  ⚑ nearest recorded observation (${floor.observedOn}, ${floor.measuredOn}): ${floor.observation}.\n` +
+            `    This dispatch has ${String(documents)} document${documents === 1 ? '' : 's'} and ` +
+            `${String(Math.round(limit / 60000))} minute(s) per role.\n` +
+            '    Give it longer:  construct work --timeout=<minutes> --lease-minutes=<more>\n' +
+            '    Or give it less ground:  construct source add --workspace=<name> …  then ' +
+            'construct outcome --workspace=<name> …\n' +
+            `    Evidence: ${floor.evidence}\n`,
+        );
+      }
     }
 
     try {
@@ -2243,6 +2305,24 @@ export function plan(argv: string[]): number {
  */
 function workspaceFlag(flags: Record<string, string>): string {
   return flags.workspace?.trim() || 'default';
+}
+
+/**
+ * `--timeout=<minutes>`, in milliseconds, or undefined for the host's own
+ * declared default.
+ *
+ * Stated in minutes because the wall a user hits is measured in minutes of
+ * their afternoon, and taken as a flag because the alternative — one constant
+ * for every model — makes a 4b model and a 120b model wait the same, which is
+ * a limit nobody measured either way.
+ */
+function timeoutFlag(flags: Record<string, string>): number | undefined {
+  if (flags.timeout === undefined) return undefined;
+  const minutes = Number(flags.timeout);
+  if (!Number.isFinite(minutes) || minutes <= 0) {
+    throw new Error(`--timeout must be a positive number of minutes, got "${flags.timeout}"`);
+  }
+  return minutes * 60 * 1000;
 }
 
 function parseFlags(argv: string[]): { flags: Record<string, string>; rest: string[] } {

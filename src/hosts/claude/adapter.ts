@@ -215,6 +215,9 @@ export function createClaudeAdapter(config: ClaudeConfig = {}): ClaudeAdapter {
       return config.model ?? null;
     },
 
+    /** The wall every invocation runs into, stated so a caller can report it. */
+    invocationTimeoutMs: timeoutMs,
+
     /**
      * Tier membership is the pin's to declare. Note the pin's
      * own recorded measurement: --model is a preference, not a constraint here,
