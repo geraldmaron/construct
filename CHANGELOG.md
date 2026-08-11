@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 3.0.0-alpha.4 — 2026-08-11
+
+A run can be grounded in material it names, and the surfaces that decide what it reads stop disagreeing with each other. Three defects found by running the product rather than testing it: a workspace flag that meant something on one command and nothing on the next, a ten-minute wall the caller could neither move nor see coming, and a measurement instrument that could reject a mixed-tier run but not separate one.
 
 ### Fixed (2026-08-11, the two usability defects Case 0 found, and the attribution the refusal could not supply)
 
