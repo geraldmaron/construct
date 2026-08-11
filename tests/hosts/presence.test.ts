@@ -26,9 +26,8 @@ test('a machine with every host reports versions, pins, and codex auth', () => {
   assert.equal(byHost.opencode?.version, '1.15.4');
   assert.equal(byHost.opencode?.dispatchable, true);
   assert.equal(byHost.claude?.dispatchable, true);
-  // codex is reachability, not a dispatch promise, until an adapter exists.
   assert.equal(byHost.codex?.found, true);
-  assert.equal(byHost.codex?.dispatchable, false);
+  assert.equal(byHost.codex?.dispatchable, true);
   assert.equal(byHost.codex?.auth, 'Logged in using ChatGPT');
 });
 
@@ -40,10 +39,9 @@ test('a bare machine reports every host as not found and stays a report', () => 
   }
 });
 
-test('the doctor line for a found-but-adapterless host says so plainly', () => {
+test('a found host whose auth probe answers nothing says so instead of guessing', () => {
   const rows = surveyHosts(world({ 'codex --version': 'codex-cli 0.145.0' }));
   const codexLine = presenceLines(rows).find((l) => l.startsWith('codex:'));
   assert.ok(codexLine);
-  assert.match(codexLine, /no dispatch adapter yet/);
   assert.match(codexLine, /login status unavailable/);
 });

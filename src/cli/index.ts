@@ -63,6 +63,7 @@ import { deliverableConcerns, licensedReviewFor, limitsFor } from '../kernel/run
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
 import { createOpenCodeAdapter } from '../hosts/opencode/adapter.ts';
 import { createClaudeAdapter } from '../hosts/claude/adapter.ts';
+import { createCodexAdapter } from '../hosts/codex/adapter.ts';
 import { dispatchFloorFor } from '../hosts/floors.ts';
 import { loadOrCreateSecret, loadSecret } from '../kernel/capabilities/secretfile.ts';
 import { readRoleEnv } from '../kernel/run/roleenv.ts';
@@ -83,6 +84,20 @@ import { presenceLines, surveyHosts } from '../hosts/presence.ts';
 import { probeDocling, readSource } from '../hosts/extract.ts';
 
 const MIN_NODE = { major: 22, minor: 18 };
+
+/**
+ * One host name to one adapter, everywhere a --host flag is honored. The
+ * default stays opencode; unknown names are the callers' to refuse (work()
+ * validates; outcome/ask/notes accept only what their usage line names).
+ */
+function adapterForHost(
+  host: string | undefined,
+  opts: { readonly binary?: string; readonly model?: string; readonly dir?: string; readonly timeoutMs?: number },
+): HostAdapter {
+  if (host === 'claude') return createClaudeAdapter(opts);
+  if (host === 'codex') return createCodexAdapter(opts);
+  return createOpenCodeAdapter(opts);
+}
 
 function packageVersion(): string {
   const raw = readFileSync(new URL('../../package.json', import.meta.url), 'utf8');
@@ -339,7 +354,7 @@ async function serve(): Promise<number> {
 }
 
 const OUTCOME_USAGE =
-  'usage: construct outcome [--host=<opencode|claude> [--model=…] [--binary=…]] ' +
+  'usage: construct outcome [--host=<opencode|claude|codex> [--model=…] [--binary=…]] ' +
   '[--domains=<name,…>] [--workspace=<name>] [--timeout=<minutes>] "<what you want to happen>"\n';
 
 export interface OutcomeArgs {
@@ -351,7 +366,7 @@ export interface OutcomeArgs {
    * least expected charge in the product. With a host named, its model is the
    * primary namer on every outcome (adopted 2026-08-05).
    */
-  readonly host?: 'opencode' | 'claude';
+  readonly host?: 'opencode' | 'claude' | 'codex';
   readonly model?: string;
   readonly binary?: string;
   readonly dir?: string;
@@ -380,7 +395,7 @@ export function parseOutcomeArgs(argv: string[]): OutcomeArgs {
       // Removed with the inversion, loudly: silence here would read as the
       // old behavior still existing.
       throw new Error(
-        '--escalate was removed: a named host\'s model is primary on every outcome now; use --host=<opencode|claude>',
+        '--escalate was removed: a named host\'s model is primary on every outcome now; use --host=<opencode|claude|codex>',
       );
     }
     const match = /^--([a-z-]+)=(.*)$/.exec(arg);
@@ -392,8 +407,8 @@ export function parseOutcomeArgs(argv: string[]): OutcomeArgs {
   }
 
   const host = flags.host;
-  if (host !== undefined && host !== 'opencode' && host !== 'claude') {
-    throw new Error(`unknown host "${host}" (expected opencode or claude)`);
+  if (host !== undefined && host !== 'opencode' && host !== 'claude' && host !== 'codex') {
+    throw new Error(`unknown host "${host}" (expected opencode, claude, or codex)`);
   }
 
   // A flag that is quietly ignored is a flag that lies. --model/--binary/--dir
@@ -402,7 +417,7 @@ export function parseOutcomeArgs(argv: string[]): OutcomeArgs {
   const hostFlags = ['model', 'binary', 'dir', 'timeout'].filter((f) => flags[f] !== undefined);
   if (host === undefined && hostFlags.length > 0) {
     throw new Error(
-      `--${hostFlags[0]} only applies when a host is named; add --host=<opencode|claude>, or drop the flag`,
+      `--${hostFlags[0]} only applies when a host is named; add --host=<opencode|claude|codex>, or drop the flag`,
     );
   }
 
@@ -594,7 +609,7 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
         //: the user, not the tool, decides to spend money.
         process.stdout.write(
           '\nA host model can be asked instead, at cost:\n' +
-            `  construct outcome --host=<opencode|claude> ${JSON.stringify(args.text)}\n`,
+            `  construct outcome --host=<opencode|claude|codex> ${JSON.stringify(args.text)}\n`,
         );
         planRun(store, started, null, args.workspace, at);
         return 0;
@@ -606,9 +621,7 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
 
     const host =
       hostOverride ??
-      (args.host === 'claude'
-        ? createClaudeAdapter({ binary: args.binary, model: args.model, dir: args.dir, timeoutMs: args.timeoutMs })
-        : createOpenCodeAdapter({ binary: args.binary, model: args.model, dir: args.dir, timeoutMs: args.timeoutMs }));
+      adapterForHost(args.host, { binary: args.binary, model: args.model, dir: args.dir, timeoutMs: args.timeoutMs });
 
     try {
       await host.init();
@@ -702,12 +715,12 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
 const DEFAULT_LEASE_MINUTES_ASK = 15;
 
 const ASK_USAGE =
-  'usage: construct ask [--host=<opencode|claude> [--model=…] [--binary=…] [--dir=…]] ' +
+  'usage: construct ask [--host=<opencode|claude|codex> [--model=…] [--binary=…] [--dir=…]] ' +
   '[--workspace=<name>] [--ceiling=<amount>] [--timeout=<minutes>] "<your question>"\n';
 
 export interface AskArgs {
   readonly question: string;
-  readonly host?: 'opencode' | 'claude';
+  readonly host?: 'opencode' | 'claude' | 'codex';
   readonly model?: string;
   readonly binary?: string;
   readonly dir?: string;
@@ -721,15 +734,15 @@ export function parseAskArgs(argv: string[]): AskArgs {
   const { flags, rest } = parseFlags(argv);
 
   const host = flags.host;
-  if (host !== undefined && host !== 'opencode' && host !== 'claude') {
-    throw new Error(`unknown host "${host}" (expected opencode or claude)`);
+  if (host !== undefined && host !== 'opencode' && host !== 'claude' && host !== 'codex') {
+    throw new Error(`unknown host "${host}" (expected opencode, claude, or codex)`);
   }
   // Same rule as `outcome`: a flag that only means something with a host, given
   // without one, is a usage error rather than a silent no-op.
   const hostFlags = ['model', 'binary', 'dir', 'timeout'].filter((f) => flags[f] !== undefined);
   if (host === undefined && hostFlags.length > 0) {
     throw new Error(
-      `--${hostFlags[0]} only applies when a host is named; add --host=<opencode|claude>, or drop the flag`,
+      `--${hostFlags[0]} only applies when a host is named; add --host=<opencode|claude|codex>, or drop the flag`,
     );
   }
 
@@ -788,9 +801,7 @@ export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<n
       args.host === undefined && hostOverride === undefined
         ? null
         : (hostOverride ??
-          (args.host === 'claude'
-            ? createClaudeAdapter({ binary: args.binary, model: args.model, dir: args.dir, timeoutMs: args.timeoutMs })
-            : createOpenCodeAdapter({ binary: args.binary, model: args.model, dir: args.dir, timeoutMs: args.timeoutMs })));
+          adapterForHost(args.host, { binary: args.binary, model: args.model, dir: args.dir, timeoutMs: args.timeoutMs }));
 
     if (host) {
       try {
@@ -832,7 +843,7 @@ export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<n
       if (!host) {
         process.stdout.write(
           '\nA host model reads the question properly, at cost:\n' +
-            `  construct ask --host=<opencode|claude> ${JSON.stringify(args.question)}\n`,
+            `  construct ask --host=<opencode|claude|codex> ${JSON.stringify(args.question)}\n`,
         );
       }
       planRun(store, started, null, args.workspace, at, []);
@@ -867,7 +878,7 @@ export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<n
     if (!host) {
       process.stdout.write(
         '\nNobody was dispatched: answering costs a model call, and no host was named.\n' +
-          `  construct ask --host=<opencode|claude> ${JSON.stringify(args.question)}\n`,
+          `  construct ask --host=<opencode|claude|codex> ${JSON.stringify(args.question)}\n`,
       );
       return 0;
     }
@@ -975,13 +986,13 @@ export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<n
 
 const NOTES_USAGE =
   'usage: construct notes <file> [--workspace=<name>] [--run=<id>] ' +
-  '[--host=<opencode|claude> [--model=…] [--binary=…] [--dir=…] [--timeout=<minutes>]]\n';
+  '[--host=<opencode|claude|codex> [--model=…] [--binary=…] [--dir=…] [--timeout=<minutes>]]\n';
 
 export interface NotesArgs {
   readonly file: string;
   readonly workspace: string;
   readonly run?: string;
-  readonly host?: 'opencode' | 'claude';
+  readonly host?: 'opencode' | 'claude' | 'codex';
   readonly model?: string;
   readonly binary?: string;
   readonly dir?: string;
@@ -1001,13 +1012,13 @@ export function parseNotesArgs(argv: string[]): NotesArgs {
     throw new Error(words.length === 0 ? 'a notes file is required' : 'one notes file at a time');
   }
   const host = flags.host;
-  if (host !== undefined && host !== 'opencode' && host !== 'claude') {
-    throw new Error(`unknown host "${host}" (expected opencode or claude)`);
+  if (host !== undefined && host !== 'opencode' && host !== 'claude' && host !== 'codex') {
+    throw new Error(`unknown host "${host}" (expected opencode, claude, or codex)`);
   }
   const hostFlags = ['model', 'binary', 'dir', 'timeout'].filter((f) => flags[f] !== undefined);
   if (host === undefined && hostFlags.length > 0) {
     throw new Error(
-      `--${hostFlags[0]} only applies when a host is named; add --host=<opencode|claude>, or drop the flag`,
+      `--${hostFlags[0]} only applies when a host is named; add --host=<opencode|claude|codex>, or drop the flag`,
     );
   }
   return {
@@ -1100,16 +1111,14 @@ export async function notes(argv: string[], hostOverride?: HostAdapter): Promise
     if (args.host === undefined && hostOverride === undefined) {
       process.stdout.write(
         '\nThe note is kept; drawing conclusions from it is model work, at cost:\n' +
-          `  construct notes --host=<opencode|claude> ${args.file}\n`,
+          `  construct notes --host=<opencode|claude|codex> ${args.file}\n`,
       );
       return 0;
     }
 
     const host =
       hostOverride ??
-      (args.host === 'claude'
-        ? createClaudeAdapter({ binary: args.binary, model: args.model, dir: args.dir, timeoutMs: args.timeoutMs })
-        : createOpenCodeAdapter({ binary: args.binary, model: args.model, dir: args.dir, timeoutMs: args.timeoutMs }));
+      adapterForHost(args.host, { binary: args.binary, model: args.model, dir: args.dir, timeoutMs: args.timeoutMs });
     try {
       await host.init();
     } catch (error) {
@@ -1321,8 +1330,8 @@ export function parseWorkArgs(argv: string[]): WorkArgs {
   };
 
   const host = args.host ?? 'opencode';
-  if (host !== 'opencode' && host !== 'claude') {
-    throw new Error(`Invalid --host=${host}; expected opencode|claude`);
+  if (host !== 'opencode' && host !== 'claude' && host !== 'codex') {
+    throw new Error(`Invalid --host=${host}; expected opencode|claude|codex`);
   }
 
   const leaseMinutes = number('lease-minutes', 15);
@@ -1442,10 +1451,7 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
     }
 
     const host =
-      hostOverride ??
-      (hostName === 'claude'
-        ? createClaudeAdapter({ binary, model, dir, timeoutMs: args.timeoutMs })
-        : createOpenCodeAdapter({ binary, model, dir, timeoutMs: args.timeoutMs }));
+      hostOverride ?? adapterForHost(hostName, { binary, model, dir, timeoutMs: args.timeoutMs });
 
     const waiting = countTasksByState(store, args.run).pending ?? 0;
     if (waiting === 0) {

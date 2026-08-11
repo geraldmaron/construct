@@ -22,6 +22,7 @@ import { spawnSync } from 'node:child_process';
 import { hostEnvironment } from './environment.ts';
 import { PINNED_VERSION as OPENCODE_PINNED } from './opencode/pin.ts';
 import { PINNED_VERSION as CLAUDE_PINNED } from './claude/pin.ts';
+import { PINNED_VERSION as CODEX_PINNED } from './codex/pin.ts';
 
 export interface HostPresence {
   /** The host, by the name its adapter (or future adapter) uses. */
@@ -89,17 +90,18 @@ export function surveyHosts(exec: ProbeExec = defaultExec): HostPresence[] {
     dispatchable: claude !== null,
   });
 
-  // Codex has no adapter yet; its row is reachability, not a dispatch
-  // promise. `codex login status` is non-interactive and prints the auth
-  // method, which is the one auth probe here that costs nothing to trust.
+  // `codex login status` is non-interactive and prints the auth method — the
+  // one auth probe here that costs nothing to trust, and the interesting one:
+  // "Logged in using ChatGPT" means dispatch spends a subscription, not a key.
   const codex = exec('codex', ['--version']);
   const codexAuth = codex !== null ? exec('codex', ['login', 'status']) : null;
   rows.push({
     host: 'codex',
     found: codex !== null,
     ...(codex !== null ? { version: codex } : {}),
+    pinned: CODEX_PINNED,
     auth: codexAuth ?? (codex !== null ? 'login status unavailable' : 'not probed'),
-    dispatchable: false,
+    dispatchable: codex !== null,
   });
 
   return rows;

@@ -51,6 +51,7 @@
     "capture:opencode": "node scripts/capture-opencode-transcripts.mjs",
     "harness:discrimination": "node scripts/check-plant-discrimination.mjs",
     "probe:claude": "node scripts/probe-claude-conformance.mjs",
+    "probe:codex": "node scripts/probe-codex-conformance.mjs",
     "probe:claude:mcp": "node scripts/probe-claude-conformance.mjs --spend-mcp",
     "check:research": "node scripts/check-research-discipline.mjs",
     "docs:org-map": "node scripts/generate-org-map.mjs"
