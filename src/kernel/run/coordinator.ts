@@ -37,6 +37,8 @@ import {
 } from '../store/tasks.ts';
 import type { LeasedTask } from '../store/tasks.ts';
 import { sourceReadsFor } from '../store/sources.ts';
+import { planFor } from '../store/plans.ts';
+import { operationalLessonsFor } from '../lessons/admission.ts';
 import { groundRootsFor } from './sourcereads.ts';
 import { ROLE_OWNERSHIP_BOUND, groundedMaterialProtocol } from './grounding.ts';
 import type { Material } from './grounding.ts';
@@ -312,6 +314,13 @@ export function assignmentFor(
     readonly groundRoots?: readonly string[];
     /** Requirements the user already answered for this run. */
     readonly answers?: readonly AnsweredAsk[];
+    /**
+     * Admitted operational lessons from the run's workspace. Standing team
+     * context, spoken so a role builds on what earlier work already settled
+     * instead of re-deriving or contradicting it. Never evidence: a lesson is
+     * cited [cite:lesson], and a finding still needs material behind it.
+     */
+    readonly lessons?: readonly string[];
   } = {},
 ): string {
   const domain = domainsByName(catalog).get(brief.role);
@@ -373,6 +382,20 @@ export function assignmentFor(
   // the kernel can frame into a decision, and there is no second role in an
   // ask. Asking anyway would put a position in the record that nothing will
   // ever be weighed against.
+  // The workspace's memory, before the material: what the team already
+  // learned frames how the material is read, and a role that contradicts a
+  // standing lesson without noticing wastes the store that held it.
+  const remembered =
+    options.lessons && options.lessons.length > 0
+      ? 'What this workspace already remembers — operational lessons admitted ' +
+        'from earlier work. Build on them; if one shapes a conclusion, cite it ' +
+        'as [cite:lesson]. A lesson is standing context, never evidence: a ' +
+        'finding still cites the material that supports it, and a lesson the ' +
+        'material now contradicts is worth saying so about rather than ' +
+        'silently following.\n' +
+        options.lessons.map((l) => `- ${l}`).join('\n') +
+        '\n\n'
+      : '';
   const asking = brief.question !== undefined;
   return (
     `You are acting as the ${brief.role} role.${concern}\n\n` +
@@ -380,6 +403,7 @@ export function assignmentFor(
       ? `The question the user asked: ${brief.question}\n\n`
       : `The outcome the user asked for: ${brief.outcome}\n\n`) +
     engagement +
+    remembered +
     lensDirective(brief.role) +
     (asking ? answerDirective() : workProductDirective(brief.role)) +
     material +
@@ -662,6 +686,23 @@ export async function workRun(
     const material = materialFor(store, task.run);
     const groundRoots = material.length > 0 ? groundRootsFor(store, task.run) : [];
 
+    // The workspace's admitted memory, resolved through the run's own plan so
+    // the dispatch and the record agree on which workspace was consulted. A
+    // run predating recorded workspaces reads the default one, which is where
+    // every pre-existing lesson lives.
+    const workspace = planFor(store, task.run)?.workspace ?? 'default';
+    const lessons = operationalLessonsFor(store, workspace);
+    if (lessons.length > 0) {
+      appendWorkLog(store, {
+        run: task.run,
+        task: task.id,
+        role: task.role,
+        action: 'lessons-briefed',
+        detail: { workspace, lessons: lessons.map((l) => l.id) },
+        at: options.clock(),
+      });
+    }
+
     // What is about to run this, recorded before it runs. A
     // claim about what a run demonstrated is only as good as the record of what
     // executed it, and a host that will not say is written down as not saying
@@ -807,6 +848,7 @@ export async function workRun(
             material,
             groundRoots,
             answers: answeredAsksFor(store, task.run),
+            lessons: lessons.map((l) => l.body),
           }),
         },
         { invocationId: task.id, roleEnv },

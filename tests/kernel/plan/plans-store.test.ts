@@ -22,6 +22,7 @@ function somePlan(run = 'run-1') {
     implicated: [{ domain: 'security', concern: 'c', score: 10, signals: ['webhook'] }],
     inferredBy: 'keywords',
     sources: [],
+    workspace: 'default',
     mode: 'team',
     plannedAt: AT,
   });

@@ -34,6 +34,7 @@ export interface PlanInput {
   readonly implicated: readonly Implication[];
   readonly inferredBy: InferredBy;
   readonly sources: readonly Source[];
+  readonly workspace: string;
   readonly mode: EngagementMode;
   readonly plannedAt: string;
 }
@@ -156,6 +157,7 @@ export function buildPlan(input: PlanInput): Plan {
     // Nothing implicated is not safety — it means routing saw nothing, and an
     // unseen outcome is exactly the unknown the catalog rates high.
     riskTier: ordered.length === 0 ? 'high' : riskTier,
+    workspace: input.workspace,
     mode: input.mode,
     steps,
     routing,

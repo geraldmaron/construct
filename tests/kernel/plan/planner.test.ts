@@ -34,6 +34,7 @@ function input(overrides: Partial<PlanInput> = {}): PlanInput {
     ],
     inferredBy: 'keywords',
     sources: [SRC],
+    workspace: 'default',
     mode: 'team',
     plannedAt: AT,
     ...overrides,

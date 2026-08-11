@@ -459,6 +459,7 @@ function planRun(
     implicated: dispatching ?? started.implicated,
     inferredBy: started.inferredBy,
     sources: sourcesFor(store, workspace),
+    workspace,
     mode: engagementMode(store, workspace),
     plannedAt: at,
   });

@@ -117,6 +117,13 @@ export interface Plan {
   };
   /** Worst tier across implicated domains; an unknown domain is high. */
   readonly riskTier: 'low' | 'high';
+  /**
+   * The workspace whose sources, mode, and lessons this plan was built from.
+   * Recorded because everything below is only interpretable against it: "no
+   * sources declared" on the wrong workspace reads identically to the right
+   * one, and the dispatch reads the workspace's memory through this field.
+   */
+  readonly workspace: string;
   readonly mode: EngagementMode;
   readonly steps: readonly PlanStep[];
   readonly routing: readonly PlanRouting[];

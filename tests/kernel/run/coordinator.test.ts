@@ -28,6 +28,10 @@ import {
   totalSpend,
 } from '../../../src/kernel/store/tasks.ts';
 import { readWorkLog } from '../../../src/kernel/store/worklog.ts';
+import { recordPlan } from '../../../src/kernel/store/plans.ts';
+import { buildPlan } from '../../../src/kernel/plan/planner.ts';
+import { recordLesson } from '../../../src/kernel/store/lessons.ts';
+import { decideAdmission } from '../../../src/kernel/lessons/admission.ts';
 import { openDecisions } from '../../../src/kernel/store/decisions.ts';
 import { assignmentFor, frameConflicts, spendOf, workRun } from '../../../src/kernel/run/coordinator.ts';
 import { deliverableConcerns, licensedReviewFor } from '../../../src/kernel/run/accountability.ts';
@@ -1096,5 +1100,77 @@ test('the house voice needs no record — silence in the log means Construct sou
       readWorkLog(store, 'run-1').some((e) => e.action === 'voice-overridden'),
       false,
     );
+  });
+});
+
+test('a dispatch carries the workspace\'s admitted lessons, and records which', async () => {
+  await withStoreAsync(async (store) => {
+    // The run's plan names the workspace; the dispatch reads memory through it.
+    recordPlan(
+      store,
+      buildPlan({
+        id: 'plan-run-1',
+        run: 'run-1',
+        outcome: 'launch the beta',
+        densified: null,
+        implicated: [{ domain: 'privacy', concern: 'personal data', score: 10, signals: ['beta'] }],
+        inferredBy: 'keywords',
+        sources: [],
+        workspace: 'client-a',
+        mode: 'team',
+        plannedAt: AT,
+      }),
+    );
+    recordLesson(store, {
+      id: 'l-1',
+      workspace: 'client-a',
+      kind: 'technique',
+      body: 'the billing team owns refunds; route refund questions there first',
+      citation: 'run:2026-08-05',
+      external: false,
+      createdAt: AT,
+    });
+    decideAdmission(store, {
+      lessonId: 'l-1',
+      domain: 'operations',
+      basis: { kind: 'adversarial-pass', detail: 'challenged and upheld' },
+      decidedAt: AT,
+    });
+    // A lesson merely recorded is not memory yet: an unadmitted one must not
+    // reach a dispatch, or the admission gate is decoration.
+    recordLesson(store, {
+      id: 'l-unadmitted',
+      workspace: 'client-a',
+      kind: 'technique',
+      body: 'this sentence must never appear in an assignment',
+      citation: 'run:2026-08-05',
+      external: false,
+      createdAt: AT,
+    });
+
+    seed(store, ['privacy']);
+    const host = fakeHost();
+    await workRun(store, host, { owner: 'w1', clock: frozen(AT), spendCeiling: 100 });
+
+    const assignment = host.assignments[0]!;
+    assert.match(assignment, /What this workspace already remembers/);
+    assert.match(assignment, /billing team owns refunds/);
+    assert.match(assignment, /\[cite:lesson\]/);
+    assert.ok(!assignment.includes('must never appear'), 'unadmitted lessons stay out');
+
+    const briefed = readWorkLog(store, 'run-1').find((e) => e.action === 'lessons-briefed');
+    assert.ok(briefed, 'which lessons were briefed is on the record');
+    assert.deepEqual((briefed!.detail as { lessons: string[] }).lessons, ['l-1']);
+    assert.equal((briefed!.detail as { workspace: string }).workspace, 'client-a');
+  });
+});
+
+test('a run with no plan or no lessons dispatches without a memory block', async () => {
+  await withStoreAsync(async (store) => {
+    seed(store, ['privacy']);
+    const host = fakeHost();
+    await workRun(store, host, { owner: 'w1', clock: frozen(AT), spendCeiling: 100 });
+    assert.ok(!host.assignments[0]!.includes('What this workspace already remembers'));
+    assert.ok(!readWorkLog(store, 'run-1').some((e) => e.action === 'lessons-briefed'));
   });
 });
