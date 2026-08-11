@@ -7,13 +7,27 @@
  * cannot be printed here is a figure nobody measured. Same discipline as
  * probe-*-conformance.mjs, applied to statistics instead of to a host.
  *
- * Reads the real corpora and the real catalog. Writes nothing.
+ * Reads the real corpora and the real catalog. Writes nothing unless asked to:
+ * §10's --namer-record persists that run's per-outcome answers, and nothing
+ * else in the script writes at all.
  *
  *   node scripts/measure-decisions.mjs
  *   node scripts/measure-decisions.mjs --section 3
+ *
+ * Comparing two §10 arms is a PAIRED question — both score the same outcomes
+ * against the same gold — so the arms are recorded per outcome and compared
+ * with McNemar rather than by reading two aggregate rates off two runs. On
+ * these corpora the intervals around a single rate are wide enough to hide
+ * every difference worth acting on, while the discordant pairs are few enough
+ * to count by hand:
+ *
+ *   ... --namer --section 10 --namer-arm shipped  --namer-record fixtures/namer-arms/shipped.json
+ *   ... --namer --section 10 --namer-arm no-nots  --namer-record fixtures/namer-arms/no-nots.json \
+ *                                                 --namer-compare fixtures/namer-arms/shipped.json
  */
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -802,7 +816,24 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
   // not see shell aliases, so an aliased auth path must be passed explicitly.
   const binaryFlag = process.argv.indexOf('--namer-binary');
   const BINARY = binaryFlag !== -1 ? process.argv[binaryFlag + 1] : undefined;
+  // The script writes nothing unless asked to. --namer-record persists this
+  // run's per-outcome answers so a later arm can be compared against it
+  // paired; --namer-compare reads such a record and reports that comparison.
+  const recordFlag = process.argv.indexOf('--namer-record');
+  const RECORD_TO = recordFlag !== -1 ? process.argv[recordFlag + 1] : null;
+  const compareFlag = process.argv.indexOf('--namer-compare');
+  const COMPARE_TO = compareFlag !== -1 ? process.argv[compareFlag + 1] : null;
+  const armFlag = process.argv.indexOf('--namer-arm');
+  const ARM_LABEL = armFlag !== -1 ? process.argv[armFlag + 1] : 'unlabelled';
   const byName = domainsByName(DOMAINS);
+
+  /**
+   * What this run actually asked the model, reduced to a short digest. A record
+   * that cannot say which prompt produced it invites the comparison nobody
+   * meant to make: two runs of the same prompt, read as evidence about a change.
+   */
+  const promptFingerprint = () =>
+    createHash('sha256').update(namerPrompt('fingerprint probe', DOMAINS)).digest('hex').slice(0, 12);
 
   let calls = 0;
   let failures = 0;
@@ -934,6 +965,14 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
   console.log('  --escalate behavior); B namer on every outcome, keyword map as the');
   console.log('  fallback when the namer fails (the shipped inversion).\n');
 
+  // Per-outcome answers, kept rather than tallied away. Two arms score the
+  // same outcomes against the same gold, so the comparison between them is
+  // paired; reading two aggregate rates off two runs and eyeballing their
+  // intervals throws that pairing away and needs far more corpus to conclude
+  // anything. The unit is the (outcome, expected label) pair, which is exactly
+  // the unit `miss = missed/expected` already counts.
+  const perOutcome = {};
+
   for (const c of corpora) {
     const kw = c.outcomes.map((o) => implicatedDomains({ outcome: o.outcome }));
     const a1 = [];
@@ -951,6 +990,13 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
         `    ${label.padEnd(13)} miss ${formatRate(t.missed, t.expected).padEnd(38)} over ${formatRate(t.over, t.surfaced)}`,
       );
     }
+    perOutcome[c.name] = c.outcomes.map((o, i) => ({
+      outcome: o.outcome,
+      expect: o.expect,
+      A0: kw[i],
+      A1: a1[i],
+      B: b[i],
+    }));
   }
   console.log(`\n  namer consultations: ${calls} (${failures} failed), mean latency ${calls ? Math.round(totalMs / calls) : 0}ms`);
   if (failures > 0) {
@@ -970,6 +1016,106 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
   console.log('  Adoption was decided by Gerald on these figures, recorded in the tracker — a weak');
   console.log('  namer understating the inversion must not kill it, and a strong one');
   console.log('  flattering it must not ship it without the figures being read per tier.');
+
+  if (RECORD_TO) {
+    const record = {
+      arm: ARM_LABEL,
+      recordedAt: new Date().toISOString(),
+      host: NAMER_HOST,
+      model: MODEL ?? null,
+      modelsRan: [...modelsRan],
+      promptFingerprint: promptFingerprint(),
+      consultations: calls,
+      failures,
+      perOutcome,
+    };
+    writeFileSync(RECORD_TO, `${JSON.stringify(record, null, 2)}\n`);
+    console.log(`\n  recorded arm "${ARM_LABEL}" to ${RECORD_TO}`);
+    console.log(`  prompt fingerprint ${record.promptFingerprint} — a comparison against a`);
+    console.log('  record carrying a different fingerprint is comparing two prompts, which is');
+    console.log('  the point; against the SAME fingerprint it is measuring host nondeterminism.');
+  }
+
+  if (COMPARE_TO) {
+    const base = JSON.parse(readFileSync(COMPARE_TO, 'utf8'));
+    console.log(`\n  PAIRED against arm "${base.arm}" (${COMPARE_TO}, recorded ${base.recordedAt})`);
+    console.log(`  fingerprints: base ${base.promptFingerprint} -> now ${promptFingerprint()}`);
+    if (base.promptFingerprint === promptFingerprint()) {
+      console.log('  IDENTICAL PROMPTS: any difference below is host nondeterminism, not the change.');
+    }
+    console.log('\n  On the miss axis, per (outcome, expected label) pair. "base only" = the pair');
+    console.log('  the baseline found and this arm misses (a regression); "now only" = recovered.\n');
+    console.log('  corpus                       base miss    now miss   base only   now only   McNemar p');
+
+    let totalBaseOnly = 0;
+    let totalNowOnly = 0;
+    let totalPairs = 0;
+    let baseMissed = 0;
+    let nowMissed = 0;
+
+    for (const c of corpora) {
+      const baseRows = base.perOutcome?.[c.name];
+      const nowRows = perOutcome[c.name];
+      if (!baseRows) {
+        console.log(`  ${c.name.padEnd(28)} ABSENT from the baseline record — not compared`);
+        continue;
+      }
+      // Match on the outcome text, never on position: a corpus that gained or
+      // reordered an entry would otherwise pair each answer with a different
+      // outcome's gold and report the misalignment as a finding.
+      const baseByOutcome = new Map(baseRows.map((r) => [r.outcome, r]));
+      let onlyBase = 0;
+      let onlyNow = 0;
+      let pairs = 0;
+      let bMiss = 0;
+      let nMiss = 0;
+      let unmatched = 0;
+      for (const row of nowRows) {
+        const prior = baseByOutcome.get(row.outcome);
+        if (!prior) {
+          unmatched += 1;
+          continue;
+        }
+        for (const label of row.expect) {
+          pairs += 1;
+          const foundBefore = prior.B.includes(label);
+          const foundNow = row.B.includes(label);
+          if (!foundBefore) bMiss += 1;
+          if (!foundNow) nMiss += 1;
+          if (foundBefore && !foundNow) onlyBase += 1;
+          if (!foundBefore && foundNow) onlyNow += 1;
+        }
+      }
+      const p = mcnemarExact(onlyBase, onlyNow);
+      console.log(
+        `  ${c.name.padEnd(28)} ${(bMiss / pairs).toFixed(3).padStart(9)} ${(nMiss / pairs)
+          .toFixed(3)
+          .padStart(11)} ${String(onlyBase).padStart(11)} ${String(onlyNow).padStart(10)} ${p
+          .toFixed(4)
+          .padStart(11)}${unmatched ? `  (${unmatched} unmatched)` : ''}`,
+      );
+      totalBaseOnly += onlyBase;
+      totalNowOnly += onlyNow;
+      totalPairs += pairs;
+      baseMissed += bMiss;
+      nowMissed += nMiss;
+    }
+
+    const pooledP = mcnemarExact(totalBaseOnly, totalNowOnly);
+    console.log(
+      `  ${'POOLED'.padEnd(28)} ${(baseMissed / totalPairs).toFixed(3).padStart(9)} ${(
+        nowMissed / totalPairs
+      )
+        .toFixed(3)
+        .padStart(11)} ${String(totalBaseOnly).padStart(11)} ${String(totalNowOnly).padStart(
+        10,
+      )} ${pooledP.toFixed(4).padStart(11)}`,
+    );
+    console.log(`\n  ${totalBaseOnly + totalNowOnly} discordant pairs of ${totalPairs}.`);
+    console.log('  A large p with few discordant pairs is "this corpus cannot tell", not');
+    console.log('  "the arms are the same". Concordant pairs carry no information about a');
+    console.log('  difference, which is why the raw rates above are the wrong thing to read.');
+  }
 }
 
 console.log('');
