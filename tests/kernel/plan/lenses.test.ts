@@ -81,9 +81,35 @@ test('an equipped domain template carries the lens slots, undoubled', () => {
 });
 
 test('a domain no lens equips keeps its template untouched', () => {
-  const commerce = playbookFor('commerce-tax').template;
-  assert.equal(lensForDomain('commerce-tax'), undefined);
-  assert.deepEqual(commerce, playbookFor('no-such-domain').template);
+  assert.equal(lensForDomain('no-such-domain'), undefined);
+  assert.deepEqual(playbookFor('no-such-domain').template, playbookFor('also-unknown').template);
+});
+
+test('every catalog domain carries a lens, so no concern routes bare', () => {
+  // The last two holes (commerce-tax, marketing-claims) routed for months with
+  // no posture, no question set, and no slots — dispatched on the default memo
+  // while every neighbouring concern got a practitioner's lens. This test makes
+  // the next hole a failing build instead of an audit finding.
+  for (const domain of DOMAINS) {
+    assert.ok(
+      lensForDomain(domain.domain),
+      `domain "${domain.domain}" routes but no lens equips it`,
+    );
+  }
+});
+
+test('the commerce lens equips taking money with obligations named where they attach', () => {
+  const lens = lensForDomain('commerce-tax');
+  assert.equal(lens?.lens, 'commerce');
+  assert.match(lens!.labeling ?? '', /never tax advice/);
+  assert.ok(playbookFor('commerce-tax').template.slots.some((s) => s.name === 'money-flow'));
+});
+
+test('the brand lens holds public claims to substantiation that exists today', () => {
+  const lens = lensForDomain('marketing-claims');
+  assert.equal(lens?.lens, 'brand');
+  assert.ok(lens!.questions.some((q) => /substantiation exists today/.test(q)));
+  assert.ok(playbookFor('marketing-claims').template.slots.some((s) => s.name === 'claims-inventory'));
 });
 
 test('the security lens equips the domain that already routed without one', () => {

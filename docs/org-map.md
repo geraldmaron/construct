@@ -34,7 +34,7 @@ Nor is it a completeness claim. Routing misses roughly three in ten of the
 concerns a labeler marks implicated on wording its authors never saw. The figure
 and its interval are in the README and in full in `RESEARCH-DECISIONS.md` §10.
 
-13 of 15 concerns carry a lens — a posture, an escalation
+15 of 15 concerns carry a lens — a posture, an escalation
 ladder, and extra required sections. The rest route and carry the default
 template, and say so.
 
@@ -79,6 +79,7 @@ template, and say so.
 - `evidence` — what supports the finding, each item citing a source read or the domain catalog
 - `risks` — what could make the finding wrong, or "none identified" said explicitly
 - `open-questions` *(optional)* — what remains unknown, each with the assumed default the draft proceeds on
+- `money-flow` — each point money moves: the obligation that attaches there, who computes it, who remits it, and what evidences it afterward
 
 **What it must answer before anyone relies on it.**
 
@@ -86,7 +87,12 @@ template, and say so.
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `legal-issue-spot` — Has a legal issue-spotting pass read this deliverable?
 
-**No lens.** This concern routes and carries the default template. It is listed saying so rather than implying depth it does not have.
+**Its posture.** Money that moves creates obligations at the moment it moves; the job is naming each obligation where it attaches, not after it has accrued.
+
+**What it surfaces to you rather than deciding itself.**
+
+- A tax obligation in a jurisdiction with no registration or filing owner: route to a licensed tax professional before anything relies on the finding.
+- A promised refund term the billing system cannot enforce: put the ownership question in the decision inbox with both citations.
 
 **Before you rely on it.** Issue-spotting only: it needs review by a licensed tax professional. Nothing this concern produces is advice.
 
@@ -425,13 +431,19 @@ template, and say so.
 - `evidence` — what supports the finding, each item citing a source read or the domain catalog
 - `risks` — what could make the finding wrong, or "none identified" said explicitly
 - `open-questions` *(optional)* — what remains unknown, each with the assumed default the draft proceeds on
+- `claims-inventory` — each public claim implicated: the substantiation that exists with its date, or [unsubstantiated] with who could either substantiate or pull the claim
 
 **What it must answer before anyone relies on it.**
 
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 
-**No lens.** This concern routes and carries the default template. It is listed saying so rather than implying depth it does not have.
+**Its posture.** Every public sentence is a commitment; the question is never whether a claim sounds right but whether its evidence exists on the day it publishes.
+
+**What it surfaces to you rather than deciding itself.**
+
+- An unsubstantiated claim already published: put it in the decision inbox naming who can substantiate it or pull it — silence leaves it running.
+- A claim in regulated territory: route to licensed review; substantiation discipline is not a legal opinion.
 ## The seat that is deliberately empty
 
 There is no engineer concern. Your host is the engineer: Construct dispatches

@@ -54,10 +54,13 @@ test('the page carries the retired claim and the miss rate, not just the seats',
   assert.match(page, /You never type a role name/);
 });
 
-test('a concern with no lens is listed saying so rather than implying depth', () => {
+test('no concern is listed lens-less now that coverage is complete', () => {
+  // The generator's "No lens." honesty marker stays in the renderer for the
+  // next catalog domain that lands before its lens does; the committed page
+  // must not carry it while every concern is equipped, because the marker on a
+  // covered concern would be the opposite lie.
   const page = readFileSync(PAGE, 'utf8');
-  assert.match(page, /\*\*No lens\.\*\*/);
-  assert.match(page, /rather than implying depth it does not have/);
+  assert.doesNotMatch(page, /\*\*No lens\.\*\*/);
 });
 
 test('a licensed-review concern says so on its own entry', () => {

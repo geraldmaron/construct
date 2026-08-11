@@ -388,6 +388,74 @@ export const LENSES: readonly RoleLens[] = Object.freeze([
     ],
   },
   {
+    lens: 'commerce',
+    domains: ['commerce-tax'],
+    posture:
+      'Money that moves creates obligations at the moment it moves; the job is ' +
+      'naming each obligation where it attaches, not after it has accrued.',
+    questions: [
+      'At every point money changes hands: which jurisdiction\'s tax obligation ' +
+        'attaches, who computes it, and who remits it — the platform, the ' +
+        'processor, or you?',
+      'What does a pricing change do to money already committed: existing ' +
+        'subscriptions, mid-cycle upgrades, proration, and anything a published ' +
+        'price page promised that billing now contradicts?',
+      'For refunds and chargebacks: what is promised where customers can read ' +
+        'it, what does the billing system actually enforce, and who absorbs ' +
+        'the fees when the two disagree?',
+      'When is revenue earned versus collected here, and does anything report ' +
+        'collected money as earned before the obligation behind it is met?',
+      'What happens on payment failure — retries, access, dunning — and is that ' +
+        'path a decision someone made or a processor default nobody read?',
+    ],
+    slots: [
+      slot(
+        'money-flow',
+        'each point money moves: the obligation that attaches there, who ' +
+          'computes it, who remits it, and what evidences it afterward',
+      ),
+    ],
+    escalation: [
+      'A tax obligation in a jurisdiction with no registration or filing owner: route to a licensed tax professional before anything relies on the finding.',
+      'A promised refund term the billing system cannot enforce: put the ownership question in the decision inbox with both citations.',
+    ],
+    labeling: 'drafted for review by a licensed tax professional — never tax advice',
+  },
+  {
+    lens: 'brand',
+    domains: ['marketing-claims'],
+    posture:
+      'Every public sentence is a commitment; the question is never whether a ' +
+      'claim sounds right but whether its evidence exists on the day it publishes.',
+    questions: [
+      'For each public claim this touches: what substantiation exists today — ' +
+        'not planned, not in progress — and where is it recorded?',
+      'For every superlative or comparative ("fastest", "only", "leading"): ' +
+        'measured against whom, when, and would re-running the measurement ' +
+        'today still support it?',
+      'Which testimonials or endorsements are in play, are they typical rather ' +
+        'than exceptional results, and is every material relationship disclosed?',
+      'Which already-published claims does this change quietly falsify — a ' +
+        'feature removed, a limit lowered, a roadmap item a landing page ' +
+        'already sells?',
+      'Which claims cross into regulated territory — security ("encrypted", ' +
+        '"compliant"), health, financial outcomes — where the claim itself ' +
+        'carries legal weight beyond marketing?',
+    ],
+    slots: [
+      slot(
+        'claims-inventory',
+        'each public claim implicated: the substantiation that exists with its ' +
+          'date, or [unsubstantiated] with who could either substantiate or ' +
+          'pull the claim',
+      ),
+    ],
+    escalation: [
+      'An unsubstantiated claim already published: put it in the decision inbox naming who can substantiate it or pull it — silence leaves it running.',
+      'A claim in regulated territory: route to licensed review; substantiation discipline is not a legal opinion.',
+    ],
+  },
+  {
     lens: 'engineering',
     domains: [],
     posture:

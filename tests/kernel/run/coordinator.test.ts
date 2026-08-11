@@ -413,8 +413,9 @@ test('an equipped role is shown its lens: posture, questions, escalation, labels
   assert.match(security, /Your posture: Assume the interesting failure is deliberate/);
   assert.match(security, /Defensive review only/);
 
-  // A domain no lens equips gets no invented posture.
-  assert.ok(!assignmentFor(brief('commerce-tax')).includes('Your posture:'));
+  // A domain no lens equips gets no invented posture. Every catalog domain
+  // carries a lens now, so the case is exercised by a domain outside it.
+  assert.ok(!assignmentFor(brief('no-such-domain')).includes('Your posture:'));
 });
 
 test('an equipped role is told to drop findings another role owns, verbatim', () => {
